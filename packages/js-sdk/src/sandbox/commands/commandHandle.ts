@@ -320,8 +320,12 @@ export class CommandHandle
             }
             break
           }
+          default:
+            // Empty or unrecognized event — skip, matching the Python SDK
+            // which checks HasField("data") / HasField("end") and otherwise
+            // continues to the next event.
+            break
         }
-        // TODO: Handle empty events like in python SDK
       }
     } catch (e) {
       // The stream raised before an `end` event (e.g. disconnect or RPC

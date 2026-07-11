@@ -73,3 +73,111 @@ test('limitConcurrency aborts queued requests when their signal fires', async ()
   const resp = await first
   expect(await resp.text()).toBe('done')
 })
+
+test('limitConcurrency holds the slot while the response body is streaming', async () => {
+  // The first fetch resolves with a streaming body. The second request must
+  // NOT start until the first body is fully consumed.
+  const chunks = [new TextEncoder().encode('hello '), new TextEncoder().encode('world')]
+  let chunkIdx = 0
+
+  const streamingBody = new ReadableStream<Uint8Array>({
+    pull(controller) {
+      if (chunkIdx < chunks.length) {
+        controller.enqueue(chunks[chunkIdx++])
+      } else {
+        controller.close()
+      }
+    },
+  })
+
+  let secondStarted = false
+  const inner = vi.fn(async (input: RequestInfo | URL) => {
+    if (String(input).endsWith('/stream')) {
+      return new Response(streamingBody)
+    }
+    secondStarted = true
+    return new Response('second')
+  }) as unknown as typeof fetch
+
+  const limited = limitConcurrency(inner, 1)
+  const first = await limited('https://example.com/stream')
+  const second = limited('https://example.com/second')
+
+  // Let microtasks drain — the second request must still be queued because
+  // the first body has not been consumed yet.
+  await Promise.resolve()
+  await Promise.resolve()
+  expect(secondStarted).toBe(false)
+
+  // Consume the first body — this should release the slot.
+  expect(await first.text()).toBe('hello world')
+
+  // Now the second request can proceed.
+  expect(await (await second).text()).toBe('second')
+  expect(secondStarted).toBe(true)
+})
+
+test('limitConcurrency releases slot when streaming body is cancelled', async () => {
+  let innerCalls = 0
+  const inner = vi.fn(async () => {
+    innerCalls++
+    if (innerCalls === 1) {
+      return new Response(
+        new ReadableStream<Uint8Array>({
+          pull() {
+            // Never resolves — simulates a long-running stream.
+          },
+        })
+      )
+    }
+    return new Response('ok')
+  }) as unknown as typeof fetch
+
+  const limited = limitConcurrency(inner, 1)
+
+  const first = await limited('https://example.com/stream')
+  // Cancel the body without reading it.
+  await first.body!.cancel()
+
+  // The slot should be free now.
+  const second = await limited('https://example.com/second')
+  expect(await second.text()).toBe('ok')
+})
+
+test('limitConcurrency releases slot when streaming body read errors', async () => {
+  let innerCalls = 0
+  const inner = vi.fn(async () => {
+    innerCalls++
+    if (innerCalls === 1) {
+      return new Response(
+        new ReadableStream<Uint8Array>({
+          pull(controller) {
+            controller.error(new Error('stream broke'))
+          },
+        })
+      )
+    }
+    return new Response('ok')
+  }) as unknown as typeof fetch
+
+  const limited = limitConcurrency(inner, 1)
+
+  const first = await limited('https://example.com/stream')
+  await expect(first.text()).rejects.toThrow('stream broke')
+
+  // The slot should be free despite the error.
+  const second = await limited('https://example.com/second')
+  expect(await second.text()).toBe('ok')
+})
+
+test('limitConcurrency releases slot immediately for null-body responses', async () => {
+  const inner = vi.fn(async () => new Response(null)) as unknown as typeof fetch
+  const limited = limitConcurrency(inner, 1)
+
+  const first = await limited('https://example.com/first')
+  expect(first.body).toBeNull()
+
+  // The slot should already be free — no body to consume.
+  const second = await limited('https://example.com/second')
+  expect(await second.text()).toBe('')
+})

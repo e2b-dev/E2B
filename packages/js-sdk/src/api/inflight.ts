@@ -47,13 +47,9 @@ function abortReason(signal: AbortSignal | undefined): unknown {
  * Subsequent requests are FIFO-queued inside the SDK process and dispatched
  * as earlier requests settle.
  *
- * NOTE: the slot is released as soon as `fetcher` resolves with the response
- * headers, not when the response body is fully consumed. This means the
- * effective concurrency can be higher than `max` while bodies are
- * still streaming.
- *
- * TODO: release on body end (consume/cancel/error) so the
- * SDK-level cap aligns with the dispatcher's connection accounting
+ * The slot is released when the response body is fully consumed, cancelled,
+ * or errors — aligning the SDK-level cap with the dispatcher's connection
+ * accounting. Responses with no body (e.g. HEAD) release immediately.
  */
 export function limitConcurrency(
   fetcher: typeof fetch,
@@ -69,10 +65,67 @@ export function limitConcurrency(
     const signal =
       init?.signal ?? (input instanceof Request ? input.signal : undefined)
     const release = await sem.acquire(signal)
+
+    let response: Response
     try {
-      return await fetcher(input, init)
-    } finally {
+      response = await fetcher(input, init)
+    } catch (e) {
       release()
+      throw e
     }
+
+    // No body (e.g. HEAD request) — release the slot immediately.
+    if (!response.body) {
+      release()
+      return response
+    }
+
+    // Wrap the response body so the semaphore slot is released when the
+    // stream is fully consumed, cancelled, or errors — not when headers
+    // arrive. This ensures the concurrency cap accounts for open streaming
+    // connections (file downloads, PTY output, command output, etc.).
+    let released = false
+    const releaseOnce = () => {
+      if (!released) {
+        released = true
+        release()
+      }
+    }
+
+    const originalBody = response.body
+    let reader: ReadableStreamDefaultReader<Uint8Array> | undefined
+
+    const wrappedBody = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        reader = originalBody.getReader()
+        try {
+          for (;;) {
+            const { done, value } = await reader.read()
+            if (done) {
+              controller.close()
+              releaseOnce()
+              return
+            }
+            controller.enqueue(value)
+          }
+        } catch (e) {
+          controller.error(e)
+          releaseOnce()
+        }
+      },
+      cancel(reason) {
+        // Cancel via the reader (which already locked the original body)
+        // instead of calling originalBody.cancel() which would throw on a
+        // locked stream.
+        reader?.cancel(reason)
+        releaseOnce()
+      },
+    })
+
+    return new Response(wrappedBody, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+    })
   }) as typeof fetch
 }

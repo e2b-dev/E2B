@@ -1,9 +1,14 @@
 import asyncio
 
+import gzip
+
 import pytest
 
 from e2b_connect.client import (
+    Code,
+    ConnectException,
     EnvelopeFlags,
+    GzipCompressor,
     ServerStreamParser,
     _retry,
     encode_envelope,
@@ -139,13 +144,6 @@ async def test_async_with_multiple_await_calls():
     assert total == 2
 
 
-def make_parser():
-    return ServerStreamParser(
-        decode=lambda data, msg_type: data,
-        response_type=None,
-    )
-
-
 def test_parser_yields_messages_from_single_chunk():
     parser = make_parser()
     envelope = encode_envelope(flags=EnvelopeFlags(0), data=b"abc")
@@ -169,3 +167,86 @@ def test_parser_handles_end_stream_payload_shorter_than_header():
 
     assert list(parser.parse(envelope[:5])) == []
     assert list(parser.parse(envelope[5:])) == []
+
+
+def test_parser_decompresses_compressed_message():
+    parser = make_parser(compressor=GzipCompressor)
+    payload = b"hello streaming world"
+    compressed = gzip.compress(payload, compresslevel=1)
+    envelope = encode_envelope(flags=EnvelopeFlags.compressed, data=compressed)
+
+    result = list(parser.parse(envelope))
+    assert result == [payload]
+
+
+def test_parser_decompresses_compressed_message_split_across_chunks():
+    parser = make_parser(compressor=GzipCompressor)
+    payload = b"split compressed payload data"
+    compressed = gzip.compress(payload, compresslevel=1)
+    envelope = encode_envelope(flags=EnvelopeFlags.compressed, data=compressed)
+
+    # Split in the middle of the payload
+    mid = len(envelope) // 2
+    assert list(parser.parse(envelope[:mid])) == []
+    assert list(parser.parse(envelope[mid:])) == [payload]
+
+
+def test_parser_raises_when_compressed_but_no_compressor():
+    parser = make_parser()  # no compressor
+    compressed = gzip.compress(b"data", compresslevel=1)
+    envelope = encode_envelope(flags=EnvelopeFlags.compressed, data=compressed)
+
+    with pytest.raises(ConnectException) as exc_info:
+        list(parser.parse(envelope))
+
+    assert exc_info.value.status == Code.internal
+    assert "no compressor configured" in exc_info.value.message
+
+
+def test_parser_raises_on_malformed_end_stream_json():
+    parser = make_parser()
+    envelope = encode_envelope(
+        flags=EnvelopeFlags.end_stream,
+        data=b"not valid json{{{",
+    )
+
+    with pytest.raises(ConnectException) as exc_info:
+        list(parser.parse(envelope))
+
+    assert exc_info.value.status == Code.internal
+    assert "malformed end-stream" in exc_info.value.message
+
+
+def test_parser_end_stream_without_error_returns_silently():
+    parser = make_parser()
+    envelope = encode_envelope(
+        flags=EnvelopeFlags.end_stream,
+        data=b'{"status": "ok"}',
+    )
+
+    assert list(parser.parse(envelope)) == []
+
+
+def test_parser_handles_many_messages_with_buffer_compaction():
+    """Verify the bytearray-based buffer handles many sequential messages
+    without losing data — exercises the compaction path in shift_buffer."""
+    parser = make_parser()
+    messages = [f"msg-{i}".encode() for i in range(50)]
+    envelopes = b"".join(
+        encode_envelope(flags=EnvelopeFlags(0), data=m) for m in messages
+    )
+
+    # Feed one byte at a time to stress the buffer management.
+    results = []
+    for byte in envelopes:
+        results.extend(parser.parse(bytes([byte])))
+
+    assert results == messages
+
+
+def make_parser(compressor=None):
+    return ServerStreamParser(
+        decode=lambda data, msg_type: data,
+        response_type=None,
+        compressor=compressor,
+    )

@@ -147,7 +147,13 @@ def _retry(exc: typing.Type[Exception], retries: int):
 class GzipCompressor:
     name = "gzip"
     decompress = gzip.decompress
-    compress = gzip.compress
+
+    @staticmethod
+    def compress(data: bytes) -> bytes:
+        # Use compresslevel=1 for speed — streaming RPC messages (PTY output,
+        # command stdout/stderr, filesystem watch events) are small and frequent,
+        # so low-latency compression matters more than squeezing out extra ratio.
+        return gzip.compress(data, compresslevel=1)
 
 
 class JSONCodec:
@@ -366,6 +372,11 @@ class Client:
 
         stream_timeout = self._create_stream_timeout(timeout)
 
+        compression_headers = {}
+        if self._compressor is not None:
+            compression_headers["connect-content-encoding"] = self._compressor.name
+            compression_headers["connect-accept-encoding"] = self._compressor.name
+
         return {
             "method": "POST",
             "url": self.url,
@@ -379,13 +390,8 @@ class Client:
                 **headers,
                 **opts.get("headers", {}),
                 **stream_timeout,
+                **compression_headers,
                 "connect-protocol-version": "1",
-                "connect-content-encoding": (
-                    "identity" if self._compressor is None else self._compressor.name
-                ),
-                "connect-accept-encoding": (
-                    "identity" if self._compressor is None else self._compressor.name
-                ),
                 "content-type": f"application/connect+{self._codec.content_type}",
             },
         }
@@ -493,13 +499,22 @@ class ServerStreamParser:
         self.response_type = response_type
         self._compressor = compressor
 
-        self.buffer: bytes = b""
+        self._buffer = bytearray()
+        self._offset = 0
         self._header: Optional[tuple[EnvelopeFlags, DataLen]] = None
 
-    def shift_buffer(self, size: int):
-        buffer = self.buffer[:size]
-        self.buffer = self.buffer[size:]
-        return buffer
+    @property
+    def _remaining(self) -> int:
+        return len(self._buffer) - self._offset
+
+    def shift_buffer(self, size: int) -> bytes:
+        data = bytes(self._buffer[self._offset : self._offset + size])
+        self._offset += size
+        # Compact the buffer when the offset wastes more space than the data left.
+        if self._offset > self._remaining:
+            self._buffer = bytearray(self._buffer[self._offset :])
+            self._offset = 0
+        return data
 
     @property
     def header(self) -> Tuple[EnvelopeFlags, DataLen]:
@@ -516,15 +531,15 @@ class ServerStreamParser:
         self._header = None
 
     def parse(self, chunk: bytes) -> Generator[Any, None, None]:
-        self.buffer += chunk
+        self._buffer.extend(chunk)
 
         # Once the header is consumed, the remaining payload can be shorter
         # than the header length, so only require a full header when we still
         # need to read one.
-        while self._header is not None or len(self.buffer) >= envelope_header_length:
+        while self._header is not None or self._remaining >= envelope_header_length:
             flags, data_len = self.header
 
-            if data_len > len(self.buffer):
+            if data_len > self._remaining:
                 break
 
             data = self.shift_buffer(data_len)
@@ -538,9 +553,15 @@ class ServerStreamParser:
                 data = self._compressor.decompress(data)
 
             if EnvelopeFlags.end_stream in flags:
-                data = json.loads(data)
+                try:
+                    data = json.loads(data)
+                except json.JSONDecodeError:
+                    raise ConnectException(
+                        Code.internal,
+                        "Received malformed end-stream message",
+                    )
 
-                if "error" in data:
+                if isinstance(data, dict) and "error" in data:
                     raise make_error(data["error"])
 
                 return
