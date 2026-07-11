@@ -383,6 +383,9 @@ class Client:
                 "connect-content-encoding": (
                     "identity" if self._compressor is None else self._compressor.name
                 ),
+                "connect-accept-encoding": (
+                    "identity" if self._compressor is None else self._compressor.name
+                ),
                 "content-type": f"application/connect+{self._codec.content_type}",
             },
         }
@@ -411,6 +414,7 @@ class Client:
         parser = ServerStreamParser(
             decode=self._codec.decode,
             response_type=self._response_type,
+            compressor=self._compressor,
         )
 
         self._log_request()
@@ -447,6 +451,7 @@ class Client:
         parser = ServerStreamParser(
             decode=self._codec.decode,
             response_type=self._response_type,
+            compressor=self._compressor,
         )
 
         self._log_request()
@@ -482,9 +487,11 @@ class ServerStreamParser:
         self,
         decode: Callable,
         response_type: Any,
+        compressor=None,
     ):
         self.decode = decode
         self.response_type = response_type
+        self._compressor = compressor
 
         self.buffer: bytes = b""
         self._header: Optional[tuple[EnvelopeFlags, DataLen]] = None
@@ -521,6 +528,14 @@ class ServerStreamParser:
                 break
 
             data = self.shift_buffer(data_len)
+
+            if EnvelopeFlags.compressed in flags:
+                if self._compressor is None:
+                    raise ConnectException(
+                        Code.internal,
+                        "Received compressed streaming message but no compressor configured",
+                    )
+                data = self._compressor.decompress(data)
 
             if EnvelopeFlags.end_stream in flags:
                 data = json.loads(data)

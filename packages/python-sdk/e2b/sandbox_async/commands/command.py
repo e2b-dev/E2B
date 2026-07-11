@@ -39,8 +39,7 @@ class Commands:
         self._check_health = lambda: acheck_sandbox_health(envd_api)
         self._rpc = process_connect.ProcessClient(
             envd_api_url,
-            # TODO: Fix and enable compression again — the headers compression is not solved for streaming.
-            # compressor=e2b_connect.GzipCompressor,
+            compressor=e2b_connect.GzipCompressor,
             async_pool=pool,
             json=True,
             headers=connection_config.sandbox_headers,

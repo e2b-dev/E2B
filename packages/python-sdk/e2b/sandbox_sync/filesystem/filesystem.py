@@ -101,8 +101,7 @@ class Filesystem:
         transport = get_envd_transport(self._connection_config)
         return filesystem_connect.FilesystemClient(
             self._envd_api_url,
-            # TODO: Fix and enable compression again — the headers compression is not solved for streaming.
-            # compressor=e2b_connect.GzipCompressor,
+            compressor=e2b_connect.GzipCompressor,
             pool=transport.pool,
             json=True,
             headers=self._connection_config.sandbox_headers,
