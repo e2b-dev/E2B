@@ -258,6 +258,52 @@ def test_update_network_clears_existing_rules(sandbox_factory):
 
 
 @pytest.mark.skip_debug()
+def test_https_ports(sandbox_factory):
+    """Test that a port listed in https_ports proxies to an HTTPS backend."""
+    port = 8443
+    sandbox = sandbox_factory(network=SandboxNetworkOpts(https_ports=[port]))
+
+    # Generate a self-signed certificate inside the sandbox
+    keygen = sandbox.commands.run(
+        "openssl req -x509 -newkey rsa:2048 "
+        "-keyout /tmp/https-backend-key.pem -out /tmp/https-backend-cert.pem "
+        '-days 1 -nodes -subj "/CN=localhost"'
+    )
+    assert keygen.exit_code == 0
+
+    # Start an HTTPS server on the configured port
+    sandbox.commands.run(
+        f"""python3 -c "
+import http.server, ssl
+class H(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b'https backend')
+    def log_message(self, *a): pass
+server = http.server.ThreadingHTTPServer(('0.0.0.0', {port}), H)
+context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+context.load_cert_chain('/tmp/https-backend-cert.pem', '/tmp/https-backend-key.pem')
+server.socket = context.wrap_socket(server.socket, server_side=True)
+server.serve_forever()
+" """,
+        background=True,
+    )
+
+    sandbox_url = f"https://{sandbox.get_host(port)}"
+
+    with httpx.Client() as client:
+        response = wait_for_status(client, sandbox_url, 200)
+        assert response.status_code == 200
+        assert response.text == "https backend"
+
+    # The port is reported back in the sandbox info
+    info = sandbox.get_info()
+    assert info.network is not None
+    assert info.network.get("https_ports") == [port]
+
+
+@pytest.mark.skip_debug()
 def test_mask_request_host(sandbox_factory):
     """Test that mask_request_host modifies the Host header correctly."""
     sandbox = sandbox_factory(

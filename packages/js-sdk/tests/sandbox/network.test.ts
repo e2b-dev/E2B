@@ -300,6 +300,67 @@ describe('updateNetwork clears existing rules when fields are omitted', () => {
   )
 })
 
+describe('httpsPorts option', () => {
+  const port = 8443
+
+  sandboxTest.scoped({
+    sandboxOpts: {
+      network: {
+        httpsPorts: [port],
+      },
+    },
+  })
+
+  sandboxTest.skipIf(isDebug)(
+    'public URL proxies to an HTTPS backend in the sandbox',
+    async ({ sandbox }) => {
+      // Generate a self-signed certificate inside the sandbox
+      const keygen = await sandbox.commands.run(
+        'openssl req -x509 -newkey rsa:2048 -keyout /tmp/https-backend-key.pem -out /tmp/https-backend-cert.pem -days 1 -nodes -subj "/CN=localhost"'
+      )
+      assert.equal(keygen.exitCode, 0)
+
+      // Start an HTTPS server on the configured port
+      sandbox.commands.run(
+        `python3 -c "
+import http.server, ssl
+class H(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b'https backend')
+    def log_message(self, *a): pass
+server = http.server.ThreadingHTTPServer(('0.0.0.0', ${port}), H)
+context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+context.load_cert_chain('/tmp/https-backend-cert.pem', '/tmp/https-backend-key.pem')
+server.socket = context.wrap_socket(server.socket, server_side=True)
+server.serve_forever()
+"`,
+        { background: true }
+      )
+
+      // Poll the public URL until the server responds
+      const sandboxUrl = `https://${sandbox.getHost(port)}`
+      let response: Response | undefined
+      const deadline = Date.now() + 15_000
+      while (Date.now() < deadline) {
+        response = await fetch(sandboxUrl)
+        if (response.status === 200) {
+          break
+        }
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+      }
+
+      assert.equal(response?.status, 200)
+      assert.equal(await response?.text(), 'https backend')
+
+      // The port is reported back in the sandbox info
+      const info = await sandbox.getInfo()
+      assert.deepEqual(info.network?.httpsPorts, [port])
+    }
+  )
+})
+
 describe('maskRequestHost option', () => {
   sandboxTest.scoped({
     sandboxOpts: {

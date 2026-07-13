@@ -295,6 +295,16 @@ components:
         maskRequestHost:
           type: string
           description: Specify host mask which will be used for all sandbox requests
+        httpsPorts:
+          type: array
+          description: Ports whose public URLs should connect to the sandbox using HTTPS. Backend certificate verification is disabled.
+          maxItems: 128
+          uniqueItems: true
+          items:
+            type: integer
+            format: uint32
+            minimum: 1
+            maximum: 65535
         rules:
           type: object
           description: >
