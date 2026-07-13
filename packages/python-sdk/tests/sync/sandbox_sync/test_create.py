@@ -1,5 +1,6 @@
 from time import sleep
 from typing import Any, cast
+from uuid import uuid4
 
 import httpx
 import pytest
@@ -35,6 +36,31 @@ def test_metadata(sandbox_factory):
             break
     else:
         assert False, "Sandbox not found"
+
+
+@pytest.mark.skip_debug()
+def test_mcp_gateway_start_failure_kills_created_sandbox():
+    metadata = {"mcp_gateway_cleanup_test_id": str(uuid4())}
+    query = SandboxQuery(state=[SandboxState.RUNNING], metadata=metadata)
+    remaining_sandboxes = []
+
+    try:
+        with pytest.raises(Exception, match="Failed to start MCP gateway"):
+            Sandbox.create(
+                timeout=60,
+                metadata=metadata,
+                mcp=cast(Any, {"invalid_server": {}}),
+            )
+
+        remaining_sandboxes = Sandbox.list(query=query).next_items()
+        assert remaining_sandboxes == []
+    finally:
+        try:
+            remaining_sandboxes = Sandbox.list(query=query).next_items()
+        except Exception:
+            pass
+        for sandbox in remaining_sandboxes:
+            Sandbox.kill(sandbox.sandbox_id)
 
 
 def test_create_payload_serializes_auto_resume_enabled():
