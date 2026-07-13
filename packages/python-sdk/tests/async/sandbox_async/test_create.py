@@ -5,7 +5,7 @@ from uuid import uuid4
 import httpx
 import pytest
 
-from e2b import AsyncSandbox, SandboxQuery, SandboxState
+from e2b import AsyncSandbox, CommandExitException, SandboxQuery, SandboxState
 from e2b.api.client.models import (
     NewSandbox,
     SandboxAutoResumeConfig,
@@ -38,14 +38,17 @@ async def test_metadata(async_sandbox_factory):
 
 
 @pytest.mark.skip_debug()
-async def test_mcp_gateway_start_failure_kills_created_sandbox():
+async def test_mcp_gateway_start_failure_kills_created_sandbox(template):
     metadata = {"mcp_gateway_cleanup_test_id": str(uuid4())}
     query = SandboxQuery(state=[SandboxState.RUNNING], metadata=metadata)
     remaining_sandboxes = []
 
     try:
-        with pytest.raises(Exception, match="Failed to start MCP gateway"):
+        # The base template has no mcp-gateway binary, so gateway startup
+        # reliably fails after the sandbox has been allocated.
+        with pytest.raises(CommandExitException):
             await AsyncSandbox.create(
+                template,
                 timeout=60,
                 metadata=metadata,
                 mcp=cast(Any, {"invalid_server": {}}),
