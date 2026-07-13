@@ -96,16 +96,16 @@ export function limitConcurrency(
     let reader: ReadableStreamDefaultReader<Uint8Array> | undefined
 
     const wrappedBody = new ReadableStream<Uint8Array>({
-      async start(controller) {
-        reader = originalBody.getReader()
+      async pull(controller) {
+        if (!reader) {
+          reader = originalBody.getReader()
+        }
         try {
-          for (;;) {
-            const { done, value } = await reader.read()
-            if (done) {
-              controller.close()
-              releaseOnce()
-              return
-            }
+          const { done, value } = await reader.read()
+          if (done) {
+            controller.close()
+            releaseOnce()
+          } else {
             controller.enqueue(value)
           }
         } catch (e) {

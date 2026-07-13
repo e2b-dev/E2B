@@ -282,7 +282,17 @@ class Client:
 
         content = http_resp.content
 
-        if self._compressor is not None:
+        # httpcore stores headers as list[tuple[bytes, bytes]] — scan for the
+        # content-encoding entry instead of calling .get() on a dict.
+        response_encoding = ""
+        for name, value in http_resp.headers:
+            if name.lower() == b"content-encoding":
+                response_encoding = value.decode("ascii", errors="replace").strip()
+                break
+        if (
+            self._compressor is not None
+            and response_encoding == self._compressor.name
+        ):
             content = self._compressor.decompress(content)
 
         return self._codec.decode(

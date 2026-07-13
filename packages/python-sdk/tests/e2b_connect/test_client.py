@@ -2,9 +2,12 @@ import asyncio
 
 import gzip
 
+from unittest.mock import MagicMock
+
 import pytest
 
 from e2b_connect.client import (
+    Client,
     Code,
     ConnectException,
     EnvelopeFlags,
@@ -250,3 +253,65 @@ def make_parser(compressor=None):
         response_type=None,
         compressor=compressor,
     )
+
+
+def make_client_with_compressor(compressor=None):
+    """Create a Client with a stub codec so we can inspect decoded bytes."""
+    client = Client(
+        url="http://test",
+        response_type=None,
+        compressor=compressor,
+        json=False,
+    )
+    # Replace the codec with a spy that returns the raw bytes unchanged.
+    client._codec = MagicMock()
+    client._codec.decode = MagicMock(side_effect=lambda data, msg_type: data)
+    return client
+
+
+def make_http_response(content: bytes, headers: list = None, status: int = 200):
+    resp = MagicMock()
+    resp.status = status
+    resp.content = content
+    resp.headers = headers or []
+    return resp
+
+
+def test_unary_decompresses_when_response_is_gzip():
+    payload = b"hello compressed world"
+    compressed = gzip.compress(payload, compresslevel=1)
+
+    client = make_client_with_compressor(compressor=GzipCompressor)
+    http_resp = make_http_response(
+        compressed,
+        headers=[(b"content-encoding", b"gzip")],
+    )
+
+    result = client._process_unary_response(http_resp)
+    assert result == payload
+
+
+def test_unary_does_not_decompress_when_response_is_identity():
+    """When the server returns an identity (uncompressed) response, the SDK
+    must pass the content through raw — not attempt gzip.decompress on it."""
+    raw_payload = b"plain uncompressed payload"
+
+    client = make_client_with_compressor(compressor=GzipCompressor)
+    http_resp = make_http_response(
+        raw_payload,
+        headers=[],  # no content-encoding → identity
+    )
+
+    result = client._process_unary_response(http_resp)
+    assert result == raw_payload
+
+
+def test_unary_does_not_decompress_when_no_compressor():
+    raw_payload = b"plain payload"
+
+    client = make_client_with_compressor(compressor=None)
+    http_resp = make_http_response(raw_payload, headers=[])
+
+    result = client._process_unary_response(http_resp)
+    assert result == raw_payload
+
