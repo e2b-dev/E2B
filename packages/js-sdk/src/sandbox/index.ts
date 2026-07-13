@@ -320,17 +320,22 @@ export class Sandbox extends SandboxApi {
 
     if (sandboxOpts?.mcp) {
       sandbox.mcpToken = crypto.randomUUID()
-      const res = await sandbox.commands.run(
-        `mcp-gateway --config ${shellQuote(JSON.stringify(sandboxOpts.mcp))}`,
-        {
-          user: 'root',
-          envs: {
-            GATEWAY_ACCESS_TOKEN: sandbox.mcpToken ?? '',
-          },
+      try {
+        const res = await sandbox.commands.run(
+          `mcp-gateway --config ${shellQuote(JSON.stringify(sandboxOpts.mcp))}`,
+          {
+            user: 'root',
+            envs: {
+              GATEWAY_ACCESS_TOKEN: sandbox.mcpToken ?? '',
+            },
+          }
+        )
+        if (res.exitCode !== 0) {
+          throw new Error(`Failed to start MCP gateway: ${res.stderr}`)
         }
-      )
-      if (res.exitCode !== 0) {
-        throw new Error(`Failed to start MCP gateway: ${res.stderr}`)
+      } catch (error) {
+        await sandbox.kill().catch(() => undefined)
+        throw error
       }
     }
 
