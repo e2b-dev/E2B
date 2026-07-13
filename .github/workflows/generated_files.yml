@@ -81,8 +81,10 @@ jobs:
           file: codegen.Dockerfile
           tags: codegen-env:latest
           load: true # makes the image available for `docker run`
+          # Cache is seeded from main by codegen_image_cache.yml. No cache-to
+          # here: PR-scoped writes are unreadable by other PRs and only fill
+          # the repo's 10 GB Actions cache, evicting other caches.
           cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Run codegen
         run: CODEGEN_IMAGE=codegen-env:latest make codegen

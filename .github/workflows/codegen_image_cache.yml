@@ -1,0 +1,35 @@
+name: Codegen image cache
+
+# Seeds the buildkit cache for codegen.Dockerfile from main so pull request
+# runs of generated_files.yml warm-start. PR-scoped cache writes are not
+# readable by other PRs, so main is the only scope worth writing to.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'codegen.Dockerfile'
+      - 'packages/connect-python/**'
+      - '.github/workflows/codegen_image_cache.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  seed:
+    name: Seed codegen image cache
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build codegen image and export cache
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: codegen.Dockerfile
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
