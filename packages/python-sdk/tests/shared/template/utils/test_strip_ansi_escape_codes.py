@@ -60,3 +60,27 @@ def test_strips_cursor_movement():
 
 def test_strips_erase_line():
     assert strip_ansi_escape_codes("\x1b[2Kdone") == "done"
+
+
+def test_strips_dcs_esc_backslash_terminated():
+    assert strip_ansi_escape_codes("\x1bPabc\x1b\\done") == "done"
+
+
+def test_strips_dcs_sixel_payload():
+    assert strip_ansi_escape_codes("\x1bPq#0;2;0;0;0~~@@\x1b\\image") == "image"
+
+
+def test_strips_sos():
+    assert strip_ansi_escape_codes("\x1bXhidden\x1b\\ok") == "ok"
+
+
+def test_strips_pm():
+    assert strip_ansi_escape_codes("\x1b^private msg\x1b\\ok") == "ok"
+
+
+def test_strips_apc():
+    assert strip_ansi_escape_codes("\x1b_app command\x07ok") == "ok"
+
+
+def test_strips_unterminated_dcs_intro_only():
+    assert strip_ansi_escape_codes("\x1bPno terminator here") == "no terminator here"

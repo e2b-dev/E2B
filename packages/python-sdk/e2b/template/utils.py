@@ -316,14 +316,15 @@ def strip_ansi_escape_codes(text: str) -> str:
     """
     # Valid string terminator sequences are BEL, ESC\, and 0x9c
     st = r"(?:\u0007|\u001B\u005C|\u009C)"
-    # OSC sequences only: ESC ] ... ST (non-greedy until the first ST)
-    osc = rf"(?:\u001B\][\s\S]*?{st})"
+    # String controls (OSC, DCS, SOS, PM, APC): ESC ]/P/X/^/_ ... ST
+    # (non-greedy until the first ST)
+    strings = rf"(?:\u001B[\]PX^_][\s\S]*?{st})"
     # CSI and related: ESC/C1, optional intermediates, optional params
     # (supports ; and :) then final byte
     csi = (
         r"[\u001B\u009B][\[\]()#;?]*(?:\d{1,4}(?:[;:]\d{0,4})*)?[\dA-PR-TZcf-nq-uy=><~]"
     )
-    ansi_escape = re.compile(f"{osc}|{csi}")
+    ansi_escape = re.compile(f"{strings}|{csi}")
     return ansi_escape.sub("", text)
 
 

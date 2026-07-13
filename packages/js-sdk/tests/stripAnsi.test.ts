@@ -60,3 +60,26 @@ test('strips cursor movement', () => {
 test('strips erase line', () => {
   expect(stripAnsi('\x1b[2Kdone')).toBe('done')
 })
+test('strips DCS (ESC backslash terminated)', () => {
+  expect(stripAnsi('\x1bPabc\x1b\\done')).toBe('done')
+})
+
+test('strips DCS sixel payload', () => {
+  expect(stripAnsi('\x1bPq#0;2;0;0;0~~@@\x1b\\image')).toBe('image')
+})
+
+test('strips SOS', () => {
+  expect(stripAnsi('\x1bXhidden\x1b\\ok')).toBe('ok')
+})
+
+test('strips PM', () => {
+  expect(stripAnsi('\x1b^private msg\x1b\\ok')).toBe('ok')
+})
+
+test('strips APC', () => {
+  expect(stripAnsi('\x1b_app command\x07ok')).toBe('ok')
+})
+
+test('strips only the intro of an unterminated DCS', () => {
+  expect(stripAnsi('\x1bPno terminator here')).toBe('no terminator here')
+})
