@@ -1,9 +1,13 @@
 .PHONY: codegen
 codegen:
-	@echo "Building codegen image"
-	docker build -q -t codegen-env . -f codegen.Dockerfile
+	@if [ -z "$$CODEGEN_IMAGE" ]; then \
+		echo "Building codegen image"; \
+		docker build -q -t codegen-env . -f codegen.Dockerfile; \
+	else \
+		echo "Using pre-built image $$CODEGEN_IMAGE (skipping build)"; \
+	fi
 	@echo "Generating code"
-	docker run -v $$PWD:/workspace codegen-env make generate
+	docker run -v $$PWD:/workspace $${CODEGEN_IMAGE:-codegen-env} make generate
 
 generate: generate-js generate-python
 
