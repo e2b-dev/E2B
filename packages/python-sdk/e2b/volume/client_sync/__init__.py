@@ -6,7 +6,7 @@ import httpx
 from httpx import Limits
 from httpx._types import ProxyTypes
 
-from e2b.api import make_logging_event_hooks
+from e2b.api import connection_retries, make_logging_event_hooks
 from e2b.api.metadata import default_headers
 from e2b.exceptions import AuthenticationException
 from e2b.volume.client.client import AuthenticatedClient as VolumeApiClient
@@ -46,7 +46,8 @@ def get_api_client(config: VolumeConnectionConfig, **kwargs) -> VolumeApiClient:
             httpx.Timeout(request_timeout) if request_timeout is not None else None
         ),
         httpx_args={
-            "proxy": config.proxy,
+            # The proxy lives in the cached transport; passing `proxy` here too
+            # would mount a fresh, never-closed proxy transport per client.
             "transport": get_transport(config),
             "event_hooks": make_logging_event_hooks(config.logger),
         },
@@ -74,6 +75,7 @@ def get_transport(config: VolumeConnectionConfig) -> TransportWithLogger:
     transport = TransportWithLogger(
         limits=limits,
         proxy=config.proxy,
+        retries=connection_retries,
     )
     instances[key] = transport
     TransportWithLogger._thread_local.instances = instances

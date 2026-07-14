@@ -1,20 +1,19 @@
 {
   "compilerOptions": {
     "outDir": "dist",
-    "target": "es6",
+    "target": "es2022",
+    "module": "esnext",
     "lib": [
       "dom",
-      "ESNext"
+      "es2022"
     ],
     "sourceMap": true,
-    "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "declaration": true,
@@ -25,6 +24,6 @@
   "exclude": [
     "dist",
     "node_modules",
-    "tsup.config.js"
+    "tsdown.config.ts"
   ]
 }

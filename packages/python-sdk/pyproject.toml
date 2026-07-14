@@ -1,46 +1,59 @@
-[tool.poetry]
+[project]
 name = "e2b"
-version = "2.30.0"
+version = "2.32.0"
 description = "E2B SDK that give agents cloud environments"
-authors = ["e2b <hello@e2b.dev>"]
+authors = [{ name = "e2b", email = "hello@e2b.dev" }]
 license = "MIT"
 readme = "README.md"
-homepage = "https://e2b.dev/"
-repository = "https://github.com/e2b-dev/e2b/tree/main/packages/python-sdk"
-packages = [{ include = "e2b" }, { include = "e2b_connect" }]
+requires-python = ">=3.10"
+dependencies = [
+    "python-dateutil>=2.8.2",
+    "wcmatch>=10.1,<11",
+    "protobuf>=4.21.0",
+    "httpcore>=1.0.5,<2",
+    "httpx>=0.27.0,<1.0.0",
+    "h2>=4,<5",
+    "attrs>=23.2.0",
+    "packaging>=24.1",
+    "typing-extensions>=4.1.0",
+    "dockerfile-parse>=2.0.1,<3",
+    "rich>=14.0.0",
+]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-python-dateutil = ">=2.8.2"
-wcmatch = "^10.1"
-protobuf = ">=4.21.0"
-httpcore = "^1.0.5"
-httpx = ">=0.27.0, <1.0.0"
-h2 = ">=4,<5"
-attrs = ">=23.2.0"
-packaging = ">=24.1"
-typing-extensions = ">=4.1.0"
-dockerfile-parse = "^2.0.1"
-rich = ">=14.0.0"
+[project.urls]
+Homepage = "https://e2b.dev/"
+Repository = "https://github.com/e2b-dev/e2b/tree/main/packages/python-sdk"
+"Bug Tracker" = "https://github.com/e2b-dev/e2b/issues"
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^9.0.3"
-pytest-xdist = "^3.3.1"
-python-dotenv = "^1.0.0"
-pytest-dotenv = "^0.5.2"
-pytest-asyncio = "^1.3.0"
-pydoc-markdown = "^4.8.2"
-datamodel-code-generator = "^0.34.0"
-ruff = "^0.11.12"
-pytest-timeout = "^2.4.0"
-ty = "^0.0.15"
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3,<10",
+    "pytest-xdist>=3.3.1,<4",
+    "python-dotenv>=1.0.0,<2",
+    "pytest-dotenv>=0.5.2,<0.6",
+    "pytest-asyncio>=1.3.0,<2",
+    "ruff>=0.11.12,<0.12",
+    "pytest-timeout>=2.4.0,<3",
+    "ty>=0.0.15,<0.0.16",
+]
+
+# Tools for local code generation (`make init` && `uv run make generate-*`).
+# Pins mirror codegen.Dockerfile so local output matches CI. `generate-envd`
+# additionally needs Go tooling (buf) and only runs via `make codegen` (Docker).
+codegen = [
+    "black==26.3.1",
+    "pyyaml==6.0.2",
+    "e2b-openapi-python-client==0.26.2",
+    "datamodel-code-generator==0.34.0",
+]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.10.0,<0.11.0"]
+build-backend = "uv_build"
 
-[tool.poetry.urls]
-"Bug Tracker" = "https://github.com/e2b-dev/e2b/issues"
+[tool.uv.build-backend]
+module-name = ["e2b", "e2b_connect"]
+module-root = ""
 
 [tool.basedpyright]
 reportInconsistentOverload = false

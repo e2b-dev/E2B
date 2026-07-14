@@ -27,8 +27,10 @@ generate-envd:
 
 generate: generate-api generate-envd generate-mcp generate-volume-api
 
+# Install the code-generation toolchain into the uv env. After this, run the
+# generators locally with e.g. `uv run make generate-api`.
 init:
-	pip install openapi-python-client datamodel-code-generator
+	uv sync --group codegen
 
 typecheck:
 	ty check
@@ -52,10 +54,6 @@ generate-mcp:
 			--disable-timestamp \
 			--extra-fields forbid
 
-.PHONY: setup
-setup:
-	poetry install
-
 .PHONY: test
-test: setup
-	poetry run pytest --verbose --numprocesses=4
+test:
+	uv run pytest --verbose --numprocesses=4

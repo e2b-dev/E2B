@@ -113,6 +113,7 @@ class CopyItem(TypedDict):
     user: NotRequired[Optional[str]]
     mode: NotRequired[Optional[int]]
     resolveSymlinks: NotRequired[Optional[bool]]
+    gzip: NotRequired[Optional[bool]]
 
 
 class Instruction(TypedDict):
@@ -126,6 +127,7 @@ class Instruction(TypedDict):
     forceUpload: NotRequired[Optional[Literal[True]]]
     filesHash: NotRequired[Optional[str]]
     resolveSymlinks: NotRequired[Optional[bool]]
+    gzip: NotRequired[Optional[bool]]
 
 
 class GenericDockerRegistry(TypedDict):

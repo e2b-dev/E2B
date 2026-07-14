@@ -1,6 +1,6 @@
 import asyncio
 from e2b import AsyncTemplate, default_build_logger
-from .template import template
+from template import template
 
 
 async def main():

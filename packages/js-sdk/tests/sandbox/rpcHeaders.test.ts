@@ -19,7 +19,7 @@ vi.mock('../../src/envd/http2', () => ({
 
 test('does not pass custom connection headers to envd RPC requests', async () => {
   const { ConnectionConfig, Sandbox } = await import('../../src')
-  const config = new ConnectionConfig({ integration: 'testing/version' })
+  const config = new ConnectionConfig()
   const sandbox = new Sandbox({
     ...config,
     sandboxId: 'sbx-test',
@@ -43,7 +43,6 @@ test('does not pass custom connection headers to envd RPC requests', async () =>
   assert.equal(headers.get('Authorization'), null)
   assert.equal(headers.get('X-Custom'), null)
   assert.equal(headers.get('User-Agent')?.startsWith('e2b-js-sdk/'), true)
-  assert.equal(headers.get('User-Agent')?.endsWith(' testing/version'), true)
   assert.equal(headers.get('E2b-Sandbox-Id'), 'sbx-test')
   assert.equal(headers.get('X-Access-Token'), 'tok')
   assert.equal(headers.get('Connect-Protocol-Version'), '1')

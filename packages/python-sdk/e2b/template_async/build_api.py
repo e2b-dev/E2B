@@ -107,6 +107,7 @@ async def upload_file(
     url: str,
     ignore_patterns: List[str],
     resolve_symlinks: bool,
+    gzip: bool,
     stack_trace: Optional[TracebackType],
     request_timeout: Optional[float] = None,
 ):
@@ -119,7 +120,7 @@ async def upload_file(
     )
     try:
         tar_file = tar_file_stream(
-            file_name, context_path, ignore_patterns, resolve_symlinks
+            file_name, context_path, ignore_patterns, resolve_symlinks, gzip
         )
         try:
             size = os.fstat(tar_file.fileno()).st_size
