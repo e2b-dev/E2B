@@ -66,8 +66,7 @@ export class TemplateBase
   // Force the next layer to be rebuilt
   private forceNextLayer: boolean = false
   private instructions: Instruction[] = []
-  private fileContextPath: PathLike =
-    runtime === 'browser' ? '.' : (getCallerDirectory(STACK_TRACE_DEPTH) ?? '.')
+  private fileContextPath: PathLike
   private fileIgnorePatterns: string[] = []
   private logsRefreshFrequency: number = 200
   private stackTraces: (string | undefined)[] = []
@@ -75,7 +74,11 @@ export class TemplateBase
   private stackTracesOverride: string | undefined = undefined
 
   constructor(options?: TemplateOptions) {
-    this.fileContextPath = options?.fileContextPath ?? this.fileContextPath
+    this.fileContextPath =
+      options?.fileContextPath ??
+      (runtime === 'browser'
+        ? '.'
+        : (getCallerDirectory(STACK_TRACE_DEPTH) ?? '.'))
     this.fileIgnorePatterns =
       options?.fileIgnorePatterns ?? this.fileIgnorePatterns
   }
