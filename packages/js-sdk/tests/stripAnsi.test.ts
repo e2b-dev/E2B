@@ -83,3 +83,6 @@ test('strips APC', () => {
 test('strips only the intro of an unterminated DCS', () => {
   expect(stripAnsi('\x1bPno terminator here')).toBe('no terminator here')
 })
+test('leaves CSI with non-ASCII digits intact', () => {
+  expect(stripAnsi('\x1b[٣١mred\x1b[0m')).toBe('\x1b[٣١mred')
+})

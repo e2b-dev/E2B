@@ -324,7 +324,8 @@ def strip_ansi_escape_codes(text: str) -> str:
     csi = (
         r"[\u001B\u009B][\[\]()#;?]*(?:\d{1,4}(?:[;:]\d{0,4})*)?[\dA-PR-TZcf-nq-uy=><~]"
     )
-    ansi_escape = re.compile(f"{strings}|{csi}")
+    # re.ASCII keeps \d to 0-9 like JS; [\s\S] still matches any char
+    ansi_escape = re.compile(f"{strings}|{csi}", re.ASCII)
     return ansi_escape.sub("", text)
 
 

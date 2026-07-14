@@ -84,3 +84,8 @@ def test_strips_apc():
 
 def test_strips_unterminated_dcs_intro_only():
     assert strip_ansi_escape_codes("\x1bPno terminator here") == "no terminator here"
+
+
+def test_leaves_csi_with_non_ascii_digits_intact():
+    # Python's \d would match Unicode digits without re.ASCII; JS \d never does
+    assert strip_ansi_escape_codes("\x1b[٣١mred\x1b[0m") == "\x1b[٣١mred"
