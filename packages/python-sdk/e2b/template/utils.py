@@ -331,7 +331,7 @@ def strip_ansi_escape_codes(text: str) -> str:
     st = r"(?:\u0007|\u001B\u005C|\u009C)"
     pattern = [
         rf"[\u001B\u009B][\[\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\d/#&.:=?%@~_]+)*|[a-zA-Z\d]+(?:;[-a-zA-Z\d/#&.:=?%@~_]*)*)?{st})",
-        r"(?:(?:\d{1,4}(?:;\d{0,4})*)?[\dA-PR-TZcf-nq-uy=><~]))",
+        r"(?:(?:\d{1,4}(?:[;:]\d{0,4})*)?[\dA-PR-TZcf-nq-uy=><~]))",
     ]
     ansi_escape = re.compile("|".join(pattern), re.UNICODE)
     return ansi_escape.sub("", text)

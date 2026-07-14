@@ -75,6 +75,24 @@ class ConnectionConfig:
 
     envd_port = 49983
 
+    _integration: Optional[str] = None
+
+    @classmethod
+    def set_integration(cls, integration: Optional[str]) -> None:
+        """
+        Identify traffic from an integration wrapping the E2B SDK by appending
+        ``integration`` (e.g. ``"e2b-code-interpreter/0.1.0"``) to the
+        ``User-Agent`` header of every request.
+
+        Call once at startup, before any ``ConnectionConfig`` is constructed —
+        configs read the value at construction time. Pass ``None`` to clear.
+
+        Internal use only — not part of the public, stable API.
+
+        :meta private:
+        """
+        ConnectionConfig._integration = integration
+
     @staticmethod
     def _domain():
         return os.getenv("E2B_DOMAIN") or "e2b.app"
@@ -104,15 +122,33 @@ class ConnectionConfig:
         return os.getenv("E2B_ACCESS_TOKEN")
 
     @staticmethod
-    def _build_user_agent(
-        integration: Optional[str] = None,
-    ) -> str:
+    def _build_user_agent() -> str:
         user_agent_parts = [f"e2b-python-sdk/{package_version}"]
 
-        if integration:
-            user_agent_parts.append(integration)
+        if ConnectionConfig._integration:
+            user_agent_parts.append(ConnectionConfig._integration)
 
         return " ".join(user_agent_parts)
+
+    def _apply_user_agent(
+        self,
+        headers: Dict[str, str],
+        user_agent_override: Optional[str],
+    ) -> bool:
+        """
+        Set the ``User-Agent`` on ``headers``: an explicitly provided value
+        always wins; otherwise the SDK-built one, tagged with the current
+        integration.
+
+        Returns whether the SDK-built value was applied, so callers can keep
+        it in sync with the current integration on later rebuilds.
+        """
+        if user_agent_override is not None:
+            headers["User-Agent"] = user_agent_override
+            return False
+
+        headers["User-Agent"] = self._build_user_agent()
+        return True
 
     def __init__(
         self,
@@ -126,7 +162,6 @@ class ConnectionConfig:
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
         api_headers: Optional[Dict[str, str]] = None,
-        integration: Optional[str] = None,
         extra_sandbox_headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
         logger: Optional[logging.Logger] = None,
@@ -143,12 +178,11 @@ class ConnectionConfig:
         # Deprecated: pass the token through `api_headers` instead, e.g.
         # api_headers={"Authorization": f"Bearer {token}"}.
         self.access_token = access_token or ConnectionConfig._access_token()
-        self.integration = integration
         self.headers = {**(headers or {}), **(api_headers or {})}
-        if self.integration is not None or "User-Agent" not in self.headers:
-            self.headers["User-Agent"] = self._build_user_agent(
-                self.integration,
-            )
+        self._user_agent_is_sdk_built = self._apply_user_agent(
+            self.headers,
+            self.headers.get("User-Agent"),
+        )
         self.__extra_sandbox_headers = extra_sandbox_headers or {}
 
         self.proxy = proxy
@@ -252,10 +286,12 @@ class ConnectionConfig:
             req_headers.update(headers)
         if api_headers is not None:
             req_headers.update(api_headers)
-        if self.integration is not None:
-            req_headers["User-Agent"] = self._build_user_agent(
-                self.integration,
+        if self._user_agent_is_sdk_built:
+            # Same precedence as the merge above: api_headers wins over headers.
+            per_call_user_agent = {**(headers or {}), **(api_headers or {})}.get(
+                "User-Agent"
             )
+            self._apply_user_agent(req_headers, per_call_user_agent)
 
         # `logger` is a construction-time option rather than a per-request
         # ApiParams field, but it must propagate to the throwaway

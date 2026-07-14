@@ -115,27 +115,29 @@ export const buildTemplateTest = base.extend<BuildTemplateFixture>({
   ],
 })
 
-export const volumeTest = base.extend<VolumeFixture>({
-  volume: [
-    // eslint-disable-next-line no-empty-pattern
-    async ({}, use) => {
-      const volume = await Volume.create(`test-vol-${generateRandomString()}`)
-      onTestFailed(() => {
-        console.error(`\n[TEST FAILED] Volume ID: ${volume.volumeId}`)
-      })
-      try {
-        await use(volume)
-      } finally {
+export const volumeTest = base
+  .extend<VolumeFixture>({
+    volume: [
+      // eslint-disable-next-line no-empty-pattern
+      async ({}, use) => {
+        const volume = await Volume.create(`test-vol-${generateRandomString()}`)
+        onTestFailed(() => {
+          console.error(`\n[TEST FAILED] Volume ID: ${volume.volumeId}`)
+        })
         try {
-          await Volume.destroy(volume.volumeId)
-        } catch {
-          // Ignore cleanup errors
+          await use(volume)
+        } finally {
+          try {
+            await Volume.destroy(volume.volumeId)
+          } catch {
+            // Ignore cleanup errors
+          }
         }
-      }
-    },
-    { auto: false },
-  ],
-})
+      },
+      { auto: false },
+    ],
+  })
+  .skipIf(process.env.ENABLE_VOLUME_TESTS === undefined)
 
 export const isDebug = process.env.E2B_DEBUG !== undefined
 export const isIntegrationTest = process.env.E2B_INTEGRATION_TEST !== undefined

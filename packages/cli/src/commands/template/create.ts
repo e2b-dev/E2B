@@ -50,7 +50,7 @@ export const createCommand = new commander.Command('create')
   )
   .option(
     '--memory-mb <memory-mb>',
-    'specify the amount of memory in megabytes that will be used to run the sandbox. Must be an even number. The default value is 512.',
+    'specify the amount of memory in megabytes that will be used to run the sandbox. Must be an even number. The default value is 1024.',
     parsePositiveInt('Memory in megabytes')
   )
   .option('--no-cache', 'skip cache when building the template.')
