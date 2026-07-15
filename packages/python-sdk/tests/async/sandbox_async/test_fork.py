@@ -1,7 +1,7 @@
 import pytest
 
 from e2b import AsyncSandbox
-from e2b.exceptions import InvalidArgumentException, SandboxNotFoundException
+from e2b.exceptions import InvalidArgumentException, NotFoundException
 
 
 @pytest.mark.skip_debug()
@@ -74,7 +74,7 @@ async def test_fork_killed_sandbox(async_sandbox_factory):
     sandbox = await async_sandbox_factory()
     await sandbox.kill()
 
-    with pytest.raises(SandboxNotFoundException):
+    with pytest.raises(NotFoundException):
         await sandbox.fork()
 
 

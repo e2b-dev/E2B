@@ -35,6 +35,7 @@ from e2b.api.client.types import UNSET, Unset
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.exceptions import (
     InvalidArgumentException,
+    NotFoundException,
     SandboxException,
     SandboxNotFoundException,
     TemplateException,
@@ -414,7 +415,9 @@ class SandboxApi(SandboxBase):
         logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> List[Union[SandboxCreateResponse, SandboxException]]:
-        timeout = timeout or SandboxBase.default_sandbox_timeout
+        timeout = (
+            timeout if timeout is not None else SandboxBase.default_sandbox_timeout
+        )
         count = count if count is not None else 1
 
         if count < 1:
@@ -430,7 +433,12 @@ class SandboxApi(SandboxBase):
         )
 
         if res.status_code == 404:
-            raise SandboxNotFoundException(f"Sandbox {sandbox_id} not found")
+            message = (
+                res.parsed.message
+                if isinstance(res.parsed, Error)
+                else f"Sandbox {sandbox_id} not found"
+            )
+            raise NotFoundException(message)
 
         if res.status_code >= 300:
             raise handle_api_exception(res)
@@ -447,13 +455,13 @@ class SandboxApi(SandboxBase):
             error = None if isinstance(result.error, Unset) else result.error
 
             if error is not None or sandbox is None:
-                code = error.code if error is not None else 500
-                message = (
-                    error.message
-                    if error is not None
-                    else "Failed to start forked sandbox"
+                results.append(
+                    SandboxException(
+                        f"{error.code}: {error.message}"
+                        if error is not None
+                        else "Failed to start forked sandbox"
+                    )
                 )
-                results.append(SandboxException(f"{code}: {message}"))
                 continue
 
             domain = sandbox.domain if isinstance(sandbox.domain, str) else None

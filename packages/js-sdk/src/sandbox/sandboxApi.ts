@@ -8,6 +8,7 @@ import { compareVersions } from 'compare-versions'
 import { ALL_TRAFFIC } from './network'
 import {
   InvalidArgumentError,
+  NotFoundError,
   SandboxError,
   SandboxNotFoundError,
   TemplateError,
@@ -306,7 +307,7 @@ export interface SandboxPauseOpts extends SandboxApiOpts {
 /**
  * Options for forking a sandbox.
  */
-export interface SandboxForkOpts extends SandboxApiOpts {
+export interface SandboxForkOpts extends ConnectionOpts {
   /**
    * Number of forked sandboxes to create.
    *
@@ -1270,7 +1271,9 @@ export class SandboxApi {
     })
 
     if (res.error?.code === 404) {
-      throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
+      throw new NotFoundError(
+        res.error?.message ?? `Sandbox ${sandboxId} not found`
+      )
     }
 
     const err = handleApiError(res)
@@ -1282,9 +1285,9 @@ export class SandboxApi {
       (result: components['schemas']['SandboxForkResult']) => {
         if (result.error || !result.sandbox) {
           return new SandboxError(
-            `${result.error?.code ?? 500}: ${
-              result.error?.message ?? 'Failed to start forked sandbox'
-            }`
+            result.error
+              ? `${result.error.code}: ${result.error.message}`
+              : 'Failed to start forked sandbox'
           )
         }
 
