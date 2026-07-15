@@ -3,18 +3,62 @@ import * as commander from 'commander'
 import { Template, TemplateBuilder, TemplateClass } from 'e2b'
 import * as fs from 'fs'
 import * as path from 'path'
+import { resolveTeamId } from '../../api'
 import { E2BConfig, getConfigPath, loadConfig } from '../../config'
 import { defaultDockerfileName } from '../../docker/constants'
 import { configOption, parsePositiveInt, pathOption } from '../../options'
 import { getRoot } from '../../utils/filesystem'
 import { asLocal, asLocalRelative, asPrimary } from '../../utils/format'
 import { getDockerfile } from './dockerfile'
+import { listSandboxTemplates } from './list'
 import { validateTemplateName } from '../../utils/templateName'
 import {
   generateAndWriteTemplateFiles,
   Language,
   languageDisplay,
 } from './generators'
+
+/**
+ * Resolve a template name (alias) for a config that only carries a template
+ * ID. The name written into the generated build files must be an alias, not
+ * the internal template ID: `Template.build` treats it as a new alias, and
+ * registering the template ID as an alias collides with the template itself
+ * (409 "alias already used").
+ *
+ * Tries to look the alias up via the API and returns undefined when that is
+ * not possible (offline, not logged in, or the template has no alias), so
+ * the caller can fall back to the previous behavior with a warning.
+ */
+async function resolveNameFromTemplateId(
+  config: E2BConfig
+): Promise<string | undefined> {
+  try {
+    const templates = await listSandboxTemplates({
+      teamID: resolveTeamId(undefined, config.team_id),
+    })
+    const template = templates.find((t) => t.templateID === config.template_id)
+    const alias = template?.aliases?.slice().sort()[0]
+    if (alias) {
+      console.log(
+        `Using template name ${asLocal(alias)} resolved from template ID ${asLocal(config.template_id)}.`
+      )
+      return alias
+    }
+  } catch {
+    // Offline or unauthenticated: fall through to the warning below.
+  }
+
+  console.warn(
+    `\n⚠️  Could not resolve a template name for template ID ${asLocal(config.template_id)}.`
+  )
+  console.warn(
+    'The generated files will use the template ID as the template name. Building them will fail with a 409 "alias already used" error, because the ID cannot be registered as a new alias for the same template.'
+  )
+  console.warn(
+    `Re-run with ${asLocal('--name <name>')}, or replace the name in the generated files with your template's name before building.`
+  )
+  return undefined
+}
 
 /**
  * Migrate Dockerfile to a specific target language using SDK
@@ -178,7 +222,8 @@ export const migrateCommand = new commander.Command('migrate')
         }
 
         // Validate config file exists
-        if (fs.existsSync(configPath)) {
+        const configExists = fs.existsSync(configPath)
+        if (configExists) {
           config = await loadConfig(configPath)
         } else {
           console.error(
@@ -233,13 +278,21 @@ export const migrateCommand = new commander.Command('migrate')
           })
         }
 
+        // Resolve the template name: an explicit override or a configured
+        // name wins; a config that only has a template ID needs the alias
+        // looked up, because the ID is not usable as a template name.
+        let templateName = opts.name
+        if (!templateName && !config.template_name && configExists) {
+          templateName = await resolveNameFromTemplateId(config)
+        }
+
         // Perform migration
         await migrateToLanguage(
           root,
           config,
           dockerfileContent,
           language,
-          opts.name
+          templateName
         )
 
         // Rename old files to .old extensions

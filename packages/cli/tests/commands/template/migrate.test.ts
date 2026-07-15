@@ -283,6 +283,61 @@ dockerfile = "e2b.Dockerfile"`
     })
   })
 
+  describe('Template Name Resolution', () => {
+    test('should warn and fall back to the template ID when no name can be resolved', async () => {
+      const dockerfile = 'FROM node:18'
+      await fs.writeFile(path.join(testDir, 'e2b.Dockerfile'), dockerfile)
+
+      const config = `template_id = "tmpl-id-without-alias"
+dockerfile = "e2b.Dockerfile"`
+      await fs.writeFile(path.join(testDir, 'e2b.toml'), config)
+
+      const output = execSync(
+        `node ${cliPath} template migrate --language typescript 2>&1`,
+        {
+          cwd: testDir,
+          encoding: 'utf-8',
+        }
+      )
+
+      expect(output).toContain('Could not resolve a template name')
+      expect(output).toContain('Migration completed successfully')
+
+      const buildProdFile = await fs.readFile(
+        path.join(testDir, 'build.prod.ts'),
+        'utf-8'
+      )
+      expect(buildProdFile).toContain("'tmpl-id-without-alias'")
+    })
+
+    test('should use the configured template name without a warning', async () => {
+      const dockerfile = 'FROM node:18'
+      await fs.writeFile(path.join(testDir, 'e2b.Dockerfile'), dockerfile)
+
+      const config = `template_id = "tmpl-id"
+template_name = "my-app"
+dockerfile = "e2b.Dockerfile"`
+      await fs.writeFile(path.join(testDir, 'e2b.toml'), config)
+
+      const output = execSync(
+        `node ${cliPath} template migrate --language typescript 2>&1`,
+        {
+          cwd: testDir,
+          encoding: 'utf-8',
+        }
+      )
+
+      expect(output).not.toContain('Could not resolve a template name')
+
+      const buildProdFile = await fs.readFile(
+        path.join(testDir, 'build.prod.ts'),
+        'utf-8'
+      )
+      expect(buildProdFile).toContain("'my-app'")
+      expect(buildProdFile).not.toContain("'tmpl-id'")
+    })
+  })
+
   describe('Error Cases', () => {
     test('should succeed with warning when config file is missing', async () => {
       // Create only Dockerfile, no config
