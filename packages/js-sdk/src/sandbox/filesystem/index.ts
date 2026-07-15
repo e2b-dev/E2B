@@ -583,6 +583,16 @@ export class Filesystem {
     data: string | ArrayBuffer | Blob | ReadableStream,
     opts?: FilesystemWriteOpts
   ): Promise<WriteInfo>
+  /**
+   * Write multiple files.
+   *
+   * @deprecated Use {@link Filesystem.writeFiles} instead. This overload will be removed in the next major version.
+   *
+   * @param files list of files to write as `WriteEntry` objects, each containing `path` and `data`.
+   * @param opts connection options.
+   *
+   * @returns information about the written files
+   */
   async write(
     files: WriteEntry[],
     opts?: FilesystemWriteOpts

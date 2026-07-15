@@ -1,7 +1,10 @@
 import io
 import uuid
 
+import pytest
+
 from e2b import AsyncSandbox
+from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox.filesystem.filesystem import FileType, WriteEntry
 from e2b.sandbox_async.filesystem.filesystem import WriteInfo
 
@@ -92,6 +95,30 @@ async def test_write_multiple_files(async_sandbox: AsyncSandbox, debug):
         await async_sandbox.files.remove(one_file_path)
         for i in range(num_test_files):
             await async_sandbox.files.remove(f"test_write_{i}.txt")
+
+
+async def test_write_list_form_is_deprecated(async_sandbox: AsyncSandbox, debug):
+    files = [
+        WriteEntry(path="deprecated_write_0.txt", data="File 0."),
+        WriteEntry(path="deprecated_write_1.txt", data="File 1."),
+    ]
+
+    with pytest.warns(DeprecationWarning, match="write_files"):
+        infos = await async_sandbox.files.write(files)  # type: ignore[invalid-argument-type]
+
+    assert isinstance(infos, list)
+    assert len(infos) == len(files)
+    for i, file in enumerate(files):
+        assert await async_sandbox.files.read(file["path"]) == f"File {i}."
+
+    if debug:
+        for file in files:
+            await async_sandbox.files.remove(file["path"])
+
+
+async def test_write_without_data_raises(async_sandbox: AsyncSandbox):
+    with pytest.raises(InvalidArgumentException, match="data"):
+        await async_sandbox.files.write("test_write_no_data.txt")
 
 
 async def test_overwrite_file(async_sandbox: AsyncSandbox, debug):

@@ -1,5 +1,6 @@
 import asyncio
-from typing import IO, Dict, List, Literal, Optional, Union, overload
+import warnings
+from typing import IO, Dict, List, Literal, Optional, Union, cast, overload
 
 
 import httpcore
@@ -262,7 +263,7 @@ class Filesystem:
     async def write(
         self,
         path: str,
-        data: Union[str, bytes, IO],
+        data: Optional[Union[str, bytes, IO]] = None,
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         gzip: bool = False,
@@ -284,7 +285,36 @@ class Filesystem:
         :param metadata: User-defined metadata to persist on the uploaded file as extended attributes. Keys are lowercased by the sandbox; invalid keys or values raise an `InvalidArgumentException`. Requires envd 0.6.2 or later.
 
         :return: Information about the written file
+
+        .. deprecated::
+            Passing a list of `WriteEntry` objects as `path` still works but is
+            deprecated — use `write_files()` to write multiple files.
         """
+        if isinstance(path, list):
+            warnings.warn(
+                "Passing a list of files to `write()` is deprecated, use `write_files()` instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            if data is not None:
+                raise InvalidArgumentException(
+                    "Cannot specify both a list of files and `data`. Use `write_files()` to write multiple files."
+                )
+            results = await self.write_files(
+                cast(List[WriteEntry], path),
+                user=user,
+                request_timeout=request_timeout,
+                gzip=gzip,
+                use_octet_stream=use_octet_stream,
+                metadata=metadata,
+            )
+            return results  # type: ignore[invalid-return-type]
+
+        if data is None:
+            raise InvalidArgumentException(
+                "`data` is required when writing a single file."
+            )
+
         result = await self.write_files(
             [WriteEntry(path=path, data=data)],
             user=user,

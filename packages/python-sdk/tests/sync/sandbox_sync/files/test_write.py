@@ -1,6 +1,9 @@
 import io
 import uuid
 
+import pytest
+
+from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox.filesystem.filesystem import FileType, WriteInfo, WriteEntry
 
 
@@ -93,6 +96,30 @@ def test_write_multiple_files(sandbox, debug):
         sandbox.files.remove(one_file_path)
         for i in range(num_test_files):
             sandbox.files.remove(f"test_write_{i}.txt")
+
+
+def test_write_list_form_is_deprecated(sandbox, debug):
+    files = [
+        WriteEntry(path="deprecated_write_0.txt", data="File 0."),
+        WriteEntry(path="deprecated_write_1.txt", data="File 1."),
+    ]
+
+    with pytest.warns(DeprecationWarning, match="write_files"):
+        infos = sandbox.files.write(files)
+
+    assert isinstance(infos, list)
+    assert len(infos) == len(files)
+    for i, file in enumerate(files):
+        assert sandbox.files.read(file["path"]) == f"File {i}."
+
+    if debug:
+        for file in files:
+            sandbox.files.remove(file["path"])
+
+
+def test_write_without_data_raises(sandbox):
+    with pytest.raises(InvalidArgumentException, match="data"):
+        sandbox.files.write("test_write_no_data.txt")
 
 
 def test_overwrite_file(sandbox, debug):
