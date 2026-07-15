@@ -1,4 +1,4 @@
-import { ApiClient, components, handleApiError } from '../api'
+import { ApiClient, apiErrorFromCode, components, handleApiError } from '../api'
 import {
   ConnectionConfig,
   ConnectionOpts,
@@ -331,7 +331,8 @@ export interface SandboxForkOpts extends ConnectionOpts {
 /**
  * Result of one requested fork as returned by the API — either the raw
  * connection info of the created sandbox, or the error that prevented it
- * from starting.
+ * from starting. Per-fork error codes map to the same error classes as other
+ * API errors (e.g. 429 to `RateLimitError`).
  */
 type SandboxForkResponse =
   | {
@@ -341,7 +342,7 @@ type SandboxForkResponse =
       envdAccessToken?: string
       trafficAccessToken?: string
     }
-  | SandboxError
+  | Error
 
 /**
  * Options for creating a new Sandbox.
@@ -1284,11 +1285,9 @@ export class SandboxApi {
     return (res.data ?? []).map(
       (result: components['schemas']['SandboxForkResult']) => {
         if (result.error || !result.sandbox) {
-          return new SandboxError(
-            result.error
-              ? `${result.error.code}: ${result.error.message}`
-              : 'Failed to start forked sandbox'
-          )
+          return result.error
+            ? apiErrorFromCode(result.error.code, result.error.message)
+            : new SandboxError('Failed to start forked sandbox')
         }
 
         return {

@@ -80,6 +80,32 @@ class SandboxCreateResponse:
     traffic_access_token: Optional[str]
 
 
+def api_exception_from_code(
+    status_code: int,
+    message: Optional[str] = None,
+    default_exception_class: type[Exception] = SandboxException,
+    stack_trace: Optional[TracebackType] = None,
+) -> Exception:
+    """Map an API error code and message to the matching exception class — the
+    same mapping :func:`handle_api_exception` applies to HTTP responses, usable
+    for error objects embedded in response bodies (e.g. per-fork results)."""
+    if status_code == 401:
+        text = f"{status_code}: Unauthorized, please check your credentials."
+        if message:
+            text += f" - {message}"
+        return AuthenticationException(text)
+
+    if status_code == 429:
+        text = f"{status_code}: Rate limit exceeded, please try again later."
+        if message:
+            text += f" - {message}"
+        return RateLimitException(text)
+
+    return default_exception_class(f"{status_code}: {message}").with_traceback(
+        stack_trace
+    )
+
+
 def handle_api_exception(
     e: "SupportsApiErrorResponse",
     default_exception_class: type[Exception] = SandboxException,
@@ -90,24 +116,14 @@ def handle_api_exception(
     except json.JSONDecodeError:
         body = {}
 
-    if e.status_code == 401:
-        message = f"{e.status_code}: Unauthorized, please check your credentials."
-        if body.get("message"):
-            message += f" - {body['message']}"
-        return AuthenticationException(message)
+    message = body["message"] if "message" in body else None
+    if message is None and e.status_code not in (401, 429):
+        return default_exception_class(f"{e.status_code}: {e.content}").with_traceback(
+            stack_trace
+        )
 
-    if e.status_code == 429:
-        message = f"{e.status_code}: Rate limit exceeded, please try again later."
-        if body.get("message"):
-            message += f" - {body['message']}"
-        return RateLimitException(message)
-
-    if "message" in body:
-        return default_exception_class(
-            f"{e.status_code}: {body['message']}"
-        ).with_traceback(stack_trace)
-    return default_exception_class(f"{e.status_code}: {e.content}").with_traceback(
-        stack_trace
+    return api_exception_from_code(
+        e.status_code, message, default_exception_class, stack_trace
     )
 
 

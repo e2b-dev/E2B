@@ -14,7 +14,6 @@ from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
 from e2b.exceptions import (
-    SandboxException,
     TemplateException,
     format_request_timeout_error,
 )
@@ -341,7 +340,7 @@ class Sandbox(SandboxApi):
         timeout: Optional[int] = None,
         count: Optional[int] = None,
         **opts: Unpack[ApiParams],
-    ) -> List[Union[Self, SandboxException]]:
+    ) -> List[Union[Self, Exception]]:
         """
         Fork the sandbox.
 
@@ -352,8 +351,10 @@ class Sandbox(SandboxApi):
         regardless of count.
 
         Each fork succeeds or fails independently — the returned list contains
-        one entry per requested fork, either a running `Sandbox` instance or a
-        `SandboxException` describing why that fork failed to start.
+        one entry per requested fork, either a running `Sandbox` instance
+        or an exception describing why that fork failed to start. Per-fork
+        error codes map to the same exception classes as other API errors
+        (e.g. 429 to `RateLimitException`).
 
         :param timeout: Timeout for the forked sandboxes in **seconds**, defaults to 300 seconds
         :param count: Number of forked sandboxes to create, defaults to 1
@@ -377,7 +378,7 @@ class Sandbox(SandboxApi):
         count: Optional[int] = None,
         logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
-    ) -> List[Union["Sandbox", SandboxException]]:
+    ) -> List[Union["Sandbox", Exception]]:
         """
         Fork a running sandbox specified by sandbox ID.
 
@@ -388,8 +389,10 @@ class Sandbox(SandboxApi):
         regardless of count.
 
         Each fork succeeds or fails independently — the returned list contains
-        one entry per requested fork, either a running `Sandbox` instance or a
-        `SandboxException` describing why that fork failed to start.
+        one entry per requested fork, either a running `Sandbox` instance
+        or an exception describing why that fork failed to start. Per-fork
+        error codes map to the same exception classes as other API errors
+        (e.g. 429 to `RateLimitException`).
 
         :param sandbox_id: Sandbox ID
         :param timeout: Timeout for the forked sandboxes in **seconds**, defaults to 300 seconds
@@ -413,7 +416,7 @@ class Sandbox(SandboxApi):
         timeout: Optional[int] = None,
         count: Optional[int] = None,
         **opts: Unpack[ApiParams],
-    ) -> List[Union[Self, SandboxException]]:
+    ) -> List[Union[Self, Exception]]:
         """
         Fork the sandbox.
 
@@ -424,8 +427,10 @@ class Sandbox(SandboxApi):
         regardless of count.
 
         Each fork succeeds or fails independently — the returned list contains
-        one entry per requested fork, either a running `Sandbox` instance or a
-        `SandboxException` describing why that fork failed to start.
+        one entry per requested fork, either a running `Sandbox` instance
+        or an exception describing why that fork failed to start. Per-fork
+        error codes map to the same exception classes as other API errors
+        (e.g. 429 to `RateLimitException`).
 
         :param timeout: Timeout for the forked sandboxes in **seconds**, defaults to 300 seconds
         :param count: Number of forked sandboxes to create, defaults to 1
@@ -1024,7 +1029,7 @@ class Sandbox(SandboxApi):
         count: Optional[int] = None,
         logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
-    ) -> List[Union[Self, SandboxException]]:
+    ) -> List[Union[Self, Exception]]:
         responses = SandboxApi._cls_fork(
             sandbox_id=sandbox_id,
             timeout=timeout,
@@ -1033,9 +1038,9 @@ class Sandbox(SandboxApi):
             **opts,
         )
 
-        sandboxes: List[Union[Self, SandboxException]] = []
+        sandboxes: List[Union[Self, Exception]] = []
         for response in responses:
-            if isinstance(response, SandboxException):
+            if isinstance(response, Exception):
                 sandboxes.append(response)
                 continue
 

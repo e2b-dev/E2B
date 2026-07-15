@@ -30,7 +30,7 @@ import {
 } from './sandboxApi'
 import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
-import { InvalidArgumentError, SandboxError, TemplateError } from '../errors'
+import { InvalidArgumentError, TemplateError } from '../errors'
 import { ENVD_DEBUG_FALLBACK, ENVD_DEFAULT_USER } from '../envd/versions'
 import { shellQuote } from '../utils'
 
@@ -394,8 +394,9 @@ export class Sandbox extends SandboxApi {
    *
    * Each fork succeeds or fails independently — the returned array contains
    * one entry per requested fork, either a running {@link Sandbox} instance or
-   * a {@link SandboxError} describing why that fork failed to start
-   * (`Promise.allSettled`-style).
+   * an `Error` describing why that fork failed to start
+   * (`Promise.allSettled`-style). Per-fork error codes map to the same error
+   * classes as other API errors (e.g. 429 to `RateLimitError`).
    *
    * @param sandboxId sandbox ID.
    * @param opts fork options — `count`, `timeoutMs` and connection options.
@@ -416,7 +417,7 @@ export class Sandbox extends SandboxApi {
     this: S,
     sandboxId: string,
     opts?: SandboxForkOpts
-  ): Promise<Array<InstanceType<S> | SandboxError>> {
+  ): Promise<Array<InstanceType<S> | Error>> {
     const config = new ConnectionConfig(opts)
 
     const results = await SandboxApi.forkSandbox(
@@ -427,7 +428,7 @@ export class Sandbox extends SandboxApi {
     )
 
     return results.map((result) =>
-      result instanceof SandboxError
+      result instanceof Error
         ? result
         : (new this({ ...result, ...config }) as InstanceType<S>)
     )
@@ -473,8 +474,9 @@ export class Sandbox extends SandboxApi {
    *
    * Each fork succeeds or fails independently — the returned array contains
    * one entry per requested fork, either a running {@link Sandbox} instance or
-   * a {@link SandboxError} describing why that fork failed to start
-   * (`Promise.allSettled`-style).
+   * an `Error` describing why that fork failed to start
+   * (`Promise.allSettled`-style). Per-fork error codes map to the same error
+   * classes as other API errors (e.g. 429 to `RateLimitError`).
    *
    * @param opts fork options — `count`, `timeoutMs` and connection options.
    *
@@ -490,10 +492,10 @@ export class Sandbox extends SandboxApi {
    * }
    * ```
    */
-  async fork(opts?: SandboxForkOpts): Promise<Array<this | SandboxError>> {
+  async fork(opts?: SandboxForkOpts): Promise<Array<this | Error>> {
     const cls = this.constructor as typeof Sandbox
     return (await cls.fork(this.sandboxId, this.resolveApiOpts(opts))) as Array<
-      this | SandboxError
+      this | Error
     >
   }
 

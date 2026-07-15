@@ -5,7 +5,11 @@ from typing import Any, Dict, List, Optional, Union, cast
 from packaging.version import Version
 from typing_extensions import Unpack
 
-from e2b.api import SandboxCreateResponse, handle_api_exception
+from e2b.api import (
+    SandboxCreateResponse,
+    api_exception_from_code,
+    handle_api_exception,
+)
 from e2b.api.client.api.sandboxes import (
     delete_sandboxes_sandbox_id,
     get_sandboxes_sandbox_id,
@@ -414,7 +418,7 @@ class SandboxApi(SandboxBase):
         count: Optional[int] = None,
         logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
-    ) -> List[Union[SandboxCreateResponse, SandboxException]]:
+    ) -> List[Union[SandboxCreateResponse, Exception]]:
         timeout = (
             timeout if timeout is not None else SandboxBase.default_sandbox_timeout
         )
@@ -449,18 +453,16 @@ class SandboxApi(SandboxBase):
         if res.parsed is None:
             raise Exception("Body of the request is None")
 
-        results: List[Union[SandboxCreateResponse, SandboxException]] = []
+        results: List[Union[SandboxCreateResponse, Exception]] = []
         for result in res.parsed:
             sandbox = None if isinstance(result.sandbox, Unset) else result.sandbox
             error = None if isinstance(result.error, Unset) else result.error
 
             if error is not None or sandbox is None:
                 results.append(
-                    SandboxException(
-                        f"{error.code}: {error.message}"
-                        if error is not None
-                        else "Failed to start forked sandbox"
-                    )
+                    api_exception_from_code(error.code, error.message)
+                    if error is not None
+                    else SandboxException("Failed to start forked sandbox")
                 )
                 continue
 

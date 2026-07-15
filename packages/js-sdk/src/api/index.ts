@@ -23,6 +23,35 @@ export function validateApiKey(apiKey: string): void {
   }
 }
 
+/**
+ * Map an API error code and message to the matching error class — the same
+ * mapping {@link handleApiError} applies to HTTP responses, usable for error
+ * objects embedded in response bodies (e.g. per-fork results).
+ */
+export function apiErrorFromCode(
+  code: number,
+  content: unknown,
+  errorClass: new (
+    message: string,
+    stackTrace?: string
+  ) => Error = SandboxError,
+  stackTrace?: string
+): Error {
+  if (code === 401) {
+    const message = 'Unauthorized, please check your credentials.'
+    return new AuthenticationError(
+      content ? `${message} - ${content}` : message
+    )
+  }
+
+  if (code === 429) {
+    const message = 'Rate limit exceeded, please try again later'
+    return new RateLimitError(content ? `${message} - ${content}` : message)
+  }
+
+  return new errorClass(`${code}: ${content}`, stackTrace)
+}
+
 export function handleApiError(
   response: FetchResponse<any, any, any>,
   errorClass: new (
@@ -37,29 +66,22 @@ export function handleApiError(
     return
   }
 
-  if (response.response.status === 401) {
-    const message = 'Unauthorized, please check your credentials.'
-    const content = response.error?.message ?? response.error
-
-    if (content) {
-      return new AuthenticationError(`${message} - ${content}`)
-    }
-    return new AuthenticationError(message)
+  const status = response.response.status
+  if (status === 401 || status === 429) {
+    return apiErrorFromCode(
+      status,
+      response.error?.message ?? response.error,
+      errorClass,
+      stackTrace
+    )
   }
 
-  if (response.response.status === 429) {
-    const message = 'Rate limit exceeded, please try again later'
-    const content = response.error?.message ?? response.error
-
-    if (content) {
-      return new RateLimitError(`${message} - ${content}`)
-    }
-    return new RateLimitError(message)
-  }
-
-  const message =
-    response.error?.message || response.error || response.response.statusText
-  return new errorClass(`${response.response.status}: ${message}`, stackTrace)
+  return apiErrorFromCode(
+    status,
+    response.error?.message || response.error || response.response.statusText,
+    errorClass,
+    stackTrace
+  )
 }
 
 /**
