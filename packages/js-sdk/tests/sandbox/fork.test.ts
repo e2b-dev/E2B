@@ -80,7 +80,7 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)('fork a killed sandbox fails', async () => {
+test.skipIf(isDebug)('fork a killed sandbox fails', async () => {
   const sandbox = await Sandbox.create()
   await sandbox.kill()
 

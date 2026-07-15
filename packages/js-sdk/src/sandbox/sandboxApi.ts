@@ -1271,7 +1271,9 @@ export class SandboxApi {
       signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
-    if (res.error?.code === 404) {
+    // check the status, not the parsed error body — openapi-fetch leaves
+    // `error` unset for non-2xx responses with an empty body
+    if (res.response.status === 404) {
       throw new NotFoundError(
         res.error?.message ?? `Sandbox ${sandboxId} not found`
       )
@@ -1285,9 +1287,17 @@ export class SandboxApi {
     return (res.data ?? []).map(
       (result: components['schemas']['SandboxForkResult']) => {
         if (result.error || !result.sandbox) {
-          return result.error
-            ? apiErrorFromCode(result.error.code, result.error.message)
-            : new SandboxError('Failed to start forked sandbox')
+          if (!result.error) {
+            return new SandboxError('Failed to start forked sandbox')
+          }
+          // 404 is call-site-specific in the SDK, so apiErrorFromCode leaves
+          // it to the caller — map it here to match the whole-request 404
+          if (result.error.code === 404) {
+            return new NotFoundError(
+              `${result.error.code}: ${result.error.message}`
+            )
+          }
+          return apiErrorFromCode(result.error.code, result.error.message)
         }
 
         return {

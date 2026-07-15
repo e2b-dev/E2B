@@ -459,11 +459,16 @@ class SandboxApi(SandboxBase):
             error = None if isinstance(result.error, Unset) else result.error
 
             if error is not None or sandbox is None:
-                results.append(
-                    api_exception_from_code(error.code, error.message)
-                    if error is not None
-                    else SandboxException("Failed to start forked sandbox")
-                )
+                if error is None:
+                    exception = SandboxException("Failed to start forked sandbox")
+                elif error.code == 404:
+                    # 404 is call-site-specific in the SDK, so
+                    # api_exception_from_code leaves it to the caller — map it
+                    # here to match the whole-request 404
+                    exception = NotFoundException(f"{error.code}: {error.message}")
+                else:
+                    exception = api_exception_from_code(error.code, error.message)
+                results.append(exception)
                 continue
 
             domain = sandbox.domain if isinstance(sandbox.domain, str) else None
