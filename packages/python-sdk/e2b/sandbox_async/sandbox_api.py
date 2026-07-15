@@ -1,6 +1,6 @@
 import datetime
 import logging
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Union, cast
 
 from packaging.version import Version
 from typing_extensions import Unpack
@@ -12,6 +12,7 @@ from e2b.api.client.api.sandboxes import (
     get_sandboxes_sandbox_id_metrics,
     post_sandboxes,
     post_sandboxes_sandbox_id_connect,
+    post_sandboxes_sandbox_id_fork,
     post_sandboxes_sandbox_id_pause,
     post_sandboxes_sandbox_id_snapshots,
     post_sandboxes_sandbox_id_timeout,
@@ -25,11 +26,12 @@ from e2b.api.client.models import (
     PostSandboxesSandboxIDSnapshotsBody,
     PostSandboxesSandboxIDTimeoutBody,
     SandboxAutoResumeConfig,
+    SandboxForkRequest,
     SandboxNetworkConfig,
     SandboxPauseRequest,
     SandboxVolumeMount as SandboxVolumeMountAPI,
 )
-from e2b.api.client.types import UNSET
+from e2b.api.client.types import UNSET, Unset
 from e2b.api.client_async import get_api_client
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.exceptions import (
@@ -449,6 +451,81 @@ class SandboxApi(SandboxBase):
             raise SandboxException(f"{res.parsed.message}: Request failed")
 
         return True
+
+    @classmethod
+    async def _cls_fork(
+        cls,
+        sandbox_id: str,
+        timeout: Optional[int] = None,
+        count: Optional[int] = None,
+        logger: Optional[logging.Logger] = None,
+        **opts: Unpack[ApiParams],
+    ) -> List[Union[SandboxCreateResponse, SandboxException]]:
+        timeout = timeout or SandboxBase.default_sandbox_timeout
+        count = count if count is not None else 1
+
+        if count < 1:
+            raise InvalidArgumentException("count must be at least 1")
+
+        config = ConnectionConfig(logger=logger, **opts)
+
+        api_client = get_api_client(config)
+        res = await post_sandboxes_sandbox_id_fork.asyncio_detailed(
+            sandbox_id,
+            client=api_client,
+            body=SandboxForkRequest(timeout=timeout, count=count),
+        )
+
+        if res.status_code == 404:
+            raise SandboxNotFoundException(f"Sandbox {sandbox_id} not found")
+
+        if res.status_code >= 300:
+            raise handle_api_exception(res)
+
+        if isinstance(res.parsed, Error):
+            raise SandboxException(f"{res.parsed.message}: Request failed")
+
+        if res.parsed is None:
+            raise Exception("Body of the request is None")
+
+        results: List[Union[SandboxCreateResponse, SandboxException]] = []
+        for result in res.parsed:
+            sandbox = None if isinstance(result.sandbox, Unset) else result.sandbox
+            error = None if isinstance(result.error, Unset) else result.error
+
+            if error is not None or sandbox is None:
+                code = error.code if error is not None else 500
+                message = (
+                    error.message
+                    if error is not None
+                    else "Failed to start forked sandbox"
+                )
+                results.append(SandboxException(f"{code}: {message}"))
+                continue
+
+            domain = sandbox.domain if isinstance(sandbox.domain, str) else None
+            envd_token = (
+                sandbox.envd_access_token
+                if isinstance(sandbox.envd_access_token, str)
+                else None
+            )
+            traffic_token = (
+                sandbox.traffic_access_token
+                if isinstance(sandbox.traffic_access_token, str)
+                else None
+            )
+
+            results.append(
+                SandboxCreateResponse(
+                    sandbox_id=sandbox.sandbox_id,
+                    sandbox_domain=domain,
+                    envd_version=sandbox.envd_version,
+                    envd_access_token=envd_token,
+                    traffic_access_token=traffic_token,
+                )
+            )
+
+        return results
 
     @classmethod
     async def _cls_connect(

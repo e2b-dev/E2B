@@ -14,6 +14,7 @@ from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
 from e2b.exceptions import (
+    SandboxException,
     TemplateException,
     format_request_timeout_error,
 )
@@ -333,6 +334,117 @@ class Sandbox(SandboxApi):
         )
 
         return self
+
+    @overload
+    def fork(
+        self,
+        timeout: Optional[int] = None,
+        count: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> List[Union[Self, SandboxException]]:
+        """
+        Fork the sandbox.
+
+        The sandbox is checkpointed in place (briefly paused, snapshotted with
+        its full memory state, and resumed — its ID and expiration stay
+        untouched) and `count` new sandboxes are created from that snapshot.
+        All forks boot from the same snapshot, so the snapshot is captured once
+        regardless of count.
+
+        Each fork succeeds or fails independently — the returned list contains
+        one entry per requested fork, either a running `Sandbox` instance or a
+        `SandboxException` describing why that fork failed to start.
+
+        :param timeout: Timeout for the forked sandboxes in **seconds**, defaults to 300 seconds
+        :param count: Number of forked sandboxes to create, defaults to 1
+
+        :return: List with one entry per requested fork — a sandbox instance or an exception
+
+        @example
+        ```python
+        sandbox = Sandbox.create()
+
+        fork1, fork2 = sandbox.fork(count=2)
+        ```
+        """
+        ...
+
+    @overload
+    @staticmethod
+    def fork(
+        sandbox_id: str,
+        timeout: Optional[int] = None,
+        count: Optional[int] = None,
+        logger: Optional[logging.Logger] = None,
+        **opts: Unpack[ApiParams],
+    ) -> List[Union["Sandbox", SandboxException]]:
+        """
+        Fork a running sandbox specified by sandbox ID.
+
+        The sandbox is checkpointed in place (briefly paused, snapshotted with
+        its full memory state, and resumed — its ID and expiration stay
+        untouched) and `count` new sandboxes are created from that snapshot.
+        All forks boot from the same snapshot, so the snapshot is captured once
+        regardless of count.
+
+        Each fork succeeds or fails independently — the returned list contains
+        one entry per requested fork, either a running `Sandbox` instance or a
+        `SandboxException` describing why that fork failed to start.
+
+        :param sandbox_id: Sandbox ID
+        :param timeout: Timeout for the forked sandboxes in **seconds**, defaults to 300 seconds
+        :param count: Number of forked sandboxes to create, defaults to 1
+        :param logger: Logger used for request and response logging for the forked sandboxes. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
+
+        :return: List with one entry per requested fork — a sandbox instance or an exception
+
+        @example
+        ```python
+        sandbox = Sandbox.create()
+
+        fork1, fork2 = Sandbox.fork(sandbox.sandbox_id, count=2)
+        ```
+        """
+        ...
+
+    @class_method_variant("_cls_fork_sandbox")
+    def fork(
+        self,
+        timeout: Optional[int] = None,
+        count: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> List[Union[Self, SandboxException]]:
+        """
+        Fork the sandbox.
+
+        The sandbox is checkpointed in place (briefly paused, snapshotted with
+        its full memory state, and resumed — its ID and expiration stay
+        untouched) and `count` new sandboxes are created from that snapshot.
+        All forks boot from the same snapshot, so the snapshot is captured once
+        regardless of count.
+
+        Each fork succeeds or fails independently — the returned list contains
+        one entry per requested fork, either a running `Sandbox` instance or a
+        `SandboxException` describing why that fork failed to start.
+
+        :param timeout: Timeout for the forked sandboxes in **seconds**, defaults to 300 seconds
+        :param count: Number of forked sandboxes to create, defaults to 1
+
+        :return: List with one entry per requested fork — a sandbox instance or an exception
+
+        @example
+        ```python
+        sandbox = Sandbox.create()
+
+        fork1, fork2 = sandbox.fork(count=2)
+        ```
+        """
+        return type(self)._cls_fork_sandbox(
+            self.sandbox_id,
+            timeout=timeout,
+            count=count,
+            **self.connection_config.get_api_params(**opts),
+        )
 
     def __enter__(self):
         return self
@@ -903,6 +1015,55 @@ class Sandbox(SandboxApi):
             traffic_access_token=traffic_access_token,
             connection_config=connection_config,
         )
+
+    @classmethod
+    def _cls_fork_sandbox(
+        cls,
+        sandbox_id: str,
+        timeout: Optional[int] = None,
+        count: Optional[int] = None,
+        logger: Optional[logging.Logger] = None,
+        **opts: Unpack[ApiParams],
+    ) -> List[Union[Self, SandboxException]]:
+        responses = SandboxApi._cls_fork(
+            sandbox_id=sandbox_id,
+            timeout=timeout,
+            count=count,
+            logger=logger,
+            **opts,
+        )
+
+        sandboxes: List[Union[Self, SandboxException]] = []
+        for response in responses:
+            if isinstance(response, SandboxException):
+                sandboxes.append(response)
+                continue
+
+            sandbox_headers = {
+                "E2b-Sandbox-Id": response.sandbox_id,
+                "E2b-Sandbox-Port": str(ConnectionConfig.envd_port),
+            }
+            if response.envd_access_token is not None:
+                sandbox_headers["X-Access-Token"] = response.envd_access_token
+
+            connection_config = ConnectionConfig(
+                extra_sandbox_headers=sandbox_headers,
+                logger=logger,
+                **opts,
+            )
+
+            sandboxes.append(
+                cls(
+                    sandbox_id=response.sandbox_id,
+                    sandbox_domain=response.sandbox_domain,
+                    envd_version=Version(response.envd_version),
+                    envd_access_token=response.envd_access_token,
+                    traffic_access_token=response.traffic_access_token,
+                    connection_config=connection_config,
+                )
+            )
+
+        return sandboxes
 
     @classmethod
     def _create(

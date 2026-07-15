@@ -46,6 +46,8 @@ from .resumed_sandbox import ResumedSandbox
 from .sandbox import Sandbox
 from .sandbox_auto_resume_config import SandboxAutoResumeConfig
 from .sandbox_detail import SandboxDetail
+from .sandbox_fork_request import SandboxForkRequest
+from .sandbox_fork_result import SandboxForkResult
 from .sandbox_lifecycle import SandboxLifecycle
 from .sandbox_log import SandboxLog
 from .sandbox_log_entry import SandboxLogEntry
@@ -137,6 +139,8 @@ __all__ = (
     "SandboxAutoResumeConfig",
     "SandboxDetail",
     "SandboxesWithMetrics",
+    "SandboxForkRequest",
+    "SandboxForkResult",
     "SandboxLifecycle",
     "SandboxLog",
     "SandboxLogEntry",
