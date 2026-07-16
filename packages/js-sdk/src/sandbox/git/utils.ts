@@ -585,3 +585,59 @@ export function getRepoPathForScope(
   }
   return path
 }
+
+/**
+ * Parsed git commit information.
+ */
+export interface GitCommit {
+  /**
+   * Commit hash.
+   */
+  hash: string
+  /**
+   * Commit author name.
+   */
+  authorName: string
+  /**
+   * Commit author email.
+   */
+  authorEmail: string
+  /**
+   * Commit date string (ISO 8601).
+   */
+  date: string
+  /**
+   * Commit message.
+   */
+  message: string
+}
+
+/**
+ * Parse git log stdout formatted with unit-separator `%H%x1f%an%x1f%ae%x1f%aI%x1f%s`.
+ *
+ * @param stdout Output from git log.
+ * @returns Array of parsed GitCommit objects.
+ */
+export function parseGitLog(stdout: string): GitCommit[] {
+  if (!stdout || stdout.trim().length === 0) {
+    return []
+  }
+
+  const lines = stdout.trim().split('\n').filter(Boolean)
+  const commits: GitCommit[] = []
+
+  for (const line of lines) {
+    const parts = line.split('\x1f')
+    if (parts.length >= 5) {
+      commits.push({
+        hash: parts[0],
+        authorName: parts[1],
+        authorEmail: parts[2],
+        date: parts[3],
+        message: parts[4],
+      })
+    }
+  }
+
+  return commits
+}

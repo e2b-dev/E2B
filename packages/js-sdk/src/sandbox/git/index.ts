@@ -13,6 +13,7 @@ import {
   buildPushArgs,
   buildUpstreamErrorMessage,
   GitBranches,
+  GitCommit,
   GitConfigScope,
   GitStatus,
   getRepoPathForScope,
@@ -20,6 +21,7 @@ import {
   isAuthFailure,
   isMissingUpstream,
   parseGitBranches,
+  parseGitLog,
   parseGitStatus,
   stripCredentials,
   deriveRepoDirFromUrl,
@@ -255,6 +257,16 @@ export interface GitConfigOpts extends GitRequestOpts {
 }
 
 /**
+ * Options for retrieving git commit history.
+ */
+export interface GitLogOpts extends GitRequestOpts {
+  /**
+   * Maximum number of commits to retrieve.
+   */
+  maxCount?: number
+}
+
+/**
  * Options for dangerously authenticating git globally via the credential helper.
  */
 export interface GitDangerouslyAuthenticateOpts extends GitRequestOpts {
@@ -485,6 +497,28 @@ export class Git {
       opts
     )
     return parseGitBranches(result.stdout)
+  }
+
+  /**
+   * Get repository commit history.
+   *
+   * @param path Repository path.
+   * @param opts Log options.
+   * @returns List of parsed commits.
+   */
+  async log(path: string, opts?: GitLogOpts): Promise<GitCommit[]> {
+    const { maxCount, ...rest } = opts ?? {}
+    const args = ['log', '--pretty=format:%H%x1f%an%x1f%ae%x1f%aI%x1f%s']
+
+    if (maxCount !== undefined) {
+      if (maxCount <= 0) {
+        throw new InvalidArgumentError('maxCount must be a positive number.')
+      }
+      args.push('-n', maxCount.toString())
+    }
+
+    const result = await this.runGit(args, path, rest)
+    return parseGitLog(result.stdout)
   }
 
   /**
@@ -1046,8 +1080,10 @@ export class Git {
   }
 }
 
+export { parseGitLog } from './utils'
 export type {
   GitBranches,
+  GitCommit,
   GitConfigScope,
   GitFileStatus,
   GitStatus,

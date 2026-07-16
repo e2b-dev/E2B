@@ -92,7 +92,7 @@ export type {
   Pty,
 } from './sandbox/commands'
 
-export { Git } from './sandbox/git'
+export { Git, parseGitLog } from './sandbox/git'
 export type {
   GitRequestOpts,
   GitCloneOpts,
@@ -106,7 +106,9 @@ export type {
   GitDangerouslyAuthenticateOpts,
   GitConfigOpts,
   GitConfigScope,
+  GitLogOpts,
   GitBranches,
+  GitCommit,
   GitFileStatus,
   GitStatus,
 } from './sandbox/git'
