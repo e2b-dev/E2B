@@ -164,7 +164,7 @@ jobs:
 
   report-success:
     needs: [preflight, publish]
-    if: needs.publish.result == 'success'
+    if: (!cancelled()) && needs.publish.result == 'success'
     name: Release Succeeded - Slack Notification
     runs-on: ubuntu-latest
     steps:
