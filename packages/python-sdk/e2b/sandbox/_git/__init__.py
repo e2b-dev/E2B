@@ -33,12 +33,14 @@ from e2b.sandbox._git.config import resolve_config_scope
 from e2b.sandbox._git.parse import (
     derive_repo_dir_from_url,
     parse_git_branches,
+    parse_git_log,
     parse_git_status,
     parse_remote_url,
 )
 from e2b.sandbox._git.types import (
     ClonePlan,
     GitBranches,
+    GitCommit,
     GitFileStatus,
     GitResetMode,
     GitStatus,
@@ -71,6 +73,7 @@ __all__ = [
     "is_auth_failure",
     "is_missing_upstream",
     "parse_git_branches",
+    "parse_git_log",
     "parse_git_status",
     "parse_remote_url",
     "resolve_config_scope",
@@ -79,6 +82,7 @@ __all__ = [
     "with_credentials",
     "ClonePlan",
     "GitBranches",
+    "GitCommit",
     "GitFileStatus",
     "GitResetMode",
     "GitStatus",

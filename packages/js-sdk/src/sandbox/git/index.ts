@@ -511,14 +511,24 @@ export class Git {
     const args = ['log', '--pretty=format:%H%x1f%an%x1f%ae%x1f%aI%x1f%s']
 
     if (maxCount !== undefined) {
-      if (maxCount <= 0) {
-        throw new InvalidArgumentError('maxCount must be a positive number.')
+      if (!Number.isInteger(maxCount) || maxCount <= 0) {
+        throw new InvalidArgumentError('maxCount must be a finite positive integer.')
       }
       args.push('-n', maxCount.toString())
     }
 
-    const result = await this.runGit(args, path, rest)
-    return parseGitLog(result.stdout)
+    try {
+      const result = await this.runGit(args, path, rest)
+      return parseGitLog(result.stdout)
+    } catch (err: any) {
+      if (
+        err.stderr?.includes('does not have any commits yet') ||
+        err.message?.includes('does not have any commits yet')
+      ) {
+        return []
+      }
+      throw err
+    }
   }
 
   /**

@@ -2,6 +2,7 @@ from typing import Dict, List, Optional
 
 from e2b.sandbox._git import (
     GitBranches,
+    GitCommit,
     GitResetMode,
     GitStatus,
     build_add_args,
@@ -29,6 +30,7 @@ from e2b.sandbox._git import (
     is_auth_failure,
     is_missing_upstream,
     parse_git_branches,
+    parse_git_log,
     parse_git_status,
     parse_remote_url,
     resolve_config_scope,
@@ -433,6 +435,51 @@ class Git:
             request_timeout,
         ).stdout.strip()
         return result or None
+
+    def log(
+        self,
+        path: str,
+        max_count: Optional[int] = None,
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[str] = None,
+        cwd: Optional[str] = None,
+        timeout: Optional[float] = None,
+        request_timeout: Optional[float] = None,
+    ) -> List[GitCommit]:
+        """
+        Get repository commit history.
+
+        :param path: Repository path
+        :param max_count: Maximum number of commits to return
+        :param envs: Environment variables used for the command
+        :param user: User to run the command as
+        :param cwd: Working directory to run the command
+        :param timeout: Timeout for the command connection in **seconds**
+        :param request_timeout: Timeout for the request in **seconds**
+        :return: List of parsed commits
+        """
+        args = ["log", "--pretty=format:%H%x1f%an%x1f%ae%x1f%aI%x1f%s"]
+        
+        if max_count is not None:
+            if max_count <= 0:
+                raise InvalidArgumentException("max_count must be a positive number.")
+            args.extend(["-n", str(max_count)])
+            
+        try:
+            result = self._run_git(
+                args,
+                path,
+                envs,
+                user,
+                cwd,
+                timeout,
+                request_timeout,
+            )
+            return parse_git_log(result.stdout)
+        except CommandExitException as err:
+            if "does not have any commits yet" in err.stderr or "does not have any commits yet" in getattr(err, "message", str(err)):
+                return []
+            raise err
 
     def status(
         self,

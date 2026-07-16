@@ -33,7 +33,7 @@ test('parseGitLog parses formatted commits', () => {
   })
 })
 
-test('git.log throws InvalidArgumentError when maxCount <= 0', async () => {
+test('git.log throws InvalidArgumentError when maxCount is invalid', async () => {
   const failingCommands = {
     run: () => {
       throw new Error('commands.run should not be called')
@@ -47,6 +47,29 @@ test('git.log throws InvalidArgumentError when maxCount <= 0', async () => {
   await expect(git.log('/repo', { maxCount: -5 })).rejects.toThrow(
     InvalidArgumentError
   )
+  await expect(git.log('/repo', { maxCount: NaN })).rejects.toThrow(
+    InvalidArgumentError
+  )
+  await expect(git.log('/repo', { maxCount: Infinity })).rejects.toThrow(
+    InvalidArgumentError
+  )
+  await expect(git.log('/repo', { maxCount: 1.5 })).rejects.toThrow(
+    InvalidArgumentError
+  )
+})
+
+test('git.log returns empty array for unborn branch', async () => {
+  const failingCommands = {
+    run: async () => {
+      const err = new Error('Process exited with code 128') as any
+      err.stderr = "fatal: your current branch 'main' does not have any commits yet\n"
+      throw err
+    },
+  } as unknown as Commands
+
+  const git = new Git(failingCommands)
+  const commits = await git.log('/repo')
+  expect(commits).toEqual([])
 })
 
 test('git.log formats args and calls commands.run correctly', async () => {

@@ -6,6 +6,23 @@ from typing_extensions import Literal
 GitResetMode = Literal["soft", "mixed", "hard", "merge", "keep"]
 """Mode for a git reset operation."""
 
+@dataclass
+class GitCommit:
+    """
+    Parsed git commit information.
+
+    :param hash: Full commit hash
+    :param author_name: Author name
+    :param author_email: Author email
+    :param date: ISO 8601 strict formatted commit date
+    :param message: Commit message
+    """
+
+    hash: str
+    author_name: str
+    author_email: str
+    date: str
+    message: str
 
 @dataclass
 class GitFileStatus:
