@@ -1,5 +1,4 @@
 import threading
-import warnings
 from typing import IO, Dict, List, Literal, Optional, Union, cast, overload
 
 import httpx
@@ -307,11 +306,6 @@ class Filesystem:
             deprecated — use `write_files()` to write multiple files.
         """
         if isinstance(path, list):
-            warnings.warn(
-                "Passing a list of files to `write()` is deprecated, use `write_files()` instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
             if data is not None:
                 raise InvalidArgumentException(
                     "Cannot specify both a list of files and `data`. Use `write_files()` to write multiple files."

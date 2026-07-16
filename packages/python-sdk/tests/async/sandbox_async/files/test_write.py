@@ -97,14 +97,15 @@ async def test_write_multiple_files(async_sandbox: AsyncSandbox, debug):
             await async_sandbox.files.remove(f"test_write_{i}.txt")
 
 
-async def test_write_list_form_is_deprecated(async_sandbox: AsyncSandbox, debug):
+async def test_write_deprecated_list_form_still_works(
+    async_sandbox: AsyncSandbox, debug
+):
     files = [
         WriteEntry(path="deprecated_write_0.txt", data="File 0."),
         WriteEntry(path="deprecated_write_1.txt", data="File 1."),
     ]
 
-    with pytest.warns(DeprecationWarning, match="write_files"):
-        infos = await async_sandbox.files.write(files)  # type: ignore[invalid-argument-type]
+    infos = await async_sandbox.files.write(files)  # type: ignore[invalid-argument-type]
 
     assert isinstance(infos, list)
     assert len(infos) == len(files)

@@ -3,8 +3,8 @@
 ---
 
 Restore backwards compatibility for the SDK v1 list form of `files.write()`:
-passing a list of `WriteEntry` objects now emits a `DeprecationWarning` and
-delegates to `files.write_files()` instead of failing with a `TypeError`. The
-typed signature of `write()` stays single-file only (`path` + `data`) — use
-`write_files()` for batch writes. Calling `write()` without `data` now raises
-`InvalidArgumentException`.
+passing a list of `WriteEntry` objects now delegates to `files.write_files()`
+instead of failing with a `TypeError`. The list form is deprecated and will be
+removed in the next major version — the typed signature of `write()` stays
+single-file only (`path` + `data`); use `write_files()` for batch writes.
+Calling `write()` without `data` now raises `InvalidArgumentException`.

@@ -98,14 +98,13 @@ def test_write_multiple_files(sandbox, debug):
             sandbox.files.remove(f"test_write_{i}.txt")
 
 
-def test_write_list_form_is_deprecated(sandbox, debug):
+def test_write_deprecated_list_form_still_works(sandbox, debug):
     files = [
         WriteEntry(path="deprecated_write_0.txt", data="File 0."),
         WriteEntry(path="deprecated_write_1.txt", data="File 1."),
     ]
 
-    with pytest.warns(DeprecationWarning, match="write_files"):
-        infos = sandbox.files.write(files)
+    infos = sandbox.files.write(files)
 
     assert isinstance(infos, list)
     assert len(infos) == len(files)
