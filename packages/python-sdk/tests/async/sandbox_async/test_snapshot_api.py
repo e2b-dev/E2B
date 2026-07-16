@@ -97,6 +97,31 @@ async def test_list_snapshots_for_sandbox(async_sandbox: AsyncSandbox):
 
 
 @pytest.mark.skip_debug()
+async def test_list_snapshots_filtered_by_name(
+    async_sandbox: AsyncSandbox, sandbox_test_id: str
+):
+    snapshot_name = f"snap-filter-{sandbox_test_id}"
+
+    snapshot = await async_sandbox.create_snapshot(name=snapshot_name)
+
+    try:
+        paginator = AsyncSandbox.list_snapshots(name=snapshot_name)
+        snapshots = await paginator.next_items()
+
+        found = any(s.snapshot_id == snapshot.snapshot_id for s in snapshots)
+        assert found
+
+        empty_paginator = AsyncSandbox.list_snapshots(
+            name=f"{snapshot_name}-does-not-exist"
+        )
+        empty_snapshots = await empty_paginator.next_items()
+        assert isinstance(empty_snapshots, list)
+        assert len(empty_snapshots) == 0
+    finally:
+        await AsyncSandbox.delete_snapshot(snapshot.snapshot_id)
+
+
+@pytest.mark.skip_debug()
 async def test_create_named_snapshot(async_sandbox: AsyncSandbox, sandbox_test_id: str):
     snapshot_name = f"snap-{sandbox_test_id}"
 
