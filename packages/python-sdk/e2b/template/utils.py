@@ -259,6 +259,7 @@ def tar_file_stream(
     file_context_path: str,
     ignore_patterns: List[str],
     resolve_symlinks: bool,
+    gzip: bool,
 ) -> IO[bytes]:
     """
     Create a tar archive of files matching a pattern in a temporary file.
@@ -270,6 +271,7 @@ def tar_file_stream(
     :param file_context_path: Base directory for resolving file paths
     :param ignore_patterns: Ignore patterns
     :param resolve_symlinks: Whether to resolve symbolic links
+    :param gzip: Whether to gzip the archive
 
     :return: Binary file object positioned at the start of the archive
     """
@@ -277,7 +279,7 @@ def tar_file_stream(
     try:
         with tarfile.open(
             fileobj=tar_file,
-            mode="w:gz",
+            mode="w:gz" if gzip else "w",
             dereference=resolve_symlinks,
         ) as tar:
             files = get_all_files_in_path(
@@ -316,7 +318,7 @@ def strip_ansi_escape_codes(text: str) -> str:
     st = r"(?:\u0007|\u001B\u005C|\u009C)"
     pattern = [
         rf"[\u001B\u009B][\[\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\d/#&.:=?%@~_]+)*|[a-zA-Z\d]+(?:;[-a-zA-Z\d/#&.:=?%@~_]*)*)?{st})",
-        r"(?:(?:\d{1,4}(?:;\d{0,4})*)?[\dA-PR-TZcf-nq-uy=><~]))",
+        r"(?:(?:\d{1,4}(?:[;:]\d{0,4})*)?[\dA-PR-TZcf-nq-uy=><~]))",
     ]
     ansi_escape = re.compile("|".join(pattern), re.UNICODE)
     return ansi_escape.sub("", text)

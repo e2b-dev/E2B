@@ -94,19 +94,19 @@ export interface ConnectionOpts {
   apiHeaders?: Record<string, string>
 
   /**
-   * Integration wrapping the E2B SDK, appended to the `User-Agent`.
-   *
-   * @example 'e2b-code-interpreter/0.1.0'
-   */
-  integration?: string
-
-  /**
    * An optional `AbortSignal` that can be used to cancel the in-flight request.
    * When the signal is aborted, the underlying `fetch` is aborted and the
    * returned promise rejects with an `AbortError`.
    */
   signal?: AbortSignal
 }
+
+/**
+ * Options accepted by `ConnectionConfig`.
+ *
+ * @deprecated Use `ConnectionOpts` instead.
+ */
+export type ConnectionConfigOpts = ConnectionOpts
 
 /**
  * Build an `AbortSignal` that combines an optional request-timeout signal
@@ -313,21 +313,62 @@ export function wrapStreamWithConnectionCleanup(
   })
 }
 
-function buildUserAgent(integration?: string) {
-  const userAgentParts = [`e2b-js-sdk/${version}`]
-
-  if (integration) {
-    userAgentParts.push(integration)
-  }
-
-  return userAgentParts.join(' ')
-}
-
 /**
  * Configuration for connecting to the API.
  */
 export class ConnectionConfig {
   public static envdPort = 49983
+
+  private static integration?: string
+
+  private static readonly sdkUserAgentPrefix = 'e2b-js-sdk/'
+
+  private static buildUserAgent() {
+    const userAgentParts = [`${ConnectionConfig.sdkUserAgentPrefix}${version}`]
+
+    if (ConnectionConfig.integration) {
+      userAgentParts.push(ConnectionConfig.integration)
+    }
+
+    return userAgentParts.join(' ')
+  }
+
+  /**
+   * Set the `User-Agent` on `headers`: an explicitly provided value always
+   * wins; otherwise the SDK-built one, tagged with the current integration.
+   *
+   * An SDK-built value carried over from an earlier config (configs are
+   * rebuilt via `new ConnectionConfig({ ...config })`) is recognized by its
+   * prefix and rebuilt, so it stays in sync with the current integration.
+   */
+  private static applyUserAgent(headers: Record<string, string>) {
+    const userAgent = headers['User-Agent']
+
+    if (
+      userAgent !== undefined &&
+      !userAgent.startsWith(ConnectionConfig.sdkUserAgentPrefix)
+    ) {
+      return
+    }
+
+    headers['User-Agent'] = ConnectionConfig.buildUserAgent()
+  }
+
+  /**
+   * Identify traffic from an integration wrapping the E2B SDK by appending
+   * `integration` (e.g. `'e2b-code-interpreter/0.1.0'`) to the `User-Agent`
+   * header of every request.
+   *
+   * Call once at startup, before any `ConnectionConfig` is constructed —
+   * configs read the value at construction time. Pass `undefined` to clear.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  static setIntegration(integration: string | undefined) {
+    ConnectionConfig.integration = integration
+  }
 
   readonly debug: boolean
   readonly domain: string
@@ -344,8 +385,6 @@ export class ConnectionConfig {
    */
   readonly accessToken?: string
 
-  readonly integration?: string
-
   readonly headers?: Record<string, string>
 
   readonly proxy?: string
@@ -359,9 +398,8 @@ export class ConnectionConfig {
     this.accessToken = opts?.accessToken || ConnectionConfig.accessToken
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.logger = opts?.logger
-    this.integration = opts?.integration
     this.headers = { ...(opts?.headers ?? {}), ...(opts?.apiHeaders ?? {}) }
-    this.headers['User-Agent'] = buildUserAgent(this.integration)
+    ConnectionConfig.applyUserAgent(this.headers)
     this.proxy = opts?.proxy
 
     this.apiUrl =

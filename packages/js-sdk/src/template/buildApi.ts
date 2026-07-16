@@ -111,6 +111,7 @@ export async function uploadFile(
     url: string
     ignorePatterns: string[]
     resolveSymlinks: boolean
+    gzip: boolean
   },
   stackTrace: string | undefined,
   // Uploads (PUT to S3 presigned URL) can take a long time for large
@@ -120,8 +121,14 @@ export async function uploadFile(
   // via `signal`) to override.
   abortOpts?: { signal?: AbortSignal; requestTimeoutMs?: number }
 ) {
-  const { fileName, url, fileContextPath, ignorePatterns, resolveSymlinks } =
-    options
+  const {
+    fileName,
+    url,
+    fileContextPath,
+    ignorePatterns,
+    resolveSymlinks,
+    gzip,
+  } = options
   // Spool the archive to a temporary file and stream it from disk instead of
   // buffering in memory. S3 presigned PUT URLs reject Transfer-Encoding:
   // chunked with 501 NotImplemented (see e2b-dev/e2b#1243), so the upload
@@ -139,7 +146,8 @@ export async function uploadFile(
       fileName,
       fileContextPath,
       ignorePatterns,
-      resolveSymlinks
+      resolveSymlinks,
+      gzip
     )
     uploadStream = tar.stream
 

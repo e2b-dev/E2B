@@ -7,11 +7,6 @@ on:
         required: false
         type: string
         default: ''
-      run:
-        description: 'Whether to actually run the build and tests. When false the matrix jobs are skipped (reported as success to required checks).'
-        required: false
-        type: boolean
-        default: true
     secrets:
       E2B_API_KEY:
         required: true
@@ -21,8 +16,6 @@ permissions:
 
 jobs:
   test:
-    # Gate each step (not the job) on `inputs.run` so the matrix always expands
-    # and the per-OS required checks are created even when skipped.
     defaults:
       run:
         working-directory: ./packages/cli
@@ -34,11 +27,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
-        if: ${{ inputs.run }}
         uses: actions/checkout@v4
 
       - name: Parse .tool-versions
-        if: ${{ inputs.run }}
         uses: wistia/parse-tool-versions@v2.1.1
         with:
           filename: '.tool-versions'
@@ -46,14 +37,12 @@ jobs:
           prefix: 'tool_version_'
 
       - name: Install pnpm
-        if: ${{ inputs.run }}
         uses: pnpm/action-setup@v4
         with:
           version: '${{ env.TOOL_VERSION_PNPM }}'
 
       - name: Setup Node
-        if: ${{ inputs.run }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version: '${{ env.TOOL_VERSION_NODEJS }}'
           registry-url: 'https://registry.npmjs.org'
@@ -61,26 +50,21 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - name: Configure pnpm
-        if: ${{ inputs.run }}
         run: |
           pnpm config set auto-install-peers true
 
       - name: Install dependencies
-        if: ${{ inputs.run }}
         run: pnpm install --frozen-lockfile
 
       - name: Build the SDK (pre-requisite for the tests)
-        if: ${{ inputs.run }}
         run: pnpm build
         working-directory: ./packages/js-sdk
 
       - name: Build the CLI
-        if: ${{ inputs.run }}
         run: pnpm build
         working-directory: ./packages/cli
 
       - name: Run tests
-        if: ${{ inputs.run }}
         run: pnpm test
         working-directory: ./packages/cli
         env:

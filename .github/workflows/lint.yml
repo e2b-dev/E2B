@@ -24,7 +24,7 @@ jobs:
             code:
               - 'packages/**/!(*.md)'
               - 'spec/**/!(*.md)'
-              - '.eslintrc.cjs'
+              - '.oxlintrc.json'
               - '.prettierrc'
               - '.prettierignore'
               - '.editorconfig'
@@ -56,7 +56,7 @@ jobs:
           version: '${{ env.TOOL_VERSION_PNPM }}'
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '${{ env.TOOL_VERSION_NODEJS }}'
           cache: pnpm
@@ -69,23 +69,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
+          version: '${{ env.TOOL_VERSION_UV }}'
           python-version: '${{ env.TOOL_VERSION_PYTHON }}'
-
-      - name: Install and configure Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: '${{ env.TOOL_VERSION_POETRY }}'
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          installer-parallel: true
+          enable-cache: true
 
       - name: Install Python dependencies
         working-directory: packages/python-sdk
         run: |
-          poetry install --with dev
+          uv sync --locked
 
       - name: Run linting
         run: |

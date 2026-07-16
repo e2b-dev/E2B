@@ -7,11 +7,6 @@ on:
         required: false
         type: string
         default: ''
-      run:
-        description: 'Whether to actually run the build and tests. When false the matrix jobs are skipped (reported as success to required checks).'
-        required: false
-        type: boolean
-        default: true
     secrets:
       E2B_API_KEY:
         required: true
@@ -21,8 +16,6 @@ permissions:
 
 jobs:
   test:
-    # Gate each step (not the job) on `inputs.run` so the matrix always expands
-    # and the per-OS required checks are created even when skipped.
     defaults:
       run:
         working-directory: ./packages/js-sdk
@@ -35,11 +28,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
-        if: ${{ inputs.run }}
         uses: actions/checkout@v4
 
       - name: Parse .tool-versions
-        if: ${{ inputs.run }}
         uses: wistia/parse-tool-versions@v2.1.1
         with:
           filename: '.tool-versions'
@@ -47,15 +38,13 @@ jobs:
           prefix: 'tool_version_'
 
       - name: Install pnpm
-        if: ${{ inputs.run }}
         uses: pnpm/action-setup@v4
         id: pnpm-install
         with:
           version: '${{ env.TOOL_VERSION_PNPM }}'
 
       - name: Setup Node
-        if: ${{ inputs.run }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version: '${{ env.TOOL_VERSION_NODEJS }}'
           registry-url: 'https://registry.npmjs.org'
@@ -63,64 +52,48 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - name: Configure pnpm
-        if: ${{ inputs.run }}
         run: |
           pnpm config set auto-install-peers true
           pnpm config set exclude-links-from-lockfile true
 
       - name: Install dependencies
-        if: ${{ inputs.run }}
         run: |
           pnpm install --frozen-lockfile
 
-      - name: Cache Playwright binaries (Linux)
-        if: ${{ inputs.run && matrix.os == 'ubuntu-22.04' }}
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ env.TOOL_VERSION_NODEJS }}-${{ hashFiles('packages/js-sdk/package.json') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-${{ env.TOOL_VERSION_NODEJS }}-
+      - name: Get Playwright version
+        id: playwright-version
+        run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
 
-      - name: Cache Playwright binaries (Windows)
-        if: ${{ inputs.run && matrix.os == 'windows-latest' }}
+      - name: Cache Playwright browsers
         uses: actions/cache@v4
         with:
-          path: ~/AppData/Local/ms-playwright
-          key: playwright-${{ runner.os }}-${{ env.TOOL_VERSION_NODEJS }}-${{ hashFiles('packages/js-sdk/package.json') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-${{ env.TOOL_VERSION_NODEJS }}-
+          path: ${{ matrix.os == 'windows-latest' && '~/AppData/Local/ms-playwright' || '~/.cache/ms-playwright' }}
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
 
       - name: Test build
-        if: ${{ inputs.run }}
         run: pnpm build
 
       - name: Run Node tests
-        if: ${{ inputs.run }}
         run: pnpm test
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
 
       - name: Install Bun
-        if: ${{ inputs.run }}
         uses: oven-sh/setup-bun@v2
 
       - name: Run Bun tests
-        if: ${{ inputs.run }}
         run: pnpm test:bun
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
 
       - name: Install Deno
-        if: ${{ inputs.run }}
         uses: denoland/setup-deno@v1
         with:
           deno-version: v${{ env.TOOL_VERSION_DENO }}
 
       - name: Run Deno tests
-        if: ${{ inputs.run }}
         run: pnpm test:deno
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}

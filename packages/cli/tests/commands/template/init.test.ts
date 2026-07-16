@@ -58,14 +58,13 @@ describe('Template Init', () => {
     })
 
     test('should validate template name format', async () => {
+      // Matches the server-side rule in e2b-dev/infra (id.identifierRegex):
+      // only lowercase letters, numbers, dashes and underscores are allowed.
       const invalidNames = [
-        'My-Template', // uppercase
-        '-invalid-start', // starts with hyphen
-        'invalid-end-', // ends with hyphen
-        '_invalid-start', // starts with underscore
-        'invalid-end_', // ends with underscore
         'invalid space', // contains space
+        'invalid.dot', // contains a dot
         '', // empty
+        'a'.repeat(129), // exceeds the 128 character limit
       ]
 
       for (const invalidName of invalidNames) {

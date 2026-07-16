@@ -11,6 +11,7 @@ import {
   SandboxNotFoundError,
   TemplateError,
 } from '../errors'
+import { Paginator } from '../paginator'
 import { timeoutToSeconds } from '../utils'
 import type { Volume } from '../volume'
 import type { McpServer as BaseMcpServer } from './mcp'
@@ -448,6 +449,12 @@ export interface SnapshotListOpts extends Omit<SandboxApiOpts, 'signal'> {
    * Filter snapshots by source sandbox ID.
    */
   sandboxId?: string
+
+  /**
+   * Filter snapshots by name or ID, optionally tag-qualified
+   * (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1").
+   */
+  name?: string
 
   /**
    * Number of snapshots to return per page.
@@ -1242,56 +1249,6 @@ export class SandboxApi {
   }
 }
 
-abstract class BasePaginator<T> {
-  protected readonly opts?: SandboxApiOpts
-  protected readonly limit?: number
-
-  private _hasNext: boolean
-  private _nextToken?: string
-
-  constructor(opts?: SandboxApiOpts, limit?: number, nextToken?: string) {
-    this.opts = opts
-    this.limit = limit
-
-    this._hasNext = true
-    this._nextToken = nextToken
-  }
-
-  /**
-   * Returns true if there are more items to fetch.
-   */
-  get hasNext(): boolean {
-    return this._hasNext
-  }
-
-  /**
-   * Returns the next token to use for pagination.
-   */
-  get nextToken(): string | undefined {
-    return this._nextToken
-  }
-
-  protected updatePagination(response: Response) {
-    this._nextToken = response.headers.get('x-next-token') || undefined
-    this._hasNext = !!this._nextToken
-  }
-
-  /**
-   * Get the next page of items.
-   *
-   * @param opts per-call connection options. When provided, this call uses
-   * these options (e.g. `apiKey`, `domain`, `headers`, `requestTimeoutMs`,
-   * `signal`) instead of the ones the paginator was constructed with.
-   * Aborting a page via `signal` does not affect subsequent {@link BasePaginator.nextItems}
-   * calls — pass a fresh signal each call you want to be cancellable.
-   *
-   * @throws Error if there are no more items to fetch. Call this method only if `hasNext` is `true`.
-   *
-   * @returns List of items
-   */
-  abstract nextItems(opts?: SandboxApiOpts): Promise<T[]>
-}
-
 /**
  * Paginator for listing sandboxes.
  *
@@ -1304,7 +1261,7 @@ abstract class BasePaginator<T> {
  * }
  * ```
  */
-export class SandboxPaginator extends BasePaginator<SandboxInfo> {
+export class SandboxPaginator extends Paginator<SandboxInfo, SandboxApiOpts> {
   private query: SandboxListOpts['query']
 
   constructor(opts?: SandboxListOpts) {
@@ -1382,13 +1339,15 @@ export class SandboxPaginator extends BasePaginator<SandboxInfo> {
  * }
  * ```
  */
-export class SnapshotPaginator extends BasePaginator<SnapshotInfo> {
+export class SnapshotPaginator extends Paginator<SnapshotInfo, SandboxApiOpts> {
   private readonly sandboxId?: string
+  private readonly name?: string
 
   constructor(opts?: SnapshotListOpts) {
     super(opts, opts?.limit, opts?.nextToken)
 
     this.sandboxId = opts?.sandboxId
+    this.name = opts?.name
   }
 
   async nextItems(opts?: SandboxApiOpts): Promise<SnapshotInfo[]> {
@@ -1403,6 +1362,7 @@ export class SnapshotPaginator extends BasePaginator<SnapshotInfo> {
       params: {
         query: {
           sandboxID: this.sandboxId,
+          name: this.name,
           limit: this.limit,
           nextToken: this.nextToken,
         },

@@ -131,18 +131,90 @@ def test_debug_defaults_to_env_var(monkeypatch):
     assert config.debug is True
 
 
-def test_integration_options_are_appended_to_user_agent():
-    config = ConnectionConfig(integration="testing/version")
+def test_set_integration_appends_to_user_agent():
+    ConnectionConfig.set_integration("testing/version")
+    try:
+        config = ConnectionConfig()
 
-    assert config.headers["User-Agent"].startswith("e2b-python-sdk/")
-    assert config.headers["User-Agent"].endswith(" testing/version")
+        assert config.headers["User-Agent"].startswith("e2b-python-sdk/")
+        assert config.headers["User-Agent"].endswith(" testing/version")
+    finally:
+        ConnectionConfig.set_integration(None)
+
+    config = ConnectionConfig()
+    assert "testing" not in config.headers["User-Agent"]
 
 
-def test_integration_option_survives_api_param_rebuilds():
-    config = ConnectionConfig(integration="testing/version")
+def test_custom_user_agent_is_preserved_without_integration():
+    config = ConnectionConfig(api_headers={"User-Agent": "custom/1.0"})
+
+    assert config.headers["User-Agent"] == "custom/1.0"
+
+
+def test_custom_user_agent_wins_over_integration(monkeypatch):
+    monkeypatch.setattr(ConnectionConfig, "_integration", "testing/version")
+
+    config = ConnectionConfig(api_headers={"User-Agent": "custom/1.0"})
+
+    assert config.headers["User-Agent"] == "custom/1.0"
+
+
+def test_integration_survives_api_param_rebuilds(monkeypatch):
+    monkeypatch.setattr(ConnectionConfig, "_integration", "testing/version")
+
+    config = ConnectionConfig()
     rebuilt_config = ConnectionConfig(**config.get_api_params())
 
     assert rebuilt_config.headers["User-Agent"].endswith(" testing/version")
+    assert rebuilt_config.get_api_params(api_headers={"X-Test": "1"})["headers"][
+        "User-Agent"
+    ].endswith(" testing/version")
+
+
+def test_cleared_integration_does_not_leak_into_api_param_rebuilds():
+    ConnectionConfig.set_integration("testing/version")
+    try:
+        config = ConnectionConfig()
+    finally:
+        ConnectionConfig.set_integration(None)
+
+    params = config.get_api_params()
+    assert not params["headers"]["User-Agent"].endswith(" testing/version")
+
+    rebuilt_config = ConnectionConfig(**params)
+    assert not rebuilt_config.headers["User-Agent"].endswith(" testing/version")
+
+
+def test_custom_user_agent_survives_api_param_rebuilds(monkeypatch):
+    monkeypatch.setattr(ConnectionConfig, "_integration", "testing/version")
+
+    config = ConnectionConfig(api_headers={"User-Agent": "custom/1.0"})
+    rebuilt_config = ConnectionConfig(**config.get_api_params())
+
+    assert rebuilt_config.headers["User-Agent"] == "custom/1.0"
+
+    monkeypatch.setattr(ConnectionConfig, "_integration", None)
+
+    config = ConnectionConfig(api_headers={"User-Agent": "custom/1.0"})
+    rebuilt_config = ConnectionConfig(**config.get_api_params())
+    assert rebuilt_config.headers["User-Agent"] == "custom/1.0"
+
+
+def test_per_call_user_agent_override_wins_in_api_params(monkeypatch):
+    monkeypatch.setattr(ConnectionConfig, "_integration", "testing/version")
+
+    config = ConnectionConfig()
+    params = config.get_api_params(api_headers={"User-Agent": "custom/1.0"})
+    assert params["headers"]["User-Agent"] == "custom/1.0"
+
+
+def test_per_call_api_headers_user_agent_wins_over_headers():
+    config = ConnectionConfig()
+    params = config.get_api_params(
+        headers={"User-Agent": "from-headers/1.0"},
+        api_headers={"User-Agent": "from-api-headers/1.0"},
+    )
+    assert params["headers"]["User-Agent"] == "from-api-headers/1.0"
 
 
 def test_request_timeout_zero_means_no_timeout():

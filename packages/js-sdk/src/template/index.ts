@@ -16,7 +16,7 @@ import {
   uploadFile,
   waitForBuildFinish,
 } from './buildApi'
-import { RESOLVE_SYMLINKS, STACK_TRACE_DEPTH } from './consts'
+import { GZIP, RESOLVE_SYMLINKS, STACK_TRACE_DEPTH } from './consts'
 import { parseDockerfile } from './dockerfileParser'
 import { LogEntry, LogEntryEnd, LogEntryStart } from './logger'
 import { ReadyCmd, waitForFile } from './readycmd'
@@ -66,8 +66,7 @@ export class TemplateBase
   // Force the next layer to be rebuilt
   private forceNextLayer: boolean = false
   private instructions: Instruction[] = []
-  private fileContextPath: PathLike =
-    runtime === 'browser' ? '.' : (getCallerDirectory(STACK_TRACE_DEPTH) ?? '.')
+  private fileContextPath: PathLike
   private fileIgnorePatterns: string[] = []
   private logsRefreshFrequency: number = 200
   private stackTraces: (string | undefined)[] = []
@@ -75,7 +74,11 @@ export class TemplateBase
   private stackTracesOverride: string | undefined = undefined
 
   constructor(options?: TemplateOptions) {
-    this.fileContextPath = options?.fileContextPath ?? this.fileContextPath
+    this.fileContextPath =
+      options?.fileContextPath ??
+      (runtime === 'browser'
+        ? '.'
+        : (getCallerDirectory(STACK_TRACE_DEPTH) ?? '.'))
     this.fileIgnorePatterns =
       options?.fileIgnorePatterns ?? this.fileIgnorePatterns
   }
@@ -570,6 +573,7 @@ export class TemplateBase
       user?: string
       mode?: number
       resolveSymlinks?: boolean
+      gzip?: boolean
     }
   ): TemplateBuilder {
     if (runtime === 'browser') {
@@ -598,6 +602,7 @@ export class TemplateBase
         force: options?.forceUpload || this.forceNextLayer,
         forceUpload: options?.forceUpload,
         resolveSymlinks: options?.resolveSymlinks,
+        gzip: options?.gzip,
       })
 
       // Collect one stack trace per pushed instruction so build steps stay
@@ -626,6 +631,7 @@ export class TemplateBase
             user: item.user,
             mode: item.mode,
             resolveSymlinks: item.resolveSymlinks,
+            gzip: item.gzip,
           })
         } catch (error) {
           const copyError = error as Error
@@ -1193,6 +1199,7 @@ export class TemplateBase
                 ...readDockerignore(this.fileContextPath.toString()),
               ],
               resolveSymlinks: instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
+              gzip: instruction.gzip ?? GZIP,
             },
             stackTrace,
             // Forward `requestTimeoutMs` only when the caller set it — we

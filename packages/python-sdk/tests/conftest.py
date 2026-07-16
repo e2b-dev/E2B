@@ -243,8 +243,14 @@ def _generate_random_string(length: int = 8) -> str:
     return "".join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
 
+def _skip_unless_volume_tests_enabled():
+    if os.getenv("ENABLE_VOLUME_TESTS") is None:
+        pytest.skip("skipped because ENABLE_VOLUME_TESTS is not set")
+
+
 @pytest.fixture
 def volume(request):
+    _skip_unless_volume_tests_enabled()
     vol = Volume.create(f"test-vol-{_generate_random_string()}")
 
     def finalizer():
@@ -261,6 +267,7 @@ def volume(request):
 
 @pytest_asyncio.fixture
 async def async_volume(request):
+    _skip_unless_volume_tests_enabled()
     vol = await AsyncVolume.create(f"test-vol-{_generate_random_string()}")
     try:
         yield vol

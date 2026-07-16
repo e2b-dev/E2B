@@ -126,7 +126,13 @@ describe('tarFileStream', () => {
     await writeFile(join(testDir, 'file1.txt'), 'content1')
     await writeFile(join(testDir, 'file2.txt'), 'content2')
 
-    const { stream, size } = await tarFileStream('*.txt', testDir, [], false)
+    const { stream, size } = await tarFileStream(
+      '*.txt',
+      testDir,
+      [],
+      false,
+      true
+    )
     expect(size).toBeGreaterThan(0)
 
     const contents = await extractTarContents(stream)
@@ -134,6 +140,39 @@ describe('tarFileStream', () => {
     expect(contents.size).toBe(2)
     expect(contents.get('file1.txt')?.toString()).toBe('content1')
     expect(contents.get('file2.txt')?.toString()).toBe('content2')
+  })
+
+  test('should create an uncompressed tar when gzip is disabled', async () => {
+    await writeFile(join(testDir, 'file1.txt'), 'content1')
+    await writeFile(join(testDir, 'file2.txt'), 'content2')
+
+    const { stream } = await tarFileStream('*.txt', testDir, [], false, false)
+
+    // Buffer the archive so we can both assert it is not gzipped and extract it
+    const chunks: Buffer[] = []
+    for await (const chunk of stream as unknown as AsyncIterable<Buffer>) {
+      chunks.push(Buffer.from(chunk))
+    }
+    const archive = Buffer.concat(chunks)
+
+    // gzip streams start with the magic bytes 0x1f 0x8b — an uncompressed tar must not
+    expect(archive[0]).not.toBe(0x1f)
+    expect(archive.subarray(0, 2).equals(Buffer.from([0x1f, 0x8b]))).toBe(false)
+
+    // And it should still extract to the original files
+    const tarFile = join(tmpdir(), `tar-uncompressed-${Date.now()}.tar`)
+    await writeFile(tarFile, archive)
+    const extractDir = join(tmpdir(), `tar-uncompressed-extract-${Date.now()}`)
+    await mkdir(extractDir, { recursive: true })
+    await tar.extract({ file: tarFile, cwd: extractDir })
+    expect((await readFile(join(extractDir, 'file1.txt'))).toString()).toBe(
+      'content1'
+    )
+    expect((await readFile(join(extractDir, 'file2.txt'))).toString()).toBe(
+      'content2'
+    )
+    await rm(tarFile, { force: true })
+    await rm(extractDir, { recursive: true, force: true })
   })
 
   test('should respect ignore patterns', async () => {
@@ -146,7 +185,8 @@ describe('tarFileStream', () => {
       '*.txt',
       testDir,
       ['temp*', 'backup*'],
-      false
+      false,
+      true
     )
 
     const contents = await extractTarContents(stream)
@@ -165,7 +205,7 @@ describe('tarFileStream', () => {
     await writeFile(join(testDir, 'src', 'index.ts'), 'index content')
     await writeFile(join(nestedDir, 'Button.tsx'), 'button content')
 
-    const { stream } = await tarFileStream('src', testDir, [], false)
+    const { stream } = await tarFileStream('src', testDir, [], false, true)
 
     const contents = await extractTarContents(stream)
     const paths = Array.from(contents.keys())
@@ -187,7 +227,8 @@ describe('tarFileStream', () => {
       throw error
     }
 
-    const { stream } = await tarFileStream('*.txt', testDir, [], true)
+    // Test with resolveSymlinks=true
+    const { stream } = await tarFileStream('*.txt', testDir, [], true, true)
 
     const contents = await extractTarContents(stream)
     expect(contents.get('original.txt')?.toString()).toBe('original content')
@@ -208,7 +249,8 @@ describe('tarFileStream', () => {
       throw error
     }
 
-    const { stream } = await tarFileStream('*.txt', testDir, [], false)
+    // Test with resolveSymlinks=false
+    const { stream } = await tarFileStream('*.txt', testDir, [], false, true)
 
     const members = await getTarMembers(stream)
     expect(members.get('original.txt')?.type).toBe('File')
