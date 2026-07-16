@@ -2618,6 +2618,12 @@ paths:
           schema:
             type: string
             description: Filter snapshots by source sandbox ID
+        - name: name
+          in: query
+          required: false
+          schema:
+            type: string
+            description: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1").
         - $ref: '#/components/parameters/paginationLimit'
         - $ref: '#/components/parameters/paginationNextToken'
       responses:

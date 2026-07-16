@@ -606,10 +606,12 @@ class SnapshotPaginatorBase(PaginatorBase[SnapshotInfo, ApiParams]):
         sandbox_id: Optional[str] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
+        name: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ):
         super().__init__(limit=limit, next_token=next_token, **opts)
         self.sandbox_id = sandbox_id
+        self.name = name
 
 
 class SandboxPaginatorBase(PaginatorBase[SandboxInfo, ApiParams]):

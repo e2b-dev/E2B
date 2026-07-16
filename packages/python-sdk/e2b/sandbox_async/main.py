@@ -771,6 +771,7 @@ class AsyncSandbox(SandboxApi):
         self,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
+        name: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> AsyncSnapshotPaginator:
         """
@@ -778,6 +779,7 @@ class AsyncSandbox(SandboxApi):
 
         :param limit: Maximum number of snapshots to return per page
         :param next_token: Token for pagination
+        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1")
 
         :return: Paginator for listing snapshots
         """
@@ -789,6 +791,7 @@ class AsyncSandbox(SandboxApi):
         sandbox_id: Optional[str] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
+        name: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> AsyncSnapshotPaginator:
         """
@@ -797,6 +800,7 @@ class AsyncSandbox(SandboxApi):
         :param sandbox_id: Filter snapshots by source sandbox ID
         :param limit: Maximum number of snapshots to return per page
         :param next_token: Token for pagination
+        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1")
 
         :return: Paginator for listing snapshots
         """
@@ -807,6 +811,7 @@ class AsyncSandbox(SandboxApi):
         self,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
+        name: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> AsyncSnapshotPaginator:
         """
@@ -814,11 +819,13 @@ class AsyncSandbox(SandboxApi):
 
         :param limit: Maximum number of snapshots to return per page
         :param next_token: Token for pagination
+        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1")
 
         :return: Paginator for listing snapshots
         """
         return AsyncSnapshotPaginator(
             sandbox_id=self.sandbox_id,
+            name=name,
             limit=limit,
             next_token=next_token,
             **self.connection_config.get_api_params(**opts),
@@ -829,10 +836,12 @@ class AsyncSandbox(SandboxApi):
         sandbox_id: Optional[str] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
+        name: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> AsyncSnapshotPaginator:
         return AsyncSnapshotPaginator(
             sandbox_id=sandbox_id,
+            name=name,
             limit=limit,
             next_token=next_token,
             **opts,

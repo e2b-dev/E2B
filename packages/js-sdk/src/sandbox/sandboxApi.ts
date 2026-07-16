@@ -451,6 +451,12 @@ export interface SnapshotListOpts extends Omit<SandboxApiOpts, 'signal'> {
   sandboxId?: string
 
   /**
+   * Filter snapshots by name or ID, optionally tag-qualified
+   * (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1").
+   */
+  name?: string
+
+  /**
    * Number of snapshots to return per page.
    *
    * @default 100
@@ -1335,11 +1341,13 @@ export class SandboxPaginator extends Paginator<SandboxInfo, SandboxApiOpts> {
  */
 export class SnapshotPaginator extends Paginator<SnapshotInfo, SandboxApiOpts> {
   private readonly sandboxId?: string
+  private readonly name?: string
 
   constructor(opts?: SnapshotListOpts) {
     super(opts, opts?.limit, opts?.nextToken)
 
     this.sandboxId = opts?.sandboxId
+    this.name = opts?.name
   }
 
   async nextItems(opts?: SandboxApiOpts): Promise<SnapshotInfo[]> {
@@ -1354,6 +1362,7 @@ export class SnapshotPaginator extends Paginator<SnapshotInfo, SandboxApiOpts> {
       params: {
         query: {
           sandboxID: this.sandboxId,
+          name: this.name,
           limit: this.limit,
           nextToken: this.nextToken,
         },
