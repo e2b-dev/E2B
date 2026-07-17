@@ -85,8 +85,8 @@ def as_async_stream(events: AsyncIterator[RES]) -> AsyncGenerator[RES, Any]:
 # Mirror the httpx pool tuning in `e2b.api.limits` with pyqwest's equivalents.
 # `pool_max_idle_per_host` is per host rather than httpx's global idle cap,
 # which suits envd traffic — each sandbox is its own host.
-_pool_idle_timeout = float(os.getenv("E2B_KEEPALIVE_EXPIRY", "300"))
-_pool_max_idle_per_host = int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS", "20"))
+_pool_idle_timeout = float(os.getenv("E2B_KEEPALIVE_EXPIRY") or "300")
+_pool_max_idle_per_host = int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20")
 
 _transport_lock = threading.Lock()
 _sync_transport: Optional[SyncHTTPTransport] = None

@@ -14,9 +14,9 @@ from e2b.volume.client.client import AuthenticatedClient as AsyncVolumeApiClient
 from e2b.volume.connection_config import VolumeConnectionConfig
 
 limits = Limits(
-    max_keepalive_connections=int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS", "20")),
-    max_connections=int(os.getenv("E2B_MAX_CONNECTIONS", "2000")),
-    keepalive_expiry=int(os.getenv("E2B_KEEPALIVE_EXPIRY", "300")),
+    max_keepalive_connections=int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20"),
+    max_connections=int(os.getenv("E2B_MAX_CONNECTIONS") or "2000"),
+    keepalive_expiry=int(os.getenv("E2B_KEEPALIVE_EXPIRY") or "300"),
 )
 
 TransportKey = Optional[ProxyTypes]
