@@ -16,6 +16,7 @@ import { Git } from './git'
 import {
   SandboxOpts,
   SandboxConnectOpts,
+  SandboxForkOpts,
   SandboxMetricsOpts,
   SandboxApi,
   SandboxListOpts,
@@ -384,6 +385,56 @@ export class Sandbox extends SandboxApi {
   }
 
   /**
+   * Fork a running sandbox specified by sandbox ID.
+   *
+   * The sandbox is checkpointed in place (briefly paused, snapshotted with its
+   * full memory state, and resumed — its ID and expiration stay untouched) and
+   * `count` new sandboxes are created from that snapshot. All forks boot from
+   * the same snapshot, so the snapshot is captured once regardless of count.
+   *
+   * Each fork succeeds or fails independently — the returned array contains
+   * one entry per requested fork, either a running {@link Sandbox} instance or
+   * an `Error` describing why that fork failed to start
+   * (`Promise.allSettled`-style). Per-fork error codes map to the same error
+   * classes as other API errors (e.g. 429 to `RateLimitError`).
+   *
+   * @param sandboxId sandbox ID.
+   * @param opts fork options — `count`, `timeoutMs` and connection options.
+   *
+   * @returns array with one entry per requested fork — a sandbox instance or an error.
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create()
+   *
+   * const [fork1, fork2] = await Sandbox.fork(sandbox.sandboxId, { count: 2 })
+   * if (fork1 instanceof Sandbox) {
+   *   await fork1.commands.run('echo "hello from fork"')
+   * }
+   * ```
+   */
+  static async fork<S extends typeof Sandbox>(
+    this: S,
+    sandboxId: string,
+    opts?: SandboxForkOpts
+  ): Promise<Array<InstanceType<S> | Error>> {
+    const config = new ConnectionConfig(opts)
+
+    const results = await SandboxApi.forkSandbox(
+      sandboxId,
+      opts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
+      opts?.count ?? 1,
+      opts
+    )
+
+    return results.map((result) =>
+      result instanceof Error
+        ? result
+        : (new this({ ...result, ...config }) as InstanceType<S>)
+    )
+  }
+
+  /**
    * Connect to a sandbox. If the sandbox is paused, it will be automatically resumed.
    * Sandbox must be either running or be paused.
    *
@@ -411,6 +462,41 @@ export class Sandbox extends SandboxApi {
     await SandboxApi.connectSandbox(this.sandboxId, this.resolveApiOpts(opts))
 
     return this
+  }
+
+  /**
+   * Fork the sandbox.
+   *
+   * The sandbox is checkpointed in place (briefly paused, snapshotted with its
+   * full memory state, and resumed — its ID and expiration stay untouched) and
+   * `count` new sandboxes are created from that snapshot. All forks boot from
+   * the same snapshot, so the snapshot is captured once regardless of count.
+   *
+   * Each fork succeeds or fails independently — the returned array contains
+   * one entry per requested fork, either a running {@link Sandbox} instance or
+   * an `Error` describing why that fork failed to start
+   * (`Promise.allSettled`-style). Per-fork error codes map to the same error
+   * classes as other API errors (e.g. 429 to `RateLimitError`).
+   *
+   * @param opts fork options — `count`, `timeoutMs` and connection options.
+   *
+   * @returns array with one entry per requested fork — a sandbox instance or an error.
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create()
+   *
+   * const [fork1, fork2] = await sandbox.fork({ count: 2 })
+   * if (fork1 instanceof Sandbox) {
+   *   await fork1.commands.run('echo "hello from fork"')
+   * }
+   * ```
+   */
+  async fork(opts?: SandboxForkOpts): Promise<Array<this | Error>> {
+    const cls = this.constructor as typeof Sandbox
+    return (await cls.fork(this.sandboxId, this.resolveApiOpts(opts))) as Array<
+      this | Error
+    >
   }
 
   /**

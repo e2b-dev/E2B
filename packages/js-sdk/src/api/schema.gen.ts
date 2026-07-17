@@ -192,6 +192,55 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sandboxes/{sandboxID}/fork": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Fork sandbox
+         * @description Fork the sandbox: checkpoint the running sandbox in place (it is briefly paused, snapshotted with its full memory state, and resumed on its node, keeping its ID and expiration untouched) and create count new sandboxes from that snapshot. Returns one result per requested fork, each carrying either the created sandbox or the error that prevented it from starting. A non-201 status means the request failed before any fork was attempted.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    sandboxID: components["parameters"]["sandboxID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["SandboxForkRequest"];
+                };
+            };
+            responses: {
+                /** @description The sandbox was snapshotted and the forks were attempted; each entry reports one fork's outcome */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SandboxForkResult"][];
+                    };
+                };
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                409: components["responses"]["409"];
+                500: components["responses"]["500"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sandboxes/{sandboxID}/logs": {
         parameters: {
             query?: never;
@@ -2246,6 +2295,25 @@ export interface components {
             sandboxes: {
                 [key: string]: components["schemas"]["SandboxMetric"];
             };
+        };
+        SandboxForkRequest: {
+            /**
+             * Format: int32
+             * @description Number of forked sandboxes to create. All forks boot from the same snapshot, so the snapshot is captured once regardless of count. Each fork succeeds or fails independently; the outcome of each is reported in its entry of the response list.
+             * @default 1
+             */
+            count?: number;
+            /**
+             * Format: int32
+             * @description Time to live for the new forked sandboxes in seconds.
+             * @default 15
+             */
+            timeout?: number;
+        };
+        /** @description Result of one requested fork. Exactly one of sandbox or error is set: sandbox when the fork started successfully, error when it failed to start. */
+        SandboxForkResult: {
+            error?: components["schemas"]["Error"];
+            sandbox?: components["schemas"]["Sandbox"];
         };
         /** @description Sandbox lifecycle policy returned by sandbox info. */
         SandboxLifecycle: {

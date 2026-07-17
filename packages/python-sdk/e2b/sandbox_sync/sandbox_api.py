@@ -1,17 +1,22 @@
 import datetime
 import logging
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Union, cast
 
 from packaging.version import Version
 from typing_extensions import Unpack
 
-from e2b.api import SandboxCreateResponse, handle_api_exception
+from e2b.api import (
+    SandboxCreateResponse,
+    api_exception_from_code,
+    handle_api_exception,
+)
 from e2b.api.client.api.sandboxes import (
     delete_sandboxes_sandbox_id,
     get_sandboxes_sandbox_id,
     get_sandboxes_sandbox_id_metrics,
     post_sandboxes,
     post_sandboxes_sandbox_id_connect,
+    post_sandboxes_sandbox_id_fork,
     post_sandboxes_sandbox_id_pause,
     post_sandboxes_sandbox_id_snapshots,
     post_sandboxes_sandbox_id_timeout,
@@ -25,14 +30,16 @@ from e2b.api.client.models import (
     PostSandboxesSandboxIDSnapshotsBody,
     PostSandboxesSandboxIDTimeoutBody,
     SandboxAutoResumeConfig,
+    SandboxForkRequest,
     SandboxNetworkConfig,
     SandboxPauseRequest,
     SandboxVolumeMount as SandboxVolumeMountAPI,
 )
-from e2b.api.client.types import UNSET
+from e2b.api.client.types import UNSET, Unset
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.exceptions import (
     InvalidArgumentException,
+    NotFoundException,
     SandboxException,
     SandboxNotFoundException,
     TemplateException,
@@ -402,6 +409,93 @@ class SandboxApi(SandboxBase):
             envd_access_token=envd_token,
             traffic_access_token=traffic_token,
         )
+
+    @classmethod
+    def _cls_fork(
+        cls,
+        sandbox_id: str,
+        timeout: Optional[int] = None,
+        count: Optional[int] = None,
+        logger: Optional[logging.Logger] = None,
+        **opts: Unpack[ApiParams],
+    ) -> List[Union[SandboxCreateResponse, Exception]]:
+        timeout = (
+            timeout if timeout is not None else SandboxBase.default_sandbox_timeout
+        )
+        count = count if count is not None else 1
+
+        if count < 1:
+            raise InvalidArgumentException("count must be at least 1")
+
+        config = ConnectionConfig(logger=logger, **opts)
+
+        api_client = get_api_client(config)
+        res = post_sandboxes_sandbox_id_fork.sync_detailed(
+            sandbox_id,
+            client=api_client,
+            body=SandboxForkRequest(timeout=timeout, count=count),
+        )
+
+        if res.status_code == 404:
+            message = (
+                res.parsed.message
+                if isinstance(res.parsed, Error)
+                else f"Sandbox {sandbox_id} not found"
+            )
+            raise SandboxNotFoundException(message)
+
+        if res.status_code >= 300:
+            raise handle_api_exception(res)
+
+        if isinstance(res.parsed, Error):
+            raise SandboxException(f"{res.parsed.message}: Request failed")
+
+        if res.parsed is None:
+            raise Exception("Body of the request is None")
+
+        results: List[Union[SandboxCreateResponse, Exception]] = []
+        for result in res.parsed:
+            sandbox = None if isinstance(result.sandbox, Unset) else result.sandbox
+            error = None if isinstance(result.error, Unset) else result.error
+
+            if error is not None or sandbox is None:
+                if error is None:
+                    exception = SandboxException("Failed to start forked sandbox")
+                elif error.code == 404:
+                    # 404 is call-site-specific in the SDK, so
+                    # api_exception_from_code leaves it to the caller. A
+                    # per-fork 404 refers to a resource needed to start that
+                    # fork (e.g. the snapshot) — not the source sandbox, which
+                    # would have failed the whole request — so stay generic.
+                    exception = NotFoundException(f"{error.code}: {error.message}")
+                else:
+                    exception = api_exception_from_code(error.code, error.message)
+                results.append(exception)
+                continue
+
+            domain = sandbox.domain if isinstance(sandbox.domain, str) else None
+            envd_token = (
+                sandbox.envd_access_token
+                if isinstance(sandbox.envd_access_token, str)
+                else None
+            )
+            traffic_token = (
+                sandbox.traffic_access_token
+                if isinstance(sandbox.traffic_access_token, str)
+                else None
+            )
+
+            results.append(
+                SandboxCreateResponse(
+                    sandbox_id=sandbox.sandbox_id,
+                    sandbox_domain=domain,
+                    envd_version=sandbox.envd_version,
+                    envd_access_token=envd_token,
+                    traffic_access_token=traffic_token,
+                )
+            )
+
+        return results
 
     @classmethod
     def _cls_create_snapshot(

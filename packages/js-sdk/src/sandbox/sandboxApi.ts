@@ -1,4 +1,4 @@
-import { ApiClient, components, handleApiError } from '../api'
+import { ApiClient, apiErrorFromCode, components, handleApiError } from '../api'
 import {
   ConnectionConfig,
   ConnectionOpts,
@@ -8,6 +8,8 @@ import { compareVersions } from 'compare-versions'
 import { ALL_TRAFFIC } from './network'
 import {
   InvalidArgumentError,
+  NotFoundError,
+  SandboxError,
   SandboxNotFoundError,
   TemplateError,
 } from '../errors'
@@ -301,6 +303,46 @@ export interface SandboxPauseOpts extends SandboxApiOpts {
    */
   keepMemory?: boolean
 }
+
+/**
+ * Options for forking a sandbox.
+ */
+export interface SandboxForkOpts extends ConnectionOpts {
+  /**
+   * Number of forked sandboxes to create.
+   *
+   * All forks boot from the same snapshot — the snapshot is captured once
+   * regardless of count. Each fork succeeds or fails independently; the
+   * outcome of each is reported in its entry of the returned array.
+   *
+   * @default 1
+   */
+  count?: number
+
+  /**
+   * Timeout for the forked sandboxes in **milliseconds**.
+   * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
+   *
+   * @default 300_000 // 5 minutes
+   */
+  timeoutMs?: number
+}
+
+/**
+ * Result of one requested fork as returned by the API — either the raw
+ * connection info of the created sandbox, or the error that prevented it
+ * from starting. Per-fork error codes map to the same error classes as other
+ * API errors (e.g. 429 to `RateLimitError`).
+ */
+type SandboxForkResponse =
+  | {
+      sandboxId: string
+      sandboxDomain?: string
+      envdVersion: string
+      envdAccessToken?: string
+      trafficAccessToken?: string
+    }
+  | Error
 
 /**
  * Options for creating a new Sandbox.
@@ -1207,6 +1249,74 @@ export class SandboxApi {
       envdAccessToken: res.data!.envdAccessToken,
       trafficAccessToken: res.data!.trafficAccessToken || undefined,
     }
+  }
+
+  protected static async forkSandbox(
+    sandboxId: string,
+    timeoutMs: number,
+    count: number,
+    opts?: SandboxApiOpts
+  ): Promise<SandboxForkResponse[]> {
+    if (count < 1) {
+      throw new InvalidArgumentError('count must be at least 1')
+    }
+
+    const config = new ConnectionConfig(opts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.POST('/sandboxes/{sandboxID}/fork', {
+      params: {
+        path: {
+          sandboxID: sandboxId,
+        },
+      },
+      body: {
+        timeout: timeoutToSeconds(timeoutMs),
+        count,
+      },
+      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+    })
+
+    // check the status, not the parsed error body — openapi-fetch leaves
+    // `error` unset for non-2xx responses with an empty body
+    if (res.response.status === 404) {
+      throw new SandboxNotFoundError(
+        res.error?.message ?? `Sandbox ${sandboxId} not found`
+      )
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    return (res.data ?? []).map(
+      (result: components['schemas']['SandboxForkResult']) => {
+        if (result.error || !result.sandbox) {
+          if (!result.error) {
+            return new SandboxError('Failed to start forked sandbox')
+          }
+          // 404 is call-site-specific in the SDK, so apiErrorFromCode leaves
+          // it to the caller. A per-fork 404 refers to a resource needed to
+          // start that fork (e.g. the snapshot) — not the source sandbox,
+          // which would have failed the whole request — so stay generic.
+          if (result.error.code === 404) {
+            return new NotFoundError(
+              `${result.error.code}: ${result.error.message}`
+            )
+          }
+          return apiErrorFromCode(result.error.code, result.error.message)
+        }
+
+        return {
+          sandboxId: result.sandbox.sandboxID,
+          sandboxDomain: result.sandbox.domain || undefined,
+          envdVersion: result.sandbox.envdVersion,
+          envdAccessToken: result.sandbox.envdAccessToken,
+          trafficAccessToken: result.sandbox.trafficAccessToken || undefined,
+        }
+      }
+    )
   }
 
   protected static async connectSandbox(

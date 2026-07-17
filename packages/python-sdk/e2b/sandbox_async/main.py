@@ -347,6 +347,123 @@ class AsyncSandbox(SandboxApi):
 
         return self
 
+    @overload
+    async def fork(
+        self,
+        timeout: Optional[int] = None,
+        count: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> List[Union[Self, Exception]]:
+        """
+        Fork the sandbox.
+
+        The sandbox is checkpointed in place (briefly paused, snapshotted with
+        its full memory state, and resumed — its ID and expiration stay
+        untouched) and `count` new sandboxes are created from that snapshot.
+        All forks boot from the same snapshot, so the snapshot is captured once
+        regardless of count.
+
+        Each fork succeeds or fails independently — the returned list contains
+        one entry per requested fork, either a running `AsyncSandbox` instance
+        or an exception describing why that fork failed to start. Per-fork
+        error codes map to the same exception classes as other API errors
+        (e.g. 429 to `RateLimitException`).
+
+        :param timeout: Timeout for the forked sandboxes in **seconds**, defaults to 300 seconds
+        :param count: Number of forked sandboxes to create, defaults to 1
+
+        :return: List with one entry per requested fork — a sandbox instance or an exception
+
+        @example
+        ```python
+        sandbox = await AsyncSandbox.create()
+
+        fork1, fork2 = await sandbox.fork(count=2)
+        ```
+        """
+        ...
+
+    @overload
+    @staticmethod
+    async def fork(
+        sandbox_id: str,
+        timeout: Optional[int] = None,
+        count: Optional[int] = None,
+        logger: Optional[logging.Logger] = None,
+        **opts: Unpack[ApiParams],
+    ) -> List[Union["AsyncSandbox", Exception]]:
+        """
+        Fork a running sandbox specified by sandbox ID.
+
+        The sandbox is checkpointed in place (briefly paused, snapshotted with
+        its full memory state, and resumed — its ID and expiration stay
+        untouched) and `count` new sandboxes are created from that snapshot.
+        All forks boot from the same snapshot, so the snapshot is captured once
+        regardless of count.
+
+        Each fork succeeds or fails independently — the returned list contains
+        one entry per requested fork, either a running `AsyncSandbox` instance
+        or an exception describing why that fork failed to start. Per-fork
+        error codes map to the same exception classes as other API errors
+        (e.g. 429 to `RateLimitException`).
+
+        :param sandbox_id: Sandbox ID
+        :param timeout: Timeout for the forked sandboxes in **seconds**, defaults to 300 seconds
+        :param count: Number of forked sandboxes to create, defaults to 1
+        :param logger: Logger used for request and response logging for the forked sandboxes. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
+
+        :return: List with one entry per requested fork — a sandbox instance or an exception
+
+        @example
+        ```python
+        sandbox = await AsyncSandbox.create()
+
+        fork1, fork2 = await AsyncSandbox.fork(sandbox.sandbox_id, count=2)
+        ```
+        """
+        ...
+
+    @class_method_variant("_cls_fork_sandbox")
+    async def fork(
+        self,
+        timeout: Optional[int] = None,
+        count: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> List[Union[Self, Exception]]:
+        """
+        Fork the sandbox.
+
+        The sandbox is checkpointed in place (briefly paused, snapshotted with
+        its full memory state, and resumed — its ID and expiration stay
+        untouched) and `count` new sandboxes are created from that snapshot.
+        All forks boot from the same snapshot, so the snapshot is captured once
+        regardless of count.
+
+        Each fork succeeds or fails independently — the returned list contains
+        one entry per requested fork, either a running `AsyncSandbox` instance
+        or an exception describing why that fork failed to start. Per-fork
+        error codes map to the same exception classes as other API errors
+        (e.g. 429 to `RateLimitException`).
+
+        :param timeout: Timeout for the forked sandboxes in **seconds**, defaults to 300 seconds
+        :param count: Number of forked sandboxes to create, defaults to 1
+
+        :return: List with one entry per requested fork — a sandbox instance or an exception
+
+        @example
+        ```python
+        sandbox = await AsyncSandbox.create()
+
+        fork1, fork2 = await sandbox.fork(count=2)
+        ```
+        """
+        return await type(self)._cls_fork_sandbox(
+            self.sandbox_id,
+            timeout=timeout,
+            count=count,
+            **self.connection_config.get_api_params(**opts),
+        )
+
     async def __aenter__(self):
         return self
 
@@ -924,6 +1041,55 @@ class AsyncSandbox(SandboxApi):
             traffic_access_token=traffic_access_token,
             connection_config=connection_config,
         )
+
+    @classmethod
+    async def _cls_fork_sandbox(
+        cls,
+        sandbox_id: str,
+        timeout: Optional[int] = None,
+        count: Optional[int] = None,
+        logger: Optional[logging.Logger] = None,
+        **opts: Unpack[ApiParams],
+    ) -> List[Union[Self, Exception]]:
+        responses = await SandboxApi._cls_fork(
+            sandbox_id=sandbox_id,
+            timeout=timeout,
+            count=count,
+            logger=logger,
+            **opts,
+        )
+
+        sandboxes: List[Union[Self, Exception]] = []
+        for response in responses:
+            if isinstance(response, Exception):
+                sandboxes.append(response)
+                continue
+
+            sandbox_headers = {
+                "E2b-Sandbox-Id": response.sandbox_id,
+                "E2b-Sandbox-Port": str(ConnectionConfig.envd_port),
+            }
+            if response.envd_access_token is not None:
+                sandbox_headers["X-Access-Token"] = response.envd_access_token
+
+            connection_config = ConnectionConfig(
+                extra_sandbox_headers=sandbox_headers,
+                logger=logger,
+                **opts,
+            )
+
+            sandboxes.append(
+                cls(
+                    sandbox_id=response.sandbox_id,
+                    sandbox_domain=response.sandbox_domain,
+                    envd_version=Version(response.envd_version),
+                    envd_access_token=response.envd_access_token,
+                    traffic_access_token=response.traffic_access_token,
+                    connection_config=connection_config,
+                )
+            )
+
+        return sandboxes
 
     @classmethod
     async def _create(
