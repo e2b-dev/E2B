@@ -249,14 +249,17 @@ class Pty:
         :param size: New size of the PTY
         :param request_timeout: Timeout for the request in **seconds**
         """
-        await self._rpc.update(
-            process_pb.UpdateRequest(
-                process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
-                pty=process_pb.PTY(
-                    size=process_pb.PTY.Size(rows=size.rows, cols=size.cols),
+        try:
+            await self._rpc.update(
+                process_pb.UpdateRequest(
+                    process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
+                    pty=process_pb.PTY(
+                        size=process_pb.PTY.Size(rows=size.rows, cols=size.cols),
+                    ),
                 ),
-            ),
-            timeout_ms=timeout_to_ms(
-                self._connection_config.get_request_timeout(request_timeout)
-            ),
-        )
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
+                ),
+            )
+        except Exception as e:
+            raise await ahandle_rpc_exception_with_health(e, self._check_health)

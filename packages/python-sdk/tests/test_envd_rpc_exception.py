@@ -1,3 +1,5 @@
+import asyncio
+
 from connectrpc.code import Code
 from connectrpc.errors import ConnectError
 
@@ -74,6 +76,17 @@ def _stream_reset() -> ConnectError:
         return e
 
 
+def _cancelled() -> ConnectError:
+    # connectrpc converts asyncio cancellation into ConnectError(CANCELED)
+    # with the CancelledError as __cause__.
+    try:
+        raise ConnectError(Code.CANCELED, "Request was cancelled") from (
+            asyncio.CancelledError()
+        )
+    except ConnectError as e:
+        return e
+
+
 def test_transport_failure_detection():
     assert is_transport_failure(_stream_reset())
     # Errors parsed from an envd response have no cause.
@@ -85,7 +98,25 @@ def test_transport_failure_detection():
         )
     except ConnectError as e:
         assert not is_transport_failure(e)
+    # Asyncio cancellation is not a connection failure — it must not be
+    # retried or trigger a health probe.
+    assert not is_transport_failure(_cancelled())
     assert not is_transport_failure(ValueError("other"))
+
+
+def test_cancellation_restores_cancelled_error():
+    err = _cancelled()
+    restored = handle_rpc_exception(err)
+    assert restored is err.__cause__
+    assert isinstance(restored, asyncio.CancelledError)
+
+
+def test_health_check_not_run_for_cancellation():
+    def fail():
+        raise AssertionError("health check should not run")
+
+    restored = handle_rpc_exception_with_health(_cancelled(), fail)
+    assert isinstance(restored, asyncio.CancelledError)
 
 
 def test_returns_raw_transport_failure_without_health_result():

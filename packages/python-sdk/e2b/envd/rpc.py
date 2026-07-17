@@ -1,3 +1,4 @@
+import asyncio
 import base64
 
 from typing import Awaitable, Callable, Optional
@@ -51,12 +52,14 @@ def is_transport_failure(e: Exception) -> bool:
     connectrpc wraps transport errors with the original exception as
     ``__cause__``, while errors parsed from an HTTP status or a stream's
     end-of-stream trailer are raised without a cause. Client-enforced
-    deadlines also carry a cause (``TimeoutError``) but are a definitive
-    result, not a connection failure.
+    deadlines (``TimeoutError``) and asyncio cancellation also carry a cause
+    but are definitive results, not connection failures — they must not be
+    retried or trigger a sandbox health probe.
     """
     return (
         isinstance(e, ConnectError)
         and e.__cause__ is not None
+        and not isinstance(e.__cause__, asyncio.CancelledError)
         and e.code is not Code.DEADLINE_EXCEEDED
     )
 
@@ -88,6 +91,13 @@ def handle_rpc_exception(
     :return: The corresponding exception. A connection dropped mid-request with the sandbox confirmed gone becomes a ``TimeoutException``; non-``ConnectError`` errors are otherwise returned as-is.
     """
     if isinstance(e, ConnectError):
+        # connectrpc converts asyncio cancellation into a ConnectError with
+        # code CANCELED; restore the original CancelledError so cancelling a
+        # task keeps its asyncio semantics instead of surfacing as an RPC
+        # error (or, via the CANCELED mapping below, a TimeoutException).
+        if isinstance(e.__cause__, asyncio.CancelledError):
+            return e.__cause__
+
         # A transport-level failure (e.g. an HTTP/2 stream reset) means the
         # connection to the sandbox was dropped mid-request — either the
         # sandbox died or the network failed — so the code mapping below,

@@ -178,7 +178,9 @@ class AsyncCommandHandle:
                             stdout="".join(self._stdout_chunks),
                             stderr="".join(self._stderr_chunks),
                             exit_code=end.exit_code,
-                            error=end.error,
+                            # Optional scalar: unset reads as "" — the presence
+                            # check keeps it None, matching the JS SDK
+                            error=end.error if end.has_field("error") else None,
                         )
                         for f in flushed:
                             yield f
