@@ -1280,7 +1280,7 @@ export class SandboxApi {
     // check the status, not the parsed error body — openapi-fetch leaves
     // `error` unset for non-2xx responses with an empty body
     if (res.response.status === 404) {
-      throw new NotFoundError(
+      throw new SandboxNotFoundError(
         res.error?.message ?? `Sandbox ${sandboxId} not found`
       )
     }
@@ -1297,7 +1297,9 @@ export class SandboxApi {
             return new SandboxError('Failed to start forked sandbox')
           }
           // 404 is call-site-specific in the SDK, so apiErrorFromCode leaves
-          // it to the caller — map it here to match the whole-request 404
+          // it to the caller. A per-fork 404 refers to a resource needed to
+          // start that fork (e.g. the snapshot) — not the source sandbox,
+          // which would have failed the whole request — so stay generic.
           if (result.error.code === 404) {
             return new NotFoundError(
               `${result.error.code}: ${result.error.message}`

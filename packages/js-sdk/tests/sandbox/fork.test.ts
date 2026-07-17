@@ -2,7 +2,7 @@ import { assert, expect, test } from 'vitest'
 
 import { sandboxTest, isDebug, TEST_API_KEY } from '../setup.js'
 import { Sandbox } from '../../src'
-import { InvalidArgumentError, NotFoundError } from '../../src/errors'
+import { InvalidArgumentError, SandboxNotFoundError } from '../../src/errors'
 
 sandboxTest.skipIf(isDebug)('fork a sandbox', async ({ sandbox }) => {
   await sandbox.files.write('/home/user/state.txt', 'state before fork')
@@ -84,7 +84,7 @@ test.skipIf(isDebug)('fork a killed sandbox fails', async () => {
   const sandbox = await Sandbox.create()
   await sandbox.kill()
 
-  await expect(sandbox.fork()).rejects.toThrowError(NotFoundError)
+  await expect(sandbox.fork()).rejects.toThrowError(SandboxNotFoundError)
 })
 
 test('fork with count lower than 1 fails', async () => {

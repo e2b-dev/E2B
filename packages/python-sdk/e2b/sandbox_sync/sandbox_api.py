@@ -442,7 +442,7 @@ class SandboxApi(SandboxBase):
                 if isinstance(res.parsed, Error)
                 else f"Sandbox {sandbox_id} not found"
             )
-            raise NotFoundException(message)
+            raise SandboxNotFoundException(message)
 
         if res.status_code >= 300:
             raise handle_api_exception(res)
@@ -463,8 +463,10 @@ class SandboxApi(SandboxBase):
                     exception = SandboxException("Failed to start forked sandbox")
                 elif error.code == 404:
                     # 404 is call-site-specific in the SDK, so
-                    # api_exception_from_code leaves it to the caller — map it
-                    # here to match the whole-request 404
+                    # api_exception_from_code leaves it to the caller. A
+                    # per-fork 404 refers to a resource needed to start that
+                    # fork (e.g. the snapshot) — not the source sandbox, which
+                    # would have failed the whole request — so stay generic.
                     exception = NotFoundException(f"{error.code}: {error.message}")
                 else:
                     exception = api_exception_from_code(error.code, error.message)
