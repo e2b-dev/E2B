@@ -1,16 +1,16 @@
 # buf.gen.yaml defines a local generation template.
 # For details, see https://buf.build/docs/configuration/v1/buf-gen-yaml
+# Both plugins are pip-installed from the python-sdk codegen dependency group
+# (`make init`): protoc-gen-py generates the protobuf-py messages and
+# protoc-gen-connectrpc the Connect clients.
 version: v1
 plugins:
-  - plugin: python
+  - name: py
     out: ../../packages/python-sdk/e2b/envd
-    opt:
-      - pyi_out=../../packages/python-sdk/e2b/envd
+    path: protoc-gen-py
   - name: connectrpc
     out: ../../packages/python-sdk/e2b/envd
     path: protoc-gen-connectrpc
-    opt:
-      - protobuf=google
 
 managed:
   enabled: true

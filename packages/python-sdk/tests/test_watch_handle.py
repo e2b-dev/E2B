@@ -3,7 +3,9 @@ import asyncio
 from packaging.version import Version
 
 from e2b.connection_config import ConnectionConfig
-from e2b.envd.filesystem import filesystem_pb2
+from protobuf import Oneof
+
+from e2b.envd.filesystem import filesystem_pb
 from e2b.envd.versions import ENVD_DEFAULT_USER
 from e2b.sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from e2b.sandbox_sync.filesystem.watch_handle import WatchHandle
@@ -11,10 +13,12 @@ from e2b.sandbox_sync.filesystem.watch_handle import WatchHandle
 
 def _fs_event(
     name: str,
-    event_type=filesystem_pb2.EventType.EVENT_TYPE_WRITE,
-) -> filesystem_pb2.WatchDirResponse:
-    return filesystem_pb2.WatchDirResponse(
-        filesystem=filesystem_pb2.FilesystemEvent(name=name, type=event_type)
+    event_type=filesystem_pb.EventType.WRITE,
+) -> filesystem_pb.WatchDirResponse:
+    return filesystem_pb.WatchDirResponse(
+        event=Oneof(
+            "filesystem", filesystem_pb.FilesystemEvent(name=name, type=event_type)
+        )
     )
 
 
@@ -27,11 +31,11 @@ class _FakeSyncRpc:
 
     def get_watcher_events(self, req, **opts):
         self.calls.append(("get_watcher_events", req, opts))
-        return filesystem_pb2.GetWatcherEventsResponse(events=[])
+        return filesystem_pb.GetWatcherEventsResponse(events=[])
 
     def remove_watcher(self, req, **opts):
         self.calls.append(("remove_watcher", req, opts))
-        return filesystem_pb2.RemoveWatcherResponse()
+        return filesystem_pb.RemoveWatcherResponse()
 
 
 def _make_sync_handle(rpc, envd_version: Version, user=None) -> WatchHandle:

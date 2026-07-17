@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
-from e2b.envd.filesystem.filesystem_pb2 import EventType
+from e2b.envd.filesystem.filesystem_pb import EventType
 from e2b.sandbox.filesystem.filesystem import EntryInfo
 
 
@@ -34,15 +34,15 @@ class FilesystemEventType(Enum):
 
 
 def map_event_type(event: EventType):
-    if event == EventType.EVENT_TYPE_CHMOD:
+    if event == EventType.CHMOD:
         return FilesystemEventType.CHMOD
-    elif event == EventType.EVENT_TYPE_CREATE:
+    elif event == EventType.CREATE:
         return FilesystemEventType.CREATE
-    elif event == EventType.EVENT_TYPE_REMOVE:
+    elif event == EventType.REMOVE:
         return FilesystemEventType.REMOVE
-    elif event == EventType.EVENT_TYPE_RENAME:
+    elif event == EventType.RENAME:
         return FilesystemEventType.RENAME
-    elif event == EventType.EVENT_TYPE_WRITE:
+    elif event == EventType.WRITE:
         return FilesystemEventType.WRITE
 
 

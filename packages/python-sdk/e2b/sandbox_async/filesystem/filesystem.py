@@ -20,7 +20,9 @@ from e2b.envd.api import (
     ahandle_envd_api_exception,
     ahandle_envd_api_transport_exception_with_health,
 )
-from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
+from protobuf import Oneof
+
+from e2b.envd.filesystem import filesystem_connect, filesystem_pb
 from e2b.envd.rpc import (
     authentication_header,
     ahandle_rpc_exception_with_health,
@@ -470,7 +472,7 @@ class Filesystem:
 
         try:
             res = await self._rpc.list_dir(
-                filesystem_pb2.ListDirRequest(path=path, depth=depth),
+                filesystem_pb.ListDirRequest(path=path, depth=depth or 0),
                 timeout_ms=timeout_to_ms(
                     self._connection_config.get_request_timeout(request_timeout)
                 ),
@@ -504,7 +506,7 @@ class Filesystem:
         """
         try:
             await self._rpc.stat(
-                filesystem_pb2.StatRequest(path=path),
+                filesystem_pb.StatRequest(path=path),
                 timeout_ms=timeout_to_ms(
                     self._connection_config.get_request_timeout(request_timeout)
                 ),
@@ -536,14 +538,14 @@ class Filesystem:
         """
         try:
             r = await self._rpc.stat(
-                filesystem_pb2.StatRequest(path=path),
+                filesystem_pb.StatRequest(path=path),
                 timeout_ms=timeout_to_ms(
                     self._connection_config.get_request_timeout(request_timeout)
                 ),
                 headers=authentication_header(self._envd_version, user),
             )
 
-            return map_entry_info(r.entry)
+            return map_entry_info(r.entry or filesystem_pb.EntryInfo())
         except Exception as e:
             raise await _ahandle_filesystem_rpc_exception(e, self._envd_api)
 
@@ -562,7 +564,7 @@ class Filesystem:
         """
         try:
             await self._rpc.remove(
-                filesystem_pb2.RemoveRequest(path=path),
+                filesystem_pb.RemoveRequest(path=path),
                 timeout_ms=timeout_to_ms(
                     self._connection_config.get_request_timeout(request_timeout)
                 ),
@@ -590,7 +592,7 @@ class Filesystem:
         """
         try:
             r = await self._rpc.move(
-                filesystem_pb2.MoveRequest(
+                filesystem_pb.MoveRequest(
                     source=old_path,
                     destination=new_path,
                 ),
@@ -600,7 +602,7 @@ class Filesystem:
                 headers=authentication_header(self._envd_version, user),
             )
 
-            return map_entry_info(r.entry)
+            return map_entry_info(r.entry or filesystem_pb.EntryInfo())
         except Exception as e:
             raise await _ahandle_filesystem_rpc_exception(e, self._envd_api)
 
@@ -621,7 +623,7 @@ class Filesystem:
         """
         try:
             await self._rpc.make_dir(
-                filesystem_pb2.MakeDirRequest(path=path),
+                filesystem_pb.MakeDirRequest(path=path),
                 timeout_ms=timeout_to_ms(
                     self._connection_config.get_request_timeout(request_timeout)
                 ),
@@ -682,7 +684,7 @@ class Filesystem:
 
         events = as_async_stream(
             self._rpc.watch_dir(
-                filesystem_pb2.WatchDirRequest(
+                filesystem_pb.WatchDirRequest(
                     path=path,
                     recursive=recursive,
                     include_entry=include_entry,
@@ -702,10 +704,13 @@ class Filesystem:
         try:
             start_event = await events.__anext__()
 
-            if not start_event.HasField("start"):
-                raise SandboxException(
-                    f"Failed to start watch: expected start event, got {start_event}",
-                )
+            match start_event.event:
+                case Oneof(field="start"):
+                    pass
+                case _:
+                    raise SandboxException(
+                        f"Failed to start watch: expected start event, got {start_event}",
+                    )
 
             return AsyncWatchHandle(
                 events=events,

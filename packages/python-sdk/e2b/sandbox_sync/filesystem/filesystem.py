@@ -22,7 +22,7 @@ from e2b.envd.api import (
     handle_envd_api_exception,
     handle_envd_api_transport_exception_with_health,
 )
-from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
+from e2b.envd.filesystem import filesystem_connect, filesystem_pb
 from e2b.envd.rpc import (
     authentication_header,
     handle_rpc_exception_with_health,
@@ -479,7 +479,7 @@ class Filesystem:
 
         try:
             res = self._rpc.list_dir(
-                filesystem_pb2.ListDirRequest(path=path, depth=depth),
+                filesystem_pb.ListDirRequest(path=path, depth=depth or 0),
                 timeout_ms=timeout_to_ms(
                     self._connection_config.get_request_timeout(request_timeout)
                 ),
@@ -513,7 +513,7 @@ class Filesystem:
         """
         try:
             self._rpc.stat(
-                filesystem_pb2.StatRequest(path=path),
+                filesystem_pb.StatRequest(path=path),
                 timeout_ms=timeout_to_ms(
                     self._connection_config.get_request_timeout(request_timeout)
                 ),
@@ -544,14 +544,14 @@ class Filesystem:
         """
         try:
             r = self._rpc.stat(
-                filesystem_pb2.StatRequest(path=path),
+                filesystem_pb.StatRequest(path=path),
                 timeout_ms=timeout_to_ms(
                     self._connection_config.get_request_timeout(request_timeout)
                 ),
                 headers=authentication_header(self._envd_version, user),
             )
 
-            return map_entry_info(r.entry)
+            return map_entry_info(r.entry or filesystem_pb.EntryInfo())
         except Exception as e:
             raise _handle_filesystem_rpc_exception(e, self._envd_api)
 
@@ -570,7 +570,7 @@ class Filesystem:
         """
         try:
             self._rpc.remove(
-                filesystem_pb2.RemoveRequest(path=path),
+                filesystem_pb.RemoveRequest(path=path),
                 timeout_ms=timeout_to_ms(
                     self._connection_config.get_request_timeout(request_timeout)
                 ),
@@ -598,7 +598,7 @@ class Filesystem:
         """
         try:
             r = self._rpc.move(
-                filesystem_pb2.MoveRequest(
+                filesystem_pb.MoveRequest(
                     source=old_path,
                     destination=new_path,
                 ),
@@ -608,7 +608,7 @@ class Filesystem:
                 headers=authentication_header(self._envd_version, user),
             )
 
-            return map_entry_info(r.entry)
+            return map_entry_info(r.entry or filesystem_pb.EntryInfo())
         except Exception as e:
             raise _handle_filesystem_rpc_exception(e, self._envd_api)
 
@@ -629,7 +629,7 @@ class Filesystem:
         """
         try:
             self._rpc.make_dir(
-                filesystem_pb2.MakeDirRequest(path=path),
+                filesystem_pb.MakeDirRequest(path=path),
                 timeout_ms=timeout_to_ms(
                     self._connection_config.get_request_timeout(request_timeout)
                 ),
@@ -684,7 +684,7 @@ class Filesystem:
 
         try:
             r = self._rpc.create_watcher(
-                filesystem_pb2.CreateWatcherRequest(
+                filesystem_pb.CreateWatcherRequest(
                     path=path,
                     recursive=recursive,
                     include_entry=include_entry,

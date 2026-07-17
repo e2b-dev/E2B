@@ -8,7 +8,9 @@ from connectrpc.errors import ConnectError
 from packaging.version import Version
 from e2b.api import make_logging_event_hooks
 from e2b.api.client_sync import get_envd_transport
-from e2b.envd.process import process_connect, process_pb2
+from protobuf import Oneof
+
+from e2b.envd.process import process_connect, process_pb
 from e2b.connection_config import (
     Username,
     ConnectionConfig,
@@ -94,9 +96,9 @@ class Pty:
         """
         try:
             self._rpc.send_signal(
-                process_pb2.SendSignalRequest(
-                    process=process_pb2.ProcessSelector(pid=pid),
-                    signal=process_pb2.Signal.SIGNAL_SIGKILL,
+                process_pb.SendSignalRequest(
+                    process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
+                    signal=process_pb.Signal.SIGKILL,
                 ),
                 timeout_ms=timeout_to_ms(
                     self._connection_config.get_request_timeout(request_timeout)
@@ -124,10 +126,10 @@ class Pty:
         """
         try:
             self._rpc.send_input(
-                process_pb2.SendInputRequest(
-                    process=process_pb2.ProcessSelector(pid=pid),
-                    input=process_pb2.ProcessInput(
-                        pty=data,
+                process_pb.SendInputRequest(
+                    process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
+                    input=process_pb.ProcessInput(
+                        input=Oneof("pty", data),
                     ),
                 ),
                 timeout_ms=timeout_to_ms(
@@ -164,15 +166,15 @@ class Pty:
         envs.setdefault("LC_ALL", "C.UTF-8")
         events = as_stream(
             self._rpc.start(
-                process_pb2.StartRequest(
-                    process=process_pb2.ProcessConfig(
+                process_pb.StartRequest(
+                    process=process_pb.ProcessConfig(
                         cmd="/bin/bash",
                         envs=envs,
                         args=["-i", "-l"],
                         cwd=cwd,
                     ),
-                    pty=process_pb2.PTY(
-                        size=process_pb2.PTY.Size(rows=size.rows, cols=size.cols)
+                    pty=process_pb.PTY(
+                        size=process_pb.PTY.Size(rows=size.rows, cols=size.cols)
                     ),
                 ),
                 headers={
@@ -186,14 +188,16 @@ class Pty:
         try:
             start_event = events.__next__()
 
-            if not start_event.HasField("event"):
-                raise SandboxException(
-                    f"Failed to start process: expected start event, got {start_event}"
-                )
-
+            match start_event.event.event if start_event.event is not None else None:
+                case Oneof(field="start", value=start):
+                    pid = start.pid
+                case _:
+                    raise SandboxException(
+                        f"Failed to start process: expected start event, got {start_event}"
+                    )
             return CommandHandle(
-                pid=start_event.event.start.pid,
-                handle_kill=lambda: self.kill(start_event.event.start.pid),
+                pid=pid,
+                handle_kill=lambda: self.kill(pid),
                 events=events,
                 check_health=self._check_health,
             )
@@ -221,8 +225,8 @@ class Pty:
         """
         events = as_stream(
             self._rpc.connect(
-                process_pb2.ConnectRequest(
-                    process=process_pb2.ProcessSelector(pid=pid),
+                process_pb.ConnectRequest(
+                    process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
                 ),
                 headers={
                     KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
@@ -234,14 +238,16 @@ class Pty:
         try:
             start_event = events.__next__()
 
-            if not start_event.HasField("event"):
-                raise SandboxException(
-                    f"Failed to connect to process: expected start event, got {start_event}"
-                )
-
+            match start_event.event.event if start_event.event is not None else None:
+                case Oneof(field="start", value=start):
+                    pid = start.pid
+                case _:
+                    raise SandboxException(
+                        f"Failed to connect to process: expected start event, got {start_event}"
+                    )
             return CommandHandle(
-                pid=start_event.event.start.pid,
-                handle_kill=lambda: self.kill(start_event.event.start.pid),
+                pid=pid,
+                handle_kill=lambda: self.kill(pid),
                 events=events,
                 check_health=self._check_health,
             )
@@ -267,10 +273,10 @@ class Pty:
         :param request_timeout: Timeout for the request in **seconds**
         """
         self._rpc.update(
-            process_pb2.UpdateRequest(
-                process=process_pb2.ProcessSelector(pid=pid),
-                pty=process_pb2.PTY(
-                    size=process_pb2.PTY.Size(rows=size.rows, cols=size.cols),
+            process_pb.UpdateRequest(
+                process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
+                pty=process_pb.PTY(
+                    size=process_pb.PTY.Size(rows=size.rows, cols=size.cols),
                 ),
             ),
             timeout_ms=timeout_to_ms(

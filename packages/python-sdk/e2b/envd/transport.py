@@ -31,8 +31,7 @@ from typing import (
 
 from connectrpc.errors import ConnectError
 from connectrpc.request import RequestContext
-from google.protobuf import json_format
-from google.protobuf.message import Message
+from protobuf import Message
 from pyqwest import Client, HTTPTransport, SyncClient, SyncHTTPTransport
 
 from e2b.api import connection_retries
@@ -49,7 +48,7 @@ class _ProtoJSONCodec:
     """JSON codec matching the JS SDK's `useBinaryFormat: false`.
 
     Unknown response fields are ignored so an older SDK keeps working against
-    a newer envd that added fields (the compat codec shipped with connectrpc
+    a newer envd that added fields (the default codec shipped with connectrpc
     fails hard on unknown fields).
     """
 
@@ -57,14 +56,10 @@ class _ProtoJSONCodec:
         return "json"
 
     def encode(self, message: Message) -> bytes:
-        return json_format.MessageToJson(message).encode("utf-8")
+        return message.to_json().encode("utf-8")
 
     def decode(self, data, message_class: type[_MESSAGE]) -> _MESSAGE:
-        message = message_class()
-        json_format.Parse(
-            bytes(data).decode("utf-8"), message, ignore_unknown_fields=True
-        )
-        return message
+        return message_class.from_json(data, ignore_unknown_fields=True)
 
 
 ENVD_JSON_CODEC = _ProtoJSONCodec()

@@ -4,7 +4,9 @@ import inspect
 from typing import Any, AsyncGenerator, Awaitable, Callable, Optional
 
 from e2b.envd.rpc import ahandle_rpc_exception_with_health
-from e2b.envd.filesystem.filesystem_pb2 import WatchDirResponse
+from protobuf import Oneof
+
+from e2b.envd.filesystem.filesystem_pb import WatchDirResponse
 from e2b.sandbox.filesystem.filesystem import map_entry_info
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent, map_event_type
 from e2b.sandbox_async.utils import OutputHandler
@@ -45,18 +47,19 @@ class AsyncWatchHandle:
     async def _iterate_events(self):
         try:
             async for event in self._events:
-                if event.HasField("filesystem"):
-                    event_type = map_event_type(event.filesystem.type)
-                    if event_type:
-                        yield FilesystemEvent(
-                            name=event.filesystem.name,
-                            type=event_type,
-                            entry=(
-                                map_entry_info(event.filesystem.entry)
-                                if event.filesystem.HasField("entry")
-                                else None
-                            ),
-                        )
+                match event.event:
+                    case Oneof(field="filesystem", value=fs_event):
+                        event_type = map_event_type(fs_event.type)
+                        if event_type:
+                            yield FilesystemEvent(
+                                name=fs_event.name,
+                                type=event_type,
+                                entry=(
+                                    map_entry_info(fs_event.entry)
+                                    if fs_event.entry is not None
+                                    else None
+                                ),
+                            )
         except Exception as e:
             raise await ahandle_rpc_exception_with_health(e, self._check_health)
 

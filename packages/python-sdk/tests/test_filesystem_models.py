@@ -1,6 +1,8 @@
 import datetime
 
-from e2b.envd.filesystem import filesystem_pb2
+from protobuf.wkt import Timestamp
+
+from e2b.envd.filesystem import filesystem_pb
 from e2b.sandbox.filesystem.filesystem import (
     FileType,
     WriteInfo,
@@ -40,9 +42,9 @@ def test_map_file_type_str():
 
 
 def test_map_entry_info_modified_time_is_timezone_aware():
-    entry = filesystem_pb2.EntryInfo(
+    entry = filesystem_pb.EntryInfo(
         name="a.txt",
-        type=filesystem_pb2.FileType.FILE_TYPE_FILE,
+        type=filesystem_pb.FileType.FILE,
         path="/home/user/a.txt",
         size=4,
         mode=0o644,
@@ -50,7 +52,7 @@ def test_map_entry_info_modified_time_is_timezone_aware():
         owner="user",
         group="user",
     )
-    entry.modified_time.FromDatetime(
+    entry.modified_time = Timestamp.from_datetime(
         datetime.datetime(2026, 1, 2, 3, 4, 5, tzinfo=datetime.timezone.utc)
     )
 

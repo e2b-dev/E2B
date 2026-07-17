@@ -5,7 +5,7 @@ from packaging.version import Version
 from e2b import SandboxException
 from e2b.connection_config import ConnectionConfig, Username
 from e2b.envd.filesystem import filesystem_connect
-from e2b.envd.filesystem.filesystem_pb2 import (
+from e2b.envd.filesystem.filesystem_pb import (
     GetWatcherEventsRequest,
     RemoveWatcherRequest,
 )
@@ -97,7 +97,7 @@ class WatchHandle:
                         type=event_type,
                         entry=(
                             map_entry_info(event.entry)
-                            if event.HasField("entry")
+                            if event.entry is not None
                             else None
                         ),
                     )

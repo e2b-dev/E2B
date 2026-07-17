@@ -10,7 +10,9 @@ from e2b.connection_config import (
     KEEPALIVE_PING_HEADER,
     KEEPALIVE_PING_INTERVAL_SEC,
 )
-from e2b.envd.process import process_connect, process_pb2
+from protobuf import Oneof
+
+from e2b.envd.process import process_connect, process_pb
 from e2b.envd.api import acheck_sandbox_health
 from e2b.envd.rpc import (
     authentication_header,
@@ -61,7 +63,7 @@ class Commands:
         """
         try:
             res = await self._rpc.list(
-                process_pb2.ListRequest(),
+                process_pb.ListRequest(),
                 timeout_ms=timeout_to_ms(
                     self._connection_config.get_request_timeout(request_timeout)
                 ),
@@ -69,13 +71,16 @@ class Commands:
             return [
                 ProcessInfo(
                     pid=p.pid,
-                    tag=p.tag if p.HasField("tag") else None,
-                    cmd=p.config.cmd,
-                    args=list(p.config.args),
-                    envs=dict(p.config.envs),
-                    cwd=p.config.cwd if p.config.HasField("cwd") else None,
+                    # Optional scalars: unset reads as "" — presence checks keep
+                    # them None
+                    tag=p.tag if p.has_field("tag") else None,
+                    cmd=config.cmd,
+                    args=list(config.args),
+                    envs=dict(config.envs),
+                    cwd=config.cwd if config.has_field("cwd") else None,
                 )
                 for p in res.processes
+                for config in (p.config or process_pb.ProcessConfig(),)
             ]
         except Exception as e:
             raise await ahandle_rpc_exception_with_health(e, self._check_health)
@@ -96,9 +101,9 @@ class Commands:
         """
         try:
             await self._rpc.send_signal(
-                process_pb2.SendSignalRequest(
-                    process=process_pb2.ProcessSelector(pid=pid),
-                    signal=process_pb2.Signal.SIGNAL_SIGKILL,
+                process_pb.SendSignalRequest(
+                    process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
+                    signal=process_pb.Signal.SIGKILL,
                 ),
                 timeout_ms=timeout_to_ms(
                     self._connection_config.get_request_timeout(request_timeout)
@@ -126,10 +131,12 @@ class Commands:
         """
         try:
             await self._rpc.send_input(
-                process_pb2.SendInputRequest(
-                    process=process_pb2.ProcessSelector(pid=pid),
-                    input=process_pb2.ProcessInput(
-                        stdin=data.encode() if isinstance(data, str) else data,
+                process_pb.SendInputRequest(
+                    process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
+                    input=process_pb.ProcessInput(
+                        input=Oneof(
+                            "stdin", data.encode() if isinstance(data, str) else data
+                        ),
                     ),
                 ),
                 timeout_ms=timeout_to_ms(
@@ -160,8 +167,8 @@ class Commands:
 
         try:
             await self._rpc.close_stdin(
-                process_pb2.CloseStdinRequest(
-                    process=process_pb2.ProcessSelector(pid=pid),
+                process_pb.CloseStdinRequest(
+                    process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
                 ),
                 timeout_ms=timeout_to_ms(
                     self._connection_config.get_request_timeout(request_timeout)
@@ -285,8 +292,8 @@ class Commands:
     ) -> AsyncCommandHandle:
         events = as_async_stream(
             self._rpc.start(
-                process_pb2.StartRequest(
-                    process=process_pb2.ProcessConfig(
+                process_pb.StartRequest(
+                    process=process_pb.ProcessConfig(
                         cmd="/bin/bash",
                         envs=envs,
                         args=["-l", "-c", cmd],
@@ -308,12 +315,13 @@ class Commands:
         try:
             start_event = await events.__anext__()
 
-            if not start_event.HasField("event"):
-                raise SandboxException(
-                    f"Failed to start process: expected start event, got {start_event}"
-                )
-
-            pid = start_event.event.start.pid
+            match start_event.event.event if start_event.event is not None else None:
+                case Oneof(field="start", value=start):
+                    pid = start.pid
+                case _:
+                    raise SandboxException(
+                        f"Failed to start process: expected start event, got {start_event}"
+                    )
             return AsyncCommandHandle(
                 pid=pid,
                 handle_kill=lambda: self.kill(pid),
@@ -357,8 +365,8 @@ class Commands:
         """
         events = as_async_stream(
             self._rpc.connect(
-                process_pb2.ConnectRequest(
-                    process=process_pb2.ProcessSelector(pid=pid),
+                process_pb.ConnectRequest(
+                    process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
                 ),
                 headers={
                     KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
@@ -370,12 +378,13 @@ class Commands:
         try:
             start_event = await events.__anext__()
 
-            if not start_event.HasField("event"):
-                raise SandboxException(
-                    f"Failed to connect to process: expected start event, got {start_event}"
-                )
-
-            pid = start_event.event.start.pid
+            match start_event.event.event if start_event.event is not None else None:
+                case Oneof(field="start", value=start):
+                    pid = start.pid
+                case _:
+                    raise SandboxException(
+                        f"Failed to connect to process: expected start event, got {start_event}"
+                    )
             return AsyncCommandHandle(
                 pid=pid,
                 handle_kill=lambda: self.kill(pid),
