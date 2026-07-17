@@ -5,11 +5,9 @@ import * as packageJSON from '../package.json'
 import { getUserConfig, UserConfig } from './user'
 import { asBold, asPrimary } from './utils/format'
 
-const cliIntegration = `e2b-cli/${packageJSON.version}`
-
 // Must run before any ConnectionConfig is constructed (including the
 // module-level one below) — configs read the integration at construction time.
-e2b.ConnectionConfig.setIntegration(cliIntegration)
+e2b.ConnectionConfig.setIntegration(`e2b-cli/${packageJSON.version}`)
 
 export type Teams =
   e2b.paths['/teams']['get']['responses'][200]['content']['application/json']
@@ -108,34 +106,15 @@ const userConfig = getUserConfig()
 const resolvedAccessToken =
   process.env.E2B_ACCESS_TOKEN || userConfig?.tokens.access_token
 
-function buildConnectionConfig() {
-  return new e2b.ConnectionConfig({
-    apiKey: process.env.E2B_API_KEY || userConfig?.teamApiKey,
-    apiHeaders: resolvedAccessToken
-      ? { Authorization: `Bearer ${resolvedAccessToken}` }
-      : undefined,
-  })
-}
+export const connectionConfig = new e2b.ConnectionConfig({
+  apiKey: process.env.E2B_API_KEY || userConfig?.teamApiKey,
+  apiHeaders: resolvedAccessToken
+    ? { Authorization: `Bearer ${resolvedAccessToken}` }
+    : undefined,
+})
 
 // The CLI authenticates team-scoped endpoints (e.g. `/teams`) with the access
 // token instead of an API key, so don't require an API key here.
-function buildClient(config: e2b.ConnectionConfig) {
-  return new e2b.ApiClient(config, { requireApiKey: false })
-}
-
-export let connectionConfig = buildConnectionConfig()
-export let client = buildClient(connectionConfig)
-
-/**
- * Extend the integration tag with the command being run, e.g.
- * `e2b-cli-command/sandbox.list`. Configs capture the User-Agent when
- * constructed, and the shared config and client above are built at import
- * time — before the command is known — so they are rebuilt here.
- */
-export function setCommandAttribution(commandPath: string) {
-  e2b.ConnectionConfig.setIntegration(
-    `${cliIntegration} e2b-cli-command/${commandPath}`
-  )
-  connectionConfig = buildConnectionConfig()
-  client = buildClient(connectionConfig)
-}
+export const client = new e2b.ApiClient(connectionConfig, {
+  requireApiKey: false,
+})

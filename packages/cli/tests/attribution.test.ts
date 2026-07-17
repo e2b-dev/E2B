@@ -44,16 +44,9 @@ async function captureUserAgent(args: string[]): Promise<string | undefined> {
   return userAgents.find(Boolean)
 }
 
-test('CLI requests carry SDK, CLI, and command attribution in the User-Agent', async () => {
+test('CLI requests carry SDK and CLI attribution in the User-Agent', async () => {
   const userAgent = await captureUserAgent(['sandbox', 'list'])
 
   expect(userAgent).toMatch(/^e2b-js-sdk\/\d/)
   expect(userAgent).toContain(`e2b-cli/${packageJSON.version}`)
-  expect(userAgent).toContain('e2b-cli-command/sandbox.list')
-})
-
-test('command attribution uses the canonical name for aliases', async () => {
-  const userAgent = await captureUserAgent(['sandbox', 'ls'])
-
-  expect(userAgent).toContain('e2b-cli-command/sandbox.list')
 })
