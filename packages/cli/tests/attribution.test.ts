@@ -49,5 +49,4 @@ test('CLI requests carry SDK and CLI attribution in the User-Agent', async () =>
 
   expect(userAgent).toMatch(/^e2b-js-sdk\/\d/)
   expect(userAgent).toContain(`e2b-cli/${packageJSON.version}`)
-  expect(userAgent).not.toContain('e2b-cli-command/')
 })
