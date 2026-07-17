@@ -9,7 +9,11 @@ from e2b.envd.filesystem.filesystem_pb2 import (
     GetWatcherEventsRequest,
     RemoveWatcherRequest,
 )
-from e2b.envd.rpc import authentication_header, handle_rpc_exception_with_health
+from e2b.envd.rpc import (
+    authentication_header,
+    handle_rpc_exception_with_health,
+    timeout_to_ms,
+)
 from e2b.sandbox.filesystem.filesystem import map_entry_info
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent, map_event_type
 
@@ -24,7 +28,7 @@ class WatchHandle:
 
     def __init__(
         self,
-        get_rpc: Callable[[], filesystem_connect.FilesystemClient],
+        get_rpc: Callable[[], filesystem_connect.FilesystemClientSync],
         watcher_id: str,
         connection_config: ConnectionConfig,
         envd_version: Version,
@@ -49,8 +53,8 @@ class WatchHandle:
         try:
             self._get_rpc().remove_watcher(
                 RemoveWatcherRequest(watcher_id=self._watcher_id),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
                 ),
                 headers=authentication_header(self._envd_version, self._user),
             )
@@ -75,8 +79,8 @@ class WatchHandle:
         try:
             r = self._get_rpc().get_watcher_events(
                 GetWatcherEventsRequest(watcher_id=self._watcher_id),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
                 ),
                 headers=authentication_header(self._envd_version, self._user),
             )

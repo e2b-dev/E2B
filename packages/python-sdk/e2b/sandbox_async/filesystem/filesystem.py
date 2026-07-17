@@ -2,11 +2,11 @@ import asyncio
 from typing import IO, Dict, List, Literal, Optional, Union, overload
 
 
-import httpcore
 import httpx
+from connectrpc.code import Code
+from connectrpc.errors import ConnectError
 from packaging.version import Version
 
-import e2b_connect as connect
 from e2b.connection_config import (
     KEEPALIVE_PING_HEADER,
     KEEPALIVE_PING_INTERVAL_SEC,
@@ -21,7 +21,12 @@ from e2b.envd.api import (
     ahandle_envd_api_transport_exception_with_health,
 )
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb2
-from e2b.envd.rpc import authentication_header, ahandle_rpc_exception_with_health
+from e2b.envd.rpc import (
+    authentication_header,
+    ahandle_rpc_exception_with_health,
+    timeout_to_ms,
+)
+from e2b.envd.transport import as_async_stream, create_rpc_client
 from e2b.envd.versions import (
     ENVD_DEFAULT_USER,
     ENVD_FILE_METADATA,
@@ -51,10 +56,9 @@ from e2b.sandbox.filesystem.filesystem import (
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent
 from e2b.sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from e2b.sandbox_async.utils import OutputHandler
-from e2b_connect.client import Code
 
 _FILESYSTEM_RPC_ERROR_MAP = {
-    Code.not_found: FileNotFoundException,
+    Code.NOT_FOUND: FileNotFoundException,
 }
 
 _FILESYSTEM_HTTP_ERROR_MAP = {
@@ -84,23 +88,18 @@ class Filesystem:
         envd_api_url: str,
         envd_version: Version,
         connection_config: ConnectionConfig,
-        pool: httpcore.AsyncConnectionPool,
         envd_api: httpx.AsyncClient,
     ) -> None:
         self._envd_api_url = envd_api_url
         self._envd_version = envd_version
         self._connection_config = connection_config
-        self._pool = pool
         self._envd_api = envd_api
 
-        self._rpc = filesystem_connect.FilesystemClient(
+        self._rpc = create_rpc_client(
+            filesystem_connect.FilesystemClient,
             envd_api_url,
-            # TODO: Fix and enable compression again — the headers compression is not solved for streaming.
-            # compressor=e2b_connect.GzipCompressor,
-            async_pool=pool,
-            json=True,
-            headers=connection_config.sandbox_headers,
-            logger=connection_config.logger,
+            connection_config,
+            sync=False,
         )
 
     @overload
@@ -470,10 +469,10 @@ class Filesystem:
             raise InvalidArgumentException("depth should be at least 1")
 
         try:
-            res = await self._rpc.alist_dir(
+            res = await self._rpc.list_dir(
                 filesystem_pb2.ListDirRequest(path=path, depth=depth),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
                 ),
                 headers=authentication_header(self._envd_version, user),
             )
@@ -504,10 +503,10 @@ class Filesystem:
         :return: `True` if the file or directory exists, `False` otherwise
         """
         try:
-            await self._rpc.astat(
+            await self._rpc.stat(
                 filesystem_pb2.StatRequest(path=path),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
                 ),
                 headers=authentication_header(self._envd_version, user),
             )
@@ -515,8 +514,8 @@ class Filesystem:
             return True
 
         except Exception as e:
-            if isinstance(e, connect.ConnectException):
-                if e.status == connect.Code.not_found:
+            if isinstance(e, ConnectError):
+                if e.code == Code.NOT_FOUND:
                     return False
             raise await _ahandle_filesystem_rpc_exception(e, self._envd_api)
 
@@ -536,10 +535,10 @@ class Filesystem:
         :return: Information about the file or directory like name, type, and path
         """
         try:
-            r = await self._rpc.astat(
+            r = await self._rpc.stat(
                 filesystem_pb2.StatRequest(path=path),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
                 ),
                 headers=authentication_header(self._envd_version, user),
             )
@@ -562,10 +561,10 @@ class Filesystem:
         :param request_timeout: Timeout for the request in **seconds**
         """
         try:
-            await self._rpc.aremove(
+            await self._rpc.remove(
                 filesystem_pb2.RemoveRequest(path=path),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
                 ),
                 headers=authentication_header(self._envd_version, user),
             )
@@ -590,13 +589,13 @@ class Filesystem:
         :return: Information about the renamed file or directory
         """
         try:
-            r = await self._rpc.amove(
+            r = await self._rpc.move(
                 filesystem_pb2.MoveRequest(
                     source=old_path,
                     destination=new_path,
                 ),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
                 ),
                 headers=authentication_header(self._envd_version, user),
             )
@@ -621,18 +620,18 @@ class Filesystem:
         :return: `True` if the directory was created, `False` if the directory already exists
         """
         try:
-            await self._rpc.amake_dir(
+            await self._rpc.make_dir(
                 filesystem_pb2.MakeDirRequest(path=path),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
                 ),
                 headers=authentication_header(self._envd_version, user),
             )
 
             return True
         except Exception as e:
-            if isinstance(e, connect.ConnectException):
-                if e.status == connect.Code.already_exists:
+            if isinstance(e, ConnectError):
+                if e.code == Code.ALREADY_EXISTS:
                     return False
             raise await _ahandle_filesystem_rpc_exception(e, self._envd_api)
 
@@ -681,21 +680,23 @@ class Filesystem:
                 "You need to update the template to watch directories on network mounts."
             )
 
-        events = self._rpc.awatch_dir(
-            filesystem_pb2.WatchDirRequest(
-                path=path,
-                recursive=recursive,
-                include_entry=include_entry,
-                allow_network_mounts=allow_network_mounts,
-            ),
-            request_timeout=self._connection_config.get_request_timeout(
-                request_timeout
-            ),
-            timeout=timeout,
-            headers={
-                **authentication_header(self._envd_version, user),
-                KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
-            },
+        events = as_async_stream(
+            self._rpc.watch_dir(
+                filesystem_pb2.WatchDirRequest(
+                    path=path,
+                    recursive=recursive,
+                    include_entry=include_entry,
+                    allow_network_mounts=allow_network_mounts,
+                ),
+                # The watch `timeout` bounds the whole stream; `request_timeout`
+                # has no per-call equivalent here — connection setup is bounded by
+                # the transport's connect timeout instead.
+                timeout_ms=timeout_to_ms(timeout),
+                headers={
+                    **authentication_header(self._envd_version, user),
+                    KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
+                },
+            )
         )
 
         try:

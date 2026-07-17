@@ -6,9 +6,11 @@ plugins:
     out: ../../packages/python-sdk/e2b/envd
     opt:
       - pyi_out=../../packages/python-sdk/e2b/envd
-  - name: connect-python
+  - name: connectrpc
     out: ../../packages/python-sdk/e2b/envd
-    path: protoc-gen-connect-python
+    path: protoc-gen-connectrpc
+    opt:
+      - protobuf=google
 
 managed:
   enabled: true

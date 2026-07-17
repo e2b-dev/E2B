@@ -5,10 +5,6 @@ RUN go install github.com/bufbuild/buf/cmd/buf@v1.50.1 && \
     go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.1 && \
     go install connectrpc.com/connect/cmd/protoc-gen-connect-go@v1.18.1
 
-# Install our custom protoc plugin, connect-python
-COPY ./packages/connect-python /packages/connect-python
-RUN cd /packages/connect-python && make bin/protoc-gen-connect-python
-
 
 FROM python:3.10
 
@@ -34,7 +30,8 @@ ENV PATH="/go/bin:${PATH}"
 
 # Install Python deps (e2b-openapi-python-client is patched version to fix issue with explode)
 # https://github.com/openapi-generators/openapi-python-client/pull/1296
-RUN pip install black==26.3.1 pyyaml==6.0.2 e2b-openapi-python-client==0.26.2 datamodel-code-generator==0.34.0
+# protoc-gen-connectrpc generates the Python envd Connect stubs.
+RUN pip install black==26.3.1 pyyaml==6.0.2 e2b-openapi-python-client==0.26.2 datamodel-code-generator==0.34.0 protoc-gen-connectrpc==0.11.1
 
 # Install Node.js (pinned to match .tool-versions)
 ENV NODE_VERSION=22.18.0

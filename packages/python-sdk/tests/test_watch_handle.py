@@ -54,7 +54,7 @@ def test_sync_get_new_events_passes_request_timeout_and_auth_header():
     name, _, opts = rpc.calls[0]
     assert name == "get_watcher_events"
     # A request timeout is always supplied so a stalled call can't hang forever.
-    assert opts["request_timeout"] == 60.0
+    assert opts["timeout_ms"] == 60_000
     assert opts["headers"].get("Authorization", "").startswith("Basic ")
 
 
@@ -66,7 +66,7 @@ def test_sync_stop_passes_request_timeout_and_auth_header():
 
     name, _, opts = rpc.calls[0]
     assert name == "remove_watcher"
-    assert opts["request_timeout"] == 60.0
+    assert opts["timeout_ms"] == 60_000
     assert opts["headers"].get("Authorization", "").startswith("Basic ")
 
 
@@ -77,8 +77,8 @@ def test_sync_caller_supplied_request_timeout_is_forwarded():
     handle.get_new_events(request_timeout=5)
     handle.stop(request_timeout=7)
 
-    assert rpc.calls[0][2]["request_timeout"] == 5
-    assert rpc.calls[1][2]["request_timeout"] == 7
+    assert rpc.calls[0][2]["timeout_ms"] == 5_000
+    assert rpc.calls[1][2]["timeout_ms"] == 7_000
     # No explicit user on a recent envd → no auth header forced.
     assert "Authorization" not in rpc.calls[0][2]["headers"]
 

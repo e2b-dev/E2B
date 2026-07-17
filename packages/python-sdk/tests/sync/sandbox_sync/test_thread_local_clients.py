@@ -83,27 +83,17 @@ def test_sync_sandbox_clients_are_created_once_per_calling_thread(
             self.transport = kwargs["transport"]
             record("http")
 
-    class FakeFilesystemClient:
-        def __init__(self, *args, **kwargs):
-            self.pool = kwargs["pool"]
-            record("filesystem_rpc")
-
-    class FakeProcessClient:
-        def __init__(self, *args, **kwargs):
-            self.pool = kwargs["pool"]
-            record("process_rpc")
+    def fake_create_rpc_client(client_cls, base_url, config, *, sync):
+        record(
+            "filesystem_rpc" if "Filesystem" in client_cls.__name__ else "process_rpc"
+        )
+        return object()
 
     monkeypatch.setattr(filesystem_sync, "get_envd_transport", get_transport)
-    monkeypatch.setattr(command_sync, "get_envd_transport", get_transport)
-    monkeypatch.setattr(pty_sync, "get_envd_transport", get_transport)
     monkeypatch.setattr(filesystem_sync.httpx, "Client", FakeHttpClient)
-    monkeypatch.setattr(
-        filesystem_sync.filesystem_connect, "FilesystemClient", FakeFilesystemClient
-    )
-    monkeypatch.setattr(
-        command_sync.process_connect, "ProcessClient", FakeProcessClient
-    )
-    monkeypatch.setattr(pty_sync.process_connect, "ProcessClient", FakeProcessClient)
+    monkeypatch.setattr(filesystem_sync, "create_rpc_client", fake_create_rpc_client)
+    monkeypatch.setattr(command_sync, "create_rpc_client", fake_create_rpc_client)
+    monkeypatch.setattr(pty_sync, "create_rpc_client", fake_create_rpc_client)
 
     main_thread_id = threading.get_ident()
     sandbox = sandbox_sync_main.Sandbox(
@@ -188,10 +178,10 @@ def test_sync_filesystem_envd_clients_are_bound_per_calling_thread(
         else worker_api,
     )
     monkeypatch.setattr(
-        filesystem_sync.filesystem_connect,
-        "FilesystemClient",
-        lambda *args, **kwargs: main_rpc
-        if kwargs["pool"] is main_transport.pool
+        filesystem_sync,
+        "create_rpc_client",
+        lambda *_args, **_kwargs: main_rpc
+        if threading.get_ident() == main_thread_id
         else worker_rpc,
     )
 
@@ -218,23 +208,14 @@ def test_sync_command_rpc_clients_are_bound_per_calling_thread(
 ):
     config = ConnectionConfig(api_key=test_api_key)
     main_thread_id = threading.get_ident()
-    main_transport = fake_transport()
-    worker_transport = fake_transport()
     main_rpc = sentinel.main_command_rpc
     worker_rpc = sentinel.worker_command_rpc
 
     monkeypatch.setattr(
         command_sync,
-        "get_envd_transport",
-        lambda *_args, **_kwargs: main_transport
+        "create_rpc_client",
+        lambda *_args, **_kwargs: main_rpc
         if threading.get_ident() == main_thread_id
-        else worker_transport,
-    )
-    monkeypatch.setattr(
-        command_sync.process_connect,
-        "ProcessClient",
-        lambda *args, **kwargs: main_rpc
-        if kwargs["pool"] is main_transport.pool
         else worker_rpc,
     )
 
@@ -249,23 +230,14 @@ def test_sync_command_rpc_clients_are_bound_per_calling_thread(
 def test_sync_pty_rpc_clients_are_bound_per_calling_thread(monkeypatch, test_api_key):
     config = ConnectionConfig(api_key=test_api_key)
     main_thread_id = threading.get_ident()
-    main_transport = fake_transport()
-    worker_transport = fake_transport()
     main_rpc = sentinel.main_pty_rpc
     worker_rpc = sentinel.worker_pty_rpc
 
     monkeypatch.setattr(
         pty_sync,
-        "get_envd_transport",
-        lambda *_args, **_kwargs: main_transport
+        "create_rpc_client",
+        lambda *_args, **_kwargs: main_rpc
         if threading.get_ident() == main_thread_id
-        else worker_transport,
-    )
-    monkeypatch.setattr(
-        pty_sync.process_connect,
-        "ProcessClient",
-        lambda *args, **kwargs: main_rpc
-        if kwargs["pool"] is main_transport.pool
         else worker_rpc,
     )
 

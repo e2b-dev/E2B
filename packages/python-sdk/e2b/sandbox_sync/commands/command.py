@@ -1,8 +1,9 @@
 import threading
 from typing import Callable, Dict, List, Literal, Optional, Union, overload
 
-import e2b_connect
 import httpx
+from connectrpc.code import Code
+from connectrpc.errors import ConnectError
 from packaging.version import Version
 from e2b.api import make_logging_event_hooks
 from e2b.api.client_sync import get_envd_transport
@@ -14,7 +15,12 @@ from e2b.connection_config import (
 )
 from e2b.envd.process import process_connect, process_pb2
 from e2b.envd.api import check_sandbox_health
-from e2b.envd.rpc import authentication_header, handle_rpc_exception_with_health
+from e2b.envd.rpc import (
+    authentication_header,
+    handle_rpc_exception_with_health,
+    timeout_to_ms,
+)
+from e2b.envd.transport import as_stream, create_rpc_client
 from e2b.envd.versions import ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.main import ProcessInfo
@@ -47,16 +53,12 @@ class Commands:
             event_hooks=make_logging_event_hooks(self._connection_config.logger),
         )
 
-    def _create_rpc(self) -> process_connect.ProcessClient:
-        transport = get_envd_transport(self._connection_config)
-        return process_connect.ProcessClient(
+    def _create_rpc(self) -> process_connect.ProcessClientSync:
+        return create_rpc_client(
+            process_connect.ProcessClientSync,
             self._envd_api_url,
-            # TODO: Fix and enable compression again — the headers compression is not solved for streaming.
-            # compressor=e2b_connect.GzipCompressor,
-            pool=transport.pool,
-            json=True,
-            headers=self._connection_config.sandbox_headers,
-            logger=self._connection_config.logger,
+            self._connection_config,
+            sync=True,
         )
 
     @property
@@ -68,7 +70,7 @@ class Commands:
         return envd_api
 
     @property
-    def _rpc(self) -> process_connect.ProcessClient:
+    def _rpc(self) -> process_connect.ProcessClientSync:
         rpc = getattr(self._thread_local, "rpc", None)
         if rpc is None:
             rpc = self._create_rpc()
@@ -92,8 +94,8 @@ class Commands:
         try:
             res = self._rpc.list(
                 process_pb2.ListRequest(),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
                 ),
             )
             return [
@@ -130,14 +132,14 @@ class Commands:
                     process=process_pb2.ProcessSelector(pid=pid),
                     signal=process_pb2.Signal.SIGNAL_SIGKILL,
                 ),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
                 ),
             )
             return True
         except Exception as e:
-            if isinstance(e, e2b_connect.ConnectException):
-                if e.status == e2b_connect.Code.not_found:
+            if isinstance(e, ConnectError):
+                if e.code == Code.NOT_FOUND:
                     return False
             raise handle_rpc_exception_with_health(e, self._check_health)
 
@@ -162,8 +164,8 @@ class Commands:
                         stdin=data.encode() if isinstance(data, str) else data,
                     ),
                 ),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
                 ),
             )
         except Exception as e:
@@ -193,8 +195,8 @@ class Commands:
                 process_pb2.CloseStdinRequest(
                     process=process_pb2.ProcessSelector(pid=pid),
                 ),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
                 ),
             )
         except Exception as e:
@@ -314,24 +316,26 @@ class Commands:
         timeout: Optional[float],
         request_timeout: Optional[float],
     ):
-        events = self._rpc.start(
-            process_pb2.StartRequest(
-                process=process_pb2.ProcessConfig(
-                    cmd="/bin/bash",
-                    envs=envs,
-                    args=["-l", "-c", cmd],
-                    cwd=cwd,
+        events = as_stream(
+            self._rpc.start(
+                process_pb2.StartRequest(
+                    process=process_pb2.ProcessConfig(
+                        cmd="/bin/bash",
+                        envs=envs,
+                        args=["-l", "-c", cmd],
+                        cwd=cwd,
+                    ),
+                    stdin=stdin,
                 ),
-                stdin=stdin,
-            ),
-            headers={
-                **authentication_header(self._envd_version, user),
-                KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
-            },
-            timeout=timeout,
-            request_timeout=self._connection_config.get_request_timeout(
-                request_timeout
-            ),
+                headers={
+                    **authentication_header(self._envd_version, user),
+                    KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
+                },
+                # The command `timeout` bounds the whole stream; `request_timeout`
+                # has no per-call equivalent here — connection setup is bounded by
+                # the transport's connect timeout instead.
+                timeout_ms=timeout_to_ms(timeout),
+            )
         )
 
         try:
@@ -378,17 +382,16 @@ class Commands:
 
         :return: `CommandHandle` handle to interact with the running command
         """
-        events = self._rpc.connect(
-            process_pb2.ConnectRequest(
-                process=process_pb2.ProcessSelector(pid=pid),
-            ),
-            headers={
-                KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
-            },
-            timeout=timeout,
-            request_timeout=self._connection_config.get_request_timeout(
-                request_timeout
-            ),
+        events = as_stream(
+            self._rpc.connect(
+                process_pb2.ConnectRequest(
+                    process=process_pb2.ProcessSelector(pid=pid),
+                ),
+                headers={
+                    KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
+                },
+                timeout_ms=timeout_to_ms(timeout),
+            )
         )
 
         try:

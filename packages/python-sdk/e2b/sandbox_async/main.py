@@ -116,20 +116,17 @@ class AsyncSandbox(SandboxApi):
             self.envd_api_url,
             self._envd_version,
             self.connection_config,
-            self._transport.pool,
             self._envd_api,
         )
         self._commands = Commands(
             self.envd_api_url,
             self.connection_config,
-            self._transport.pool,
             self._envd_version,
             self._envd_api,
         )
         self._pty = Pty(
             self.envd_api_url,
             self.connection_config,
-            self._transport.pool,
             self._envd_version,
             self._envd_api,
         )
