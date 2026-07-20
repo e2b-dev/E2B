@@ -19,35 +19,35 @@ T = TypeVar("T", bound="SandboxLogEntry")
 class SandboxLogEntry:
     """
     Attributes:
-        fields (SandboxLogEntryFields):
-        level (LogLevel): State of the sandbox
-        message (str): Log message content
         timestamp (datetime.datetime): Timestamp of the log entry
+        message (str): Log message content
+        level (LogLevel): State of the sandbox
+        fields (SandboxLogEntryFields):
     """
 
-    fields: "SandboxLogEntryFields"
-    level: LogLevel
-    message: str
     timestamp: datetime.datetime
+    message: str
+    level: LogLevel
+    fields: "SandboxLogEntryFields"
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        fields = self.fields.to_dict()
-
-        level = self.level.value
+        timestamp = self.timestamp.isoformat()
 
         message = self.message
 
-        timestamp = self.timestamp.isoformat()
+        level = self.level.value
+
+        fields = self.fields.to_dict()
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "fields": fields,
-                "level": level,
-                "message": message,
                 "timestamp": timestamp,
+                "message": message,
+                "level": level,
+                "fields": fields,
             }
         )
 
@@ -58,19 +58,19 @@ class SandboxLogEntry:
         from ..models.sandbox_log_entry_fields import SandboxLogEntryFields
 
         d = dict(src_dict)
-        fields = SandboxLogEntryFields.from_dict(d.pop("fields"))
-
-        level = LogLevel(d.pop("level"))
+        timestamp = isoparse(d.pop("timestamp"))
 
         message = d.pop("message")
 
-        timestamp = isoparse(d.pop("timestamp"))
+        level = LogLevel(d.pop("level"))
+
+        fields = SandboxLogEntryFields.from_dict(d.pop("fields"))
 
         sandbox_log_entry = cls(
-            fields=fields,
-            level=level,
-            message=message,
             timestamp=timestamp,
+            message=message,
+            level=level,
+            fields=fields,
         )
 
         sandbox_log_entry.additional_properties = d

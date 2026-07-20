@@ -16,21 +16,21 @@ class SandboxEgressProxyConfigType0:
 
         Attributes:
             address (str): SOCKS5 proxy address in host:port format (e.g. "proxy.example.com:1080").
-            password (Union[Unset, str]): Optional SOCKS5 password (RFC 1929), max 255 bytes.
             username (Union[Unset, str]): Optional SOCKS5 username (RFC 1929), max 255 bytes.
+            password (Union[Unset, str]): Optional SOCKS5 password (RFC 1929), max 255 bytes.
     """
 
     address: str
-    password: Union[Unset, str] = UNSET
     username: Union[Unset, str] = UNSET
+    password: Union[Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         address = self.address
 
-        password = self.password
-
         username = self.username
+
+        password = self.password
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -39,10 +39,10 @@ class SandboxEgressProxyConfigType0:
                 "address": address,
             }
         )
-        if password is not UNSET:
-            field_dict["password"] = password
         if username is not UNSET:
             field_dict["username"] = username
+        if password is not UNSET:
+            field_dict["password"] = password
 
         return field_dict
 
@@ -51,14 +51,14 @@ class SandboxEgressProxyConfigType0:
         d = dict(src_dict)
         address = d.pop("address")
 
-        password = d.pop("password", UNSET)
-
         username = d.pop("username", UNSET)
+
+        password = d.pop("password", UNSET)
 
         sandbox_egress_proxy_config_type_0 = cls(
             address=address,
-            password=password,
             username=username,
+            password=password,
         )
 
         sandbox_egress_proxy_config_type_0.additional_properties = d

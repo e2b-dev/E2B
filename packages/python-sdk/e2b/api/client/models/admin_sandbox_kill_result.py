@@ -11,25 +11,25 @@ T = TypeVar("T", bound="AdminSandboxKillResult")
 class AdminSandboxKillResult:
     """
     Attributes:
-        failed_count (int): Number of sandboxes that failed to kill
         killed_count (int): Number of sandboxes successfully killed
+        failed_count (int): Number of sandboxes that failed to kill
     """
 
-    failed_count: int
     killed_count: int
+    failed_count: int
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        failed_count = self.failed_count
-
         killed_count = self.killed_count
+
+        failed_count = self.failed_count
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "failedCount": failed_count,
                 "killedCount": killed_count,
+                "failedCount": failed_count,
             }
         )
 
@@ -38,13 +38,13 @@ class AdminSandboxKillResult:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        failed_count = d.pop("failedCount")
-
         killed_count = d.pop("killedCount")
 
+        failed_count = d.pop("failedCount")
+
         admin_sandbox_kill_result = cls(
-            failed_count=failed_count,
             killed_count=killed_count,
+            failed_count=failed_count,
         )
 
         admin_sandbox_kill_result.additional_properties = d

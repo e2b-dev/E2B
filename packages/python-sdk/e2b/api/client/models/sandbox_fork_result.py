@@ -20,30 +20,30 @@ class SandboxForkResult:
     error when it failed to start.
 
         Attributes:
-            error (Union[Unset, Error]):
             sandbox (Union[Unset, Sandbox]):
+            error (Union[Unset, Error]):
     """
 
-    error: Union[Unset, "Error"] = UNSET
     sandbox: Union[Unset, "Sandbox"] = UNSET
+    error: Union[Unset, "Error"] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        error: Union[Unset, dict[str, Any]] = UNSET
-        if not isinstance(self.error, Unset):
-            error = self.error.to_dict()
-
         sandbox: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.sandbox, Unset):
             sandbox = self.sandbox.to_dict()
 
+        error: Union[Unset, dict[str, Any]] = UNSET
+        if not isinstance(self.error, Unset):
+            error = self.error.to_dict()
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
-        if error is not UNSET:
-            field_dict["error"] = error
         if sandbox is not UNSET:
             field_dict["sandbox"] = sandbox
+        if error is not UNSET:
+            field_dict["error"] = error
 
         return field_dict
 
@@ -53,13 +53,6 @@ class SandboxForkResult:
         from ..models.sandbox import Sandbox
 
         d = dict(src_dict)
-        _error = d.pop("error", UNSET)
-        error: Union[Unset, Error]
-        if isinstance(_error, Unset):
-            error = UNSET
-        else:
-            error = Error.from_dict(_error)
-
         _sandbox = d.pop("sandbox", UNSET)
         sandbox: Union[Unset, Sandbox]
         if isinstance(_sandbox, Unset):
@@ -67,9 +60,16 @@ class SandboxForkResult:
         else:
             sandbox = Sandbox.from_dict(_sandbox)
 
+        _error = d.pop("error", UNSET)
+        error: Union[Unset, Error]
+        if isinstance(_error, Unset):
+            error = UNSET
+        else:
+            error = Error.from_dict(_error)
+
         sandbox_fork_result = cls(
-            error=error,
             sandbox=sandbox,
+            error=error,
         )
 
         sandbox_fork_result.additional_properties = d

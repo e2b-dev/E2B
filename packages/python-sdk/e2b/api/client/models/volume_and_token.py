@@ -11,30 +11,30 @@ T = TypeVar("T", bound="VolumeAndToken")
 class VolumeAndToken:
     """
     Attributes:
+        volume_id (str): ID of the volume
         name (str): Name of the volume
         token (str): Auth token to use for interacting with volume content
-        volume_id (str): ID of the volume
     """
 
+    volume_id: str
     name: str
     token: str
-    volume_id: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        volume_id = self.volume_id
+
         name = self.name
 
         token = self.token
-
-        volume_id = self.volume_id
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
+                "volumeID": volume_id,
                 "name": name,
                 "token": token,
-                "volumeID": volume_id,
             }
         )
 
@@ -43,16 +43,16 @@ class VolumeAndToken:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
+        volume_id = d.pop("volumeID")
+
         name = d.pop("name")
 
         token = d.pop("token")
 
-        volume_id = d.pop("volumeID")
-
         volume_and_token = cls(
+            volume_id=volume_id,
             name=name,
             token=token,
-            volume_id=volume_id,
         )
 
         volume_and_token.additional_properties = d

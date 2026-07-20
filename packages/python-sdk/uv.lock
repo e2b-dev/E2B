@@ -188,7 +188,6 @@ codegen = [
     { name = "black" },
     { name = "datamodel-code-generator" },
     { name = "e2b-openapi-python-client" },
-    { name = "pyyaml" },
 ]
 dev = [
     { name = "pytest" },
@@ -221,7 +220,6 @@ codegen = [
     { name = "black", specifier = "==26.3.1" },
     { name = "datamodel-code-generator", specifier = "==0.34.0" },
     { name = "e2b-openapi-python-client", specifier = "==0.26.2" },
-    { name = "pyyaml", specifier = "==6.0.2" },
 ]
 dev = [
     { name = "pytest", specifier = ">=9.0.3,<10" },

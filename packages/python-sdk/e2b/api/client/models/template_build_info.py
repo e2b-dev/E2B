@@ -19,35 +19,35 @@ T = TypeVar("T", bound="TemplateBuildInfo")
 class TemplateBuildInfo:
     """
     Attributes:
-        build_id (str): Identifier of the build
-        log_entries (list['BuildLogEntry']): Build logs structured
         logs (list[str]): Build logs
-        status (TemplateBuildStatus): Status of the template build
+        log_entries (list['BuildLogEntry']): Build logs structured
         template_id (str): Identifier of the template
+        build_id (str): Identifier of the build
+        status (TemplateBuildStatus): Status of the template build
         reason (Union[Unset, BuildStatusReason]):
     """
 
-    build_id: str
-    log_entries: list["BuildLogEntry"]
     logs: list[str]
-    status: TemplateBuildStatus
+    log_entries: list["BuildLogEntry"]
     template_id: str
+    build_id: str
+    status: TemplateBuildStatus
     reason: Union[Unset, "BuildStatusReason"] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        build_id = self.build_id
+        logs = self.logs
 
         log_entries = []
         for log_entries_item_data in self.log_entries:
             log_entries_item = log_entries_item_data.to_dict()
             log_entries.append(log_entries_item)
 
-        logs = self.logs
+        template_id = self.template_id
+
+        build_id = self.build_id
 
         status = self.status.value
-
-        template_id = self.template_id
 
         reason: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.reason, Unset):
@@ -57,11 +57,11 @@ class TemplateBuildInfo:
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "buildID": build_id,
-                "logEntries": log_entries,
                 "logs": logs,
-                "status": status,
+                "logEntries": log_entries,
                 "templateID": template_id,
+                "buildID": build_id,
+                "status": status,
             }
         )
         if reason is not UNSET:
@@ -75,7 +75,7 @@ class TemplateBuildInfo:
         from ..models.build_status_reason import BuildStatusReason
 
         d = dict(src_dict)
-        build_id = d.pop("buildID")
+        logs = cast(list[str], d.pop("logs"))
 
         log_entries = []
         _log_entries = d.pop("logEntries")
@@ -84,11 +84,11 @@ class TemplateBuildInfo:
 
             log_entries.append(log_entries_item)
 
-        logs = cast(list[str], d.pop("logs"))
+        template_id = d.pop("templateID")
+
+        build_id = d.pop("buildID")
 
         status = TemplateBuildStatus(d.pop("status"))
-
-        template_id = d.pop("templateID")
 
         _reason = d.pop("reason", UNSET)
         reason: Union[Unset, BuildStatusReason]
@@ -98,11 +98,11 @@ class TemplateBuildInfo:
             reason = BuildStatusReason.from_dict(_reason)
 
         template_build_info = cls(
-            build_id=build_id,
-            log_entries=log_entries,
             logs=logs,
-            status=status,
+            log_entries=log_entries,
             template_id=template_id,
+            build_id=build_id,
+            status=status,
             reason=reason,
         )
 

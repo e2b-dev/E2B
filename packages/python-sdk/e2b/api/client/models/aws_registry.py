@@ -13,35 +13,35 @@ T = TypeVar("T", bound="AWSRegistry")
 class AWSRegistry:
     """
     Attributes:
-        aws_access_key_id (str): AWS Access Key ID for ECR authentication
-        aws_region (str): AWS Region where the ECR registry is located
-        aws_secret_access_key (str): AWS Secret Access Key for ECR authentication
         type_ (AWSRegistryType): Type of registry authentication
+        aws_access_key_id (str): AWS Access Key ID for ECR authentication
+        aws_secret_access_key (str): AWS Secret Access Key for ECR authentication
+        aws_region (str): AWS Region where the ECR registry is located
     """
 
-    aws_access_key_id: str
-    aws_region: str
-    aws_secret_access_key: str
     type_: AWSRegistryType
+    aws_access_key_id: str
+    aws_secret_access_key: str
+    aws_region: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        aws_access_key_id = self.aws_access_key_id
+        type_ = self.type_.value
 
-        aws_region = self.aws_region
+        aws_access_key_id = self.aws_access_key_id
 
         aws_secret_access_key = self.aws_secret_access_key
 
-        type_ = self.type_.value
+        aws_region = self.aws_region
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "awsAccessKeyId": aws_access_key_id,
-                "awsRegion": aws_region,
-                "awsSecretAccessKey": aws_secret_access_key,
                 "type": type_,
+                "awsAccessKeyId": aws_access_key_id,
+                "awsSecretAccessKey": aws_secret_access_key,
+                "awsRegion": aws_region,
             }
         )
 
@@ -50,19 +50,19 @@ class AWSRegistry:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        aws_access_key_id = d.pop("awsAccessKeyId")
+        type_ = AWSRegistryType(d.pop("type"))
 
-        aws_region = d.pop("awsRegion")
+        aws_access_key_id = d.pop("awsAccessKeyId")
 
         aws_secret_access_key = d.pop("awsSecretAccessKey")
 
-        type_ = AWSRegistryType(d.pop("type"))
+        aws_region = d.pop("awsRegion")
 
         aws_registry = cls(
-            aws_access_key_id=aws_access_key_id,
-            aws_region=aws_region,
-            aws_secret_access_key=aws_secret_access_key,
             type_=type_,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            aws_region=aws_region,
         )
 
         aws_registry.additional_properties = d
