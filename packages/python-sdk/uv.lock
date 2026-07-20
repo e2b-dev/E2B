@@ -204,7 +204,6 @@ codegen = [
     { name = "e2b-openapi-python-client" },
     { name = "protoc-gen-connectrpc" },
     { name = "protoc-gen-py" },
-    { name = "pyyaml" },
 ]
 dev = [
     { name = "pytest" },
@@ -240,7 +239,6 @@ codegen = [
     { name = "e2b-openapi-python-client", specifier = "==0.26.2" },
     { name = "protoc-gen-connectrpc", specifier = "==0.11.1" },
     { name = "protoc-gen-py", specifier = "==0.1.1" },
-    { name = "pyyaml", specifier = "==6.0.2" },
 ]
 dev = [
     { name = "pytest", specifier = ">=9.0.3,<10" },

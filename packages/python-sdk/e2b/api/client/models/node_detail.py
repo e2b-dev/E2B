@@ -20,83 +20,83 @@ T = TypeVar("T", bound="NodeDetail")
 class NodeDetail:
     """
     Attributes:
-        cached_builds (list[str]): List of cached builds id on the node
         cluster_id (str): Identifier of the cluster
+        version (str): Version of the orchestrator
         commit (str): Commit of the orchestrator
-        create_fails (int): Number of sandbox create fails
-        create_successes (int): Number of sandbox create successes
         id (str): Identifier of the node
-        machine_info (MachineInfo):
-        metrics (NodeMetrics): Node metrics
-        sandbox_count (int): Number of sandboxes running on the node
         service_instance_id (str): Service instance identifier of the node
+        machine_info (MachineInfo):
         status (NodeStatus): Status of the node.
             - draining: the node is bound to be shut down. It will not accept new sandboxes and will stop once all existing
             sandboxes are done.
             - standby: the node is not actively used, but it can return to ready and continue serving traffic.
         status_changed_at (datetime.datetime): Time when the node status was last changed
-        version (str): Version of the orchestrator
+        sandbox_count (int): Number of sandboxes running on the node
+        metrics (NodeMetrics): Node metrics
+        cached_builds (list[str]): List of cached builds id on the node
+        create_successes (int): Number of sandbox create successes
+        create_fails (int): Number of sandbox create fails
     """
 
-    cached_builds: list[str]
     cluster_id: str
+    version: str
     commit: str
-    create_fails: int
-    create_successes: int
     id: str
-    machine_info: "MachineInfo"
-    metrics: "NodeMetrics"
-    sandbox_count: int
     service_instance_id: str
+    machine_info: "MachineInfo"
     status: NodeStatus
     status_changed_at: datetime.datetime
-    version: str
+    sandbox_count: int
+    metrics: "NodeMetrics"
+    cached_builds: list[str]
+    create_successes: int
+    create_fails: int
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        cached_builds = self.cached_builds
-
         cluster_id = self.cluster_id
+
+        version = self.version
 
         commit = self.commit
 
-        create_fails = self.create_fails
-
-        create_successes = self.create_successes
-
         id = self.id
 
-        machine_info = self.machine_info.to_dict()
-
-        metrics = self.metrics.to_dict()
-
-        sandbox_count = self.sandbox_count
-
         service_instance_id = self.service_instance_id
+
+        machine_info = self.machine_info.to_dict()
 
         status = self.status.value
 
         status_changed_at = self.status_changed_at.isoformat()
 
-        version = self.version
+        sandbox_count = self.sandbox_count
+
+        metrics = self.metrics.to_dict()
+
+        cached_builds = self.cached_builds
+
+        create_successes = self.create_successes
+
+        create_fails = self.create_fails
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "cachedBuilds": cached_builds,
                 "clusterID": cluster_id,
+                "version": version,
                 "commit": commit,
-                "createFails": create_fails,
-                "createSuccesses": create_successes,
                 "id": id,
-                "machineInfo": machine_info,
-                "metrics": metrics,
-                "sandboxCount": sandbox_count,
                 "serviceInstanceID": service_instance_id,
+                "machineInfo": machine_info,
                 "status": status,
                 "statusChangedAt": status_changed_at,
-                "version": version,
+                "sandboxCount": sandbox_count,
+                "metrics": metrics,
+                "cachedBuilds": cached_builds,
+                "createSuccesses": create_successes,
+                "createFails": create_fails,
             }
         )
 
@@ -108,46 +108,46 @@ class NodeDetail:
         from ..models.node_metrics import NodeMetrics
 
         d = dict(src_dict)
-        cached_builds = cast(list[str], d.pop("cachedBuilds"))
-
         cluster_id = d.pop("clusterID")
+
+        version = d.pop("version")
 
         commit = d.pop("commit")
 
-        create_fails = d.pop("createFails")
-
-        create_successes = d.pop("createSuccesses")
-
         id = d.pop("id")
 
-        machine_info = MachineInfo.from_dict(d.pop("machineInfo"))
-
-        metrics = NodeMetrics.from_dict(d.pop("metrics"))
-
-        sandbox_count = d.pop("sandboxCount")
-
         service_instance_id = d.pop("serviceInstanceID")
+
+        machine_info = MachineInfo.from_dict(d.pop("machineInfo"))
 
         status = NodeStatus(d.pop("status"))
 
         status_changed_at = isoparse(d.pop("statusChangedAt"))
 
-        version = d.pop("version")
+        sandbox_count = d.pop("sandboxCount")
+
+        metrics = NodeMetrics.from_dict(d.pop("metrics"))
+
+        cached_builds = cast(list[str], d.pop("cachedBuilds"))
+
+        create_successes = d.pop("createSuccesses")
+
+        create_fails = d.pop("createFails")
 
         node_detail = cls(
-            cached_builds=cached_builds,
             cluster_id=cluster_id,
+            version=version,
             commit=commit,
-            create_fails=create_fails,
-            create_successes=create_successes,
             id=id,
-            machine_info=machine_info,
-            metrics=metrics,
-            sandbox_count=sandbox_count,
             service_instance_id=service_instance_id,
+            machine_info=machine_info,
             status=status,
             status_changed_at=status_changed_at,
-            version=version,
+            sandbox_count=sandbox_count,
+            metrics=metrics,
+            cached_builds=cached_builds,
+            create_successes=create_successes,
+            create_fails=create_fails,
         )
 
         node_detail.additional_properties = d

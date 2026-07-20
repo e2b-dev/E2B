@@ -16,31 +16,31 @@ T = TypeVar("T", bound="SandboxLogs")
 class SandboxLogs:
     """
     Attributes:
-        log_entries (list['SandboxLogEntry']): Structured logs of the sandbox
         logs (list['SandboxLog']): Logs of the sandbox
+        log_entries (list['SandboxLogEntry']): Structured logs of the sandbox
     """
 
-    log_entries: list["SandboxLogEntry"]
     logs: list["SandboxLog"]
+    log_entries: list["SandboxLogEntry"]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        log_entries = []
-        for log_entries_item_data in self.log_entries:
-            log_entries_item = log_entries_item_data.to_dict()
-            log_entries.append(log_entries_item)
-
         logs = []
         for logs_item_data in self.logs:
             logs_item = logs_item_data.to_dict()
             logs.append(logs_item)
 
+        log_entries = []
+        for log_entries_item_data in self.log_entries:
+            log_entries_item = log_entries_item_data.to_dict()
+            log_entries.append(log_entries_item)
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "logEntries": log_entries,
                 "logs": logs,
+                "logEntries": log_entries,
             }
         )
 
@@ -52,13 +52,6 @@ class SandboxLogs:
         from ..models.sandbox_log_entry import SandboxLogEntry
 
         d = dict(src_dict)
-        log_entries = []
-        _log_entries = d.pop("logEntries")
-        for log_entries_item_data in _log_entries:
-            log_entries_item = SandboxLogEntry.from_dict(log_entries_item_data)
-
-            log_entries.append(log_entries_item)
-
         logs = []
         _logs = d.pop("logs")
         for logs_item_data in _logs:
@@ -66,9 +59,16 @@ class SandboxLogs:
 
             logs.append(logs_item)
 
+        log_entries = []
+        _log_entries = d.pop("logEntries")
+        for log_entries_item_data in _log_entries:
+            log_entries_item = SandboxLogEntry.from_dict(log_entries_item_data)
+
+            log_entries.append(log_entries_item)
+
         sandbox_logs = cls(
-            log_entries=log_entries,
             logs=logs,
+            log_entries=log_entries,
         )
 
         sandbox_logs.additional_properties = d

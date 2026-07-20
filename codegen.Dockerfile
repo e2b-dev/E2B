@@ -21,7 +21,7 @@ ENV PATH="/go/bin:${PATH}"
 # https://github.com/openapi-generators/openapi-python-client/pull/1296
 # protoc-gen-py generates the Python envd protobuf-py messages and
 # protoc-gen-connectrpc the Connect stubs.
-RUN pip install black==26.3.1 pyyaml==6.0.2 e2b-openapi-python-client==0.26.2 datamodel-code-generator==0.34.0 protoc-gen-connectrpc==0.11.1 protoc-gen-py==0.1.1
+RUN pip install black==26.3.1 e2b-openapi-python-client==0.26.2 datamodel-code-generator==0.34.0 protoc-gen-connectrpc==0.11.1 protoc-gen-py==0.1.1
 
 # Install Node.js (pinned to match .tool-versions)
 ENV NODE_VERSION=22.18.0
@@ -38,6 +38,7 @@ ENV PNPM_VERSION=9.15.5
 RUN npm install -g \
     pnpm@${PNPM_VERSION} \
     @connectrpc/protoc-gen-connect-es@1.6.1 \
-    @bufbuild/protoc-gen-es@2.6.2
+    @bufbuild/protoc-gen-es@2.6.2 \
+    @redocly/cli@2.39.0
 
 CMD ["make", "generate"]

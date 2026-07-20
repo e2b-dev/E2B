@@ -21,8 +21,7 @@ class NewSandbox:
     """
     Attributes:
         template_id (str): Identifier of the required template
-        allow_internet_access (Union[Unset, bool]): Allow sandbox to access the internet. When set to false, it behaves
-            the same as specifying denyOut to 0.0.0.0/0 in the network config.
+        timeout (Union[Unset, int]): Time to live for the sandbox in seconds. Default: 15.
         auto_pause (Union[Unset, bool]): Automatically pauses the sandbox after the timeout Default: False.
         auto_pause_memory (Union[Unset, bool]): Controls the snapshot kind taken when the sandbox auto-pauses on timeout
             (only relevant when autoPause is true). When false, the auto-pause drops the in-memory state and persists only
@@ -30,26 +29,27 @@ class NewSandbox:
             snapshot cannot be auto-resumed by traffic and must be resumed explicitly, so it cannot be combined with
             autoResume. Defaults to true (full memory snapshot). Default: True.
         auto_resume (Union[Unset, SandboxAutoResumeConfig]): Auto-resume configuration for paused sandboxes.
+        secure (Union[Unset, bool]): Secure all system communication with sandbox
+        allow_internet_access (Union[Unset, bool]): Allow sandbox to access the internet. When set to false, it behaves
+            the same as specifying denyOut to 0.0.0.0/0 in the network config.
+        network (Union[Unset, SandboxNetworkConfig]):
+        metadata (Union[Unset, Any]):
         env_vars (Union[Unset, Any]):
         mcp (Union['McpType0', None, Unset]): MCP configuration for the sandbox
-        metadata (Union[Unset, Any]):
-        network (Union[Unset, SandboxNetworkConfig]):
-        secure (Union[Unset, bool]): Secure all system communication with sandbox
-        timeout (Union[Unset, int]): Time to live for the sandbox in seconds. Default: 15.
         volume_mounts (Union[Unset, list['SandboxVolumeMount']]):
     """
 
     template_id: str
-    allow_internet_access: Union[Unset, bool] = UNSET
+    timeout: Union[Unset, int] = 15
     auto_pause: Union[Unset, bool] = False
     auto_pause_memory: Union[Unset, bool] = True
     auto_resume: Union[Unset, "SandboxAutoResumeConfig"] = UNSET
+    secure: Union[Unset, bool] = UNSET
+    allow_internet_access: Union[Unset, bool] = UNSET
+    network: Union[Unset, "SandboxNetworkConfig"] = UNSET
+    metadata: Union[Unset, Any] = UNSET
     env_vars: Union[Unset, Any] = UNSET
     mcp: Union["McpType0", None, Unset] = UNSET
-    metadata: Union[Unset, Any] = UNSET
-    network: Union[Unset, "SandboxNetworkConfig"] = UNSET
-    secure: Union[Unset, bool] = UNSET
-    timeout: Union[Unset, int] = 15
     volume_mounts: Union[Unset, list["SandboxVolumeMount"]] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -58,7 +58,7 @@ class NewSandbox:
 
         template_id = self.template_id
 
-        allow_internet_access = self.allow_internet_access
+        timeout = self.timeout
 
         auto_pause = self.auto_pause
 
@@ -67,6 +67,16 @@ class NewSandbox:
         auto_resume: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.auto_resume, Unset):
             auto_resume = self.auto_resume.to_dict()
+
+        secure = self.secure
+
+        allow_internet_access = self.allow_internet_access
+
+        network: Union[Unset, dict[str, Any]] = UNSET
+        if not isinstance(self.network, Unset):
+            network = self.network.to_dict()
+
+        metadata = self.metadata
 
         env_vars = self.env_vars
 
@@ -77,16 +87,6 @@ class NewSandbox:
             mcp = self.mcp.to_dict()
         else:
             mcp = self.mcp
-
-        metadata = self.metadata
-
-        network: Union[Unset, dict[str, Any]] = UNSET
-        if not isinstance(self.network, Unset):
-            network = self.network.to_dict()
-
-        secure = self.secure
-
-        timeout = self.timeout
 
         volume_mounts: Union[Unset, list[dict[str, Any]]] = UNSET
         if not isinstance(self.volume_mounts, Unset):
@@ -102,26 +102,26 @@ class NewSandbox:
                 "templateID": template_id,
             }
         )
-        if allow_internet_access is not UNSET:
-            field_dict["allow_internet_access"] = allow_internet_access
+        if timeout is not UNSET:
+            field_dict["timeout"] = timeout
         if auto_pause is not UNSET:
             field_dict["autoPause"] = auto_pause
         if auto_pause_memory is not UNSET:
             field_dict["autoPauseMemory"] = auto_pause_memory
         if auto_resume is not UNSET:
             field_dict["autoResume"] = auto_resume
+        if secure is not UNSET:
+            field_dict["secure"] = secure
+        if allow_internet_access is not UNSET:
+            field_dict["allow_internet_access"] = allow_internet_access
+        if network is not UNSET:
+            field_dict["network"] = network
+        if metadata is not UNSET:
+            field_dict["metadata"] = metadata
         if env_vars is not UNSET:
             field_dict["envVars"] = env_vars
         if mcp is not UNSET:
             field_dict["mcp"] = mcp
-        if metadata is not UNSET:
-            field_dict["metadata"] = metadata
-        if network is not UNSET:
-            field_dict["network"] = network
-        if secure is not UNSET:
-            field_dict["secure"] = secure
-        if timeout is not UNSET:
-            field_dict["timeout"] = timeout
         if volume_mounts is not UNSET:
             field_dict["volumeMounts"] = volume_mounts
 
@@ -137,7 +137,7 @@ class NewSandbox:
         d = dict(src_dict)
         template_id = d.pop("templateID")
 
-        allow_internet_access = d.pop("allow_internet_access", UNSET)
+        timeout = d.pop("timeout", UNSET)
 
         auto_pause = d.pop("autoPause", UNSET)
 
@@ -149,6 +149,19 @@ class NewSandbox:
             auto_resume = UNSET
         else:
             auto_resume = SandboxAutoResumeConfig.from_dict(_auto_resume)
+
+        secure = d.pop("secure", UNSET)
+
+        allow_internet_access = d.pop("allow_internet_access", UNSET)
+
+        _network = d.pop("network", UNSET)
+        network: Union[Unset, SandboxNetworkConfig]
+        if isinstance(_network, Unset):
+            network = UNSET
+        else:
+            network = SandboxNetworkConfig.from_dict(_network)
+
+        metadata = d.pop("metadata", UNSET)
 
         env_vars = d.pop("envVars", UNSET)
 
@@ -169,19 +182,6 @@ class NewSandbox:
 
         mcp = _parse_mcp(d.pop("mcp", UNSET))
 
-        metadata = d.pop("metadata", UNSET)
-
-        _network = d.pop("network", UNSET)
-        network: Union[Unset, SandboxNetworkConfig]
-        if isinstance(_network, Unset):
-            network = UNSET
-        else:
-            network = SandboxNetworkConfig.from_dict(_network)
-
-        secure = d.pop("secure", UNSET)
-
-        timeout = d.pop("timeout", UNSET)
-
         volume_mounts = []
         _volume_mounts = d.pop("volumeMounts", UNSET)
         for volume_mounts_item_data in _volume_mounts or []:
@@ -191,16 +191,16 @@ class NewSandbox:
 
         new_sandbox = cls(
             template_id=template_id,
-            allow_internet_access=allow_internet_access,
+            timeout=timeout,
             auto_pause=auto_pause,
             auto_pause_memory=auto_pause_memory,
             auto_resume=auto_resume,
+            secure=secure,
+            allow_internet_access=allow_internet_access,
+            network=network,
+            metadata=metadata,
             env_vars=env_vars,
             mcp=mcp,
-            metadata=metadata,
-            network=network,
-            secure=secure,
-            timeout=timeout,
             volume_mounts=volume_mounts,
         )
 

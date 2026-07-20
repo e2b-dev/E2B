@@ -20,56 +20,56 @@ T = TypeVar("T", bound="ListedSandbox")
 class ListedSandbox:
     """
     Attributes:
-        client_id (str): Identifier of the client
-        cpu_count (int): CPU cores for the sandbox
-        disk_size_mb (int): Disk size for the sandbox in MiB
-        end_at (datetime.datetime): Time when the sandbox will expire
-        envd_version (str): Version of the envd running in the sandbox
-        memory_mb (int): Memory for the sandbox in MiB
-        sandbox_id (str): Identifier of the sandbox
-        started_at (datetime.datetime): Time when the sandbox was started
-        state (SandboxState): State of the sandbox
         template_id (str): Identifier of the template from which is the sandbox created
+        sandbox_id (str): Identifier of the sandbox
+        client_id (str): Identifier of the client
+        started_at (datetime.datetime): Time when the sandbox was started
+        end_at (datetime.datetime): Time when the sandbox will expire
+        cpu_count (int): CPU cores for the sandbox
+        memory_mb (int): Memory for the sandbox in MiB
+        disk_size_mb (int): Disk size for the sandbox in MiB
+        state (SandboxState): State of the sandbox
+        envd_version (str): Version of the envd running in the sandbox
         alias (Union[Unset, str]): Alias of the template
         metadata (Union[Unset, Any]):
         volume_mounts (Union[Unset, list['SandboxVolumeMount']]):
     """
 
-    client_id: str
-    cpu_count: int
-    disk_size_mb: int
-    end_at: datetime.datetime
-    envd_version: str
-    memory_mb: int
-    sandbox_id: str
-    started_at: datetime.datetime
-    state: SandboxState
     template_id: str
+    sandbox_id: str
+    client_id: str
+    started_at: datetime.datetime
+    end_at: datetime.datetime
+    cpu_count: int
+    memory_mb: int
+    disk_size_mb: int
+    state: SandboxState
+    envd_version: str
     alias: Union[Unset, str] = UNSET
     metadata: Union[Unset, Any] = UNSET
     volume_mounts: Union[Unset, list["SandboxVolumeMount"]] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        client_id = self.client_id
-
-        cpu_count = self.cpu_count
-
-        disk_size_mb = self.disk_size_mb
-
-        end_at = self.end_at.isoformat()
-
-        envd_version = self.envd_version
-
-        memory_mb = self.memory_mb
+        template_id = self.template_id
 
         sandbox_id = self.sandbox_id
 
+        client_id = self.client_id
+
         started_at = self.started_at.isoformat()
+
+        end_at = self.end_at.isoformat()
+
+        cpu_count = self.cpu_count
+
+        memory_mb = self.memory_mb
+
+        disk_size_mb = self.disk_size_mb
 
         state = self.state.value
 
-        template_id = self.template_id
+        envd_version = self.envd_version
 
         alias = self.alias
 
@@ -86,16 +86,16 @@ class ListedSandbox:
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "clientID": client_id,
-                "cpuCount": cpu_count,
-                "diskSizeMB": disk_size_mb,
-                "endAt": end_at,
-                "envdVersion": envd_version,
-                "memoryMB": memory_mb,
-                "sandboxID": sandbox_id,
-                "startedAt": started_at,
-                "state": state,
                 "templateID": template_id,
+                "sandboxID": sandbox_id,
+                "clientID": client_id,
+                "startedAt": started_at,
+                "endAt": end_at,
+                "cpuCount": cpu_count,
+                "memoryMB": memory_mb,
+                "diskSizeMB": disk_size_mb,
+                "state": state,
+                "envdVersion": envd_version,
             }
         )
         if alias is not UNSET:
@@ -112,25 +112,25 @@ class ListedSandbox:
         from ..models.sandbox_volume_mount import SandboxVolumeMount
 
         d = dict(src_dict)
-        client_id = d.pop("clientID")
-
-        cpu_count = d.pop("cpuCount")
-
-        disk_size_mb = d.pop("diskSizeMB")
-
-        end_at = isoparse(d.pop("endAt"))
-
-        envd_version = d.pop("envdVersion")
-
-        memory_mb = d.pop("memoryMB")
+        template_id = d.pop("templateID")
 
         sandbox_id = d.pop("sandboxID")
 
+        client_id = d.pop("clientID")
+
         started_at = isoparse(d.pop("startedAt"))
+
+        end_at = isoparse(d.pop("endAt"))
+
+        cpu_count = d.pop("cpuCount")
+
+        memory_mb = d.pop("memoryMB")
+
+        disk_size_mb = d.pop("diskSizeMB")
 
         state = SandboxState(d.pop("state"))
 
-        template_id = d.pop("templateID")
+        envd_version = d.pop("envdVersion")
 
         alias = d.pop("alias", UNSET)
 
@@ -144,16 +144,16 @@ class ListedSandbox:
             volume_mounts.append(volume_mounts_item)
 
         listed_sandbox = cls(
-            client_id=client_id,
-            cpu_count=cpu_count,
-            disk_size_mb=disk_size_mb,
-            end_at=end_at,
-            envd_version=envd_version,
-            memory_mb=memory_mb,
-            sandbox_id=sandbox_id,
-            started_at=started_at,
-            state=state,
             template_id=template_id,
+            sandbox_id=sandbox_id,
+            client_id=client_id,
+            started_at=started_at,
+            end_at=end_at,
+            cpu_count=cpu_count,
+            memory_mb=memory_mb,
+            disk_size_mb=disk_size_mb,
+            state=state,
+            envd_version=envd_version,
             alias=alias,
             metadata=metadata,
             volume_mounts=volume_mounts,

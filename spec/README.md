@@ -28,5 +28,7 @@ E2B_INFRA_REF=main pnpm fetch:api-spec     # try the latest without moving the p
 E2B_BELT_REF=main pnpm fetch:volume-spec
 ```
 
-The remaining files (`mcp-server.json`, `envd/buf-*.gen.yaml`,
-`remove_extra_tags.py`) are owned by this repository.
+The remaining files (`mcp-server.json`, `envd/buf-*.gen.yaml`) are owned by
+this repository. The SDK generate pipelines filter `openapi.yml` down to the
+tags each SDK exposes with Redocly CLI (see `../redocly.yaml`) before
+generating the clients.

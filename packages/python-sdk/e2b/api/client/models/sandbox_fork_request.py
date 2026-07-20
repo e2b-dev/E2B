@@ -13,41 +13,41 @@ T = TypeVar("T", bound="SandboxForkRequest")
 class SandboxForkRequest:
     """
     Attributes:
+        timeout (Union[Unset, int]): Time to live for the new forked sandboxes in seconds. Default: 15.
         count (Union[Unset, int]): Number of forked sandboxes to create. All forks boot from the same snapshot, so the
             snapshot is captured once regardless of count. Each fork succeeds or fails independently; the outcome of each is
             reported in its entry of the response list. Default: 1.
-        timeout (Union[Unset, int]): Time to live for the new forked sandboxes in seconds. Default: 15.
     """
 
-    count: Union[Unset, int] = 1
     timeout: Union[Unset, int] = 15
+    count: Union[Unset, int] = 1
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        count = self.count
-
         timeout = self.timeout
+
+        count = self.count
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
-        if count is not UNSET:
-            field_dict["count"] = count
         if timeout is not UNSET:
             field_dict["timeout"] = timeout
+        if count is not UNSET:
+            field_dict["count"] = count
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        count = d.pop("count", UNSET)
-
         timeout = d.pop("timeout", UNSET)
 
+        count = d.pop("count", UNSET)
+
         sandbox_fork_request = cls(
-            count=count,
             timeout=timeout,
+            count=count,
         )
 
         sandbox_fork_request.additional_properties = d

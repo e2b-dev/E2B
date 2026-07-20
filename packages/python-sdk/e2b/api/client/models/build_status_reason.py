@@ -18,17 +18,19 @@ class BuildStatusReason:
     """
     Attributes:
         message (str): Message with the status reason, currently reporting only for error status
-        log_entries (Union[Unset, list['BuildLogEntry']]): Log entries related to the status reason
         step (Union[Unset, str]): Step that failed
+        log_entries (Union[Unset, list['BuildLogEntry']]): Log entries related to the status reason
     """
 
     message: str
-    log_entries: Union[Unset, list["BuildLogEntry"]] = UNSET
     step: Union[Unset, str] = UNSET
+    log_entries: Union[Unset, list["BuildLogEntry"]] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         message = self.message
+
+        step = self.step
 
         log_entries: Union[Unset, list[dict[str, Any]]] = UNSET
         if not isinstance(self.log_entries, Unset):
@@ -37,8 +39,6 @@ class BuildStatusReason:
                 log_entries_item = log_entries_item_data.to_dict()
                 log_entries.append(log_entries_item)
 
-        step = self.step
-
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -46,10 +46,10 @@ class BuildStatusReason:
                 "message": message,
             }
         )
-        if log_entries is not UNSET:
-            field_dict["logEntries"] = log_entries
         if step is not UNSET:
             field_dict["step"] = step
+        if log_entries is not UNSET:
+            field_dict["logEntries"] = log_entries
 
         return field_dict
 
@@ -60,6 +60,8 @@ class BuildStatusReason:
         d = dict(src_dict)
         message = d.pop("message")
 
+        step = d.pop("step", UNSET)
+
         log_entries = []
         _log_entries = d.pop("logEntries", UNSET)
         for log_entries_item_data in _log_entries or []:
@@ -67,12 +69,10 @@ class BuildStatusReason:
 
             log_entries.append(log_entries_item)
 
-        step = d.pop("step", UNSET)
-
         build_status_reason = cls(
             message=message,
-            log_entries=log_entries,
             step=step,
+            log_entries=log_entries,
         )
 
         build_status_reason.additional_properties = d
