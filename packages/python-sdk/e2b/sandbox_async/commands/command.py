@@ -19,7 +19,7 @@ from e2b.envd.rpc import (
     ahandle_rpc_exception_with_health,
     timeout_to_ms,
 )
-from e2b.envd.client import as_async_stream, create_async_rpc_client
+from e2b.envd.client_async import as_stream, create_rpc_client
 from e2b.envd.versions import ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.main import ProcessInfo
@@ -43,7 +43,7 @@ class Commands:
         self._connection_config = connection_config
         self._envd_version = envd_version
         self._check_health = lambda: acheck_sandbox_health(envd_api)
-        self._rpc = create_async_rpc_client(
+        self._rpc = create_rpc_client(
             process_connect.ProcessClient,
             envd_api_url,
             connection_config,
@@ -289,7 +289,7 @@ class Commands:
         on_stdout: Optional[OutputHandler[Stdout]],
         on_stderr: Optional[OutputHandler[Stderr]],
     ) -> AsyncCommandHandle:
-        events = as_async_stream(
+        events = as_stream(
             self._rpc.start(
                 process_pb.StartRequest(
                     process=process_pb.ProcessConfig(
@@ -362,7 +362,7 @@ class Commands:
 
         :return: `AsyncCommandHandle` handle to interact with the running command
         """
-        events = as_async_stream(
+        events = as_stream(
             self._rpc.connect(
                 process_pb.ConnectRequest(
                     process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),

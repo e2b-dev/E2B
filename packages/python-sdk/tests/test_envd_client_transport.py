@@ -1,17 +1,16 @@
 import httpx
 import pytest
 
-from e2b.envd import transport
-from e2b.envd.transport import proxy_to_url
+from e2b.envd import client_async, client_sync, proxy_to_url
 
 
 @pytest.fixture(autouse=True)
 def reset_transport_caches():
-    transport._sync_transports.clear()
-    transport._async_transports.clear()
+    client_sync._transports.clear()
+    client_async._transports.clear()
     yield
-    transport._sync_transports.clear()
-    transport._async_transports.clear()
+    client_sync._transports.clear()
+    client_async._transports.clear()
 
 
 def test_proxy_to_url_none():
@@ -40,10 +39,10 @@ def test_proxy_to_url_rejects_httpx_url():
 
 
 def test_sync_transport_is_cached_per_proxy():
-    transport_a = transport.get_sync_transport(None)
-    transport_b = transport.get_sync_transport(None)
-    transport_c = transport.get_sync_transport("http://127.0.0.1:8080")
-    transport_d = transport.get_sync_transport("http://127.0.0.1:8080")
+    transport_a = client_sync.get_transport(None)
+    transport_b = client_sync.get_transport(None)
+    transport_c = client_sync.get_transport("http://127.0.0.1:8080")
+    transport_d = client_sync.get_transport("http://127.0.0.1:8080")
 
     assert transport_a is transport_b
     assert transport_c is transport_d
@@ -51,10 +50,10 @@ def test_sync_transport_is_cached_per_proxy():
 
 
 def test_async_transport_is_cached_per_proxy():
-    transport_a = transport.get_async_transport(None)
-    transport_b = transport.get_async_transport(None)
-    transport_c = transport.get_async_transport("http://127.0.0.1:8080")
+    transport_a = client_async.get_transport(None)
+    transport_b = client_async.get_transport(None)
+    transport_c = client_async.get_transport("http://127.0.0.1:8080")
 
     assert transport_a is transport_b
     assert transport_a is not transport_c
-    assert transport.get_sync_transport(None) is not transport_a
+    assert client_sync.get_transport(None) is not transport_a

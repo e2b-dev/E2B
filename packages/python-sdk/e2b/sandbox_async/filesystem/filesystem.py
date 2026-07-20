@@ -28,7 +28,7 @@ from e2b.envd.rpc import (
     ahandle_rpc_exception_with_health,
     timeout_to_ms,
 )
-from e2b.envd.client import as_async_stream, create_async_rpc_client
+from e2b.envd.client_async import as_stream, create_rpc_client
 from e2b.envd.versions import (
     ENVD_DEFAULT_USER,
     ENVD_FILE_METADATA,
@@ -97,7 +97,7 @@ class Filesystem:
         self._connection_config = connection_config
         self._envd_api = envd_api
 
-        self._rpc = create_async_rpc_client(
+        self._rpc = create_rpc_client(
             filesystem_connect.FilesystemClient,
             envd_api_url,
             connection_config,
@@ -681,7 +681,7 @@ class Filesystem:
                 "You need to update the template to watch directories on network mounts."
             )
 
-        events = as_async_stream(
+        events = as_stream(
             self._rpc.watch_dir(
                 filesystem_pb.WatchDirRequest(
                     path=path,

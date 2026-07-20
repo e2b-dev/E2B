@@ -21,7 +21,7 @@ from e2b.envd.rpc import (
     ahandle_rpc_exception_with_health,
     timeout_to_ms,
 )
-from e2b.envd.client import as_async_stream, create_async_rpc_client
+from e2b.envd.client_async import as_stream, create_rpc_client
 from e2b.sandbox.commands.command_handle import PtySize
 from e2b.sandbox_async.commands.command_handle import (
     AsyncCommandHandle,
@@ -45,7 +45,7 @@ class Pty:
         self._connection_config = connection_config
         self._envd_version = envd_version
         self._check_health = lambda: acheck_sandbox_health(envd_api)
-        self._rpc = create_async_rpc_client(
+        self._rpc = create_rpc_client(
             process_connect.ProcessClient,
             envd_api_url,
             connection_config,
@@ -136,7 +136,7 @@ class Pty:
         envs.setdefault("TERM", "xterm-256color")
         envs.setdefault("LANG", "C.UTF-8")
         envs.setdefault("LC_ALL", "C.UTF-8")
-        events = as_async_stream(
+        events = as_stream(
             self._rpc.start(
                 process_pb.StartRequest(
                     process=process_pb.ProcessConfig(
@@ -198,7 +198,7 @@ class Pty:
 
         :return: Handle to interact with the PTY
         """
-        events = as_async_stream(
+        events = as_stream(
             self._rpc.connect(
                 process_pb.ConnectRequest(
                     process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
