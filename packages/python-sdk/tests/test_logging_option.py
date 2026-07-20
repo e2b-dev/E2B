@@ -3,7 +3,7 @@ import logging
 from types import SimpleNamespace
 
 from e2b import AsyncSandbox, ConnectionConfig, Sandbox
-from e2b.envd.transport import _LoggingInterceptor, _build_interceptors
+from e2b.envd.interceptors import LoggingInterceptor, build_interceptors
 from e2b.api import (
     ApiClient,
     make_async_logging_event_hooks,
@@ -92,16 +92,16 @@ def test_rpc_client_without_logger_has_no_logging_interceptor(test_api_key):
     # clients (matching the JS SDK, which only attaches its logging
     # middleware when a logger is given).
     config = ConnectionConfig(api_key=test_api_key)
-    interceptors = _build_interceptors(config, "https://example.com")
-    assert not any(isinstance(i, _LoggingInterceptor) for i in interceptors)
+    interceptors = build_interceptors(config, "https://example.com")
+    assert not any(isinstance(i, LoggingInterceptor) for i in interceptors)
 
 
 def test_rpc_clients_get_logging_interceptor_from_config(test_api_key):
     custom = logging.getLogger("test.rpc")
     config = ConnectionConfig(api_key=test_api_key, logger=custom)
-    interceptors = _build_interceptors(config, "https://example.com")
+    interceptors = build_interceptors(config, "https://example.com")
     logging_interceptors = [
-        i for i in interceptors if isinstance(i, _LoggingInterceptor)
+        i for i in interceptors if isinstance(i, LoggingInterceptor)
     ]
     assert len(logging_interceptors) == 1
     assert logging_interceptors[0]._logger is custom
@@ -115,7 +115,7 @@ def _fake_ctx():
 
 def test_logging_interceptor_logs_unary_rpc(caplog):
     custom = logging.getLogger("test.rpc")
-    interceptor = _LoggingInterceptor(custom, "https://example.com")
+    interceptor = LoggingInterceptor(custom, "https://example.com")
     ctx = _fake_ctx()
 
     with caplog.at_level(logging.DEBUG, logger="test.rpc"):
@@ -141,7 +141,7 @@ def test_logging_interceptor_logs_unary_rpc(caplog):
 
 def test_logging_interceptor_logs_stream_messages(caplog):
     custom = logging.getLogger("test.rpc")
-    interceptor = _LoggingInterceptor(custom, "https://example.com")
+    interceptor = LoggingInterceptor(custom, "https://example.com")
     ctx = _fake_ctx()
 
     with caplog.at_level(logging.DEBUG, logger="test.rpc"):

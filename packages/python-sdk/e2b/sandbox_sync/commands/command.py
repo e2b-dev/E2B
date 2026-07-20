@@ -22,7 +22,7 @@ from e2b.envd.rpc import (
     handle_rpc_exception_with_health,
     timeout_to_ms,
 )
-from e2b.envd.transport import as_stream, create_rpc_client
+from e2b.envd.client import as_stream, create_rpc_client
 from e2b.envd.versions import ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.main import ProcessInfo
@@ -60,7 +60,6 @@ class Commands:
             process_connect.ProcessClientSync,
             self._envd_api_url,
             self._connection_config,
-            sync=True,
         )
 
     @property

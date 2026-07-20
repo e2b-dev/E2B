@@ -40,10 +40,10 @@ def test_proxy_to_url_rejects_httpx_url():
 
 
 def test_sync_transport_is_cached_per_proxy():
-    transport_a = transport._get_sync_transport(None)
-    transport_b = transport._get_sync_transport(None)
-    transport_c = transport._get_sync_transport("http://127.0.0.1:8080")
-    transport_d = transport._get_sync_transport("http://127.0.0.1:8080")
+    transport_a = transport.get_sync_transport(None)
+    transport_b = transport.get_sync_transport(None)
+    transport_c = transport.get_sync_transport("http://127.0.0.1:8080")
+    transport_d = transport.get_sync_transport("http://127.0.0.1:8080")
 
     assert transport_a is transport_b
     assert transport_c is transport_d
@@ -51,10 +51,10 @@ def test_sync_transport_is_cached_per_proxy():
 
 
 def test_async_transport_is_cached_per_proxy():
-    transport_a = transport._get_async_transport(None)
-    transport_b = transport._get_async_transport(None)
-    transport_c = transport._get_async_transport("http://127.0.0.1:8080")
+    transport_a = transport.get_async_transport(None)
+    transport_b = transport.get_async_transport(None)
+    transport_c = transport.get_async_transport("http://127.0.0.1:8080")
 
     assert transport_a is transport_b
     assert transport_a is not transport_c
-    assert transport._get_sync_transport(None) is not transport_a
+    assert transport.get_sync_transport(None) is not transport_a

@@ -19,7 +19,7 @@ from e2b.envd.rpc import (
     ahandle_rpc_exception_with_health,
     timeout_to_ms,
 )
-from e2b.envd.transport import as_async_stream, create_rpc_client
+from e2b.envd.client import as_async_stream, create_async_rpc_client
 from e2b.envd.versions import ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.main import ProcessInfo
@@ -43,11 +43,10 @@ class Commands:
         self._connection_config = connection_config
         self._envd_version = envd_version
         self._check_health = lambda: acheck_sandbox_health(envd_api)
-        self._rpc = create_rpc_client(
+        self._rpc = create_async_rpc_client(
             process_connect.ProcessClient,
             envd_api_url,
             connection_config,
-            sync=False,
         )
 
     async def list(

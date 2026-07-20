@@ -28,7 +28,7 @@ from e2b.envd.rpc import (
     handle_rpc_exception_with_health,
     timeout_to_ms,
 )
-from e2b.envd.transport import create_rpc_client
+from e2b.envd.client import create_rpc_client
 from e2b.envd.versions import (
     ENVD_DEFAULT_USER,
     ENVD_FILE_METADATA,
@@ -107,7 +107,6 @@ class Filesystem:
             filesystem_connect.FilesystemClientSync,
             self._envd_api_url,
             self._connection_config,
-            sync=True,
         )
 
     @property
