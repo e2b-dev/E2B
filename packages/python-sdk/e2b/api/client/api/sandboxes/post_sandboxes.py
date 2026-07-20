@@ -71,7 +71,9 @@ def sync_detailed(
     client: AuthenticatedClient,
     body: NewSandbox,
 ) -> Response[Union[Error, Sandbox]]:
-    """Create a sandbox from the template
+    """Create sandbox
+
+     Create a sandbox from the template
 
     Args:
         body (NewSandbox):
@@ -100,7 +102,9 @@ def sync(
     client: AuthenticatedClient,
     body: NewSandbox,
 ) -> Optional[Union[Error, Sandbox]]:
-    """Create a sandbox from the template
+    """Create sandbox
+
+     Create a sandbox from the template
 
     Args:
         body (NewSandbox):
@@ -124,7 +128,9 @@ async def asyncio_detailed(
     client: AuthenticatedClient,
     body: NewSandbox,
 ) -> Response[Union[Error, Sandbox]]:
-    """Create a sandbox from the template
+    """Create sandbox
+
+     Create a sandbox from the template
 
     Args:
         body (NewSandbox):
@@ -151,7 +157,9 @@ async def asyncio(
     client: AuthenticatedClient,
     body: NewSandbox,
 ) -> Optional[Union[Error, Sandbox]]:
-    """Create a sandbox from the template
+    """Create sandbox
+
+     Create a sandbox from the template
 
     Args:
         body (NewSandbox):

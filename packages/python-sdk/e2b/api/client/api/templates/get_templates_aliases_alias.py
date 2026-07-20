@@ -66,7 +66,9 @@ def sync_detailed(
     *,
     client: AuthenticatedClient,
 ) -> Response[Union[Error, TemplateAliasResponse]]:
-    """Check if template with given alias exists
+    """Check template alias
+
+     Check if template with given alias exists
 
     Args:
         alias (str): Template alias
@@ -95,7 +97,9 @@ def sync(
     *,
     client: AuthenticatedClient,
 ) -> Optional[Union[Error, TemplateAliasResponse]]:
-    """Check if template with given alias exists
+    """Check template alias
+
+     Check if template with given alias exists
 
     Args:
         alias (str): Template alias
@@ -119,7 +123,9 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
 ) -> Response[Union[Error, TemplateAliasResponse]]:
-    """Check if template with given alias exists
+    """Check template alias
+
+     Check if template with given alias exists
 
     Args:
         alias (str): Template alias
@@ -146,7 +152,9 @@ async def asyncio(
     *,
     client: AuthenticatedClient,
 ) -> Optional[Union[Error, TemplateAliasResponse]]:
-    """Check if template with given alias exists
+    """Check template alias
+
+     Check if template with given alias exists
 
     Args:
         alias (str): Template alias

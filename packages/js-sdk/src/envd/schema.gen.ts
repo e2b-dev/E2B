@@ -4,6 +4,43 @@
  */
 
 export interface paths {
+    "/collapse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Collapse envd's own anonymous heap into 2 MiB transparent hugepages before pause, so on resume envd touches fewer distinct guest-physical frames (each a cold fault). Best-effort. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Heap collapsed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CollapseResult"];
+                    };
+                };
+                500: components["responses"]["InternalServerError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/envs": {
         parameters: {
             query?: never;
@@ -11,7 +48,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get the environment variables */
+        /** Environment variables */
         get: {
             parameters: {
                 query?: never;
@@ -51,13 +88,13 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    /** @description Path to the file, URL encoded. Can be relative to user's home directory. */
+                    /** @description Path to the file, URL encoded. Can be relative to the user's home directory (e.g. "file.txt" resolves to ~/file.txt). */
                     path?: components["parameters"]["FilePath"];
                     /** @description Signature used for file access permission verification. */
                     signature?: components["parameters"]["Signature"];
-                    /** @description Signature expiration used for defining the expiration time of the signature. */
+                    /** @description Unix timestamp (seconds) after which the signature expires. Only used with the signature parameter. */
                     signature_expiration?: components["parameters"]["SignatureExpiration"];
-                    /** @description User used for setting the owner, or resolving relative paths. */
+                    /** @description User for setting file ownership and resolving relative paths. Defaults to the sandbox's default user. */
                     username?: components["parameters"]["User"];
                 };
                 header?: never;
@@ -70,6 +107,7 @@ export interface paths {
                 400: components["responses"]["InvalidPath"];
                 401: components["responses"]["InvalidUser"];
                 404: components["responses"]["FileNotFound"];
+                406: components["responses"]["NotAcceptable"];
                 500: components["responses"]["InternalServerError"];
             };
         };
@@ -101,13 +139,13 @@ export interface paths {
         post: {
             parameters: {
                 query?: {
-                    /** @description Path to the file, URL encoded. Can be relative to user's home directory. */
+                    /** @description Path to the file, URL encoded. Can be relative to the user's home directory (e.g. "file.txt" resolves to ~/file.txt). */
                     path?: components["parameters"]["FilePath"];
                     /** @description Signature used for file access permission verification. */
                     signature?: components["parameters"]["Signature"];
-                    /** @description Signature expiration used for defining the expiration time of the signature. */
+                    /** @description Unix timestamp (seconds) after which the signature expires. Only used with the signature parameter. */
                     signature_expiration?: components["parameters"]["SignatureExpiration"];
-                    /** @description User used for setting the owner, or resolving relative paths. */
+                    /** @description User for setting file ownership and resolving relative paths. Defaults to the sandbox's default user. */
                     username?: components["parameters"]["User"];
                 };
                 header?: never;
@@ -121,6 +159,177 @@ export interface paths {
                 401: components["responses"]["InvalidUser"];
                 500: components["responses"]["InternalServerError"];
                 507: components["responses"]["NotEnoughDiskSpace"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/files/compose": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Compose multiple files into a single file using zero-copy concatenation. Source files are deleted after successful composition. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ComposeRequest"];
+                };
+            };
+            responses: {
+                /** @description Files composed successfully */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["EntryInfo"];
+                    };
+                };
+                400: components["responses"]["InvalidPath"];
+                401: components["responses"]["InvalidUser"];
+                404: components["responses"]["FileNotFound"];
+                500: components["responses"]["InternalServerError"];
+                507: components["responses"]["NotEnoughDiskSpace"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/freeze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Freeze user/pty cgroups before pause. Written directly by envd to avoid Process.Start / shell overhead under load. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Cgroups frozen */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                500: components["responses"]["InternalServerError"];
+                /** @description Freeze lock is held by another operation */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/fsfreeze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Freeze the guest rootfs (FIFREEZE) before a filesystem-only pause so it is flushed to a consistent on-disk state, closing the sync->pause race. Idempotent. On a successful filesystem-only pause the VM is rebooted, so no thaw is needed; the orchestrator thaws only on the pause-failure path. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Rootfs frozen */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                500: components["responses"]["InternalServerError"];
+                /** @description Freeze lock is held by another operation */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/fsthaw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Thaw the guest rootfs (FITHAW). Intended ONLY for the orchestrator's pause-failure rollback path, so a frozen filesystem cannot leave the live VM deadlocked. Idempotent. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Rootfs thawed */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                500: components["responses"]["InternalServerError"];
+                /** @description Freeze lock is held by another operation */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
             };
         };
         delete?: never;
@@ -185,6 +394,8 @@ export interface paths {
                     "application/json": {
                         /** @description Access token for secure access to envd service */
                         accessToken?: string;
+                        /** @description PEM-encoded CA certificates to install into the system trust store (may contain multiple concatenated PEM blocks) */
+                        caBundle?: string;
                         /** @description The default user to use for operations */
                         defaultUser?: string;
                         /** @description The default working directory to use for operations */
@@ -192,11 +403,14 @@ export interface paths {
                         envVars?: components["schemas"]["EnvVars"];
                         /** @description IP address of the hyperloop server to connect to */
                         hyperloopIP?: string;
+                        /** @description Lifecycle ID of the sandbox */
+                        lifecycleID?: string;
                         /**
                          * Format: date-time
                          * @description The current timestamp in RFC3339 format
                          */
                         timestamp?: string;
+                        volumeMounts?: components["schemas"]["VolumeMount"][];
                     };
                 };
             };
@@ -223,7 +437,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get the stats of the service */
+        /** Service stats */
         get: {
             parameters: {
                 query?: never;
@@ -252,10 +466,78 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/unfreeze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Unfreeze user/pty cgroups. Intended ONLY for the orchestrator's pause-failure rollback path; the normal resume thaw happens via /init's deferred unfreeze, not here. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Cgroups unfrozen */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                500: components["responses"]["InternalServerError"];
+                /** @description Freeze lock is held by another operation */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description Per-call statistics from a heap collapse */
+        CollapseResult: {
+            /** @description Chunks MADV_COLLAPSE accepted but were already hugepages (no work) */
+            alreadyHuge?: number;
+            /** @description 2 MiB chunks attempted */
+            chunks?: number;
+            /** @description Chunks whose base pages were actually migrated into a new hugepage (real work) */
+            collapsed?: number;
+            /**
+             * Format: int64
+             * @description Wall-clock time spent collapsing, in milliseconds
+             */
+            elapsedMs?: number;
+            /** @description Anonymous read-write regions scanned */
+            regions?: number;
+            /** @description Chunks that could not be collapsed (empty or ineligible) */
+            skipped?: number;
+        };
+        ComposeRequest: {
+            /** @description Destination file path for the composed file */
+            destination: string;
+            /** @description Ordered list of source file paths to concatenate */
+            source_paths: string[];
+            /** @description User for setting ownership and resolving relative paths */
+            username?: string;
+        };
         EntryInfo: {
             /** @description User-defined metadata stored as extended attributes on the file. */
             metadata?: {
@@ -294,15 +576,28 @@ export interface components {
             disk_total?: number;
             /** @description Used disk space in bytes */
             disk_used?: number;
+            /** @description Cached memory (page cache) in bytes */
+            mem_cache?: number;
             /** @description Total virtual memory in bytes */
             mem_total?: number;
+            /** @description Total virtual memory in MiB */
+            mem_total_mib?: number;
             /** @description Used virtual memory in bytes */
             mem_used?: number;
+            /** @description Used virtual memory in MiB */
+            mem_used_mib?: number;
             /**
              * Format: int64
              * @description Unix timestamp in UTC for current sandbox time
              */
             ts?: number;
+        };
+        /** @description Volume mount configuration */
+        VolumeMount: {
+            /** @description Server target address */
+            nfs_target: string;
+            /** @description Mount path inside the sandbox */
+            path: string;
         };
     };
     responses: {
@@ -321,6 +616,10 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
+                /** @example {
+                 *       "message": "path '/home/user/missing.txt' does not exist",
+                 *       "code": 404
+                 *     } */
                 "application/json": components["schemas"]["Error"];
             };
         };
@@ -330,6 +629,10 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
+                /** @example {
+                 *       "message": "error opening file '/home/user/file.txt': permission denied",
+                 *       "code": 500
+                 *     } */
                 "application/json": components["schemas"]["Error"];
             };
         };
@@ -339,6 +642,10 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
+                /** @example {
+                 *       "message": "path '/home/user/docs' is a directory",
+                 *       "code": 400
+                 *     } */
                 "application/json": components["schemas"]["Error"];
             };
         };
@@ -348,6 +655,23 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
+                /** @example {
+                 *       "message": "error looking up user 'nonexistent': user: unknown user nonexistent",
+                 *       "code": 401
+                 *     } */
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Requested encoding is not supported */
+        NotAcceptable: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /** @example {
+                 *       "message": "no acceptable encoding found, supported: [identity, gzip]",
+                 *       "code": 406
+                 *     } */
                 "application/json": components["schemas"]["Error"];
             };
         };
@@ -357,6 +681,10 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
+                /** @example {
+                 *       "message": "not enough disk space available",
+                 *       "code": 507
+                 *     } */
                 "application/json": components["schemas"]["Error"];
             };
         };
@@ -366,23 +694,31 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
+                /** @example [
+                 *       {
+                 *         "path": "/home/user/hello.txt",
+                 *         "name": "hello.txt",
+                 *         "type": "file"
+                 *       }
+                 *     ] */
                 "application/json": components["schemas"]["EntryInfo"][];
             };
         };
     };
     parameters: {
-        /** @description Path to the file, URL encoded. Can be relative to user's home directory. */
+        /** @description Path to the file, URL encoded. Can be relative to the user's home directory (e.g. "file.txt" resolves to ~/file.txt). */
         FilePath: string;
         /** @description Signature used for file access permission verification. */
         Signature: string;
-        /** @description Signature expiration used for defining the expiration time of the signature. */
+        /** @description Unix timestamp (seconds) after which the signature expires. Only used with the signature parameter. */
         SignatureExpiration: number;
-        /** @description User used for setting the owner, or resolving relative paths. */
+        /** @description User for setting file ownership and resolving relative paths. Defaults to the sandbox's default user. */
         User: string;
     };
     requestBodies: {
         File: {
             content: {
+                "application/octet-stream": string;
                 "multipart/form-data": {
                     /** Format: binary */
                     file?: string;

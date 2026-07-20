@@ -295,3 +295,6 @@ sdkRefRoutes.json
 
 # SDK Client generated spec
 spec/openapi_generated.yml
+
+# Copybara staging directory (see copy.bara.sky)
+.copybara/

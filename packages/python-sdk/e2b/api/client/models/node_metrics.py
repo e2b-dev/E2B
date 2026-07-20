@@ -21,6 +21,10 @@ class NodeMetrics:
         cpu_count (int): Total number of CPU cores on the node
         cpu_percent (int): Node CPU usage percentage
         disks (list['DiskMetrics']): Detailed metrics for each disk/mount point
+        huge_page_size_bytes (int): Size of a single hugepage in bytes
+        huge_pages_reserved (int): Number of reserved hugepages (committed but not yet faulted)
+        huge_pages_total (int): Total number of preallocated hugepages on the node
+        huge_pages_used (int): Number of hugepages in use (total - free)
         memory_total_bytes (int): Total node memory in bytes
         memory_used_bytes (int): Node memory used in bytes
     """
@@ -30,6 +34,10 @@ class NodeMetrics:
     cpu_count: int
     cpu_percent: int
     disks: list["DiskMetrics"]
+    huge_page_size_bytes: int
+    huge_pages_reserved: int
+    huge_pages_total: int
+    huge_pages_used: int
     memory_total_bytes: int
     memory_used_bytes: int
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -48,6 +56,14 @@ class NodeMetrics:
             disks_item = disks_item_data.to_dict()
             disks.append(disks_item)
 
+        huge_page_size_bytes = self.huge_page_size_bytes
+
+        huge_pages_reserved = self.huge_pages_reserved
+
+        huge_pages_total = self.huge_pages_total
+
+        huge_pages_used = self.huge_pages_used
+
         memory_total_bytes = self.memory_total_bytes
 
         memory_used_bytes = self.memory_used_bytes
@@ -61,6 +77,10 @@ class NodeMetrics:
                 "cpuCount": cpu_count,
                 "cpuPercent": cpu_percent,
                 "disks": disks,
+                "hugePageSizeBytes": huge_page_size_bytes,
+                "hugePagesReserved": huge_pages_reserved,
+                "hugePagesTotal": huge_pages_total,
+                "hugePagesUsed": huge_pages_used,
                 "memoryTotalBytes": memory_total_bytes,
                 "memoryUsedBytes": memory_used_bytes,
             }
@@ -88,6 +108,14 @@ class NodeMetrics:
 
             disks.append(disks_item)
 
+        huge_page_size_bytes = d.pop("hugePageSizeBytes")
+
+        huge_pages_reserved = d.pop("hugePagesReserved")
+
+        huge_pages_total = d.pop("hugePagesTotal")
+
+        huge_pages_used = d.pop("hugePagesUsed")
+
         memory_total_bytes = d.pop("memoryTotalBytes")
 
         memory_used_bytes = d.pop("memoryUsedBytes")
@@ -98,6 +126,10 @@ class NodeMetrics:
             cpu_count=cpu_count,
             cpu_percent=cpu_percent,
             disks=disks,
+            huge_page_size_bytes=huge_page_size_bytes,
+            huge_pages_reserved=huge_pages_reserved,
+            huge_pages_total=huge_pages_total,
+            huge_pages_used=huge_pages_used,
             memory_total_bytes=memory_total_bytes,
             memory_used_bytes=memory_used_bytes,
         )

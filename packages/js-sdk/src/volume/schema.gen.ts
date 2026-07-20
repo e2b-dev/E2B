@@ -279,7 +279,7 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description Successfully updated a file's metadata */
+                /** @description Successfully updated a path's metadata */
                 200: {
                     headers: {
                         [name: string]: unknown;

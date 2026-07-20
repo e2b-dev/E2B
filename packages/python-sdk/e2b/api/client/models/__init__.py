@@ -35,17 +35,11 @@ from .node_detail import NodeDetail
 from .node_metrics import NodeMetrics
 from .node_status import NodeStatus
 from .node_status_change import NodeStatusChange
-from .post_sandboxes_sandbox_id_refreshes_body import (
-    PostSandboxesSandboxIDRefreshesBody,
-)
-from .post_sandboxes_sandbox_id_snapshots_body import (
-    PostSandboxesSandboxIDSnapshotsBody,
-)
-from .post_sandboxes_sandbox_id_timeout_body import PostSandboxesSandboxIDTimeoutBody
 from .resumed_sandbox import ResumedSandbox
 from .sandbox import Sandbox
 from .sandbox_auto_resume_config import SandboxAutoResumeConfig
 from .sandbox_detail import SandboxDetail
+from .sandbox_egress_proxy_config_type_0 import SandboxEgressProxyConfigType0
 from .sandbox_fork_request import SandboxForkRequest
 from .sandbox_fork_result import SandboxForkResult
 from .sandbox_lifecycle import SandboxLifecycle
@@ -64,7 +58,10 @@ from .sandbox_network_update_config import SandboxNetworkUpdateConfig
 from .sandbox_network_update_config_rules import SandboxNetworkUpdateConfigRules
 from .sandbox_on_timeout import SandboxOnTimeout
 from .sandbox_pause_request import SandboxPauseRequest
+from .sandbox_refresh_request import SandboxRefreshRequest
+from .sandbox_snapshot_request import SandboxSnapshotRequest
 from .sandbox_state import SandboxState
+from .sandbox_timeout_request import SandboxTimeoutRequest
 from .sandbox_volume_mount import SandboxVolumeMount
 from .sandboxes_with_metrics import SandboxesWithMetrics
 from .snapshot_info import SnapshotInfo
@@ -131,13 +128,11 @@ __all__ = (
     "NodeMetrics",
     "NodeStatus",
     "NodeStatusChange",
-    "PostSandboxesSandboxIDRefreshesBody",
-    "PostSandboxesSandboxIDSnapshotsBody",
-    "PostSandboxesSandboxIDTimeoutBody",
     "ResumedSandbox",
     "Sandbox",
     "SandboxAutoResumeConfig",
     "SandboxDetail",
+    "SandboxEgressProxyConfigType0",
     "SandboxesWithMetrics",
     "SandboxForkRequest",
     "SandboxForkResult",
@@ -157,7 +152,10 @@ __all__ = (
     "SandboxNetworkUpdateConfigRules",
     "SandboxOnTimeout",
     "SandboxPauseRequest",
+    "SandboxRefreshRequest",
+    "SandboxSnapshotRequest",
     "SandboxState",
+    "SandboxTimeoutRequest",
     "SandboxVolumeMount",
     "SnapshotInfo",
     "Team",

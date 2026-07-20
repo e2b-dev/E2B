@@ -6,11 +6,11 @@ from attrs import field as _attrs_field
 
 from ..types import UNSET, Unset
 
-T = TypeVar("T", bound="PostSandboxesSandboxIDSnapshotsBody")
+T = TypeVar("T", bound="SandboxSnapshotRequest")
 
 
 @_attrs_define
-class PostSandboxesSandboxIDSnapshotsBody:
+class SandboxSnapshotRequest:
     """
     Attributes:
         name (Union[Unset, str]): Optional name for the snapshot template. If a snapshot template with this name already
@@ -36,12 +36,12 @@ class PostSandboxesSandboxIDSnapshotsBody:
         d = dict(src_dict)
         name = d.pop("name", UNSET)
 
-        post_sandboxes_sandbox_id_snapshots_body = cls(
+        sandbox_snapshot_request = cls(
             name=name,
         )
 
-        post_sandboxes_sandbox_id_snapshots_body.additional_properties = d
-        return post_sandboxes_sandbox_id_snapshots_body
+        sandbox_snapshot_request.additional_properties = d
+        return sandbox_snapshot_request
 
     @property
     def additional_keys(self) -> list[str]:

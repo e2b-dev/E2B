@@ -96,7 +96,9 @@ def sync_detailed(
     next_token: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 100,
 ) -> Response[Union[Error, list["ListedSandbox"]]]:
-    """List all sandboxes
+    """List sandboxes (v2)
+
+     List all sandboxes
 
     Args:
         metadata (Union[Unset, str]):
@@ -134,7 +136,9 @@ def sync(
     next_token: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 100,
 ) -> Optional[Union[Error, list["ListedSandbox"]]]:
-    """List all sandboxes
+    """List sandboxes (v2)
+
+     List all sandboxes
 
     Args:
         metadata (Union[Unset, str]):
@@ -167,7 +171,9 @@ async def asyncio_detailed(
     next_token: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 100,
 ) -> Response[Union[Error, list["ListedSandbox"]]]:
-    """List all sandboxes
+    """List sandboxes (v2)
+
+     List all sandboxes
 
     Args:
         metadata (Union[Unset, str]):
@@ -203,7 +209,9 @@ async def asyncio(
     next_token: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 100,
 ) -> Optional[Union[Error, list["ListedSandbox"]]]:
-    """List all sandboxes
+    """List sandboxes (v2)
+
+     List all sandboxes
 
     Args:
         metadata (Union[Unset, str]):

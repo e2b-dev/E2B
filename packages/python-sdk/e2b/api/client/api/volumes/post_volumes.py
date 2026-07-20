@@ -71,7 +71,9 @@ def sync_detailed(
     client: AuthenticatedClient,
     body: NewVolume,
 ) -> Response[Union[Error, VolumeAndToken]]:
-    """Create a new team volume
+    """Create team volume
+
+     Create a new team volume
 
     Args:
         body (NewVolume):
@@ -100,7 +102,9 @@ def sync(
     client: AuthenticatedClient,
     body: NewVolume,
 ) -> Optional[Union[Error, VolumeAndToken]]:
-    """Create a new team volume
+    """Create team volume
+
+     Create a new team volume
 
     Args:
         body (NewVolume):
@@ -124,7 +128,9 @@ async def asyncio_detailed(
     client: AuthenticatedClient,
     body: NewVolume,
 ) -> Response[Union[Error, VolumeAndToken]]:
-    """Create a new team volume
+    """Create team volume
+
+     Create a new team volume
 
     Args:
         body (NewVolume):
@@ -151,7 +157,9 @@ async def asyncio(
     client: AuthenticatedClient,
     body: NewVolume,
 ) -> Optional[Union[Error, VolumeAndToken]]:
-    """Create a new team volume
+    """Create team volume
+
+     Create a new team volume
 
     Args:
         body (NewVolume):

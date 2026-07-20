@@ -231,6 +231,9 @@ class StartRequest(Message[_StartRequestFields]):
             optional string tag = 3;
             ```
         stdin:
+            This is optional for backwards compatibility.
+            We default to true. New SDK versions will set this to false by default.
+
             ```proto
             optional bool stdin = 4;
             ```

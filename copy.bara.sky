@@ -1,0 +1,66 @@
+# Copybara config that imports API specs from their source-of-truth
+# repositories into spec/. The imported files are tracked here but must not
+# be edited by hand — `make codegen` re-fetches the infra ones at the commit
+# pinned in spec/infra-ref before generating the clients, and the
+# generated-files CI check fails if the tracked copies don't match the pin.
+# See spec/README.md.
+
+INFRA_REPO = "https://github.com/e2b-dev/infra.git"
+BELT_REPO = "https://github.com/e2b-dev/belt.git"
+
+AUTHORING = authoring.pass_thru("E2B <hello@e2b.dev>")
+
+# REST API spec -> spec/openapi.yml
+core.workflow(
+    name = "api-spec",
+    origin = git.github_origin(
+        url = INFRA_REPO,
+    ),
+    destination = folder.destination(),
+    origin_files = glob(["spec/openapi.yml"]),
+    authoring = AUTHORING,
+    mode = "SQUASH",
+    transformations = [
+        core.move("spec/openapi.yml", "openapi.yml"),
+    ],
+)
+
+# envd spec (HTTP API + protobufs) -> spec/envd/
+core.workflow(
+    name = "envd-spec",
+    origin = git.github_origin(
+        url = INFRA_REPO,
+    ),
+    destination = folder.destination(),
+    origin_files = glob(
+        [
+            "packages/envd/spec/envd.yaml",
+            "packages/envd/spec/filesystem/**",
+            "packages/envd/spec/process/**",
+        ],
+        # This repo has its own buf generation templates in spec/envd.
+        exclude = ["packages/envd/spec/buf*.yaml"],
+    ),
+    authoring = AUTHORING,
+    mode = "SQUASH",
+    transformations = [
+        core.move("packages/envd/spec", "envd"),
+    ],
+)
+
+# Volume-content API spec -> spec/openapi-volumecontent.yml
+# belt is private, so the fetch authenticates with a GitHub token
+# (see scripts/fetch-spec.sh).
+core.workflow(
+    name = "volume-api-spec",
+    origin = git.github_origin(
+        url = BELT_REPO,
+    ),
+    destination = folder.destination(),
+    origin_files = glob(["packages/volume-content/openapi.yml"]),
+    authoring = AUTHORING,
+    mode = "SQUASH",
+    transformations = [
+        core.move("packages/volume-content/openapi.yml", "openapi-volumecontent.yml"),
+    ],
+)
