@@ -6,7 +6,7 @@ from typing import Any, AsyncGenerator, AsyncIterator, Callable, Optional, TypeV
 from pyqwest import Client, HTTPTransport
 
 from e2b.connection_config import ConnectionConfig
-from e2b.envd import (
+from e2b.envd.client_shared import (
     ENVD_JSON_CODEC,
     pool_idle_timeout,
     pool_max_idle_per_host,

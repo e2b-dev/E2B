@@ -83,7 +83,7 @@ def test_sync_sandbox_clients_are_created_once_per_calling_thread(
             self.transport = kwargs["transport"]
             record("http")
 
-    def fake_create_rpc_client(client_cls, base_url, config, *, sync):
+    def fake_create_rpc_client(client_cls, base_url, config):
         record(
             "filesystem_rpc" if "Filesystem" in client_cls.__name__ else "process_rpc"
         )

@@ -1,7 +1,8 @@
 import httpx
 import pytest
 
-from e2b.envd import client_async, client_sync, proxy_to_url
+from e2b.envd import client_async, client_sync
+from e2b.envd.client_shared import proxy_to_url
 
 
 @pytest.fixture(autouse=True)
