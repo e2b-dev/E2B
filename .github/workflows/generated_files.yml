@@ -27,6 +27,7 @@ jobs:
               - 'codegen.Dockerfile'
               - 'copybara.Dockerfile'
               - 'copy.bara.sky'
+              - 'redocly.yaml'
               - 'scripts/fetch-spec.sh'
               - 'Makefile'
               - 'packages/**/!(*.md)'
@@ -103,9 +104,12 @@ jobs:
       # scripts/fetch-spec.sh needs read access to the private e2b-dev/belt
       # repo to fetch the volume-content spec. The default `secrets.GITHUB_TOKEN`
       # is scoped to this repository only, so mint a short-lived belt-scoped
-      # token from the Autofixer GitHub App instead.
+      # token from the Autofixer GitHub App instead. Fork PRs have no access
+      # to the App secret, so they skip the mint and the volume-content spec
+      # freshness check; the public infra fetches use the default token.
       - name: Generate token for belt repo
         id: belt-token
+        if: github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.AUTOFIXER_APP_ID }}
@@ -116,7 +120,8 @@ jobs:
 
       - name: Run codegen
         env:
-          GITHUB_TOKEN: ${{ steps.belt-token.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.belt-token.outputs.token || github.token }}
+          SKIP_VOLUME_SPEC: ${{ steps.belt-token.outputs.token == '' && '1' || '' }}
         run: |
           CODEGEN_IMAGE=codegen-env:latest \
           COPYBARA_IMAGE=e2b-copybara:latest \
