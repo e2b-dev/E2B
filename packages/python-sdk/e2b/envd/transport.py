@@ -6,10 +6,6 @@ layer is `pyqwest` (Rust reqwest/hyper). This is a separate stack from the
 multipart file transfer endpoints. Unlike the previous httpcore-based
 transport, hyper sends RST_STREAM when a server stream is closed early, so
 abandoned command/watch streams don't leak on the shared HTTP/2 connection.
-
-Note: the per-request ``proxy`` option is not applied to RPC calls — pyqwest
-only honors the standard ``http_proxy``/``https_proxy``/``all_proxy``
-environment variables. File transfer and REST API requests still honor it.
 """
 
 import logging
@@ -29,8 +25,10 @@ from typing import (
     cast,
 )
 
+import httpx
 from connectrpc.errors import ConnectError
 from connectrpc.request import RequestContext
+from httpx._types import ProxyTypes
 from protobuf import Message
 from pyqwest import Client, HTTPTransport, SyncClient, SyncHTTPTransport
 
@@ -84,30 +82,59 @@ _pool_idle_timeout = float(os.getenv("E2B_KEEPALIVE_EXPIRY") or "300")
 _pool_max_idle_per_host = int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20")
 
 _transport_lock = threading.Lock()
-_sync_transport: Optional[SyncHTTPTransport] = None
-_async_transport: Optional[HTTPTransport] = None
+# One transport (= one connection pool) per proxy; None is the direct pool.
+_sync_transports: dict[Optional[str], SyncHTTPTransport] = {}
+_async_transports: dict[Optional[str], HTTPTransport] = {}
 
 
-def _get_sync_transport() -> SyncHTTPTransport:
-    global _sync_transport
+def proxy_to_url(proxy: Optional[ProxyTypes]) -> Optional[str]:
+    """Convert the httpx-typed ``proxy`` connection option to the proxy URL
+    string pyqwest transports take, folding ``httpx.Proxy`` credentials into
+    the URL userinfo. httpx and pyqwest support the same URL schemes (http,
+    https, socks5, socks5h); ``httpx.Proxy`` extras that pyqwest cannot honor
+    (custom headers, TLS context) are rejected rather than silently dropped.
+    """
+    if proxy is None:
+        return None
+    if not isinstance(proxy, httpx.Proxy):
+        proxy = httpx.Proxy(url=proxy)
+    if proxy.headers:
+        raise ValueError("Proxy headers are not supported for sandbox RPC calls")
+    if proxy.ssl_context is not None:
+        raise ValueError("Proxy ssl_context is not supported for sandbox RPC calls")
+    url = proxy.url
+    if proxy.auth is not None:
+        username, password = proxy.auth
+        url = url.copy_with(username=username, password=password)
+    return str(url)
+
+
+def _get_sync_transport(proxy_url: Optional[str]) -> SyncHTTPTransport:
     with _transport_lock:
-        if _sync_transport is None:
-            _sync_transport = SyncHTTPTransport(
+        transport = _sync_transports.get(proxy_url)
+        if transport is None:
+            transport = SyncHTTPTransport(
+                tls_include_system_certs=True,
+                proxy=proxy_url,
                 pool_idle_timeout=_pool_idle_timeout,
                 pool_max_idle_per_host=_pool_max_idle_per_host,
             )
-        return _sync_transport
+            _sync_transports[proxy_url] = transport
+        return transport
 
 
-def _get_async_transport() -> HTTPTransport:
-    global _async_transport
+def _get_async_transport(proxy_url: Optional[str]) -> HTTPTransport:
     with _transport_lock:
-        if _async_transport is None:
-            _async_transport = HTTPTransport(
+        transport = _async_transports.get(proxy_url)
+        if transport is None:
+            transport = HTTPTransport(
+                tls_include_system_certs=True,
+                proxy=proxy_url,
                 pool_idle_timeout=_pool_idle_timeout,
                 pool_max_idle_per_host=_pool_max_idle_per_host,
             )
-        return _async_transport
+            _async_transports[proxy_url] = transport
+        return transport
 
 
 class _DefaultHeadersInterceptor:
@@ -301,8 +328,11 @@ def create_rpc_client(
     Compression is disabled in both directions to match the previous
     transport; envd's handling of compressed streaming bodies is unresolved.
     """
+    proxy_url = proxy_to_url(config.proxy)
     http_client = (
-        SyncClient(_get_sync_transport()) if sync else Client(_get_async_transport())
+        SyncClient(_get_sync_transport(proxy_url))
+        if sync
+        else Client(_get_async_transport(proxy_url))
     )
     return client_cls(
         base_url,

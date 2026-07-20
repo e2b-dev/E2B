@@ -25,6 +25,7 @@ Notes:
 - The generated `e2b.envd.*.*_pb2` modules were replaced by `protobuf-py`
   equivalents (`e2b.envd.process.process_pb`,
   `e2b.envd.filesystem.filesystem_pb`) with a different message API.
-- The `proxy` option is not applied to sandbox RPC calls for now — `pyqwest`
-  only honors the standard `http_proxy`/`https_proxy`/`all_proxy` environment
-  variables. It still applies to the REST API and file transfer requests.
+- The `proxy` option applies to sandbox RPC calls the same way it does to the
+  REST API and file transfer requests. `httpx.Proxy` values with custom
+  `headers` or `ssl_context` are rejected for RPC calls — fold credentials
+  into the proxy URL instead.
