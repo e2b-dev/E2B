@@ -121,7 +121,7 @@ jobs:
       - name: Run codegen
         env:
           GITHUB_TOKEN: ${{ steps.belt-token.outputs.token || github.token }}
-          SKIP_VOLUME_SPEC: ${{ steps.belt-token.outputs.token == '' && '1' || '' }}
+          FETCH_PRIVATE_SPECS: ${{ steps.belt-token.outputs.token != '' && '1' || '0' }}
         run: |
           CODEGEN_IMAGE=codegen-env:latest \
           COPYBARA_IMAGE=e2b-copybara:latest \

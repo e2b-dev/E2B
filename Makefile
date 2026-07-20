@@ -1,13 +1,15 @@
 # Specs are fetched from their source-of-truth repositories (e2b-dev/infra
 # and e2b-dev/belt) at the commits pinned in spec/infra-ref and spec/belt-ref.
 # To update the specs, bump the pins and re-run `make codegen`.
-# Set SKIP_VOLUME_SPEC=1 to skip the volume-content spec: it lives in the
-# private belt repo, which fork PRs in CI have no token for.
+# Set FETCH_PRIVATE_SPECS=0 to skip specs that live in private repositories
+# (currently the volume-content spec from belt); fork PRs in CI have no
+# token with access to them.
+FETCH_PRIVATE_SPECS ?= 1
 .PHONY: fetch-specs
 fetch-specs:
 	./scripts/fetch-spec.sh api-spec
 	./scripts/fetch-spec.sh envd-spec
-ifeq ($(SKIP_VOLUME_SPEC),)
+ifeq ($(FETCH_PRIVATE_SPECS),1)
 	./scripts/fetch-spec.sh volume-api-spec
 endif
 
