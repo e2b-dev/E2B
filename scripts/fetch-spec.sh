@@ -23,14 +23,23 @@ if [ -z "$TOKEN" ]; then
   exit 1
 fi
 
+# TARGETS lists the spec/ paths owned by each upstream; they are replaced
+# (not merged) on fetch so files deleted upstream don't linger locally.
 case "$SPEC" in
-  api-spec | envd-spec)
+  api-spec)
     SOURCE="e2b-dev/infra"
     REF="${E2B_INFRA_REF:-$(tr -d '[:space:]' < "$ROOT_DIR/spec/infra-ref")}"
+    TARGETS="openapi.yml"
+    ;;
+  envd-spec)
+    SOURCE="e2b-dev/infra"
+    REF="${E2B_INFRA_REF:-$(tr -d '[:space:]' < "$ROOT_DIR/spec/infra-ref")}"
+    TARGETS="envd/envd.yaml envd/filesystem envd/process"
     ;;
   volume-api-spec)
     SOURCE="e2b-dev/belt"
     REF="${E2B_BELT_REF:-$(tr -d '[:space:]' < "$ROOT_DIR/spec/belt-ref")}"
+    TARGETS="openapi-volumecontent.yml"
     ;;
   *)
     echo "error: unknown spec '$SPEC'" >&2
@@ -59,6 +68,9 @@ docker run --rm \
   migrate /workspace/copy.bara.sky "$SPEC" "$REF" \
   --folder-dir "/workspace/$STAGING"
 
+for target in $TARGETS; do
+  rm -rf "$ROOT_DIR/spec/$target"
+done
 cp -R "$ROOT_DIR/$STAGING/." "$ROOT_DIR/spec/"
 rm -rf "$ROOT_DIR/.copybara"
 
