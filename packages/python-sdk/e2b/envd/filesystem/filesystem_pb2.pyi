@@ -18,6 +18,7 @@ class FileType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     FILE_TYPE_UNSPECIFIED: _ClassVar[FileType]
     FILE_TYPE_FILE: _ClassVar[FileType]
     FILE_TYPE_DIRECTORY: _ClassVar[FileType]
+    FILE_TYPE_SYMLINK: _ClassVar[FileType]
 
 class EventType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = ()
@@ -31,6 +32,7 @@ class EventType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
 FILE_TYPE_UNSPECIFIED: FileType
 FILE_TYPE_FILE: FileType
 FILE_TYPE_DIRECTORY: FileType
+FILE_TYPE_SYMLINK: FileType
 EVENT_TYPE_UNSPECIFIED: EventType
 EVENT_TYPE_CREATE: EventType
 EVENT_TYPE_WRITE: EventType

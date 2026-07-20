@@ -75,7 +75,9 @@ def sync_detailed(
     client: AuthenticatedClient,
     body: SandboxPauseRequest,
 ) -> Response[Union[Any, Error]]:
-    """Pause the sandbox
+    """Pause sandbox
+
+     Pause the sandbox
 
     Args:
         sandbox_id (str):
@@ -107,7 +109,9 @@ def sync(
     client: AuthenticatedClient,
     body: SandboxPauseRequest,
 ) -> Optional[Union[Any, Error]]:
-    """Pause the sandbox
+    """Pause sandbox
+
+     Pause the sandbox
 
     Args:
         sandbox_id (str):
@@ -134,7 +138,9 @@ async def asyncio_detailed(
     client: AuthenticatedClient,
     body: SandboxPauseRequest,
 ) -> Response[Union[Any, Error]]:
-    """Pause the sandbox
+    """Pause sandbox
+
+     Pause the sandbox
 
     Args:
         sandbox_id (str):
@@ -164,7 +170,9 @@ async def asyncio(
     client: AuthenticatedClient,
     body: SandboxPauseRequest,
 ) -> Optional[Union[Any, Error]]:
-    """Pause the sandbox
+    """Pause sandbox
+
+     Pause the sandbox
 
     Args:
         sandbox_id (str):

@@ -98,7 +98,9 @@ def sync_detailed(
     level: Union[Unset, LogLevel] = UNSET,
     search: Union[Unset, str] = UNSET,
 ) -> Response[Union[Error, SandboxLogsV2Response]]:
-    """Get sandbox logs
+    """Sandbox logs (v2)
+
+     Get sandbox logs
 
     Args:
         sandbox_id (str):
@@ -142,7 +144,9 @@ def sync(
     level: Union[Unset, LogLevel] = UNSET,
     search: Union[Unset, str] = UNSET,
 ) -> Optional[Union[Error, SandboxLogsV2Response]]:
-    """Get sandbox logs
+    """Sandbox logs (v2)
+
+     Get sandbox logs
 
     Args:
         sandbox_id (str):
@@ -181,7 +185,9 @@ async def asyncio_detailed(
     level: Union[Unset, LogLevel] = UNSET,
     search: Union[Unset, str] = UNSET,
 ) -> Response[Union[Error, SandboxLogsV2Response]]:
-    """Get sandbox logs
+    """Sandbox logs (v2)
+
+     Get sandbox logs
 
     Args:
         sandbox_id (str):
@@ -223,7 +229,9 @@ async def asyncio(
     level: Union[Unset, LogLevel] = UNSET,
     search: Union[Unset, str] = UNSET,
 ) -> Optional[Union[Error, SandboxLogsV2Response]]:
-    """Get sandbox logs
+    """Sandbox logs (v2)
+
+     Get sandbox logs
 
     Args:
         sandbox_id (str):

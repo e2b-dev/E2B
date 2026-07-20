@@ -105,7 +105,9 @@ def sync_detailed(
     level: Union[Unset, LogLevel] = UNSET,
     source: Union[Unset, LogsSource] = UNSET,
 ) -> Response[Union[Error, TemplateBuildLogsResponse]]:
-    """Get template build logs
+    """Template build logs
+
+     Get template build logs
 
     Args:
         template_id (str):
@@ -152,7 +154,9 @@ def sync(
     level: Union[Unset, LogLevel] = UNSET,
     source: Union[Unset, LogsSource] = UNSET,
 ) -> Optional[Union[Error, TemplateBuildLogsResponse]]:
-    """Get template build logs
+    """Template build logs
+
+     Get template build logs
 
     Args:
         template_id (str):
@@ -194,7 +198,9 @@ async def asyncio_detailed(
     level: Union[Unset, LogLevel] = UNSET,
     source: Union[Unset, LogsSource] = UNSET,
 ) -> Response[Union[Error, TemplateBuildLogsResponse]]:
-    """Get template build logs
+    """Template build logs
+
+     Get template build logs
 
     Args:
         template_id (str):
@@ -239,7 +245,9 @@ async def asyncio(
     level: Union[Unset, LogLevel] = UNSET,
     source: Union[Unset, LogsSource] = UNSET,
 ) -> Optional[Union[Error, TemplateBuildLogsResponse]]:
-    """Get template build logs
+    """Template build logs
+
+     Get template build logs
 
     Args:
         template_id (str):

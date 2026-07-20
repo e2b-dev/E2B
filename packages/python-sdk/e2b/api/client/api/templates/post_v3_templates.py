@@ -75,7 +75,9 @@ def sync_detailed(
     client: AuthenticatedClient,
     body: TemplateBuildRequestV3,
 ) -> Response[Union[Error, TemplateRequestResponseV3]]:
-    """Create a new template
+    """Create template (v3)
+
+     Create a new template
 
     Args:
         body (TemplateBuildRequestV3):
@@ -104,7 +106,9 @@ def sync(
     client: AuthenticatedClient,
     body: TemplateBuildRequestV3,
 ) -> Optional[Union[Error, TemplateRequestResponseV3]]:
-    """Create a new template
+    """Create template (v3)
+
+     Create a new template
 
     Args:
         body (TemplateBuildRequestV3):
@@ -128,7 +132,9 @@ async def asyncio_detailed(
     client: AuthenticatedClient,
     body: TemplateBuildRequestV3,
 ) -> Response[Union[Error, TemplateRequestResponseV3]]:
-    """Create a new template
+    """Create template (v3)
+
+     Create a new template
 
     Args:
         body (TemplateBuildRequestV3):
@@ -155,7 +161,9 @@ async def asyncio(
     client: AuthenticatedClient,
     body: TemplateBuildRequestV3,
 ) -> Optional[Union[Error, TemplateRequestResponseV3]]:
-    """Create a new template
+    """Create template (v3)
+
+     Create a new template
 
     Args:
         body (TemplateBuildRequestV3):

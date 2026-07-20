@@ -77,7 +77,9 @@ def sync_detailed(
     client: AuthenticatedClient,
     body: ResumedSandbox,
 ) -> Response[Union[Error, Sandbox]]:
-    """Resume the sandbox
+    """Resume sandbox
+
+     Resume the sandbox
 
     Args:
         sandbox_id (str):
@@ -109,7 +111,9 @@ def sync(
     client: AuthenticatedClient,
     body: ResumedSandbox,
 ) -> Optional[Union[Error, Sandbox]]:
-    """Resume the sandbox
+    """Resume sandbox
+
+     Resume the sandbox
 
     Args:
         sandbox_id (str):
@@ -136,7 +140,9 @@ async def asyncio_detailed(
     client: AuthenticatedClient,
     body: ResumedSandbox,
 ) -> Response[Union[Error, Sandbox]]:
-    """Resume the sandbox
+    """Resume sandbox
+
+     Resume the sandbox
 
     Args:
         sandbox_id (str):
@@ -166,7 +172,9 @@ async def asyncio(
     client: AuthenticatedClient,
     body: ResumedSandbox,
 ) -> Optional[Union[Error, Sandbox]]:
-    """Resume the sandbox
+    """Resume sandbox
+
+     Resume the sandbox
 
     Args:
         sandbox_id (str):

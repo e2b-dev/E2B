@@ -83,12 +83,13 @@ def sync_detailed(
     limit: Union[Unset, int] = 100,
     next_token: Union[Unset, str] = UNSET,
 ) -> Response[Union[Error, list["SnapshotInfo"]]]:
-    """List all snapshots for the team
+    """List snapshots
+
+     List all snapshots for the team
 
     Args:
         sandbox_id (Union[Unset, str]): Filter snapshots by source sandbox ID
-        name (Union[Unset, str]): Filter snapshots by name or ID, optionally tag-qualified (e.g.
-            "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1").
+        name (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 100.
         next_token (Union[Unset, str]):
 
@@ -122,12 +123,13 @@ def sync(
     limit: Union[Unset, int] = 100,
     next_token: Union[Unset, str] = UNSET,
 ) -> Optional[Union[Error, list["SnapshotInfo"]]]:
-    """List all snapshots for the team
+    """List snapshots
+
+     List all snapshots for the team
 
     Args:
         sandbox_id (Union[Unset, str]): Filter snapshots by source sandbox ID
-        name (Union[Unset, str]): Filter snapshots by name or ID, optionally tag-qualified (e.g.
-            "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1").
+        name (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 100.
         next_token (Union[Unset, str]):
 
@@ -156,12 +158,13 @@ async def asyncio_detailed(
     limit: Union[Unset, int] = 100,
     next_token: Union[Unset, str] = UNSET,
 ) -> Response[Union[Error, list["SnapshotInfo"]]]:
-    """List all snapshots for the team
+    """List snapshots
+
+     List all snapshots for the team
 
     Args:
         sandbox_id (Union[Unset, str]): Filter snapshots by source sandbox ID
-        name (Union[Unset, str]): Filter snapshots by name or ID, optionally tag-qualified (e.g.
-            "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1").
+        name (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 100.
         next_token (Union[Unset, str]):
 
@@ -193,12 +196,13 @@ async def asyncio(
     limit: Union[Unset, int] = 100,
     next_token: Union[Unset, str] = UNSET,
 ) -> Optional[Union[Error, list["SnapshotInfo"]]]:
-    """List all snapshots for the team
+    """List snapshots
+
+     List all snapshots for the team
 
     Args:
         sandbox_id (Union[Unset, str]): Filter snapshots by source sandbox ID
-        name (Union[Unset, str]): Filter snapshots by name or ID, optionally tag-qualified (e.g.
-            "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1").
+        name (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 100.
         next_token (Union[Unset, str]):
 

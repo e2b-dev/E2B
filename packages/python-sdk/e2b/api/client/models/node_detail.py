@@ -1,8 +1,10 @@
+import datetime
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
+from dateutil.parser import isoparse
 
 from ..models.node_status import NodeStatus
 
@@ -32,6 +34,7 @@ class NodeDetail:
             - draining: the node is bound to be shut down. It will not accept new sandboxes and will stop once all existing
             sandboxes are done.
             - standby: the node is not actively used, but it can return to ready and continue serving traffic.
+        status_changed_at (datetime.datetime): Time when the node status was last changed
         version (str): Version of the orchestrator
     """
 
@@ -46,6 +49,7 @@ class NodeDetail:
     sandbox_count: int
     service_instance_id: str
     status: NodeStatus
+    status_changed_at: datetime.datetime
     version: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -72,6 +76,8 @@ class NodeDetail:
 
         status = self.status.value
 
+        status_changed_at = self.status_changed_at.isoformat()
+
         version = self.version
 
         field_dict: dict[str, Any] = {}
@@ -89,6 +95,7 @@ class NodeDetail:
                 "sandboxCount": sandbox_count,
                 "serviceInstanceID": service_instance_id,
                 "status": status,
+                "statusChangedAt": status_changed_at,
                 "version": version,
             }
         )
@@ -123,6 +130,8 @@ class NodeDetail:
 
         status = NodeStatus(d.pop("status"))
 
+        status_changed_at = isoparse(d.pop("statusChangedAt"))
+
         version = d.pop("version")
 
         node_detail = cls(
@@ -137,6 +146,7 @@ class NodeDetail:
             sandbox_count=sandbox_count,
             service_instance_id=service_instance_id,
             status=status,
+            status_changed_at=status_changed_at,
             version=version,
         )
 

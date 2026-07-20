@@ -1,46 +1,46 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union
+from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..types import UNSET, Unset
-
-T = TypeVar("T", bound="PostSandboxesSandboxIDRefreshesBody")
+T = TypeVar("T", bound="SandboxTimeoutRequest")
 
 
 @_attrs_define
-class PostSandboxesSandboxIDRefreshesBody:
+class SandboxTimeoutRequest:
     """
     Attributes:
-        duration (Union[Unset, int]): Duration for which the sandbox should be kept alive in seconds
+        timeout (int): Timeout in seconds from the current time after which the sandbox should expire
     """
 
-    duration: Union[Unset, int] = UNSET
+    timeout: int
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        duration = self.duration
+        timeout = self.timeout
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
-        field_dict.update({})
-        if duration is not UNSET:
-            field_dict["duration"] = duration
+        field_dict.update(
+            {
+                "timeout": timeout,
+            }
+        )
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        duration = d.pop("duration", UNSET)
+        timeout = d.pop("timeout")
 
-        post_sandboxes_sandbox_id_refreshes_body = cls(
-            duration=duration,
+        sandbox_timeout_request = cls(
+            timeout=timeout,
         )
 
-        post_sandboxes_sandbox_id_refreshes_body.additional_properties = d
-        return post_sandboxes_sandbox_id_refreshes_body
+        sandbox_timeout_request.additional_properties = d
+        return sandbox_timeout_request
 
     @property
     def additional_keys(self) -> list[str]:

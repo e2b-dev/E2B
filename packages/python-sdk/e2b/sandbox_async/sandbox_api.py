@@ -27,8 +27,8 @@ from e2b.api.client.models import (
     ConnectSandbox,
     Error,
     NewSandbox,
-    PostSandboxesSandboxIDSnapshotsBody,
-    PostSandboxesSandboxIDTimeoutBody,
+    SandboxSnapshotRequest,
+    SandboxTimeoutRequest,
     SandboxAutoResumeConfig,
     SandboxForkRequest,
     SandboxNetworkConfig,
@@ -165,7 +165,7 @@ class SandboxApi(SandboxBase):
         res = await post_sandboxes_sandbox_id_timeout.asyncio_detailed(
             sandbox_id,
             client=api_client,
-            body=PostSandboxesSandboxIDTimeoutBody(timeout=timeout),
+            body=SandboxTimeoutRequest(timeout=timeout),
         )
 
         if res.status_code == 404:
@@ -383,7 +383,7 @@ class SandboxApi(SandboxBase):
         res = await post_sandboxes_sandbox_id_snapshots.asyncio_detailed(
             sandbox_id,
             client=api_client,
-            body=PostSandboxesSandboxIDSnapshotsBody(name=name if name else UNSET),
+            body=SandboxSnapshotRequest(name=name if name else UNSET),
         )
 
         if res.status_code == 404:

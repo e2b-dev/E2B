@@ -234,12 +234,6 @@ importers:
 
   packages/python-sdk: {}
 
-  spec:
-    devDependencies:
-      prettier:
-        specifier: ^3.3.3
-        version: 3.6.2
-
 packages:
 
   '@apidevtools/json-schema-ref-parser@11.9.3':
