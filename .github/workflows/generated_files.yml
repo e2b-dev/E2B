@@ -105,8 +105,9 @@ jobs:
       # repo to fetch the volume-content spec. The default `secrets.GITHUB_TOKEN`
       # is scoped to this repository only, so mint a short-lived belt-scoped
       # token from the Autofixer GitHub App instead. Fork PRs have no access
-      # to the App secret, so they skip the mint and the volume-content spec
-      # freshness check; the public infra fetches use the default token.
+      # to the App secret, so they skip the mint, run the public infra fetches
+      # with the default token, and fall back to the tracked volume-content
+      # spec (make fetch-specs warns instead of failing).
       - name: Generate token for belt repo
         id: belt-token
         if: github.event.pull_request.head.repo.full_name == github.repository
@@ -121,7 +122,6 @@ jobs:
       - name: Run codegen
         env:
           GITHUB_TOKEN: ${{ steps.belt-token.outputs.token || github.token }}
-          FETCH_PRIVATE_SPECS: ${{ steps.belt-token.outputs.token != '' && '1' || '0' }}
         run: |
           CODEGEN_IMAGE=codegen-env:latest \
           COPYBARA_IMAGE=e2b-copybara:latest \
