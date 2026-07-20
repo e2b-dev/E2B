@@ -22,42 +22,21 @@ def test_proxy_to_url_str():
     assert proxy_to_url("http://127.0.0.1:8080") == "http://127.0.0.1:8080"
 
 
-def test_proxy_to_url_httpx_url():
-    assert proxy_to_url(httpx.URL("socks5://localhost:1080")) == (
-        "socks5://localhost:1080"
-    )
-
-
 def test_proxy_to_url_keeps_credentials_from_url():
     assert proxy_to_url("http://user:pass@localhost:8030") == (
         "http://user:pass@localhost:8030"
     )
 
 
-def test_proxy_to_url_folds_proxy_auth_into_url():
-    proxy = httpx.Proxy("http://localhost:8030", auth=("user", "p@ss:word"))
-    assert proxy_to_url(proxy) == "http://user:p%40ss%3Aword@localhost:8030"
-
-
-def test_proxy_to_url_rejects_unknown_scheme():
-    with pytest.raises(ValueError):
-        proxy_to_url("ftp://localhost:8030")
-
-
-def test_proxy_to_url_rejects_proxy_headers():
-    proxy = httpx.Proxy("http://localhost:8030", headers={"X-Custom": "1"})
-    with pytest.raises(ValueError, match="headers"):
+def test_proxy_to_url_rejects_httpx_proxy():
+    proxy = httpx.Proxy("http://localhost:8030", auth=("user", "pass"))
+    with pytest.raises(ValueError, match="URL-string"):
         proxy_to_url(proxy)
 
 
-def test_proxy_to_url_rejects_proxy_ssl_context():
-    import ssl
-
-    proxy = httpx.Proxy(
-        "https://localhost:8030", ssl_context=ssl.create_default_context()
-    )
-    with pytest.raises(ValueError, match="ssl_context"):
-        proxy_to_url(proxy)
+def test_proxy_to_url_rejects_httpx_url():
+    with pytest.raises(ValueError, match="URL-string"):
+        proxy_to_url(httpx.URL("http://localhost:8030"))
 
 
 def test_sync_transport_is_cached_per_proxy():

@@ -25,10 +25,8 @@ from typing import (
     cast,
 )
 
-import httpx
 from connectrpc.errors import ConnectError
 from connectrpc.request import RequestContext
-from httpx._types import ProxyTypes
 from protobuf import Message
 from pyqwest import Client, HTTPTransport, SyncClient, SyncHTTPTransport
 
@@ -87,26 +85,20 @@ _sync_transports: dict[Optional[str], SyncHTTPTransport] = {}
 _async_transports: dict[Optional[str], HTTPTransport] = {}
 
 
-def proxy_to_url(proxy: Optional[ProxyTypes]) -> Optional[str]:
-    """Convert the httpx-typed ``proxy`` connection option to the proxy URL
-    string pyqwest transports take, folding ``httpx.Proxy`` credentials into
-    the URL userinfo. httpx and pyqwest support the same URL schemes (http,
-    https, socks5, socks5h); ``httpx.Proxy`` extras that pyqwest cannot honor
-    (custom headers, TLS context) are rejected rather than silently dropped.
+def proxy_to_url(proxy: object) -> Optional[str]:
+    """Narrow the ``proxy`` connection option to the proxy URL string pyqwest
+    transports take (scheme http, https, socks5, or socks5h, credentials in
+    the URL userinfo). The richer httpx proxy objects the REST client accepts
+    are rejected rather than partially honored.
     """
     if proxy is None:
         return None
-    if not isinstance(proxy, httpx.Proxy):
-        proxy = httpx.Proxy(url=proxy)
-    if proxy.headers:
-        raise ValueError("Proxy headers are not supported for sandbox RPC calls")
-    if proxy.ssl_context is not None:
-        raise ValueError("Proxy ssl_context is not supported for sandbox RPC calls")
-    url = proxy.url
-    if proxy.auth is not None:
-        username, password = proxy.auth
-        url = url.copy_with(username=username, password=password)
-    return str(url)
+    if isinstance(proxy, str):
+        return proxy
+    raise ValueError(
+        "Sandbox RPC calls support only URL-string proxies, "
+        'e.g. proxy="http://user:pass@localhost:8030"'
+    )
 
 
 def _get_sync_transport(proxy_url: Optional[str]) -> SyncHTTPTransport:

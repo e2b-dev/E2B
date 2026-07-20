@@ -26,6 +26,7 @@ Notes:
   equivalents (`e2b.envd.process.process_pb`,
   `e2b.envd.filesystem.filesystem_pb`) with a different message API.
 - The `proxy` option applies to sandbox RPC calls the same way it does to the
-  REST API and file transfer requests. `httpx.Proxy` values with custom
-  `headers` or `ssl_context` are rejected for RPC calls — fold credentials
-  into the proxy URL instead.
+  REST API and file transfer requests. RPC calls accept only URL-string
+  proxies (credentials in the URL, e.g.
+  `proxy="http://user:pass@localhost:8030"`); `httpx.Proxy` and `httpx.URL`
+  values are rejected for RPC calls.
