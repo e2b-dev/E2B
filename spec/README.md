@@ -11,8 +11,11 @@ source repository and re-sync:
 - `openapi-volumecontent.yml` is owned by the private belt repository,
   pinned by `belt-ref`.
 
-Fetching needs a GitHub token with read access to belt (`GITHUB_TOKEN`, or
-being logged in with `gh auth login`).
+Fetches authenticate with a GitHub token when available (`GITHUB_TOKEN`, or
+being logged in with `gh auth login`); the public infra specs also fetch
+anonymously, while the volume-content spec needs a token with read access
+to belt. When a fetch fails, `make codegen` warns and falls back to the
+tracked copy.
 
 `make codegen` re-fetches all of them at their pinned commits before
 generating the clients, and the generated-files CI check fails if the

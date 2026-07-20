@@ -1,17 +1,14 @@
 # Specs are fetched from their source-of-truth repositories (e2b-dev/infra
 # and e2b-dev/belt) at the commits pinned in spec/infra-ref and spec/belt-ref.
 # To update the specs, bump the pins and re-run `make codegen`.
-# Set FETCH_PRIVATE_SPECS=0 to skip specs that live in private repositories
-# (currently the volume-content spec from belt); fork PRs in CI have no
-# token with access to them.
-FETCH_PRIVATE_SPECS ?= 1
+# When a fetch fails (no GitHub token, no access to the private belt repo),
+# fall back to the tracked copy in spec/ with a warning.
 .PHONY: fetch-specs
 fetch-specs:
-	./scripts/fetch-spec.sh api-spec
-	./scripts/fetch-spec.sh envd-spec
-ifeq ($(FETCH_PRIVATE_SPECS),1)
-	./scripts/fetch-spec.sh volume-api-spec
-endif
+	@for spec in api-spec envd-spec volume-api-spec; do \
+		./scripts/fetch-spec.sh $$spec || \
+			echo "WARNING: could not fetch $$spec; using the tracked copy in spec/"; \
+	done
 
 # Set CODEGEN_IMAGE to skip the image build and use a prebuilt image instead
 # (CI builds it separately with a warm buildkit cache).

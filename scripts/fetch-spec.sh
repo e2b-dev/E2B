@@ -11,17 +11,15 @@ set -euo pipefail
 # touching the pin. volume-api-spec comes from e2b-dev/belt at the commit
 # pinned in spec/belt-ref (override with E2B_BELT_REF).
 #
-# All fetches need a GitHub token (belt is private): GITHUB_TOKEN, or being
-# logged in with `gh auth login`.
+# Fetches authenticate with GITHUB_TOKEN (or `gh auth login`) when available;
+# the public infra specs also fetch anonymously. volume-api-spec needs a
+# token with read access to the private belt repo — `make fetch-specs` falls
+# back to the tracked copy in spec/ with a warning when a fetch fails.
 
 SPEC="${1:?usage: fetch-spec.sh <api-spec|envd-spec|volume-api-spec>}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 TOKEN="${GITHUB_TOKEN:-$(gh auth token 2> /dev/null || true)}"
-if [ -z "$TOKEN" ]; then
-  echo "error: a GitHub token is required; set GITHUB_TOKEN or run \`gh auth login\`" >&2
-  exit 1
-fi
 
 # TARGETS lists the spec/ paths owned by each upstream; they are replaced
 # (not merged) on fetch so files deleted upstream don't linger locally.
