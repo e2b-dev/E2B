@@ -348,4 +348,35 @@ dockerfile = "e2b.Dockerfile"`
       expect(files).toContain('build.prod.ts')
     })
   })
+  describe('Build name resolution (#1478)', () => {
+    test('uses template_name over template_id in generated build_prod', async () => {
+      const dockerfile = 'FROM node:18'
+      await fs.writeFile(path.join(testDir, 'e2b.Dockerfile'), dockerfile)
+
+      // Opaque ID-looking value must NOT appear as the build name when a
+      // human-readable template_name is present (would 409 on rebuild).
+      const config = `template_id = "abc1234567890xyz"
+template_name = "my-template"
+dockerfile = "e2b.Dockerfile"`
+      await fs.writeFile(path.join(testDir, 'e2b.toml'), config)
+
+      execSync(`node ${cliPath} template migrate --language python-async`, {
+        cwd: testDir,
+      })
+
+      const buildProd = await fs.readFile(
+        path.join(testDir, 'build_prod.py'),
+        'utf-8'
+      )
+      expect(buildProd).toContain('"my-template"')
+      expect(buildProd).not.toContain('"abc1234567890xyz"')
+
+      const buildDev = await fs.readFile(
+        path.join(testDir, 'build_dev.py'),
+        'utf-8'
+      )
+      expect(buildDev).toContain('"my-template-dev"')
+      expect(buildDev).not.toContain('"abc1234567890xyz-dev"')
+    })
+  })
 })

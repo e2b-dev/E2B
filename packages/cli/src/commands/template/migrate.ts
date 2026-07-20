@@ -15,6 +15,62 @@ import {
   Language,
   languageDisplay,
 } from './generators'
+import { listSandboxTemplates } from './list'
+import { resolveTeamId } from '../../api'
+
+/**
+ * Resolve the human-readable template alias used as `Template.build(..., name)`.
+ *
+ * `template_id` is an opaque internal ID. Passing it as `name` makes the API
+ * try to register that string as a *new* alias, which collides with the
+ * existing template → 409 (#1478). Prefer `template_name`, then the first
+ * alias returned by the templates API for this ID, and only fall back to
+ * `template_id` with a loud warning when nothing else is available.
+ */
+async function resolveMigrateBuildName(
+  config: E2BConfig,
+  nameOverride?: string
+): Promise<string> {
+  if (nameOverride) {
+    return nameOverride
+  }
+  if (config.template_name) {
+    return config.template_name
+  }
+  if (!config.template_id) {
+    throw new Error('Template name or ID is required')
+  }
+
+  try {
+    const templates = await listSandboxTemplates({
+      teamID: resolveTeamId(undefined, config.team_id),
+    })
+    const match = templates.find((tpl) => tpl.templateID === config.template_id)
+    const alias = match?.aliases?.find((a) => typeof a === 'string' && a.length > 0)
+    if (alias) {
+      console.log(
+        `Resolved template_id ${asLocal(config.template_id)} to alias ${asPrimary(alias)}`
+      )
+      return alias
+    }
+  } catch (err) {
+    console.warn(
+      `Could not list templates to resolve alias for ${asLocal(config.template_id)}: ${
+        err instanceof Error ? err.message : String(err)
+      }`
+    )
+  }
+
+  console.warn(
+    `\n⚠️  No template_name/alias found for template_id ${asLocal(
+      config.template_id
+    )}. Using the ID as the build name may cause a 409 alias collision.`
+  )
+  console.warn(
+    `   Prefer: e2b template migrate --name <existing-alias>  (or set template_name in e2b.toml)\n`
+  )
+  return config.template_id
+}
 
 /**
  * Migrate Dockerfile to a specific target language using SDK
@@ -68,10 +124,7 @@ async function migrateToLanguage(
     parsedTemplate = baseTemplate.setReadyCmd(config.ready_cmd)
   }
 
-  const name = nameOverride || config.template_name || config.template_id
-  if (!name) {
-    throw new Error('Template name or ID is required')
-  }
+  const name = await resolveMigrateBuildName(config, nameOverride)
 
   // Generate code for the target language using shared functionality
   await generateAndWriteTemplateFiles(
