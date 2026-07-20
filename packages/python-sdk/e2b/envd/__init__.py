@@ -23,9 +23,11 @@ _MESSAGE = TypeVar("_MESSAGE", bound=Message)
 class _ProtoJSONCodec:
     """JSON codec matching the JS SDK's `useBinaryFormat: false`.
 
-    Unknown response fields are ignored so an older SDK keeps working against
-    a newer envd that added fields (the default codec shipped with connectrpc
-    fails hard on unknown fields).
+    connectrpc's default codec is binary protobuf, which would silently
+    change the wire format the SDK has always used; its built-in JSON codec
+    fails hard on unknown fields, which would break an older SDK against a
+    newer envd that added response fields. This codec is the built-in JSON
+    codec plus `ignore_unknown_fields`.
     """
 
     def name(self) -> str:
