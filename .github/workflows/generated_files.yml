@@ -100,13 +100,23 @@ jobs:
           # cache-to note above for why there is no cache-to here).
           cache-from: type=gha,scope=copybara
 
+      # scripts/fetch-spec.sh needs read access to the private e2b-dev/belt
+      # repo to fetch the volume-content spec. The default `secrets.GITHUB_TOKEN`
+      # is scoped to this repository only, so mint a short-lived belt-scoped
+      # token from the Autofixer GitHub App instead.
+      - name: Generate token for belt repo
+        id: belt-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.AUTOFIXER_APP_ID }}
+          private-key: ${{ secrets.AUTOFIXER_APP_SECRET }}
+          owner: e2b-dev
+          repositories: belt
+          permission-contents: read
+
       - name: Run codegen
         env:
-          # Token with read access to the private e2b-dev/belt repo, used by
-          # scripts/fetch-spec.sh to fetch the volume-content spec. The
-          # default `secrets.GITHUB_TOKEN` cannot be used here: it is scoped
-          # to this repository only and cannot read other private repos.
-          GITHUB_TOKEN: ${{ secrets.BELT_READ_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.belt-token.outputs.token }}
         run: |
           CODEGEN_IMAGE=codegen-env:latest \
           COPYBARA_IMAGE=e2b-copybara:latest \
