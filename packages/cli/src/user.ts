@@ -61,8 +61,9 @@ export function getUserConfig(): UserConfig | null {
   const migrated = migrateV1UserConfig(config)
   if (migrated) return migrated
 
+  // An unrecognized config is treated as being signed out, but the file is
+  // kept on disk — `e2b auth login` overwrites it.
   if (!isUserConfig(config)) {
-    fs.unlinkSync(USER_CONFIG_PATH)
     console.error(DEPRECATED_USER_CONFIG_MESSAGE)
     return null
   }

@@ -38,6 +38,7 @@ beforeEach(() => {
 
 afterEach(() => {
   fs.rmSync(mockHome, { recursive: true, force: true })
+  vi.restoreAllMocks()
 })
 
 function writeConfigFile(config: unknown): string {
@@ -82,5 +83,23 @@ describe('getUserConfig', () => {
 
     const { getUserConfig } = await import('../src/user')
     expect(getUserConfig()).toEqual(v2Config)
+  })
+
+  it('treats an unrecognized config as signed out without deleting it', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {
+      /* silence deprecation message */
+    })
+    const configPath = writeConfigFile({
+      version: 1,
+      ...v1AuthFields,
+      // Missing team* fields — cannot be migrated.
+    })
+
+    const { getUserConfig, DEPRECATED_USER_CONFIG_MESSAGE } = await import(
+      '../src/user'
+    )
+    expect(getUserConfig()).toBeNull()
+    expect(fs.existsSync(configPath)).toBe(true)
+    expect(consoleError).toHaveBeenCalledWith(DEPRECATED_USER_CONFIG_MESSAGE)
   })
 })
