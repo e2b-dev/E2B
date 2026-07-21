@@ -80,7 +80,6 @@
     "chalk": "^5.3.0",
     "cli-highlight": "^2.1.11",
     "commander": "^11.1.0",
-    "console-table-printer": "^2.11.2",
     "e2b": "^2.33.1",
     "handlebars": "^4.7.9",
     "inquirer": "^12.10.0",

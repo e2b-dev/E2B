@@ -1,20 +1,12 @@
-import * as tablePrinter from 'console-table-printer'
 import * as commander from 'commander'
 import { components, Sandbox, SandboxInfo } from 'e2b'
 
 import { ensureAPIKey } from 'src/api'
+import { printTable, type TableColumn } from 'src/utils/table'
 import { parseMetadata } from './utils'
 
 const DEFAULT_LIMIT = 1000
 const PAGE_LIMIT = 100
-
-function getStateTitle(state?: components['schemas']['SandboxState'][]) {
-  if (state?.length === 1) {
-    if (state?.includes('running')) return 'Running sandboxes'
-    if (state?.includes('paused')) return 'Paused sandboxes'
-  }
-  return 'Sandboxes'
-}
 
 export const listCommand = new commander.Command('list')
   .description('list all sandboxes, by default it list only running ones')
@@ -44,7 +36,7 @@ export const listCommand = new commander.Command('list')
       })
 
       if (format === 'pretty') {
-        renderTable(sandboxes, state)
+        renderTable(sandboxes)
         if (hasMore) {
           console.log(
             `Showing first ${limit} sandboxes. Use --limit to change.`
@@ -62,74 +54,50 @@ export const listCommand = new commander.Command('list')
     }
   })
 
-function renderTable(
-  sandboxes: SandboxInfo[],
-  state: components['schemas']['SandboxState'][]
-) {
+function renderTable(sandboxes: SandboxInfo[]) {
   if (!sandboxes?.length) {
     console.log('No sandboxes found')
     return
   }
 
-  const table = new tablePrinter.Table({
-    title: getStateTitle(state),
-    columns: [
-      { name: 'sandboxId', alignment: 'left', title: 'Sandbox ID' },
-      {
-        name: 'templateId',
-        alignment: 'left',
-        title: 'Template ID',
-        maxLen: 20,
-      },
-      { name: 'name', alignment: 'left', title: 'Alias' },
-      { name: 'startedAt', alignment: 'left', title: 'Started at' },
-      { name: 'endAt', alignment: 'left', title: 'End at' },
-      { name: 'state', alignment: 'left', title: 'State' },
-      { name: 'cpuCount', alignment: 'left', title: 'vCPUs' },
-      { name: 'memoryMB', alignment: 'left', title: 'RAM MiB' },
-      { name: 'envdVersion', alignment: 'left', title: 'Envd version' },
-      { name: 'metadata', alignment: 'left', title: 'Metadata' },
-    ],
-    disabledColumns: ['clientID'],
-    rows: sandboxes
-      .map((sandbox) => ({
-        ...sandbox,
-        startedAt: new Date(sandbox.startedAt).toLocaleString(),
-        endAt: new Date(sandbox.endAt).toLocaleString(),
-        state: sandbox.state.charAt(0).toUpperCase() + sandbox.state.slice(1), // capitalize
-        metadata: JSON.stringify(sandbox.metadata),
-      }))
-      .sort(
-        (a, b) =>
-          a.startedAt.localeCompare(b.startedAt) ||
-          a.sandboxId.localeCompare(b.sandboxId)
-      ),
-    style: {
-      headerTop: {
-        left: '',
-        right: '',
-        mid: '',
-        other: '',
-      },
-      headerBottom: {
-        left: '',
-        right: '',
-        mid: '',
-        other: '',
-      },
-      tableBottom: {
-        left: '',
-        right: '',
-        mid: '',
-        other: '',
-      },
-      vertical: '',
+  const columns: TableColumn<SandboxInfo>[] = [
+    { name: 'sandboxId', title: 'Sandbox ID' },
+    { name: 'templateId', title: 'Template ID', maxLen: 20 },
+    { name: 'name', title: 'Alias' },
+    {
+      name: 'startedAt',
+      title: 'Started at',
+      getValue: (sandbox) => new Date(sandbox.startedAt).toLocaleString(),
     },
-    colorMap: {
-      orange: '\x1b[38;5;216m',
+    {
+      name: 'endAt',
+      title: 'End at',
+      getValue: (sandbox) => new Date(sandbox.endAt).toLocaleString(),
     },
-  })
-  table.printTable()
+    {
+      name: 'state',
+      title: 'State',
+      getValue: (sandbox) =>
+        sandbox.state.charAt(0).toUpperCase() + sandbox.state.slice(1),
+    },
+    { name: 'cpuCount', title: 'vCPUs' },
+    { name: 'memoryMB', title: 'RAM MiB' },
+    { name: 'envdVersion', title: 'Envd version' },
+    {
+      name: 'metadata',
+      title: 'Metadata',
+      getValue: (sandbox) => JSON.stringify(sandbox.metadata),
+    },
+  ]
+
+  printTable(
+    columns,
+    [...sandboxes].sort(
+      (a, b) =>
+        new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime() ||
+        a.sandboxId.localeCompare(b.sandboxId)
+    )
+  )
 
   process.stdout.write('\n')
 }

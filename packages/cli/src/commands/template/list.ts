@@ -1,8 +1,8 @@
-import * as tablePrinter from 'console-table-printer'
 import * as commander from 'commander'
 import * as e2b from 'e2b'
 
 import { listAliases } from '../../utils/format'
+import { printTable, type TableColumn } from 'src/utils/table'
 import { sortTemplatesAliases } from 'src/utils/templateSort'
 import { client, ensureAPIKey, resolveTeamId } from 'src/api'
 import { teamOption } from '../../options'
@@ -47,66 +47,38 @@ function renderTable(templates: e2b.components['schemas']['Template'][]) {
     return
   }
 
-  const table = new tablePrinter.Table({
-    title: 'Sandbox templates',
-    columns: [
-      { name: 'visibility', alignment: 'left', title: 'Access' },
-      { name: 'templateID', alignment: 'left', title: 'Template ID' },
-      {
-        name: 'aliases',
-        alignment: 'left',
-        title: 'Template Name',
-        color: 'orange',
-        maxLen: 20,
-      },
-      { name: 'cpuCount', alignment: 'right', title: 'vCPUs' },
-      { name: 'memoryMB', alignment: 'right', title: 'RAM MiB' },
-      { name: 'createdBy', alignment: 'right', title: 'Created by' },
-      { name: 'createdAt', alignment: 'right', title: 'Created at' },
-      { name: 'diskSizeMB', alignment: 'right', title: 'Disk size MiB' },
-      { name: 'envdVersion', alignment: 'right', title: 'Envd version' },
-    ],
-    disabledColumns: [
-      'public',
-      'buildID',
-      'buildCount',
-      'lastSpawnedAt',
-      'spawnCount',
-      'updatedAt',
-    ],
-    rows: templates.map((template) => ({
-      ...template,
-      visibility: template.public ? 'Public' : 'Private',
-      aliases: listAliases(template.aliases),
-      createdBy: template.createdBy?.email,
-      createdAt: new Date(template.createdAt).toLocaleDateString(),
-    })),
-    style: {
-      headerTop: {
-        left: '',
-        right: '',
-        mid: '',
-        other: '',
-      },
-      headerBottom: {
-        left: '',
-        right: '',
-        mid: '',
-        other: '',
-      },
-      tableBottom: {
-        left: '',
-        right: '',
-        mid: '',
-        other: '',
-      },
-      vertical: '',
+  const columns: TableColumn<e2b.components['schemas']['Template']>[] = [
+    {
+      name: 'visibility',
+      title: 'Access',
+      getValue: (template) => (template.public ? 'Public' : 'Private'),
     },
-    colorMap: {
-      orange: '\x1b[38;5;216m',
+    { name: 'templateID', title: 'Template ID' },
+    {
+      name: 'aliases',
+      title: 'Template Name',
+      maxLen: 20,
+      getValue: (template) => listAliases(template.aliases),
     },
-  })
-  table.printTable()
+    { name: 'cpuCount', title: 'vCPUs', alignment: 'right' },
+    { name: 'memoryMB', title: 'RAM MiB', alignment: 'right' },
+    {
+      name: 'createdBy',
+      title: 'Created by',
+      alignment: 'right',
+      getValue: (template) => template.createdBy?.email,
+    },
+    {
+      name: 'createdAt',
+      title: 'Created at',
+      alignment: 'right',
+      getValue: (template) => new Date(template.createdAt).toLocaleDateString(),
+    },
+    { name: 'diskSizeMB', title: 'Disk size MiB', alignment: 'right' },
+    { name: 'envdVersion', title: 'Envd version', alignment: 'right' },
+  ]
+
+  printTable(columns, templates)
 
   process.stdout.write('\n')
 }
