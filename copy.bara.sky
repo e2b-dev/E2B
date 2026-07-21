@@ -4,6 +4,12 @@
 # pinned in spec/infra-ref before generating the clients, and the
 # generated-files CI check fails if the tracked copies don't match the pin.
 # See spec/README.md.
+#
+# scripts/fetch-spec.sh runs these workflows with `--folder-dir` pointing at
+# spec/ itself. Each workflow's destination_files glob declares the spec/
+# paths its upstream owns: after a successful fetch, Copybara replaces
+# exactly those paths (so files deleted upstream are deleted here too) and
+# leaves the repo-owned files in spec/ untouched.
 
 INFRA_REPO = "https://github.com/e2b-dev/infra.git"
 BELT_REPO = "https://github.com/e2b-dev/belt.git"
@@ -18,6 +24,7 @@ core.workflow(
     ),
     destination = folder.destination(),
     origin_files = glob(["spec/openapi.yml"]),
+    destination_files = glob(["openapi.yml"]),
     authoring = AUTHORING,
     mode = "SQUASH",
     transformations = [
@@ -41,6 +48,11 @@ core.workflow(
         # This repo has its own buf generation templates in spec/envd.
         exclude = ["packages/envd/spec/buf*.yaml"],
     ),
+    destination_files = glob([
+        "envd/envd.yaml",
+        "envd/filesystem/**",
+        "envd/process/**",
+    ]),
     authoring = AUTHORING,
     mode = "SQUASH",
     transformations = [
@@ -58,6 +70,7 @@ core.workflow(
     ),
     destination = folder.destination(),
     origin_files = glob(["packages/volume-content/openapi.yml"]),
+    destination_files = glob(["openapi-volumecontent.yml"]),
     authoring = AUTHORING,
     mode = "SQUASH",
     transformations = [
