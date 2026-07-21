@@ -10,11 +10,11 @@ export const primaryColor = '#FFB766'
 
 export function asFormattedConfig(config: UserConfig) {
   const email = asBold(config.identity.email)
-  const team = config.projectName
+  const project = config.projectName
     ? asBold(config.projectName)
     : asRed('Log out and log in to get team name')
-  const teamId = asBold(config.projectId)
-  return `You are logged in as ${email},\nSelected team: ${team} (${teamId})`
+  const projectId = asBold(config.projectId)
+  return `You are logged in as ${email},\nSelected team: ${project} (${projectId})`
 }
 
 export function asFormattedTeam(
