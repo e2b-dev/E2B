@@ -1,11 +1,11 @@
 import * as commander from 'commander'
-import * as fs from 'fs'
 import * as chalk from 'chalk'
 import * as e2b from 'e2b'
 
 import {
   USER_CONFIG_PATH,
   getConfigRefreshTimestamp,
+  getUserConfig,
   writeUserConfig,
 } from 'src/user'
 import { ensureUserConfig, Teams } from 'src/api'
@@ -20,7 +20,9 @@ export const configureCommand = new commander.Command('configure')
 
     console.log('Configuring user...\n')
 
-    if (!fs.existsSync(USER_CONFIG_PATH)) {
+    // A file that exists but fails validation counts as signed out too —
+    // getUserConfig returns null for it (and prints the deprecation message).
+    if (!getUserConfig()) {
       console.log('No user config found, run `e2b auth login` to log in first.')
       return
     }

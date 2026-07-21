@@ -39,6 +39,9 @@ export const USER_CONFIG_PATH = path.join(os.homedir(), '.e2b', 'config.json') /
 export const DEPRECATED_USER_CONFIG_MESSAGE =
   'Your CLI authentication config is deprecated. You have been signed out. Please run `e2b auth login` again.'
 
+// getUserConfig can be called several times per command; warn only once.
+let deprecationWarned = false
+
 export const DOCS_BASE =
   process.env.E2B_DOCS_BASE ||
   `https://${process.env.E2B_DOMAIN || 'e2b.dev'}/docs`
@@ -64,7 +67,10 @@ export function getUserConfig(): UserConfig | null {
   // An unrecognized config is treated as being signed out, but the file is
   // kept on disk — `e2b auth login` overwrites it.
   if (!isUserConfig(config)) {
-    console.error(DEPRECATED_USER_CONFIG_MESSAGE)
+    if (!deprecationWarned) {
+      deprecationWarned = true
+      console.error(DEPRECATED_USER_CONFIG_MESSAGE)
+    }
     return null
   }
 
