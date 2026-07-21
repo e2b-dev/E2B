@@ -38,6 +38,52 @@ test('uses undici with a bounded HTTP/2 dispatcher for API requests', async () =
   expect(requests[0].init?.dispatcher).toBeInstanceOf(Agent)
 })
 
+test('retries a graceful HTTP/2 GOAWAY once for API GET requests', async () => {
+  class Agent {}
+  const goAway = Object.assign(
+    new Error('HTTP/2: "GOAWAY" frame received with code 0'),
+    { code: 'UND_ERR_SOCKET' }
+  )
+  const undiciFetch = vi
+    .fn()
+    .mockRejectedValueOnce(
+      Object.assign(new TypeError('fetch failed'), { cause: goAway })
+    )
+    .mockResolvedValueOnce(new Response('ok'))
+
+  const { createApiFetchForRuntime } = await import('../../src/api/http2')
+  const fetcher = createApiFetchForRuntime('node', {
+    loadUndici: () => Promise.resolve({ Agent, fetch: undiciFetch }),
+  })
+
+  expect(await (await fetcher('https://example.com/sandboxes')).text()).toBe(
+    'ok'
+  )
+  expect(undiciFetch).toHaveBeenCalledTimes(2)
+})
+
+test('leaves graceful GOAWAY handling to Undici 8', async () => {
+  class Agent {}
+  const goAway = Object.assign(
+    new Error('HTTP/2: "GOAWAY" frame received with code 0'),
+    { code: 'UND_ERR_SOCKET' }
+  )
+  const undiciFetch = vi.fn().mockRejectedValue(goAway)
+
+  const { createApiFetchForRuntime } = await import('../../src/api/http2')
+  const fetcher = createApiFetchForRuntime('node', {
+    loadUndici: () =>
+      Promise.resolve({
+        Agent,
+        fetch: undiciFetch,
+        retryGracefulGoAway: false,
+      }),
+  })
+
+  await expect(fetcher('https://example.com/sandboxes')).rejects.toBe(goAway)
+  expect(undiciFetch).toHaveBeenCalledOnce()
+})
+
 test('uses a ProxyAgent dispatcher when a proxy is configured', async () => {
   const proxyAgents: Array<{
     uri?: string
@@ -58,6 +104,7 @@ test('uses a ProxyAgent dispatcher when a proxy is configured', async () => {
       uri?: string
       allowH2?: boolean
       connections?: number
+      proxyTunnel?: boolean
     }) {
       proxyAgents.push(options)
     }
@@ -86,6 +133,7 @@ test('uses a ProxyAgent dispatcher when a proxy is configured', async () => {
       uri: 'http://user:pass@127.0.0.1:8080',
       allowH2: true,
       connections: 100,
+      proxyTunnel: true,
     },
   ])
   expect(requests[0].init?.dispatcher).toBeInstanceOf(ProxyAgent)

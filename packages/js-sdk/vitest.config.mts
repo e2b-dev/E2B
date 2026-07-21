@@ -3,6 +3,12 @@ import { playwright } from '@vitest/browser-playwright'
 import { config } from 'dotenv'
 
 const env = config()
+const [nodeMajor = 0, nodeMinor = 0] = process.versions.node
+  .split('.', 2)
+  .map((part) => Number.parseInt(part, 10))
+const supportsUndici8 =
+  nodeMajor > 22 || (nodeMajor === 22 && nodeMinor >= 19)
+
 export default defineConfig({
   test: {
     projects: [
@@ -15,6 +21,7 @@ export default defineConfig({
             'tests/integration/**',
             'tests/template/**',
             'tests/connectionConfig.test.ts',
+            ...(!supportsUndici8 ? ['tests/undici8-goaway.test.ts'] : []),
           ],
           // Isolation is required: several suites patch global fetch via msw
           // and rely on module mocks (vi.doMock / vi.resetModules). Under

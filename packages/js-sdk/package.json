@@ -45,6 +45,7 @@
     "format": "prettier --write src/ tests/ example.mts"
   },
   "devDependencies": {
+    "@metcoder95/https-pem": "^1.0.0",
     "@testing-library/react": "^16.2.0",
     "@types/node": "^20.19.19",
     "@types/platform": "^1.3.6",
@@ -99,6 +100,9 @@
     "platform": "^1.3.6",
     "tar": "^7.5.16",
     "undici": "^7.28.0"
+  },
+  "optionalDependencies": {
+    "undici8": "npm:undici@8.8.0"
   },
   "engines": {
     "node": ">=20.18.1 <21 || >=22"

@@ -38,6 +38,44 @@ test('uses undici with HTTP/2 enabled in Node', async () => {
   expect(requests[0].init?.dispatcher).toBeInstanceOf(Agent)
 })
 
+test('retries a graceful HTTP/2 GOAWAY once for envd REST GET requests', async () => {
+  class Agent {}
+  const goAway = Object.assign(
+    new Error('HTTP/2: "GOAWAY" frame received with code 0'),
+    { code: 'UND_ERR_SOCKET' }
+  )
+  const undiciFetch = vi
+    .fn()
+    .mockRejectedValueOnce(goAway)
+    .mockResolvedValueOnce(new Response('ok'))
+
+  const { createEnvdFetchForRuntime } = await import('../../src/envd/http2')
+  const fetcher = createEnvdFetchForRuntime('node', {
+    loadUndici: () => Promise.resolve({ Agent, fetch: undiciFetch }),
+  })
+
+  expect(await (await fetcher('https://example.com/files')).text()).toBe('ok')
+  expect(undiciFetch).toHaveBeenCalledTimes(2)
+})
+
+test('can disable graceful GOAWAY retries for envd RPC transport', async () => {
+  class Agent {}
+  const goAway = Object.assign(
+    new Error('HTTP/2: "GOAWAY" frame received with code 0'),
+    { code: 'UND_ERR_SOCKET' }
+  )
+  const undiciFetch = vi.fn().mockRejectedValue(goAway)
+
+  const { createEnvdFetchForRuntime } = await import('../../src/envd/http2')
+  const fetcher = createEnvdFetchForRuntime('node', {
+    retryGracefulGoAway: false,
+    loadUndici: () => Promise.resolve({ Agent, fetch: undiciFetch }),
+  })
+
+  await expect(fetcher('https://example.com/rpc')).rejects.toBe(goAway)
+  expect(undiciFetch).toHaveBeenCalledOnce()
+})
+
 test('uses a ProxyAgent dispatcher when a proxy is configured', async () => {
   const proxyAgents: Array<{
     uri?: string
@@ -58,6 +96,7 @@ test('uses a ProxyAgent dispatcher when a proxy is configured', async () => {
       uri?: string
       allowH2?: boolean
       connections?: number
+      proxyTunnel?: boolean
     }) {
       proxyAgents.push(options)
     }
@@ -80,7 +119,12 @@ test('uses a ProxyAgent dispatcher when a proxy is configured', async () => {
 
   expect(agents).toHaveLength(0)
   expect(proxyAgents).toEqual([
-    { uri: 'http://127.0.0.1:8080', allowH2: true, connections: 1 },
+    {
+      uri: 'http://127.0.0.1:8080',
+      allowH2: true,
+      connections: 1,
+      proxyTunnel: true,
+    },
   ])
   expect(requests[0].init?.dispatcher).toBeInstanceOf(ProxyAgent)
 })

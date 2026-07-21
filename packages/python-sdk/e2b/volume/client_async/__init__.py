@@ -10,7 +10,7 @@ from httpx._types import ProxyTypes
 from e2b.api import connection_retries, make_async_logging_event_hooks
 from e2b.api.metadata import default_headers
 from e2b.exceptions import AuthenticationException
-from e2b.volume.client.client import AuthenticatedClient as AsyncVolumeApiClient
+from e2b.volume.api_client import RetryingVolumeApiClient
 from e2b.volume.connection_config import VolumeConnectionConfig
 
 limits = Limits(
@@ -22,7 +22,7 @@ limits = Limits(
 TransportKey = Optional[ProxyTypes]
 
 
-def get_api_client(config: VolumeConnectionConfig, **kwargs) -> AsyncVolumeApiClient:
+def get_api_client(config: VolumeConnectionConfig, **kwargs) -> RetryingVolumeApiClient:
     if config.access_token is None:
         raise AuthenticationException(
             "Volume token is required for volume content operations. "
@@ -37,7 +37,7 @@ def get_api_client(config: VolumeConnectionConfig, **kwargs) -> AsyncVolumeApiCl
 
     request_timeout = config.request_timeout
 
-    return AsyncVolumeApiClient(
+    return RetryingVolumeApiClient(
         base_url=config.api_url,
         token=config.access_token,
         auth_header_name="Authorization",

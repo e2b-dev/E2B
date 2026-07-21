@@ -3,6 +3,7 @@ import { parseInflightLimitEnv, parsePositiveIntEnv } from '../api/metadata'
 import { limitConcurrency } from '../api/inflight'
 import {
   loadUndici,
+  retryGracefulHttp2GoAway,
   toUndiciRequestInput,
   type UndiciModule,
   type UndiciRequestInit,
@@ -12,6 +13,7 @@ type EnvdFetchOptions = {
   connectionLimit?: number
   inflightLimit?: number
   proxy?: string
+  retryGracefulGoAway?: boolean
   loadUndici?: () => Promise<UndiciModule | undefined>
 }
 
@@ -52,7 +54,12 @@ async function buildEnvdFetcher(
     return limitConcurrency(fetch, inflightLimit)
   }
 
-  const { Agent, ProxyAgent, fetch: undiciFetch } = undici
+  const {
+    Agent,
+    ProxyAgent,
+    fetch: undiciFetch,
+    retryGracefulGoAway = true,
+  } = undici
   const connections = options.connectionLimit ?? DEFAULT_ENVD_CONNECTION_LIMIT
 
   const dispatcher = options.proxy
@@ -60,6 +67,7 @@ async function buildEnvdFetcher(
         uri: options.proxy,
         allowH2: true,
         connections,
+        proxyTunnel: true,
       })
     : new Agent({
         allowH2: true,
@@ -79,7 +87,12 @@ async function buildEnvdFetcher(
     })
   }) as typeof fetch
 
-  return limitConcurrency(wrapped, inflightLimit)
+  const fetcher =
+    options.retryGracefulGoAway === false || !retryGracefulGoAway
+      ? wrapped
+      : retryGracefulHttp2GoAway(wrapped)
+
+  return limitConcurrency(fetcher, inflightLimit)
 }
 
 export function createEnvdFetch(proxy?: string): typeof fetch {
@@ -113,6 +126,7 @@ export function createEnvdRpcFetch(proxy?: string): typeof fetch {
     connectionLimit: getEnvdRpcConnectionLimit(),
     inflightLimit: getEnvdRpcInflightLimit(),
     proxy,
+    retryGracefulGoAway: false,
   })
   envdRpcFetchers.set(key, envdRpcFetch)
 

@@ -5,6 +5,7 @@ import e2b_connect
 import httpx
 from packaging.version import Version
 from e2b.api import make_logging_event_hooks
+from e2b.api.http_client import RetryingClient
 from e2b.api.client_sync import get_envd_transport
 from e2b.connection_config import (
     ConnectionConfig,
@@ -40,7 +41,7 @@ class Commands:
 
     def _create_envd_api(self) -> httpx.Client:
         transport = get_envd_transport(self._connection_config)
-        return httpx.Client(
+        return RetryingClient(
             base_url=self._envd_api_url,
             transport=transport,
             headers=self._connection_config.sandbox_headers,
