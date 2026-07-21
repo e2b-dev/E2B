@@ -46,8 +46,8 @@ export const configureCommand = new commander.Command('configure')
     const team = (
       await inquirer.default.prompt([
         {
-          name: 'project',
-          message: chalk.default.underline('Select project'),
+          name: 'team',
+          message: chalk.default.underline('Select team'),
           type: 'list',
           pageSize: 50,
           choices: teams.map((team) => ({
@@ -56,7 +56,7 @@ export const configureCommand = new commander.Command('configure')
           })),
         },
       ])
-    )['project']
+    )['team']
 
     userConfig.projectName = team.name
     userConfig.projectId = team.teamID
@@ -64,5 +64,5 @@ export const configureCommand = new commander.Command('configure')
     userConfig.last_refresh = getConfigRefreshTimestamp()
     writeUserConfig(USER_CONFIG_PATH, userConfig)
 
-    console.log(`Project ${asBold(team.name)} (${team.teamID}) selected.\n`)
+    console.log(`Team ${asBold(team.name)} (${team.teamID}) selected.\n`)
   })
