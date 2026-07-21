@@ -1,8 +1,8 @@
 ROOT_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/../..)
 
 generate-api:
-	redocly bundle python-sdk --config $(ROOT_DIR)/redocly.yaml -o $(ROOT_DIR)/spec/openapi_generated.yml
-	openapi-python-client generate --output-path $(ROOT_DIR)/packages/python-sdk/e2b/api/api --overwrite --path $(ROOT_DIR)/spec/openapi_generated.yml
+	redocly bundle python-sdk --config $(ROOT_DIR)/redocly.yaml -o $(ROOT_DIR)/spec/openapi_generated.python-sdk.yml
+	openapi-python-client generate --output-path $(ROOT_DIR)/packages/python-sdk/e2b/api/api --overwrite --path $(ROOT_DIR)/spec/openapi_generated.python-sdk.yml
 	rm -rf e2b/api/client
 	mv e2b/api/api/e2b_api_client e2b/api/client
 	rm -rf e2b/api/api
