@@ -39,13 +39,13 @@ export const selectMultipleOption = new commander.Option(
 
 export const teamOption = new commander.Option(
   '-t, --team <team-id>',
-  '[deprecated] specify the team ID that the operation will be associated with. This option will be removed in future releases; the operation is scoped to the team of your API key.'
+  '[deprecated] specify the team ID that the operation will be associated with. This option will be removed in future releases; the operation is scoped to the currently active project.'
 )
 
 export function warnDeprecatedTeamOption(team?: string) {
   if (team) {
     console.warn(
-      "Warning: The '--team' option is deprecated and will be removed in future releases. The operation is scoped to the team of your API key."
+      "Warning: The '--team' option is deprecated and will be removed in future releases. The operation is scoped to the currently active project."
     )
   }
 }
