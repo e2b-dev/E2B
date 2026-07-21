@@ -66,10 +66,19 @@ docker run --rm \
   migrate /workspace/copy.bara.sky "$SPEC" "$REF" \
   --folder-dir "/workspace/$STAGING"
 
+# Only replace the tracked copies once the fetched output is known to be
+# complete, and swap each target in with mv (an instant same-filesystem
+# rename) so a failure can't leave spec/ half-populated.
+for target in $TARGETS; do
+  if [ ! -e "$ROOT_DIR/$STAGING/$target" ]; then
+    echo "error: fetched output is missing spec/$target; leaving spec/ untouched" >&2
+    exit 1
+  fi
+done
 for target in $TARGETS; do
   rm -rf "$ROOT_DIR/spec/$target"
+  mv "$ROOT_DIR/$STAGING/$target" "$ROOT_DIR/spec/$target"
 done
-cp -R "$ROOT_DIR/$STAGING/." "$ROOT_DIR/spec/"
 rm -rf "$ROOT_DIR/.copybara"
 
 echo "Updated spec/ from $SPEC ($SOURCE@$REF)"
