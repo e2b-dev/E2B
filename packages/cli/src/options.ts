@@ -39,5 +39,13 @@ export const selectMultipleOption = new commander.Option(
 
 export const teamOption = new commander.Option(
   '-t, --team <team-id>',
-  'specify the team ID that the operation will be associated with. You can find team ID in the team settings in the E2B dashboard (https://e2b.dev/dashboard?tab=team).'
+  '[deprecated] specify the team ID that the operation will be associated with. This option will be removed in future releases; the operation is scoped to the team of your API key.'
 )
+
+export function warnDeprecatedTeamOption(team?: string) {
+  if (team) {
+    console.warn(
+      "Warning: The '--team' option is deprecated and will be removed in future releases. The operation is scoped to the team of your API key."
+    )
+  }
+}

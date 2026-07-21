@@ -14,6 +14,7 @@ import {
   pathOption,
   selectMultipleOption,
   teamOption,
+  warnDeprecatedTeamOption,
 } from 'src/options'
 import {
   E2BConfig,
@@ -26,7 +27,7 @@ import { getRoot } from 'src/utils/filesystem'
 import { listSandboxTemplates } from './list'
 import { getPromptTemplates } from 'src/utils/templatePrompt'
 import { confirm } from 'src/utils/confirm'
-import { client, resolveTeamId } from 'src/api'
+import { client, ensureAPIKey } from 'src/api'
 import { handleE2BRequestError } from '../../utils/errors'
 
 async function deleteTemplate(templateID: string) {
@@ -70,7 +71,8 @@ export const deleteCommand = new commander.Command('delete')
       }
     ) => {
       try {
-        let teamId = opts.team
+        warnDeprecatedTeamOption(opts.team)
+        ensureAPIKey()
 
         const root = getRoot(opts.path)
 
@@ -83,11 +85,7 @@ export const deleteCommand = new commander.Command('delete')
             template_id: template,
           })
         } else if (opts.select) {
-          teamId = resolveTeamId(teamId)
-
-          const allTemplates = await listSandboxTemplates({
-            teamID: teamId,
-          })
+          const allTemplates = await listSandboxTemplates()
 
           const selectedTemplates = await getPromptTemplates(
             allTemplates,

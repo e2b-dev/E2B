@@ -14,13 +14,14 @@ import {
   pathOption,
   selectMultipleOption,
   teamOption,
+  warnDeprecatedTeamOption,
 } from 'src/options'
 import { configName, E2BConfig, getConfigPath, loadConfig } from 'src/config'
 import { getRoot } from 'src/utils/filesystem'
 import { listSandboxTemplates } from './list'
 import { getPromptTemplates } from 'src/utils/templatePrompt'
 import { confirm } from 'src/utils/confirm'
-import { client, resolveTeamId } from 'src/api'
+import { client, ensureAPIKey } from 'src/api'
 import { handleE2BRequestError } from '../../utils/errors'
 
 async function publishTemplate(templateID: string, publish: boolean) {
@@ -55,7 +56,8 @@ async function templateAction(
   }
 ) {
   try {
-    let teamId = opts.team
+    warnDeprecatedTeamOption(opts.team)
+    ensureAPIKey()
 
     const root = getRoot(opts.path)
 
@@ -68,11 +70,7 @@ async function templateAction(
         template_id: template,
       })
     } else if (opts.select) {
-      teamId = resolveTeamId(teamId)
-
-      const allTemplates = await listSandboxTemplates({
-        teamID: teamId,
-      })
+      const allTemplates = await listSandboxTemplates()
 
       const filteredTemplates = allTemplates.filter(
         (e) => !e.public === publish

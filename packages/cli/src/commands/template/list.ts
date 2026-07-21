@@ -4,8 +4,8 @@ import * as e2b from 'e2b'
 
 import { listAliases } from '../../utils/format'
 import { sortTemplatesAliases } from 'src/utils/templateSort'
-import { client, ensureAPIKey, resolveTeamId } from 'src/api'
-import { teamOption } from '../../options'
+import { client, ensureAPIKey } from 'src/api'
+import { teamOption, warnDeprecatedTeamOption } from '../../options'
 import { handleE2BRequestError } from '../../utils/errors'
 
 export const listCommand = new commander.Command('list')
@@ -15,13 +15,12 @@ export const listCommand = new commander.Command('list')
   .option('-f, --format <format>', 'output format, eg. json, pretty')
   .action(async (opts: { team: string; format: string }) => {
     try {
+      warnDeprecatedTeamOption(opts.team)
       const format = opts.format || 'pretty'
       ensureAPIKey()
       process.stdout.write('\n')
 
-      const templates = await listSandboxTemplates({
-        teamID: resolveTeamId(opts.team),
-      })
+      const templates = await listSandboxTemplates()
 
       for (const template of templates) {
         sortTemplatesAliases(template.aliases)
@@ -111,16 +110,10 @@ function renderTable(templates: e2b.components['schemas']['Template'][]) {
   process.stdout.write('\n')
 }
 
-export async function listSandboxTemplates({
-  teamID,
-}: {
-  teamID?: string
-}): Promise<e2b.components['schemas']['Template'][]> {
-  const templates = await client.api.GET('/templates', {
-    params: {
-      query: { teamID },
-    },
-  })
+export async function listSandboxTemplates(): Promise<
+  e2b.components['schemas']['Template'][]
+> {
+  const templates = await client.api.GET('/templates')
 
   handleE2BRequestError(templates, 'Error getting templates')
   return templates.data

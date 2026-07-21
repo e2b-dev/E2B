@@ -14,7 +14,6 @@ export type Teams =
 
 export let apiKey = process.env.E2B_API_KEY
 export let accessToken = process.env.E2B_ACCESS_TOKEN
-export const teamId = process.env.E2B_TEAM_ID
 
 const authErrorBox = (keyName: 'E2B_API_KEY' | 'E2B_ACCESS_TOKEN') => {
   const link =
@@ -77,28 +76,6 @@ export function ensureAccessToken() {
   } else {
     return accessToken
   }
-}
-
-/**
- * Resolve team ID with proper precedence:
- * 1. CLI --team flag
- * 2. E2B_TEAM_ID env var
- * 3. Local e2b.toml team_id (if provided)
- * 4. ~/.e2b/config.json teamId (only if E2B_API_KEY env var is NOT set,
- *    to avoid mismatch between env var API key and config file team ID)
- */
-export function resolveTeamId(
-  cliTeamId?: string,
-  localConfigTeamId?: string
-): string | undefined {
-  if (cliTeamId) return cliTeamId
-  if (teamId) return teamId
-  if (localConfigTeamId) return localConfigTeamId
-  if (!process.env.E2B_API_KEY) {
-    const config = getUserConfig()
-    return config?.teamId
-  }
-  return undefined
 }
 
 const userConfig = getUserConfig()
