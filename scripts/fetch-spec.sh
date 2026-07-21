@@ -15,37 +15,30 @@ set -euo pipefail
 # the public infra specs also fetch anonymously. volume-api-spec needs a
 # token with read access to the private belt repo — `make fetch-specs` falls
 # back to the tracked copy in spec/ with a warning when a fetch fails.
+#
+# This script only resolves the pin and auth and runs Copybara; which spec/
+# paths each workflow owns (and therefore replaces) is declared by the
+# destination_files globs in copy.bara.sky.
 
 SPEC="${1:?usage: fetch-spec.sh <api-spec|envd-spec|volume-api-spec>}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 TOKEN="${GITHUB_TOKEN:-$(gh auth token 2> /dev/null || true)}"
 
-# TARGETS lists the spec/ paths owned by each upstream; they are replaced
-# (not merged) on fetch so files deleted upstream don't linger locally.
 case "$SPEC" in
-  api-spec)
+  api-spec | envd-spec)
     SOURCE="e2b-dev/infra"
     REF="${E2B_INFRA_REF:-$(tr -d '[:space:]' < "$ROOT_DIR/spec/infra-ref")}"
-    TARGETS="openapi.yml"
-    ;;
-  envd-spec)
-    SOURCE="e2b-dev/infra"
-    REF="${E2B_INFRA_REF:-$(tr -d '[:space:]' < "$ROOT_DIR/spec/infra-ref")}"
-    TARGETS="envd/envd.yaml envd/filesystem envd/process"
     ;;
   volume-api-spec)
     SOURCE="e2b-dev/belt"
     REF="${E2B_BELT_REF:-$(tr -d '[:space:]' < "$ROOT_DIR/spec/belt-ref")}"
-    TARGETS="openapi-volumecontent.yml"
     ;;
   *)
     echo "error: unknown spec '$SPEC'" >&2
     exit 1
     ;;
 esac
-
-STAGING=".copybara/$SPEC"
 
 echo "Fetching $SPEC from $SOURCE@$REF"
 
@@ -56,7 +49,6 @@ if [ -z "${COPYBARA_IMAGE:-}" ]; then
   COPYBARA_IMAGE=e2b-copybara
 fi
 
-rm -rf "$ROOT_DIR/$STAGING"
 docker run --rm \
   --user "$(id -u):$(id -g)" \
   -e HOME=/tmp \
@@ -64,21 +56,6 @@ docker run --rm \
   -v "$ROOT_DIR:/workspace" \
   "$COPYBARA_IMAGE" \
   migrate /workspace/copy.bara.sky "$SPEC" "$REF" \
-  --folder-dir "/workspace/$STAGING"
-
-# Only replace the tracked copies once the fetched output is known to be
-# complete, and swap each target in with mv (an instant same-filesystem
-# rename) so a failure can't leave spec/ half-populated.
-for target in $TARGETS; do
-  if [ ! -e "$ROOT_DIR/$STAGING/$target" ]; then
-    echo "error: fetched output is missing spec/$target; leaving spec/ untouched" >&2
-    exit 1
-  fi
-done
-for target in $TARGETS; do
-  rm -rf "$ROOT_DIR/spec/$target"
-  mv "$ROOT_DIR/$STAGING/$target" "$ROOT_DIR/spec/$target"
-done
-rm -rf "$ROOT_DIR/.copybara"
+  --folder-dir /workspace/spec
 
 echo "Updated spec/ from $SPEC ($SOURCE@$REF)"

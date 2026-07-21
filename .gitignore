@@ -298,5 +298,3 @@ sdkRefRoutes.json
 spec/openapi_generated.*.yml
 spec/openapi_generated.yml
 
-# Copybara staging directory (see copy.bara.sky)
-.copybara/
