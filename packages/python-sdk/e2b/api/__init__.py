@@ -70,6 +70,15 @@ limits = Limits(
 
 connection_retries = int(os.getenv("E2B_CONNECTION_RETRIES", "3"))
 
+# Number of times to retry a request when a transient error occurs
+# (5xx responses, network/protocol errors like h2 ConnectionTerminated, etc.)
+request_retries = int(os.getenv("E2B_REQUEST_RETRIES", "3"))
+
+# Status codes that are safe to retry (server-side transient errors)
+RETRYABLE_STATUS_CODES = frozenset({502, 503, 504})
+
+_retry_logger = logging.getLogger("e2b.api.retry")
+
 
 @dataclass
 class SandboxCreateResponse:

@@ -1,5 +1,5 @@
 import { runtime } from '../utils'
-import { parseInflightLimitEnv, parsePositiveIntEnv } from './metadata'
+import { parseInflightLimitEnv, parseIntEnv, parsePositiveIntEnv } from './metadata'
 import { limitConcurrency } from './inflight'
 import {
   loadUndici,
@@ -9,6 +9,8 @@ import {
 } from '../undici'
 
 const DEFAULT_API_CONNECTION_LIMIT = 100
+const DEFAULT_REQUEST_RETRIES = 3
+const RETRYABLE_STATUS_CODES = new Set([502, 503, 504])
 // 1000 = ~10 streams per connection (with the 100-conn default).
 // Override via env if your workload needs different.
 const DEFAULT_API_INFLIGHT_LIMIT = 1000
@@ -64,21 +66,21 @@ async function buildApiFetcher(options: {
   const inflightLimit = options.inflightLimit ?? getApiInflightLimit()
 
   if (!undici) {
-    return limitConcurrency(fetch, inflightLimit)
+    return limitConcurrency(withRetry(fetch), inflightLimit)
   }
 
   const { Agent, ProxyAgent, fetch: undiciFetch } = undici
   const connections = options.connectionLimit ?? getApiConnectionLimit()
   const dispatcher = options.proxy
     ? new ProxyAgent({
-        uri: options.proxy,
-        allowH2: true,
-        connections,
-      })
+      uri: options.proxy,
+      allowH2: true,
+      connections,
+    })
     : new Agent({
-        allowH2: true,
-        connections,
-      })
+      allowH2: true,
+      connections,
+    })
   const fetchWithDispatcher = undiciFetch as unknown as (
     input: RequestInfo | URL,
     init?: UndiciRequestInit
@@ -93,7 +95,56 @@ async function buildApiFetcher(options: {
     })
   }) as typeof fetch
 
-  return limitConcurrency(wrapped, inflightLimit)
+  return limitConcurrency(withRetry(wrapped), inflightLimit)
+}
+
+function getRequestRetries(): number {
+  return parseIntEnv('E2B_REQUEST_RETRIES', DEFAULT_REQUEST_RETRIES)
+}
+
+export function withRetry(baseFetch: typeof fetch): typeof fetch {
+  const maxRetries = getRequestRetries()
+  if (maxRetries <= 0) return baseFetch
+
+  return (async (input: RequestInfo | URL, init?: RequestInit) => {
+    let lastError: unknown
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await baseFetch(input, init)
+        if (RETRYABLE_STATUS_CODES.has(response.status) && attempt < maxRetries) {
+          // Consume the body before retrying
+          await response.text().catch(() => { })
+          const delay = Math.min(2 ** attempt * 1000, 8000)
+          const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+          console.warn(
+            `[e2b] Retrying ${init?.method ?? 'GET'} ${url} (attempt ${attempt + 1}/${maxRetries}, backoff ${delay}ms): server returned ${response.status}`
+          )
+          await sleep(delay)
+          continue
+        }
+        return response
+      } catch (error: unknown) {
+        lastError = error
+        // Don't retry abort/timeout errors
+        if (error instanceof DOMException && error.name === 'AbortError') throw error
+        if (attempt < maxRetries) {
+          const delay = Math.min(2 ** attempt * 1000, 8000)
+          const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+          console.warn(
+            `[e2b] Retrying ${init?.method ?? 'GET'} ${url} (attempt ${attempt + 1}/${maxRetries}, backoff ${delay}ms): ${error}`
+          )
+          await sleep(delay)
+          continue
+        }
+        throw error
+      }
+    }
+    throw lastError
+  }) as typeof fetch
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 export function getApiConnectionLimit(): number {
