@@ -3,6 +3,14 @@ import { NotFoundError, Sandbox } from 'e2b'
 
 import { ensureAPIKey } from 'src/api'
 import { asBold } from 'src/utils/format'
+import {
+  formatOption,
+  OutputFormat,
+  outputOption,
+  printJson,
+  printYaml,
+  resolveOutputFormat,
+} from 'src/utils/output'
 
 const fieldLabels: Partial<Record<string, string>> = {
   sandboxId: 'Sandbox ID',
@@ -45,31 +53,38 @@ export const infoCommand = new commander.Command('info')
     `show information for sandbox specified by ${asBold('<sandboxID>')}`
   )
   .alias('in')
-  .option('-f, --format <format>', 'output format, eg. json, pretty')
-  .action(async (sandboxID: string, options: { format?: string }) => {
-    try {
-      const format = options.format || 'pretty'
-      const apiKey = ensureAPIKey()
-      const info = await Sandbox.getInfo(sandboxID, { apiKey })
+  .addOption(outputOption)
+  .addOption(formatOption)
+  .action(
+    async (
+      sandboxID: string,
+      options: { output?: string; format?: string }
+    ) => {
+      try {
+        const format = resolveOutputFormat(options)
+        const apiKey = ensureAPIKey()
+        const info = await Sandbox.getInfo(sandboxID, { apiKey })
 
-      if (format === 'pretty') {
-        renderPrettyInfo(info as unknown as Record<string, unknown>)
-      } else if (format === 'json') {
-        console.log(JSON.stringify(info, null, 2))
-      } else {
-        console.error(`Unsupported output format: ${format}`)
+        if (format === OutputFormat.PRETTY) {
+          renderPrettyInfo(info as unknown as Record<string, unknown>)
+        } else if (format === OutputFormat.JSON) {
+          printJson(info)
+        } else if (format === OutputFormat.YAML) {
+          printYaml(info)
+        } else if (format === OutputFormat.NAME) {
+          console.log(`sandbox/${info.sandboxId}`)
+        }
+      } catch (err: any) {
+        if (err instanceof NotFoundError) {
+          console.error(`Sandbox ${asBold(sandboxID)} wasn't found`)
+          process.exit(1)
+          return
+        }
+        console.error(err)
         process.exit(1)
       }
-    } catch (err: any) {
-      if (err instanceof NotFoundError) {
-        console.error(`Sandbox ${asBold(sandboxID)} wasn't found`)
-        process.exit(1)
-        return
-      }
-      console.error(err)
-      process.exit(1)
     }
-  })
+  )
 
 function renderPrettyInfo(info: Record<string, unknown>) {
   console.log(

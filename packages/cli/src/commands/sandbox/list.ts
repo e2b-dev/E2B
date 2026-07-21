@@ -4,6 +4,15 @@ import { components, Sandbox, SandboxInfo } from 'e2b'
 
 import { ensureAPIKey } from 'src/api'
 import { parseMetadata } from './utils'
+import {
+  formatOption,
+  OutputFormat,
+  outputOption,
+  printJson,
+  printNames,
+  printYaml,
+  resolveOutputFormat,
+} from 'src/utils/output'
 
 const DEFAULT_LIMIT = 1000
 const PAGE_LIMIT = 100
@@ -30,11 +39,12 @@ export const listCommand = new commander.Command('list')
     `limit the number of sandboxes returned (default: ${DEFAULT_LIMIT}, 0 for no limit)`,
     (value) => parseInt(value)
   )
-  .option('-f, --format <format>', 'output format, eg. json, pretty')
+  .addOption(outputOption)
+  .addOption(formatOption)
   .action(async (options) => {
     try {
       const state = options.state || ['running']
-      const format = options.format || 'pretty'
+      const format = resolveOutputFormat(options)
       const limit =
         options.limit === 0 ? undefined : (options.limit ?? DEFAULT_LIMIT)
       const { sandboxes, hasMore } = await listSandboxes({
@@ -50,11 +60,15 @@ export const listCommand = new commander.Command('list')
             `Showing first ${limit} sandboxes. Use --limit to change.`
           )
         }
-      } else if (format === 'json') {
-        console.log(JSON.stringify(sandboxes, null, 2))
-      } else {
-        console.error(`Unsupported output format: ${format}`)
-        process.exit(1)
+      } else if (format === OutputFormat.JSON) {
+        printJson(sandboxes)
+      } else if (format === OutputFormat.YAML) {
+        printYaml(sandboxes)
+      } else if (format === OutputFormat.NAME) {
+        printNames(sandboxes, (sandbox) => {
+          const sandboxInfo = sandbox as SandboxInfo
+          return `sandbox/${sandboxInfo.sandboxId}`
+        })
       }
     } catch (err: any) {
       console.error(err)

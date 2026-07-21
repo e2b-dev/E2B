@@ -7,17 +7,26 @@ import { sortTemplatesAliases } from 'src/utils/templateSort'
 import { client, ensureAPIKey, resolveTeamId } from 'src/api'
 import { teamOption } from '../../options'
 import { handleE2BRequestError } from '../../utils/errors'
+import {
+  formatOption,
+  OutputFormat,
+  outputOption,
+  printJson,
+  printNames,
+  printYaml,
+  resolveOutputFormat,
+} from 'src/utils/output'
 
 export const listCommand = new commander.Command('list')
   .description('list sandbox templates')
   .alias('ls')
   .addOption(teamOption)
-  .option('-f, --format <format>', 'output format, eg. json, pretty')
-  .action(async (opts: { team: string; format: string }) => {
+  .addOption(outputOption)
+  .addOption(formatOption)
+  .action(async (opts: { team: string; output?: string; format?: string }) => {
     try {
-      const format = opts.format || 'pretty'
+      const format = resolveOutputFormat(opts)
       ensureAPIKey()
-      process.stdout.write('\n')
 
       const templates = await listSandboxTemplates({
         teamID: resolveTeamId(opts.team),
@@ -27,13 +36,19 @@ export const listCommand = new commander.Command('list')
         sortTemplatesAliases(template.aliases)
       }
 
-      if (format === 'pretty') {
+      if (format === OutputFormat.PRETTY) {
+        process.stdout.write('\n')
         renderTable(templates)
-      } else if (format === 'json') {
-        console.log(JSON.stringify(templates, null, 2))
-      } else {
-        console.error(`Unsupported output format: ${format}`)
-        process.exit(1)
+      } else if (format === OutputFormat.JSON) {
+        printJson(templates)
+      } else if (format === OutputFormat.YAML) {
+        printYaml(templates)
+      } else if (format === OutputFormat.NAME) {
+        printNames(templates, (template) => {
+          const sandboxTemplate =
+            template as e2b.components['schemas']['Template']
+          return `template/${sandboxTemplate.templateID}`
+        })
       }
     } catch (err: any) {
       console.error(err)
