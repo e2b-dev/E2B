@@ -54,11 +54,12 @@ export function getUserConfig(): UserConfig | null {
   if (!fs.existsSync(USER_CONFIG_PATH)) return null
   const config = JSON.parse(fs.readFileSync(USER_CONFIG_PATH, 'utf8'))
 
+  // v1 configs are migrated in memory only — the file on disk is left
+  // untouched so older CLI versions keep working; the v2 format is only
+  // persisted when the config is written anyway (login, configure,
+  // token refresh).
   const migrated = migrateV1UserConfig(config)
-  if (migrated) {
-    writeUserConfig(USER_CONFIG_PATH, migrated)
-    return migrated
-  }
+  if (migrated) return migrated
 
   if (!isUserConfig(config)) {
     fs.unlinkSync(USER_CONFIG_PATH)

@@ -49,15 +49,16 @@ function writeConfigFile(config: unknown): string {
 }
 
 describe('getUserConfig', () => {
-  it('migrates a v1 team config to the v2 project format and persists it', async () => {
-    const configPath = writeConfigFile({
+  it('migrates a v1 team config to the v2 project format in memory', async () => {
+    const v1Config = {
       version: 1,
       ...v1AuthFields,
       teamName: 'default',
       teamId: 'team-id',
       teamApiKey: 'team-api-key-secret',
       dockerProxySet: true,
-    })
+    }
+    const configPath = writeConfigFile(v1Config)
 
     const { getUserConfig } = await import('../src/user')
     const config = getUserConfig()
@@ -71,12 +72,10 @@ describe('getUserConfig', () => {
       dockerProxySet: true,
     })
 
-    // The migrated config is written back to disk without the old team keys.
+    // The file on disk is not rewritten — it keeps the v1 format so older
+    // CLI versions can still read it.
     const onDisk = JSON.parse(fs.readFileSync(configPath, 'utf8'))
-    expect(onDisk).toEqual(config)
-    expect(onDisk).not.toHaveProperty('teamName')
-    expect(onDisk).not.toHaveProperty('teamId')
-    expect(onDisk).not.toHaveProperty('teamApiKey')
+    expect(onDisk).toEqual(v1Config)
   })
 
   it('returns a valid v2 config as-is', async () => {
