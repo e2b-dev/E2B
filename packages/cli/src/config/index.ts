@@ -1,36 +1,9 @@
 import * as yup from 'yup'
 import * as toml from '@iarna/toml'
 import * as fsPromise from 'fs/promises'
-import * as fs from 'fs'
 import * as path from 'path'
 
-import { asFormattedSandboxTemplate, asLocalRelative } from 'src/utils/format'
-
 export const configName = 'e2b.toml'
-
-function getConfigHeader(config: E2BConfig) {
-  return `# This is a config for E2B sandbox template.
-# You can use template ID (${config.template_id}) ${
-    config.template_name ? `or template name (${config.template_name}) ` : ''
-  }to create a sandbox:
-
-# Python SDK
-# from e2b import Sandbox, AsyncSandbox
-# sandbox = Sandbox.create("${
-    config.template_name || config.template_id
-  }") # Sync sandbox
-# sandbox = await AsyncSandbox.create("${
-    config.template_name || config.template_id
-  }") # Async sandbox
-
-# JS SDK
-# import { Sandbox } from 'e2b'
-# const sandbox = await Sandbox.create('${
-    config.template_name || config.template_id
-  }')
-
-`
-}
 
 export const configSchema = yup.object({
   template_id: yup.string().required(),
@@ -83,39 +56,6 @@ export async function loadConfig(configPath: string) {
   const migratedConfig = applyMigrations(config, migrations)
 
   return (await configSchema.validate(migratedConfig)) as E2BConfig
-}
-
-export async function saveConfig(
-  configPath: string,
-  config: E2BConfig,
-  overwrite?: boolean
-) {
-  try {
-    if (!overwrite) {
-      const configExists = fs.existsSync(configPath)
-      if (configExists) {
-        throw new Error(
-          `Config already exists on path ${asLocalRelative(configPath)}`
-        )
-      }
-    }
-
-    const validatedConfig: any = await configSchema.validate(config, {
-      stripUnknown: true,
-    })
-
-    const tomlRaw = toml.stringify(validatedConfig)
-    await fsPromise.writeFile(configPath, getConfigHeader(config) + tomlRaw)
-  } catch (err: any) {
-    throw new Error(
-      `E2B sandbox template config ${asFormattedSandboxTemplate(
-        {
-          templateID: config.template_id,
-        },
-        configPath
-      )} cannot be saved: ${err.message}`
-    )
-  }
 }
 
 export async function deleteConfig(configPath: string) {
