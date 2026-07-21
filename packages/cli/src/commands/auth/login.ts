@@ -31,7 +31,7 @@ export const loginCommand = new commander.Command('login')
       console.log(
         `\nAlready logged in. ${asFormattedConfig(
           userConfig
-        )}.\n\nIf you want to log in as a different user, log out first by running 'e2b auth logout'.\nTo change the team, run 'e2b auth configure'.\n`
+        )}.\n\nIf you want to log in as a different user, log out first by running 'e2b auth logout'.\nTo change the project, run 'e2b auth configure'.\n`
       )
       return
     } else if (!userConfig) {
@@ -65,7 +65,7 @@ export const loginCommand = new commander.Command('login')
       }
 
       userConfig = {
-        version: 1,
+        version: 2,
         identity: {
           email: signInResponse.email,
         },
@@ -79,9 +79,9 @@ export const loginCommand = new commander.Command('login')
           refresh_token: signInResponse.refreshToken,
         },
         last_refresh: getConfigRefreshTimestamp(),
-        teamName: defaultTeam.name,
-        teamId: defaultTeam.teamID,
-        teamApiKey: defaultTeam.apiKey,
+        projectName: defaultTeam.name,
+        projectId: defaultTeam.teamID,
+        projectApiKey: defaultTeam.apiKey,
       }
 
       writeUserConfig(USER_CONFIG_PATH, userConfig)
@@ -90,7 +90,7 @@ export const loginCommand = new commander.Command('login')
     console.log(
       `Logged in as ${asBold(
         userConfig.identity.email
-      )} with selected team ${asBold(userConfig.teamName)}`
+      )} with selected project ${asBold(userConfig.projectName)}`
     )
     process.exit(0)
   })

@@ -21,14 +21,14 @@ export interface UserTokens {
 }
 
 export interface UserConfig {
-  version: 1
+  version: 2
   identity: UserIdentity
   oauth: UserOAuth
   tokens: UserTokens
   last_refresh: string
-  teamName: string
-  teamId: string
-  teamApiKey: string
+  projectName: string
+  projectId: string
+  projectApiKey: string
   dockerProxySet?: boolean
 }
 
@@ -54,6 +54,12 @@ export function getUserConfig(): UserConfig | null {
   if (!fs.existsSync(USER_CONFIG_PATH)) return null
   const config = JSON.parse(fs.readFileSync(USER_CONFIG_PATH, 'utf8'))
 
+  const migrated = migrateV1UserConfig(config)
+  if (migrated) {
+    writeUserConfig(USER_CONFIG_PATH, migrated)
+    return migrated
+  }
+
   if (!isUserConfig(config)) {
     fs.unlinkSync(USER_CONFIG_PATH)
     console.error(DEPRECATED_USER_CONFIG_MESSAGE)
@@ -71,9 +77,7 @@ function isString(value: unknown): value is string {
   return typeof value === 'string'
 }
 
-function isUserConfig(config: unknown): config is UserConfig {
-  if (!isObject(config)) return false
-  if (config.version !== 1) return false
+function hasValidAuthFields(config: UnknownRecord): boolean {
   return (
     isObject(config.identity) &&
     isString(config.identity.email) &&
@@ -85,6 +89,43 @@ function isUserConfig(config: unknown): config is UserConfig {
     isString(config.tokens.access_token) &&
     isString(config.tokens.refresh_token)
   )
+}
+
+function isUserConfig(config: unknown): config is UserConfig {
+  if (!isObject(config)) return false
+  if (config.version !== 2) return false
+  return (
+    hasValidAuthFields(config) &&
+    isString(config.projectName) &&
+    isString(config.projectId) &&
+    isString(config.projectApiKey)
+  )
+}
+
+/**
+ * Convert a v1 config (team* fields) to the v2 format (project* fields).
+ * Returns null if the config is not a valid v1 config.
+ */
+function migrateV1UserConfig(config: unknown): UserConfig | null {
+  if (!isObject(config)) return null
+  if (config.version !== 1) return null
+  if (!hasValidAuthFields(config)) return null
+  if (
+    !isString(config.teamName) ||
+    !isString(config.teamId) ||
+    !isString(config.teamApiKey)
+  ) {
+    return null
+  }
+
+  const { teamName, teamId, teamApiKey, ...rest } = config
+  return {
+    ...rest,
+    version: 2,
+    projectName: teamName,
+    projectId: teamId,
+    projectApiKey: teamApiKey,
+  } as UserConfig
 }
 
 export function getConfigRefreshTimestamp(): string {
