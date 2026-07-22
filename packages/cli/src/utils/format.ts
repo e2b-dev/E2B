@@ -12,9 +12,9 @@ export function asFormattedConfig(config: UserConfig) {
   const email = asBold(config.identity.email)
   const team = config.teamName
     ? asBold(config.teamName)
-    : asRed('Log out and log in to get team name')
+    : asRed('Log out and log in to get project name')
   const teamId = asBold(config.teamId)
-  return `You are logged in as ${email},\nSelected team: ${team} (${teamId})`
+  return `You are logged in as ${email},\nSelected project: ${team} (${teamId})`
 }
 
 export function asFormattedTeam(
@@ -24,7 +24,7 @@ export function asFormattedTeam(
   const name = asBold(team.name)
   const id = asBold(team.teamID)
   const isSelected =
-    team.teamID == selected ? asPrimary(' (currently selected team)') : ''
+    team.teamID == selected ? asPrimary(' (currently selected project)') : ''
   return `${name} (${id})${isSelected}`
 }
 
