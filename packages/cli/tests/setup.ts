@@ -84,7 +84,16 @@ export async function runCliWithPipedStdin(
   })
 }
 
-export function bufferToText(value: Buffer | string | null | undefined): string {
+// eslint-disable-next-line no-control-regex
+const ansiPattern = /\x1B\[[0-9;]*m/g
+
+export function stripAnsi(text: string): string {
+  return text.replace(ansiPattern, '')
+}
+
+export function bufferToText(
+  value: Buffer | string | null | undefined
+): string {
   if (!value) {
     return ''
   }
