@@ -40,14 +40,14 @@ export const configureCommand = new commander.Command('configure')
       signal: config.getSignal(),
     })
 
-    handleE2BRequestError(res, 'Error getting teams')
+    handleE2BRequestError(res, 'Error getting projects')
     const teams = res.data as Teams
 
     const team = (
       await inquirer.default.prompt([
         {
           name: 'team',
-          message: chalk.default.underline('Select team'),
+          message: chalk.default.underline('Select project'),
           type: 'list',
           pageSize: 50,
           choices: teams.map((team) => ({
@@ -64,5 +64,5 @@ export const configureCommand = new commander.Command('configure')
     userConfig.last_refresh = getConfigRefreshTimestamp()
     writeUserConfig(USER_CONFIG_PATH, userConfig)
 
-    console.log(`Team ${asBold(team.name)} (${team.teamID}) selected.\n`)
+    console.log(`Project ${asBold(team.name)} (${team.teamID}) selected.\n`)
   })

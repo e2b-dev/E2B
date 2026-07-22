@@ -157,8 +157,8 @@ async function templateAction(
           templates.length === 1 ? 'template' : 'templates'
         } ${
           publish
-            ? 'public to everyone outside your team'
-            : 'private to your team'
+            ? 'public to everyone outside your project'
+            : 'private to your project'
         }`
       )
 
