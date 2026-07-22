@@ -58,6 +58,7 @@ test('uses a ProxyAgent dispatcher when a proxy is configured', async () => {
       uri?: string
       allowH2?: boolean
       connections?: number
+      proxyTunnel?: boolean
     }) {
       proxyAgents.push(options)
     }
@@ -80,7 +81,12 @@ test('uses a ProxyAgent dispatcher when a proxy is configured', async () => {
 
   expect(agents).toHaveLength(0)
   expect(proxyAgents).toEqual([
-    { uri: 'http://127.0.0.1:8080', allowH2: true, connections: 1 },
+    {
+      uri: 'http://127.0.0.1:8080',
+      allowH2: true,
+      connections: 1,
+      proxyTunnel: true,
+    },
   ])
   expect(requests[0].init?.dispatcher).toBeInstanceOf(ProxyAgent)
 })

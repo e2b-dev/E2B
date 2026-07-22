@@ -60,6 +60,7 @@ async function buildEnvdFetcher(
         uri: options.proxy,
         allowH2: true,
         connections,
+        proxyTunnel: true,
       })
     : new Agent({
         allowH2: true,
