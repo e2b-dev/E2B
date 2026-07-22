@@ -10,7 +10,6 @@ from packaging.version import Version
 from typing_extensions import Self, Unpack
 
 from e2b.api import make_async_logging_event_hooks
-from e2b.api.http_client import AsyncRetryingClient
 from e2b.api.client.types import Unset
 from e2b.api.client_async import get_envd_transport as get_transport
 from e2b.connection_config import ApiParams, ConnectionConfig
@@ -107,7 +106,7 @@ class AsyncSandbox(SandboxApi):
         super().__init__(**opts)
 
         self._transport = get_transport(self.connection_config)
-        self._envd_api = AsyncRetryingClient(
+        self._envd_api = httpx.AsyncClient(
             base_url=self.envd_api_url,
             transport=self._transport,
             headers=self.connection_config.sandbox_headers,

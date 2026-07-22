@@ -96,7 +96,7 @@ def test_sync_sandbox_clients_are_created_once_per_calling_thread(
     monkeypatch.setattr(filesystem_sync, "get_envd_transport", get_transport)
     monkeypatch.setattr(command_sync, "get_envd_transport", get_transport)
     monkeypatch.setattr(pty_sync, "get_envd_transport", get_transport)
-    monkeypatch.setattr(filesystem_sync, "RetryingClient", FakeHttpClient)
+    monkeypatch.setattr(filesystem_sync.httpx, "Client", FakeHttpClient)
     monkeypatch.setattr(
         filesystem_sync.filesystem_connect, "FilesystemClient", FakeFilesystemClient
     )
@@ -181,8 +181,8 @@ def test_sync_filesystem_envd_clients_are_bound_per_calling_thread(
         else worker_transport,
     )
     monkeypatch.setattr(
-        filesystem_sync,
-        "RetryingClient",
+        filesystem_sync.httpx,
+        "Client",
         lambda *args, **kwargs: main_api
         if kwargs["transport"] is main_transport
         else worker_api,

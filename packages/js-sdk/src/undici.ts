@@ -12,7 +12,6 @@ export type UndiciModule = {
     proxyTunnel: true
   }) => unknown
   fetch: unknown
-  retryGracefulGoAway?: boolean
 }
 
 const UNDICI_8_MIN_NODE_MAJOR = 22
@@ -33,88 +32,21 @@ export function getUndiciPackageCandidates(nodeVersion: string): string[] {
   return ['undici']
 }
 
-const GRACEFUL_HTTP2_GOAWAY_MESSAGE =
-  'HTTP/2: "GOAWAY" frame received with code 0'
-
-function isGracefulHttp2GoAway(error: unknown): boolean {
-  const seen = new Set<unknown>()
-  let current = error
-
-  while (current && !seen.has(current)) {
-    seen.add(current)
-
-    const candidate = current as {
-      cause?: unknown
-      code?: unknown
-      message?: unknown
-    }
-    if (
-      candidate.code === 'UND_ERR_SOCKET' &&
-      candidate.message === GRACEFUL_HTTP2_GOAWAY_MESSAGE
-    ) {
-      return true
-    }
-
-    current = candidate.cause
-  }
-
-  return false
-}
-
-/**
- * Replay a request once when Undici rejects a safe request because its HTTP/2
- * session was gracefully retired. The original signal bounds both attempts.
- */
-export function retryGracefulHttp2GoAway(fetcher: typeof fetch): typeof fetch {
-  return (async (input, init) => {
-    try {
-      return await fetcher(input, init)
-    } catch (error) {
-      const method = (
-        init?.method ?? (input instanceof Request ? input.method : 'GET')
-      ).toUpperCase()
-
-      if (
-        (method !== 'GET' && method !== 'HEAD') ||
-        !isGracefulHttp2GoAway(error)
-      ) {
-        throw error
-      }
-
-      const signal =
-        init && 'signal' in init
-          ? init.signal
-          : input instanceof Request
-            ? input.signal
-            : undefined
-      signal?.throwIfAborted()
-
-      return fetcher(input, init)
-    }
-  }) as typeof fetch
-}
-
 type UndiciImporter = (moduleName: string) => Promise<UndiciModule>
 
-export async function loadUndici(
-  importModule?: UndiciImporter
-): Promise<UndiciModule | undefined> {
-  // Keep this import opaque to bundlers. It must resolve as a package name
-  // from the runtime environment, not as a path relative to this file.
-  // eslint-disable-next-line no-new-func
-  importModule ??= new Function(
-    'moduleName',
-    'return import(moduleName)'
-  ) as UndiciImporter
+// Keep package imports opaque so downstream bundlers resolve them at runtime.
+// eslint-disable-next-line no-new-func
+const importUndici = new Function(
+  'moduleName',
+  'return import(moduleName)'
+) as UndiciImporter
 
+export async function loadUndici(
+  importModule = importUndici
+): Promise<UndiciModule | undefined> {
   for (const packageName of getUndiciPackageCandidates(process.versions.node)) {
     try {
-      const undici = await importModule(packageName)
-
-      return {
-        ...undici,
-        retryGracefulGoAway: packageName === 'undici',
-      }
+      return await importModule(packageName)
     } catch {
       // Undici 8 is optional so Node 20 package managers can omit it.
     }

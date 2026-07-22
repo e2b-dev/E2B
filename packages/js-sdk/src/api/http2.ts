@@ -3,7 +3,6 @@ import { parseInflightLimitEnv, parsePositiveIntEnv } from './metadata'
 import { limitConcurrency } from './inflight'
 import {
   loadUndici,
-  retryGracefulHttp2GoAway,
   toUndiciRequestInput,
   type UndiciModule,
   type UndiciRequestInit,
@@ -68,12 +67,7 @@ async function buildApiFetcher(options: {
     return limitConcurrency(fetch, inflightLimit)
   }
 
-  const {
-    Agent,
-    ProxyAgent,
-    fetch: undiciFetch,
-    retryGracefulGoAway = true,
-  } = undici
+  const { Agent, ProxyAgent, fetch: undiciFetch } = undici
   const connections = options.connectionLimit ?? getApiConnectionLimit()
   const dispatcher = options.proxy
     ? new ProxyAgent({
@@ -100,11 +94,7 @@ async function buildApiFetcher(options: {
     })
   }) as typeof fetch
 
-  const fetcher = retryGracefulGoAway
-    ? retryGracefulHttp2GoAway(wrapped)
-    : wrapped
-
-  return limitConcurrency(fetcher, inflightLimit)
+  return limitConcurrency(wrapped, inflightLimit)
 }
 
 export function getApiConnectionLimit(): number {

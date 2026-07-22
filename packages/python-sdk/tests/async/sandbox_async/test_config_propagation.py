@@ -22,7 +22,7 @@ def create_sandbox(monkeypatch, api_key: str) -> AsyncSandbox:
         sandbox_async_main, "get_transport", lambda *_args, **_kwargs: dummy_transport
     )
     monkeypatch.setattr(
-        sandbox_async_main, "AsyncRetryingClient", lambda *args, **kwargs: object()
+        sandbox_async_main.httpx, "AsyncClient", lambda *args, **kwargs: object()
     )
     monkeypatch.setattr(
         sandbox_async_main, "Filesystem", lambda *args, **kwargs: object()

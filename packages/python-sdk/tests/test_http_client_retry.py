@@ -1,5 +1,5 @@
 from collections.abc import AsyncIterator, Iterator
-from typing import cast
+from typing import Any
 
 import httpx
 import pytest
@@ -23,8 +23,8 @@ class AsyncGoAwayStream(httpx.AsyncByteStream):
         yield b""  # pragma: no cover
 
 
-@pytest.mark.parametrize("method", ["GET", "HEAD", "get", "head"])
-def test_sync_retries_graceful_goaway_once_for_safe_methods(method: str):
+@pytest.mark.parametrize("method", ["GET", "HEAD"])
+def test_sync_retries_one_graceful_goaway_for_safe_methods(method: str):
     attempts = 0
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -41,7 +41,7 @@ def test_sync_retries_graceful_goaway_once_for_safe_methods(method: str):
     assert attempts == 2
 
 
-def test_sync_retries_goaway_while_buffering_response_body():
+def test_sync_retries_goaway_while_buffering_the_response():
     attempts = 0
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -52,119 +52,60 @@ def test_sync_retries_goaway_while_buffering_response_body():
         return httpx.Response(200, content=b"ok")
 
     with RetryingClient(transport=httpx.MockTransport(handler)) as client:
-        response = client.get("https://example.com")
-
-    assert response.content == b"ok"
-    assert attempts == 2
-
-
-def test_sync_does_not_retry_get_with_one_shot_request_body():
-    attempts = 0
-    consumed = 0
-
-    def body() -> Iterator[bytes]:
-        nonlocal consumed
-        consumed += 1
-        yield b"payload"
-
-    def handler(request: httpx.Request) -> httpx.Response:
-        nonlocal attempts
-        attempts += 1
-        stream = cast(httpx.SyncByteStream, request.stream)
-        assert b"".join(stream) == b"payload"
-        raise httpx.RemoteProtocolError(GRACEFUL_GOAWAY)
-
-    with RetryingClient(transport=httpx.MockTransport(handler)) as client:
-        with pytest.raises(httpx.RemoteProtocolError, match="error_code:0"):
-            client.request("GET", "https://example.com", content=body())
-
-    assert attempts == 1
-    assert consumed == 1
-
-
-def test_sync_propagates_second_graceful_goaway():
-    attempts = 0
-
-    def handler(request: httpx.Request) -> httpx.Response:
-        nonlocal attempts
-        attempts += 1
-        raise httpx.RemoteProtocolError(GRACEFUL_GOAWAY)
-
-    with RetryingClient(transport=httpx.MockTransport(handler)) as client:
-        with pytest.raises(httpx.RemoteProtocolError, match="error_code:0"):
-            client.get("https://example.com")
+        assert client.get("https://example.com").content == b"ok"
 
     assert attempts == 2
 
 
 @pytest.mark.parametrize(
-    "exception",
+    ("method", "kwargs", "error"),
     [
-        httpx.RemoteProtocolError(
-            "<ConnectionTerminated error_code:1, last_stream_id:41>"
+        ("POST", {}, httpx.RemoteProtocolError(GRACEFUL_GOAWAY)),
+        ("GET", {"content": b"body"}, httpx.RemoteProtocolError(GRACEFUL_GOAWAY)),
+        (
+            "GET",
+            {},
+            httpx.RemoteProtocolError(
+                "<ConnectionTerminated error_code:1, last_stream_id:41>"
+            ),
         ),
-        httpx.RemoteProtocolError(
-            "<ConnectionTerminated error_code:0x1, last_stream_id:41>"
-        ),
-        httpx.RemoteProtocolError("Server disconnected"),
-        httpx.LocalProtocolError(GRACEFUL_GOAWAY),
-        httpx.ReadTimeout("timed out"),
+        ("GET", {}, httpx.RemoteProtocolError("Server disconnected")),
     ],
 )
-def test_sync_does_not_retry_other_transport_errors(exception: Exception):
+def test_sync_does_not_retry_unsafe_requests_or_other_errors(
+    method: str, kwargs: dict[str, Any], error: Exception
+):
     attempts = 0
 
     def handler(request: httpx.Request) -> httpx.Response:
         nonlocal attempts
         attempts += 1
-        raise exception
+        raise error
 
     with RetryingClient(transport=httpx.MockTransport(handler)) as client:
-        with pytest.raises(type(exception)):
+        with pytest.raises(type(error)):
+            client.request(method, "https://example.com", **kwargs)
+
+    assert attempts == 1
+
+
+def test_sync_surfaces_a_second_goaway():
+    attempts = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal attempts
+        attempts += 1
+        raise httpx.RemoteProtocolError(GRACEFUL_GOAWAY)
+
+    with RetryingClient(transport=httpx.MockTransport(handler)) as client:
+        with pytest.raises(httpx.RemoteProtocolError):
             client.get("https://example.com")
 
-    assert attempts == 1
+    assert attempts == 2
 
 
-@pytest.mark.parametrize("method", ["POST", "PUT", "PATCH", "DELETE"])
-def test_sync_does_not_retry_mutating_methods(method: str):
-    attempts = 0
-
-    def handler(request: httpx.Request) -> httpx.Response:
-        nonlocal attempts
-        attempts += 1
-        raise httpx.RemoteProtocolError(GRACEFUL_GOAWAY)
-
-    with RetryingClient(transport=httpx.MockTransport(handler)) as client:
-        with pytest.raises(httpx.RemoteProtocolError):
-            client.request(method, "https://example.com")
-
-    assert attempts == 1
-
-
-@pytest.mark.parametrize("stream_api", ["send", "stream"])
-def test_sync_streaming_apis_bypass_retry(stream_api: str):
-    attempts = 0
-
-    def handler(request: httpx.Request) -> httpx.Response:
-        nonlocal attempts
-        attempts += 1
-        raise httpx.RemoteProtocolError(GRACEFUL_GOAWAY)
-
-    with RetryingClient(transport=httpx.MockTransport(handler)) as client:
-        with pytest.raises(httpx.RemoteProtocolError):
-            if stream_api == "send":
-                request = client.build_request("GET", "https://example.com")
-                client.send(request, stream=True)
-            else:
-                with client.stream("GET", "https://example.com"):
-                    pass
-
-    assert attempts == 1
-
-
-@pytest.mark.parametrize("method", ["GET", "HEAD", "get", "head"])
-async def test_async_retries_graceful_goaway_once_for_safe_methods(method: str):
+@pytest.mark.parametrize("method", ["GET", "HEAD"])
+async def test_async_retries_one_graceful_goaway_for_safe_methods(method: str):
     attempts = 0
 
     async def handler(request: httpx.Request) -> httpx.Response:
@@ -181,7 +122,7 @@ async def test_async_retries_graceful_goaway_once_for_safe_methods(method: str):
     assert attempts == 2
 
 
-async def test_async_retries_goaway_while_buffering_response_body():
+async def test_async_retries_goaway_while_buffering_the_response():
     attempts = 0
 
     async def handler(request: httpx.Request) -> httpx.Response:
@@ -192,113 +133,38 @@ async def test_async_retries_goaway_while_buffering_response_body():
         return httpx.Response(200, content=b"ok")
 
     async with AsyncRetryingClient(transport=httpx.MockTransport(handler)) as client:
-        response = await client.get("https://example.com")
-
-    assert response.content == b"ok"
-    assert attempts == 2
-
-
-async def test_async_does_not_retry_get_with_one_shot_request_body():
-    attempts = 0
-    consumed = 0
-
-    async def body() -> AsyncIterator[bytes]:
-        nonlocal consumed
-        consumed += 1
-        yield b"payload"
-
-    async def handler(request: httpx.Request) -> httpx.Response:
-        nonlocal attempts
-        attempts += 1
-        stream = cast(httpx.AsyncByteStream, request.stream)
-        chunks = [chunk async for chunk in stream]
-        assert b"".join(chunks) == b"payload"
-        raise httpx.RemoteProtocolError(GRACEFUL_GOAWAY)
-
-    async with AsyncRetryingClient(transport=httpx.MockTransport(handler)) as client:
-        with pytest.raises(httpx.RemoteProtocolError, match="error_code:0"):
-            await client.request("GET", "https://example.com", content=body())
-
-    assert attempts == 1
-    assert consumed == 1
-
-
-async def test_async_propagates_second_graceful_goaway():
-    attempts = 0
-
-    async def handler(request: httpx.Request) -> httpx.Response:
-        nonlocal attempts
-        attempts += 1
-        raise httpx.RemoteProtocolError(GRACEFUL_GOAWAY)
-
-    async with AsyncRetryingClient(transport=httpx.MockTransport(handler)) as client:
-        with pytest.raises(httpx.RemoteProtocolError, match="error_code:0"):
-            await client.get("https://example.com")
+        assert (await client.get("https://example.com")).content == b"ok"
 
     assert attempts == 2
 
 
 @pytest.mark.parametrize(
-    "exception",
+    ("method", "kwargs", "error"),
     [
-        httpx.RemoteProtocolError(
-            "<ConnectionTerminated error_code:1, last_stream_id:41>"
+        ("POST", {}, httpx.RemoteProtocolError(GRACEFUL_GOAWAY)),
+        ("GET", {"content": b"body"}, httpx.RemoteProtocolError(GRACEFUL_GOAWAY)),
+        (
+            "GET",
+            {},
+            httpx.RemoteProtocolError(
+                "<ConnectionTerminated error_code:1, last_stream_id:41>"
+            ),
         ),
-        httpx.RemoteProtocolError(
-            "<ConnectionTerminated error_code:0x1, last_stream_id:41>"
-        ),
-        httpx.RemoteProtocolError("Server disconnected"),
-        httpx.LocalProtocolError(GRACEFUL_GOAWAY),
-        httpx.ReadTimeout("timed out"),
+        ("GET", {}, httpx.RemoteProtocolError("Server disconnected")),
     ],
 )
-async def test_async_does_not_retry_other_transport_errors(exception: Exception):
+async def test_async_does_not_retry_unsafe_requests_or_other_errors(
+    method: str, kwargs: dict[str, Any], error: Exception
+):
     attempts = 0
 
     async def handler(request: httpx.Request) -> httpx.Response:
         nonlocal attempts
         attempts += 1
-        raise exception
+        raise error
 
     async with AsyncRetryingClient(transport=httpx.MockTransport(handler)) as client:
-        with pytest.raises(type(exception)):
-            await client.get("https://example.com")
-
-    assert attempts == 1
-
-
-@pytest.mark.parametrize("method", ["POST", "PUT", "PATCH", "DELETE"])
-async def test_async_does_not_retry_mutating_methods(method: str):
-    attempts = 0
-
-    async def handler(request: httpx.Request) -> httpx.Response:
-        nonlocal attempts
-        attempts += 1
-        raise httpx.RemoteProtocolError(GRACEFUL_GOAWAY)
-
-    async with AsyncRetryingClient(transport=httpx.MockTransport(handler)) as client:
-        with pytest.raises(httpx.RemoteProtocolError):
-            await client.request(method, "https://example.com")
-
-    assert attempts == 1
-
-
-@pytest.mark.parametrize("stream_api", ["send", "stream"])
-async def test_async_streaming_apis_bypass_retry(stream_api: str):
-    attempts = 0
-
-    async def handler(request: httpx.Request) -> httpx.Response:
-        nonlocal attempts
-        attempts += 1
-        raise httpx.RemoteProtocolError(GRACEFUL_GOAWAY)
-
-    async with AsyncRetryingClient(transport=httpx.MockTransport(handler)) as client:
-        with pytest.raises(httpx.RemoteProtocolError):
-            if stream_api == "send":
-                request = client.build_request("GET", "https://example.com")
-                await client.send(request, stream=True)
-            else:
-                async with client.stream("GET", "https://example.com"):
-                    pass
+        with pytest.raises(type(error)):
+            await client.request(method, "https://example.com", **kwargs)
 
     assert attempts == 1

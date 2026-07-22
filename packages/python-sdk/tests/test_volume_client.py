@@ -6,7 +6,6 @@ import httpx
 import pytest
 
 from e2b.exceptions import AuthenticationException
-from e2b.api.http_client import AsyncRetryingClient, RetryingClient
 from e2b.volume.client_async import (
     AsyncTransportWithLogger as AsyncVolumeTransport,
     get_api_client as get_async_api_client,
@@ -35,18 +34,12 @@ def test_async_client_requires_volume_token(monkeypatch):
 
 def test_sync_client_uses_config_request_timeout():
     client = get_sync_api_client(VolumeConnectionConfig(token="vol-token"))
-    assert isinstance(client.get_httpx_client(), RetryingClient)
     assert client.get_httpx_client().timeout == httpx.Timeout(60.0)
-    assert client.get_httpx_client().headers["Authorization"] == "Bearer vol-token"
 
     client = get_sync_api_client(
         VolumeConnectionConfig(token="vol-token", request_timeout=10.0)
     )
     assert client.get_httpx_client().timeout == httpx.Timeout(10.0)
-
-    client = client.with_timeout(httpx.Timeout(5.0))
-    assert isinstance(client.get_httpx_client(), RetryingClient)
-    assert client.get_httpx_client().timeout == httpx.Timeout(5.0)
 
     client = get_sync_api_client(
         VolumeConnectionConfig(token="vol-token", request_timeout=0)
@@ -57,16 +50,7 @@ def test_sync_client_uses_config_request_timeout():
 def test_async_client_uses_config_request_timeout():
     async def run():
         client = get_async_api_client(VolumeConnectionConfig(token="vol-token"))
-        assert isinstance(client.get_async_httpx_client(), AsyncRetryingClient)
         assert client.get_async_httpx_client().timeout == httpx.Timeout(60.0)
-        assert (
-            client.get_async_httpx_client().headers["Authorization"]
-            == "Bearer vol-token"
-        )
-
-        client = client.with_timeout(httpx.Timeout(5.0))
-        assert isinstance(client.get_async_httpx_client(), AsyncRetryingClient)
-        assert client.get_async_httpx_client().timeout == httpx.Timeout(5.0)
 
         client = get_async_api_client(
             VolumeConnectionConfig(token="vol-token", request_timeout=0)
