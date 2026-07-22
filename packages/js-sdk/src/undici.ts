@@ -1,3 +1,5 @@
+import { compareVersions } from 'compare-versions'
+
 export type UndiciRequestInit = RequestInit & {
   dispatcher?: unknown
   duplex?: 'half'
@@ -14,41 +16,29 @@ export type UndiciModule = {
   fetch: unknown
 }
 
-const UNDICI_8_MIN_NODE_MAJOR = 22
-const UNDICI_8_MIN_NODE_MINOR = 19
+const UNDICI_8_MIN_NODE = '22.19.0'
 
 export function getUndiciPackageCandidates(nodeVersion: string): string[] {
-  const [major = 0, minor = 0] = nodeVersion
-    .split('.', 2)
-    .map((part) => Number.parseInt(part, 10))
-
-  if (
-    major > UNDICI_8_MIN_NODE_MAJOR ||
-    (major === UNDICI_8_MIN_NODE_MAJOR && minor >= UNDICI_8_MIN_NODE_MINOR)
-  ) {
+  if (compareVersions(nodeVersion, UNDICI_8_MIN_NODE) >= 0) {
     return ['undici8', 'undici']
   }
 
   return ['undici']
 }
 
-type UndiciImporter = (moduleName: string) => Promise<UndiciModule>
+export async function loadUndici(): Promise<UndiciModule | undefined> {
+  // Keep package imports opaque so downstream bundlers resolve them at runtime.
+  // eslint-disable-next-line no-new-func
+  const importModule = new Function(
+    'moduleName',
+    'return import(moduleName)'
+  ) as (moduleName: string) => Promise<UndiciModule>
 
-// Keep package imports opaque so downstream bundlers resolve them at runtime.
-// eslint-disable-next-line no-new-func
-const importUndici = new Function(
-  'moduleName',
-  'return import(moduleName)'
-) as UndiciImporter
-
-export async function loadUndici(
-  importModule = importUndici
-): Promise<UndiciModule | undefined> {
   for (const packageName of getUndiciPackageCandidates(process.versions.node)) {
     try {
       return await importModule(packageName)
     } catch {
-      // Undici 8 is optional so Node 20 package managers can omit it.
+      // Try the next package supported by this Node version.
     }
   }
 

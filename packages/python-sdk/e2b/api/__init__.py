@@ -14,7 +14,6 @@ from httpx import AsyncBaseTransport, BaseTransport, Limits, Timeout
 
 from e2b.api.client.client import AuthenticatedClient
 from e2b.api.client.types import Response
-from e2b.api.http_client import AsyncRetryingClient, RetryingClient
 from e2b.api.metadata import default_headers
 from e2b.connection_config import ConnectionConfig
 from e2b.exceptions import (
@@ -264,7 +263,7 @@ class ApiClient(AuthenticatedClient):
 
         client = getattr(self._thread_local, "client", None)
         if client is None:
-            client = RetryingClient(
+            client = httpx.Client(
                 base_url=self._base_url,
                 cookies=self._cookies,
                 headers=self._headers_with_auth(),
@@ -284,7 +283,7 @@ class ApiClient(AuthenticatedClient):
         loop = asyncio.get_running_loop()
         client = self._async_clients.get(loop)
         if client is None:
-            client = AsyncRetryingClient(
+            client = httpx.AsyncClient(
                 base_url=self._base_url,
                 cookies=self._cookies,
                 headers=self._headers_with_auth(),

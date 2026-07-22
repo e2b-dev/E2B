@@ -13,7 +13,6 @@ from e2b.api.client_sync import EnvdTransportWithLogger, TransportWithLogger
 from e2b.api.client_sync import get_api_client as get_sync_api_client
 from e2b.api.client_sync import get_envd_transport as get_sync_envd_transport
 from e2b.api.client_sync import get_transport as get_sync_transport
-from e2b.api.http_client import AsyncRetryingClient, RetryingClient
 from e2b.connection_config import ConnectionConfig
 
 
@@ -42,7 +41,6 @@ def test_sync_api_client_proxy_uses_explicit_transport(test_api_key):
 
     try:
         assert "proxy" not in api_client._httpx_args
-        assert isinstance(httpx_client, RetryingClient)
         assert httpx_client._transport is get_sync_transport(config)
         assert httpx_client._mounts == {}
     finally:
@@ -231,7 +229,6 @@ async def test_async_api_client_proxy_uses_explicit_transport(test_api_key):
 
     try:
         assert "proxy" not in api_client._httpx_args
-        assert isinstance(httpx_client, AsyncRetryingClient)
         assert httpx_client._transport is transport
         assert httpx_client._mounts == {}
     finally:
