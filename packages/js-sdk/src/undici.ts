@@ -27,12 +27,16 @@ export function getUndiciPackageCandidates(nodeVersion: string): string[] {
 }
 
 export async function loadUndici(): Promise<UndiciModule | undefined> {
-  // Keep package imports opaque so downstream bundlers resolve them at runtime.
-  // eslint-disable-next-line no-new-func
-  const importModule = new Function(
-    'moduleName',
-    'return import(moduleName)'
-  ) as (moduleName: string) => Promise<UndiciModule>
+  let importModule: (moduleName: string) => Promise<UndiciModule>
+  try {
+    // Keep package imports opaque so downstream bundlers resolve them at runtime.
+    // eslint-disable-next-line no-new-func
+    importModule = new Function('moduleName', 'return import(moduleName)') as (
+      moduleName: string
+    ) => Promise<UndiciModule>
+  } catch {
+    return undefined
+  }
 
   for (const packageName of getUndiciPackageCandidates(process.versions.node)) {
     try {
