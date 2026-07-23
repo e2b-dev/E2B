@@ -28,7 +28,7 @@ from pyqwest import (
 
 from e2b.connection_config import ConnectionConfig
 from e2b.envd.client_async import first_event
-from e2b.envd.client_shared import ENVD_JSON_CODEC
+from e2b.envd.client_shared import ENVD_JSON_CODEC, ENVD_RPC_COMPRESSION
 from e2b.exceptions import TimeoutException
 from e2b.envd.interceptors import build_interceptors
 from e2b.envd.process.process_connect import ProcessClient, ProcessClientSync
@@ -49,8 +49,7 @@ def make_sync_client(port: int, logger: Optional[logging.Logger] = None):
     return ProcessClientSync(
         base_url,
         codec=ENVD_JSON_CODEC,
-        send_compression=None,
-        accept_compression=(),
+        **ENVD_RPC_COMPRESSION,
         interceptors=build_interceptors(_config(logger), base_url),
         http_client=SyncClient(SyncHTTPTransport(http_version=HTTPVersion.HTTP2)),
     )
@@ -61,8 +60,7 @@ def make_async_client(port: int, logger: Optional[logging.Logger] = None):
     return ProcessClient(
         base_url,
         codec=ENVD_JSON_CODEC,
-        send_compression=None,
-        accept_compression=(),
+        **ENVD_RPC_COMPRESSION,
         interceptors=build_interceptors(_config(logger), base_url),
         http_client=Client(HTTPTransport(http_version=HTTPVersion.HTTP2)),
     )

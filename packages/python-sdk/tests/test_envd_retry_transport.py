@@ -23,7 +23,7 @@ from envd_frame_server import assert_stdout_event, frame_recording_server
 
 from e2b.connection_config import ConnectionConfig
 from e2b.envd.client_async import ConnectionRetryTransport
-from e2b.envd.client_shared import ENVD_JSON_CODEC
+from e2b.envd.client_shared import ENVD_JSON_CODEC, ENVD_RPC_COMPRESSION
 from e2b.envd.client_sync import (
     ConnectionRetryTransport as SyncConnectionRetryTransport,
 )
@@ -173,8 +173,7 @@ async def test_async_stream_setup_retries_failed_connects():
         client = ProcessClient(
             base_url,
             codec=ENVD_JSON_CODEC,
-            send_compression=None,
-            accept_compression=(),
+            **ENVD_RPC_COMPRESSION,
             interceptors=build_interceptors(_config(), base_url),
             http_client=Client(_retrying(flaky)),
         )
@@ -193,8 +192,7 @@ def test_sync_stream_setup_retries_failed_connects():
         client = ProcessClientSync(
             base_url,
             codec=ENVD_JSON_CODEC,
-            send_compression=None,
-            accept_compression=(),
+            **ENVD_RPC_COMPRESSION,
             interceptors=build_interceptors(_config(), base_url),
             http_client=SyncClient(_retrying_sync(flaky)),
         )

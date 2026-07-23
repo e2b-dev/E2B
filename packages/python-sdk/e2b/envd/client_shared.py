@@ -15,7 +15,7 @@ protobuf codegen (`make generate-envd`).
 """
 
 import os
-from typing import Optional, TypeVar
+from typing import Optional, TypedDict, TypeVar
 
 from protobuf import Message
 
@@ -43,6 +43,24 @@ class _ProtoJSONCodec:
 
 
 ENVD_JSON_CODEC = _ProtoJSONCodec()
+
+
+class _RPCCompression(TypedDict):
+    send_compression: None
+    accept_compression: "tuple[()]"
+
+
+# Compression is disabled in both directions, matching every previous stack:
+# the vendored client never compressed and the JS SDK's connect-web transport
+# has no compression support — connectrpc's default would silently start
+# gzipping every request body. envd RPC payloads are tiny JSON (the large
+# file-transfer payloads go over httpx with their own gzip option), and
+# envd's handling of compressed streaming bodies is unresolved. The empty
+# accept resolves to identity-only, so responses stay uncompressed too.
+ENVD_RPC_COMPRESSION: _RPCCompression = {
+    "send_compression": None,
+    "accept_compression": (),
+}
 
 # Mirror the httpx pool tuning in `e2b.api.limits` with pyqwest's equivalents.
 # `pool_max_idle_per_host` is per host rather than httpx's global idle cap,

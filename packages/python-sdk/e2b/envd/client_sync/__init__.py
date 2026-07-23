@@ -10,6 +10,7 @@ from e2b.api import connection_retries
 from e2b.connection_config import ConnectionConfig
 from e2b.envd.client_shared import (
     ENVD_JSON_CODEC,
+    ENVD_RPC_COMPRESSION,
     pool_idle_timeout,
     pool_max_idle_per_host,
     proxy_to_url,
@@ -72,19 +73,16 @@ def create_rpc_client(
     """Build a generated sync connectrpc client (e.g. ``ProcessClientSync``)
     wired with the shared pyqwest transport (which retries failed connects,
     see :class:`ConnectionRetryTransport`), the envd JSON codec, and the
-    SDK's default-header and logging interceptors.
-
-    Compression is disabled in both directions to match the previous
-    transport; envd's handling of compressed streaming bodies is unresolved.
+    SDK's default-header and logging interceptors. Compression is disabled
+    (see ``ENVD_RPC_COMPRESSION``).
     """
     http_client = SyncClient(get_transport(proxy_to_url(config.proxy)))
     return client_cls(
         base_url,
         codec=ENVD_JSON_CODEC,
-        send_compression=None,
-        accept_compression=(),
         interceptors=build_interceptors(config, base_url),
         http_client=http_client,
+        **ENVD_RPC_COMPRESSION,
     )
 
 
