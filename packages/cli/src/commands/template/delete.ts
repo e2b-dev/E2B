@@ -90,7 +90,7 @@ export const deleteCommand = new commander.Command('delete')
           projectId = resolveProjectId(projectId)
 
           const allTemplates = await listSandboxTemplates({
-            teamID: projectId,
+            projectId,
           })
 
           const selectedTemplates = await getPromptTemplates(

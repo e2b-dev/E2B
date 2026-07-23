@@ -74,7 +74,7 @@ async function templateAction(
       projectId = resolveProjectId(projectId)
 
       const allTemplates = await listSandboxTemplates({
-        teamID: projectId,
+        projectId,
       })
 
       const filteredTemplates = allTemplates.filter(

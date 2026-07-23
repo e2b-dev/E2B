@@ -25,7 +25,7 @@ export const listCommand = new commander.Command('list')
       process.stdout.write('\n')
 
       const templates = await listSandboxTemplates({
-        teamID: resolveProjectId(projectIdFromOptions(opts)),
+        projectId: resolveProjectId(projectIdFromOptions(opts)),
       })
 
       for (const template of templates) {
@@ -117,13 +117,14 @@ function renderTable(templates: e2b.components['schemas']['Template'][]) {
 }
 
 export async function listSandboxTemplates({
-  teamID,
+  projectId,
 }: {
-  teamID?: string
+  projectId?: string
 }): Promise<e2b.components['schemas']['Template'][]> {
   const templates = await client.api.GET('/templates', {
     params: {
-      query: { teamID },
+      // the backend API still calls the project ID "teamID"
+      query: { teamID: projectId },
     },
   })
 
