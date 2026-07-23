@@ -91,15 +91,17 @@ function getStackTraceCallerMethod(
     return null
   }
 
-  const stackTraceLines = stackTrace.split('\n')
-  if (stackTraceLines.length === 0) {
-    return null
-  }
-  const callerTrace = stackTraceLines[0]
-
-  // Match line and column numbers at the end of the stack trace line
+  // The stack starts with the `Name: message` header — the first line with
+  // line and column numbers is the user's frame.
   // Format: ...file.ts:123:45) or ...file.ts:123:45
   // This handles Windows paths (C:\Users\...) and Unix paths
+  const callerTrace = stackTrace
+    .split('\n')
+    .find((line) => /:(\d+):(\d+)\)?$/.test(line))
+  if (!callerTrace) {
+    return null
+  }
+
   const lineColumnMatch = callerTrace.match(/:(\d+):(\d+)\)?$/)
   if (!lineColumnMatch) {
     return null
@@ -136,6 +138,8 @@ async function expectToThrowAndCheckTrace(
       throw error
     }
     assert.include(callerMethod, expectedMethod)
+    // The synthesized stack keeps the failure message as its header
+    assert.include(error.stack, error.message)
   }
 }
 
