@@ -12,7 +12,6 @@ export default defineConfig({
           include: ['tests/**/*.test.ts'],
           exclude: [
             'tests/runtimes/**',
-            'tests/integration/**',
             'tests/template/**',
             'tests/connectionConfig.test.ts',
           ],
@@ -51,15 +50,6 @@ export default defineConfig({
             E2B_API_KEY: process.env.E2B_API_KEY || env.parsed?.E2B_API_KEY,
             E2B_DOMAIN: process.env.E2B_DOMAIN || env.parsed?.E2B_DOMAIN,
           },
-        },
-      },
-      {
-        test: {
-          name: 'integration',
-          include: ['tests/integration/**/*.test.ts'],
-          globals: false,
-          testTimeout: 60_000,
-          environment: 'node',
         },
       },
       {
