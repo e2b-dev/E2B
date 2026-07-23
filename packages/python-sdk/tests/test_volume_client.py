@@ -1,21 +1,28 @@
 import asyncio
-import gc
+import socket
 import threading
+import time
+from typing import List
 
 import httpx
 import pytest
+from pyqwest.httpx import AsyncPyqwestTransport, PyqwestTransport
 
+import e2b.volume.client_async as client_async
+import e2b.volume.client_sync as client_sync
 from e2b.exceptions import AuthenticationException
-from e2b.volume.client_async import (
-    AsyncTransportWithLogger as AsyncVolumeTransport,
-    get_api_client as get_async_api_client,
-    get_transport as get_async_transport,
-)
-from e2b.volume.client_sync import (
-    get_api_client as get_sync_api_client,
-    get_transport as get_sync_transport,
-)
+from e2b.volume.client_async import get_api_client as get_async_api_client
+from e2b.volume.client_async import get_transport as get_async_transport
+from e2b.volume.client_sync import get_api_client as get_sync_api_client
+from e2b.volume.client_sync import get_transport as get_sync_transport
 from e2b.volume.connection_config import VolumeConnectionConfig
+from e2b.volume.volume_async import AsyncVolume
+from e2b.volume.volume_sync import Volume
+
+
+def reset_volume_transports():
+    client_sync._transports.clear()
+    client_async._transports.clear()
 
 
 def test_sync_client_requires_volume_token(monkeypatch):
@@ -61,85 +68,267 @@ def test_async_client_uses_config_request_timeout():
 
 
 def test_sync_transport_is_cached_per_proxy():
+    reset_volume_transports()
     config = VolumeConnectionConfig(token="vol-token")
     proxied = VolumeConnectionConfig(token="vol-token", proxy="http://127.0.0.1:8080")
 
-    transport_a = get_sync_transport(config)
-    transport_b = get_sync_transport(config)
-    transport_c = get_sync_transport(proxied)
+    try:
+        transport_a = get_sync_transport(config)
+        transport_b = get_sync_transport(config)
+        transport_c = get_sync_transport(proxied)
 
-    assert transport_a is transport_b
-    assert transport_a is not transport_c
+        assert isinstance(transport_a, PyqwestTransport)
+        assert transport_a is transport_b
+        assert transport_a is not transport_c
+    finally:
+        reset_volume_transports()
 
 
-def test_sync_transport_is_not_shared_across_threads():
+def test_sync_transport_is_shared_across_threads():
+    # pyqwest transports are thread-safe, so one transport (and its pool)
+    # serves all threads — the per-thread caching this replaced is gone.
+    reset_volume_transports()
     config = VolumeConnectionConfig(token="vol-token")
-    main_transport = get_sync_transport(config)
 
-    result = {}
+    try:
+        main_transport = get_sync_transport(config)
 
-    def worker():
-        result["transport"] = get_sync_transport(config)
+        result = {}
 
-    thread = threading.Thread(target=worker)
-    thread.start()
-    thread.join()
+        def worker():
+            result["transport"] = get_sync_transport(config)
 
-    assert result["transport"] is not main_transport
+        thread = threading.Thread(target=worker)
+        thread.start()
+        thread.join()
+
+        assert result["transport"] is main_transport
+    finally:
+        reset_volume_transports()
 
 
-def test_async_transport_is_cached_per_event_loop():
+def test_async_transport_is_shared_across_loops():
+    # pyqwest's I/O runs on its own Rust runtime, so the transport is not
+    # bound to an event loop — the per-loop caching this replaced is gone.
+    reset_volume_transports()
     config = VolumeConnectionConfig(token="vol-token")
     proxied = VolumeConnectionConfig(token="vol-token", proxy="http://127.0.0.1:8080")
 
     async def get_transports():
         return get_async_transport(config), get_async_transport(config)
 
-    async def get_proxied_transport():
-        return get_async_transport(proxied)
-
-    loop_a = asyncio.new_event_loop()
-    loop_b = asyncio.new_event_loop()
     try:
-        transport_a1, transport_a2 = loop_a.run_until_complete(get_transports())
-        transport_b1, _ = loop_b.run_until_complete(get_transports())
-        proxied_a = loop_a.run_until_complete(get_proxied_transport())
+        transport_a1, transport_a2 = asyncio.run(get_transports())
+        transport_b1, _ = asyncio.run(get_transports())
+        proxied_transport = get_async_transport(proxied)
 
-        # Same loop reuses the transport, another loop gets its own
+        assert isinstance(transport_a1, AsyncPyqwestTransport)
         assert transport_a1 is transport_a2
-        assert transport_a1 is not transport_b1
+        assert transport_a1 is transport_b1
 
-        # Different proxy gets its own transport even on the same loop
-        assert proxied_a is not transport_a1
+        # Different proxy still gets its own transport.
+        assert proxied_transport is not transport_a1
     finally:
-        loop_a.close()
-        loop_b.close()
+        reset_volume_transports()
 
 
-def test_async_transport_not_reused_across_sequential_loops():
-    AsyncVolumeTransport._instances.clear()
+CHUNK = b"x" * 1024
+
+
+def _start_volume_file_server(
+    chunk_delays: List[float], ttfb_delay: float = 0.0
+) -> str:
+    """One-shot HTTP server streaming a chunked volume-file body, sleeping
+    ``ttfb_delay`` before the response head and ``chunk_delays[i]`` before
+    sending chunk ``i``. Returns its base URL."""
+    sock = socket.socket()
+    sock.bind(("127.0.0.1", 0))
+    sock.listen(1)
+    port = sock.getsockname()[1]
+
+    def serve():
+        try:
+            conn, _ = sock.accept()
+            while b"\r\n\r\n" not in conn.recv(65536):
+                pass
+            time.sleep(ttfb_delay)
+            conn.sendall(
+                b"HTTP/1.1 200 OK\r\n"
+                b"Content-Type: application/octet-stream\r\n"
+                b"Transfer-Encoding: chunked\r\n\r\n"
+            )
+            for delay in chunk_delays:
+                time.sleep(delay)
+                conn.sendall(f"{len(CHUNK):x}\r\n".encode() + CHUNK + b"\r\n")
+            conn.sendall(b"0\r\n\r\n")
+            conn.close()
+        except OSError:
+            pass
+        finally:
+            sock.close()
+
+    threading.Thread(target=serve, daemon=True).start()
+    return f"http://127.0.0.1:{port}"
+
+
+@pytest.fixture
+def short_read_timeout(monkeypatch):
+    """Rebuild the volume transports with a short idle read timeout."""
+    reset_volume_transports()
+    monkeypatch.setattr(client_sync, "READ_TIMEOUT", 0.3)
+    monkeypatch.setattr(client_async, "READ_TIMEOUT", 0.3)
+    yield 0.3
+    reset_volume_transports()
+
+
+def test_sync_stream_survives_transfers_longer_than_read_timeout(short_read_timeout):
+    # The transport read timeout is an idle bound that resets on every chunk:
+    # a healthy stream whose total duration exceeds it must complete.
+    # `stream_idle_timeout` is ignored in the sync client (it cannot
+    # interrupt a blocking read) — a value shorter than every chunk gap must
+    # not abort the stream.
+    api_url = _start_volume_file_server([0.15] * 4)
+    volume = Volume(volume_id="v1", name="test", token="vol-token")
+
+    stream = volume.read_file(
+        "file.bin", format="stream", stream_idle_timeout=0.01, api_url=api_url
+    )
+    assert b"".join(stream) == CHUNK * 4
+
+
+def test_sync_stream_stall_raises_read_timeout(short_read_timeout):
+    # A mid-body stall longer than the idle read timeout surfaces as
+    # httpx.ReadTimeout (pyqwest's builtin TimeoutError is remapped).
+    api_url = _start_volume_file_server([0.0, 5.0])
+    volume = Volume(volume_id="v1", name="test", token="vol-token")
+
+    stream = volume.read_file("file.bin", format="stream", api_url=api_url)
+    received = [next(iter(stream))]
+    with pytest.raises(httpx.ReadTimeout):
+        for chunk in stream:
+            received.append(chunk)
+    assert received == [CHUNK]
+
+
+def test_async_stream_survives_transfers_longer_than_read_timeout(short_read_timeout):
+    api_url = _start_volume_file_server([0.15] * 4)
+    volume = AsyncVolume(volume_id="v1", name="test", token="vol-token")
+
+    async def run():
+        stream = await volume.read_file("file.bin", format="stream", api_url=api_url)
+        return b"".join([chunk async for chunk in stream])
+
+    assert asyncio.run(run()) == CHUNK * 4
+
+
+def test_async_stream_stall_raises_read_timeout(short_read_timeout):
+    api_url = _start_volume_file_server([0.0, 5.0])
+    volume = AsyncVolume(volume_id="v1", name="test", token="vol-token")
+
+    async def run():
+        stream = await volume.read_file("file.bin", format="stream", api_url=api_url)
+        received = [await stream.__anext__()]
+        with pytest.raises(httpx.ReadTimeout):
+            async for chunk in stream:
+                received.append(chunk)
+        return received
+
+    assert asyncio.run(run()) == [CHUNK]
+
+
+def test_async_explicit_stream_idle_timeout_aborts_stall():
+    # An explicit stream_idle_timeout is honored per read with wait_for
+    # (like the JS SDK's streamIdleTimeoutMs) — no transport rebuild needed.
+    reset_volume_transports()
+    api_url = _start_volume_file_server([0.0, 5.0])
+    volume = AsyncVolume(volume_id="v1", name="test", token="vol-token")
+
+    async def run():
+        stream = await volume.read_file(
+            "file.bin", format="stream", stream_idle_timeout=0.3, api_url=api_url
+        )
+        received = [await stream.__anext__()]
+        with pytest.raises(httpx.ReadTimeout):
+            async for chunk in stream:
+                received.append(chunk)
+        return received
+
+    try:
+        assert asyncio.run(run()) == [CHUNK]
+    finally:
+        reset_volume_transports()
+
+
+def test_async_explicit_stream_idle_timeout_above_transport_bound(short_read_timeout):
+    # An explicit value larger than the transport's idle read timeout must
+    # not be capped by it: explicit values run on the regular transport.
+    api_url = _start_volume_file_server([short_read_timeout * 1.5] * 3)
+    volume = AsyncVolume(volume_id="v1", name="test", token="vol-token")
+
+    async def run():
+        stream = await volume.read_file(
+            "file.bin", format="stream", stream_idle_timeout=5.0, api_url=api_url
+        )
+        return b"".join([chunk async for chunk in stream])
+
+    assert asyncio.run(run()) == CHUNK * 3
+
+
+def test_async_stream_idle_timeout_zero_disables_idle_bound(short_read_timeout):
+    # `stream_idle_timeout=0` disables idle bounding entirely — a stall
+    # longer than the transport's idle read timeout must not abort.
+    api_url = _start_volume_file_server([0.0, short_read_timeout * 3])
+    volume = AsyncVolume(volume_id="v1", name="test", token="vol-token")
+
+    async def run():
+        stream = await volume.read_file(
+            "file.bin", format="stream", stream_idle_timeout=0, api_url=api_url
+        )
+        return b"".join([chunk async for chunk in stream])
+
+    assert asyncio.run(run()) == CHUNK * 2
+
+
+def test_stream_transport_is_separate_from_regular_transport():
+    # reqwest's read timer keeps running while a request body is sent and
+    # while waiting for the response head, so the idle read timeout lives on
+    # a dedicated streaming transport — putting it on the shared one would
+    # cut off uploads and slow unary responses longer than the idle bound.
+    reset_volume_transports()
     config = VolumeConnectionConfig(token="vol-token")
 
-    async def get_transport():
-        return get_async_transport(config)
-
-    loop_a = asyncio.new_event_loop()
     try:
-        transport_a = loop_a.run_until_complete(get_transport())
+        regular = get_sync_transport(config)
+        streaming = get_sync_transport(config, for_streaming=True)
+        assert regular is not streaming
+        assert get_sync_transport(config) is regular
+        assert get_sync_transport(config, for_streaming=True) is streaming
+
+        async_regular = get_async_transport(config)
+        async_streaming = get_async_transport(config, for_streaming=True)
+        assert async_regular is not async_streaming
     finally:
-        loop_a.close()
-    del loop_a
-    gc.collect()
+        reset_volume_transports()
 
-    # The cache entry dies with the loop, so a later loop can never inherit
-    # a transport bound to a closed loop, even when CPython reuses the dead
-    # loop's object id.
-    assert len(AsyncVolumeTransport._instances) == 0
 
-    loop_b = asyncio.new_event_loop()
-    try:
-        transport_b = loop_b.run_until_complete(get_transport())
-    finally:
-        loop_b.close()
+def test_sync_non_stream_read_survives_response_slower_than_idle_timeout(
+    short_read_timeout,
+):
+    # Non-streamed requests go through the regular transport, which has no
+    # idle read timeout: a server that takes longer than the streaming idle
+    # bound to start responding must not be cut off.
+    api_url = _start_volume_file_server([0.0], ttfb_delay=short_read_timeout * 3)
+    volume = Volume(volume_id="v1", name="test", token="vol-token")
 
-    assert transport_b is not transport_a
+    assert volume.read_file("file.bin", format="bytes", api_url=api_url) == CHUNK
+
+
+def test_sync_stream_response_head_is_bounded_by_idle_timeout(short_read_timeout):
+    # For streamed reads the idle read timeout also bounds waiting for the
+    # response head (like the JS SDK's handshake timeout on stream start).
+    api_url = _start_volume_file_server([0.0], ttfb_delay=5.0)
+    volume = Volume(volume_id="v1", name="test", token="vol-token")
+
+    stream = volume.read_file("file.bin", format="stream", api_url=api_url)
+    with pytest.raises(httpx.ReadTimeout):
+        next(iter(stream))
