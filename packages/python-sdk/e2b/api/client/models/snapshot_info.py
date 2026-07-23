@@ -11,28 +11,28 @@ T = TypeVar("T", bound="SnapshotInfo")
 class SnapshotInfo:
     """
     Attributes:
-        names (list[str]): Full names of the snapshot template including team namespace and tag (e.g. team-slug/my-
-            snapshot:v2)
         snapshot_id (str): Identifier of the snapshot template including the tag. Uses namespace/alias when a name was
             provided (e.g. team-slug/my-snapshot:default), otherwise falls back to the raw template ID (e.g.
             abc123:default).
+        names (list[str]): Full names of the snapshot template including team namespace and tag (e.g. team-slug/my-
+            snapshot:v2)
     """
 
-    names: list[str]
     snapshot_id: str
+    names: list[str]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        names = self.names
-
         snapshot_id = self.snapshot_id
+
+        names = self.names
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "names": names,
                 "snapshotID": snapshot_id,
+                "names": names,
             }
         )
 
@@ -41,13 +41,13 @@ class SnapshotInfo:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        names = cast(list[str], d.pop("names"))
-
         snapshot_id = d.pop("snapshotID")
 
+        names = cast(list[str], d.pop("names"))
+
         snapshot_info = cls(
-            names=names,
             snapshot_id=snapshot_id,
+            names=names,
         )
 
         snapshot_info.additional_properties = d

@@ -34,7 +34,7 @@ ENV PATH="/go/bin:${PATH}"
 
 # Install Python deps (e2b-openapi-python-client is patched version to fix issue with explode)
 # https://github.com/openapi-generators/openapi-python-client/pull/1296
-RUN pip install black==26.3.1 pyyaml==6.0.2 e2b-openapi-python-client==0.26.2 datamodel-code-generator==0.34.0
+RUN pip install black==26.3.1 e2b-openapi-python-client==0.26.2 datamodel-code-generator==0.34.0
 
 # Install Node.js (pinned to match .tool-versions)
 ENV NODE_VERSION=22.18.0
@@ -51,6 +51,7 @@ ENV PNPM_VERSION=9.15.5
 RUN npm install -g \
     pnpm@${PNPM_VERSION} \
     @connectrpc/protoc-gen-connect-es@1.6.1 \
-    @bufbuild/protoc-gen-es@2.6.2
+    @bufbuild/protoc-gen-es@2.6.2 \
+    @redocly/cli@2.39.0
 
 CMD ["make", "generate"]

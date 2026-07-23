@@ -38,11 +38,11 @@ dev = [
 ]
 
 # Tools for local code generation (`make init` && `uv run make generate-*`).
-# Pins mirror codegen.Dockerfile so local output matches CI. `generate-envd`
-# additionally needs Go tooling (buf) and only runs via `make codegen` (Docker).
+# Pins mirror codegen.Dockerfile so local output matches CI. `generate-api`
+# additionally needs @redocly/cli (npm) and `generate-envd` needs Go tooling
+# (buf); both only run via `make codegen` (Docker).
 codegen = [
     "black==26.3.1",
-    "pyyaml==6.0.2",
     "e2b-openapi-python-client==0.26.2",
     "datamodel-code-generator==0.34.0",
 ]

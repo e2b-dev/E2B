@@ -14,30 +14,30 @@ T = TypeVar("T", bound="TemplateTag")
 class TemplateTag:
     """
     Attributes:
+        tag (str): The tag name
         build_id (UUID): Identifier of the build associated with this tag
         created_at (datetime.datetime): Time when the tag was assigned
-        tag (str): The tag name
     """
 
+    tag: str
     build_id: UUID
     created_at: datetime.datetime
-    tag: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        tag = self.tag
+
         build_id = str(self.build_id)
 
         created_at = self.created_at.isoformat()
-
-        tag = self.tag
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
+                "tag": tag,
                 "buildID": build_id,
                 "createdAt": created_at,
-                "tag": tag,
             }
         )
 
@@ -46,16 +46,16 @@ class TemplateTag:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
+        tag = d.pop("tag")
+
         build_id = UUID(d.pop("buildID"))
 
         created_at = isoparse(d.pop("createdAt"))
 
-        tag = d.pop("tag")
-
         template_tag = cls(
+            tag=tag,
             build_id=build_id,
             created_at=created_at,
-            tag=tag,
         )
 
         template_tag.additional_properties = d

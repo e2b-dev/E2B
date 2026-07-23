@@ -11,25 +11,25 @@ T = TypeVar("T", bound="AssignTemplateTagsRequest")
 class AssignTemplateTagsRequest:
     """
     Attributes:
-        tags (list[str]): Tags to assign to the template
         target (str): Target template in "name:tag" format
+        tags (list[str]): Tags to assign to the template
     """
 
-    tags: list[str]
     target: str
+    tags: list[str]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        tags = self.tags
-
         target = self.target
+
+        tags = self.tags
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "tags": tags,
                 "target": target,
+                "tags": tags,
             }
         )
 
@@ -38,13 +38,13 @@ class AssignTemplateTagsRequest:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        tags = cast(list[str], d.pop("tags"))
-
         target = d.pop("target")
 
+        tags = cast(list[str], d.pop("tags"))
+
         assign_template_tags_request = cls(
-            tags=tags,
             target=target,
+            tags=tags,
         )
 
         assign_template_tags_request.additional_properties = d

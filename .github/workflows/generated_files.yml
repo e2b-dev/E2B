@@ -25,6 +25,10 @@ jobs:
             generated:
               - 'spec/**/!(*.md)'
               - 'codegen.Dockerfile'
+              - 'copybara.Dockerfile'
+              - 'copy.bara.sky'
+              - 'redocly.yaml'
+              - 'scripts/fetch-spec.sh'
               - 'Makefile'
               - 'packages/**/!(*.md)'
               - 'pnpm-lock.yaml'
@@ -86,8 +90,43 @@ jobs:
           # the repo's 10 GB Actions cache, evicting other caches.
           cache-from: type=gha
 
+      - name: Build copybara image with caching
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: copybara.Dockerfile
+          tags: e2b-copybara:latest
+          load: true # makes the image available for `docker run`
+          # Cache is seeded from main by codegen_image_cache.yml (see the
+          # cache-to note above for why there is no cache-to here).
+          cache-from: type=gha,scope=copybara
+
+      # scripts/fetch-spec.sh needs read access to the private e2b-dev/belt
+      # repo to fetch the volume-content spec. The default `secrets.GITHUB_TOKEN`
+      # is scoped to this repository only, so mint a short-lived token from
+      # the Autofixer GitHub App instead, scoped to every repo the fetches
+      # touch. Fork PRs have no access to the App secret, so they skip the
+      # mint, run the public infra fetches with the default token, and fall
+      # back to the tracked volume-content spec (make fetch-specs warns
+      # instead of failing).
+      - name: Generate token for spec repos
+        id: spec-repos-token
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.AUTOFIXER_APP_ID }}
+          private-key: ${{ secrets.AUTOFIXER_APP_SECRET }}
+          owner: e2b-dev
+          repositories: belt,infra
+          permission-contents: read
+
       - name: Run codegen
-        run: CODEGEN_IMAGE=codegen-env:latest make codegen
+        env:
+          GITHUB_TOKEN: ${{ steps.spec-repos-token.outputs.token || github.token }}
+        run: |
+          CODEGEN_IMAGE=codegen-env:latest \
+          COPYBARA_IMAGE=e2b-copybara:latest \
+          make codegen
 
       - name: Check for uncommitted changes
         run: |

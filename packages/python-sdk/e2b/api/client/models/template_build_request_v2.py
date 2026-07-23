@@ -14,25 +14,25 @@ class TemplateBuildRequestV2:
     """
     Attributes:
         alias (str): Alias of the template
+        team_id (Union[Unset, str]): Identifier of the team
         cpu_count (Union[Unset, int]): CPU cores for the sandbox
         memory_mb (Union[Unset, int]): Memory for the sandbox in MiB
-        team_id (Union[Unset, str]): Identifier of the team
     """
 
     alias: str
+    team_id: Union[Unset, str] = UNSET
     cpu_count: Union[Unset, int] = UNSET
     memory_mb: Union[Unset, int] = UNSET
-    team_id: Union[Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         alias = self.alias
 
+        team_id = self.team_id
+
         cpu_count = self.cpu_count
 
         memory_mb = self.memory_mb
-
-        team_id = self.team_id
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -41,12 +41,12 @@ class TemplateBuildRequestV2:
                 "alias": alias,
             }
         )
+        if team_id is not UNSET:
+            field_dict["teamID"] = team_id
         if cpu_count is not UNSET:
             field_dict["cpuCount"] = cpu_count
         if memory_mb is not UNSET:
             field_dict["memoryMB"] = memory_mb
-        if team_id is not UNSET:
-            field_dict["teamID"] = team_id
 
         return field_dict
 
@@ -55,17 +55,17 @@ class TemplateBuildRequestV2:
         d = dict(src_dict)
         alias = d.pop("alias")
 
+        team_id = d.pop("teamID", UNSET)
+
         cpu_count = d.pop("cpuCount", UNSET)
 
         memory_mb = d.pop("memoryMB", UNSET)
 
-        team_id = d.pop("teamID", UNSET)
-
         template_build_request_v2 = cls(
             alias=alias,
+            team_id=team_id,
             cpu_count=cpu_count,
             memory_mb=memory_mb,
-            team_id=team_id,
         )
 
         template_build_request_v2.additional_properties = d

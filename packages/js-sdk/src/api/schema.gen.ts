@@ -11,7 +11,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description List all running sandboxes */
+        /**
+         * List running sandboxes
+         * @deprecated
+         * @description List all running sandboxes. Use GET /v2/sandboxes instead.
+         */
         get: {
             parameters: {
                 query?: {
@@ -39,7 +43,10 @@ export interface paths {
             };
         };
         put?: never;
-        /** @description Create a sandbox from the template */
+        /**
+         * Create sandbox
+         * @description Create a sandbox from the template
+         */
         post: {
             parameters: {
                 query?: never;
@@ -80,7 +87,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Get a sandbox by id */
+        /**
+         * Sandbox
+         * @description Get a sandbox by id
+         */
         get: {
             parameters: {
                 query?: never;
@@ -108,7 +118,10 @@ export interface paths {
         };
         put?: never;
         post?: never;
-        /** @description Kill a sandbox */
+        /**
+         * Kill sandbox
+         * @description Kill a sandbox
+         */
         delete: {
             parameters: {
                 query?: never;
@@ -146,7 +159,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. */
+        /**
+         * Connect sandbox
+         * @description Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended.
+         */
         post: {
             parameters: {
                 query?: never;
@@ -249,6 +265,7 @@ export interface paths {
             cookie?: never;
         };
         /**
+         * Sandbox logs
          * @deprecated
          * @description Get sandbox logs. Use /v2/sandboxes/{sandboxID}/logs instead.
          */
@@ -297,7 +314,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Get sandbox metrics */
+        /**
+         * Sandbox metrics
+         * @description Get sandbox metrics
+         */
         get: {
             parameters: {
                 query?: {
@@ -344,7 +364,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** @description Update the network configuration for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting field clears it. */
+        /**
+         * Update sandbox network
+         * @description Update the network configuration for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting field clears it.
+         */
         put: {
             parameters: {
                 query?: never;
@@ -389,7 +412,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Pause the sandbox */
+        /**
+         * Pause sandbox
+         * @description Pause the sandbox
+         */
         post: {
             parameters: {
                 query?: never;
@@ -433,7 +459,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Refresh the sandbox extending its time to live */
+        /**
+         * Refresh sandbox
+         * @description Refresh the sandbox extending its time to live
+         */
         post: {
             parameters: {
                 query?: never;
@@ -445,10 +474,7 @@ export interface paths {
             };
             requestBody?: {
                 content: {
-                    "application/json": {
-                        /** @description Duration for which the sandbox should be kept alive in seconds */
-                        duration?: number;
-                    };
+                    "application/json": components["schemas"]["SandboxRefreshRequest"];
                 };
             };
             responses: {
@@ -479,6 +505,7 @@ export interface paths {
         get?: never;
         put?: never;
         /**
+         * Resume sandbox
          * @deprecated
          * @description Resume the sandbox
          */
@@ -527,7 +554,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Create a persistent snapshot from the sandbox's current state. Snapshots can be used to create new sandboxes and persist beyond the original sandbox's lifetime. */
+        /**
+         * Create snapshot
+         * @description Create a persistent snapshot from the sandbox's current state. Snapshots can be used to create new sandboxes and persist beyond the original sandbox's lifetime.
+         */
         post: {
             parameters: {
                 query?: never;
@@ -539,10 +569,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": {
-                        /** @description Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one. */
-                        name?: string;
-                    };
+                    "application/json": components["schemas"]["SandboxSnapshotRequest"];
                 };
             };
             responses: {
@@ -576,7 +603,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request. Calling this method multiple times overwrites the TTL, each time using the current timestamp as the starting point to measure the timeout duration. */
+        /**
+         * Set sandbox timeout
+         * @description Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request. Calling this method multiple times overwrites the TTL, each time using the current timestamp as the starting point to measure the timeout duration.
+         */
         post: {
             parameters: {
                 query?: never;
@@ -588,13 +618,7 @@ export interface paths {
             };
             requestBody?: {
                 content: {
-                    "application/json": {
-                        /**
-                         * Format: int32
-                         * @description Timeout in seconds from the current time after which the sandbox should expire
-                         */
-                        timeout: number;
-                    };
+                    "application/json": components["schemas"]["SandboxTimeoutRequest"];
                 };
             };
             responses: {
@@ -623,7 +647,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description List metrics for given sandboxes */
+        /**
+         * List sandbox metrics
+         * @description List metrics for given sandboxes
+         */
         get: {
             parameters: {
                 query: {
@@ -665,12 +692,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description List all snapshots for the team */
+        /**
+         * List snapshots
+         * @description List all snapshots for the team
+         */
         get: {
             parameters: {
                 query?: {
                     /** @description Maximum number of items to return per page */
                     limit?: components["parameters"]["paginationLimit"];
+                    /** @description Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1"). */
                     name?: string;
                     /** @description Cursor to start the list from */
                     nextToken?: components["parameters"]["paginationNextToken"];
@@ -710,7 +741,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description List all teams */
+        /**
+         * List teams
+         * @description List all teams
+         */
         get: {
             parameters: {
                 query?: never;
@@ -748,7 +782,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Get metrics for the team */
+        /**
+         * Team metrics
+         * @description Get metrics for the team
+         */
         get: {
             parameters: {
                 query?: {
@@ -794,7 +831,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Get the maximum metrics for the team in the given interval */
+        /**
+         * Maximum team metrics
+         * @description Get the maximum metrics for the team in the given interval
+         */
         get: {
             parameters: {
                 query: {
@@ -842,7 +882,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description List all templates */
+        /**
+         * List templates
+         * @deprecated
+         * @description List all templates
+         */
         get: {
             parameters: {
                 query?: {
@@ -869,6 +913,7 @@ export interface paths {
         };
         put?: never;
         /**
+         * Create template
          * @deprecated
          * @description Create a new template
          */
@@ -912,7 +957,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description List all builds for a template */
+        /**
+         * List template builds
+         * @description List all builds for a template
+         */
         get: {
             parameters: {
                 query?: {
@@ -944,6 +992,7 @@ export interface paths {
         };
         put?: never;
         /**
+         * Rebuild template
          * @deprecated
          * @description Rebuild an template
          */
@@ -975,7 +1024,10 @@ export interface paths {
                 500: components["responses"]["500"];
             };
         };
-        /** @description Delete a template */
+        /**
+         * Delete template
+         * @description Delete a template
+         */
         delete: {
             parameters: {
                 query?: never;
@@ -1001,6 +1053,7 @@ export interface paths {
         options?: never;
         head?: never;
         /**
+         * Update template
          * @deprecated
          * @description Update template
          */
@@ -1043,6 +1096,7 @@ export interface paths {
         get?: never;
         put?: never;
         /**
+         * Start template build
          * @deprecated
          * @description Start the build
          */
@@ -1082,7 +1136,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Get template build logs */
+        /**
+         * Template build logs
+         * @description Get template build logs
+         */
         get: {
             parameters: {
                 query?: {
@@ -1133,7 +1190,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Get template build info */
+        /**
+         * Template build status
+         * @description Get template build info
+         */
         get: {
             parameters: {
                 query?: {
@@ -1181,7 +1241,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Get an upload link for a tar file containing build layer files */
+        /**
+         * Template build file upload URL
+         * @description Get an upload link for a tar file containing build layer files
+         */
         get: {
             parameters: {
                 query?: never;
@@ -1224,7 +1287,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description List all tags for a template */
+        /**
+         * List template tags
+         * @description List all tags for a template
+         */
         get: {
             parameters: {
                 query?: never;
@@ -1266,7 +1332,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Check if template with given alias exists */
+        /**
+         * Check template alias
+         * @description Check if template with given alias exists
+         */
         get: {
             parameters: {
                 query?: never;
@@ -1310,7 +1379,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Assign tag(s) to a template build */
+        /**
+         * Assign template tags
+         * @description Assign tag(s) to a template build
+         */
         post: {
             parameters: {
                 query?: never;
@@ -1339,7 +1411,10 @@ export interface paths {
                 500: components["responses"]["500"];
             };
         };
-        /** @description Delete multiple tags from templates */
+        /**
+         * Delete template tags
+         * @description Delete multiple tags from templates
+         */
         delete: {
             parameters: {
                 query?: never;
@@ -1378,7 +1453,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description List all sandboxes */
+        /**
+         * List sandboxes (v2)
+         * @description List all sandboxes
+         */
         get: {
             parameters: {
                 query?: {
@@ -1426,7 +1504,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Get sandbox logs */
+        /**
+         * Sandbox logs (v2)
+         * @description Get sandbox logs
+         */
         get: {
             parameters: {
                 query?: {
@@ -1478,9 +1559,45 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * List templates (v2)
+         * @description List all templates
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Maximum number of items to return per page */
+                    limit?: components["parameters"]["paginationLimit"];
+                    /** @description Cursor to start the list from */
+                    nextToken?: components["parameters"]["paginationNextToken"];
+                    teamID?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned all templates */
+                200: {
+                    headers: {
+                        /** @description Cursor to fetch the next page of results, if more exist */
+                        "X-Next-Token"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Template"][];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                500: components["responses"]["500"];
+            };
+        };
         put?: never;
         /**
+         * Create template (v2)
          * @deprecated
          * @description Create a new template
          */
@@ -1530,7 +1647,10 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** @description Update template */
+        /**
+         * Update template (v2)
+         * @description Update template
+         */
         patch: {
             parameters: {
                 query?: never;
@@ -1571,7 +1691,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Start the build */
+        /**
+         * Start template build (v2)
+         * @description Start the build
+         */
         post: {
             parameters: {
                 query?: never;
@@ -1614,7 +1737,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Create a new template */
+        /**
+         * Create template (v3)
+         * @description Create a new template
+         */
         post: {
             parameters: {
                 query?: never;
@@ -1656,7 +1782,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description List all team volumes */
+        /**
+         * List team volumes
+         * @description List all team volumes
+         */
         get: {
             parameters: {
                 query?: never;
@@ -1680,7 +1809,10 @@ export interface paths {
             };
         };
         put?: never;
-        /** @description Create a new team volume */
+        /**
+         * Create team volume
+         * @description Create a new team volume
+         */
         post: {
             parameters: {
                 query?: never;
@@ -1721,7 +1853,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Get team volume info */
+        /**
+         * Team volume
+         * @description Get team volume info
+         */
         get: {
             parameters: {
                 query?: never;
@@ -1749,7 +1884,10 @@ export interface paths {
         };
         put?: never;
         post?: never;
-        /** @description Delete a team volume */
+        /**
+         * Delete team volume
+         * @description Delete a team volume
+         */
         delete: {
             parameters: {
                 query?: never;
@@ -2125,6 +2263,11 @@ export interface components {
             /** @description Service instance identifier of the node */
             serviceInstanceID: string;
             status: components["schemas"]["NodeStatus"];
+            /**
+             * Format: date-time
+             * @description Time when the node status was last changed
+             */
+            statusChangedAt: string;
             /** @description Version of the orchestrator */
             version: string;
         };
@@ -2157,6 +2300,11 @@ export interface components {
             /** @description Service instance identifier of the node */
             serviceInstanceID: string;
             status: components["schemas"]["NodeStatus"];
+            /**
+             * Format: date-time
+             * @description Time when the node status was last changed
+             */
+            statusChangedAt: string;
             /** @description Version of the orchestrator */
             version: string;
         };
@@ -2184,6 +2332,26 @@ export interface components {
             cpuPercent: number;
             /** @description Detailed metrics for each disk/mount point */
             disks: components["schemas"]["DiskMetrics"][];
+            /**
+             * Format: uint64
+             * @description Size of a single hugepage in bytes
+             */
+            hugePageSizeBytes: number;
+            /**
+             * Format: uint64
+             * @description Number of reserved hugepages (committed but not yet faulted)
+             */
+            hugePagesReserved: number;
+            /**
+             * Format: uint64
+             * @description Total number of preallocated hugepages on the node
+             */
+            hugePagesTotal: number;
+            /**
+             * Format: uint64
+             * @description Number of hugepages in use (total - free)
+             */
+            hugePagesUsed: number;
             /**
              * Format: uint64
              * @description Total node memory in bytes
@@ -2291,6 +2459,15 @@ export interface components {
             templateID: string;
             volumeMounts?: components["schemas"]["SandboxVolumeMount"][];
         };
+        /** @description SOCKS5 proxy for sandbox egress. Outbound TCP is tunneled through the proxy after allow/deny filtering; the sandbox is unaware. Domain-matched flows use remote DNS (ATYP=domain). */
+        SandboxEgressProxyConfig: {
+            /** @description SOCKS5 proxy address in host:port format (e.g. "proxy.example.com:1080"). */
+            address: string;
+            /** @description Optional SOCKS5 password (RFC 1929), max 255 bytes. */
+            password?: string;
+            /** @description Optional SOCKS5 username (RFC 1929), max 255 bytes. */
+            username?: string;
+        } | null;
         SandboxesWithMetrics: {
             sandboxes: {
                 [key: string]: components["schemas"]["SandboxMetric"];
@@ -2419,6 +2596,7 @@ export interface components {
             allowPublicTraffic?: boolean;
             /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
             denyOut?: string[];
+            egressProxy?: components["schemas"]["SandboxEgressProxyConfig"];
             /** @description Specify host mask which will be used for all sandbox requests */
             maskRequestHost?: string;
             /** @description Per-domain transform rules applied to matching egress HTTP/HTTPS requests. Keys are domains (e.g. "api.example.com", "example.com"). A domain listed here is not automatically allowed - use allowOut to permit the traffic.
@@ -2447,6 +2625,7 @@ export interface components {
             allowOut?: string[];
             /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
             denyOut?: string[];
+            egressProxy?: components["schemas"]["SandboxEgressProxyConfig"];
             /** @description Per-domain transform rules. Replaces all existing rules when provided. */
             rules?: {
                 [key: string]: components["schemas"]["SandboxNetworkRule"][];
@@ -2464,11 +2643,26 @@ export interface components {
              */
             memory?: boolean;
         };
+        SandboxRefreshRequest: {
+            /** @description Duration for which the sandbox should be kept alive in seconds */
+            duration?: number;
+        };
+        SandboxSnapshotRequest: {
+            /** @description Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one. */
+            name?: string;
+        };
         /**
          * @description State of the sandbox
          * @enum {string}
          */
         SandboxState: "running" | "paused";
+        SandboxTimeoutRequest: {
+            /**
+             * Format: int32
+             * @description Timeout in seconds from the current time after which the sandbox should expire
+             */
+            timeout: number;
+        };
         SandboxVolumeMount: {
             /** @description Name of the volume */
             name: string;
@@ -2920,6 +3114,15 @@ export interface components {
         };
         /** @description Conflict */
         409: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Gone */
+        410: {
             headers: {
                 [name: string]: unknown;
             };

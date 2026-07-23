@@ -13,25 +13,25 @@ T = TypeVar("T", bound="GCPRegistry")
 class GCPRegistry:
     """
     Attributes:
-        service_account_json (str): Service Account JSON for GCP authentication
         type_ (GCPRegistryType): Type of registry authentication
+        service_account_json (str): Service Account JSON for GCP authentication
     """
 
-    service_account_json: str
     type_: GCPRegistryType
+    service_account_json: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        service_account_json = self.service_account_json
-
         type_ = self.type_.value
+
+        service_account_json = self.service_account_json
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "serviceAccountJson": service_account_json,
                 "type": type_,
+                "serviceAccountJson": service_account_json,
             }
         )
 
@@ -40,13 +40,13 @@ class GCPRegistry:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        service_account_json = d.pop("serviceAccountJson")
-
         type_ = GCPRegistryType(d.pop("type"))
 
+        service_account_json = d.pop("serviceAccountJson")
+
         gcp_registry = cls(
-            service_account_json=service_account_json,
             type_=type_,
+            service_account_json=service_account_json,
         )
 
         gcp_registry.additional_properties = d

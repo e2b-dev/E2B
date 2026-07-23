@@ -69,7 +69,9 @@ def sync_detailed(
     client: AuthenticatedClient,
     body: TemplateBuildRequest,
 ) -> Response[Union[Error, TemplateLegacy]]:
-    """Rebuild an template
+    """Rebuild template
+
+     Rebuild an template
 
     Args:
         template_id (str):
@@ -101,7 +103,9 @@ def sync(
     client: AuthenticatedClient,
     body: TemplateBuildRequest,
 ) -> Optional[Union[Error, TemplateLegacy]]:
-    """Rebuild an template
+    """Rebuild template
+
+     Rebuild an template
 
     Args:
         template_id (str):
@@ -128,7 +132,9 @@ async def asyncio_detailed(
     client: AuthenticatedClient,
     body: TemplateBuildRequest,
 ) -> Response[Union[Error, TemplateLegacy]]:
-    """Rebuild an template
+    """Rebuild template
+
+     Rebuild an template
 
     Args:
         template_id (str):
@@ -158,7 +164,9 @@ async def asyncio(
     client: AuthenticatedClient,
     body: TemplateBuildRequest,
 ) -> Optional[Union[Error, TemplateLegacy]]:
-    """Rebuild an template
+    """Rebuild template
+
+     Rebuild an template
 
     Args:
         template_id (str):

@@ -12,26 +12,26 @@ T = TypeVar("T", bound="TeamUser")
 class TeamUser:
     """
     Attributes:
-        email (Union[None, str]): Email of the user
         id (UUID): Identifier of the user
+        email (Union[None, str]): Email of the user
     """
 
-    email: Union[None, str]
     id: UUID
+    email: Union[None, str]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        id = str(self.id)
+
         email: Union[None, str]
         email = self.email
-
-        id = str(self.id)
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "email": email,
                 "id": id,
+                "email": email,
             }
         )
 
@@ -40,6 +40,7 @@ class TeamUser:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
+        id = UUID(d.pop("id"))
 
         def _parse_email(data: object) -> Union[None, str]:
             if data is None:
@@ -48,11 +49,9 @@ class TeamUser:
 
         email = _parse_email(d.pop("email"))
 
-        id = UUID(d.pop("id"))
-
         team_user = cls(
-            email=email,
             id=id,
+            email=email,
         )
 
         team_user.additional_properties = d

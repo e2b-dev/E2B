@@ -75,7 +75,9 @@ def sync_detailed(
     client: AuthenticatedClient,
     metadata: Union[Unset, str] = UNSET,
 ) -> Response[Union[Error, list["ListedSandbox"]]]:
-    """List all running sandboxes
+    """List running sandboxes
+
+     List all running sandboxes. Use GET /v2/sandboxes instead.
 
     Args:
         metadata (Union[Unset, str]):
@@ -104,7 +106,9 @@ def sync(
     client: AuthenticatedClient,
     metadata: Union[Unset, str] = UNSET,
 ) -> Optional[Union[Error, list["ListedSandbox"]]]:
-    """List all running sandboxes
+    """List running sandboxes
+
+     List all running sandboxes. Use GET /v2/sandboxes instead.
 
     Args:
         metadata (Union[Unset, str]):
@@ -128,7 +132,9 @@ async def asyncio_detailed(
     client: AuthenticatedClient,
     metadata: Union[Unset, str] = UNSET,
 ) -> Response[Union[Error, list["ListedSandbox"]]]:
-    """List all running sandboxes
+    """List running sandboxes
+
+     List all running sandboxes. Use GET /v2/sandboxes instead.
 
     Args:
         metadata (Union[Unset, str]):
@@ -155,7 +161,9 @@ async def asyncio(
     client: AuthenticatedClient,
     metadata: Union[Unset, str] = UNSET,
 ) -> Optional[Union[Error, list["ListedSandbox"]]]:
-    """List all running sandboxes
+    """List running sandboxes
+
+     List all running sandboxes. Use GET /v2/sandboxes instead.
 
     Args:
         metadata (Union[Unset, str]):

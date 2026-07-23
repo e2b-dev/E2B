@@ -1,13 +1,15 @@
 name: Codegen image cache
 
-# Seeds the buildkit cache for codegen.Dockerfile from main so pull request
-# runs of generated_files.yml warm-start. PR-scoped cache writes are not
-# readable by other PRs, so main is the only scope worth writing to.
+# Seeds the buildkit caches for codegen.Dockerfile and copybara.Dockerfile
+# from main so pull request runs of generated_files.yml warm-start. PR-scoped
+# cache writes are not readable by other PRs, so main is the only scope worth
+# writing to.
 on:
   push:
     branches: [main]
     paths:
       - 'codegen.Dockerfile'
+      - 'copybara.Dockerfile'
       - 'packages/connect-python/**'
       - '.github/workflows/codegen_image_cache.yml'
   workflow_dispatch:
@@ -33,3 +35,11 @@ jobs:
           file: codegen.Dockerfile
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Build copybara image and export cache
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: copybara.Dockerfile
+          cache-from: type=gha,scope=copybara
+          cache-to: type=gha,mode=max,scope=copybara

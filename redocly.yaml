@@ -1,0 +1,23 @@
+# Filters the synced REST API spec (spec/openapi.yml) down to the endpoint
+# tags each SDK exposes; everything else (admin, access-tokens, api-keys,
+# untagged endpoints like /health) is dropped. The SDK generate pipelines run
+# `redocly bundle <api> -o spec/openapi_generated.<api>.yml` before invoking
+# their client generators. The js-sdk list additionally keeps `auth` because
+# the CLI reaches /teams through the js-sdk's generated schema.
+apis:
+  js-sdk:
+    root: spec/openapi.yml
+    decorators:
+      filter-in:
+        property: tags
+        value: [sandboxes, snapshots, templates, tags, auth, volumes]
+        matchStrategy: any
+        applyTo: Operation
+  python-sdk:
+    root: spec/openapi.yml
+    decorators:
+      filter-in:
+        property: tags
+        value: [sandboxes, snapshots, templates, tags, volumes]
+        matchStrategy: any
+        applyTo: Operation

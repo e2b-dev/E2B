@@ -11,25 +11,25 @@ T = TypeVar("T", bound="TemplateAliasResponse")
 class TemplateAliasResponse:
     """
     Attributes:
-        public (bool): Whether the template is public or only accessible by the team
         template_id (str): Identifier of the template
+        public (bool): Whether the template is public or only accessible by the team
     """
 
-    public: bool
     template_id: str
+    public: bool
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        public = self.public
-
         template_id = self.template_id
+
+        public = self.public
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "public": public,
                 "templateID": template_id,
+                "public": public,
             }
         )
 
@@ -38,13 +38,13 @@ class TemplateAliasResponse:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        public = d.pop("public")
-
         template_id = d.pop("templateID")
 
+        public = d.pop("public")
+
         template_alias_response = cls(
-            public=public,
             template_id=template_id,
+            public=public,
         )
 
         template_alias_response.additional_properties = d

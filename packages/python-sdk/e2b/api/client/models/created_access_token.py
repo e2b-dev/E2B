@@ -18,40 +18,40 @@ T = TypeVar("T", bound="CreatedAccessToken")
 class CreatedAccessToken:
     """
     Attributes:
-        created_at (datetime.datetime): Timestamp of access token creation
         id (UUID): Identifier of the access token
-        mask (IdentifierMaskingDetails):
         name (str): Name of the access token
         token (str): The fully created access token
+        mask (IdentifierMaskingDetails):
+        created_at (datetime.datetime): Timestamp of access token creation
     """
 
-    created_at: datetime.datetime
     id: UUID
-    mask: "IdentifierMaskingDetails"
     name: str
     token: str
+    mask: "IdentifierMaskingDetails"
+    created_at: datetime.datetime
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        created_at = self.created_at.isoformat()
-
         id = str(self.id)
-
-        mask = self.mask.to_dict()
 
         name = self.name
 
         token = self.token
 
+        mask = self.mask.to_dict()
+
+        created_at = self.created_at.isoformat()
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "createdAt": created_at,
                 "id": id,
-                "mask": mask,
                 "name": name,
                 "token": token,
+                "mask": mask,
+                "createdAt": created_at,
             }
         )
 
@@ -62,22 +62,22 @@ class CreatedAccessToken:
         from ..models.identifier_masking_details import IdentifierMaskingDetails
 
         d = dict(src_dict)
-        created_at = isoparse(d.pop("createdAt"))
-
         id = UUID(d.pop("id"))
-
-        mask = IdentifierMaskingDetails.from_dict(d.pop("mask"))
 
         name = d.pop("name")
 
         token = d.pop("token")
 
+        mask = IdentifierMaskingDetails.from_dict(d.pop("mask"))
+
+        created_at = isoparse(d.pop("createdAt"))
+
         created_access_token = cls(
-            created_at=created_at,
             id=id,
-            mask=mask,
             name=name,
             token=token,
+            mask=mask,
+            created_at=created_at,
         )
 
         created_access_token.additional_properties = d
