@@ -153,7 +153,7 @@ export class Pty {
         undefined,
         undefined,
         opts.onData,
-        undefined,
+        (data, stdinOpts) => this.sendStdin(pid, data, stdinOpts),
         undefined,
         this.checkHealth
       )
@@ -210,7 +210,7 @@ export class Pty {
         undefined,
         undefined,
         opts?.onData,
-        undefined,
+        (data, stdinOpts) => this.sendStdin(pid, data, stdinOpts),
         undefined,
         this.checkHealth
       )
@@ -227,9 +227,9 @@ export class Pty {
    * @param data input data to send to the PTY.
    * @param opts connection options.
    */
-  async sendInput(
+  async sendStdin(
     pid: number,
-    data: Uint8Array,
+    data: string | Uint8Array,
     opts?: Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>
   ): Promise<void> {
     try {
@@ -238,7 +238,10 @@ export class Pty {
           input: {
             input: {
               case: 'pty',
-              value: data,
+              value:
+                typeof data === 'string'
+                  ? new TextEncoder().encode(data)
+                  : data,
             },
           },
           process: {
@@ -258,6 +261,23 @@ export class Pty {
     } catch (err) {
       throw await handleRpcErrorWithHealthCheck(err, this.checkHealth)
     }
+  }
+
+  /**
+   * Send input to a PTY.
+   *
+   * @deprecated Use {@link Pty.sendStdin} instead.
+   *
+   * @param pid process ID of the PTY.
+   * @param data input data to send to the PTY.
+   * @param opts connection options.
+   */
+  async sendInput(
+    pid: number,
+    data: string | Uint8Array,
+    opts?: Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>
+  ): Promise<void> {
+    return this.sendStdin(pid, data, opts)
   }
 
   /**
