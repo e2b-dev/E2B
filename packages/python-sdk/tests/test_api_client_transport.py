@@ -1,23 +1,45 @@
 import asyncio
 import gc
+import json
+import threading
 from concurrent.futures import ThreadPoolExecutor
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from typing import cast
 
 import httpx
 import pytest
+from pyqwest import (
+    Headers,
+    Request,
+    Response,
+    SyncRequest,
+    SyncResponse,
+    SyncTransport,
+    Transport,
+)
+from pyqwest.httpx import AsyncPyqwestTransport, PyqwestTransport
 
-from e2b.api.client_async import AsyncEnvdTransportWithLogger, AsyncTransportWithLogger
+import e2b.api.client_async as client_async
+import e2b.api.client_sync as client_sync
+from e2b.api import proxy_to_url
+from e2b.api.client_async import AsyncEnvdTransportWithLogger
 from e2b.api.client_async import get_api_client as get_async_api_client
 from e2b.api.client_async import get_envd_transport as get_async_envd_transport
 from e2b.api.client_async import get_transport as get_async_transport
-from e2b.api.client_sync import EnvdTransportWithLogger, TransportWithLogger
+from e2b.api.client_sync import EnvdTransportWithLogger
 from e2b.api.client_sync import get_api_client as get_sync_api_client
 from e2b.api.client_sync import get_envd_transport as get_sync_envd_transport
 from e2b.api.client_sync import get_transport as get_sync_transport
 from e2b.connection_config import ConnectionConfig
+from e2b.exceptions import InvalidArgumentException
 
 
 def reset_sync_api_transports():
-    TransportWithLogger._thread_local.instances = {}
+    client_sync._transports.clear()
+
+
+def reset_async_api_transports():
+    client_async._transports.clear()
 
 
 def reset_sync_envd_transports():
@@ -27,6 +49,72 @@ def reset_sync_envd_transports():
 def run_in_worker_thread(fn):
     with ThreadPoolExecutor(max_workers=1) as executor:
         return executor.submit(fn).result()
+
+
+def test_proxy_to_url_narrows_to_url_strings():
+    assert proxy_to_url(None) is None
+    assert proxy_to_url("http://127.0.0.1:9999") == "http://127.0.0.1:9999"
+    assert proxy_to_url(httpx.URL("http://127.0.0.1:9999")) == "http://127.0.0.1:9999"
+    with pytest.raises(InvalidArgumentException):
+        proxy_to_url(httpx.Proxy("http://127.0.0.1:9999"))
+
+
+def test_connection_retry_policy_retries_only_connection_errors():
+    # The inner transport is never invoked by should_retry_response.
+    sync_policy = client_sync.ConnectionRetryTransport(cast(SyncTransport, object()))
+    async_policy = client_async.ConnectionRetryTransport(cast(Transport, object()))
+    sync_request = SyncRequest("GET", "https://example.com")
+    async_request = Request("GET", "https://example.com")
+
+    assert sync_policy.should_retry_response(sync_request, ConnectionError("refused"))
+    # TimeoutError is an OSError but not a ConnectionError: the request
+    # may have been written, so it must not be replayed.
+    assert not sync_policy.should_retry_response(sync_request, TimeoutError())
+    assert not sync_policy.should_retry_response(sync_request, RuntimeError())
+
+    assert async_policy.should_retry_response(async_request, ConnectionError("refused"))
+    assert not async_policy.should_retry_response(async_request, TimeoutError())
+    assert not async_policy.should_retry_response(async_request, RuntimeError())
+
+
+def test_sync_api_transport_strips_host_header():
+    # Forwarding httpx's auto-added Host header on an HTTP/2 connection makes
+    # the E2B API edge reset the stream with PROTOCOL_ERROR; hyper derives
+    # Host/:authority from the URL instead.
+    captured = {}
+
+    class FakeInner:
+        def execute_sync(self, request):
+            captured["headers"] = dict(request.headers.items())
+            return SyncResponse(status=200, headers=Headers(()), content=b"")
+
+    transport = client_sync.ApiPyqwestTransport(FakeInner())
+    request = httpx.Request("GET", "https://api.example.com/health")
+    assert "host" in request.headers
+
+    response = transport.handle_request(request)
+
+    assert response.status_code == 200
+    assert "host" not in captured["headers"]
+
+
+@pytest.mark.asyncio
+async def test_async_api_transport_strips_host_header():
+    captured = {}
+
+    class FakeInner:
+        async def execute(self, request):
+            captured["headers"] = dict(request.headers.items())
+            return Response(status=200, headers=Headers(()), content=b"")
+
+    transport = client_async.AsyncApiPyqwestTransport(FakeInner())
+    request = httpx.Request("GET", "https://api.example.com/health")
+    assert "host" in request.headers
+
+    response = await transport.handle_async_request(request)
+
+    assert response.status_code == 200
+    assert "host" not in captured["headers"]
 
 
 def test_sync_api_client_proxy_uses_explicit_transport(test_api_key):
@@ -42,28 +130,10 @@ def test_sync_api_client_proxy_uses_explicit_transport(test_api_key):
     try:
         assert "proxy" not in api_client._httpx_args
         assert httpx_client._transport is get_sync_transport(config)
+        assert isinstance(httpx_client._transport, PyqwestTransport)
         assert httpx_client._mounts == {}
     finally:
         httpx_client.close()
-        reset_sync_api_transports()
-
-
-def test_sync_get_transport_http2_opt_out_returns_distinct_instance(test_api_key):
-    reset_sync_api_transports()
-    config = ConnectionConfig(api_key=test_api_key)
-
-    try:
-        http2_transport = get_sync_transport(config)
-        http1_transport = get_sync_transport(config, http2=False)
-
-        assert http2_transport is not http1_transport
-        assert http2_transport._pool._http2 is True
-        assert http1_transport._pool._http2 is False
-        # Subsequent calls with the same http2 flag return the cached
-        # instance.
-        assert get_sync_transport(config) is http2_transport
-        assert get_sync_transport(config, http2=False) is http1_transport
-    finally:
         reset_sync_api_transports()
 
 
@@ -122,7 +192,9 @@ def test_sync_api_client_request_timeout_zero_disables_timeout(test_api_key):
         reset_sync_api_transports()
 
 
-def test_sync_envd_transport_uses_separate_cache(test_api_key):
+def test_sync_envd_transport_uses_separate_stack(test_api_key):
+    # envd file-transfer traffic stays on the httpx-native transport (its RPC
+    # migration is a separate change); only REST API calls go through pyqwest.
     reset_sync_api_transports()
     reset_sync_envd_transports()
     config = ConnectionConfig(api_key=test_api_key)
@@ -131,18 +203,20 @@ def test_sync_envd_transport_uses_separate_cache(test_api_key):
         api_transport = get_sync_transport(config)
         envd_transport = get_sync_envd_transport(config)
 
-        assert api_transport is not envd_transport
+        assert isinstance(api_transport, PyqwestTransport)
+        assert isinstance(envd_transport, httpx.HTTPTransport)
         assert get_sync_transport(config) is api_transport
         assert get_sync_envd_transport(config) is envd_transport
-        assert envd_transport._pool._http2 is True
+        envd_pool = envd_transport._pool
+        assert envd_pool._http2 is True  # ty: ignore[possibly-missing-attribute]
     finally:
         reset_sync_api_transports()
         reset_sync_envd_transports()
 
 
-def test_sync_api_transport_cache_reuses_within_thread_and_isolates_across_threads(
-    test_api_key,
-):
+def test_sync_api_transport_cache_is_shared_across_threads(test_api_key):
+    # pyqwest transports are thread-safe, so all threads share one connection
+    # pool per proxy (the httpx transports this replaced were per-thread).
     reset_sync_api_transports()
     config = ConnectionConfig(api_key=test_api_key)
 
@@ -154,12 +228,12 @@ def test_sync_api_transport_cache_reuses_within_thread_and_isolates_across_threa
         )
 
         assert same_thread_transport is main_transport
-        assert worker_thread_transport is not main_transport
+        assert worker_thread_transport is main_transport
     finally:
         reset_sync_api_transports()
 
 
-def test_sync_api_client_cache_reuses_within_thread_and_isolates_across_threads(
+def test_sync_api_client_reused_within_thread_and_shares_transport_across_threads(
     test_api_key,
 ):
     reset_sync_api_transports()
@@ -173,7 +247,6 @@ def test_sync_api_client_cache_reuses_within_thread_and_isolates_across_threads(
                 id(httpx_client),
                 id(api_client.get_httpx_client()),
                 id(httpx_client._transport),
-                id(get_sync_transport(config)),
             )
         finally:
             httpx_client.close()
@@ -184,14 +257,14 @@ def test_sync_api_client_cache_reuses_within_thread_and_isolates_across_threads(
             worker_client_id,
             worker_cached_client_id,
             worker_transport_id,
-            worker_cached_transport_id,
         ) = run_in_worker_thread(get_worker_client_ids)
 
         assert api_client.get_httpx_client() is main_client
+        # The httpx client wrapper stays per-thread, but every thread's
+        # client delegates to the same shared pyqwest transport.
         assert worker_client_id == worker_cached_client_id
-        assert worker_transport_id == worker_cached_transport_id
         assert worker_client_id != id(main_client)
-        assert worker_transport_id != id(main_client._transport)
+        assert worker_transport_id == id(main_client._transport)
     finally:
         main_client.close()
         reset_sync_api_transports()
@@ -207,7 +280,8 @@ def test_sync_envd_transport_cache_is_thread_local(test_api_key):
 
         assert main_transport is get_sync_envd_transport(config)
         assert thread_transport is not main_transport
-        assert main_transport._pool._http2 is True
+        main_pool = main_transport._pool
+        assert main_pool._http2 is True  # ty: ignore[possibly-missing-attribute]
         assert thread_transport._pool._http2 is True
     finally:
         reset_sync_envd_transports()
@@ -215,7 +289,7 @@ def test_sync_envd_transport_cache_is_thread_local(test_api_key):
 
 @pytest.mark.asyncio
 async def test_async_api_client_proxy_uses_explicit_transport(test_api_key):
-    AsyncTransportWithLogger._instances.clear()
+    reset_async_api_transports()
     config = ConnectionConfig(
         api_key=test_api_key,
         proxy="http://127.0.0.1:9999",
@@ -223,44 +297,20 @@ async def test_async_api_client_proxy_uses_explicit_transport(test_api_key):
 
     api_client = get_async_api_client(config)
     httpx_client = api_client.get_async_httpx_client()
-    transport = AsyncTransportWithLogger._instances[asyncio.get_running_loop()][
-        (True, "http://127.0.0.1:9999")
-    ]
 
     try:
         assert "proxy" not in api_client._httpx_args
-        assert httpx_client._transport is transport
+        assert httpx_client._transport is get_async_transport(config)
+        assert isinstance(httpx_client._transport, AsyncPyqwestTransport)
         assert httpx_client._mounts == {}
     finally:
         await httpx_client.aclose()
-        AsyncTransportWithLogger._instances.clear()
-
-
-@pytest.mark.asyncio
-async def test_async_get_transport_http2_opt_out_returns_distinct_instance(
-    test_api_key,
-):
-    AsyncTransportWithLogger._instances.clear()
-    config = ConnectionConfig(api_key=test_api_key)
-
-    try:
-        http2_transport = get_async_transport(config)
-        http1_transport = get_async_transport(config, http2=False)
-
-        assert http2_transport is not http1_transport
-        assert http2_transport._pool._http2 is True
-        assert http1_transport._pool._http2 is False
-        # Subsequent calls with the same http2 flag return the cached
-        # instance.
-        assert get_async_transport(config) is http2_transport
-        assert get_async_transport(config, http2=False) is http1_transport
-    finally:
-        AsyncTransportWithLogger._instances.clear()
+        reset_async_api_transports()
 
 
 @pytest.mark.asyncio
 async def test_async_get_transport_keyed_by_proxy(test_api_key):
-    AsyncTransportWithLogger._instances.clear()
+    reset_async_api_transports()
     proxied_config = ConnectionConfig(
         api_key=test_api_key,
         proxy="http://127.0.0.1:9999",
@@ -276,12 +326,12 @@ async def test_async_get_transport_keyed_by_proxy(test_api_key):
         assert get_async_transport(proxied_config) is proxied_transport
         assert get_async_transport(direct_config) is direct_transport
     finally:
-        AsyncTransportWithLogger._instances.clear()
+        reset_async_api_transports()
 
 
 @pytest.mark.asyncio
 async def test_async_api_client_applies_request_timeout(test_api_key):
-    AsyncTransportWithLogger._instances.clear()
+    reset_async_api_transports()
     config = ConnectionConfig(api_key=test_api_key, request_timeout=1.5)
 
     api_client = get_async_api_client(config)
@@ -291,14 +341,14 @@ async def test_async_api_client_applies_request_timeout(test_api_key):
         assert httpx_client.timeout == httpx.Timeout(1.5)
     finally:
         await httpx_client.aclose()
-        AsyncTransportWithLogger._instances.clear()
+        reset_async_api_transports()
 
 
 @pytest.mark.asyncio
-async def test_async_api_client_cache_reuses_within_loop_and_isolates_across_loops(
+async def test_async_api_client_cache_reuses_within_loop_and_shares_transport(
     test_api_key,
 ):
-    AsyncTransportWithLogger._instances.clear()
+    reset_async_api_transports()
     config = ConnectionConfig(api_key=test_api_key)
     api_client = get_async_api_client(config)
 
@@ -309,7 +359,6 @@ async def test_async_api_client_cache_reuses_within_loop_and_isolates_across_loo
                 id(httpx_client),
                 id(api_client.get_async_httpx_client()),
                 id(httpx_client._transport),
-                id(get_async_transport(config)),
             )
         finally:
             await httpx_client.aclose()
@@ -320,24 +369,25 @@ async def test_async_api_client_cache_reuses_within_loop_and_isolates_across_loo
             worker_client_id,
             worker_cached_client_id,
             worker_transport_id,
-            worker_cached_transport_id,
         ) = await asyncio.get_running_loop().run_in_executor(
             None,
             lambda: asyncio.run(get_client_ids()),
         )
 
         assert api_client.get_async_httpx_client() is main_client
+        # The httpx client wrapper stays per-loop, but pyqwest's I/O runs on
+        # its own Rust runtime, so every loop's client delegates to the same
+        # shared transport.
         assert worker_client_id == worker_cached_client_id
-        assert worker_transport_id == worker_cached_transport_id
         assert worker_client_id != id(main_client)
-        assert worker_transport_id != id(main_client._transport)
+        assert worker_transport_id == id(main_client._transport)
     finally:
         await main_client.aclose()
-        AsyncTransportWithLogger._instances.clear()
+        reset_async_api_transports()
 
 
-def test_async_transport_not_reused_across_sequential_loops(test_api_key):
-    AsyncTransportWithLogger._instances.clear()
+def test_async_transport_reused_across_sequential_loops(test_api_key):
+    reset_async_api_transports()
     config = ConnectionConfig(api_key=test_api_key)
 
     async def get_transport():
@@ -352,24 +402,21 @@ def test_async_transport_not_reused_across_sequential_loops(test_api_key):
         del loop_a
         gc.collect()
 
-        # The cache entry dies with the loop, so a later loop can never
-        # inherit a transport bound to a closed loop, even when CPython
-        # reuses the dead loop's object id.
-        assert len(AsyncTransportWithLogger._instances) == 0
-
+        # The transport is not bound to an event loop, so it survives the
+        # loop it was first created on.
         loop_b = asyncio.new_event_loop()
         try:
             transport_b = loop_b.run_until_complete(get_transport())
         finally:
             loop_b.close()
 
-        assert transport_b is not transport_a
+        assert transport_b is transport_a
     finally:
-        AsyncTransportWithLogger._instances.clear()
+        reset_async_api_transports()
 
 
 def test_async_api_client_not_reused_across_sequential_loops(test_api_key):
-    AsyncTransportWithLogger._instances.clear()
+    reset_async_api_transports()
     config = ConnectionConfig(api_key=test_api_key)
     api_client = get_async_api_client(config)
 
@@ -399,12 +446,12 @@ def test_async_api_client_not_reused_across_sequential_loops(test_api_key):
 
         assert client_b is not client_a
     finally:
-        AsyncTransportWithLogger._instances.clear()
+        reset_async_api_transports()
 
 
 @pytest.mark.asyncio
-async def test_async_envd_transport_uses_separate_cache(test_api_key):
-    AsyncTransportWithLogger._instances.clear()
+async def test_async_envd_transport_uses_separate_stack(test_api_key):
+    reset_async_api_transports()
     AsyncEnvdTransportWithLogger._instances.clear()
     config = ConnectionConfig(api_key=test_api_key)
 
@@ -412,10 +459,79 @@ async def test_async_envd_transport_uses_separate_cache(test_api_key):
         api_transport = get_async_transport(config)
         envd_transport = get_async_envd_transport(config)
 
-        assert api_transport is not envd_transport
+        assert isinstance(api_transport, AsyncPyqwestTransport)
+        assert isinstance(envd_transport, httpx.AsyncHTTPTransport)
         assert get_async_transport(config) is api_transport
         assert get_async_envd_transport(config) is envd_transport
-        assert envd_transport._pool._http2 is True
+        envd_pool = envd_transport._pool
+        assert envd_pool._http2 is True  # ty: ignore[possibly-missing-attribute]
     finally:
-        AsyncTransportWithLogger._instances.clear()
+        reset_async_api_transports()
         AsyncEnvdTransportWithLogger._instances.clear()
+
+
+class _EchoHandler(BaseHTTPRequestHandler):
+    """Answers every GET with a JSON echo of the request headers."""
+
+    def do_GET(self):
+        headers = {k.lower(): v for k, v in self.headers.items()}
+        body = json.dumps({"path": self.path, "headers": headers}).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, *args):
+        pass
+
+
+@pytest.fixture
+def echo_server():
+    server = ThreadingHTTPServer(("127.0.0.1", 0), _EchoHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{server.server_address[1]}"
+    finally:
+        server.shutdown()
+        thread.join()
+
+
+def test_sync_api_client_round_trips_through_pyqwest(test_api_key, echo_server):
+    reset_sync_api_transports()
+    config = ConnectionConfig(api_key=test_api_key, api_url=echo_server)
+    api_client = get_sync_api_client(config)
+    httpx_client = api_client.get_httpx_client()
+
+    try:
+        assert isinstance(httpx_client._transport, PyqwestTransport)
+        response = httpx_client.request("GET", "/sandboxes")
+        assert response.status_code == 200
+        echoed = response.json()
+        assert echoed["path"] == "/sandboxes"
+        assert echoed["headers"]["x-api-key"] == test_api_key
+        assert echoed["headers"]["package_version"]
+    finally:
+        httpx_client.close()
+        reset_sync_api_transports()
+
+
+@pytest.mark.asyncio
+async def test_async_api_client_round_trips_through_pyqwest(test_api_key, echo_server):
+    reset_async_api_transports()
+    config = ConnectionConfig(api_key=test_api_key, api_url=echo_server)
+    api_client = get_async_api_client(config)
+    httpx_client = api_client.get_async_httpx_client()
+
+    try:
+        assert isinstance(httpx_client._transport, AsyncPyqwestTransport)
+        response = await httpx_client.request("GET", "/sandboxes")
+        assert response.status_code == 200
+        echoed = response.json()
+        assert echoed["path"] == "/sandboxes"
+        assert echoed["headers"]["x-api-key"] == test_api_key
+        assert echoed["headers"]["package_version"]
+    finally:
+        await httpx_client.aclose()
+        reset_async_api_transports()
