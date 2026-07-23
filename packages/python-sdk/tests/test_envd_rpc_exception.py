@@ -1,15 +1,21 @@
 import asyncio
 
+import httpx
 from connectrpc.code import Code
 from connectrpc.errors import ConnectError
+from packaging.version import Version
 from pyqwest import StreamError, StreamErrorCode
 
+from e2b.connection_config import ConnectionConfig
 from e2b.envd.rpc import (
     ahandle_rpc_exception_with_health,
     handle_rpc_exception,
     handle_rpc_exception_with_health,
     is_transport_failure,
+    rpc_error_code,
 )
+from e2b.sandbox_async.commands.command import Commands
+from e2b.sandbox_async.filesystem.filesystem import Filesystem
 from e2b.exceptions import (
     AuthenticationException,
     InvalidArgumentException,
@@ -158,6 +164,30 @@ def test_unimplemented_with_other_message_stays_generic():
     assert not isinstance(err, NotFoundException)
 
 
+def test_rpc_error_code_restores_plain_http_statuses():
+    # connectrpc maps plain (non-Connect-encoded) HTTP error responses per
+    # the Connect spec with the synthesized reason phrase as the message; the
+    # vendored client kept the original statuses (404 → not_found,
+    # 429 → resource_exhausted, 409 → already_exists).
+    err_404 = ConnectError(Code.UNIMPLEMENTED, "Not Found")
+    err_429 = ConnectError(Code.UNAVAILABLE, "Too Many Requests")
+    err_409 = ConnectError(Code.UNKNOWN, "Conflict")
+    assert rpc_error_code(err_404) is Code.NOT_FOUND
+    assert rpc_error_code(err_429) is Code.RESOURCE_EXHAUSTED
+    assert rpc_error_code(err_409) is Code.ALREADY_EXISTS
+
+
+def test_rpc_error_code_keeps_envd_codes():
+    # Errors parsed from a Connect response body carry envd's own message and
+    # never match the synthesized reason phrases.
+    assert rpc_error_code(ConnectError(Code.NOT_FOUND, "no process")) is Code.NOT_FOUND
+    assert rpc_error_code(ConnectError(Code.UNIMPLEMENTED, "nope")) is (
+        Code.UNIMPLEMENTED
+    )
+    assert rpc_error_code(ConnectError(Code.UNAVAILABLE, "gone")) is Code.UNAVAILABLE
+    assert rpc_error_code(ConnectError(Code.UNKNOWN, "boom")) is Code.UNKNOWN
+
+
 def test_cancellation_restores_cancelled_error():
     err = _cancelled()
     restored = handle_rpc_exception(err)
@@ -232,3 +262,58 @@ async def test_async_health_check_failure_returns_raw_error():
     original = _stream_reset()
     err = await ahandle_rpc_exception_with_health(original, check)
     assert err is original
+
+
+class _RaisingRpc:
+    """Stand-in for a generated RPC client whose every call raises."""
+
+    def __init__(self, error: Exception):
+        self._error = error
+
+    def __getattr__(self, name):
+        async def call(*args, **kwargs):
+            raise self._error
+
+        return call
+
+
+def _commands(error: Exception) -> Commands:
+    commands = Commands(
+        "http://127.0.0.1:1",
+        ConnectionConfig(api_key="e2b_" + "0" * 40),
+        Version("0.5.0"),
+        httpx.AsyncClient(),
+    )
+    commands._rpc = _RaisingRpc(error)
+    return commands
+
+
+def _filesystem(error: Exception) -> Filesystem:
+    filesystem = Filesystem(
+        "http://127.0.0.1:1",
+        Version("0.5.0"),
+        ConnectionConfig(api_key="e2b_" + "0" * 40),
+        httpx.AsyncClient(),
+    )
+    filesystem._rpc = _RaisingRpc(error)
+    return filesystem
+
+
+# The call sites that branch on the error code before mapping the exception
+# must see the restored codes too, so a gateway answering with a plain HTTP
+# error behaves like envd's own response (the vendored client's behavior).
+
+
+async def test_kill_returns_false_on_plain_http_404():
+    commands = _commands(ConnectError(Code.UNIMPLEMENTED, "Not Found"))
+    assert await commands.kill(pid=1) is False
+
+
+async def test_exists_returns_false_on_plain_http_404():
+    filesystem = _filesystem(ConnectError(Code.UNIMPLEMENTED, "Not Found"))
+    assert await filesystem.exists("/does/not/matter") is False
+
+
+async def test_make_dir_returns_false_on_plain_http_409():
+    filesystem = _filesystem(ConnectError(Code.UNKNOWN, "Conflict"))
+    assert await filesystem.make_dir("/does/not/matter") is False

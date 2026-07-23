@@ -18,7 +18,7 @@ from e2b.connection_config import (
     KEEPALIVE_PING_INTERVAL_SEC,
 )
 from e2b.envd.api import check_sandbox_health
-from e2b.envd.rpc import handle_rpc_exception_with_health
+from e2b.envd.rpc import handle_rpc_exception_with_health, rpc_error_code
 from e2b.envd.utils import (
     authentication_header,
     extract_start_pid,
@@ -106,7 +106,7 @@ class Pty:
             return True
         except Exception as e:
             if isinstance(e, ConnectError):
-                if e.code == Code.NOT_FOUND:
+                if rpc_error_code(e) == Code.NOT_FOUND:
                     return False
             raise handle_rpc_exception_with_health(e, self._check_health)
 

@@ -14,7 +14,7 @@ from protobuf import Oneof
 
 from e2b.envd.process import process_connect, process_pb
 from e2b.envd.api import acheck_sandbox_health
-from e2b.envd.rpc import ahandle_rpc_exception_with_health
+from e2b.envd.rpc import ahandle_rpc_exception_with_health, rpc_error_code
 from e2b.envd.utils import (
     authentication_header,
     extract_start_pid,
@@ -112,7 +112,7 @@ class Commands:
             return True
         except Exception as e:
             if isinstance(e, ConnectError):
-                if e.code == Code.NOT_FOUND:
+                if rpc_error_code(e) == Code.NOT_FOUND:
                     return False
             raise await ahandle_rpc_exception_with_health(e, self._check_health)
 

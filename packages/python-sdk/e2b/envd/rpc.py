@@ -73,6 +73,27 @@ def format_terminated_exception(
     return e
 
 
+def rpc_error_code(e: ConnectError) -> Code:
+    """The error's code, with plain (non-Connect-encoded) HTTP error
+    responses — e.g. an edge proxy answering for envd — restored to the
+    statuses the vendored client kept. connectrpc maps them per the Connect
+    spec (429 → UNAVAILABLE, 404 → UNIMPLEMENTED, 409 → no entry, so
+    UNKNOWN), with the HTTP reason phrase as the message; user code relies
+    on RateLimitException to back off, and ``kill``/``exists``/``make_dir``
+    branch on NOT_FOUND/ALREADY_EXISTS before mapping the error, so both
+    those call sites and :func:`handle_rpc_exception` resolve codes through
+    this. Connect errors parsed from a response body carry envd's own
+    message and never match these exact reason phrases.
+    """
+    if e.code is Code.UNAVAILABLE and e.message == "Too Many Requests":
+        return Code.RESOURCE_EXHAUSTED
+    if e.code is Code.UNIMPLEMENTED and e.message == "Not Found":
+        return Code.NOT_FOUND
+    if e.code is Code.UNKNOWN and e.message == "Conflict":
+        return Code.ALREADY_EXISTS
+    return e.code
+
+
 def handle_rpc_exception(
     e: Exception,
     error_map: Optional[dict[Code, Callable[[str], Exception]]] = None,
@@ -109,19 +130,7 @@ def handle_rpc_exception(
         if isinstance(e.__cause__, Exception) and e.code is not Code.DEADLINE_EXCEEDED:
             return e.__cause__
 
-        # connectrpc maps plain (non-Connect-encoded) HTTP error responses —
-        # e.g. an edge proxy answering for envd — per the Connect spec:
-        # 429 → UNAVAILABLE and 404 → UNIMPLEMENTED, with the HTTP reason
-        # phrase as the message. The vendored client kept the original
-        # statuses (429 → resource_exhausted, 404 → not_found), and user code
-        # relies on RateLimitException to back off, so restore that mapping.
-        # Connect errors parsed from a response body carry envd's own message
-        # and never match these exact reason phrases.
-        code = e.code
-        if code is Code.UNAVAILABLE and e.message == "Too Many Requests":
-            code = Code.RESOURCE_EXHAUSTED
-        elif code is Code.UNIMPLEMENTED and e.message == "Not Found":
-            code = Code.NOT_FOUND
+        code = rpc_error_code(e)
 
         if error_map and code in error_map:
             return error_map[code](e.message)
