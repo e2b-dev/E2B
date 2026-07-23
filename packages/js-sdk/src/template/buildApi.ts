@@ -1,6 +1,8 @@
+import { createReadStream } from 'node:fs'
+import { Readable } from 'node:stream'
+
 import { ApiClient, handleApiError, components } from '../api'
 import { buildRequestSignal } from '../connectionConfig'
-import { dynamicImport } from '../utils'
 import { loadUndici } from '../undici'
 import { BuildError, FileUploadError, TemplateError } from '../errors'
 import { FILE_UPLOAD_TIMEOUT_MS } from './consts'
@@ -174,12 +176,6 @@ async function putFileStream(
   size: number,
   signal: AbortSignal | undefined
 ): Promise<{ ok: boolean; statusText: string }> {
-  // Dynamically import so the browser bundle doesn't pull in node:fs.
-  const { createReadStream } =
-    await dynamicImport<typeof import('node:fs')>('node:fs')
-  const { Readable } =
-    await dynamicImport<typeof import('node:stream')>('node:stream')
-
   // Prefer undici's fetch: it honors the explicit Content-Length on stream
   // bodies on every runtime, while Deno's native fetch ignores the header and
   // falls back to chunked. Where undici isn't resolvable (e.g. bundled apps),
