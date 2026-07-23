@@ -1,9 +1,13 @@
 import asyncio
 
-from http import HTTPStatus
 from typing import Awaitable, Callable, Optional
 from connectrpc.code import Code
 from connectrpc.errors import ConnectError
+
+# Private connectrpc API (used to invert its plain-HTTP error mapping, see
+# _VENDORED_PLAIN_HTTP_CODES); the connectrpc pin is narrow and
+# test_envd_rpc_exception exercises every entry against it.
+from connectrpc._protocol import ConnectWireError
 from pyqwest import ReadError, StreamError, WriteError
 
 from e2b.exceptions import (
@@ -76,6 +80,11 @@ def format_terminated_exception(
 
 # How the vendored client mapped plain (non-Connect-encoded) HTTP error
 # responses — e.g. an edge proxy answering for envd — to codes (#806).
+# connectrpc collapses such responses into a (code, reason phrase) pair per
+# the Connect spec instead, so invert its own mapper to recognize them: for
+# each status this asks `from_http_status` — the very function that will
+# build the error at runtime — what to look for, which keeps the table
+# transcription-free and immune to upstream mapping or phrase changes.
 _VENDORED_PLAIN_HTTP_CODES: dict[int, Code] = {
     400: Code.INVALID_ARGUMENT,
     401: Code.UNAUTHENTICATED,
@@ -93,38 +102,12 @@ _VENDORED_PLAIN_HTTP_CODES: dict[int, Code] = {
     505: Code.UNIMPLEMENTED,
 }
 
-# How connectrpc maps them, per the Connect spec (statuses it doesn't list
-# become UNKNOWN).
-_CONNECT_SPEC_PLAIN_HTTP_CODES: dict[int, Code] = {
-    400: Code.INTERNAL,
-    401: Code.UNAUTHENTICATED,
-    403: Code.PERMISSION_DENIED,
-    404: Code.UNIMPLEMENTED,
-    429: Code.UNAVAILABLE,
-    502: Code.UNAVAILABLE,
-    503: Code.UNAVAILABLE,
-    504: Code.UNAVAILABLE,
-}
-
-
-def _plain_http_phrase(status: int) -> str:
-    # connectrpc synthesizes the error message from the stdlib reason phrase
-    # (499 isn't a stdlib status; connectrpc special-cases its phrase). Using
-    # the same call keeps the restoration in sync with phrase renames across
-    # Python versions (e.g. 413 became "Content Too Large" in 3.13).
-    if status == 499:
-        return "Client Closed Request"
-    return HTTPStatus(status).phrase
-
-
-_PLAIN_HTTP_RESTORATIONS: dict[tuple[Code, str], Code] = {
-    (
-        _CONNECT_SPEC_PLAIN_HTTP_CODES.get(status, Code.UNKNOWN),
-        _plain_http_phrase(status),
-    ): code
-    for status, code in _VENDORED_PLAIN_HTTP_CODES.items()
-    if _CONNECT_SPEC_PLAIN_HTTP_CODES.get(status, Code.UNKNOWN) is not code
-}
+_PLAIN_HTTP_RESTORATIONS: dict[tuple[Code, str], Code] = {}
+for _status, _code in _VENDORED_PLAIN_HTTP_CODES.items():
+    _wire = ConnectWireError.from_http_status(_status)
+    if _wire.code is not _code:
+        _PLAIN_HTTP_RESTORATIONS[(_wire.code, _wire.message)] = _code
+del _status, _code, _wire
 
 
 def rpc_error_code(e: ConnectError) -> Code:
