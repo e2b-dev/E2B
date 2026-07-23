@@ -2,13 +2,12 @@ import asyncio
 
 from connectrpc.code import Code
 from connectrpc.errors import ConnectError
-from pyqwest import StreamError, StreamErrorCode, WriteError
+from pyqwest import StreamError, StreamErrorCode
 
 from e2b.envd.rpc import (
     ahandle_rpc_exception_with_health,
     handle_rpc_exception,
     handle_rpc_exception_with_health,
-    is_connect_failure,
     is_transport_failure,
     timeout_to_ms,
 )
@@ -111,7 +110,7 @@ def test_transport_failure_detection():
     # Errors parsed from an envd response have no cause.
     assert not is_transport_failure(ConnectError(Code.UNAVAILABLE, "502"))
     # A client-side decode failure carries a cause, but the request was
-    # delivered — retrying or probing health would be wrong.
+    # delivered — probing health would be wrong.
     assert not is_transport_failure(_decode_failure())
     # A client-enforced deadline carries a cause but is a definitive result.
     try:
@@ -120,26 +119,10 @@ def test_transport_failure_detection():
         )
     except ConnectError as e:
         assert not is_transport_failure(e)
-    # Asyncio cancellation is not a connection failure — it must not be
-    # retried or trigger a health probe.
+    # Asyncio cancellation is not a connection failure — it must not
+    # trigger a health probe.
     assert not is_transport_failure(_cancelled())
     assert not is_transport_failure(ValueError("other"))
-
-
-def test_connect_failure_detection():
-    # pyqwest raises the builtin ConnectionError only while establishing the
-    # connection — the only phase safe to retry for streams.
-    try:
-        raise ConnectError(Code.UNAVAILABLE, "connect") from ConnectionError(
-            "tcp connect error"
-        )
-    except ConnectError as e:
-        assert is_connect_failure(e)
-    try:
-        raise ConnectError(Code.UNAVAILABLE, "sent") from WriteError("closed")
-    except ConnectError as e:
-        assert not is_connect_failure(e)
-    assert not is_connect_failure(ConnectError(Code.UNAVAILABLE, "no cause"))
 
 
 def test_decode_failure_surfaces_original_error():

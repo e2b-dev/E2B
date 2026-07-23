@@ -25,6 +25,12 @@ Notes:
 - The generated `e2b.envd.*.*_pb2` modules were replaced by `protobuf-py`
   equivalents (`e2b.envd.process.process_pb`,
   `e2b.envd.filesystem.filesystem_pb`) with a different message API.
+- Connection retries for sandbox RPC calls (`E2B_CONNECTION_RETRIES`, default
+  3) now retry only failures establishing the connection — before the request
+  could have reached envd — with exponential backoff. Unary RPCs are no
+  longer replayed when the connection drops mid-request, which could
+  re-execute a delivered call (e.g. re-send process input); such drops
+  surface as errors immediately, the way they always did for streaming calls.
 - The `proxy` option applies to sandbox RPC calls the same way it does to the
   REST API and file transfer requests. RPC calls accept only URL-string
   proxies (credentials in the URL, e.g.

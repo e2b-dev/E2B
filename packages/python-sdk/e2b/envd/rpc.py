@@ -68,27 +68,14 @@ def is_transport_failure(e: Exception) -> bool:
     way — including a response body that fails to decode — so the cause must
     actually be a transport error type, not merely present. Client-enforced
     deadlines (mapped to ``DEADLINE_EXCEEDED`` with a ``TimeoutError`` cause)
-    are definitive results, not connection failures — they must not be
-    retried or trigger a sandbox health probe.
+    are definitive results, not connection failures — they must not trigger
+    a sandbox health probe.
     """
     return (
         isinstance(e, ConnectError)
         and isinstance(e.__cause__, _TRANSPORT_ERRORS)
         and e.code is not Code.DEADLINE_EXCEEDED
     )
-
-
-def is_connect_failure(e: Exception) -> bool:
-    """Whether the error happened while establishing the connection, before
-    the request could have reached envd.
-
-    pyqwest raises the builtin ``ConnectionError`` only for
-    connection-establishment failures ("client error (Connect)"); once the
-    connection is up, failures raise its ``WriteError``/``ReadError``/
-    ``StreamError`` instead. Only these pre-request failures are safe to
-    retry for streaming RPCs — envd cannot have started the command or watch.
-    """
-    return isinstance(e, ConnectError) and isinstance(e.__cause__, ConnectionError)
 
 
 def format_terminated_exception(
