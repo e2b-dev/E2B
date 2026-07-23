@@ -4,6 +4,28 @@ import { defineConfig } from 'vitest/config'
 
 const env = config()
 
+// Error names thrown by src/errors.ts (plus CommandExitError) — the shapes
+// this suite's rejection tests expect. Kept as a literal list so an unknown
+// error class still fails the run instead of being silently ignored.
+const SDK_ERROR_NAMES = new Set([
+  'SandboxError',
+  'TimeoutError',
+  'InvalidArgumentError',
+  'NotEnoughSpaceError',
+  'NotFoundError',
+  'FileNotFoundError',
+  'SandboxNotFoundError',
+  'AuthenticationError',
+  'GitAuthError',
+  'GitUpstreamError',
+  'TemplateError',
+  'RateLimitError',
+  'BuildError',
+  'FileUploadError',
+  'VolumeError',
+  'CommandExitError',
+])
+
 // Runs the unit + connectionConfig projects (same coverage as test:bun /
 // test:deno) inside Cloudflare's workerd via vitest-pool-workers, against src.
 // The real-deploy suite (tests/runtimes/cloudflare-deploy) keeps covering the
@@ -42,10 +64,30 @@ export default defineConfig({
     testTimeout: 30_000,
     bail: 0,
     // workerd reports a rejection as unhandled unless a handler is attached
-    // within the same microtask drain, so the common `const p = op(); …;
-    // await expect(p).rejects` pattern false-positives (verified with a plain
-    // `Promise.reject` handled one macrotask later — Node un-reports it,
-    // workerd does not). Real failures still fail the run as test errors.
-    dangerouslyIgnoreUnhandledErrors: true,
+    // within the same microtask drain, and vitest never processes the
+    // rejectionhandled retraction, so rejections the tests DO handle (the
+    // `await expect(p).rejects` pattern, including inline ones — workerd also
+    // flags intermediate promises of the async-function chain) false-positive
+    // ~60 times per run. Instead of dangerouslyIgnoreUnhandledErrors, drop
+    // only the rejection shapes these tests deliberately provoke; uncaught
+    // exceptions and any unknown rejection shape still fail the run.
+    onUnhandledError(error) {
+      const message = String(error.message ?? '')
+      const expectedRejection =
+        error.type === 'Unhandled Rejection' &&
+        // SDK public errors — what `expect(p).rejects` asserts on.
+        (SDK_ERROR_NAMES.has(error.name) ||
+          // The transport errors the SDK wraps: connect-rpc failures and
+          // aborted requests surface on intermediate promises too.
+          error.name === 'ConnectError' ||
+          message.startsWith('ConnectError:') ||
+          error.name === 'AbortError' ||
+          // workerd's teardown error for in-flight streams when a test kills
+          // the sandbox mid-request.
+          message === 'Network connection lost.' ||
+          // Stub rejection from tests/sandbox/git/validation.test.ts.
+          message === 'commands.run should not be called')
+      if (expectedRejection) return false
+    },
   },
 })
