@@ -3,6 +3,7 @@ import { test, expect } from 'vitest'
 import { Git } from '../../../src/sandbox/git'
 import type { Commands } from '../../../src/sandbox/commands'
 import { InvalidArgumentError } from '../../../src/errors'
+import { withCredentials } from '../../../src/sandbox/git/utils'
 
 // Stub command runner that fails if a git command is actually executed —
 // validation must throw before reaching it.
@@ -41,4 +42,19 @@ test('git.remoteAdd throws InvalidArgumentError when name or url is missing', as
 test('git.remoteGet throws InvalidArgumentError when name is missing', async () => {
   const git = new Git(failingCommands)
   await expect(git.remoteGet('/repo', '')).rejects.toThrow(InvalidArgumentError)
+})
+
+test('withCredentials percent-encodes reserved characters', () => {
+  expect(
+    withCredentials('https://github.com/o/r.git', 'user', 'p@ss/w:rd')
+  ).toBe('https://user:p%40ss%2Fw%3Ard@github.com/o/r.git')
+  expect(withCredentials('https://github.com/o/r.git', 'user', 'x#y?z')).toBe(
+    'https://user:x%23y%3Fz@github.com/o/r.git'
+  )
+  expect(withCredentials('https://github.com/o/r.git', 'git', 't/k@n')).toBe(
+    'https://git:t%2Fk%40n@github.com/o/r.git'
+  )
+  expect(
+    withCredentials('https://github.com/o/r.git', 'user', 'ghp_AbC123')
+  ).toBe('https://user:ghp_AbC123@github.com/o/r.git')
 })
