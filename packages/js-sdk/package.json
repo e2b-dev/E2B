@@ -36,7 +36,6 @@
     "generate:mcp": "json2ts -i ./../../spec/mcp-server.json -o src/sandbox/mcp.d.ts --unreachableDefinitions --style.singleQuote --no-style.semi",
     "check-deps": "knip",
     "pretest": "npx playwright install --with-deps chromium",
-    "postPublish": "./scripts/post-publish.sh || true",
     "test:bun": "bunx --bun vitest run --project unit --project connectionConfig",
     "test:cf": "vitest run --config tests/runtimes/cloudflare/vitest.config.mts",
     "test:cf:deploy": "vitest run --config tests/runtimes/cloudflare-deploy/vitest.config.mts",
