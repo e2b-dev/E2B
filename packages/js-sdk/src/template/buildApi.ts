@@ -1,11 +1,13 @@
-import type { Readable } from 'node:stream'
+import fs from 'node:fs'
+import stream from 'node:stream'
+
 import { ApiClient, handleApiError, components } from '../api'
 import { buildRequestSignal } from '../connectionConfig'
-import { dynamicImport } from '../utils'
+import { loadUndici } from '../undici'
 import { BuildError, FileUploadError, TemplateError } from '../errors'
 import { FILE_UPLOAD_TIMEOUT_MS } from './consts'
 import { LogEntry } from './logger'
-import { getBuildStepIndex, tarFileStream } from './utils'
+import { getBuildStepIndex, spoolTarArchive } from './utils'
 import {
   BuildStatusReason,
   TemplateBuildStatus,
@@ -130,40 +132,27 @@ export async function uploadFile(
     gzip,
   } = options
   // Spool the archive to a temporary file and stream it from disk instead of
-  // buffering in memory. S3 presigned PUT URLs reject Transfer-Encoding:
+  // buffering it in memory. S3 presigned PUT URLs reject Transfer-Encoding:
   // chunked with 501 NotImplemented (see e2b-dev/e2b#1243), so the upload
-  // sends an explicit Content-Length, which fetch honors for stream bodies.
-  // The spooled file deletes itself once the stream is consumed, so there is
-  // no cleanup to manage here. The Python SDK takes the same approach
-  // (build_api.py:upload_file).
-  let uploadStream: Readable | undefined
+  // must carry an exact Content-Length. The Python SDK takes the same
+  // approach (build_api.py:upload_file).
+  let cleanup: (() => Promise<void>) | undefined
   try {
-    // Dynamically import so the browser bundle doesn't pull in node:stream.
-    const { Readable } =
-      await dynamicImport<typeof import('node:stream')>('node:stream')
-
-    const tar = await tarFileStream(
+    const tar = await spoolTarArchive(
       fileName,
       fileContextPath,
       ignorePatterns,
       resolveSymlinks,
       gzip
     )
-    uploadStream = tar.stream
+    cleanup = tar.cleanup
 
-    const res = await fetch(url, {
-      method: 'PUT',
-      body: Readable.toWeb(uploadStream) as ReadableStream<Uint8Array>,
-      headers: {
-        'Content-Length': tar.size.toString(),
-      },
-      // Streaming request bodies require half-duplex mode.
-      duplex: 'half',
-      signal: buildRequestSignal(
-        abortOpts?.requestTimeoutMs ?? FILE_UPLOAD_TIMEOUT_MS,
-        abortOpts?.signal
-      ),
-    } as RequestInit)
+    const signal = buildRequestSignal(
+      abortOpts?.requestTimeoutMs ?? FILE_UPLOAD_TIMEOUT_MS,
+      abortOpts?.signal
+    )
+
+    const res = await putFileStream(url, tar.path, tar.size, signal)
 
     if (!res.ok) {
       throw new FileUploadError(
@@ -172,15 +161,42 @@ export async function uploadFile(
       )
     }
   } catch (error) {
-    // Ensure the spooled archive is removed even if fetch never consumed the
-    // stream (e.g. it threw before reading the body). Destroying the stream
-    // fires its `close` handler, which deletes the temp file.
-    uploadStream?.destroy()
     if (error instanceof FileUploadError) {
       throw error
     }
     throw new FileUploadError(`Failed to upload file: ${error}`, stackTrace)
+  } finally {
+    await cleanup?.()
   }
+}
+
+async function putFileStream(
+  url: string,
+  filePath: string,
+  size: number,
+  signal: AbortSignal | undefined
+): Promise<{ ok: boolean; statusText: string }> {
+  // Prefer undici's fetch: it honors the explicit Content-Length on stream
+  // bodies on every runtime, while Deno's native fetch ignores the header and
+  // falls back to chunked. Where undici isn't resolvable (e.g. bundled apps),
+  // fall back to the global fetch — Node's and Bun's native fetch also honor
+  // Content-Length on stream bodies. loadUndici tries undici 8 first and
+  // falls back to undici 7 where 8 doesn't import (Bun).
+  const undici = await loadUndici()
+  const fetchImpl = (undici?.fetch as typeof fetch | undefined) ?? fetch
+
+  return await fetchImpl(url, {
+    method: 'PUT',
+    body: stream.Readable.toWeb(
+      fs.createReadStream(filePath)
+    ) as ReadableStream,
+    headers: {
+      'Content-Length': size.toString(),
+    },
+    // Streaming request bodies require half-duplex mode.
+    duplex: 'half',
+    signal,
+  } as RequestInit)
 }
 
 export async function triggerBuild(

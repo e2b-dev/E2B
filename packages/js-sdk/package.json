@@ -39,7 +39,7 @@
     "test:bun": "bunx --bun vitest run --project unit --project connectionConfig",
     "test:cf": "vitest run --config tests/runtimes/cloudflare/vitest.config.mts",
     "test:cf:deploy": "vitest run --config tests/runtimes/cloudflare-deploy/vitest.config.mts",
-    "test:deno": "deno run -A npm:vitest run --project unit --project connectionConfig",
+    "test:deno": "deno run -A npm:vitest run --project unit --project connectionConfig --project template",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint --config ../../.oxlintrc.json src tests",
     "format": "prettier --write src/ tests/ example.mts"
