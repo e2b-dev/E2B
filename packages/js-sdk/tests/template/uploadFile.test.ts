@@ -66,5 +66,10 @@ describe('uploadFile transfer encoding', () => {
     if (transferEncoding !== undefined) {
       expect(transferEncoding.toLowerCase()).not.toContain('chunked')
     }
+
+    // Presigned upload URLs sign the request headers, so an implicit
+    // Content-Type (e.g. inferred from the archive's file extension) makes
+    // the storage backend reject the upload with 403 Forbidden.
+    expect(capturedHeaders['content-type']).toBeUndefined()
   })
 })
