@@ -160,10 +160,10 @@ export function setupRequestController(
 } {
   const controller = new AbortController()
 
-  const onUserAbort = () => controller.abort(userSignal?.reason)
+  const onUserAbort = () => abortWithReason(controller, userSignal?.reason)
   if (userSignal) {
     if (userSignal.aborted) {
-      controller.abort(userSignal.reason)
+      abortWithReason(controller, userSignal.reason)
     } else {
       userSignal.addEventListener('abort', onUserAbort, { once: true })
     }
@@ -172,7 +172,8 @@ export function setupRequestController(
   let reqTimeout: ReturnType<typeof setTimeout> | undefined = requestTimeoutMs
     ? setTimeout(
         () =>
-          controller.abort(
+          abortWithReason(
+            controller,
             new DOMException(
               `Request handshake timed out after ${requestTimeoutMs}ms`,
               'TimeoutError'
@@ -225,7 +226,8 @@ function createIdleAbort(
     clear()
     timer = setTimeout(
       () =>
-        controller.abort(
+        abortWithReason(
+          controller,
           new DOMException(
             `${label} idle for ${idleTimeoutMs}ms`,
             'TimeoutError'
@@ -235,6 +237,24 @@ function createIdleAbort(
     )
   }
   return { arm, clear }
+}
+
+/**
+ * Abort with the reason pinned to the controller. Bun (observed on 1.3.14)
+ * holds `signal.reason` weakly: a reason that nothing else strongly
+ * references — e.g. a `DOMException` constructed inside a timer callback —
+ * can be garbage-collected, leaving `signal.reason` undefined by the time a
+ * consumer reads it. Pinning the reason to the controller keeps it alive for
+ * the signal's lifetime. No-op cost on other runtimes.
+ *
+ * @internal
+ */
+function abortWithReason(controller: AbortController, reason: unknown) {
+  // A second abort is a spec-level no-op and must not overwrite the pin that
+  // keeps the committed (winning) reason alive.
+  if (controller.signal.aborted) return
+  ;(controller as { __e2bAbortReason?: unknown }).__e2bAbortReason = reason
+  controller.abort(reason)
 }
 
 /**

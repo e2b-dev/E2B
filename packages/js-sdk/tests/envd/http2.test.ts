@@ -272,11 +272,26 @@ test('falls back to global fetch when undici cannot be loaded', async () => {
 })
 
 test('uses global fetch outside Node', async () => {
-  const fallbackFetch = vi.fn() as unknown as typeof fetch
-  vi.stubGlobal('fetch', fallbackFetch)
+  const fallbackFetch = vi.fn()
 
   const { createEnvdFetchForRuntime } = await import('../../src/envd/http2')
 
-  expect(createEnvdFetchForRuntime('browser')).toBe(fallbackFetch)
-  expect(createEnvdFetchForRuntime('vercel-edge')).toBe(fallbackFetch)
+  const browserFetch = createEnvdFetchForRuntime('browser')
+  const edgeFetch = createEnvdFetchForRuntime('vercel-edge')
+
+  // The global fetch is late-bound: a fetch swapped in after the fetcher was
+  // created (msw, instrumentation) must still be picked up.
+  vi.stubGlobal('fetch', fallbackFetch)
+  try {
+    await browserFetch('https://example.com/status')
+    await edgeFetch('https://example.com/status')
+  } finally {
+    vi.unstubAllGlobals()
+  }
+
+  expect(fallbackFetch).toHaveBeenCalledTimes(2)
+  expect(fallbackFetch).toHaveBeenCalledWith(
+    'https://example.com/status',
+    undefined
+  )
 })

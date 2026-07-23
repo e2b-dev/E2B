@@ -50,32 +50,16 @@ function getRuntime(): { runtime: Runtime; version: string } {
 export const { runtime, version: runtimeVersion } = getRuntime()
 
 export async function sha256(data: string): Promise<string> {
-  // Use WebCrypto API if available
-  if (typeof crypto !== 'undefined') {
-    const encoder = new TextEncoder()
-    const dataBuffer = encoder.encode(data)
-    const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer)
-    const hashArray = new Uint8Array(hashBuffer)
-    return btoa(String.fromCharCode(...hashArray))
-  }
-
-  // Use Node.js crypto if WebCrypto is not available
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { createHash } = require('node:crypto')
-  const hash = createHash('sha256').update(data, 'utf8').digest()
-  return hash.toString('base64')
+  // WebCrypto is available in all supported runtimes (Node >= 20, browsers, edge)
+  const encoder = new TextEncoder()
+  const dataBuffer = encoder.encode(data)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer)
+  const hashArray = new Uint8Array(hashBuffer)
+  return btoa(String.fromCharCode(...hashArray))
 }
 
 export function timeoutToSeconds(timeout: number): number {
   return Math.ceil(timeout / 1000)
-}
-
-export function dynamicRequire<T>(module: string): T {
-  if (runtime === 'browser') {
-    throw new Error('Browser runtime is not supported for require')
-  }
-
-  return require(module)
 }
 
 export async function dynamicImport<T>(module: string): Promise<T> {

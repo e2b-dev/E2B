@@ -2,7 +2,8 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { dynamicImport, dynamicRequire } from '../utils'
+import url from 'node:url'
+import { dynamicImport } from '../utils'
 import { TemplateError } from '../errors'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
 import type { Readable } from 'node:stream'
@@ -329,11 +330,7 @@ export function getCallerDirectory(depth: number): string | undefined {
 
   // Handle file:// URLs returned by getFileName() in ESM modules
   if (fileName.startsWith('file:')) {
-    // we use the dynamic import to avoid bundling node:url for browser compatibility
-    // getCallerDirectory method is not called in the browser
-    const { fileURLToPath } =
-      dynamicRequire<typeof import('node:url')>('node:url')
-    fileName = fileURLToPath(fileName)
+    fileName = url.fileURLToPath(fileName)
   }
 
   return path.dirname(fileName)
