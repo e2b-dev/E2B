@@ -228,13 +228,20 @@ class Sandbox(SandboxApi):
             token = str(uuid.uuid4())
             sandbox._mcp_token = token
 
-            res = sandbox.commands.run(
-                f"mcp-gateway --config {shlex.quote(json.dumps(mcp))}",
-                user="root",
-                envs={"GATEWAY_ACCESS_TOKEN": token},
-            )
-            if res.exit_code != 0:
-                raise Exception(f"Failed to start MCP gateway: {res.stderr}")
+            try:
+                res = sandbox.commands.run(
+                    f"mcp-gateway --config {shlex.quote(json.dumps(mcp))}",
+                    user="root",
+                    envs={"GATEWAY_ACCESS_TOKEN": token},
+                )
+                if res.exit_code != 0:
+                    raise Exception(f"Failed to start MCP gateway: {res.stderr}")
+            except BaseException:
+                try:
+                    sandbox.kill()
+                except BaseException:
+                    pass
+                raise
 
         return sandbox
 

@@ -1,6 +1,6 @@
-import { assert, test } from 'vitest'
+import { assert, expect, test } from 'vitest'
 
-import { Sandbox } from '../../src'
+import { CommandExitError, Sandbox } from '../../src'
 import { template, isDebug } from '../setup.js'
 
 test.skipIf(isDebug)('create', async () => {
@@ -32,3 +32,38 @@ test.skipIf(isDebug)('metadata', async () => {
     await sbx.kill()
   }
 })
+
+test.skipIf(isDebug)(
+  'MCP gateway start failure kills the created sandbox',
+  async () => {
+    const metadata = { mcpGatewayCleanupTestId: crypto.randomUUID() }
+    const query = { state: ['running' as const], metadata }
+    let remainingSandboxes: Awaited<
+      ReturnType<ReturnType<typeof Sandbox.list>['nextItems']>
+    > = []
+
+    try {
+      // The base template has no mcp-gateway binary, so gateway startup
+      // reliably fails after the sandbox has been allocated.
+      await expect(
+        Sandbox.create(template, {
+          timeoutMs: 60_000,
+          metadata,
+          mcp: { invalid_server: {} } as never,
+        })
+      ).rejects.toThrow(CommandExitError)
+
+      remainingSandboxes = await Sandbox.list({ query }).nextItems()
+      expect(remainingSandboxes).toEqual([])
+    } finally {
+      remainingSandboxes = await Sandbox.list({ query })
+        .nextItems()
+        .catch(() => remainingSandboxes)
+      await Promise.all(
+        remainingSandboxes.map((sandbox) =>
+          Sandbox.kill(sandbox.sandboxId).catch(() => false)
+        )
+      )
+    }
+  }
+)

@@ -1,10 +1,11 @@
 import asyncio
 from typing import Any, cast
+from uuid import uuid4
 
 import httpx
 import pytest
 
-from e2b import AsyncSandbox, SandboxQuery, SandboxState
+from e2b import AsyncSandbox, CommandExitException, SandboxQuery, SandboxState
 from e2b.api.client.models import (
     NewSandbox,
     SandboxAutoResumeConfig,
@@ -34,6 +35,34 @@ async def test_metadata(async_sandbox_factory):
             break
     else:
         assert False, "Sandbox not found"
+
+
+@pytest.mark.skip_debug()
+async def test_mcp_gateway_start_failure_kills_created_sandbox(template):
+    metadata = {"mcp_gateway_cleanup_test_id": str(uuid4())}
+    query = SandboxQuery(state=[SandboxState.RUNNING], metadata=metadata)
+    remaining_sandboxes = []
+
+    try:
+        # The base template has no mcp-gateway binary, so gateway startup
+        # reliably fails after the sandbox has been allocated.
+        with pytest.raises(CommandExitException):
+            await AsyncSandbox.create(
+                template,
+                timeout=60,
+                metadata=metadata,
+                mcp=cast(Any, {"invalid_server": {}}),
+            )
+
+        remaining_sandboxes = await AsyncSandbox.list(query=query).next_items()
+        assert remaining_sandboxes == []
+    finally:
+        try:
+            remaining_sandboxes = await AsyncSandbox.list(query=query).next_items()
+        except Exception:
+            pass
+        for sandbox in remaining_sandboxes:
+            await AsyncSandbox.kill(sandbox.sandbox_id)
 
 
 def test_create_payload_serializes_auto_resume_enabled():
