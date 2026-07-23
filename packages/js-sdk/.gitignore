@@ -41,4 +41,8 @@ build/Release
 logs.txt
 deno.lock
 
+# written by wrangler during `pnpm test:cf:deploy`
+.deploy-output.json
+.wrangler
+
 __screenshots__

@@ -38,6 +38,8 @@
     "pretest": "npx playwright install --with-deps chromium",
     "postPublish": "./scripts/post-publish.sh || true",
     "test:bun": "bunx --bun vitest run --project unit --project connectionConfig",
+    "test:cf": "vitest run --config tests/runtimes/cloudflare/vitest.config.mts",
+    "test:cf:deploy": "vitest run --config tests/runtimes/cloudflare-deploy/vitest.config.mts",
     "test:deno": "deno test tests/runtimes/deno/ --allow-net --allow-read --allow-env --unstable-sloppy-imports --trace-leaks",
     "test:integration": "E2B_INTEGRATION_TEST=1 vitest run tests/integration/**",
     "typecheck": "tsc --noEmit",
@@ -45,6 +47,7 @@
     "format": "prettier --write src/ tests/ example.mts"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.18.7",
     "@testing-library/react": "^16.2.0",
     "@types/node": "^20.19.19",
     "@types/platform": "^1.3.6",
@@ -66,7 +69,8 @@
     "tsdown": "^0.22.3",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "vitest": "^4.1.8",
-    "vitest-browser-react": "^2.2.0"
+    "vitest-browser-react": "^2.2.0",
+    "wrangler": "^4.113.0"
   },
   "files": [
     "dist",

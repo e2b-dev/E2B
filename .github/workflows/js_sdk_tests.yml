@@ -79,6 +79,23 @@ jobs:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
 
+      - name: Run Cloudflare Workers tests
+        run: pnpm test:cf
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
+
+      # The suite deploys to an ephemeral Cloudflare preview account in its
+      # global setup (wrangler deploy --temporary, no Cloudflare credentials
+      # needed) and deletes the worker in teardown. Ubuntu only: the deployed
+      # worker is identical across OSes.
+      - name: Run Cloudflare Workers deploy tests
+        if: matrix.os == 'ubuntu-22.04'
+        run: pnpm test:cf:deploy
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
+
       - name: Install Bun
         if: matrix.os == 'ubuntu-22.04'
         uses: oven-sh/setup-bun@v2

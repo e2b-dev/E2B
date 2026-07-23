@@ -24,17 +24,20 @@ function getRuntime(): { runtime: Runtime; version: string } {
     return { runtime: 'deno', version: globalThis.Deno.version.deno }
   }
 
-  if ((globalThis as any).process?.release?.name === 'node') {
-    return { runtime: 'node', version: platform.version || 'unknown' }
-  }
-
   // @ts-ignore
   if (typeof EdgeRuntime === 'string') {
     return { runtime: 'vercel-edge', version: 'unknown' }
   }
 
+  // Check the explicit Workers marker before the generic Node check — Node
+  // compatibility shims (workerd's nodejs_compat, vitest-pool-workers) can
+  // populate process.release.name inside Workers.
   if ((globalThis as any).navigator?.userAgent === 'Cloudflare-Workers') {
     return { runtime: 'cloudflare-worker', version: 'unknown' }
+  }
+
+  if ((globalThis as any).process?.release?.name === 'node') {
+    return { runtime: 'node', version: platform.version || 'unknown' }
   }
 
   if (typeof window !== 'undefined') {
