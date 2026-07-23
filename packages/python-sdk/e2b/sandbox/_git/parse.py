@@ -2,7 +2,7 @@ from typing import List, Optional
 from urllib.parse import urlparse
 
 from e2b.exceptions import InvalidArgumentException
-from e2b.sandbox._git.types import GitBranches, GitFileStatus, GitStatus
+from e2b.sandbox._git.types import GitBranches, GitCommit, GitFileStatus, GitStatus
 
 
 def derive_repo_dir_from_url(url: str) -> Optional[str]:
@@ -220,3 +220,32 @@ def parse_remote_url(output: str, remote: str) -> str:
             f'Remote "{remote}" URL not found in repository.'
         )
     return url
+
+
+_GIT_LOG_FIELD_SEPARATOR = "\x1f"
+
+
+def parse_git_log(output: str) -> List[GitCommit]:
+    """
+    Parse machine-readable ``git log`` output into commit entries.
+
+    :param output: Raw stdout produced with the pipeline log format
+    :return: List of parsed commits, newest first
+    """
+    commits: List[GitCommit] = []
+    for line in output.split("\n"):
+        if not line.strip():
+            continue
+        parts = line.split(_GIT_LOG_FIELD_SEPARATOR)
+        if len(parts) < 5:
+            continue
+        commits.append(
+            GitCommit(
+                hash=parts[0],
+                author_name=parts[1],
+                author_email=parts[2],
+                date=parts[3],
+                message=parts[4],
+            )
+        )
+    return commits
