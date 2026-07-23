@@ -24,6 +24,8 @@ class SandboxNetworkConfig:
             authentication. Default: True.
         deny_out (Union[Unset, list[str]]): List of denied CIDR blocks or IP addresses for egress traffic. Domain names
             are not supported for deny rules.
+        https_ports (Union[Unset, list[int]]): Ports whose public URLs should connect to the sandbox using HTTPS.
+            Backend certificate verification is disabled.
         mask_request_host (Union[Unset, str]): Specify host mask which will be used for all sandbox requests
         rules (Union[Unset, SandboxNetworkConfigRules]): Per-domain transform rules applied to matching egress
             HTTP/HTTPS requests. Keys are domains (e.g. "api.example.com", "example.com"). A domain listed here is not
@@ -33,6 +35,7 @@ class SandboxNetworkConfig:
     allow_out: Union[Unset, list[str]] = UNSET
     allow_public_traffic: Union[Unset, bool] = True
     deny_out: Union[Unset, list[str]] = UNSET
+    https_ports: Union[Unset, list[int]] = UNSET
     mask_request_host: Union[Unset, str] = UNSET
     rules: Union[Unset, "SandboxNetworkConfigRules"] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -47,6 +50,10 @@ class SandboxNetworkConfig:
         deny_out: Union[Unset, list[str]] = UNSET
         if not isinstance(self.deny_out, Unset):
             deny_out = self.deny_out
+
+        https_ports: Union[Unset, list[int]] = UNSET
+        if not isinstance(self.https_ports, Unset):
+            https_ports = self.https_ports
 
         mask_request_host = self.mask_request_host
 
@@ -63,6 +70,8 @@ class SandboxNetworkConfig:
             field_dict["allowPublicTraffic"] = allow_public_traffic
         if deny_out is not UNSET:
             field_dict["denyOut"] = deny_out
+        if https_ports is not UNSET:
+            field_dict["httpsPorts"] = https_ports
         if mask_request_host is not UNSET:
             field_dict["maskRequestHost"] = mask_request_host
         if rules is not UNSET:
@@ -81,6 +90,8 @@ class SandboxNetworkConfig:
 
         deny_out = cast(list[str], d.pop("denyOut", UNSET))
 
+        https_ports = cast(list[int], d.pop("httpsPorts", UNSET))
+
         mask_request_host = d.pop("maskRequestHost", UNSET)
 
         _rules = d.pop("rules", UNSET)
@@ -94,6 +105,7 @@ class SandboxNetworkConfig:
             allow_out=allow_out,
             allow_public_traffic=allow_public_traffic,
             deny_out=deny_out,
+            https_ports=https_ports,
             mask_request_host=mask_request_host,
             rules=rules,
         )

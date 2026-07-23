@@ -2419,6 +2419,8 @@ export interface components {
             allowPublicTraffic?: boolean;
             /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
             denyOut?: string[];
+            /** @description Ports whose public URLs should connect to the sandbox using HTTPS. Backend certificate verification is disabled. */
+            httpsPorts?: number[];
             /** @description Specify host mask which will be used for all sandbox requests */
             maskRequestHost?: string;
             /** @description Per-domain transform rules applied to matching egress HTTP/HTTPS requests. Keys are domains (e.g. "api.example.com", "example.com"). A domain listed here is not automatically allowed - use allowOut to permit the traffic.
