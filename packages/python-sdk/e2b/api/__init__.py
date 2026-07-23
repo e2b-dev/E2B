@@ -81,15 +81,31 @@ pool_max_idle_per_host = int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20")
 def proxy_to_url(proxy: Optional[ProxyTypes]) -> Optional[str]:
     """Narrow the ``proxy`` connection option to the proxy URL string pyqwest
     transports take (scheme http, https, socks5, or socks5h, credentials in
-    the URL userinfo). The richer ``httpx.Proxy`` objects the httpx transports
-    accepted (per-proxy auth, headers, TLS context) are rejected rather than
-    partially honored."""
+    the URL userinfo). ``httpx.URL`` and ``httpx.Proxy`` — which the httpx
+    transports accepted — are converted when they reduce to such a URL;
+    ``httpx.Proxy`` extras that don't (custom headers, an ssl_context) are
+    rejected rather than silently dropped."""
     if proxy is None:
         return None
     if isinstance(proxy, str):
         return proxy
     if isinstance(proxy, httpx.URL):
         return str(proxy)
+    if isinstance(proxy, httpx.Proxy):
+        if proxy.headers:
+            raise InvalidArgumentException(
+                "E2B API calls don't support httpx.Proxy custom headers; "
+                "pass credentials in the proxy URL instead, "
+                'e.g. proxy="http://user:pass@localhost:8030"'
+            )
+        if proxy.ssl_context is not None:
+            raise InvalidArgumentException(
+                "E2B API calls don't support httpx.Proxy ssl_context"
+            )
+        url = proxy.url
+        if proxy.auth is not None:
+            url = url.copy_with(username=proxy.auth[0], password=proxy.auth[1])
+        return str(url)
     raise InvalidArgumentException(
         "E2B API calls support only URL-string proxies, "
         'e.g. proxy="http://user:pass@localhost:8030"'

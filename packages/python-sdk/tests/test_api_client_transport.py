@@ -1,5 +1,6 @@
 import asyncio
 import json
+import ssl
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -54,8 +55,31 @@ def test_proxy_to_url_narrows_to_url_strings():
     assert proxy_to_url(None) is None
     assert proxy_to_url("http://127.0.0.1:9999") == "http://127.0.0.1:9999"
     assert proxy_to_url(httpx.URL("http://127.0.0.1:9999")) == "http://127.0.0.1:9999"
+
+
+def test_proxy_to_url_reduces_httpx_proxy():
+    # httpx.Proxy converts when it reduces to a plain proxy URL, with
+    # credentials (which httpx.Proxy splits off the URL) folded back into
+    # the userinfo.
+    assert proxy_to_url(httpx.Proxy("http://127.0.0.1:9999")) == "http://127.0.0.1:9999"
+    assert (
+        proxy_to_url(httpx.Proxy("http://user:pass@127.0.0.1:9999"))
+        == "http://user:pass@127.0.0.1:9999"
+    )
+    assert (
+        proxy_to_url(httpx.Proxy("http://127.0.0.1:9999", auth=("user", "pass")))
+        == "http://user:pass@127.0.0.1:9999"
+    )
+
+    # Extras pyqwest can't express are rejected rather than silently dropped.
     with pytest.raises(InvalidArgumentException):
-        proxy_to_url(httpx.Proxy("http://127.0.0.1:9999"))
+        proxy_to_url(httpx.Proxy("http://127.0.0.1:9999", headers={"X-Auth": "t"}))
+    with pytest.raises(InvalidArgumentException):
+        proxy_to_url(
+            httpx.Proxy(
+                "https://127.0.0.1:9999", ssl_context=ssl.create_default_context()
+            )
+        )
 
 
 def test_connection_retry_policy_retries_only_connection_errors():
