@@ -10,7 +10,7 @@ from e2b.envd.filesystem.filesystem_pb import (
     RemoveWatcherRequest,
 )
 from e2b.envd.rpc import handle_rpc_exception_with_health
-from e2b.envd.utils import authentication_header, request_timeout_ms
+from e2b.envd.utils import authentication_header, timeout_to_ms
 from e2b.sandbox.filesystem.filesystem import map_entry_info
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent, map_event_type
 
@@ -50,7 +50,9 @@ class WatchHandle:
         try:
             self._rpc.remove_watcher(
                 RemoveWatcherRequest(watcher_id=self._watcher_id),
-                timeout_ms=request_timeout_ms(self._connection_config, request_timeout),
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
+                ),
                 headers=authentication_header(self._envd_version, self._user),
             )
         except Exception as e:
@@ -74,7 +76,9 @@ class WatchHandle:
         try:
             r = self._rpc.get_watcher_events(
                 GetWatcherEventsRequest(watcher_id=self._watcher_id),
-                timeout_ms=request_timeout_ms(self._connection_config, request_timeout),
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
+                ),
                 headers=authentication_header(self._envd_version, self._user),
             )
         except Exception as e:

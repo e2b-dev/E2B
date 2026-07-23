@@ -24,7 +24,7 @@ from e2b.envd.api import (
 )
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb
 from e2b.envd.rpc import handle_rpc_exception_with_health
-from e2b.envd.utils import authentication_header, request_timeout_ms
+from e2b.envd.utils import authentication_header, timeout_to_ms
 from e2b.envd.client_sync import create_rpc_client
 from e2b.envd.versions import (
     ENVD_DEFAULT_USER,
@@ -468,7 +468,9 @@ class Filesystem:
         try:
             res = self._rpc.list_dir(
                 filesystem_pb.ListDirRequest(path=path, depth=depth or 0),
-                timeout_ms=request_timeout_ms(self._connection_config, request_timeout),
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
+                ),
                 headers=authentication_header(self._envd_version, user),
             )
 
@@ -500,7 +502,9 @@ class Filesystem:
         try:
             self._rpc.stat(
                 filesystem_pb.StatRequest(path=path),
-                timeout_ms=request_timeout_ms(self._connection_config, request_timeout),
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
+                ),
                 headers=authentication_header(self._envd_version, user),
             )
             return True
@@ -529,7 +533,9 @@ class Filesystem:
         try:
             r = self._rpc.stat(
                 filesystem_pb.StatRequest(path=path),
-                timeout_ms=request_timeout_ms(self._connection_config, request_timeout),
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
+                ),
                 headers=authentication_header(self._envd_version, user),
             )
 
@@ -553,7 +559,9 @@ class Filesystem:
         try:
             self._rpc.remove(
                 filesystem_pb.RemoveRequest(path=path),
-                timeout_ms=request_timeout_ms(self._connection_config, request_timeout),
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
+                ),
                 headers=authentication_header(self._envd_version, user),
             )
         except Exception as e:
@@ -582,7 +590,9 @@ class Filesystem:
                     source=old_path,
                     destination=new_path,
                 ),
-                timeout_ms=request_timeout_ms(self._connection_config, request_timeout),
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
+                ),
                 headers=authentication_header(self._envd_version, user),
             )
 
@@ -608,7 +618,9 @@ class Filesystem:
         try:
             self._rpc.make_dir(
                 filesystem_pb.MakeDirRequest(path=path),
-                timeout_ms=request_timeout_ms(self._connection_config, request_timeout),
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
+                ),
                 headers=authentication_header(self._envd_version, user),
             )
 
@@ -666,7 +678,9 @@ class Filesystem:
                     include_entry=include_entry,
                     allow_network_mounts=allow_network_mounts,
                 ),
-                timeout_ms=request_timeout_ms(self._connection_config, request_timeout),
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
+                ),
                 headers={
                     **authentication_header(self._envd_version, user),
                     KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),

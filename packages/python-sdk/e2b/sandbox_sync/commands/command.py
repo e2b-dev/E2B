@@ -21,7 +21,6 @@ from e2b.envd.rpc import handle_rpc_exception_with_health
 from e2b.envd.utils import (
     authentication_header,
     extract_start_pid,
-    request_timeout_ms,
     timeout_to_ms,
 )
 from e2b.envd.client_sync import as_stream, create_rpc_client
@@ -89,7 +88,9 @@ class Commands:
         try:
             res = self._rpc.list(
                 process_pb.ListRequest(),
-                timeout_ms=request_timeout_ms(self._connection_config, request_timeout),
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
+                ),
             )
             return [
                 ProcessInfo(
@@ -128,7 +129,9 @@ class Commands:
                     process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
                     signal=process_pb.Signal.SIGKILL,
                 ),
-                timeout_ms=request_timeout_ms(self._connection_config, request_timeout),
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
+                ),
             )
             return True
         except Exception as e:
@@ -160,7 +163,9 @@ class Commands:
                         ),
                     ),
                 ),
-                timeout_ms=request_timeout_ms(self._connection_config, request_timeout),
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
+                ),
             )
         except Exception as e:
             raise handle_rpc_exception_with_health(e, self._check_health)
@@ -189,7 +194,9 @@ class Commands:
                 process_pb.CloseStdinRequest(
                     process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
                 ),
-                timeout_ms=request_timeout_ms(self._connection_config, request_timeout),
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
+                ),
             )
         except Exception as e:
             raise handle_rpc_exception_with_health(e, self._check_health)

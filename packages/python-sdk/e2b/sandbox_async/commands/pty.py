@@ -19,7 +19,6 @@ from e2b.envd.rpc import ahandle_rpc_exception_with_health
 from e2b.envd.utils import (
     authentication_header,
     extract_start_pid,
-    request_timeout_ms,
     timeout_to_ms,
 )
 from e2b.envd.client_async import as_stream, create_rpc_client, first_event
@@ -71,7 +70,9 @@ class Pty:
                     process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
                     signal=process_pb.Signal.SIGKILL,
                 ),
-                timeout_ms=request_timeout_ms(self._connection_config, request_timeout),
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
+                ),
             )
             return True
         except Exception as e:
@@ -101,7 +102,9 @@ class Pty:
                         input=Oneof("pty", data),
                     ),
                 ),
-                timeout_ms=request_timeout_ms(self._connection_config, request_timeout),
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
+                ),
             )
         except Exception as e:
             raise await ahandle_rpc_exception_with_health(e, self._check_health)
@@ -245,7 +248,9 @@ class Pty:
                         size=process_pb.PTY.Size(rows=size.rows, cols=size.cols),
                     ),
                 ),
-                timeout_ms=request_timeout_ms(self._connection_config, request_timeout),
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
+                ),
             )
         except Exception as e:
             raise await ahandle_rpc_exception_with_health(e, self._check_health)

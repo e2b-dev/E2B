@@ -6,7 +6,7 @@ from typing import Optional, Union
 from packaging.version import Version
 from protobuf import Oneof
 
-from e2b.connection_config import ConnectionConfig, Username, default_username
+from e2b.connection_config import Username, default_username
 from e2b.envd.process import process_pb
 from e2b.envd.versions import ENVD_DEFAULT_USER
 from e2b.exceptions import SandboxException
@@ -22,16 +22,6 @@ def timeout_to_ms(timeout: Optional[float]) -> Optional[int]:
     if not timeout:
         return None
     return max(1, round(timeout * 1000))
-
-
-def request_timeout_ms(
-    connection_config: ConnectionConfig, request_timeout: Optional[float]
-) -> Optional[int]:
-    """The ``timeout_ms`` for a unary envd call: the per-call
-    ``request_timeout`` resolved against the connection default, converted
-    with :func:`timeout_to_ms`. Streaming calls pass their ``timeout``
-    (the stream lifetime) through :func:`timeout_to_ms` directly."""
-    return timeout_to_ms(connection_config.get_request_timeout(request_timeout))
 
 
 def extract_start_pid(
