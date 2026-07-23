@@ -10,7 +10,9 @@ import { uploadFile } from '../../src/template/buildApi'
 // Readable directly to fetch, which made undici fall back to
 // Transfer-Encoding: chunked. S3 presigned PUT URLs reject that with 501
 // NotImplemented. The fix spools the archive to a temporary file and streams
-// it from disk with an explicit Content-Length.
+// it from disk with an explicit Content-Length via undici's fetch, which
+// honors the header on stream bodies on every runtime (Deno's native fetch
+// ignores it and chunks). This suite runs under both Node and Deno.
 describe('uploadFile transfer encoding', () => {
   let testDir: string
   let server: Server
