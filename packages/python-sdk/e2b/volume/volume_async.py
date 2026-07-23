@@ -1,3 +1,5 @@
+import asyncio
+
 from typing import AsyncIterator, IO, List, Literal, Optional, Union, cast, overload
 from http import HTTPStatus
 
@@ -464,11 +466,9 @@ class AsyncVolume:
 
         :param path: Path to the file
         :param format: Format of the file content—`text` by default
-        :param stream_idle_timeout: Idle timeout in **seconds** for a streamed
-            read (`format="stream"`)—abort if no chunk arrives within this
-            window while reading. Resets on every chunk, so it bounds a stalled
-            stream without limiting total transfer time. Defaults to the request
-            timeout; pass `0` to disable.
+        :param stream_idle_timeout: Deprecated and ignored. A stalled streamed
+            read is bounded by a transport-wide idle read timeout instead,
+            which resets on every chunk.
         :param opts: Connection options
 
         :return: File content as string, bytes, or async iterator of bytes
@@ -482,38 +482,45 @@ class AsyncVolume:
         )
 
         if format == "stream":
-            # The request timeout bounds connection setup, not total transfer;
-            # consuming the body must not be killed by it. httpx's per-chunk
-            # `read` timeout becomes the idle-read timeout for the body
-            # (defaults to the request timeout), bounding a stalled stream
-            # without limiting total transfer time. Pass `0` to disable.
-            # Mirrors the sandbox files stream path.
-            idle_timeout = (
-                timeout if stream_idle_timeout is None else stream_idle_timeout
+            # Through the pyqwest adapter a per-request timeout is a
+            # whole-request deadline that would kill long downloads, so a
+            # streamed read is sent with one only when the caller set
+            # `request_timeout` explicitly (making it the total-transfer
+            # deadline). A stalled stream is instead bounded by the
+            # transport-wide idle read timeout (see `get_transport`), which
+            # resets on every chunk without limiting total transfer time.
+            stream_timeout = VolumeConnectionConfig._get_request_timeout(
+                None, opts.get("request_timeout")
             )
-            stream_timeout = httpx.Timeout(timeout, read=idle_timeout or None)
 
             async def stream_file() -> AsyncIterator[bytes]:
-                async with api_client.get_async_httpx_client().stream(
-                    method="GET",
-                    url=f"/volumecontent/{self._volume_id}/file",
-                    params=params,
-                    timeout=stream_timeout,
-                ) as response:
-                    if response.status_code == 404:
-                        raise NotFoundException(f"Path {path} not found")
+                # pyqwest raises the builtin TimeoutError; keep the httpx
+                # exception the streamed-read contract established.
+                try:
+                    async with api_client.get_async_httpx_client().stream(
+                        method="GET",
+                        url=f"/volumecontent/{self._volume_id}/file",
+                        params=params,
+                        timeout=stream_timeout,
+                    ) as response:
+                        if response.status_code == 404:
+                            raise NotFoundException(f"Path {path} not found")
 
-                    if response.status_code >= 300:
-                        api_response = Response(
-                            status_code=HTTPStatus(response.status_code),
-                            content=await response.aread(),
-                            headers=response.headers,
-                            parsed=None,
-                        )
-                        raise handle_api_exception(api_response, VolumeException)
+                        if response.status_code >= 300:
+                            api_response = Response(
+                                status_code=HTTPStatus(response.status_code),
+                                content=await response.aread(),
+                                headers=response.headers,
+                                parsed=None,
+                            )
+                            raise handle_api_exception(api_response, VolumeException)
 
-                    async for chunk in response.aiter_bytes():
-                        yield chunk
+                        async for chunk in response.aiter_bytes():
+                            yield chunk
+                # asyncio.TimeoutError is distinct from the builtin until 3.11,
+                # and the adapter's whole-request deadline raises it.
+                except (TimeoutError, asyncio.TimeoutError) as e:
+                    raise httpx.ReadTimeout(str(e)) from e
 
             return stream_file()
 
