@@ -20,6 +20,12 @@ test('natural throw site is preserved on cause', () => {
   expect(typeof (error.cause as Error).stack).toBe('string')
 })
 
+test('cause is non-enumerable, matching native Error cause semantics', () => {
+  const error = new SandboxError('boom', userFrames)
+  expect(Object.keys(error)).not.toContain('cause')
+  expect(JSON.stringify(error)).not.toContain('cause')
+})
+
 test('stack stays assignable after synthesis', () => {
   const error = new BuildError('boom', userFrames)
   error.stack = 'replaced'

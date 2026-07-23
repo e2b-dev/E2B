@@ -23,9 +23,16 @@ export function withStackTrace<E extends Error>(error: E, frames?: string): E {
   }
 
   // Preserve the natural throw site — useful when debugging the SDK itself.
+  // Defined non-enumerable to match native `new Error(msg, { cause })`
+  // semantics, so it doesn't leak into Object.keys()/JSON.stringify().
   const thrownAt = new Error('SDK-internal throw site')
   thrownAt.stack = error.stack
-  error.cause = thrownAt
+  Object.defineProperty(error, 'cause', {
+    value: thrownAt,
+    writable: true,
+    configurable: true,
+    enumerable: false,
+  })
 
   Object.defineProperty(error, 'stack', {
     configurable: true,
