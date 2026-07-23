@@ -426,7 +426,7 @@ class TemplateBuilder:
         template.bun_install(['lodash', 'axios'])
         template.bun_install('tsx', g=True)
         template.bun_install('typescript', dev=True)
-        template.bun_install()  // Installs from package.json
+        template.bun_install()  # Installs from package.json
         ```
         """
         if isinstance(packages, str):
