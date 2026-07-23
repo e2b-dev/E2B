@@ -1,3 +1,5 @@
+import { compareVersions } from 'compare-versions'
+
 export type UndiciRequestInit = RequestInit & {
   dispatcher?: unknown
   duplex?: 'half'
@@ -9,24 +11,42 @@ export type UndiciModule = {
     uri: string
     allowH2: true
     connections?: number
+    proxyTunnel: true
   }) => unknown
   fetch: unknown
 }
 
-export async function loadUndici(): Promise<UndiciModule | undefined> {
-  try {
-    // Keep this import opaque to bundlers. It must resolve as a package name
-    // from the runtime environment, not as a path relative to this file.
-    // eslint-disable-next-line no-new-func
-    const importModule = new Function(
-      'moduleName',
-      'return import(moduleName)'
-    ) as (moduleName: string) => Promise<UndiciModule>
+const UNDICI_8_MIN_NODE = '22.19.0'
 
-    return await importModule('undici')
+export function getUndiciPackageCandidates(nodeVersion: string): string[] {
+  if (compareVersions(nodeVersion, UNDICI_8_MIN_NODE) >= 0) {
+    return ['undici8', 'undici']
+  }
+
+  return ['undici']
+}
+
+export async function loadUndici(): Promise<UndiciModule | undefined> {
+  let importModule: (moduleName: string) => Promise<UndiciModule>
+  try {
+    // Keep package imports opaque so downstream bundlers resolve them at runtime.
+    // eslint-disable-next-line no-new-func
+    importModule = new Function('moduleName', 'return import(moduleName)') as (
+      moduleName: string
+    ) => Promise<UndiciModule>
   } catch {
     return undefined
   }
+
+  for (const packageName of getUndiciPackageCandidates(process.versions.node)) {
+    try {
+      return await importModule(packageName)
+    } catch {
+      // Try the next package supported by this Node version.
+    }
+  }
+
+  return undefined
 }
 
 export function toUndiciRequestInput(
