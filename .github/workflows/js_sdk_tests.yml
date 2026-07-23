@@ -80,17 +80,12 @@ jobs:
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
 
       - name: Install Bun
+        if: matrix.os == 'ubuntu-22.04'
         uses: oven-sh/setup-bun@v2
-
-      - name: Run Bun tests
-        run: pnpm test:bun
-        env:
-          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
 
       - name: Run test suite under Bun
         if: matrix.os == 'ubuntu-22.04'
-        run: pnpm test:bun:suite
+        run: pnpm test:bun
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
