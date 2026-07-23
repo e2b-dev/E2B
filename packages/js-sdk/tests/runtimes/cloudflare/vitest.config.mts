@@ -30,7 +30,7 @@ export default defineConfig({
   test: {
     name: 'cloudflare',
     include: ['tests/**/*.test.ts'],
-    exclude: ['tests/runtimes/**', 'tests/integration/**', 'tests/template/**'],
+    exclude: ['tests/runtimes/**', 'tests/template/**'],
     globals: false,
     testTimeout: 30_000,
     bail: 0,
