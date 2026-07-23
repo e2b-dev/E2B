@@ -238,6 +238,9 @@ importers:
       vitest-browser-react:
         specifier: ^2.2.0
         version: 2.2.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.8)
+      wrangler:
+        specifier: ^4.113.0
+        version: 4.113.0(bufferutil@4.0.8)(utf-8-validate@6.0.3)
 
   packages/python-sdk: {}
 

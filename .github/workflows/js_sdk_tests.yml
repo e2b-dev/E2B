@@ -85,6 +85,16 @@ jobs:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
 
+      # Deploys to an ephemeral Cloudflare preview account (wrangler deploy
+      # --temporary), so no Cloudflare credentials are needed. Ubuntu only:
+      # the deployed worker is identical across OSes.
+      - name: Run Cloudflare Workers deploy tests
+        if: matrix.os == 'ubuntu-22.04'
+        run: pnpm test:cf:deploy
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
+
       - name: Install Bun
         uses: oven-sh/setup-bun@v2
 
