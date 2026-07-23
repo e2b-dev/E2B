@@ -35,7 +35,7 @@ Notes:
   REST API and file transfer requests. RPC calls accept only URL-string
   proxies (credentials in the URL, e.g.
   `proxy="http://user:pass@localhost:8030"`); `httpx.Proxy` and `httpx.URL`
-  values are rejected for RPC calls.
+  values are rejected for RPC calls with `InvalidArgumentException`.
 - `CommandResult.error` (and `CommandHandle.error`) is now `None` when a
   command finishes without an error, matching the declared `Optional[str]`
   type and the JS SDK's `error?: string`. It used to be `""` on success —

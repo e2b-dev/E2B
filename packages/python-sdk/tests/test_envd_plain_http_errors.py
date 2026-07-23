@@ -108,11 +108,39 @@ async def test_async_empty_body_falls_back_to_status():
 
 
 async def test_async_leaves_connect_encoded_errors_to_connectrpc():
-    # Per the Connect protocol, error responses carry a JSON content type —
-    # connectrpc parses those itself (including envd's own error details).
+    # A valid Connect error is a JSON body with a string `code` — connectrpc
+    # parses those itself (including envd's own error details). The body was
+    # drained to check validity, so the response is rebuilt with it restored.
     for content_type in ("application/json", "application/json; charset=utf-8"):
         response = await _executed(404, content_type, b'{"code": "not_found"}')
         assert response.status == 404
+        body = bytearray()
+        async for chunk in response.content:
+            body.extend(chunk)
+        assert bytes(body) == b'{"code": "not_found"}'
+
+
+async def test_async_maps_json_errors_without_a_valid_connect_code():
+    # A gateway answering with a JSON body that is not Connect-encoded (#806):
+    # an int `code` is treated as the HTTP status, like the vendored client.
+    error = await _raised(
+        429, "application/json", b'{"code": 429, "message": "rate limited"}'
+    )
+    assert error.code is Code.RESOURCE_EXHAUSTED
+    assert error.message == "rate limited"
+
+    # No `code` at all falls back to the response status, body as message.
+    error = await _raised(404, "application/json", b'{"error": "no such route"}')
+    assert error.code is Code.NOT_FOUND
+    assert error.message == '{"error": "no such route"}'
+
+    # Unparseable JSON falls back to the response status too.
+    error = await _raised(502, "application/json", b"<html>bad gateway</html>")
+    assert error.code is Code.UNAVAILABLE
+
+    # An invalid code string is not a Connect error either.
+    error = await _raised(429, "application/json", b'{"code": "TOO_MANY"}')
+    assert error.code is Code.RESOURCE_EXHAUSTED
 
 
 async def test_async_leaves_successful_responses_untouched():
@@ -134,7 +162,21 @@ def test_sync_leaves_connect_encoded_errors_to_connectrpc():
     transport = SyncPlainHTTPErrorTransport(
         RespondingSyncTransport(404, "application/json", b'{"code": "not_found"}')
     )
-    assert transport.execute_sync(_sync_request()).status == 404
+    response = transport.execute_sync(_sync_request())
+    assert response.status == 404
+    assert b"".join(response.content) == b'{"code": "not_found"}'
+
+
+def test_sync_maps_json_errors_without_a_valid_connect_code():
+    transport = SyncPlainHTTPErrorTransport(
+        RespondingSyncTransport(
+            429, "application/json", b'{"code": 429, "message": "rate limited"}'
+        )
+    )
+    with pytest.raises(ConnectError) as excinfo:
+        transport.execute_sync(_sync_request())
+    assert excinfo.value.code is Code.RESOURCE_EXHAUSTED
+    assert excinfo.value.message == "rate limited"
 
 
 # End-to-end through the generated stubs against a real HTTP/2 server

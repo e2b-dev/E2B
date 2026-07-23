@@ -124,19 +124,25 @@ def test_transport_failure_detection():
     assert not is_transport_failure(ValueError("other"))
 
 
-def test_decode_failure_surfaces_original_error():
+def test_decode_failure_wraps_original_error():
+    # The mapped code would produce a misleading sandbox-timeout message, but
+    # the raw ValueError must not escape the documented exception surface
+    # either — it is wrapped in SandboxException with the cause chained.
     err = _decode_failure()
-    restored = handle_rpc_exception(err)
-    assert restored is err.__cause__
-    assert isinstance(restored, ValueError)
+    wrapped = handle_rpc_exception(err)
+    assert isinstance(wrapped, SandboxException)
+    assert not isinstance(wrapped, TimeoutException)
+    assert wrapped.__cause__ is err.__cause__
+    assert "ValueError: bad json" in str(wrapped)
 
 
 def test_health_check_not_run_for_decode_failure():
     def fail():
         raise AssertionError("health check should not run")
 
-    restored = handle_rpc_exception_with_health(_decode_failure(), fail)
-    assert isinstance(restored, ValueError)
+    wrapped = handle_rpc_exception_with_health(_decode_failure(), fail)
+    assert isinstance(wrapped, SandboxException)
+    assert isinstance(wrapped.__cause__, ValueError)
 
 
 def test_cancellation_restores_cancelled_error():

@@ -3,6 +3,7 @@ import pytest
 
 from e2b.envd import client_async, client_sync
 from e2b.envd.client_shared import proxy_to_url
+from e2b.exceptions import InvalidArgumentException
 
 
 @pytest.fixture(autouse=True)
@@ -29,13 +30,15 @@ def test_proxy_to_url_keeps_credentials_from_url():
 
 
 def test_proxy_to_url_rejects_httpx_proxy():
+    # A typed SDK exception, not a bare ValueError — `except SandboxException`
+    # handlers must catch it when it surfaces from an RPC call.
     proxy = httpx.Proxy("http://localhost:8030", auth=("user", "pass"))
-    with pytest.raises(ValueError, match="URL-string"):
+    with pytest.raises(InvalidArgumentException, match="URL-string"):
         proxy_to_url(proxy)
 
 
 def test_proxy_to_url_rejects_httpx_url():
-    with pytest.raises(ValueError, match="URL-string"):
+    with pytest.raises(InvalidArgumentException, match="URL-string"):
         proxy_to_url(httpx.URL("http://localhost:8030"))
 
 

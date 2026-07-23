@@ -14,11 +14,15 @@ The flavor-specific transports and client factories live in
 protobuf codegen (`make generate-envd`).
 """
 
+import json
 import os
 from typing import Optional, TypedDict, TypeVar
 
 from connectrpc.code import Code
+from connectrpc.errors import ConnectError
 from protobuf import Message
+
+from e2b.exceptions import InvalidArgumentException
 
 # Mirror the httpx pool tuning in `e2b.api.limits` with pyqwest's equivalents.
 # `pool_max_idle_per_host` is per host rather than httpx's global idle cap,
@@ -72,17 +76,42 @@ PLAIN_HTTP_ERROR_CODES: dict[int, Code] = {
 }
 
 
-def plain_http_error_code(status: int, content_type: str) -> Optional[Code]:
-    """The vendored-client code for a plain HTTP error response, or ``None``
-    when the response is not an error or is a Connect-encoded one. Per the
-    Connect protocol, error responses carry a JSON content type — anything
-    else on an error status is a proxy or gateway answering instead of envd.
+def plain_http_error(
+    status: int, content_type: str, body: bytes
+) -> Optional[ConnectError]:
+    """The ``ConnectError`` for a plain (non-Connect-encoded) HTTP error
+    response, or ``None`` when the body is a valid Connect-encoded error that
+    connectrpc must parse itself (it also decodes the error details). Only
+    called for error statuses, with the body already drained.
+
+    Per the Connect protocol an error response is a JSON body with a string
+    ``code``; anything else — non-JSON, unparseable JSON, or a gateway's
+    ``{"code": 429}``-style body — is a proxy or gateway answering instead of
+    envd, mapped like the vendored client did: an int ``code`` is treated as
+    the HTTP status, everything else falls back to the response status.
     """
-    if status < 400:
-        return None
+    message: Optional[str] = None
     if content_type.split(";", 1)[0].strip().lower() == "application/json":
-        return None
-    return PLAIN_HTTP_ERROR_CODES.get(status, Code.UNKNOWN)
+        try:
+            parsed = json.loads(body)
+        except ValueError:
+            parsed = None
+        code_value = parsed.get("code") if isinstance(parsed, dict) else None
+        if isinstance(code_value, str):
+            try:
+                Code(code_value)
+            except ValueError:
+                pass
+            else:
+                return None
+        if isinstance(code_value, int) and not isinstance(code_value, bool):
+            status = code_value
+        if isinstance(parsed, dict) and isinstance(parsed.get("message"), str):
+            message = parsed["message"]
+    code = PLAIN_HTTP_ERROR_CODES.get(status, Code.UNKNOWN)
+    return ConnectError(
+        code, message or body.decode("utf-8", "replace") or f"HTTP {status}"
+    )
 
 
 class _RPCCompression(TypedDict):
@@ -113,7 +142,7 @@ def proxy_to_url(proxy: object) -> Optional[str]:
         return None
     if isinstance(proxy, str):
         return proxy
-    raise ValueError(
+    raise InvalidArgumentException(
         "Sandbox RPC calls support only URL-string proxies, "
         'e.g. proxy="http://user:pass@localhost:8030"'
     )

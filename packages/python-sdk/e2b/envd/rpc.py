@@ -103,11 +103,16 @@ def handle_rpc_exception(
         # connectrpc's catch-all wraps client-side failures — e.g. a response
         # body that fails to decode — as ConnectError(UNAVAILABLE) with the
         # original exception as __cause__. Those are not envd responses, so
-        # surface the original error (like the previous stack did) instead of
-        # mapping the code to a misleading sandbox-timeout message. Deadlines
-        # (DEADLINE_EXCEEDED with a TimeoutError cause) stay mapped.
+        # the code mapping below would produce a misleading sandbox-timeout
+        # message; wrap the original error in SandboxException instead, so
+        # `except SandboxException` handlers keep working while the cause
+        # stays chained. Deadlines (DEADLINE_EXCEEDED with a TimeoutError
+        # cause) stay mapped.
         if isinstance(e.__cause__, Exception) and e.code is not Code.DEADLINE_EXCEEDED:
-            return e.__cause__
+            cause = e.__cause__
+            wrapped = SandboxException(f"{type(cause).__name__}: {cause}")
+            wrapped.__cause__ = cause
+            return wrapped
 
         # Plain (non-Connect-encoded) HTTP error responses arrive here
         # already carrying the vendored client's status mapping — see

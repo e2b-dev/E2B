@@ -3,7 +3,6 @@
 import threading
 from typing import Any, Callable, Generator, Iterator, Optional, TypeVar, Union, cast
 
-from connectrpc.errors import ConnectError
 from pyqwest import (
     SyncClient,
     SyncHTTPTransport,
@@ -18,7 +17,7 @@ from e2b.connection_config import ConnectionConfig
 from e2b.envd.client_shared import (
     ENVD_JSON_CODEC,
     ENVD_RPC_COMPRESSION,
-    plain_http_error_code,
+    plain_http_error,
     pool_idle_timeout,
     pool_max_idle_per_host,
     proxy_to_url,
@@ -42,9 +41,10 @@ class PlainHTTPErrorTransport:
     branch on NOT_FOUND/ALREADY_EXISTS and user code relies on
     RateLimitException to back off. connectrpc re-raises a ``ConnectError``
     from the transport unchanged — the path its own protocol errors take.
-    Error responses with a JSON content type are Connect-encoded; connectrpc
-    parses those itself. Becomes unnecessary once connectrpc preserves the
-    status on the errors it builds
+    JSON error bodies are handed back to connectrpc only when they are valid
+    Connect-encoded errors (a string ``code``); a gateway's ``{"code": 429}``
+    or plain-JSON error page gets the vendored mapping too. Becomes
+    unnecessary once connectrpc preserves the status on the errors it builds
     (https://github.com/connectrpc/connect-py/issues/306).
     """
 
@@ -53,16 +53,23 @@ class PlainHTTPErrorTransport:
 
     def execute_sync(self, request: SyncRequest) -> SyncResponse:
         response = self._inner.execute_sync(request)
-        code = plain_http_error_code(
-            response.status, response.headers.get("content-type", "")
-        )
-        if code is None:
+        if response.status < 400:
             return response
         body = bytearray()
         for chunk in response.content:
             body.extend(chunk)
-        message = bytes(body).decode("utf-8", "replace") or f"HTTP {response.status}"
-        raise ConnectError(code, message)
+        error = plain_http_error(
+            response.status, response.headers.get("content-type", ""), bytes(body)
+        )
+        if error is None:
+            # A valid Connect-encoded error: hand it back to connectrpc with
+            # the drained body restored.
+            return SyncResponse(
+                status=response.status,
+                headers=response.headers,
+                content=bytes(body),
+            )
+        raise error
 
 
 class ConnectionRetryTransport(SyncRetryTransport):
