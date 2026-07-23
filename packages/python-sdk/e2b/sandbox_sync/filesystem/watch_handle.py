@@ -5,11 +5,12 @@ from packaging.version import Version
 from e2b import SandboxException
 from e2b.connection_config import ConnectionConfig, Username
 from e2b.envd.filesystem import filesystem_connect
-from e2b.envd.filesystem.filesystem_pb2 import (
+from e2b.envd.filesystem.filesystem_pb import (
     GetWatcherEventsRequest,
     RemoveWatcherRequest,
 )
-from e2b.envd.rpc import authentication_header, handle_rpc_exception_with_health
+from e2b.envd.rpc import handle_rpc_exception_with_health
+from e2b.envd.utils import authentication_header, timeout_to_ms
 from e2b.sandbox.filesystem.filesystem import map_entry_info
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent, map_event_type
 
@@ -24,14 +25,14 @@ class WatchHandle:
 
     def __init__(
         self,
-        get_rpc: Callable[[], filesystem_connect.FilesystemClient],
+        rpc: filesystem_connect.FilesystemClientSync,
         watcher_id: str,
         connection_config: ConnectionConfig,
         envd_version: Version,
         user: Optional[Username] = None,
         check_health: Optional[Callable[[], Optional[bool]]] = None,
     ):
-        self._get_rpc = get_rpc
+        self._rpc = rpc
         self._watcher_id = watcher_id
         self._connection_config = connection_config
         self._envd_version = envd_version
@@ -47,10 +48,10 @@ class WatchHandle:
         :param request_timeout: Timeout for the request in **seconds**
         """
         try:
-            self._get_rpc().remove_watcher(
+            self._rpc.remove_watcher(
                 RemoveWatcherRequest(watcher_id=self._watcher_id),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
                 ),
                 headers=authentication_header(self._envd_version, self._user),
             )
@@ -73,10 +74,10 @@ class WatchHandle:
             raise SandboxException("The watcher is already stopped")
 
         try:
-            r = self._get_rpc().get_watcher_events(
+            r = self._rpc.get_watcher_events(
                 GetWatcherEventsRequest(watcher_id=self._watcher_id),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
                 ),
                 headers=authentication_header(self._envd_version, self._user),
             )
@@ -93,7 +94,7 @@ class WatchHandle:
                         type=event_type,
                         entry=(
                             map_entry_info(event.entry)
-                            if event.HasField("entry")
+                            if event.entry is not None
                             else None
                         ),
                     )

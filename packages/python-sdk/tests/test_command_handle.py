@@ -3,7 +3,9 @@ from typing import Any, cast
 
 import pytest
 
-from e2b.envd.process import process_pb2
+from protobuf import Oneof
+
+from e2b.envd.process import process_pb
 from e2b.sandbox_async.commands.command_handle import AsyncCommandHandle
 from e2b.sandbox_sync.commands.command_handle import CommandHandle
 
@@ -11,27 +13,34 @@ EMOJI = "😀"
 EMOJI_BYTES = EMOJI.encode("utf-8")  # 4 bytes
 
 
-def _stdout_event(data: bytes) -> process_pb2.StartResponse:
-    return process_pb2.StartResponse(
-        event=process_pb2.ProcessEvent(
-            data=process_pb2.ProcessEvent.DataEvent(stdout=data)
+def _stdout_event(data: bytes) -> process_pb.StartResponse:
+    return process_pb.StartResponse(
+        event=process_pb.ProcessEvent(
+            event=Oneof(
+                "data", process_pb.ProcessEvent.DataEvent(output=Oneof("stdout", data))
+            )
         )
     )
 
 
-def _stderr_event(data: bytes) -> process_pb2.StartResponse:
-    return process_pb2.StartResponse(
-        event=process_pb2.ProcessEvent(
-            data=process_pb2.ProcessEvent.DataEvent(stderr=data)
+def _stderr_event(data: bytes) -> process_pb.StartResponse:
+    return process_pb.StartResponse(
+        event=process_pb.ProcessEvent(
+            event=Oneof(
+                "data", process_pb.ProcessEvent.DataEvent(output=Oneof("stderr", data))
+            )
         )
     )
 
 
-def _end_event(exit_code: int = 0) -> process_pb2.StartResponse:
-    return process_pb2.StartResponse(
-        event=process_pb2.ProcessEvent(
-            end=process_pb2.ProcessEvent.EndEvent(
-                exit_code=exit_code, exited=True, status="exited"
+def _end_event(exit_code: int = 0) -> process_pb.StartResponse:
+    return process_pb.StartResponse(
+        event=process_pb.ProcessEvent(
+            event=Oneof(
+                "end",
+                process_pb.ProcessEvent.EndEvent(
+                    exit_code=exit_code, exited=True, status="exited"
+                ),
             )
         )
     )

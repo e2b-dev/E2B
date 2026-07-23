@@ -1,8 +1,9 @@
 import inspect
 import logging
+from types import SimpleNamespace
 
-import e2b_connect as connect
 from e2b import AsyncSandbox, ConnectionConfig, Sandbox
+from e2b.envd.interceptors import LoggingInterceptor, build_interceptors
 from e2b.api import (
     ApiClient,
     make_async_logging_event_hooks,
@@ -86,36 +87,76 @@ def test_api_client_without_logger_emits_no_hooks():
         client.get_httpx_client().close()
 
 
-def test_rpc_client_without_logger_does_not_log(caplog):
-    client = connect.Client(url="https://example.com", response_type=object)
-    assert client._logger is None
-    # The guarded helpers must be safe no-ops when no logger was supplied.
-    with caplog.at_level(logging.DEBUG):
-        client._log_request()
-        client._log_response(200)
-        client._log_response(500)
-        client._log_stream_message()
-    assert caplog.records == []
+def test_rpc_client_without_logger_has_no_logging_interceptor(test_api_key):
+    # With no logger supplied, no logging interceptor is attached to RPC
+    # clients (matching the JS SDK, which only attaches its logging
+    # middleware when a logger is given).
+    config = ConnectionConfig(api_key=test_api_key)
+    interceptors = build_interceptors(config, "https://example.com")
+    assert not any(isinstance(i, LoggingInterceptor) for i in interceptors)
 
 
-def test_rpc_client_uses_provided_logger(caplog):
+def test_rpc_clients_get_logging_interceptor_from_config(test_api_key):
     custom = logging.getLogger("test.rpc")
-    client = connect.Client(
-        url="https://example.com", response_type=object, logger=custom
+    config = ConnectionConfig(api_key=test_api_key, logger=custom)
+    interceptors = build_interceptors(config, "https://example.com")
+    logging_interceptors = [
+        i for i in interceptors if isinstance(i, LoggingInterceptor)
+    ]
+    assert len(logging_interceptors) == 1
+    assert logging_interceptors[0]._logger is custom
+
+
+def _fake_ctx():
+    return SimpleNamespace(
+        method=SimpleNamespace(service_name="process.Process", name="List")
     )
-    assert client._logger is custom
+
+
+def test_logging_interceptor_logs_unary_rpc(caplog):
+    custom = logging.getLogger("test.rpc")
+    interceptor = LoggingInterceptor(custom, "https://example.com")
+    ctx = _fake_ctx()
 
     with caplog.at_level(logging.DEBUG, logger="test.rpc"):
-        client._log_request()
-        client._log_response(200)
-        client._log_response(500)
-        client._log_stream_message()
+        result = interceptor.intercept_unary_sync(
+            lambda request, ctx: "response", "request", ctx
+        )
+        assert result == "response"
+
+        def fail(request, ctx):
+            raise RuntimeError("boom")
+
+        try:
+            interceptor.intercept_unary_sync(fail, "request", ctx)
+        except RuntimeError:
+            pass
 
     levels = [(r.levelno, r.getMessage()) for r in caplog.records]
-    assert (logging.INFO, "Request: POST https://example.com") in levels
-    assert (logging.INFO, "Response: 200 https://example.com") in levels
-    assert (logging.ERROR, "Response: 500 https://example.com") in levels
-    assert (logging.DEBUG, "Response stream: https://example.com") in levels
+    url = "https://example.com/process.Process/List"
+    assert (logging.INFO, f"Request: POST {url}") in levels
+    assert (logging.INFO, f"Response: ok {url}") in levels
+    assert (logging.ERROR, f"Response: boom {url}") in levels
+
+
+def test_logging_interceptor_logs_stream_messages(caplog):
+    custom = logging.getLogger("test.rpc")
+    interceptor = LoggingInterceptor(custom, "https://example.com")
+    ctx = _fake_ctx()
+
+    with caplog.at_level(logging.DEBUG, logger="test.rpc"):
+        messages = list(
+            interceptor.intercept_server_stream_sync(
+                lambda request, ctx: iter(["a", "b"]), "request", ctx
+            )
+        )
+        assert messages == ["a", "b"]
+
+    levels = [(r.levelno, r.getMessage()) for r in caplog.records]
+    url = "https://example.com/process.Process/List"
+    assert (logging.INFO, f"Request: POST {url}") in levels
+    assert levels.count((logging.DEBUG, f"Response stream: {url}")) == 2
+    assert (logging.INFO, f"Response: ok {url}") in levels
 
 
 def test_logging_event_hooks_without_logger_are_empty():

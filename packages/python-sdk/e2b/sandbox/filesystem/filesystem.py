@@ -1,14 +1,16 @@
 import gzip
 import re
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime
 from enum import Enum
 from io import IOBase, TextIOBase
 from typing import IO, AsyncIterator, Dict, Iterator, Optional, Union, TypedDict
 
 import httpx
 
-from e2b.envd.filesystem import filesystem_pb2
+from protobuf.wkt import Timestamp
+
+from e2b.envd.filesystem import filesystem_pb
 from e2b.exceptions import InvalidArgumentException
 from e2b.io_utils import agzip_iter, aiter_io_chunks, gzip_iter, iter_io_chunks
 
@@ -28,10 +30,10 @@ class FileType(Enum):
     """
 
 
-def map_file_type(ft: filesystem_pb2.FileType):
-    if ft == filesystem_pb2.FileType.FILE_TYPE_FILE:
+def map_file_type(ft: filesystem_pb.FileType):
+    if ft == filesystem_pb.FileType.FILE:
         return FileType.FILE
-    elif ft == filesystem_pb2.FileType.FILE_TYPE_DIRECTORY:
+    elif ft == filesystem_pb.FileType.DIRECTORY:
         return FileType.DIR
 
 
@@ -118,7 +120,7 @@ class EntryInfo(WriteInfo):
     """
 
 
-def map_entry_info(entry: filesystem_pb2.EntryInfo) -> EntryInfo:
+def map_entry_info(entry: filesystem_pb.EntryInfo) -> EntryInfo:
     return EntryInfo(
         name=entry.name,
         type=map_file_type(entry.type),
@@ -128,10 +130,10 @@ def map_entry_info(entry: filesystem_pb2.EntryInfo) -> EntryInfo:
         permissions=entry.permissions,
         owner=entry.owner,
         group=entry.group,
-        modified_time=entry.modified_time.ToDatetime(tzinfo=timezone.utc),
-        # Optional, we can't directly access symlink_target otherwise it will be "" instead of None
+        modified_time=(entry.modified_time or Timestamp()).to_datetime(),
+        # Optional scalar: unset reads as "" — presence check keeps it None
         symlink_target=(
-            entry.symlink_target if entry.HasField("symlink_target") else None
+            entry.symlink_target if entry.has_field("symlink_target") else None
         ),
         metadata=map_metadata(entry.metadata),
     )
