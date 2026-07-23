@@ -48,14 +48,14 @@ export const deprecatedTeamOption = new commander.Option(
 ).hideHelp()
 
 /**
- * Read the project ID from parsed command options, honoring the deprecated
- * --team flag (with a warning) when --project is not set.
+ * Read the project ID from parsed command options, preferring --project and
+ * warning whenever the deprecated --team flag is used.
  */
 export function projectIdFromOptions(opts: {
   project?: string
   team?: string
 }): string | undefined {
-  if (opts.team && !opts.project) {
+  if (opts.team) {
     console.error(
       `The ${asBold('--team')} flag is deprecated, use ${asBold(
         '--project'
