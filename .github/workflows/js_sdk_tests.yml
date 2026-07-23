@@ -7,6 +7,11 @@ on:
         required: false
         type: string
         default: ''
+      node-only:
+        description: 'Run only the Node legs (skip Bun, Deno, and Cloudflare)'
+        required: false
+        type: boolean
+        default: false
     secrets:
       E2B_API_KEY:
         required: true
@@ -23,20 +28,15 @@ jobs:
     name: JS SDK - ${{ matrix.runtime }} (${{ matrix.os }})
     strategy:
       fail-fast: false
+      # With node-only (set by staging callers) the matrix collapses to the
+      # Node legs: Bun/Deno only run API-free unit suites and the Cloudflare
+      # legs add sandbox load without extra backend signal, so the other
+      # runtimes are exercised against production only.
       matrix:
-        include:
-          - runtime: node
-            os: ubuntu-22.04
-          - runtime: node
-            os: windows-latest
-          - runtime: bun
-            os: ubuntu-22.04
-          - runtime: deno
-            os: ubuntu-22.04
-          - runtime: cloudflare
-            os: ubuntu-22.04
-          - runtime: cloudflare-deploy
-            os: ubuntu-22.04
+        include: >-
+          ${{ inputs.node-only
+            && fromJSON('[{"runtime": "node", "os": "ubuntu-22.04"}, {"runtime": "node", "os": "windows-latest"}]')
+            || fromJSON('[{"runtime": "node", "os": "ubuntu-22.04"}, {"runtime": "node", "os": "windows-latest"}, {"runtime": "bun", "os": "ubuntu-22.04"}, {"runtime": "deno", "os": "ubuntu-22.04"}, {"runtime": "cloudflare", "os": "ubuntu-22.04"}, {"runtime": "cloudflare-deploy", "os": "ubuntu-22.04"}]') }}
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
