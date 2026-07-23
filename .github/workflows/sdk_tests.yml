@@ -84,6 +84,9 @@ jobs:
     uses: ./.github/workflows/js_sdk_tests.yml
     with:
       E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
+      # Staging only checks backend compatibility, so the Node legs suffice;
+      # Bun/Deno/Cloudflare runtime coverage runs against production above.
+      node-only: true
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY_STAGING }}
 

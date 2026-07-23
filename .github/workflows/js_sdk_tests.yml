@@ -7,6 +7,11 @@ on:
         required: false
         type: string
         default: ''
+      node-only:
+        description: 'Run only the Node legs (skip Bun, Deno, and Cloudflare)'
+        required: false
+        type: boolean
+        default: false
     secrets:
       E2B_API_KEY:
         required: true
@@ -20,11 +25,18 @@ jobs:
       run:
         working-directory: ./packages/js-sdk
         shell: bash
-    name: JS SDK - Build and test (${{ matrix.os }})
+    name: JS SDK - ${{ matrix.runtime }} (${{ matrix.os }})
     strategy:
-      matrix:
-        os: [ubuntu-22.04, windows-latest]
       fail-fast: false
+      # With node-only (set by staging callers) the matrix collapses to the
+      # Node legs: Bun/Deno only run API-free unit suites and the Cloudflare
+      # legs add sandbox load without extra backend signal, so the other
+      # runtimes are exercised against production only.
+      matrix:
+        include: >-
+          ${{ inputs.node-only
+            && fromJSON('[{"runtime": "node", "os": "ubuntu-22.04"}, {"runtime": "node", "os": "windows-latest"}]')
+            || fromJSON('[{"runtime": "node", "os": "ubuntu-22.04"}, {"runtime": "node", "os": "windows-latest"}, {"runtime": "bun", "os": "ubuntu-22.04"}, {"runtime": "deno", "os": "ubuntu-22.04"}, {"runtime": "cloudflare", "os": "ubuntu-22.04"}, {"runtime": "cloudflare-deploy", "os": "ubuntu-22.04"}]') }}
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
@@ -60,26 +72,58 @@ jobs:
         run: |
           pnpm install --frozen-lockfile
 
+      # Only the Node runtime runs the vitest `browser` project, which drives
+      # Chromium through Playwright.
       - name: Get Playwright version
+        if: matrix.runtime == 'node'
         id: playwright-version
         run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
 
       - name: Cache Playwright browsers
+        if: matrix.runtime == 'node'
         uses: actions/cache@v4
         with:
           path: ${{ matrix.os == 'windows-latest' && '~/AppData/Local/ms-playwright' || '~/.cache/ms-playwright' }}
           key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
 
+      # Every suite needs dist/: the unit bundle test and both Cloudflare
+      # configs fail in CI when the build output is missing.
       - name: Test build
         run: pnpm build
 
       - name: Run Node tests
+        if: matrix.runtime == 'node'
         run: pnpm test
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
 
+      - name: Install Bun
+        if: matrix.runtime == 'bun'
+        uses: oven-sh/setup-bun@v2
+
+      - name: Run test suite under Bun
+        if: matrix.runtime == 'bun'
+        run: pnpm test:bun
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
+
+      - name: Install Deno
+        if: matrix.runtime == 'deno'
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v${{ env.TOOL_VERSION_DENO }}
+
+      - name: Run test suite under Deno
+        if: matrix.runtime == 'deno'
+        run: pnpm test:deno
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
+
       - name: Run Cloudflare Workers tests
+        if: matrix.runtime == 'cloudflare'
         run: pnpm test:cf
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
@@ -87,35 +131,10 @@ jobs:
 
       # The suite deploys to an ephemeral Cloudflare preview account in its
       # global setup (wrangler deploy --temporary, no Cloudflare credentials
-      # needed) and deletes the worker in teardown. Ubuntu only: the deployed
-      # worker is identical across OSes.
+      # needed) and deletes the worker in teardown.
       - name: Run Cloudflare Workers deploy tests
-        if: matrix.os == 'ubuntu-22.04'
+        if: matrix.runtime == 'cloudflare-deploy'
         run: pnpm test:cf:deploy
-        env:
-          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
-
-      - name: Install Bun
-        if: matrix.os == 'ubuntu-22.04'
-        uses: oven-sh/setup-bun@v2
-
-      - name: Run test suite under Bun
-        if: matrix.os == 'ubuntu-22.04'
-        run: pnpm test:bun
-        env:
-          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
-
-      - name: Install Deno
-        if: matrix.os == 'ubuntu-22.04'
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: v${{ env.TOOL_VERSION_DENO }}
-
-      - name: Run test suite under Deno
-        if: matrix.os == 'ubuntu-22.04'
-        run: pnpm test:deno
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
