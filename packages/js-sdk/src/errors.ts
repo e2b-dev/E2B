@@ -6,50 +6,6 @@ export function formatSandboxTimeoutError(message: string) {
 }
 
 /**
- * Point an error's stack trace at `frames` (the user's call site, captured at
- * template-definition time) without losing information: `error.stack` is
- * synthesized as `Name: message\n<frames>` so reporters that print only
- * `error.stack` keep the failure message, and the error's original stack —
- * the actual throw site inside the SDK — stays reachable on `error.cause`.
- *
- * The header is composed lazily at read time so subclass constructors can
- * still assign `name` after this runs.
- *
- * @internal
- */
-export function withStackTrace<E extends Error>(error: E, frames?: string): E {
-  if (!frames) {
-    return error
-  }
-
-  // Preserve the natural throw site — useful when debugging the SDK itself.
-  // Defined non-enumerable to match native `new Error(msg, { cause })`
-  // semantics, so it doesn't leak into Object.keys()/JSON.stringify().
-  const thrownAt = new Error('SDK-internal throw site')
-  thrownAt.stack = error.stack
-  Object.defineProperty(error, 'cause', {
-    value: thrownAt,
-    writable: true,
-    configurable: true,
-    enumerable: false,
-  })
-
-  Object.defineProperty(error, 'stack', {
-    configurable: true,
-    get: () => `${error.name}: ${error.message}\n${frames}`,
-    set: (value: string | undefined) => {
-      Object.defineProperty(error, 'stack', {
-        value,
-        writable: true,
-        configurable: true,
-      })
-    },
-  })
-
-  return error
-}
-
-/**
  * Base class for all sandbox errors.
  *
  * Thrown when general sandbox errors occur.
@@ -58,7 +14,9 @@ export class SandboxError extends Error {
   constructor(message?: string, stackTrace?: string) {
     super(message)
     this.name = 'SandboxError'
-    withStackTrace(this, stackTrace)
+    if (stackTrace) {
+      this.stack = stackTrace
+    }
   }
 }
 
@@ -189,7 +147,9 @@ export class BuildError extends Error {
   constructor(message: string, stackTrace?: string) {
     super(message)
     this.name = 'BuildError'
-    withStackTrace(this, stackTrace)
+    if (stackTrace) {
+      this.stack = stackTrace
+    }
   }
 }
 

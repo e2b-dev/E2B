@@ -5,7 +5,7 @@ import path from 'node:path'
 import url from 'node:url'
 import { parse, type StackFrame } from 'error-stack-parser-es'
 import { dynamicImport } from '../utils'
-import { TemplateError, withStackTrace } from '../errors'
+import { TemplateError } from '../errors'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
 import type { Readable } from 'node:stream'
 import type { Path } from 'glob'
@@ -218,7 +218,11 @@ export async function calculateFilesHash(
   const files = await getAllFilesInPath(src, contextPath, ignorePatterns, true)
 
   if (files.length === 0) {
-    throw withStackTrace(new Error(`No files found in ${srcPath}`), stackTrace)
+    const error = new Error(`No files found in ${srcPath}`)
+    if (stackTrace) {
+      error.stack = stackTrace
+    }
+    throw error
   }
 
   // Hash stats - only include stable metadata (mode, size)

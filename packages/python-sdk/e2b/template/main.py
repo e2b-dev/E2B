@@ -120,19 +120,29 @@ class TemplateBuilder:
         ])
         ```
         """
-        # Validation errors raised by copy() already carry this method's call
-        # site — its boundary-based stack capture resolves through SDK frames
-        for item in items:
-            self.copy(
-                item["src"],
-                item["dest"],
-                item.get("forceUpload"),
-                item.get("user"),
-                item.get("mode"),
-                item.get("resolveSymlinks"),
-                item.get("gzip"),
-            )
+        # Get the stack trace at the copy_items call site
+        caller_frame = get_caller_frame()
+        stack_trace = make_traceback(caller_frame)
 
+        def _copy_items():
+            for item in items:
+                try:
+                    self.copy(
+                        item["src"],
+                        item["dest"],
+                        item.get("forceUpload"),
+                        item.get("user"),
+                        item.get("mode"),
+                        item.get("resolveSymlinks"),
+                        item.get("gzip"),
+                    )
+                except Exception as error:
+                    # Re-raise the error with the captured stack trace
+                    if stack_trace is not None:
+                        raise error.with_traceback(stack_trace)
+                    raise
+
+        _copy_items()
         return self
 
     def remove(

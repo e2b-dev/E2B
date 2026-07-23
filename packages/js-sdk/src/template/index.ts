@@ -612,16 +612,23 @@ export class TemplateBase
       throw new Error('Browser runtime is not supported for copyItems')
     }
 
-    // Validation errors thrown by copy() already carry this method's call
-    // site — its boundary-based stack capture resolves through SDK frames
+    // Stack trace that will be used to re-throw the error with
+    const stackTrace = getCallerFrame()
+
     for (const item of items) {
-      this.copy(item.src, item.dest, {
-        forceUpload: item.forceUpload,
-        user: item.user,
-        mode: item.mode,
-        resolveSymlinks: item.resolveSymlinks,
-        gzip: item.gzip,
-      })
+      try {
+        this.copy(item.src, item.dest, {
+          forceUpload: item.forceUpload,
+          user: item.user,
+          mode: item.mode,
+          resolveSymlinks: item.resolveSymlinks,
+          gzip: item.gzip,
+        })
+      } catch (error) {
+        const copyError = error as Error
+        copyError.stack = stackTrace
+        throw copyError
+      }
     }
 
     return this
