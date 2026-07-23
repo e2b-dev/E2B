@@ -1,23 +1,12 @@
-import {
-  expect,
-  test,
-  describe,
-  beforeAll,
-  afterAll,
-  beforeEach,
-  vi,
-} from 'vitest'
+import { expect, test, describe, beforeAll, afterAll, beforeEach } from 'vitest'
 import { writeFile, mkdir, rm, symlink, readFile, access } from 'fs/promises'
-import fs from 'node:fs'
-import { Readable } from 'node:stream'
-import { pipeline } from 'node:stream/promises'
-import { join } from 'path'
+import { join, dirname } from 'path'
 import { tmpdir } from 'os'
-import { tarFileStream } from '../../../src/template/utils'
+import { spoolTarArchive } from '../../../src/template/utils'
 import * as tar from 'tar'
 import { ReadEntry } from 'tar'
 
-describe('tarFileStream', () => {
+describe('spoolTarArchive', () => {
   const testDir = join(__dirname, 'tar-test-folder')
 
   beforeAll(async () => {
@@ -35,26 +24,10 @@ describe('tarFileStream', () => {
   })
 
   /**
-   * Wait until a path no longer exists. Cleanup runs asynchronously from the
-   * stream's `close` handler, so it may not complete in the same tick.
+   * Extract a spooled archive and collect its entries, then remove the spool.
    */
-  async function waitUntilGone(target: string): Promise<void> {
-    for (let i = 0; i < 100; i++) {
-      try {
-        await access(target)
-      } catch {
-        return
-      }
-      await new Promise((resolve) => setTimeout(resolve, 10))
-    }
-    throw new Error(`path was not removed: ${target}`)
-  }
-
-  /**
-   * Pipe an archive stream into tar's extractor and collect its entries.
-   */
-  async function extractTarStream(
-    stream: Readable
+  async function extractTarArchive(
+    archive: Awaited<ReturnType<typeof spoolTarArchive>>
   ): Promise<{ extractDir: string; members: ReadEntry[] }> {
     const extractDir = join(
       tmpdir(),
@@ -63,16 +36,17 @@ describe('tarFileStream', () => {
     await mkdir(extractDir, { recursive: true })
 
     const members: ReadEntry[] = []
-    await pipeline(
-      stream,
-      tar.extract({
+    try {
+      await tar.extract({
+        file: archive.path,
         cwd: extractDir,
-        gzip: true,
         onentry: (entry: ReadEntry) => {
           members.push(entry)
         },
       })
-    )
+    } finally {
+      await archive.cleanup()
+    }
 
     return { extractDir, members }
   }
@@ -81,9 +55,9 @@ describe('tarFileStream', () => {
    * Extract archive contents into a map of path -> file contents.
    */
   async function extractTarContents(
-    stream: Readable
+    archive: Awaited<ReturnType<typeof spoolTarArchive>>
   ): Promise<Map<string, Buffer | null>> {
-    const { extractDir, members } = await extractTarStream(stream)
+    const { extractDir, members } = await extractTarArchive(archive)
     const contents = new Map<string, Buffer | null>()
 
     for (const member of members) {
@@ -111,9 +85,9 @@ describe('tarFileStream', () => {
    * Extract archive members into a map of path -> entry.
    */
   async function getTarMembers(
-    stream: Readable
+    archive: Awaited<ReturnType<typeof spoolTarArchive>>
   ): Promise<Map<string, ReadEntry>> {
-    const { extractDir, members } = await extractTarStream(stream)
+    const { extractDir, members } = await extractTarArchive(archive)
     const map = new Map<string, ReadEntry>()
     for (const member of members) {
       map.set(member.path, member)
@@ -126,16 +100,10 @@ describe('tarFileStream', () => {
     await writeFile(join(testDir, 'file1.txt'), 'content1')
     await writeFile(join(testDir, 'file2.txt'), 'content2')
 
-    const { stream, size } = await tarFileStream(
-      '*.txt',
-      testDir,
-      [],
-      false,
-      true
-    )
-    expect(size).toBeGreaterThan(0)
+    const archive = await spoolTarArchive('*.txt', testDir, [], false, true)
+    expect(archive.size).toBeGreaterThan(0)
 
-    const contents = await extractTarContents(stream)
+    const contents = await extractTarContents(archive)
 
     expect(contents.size).toBe(2)
     expect(contents.get('file1.txt')?.toString()).toBe('content1')
@@ -146,33 +114,32 @@ describe('tarFileStream', () => {
     await writeFile(join(testDir, 'file1.txt'), 'content1')
     await writeFile(join(testDir, 'file2.txt'), 'content2')
 
-    const { stream } = await tarFileStream('*.txt', testDir, [], false, false)
+    const archive = await spoolTarArchive('*.txt', testDir, [], false, false)
 
-    // Buffer the archive so we can both assert it is not gzipped and extract it
-    const chunks: Buffer[] = []
-    for await (const chunk of stream as unknown as AsyncIterable<Buffer>) {
-      chunks.push(Buffer.from(chunk))
+    try {
+      const raw = await readFile(archive.path)
+
+      // gzip streams start with the magic bytes 0x1f 0x8b — an uncompressed tar must not
+      expect(raw[0]).not.toBe(0x1f)
+      expect(raw.subarray(0, 2).equals(Buffer.from([0x1f, 0x8b]))).toBe(false)
+
+      // And it should still extract to the original files
+      const extractDir = join(
+        tmpdir(),
+        `tar-uncompressed-extract-${Date.now()}`
+      )
+      await mkdir(extractDir, { recursive: true })
+      await tar.extract({ file: archive.path, cwd: extractDir })
+      expect((await readFile(join(extractDir, 'file1.txt'))).toString()).toBe(
+        'content1'
+      )
+      expect((await readFile(join(extractDir, 'file2.txt'))).toString()).toBe(
+        'content2'
+      )
+      await rm(extractDir, { recursive: true, force: true })
+    } finally {
+      await archive.cleanup()
     }
-    const archive = Buffer.concat(chunks)
-
-    // gzip streams start with the magic bytes 0x1f 0x8b — an uncompressed tar must not
-    expect(archive[0]).not.toBe(0x1f)
-    expect(archive.subarray(0, 2).equals(Buffer.from([0x1f, 0x8b]))).toBe(false)
-
-    // And it should still extract to the original files
-    const tarFile = join(tmpdir(), `tar-uncompressed-${Date.now()}.tar`)
-    await writeFile(tarFile, archive)
-    const extractDir = join(tmpdir(), `tar-uncompressed-extract-${Date.now()}`)
-    await mkdir(extractDir, { recursive: true })
-    await tar.extract({ file: tarFile, cwd: extractDir })
-    expect((await readFile(join(extractDir, 'file1.txt'))).toString()).toBe(
-      'content1'
-    )
-    expect((await readFile(join(extractDir, 'file2.txt'))).toString()).toBe(
-      'content2'
-    )
-    await rm(tarFile, { force: true })
-    await rm(extractDir, { recursive: true, force: true })
   })
 
   test('should respect ignore patterns', async () => {
@@ -181,7 +148,7 @@ describe('tarFileStream', () => {
     await writeFile(join(testDir, 'temp.txt'), 'temp content')
     await writeFile(join(testDir, 'backup.txt'), 'backup content')
 
-    const { stream } = await tarFileStream(
+    const archive = await spoolTarArchive(
       '*.txt',
       testDir,
       ['temp*', 'backup*'],
@@ -189,7 +156,7 @@ describe('tarFileStream', () => {
       true
     )
 
-    const contents = await extractTarContents(stream)
+    const contents = await extractTarContents(archive)
 
     expect(contents.size).toBe(2)
     expect(contents.get('file1.txt')?.toString()).toBe('content1')
@@ -205,9 +172,9 @@ describe('tarFileStream', () => {
     await writeFile(join(testDir, 'src', 'index.ts'), 'index content')
     await writeFile(join(nestedDir, 'Button.tsx'), 'button content')
 
-    const { stream } = await tarFileStream('src', testDir, [], false, true)
+    const archive = await spoolTarArchive('src', testDir, [], false, true)
 
-    const contents = await extractTarContents(stream)
+    const contents = await extractTarContents(archive)
     const paths = Array.from(contents.keys())
     expect(paths.some((p) => p.includes('src'))).toBe(true)
     expect(paths.some((p) => p.includes('index.ts'))).toBe(true)
@@ -228,9 +195,9 @@ describe('tarFileStream', () => {
     }
 
     // Test with resolveSymlinks=true
-    const { stream } = await tarFileStream('*.txt', testDir, [], true, true)
+    const archive = await spoolTarArchive('*.txt', testDir, [], true, true)
 
-    const contents = await extractTarContents(stream)
+    const contents = await extractTarContents(archive)
     expect(contents.get('original.txt')?.toString()).toBe('original content')
     // Symlink should be resolved (contain actual content, not link)
     expect(contents.get('link.txt')?.toString()).toBe('original content')
@@ -250,65 +217,26 @@ describe('tarFileStream', () => {
     }
 
     // Test with resolveSymlinks=false
-    const { stream } = await tarFileStream('*.txt', testDir, [], false, true)
+    const archive = await spoolTarArchive('*.txt', testDir, [], false, true)
 
-    const members = await getTarMembers(stream)
+    const members = await getTarMembers(archive)
     expect(members.get('original.txt')?.type).toBe('File')
     const link = members.get('link.txt')!
     expect(link.type).toBe('SymbolicLink')
     expect(link.linkpath).toBe('original.txt')
   })
 
-  test('removes the spooled archive once the stream is consumed', async () => {
+  test('cleanup removes the spooled archive and its temp dir', async () => {
     await writeFile(join(testDir, 'file1.txt'), 'content1')
 
-    // Capture the temp dir the helper creates so we can assert it is gone.
-    let tmpDir: string | undefined
-    const mkdtemp = fs.promises.mkdtemp.bind(fs.promises)
-    const spy = vi
-      .spyOn(fs.promises, 'mkdtemp')
-      .mockImplementation(async (prefix: any, ...rest: any[]) => {
-        const dir = await mkdtemp(prefix, ...rest)
-        tmpDir = dir
-        return dir
-      })
+    const archive = await spoolTarArchive('*.txt', testDir, [], false, true)
+    const spoolDir = dirname(archive.path)
+    await access(spoolDir)
 
-    try {
-      const { stream } = await tarFileStream('*.txt', testDir, [], false)
-      expect(tmpDir).toBeDefined()
-      await access(tmpDir!)
+    await archive.cleanup()
 
-      // Drain the stream to completion; the `close` handler then removes the
-      // spooled archive.
-      stream.resume()
-      await waitUntilGone(tmpDir!)
-    } finally {
-      spy.mockRestore()
-    }
-  })
-
-  test('cleans up the spooled archive if it is never consumed', async () => {
-    await writeFile(join(testDir, 'file1.txt'), 'content1')
-
-    let tmpDir: string | undefined
-    const mkdtemp = fs.promises.mkdtemp.bind(fs.promises)
-    const spy = vi
-      .spyOn(fs.promises, 'mkdtemp')
-      .mockImplementation(async (prefix: any, ...rest: any[]) => {
-        const dir = await mkdtemp(prefix, ...rest)
-        tmpDir = dir
-        return dir
-      })
-
-    try {
-      const { stream } = await tarFileStream('*.txt', testDir, [], false)
-      await access(tmpDir!)
-
-      // Destroying without reading still fires `close` and removes the file.
-      stream.destroy()
-      await waitUntilGone(tmpDir!)
-    } finally {
-      spy.mockRestore()
-    }
+    await expect(access(spoolDir)).rejects.toThrow()
+    // Cleanup is idempotent
+    await archive.cleanup()
   })
 })

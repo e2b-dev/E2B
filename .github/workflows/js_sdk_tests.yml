@@ -29,9 +29,9 @@ jobs:
     strategy:
       fail-fast: false
       # With node-only (set by staging callers) the matrix collapses to the
-      # Node legs: Bun/Deno only run API-free unit suites and the Cloudflare
-      # legs add sandbox load without extra backend signal, so the other
-      # runtimes are exercised against production only.
+      # Node legs: the Bun/Deno/Cloudflare legs re-run suites the Node legs
+      # already cover and add sandbox/build load without extra backend
+      # signal, so the other runtimes are exercised against production only.
       matrix:
         include: >-
           ${{ inputs.node-only
