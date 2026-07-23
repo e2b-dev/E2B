@@ -15,7 +15,7 @@ from typing import (
 
 from connectrpc.code import Code
 from connectrpc.errors import ConnectError
-from pyqwest import Client, HTTPTransport, Request, Response
+from pyqwest import Client, HTTPTransport, Request, Response, Transport
 from pyqwest.middleware.retry import RetryTransport
 
 from e2b.api import connection_retries
@@ -23,6 +23,7 @@ from e2b.connection_config import ConnectionConfig
 from e2b.envd.client_shared import (
     ENVD_JSON_CODEC,
     ENVD_RPC_COMPRESSION,
+    plain_http_error_code,
     pool_idle_timeout,
     pool_max_idle_per_host,
     proxy_to_url,
@@ -35,7 +36,39 @@ TClient = TypeVar("TClient")
 
 _transport_lock = threading.Lock()
 # One transport (= one connection pool) per proxy; None is the direct pool.
-_transports: dict[Optional[str], "ConnectionRetryTransport"] = {}
+_transports: dict[Optional[str], "PlainHTTPErrorTransport"] = {}
+
+
+class PlainHTTPErrorTransport:
+    """Raise plain (non-Connect-encoded) HTTP error responses — e.g. an edge
+    proxy answering for envd — as ``ConnectError`` with the vendored client's
+    status mapping and the response body as the message, before connectrpc
+    collapses them into Connect-spec codes with synthesized reason phrases
+    (404 → UNIMPLEMENTED "Not Found"): ``kill``/``exists``/``make_dir``
+    branch on NOT_FOUND/ALREADY_EXISTS and user code relies on
+    RateLimitException to back off. connectrpc re-raises a ``ConnectError``
+    from the transport unchanged — the path its own protocol errors take.
+    Error responses with a JSON content type are Connect-encoded; connectrpc
+    parses those itself. Becomes unnecessary once connectrpc preserves the
+    status on the errors it builds
+    (https://github.com/connectrpc/connect-py/issues/306).
+    """
+
+    def __init__(self, inner: Transport):
+        self._inner = inner
+
+    async def execute(self, request: Request) -> Response:
+        response = await self._inner.execute(request)
+        code = plain_http_error_code(
+            response.status, response.headers.get("content-type", "")
+        )
+        if code is None:
+            return response
+        body = bytearray()
+        async for chunk in response.content:
+            body.extend(chunk)
+        message = bytes(body).decode("utf-8", "replace") or f"HTTP {response.status}"
+        raise ConnectError(code, message)
 
 
 class ConnectionRetryTransport(RetryTransport):
@@ -59,20 +92,24 @@ class ConnectionRetryTransport(RetryTransport):
         return isinstance(response, ConnectionError)
 
 
-def get_transport(proxy_url: Optional[str]) -> ConnectionRetryTransport:
+def get_transport(proxy_url: Optional[str]) -> "PlainHTTPErrorTransport":
     with _transport_lock:
         transport = _transports.get(proxy_url)
         if transport is None:
             # connectrpc arms the per-call deadline around the transport, so
-            # retry backoff counts against the request timeout.
-            transport = ConnectionRetryTransport(
-                HTTPTransport(
-                    tls_include_system_certs=True,
-                    proxy=proxy_url,
-                    pool_idle_timeout=pool_idle_timeout,
-                    pool_max_idle_per_host=pool_max_idle_per_host,
-                ),
-                max_retries=connection_retries,
+            # retry backoff counts against the request timeout. The plain-
+            # error normalization sits outside the retries so it converts
+            # the settled response once.
+            transport = PlainHTTPErrorTransport(
+                ConnectionRetryTransport(
+                    HTTPTransport(
+                        tls_include_system_certs=True,
+                        proxy=proxy_url,
+                        pool_idle_timeout=pool_idle_timeout,
+                        pool_max_idle_per_host=pool_max_idle_per_host,
+                    ),
+                    max_retries=connection_retries,
+                )
             )
             _transports[proxy_url] = transport
         return transport

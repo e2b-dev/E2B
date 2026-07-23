@@ -23,7 +23,7 @@ from e2b.envd.api import (
     handle_envd_api_transport_exception_with_health,
 )
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb
-from e2b.envd.rpc import handle_rpc_exception_with_health, rpc_error_code
+from e2b.envd.rpc import handle_rpc_exception_with_health
 from e2b.envd.utils import authentication_header, timeout_to_ms
 from e2b.envd.client_sync import create_rpc_client
 from e2b.envd.versions import (
@@ -519,7 +519,7 @@ class Filesystem:
 
         except Exception as e:
             if isinstance(e, ConnectError):
-                if rpc_error_code(e) == Code.NOT_FOUND:
+                if e.code == Code.NOT_FOUND:
                     return False
             raise _handle_filesystem_rpc_exception(e, self._envd_api)
 
@@ -635,7 +635,7 @@ class Filesystem:
             return True
         except Exception as e:
             if isinstance(e, ConnectError):
-                if rpc_error_code(e) == Code.ALREADY_EXISTS:
+                if e.code == Code.ALREADY_EXISTS:
                     return False
             raise _handle_filesystem_rpc_exception(e, self._envd_api)
 

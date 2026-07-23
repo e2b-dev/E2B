@@ -14,7 +14,7 @@ import socket
 import struct
 import threading
 import time
-from typing import Iterator
+from typing import Iterator, Optional
 
 import h2.config
 import h2.connection
@@ -48,13 +48,21 @@ class FrameRecordingServer(threading.Thread):
     when ``server_ends_stream`` is set, a Connect end-of-stream envelope with
     the HTTP/2 END_STREAM flag; otherwise it leaves the stream open the way a
     still-running process does. With ``respond=False`` it accepts the request
-    but never answers, the way an unresponsive envd does.
+    but never answers, the way an unresponsive envd does. With
+    ``plain_error=(status, content_type, body)`` it answers every request
+    with that plain HTTP response, the way a gateway answering for envd does.
     """
 
-    def __init__(self, server_ends_stream: bool, respond: bool = True):
+    def __init__(
+        self,
+        server_ends_stream: bool,
+        respond: bool = True,
+        plain_error: Optional[tuple[int, str, bytes]] = None,
+    ):
         super().__init__(daemon=True)
         self.server_ends_stream = server_ends_stream
         self.respond = respond
+        self.plain_error = plain_error
         self.listener = socket.create_server(("127.0.0.1", 0))
         self.listener.settimeout(10)
         self.port = self.listener.getsockname()[1]
@@ -86,7 +94,17 @@ class FrameRecordingServer(threading.Thread):
                 if not data:
                     break
                 for event in conn.receive_data(data):
-                    if isinstance(event, h2.events.StreamEnded) and self.respond:
+                    if isinstance(event, h2.events.StreamEnded) and self.plain_error:
+                        status, content_type, body = self.plain_error
+                        conn.send_headers(
+                            event.stream_id,
+                            [
+                                (":status", str(status)),
+                                ("content-type", content_type),
+                            ],
+                        )
+                        conn.send_data(event.stream_id, body, end_stream=True)
+                    elif isinstance(event, h2.events.StreamEnded) and self.respond:
                         # The client finished sending the request: respond.
                         conn.send_headers(
                             event.stream_id,
@@ -133,9 +151,11 @@ class FrameRecordingServer(threading.Thread):
 
 @contextlib.contextmanager
 def frame_recording_server(
-    server_ends_stream: bool, respond: bool = True
+    server_ends_stream: bool,
+    respond: bool = True,
+    plain_error: Optional[tuple[int, str, bytes]] = None,
 ) -> Iterator[FrameRecordingServer]:
-    server = FrameRecordingServer(server_ends_stream, respond)
+    server = FrameRecordingServer(server_ends_stream, respond, plain_error)
     server.start()
     try:
         yield server

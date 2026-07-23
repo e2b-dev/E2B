@@ -3,11 +3,6 @@ import asyncio
 from typing import Awaitable, Callable, Optional
 from connectrpc.code import Code
 from connectrpc.errors import ConnectError
-
-# Private connectrpc API (used to invert its plain-HTTP error mapping, see
-# _VENDORED_PLAIN_HTTP_CODES); the connectrpc pin is narrow and
-# test_envd_rpc_exception exercises every entry against it.
-from connectrpc._protocol import ConnectWireError
 from pyqwest import ReadError, StreamError, WriteError
 
 from e2b.exceptions import (
@@ -78,58 +73,6 @@ def format_terminated_exception(
     return e
 
 
-# How the vendored client mapped plain (non-Connect-encoded) HTTP error
-# responses — e.g. an edge proxy answering for envd — to codes (#806).
-# connectrpc collapses such responses into a (code, reason phrase) pair per
-# the Connect spec instead, so invert its own mapper to recognize them: for
-# each status this asks `from_http_status` — the very function that will
-# build the error at runtime — what to look for, which keeps the table
-# transcription-free and immune to upstream mapping or phrase changes.
-#
-# Proposed upstream as `ConnectError.http_status`
-# (https://github.com/connectrpc/connect-py/issues/306); once that ships in
-# a release the SDK can depend on, this inversion (and the private import it
-# needs) collapses to a direct status lookup.
-_VENDORED_PLAIN_HTTP_CODES: dict[int, Code] = {
-    400: Code.INVALID_ARGUMENT,
-    401: Code.UNAUTHENTICATED,
-    403: Code.PERMISSION_DENIED,
-    404: Code.NOT_FOUND,
-    409: Code.ALREADY_EXISTS,
-    413: Code.RESOURCE_EXHAUSTED,
-    429: Code.RESOURCE_EXHAUSTED,
-    499: Code.CANCELED,
-    500: Code.INTERNAL,
-    501: Code.UNIMPLEMENTED,
-    502: Code.UNAVAILABLE,
-    503: Code.UNAVAILABLE,
-    504: Code.DEADLINE_EXCEEDED,
-    505: Code.UNIMPLEMENTED,
-}
-
-_PLAIN_HTTP_RESTORATIONS: dict[tuple[Code, str], Code] = {}
-for _status, _code in _VENDORED_PLAIN_HTTP_CODES.items():
-    _wire = ConnectWireError.from_http_status(_status)
-    if _wire.code is not _code:
-        _PLAIN_HTTP_RESTORATIONS[(_wire.code, _wire.message)] = _code
-del _status, _code, _wire
-
-
-def rpc_error_code(e: ConnectError) -> Code:
-    """The error's code, with plain (non-Connect-encoded) HTTP error
-    responses — e.g. an edge proxy answering for envd — restored to the
-    statuses the vendored client kept (``_VENDORED_PLAIN_HTTP_CODES``).
-    connectrpc maps such responses per the Connect spec with the HTTP reason
-    phrase as the message, so the restoration matches (code, phrase) pairs;
-    Connect errors parsed from a response body carry envd's own message and
-    never match these exact phrases. User code relies on RateLimitException
-    to back off, and ``kill``/``exists``/``make_dir`` branch on
-    NOT_FOUND/ALREADY_EXISTS before mapping the error, so both those call
-    sites and :func:`handle_rpc_exception` resolve codes through this.
-    """
-    return _PLAIN_HTTP_RESTORATIONS.get((e.code, e.message), e.code)
-
-
 def handle_rpc_exception(
     e: Exception,
     error_map: Optional[dict[Code, Callable[[str], Exception]]] = None,
@@ -166,15 +109,16 @@ def handle_rpc_exception(
         if isinstance(e.__cause__, Exception) and e.code is not Code.DEADLINE_EXCEEDED:
             return e.__cause__
 
-        code = rpc_error_code(e)
+        # Plain (non-Connect-encoded) HTTP error responses arrive here
+        # already carrying the vendored client's status mapping — see
+        # PlainHTTPErrorTransport in client_sync/client_async.
+        if error_map and e.code in error_map:
+            return error_map[e.code](e.message)
 
-        if error_map and code in error_map:
-            return error_map[code](e.message)
+        if e.code in _DEFAULT_RPC_ERROR_MAP:
+            return _DEFAULT_RPC_ERROR_MAP[e.code](e.message)
 
-        if code in _DEFAULT_RPC_ERROR_MAP:
-            return _DEFAULT_RPC_ERROR_MAP[code](e.message)
-
-        return SandboxException(f"{code}: {e.message}")
+        return SandboxException(f"{e.code}: {e.message}")
 
     return e
 

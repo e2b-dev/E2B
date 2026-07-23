@@ -17,6 +17,7 @@ protobuf codegen (`make generate-envd`).
 import os
 from typing import Optional, TypedDict, TypeVar
 
+from connectrpc.code import Code
 from protobuf import Message
 
 _MESSAGE = TypeVar("_MESSAGE", bound=Message)
@@ -43,6 +44,39 @@ class _ProtoJSONCodec:
 
 
 ENVD_JSON_CODEC = _ProtoJSONCodec()
+
+# How the vendored client mapped plain (non-Connect-encoded) HTTP error
+# responses — e.g. an edge proxy answering for envd — to codes (#806).
+# Statuses without an entry map to UNKNOWN, as before.
+PLAIN_HTTP_ERROR_CODES: dict[int, Code] = {
+    400: Code.INVALID_ARGUMENT,
+    401: Code.UNAUTHENTICATED,
+    403: Code.PERMISSION_DENIED,
+    404: Code.NOT_FOUND,
+    409: Code.ALREADY_EXISTS,
+    413: Code.RESOURCE_EXHAUSTED,
+    429: Code.RESOURCE_EXHAUSTED,
+    499: Code.CANCELED,
+    500: Code.INTERNAL,
+    501: Code.UNIMPLEMENTED,
+    502: Code.UNAVAILABLE,
+    503: Code.UNAVAILABLE,
+    504: Code.DEADLINE_EXCEEDED,
+    505: Code.UNIMPLEMENTED,
+}
+
+
+def plain_http_error_code(status: int, content_type: str) -> Optional[Code]:
+    """The vendored-client code for a plain HTTP error response, or ``None``
+    when the response is not an error or is a Connect-encoded one. Per the
+    Connect protocol, error responses carry a JSON content type — anything
+    else on an error status is a proxy or gateway answering instead of envd.
+    """
+    if status < 400:
+        return None
+    if content_type.split(";", 1)[0].strip().lower() == "application/json":
+        return None
+    return PLAIN_HTTP_ERROR_CODES.get(status, Code.UNKNOWN)
 
 
 class _RPCCompression(TypedDict):
