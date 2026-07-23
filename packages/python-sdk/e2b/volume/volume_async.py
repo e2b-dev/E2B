@@ -38,6 +38,9 @@ from e2b.volume.client.models import (
 )
 from e2b.volume.client.types import File as FilePayload, UNSET
 from e2b.volume.client_async import get_api_client as get_volume_api_client
+from e2b.volume.client_async import (
+    get_streaming_api_client as get_streaming_volume_api_client,
+)
 from e2b.volume.connection_config import (
     VolumeApiParams,
     VolumeConnectionConfig,
@@ -467,8 +470,8 @@ class AsyncVolume:
         :param path: Path to the file
         :param format: Format of the file content—`text` by default
         :param stream_idle_timeout: Deprecated and ignored. A stalled streamed
-            read is bounded by a transport-wide idle read timeout instead,
-            which resets on every chunk.
+            read is bounded by a transport-wide idle read timeout instead
+            (60 seconds), which resets on every chunk.
         :param opts: Connection options
 
         :return: File content as string, bytes, or async iterator of bytes
@@ -487,17 +490,21 @@ class AsyncVolume:
             # streamed read is sent with one only when the caller set
             # `request_timeout` explicitly (making it the total-transfer
             # deadline). A stalled stream is instead bounded by the
-            # transport-wide idle read timeout (see `get_transport`), which
+            # transport-wide idle read timeout (see `get_streaming_transport`), which
             # resets on every chunk without limiting total transfer time.
             stream_timeout = VolumeConnectionConfig._get_request_timeout(
                 None, opts.get("request_timeout")
             )
+            # The streaming transport carries the idle read timeout; the
+            # regular one must not (it would cut off slow uploads and
+            # responses), so streamed reads get their own client.
+            stream_client = get_streaming_volume_api_client(config)
 
             async def stream_file() -> AsyncIterator[bytes]:
                 # pyqwest raises the builtin TimeoutError; keep the httpx
                 # exception the streamed-read contract established.
                 try:
-                    async with api_client.get_async_httpx_client().stream(
+                    async with stream_client.get_async_httpx_client().stream(
                         method="GET",
                         url=f"/volumecontent/{self._volume_id}/file",
                         params=params,
