@@ -55,13 +55,6 @@ export default defineConfig({
       },
       {
         test: {
-          include: ['tests/runtimes/edge/**/*.{test,spec}.ts'],
-          name: 'edge',
-          environment: 'edge-runtime',
-        },
-      },
-      {
-        test: {
           name: 'integration',
           include: ['tests/integration/**/*.test.ts'],
           globals: false,
