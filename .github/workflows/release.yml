@@ -180,3 +180,27 @@ jobs:
           SLACK_TITLE: Release Succeeded
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_CHANNEL: 'monitoring-releases'
+
+  trigger-docs-sync:
+    needs: [preflight, publish]
+    if: needs.publish.result == 'success' && (needs.preflight.outputs.js-sdk == 'true' || needs.preflight.outputs.python-sdk == 'true')
+    name: Trigger Docs SDK Reference Sync
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate token for docs repo
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.AUTOFIXER_APP_ID }}
+          private-key: ${{ secrets.AUTOFIXER_APP_SECRET }}
+          owner: e2b-dev
+          repositories: docs
+
+      - name: Dispatch sdk-release event
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh api repos/e2b-dev/docs/dispatches \
+            -f event_type=sdk-release \
+            -F 'client_payload[sdk]=all' \
+            -F 'client_payload[version]=latest'
