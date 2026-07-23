@@ -11,6 +11,7 @@ from typing import Callable, Optional, Protocol, Union
 
 import httpx
 from httpx import AsyncBaseTransport, BaseTransport, Limits, Timeout
+from httpx._types import ProxyTypes
 
 from e2b.api.client.client import AuthenticatedClient
 from e2b.api.client.types import Response
@@ -18,6 +19,7 @@ from e2b.api.metadata import default_headers
 from e2b.connection_config import ConnectionConfig
 from e2b.exceptions import (
     AuthenticationException,
+    InvalidArgumentException,
     RateLimitException,
     SandboxException,
 )
@@ -69,6 +71,32 @@ limits = Limits(
 )
 
 connection_retries = int(os.getenv("E2B_CONNECTION_RETRIES", "3"))
+
+# Mirror the httpx pool tuning above with pyqwest's equivalents for the REST
+# API transports. `pool_max_idle_per_host` is per host rather than httpx's
+# global idle cap, but API traffic goes to a single host, so the values map
+# directly; reqwest has no counterpart to `E2B_MAX_CONNECTIONS` (it does not
+# cap concurrent connections).
+pool_idle_timeout = float(os.getenv("E2B_KEEPALIVE_EXPIRY") or "300")
+pool_max_idle_per_host = int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20")
+
+
+def proxy_to_url(proxy: Optional[ProxyTypes]) -> Optional[str]:
+    """Narrow the ``proxy`` connection option to the proxy URL string pyqwest
+    transports take (scheme http, https, socks5, or socks5h, credentials in
+    the URL userinfo). The richer ``httpx.Proxy`` objects the httpx transports
+    accepted (per-proxy auth, headers, TLS context) are rejected rather than
+    partially honored."""
+    if proxy is None:
+        return None
+    if isinstance(proxy, str):
+        return proxy
+    if isinstance(proxy, httpx.URL):
+        return str(proxy)
+    raise InvalidArgumentException(
+        "E2B API calls support only URL-string proxies, "
+        'e.g. proxy="http://user:pass@localhost:8030"'
+    )
 
 
 @dataclass
