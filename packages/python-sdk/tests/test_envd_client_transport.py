@@ -30,8 +30,7 @@ def test_proxy_to_url_keeps_credentials_from_url():
 
 
 def test_proxy_to_url_rejects_httpx_proxy():
-    # A typed SDK exception, not a bare ValueError — `except SandboxException`
-    # handlers must catch it when it surfaces from an RPC call.
+    # Typed so `except SandboxException` handlers catch it at the RPC call.
     proxy = httpx.Proxy("http://localhost:8030", auth=("user", "pass"))
     with pytest.raises(InvalidArgumentException, match="URL-string"):
         proxy_to_url(proxy)

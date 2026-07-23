@@ -108,9 +108,8 @@ async def test_async_empty_body_falls_back_to_status():
 
 
 async def test_async_leaves_connect_encoded_errors_to_connectrpc():
-    # A valid Connect error is a JSON body with a string `code` — connectrpc
-    # parses those itself (including envd's own error details). The body was
-    # drained to check validity, so the response is rebuilt with it restored.
+    # A valid Connect error (JSON body with a string `code`) is left to
+    # connectrpc, rebuilt with the validity-checked body restored.
     for content_type in ("application/json", "application/json; charset=utf-8"):
         response = await _executed(404, content_type, b'{"code": "not_found"}')
         assert response.status == 404

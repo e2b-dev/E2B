@@ -69,8 +69,7 @@ class PlainHTTPErrorTransport:
             response.status, response.headers.get("content-type", ""), bytes(body)
         )
         if error is None:
-            # A valid Connect-encoded error: hand it back to connectrpc with
-            # the drained body restored.
+            # Valid Connect error: hand back to connectrpc, body restored.
             return Response(
                 status=response.status,
                 headers=response.headers,

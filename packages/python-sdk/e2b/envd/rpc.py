@@ -100,13 +100,10 @@ def handle_rpc_exception(
         if is_transport_failure(e):
             return format_terminated_exception(e, sandbox_running)
 
-        # Everything else maps by code. Client-side failures the SDK itself
-        # can classify are typed at their source instead of sniffed out of
-        # ``__cause__`` here: an undecodable response body raises
-        # ConnectError(INTERNAL) from the envd JSON codec (client_shared),
-        # and plain (non-Connect-encoded) HTTP error responses arrive
-        # already carrying the vendored client's status mapping — see
-        # PlainHTTPErrorTransport in client_sync/client_async.
+        # Everything else maps by code; classifiable client-side failures
+        # are typed at their source rather than sniffed from __cause__ here
+        # (undecodable bodies: the envd codec; plain HTTP errors:
+        # PlainHTTPErrorTransport).
         if error_map and e.code in error_map:
             return error_map[e.code](e.message)
 

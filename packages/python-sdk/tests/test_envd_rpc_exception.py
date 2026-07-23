@@ -89,11 +89,9 @@ def _cancelled() -> ConnectError:
 
 def _wrapped_client_failure() -> ConnectError:
     # connectrpc's catch-all wraps unexpected client-side exceptions as
-    # ConnectError(UNAVAILABLE) with the original exception as __cause__.
-    # The failures the SDK can classify never take this path — an
-    # undecodable response body raises ConnectError(INTERNAL) from the envd
-    # JSON codec itself (see test_envd_codec.py) — so what remains maps by
-    # code like any other ConnectError.
+    # ConnectError(UNAVAILABLE) with __cause__ set. Decode failures never
+    # take this path (the codec raises typed, see test_envd_codec.py); what
+    # remains maps by code.
     try:
         raise ConnectError(Code.UNAVAILABLE, "bad frame") from ValueError("bad frame")
     except ConnectError as e:

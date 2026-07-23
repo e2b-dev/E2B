@@ -53,13 +53,10 @@ class _ProtoJSONCodec:
         try:
             return message_class.from_json(data, ignore_unknown_fields=True)
         except Exception as e:
-            # Classify the failure here, where the origin is still known:
-            # letting the raw error escape would have connectrpc's catch-all
-            # wrap it as ConnectError(UNAVAILABLE), which rpc.py would map to
-            # a misleading sandbox-timeout message. connectrpc re-raises a
-            # codec-raised ConnectError unchanged on the unary and stream
-            # paths alike; INTERNAL has no special mapping in rpc.py, so this
-            # surfaces as a SandboxException carrying this message.
+            # A raw error would hit connectrpc's catch-all and become
+            # ConnectError(UNAVAILABLE) — a misleading sandbox-timeout in
+            # rpc.py. Codec-raised ConnectErrors pass through unchanged;
+            # INTERNAL maps to a plain SandboxException.
             raise ConnectError(
                 Code.INTERNAL,
                 f"envd sent a response that could not be decoded as "
@@ -94,15 +91,12 @@ def plain_http_error(
     status: int, content_type: str, body: bytes
 ) -> Optional[ConnectError]:
     """The ``ConnectError`` for a plain (non-Connect-encoded) HTTP error
-    response, or ``None`` when the body is a valid Connect-encoded error that
-    connectrpc must parse itself (it also decodes the error details). Only
-    called for error statuses, with the body already drained.
-
-    Per the Connect protocol an error response is a JSON body with a string
-    ``code``; anything else — non-JSON, unparseable JSON, or a gateway's
-    ``{"code": 429}``-style body — is a proxy or gateway answering instead of
-    envd, mapped like the vendored client did: an int ``code`` is treated as
-    the HTTP status, everything else falls back to the response status.
+    response, or ``None`` for a valid Connect error (per spec, a JSON body
+    with a string ``code``) that connectrpc must parse itself. Anything else
+    is a proxy or gateway answering instead of envd, mapped like the vendored
+    client: an int ``code`` counts as the HTTP status, everything else falls
+    back to the response status. Called only for error statuses, with the
+    body already drained.
     """
     message: Optional[str] = None
     if content_type.split(";", 1)[0].strip().lower() == "application/json":

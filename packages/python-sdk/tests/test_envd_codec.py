@@ -1,8 +1,6 @@
-"""The envd JSON codec (client_shared) decodes responses leniently — unknown
-fields from a newer envd must not break an older SDK — and classifies decode
-failures at the source: it raises ``ConnectError(INTERNAL)`` itself rather
-than letting the raw error escape into connectrpc's catch-all, which would
-wrap it as ``ConnectError(UNAVAILABLE)`` and map to a misleading
+"""The envd JSON codec must tolerate unknown response fields (newer envd,
+older SDK) and raise decode failures as ``ConnectError(INTERNAL)`` itself —
+a raw error would hit connectrpc's catch-all and end up a misleading
 sandbox-timeout message in rpc.py.
 """
 
@@ -32,10 +30,8 @@ def test_decode_failure_raises_typed_connect_error():
 
 
 def test_decode_failure_maps_to_sandbox_exception_not_timeout():
-    # INTERNAL has no special mapping in rpc.py: the codec's message surfaces
-    # in a SandboxException, never the sandbox-timeout TimeoutException that
-    # connectrpc's UNAVAILABLE catch-all wrapping would have produced — and
-    # no sandbox health probe runs for it.
+    # INTERNAL has no special mapping in rpc.py: a SandboxException with the
+    # codec's message, never the sandbox-timeout path, and no health probe.
     with pytest.raises(ConnectError) as excinfo:
         ENVD_JSON_CODEC.decode(b"not json", ProcessConfig)
     assert not is_transport_failure(excinfo.value)
