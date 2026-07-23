@@ -494,7 +494,7 @@ export interface SnapshotListOpts extends Omit<SandboxApiOpts, 'signal'> {
 
   /**
    * Filter snapshots by name or ID, optionally tag-qualified
-   * (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1").
+   * (e.g. "my-snapshot", "my-project/my-snapshot" or "my-snapshot:v1").
    */
   name?: string
 
@@ -522,7 +522,7 @@ export interface SnapshotInfo {
   snapshotId: string
 
   /**
-   * Full names of the snapshot template including team namespace and tag (e.g. team-slug/my-snapshot:v2).
+   * Full names of the snapshot template including project slug and tag (e.g. project-slug/my-snapshot:v2).
    */
   names: string[]
 }
