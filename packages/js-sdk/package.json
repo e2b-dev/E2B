@@ -40,7 +40,7 @@
     "test:bun": "bunx --bun vitest run --project unit --project connectionConfig",
     "test:cf": "vitest run --config tests/runtimes/cloudflare/vitest.config.mts",
     "test:cf:deploy": "vitest run --config tests/runtimes/cloudflare-deploy/vitest.config.mts",
-    "test:deno": "deno test tests/runtimes/deno/ --allow-net --allow-read --allow-env --unstable-sloppy-imports --trace-leaks",
+    "test:deno": "deno run -A npm:vitest run --project unit --project connectionConfig",
     "test:integration": "E2B_INTEGRATION_TEST=1 vitest run tests/integration/**",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint --config ../../.oxlintrc.json src tests",
