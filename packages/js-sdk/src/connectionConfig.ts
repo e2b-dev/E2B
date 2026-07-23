@@ -250,6 +250,9 @@ function createIdleAbort(
  * @internal
  */
 function abortWithReason(controller: AbortController, reason: unknown) {
+  // A second abort is a spec-level no-op and must not overwrite the pin that
+  // keeps the committed (winning) reason alive.
+  if (controller.signal.aborted) return
   ;(controller as { __e2bAbortReason?: unknown }).__e2bAbortReason = reason
   controller.abort(reason)
 }
