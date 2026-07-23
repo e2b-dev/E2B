@@ -25,14 +25,16 @@ export type SandboxHealthCheck = () => Promise<boolean | undefined>
  * is dropped mid-request. The transport surfaces a dropped connection (e.g. an
  * HTTP/2 stream reset) with runtime- and version-specific wording, so we match
  * every known variant:
- *   - Node (undici): `terminated`
- *   - Bun:           `The socket connection was closed unexpectedly`
- *   - Deno:          `error reading a body from connection`
+ *   - Node (undici):       `terminated`
+ *   - Bun:                 `The socket connection was closed unexpectedly`
+ *   - Deno:                `error reading a body from connection`
+ *   - Cloudflare Workers:  `Network connection lost`
  */
 const CONNECTION_TERMINATED_MESSAGES = [
   'terminated',
   'The socket connection was closed unexpectedly',
   'error reading a body from connection',
+  'Network connection lost',
 ]
 
 /**

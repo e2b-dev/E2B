@@ -86,8 +86,8 @@ jobs:
           path: ${{ matrix.os == 'windows-latest' && '~/AppData/Local/ms-playwright' || '~/.cache/ms-playwright' }}
           key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
 
-      # Every suite needs dist/: the unit bundle test and both Cloudflare
-      # configs fail in CI when the build output is missing.
+      # The unit bundle test and the Cloudflare deploy config fail in CI when
+      # the build output is missing.
       - name: Test build
         run: pnpm build
 
@@ -122,7 +122,8 @@ jobs:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
 
-      - name: Run Cloudflare Workers tests
+      # Full unit + connectionConfig suite inside workerd (vitest-pool-workers).
+      - name: Run test suite under Cloudflare workerd
         if: matrix.runtime == 'cloudflare'
         run: pnpm test:cf
         env:

@@ -1,37 +1,25 @@
-import { existsSync } from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
 import { cloudflareTest } from '@cloudflare/vitest-pool-workers'
 import { config } from 'dotenv'
 import { defineConfig } from 'vitest/config'
 
 const env = config()
 
-// The suite smoke-tests the built ESM bundle (what Workers users consume),
-// so dist must exist. Skip locally to keep plain `vitest` runs green, but
-// fail loudly in CI where the build step is expected to have run.
-const distEntry = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '../../../dist/index.mjs'
-)
-const hasDist = existsSync(distEntry)
-
-if (!hasDist) {
-  const message =
-    'dist/index.mjs not found — run `pnpm build` in packages/js-sdk before running the Cloudflare Workers tests'
-  if (process.env.CI) {
-    throw new Error(message)
-  }
-  console.warn(`Skipping Cloudflare Workers tests: ${message}`)
-}
-
+// Runs the unit + connectionConfig projects (same coverage as test:bun /
+// test:deno) inside Cloudflare's workerd via vitest-pool-workers, against src.
+// The real-deploy suite (tests/runtimes/cloudflare-deploy) keeps covering the
+// built bundle on actual Cloudflare infrastructure.
 export default defineConfig({
   plugins: [
     cloudflareTest({
       miniflare: {
         compatibilityDate: '2026-03-01',
-        compatibilityFlags: ['nodejs_compat'],
+        // nodejs_compat is a hard requirement for the SDK on Workers;
+        // nodejs_compat_populate_process_env mirrors the bindings into
+        // process.env so tests and the SDK read E2B_* like on Node.
+        compatibilityFlags: [
+          'nodejs_compat',
+          'nodejs_compat_populate_process_env',
+        ],
         bindings: {
           E2B_API_KEY: process.env.E2B_API_KEY ?? env.parsed?.E2B_API_KEY ?? '',
           E2B_DOMAIN: process.env.E2B_DOMAIN ?? env.parsed?.E2B_DOMAIN ?? '',
@@ -41,8 +29,16 @@ export default defineConfig({
   ],
   test: {
     name: 'cloudflare',
-    include: hasDist ? ['tests/runtimes/cloudflare/**/*.test.ts'] : [],
-    passWithNoTests: !hasDist,
+    include: ['tests/**/*.test.ts'],
+    exclude: ['tests/runtimes/**', 'tests/integration/**', 'tests/template/**'],
+    globals: false,
     testTimeout: 30_000,
+    bail: 0,
+    // workerd reports a rejection as unhandled unless a handler is attached
+    // within the same microtask drain, so the common `const p = op(); …;
+    // await expect(p).rejects` pattern false-positives (verified with a plain
+    // `Promise.reject` handled one macrotask later — Node un-reports it,
+    // workerd does not). Real failures still fail the run as test errors.
+    dangerouslyIgnoreUnhandledErrors: true,
   },
 })

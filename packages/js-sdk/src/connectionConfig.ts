@@ -295,8 +295,15 @@ export function wrapStreamWithConnectionCleanup(
   const reader = body.getReader()
   const idle = createIdleAbort(controller, idleTimeoutMs, 'Stream')
 
-  // Idempotent: safe to call from multiple stream callbacks.
+  // Idempotent: safe to call from multiple stream callbacks — cancelling
+  // while a pull is in flight settles both paths (the pending read resolves
+  // `done` after `reader.cancel()`), which must not release twice.
+  let released = false
   const release = () => {
+    if (released) {
+      return
+    }
+    released = true
     idle.clear()
     cleanup()
   }
