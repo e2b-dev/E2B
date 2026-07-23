@@ -467,8 +467,8 @@ class AsyncVolume:
         :param path: Path to the file
         :param format: Format of the file content—`text` by default
         :param stream_idle_timeout: Deprecated and ignored. A stalled streamed
-            read is bounded by a transport-wide idle read timeout instead,
-            which resets on every chunk.
+            read is bounded by a transport-wide idle read timeout instead
+            (60 seconds), which resets on every chunk.
         :param opts: Connection options
 
         :return: File content as string, bytes, or async iterator of bytes
@@ -492,12 +492,16 @@ class AsyncVolume:
             stream_timeout = VolumeConnectionConfig._get_request_timeout(
                 None, opts.get("request_timeout")
             )
+            # The streaming transport carries the idle read timeout; the
+            # regular one must not (it would cut off slow uploads and
+            # responses), so streamed reads get their own client.
+            stream_client = get_volume_api_client(config, for_streaming=True)
 
             async def stream_file() -> AsyncIterator[bytes]:
                 # pyqwest raises the builtin TimeoutError; keep the httpx
                 # exception the streamed-read contract established.
                 try:
-                    async with api_client.get_async_httpx_client().stream(
+                    async with stream_client.get_async_httpx_client().stream(
                         method="GET",
                         url=f"/volumecontent/{self._volume_id}/file",
                         params=params,

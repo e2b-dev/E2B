@@ -135,9 +135,12 @@ def test_async_transport_is_shared_across_loops():
 CHUNK = b"x" * 1024
 
 
-def _start_volume_file_server(chunk_delays: List[float]) -> str:
+def _start_volume_file_server(
+    chunk_delays: List[float], ttfb_delay: float = 0.0
+) -> str:
     """One-shot HTTP server streaming a chunked volume-file body, sleeping
-    ``chunk_delays[i]`` before sending chunk ``i``. Returns its base URL."""
+    ``ttfb_delay`` before the response head and ``chunk_delays[i]`` before
+    sending chunk ``i``. Returns its base URL."""
     sock = socket.socket()
     sock.bind(("127.0.0.1", 0))
     sock.listen(1)
@@ -148,6 +151,7 @@ def _start_volume_file_server(chunk_delays: List[float]) -> str:
             conn, _ = sock.accept()
             while b"\r\n\r\n" not in conn.recv(65536):
                 pass
+            time.sleep(ttfb_delay)
             conn.sendall(
                 b"HTTP/1.1 200 OK\r\n"
                 b"Content-Type: application/octet-stream\r\n"
@@ -171,8 +175,8 @@ def _start_volume_file_server(chunk_delays: List[float]) -> str:
 def short_read_timeout(monkeypatch):
     """Rebuild the volume transports with a short idle read timeout."""
     reset_volume_transports()
-    monkeypatch.setattr(client_sync, "FILE_TIMEOUT", 0.3)
-    monkeypatch.setattr(client_async, "FILE_TIMEOUT", 0.3)
+    monkeypatch.setattr(client_sync, "READ_TIMEOUT", 0.3)
+    monkeypatch.setattr(client_async, "READ_TIMEOUT", 0.3)
     yield 0.3
     reset_volume_transports()
 
@@ -231,3 +235,48 @@ def test_async_stream_stall_raises_read_timeout(short_read_timeout):
         return received
 
     assert asyncio.run(run()) == [CHUNK]
+
+
+def test_stream_transport_is_separate_from_regular_transport():
+    # reqwest's read timer keeps running while a request body is sent and
+    # while waiting for the response head, so the idle read timeout lives on
+    # a dedicated streaming transport — putting it on the shared one would
+    # cut off uploads and slow unary responses longer than the idle bound.
+    reset_volume_transports()
+    config = VolumeConnectionConfig(token="vol-token")
+
+    try:
+        regular = get_sync_transport(config)
+        streaming = get_sync_transport(config, for_streaming=True)
+        assert regular is not streaming
+        assert get_sync_transport(config) is regular
+        assert get_sync_transport(config, for_streaming=True) is streaming
+
+        async_regular = get_async_transport(config)
+        async_streaming = get_async_transport(config, for_streaming=True)
+        assert async_regular is not async_streaming
+    finally:
+        reset_volume_transports()
+
+
+def test_sync_non_stream_read_survives_response_slower_than_idle_timeout(
+    short_read_timeout,
+):
+    # Non-streamed requests go through the regular transport, which has no
+    # idle read timeout: a server that takes longer than the streaming idle
+    # bound to start responding must not be cut off.
+    api_url = _start_volume_file_server([0.0], ttfb_delay=short_read_timeout * 3)
+    volume = Volume(volume_id="v1", name="test", token="vol-token")
+
+    assert volume.read_file("file.bin", format="bytes", api_url=api_url) == CHUNK
+
+
+def test_sync_stream_response_head_is_bounded_by_idle_timeout(short_read_timeout):
+    # For streamed reads the idle read timeout also bounds waiting for the
+    # response head (like the JS SDK's handshake timeout on stream start).
+    api_url = _start_volume_file_server([0.0], ttfb_delay=5.0)
+    volume = Volume(volume_id="v1", name="test", token="vol-token")
+
+    stream = volume.read_file("file.bin", format="stream", api_url=api_url)
+    with pytest.raises(httpx.ReadTimeout):
+        next(iter(stream))

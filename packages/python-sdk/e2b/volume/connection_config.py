@@ -15,6 +15,12 @@ REQUEST_TIMEOUT: float = 60.0  # 60 seconds
 # bounds each chunk by the request timeout and leaves the total to the server.)
 FILE_TIMEOUT: float = 3600.0  # 1 hour
 
+# Idle bound for every read on the volume content transports: the transfer is
+# aborted when no bytes at all arrive for this long. It resets on each chunk,
+# so it never limits total transfer time — only a fully stalled connection.
+# Matches the JS SDK's default stream idle timeout (REQUEST_TIMEOUT_MS).
+READ_TIMEOUT: float = 60.0  # 60 seconds
+
 
 class VolumeApiParams(TypedDict, total=False):
     """
