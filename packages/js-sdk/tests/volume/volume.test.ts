@@ -5,6 +5,7 @@ import { randomUUID } from 'node:crypto'
 
 import { Volume, NotFoundError, VolumeError } from '../../src'
 import { VolumeConnectionConfig } from '../../src/volume/client'
+import { runtime } from '../../src/utils'
 import { apiUrl } from '../setup'
 
 // In-memory store for mock volumes
@@ -223,11 +224,23 @@ describe('Volume content readFile', () => {
     const blob = await vol.readFile('hello.txt', { format: 'blob' })
     expect(blob).toBeInstanceOf(Blob)
     expect(await blob.text()).toBe('hello world')
-
-    const stream = await vol.readFile('hello.txt', { format: 'stream' })
-    expect(stream).toBeInstanceOf(ReadableStream)
-    expect(await new Response(stream).text()).toBe('hello world')
   })
+
+  // Skipped on Bun: reading `response.body` of an msw-intercepted fetch via a
+  // reader yields an immediately-done stream there (msw/Bun incompatibility),
+  // while `.text()`/`.blob()` work. Real (non-mocked) streams work on Bun —
+  // covered by the sandbox files.read stream tests.
+  it.skipIf(runtime === 'bun')(
+    'should return content for a non-empty file as a stream',
+    async () => {
+      volumeFiles.set('hello.txt', 'hello world')
+      const vol = await Volume.create('content-volume')
+
+      const stream = await vol.readFile('hello.txt', { format: 'stream' })
+      expect(stream).toBeInstanceOf(ReadableStream)
+      expect(await new Response(stream).text()).toBe('hello world')
+    }
+  )
 
   it('should return empty values for an empty file in every format', async () => {
     volumeFiles.set('empty.txt', '')

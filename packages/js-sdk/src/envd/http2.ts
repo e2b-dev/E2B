@@ -29,7 +29,10 @@ export function createEnvdFetchForRuntime(
   options: EnvdFetchOptions = {}
 ): typeof fetch {
   if (currentRuntime !== 'node') {
-    return fetch
+    // Late-bind the global fetch: runtimes and tools (msw, instrumentation)
+    // may replace `globalThis.fetch` after this factory runs, and a fresh
+    // closure keeps the per-proxy cache entries distinct.
+    return ((input, init) => globalThis.fetch(input, init)) as typeof fetch
   }
 
   let fetcherPromise: Promise<typeof fetch> | undefined
