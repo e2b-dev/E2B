@@ -3,8 +3,10 @@ from types import TracebackType
 from typing import Callable, Optional, List, Union
 
 import httpx
+from pyqwest import SyncHTTPTransport
 
-from e2b.api import handle_api_exception
+from e2b.api import handle_api_exception, proxy_to_url
+from e2b.api.client_sync import ApiPyqwestTransport
 from e2b.api.client.api.templates import (
     post_v3_templates,
     get_templates_template_id_files_hash,
@@ -121,16 +123,23 @@ def upload_file(
             file_name, context_path, ignore_patterns, resolve_symlinks, gzip
         )
         try:
+            # Through the pyqwest adapter the upload timeout is a
+            # whole-request deadline for the entire transfer, not a per-write
+            # bound as with the httpx transport this replaced.
             with httpx.Client(
                 timeout=httpx.Timeout(upload_timeout),
-                verify=api_client._verify_ssl,
                 follow_redirects=api_client._follow_redirects,
-                proxy=getattr(api_client, "_proxy", None),
-                http2=False,
+                transport=ApiPyqwestTransport(
+                    SyncHTTPTransport(
+                        tls_include_system_certs=True,
+                        proxy=proxy_to_url(getattr(api_client, "_proxy", None)),
+                    )
+                ),
             ) as client:
                 # httpx streams the archive from disk in chunks and sets
                 # Content-Length from the file size—S3 presigned URLs reject
-                # chunked transfer encoding.
+                # chunked transfer encoding, and reqwest keeps the
+                # Content-Length framing for the streamed body.
                 response = client.put(url, content=tar_file)
             response.raise_for_status()
         finally:
