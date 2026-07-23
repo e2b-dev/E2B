@@ -233,38 +233,20 @@ def test_sync_api_transport_cache_is_shared_across_threads(test_api_key):
         reset_sync_api_transports()
 
 
-def test_sync_api_client_reused_within_thread_and_shares_transport_across_threads(
-    test_api_key,
-):
+def test_sync_api_client_is_shared_across_threads(test_api_key):
+    # httpx.Client is thread-safe and the pyqwest transport underneath is
+    # too, so a single client (and its pool) serves all threads — the
+    # per-thread client caching this replaced is gone.
     reset_sync_api_transports()
     config = ConnectionConfig(api_key=test_api_key)
     api_client = get_sync_api_client(config)
 
-    def get_worker_client_ids():
-        httpx_client = api_client.get_httpx_client()
-        try:
-            return (
-                id(httpx_client),
-                id(api_client.get_httpx_client()),
-                id(httpx_client._transport),
-            )
-        finally:
-            httpx_client.close()
-
     try:
         main_client = api_client.get_httpx_client()
-        (
-            worker_client_id,
-            worker_cached_client_id,
-            worker_transport_id,
-        ) = run_in_worker_thread(get_worker_client_ids)
+        worker_client = run_in_worker_thread(api_client.get_httpx_client)
 
         assert api_client.get_httpx_client() is main_client
-        # The httpx client wrapper stays per-thread, but every thread's
-        # client delegates to the same shared pyqwest transport.
-        assert worker_client_id == worker_cached_client_id
-        assert worker_client_id != id(main_client)
-        assert worker_transport_id == id(main_client._transport)
+        assert worker_client is main_client
     finally:
         main_client.close()
         reset_sync_api_transports()
@@ -345,42 +327,27 @@ async def test_async_api_client_applies_request_timeout(test_api_key):
 
 
 @pytest.mark.asyncio
-async def test_async_api_client_cache_reuses_within_loop_and_shares_transport(
-    test_api_key,
-):
+async def test_async_api_client_is_shared_across_loops(test_api_key):
+    # pyqwest's I/O runs on its own Rust runtime, so neither the transport
+    # nor the httpx client wrapper is bound to an event loop — a single
+    # client serves all loops (the per-loop client caching this replaced is
+    # gone).
     reset_async_api_transports()
     config = ConnectionConfig(api_key=test_api_key)
     api_client = get_async_api_client(config)
 
-    async def get_client_ids():
-        httpx_client = api_client.get_async_httpx_client()
-        try:
-            return (
-                id(httpx_client),
-                id(api_client.get_async_httpx_client()),
-                id(httpx_client._transport),
-            )
-        finally:
-            await httpx_client.aclose()
+    async def get_client():
+        return api_client.get_async_httpx_client()
 
     try:
         main_client = api_client.get_async_httpx_client()
-        (
-            worker_client_id,
-            worker_cached_client_id,
-            worker_transport_id,
-        ) = await asyncio.get_running_loop().run_in_executor(
+        other_loop_client = await asyncio.get_running_loop().run_in_executor(
             None,
-            lambda: asyncio.run(get_client_ids()),
+            lambda: asyncio.run(get_client()),
         )
 
         assert api_client.get_async_httpx_client() is main_client
-        # The httpx client wrapper stays per-loop, but pyqwest's I/O runs on
-        # its own Rust runtime, so every loop's client delegates to the same
-        # shared transport.
-        assert worker_client_id == worker_cached_client_id
-        assert worker_client_id != id(main_client)
-        assert worker_transport_id == id(main_client._transport)
+        assert other_loop_client is main_client
     finally:
         await main_client.aclose()
         reset_async_api_transports()
@@ -415,7 +382,9 @@ def test_async_transport_reused_across_sequential_loops(test_api_key):
         reset_async_api_transports()
 
 
-def test_async_api_client_not_reused_across_sequential_loops(test_api_key):
+def test_async_api_client_reused_across_sequential_loops(test_api_key):
+    # A closed loop doesn't strand the client: nothing in it is loop-bound,
+    # so a later loop reuses the same client and shared transport.
     reset_async_api_transports()
     config = ConnectionConfig(api_key=test_api_key)
     api_client = get_async_api_client(config)
@@ -429,22 +398,18 @@ def test_async_api_client_not_reused_across_sequential_loops(test_api_key):
         loop_a = asyncio.new_event_loop()
         try:
             client_a = loop_a.run_until_complete(get_client())
-            loop_a.run_until_complete(client_a.aclose())
         finally:
             loop_a.close()
         del loop_a
         gc.collect()
 
-        assert len(api_client._async_clients) == 0
-
         loop_b = asyncio.new_event_loop()
         try:
             client_b = loop_b.run_until_complete(get_client())
-            loop_b.run_until_complete(client_b.aclose())
         finally:
             loop_b.close()
 
-        assert client_b is not client_a
+        assert client_b is client_a
     finally:
         reset_async_api_transports()
 
@@ -515,6 +480,47 @@ def test_sync_api_client_round_trips_through_pyqwest(test_api_key, echo_server):
     finally:
         httpx_client.close()
         reset_sync_api_transports()
+
+
+def test_sync_api_client_serves_concurrent_threads(test_api_key, echo_server):
+    # The scenario the removed per-thread client caching used to guard: one
+    # client, one shared pyqwest pool, many threads at once.
+    reset_sync_api_transports()
+    config = ConnectionConfig(api_key=test_api_key, api_url=echo_server)
+    api_client = get_sync_api_client(config)
+    httpx_client = api_client.get_httpx_client()
+
+    def request(i: int) -> tuple[int, str]:
+        response = httpx_client.request("GET", f"/sandboxes/{i}")
+        return response.status_code, response.json()["path"]
+
+    try:
+        with ThreadPoolExecutor(max_workers=16) as executor:
+            results = list(executor.map(request, range(32)))
+
+        assert results == [(200, f"/sandboxes/{i}") for i in range(32)]
+    finally:
+        httpx_client.close()
+        reset_sync_api_transports()
+
+
+@pytest.mark.asyncio
+async def test_async_api_client_serves_concurrent_requests(test_api_key, echo_server):
+    reset_async_api_transports()
+    config = ConnectionConfig(api_key=test_api_key, api_url=echo_server)
+    api_client = get_async_api_client(config)
+    httpx_client = api_client.get_async_httpx_client()
+
+    async def request(i: int) -> tuple[int, str]:
+        response = await httpx_client.request("GET", f"/sandboxes/{i}")
+        return response.status_code, response.json()["path"]
+
+    try:
+        results = await asyncio.gather(*(request(i) for i in range(32)))
+        assert list(results) == [(200, f"/sandboxes/{i}") for i in range(32)]
+    finally:
+        await httpx_client.aclose()
+        reset_async_api_transports()
 
 
 @pytest.mark.asyncio

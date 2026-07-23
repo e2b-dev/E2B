@@ -22,11 +22,7 @@ TransportKey = Tuple[bool, Optional[ProxyTypes]]
 
 
 def get_api_client(config: ConnectionConfig, **kwargs) -> ApiClient:
-    return ApiClient(
-        config,
-        transport_factory=lambda: get_transport(config),
-        **kwargs,
-    )
+    return ApiClient(config, transport=get_transport(config), **kwargs)
 
 
 class ApiPyqwestTransport(PyqwestTransport):

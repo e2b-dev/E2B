@@ -11,7 +11,9 @@ event hooks, per-request timeouts, and headers behave as before.
 
 Because pyqwest transports are thread-safe and loop-independent (I/O runs on
 a Rust runtime), the API connection pool is now shared process-wide per
-proxy, instead of one pool per thread (sync) or per event loop (async).
+proxy, instead of one pool per thread (sync) or per event loop (async), and
+`ApiClient` no longer maintains per-thread/per-loop httpx client caches — a
+single httpx client serves all threads and event loops.
 Connection-establishment failures are retried with backoff
 (`E2B_CONNECTION_RETRIES`, default 3), matching the connect-only retries of
 the previous transports.
