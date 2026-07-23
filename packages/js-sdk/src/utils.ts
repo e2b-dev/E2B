@@ -57,8 +57,8 @@ export async function sha256(data: string): Promise<string> {
   }
 
   // Use Node.js crypto if WebCrypto is not available
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { createHash } = require('node:crypto')
+  const { createHash } =
+    dynamicRequire<typeof import('node:crypto')>('node:crypto')
   const hash = createHash('sha256').update(data, 'utf8').digest()
   return hash.toString('base64')
 }
@@ -67,12 +67,28 @@ export function timeoutToSeconds(timeout: number): number {
   return Math.ceil(timeout / 1000)
 }
 
+/**
+ * Synchronously load a built-in Node.js module.
+ *
+ * Implemented with `process.getBuiltinModule` (available on all supported
+ * runtimes) instead of `require`, because a `require` reference in ESM source
+ * makes bundlers emit a `createRequire` shim evaluated at module scope, which
+ * crashes in edge runtimes like Cloudflare Workers where the module URL is
+ * undefined.
+ */
 export function dynamicRequire<T>(module: string): T {
   if (runtime === 'browser') {
     throw new Error('Browser runtime is not supported for require')
   }
 
-  return require(module)
+  const getBuiltinModule = (globalThis as any).process?.getBuiltinModule
+  if (typeof getBuiltinModule !== 'function') {
+    throw new Error(
+      `Cannot load module "${module}": process.getBuiltinModule is not available in this runtime`
+    )
+  }
+
+  return getBuiltinModule(module)
 }
 
 export async function dynamicImport<T>(module: string): Promise<T> {
