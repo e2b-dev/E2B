@@ -11,16 +11,18 @@ import {
 } from 'src/utils/format'
 import {
   configOption,
+  deprecatedTeamOption,
   pathOption,
+  projectIdFromOptions,
+  projectOption,
   selectMultipleOption,
-  teamOption,
 } from 'src/options'
 import { configName, E2BConfig, getConfigPath, loadConfig } from 'src/config'
 import { getRoot } from 'src/utils/filesystem'
 import { listSandboxTemplates } from './list'
 import { getPromptTemplates } from 'src/utils/templatePrompt'
 import { confirm } from 'src/utils/confirm'
-import { client, resolveTeamId } from 'src/api'
+import { client, resolveProjectId } from 'src/api'
 import { handleE2BRequestError } from '../../utils/errors'
 
 async function publishTemplate(templateID: string, publish: boolean) {
@@ -51,11 +53,12 @@ async function templateAction(
     config?: string
     yes?: boolean
     select?: boolean
+    project?: string
     team?: string
   }
 ) {
   try {
-    let teamId = opts.team
+    let projectId = projectIdFromOptions(opts)
 
     const root = getRoot(opts.path)
 
@@ -68,10 +71,10 @@ async function templateAction(
         template_id: template,
       })
     } else if (opts.select) {
-      teamId = resolveTeamId(teamId)
+      projectId = resolveProjectId(projectId)
 
       const allTemplates = await listSandboxTemplates({
-        teamID: teamId,
+        teamID: projectId,
       })
 
       const filteredTemplates = allTemplates.filter(
@@ -206,7 +209,8 @@ export const publishCommand = new commander.Command('publish')
   .addOption(pathOption)
   .addOption(configOption)
   .addOption(selectMultipleOption)
-  .addOption(teamOption)
+  .addOption(projectOption)
+  .addOption(deprecatedTeamOption)
   .alias('pb')
   .option('-y, --yes', 'skip manual publish confirmation')
   .action(templateAction.bind(null, true))
@@ -226,7 +230,8 @@ export const unPublishCommand = new commander.Command('unpublish')
   .addOption(pathOption)
   .addOption(configOption)
   .addOption(selectMultipleOption)
-  .addOption(teamOption)
+  .addOption(projectOption)
+  .addOption(deprecatedTeamOption)
   .alias('upb')
   .option('-y, --yes', 'skip manual unpublish confirmation')
   .action(templateAction.bind(null, false))

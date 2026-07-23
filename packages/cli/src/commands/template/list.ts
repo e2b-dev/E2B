@@ -4,23 +4,28 @@ import * as e2b from 'e2b'
 
 import { listAliases } from '../../utils/format'
 import { sortTemplatesAliases } from 'src/utils/templateSort'
-import { client, ensureAPIKey, resolveTeamId } from 'src/api'
-import { teamOption } from '../../options'
+import { client, ensureAPIKey, resolveProjectId } from 'src/api'
+import {
+  deprecatedTeamOption,
+  projectIdFromOptions,
+  projectOption,
+} from '../../options'
 import { handleE2BRequestError } from '../../utils/errors'
 
 export const listCommand = new commander.Command('list')
   .description('list sandbox templates')
   .alias('ls')
-  .addOption(teamOption)
+  .addOption(projectOption)
+  .addOption(deprecatedTeamOption)
   .option('-f, --format <format>', 'output format, eg. json, pretty')
-  .action(async (opts: { team: string; format: string }) => {
+  .action(async (opts: { project?: string; team?: string; format: string }) => {
     try {
       const format = opts.format || 'pretty'
       ensureAPIKey()
       process.stdout.write('\n')
 
       const templates = await listSandboxTemplates({
-        teamID: resolveTeamId(opts.team),
+        teamID: resolveProjectId(projectIdFromOptions(opts)),
       })
 
       for (const template of templates) {
