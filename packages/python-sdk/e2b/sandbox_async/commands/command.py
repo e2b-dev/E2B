@@ -16,6 +16,7 @@ from e2b.envd.process import process_connect, process_pb
 from e2b.envd.api import acheck_sandbox_health
 from e2b.envd.rpc import (
     authentication_header,
+    extract_start_pid,
     ahandle_rpc_exception_with_health,
     timeout_to_ms,
 )
@@ -202,7 +203,7 @@ class Commands:
         :param on_stderr: Callback for command stderr output
         :param stdin: If `True`, the command will have a stdin stream that you can send data to using `sandbox.commands.send_stdin()`
         :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
-        :param request_timeout: Timeout for the request in **seconds**
+        :param request_timeout: Not applied to this streaming call — opening the stream is bounded by the transport's 30 s connect timeout, the stream itself by `timeout`
 
         :return: `CommandResult` result of the command execution
         """
@@ -234,7 +235,7 @@ class Commands:
         :param on_stderr: Callback for command stderr output
         :param stdin: If `True`, the command will have a stdin stream that you can send data to using `sandbox.commands.send_stdin()`
         :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
-        :param request_timeout: Timeout for the request in **seconds**
+        :param request_timeout: Not applied to this streaming call — opening the stream is bounded by the transport's 30 s connect timeout, the stream itself by `timeout`
 
         :return: `AsyncCommandHandle` handle to interact with the running command
         """
@@ -314,13 +315,7 @@ class Commands:
         try:
             start_event = await events.__anext__()
 
-            match start_event.event.event if start_event.event is not None else None:
-                case Oneof(field="start", value=start):
-                    pid = start.pid
-                case _:
-                    raise SandboxException(
-                        f"Failed to start process: expected start event, got {start_event}"
-                    )
+            pid = extract_start_pid(start_event, "start process")
             return AsyncCommandHandle(
                 pid=pid,
                 handle_kill=lambda: self.kill(pid),
@@ -355,7 +350,7 @@ class Commands:
         You can use `AsyncCommandHandle.wait()` to wait for the command to finish and get execution results.
 
         :param pid: Process ID of the command to connect to. You can get the list of processes using `sandbox.commands.list()`
-        :param request_timeout: Request timeout in **seconds**
+        :param request_timeout: Not applied to this streaming call — opening the stream is bounded by the transport's 30 s connect timeout, the stream itself by `timeout`
         :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
         :param on_stdout: Callback for command stdout output
         :param on_stderr: Callback for command stderr output
@@ -377,13 +372,7 @@ class Commands:
         try:
             start_event = await events.__anext__()
 
-            match start_event.event.event if start_event.event is not None else None:
-                case Oneof(field="start", value=start):
-                    pid = start.pid
-                case _:
-                    raise SandboxException(
-                        f"Failed to connect to process: expected start event, got {start_event}"
-                    )
+            pid = extract_start_pid(start_event, "connect to process")
             return AsyncCommandHandle(
                 pid=pid,
                 handle_kill=lambda: self.kill(pid),

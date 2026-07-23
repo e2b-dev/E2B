@@ -655,7 +655,7 @@ class Filesystem:
         :param on_event: Callback to call on each event in the directory
         :param on_exit: Callback to call when the watching ends. It receives the error that ended the watch, or `None` on a clean end or when `stop()` is called
         :param user: Run the operation as this user
-        :param request_timeout: Timeout for the request in **seconds**
+        :param request_timeout: Not applied to this streaming call — opening the stream is bounded by the transport's 30 s connect timeout, the stream itself by `timeout`
         :param timeout: Timeout for the watch operation in **seconds**. Using `0` will not limit the watch time
         :param recursive: Watch directory recursively
         :param include_entry: Include the `EntryInfo` of the affected entry in each event, when available. Requires envd 0.6.3 or later

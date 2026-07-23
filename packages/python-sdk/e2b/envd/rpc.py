@@ -1,10 +1,14 @@
 import asyncio
 import base64
 
-from typing import Awaitable, Callable, Optional
+from typing import Awaitable, Callable, Optional, Union
 from packaging.version import Version
 from connectrpc.code import Code
 from connectrpc.errors import ConnectError
+from protobuf import Oneof
+from pyqwest import ReadError, StreamError, WriteError
+
+from e2b.envd.process import process_pb
 
 from e2b.exceptions import (
     SandboxException,
@@ -38,10 +42,20 @@ _DEFAULT_RPC_ERROR_MAP: dict[Code, Callable[[str], Exception]] = {
 def timeout_to_ms(timeout: Optional[float]) -> Optional[int]:
     """Convert a timeout in seconds to the ``timeout_ms`` connectrpc calls
     expect. ``None`` and ``0`` (timeout disabled) map to ``None`` — connectrpc
-    treats a non-positive deadline as already expired."""
+    treats a non-positive deadline as already expired. Positive values map to
+    at least 1 ms so a sub-millisecond timeout stays a deadline instead of
+    the 0 that connectrpc's ``timeout_ms or default`` fallback would
+    discard."""
     if not timeout:
         return None
-    return int(timeout * 1000)
+    return max(1, round(timeout * 1000))
+
+
+# pyqwest raises the builtin ConnectionError for connection-establishment
+# failures and TimeoutError for its transport timeouts (both OSError
+# subclasses); failures after the connection is up raise its ReadError /
+# WriteError / StreamError (an HTTP/2 stream reset is a StreamError).
+_TRANSPORT_ERRORS = (OSError, ReadError, WriteError, StreamError)
 
 
 def is_transport_failure(e: Exception) -> bool:
@@ -50,18 +64,31 @@ def is_transport_failure(e: Exception) -> bool:
     envd.
 
     connectrpc wraps transport errors with the original exception as
-    ``__cause__``, while errors parsed from an HTTP status or a stream's
-    end-of-stream trailer are raised without a cause. Client-enforced
-    deadlines (``TimeoutError``) and asyncio cancellation also carry a cause
-    but are definitive results, not connection failures — they must not be
+    ``__cause__``, but its catch-all wraps *any* unexpected exception the same
+    way — including a response body that fails to decode — so the cause must
+    actually be a transport error type, not merely present. Client-enforced
+    deadlines (mapped to ``DEADLINE_EXCEEDED`` with a ``TimeoutError`` cause)
+    are definitive results, not connection failures — they must not be
     retried or trigger a sandbox health probe.
     """
     return (
         isinstance(e, ConnectError)
-        and e.__cause__ is not None
-        and not isinstance(e.__cause__, asyncio.CancelledError)
+        and isinstance(e.__cause__, _TRANSPORT_ERRORS)
         and e.code is not Code.DEADLINE_EXCEEDED
     )
+
+
+def is_connect_failure(e: Exception) -> bool:
+    """Whether the error happened while establishing the connection, before
+    the request could have reached envd.
+
+    pyqwest raises the builtin ``ConnectionError`` only for
+    connection-establishment failures ("client error (Connect)"); once the
+    connection is up, failures raise its ``WriteError``/``ReadError``/
+    ``StreamError`` instead. Only these pre-request failures are safe to
+    retry for streaming RPCs — envd cannot have started the command or watch.
+    """
+    return isinstance(e, ConnectError) and isinstance(e.__cause__, ConnectionError)
 
 
 def format_terminated_exception(
@@ -105,13 +132,36 @@ def handle_rpc_exception(
         if is_transport_failure(e):
             return format_terminated_exception(e, sandbox_running)
 
-        if error_map and e.code in error_map:
-            return error_map[e.code](e.message)
+        # connectrpc's catch-all wraps client-side failures — e.g. a response
+        # body that fails to decode — as ConnectError(UNAVAILABLE) with the
+        # original exception as __cause__. Those are not envd responses, so
+        # surface the original error (like the previous stack did) instead of
+        # mapping the code to a misleading sandbox-timeout message. Deadlines
+        # (DEADLINE_EXCEEDED with a TimeoutError cause) stay mapped.
+        if isinstance(e.__cause__, Exception) and e.code is not Code.DEADLINE_EXCEEDED:
+            return e.__cause__
 
-        if e.code in _DEFAULT_RPC_ERROR_MAP:
-            return _DEFAULT_RPC_ERROR_MAP[e.code](e.message)
+        # connectrpc maps plain (non-Connect-encoded) HTTP error responses —
+        # e.g. an edge proxy answering for envd — per the Connect spec:
+        # 429 → UNAVAILABLE and 404 → UNIMPLEMENTED, with the HTTP reason
+        # phrase as the message. The vendored client kept the original
+        # statuses (429 → resource_exhausted, 404 → not_found), and user code
+        # relies on RateLimitException to back off, so restore that mapping.
+        # Connect errors parsed from a response body carry envd's own message
+        # and never match these exact reason phrases.
+        code = e.code
+        if code is Code.UNAVAILABLE and e.message == "Too Many Requests":
+            code = Code.RESOURCE_EXHAUSTED
+        elif code is Code.UNIMPLEMENTED and e.message == "Not Found":
+            code = Code.NOT_FOUND
 
-        return SandboxException(f"{e.code}: {e.message}")
+        if error_map and code in error_map:
+            return error_map[code](e.message)
+
+        if code in _DEFAULT_RPC_ERROR_MAP:
+            return _DEFAULT_RPC_ERROR_MAP[code](e.message)
+
+        return SandboxException(f"{code}: {e.message}")
 
     return e
 
@@ -147,6 +197,23 @@ async def ahandle_rpc_exception_with_health(
         except Exception:
             sandbox_running = None
     return handle_rpc_exception(e, error_map, sandbox_running)
+
+
+def extract_start_pid(
+    start_event: Union[process_pb.StartResponse, process_pb.ConnectResponse],
+    action: str,
+) -> int:
+    """Return the pid carried by the ``start`` event that must open a process
+    stream (start/connect), raising :class:`SandboxException` when the stream
+    opened with anything else."""
+    # `event.event` is the ProcessEvent; its `event` oneof holds the payload.
+    match start_event.event.event if start_event.event is not None else None:
+        case Oneof(field="start", value=start):
+            return start.pid
+        case _:
+            raise SandboxException(
+                f"Failed to {action}: expected start event, got {start_event}"
+            )
 
 
 def authentication_header(

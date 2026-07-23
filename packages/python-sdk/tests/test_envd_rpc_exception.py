@@ -2,11 +2,13 @@ import asyncio
 
 from connectrpc.code import Code
 from connectrpc.errors import ConnectError
+from pyqwest import StreamError, StreamErrorCode, WriteError
 
 from e2b.envd.rpc import (
     ahandle_rpc_exception_with_health,
     handle_rpc_exception,
     handle_rpc_exception_with_health,
+    is_connect_failure,
     is_transport_failure,
     timeout_to_ms,
 )
@@ -87,10 +89,30 @@ def _cancelled() -> ConnectError:
         return e
 
 
+def _decode_failure() -> ConnectError:
+    # connectrpc's catch-all wraps a 200 response whose body fails to decode
+    # the same way it wraps transport errors: ConnectError(UNAVAILABLE) with
+    # the original exception as __cause__.
+    try:
+        raise ConnectError(Code.UNAVAILABLE, "bad json") from ValueError("bad json")
+    except ConnectError as e:
+        return e
+
+
 def test_transport_failure_detection():
     assert is_transport_failure(_stream_reset())
+    # An HTTP/2 stream reset surfaces as a pyqwest StreamError cause.
+    try:
+        raise ConnectError(Code.INTERNAL, "reset") from StreamError(
+            "reset", StreamErrorCode.INTERNAL_ERROR
+        )
+    except ConnectError as e:
+        assert is_transport_failure(e)
     # Errors parsed from an envd response have no cause.
     assert not is_transport_failure(ConnectError(Code.UNAVAILABLE, "502"))
+    # A client-side decode failure carries a cause, but the request was
+    # delivered — retrying or probing health would be wrong.
+    assert not is_transport_failure(_decode_failure())
     # A client-enforced deadline carries a cause but is a definitive result.
     try:
         raise ConnectError(Code.DEADLINE_EXCEEDED, "Request timed out") from (
@@ -102,6 +124,56 @@ def test_transport_failure_detection():
     # retried or trigger a health probe.
     assert not is_transport_failure(_cancelled())
     assert not is_transport_failure(ValueError("other"))
+
+
+def test_connect_failure_detection():
+    # pyqwest raises the builtin ConnectionError only while establishing the
+    # connection — the only phase safe to retry for streams.
+    try:
+        raise ConnectError(Code.UNAVAILABLE, "connect") from ConnectionError(
+            "tcp connect error"
+        )
+    except ConnectError as e:
+        assert is_connect_failure(e)
+    try:
+        raise ConnectError(Code.UNAVAILABLE, "sent") from WriteError("closed")
+    except ConnectError as e:
+        assert not is_connect_failure(e)
+    assert not is_connect_failure(ConnectError(Code.UNAVAILABLE, "no cause"))
+
+
+def test_decode_failure_surfaces_original_error():
+    err = _decode_failure()
+    restored = handle_rpc_exception(err)
+    assert restored is err.__cause__
+    assert isinstance(restored, ValueError)
+
+
+def test_health_check_not_run_for_decode_failure():
+    def fail():
+        raise AssertionError("health check should not run")
+
+    restored = handle_rpc_exception_with_health(_decode_failure(), fail)
+    assert isinstance(restored, ValueError)
+
+
+def test_plain_http_429_maps_to_rate_limit():
+    # A plain (non-Connect-encoded) HTTP 429 from an edge proxy: connectrpc
+    # maps it to UNAVAILABLE with the reason phrase as the message.
+    err = handle_rpc_exception(ConnectError(Code.UNAVAILABLE, "Too Many Requests"))
+    assert isinstance(err, RateLimitException)
+    assert "Rate limit" in str(err)
+
+
+def test_plain_http_404_maps_to_not_found():
+    err = handle_rpc_exception(ConnectError(Code.UNIMPLEMENTED, "Not Found"))
+    assert isinstance(err, NotFoundException)
+
+
+def test_unimplemented_with_other_message_stays_generic():
+    err = handle_rpc_exception(ConnectError(Code.UNIMPLEMENTED, "unknown method"))
+    assert isinstance(err, SandboxException)
+    assert not isinstance(err, NotFoundException)
 
 
 def test_cancellation_restores_cancelled_error():
@@ -183,6 +255,11 @@ async def test_async_health_check_failure_returns_raw_error():
 def test_timeout_to_ms():
     assert timeout_to_ms(60) == 60_000
     assert timeout_to_ms(0.5) == 500
+    assert timeout_to_ms(0.1) == 100
+    # A positive sub-millisecond timeout must stay a deadline — a 0 would be
+    # discarded by connectrpc's `timeout_ms or default` fallback, disabling
+    # the deadline entirely.
+    assert timeout_to_ms(0.0005) == 1
     # Disabled timeouts must map to None — connectrpc treats a non-positive
     # deadline as already expired.
     assert timeout_to_ms(0) is None

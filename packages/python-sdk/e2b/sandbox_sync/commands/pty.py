@@ -17,10 +17,10 @@ from e2b.connection_config import (
     KEEPALIVE_PING_HEADER,
     KEEPALIVE_PING_INTERVAL_SEC,
 )
-from e2b.exceptions import SandboxException
 from e2b.envd.api import check_sandbox_health
 from e2b.envd.rpc import (
     authentication_header,
+    extract_start_pid,
     handle_rpc_exception_with_health,
     timeout_to_ms,
 )
@@ -155,7 +155,7 @@ class Pty:
         :param cwd: Working directory for the PTY
         :param envs: Environment variables for the PTY
         :param timeout: Timeout for the PTY in **seconds**
-        :param request_timeout: Timeout for the request in **seconds**
+        :param request_timeout: Not applied to this streaming call — opening the stream is bounded by the transport's 30 s connect timeout, the stream itself by `timeout`
 
         :return: Handle to interact with the PTY
         """
@@ -187,13 +187,7 @@ class Pty:
         try:
             start_event = events.__next__()
 
-            match start_event.event.event if start_event.event is not None else None:
-                case Oneof(field="start", value=start):
-                    pid = start.pid
-                case _:
-                    raise SandboxException(
-                        f"Failed to start process: expected start event, got {start_event}"
-                    )
+            pid = extract_start_pid(start_event, "start process")
             return CommandHandle(
                 pid=pid,
                 handle_kill=lambda: self.kill(pid),
@@ -218,7 +212,7 @@ class Pty:
 
         :param pid: Process ID of the PTY to connect to. You can get the list of running PTYs using `sandbox.pty.list()`.
         :param timeout: Timeout for the PTY connection in **seconds**. Using `0` will not limit the connection time
-        :param request_timeout: Timeout for the request in **seconds**
+        :param request_timeout: Not applied to this streaming call — opening the stream is bounded by the transport's 30 s connect timeout, the stream itself by `timeout`
 
         :return: Handle to interact with the PTY
         """
@@ -237,13 +231,7 @@ class Pty:
         try:
             start_event = events.__next__()
 
-            match start_event.event.event if start_event.event is not None else None:
-                case Oneof(field="start", value=start):
-                    pid = start.pid
-                case _:
-                    raise SandboxException(
-                        f"Failed to connect to process: expected start event, got {start_event}"
-                    )
+            pid = extract_start_pid(start_event, "connect to process")
             return CommandHandle(
                 pid=pid,
                 handle_kill=lambda: self.kill(pid),

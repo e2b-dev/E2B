@@ -184,9 +184,10 @@ class CommandHandle:
         except StopIteration:
             pass
         except Exception as e:
-            self._iteration_exception = handle_rpc_exception_with_health(
-                e, self._check_health
-            )
+            # `_handle_events` already maps stream errors (including the
+            # sandbox health probe for transport failures); mapping again here
+            # would probe health a second time.
+            self._iteration_exception = e
 
         if self._iteration_exception:
             raise self._iteration_exception

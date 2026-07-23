@@ -30,3 +30,12 @@ Notes:
   proxies (credentials in the URL, e.g.
   `proxy="http://user:pass@localhost:8030"`); `httpx.Proxy` and `httpx.URL`
   values are rejected for RPC calls.
+- `CommandResult.error` (and `CommandHandle.error`) is now `None` when a
+  command finishes without an error, matching the declared `Optional[str]`
+  type and the JS SDK's `error?: string`. It used to be `""` on success —
+  code comparing `result.error == ""` or treating it as always-`str` should
+  check for `None`/falsiness instead.
+- For streaming calls (`commands.run`/`connect`, PTY, `files.watch_dir`),
+  `request_timeout` no longer bounds opening the stream — setup is bounded by
+  the transport's 30 s connect timeout, and the stream itself by the
+  command/watch `timeout` (as before).
