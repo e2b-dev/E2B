@@ -26,8 +26,8 @@ from e2b.envd.filesystem import filesystem_connect, filesystem_pb
 from e2b.envd.rpc import (
     authentication_header,
     handle_rpc_exception_with_health,
-    timeout_to_ms,
 )
+from e2b.envd.utils import timeout_to_ms
 from e2b.envd.client_sync import create_rpc_client
 from e2b.envd.versions import (
     ENVD_DEFAULT_USER,
