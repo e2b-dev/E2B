@@ -184,8 +184,9 @@ def short_read_timeout(monkeypatch):
 def test_sync_stream_survives_transfers_longer_than_read_timeout(short_read_timeout):
     # The transport read timeout is an idle bound that resets on every chunk:
     # a healthy stream whose total duration exceeds it must complete.
-    # `stream_idle_timeout` is deprecated and ignored — a value shorter than
-    # every chunk gap must not abort the stream.
+    # `stream_idle_timeout` is ignored in the sync client (it cannot
+    # interrupt a blocking read) — a value shorter than every chunk gap must
+    # not abort the stream.
     api_url = _start_volume_file_server([0.15] * 4)
     volume = Volume(volume_id="v1", name="test", token="vol-token")
 
@@ -214,9 +215,7 @@ def test_async_stream_survives_transfers_longer_than_read_timeout(short_read_tim
     volume = AsyncVolume(volume_id="v1", name="test", token="vol-token")
 
     async def run():
-        stream = await volume.read_file(
-            "file.bin", format="stream", stream_idle_timeout=0.01, api_url=api_url
-        )
+        stream = await volume.read_file("file.bin", format="stream", api_url=api_url)
         return b"".join([chunk async for chunk in stream])
 
     assert asyncio.run(run()) == CHUNK * 4
@@ -235,6 +234,59 @@ def test_async_stream_stall_raises_read_timeout(short_read_timeout):
         return received
 
     assert asyncio.run(run()) == [CHUNK]
+
+
+def test_async_explicit_stream_idle_timeout_aborts_stall():
+    # An explicit stream_idle_timeout is honored per read with wait_for
+    # (like the JS SDK's streamIdleTimeoutMs) — no transport rebuild needed.
+    reset_volume_transports()
+    api_url = _start_volume_file_server([0.0, 5.0])
+    volume = AsyncVolume(volume_id="v1", name="test", token="vol-token")
+
+    async def run():
+        stream = await volume.read_file(
+            "file.bin", format="stream", stream_idle_timeout=0.3, api_url=api_url
+        )
+        received = [await stream.__anext__()]
+        with pytest.raises(httpx.ReadTimeout):
+            async for chunk in stream:
+                received.append(chunk)
+        return received
+
+    try:
+        assert asyncio.run(run()) == [CHUNK]
+    finally:
+        reset_volume_transports()
+
+
+def test_async_explicit_stream_idle_timeout_above_transport_bound(short_read_timeout):
+    # An explicit value larger than the transport's idle read timeout must
+    # not be capped by it: explicit values run on the regular transport.
+    api_url = _start_volume_file_server([short_read_timeout * 1.5] * 3)
+    volume = AsyncVolume(volume_id="v1", name="test", token="vol-token")
+
+    async def run():
+        stream = await volume.read_file(
+            "file.bin", format="stream", stream_idle_timeout=5.0, api_url=api_url
+        )
+        return b"".join([chunk async for chunk in stream])
+
+    assert asyncio.run(run()) == CHUNK * 3
+
+
+def test_async_stream_idle_timeout_zero_disables_idle_bound(short_read_timeout):
+    # `stream_idle_timeout=0` disables idle bounding entirely — a stall
+    # longer than the transport's idle read timeout must not abort.
+    api_url = _start_volume_file_server([0.0, short_read_timeout * 3])
+    volume = AsyncVolume(volume_id="v1", name="test", token="vol-token")
+
+    async def run():
+        stream = await volume.read_file(
+            "file.bin", format="stream", stream_idle_timeout=0, api_url=api_url
+        )
+        return b"".join([chunk async for chunk in stream])
+
+    assert asyncio.run(run()) == CHUNK * 2
 
 
 def test_stream_transport_is_separate_from_regular_transport():

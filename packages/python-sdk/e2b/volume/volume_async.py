@@ -466,9 +466,13 @@ class AsyncVolume:
 
         :param path: Path to the file
         :param format: Format of the file content—`text` by default
-        :param stream_idle_timeout: Deprecated and ignored. A stalled streamed
-            read is bounded by a transport-wide idle read timeout instead
-            (60 seconds), which resets on every chunk.
+        :param stream_idle_timeout: Idle timeout in **seconds** for a streamed
+            read (`format="stream"`)—abort with `httpx.ReadTimeout` if the
+            response head or the next chunk doesn't arrive within this
+            window. Resets on every chunk, so it bounds a stalled stream
+            without limiting total transfer time. Defaults to the
+            transport-wide idle read timeout (60 seconds); pass `0` to
+            disable.
         :param opts: Connection options
 
         :return: File content as string, bytes, or async iterator of bytes
@@ -486,27 +490,38 @@ class AsyncVolume:
             # whole-request deadline that would kill long downloads, so a
             # streamed read is sent with one only when the caller set
             # `request_timeout` explicitly (making it the total-transfer
-            # deadline). A stalled stream is instead bounded by the
-            # transport-wide idle read timeout (see `get_transport`), which
-            # resets on every chunk without limiting total transfer time.
+            # deadline).
             stream_timeout = VolumeConnectionConfig._get_request_timeout(
                 None, opts.get("request_timeout")
             )
-            # The streaming transport carries the idle read timeout; the
-            # regular one must not (it would cut off slow uploads and
-            # responses), so streamed reads get their own client.
-            stream_client = get_volume_api_client(config, for_streaming=True)
+            # By default a stalled stream is bounded by the streaming
+            # transport's idle read timeout (see `get_transport`). An
+            # explicit `stream_idle_timeout` is applied per read with
+            # `wait_for` instead, on the regular transport — so values above
+            # the transport bound aren't capped by it and `0` disables idle
+            # bounding entirely. (The sync client can't interrupt a blocking
+            # read, so only the async flavor honors the per-call value.)
+            stream_client = get_volume_api_client(
+                config, for_streaming=stream_idle_timeout is None
+            )
+
+            async def read_bounded(awaitable):
+                if not stream_idle_timeout:
+                    return await awaitable
+                return await asyncio.wait_for(awaitable, stream_idle_timeout)
 
             async def stream_file() -> AsyncIterator[bytes]:
                 # pyqwest raises the builtin TimeoutError; keep the httpx
                 # exception the streamed-read contract established.
                 try:
-                    async with stream_client.get_async_httpx_client().stream(
+                    stream_cm = stream_client.get_async_httpx_client().stream(
                         method="GET",
                         url=f"/volumecontent/{self._volume_id}/file",
                         params=params,
                         timeout=stream_timeout,
-                    ) as response:
+                    )
+                    response = await read_bounded(stream_cm.__aenter__())
+                    try:
                         if response.status_code == 404:
                             raise NotFoundException(f"Path {path} not found")
 
@@ -519,10 +534,17 @@ class AsyncVolume:
                             )
                             raise handle_api_exception(api_response, VolumeException)
 
-                        async for chunk in response.aiter_bytes():
+                        chunks = response.aiter_bytes()
+                        while True:
+                            try:
+                                chunk = await read_bounded(chunks.__anext__())
+                            except StopAsyncIteration:
+                                break
                             yield chunk
+                    finally:
+                        await stream_cm.__aexit__(None, None, None)
                 # asyncio.TimeoutError is distinct from the builtin until 3.11,
-                # and the adapter's whole-request deadline raises it.
+                # and wait_for and the adapter's whole-request deadline raise it.
                 except (TimeoutError, asyncio.TimeoutError) as e:
                     raise httpx.ReadTimeout(str(e)) from e
 

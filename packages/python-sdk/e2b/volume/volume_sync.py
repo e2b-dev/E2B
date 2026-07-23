@@ -463,9 +463,11 @@ class Volume:
 
         :param path: Path to the file
         :param format: Format of the file content—`text` by default
-        :param stream_idle_timeout: Deprecated and ignored. A stalled streamed
-            read is bounded by a transport-wide idle read timeout instead
-            (60 seconds), which resets on every chunk.
+        :param stream_idle_timeout: Ignored — the sync client cannot
+            interrupt a blocking read. A stalled streamed read is bounded by
+            a transport-wide idle read timeout instead (60 seconds), which
+            resets on every chunk. (`AsyncVolume.read_file` honors this
+            parameter.)
         :param opts: Connection options
 
         :return: File content as string, bytes, or iterator of bytes
