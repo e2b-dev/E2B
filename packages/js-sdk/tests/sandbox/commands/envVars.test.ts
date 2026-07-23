@@ -3,7 +3,7 @@ import { assert, describe } from 'vitest'
 import { sandboxTest, isDebug } from '../../setup.js'
 
 describe('sandbox global env vars', () => {
-  sandboxTest.scoped({
+  sandboxTest.override({
     sandboxOpts: {
       envs: { FOO: 'bar' },
     },
