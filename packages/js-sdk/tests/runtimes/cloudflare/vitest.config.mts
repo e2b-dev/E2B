@@ -30,7 +30,14 @@ export default defineConfig({
   test: {
     name: 'cloudflare',
     include: ['tests/**/*.test.ts'],
-    exclude: ['tests/runtimes/**', 'tests/template/**'],
+    exclude: [
+      'tests/runtimes/**',
+      'tests/template/**',
+      // Inspects the host-built dist/index.mjs via node:fs, which workerd's
+      // virtual filesystem can never see (and throws in CI when the file is
+      // "missing"); the Node unit project keeps running it.
+      'tests/bundle/**',
+    ],
     globals: false,
     testTimeout: 30_000,
     bail: 0,
