@@ -24,9 +24,9 @@ if (!hasDeployOutput) {
 
 export default defineConfig({
   test: {
-    name: 'cloudflare-deployed',
+    name: 'cloudflare-deploy',
     include: hasDeployOutput
-      ? ['tests/runtimes/cloudflare/deploy/*.test.ts']
+      ? ['tests/runtimes/cloudflare-deploy/*.test.ts']
       : [],
     passWithNoTests: !hasDeployOutput,
     environment: 'node',

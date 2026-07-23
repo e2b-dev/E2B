@@ -102,7 +102,7 @@ jobs:
 
       - name: Delete deployed Cloudflare Worker
         if: always() && steps.cf-deploy.outcome == 'success'
-        run: pnpm exec wrangler delete --force --temporary --config tests/runtimes/cloudflare/deploy/wrangler.jsonc || true
+        run: pnpm exec wrangler delete --force --temporary --config tests/runtimes/cloudflare-deploy/wrangler.jsonc || true
 
       - name: Install Bun
         uses: oven-sh/setup-bun@v2

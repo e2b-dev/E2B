@@ -1,9 +1,9 @@
-// Deployed to real Cloudflare infrastructure by run.mjs via
-// `wrangler deploy --temporary`. Imports the built ESM bundle so wrangler's
+// Deployed to real Cloudflare infrastructure via `pnpm deploy:cf`
+// (wrangler deploy --temporary). Imports the built ESM bundle so wrangler's
 // bundling and workerd's production module semantics (e.g. import.meta.url
 // being undefined, #1579) are exercised — the vitest-pool-workers suite
 // polyfills those away.
-import { Sandbox } from '../../../../dist/index.mjs'
+import { Sandbox } from '../../../dist/index.mjs'
 
 export default {
   async fetch(request) {

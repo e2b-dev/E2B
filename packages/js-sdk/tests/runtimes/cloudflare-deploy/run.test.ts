@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { expect, test } from 'vitest'
 
-import { template } from '../../../template'
+import { template } from '../../template'
 
 // Written by wrangler during `pnpm deploy:cf` (WRANGLER_OUTPUT_FILE_PATH):
 // ndjson records, one of which is {type: 'deploy', targets: [urls]}. The
