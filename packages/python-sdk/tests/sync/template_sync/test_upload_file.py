@@ -22,7 +22,9 @@ def _make_server():
 
     class Handler(BaseHTTPRequestHandler):
         def do_PUT(self):
-            state["headers"] = dict(self.headers)
+            # hyper (pyqwest) sends lowercase header names where httpcore
+            # title-cased them; compare case-insensitively.
+            state["headers"] = {k.lower(): v for k, v in self.headers.items()}
             length = int(self.headers.get("Content-Length", 0))
             body = self.rfile.read(length) if length else b""
             state["body_length"] = len(body)
@@ -68,15 +70,15 @@ def test_upload_file_sets_content_length_and_no_chunked_encoding(tmp_path):
         thread.join(timeout=5)
 
     assert state["headers"] is not None
-    content_length = state["headers"].get("Content-Length")
+    content_length = state["headers"].get("content-length")
     assert content_length is not None
     assert int(content_length) > 0
     assert int(content_length) == state["body_length"]
 
-    transfer_encoding = state["headers"].get("Transfer-Encoding")
+    transfer_encoding = state["headers"].get("transfer-encoding")
     if transfer_encoding is not None:
         assert "chunked" not in transfer_encoding.lower()
-    assert "Authorization" not in state["headers"]
+    assert "authorization" not in state["headers"]
 
 
 def _capture_upload_timeout(tmp_path, request_timeout=None):
