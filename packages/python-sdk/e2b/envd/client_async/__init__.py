@@ -1,8 +1,11 @@
 """Async envd RPC clients: shared pyqwest transports and client factory."""
 
+import asyncio
 import threading
 from typing import Any, AsyncGenerator, AsyncIterator, Callable, Optional, TypeVar, cast
 
+from connectrpc.code import Code
+from connectrpc.errors import ConnectError
 from pyqwest import Client, HTTPTransport
 
 from e2b.connection_config import ConnectionConfig
@@ -13,6 +16,7 @@ from e2b.envd.client_shared import (
     proxy_to_url,
 )
 from e2b.envd.interceptors import build_interceptors
+from e2b.exceptions import TimeoutException
 
 RES = TypeVar("RES")
 TClient = TypeVar("TClient")
@@ -64,3 +68,48 @@ def as_stream(events: AsyncIterator[RES]) -> AsyncGenerator[RES, Any]:
     connectrpc returns real async generators — the SDK relies on ``aclose()``
     to cancel a stream early (hyper then resets the HTTP/2 stream)."""
     return cast("AsyncGenerator[RES, Any]", events)
+
+
+def _request_timeout_exception(request_timeout: float) -> TimeoutException:
+    return TimeoutException(
+        f"Request timed out: the stream didn't open within 'request_timeout' "
+        f"({request_timeout} seconds). You can pass the request timeout value "
+        "as an option when making the request. Use '0' to disable it."
+    )
+
+
+async def first_event(
+    events: AsyncGenerator[RES, Any], request_timeout: Optional[float]
+) -> RES:
+    """Wait for the event that opens a server stream (start/connect/watch),
+    bounding the wait — connection setup, request write, and envd sending the
+    event — by ``request_timeout``. This mirrors the JS SDK's
+    ``requestTimeoutMs`` timer on streaming calls, which is disarmed once the
+    stream is open; the rest of the stream is bounded only by the call's
+    ``timeout_ms``. On timeout the caller's ``aclose()`` finds the stream
+    already torn down (hyper resets the HTTP/2 stream when the cancellation
+    unwinds connectrpc's response scope).
+    """
+    if not request_timeout:
+        return await events.__anext__()
+    try:
+        return await asyncio.wait_for(events.__anext__(), request_timeout)
+    except (asyncio.TimeoutError, TimeoutError) as e:
+        raise _request_timeout_exception(request_timeout) from e
+    except ConnectError as e:
+        # wait_for's expiry cancels the __anext__ task, but connectrpc
+        # converts the delivered CancelledError into ConnectError(CANCELED)
+        # before wait_for can turn it into TimeoutError. A caller cancelling
+        # the surrounding task surfaces identically, so tell the two apart by
+        # the pending-cancellation count: wait_for uncancels its own expiry,
+        # an external cancel stays pending. (Python 3.10 has no cancelling(),
+        # but its wait_for re-raises external cancels before this point, so
+        # reaching here without it means the timer expired.)
+        cancelling = getattr(asyncio.current_task(), "cancelling", None)
+        if (
+            e.code is Code.CANCELED
+            and isinstance(e.__cause__, asyncio.CancelledError)
+            and (cancelling is None or cancelling() == 0)
+        ):
+            raise _request_timeout_exception(request_timeout) from e
+        raise

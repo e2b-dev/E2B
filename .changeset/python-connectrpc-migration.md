@@ -35,7 +35,10 @@ Notes:
   type and the JS SDK's `error?: string`. It used to be `""` on success —
   code comparing `result.error == ""` or treating it as always-`str` should
   check for `None`/falsiness instead.
-- For streaming calls (`commands.run`/`connect`, PTY, `files.watch_dir`),
-  `request_timeout` no longer bounds opening the stream — setup is bounded by
-  the transport's 30 s connect timeout, and the stream itself by the
-  command/watch `timeout` (as before).
+- For async streaming calls (`commands.run`/`connect`, PTY,
+  `files.watch_dir`), `request_timeout` now bounds opening the stream — the
+  wait until envd confirms with a start event, matching the JS SDK's
+  `requestTimeoutMs` — and raises `TimeoutException` when exceeded. The
+  running stream is bounded by the command/watch `timeout` (as before). In
+  the sync SDK there is no way to interrupt the blocking wait, so stream
+  setup is bounded by the transport's 30 s connect timeout instead.

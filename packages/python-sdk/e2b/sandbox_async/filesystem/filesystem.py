@@ -28,7 +28,7 @@ from e2b.envd.rpc import (
     ahandle_rpc_exception_with_health,
     timeout_to_ms,
 )
-from e2b.envd.client_async import as_stream, create_rpc_client
+from e2b.envd.client_async import as_stream, create_rpc_client, first_event
 from e2b.envd.versions import (
     ENVD_DEFAULT_USER,
     ENVD_FILE_METADATA,
@@ -655,7 +655,7 @@ class Filesystem:
         :param on_event: Callback to call on each event in the directory
         :param on_exit: Callback to call when the watching ends. It receives the error that ended the watch, or `None` on a clean end or when `stop()` is called
         :param user: Run the operation as this user
-        :param request_timeout: Not applied to this streaming call — opening the stream is bounded by the transport's 30 s connect timeout, the stream itself by `timeout`
+        :param request_timeout: Timeout for opening the stream in **seconds** — the wait until envd confirms with a start event. The running watch is bounded by `timeout`
         :param timeout: Timeout for the watch operation in **seconds**. Using `0` will not limit the watch time
         :param recursive: Watch directory recursively
         :param include_entry: Include the `EntryInfo` of the affected entry in each event, when available. Requires envd 0.6.3 or later
@@ -689,9 +689,9 @@ class Filesystem:
                     include_entry=include_entry,
                     allow_network_mounts=allow_network_mounts,
                 ),
-                # The watch `timeout` bounds the whole stream; `request_timeout`
-                # has no per-call equivalent here — connection setup is bounded by
-                # the transport's connect timeout instead.
+                # The watch `timeout` bounds the whole stream;
+                # `request_timeout` bounds opening it (the wait for the
+                # start event below).
                 timeout_ms=timeout_to_ms(timeout),
                 headers={
                     **authentication_header(self._envd_version, user),
@@ -701,7 +701,9 @@ class Filesystem:
         )
 
         try:
-            start_event = await events.__anext__()
+            start_event = await first_event(
+                events, self._connection_config.get_request_timeout(request_timeout)
+            )
 
             match start_event.event:
                 case Oneof(field="start"):

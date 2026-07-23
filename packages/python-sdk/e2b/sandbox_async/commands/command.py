@@ -20,7 +20,7 @@ from e2b.envd.rpc import (
     ahandle_rpc_exception_with_health,
     timeout_to_ms,
 )
-from e2b.envd.client_async import as_stream, create_rpc_client
+from e2b.envd.client_async import as_stream, create_rpc_client, first_event
 from e2b.envd.versions import ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.main import ProcessInfo
@@ -203,7 +203,7 @@ class Commands:
         :param on_stderr: Callback for command stderr output
         :param stdin: If `True`, the command will have a stdin stream that you can send data to using `sandbox.commands.send_stdin()`
         :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
-        :param request_timeout: Not applied to this streaming call — opening the stream is bounded by the transport's 30 s connect timeout, the stream itself by `timeout`
+        :param request_timeout: Timeout for opening the stream in **seconds** — the wait until envd confirms with a start event. The running stream is bounded by `timeout`
 
         :return: `CommandResult` result of the command execution
         """
@@ -235,7 +235,7 @@ class Commands:
         :param on_stderr: Callback for command stderr output
         :param stdin: If `True`, the command will have a stdin stream that you can send data to using `sandbox.commands.send_stdin()`
         :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
-        :param request_timeout: Not applied to this streaming call — opening the stream is bounded by the transport's 30 s connect timeout, the stream itself by `timeout`
+        :param request_timeout: Timeout for opening the stream in **seconds** — the wait until envd confirms with a start event. The running stream is bounded by `timeout`
 
         :return: `AsyncCommandHandle` handle to interact with the running command
         """
@@ -305,15 +305,17 @@ class Commands:
                     **authentication_header(self._envd_version, user),
                     KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
                 },
-                # The command `timeout` bounds the whole stream; `request_timeout`
-                # has no per-call equivalent here — connection setup is bounded by
-                # the transport's connect timeout instead.
+                # The command `timeout` bounds the whole stream;
+                # `request_timeout` bounds opening it (the wait for the
+                # start event below).
                 timeout_ms=timeout_to_ms(timeout),
             )
         )
 
         try:
-            start_event = await events.__anext__()
+            start_event = await first_event(
+                events, self._connection_config.get_request_timeout(request_timeout)
+            )
 
             pid = extract_start_pid(start_event, "start process")
             return AsyncCommandHandle(
@@ -350,7 +352,7 @@ class Commands:
         You can use `AsyncCommandHandle.wait()` to wait for the command to finish and get execution results.
 
         :param pid: Process ID of the command to connect to. You can get the list of processes using `sandbox.commands.list()`
-        :param request_timeout: Not applied to this streaming call — opening the stream is bounded by the transport's 30 s connect timeout, the stream itself by `timeout`
+        :param request_timeout: Timeout for opening the stream in **seconds** — the wait until envd confirms with a start event. The running stream is bounded by `timeout`
         :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
         :param on_stdout: Callback for command stdout output
         :param on_stderr: Callback for command stderr output
@@ -370,7 +372,9 @@ class Commands:
         )
 
         try:
-            start_event = await events.__anext__()
+            start_event = await first_event(
+                events, self._connection_config.get_request_timeout(request_timeout)
+            )
 
             pid = extract_start_pid(start_event, "connect to process")
             return AsyncCommandHandle(

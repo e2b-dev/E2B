@@ -24,6 +24,7 @@ from typing import Iterator, Optional
 import h2.config
 import h2.connection
 import h2.events
+import pytest
 from protobuf import Oneof
 from pyqwest import (
     Client,
@@ -34,7 +35,9 @@ from pyqwest import (
 )
 
 from e2b.connection_config import ConnectionConfig
+from e2b.envd.client_async import first_event
 from e2b.envd.client_shared import ENVD_JSON_CODEC
+from e2b.exceptions import TimeoutException
 from e2b.envd.interceptors import build_interceptors
 from e2b.envd.process.process_connect import ProcessClient, ProcessClientSync
 from e2b.envd.process.process_pb import ConnectRequest, ConnectResponse, ProcessEvent
@@ -62,12 +65,14 @@ class FrameRecordingServer(threading.Thread):
     Replies to the first request with a single Connect message envelope and,
     when ``server_ends_stream`` is set, a Connect end-of-stream envelope with
     the HTTP/2 END_STREAM flag; otherwise it leaves the stream open the way a
-    still-running process does.
+    still-running process does. With ``respond=False`` it accepts the request
+    but never answers, the way an unresponsive envd does.
     """
 
-    def __init__(self, server_ends_stream: bool):
+    def __init__(self, server_ends_stream: bool, respond: bool = True):
         super().__init__(daemon=True)
         self.server_ends_stream = server_ends_stream
+        self.respond = respond
         self.listener = socket.create_server(("127.0.0.1", 0))
         self.listener.settimeout(10)
         self.port = self.listener.getsockname()[1]
@@ -99,7 +104,7 @@ class FrameRecordingServer(threading.Thread):
                 if not data:
                     break
                 for event in conn.receive_data(data):
-                    if isinstance(event, h2.events.StreamEnded):
+                    if isinstance(event, h2.events.StreamEnded) and self.respond:
                         # The client finished sending the request: respond.
                         conn.send_headers(
                             event.stream_id,
@@ -145,8 +150,10 @@ class FrameRecordingServer(threading.Thread):
 
 
 @contextlib.contextmanager
-def frame_recording_server(server_ends_stream: bool) -> Iterator[FrameRecordingServer]:
-    server = FrameRecordingServer(server_ends_stream)
+def frame_recording_server(
+    server_ends_stream: bool, respond: bool = True
+) -> Iterator[FrameRecordingServer]:
+    server = FrameRecordingServer(server_ends_stream, respond)
     server.start()
     try:
         yield server
@@ -258,4 +265,16 @@ async def test_async_early_close_propagates_through_logging_interceptor():
         events = client.connect(ConnectRequest())
         assert_stdout_event(await events.__anext__())
         await events.aclose()
+        server.assert_reset_sent()
+
+
+async def test_async_setup_timeout_sends_rst_stream():
+    # `request_timeout` expiring while envd never answers (see
+    # test_envd_stream_request_timeout) must tear the HTTP/2 stream down,
+    # not leave it attached to the shared connection.
+    with frame_recording_server(server_ends_stream=False, respond=False) as server:
+        events = make_async_client(server.port).connect(ConnectRequest())
+        with pytest.raises(TimeoutException, match="request_timeout"):
+            await first_event(events, 0.3)
+        await events.aclose()  # what the call sites do next; must be a no-op
         server.assert_reset_sent()

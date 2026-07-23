@@ -21,7 +21,7 @@ from e2b.envd.rpc import (
     ahandle_rpc_exception_with_health,
     timeout_to_ms,
 )
-from e2b.envd.client_async import as_stream, create_rpc_client
+from e2b.envd.client_async import as_stream, create_rpc_client, first_event
 from e2b.sandbox.commands.command_handle import PtySize
 from e2b.sandbox_async.commands.command_handle import (
     AsyncCommandHandle,
@@ -128,7 +128,7 @@ class Pty:
         :param cwd: Working directory for the PTY
         :param envs: Environment variables for the PTY
         :param timeout: Timeout for the PTY in **seconds**
-        :param request_timeout: Not applied to this streaming call — opening the stream is bounded by the transport's 30 s connect timeout, the stream itself by `timeout`
+        :param request_timeout: Timeout for opening the stream in **seconds** — the wait until envd confirms with a start event. The running stream is bounded by `timeout`
 
         :return: Handle to interact with the PTY
         """
@@ -158,7 +158,9 @@ class Pty:
         )
 
         try:
-            start_event = await events.__anext__()
+            start_event = await first_event(
+                events, self._connection_config.get_request_timeout(request_timeout)
+            )
 
             pid = extract_start_pid(start_event, "start process")
             return AsyncCommandHandle(
@@ -188,7 +190,7 @@ class Pty:
         :param pid: Process ID of the PTY to connect to. You can get the list of running PTYs using `sandbox.pty.list()`.
         :param on_data: Callback to handle PTY data
         :param timeout: Timeout for the PTY connection in **seconds**. Using `0` will not limit the connection time
-        :param request_timeout: Not applied to this streaming call — opening the stream is bounded by the transport's 30 s connect timeout, the stream itself by `timeout`
+        :param request_timeout: Timeout for opening the stream in **seconds** — the wait until envd confirms with a start event. The running stream is bounded by `timeout`
 
         :return: Handle to interact with the PTY
         """
@@ -205,7 +207,9 @@ class Pty:
         )
 
         try:
-            start_event = await events.__anext__()
+            start_event = await first_event(
+                events, self._connection_config.get_request_timeout(request_timeout)
+            )
 
             pid = extract_start_pid(start_event, "connect to process")
             return AsyncCommandHandle(
