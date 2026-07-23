@@ -87,12 +87,15 @@ def _cancelled() -> ConnectError:
         return e
 
 
-def _decode_failure() -> ConnectError:
-    # connectrpc's catch-all wraps a 200 response whose body fails to decode
-    # the same way it wraps transport errors: ConnectError(UNAVAILABLE) with
-    # the original exception as __cause__.
+def _wrapped_client_failure() -> ConnectError:
+    # connectrpc's catch-all wraps unexpected client-side exceptions as
+    # ConnectError(UNAVAILABLE) with the original exception as __cause__.
+    # The failures the SDK can classify never take this path — an
+    # undecodable response body raises ConnectError(INTERNAL) from the envd
+    # JSON codec itself (see test_envd_codec.py) — so what remains maps by
+    # code like any other ConnectError.
     try:
-        raise ConnectError(Code.UNAVAILABLE, "bad json") from ValueError("bad json")
+        raise ConnectError(Code.UNAVAILABLE, "bad frame") from ValueError("bad frame")
     except ConnectError as e:
         return e
 
@@ -108,9 +111,9 @@ def test_transport_failure_detection():
         assert is_transport_failure(e)
     # Errors parsed from an envd response have no cause.
     assert not is_transport_failure(ConnectError(Code.UNAVAILABLE, "502"))
-    # A client-side decode failure carries a cause, but the request was
+    # A wrapped client-side failure carries a cause, but the request was
     # delivered — probing health would be wrong.
-    assert not is_transport_failure(_decode_failure())
+    assert not is_transport_failure(_wrapped_client_failure())
     # A client-enforced deadline carries a cause but is a definitive result.
     try:
         raise ConnectError(Code.DEADLINE_EXCEEDED, "Request timed out") from (
@@ -124,25 +127,20 @@ def test_transport_failure_detection():
     assert not is_transport_failure(ValueError("other"))
 
 
-def test_decode_failure_wraps_original_error():
-    # The mapped code would produce a misleading sandbox-timeout message, but
-    # the raw ValueError must not escape the documented exception surface
-    # either — it is wrapped in SandboxException with the cause chained.
-    err = _decode_failure()
-    wrapped = handle_rpc_exception(err)
-    assert isinstance(wrapped, SandboxException)
-    assert not isinstance(wrapped, TimeoutException)
-    assert wrapped.__cause__ is err.__cause__
-    assert "ValueError: bad json" in str(wrapped)
+def test_wrapped_client_failure_maps_by_code():
+    # A non-transport cause doesn't change the mapping — the raw exception
+    # must not escape the documented exception surface.
+    err = handle_rpc_exception(_wrapped_client_failure())
+    assert isinstance(err, SandboxException)
+    assert not isinstance(err, ValueError)
 
 
-def test_health_check_not_run_for_decode_failure():
+def test_health_check_not_run_for_wrapped_client_failure():
     def fail():
         raise AssertionError("health check should not run")
 
-    wrapped = handle_rpc_exception_with_health(_decode_failure(), fail)
-    assert isinstance(wrapped, SandboxException)
-    assert isinstance(wrapped.__cause__, ValueError)
+    err = handle_rpc_exception_with_health(_wrapped_client_failure(), fail)
+    assert isinstance(err, SandboxException)
 
 
 def test_cancellation_restores_cancelled_error():

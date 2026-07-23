@@ -100,21 +100,11 @@ def handle_rpc_exception(
         if is_transport_failure(e):
             return format_terminated_exception(e, sandbox_running)
 
-        # connectrpc's catch-all wraps client-side failures — e.g. a response
-        # body that fails to decode — as ConnectError(UNAVAILABLE) with the
-        # original exception as __cause__. Those are not envd responses, so
-        # the code mapping below would produce a misleading sandbox-timeout
-        # message; wrap the original error in SandboxException instead, so
-        # `except SandboxException` handlers keep working while the cause
-        # stays chained. Deadlines (DEADLINE_EXCEEDED with a TimeoutError
-        # cause) stay mapped.
-        if isinstance(e.__cause__, Exception) and e.code is not Code.DEADLINE_EXCEEDED:
-            cause = e.__cause__
-            wrapped = SandboxException(f"{type(cause).__name__}: {cause}")
-            wrapped.__cause__ = cause
-            return wrapped
-
-        # Plain (non-Connect-encoded) HTTP error responses arrive here
+        # Everything else maps by code. Client-side failures the SDK itself
+        # can classify are typed at their source instead of sniffed out of
+        # ``__cause__`` here: an undecodable response body raises
+        # ConnectError(INTERNAL) from the envd JSON codec (client_shared),
+        # and plain (non-Connect-encoded) HTTP error responses arrive
         # already carrying the vendored client's status mapping — see
         # PlainHTTPErrorTransport in client_sync/client_async.
         if error_map and e.code in error_map:

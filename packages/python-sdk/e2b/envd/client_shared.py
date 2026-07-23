@@ -50,7 +50,21 @@ class _ProtoJSONCodec:
         return message.to_json().encode("utf-8")
 
     def decode(self, data, message_class: type[_MESSAGE]) -> _MESSAGE:
-        return message_class.from_json(data, ignore_unknown_fields=True)
+        try:
+            return message_class.from_json(data, ignore_unknown_fields=True)
+        except Exception as e:
+            # Classify the failure here, where the origin is still known:
+            # letting the raw error escape would have connectrpc's catch-all
+            # wrap it as ConnectError(UNAVAILABLE), which rpc.py would map to
+            # a misleading sandbox-timeout message. connectrpc re-raises a
+            # codec-raised ConnectError unchanged on the unary and stream
+            # paths alike; INTERNAL has no special mapping in rpc.py, so this
+            # surfaces as a SandboxException carrying this message.
+            raise ConnectError(
+                Code.INTERNAL,
+                f"envd sent a response that could not be decoded as "
+                f"{message_class.__name__}: {e}",
+            ) from e
 
 
 ENVD_JSON_CODEC = _ProtoJSONCodec()
