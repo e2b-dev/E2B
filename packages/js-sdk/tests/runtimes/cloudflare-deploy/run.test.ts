@@ -4,10 +4,10 @@ import { template } from '../../template'
 
 test(
   'sandbox lifecycle inside a deployed Cloudflare Worker',
-  // Retry the whole test while the fresh workers.dev subdomain propagates:
-  // Cloudflare serves an HTML error page until the route is live ("non-JSON
-  // response"), and fetch itself can fail at the DNS/connect level first
-  // (undici throws "fetch failed").
+  // setup.mts waits for the fresh workers.dev subdomain to propagate before
+  // tests run; these retries only absorb transient edge/network blips
+  // ("non-JSON response" for a stray Cloudflare HTML error page, "fetch
+  // failed" for undici DNS/connect errors).
   {
     retry: {
       count: 10,
@@ -35,10 +35,14 @@ test(
     try {
       body = JSON.parse(text)
     } catch {
-      // Cloudflare edge error page (e.g. DNS still propagating) — fail and
-      // let the retry kick in.
+      // Cloudflare edge error page — fail and let the retry kick in. The
+      // page's <title> says which error it is (the truncated body is just
+      // boilerplate shared by every Cloudflare error page).
+      const title = text.match(/<title>(.*?)<\/title>/is)?.[1]?.trim()
       throw new Error(
-        `non-JSON response (${response.status}): ${text.slice(0, 200)}`
+        `non-JSON response (${response.status}${
+          title ? `, "${title}"` : ''
+        }): ${text.slice(0, 200)}`
       )
     }
 
