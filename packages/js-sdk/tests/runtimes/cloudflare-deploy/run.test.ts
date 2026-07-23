@@ -10,7 +10,7 @@ test(
   // (undici throws "fetch failed").
   {
     retry: {
-      count: 5,
+      count: 10,
       delay: 3_000,
       condition: /non-JSON response|fetch failed/,
     },
