@@ -5,6 +5,8 @@ import logging
 import struct
 import typing
 
+import h2.errors
+
 from httpcore import (
     ConnectionPool,
     AsyncConnectionPool,
@@ -106,6 +108,69 @@ def make_error(error):
         status = Code.unknown
 
     return ConnectException(status, error.get("message", ""))
+
+
+def _get_h2_stream_parts(http_resp: Response):
+    """
+    Return ``(connection, request, stream_id)`` for a pooled httpcore HTTP/2
+    response, or ``None`` when the response is not an HTTP/2 stream (e.g. an
+    HTTP/1.1 fallback) or httpcore internals don't match.
+    """
+    inner = getattr(getattr(http_resp, "stream", None), "_stream", None)
+    connection = getattr(inner, "_connection", None)
+    request = getattr(inner, "_request", None)
+    stream_id = getattr(inner, "_stream_id", None)
+    if (
+        getattr(connection, "_h2_state", None) is None
+        or request is None
+        or stream_id is None
+    ):
+        return None
+    return connection, request, stream_id
+
+
+def _reset_h2_stream(http_resp: Response) -> None:
+    """
+    Best-effort ``RST_STREAM`` (CANCEL) for a server stream that is being
+    closed before the server ended it.
+
+    httpcore never cancels an HTTP/2 stream when a response is closed early —
+    it only stops reading it, so the server side stays attached and keeps
+    writing into a receive window nobody drains. On the shared envd
+    connection a stream abandoned that way blocks envd's process output
+    fan-out for every other consumer once its window fills (#1352, #1587).
+    Sending an explicit ``RST_STREAM`` lets the server tear the stream down.
+
+    Failures are swallowed: the stream may already be fully closed (normal
+    completion), the connection may be dead, or the transport may be
+    HTTP/1.1 (where closing the response already closes the connection).
+    """
+    parts = _get_h2_stream_parts(http_resp)
+    if parts is None:
+        return
+    connection, request, stream_id = parts
+    try:
+        connection._h2_state.reset_stream(
+            stream_id, error_code=h2.errors.ErrorCodes.CANCEL
+        )
+        connection._write_outgoing_data(request)
+    except Exception:
+        pass
+
+
+async def _areset_h2_stream(http_resp: Response) -> None:
+    """Async variant of :func:`_reset_h2_stream`."""
+    parts = _get_h2_stream_parts(http_resp)
+    if parts is None:
+        return
+    connection, request, stream_id = parts
+    try:
+        connection._h2_state.reset_stream(
+            stream_id, error_code=h2.errors.ErrorCodes.CANCEL
+        )
+        await connection._write_outgoing_data(request)
+    except Exception:
+        pass
 
 
 def _sync_retry(func, exc, retries):
@@ -415,15 +480,24 @@ class Client:
 
         self._log_request()
         async with self.async_pool.stream(**req_data) as http_resp:
-            if http_resp.status != 200:
-                self._log_response(http_resp.status)
-                await http_resp.aread()
-                raise error_for_response(http_resp)
+            # `completed` means the server ended the stream itself; any other
+            # exit (consumer stops iterating, disconnect, error) leaves the
+            # stream open server-side, so cancel it explicitly.
+            completed = False
+            try:
+                if http_resp.status != 200:
+                    self._log_response(http_resp.status)
+                    await http_resp.aread()
+                    raise error_for_response(http_resp)
 
-            async for chunk in http_resp.aiter_stream():
-                for parsed in parser.parse(chunk):
-                    self._log_stream_message()
-                    yield parsed
+                async for chunk in http_resp.aiter_stream():
+                    for parsed in parser.parse(chunk):
+                        self._log_stream_message()
+                        yield parsed
+                completed = True
+            finally:
+                if not completed:
+                    await _areset_h2_stream(http_resp)
 
     def call_server_stream(
         self,
@@ -451,15 +525,24 @@ class Client:
 
         self._log_request()
         with self.pool.stream(**req_data) as http_resp:
-            if http_resp.status != 200:
-                self._log_response(http_resp.status)
-                http_resp.read()
-                raise error_for_response(http_resp)
+            # `completed` means the server ended the stream itself; any other
+            # exit (consumer stops iterating, disconnect, error) leaves the
+            # stream open server-side, so cancel it explicitly.
+            completed = False
+            try:
+                if http_resp.status != 200:
+                    self._log_response(http_resp.status)
+                    http_resp.read()
+                    raise error_for_response(http_resp)
 
-            for chunk in http_resp.iter_stream():
-                for parsed in parser.parse(chunk):
-                    self._log_stream_message()
-                    yield parsed
+                for chunk in http_resp.iter_stream():
+                    for parsed in parser.parse(chunk):
+                        self._log_stream_message()
+                        yield parsed
+                completed = True
+            finally:
+                if not completed:
+                    _reset_h2_stream(http_resp)
 
     def call_client_stream(self, req, **opts):
         raise NotImplementedError("client stream not supported")
