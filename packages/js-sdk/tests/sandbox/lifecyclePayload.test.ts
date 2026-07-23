@@ -79,9 +79,13 @@ test.skipIf(isDebug)(
     try {
       const marker = 'auto-pause-fs-only'
       await sandbox.files.write('/home/user/auto-pause-marker.txt', marker)
+      // Read via a command, not files.read: envd's non-gzip download path
+      // serves procfs files as an empty 200 (it sizes them by stat, which is
+      // 0), so clients that don't negotiate gzip — like workerd's fetch —
+      // silently get '' (infra#3363).
       const bootBefore = (
-        await sandbox.files.read('/proc/sys/kernel/random/boot_id')
-      ).trim()
+        await sandbox.commands.run('cat /proc/sys/kernel/random/boot_id')
+      ).stdout.trim()
 
       await wait(5_000)
 
@@ -97,8 +101,8 @@ test.skipIf(isDebug)(
       assert.equal(persisted, marker)
 
       const bootAfter = (
-        await sandbox.files.read('/proc/sys/kernel/random/boot_id')
-      ).trim()
+        await sandbox.commands.run('cat /proc/sys/kernel/random/boot_id')
+      ).stdout.trim()
       assert.notEqual(bootAfter, bootBefore)
     } finally {
       await sandbox.kill().catch(() => {})

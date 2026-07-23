@@ -173,10 +173,14 @@ sandboxTest.skipIf(isDebug)(
 
     await sandbox.files.write(filename, content)
 
-    // Kernel boot id before the pause; it changes only across a real (cold) boot.
+    // Kernel boot id before the pause; it changes only across a real (cold)
+    // boot. Read via a command, not files.read: envd's non-gzip download path
+    // serves procfs files as an empty 200 (it sizes them by stat, which is 0),
+    // so clients that don't negotiate gzip — like workerd's fetch — silently
+    // get '' (infra#3363).
     const bootBefore = (
-      await sandbox.files.read('/proc/sys/kernel/random/boot_id')
-    ).trim()
+      await sandbox.commands.run('cat /proc/sys/kernel/random/boot_id')
+    ).stdout.trim()
 
     // Filesystem-only snapshot: no memory is captured, so resuming cold-boots.
     await sandbox.pause({ keepMemory: false })
@@ -196,8 +200,8 @@ sandboxTest.skipIf(isDebug)(
 
     // A fresh boot id proves the guest rebooted rather than restoring memory.
     const bootAfter = (
-      await resumedSandbox.files.read('/proc/sys/kernel/random/boot_id')
-    ).trim()
+      await resumedSandbox.commands.run('cat /proc/sys/kernel/random/boot_id')
+    ).stdout.trim()
     assert.notEqual(bootAfter, bootBefore)
   }
 )
