@@ -142,9 +142,7 @@ class TemplateBuilder:
                         raise error.with_traceback(stack_trace)
                     raise
 
-        # Use the override so each copied item collects this stack trace,
-        # keeping build steps aligned with their stack traces
-        self._template._run_in_stack_trace_override_context(_copy_items, stack_trace)
+        _copy_items()
         return self
 
     def remove(
@@ -178,9 +176,7 @@ class TemplateBuilder:
             args.append("-f")
         args.extend([shlex.quote(str(p)) for p in paths])
 
-        return self._template._run_in_new_stack_trace_context(
-            lambda: self.run_cmd(" ".join(args), user=user)
-        )
+        return self.run_cmd(" ".join(args), user=user)
 
     def rename(
         self,
@@ -209,9 +205,7 @@ class TemplateBuilder:
         if force:
             args.append("-f")
 
-        return self._template._run_in_new_stack_trace_context(
-            lambda: self.run_cmd(" ".join(args), user=user)
-        )
+        return self.run_cmd(" ".join(args), user=user)
 
     def make_dir(
         self,
@@ -241,9 +235,7 @@ class TemplateBuilder:
             args.append(f"-m {pad_octal(mode)}")
         args.extend([shlex.quote(str(p)) for p in path_list])
 
-        return self._template._run_in_new_stack_trace_context(
-            lambda: self.run_cmd(" ".join(args), user=user)
-        )
+        return self.run_cmd(" ".join(args), user=user)
 
     def make_symlink(
         self,
@@ -273,9 +265,7 @@ class TemplateBuilder:
         if force:
             args.append("-f")
         args.extend([shlex.quote(str(src)), shlex.quote(str(dest))])
-        return self._template._run_in_new_stack_trace_context(
-            lambda: self.run_cmd(" ".join(args), user=user)
-        )
+        return self.run_cmd(" ".join(args), user=user)
 
     def run_cmd(
         self, command: Union[str, List[str]], user: Optional[str] = None
@@ -387,9 +377,7 @@ class TemplateBuilder:
         else:
             args.append(".")
 
-        return self._template._run_in_new_stack_trace_context(
-            lambda: self.run_cmd(" ".join(args), user="root" if g else None)
-        )
+        return self.run_cmd(" ".join(args), user="root" if g else None)
 
     def npm_install(
         self,
@@ -425,9 +413,7 @@ class TemplateBuilder:
         if packages:
             args.extend(packages)
 
-        return self._template._run_in_new_stack_trace_context(
-            lambda: self.run_cmd(" ".join(args), user="root" if g else None)
-        )
+        return self.run_cmd(" ".join(args), user="root" if g else None)
 
     def bun_install(
         self,
@@ -464,9 +450,7 @@ class TemplateBuilder:
         if packages:
             args.extend(packages)
 
-        return self._template._run_in_new_stack_trace_context(
-            lambda: self.run_cmd(" ".join(args), user="root" if g else None)
-        )
+        return self.run_cmd(" ".join(args), user="root" if g else None)
 
     def apt_install(
         self,
@@ -493,14 +477,12 @@ class TemplateBuilder:
         if isinstance(packages, str):
             packages = [packages]
 
-        return self._template._run_in_new_stack_trace_context(
-            lambda: self.run_cmd(
-                [
-                    "apt-get update",
-                    f"DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y {'--no-install-recommends ' if no_install_recommends else ''}{'--fix-missing ' if fix_missing else ''}{' '.join(packages)}",
-                ],
-                user="root",
-            )
+        return self.run_cmd(
+            [
+                "apt-get update",
+                f"DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y {'--no-install-recommends ' if no_install_recommends else ''}{'--fix-missing ' if fix_missing else ''}{' '.join(packages)}",
+            ],
+            user="root",
         )
 
     def add_mcp_server(self, servers: Union[str, List[str]]) -> "TemplateBuilder":
@@ -529,9 +511,7 @@ class TemplateBuilder:
         if isinstance(servers, str):
             servers = [servers]
 
-        return self._template._run_in_new_stack_trace_context(
-            lambda: self.run_cmd(f"mcp-gateway pull {' '.join(servers)}", user="root")
-        )
+        return self.run_cmd(f"mcp-gateway pull {' '.join(servers)}", user="root")
 
     def git_clone(
         self,
@@ -567,9 +547,7 @@ class TemplateBuilder:
             args.append(f"--depth {depth}")
         if path:
             args.append(shlex.quote(str(path)))
-        return self._template._run_in_new_stack_trace_context(
-            lambda: self.run_cmd(" ".join(args), user=user)
-        )
+        return self.run_cmd(" ".join(args), user=user)
 
     def beta_dev_container_prebuild(
         self,
@@ -595,11 +573,9 @@ class TemplateBuilder:
                 "Devcontainers can only used in the devcontainer template"
             ).with_traceback(stack_trace)
 
-        return self._template._run_in_new_stack_trace_context(
-            lambda: self.run_cmd(
-                f"devcontainer build --workspace-folder {shlex.quote(str(devcontainer_directory))}",
-                user="root",
-            )
+        return self.run_cmd(
+            f"devcontainer build --workspace-folder {shlex.quote(str(devcontainer_directory))}",
+            user="root",
         )
 
     def beta_set_dev_container_start(
@@ -645,7 +621,7 @@ class TemplateBuilder:
                 wait_for_file("/devcontainer.up"),
             )
 
-        return self._template._run_in_new_stack_trace_context(_set_start)
+        return _set_start()
 
     def set_envs(self, envs: Dict[str, str]) -> "TemplateBuilder":
         """
@@ -810,8 +786,6 @@ class TemplateBase:
         )
         self._file_ignore_patterns: List[str] = file_ignore_patterns or []
         self._stack_traces: List[Union[TracebackType, None]] = []
-        self._stack_traces_enabled: bool = True
-        self._stack_traces_override: Optional[Union[TracebackType, None]] = None
 
     def skip_cache(self) -> "TemplateBase":
         """
@@ -831,70 +805,15 @@ class TemplateBase:
         """
         Collect the current stack trace for debugging purposes.
 
+        The trace resolves to the first frame outside the SDK, so methods that
+        delegate to other builder methods (e.g. ``remove()`` -> ``run_cmd()``)
+        collect the user's call site without any bookkeeping.
+
         :return: `TemplateBase` class
         """
-        if not self._stack_traces_enabled:
-            return self
-
-        # Use the override if set, otherwise get the caller frame
-        if self._stack_traces_override is not None:
-            self._stack_traces.append(self._stack_traces_override)
-            return self
-
         stack = get_caller_frame()
         self._stack_traces.append(make_traceback(stack))
         return self
-
-    def _disable_stack_trace(self) -> "TemplateBase":
-        """
-        Temporarily disable stack trace collection.
-
-        :return: `TemplateBase` class
-        """
-        self._stack_traces_enabled = False
-        return self
-
-    def _enable_stack_trace(self) -> "TemplateBase":
-        """
-        Re-enable stack trace collection.
-
-        :return: `TemplateBase` class
-        """
-        self._stack_traces_enabled = True
-        return self
-
-    def _run_in_new_stack_trace_context(self, fn):
-        """
-        Execute a function in a clean stack trace context.
-
-        :param fn: Function to execute
-
-        :return: The result of the function
-        """
-        self._disable_stack_trace()
-        try:
-            result = fn()
-        finally:
-            self._enable_stack_trace()
-        self._collect_stack_trace()
-        return result
-
-    def _run_in_stack_trace_override_context(
-        self, fn, stack_trace_override: Optional[Union[TracebackType, None]]
-    ):
-        """
-        Execute a function with a manual stack trace override.
-
-        :param fn: Function to execute
-        :param stack_trace_override: Stack trace to use instead of auto-collecting
-
-        :return: The result of the function
-        """
-        self._stack_traces_override = stack_trace_override
-        try:
-            return fn()
-        finally:
-            self._stack_traces_override = None
 
     # Built-in image mixins
     def from_debian_image(self, variant: str = "stable") -> TemplateBuilder:
@@ -910,9 +829,7 @@ class TemplateBase:
         Template().from_debian_image('bookworm')
         ```
         """
-        return self._run_in_new_stack_trace_context(
-            lambda: self.from_image(f"debian:{variant}")
-        )
+        return self.from_image(f"debian:{variant}")
 
     def from_ubuntu_image(self, variant: str = "latest") -> TemplateBuilder:
         """
@@ -927,9 +844,7 @@ class TemplateBase:
         Template().from_ubuntu_image('24.04')
         ```
         """
-        return self._run_in_new_stack_trace_context(
-            lambda: self.from_image(f"ubuntu:{variant}")
-        )
+        return self.from_image(f"ubuntu:{variant}")
 
     def from_python_image(self, version: str = "3") -> TemplateBuilder:
         """
@@ -944,9 +859,7 @@ class TemplateBase:
         Template().from_python_image('3')
         ```
         """
-        return self._run_in_new_stack_trace_context(
-            lambda: self.from_image(f"python:{version}")
-        )
+        return self.from_image(f"python:{version}")
 
     def from_node_image(self, variant: str = "lts") -> TemplateBuilder:
         """
@@ -961,9 +874,7 @@ class TemplateBase:
         Template().from_node_image('24')
         ```
         """
-        return self._run_in_new_stack_trace_context(
-            lambda: self.from_image(f"node:{variant}")
-        )
+        return self.from_image(f"node:{variant}")
 
     def from_bun_image(self, variant: str = "latest") -> TemplateBuilder:
         """
@@ -973,9 +884,7 @@ class TemplateBase:
 
         :return: `TemplateBuilder` class
         """
-        return self._run_in_new_stack_trace_context(
-            lambda: self.from_image(f"oven/bun:{variant}")
-        )
+        return self.from_image(f"oven/bun:{variant}")
 
     def from_base_image(self) -> TemplateBuilder:
         """
@@ -988,9 +897,7 @@ class TemplateBase:
         Template().from_base_image()
         ```
         """
-        return self._run_in_new_stack_trace_context(
-            lambda: self.from_image(self._default_base_image)
-        )
+        return self.from_image(self._default_base_image)
 
     def from_image(
         self,
@@ -1080,16 +987,10 @@ class TemplateBase:
         # Create a TemplateBuilder first to use its methods
         builder = TemplateBuilder(self)
 
-        # Get the caller frame to use for stack trace override so all
-        # instructions parsed from the Dockerfile share this call site
-        caller_frame = get_caller_frame()
-        stack_trace_override = make_traceback(caller_frame)
-
-        # Parse the dockerfile using the builder as the interface
-        base_image = self._run_in_stack_trace_override_context(
-            lambda: parse_dockerfile(dockerfile_content_or_path, builder),
-            stack_trace_override,
-        )
+        # Parse the dockerfile using the builder as the interface. Each parsed
+        # instruction collects its own stack trace, which resolves to this
+        # method's call site
+        base_image = parse_dockerfile(dockerfile_content_or_path, builder)
         self._base_image = base_image
 
         # If we should force the next layer and it's a FROM command, invalidate whole template
