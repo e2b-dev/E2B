@@ -16,7 +16,7 @@ import {
   uploadFile,
   waitForBuildFinish,
 } from './buildApi'
-import { GZIP, RESOLVE_SYMLINKS, STACK_TRACE_DEPTH } from './consts'
+import { GZIP, RESOLVE_SYMLINKS } from './consts'
 import { parseDockerfile } from './dockerfileParser'
 import { LogEntry, LogEntryEnd, LogEntryStart } from './logger'
 import { ReadyCmd, waitForFile } from './readycmd'
@@ -76,9 +76,7 @@ export class TemplateBase
   constructor(options?: TemplateOptions) {
     this.fileContextPath =
       options?.fileContextPath ??
-      (runtime === 'browser'
-        ? '.'
-        : (getCallerDirectory(STACK_TRACE_DEPTH) ?? '.'))
+      (runtime === 'browser' ? '.' : (getCallerDirectory() ?? '.'))
     this.fileIgnorePatterns =
       options?.fileIgnorePatterns ?? this.fileIgnorePatterns
   }
@@ -454,7 +452,7 @@ export class TemplateBase
     if (credentials && (!credentials.username || !credentials.password)) {
       throw new InvalidArgumentError(
         'Both username and password are required when providing registry credentials',
-        getCallerFrame(STACK_TRACE_DEPTH - 1)
+        getCallerFrame()
       )
     }
 
@@ -495,8 +493,8 @@ export class TemplateBase
   fromDockerfile(dockerfileContentOrPath: string): TemplateBuilder {
     const { baseImage } = this.runInStackTraceOverrideContext(
       () => parseDockerfile(dockerfileContentOrPath, this),
-      // -1 as we're going up the call stack from the parseDockerfile function
-      getCallerFrame(STACK_TRACE_DEPTH - 1)
+      // All instructions parsed from the Dockerfile share this call site
+      getCallerFrame()
     )
     this.baseImage = baseImage
     this.baseTemplate = undefined
@@ -581,7 +579,7 @@ export class TemplateBase
     }
 
     const srcs = Array.isArray(src) ? src : [src]
-    const stackTrace = getCallerFrame(STACK_TRACE_DEPTH - 1)
+    const stackTrace = getCallerFrame()
 
     for (const src of srcs) {
       const srcString = src.toString()
@@ -619,7 +617,7 @@ export class TemplateBase
     }
 
     // Stack trace that will be used to re-throw the error with
-    const stackTrace = getCallerFrame(STACK_TRACE_DEPTH - 1)
+    const stackTrace = getCallerFrame()
 
     // Use the override so each copied item collects this stack trace,
     // keeping build steps aligned with their stack traces
@@ -857,7 +855,7 @@ export class TemplateBase
     if (this.baseTemplate !== 'mcp-gateway') {
       throw new BuildError(
         'MCP servers can only be added to mcp-gateway template',
-        getCallerFrame(STACK_TRACE_DEPTH - 1)
+        getCallerFrame()
       )
     }
 
@@ -941,7 +939,7 @@ export class TemplateBase
     if (this.baseTemplate !== 'devcontainer') {
       throw new BuildError(
         'Devcontainers can only used in the devcontainer template',
-        getCallerFrame(STACK_TRACE_DEPTH - 1)
+        getCallerFrame()
       )
     }
 
@@ -957,7 +955,7 @@ export class TemplateBase
     if (this.baseTemplate !== 'devcontainer') {
       throw new BuildError(
         'Devcontainers can only used in the devcontainer template',
-        getCallerFrame(STACK_TRACE_DEPTH - 1)
+        getCallerFrame()
       )
     }
 
@@ -973,10 +971,9 @@ export class TemplateBase
   /**
    * Collect the current stack trace for debugging purposes.
    *
-   * @param stackTracesDepth Depth to traverse in the call stack
    * @returns this for method chaining
    */
-  private collectStackTrace(stackTracesDepth: number = STACK_TRACE_DEPTH) {
+  private collectStackTrace() {
     if (!this.stackTracesEnabled) {
       return this
     }
@@ -986,7 +983,7 @@ export class TemplateBase
       return this
     }
 
-    this.stackTraces.push(getCallerFrame(stackTracesDepth))
+    this.stackTraces.push(getCallerFrame())
     return this
   }
 
@@ -1024,7 +1021,7 @@ export class TemplateBase
     } finally {
       this.enableStackTrace()
     }
-    this.collectStackTrace(STACK_TRACE_DEPTH + 1)
+    this.collectStackTrace()
     return result
   }
 

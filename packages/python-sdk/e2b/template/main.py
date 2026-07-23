@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 from e2b.exceptions import BuildException, InvalidArgumentException
-from e2b.template.consts import STACK_TRACE_DEPTH, RESOLVE_SYMLINKS
+from e2b.template.consts import RESOLVE_SYMLINKS
 from e2b.template.dockerfile_parser import parse_dockerfile
 from e2b.template.readycmd import ReadyCmd, wait_for_file
 from e2b.template.types import (
@@ -70,7 +70,7 @@ class TemplateBuilder:
         srcs = [src] if isinstance(src, (str, Path)) else src
 
         # Get the caller frame for stack trace in validation errors
-        caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
+        caller_frame = get_caller_frame()
         stack_trace = make_traceback(caller_frame)
 
         for src_item in srcs:
@@ -121,7 +121,7 @@ class TemplateBuilder:
         ```
         """
         # Get the stack trace at the copy_items call site
-        caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
+        caller_frame = get_caller_frame()
         stack_trace = make_traceback(caller_frame)
 
         def _copy_items():
@@ -520,7 +520,7 @@ class TemplateBuilder:
         ```
         """
         if self._template._base_template != "mcp-gateway":
-            caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
+            caller_frame = get_caller_frame()
             stack_trace = make_traceback(caller_frame)
             raise BuildException(
                 "MCP servers can only be added to mcp-gateway template"
@@ -589,7 +589,7 @@ class TemplateBuilder:
         ```
         """
         if self._template._base_template != "devcontainer":
-            caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
+            caller_frame = get_caller_frame()
             stack_trace = make_traceback(caller_frame)
             raise BuildException(
                 "Devcontainers can only used in the devcontainer template"
@@ -628,7 +628,7 @@ class TemplateBuilder:
         ```
         """
         if self._template._base_template != "devcontainer":
-            caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
+            caller_frame = get_caller_frame()
             stack_trace = make_traceback(caller_frame)
             raise BuildException(
                 "Devcontainers can only used in the devcontainer template"
@@ -806,7 +806,7 @@ class TemplateBase:
         self._file_context_path = (
             file_context_path.as_posix()
             if isinstance(file_context_path, Path)
-            else (file_context_path or get_caller_directory(STACK_TRACE_DEPTH) or ".")
+            else (file_context_path or get_caller_directory() or ".")
         )
         self._file_ignore_patterns: List[str] = file_ignore_patterns or []
         self._stack_traces: List[Union[TracebackType, None]] = []
@@ -827,13 +827,9 @@ class TemplateBase:
         self._force_next_layer = True
         return self
 
-    def _collect_stack_trace(
-        self, stack_traces_depth: int = STACK_TRACE_DEPTH
-    ) -> "TemplateBase":
+    def _collect_stack_trace(self) -> "TemplateBase":
         """
         Collect the current stack trace for debugging purposes.
-
-        :param stack_traces_depth: Depth to traverse in the call stack
 
         :return: `TemplateBase` class
         """
@@ -845,7 +841,7 @@ class TemplateBase:
             self._stack_traces.append(self._stack_traces_override)
             return self
 
-        stack = get_caller_frame(stack_traces_depth)
+        stack = get_caller_frame()
         self._stack_traces.append(make_traceback(stack))
         return self
 
@@ -880,7 +876,7 @@ class TemplateBase:
             result = fn()
         finally:
             self._enable_stack_trace()
-        self._collect_stack_trace(STACK_TRACE_DEPTH + 1)
+        self._collect_stack_trace()
         return result
 
     def _run_in_stack_trace_override_context(
@@ -1022,7 +1018,7 @@ class TemplateBase:
         # Validate (and resolve the registry config) before mutating the builder.
         if username is not None or password is not None:
             if not username or not password:
-                caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
+                caller_frame = get_caller_frame()
                 stack_trace = make_traceback(caller_frame)
                 raise InvalidArgumentException(
                     "Both username and password are required when providing registry credentials"
@@ -1084,9 +1080,9 @@ class TemplateBase:
         # Create a TemplateBuilder first to use its methods
         builder = TemplateBuilder(self)
 
-        # Get the caller frame to use for stack trace override
-        # -1 as we're going up the call stack from the parse_dockerfile function
-        caller_frame = get_caller_frame(STACK_TRACE_DEPTH - 1)
+        # Get the caller frame to use for stack trace override so all
+        # instructions parsed from the Dockerfile share this call site
+        caller_frame = get_caller_frame()
         stack_trace_override = make_traceback(caller_frame)
 
         # Parse the dockerfile using the builder as the interface
