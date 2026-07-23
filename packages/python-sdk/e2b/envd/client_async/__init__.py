@@ -27,6 +27,7 @@ from e2b.envd.client_shared import (
     pool_idle_timeout,
     pool_max_idle_per_host,
     proxy_to_url,
+    should_retry_connection,
 )
 from e2b.envd.interceptors import build_interceptors
 from e2b.exceptions import TimeoutException
@@ -41,19 +42,9 @@ _transports: dict[Optional[str], "PlainHTTPErrorTransport"] = {}
 
 class PlainHTTPErrorTransport:
     """Raise plain (non-Connect-encoded) HTTP error responses — e.g. an edge
-    proxy answering for envd — as ``ConnectError`` with the vendored client's
-    status mapping and the response body as the message, before connectrpc
-    collapses them into Connect-spec codes with synthesized reason phrases
-    (404 → UNIMPLEMENTED "Not Found"): ``kill``/``exists``/``make_dir``
-    branch on NOT_FOUND/ALREADY_EXISTS and user code relies on
-    RateLimitException to back off. connectrpc re-raises a ``ConnectError``
-    from the transport unchanged — the path its own protocol errors take.
-    JSON error bodies are handed back to connectrpc only when they are valid
-    Connect-encoded errors (a string ``code``); a gateway's ``{"code": 429}``
-    or plain-JSON error page gets the vendored mapping too. Becomes
-    unnecessary once connectrpc preserves the status on the errors it builds
-    (https://github.com/connectrpc/connect-py/issues/306).
-    """
+    proxy answering for envd — as ``ConnectError``; see
+    :func:`e2b.envd.client_shared.plain_http_error` for the mapping and
+    rationale."""
 
     def __init__(self, inner: Transport):
         self._inner = inner
@@ -65,38 +56,29 @@ class PlainHTTPErrorTransport:
         body = bytearray()
         async for chunk in response.content:
             body.extend(chunk)
+        data = bytes(body)
         error = plain_http_error(
-            response.status, response.headers.get("content-type", ""), bytes(body)
+            response.status, response.headers.get("content-type", ""), data
         )
         if error is None:
             # Valid Connect error: hand back to connectrpc, body restored.
             return Response(
                 status=response.status,
                 headers=response.headers,
-                content=bytes(body),
+                content=data,
             )
         raise error
 
 
 class ConnectionRetryTransport(RetryTransport):
-    """Retry only failures establishing the connection.
-
-    pyqwest raises the builtin ``ConnectionError`` only before the request
-    was written, so retrying exactly these failures can never replay a
-    request envd may have received — which could re-run a command or
-    re-deliver events — for unary and streaming RPCs alike. Anything later
-    (``WriteError``/``ReadError``/``StreamError``, error responses) surfaces
-    to the caller; the middleware's default policy would otherwise also retry
-    I/O errors and 429/5xx responses for idempotent methods. This replaces
-    httpcore's transport ``retries`` from the previous stack and deliberately
-    drops the vendored client's retry on connections dropped mid-request,
-    which could re-execute a delivered unary RPC like ``SendInput``.
-    """
+    """Retry only failures establishing the connection; see
+    :func:`e2b.envd.client_shared.should_retry_connection` for the policy
+    rationale."""
 
     def should_retry_response(
         self, request: Request, response: Union[Response, Exception]
     ) -> bool:
-        return isinstance(response, ConnectionError)
+        return should_retry_connection(response)
 
 
 def get_transport(proxy_url: Optional[str]) -> "PlainHTTPErrorTransport":

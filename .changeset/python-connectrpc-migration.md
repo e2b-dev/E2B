@@ -46,5 +46,10 @@ Notes:
   wait until envd confirms with a start event, matching the JS SDK's
   `requestTimeoutMs` — and raises `TimeoutException` when exceeded. The
   running stream is bounded by the command/watch `timeout` (as before). In
-  the sync SDK there is no way to interrupt the blocking wait, so stream
-  setup is bounded by the transport's 30 s connect timeout instead.
+  the sync SDK there is no way to interrupt the blocking wait, so
+  `request_timeout` is not applied to opening the stream — both stream setup
+  and the running stream are bounded by `timeout` (unlimited when `0`).
+- `E2B_MAX_CONNECTIONS` no longer applies to sandbox RPC traffic: the new
+  transport bounds only idle connections per host (`E2B_KEEPALIVE_EXPIRY`,
+  `E2B_MAX_KEEPALIVE_CONNECTIONS`), not the total number of open
+  connections. It still applies to the REST API and file transfers.

@@ -127,9 +127,6 @@ class LoggingInterceptor:
             code = error.code.name.lower() if isinstance(error, ConnectError) else error
             self._logger.error(f"Response: {code} {self._url(ctx)}")
 
-    def _log_stream_message(self, ctx: RequestContext) -> None:
-        self._logger.debug(f"Response stream: {self._url(ctx)}")
-
     def intercept_unary_sync(
         self,
         call_next: Callable[[REQ, RequestContext], RES],
@@ -168,9 +165,12 @@ class LoggingInterceptor:
     ) -> Iterator[RES]:
         self._log_request(ctx)
         inner = call_next(request, ctx)
+        # Hoisted out of the loop and %-formatted lazily: this logs once per
+        # streamed message — the per-stdout-chunk hot path.
+        url = self._url(ctx)
         try:
             for message in inner:
-                self._log_stream_message(ctx)
+                self._logger.debug("Response stream: %s", url)
                 yield message
         except Exception as e:
             self._log_response(ctx, e)
@@ -190,9 +190,12 @@ class LoggingInterceptor:
     ) -> AsyncIterator[RES]:
         self._log_request(ctx)
         inner = call_next(request, ctx)
+        # Hoisted out of the loop and %-formatted lazily: this logs once per
+        # streamed message — the per-stdout-chunk hot path.
+        url = self._url(ctx)
         try:
             async for message in inner:
-                self._log_stream_message(ctx)
+                self._logger.debug("Response stream: %s", url)
                 yield message
         except Exception as e:
             self._log_response(ctx, e)

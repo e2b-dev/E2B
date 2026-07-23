@@ -22,6 +22,7 @@ from e2b.envd.rpc import handle_rpc_exception_with_health
 from e2b.envd.utils import (
     authentication_header,
     extract_start_pid,
+    request_timeout_ms,
     timeout_to_ms,
 )
 from e2b.envd.client_sync import as_stream, create_rpc_client
@@ -44,6 +45,11 @@ class Pty:
         self._connection_config = connection_config
         self._envd_version = envd_version
         self._thread_local = threading.local()
+        self._rpc = create_rpc_client(
+            process_connect.ProcessClientSync,
+            envd_api_url,
+            connection_config,
+        )
 
     def _create_envd_api(self) -> httpx.Client:
         transport = get_envd_transport(self._connection_config)
@@ -54,28 +60,15 @@ class Pty:
             event_hooks=make_logging_event_hooks(self._connection_config.logger),
         )
 
-    def _create_rpc(self) -> process_connect.ProcessClientSync:
-        return create_rpc_client(
-            process_connect.ProcessClientSync,
-            self._envd_api_url,
-            self._connection_config,
-        )
-
     @property
     def _envd_api(self) -> httpx.Client:
+        # Unlike the shared RPC client, the httpx transports are per-thread
+        # (see e2b.api.client_sync), so the client wrapping them is too.
         envd_api = getattr(self._thread_local, "envd_api", None)
         if envd_api is None:
             envd_api = self._create_envd_api()
             self._thread_local.envd_api = envd_api
         return envd_api
-
-    @property
-    def _rpc(self) -> process_connect.ProcessClientSync:
-        rpc = getattr(self._thread_local, "rpc", None)
-        if rpc is None:
-            rpc = self._create_rpc()
-            self._thread_local.rpc = rpc
-        return rpc
 
     def _check_health(self) -> Optional[bool]:
         return check_sandbox_health(self._envd_api)
@@ -99,9 +92,7 @@ class Pty:
                     process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
                     signal=process_pb.Signal.SIGKILL,
                 ),
-                timeout_ms=timeout_to_ms(
-                    self._connection_config.get_request_timeout(request_timeout)
-                ),
+                timeout_ms=request_timeout_ms(self._connection_config, request_timeout),
             )
             return True
         except Exception as e:
@@ -131,9 +122,7 @@ class Pty:
                         input=Oneof("pty", data),
                     ),
                 ),
-                timeout_ms=timeout_to_ms(
-                    self._connection_config.get_request_timeout(request_timeout)
-                ),
+                timeout_ms=request_timeout_ms(self._connection_config, request_timeout),
             )
         except Exception as e:
             raise handle_rpc_exception_with_health(e, self._check_health)
@@ -155,7 +144,7 @@ class Pty:
         :param cwd: Working directory for the PTY
         :param envs: Environment variables for the PTY
         :param timeout: Timeout for the PTY in **seconds**
-        :param request_timeout: Not applied to this streaming call — opening the stream is bounded by the transport's 30 s connect timeout, the stream itself by `timeout`
+        :param request_timeout: Not applied to this streaming call — both opening the stream and the stream itself are bounded by `timeout` (unlimited when `0`)
 
         :return: Handle to interact with the PTY
         """
@@ -212,7 +201,7 @@ class Pty:
 
         :param pid: Process ID of the PTY to connect to. You can get the list of running PTYs using `sandbox.pty.list()`.
         :param timeout: Timeout for the PTY connection in **seconds**. Using `0` will not limit the connection time
-        :param request_timeout: Not applied to this streaming call — opening the stream is bounded by the transport's 30 s connect timeout, the stream itself by `timeout`
+        :param request_timeout: Not applied to this streaming call — both opening the stream and the stream itself are bounded by `timeout` (unlimited when `0`)
 
         :return: Handle to interact with the PTY
         """
@@ -267,9 +256,7 @@ class Pty:
                         size=process_pb.PTY.Size(rows=size.rows, cols=size.cols),
                     ),
                 ),
-                timeout_ms=timeout_to_ms(
-                    self._connection_config.get_request_timeout(request_timeout)
-                ),
+                timeout_ms=request_timeout_ms(self._connection_config, request_timeout),
             )
         except Exception as e:
             raise handle_rpc_exception_with_health(e, self._check_health)

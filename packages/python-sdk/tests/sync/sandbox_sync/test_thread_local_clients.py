@@ -1,13 +1,21 @@
+"""Client lifecycle in the sync sandbox modules: the httpx `envd_api` clients
+wrap per-thread transports (see `e2b.api.client_sync`) and are bound per
+calling thread, while the connectrpc RPC clients are stateless over a
+process-global transport and are built once per module and shared across
+threads."""
+
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 import threading
 from types import SimpleNamespace
+from typing import cast
 from unittest.mock import Mock, sentinel
 
 import httpx
 from packaging.version import Version
 
 from e2b.connection_config import ConnectionConfig
+from e2b.envd.filesystem.filesystem_connect import FilesystemClientSync
 from e2b.sandbox_sync.commands.command import Commands
 from e2b.sandbox_sync.commands.pty import Pty
 from e2b.sandbox_sync.filesystem import filesystem as filesystem_sync
@@ -25,10 +33,6 @@ ENVD_VERSION = Version("0.6.2")
 def run_in_worker_thread(fn):
     with ThreadPoolExecutor(max_workers=1) as executor:
         return executor.submit(fn).result()
-
-
-def fake_transport():
-    return SimpleNamespace(pool=object())
 
 
 def test_sync_sandbox_envd_api_is_bound_per_calling_thread(monkeypatch, test_api_key):
@@ -57,9 +61,7 @@ def test_sync_sandbox_envd_api_is_bound_per_calling_thread(monkeypatch, test_api
     assert not hasattr(sandbox, "_transport")
 
 
-def test_sync_sandbox_clients_are_created_once_per_calling_thread(
-    monkeypatch, test_api_key
-):
+def test_sync_sandbox_rpc_shared_and_envd_api_per_thread(monkeypatch, test_api_key):
     config = ConnectionConfig(api_key=test_api_key)
     created = []
     transports = {}
@@ -70,7 +72,7 @@ def test_sync_sandbox_clients_are_created_once_per_calling_thread(
         with lock:
             transport = transports.get(thread_id)
             if transport is None:
-                transport = fake_transport()
+                transport = object()
                 transports[thread_id] = transport
             return transport
 
@@ -105,7 +107,13 @@ def test_sync_sandbox_clients_are_created_once_per_calling_thread(
         connection_config=config,
     )
 
-    assert Counter(kind for kind, thread in created if thread == main_thread_id) == {}
+    # RPC clients are built eagerly, once, on the constructing thread.
+    assert Counter(kind for kind, thread in created if thread == main_thread_id) == {
+        "filesystem_rpc": 1,
+        "process_rpc": 2,
+    }
+
+    main_rpcs = (sandbox.files._rpc, sandbox.commands._rpc, sandbox.pty._rpc)
 
     worker_count = 10
     barrier = threading.Barrier(worker_count + 1)
@@ -114,9 +122,6 @@ def test_sync_sandbox_clients_are_created_once_per_calling_thread(
         barrier.wait()
         envd_api = sandbox._envd_api
         files_envd_api = sandbox.files._envd_api
-        files_rpc = sandbox.files._rpc
-        commands_rpc = sandbox.commands._rpc
-        pty_rpc = sandbox.pty._rpc
 
         return {
             "thread": threading.get_ident(),
@@ -124,10 +129,13 @@ def test_sync_sandbox_clients_are_created_once_per_calling_thread(
             "stable": (
                 envd_api is sandbox._envd_api
                 and files_envd_api is sandbox.files._envd_api
-                and files_rpc is sandbox.files._rpc
-                and commands_rpc is sandbox.commands._rpc
-                and pty_rpc is sandbox.pty._rpc
             ),
+            "same_rpcs": (
+                sandbox.files._rpc,
+                sandbox.commands._rpc,
+                sandbox.pty._rpc,
+            )
+            == main_rpcs,
         }
 
     with ThreadPoolExecutor(max_workers=worker_count) as executor:
@@ -144,24 +152,21 @@ def test_sync_sandbox_clients_are_created_once_per_calling_thread(
         True: worker_count
     }
     assert Counter(result["stable"] for result in results) == {True: worker_count}
+    assert Counter(result["same_rpcs"] for result in results) == {True: worker_count}
+    # Worker threads build only their per-thread httpx client — no RPC clients.
     assert Counter(kind for kind, _thread in worker_created) == {
         "http": worker_count,
-        "filesystem_rpc": worker_count,
-        "process_rpc": worker_count * 2,
     }
 
 
-def test_sync_filesystem_envd_clients_are_bound_per_calling_thread(
-    monkeypatch, test_api_key
-):
+def test_sync_filesystem_envd_api_per_thread_rpc_shared(monkeypatch, test_api_key):
     config = ConnectionConfig(api_key=test_api_key)
     main_thread_id = threading.get_ident()
-    main_transport = fake_transport()
-    worker_transport = fake_transport()
+    main_transport = object()
+    worker_transport = object()
     main_api = Mock(spec=httpx.Client)
     worker_api = Mock(spec=httpx.Client)
-    main_rpc = sentinel.main_filesystem_rpc
-    worker_rpc = sentinel.worker_filesystem_rpc
+    shared_rpc = sentinel.filesystem_rpc
 
     monkeypatch.setattr(
         filesystem_sync,
@@ -180,9 +185,7 @@ def test_sync_filesystem_envd_clients_are_bound_per_calling_thread(
     monkeypatch.setattr(
         filesystem_sync,
         "create_rpc_client",
-        lambda *_args, **_kwargs: main_rpc
-        if threading.get_ident() == main_thread_id
-        else worker_rpc,
+        lambda *_args, **_kwargs: shared_rpc,
     )
 
     fs = Filesystem(
@@ -192,64 +195,53 @@ def test_sync_filesystem_envd_clients_are_bound_per_calling_thread(
     )
 
     assert fs._envd_api is main_api
-    assert fs._rpc is main_rpc
+    assert fs._rpc is shared_rpc
 
     worker_api_result, worker_rpc_result = run_in_worker_thread(
         lambda: (fs._envd_api, fs._rpc)
     )
     assert worker_api_result is worker_api
-    assert worker_rpc_result is worker_rpc
+    assert worker_rpc_result is shared_rpc
     assert fs._envd_api is main_api
-    assert fs._rpc is main_rpc
 
 
-def test_sync_command_rpc_clients_are_bound_per_calling_thread(
-    monkeypatch, test_api_key
-):
+def test_sync_command_rpc_client_is_shared_across_threads(monkeypatch, test_api_key):
     config = ConnectionConfig(api_key=test_api_key)
-    main_thread_id = threading.get_ident()
-    main_rpc = sentinel.main_command_rpc
-    worker_rpc = sentinel.worker_command_rpc
+    created = []
 
-    monkeypatch.setattr(
-        command_sync,
-        "create_rpc_client",
-        lambda *_args, **_kwargs: main_rpc
-        if threading.get_ident() == main_thread_id
-        else worker_rpc,
-    )
+    def fake_create_rpc_client(*_args, **_kwargs):
+        rpc = object()
+        created.append(rpc)
+        return rpc
+
+    monkeypatch.setattr(command_sync, "create_rpc_client", fake_create_rpc_client)
 
     commands = Commands(ENVD_API_URL, config, ENVD_VERSION)
 
-    assert commands._rpc is main_rpc
-    worker_rpc_result = run_in_worker_thread(lambda: commands._rpc)
-    assert worker_rpc_result is worker_rpc
-    assert commands._rpc is main_rpc
+    assert created == [commands._rpc]
+    assert run_in_worker_thread(lambda: commands._rpc) is created[0]
+    assert created == [commands._rpc]
 
 
-def test_sync_pty_rpc_clients_are_bound_per_calling_thread(monkeypatch, test_api_key):
+def test_sync_pty_rpc_client_is_shared_across_threads(monkeypatch, test_api_key):
     config = ConnectionConfig(api_key=test_api_key)
-    main_thread_id = threading.get_ident()
-    main_rpc = sentinel.main_pty_rpc
-    worker_rpc = sentinel.worker_pty_rpc
+    created = []
 
-    monkeypatch.setattr(
-        pty_sync,
-        "create_rpc_client",
-        lambda *_args, **_kwargs: main_rpc
-        if threading.get_ident() == main_thread_id
-        else worker_rpc,
-    )
+    def fake_create_rpc_client(*_args, **_kwargs):
+        rpc = object()
+        created.append(rpc)
+        return rpc
+
+    monkeypatch.setattr(pty_sync, "create_rpc_client", fake_create_rpc_client)
 
     pty = Pty(ENVD_API_URL, config, ENVD_VERSION)
 
-    assert pty._rpc is main_rpc
-    worker_rpc_result = run_in_worker_thread(lambda: pty._rpc)
-    assert worker_rpc_result is worker_rpc
-    assert pty._rpc is main_rpc
+    assert created == [pty._rpc]
+    assert run_in_worker_thread(lambda: pty._rpc) is created[0]
+    assert created == [pty._rpc]
 
 
-def test_sync_watch_handle_uses_calling_thread_rpc(test_api_key):
+def test_sync_watch_handle_uses_given_rpc(test_api_key):
     class FakeRpc:
         def __init__(self, name):
             self.name = name
@@ -260,13 +252,17 @@ def test_sync_watch_handle_uses_calling_thread_rpc(test_api_key):
 
     config = ConnectionConfig(api_key=test_api_key)
 
-    main_rpc = FakeRpc("main")
-    worker_rpc = FakeRpc("worker")
-    handle = WatchHandle(lambda: main_rpc, "watcher-id", config, ENVD_VERSION)
+    rpc = FakeRpc("shared")
+    handle = WatchHandle(
+        cast(FilesystemClientSync, rpc), "watcher-id", config, ENVD_VERSION
+    )
 
     handle.stop()
-    assert main_rpc.calls == [("remove", "watcher-id")]
+    assert rpc.calls == [("remove", "watcher-id")]
 
-    handle = WatchHandle(lambda: worker_rpc, "watcher-id", config, ENVD_VERSION)
+    rpc = FakeRpc("shared")
+    handle = WatchHandle(
+        cast(FilesystemClientSync, rpc), "watcher-id", config, ENVD_VERSION
+    )
     run_in_worker_thread(handle.stop)
-    assert worker_rpc.calls == [("remove", "watcher-id")]
+    assert rpc.calls == [("remove", "watcher-id")]

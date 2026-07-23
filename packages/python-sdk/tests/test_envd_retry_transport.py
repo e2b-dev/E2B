@@ -8,27 +8,26 @@ events), for unary and streaming RPCs alike.
 
 import pytest
 from pyqwest import (
-    Client,
     HTTPTransport,
     HTTPVersion,
     Request,
     Response,
-    SyncClient,
     SyncHTTPTransport,
     SyncRequest,
     SyncResponse,
     WriteError,
 )
-from envd_frame_server import assert_stdout_event, frame_recording_server
+from envd_frame_server import (
+    assert_stdout_event,
+    frame_recording_server,
+    make_async_client,
+    make_sync_client,
+)
 
-from e2b.connection_config import ConnectionConfig
 from e2b.envd.client_async import ConnectionRetryTransport
-from e2b.envd.client_shared import ENVD_JSON_CODEC, ENVD_RPC_COMPRESSION
 from e2b.envd.client_sync import (
     ConnectionRetryTransport as SyncConnectionRetryTransport,
 )
-from e2b.envd.interceptors import build_interceptors
-from e2b.envd.process.process_connect import ProcessClient, ProcessClientSync
 from e2b.envd.process.process_pb import ConnectRequest
 
 
@@ -162,21 +161,10 @@ class ConnectFlakySyncTransport:
 # `Client.stream`, a different client path than unary `post`).
 
 
-def _config() -> ConnectionConfig:
-    return ConnectionConfig(api_key="e2b_" + "0" * 40)
-
-
 async def test_async_stream_setup_retries_failed_connects():
     with frame_recording_server(server_ends_stream=True) as server:
-        base_url = f"http://127.0.0.1:{server.port}"
         flaky = ConnectFlakyTransport(HTTPTransport(http_version=HTTPVersion.HTTP2))
-        client = ProcessClient(
-            base_url,
-            codec=ENVD_JSON_CODEC,
-            **ENVD_RPC_COMPRESSION,
-            interceptors=build_interceptors(_config(), base_url),
-            http_client=Client(_retrying(flaky)),
-        )
+        client = make_async_client(server.port, transport=_retrying(flaky))
         events = [event async for event in client.connect(ConnectRequest())]
         assert len(events) == 1
         assert_stdout_event(events[0])
@@ -185,17 +173,10 @@ async def test_async_stream_setup_retries_failed_connects():
 
 def test_sync_stream_setup_retries_failed_connects():
     with frame_recording_server(server_ends_stream=True) as server:
-        base_url = f"http://127.0.0.1:{server.port}"
         flaky = ConnectFlakySyncTransport(
             SyncHTTPTransport(http_version=HTTPVersion.HTTP2)
         )
-        client = ProcessClientSync(
-            base_url,
-            codec=ENVD_JSON_CODEC,
-            **ENVD_RPC_COMPRESSION,
-            interceptors=build_interceptors(_config(), base_url),
-            http_client=SyncClient(_retrying_sync(flaky)),
-        )
+        client = make_sync_client(server.port, transport=_retrying_sync(flaky))
         events = list(client.connect(ConnectRequest()))
         assert len(events) == 1
         assert_stdout_event(events[0])

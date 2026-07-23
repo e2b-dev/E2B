@@ -24,7 +24,7 @@ _DEFAULT_RPC_ERROR_MAP: dict[Code, Callable[[str], Exception]] = {
         f"{message}: Rate limit exceeded, please try again later."
     ),
     Code.CANCELED: lambda message: TimeoutException(
-        f"{message}: This error is likely due to exceeding 'request_timeout'. You can pass the request timeout value as an option when making the request."
+        f"{message}: The request was cancelled by the server or a proxy while it was in flight — for example when the sandbox is paused or shut down."
     ),
     Code.DEADLINE_EXCEEDED: lambda message: TimeoutException(
         f"{message}: This error is likely due to exceeding 'timeout' — the total time a long running request (like process or directory watch) can be active — or 'request_timeout'. You can modify these by passing 'timeout' or 'request_timeout' when making the request. Use '0' to disable the timeout."

@@ -20,9 +20,10 @@ import httpx
 import pytest
 from connectrpc.code import Code
 from connectrpc.errors import ConnectError
+from envd_frame_server import make_config
 from packaging.version import Version
 
-from e2b.connection_config import ConnectionConfig
+import e2b.sandbox_async.commands.command as command_async
 from e2b.envd.client_async import first_event
 from e2b.envd.rpc import handle_rpc_exception
 from e2b.exceptions import TimeoutException
@@ -91,19 +92,23 @@ async def test_external_cancellation_is_not_masked():
     assert isinstance(err, asyncio.CancelledError)
 
 
-async def test_commands_connect_applies_request_timeout():
-    commands = Commands(
-        "http://127.0.0.1:1",
-        ConnectionConfig(api_key="e2b_" + "0" * 40),
-        Version("0.5.0"),
-        httpx.AsyncClient(),
-    )
-
+async def test_commands_connect_applies_request_timeout(monkeypatch):
     class NeverStartingRpc:
         def connect(self, req, headers=None, timeout_ms=None):
             return connectrpc_style_stream(30)
 
-    commands._rpc = NeverStartingRpc()
+    # Hand Commands the stub directly; the real factory would register a
+    # pooled transport in the process-global cache.
+    monkeypatch.setattr(
+        command_async, "create_rpc_client", lambda *_args, **_kwargs: NeverStartingRpc()
+    )
+    commands = Commands(
+        "http://127.0.0.1:1",
+        make_config(),
+        Version("0.5.0"),
+        httpx.AsyncClient(),
+    )
+
     start = time.monotonic()
     with pytest.raises(TimeoutException, match="request_timeout"):
         await commands.connect(pid=1, request_timeout=0.1)

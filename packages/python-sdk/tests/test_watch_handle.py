@@ -1,4 +1,5 @@
 import asyncio
+from typing import cast
 
 from packaging.version import Version
 
@@ -6,6 +7,7 @@ from e2b.connection_config import ConnectionConfig
 from protobuf import Oneof
 
 from e2b.envd.filesystem import filesystem_pb
+from e2b.envd.filesystem.filesystem_connect import FilesystemClientSync
 from e2b.envd.versions import ENVD_DEFAULT_USER
 from e2b.sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from e2b.sandbox_sync.filesystem.watch_handle import WatchHandle
@@ -40,7 +42,7 @@ class _FakeSyncRpc:
 
 def _make_sync_handle(rpc, envd_version: Version, user=None) -> WatchHandle:
     return WatchHandle(
-        get_rpc=lambda: rpc,
+        rpc=cast(FilesystemClientSync, rpc),
         watcher_id="watcher-1",
         connection_config=ConnectionConfig(),
         envd_version=envd_version,

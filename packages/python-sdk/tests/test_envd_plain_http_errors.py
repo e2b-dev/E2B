@@ -12,33 +12,33 @@ import httpx
 import pytest
 from connectrpc.code import Code
 from connectrpc.errors import ConnectError
-from envd_frame_server import frame_recording_server
+from envd_frame_server import (
+    frame_recording_server,
+    make_async_client,
+    make_sync_client,
+    make_config,
+)
 from packaging.version import Version
 from pyqwest import (
-    Client,
     Headers,
     HTTPTransport,
     HTTPVersion,
     Request,
     Response,
-    SyncClient,
     SyncHTTPTransport,
     SyncRequest,
     SyncResponse,
 )
 
-from e2b.connection_config import ConnectionConfig
+import e2b.sandbox_async.commands.command as command_async
 from e2b.envd.client_async import (
     ConnectionRetryTransport,
     PlainHTTPErrorTransport,
 )
-from e2b.envd.client_shared import ENVD_JSON_CODEC, ENVD_RPC_COMPRESSION
 from e2b.envd.client_sync import (
     ConnectionRetryTransport as SyncConnectionRetryTransport,
     PlainHTTPErrorTransport as SyncPlainHTTPErrorTransport,
 )
-from e2b.envd.interceptors import build_interceptors
-from e2b.envd.process.process_connect import ProcessClient, ProcessClientSync
 from e2b.envd.process.process_pb import ConnectRequest
 from e2b.sandbox_async.commands.command import Commands
 
@@ -186,28 +186,28 @@ def test_sync_maps_json_errors_without_a_valid_connect_code():
 _PLAIN_404 = (404, "text/plain", b"sandbox not found")
 
 
-def _config() -> ConnectionConfig:
-    return ConnectionConfig(api_key="e2b_" + "0" * 40)
-
-
 def _stack(transport) -> PlainHTTPErrorTransport:
     # The factories' transport stack, minus TLS (the test server is
     # plaintext, so HTTP/2 by prior knowledge instead of ALPN).
     return PlainHTTPErrorTransport(ConnectionRetryTransport(transport))
 
 
-async def test_async_kill_returns_false_on_plain_http_404():
+async def test_async_kill_returns_false_on_plain_http_404(monkeypatch):
     with frame_recording_server(server_ends_stream=False, plain_error=_PLAIN_404) as (
         server
     ):
         base_url = f"http://127.0.0.1:{server.port}"
-        commands = Commands(base_url, _config(), Version("0.5.0"), httpx.AsyncClient())
-        commands._rpc = ProcessClient(
-            base_url,
-            codec=ENVD_JSON_CODEC,
-            **ENVD_RPC_COMPRESSION,
-            interceptors=build_interceptors(_config(), base_url),
-            http_client=Client(_stack(HTTPTransport(http_version=HTTPVersion.HTTP2))),
+        rpc = make_async_client(
+            server.port,
+            transport=_stack(HTTPTransport(http_version=HTTPVersion.HTTP2)),
+        )
+        # Hand Commands the plaintext test client; the real factory would
+        # also register a pooled TLS transport in the process-global cache.
+        monkeypatch.setattr(
+            command_async, "create_rpc_client", lambda *_args, **_kwargs: rpc
+        )
+        commands = Commands(
+            base_url, make_config(), Version("0.5.0"), httpx.AsyncClient()
         )
         assert await commands.kill(pid=1) is False
 
@@ -216,19 +216,12 @@ def test_sync_stream_surfaces_plain_http_404_with_vendored_code():
     with frame_recording_server(server_ends_stream=False, plain_error=_PLAIN_404) as (
         server
     ):
-        base_url = f"http://127.0.0.1:{server.port}"
         sync_stack = SyncPlainHTTPErrorTransport(
             SyncConnectionRetryTransport(
                 SyncHTTPTransport(http_version=HTTPVersion.HTTP2)
             )
         )
-        client = ProcessClientSync(
-            base_url,
-            codec=ENVD_JSON_CODEC,
-            **ENVD_RPC_COMPRESSION,
-            interceptors=build_interceptors(_config(), base_url),
-            http_client=SyncClient(sync_stack),
-        )
+        client = make_sync_client(server.port, transport=sync_stack)
         with pytest.raises(ConnectError) as excinfo:
             next(iter(client.connect(ConnectRequest())))
         assert excinfo.value.code is Code.NOT_FOUND

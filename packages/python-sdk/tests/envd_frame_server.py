@@ -2,14 +2,16 @@
 
 A real plaintext HTTP/2 server that records the frames the client sends
 (notably ``RST_STREAM``), serving a Connect server stream the way envd's
-process ``connect`` does. Tests drive it with the actual generated stubs
-wired with the SDK's codec and interceptors. Not a test module itself —
-imported by ``test_envd_stream_reset`` and ``test_envd_retry_transport``
-(``pythonpath = tests`` in pytest.ini makes it importable under
-``--import-mode=importlib``).
+process ``connect`` does, plus client factories mirroring the
+``e2b.envd.client_sync``/``client_async`` wiring over a plaintext
+transport. Tests drive it with the actual generated stubs wired with the
+SDK's codec and interceptors. Not a test module itself — imported by the
+``test_envd_*`` transport and stream test modules (``pythonpath = tests``
+in pytest.ini makes it importable under ``--import-mode=importlib``).
 """
 
 import contextlib
+import logging
 import socket
 import struct
 import threading
@@ -20,8 +22,20 @@ import h2.config
 import h2.connection
 import h2.events
 from protobuf import Oneof
+from pyqwest import (
+    Client,
+    HTTPTransport,
+    HTTPVersion,
+    SyncClient,
+    SyncHTTPTransport,
+    SyncTransport,
+    Transport,
+)
 
-from e2b.envd.client_shared import ENVD_JSON_CODEC
+from e2b.connection_config import ConnectionConfig
+from e2b.envd.client_shared import ENVD_JSON_CODEC, ENVD_RPC_COMPRESSION
+from e2b.envd.interceptors import build_interceptors
+from e2b.envd.process.process_connect import ProcessClient, ProcessClientSync
 from e2b.envd.process.process_pb import ConnectResponse, ProcessEvent
 
 H2_CANCEL = 0x8
@@ -170,3 +184,49 @@ def assert_stdout_event(event: ConnectResponse):
             assert data.output == Oneof("stdout", b"hi")
         case other:
             raise AssertionError(f"expected a data event, got {other}")
+
+
+def make_config(logger: Optional[logging.Logger] = None) -> ConnectionConfig:
+    """A ``ConnectionConfig`` with a syntactically valid dummy API key."""
+    return ConnectionConfig(api_key="e2b_" + "0" * 40, logger=logger)
+
+
+# The factories in e2b.envd.client_sync/client_async use the shared TLS
+# transports, which negotiate HTTP/2 via ALPN. The test server is plaintext,
+# so these mirror the factories with an HTTP/2-prior-knowledge transport —
+# pass `transport` to interpose a custom stack (retry middleware, plain-error
+# normalization, ...). Return types stay unannotated on purpose: the stubs
+# type server streams as Iterator/AsyncIterator, but the tests pin the
+# close()/aclose() behavior of the real generators connectrpc returns.
+
+
+def make_sync_client(
+    port: int,
+    transport: Optional[SyncTransport] = None,
+    logger: Optional[logging.Logger] = None,
+):
+    base_url = f"http://127.0.0.1:{port}"
+    return ProcessClientSync(
+        base_url,
+        codec=ENVD_JSON_CODEC,
+        **ENVD_RPC_COMPRESSION,
+        interceptors=build_interceptors(make_config(logger), base_url),
+        http_client=SyncClient(
+            transport or SyncHTTPTransport(http_version=HTTPVersion.HTTP2)
+        ),
+    )
+
+
+def make_async_client(
+    port: int,
+    transport: Optional[Transport] = None,
+    logger: Optional[logging.Logger] = None,
+):
+    base_url = f"http://127.0.0.1:{port}"
+    return ProcessClient(
+        base_url,
+        codec=ENVD_JSON_CODEC,
+        **ENVD_RPC_COMPRESSION,
+        interceptors=build_interceptors(make_config(logger), base_url),
+        http_client=Client(transport or HTTPTransport(http_version=HTTPVersion.HTTP2)),
+    )

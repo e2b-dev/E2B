@@ -14,56 +14,18 @@ by the ``e2b.envd.client_sync``/``client_async`` factories.
 """
 
 import logging
-from typing import Optional
 
 import pytest
-from envd_frame_server import assert_stdout_event, frame_recording_server
-from pyqwest import (
-    Client,
-    HTTPTransport,
-    HTTPVersion,
-    SyncClient,
-    SyncHTTPTransport,
+from envd_frame_server import (
+    assert_stdout_event,
+    frame_recording_server,
+    make_async_client,
+    make_sync_client,
 )
 
-from e2b.connection_config import ConnectionConfig
 from e2b.envd.client_async import first_event
-from e2b.envd.client_shared import ENVD_JSON_CODEC, ENVD_RPC_COMPRESSION
 from e2b.exceptions import TimeoutException
-from e2b.envd.interceptors import build_interceptors
-from e2b.envd.process.process_connect import ProcessClient, ProcessClientSync
 from e2b.envd.process.process_pb import ConnectRequest
-
-
-def _config(logger: Optional[logging.Logger]) -> ConnectionConfig:
-    return ConnectionConfig(api_key="e2b_" + "0" * 40, logger=logger)
-
-
-# The factories in e2b.envd.client_sync/client_async use the shared TLS
-# transports, which negotiate HTTP/2 via ALPN. The test server is plaintext,
-# so mirror the factories with an HTTP/2-prior-knowledge transport instead.
-
-
-def make_sync_client(port: int, logger: Optional[logging.Logger] = None):
-    base_url = f"http://127.0.0.1:{port}"
-    return ProcessClientSync(
-        base_url,
-        codec=ENVD_JSON_CODEC,
-        **ENVD_RPC_COMPRESSION,
-        interceptors=build_interceptors(_config(logger), base_url),
-        http_client=SyncClient(SyncHTTPTransport(http_version=HTTPVersion.HTTP2)),
-    )
-
-
-def make_async_client(port: int, logger: Optional[logging.Logger] = None):
-    base_url = f"http://127.0.0.1:{port}"
-    return ProcessClient(
-        base_url,
-        codec=ENVD_JSON_CODEC,
-        **ENVD_RPC_COMPRESSION,
-        interceptors=build_interceptors(_config(logger), base_url),
-        http_client=Client(HTTPTransport(http_version=HTTPVersion.HTTP2)),
-    )
 
 
 def test_sync_early_close_sends_rst_stream():

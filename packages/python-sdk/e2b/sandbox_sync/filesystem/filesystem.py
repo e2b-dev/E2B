@@ -24,7 +24,7 @@ from e2b.envd.api import (
 )
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb
 from e2b.envd.rpc import handle_rpc_exception_with_health
-from e2b.envd.utils import authentication_header, timeout_to_ms
+from e2b.envd.utils import authentication_header, request_timeout_ms
 from e2b.envd.client_sync import create_rpc_client
 from e2b.envd.versions import (
     ENVD_DEFAULT_USER,
@@ -89,6 +89,11 @@ class Filesystem:
         self._envd_version = envd_version
         self._connection_config = connection_config
         self._thread_local = threading.local()
+        self._rpc = create_rpc_client(
+            filesystem_connect.FilesystemClientSync,
+            envd_api_url,
+            connection_config,
+        )
 
     def _create_envd_api(self) -> httpx.Client:
         transport = get_envd_transport(self._connection_config)
@@ -99,28 +104,15 @@ class Filesystem:
             event_hooks=make_logging_event_hooks(self._connection_config.logger),
         )
 
-    def _create_rpc(self) -> filesystem_connect.FilesystemClientSync:
-        return create_rpc_client(
-            filesystem_connect.FilesystemClientSync,
-            self._envd_api_url,
-            self._connection_config,
-        )
-
     @property
     def _envd_api(self) -> httpx.Client:
+        # Unlike the shared RPC client, the httpx transports are per-thread
+        # (see e2b.api.client_sync), so the client wrapping them is too.
         envd_api = getattr(self._thread_local, "envd_api", None)
         if envd_api is None:
             envd_api = self._create_envd_api()
             self._thread_local.envd_api = envd_api
         return envd_api
-
-    @property
-    def _rpc(self) -> filesystem_connect.FilesystemClientSync:
-        rpc = getattr(self._thread_local, "rpc", None)
-        if rpc is None:
-            rpc = self._create_rpc()
-            self._thread_local.rpc = rpc
-        return rpc
 
     @overload
     def read(
@@ -476,9 +468,7 @@ class Filesystem:
         try:
             res = self._rpc.list_dir(
                 filesystem_pb.ListDirRequest(path=path, depth=depth or 0),
-                timeout_ms=timeout_to_ms(
-                    self._connection_config.get_request_timeout(request_timeout)
-                ),
+                timeout_ms=request_timeout_ms(self._connection_config, request_timeout),
                 headers=authentication_header(self._envd_version, user),
             )
 
@@ -510,9 +500,7 @@ class Filesystem:
         try:
             self._rpc.stat(
                 filesystem_pb.StatRequest(path=path),
-                timeout_ms=timeout_to_ms(
-                    self._connection_config.get_request_timeout(request_timeout)
-                ),
+                timeout_ms=request_timeout_ms(self._connection_config, request_timeout),
                 headers=authentication_header(self._envd_version, user),
             )
             return True
@@ -541,9 +529,7 @@ class Filesystem:
         try:
             r = self._rpc.stat(
                 filesystem_pb.StatRequest(path=path),
-                timeout_ms=timeout_to_ms(
-                    self._connection_config.get_request_timeout(request_timeout)
-                ),
+                timeout_ms=request_timeout_ms(self._connection_config, request_timeout),
                 headers=authentication_header(self._envd_version, user),
             )
 
@@ -567,9 +553,7 @@ class Filesystem:
         try:
             self._rpc.remove(
                 filesystem_pb.RemoveRequest(path=path),
-                timeout_ms=timeout_to_ms(
-                    self._connection_config.get_request_timeout(request_timeout)
-                ),
+                timeout_ms=request_timeout_ms(self._connection_config, request_timeout),
                 headers=authentication_header(self._envd_version, user),
             )
         except Exception as e:
@@ -598,9 +582,7 @@ class Filesystem:
                     source=old_path,
                     destination=new_path,
                 ),
-                timeout_ms=timeout_to_ms(
-                    self._connection_config.get_request_timeout(request_timeout)
-                ),
+                timeout_ms=request_timeout_ms(self._connection_config, request_timeout),
                 headers=authentication_header(self._envd_version, user),
             )
 
@@ -626,9 +608,7 @@ class Filesystem:
         try:
             self._rpc.make_dir(
                 filesystem_pb.MakeDirRequest(path=path),
-                timeout_ms=timeout_to_ms(
-                    self._connection_config.get_request_timeout(request_timeout)
-                ),
+                timeout_ms=request_timeout_ms(self._connection_config, request_timeout),
                 headers=authentication_header(self._envd_version, user),
             )
 
@@ -686,9 +666,7 @@ class Filesystem:
                     include_entry=include_entry,
                     allow_network_mounts=allow_network_mounts,
                 ),
-                timeout_ms=timeout_to_ms(
-                    self._connection_config.get_request_timeout(request_timeout)
-                ),
+                timeout_ms=request_timeout_ms(self._connection_config, request_timeout),
                 headers={
                     **authentication_header(self._envd_version, user),
                     KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
@@ -698,7 +676,7 @@ class Filesystem:
             raise _handle_filesystem_rpc_exception(e, self._envd_api)
 
         return WatchHandle(
-            lambda: self._rpc,
+            self._rpc,
             r.watcher_id,
             self._connection_config,
             self._envd_version,

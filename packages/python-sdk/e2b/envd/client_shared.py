@@ -97,6 +97,16 @@ def plain_http_error(
     client: an int ``code`` counts as the HTTP status, everything else falls
     back to the response status. Called only for error statuses, with the
     body already drained.
+
+    The flavor ``PlainHTTPErrorTransport``s raise this before connectrpc
+    collapses plain error responses into Connect-spec codes with synthesized
+    reason phrases (404 → UNIMPLEMENTED "Not Found"): ``kill``/``exists``/
+    ``make_dir`` branch on NOT_FOUND/ALREADY_EXISTS and user code relies on
+    RateLimitException to back off. connectrpc re-raises a ``ConnectError``
+    from the transport unchanged — the path its own protocol errors take.
+    A gateway's ``{"code": 429}`` or plain-JSON error page gets the vendored
+    mapping too. Becomes unnecessary once connectrpc preserves the status on
+    the errors it builds (https://github.com/connectrpc/connect-py/issues/306).
     """
     message: Optional[str] = None
     if content_type.split(";", 1)[0].strip().lower() == "application/json":
@@ -120,6 +130,25 @@ def plain_http_error(
     return ConnectError(
         code, message or body.decode("utf-8", "replace") or f"HTTP {status}"
     )
+
+
+def should_retry_connection(response: object) -> bool:
+    """Whether a transport result is a retryable connection-establishment
+    failure — the shared policy of the flavor ``ConnectionRetryTransport``s.
+
+    pyqwest raises the builtin ``ConnectionError`` only before the request
+    was written, so retrying exactly these failures can never replay a
+    request envd may have received — which could re-run a command or
+    re-deliver events — for unary and streaming RPCs alike. Anything later
+    (``WriteError``/``ReadError``/``StreamError``, error responses) surfaces
+    to the caller; the retry middleware's default policy would otherwise also
+    retry I/O errors and 429/5xx responses for idempotent methods. This
+    replaces httpcore's transport ``retries`` from the previous stack and
+    deliberately drops the vendored client's retry on connections dropped
+    mid-request, which could re-execute a delivered unary RPC like
+    ``SendInput``.
+    """
+    return isinstance(response, ConnectionError)
 
 
 class _RPCCompression(TypedDict):
