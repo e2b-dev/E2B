@@ -82,7 +82,15 @@ jobs:
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
       - name: Update lock file
-        run: pnpm i --no-link --no-frozen-lockfile
+        # The npm registry is eventually consistent: versions published
+        # seconds earlier may not resolve yet, so retry with backoff.
+        run: |
+          for delay in 10 20 40 80 160; do
+            pnpm i --no-link --no-frozen-lockfile && exit 0
+            echo "Registry has not propagated the new versions yet, retrying in ${delay}s..."
+            sleep "$delay"
+          done
+          pnpm i --no-link --no-frozen-lockfile
 
       - name: Commit new versions
         run: |
