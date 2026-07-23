@@ -17,12 +17,12 @@ from protobuf import Oneof
 
 from e2b.envd.process import process_connect, process_pb
 from e2b.envd.api import check_sandbox_health
-from e2b.envd.rpc import (
+from e2b.envd.rpc import handle_rpc_exception_with_health
+from e2b.envd.utils import (
     authentication_header,
     extract_start_pid,
-    handle_rpc_exception_with_health,
+    timeout_to_ms,
 )
-from e2b.envd.utils import timeout_to_ms
 from e2b.envd.client_sync import as_stream, create_rpc_client
 from e2b.envd.versions import ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE
 from e2b.exceptions import SandboxException

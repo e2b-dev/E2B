@@ -15,12 +15,12 @@ from e2b.connection_config import (
     KEEPALIVE_PING_INTERVAL_SEC,
 )
 from e2b.envd.api import acheck_sandbox_health
-from e2b.envd.rpc import (
+from e2b.envd.rpc import ahandle_rpc_exception_with_health
+from e2b.envd.utils import (
     authentication_header,
     extract_start_pid,
-    ahandle_rpc_exception_with_health,
+    timeout_to_ms,
 )
-from e2b.envd.utils import timeout_to_ms
 from e2b.envd.client_async import as_stream, create_rpc_client, first_event
 from e2b.sandbox.commands.command_handle import PtySize
 from e2b.sandbox_async.commands.command_handle import (

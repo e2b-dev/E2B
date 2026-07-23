@@ -1,14 +1,9 @@
 import asyncio
-import base64
 
-from typing import Awaitable, Callable, Optional, Union
-from packaging.version import Version
+from typing import Awaitable, Callable, Optional
 from connectrpc.code import Code
 from connectrpc.errors import ConnectError
-from protobuf import Oneof
 from pyqwest import ReadError, StreamError, WriteError
-
-from e2b.envd.process import process_pb
 
 from e2b.exceptions import (
     SandboxException,
@@ -19,8 +14,6 @@ from e2b.exceptions import (
     AuthenticationException,
     RateLimitException,
 )
-from e2b.connection_config import Username, default_username
-from e2b.envd.versions import ENVD_DEFAULT_USER
 
 _DEFAULT_RPC_ERROR_MAP: dict[Code, Callable[[str], Exception]] = {
     Code.INVALID_ARGUMENT: InvalidArgumentException,
@@ -172,36 +165,3 @@ async def ahandle_rpc_exception_with_health(
         except Exception:
             sandbox_running = None
     return handle_rpc_exception(e, error_map, sandbox_running)
-
-
-def extract_start_pid(
-    start_event: Union[process_pb.StartResponse, process_pb.ConnectResponse],
-    action: str,
-) -> int:
-    """Return the pid carried by the ``start`` event that must open a process
-    stream (start/connect), raising :class:`SandboxException` when the stream
-    opened with anything else."""
-    # `event.event` is the ProcessEvent; its `event` oneof holds the payload.
-    match start_event.event.event if start_event.event is not None else None:
-        case Oneof(field="start", value=start):
-            return start.pid
-        case _:
-            raise SandboxException(
-                f"Failed to {action}: expected start event, got {start_event}"
-            )
-
-
-def authentication_header(
-    envd_version: Version, user: Optional[Username] = None
-) -> dict[str, str]:
-    if user is None and envd_version < ENVD_DEFAULT_USER:
-        user = default_username
-
-    if not user:
-        return {}
-
-    value = f"{user}:"
-
-    encoded = base64.b64encode(value.encode("utf-8")).decode("utf-8")
-
-    return {"Authorization": f"Basic {encoded}"}

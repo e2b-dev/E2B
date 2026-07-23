@@ -23,11 +23,8 @@ from e2b.envd.api import (
 from protobuf import Oneof
 
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb
-from e2b.envd.rpc import (
-    authentication_header,
-    ahandle_rpc_exception_with_health,
-)
-from e2b.envd.utils import timeout_to_ms
+from e2b.envd.rpc import ahandle_rpc_exception_with_health
+from e2b.envd.utils import authentication_header, timeout_to_ms
 from e2b.envd.client_async import as_stream, create_rpc_client, first_event
 from e2b.envd.versions import (
     ENVD_DEFAULT_USER,
