@@ -88,6 +88,13 @@ jobs:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
 
+      - name: Run test suite under Bun
+        if: matrix.os == 'ubuntu-22.04'
+        run: pnpm test:bun:suite
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
+
       - name: Install Deno
         uses: denoland/setup-deno@v1
         with:
