@@ -199,6 +199,10 @@ class LoggingInterceptor:
     Requests and successful responses log at INFO, failures at ERROR and each
     streamed message at DEBUG — mirroring the httpx event hooks used for the
     REST API and file transfer requests.
+
+    Upstreamed to pyqwest as a logging middleware
+    (https://github.com/curioswitch/pyqwest/pull/192); this interceptor stays
+    until that ships in a pyqwest release the SDK can depend on.
     """
 
     def __init__(self, logger: logging.Logger, base_url: str):
