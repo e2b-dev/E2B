@@ -85,6 +85,11 @@ def format_terminated_exception(
 # each status this asks `from_http_status` — the very function that will
 # build the error at runtime — what to look for, which keeps the table
 # transcription-free and immune to upstream mapping or phrase changes.
+#
+# Proposed upstream as `ConnectError.http_status`
+# (https://github.com/connectrpc/connect-py/issues/306); once that ships in
+# a release the SDK can depend on, this inversion (and the private import it
+# needs) collapses to a direct status lookup.
 _VENDORED_PLAIN_HTTP_CODES: dict[int, Code] = {
     400: Code.INVALID_ARGUMENT,
     401: Code.UNAUTHENTICATED,
