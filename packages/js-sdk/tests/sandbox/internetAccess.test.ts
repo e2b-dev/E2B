@@ -4,7 +4,7 @@ import { CommandExitError } from '../../src'
 import { sandboxTest, isDebug } from '../setup.js'
 
 describe('internet access enabled', () => {
-  sandboxTest.scoped({
+  sandboxTest.override({
     sandboxOpts: {
       allowInternetAccess: true,
     },
@@ -24,7 +24,7 @@ describe('internet access enabled', () => {
 })
 
 describe('internet access disabled', () => {
-  sandboxTest.scoped({
+  sandboxTest.override({
     sandboxOpts: {
       allowInternetAccess: false,
     },

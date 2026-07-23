@@ -4,7 +4,7 @@ import { sandboxTest, isDebug } from '../setup'
 import { randomUUID, createHash } from 'node:crypto'
 
 describe('secure sandbox', () => {
-  sandboxTest.scoped({
+  sandboxTest.override({
     sandboxOpts: {
       secure: true,
     },

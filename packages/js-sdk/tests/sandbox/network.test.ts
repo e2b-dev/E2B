@@ -4,7 +4,7 @@ import { CommandExitError } from '../../src'
 import { sandboxTest, isDebug } from '../setup.js'
 
 describe('allow only 1.1.1.1', () => {
-  sandboxTest.scoped({
+  sandboxTest.override({
     sandboxOpts: {
       network: {
         denyOut: ({ allTraffic }) => [allTraffic],
@@ -34,7 +34,7 @@ describe('allow only 1.1.1.1', () => {
 })
 
 describe('deny specific IP address', () => {
-  sandboxTest.scoped({
+  sandboxTest.override({
     sandboxOpts: {
       network: {
         denyOut: ['8.8.8.8'],
@@ -63,7 +63,7 @@ describe('deny specific IP address', () => {
 })
 
 describe('deny all traffic using allTraffic selector', () => {
-  sandboxTest.scoped({
+  sandboxTest.override({
     sandboxOpts: {
       network: {
         denyOut: ({ allTraffic }) => [allTraffic],
@@ -91,7 +91,7 @@ describe('deny all traffic using allTraffic selector', () => {
 })
 
 describe('allow takes precedence over deny', () => {
-  sandboxTest.scoped({
+  sandboxTest.override({
     sandboxOpts: {
       network: {
         denyOut: ({ allTraffic }) => [allTraffic],
@@ -121,7 +121,7 @@ describe('allow takes precedence over deny', () => {
 })
 
 describe('allowPublicTraffic=false', () => {
-  sandboxTest.scoped({
+  sandboxTest.override({
     sandboxOpts: {
       network: {
         allowPublicTraffic: false,
@@ -163,7 +163,7 @@ describe('allowPublicTraffic=false', () => {
 })
 
 describe('allowPublicTraffic=true', () => {
-  sandboxTest.scoped({
+  sandboxTest.override({
     sandboxOpts: {
       network: {
         allowPublicTraffic: true,
@@ -197,7 +197,7 @@ describe('firewall transform injects headers', () => {
   const injectedHeader = 'X-E2B-Test-Token'
   const injectedValue = 'e2b-transform-value-123'
 
-  sandboxTest.scoped({
+  sandboxTest.override({
     sandboxOpts: {
       network: {
         rules: {
@@ -265,7 +265,7 @@ describe('updateNetwork applies new egress rules', () => {
 })
 
 describe('updateNetwork clears existing rules when fields are omitted', () => {
-  sandboxTest.scoped({
+  sandboxTest.override({
     sandboxOpts: {
       network: {
         denyOut: ({ allTraffic }) => [allTraffic],
@@ -301,7 +301,7 @@ describe('updateNetwork clears existing rules when fields are omitted', () => {
 })
 
 describe('maskRequestHost option', () => {
-  sandboxTest.scoped({
+  sandboxTest.override({
     sandboxOpts: {
       network: {
         maskRequestHost: 'custom-host.example.com:${PORT}',

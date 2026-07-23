@@ -19,7 +19,7 @@ sandboxTest.skipIf(isDebug)(
 )
 
 describe('pause and resume with env vars', () => {
-  sandboxTest.scoped({
+  sandboxTest.override({
     sandboxOpts: {
       envs: { TEST_VAR: 'sfisback' },
     },
