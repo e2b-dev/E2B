@@ -94,9 +94,8 @@ export function createEnvdFetch(proxy?: string): typeof fetch {
     return cached
   }
 
-  // Keep one origin connection for short envd REST calls. If ALPN falls back
-  // to h1, this favors connection pressure over per-sandbox throughput.
   const envdFetch = createEnvdFetchForRuntime(runtime, {
+    connectionLimit: getEnvdConnectionLimit(),
     inflightLimit: getEnvdInflightLimit(),
     proxy,
   })
@@ -121,6 +120,13 @@ export function createEnvdRpcFetch(proxy?: string): typeof fetch {
   envdRpcFetchers.set(key, envdRpcFetch)
 
   return envdRpcFetch
+}
+
+export function getEnvdConnectionLimit(): number {
+  return parsePositiveIntEnv(
+    'E2B_ENVD_CONNECTIONS',
+    DEFAULT_ENVD_CONNECTION_LIMIT
+  )
 }
 
 export function getEnvdRpcConnectionLimit(): number {
