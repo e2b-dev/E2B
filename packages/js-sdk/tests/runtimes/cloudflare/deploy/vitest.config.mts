@@ -7,15 +7,15 @@ import { defineConfig } from 'vitest/config'
 
 config()
 
-// Written by deploy.mjs (`pnpm deploy:cf`), which must run first. Skip
+// Written by wrangler during `pnpm deploy:cf`, which must run first. Skip
 // locally when nothing is deployed, but fail loudly in CI where the deploy
 // step is expected to have run.
 const here = path.dirname(fileURLToPath(import.meta.url))
-const hasDeployedUrl = existsSync(path.join(here, '.deployed-url'))
+const hasDeployOutput = existsSync(path.join(here, '.deploy-output.json'))
 
-if (!hasDeployedUrl) {
+if (!hasDeployOutput) {
   const message =
-    'no .deployed-url found — run `pnpm deploy:cf` before the Cloudflare Workers deploy tests'
+    'no .deploy-output.json found — run `pnpm deploy:cf` before the Cloudflare Workers deploy tests'
   if (process.env.CI) {
     throw new Error(message)
   }
@@ -25,12 +25,11 @@ if (!hasDeployedUrl) {
 export default defineConfig({
   test: {
     name: 'cloudflare-deployed',
-    include: hasDeployedUrl
+    include: hasDeployOutput
       ? ['tests/runtimes/cloudflare/deploy/*.test.ts']
       : [],
-    passWithNoTests: !hasDeployedUrl,
+    passWithNoTests: !hasDeployOutput,
     environment: 'node',
     testTimeout: 60_000,
-    globalSetup: ['tests/runtimes/cloudflare/deploy/teardown.mts'],
   },
 })

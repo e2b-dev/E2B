@@ -89,6 +89,7 @@ jobs:
       # --temporary), so no Cloudflare credentials are needed. Ubuntu only:
       # the deployed worker is identical across OSes.
       - name: Deploy Cloudflare Worker to a temporary preview account
+        id: cf-deploy
         if: matrix.os == 'ubuntu-22.04'
         run: pnpm deploy:cf
 
@@ -98,6 +99,10 @@ jobs:
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
+
+      - name: Delete deployed Cloudflare Worker
+        if: always() && steps.cf-deploy.outcome == 'success'
+        run: pnpm exec wrangler delete --force --temporary --config tests/runtimes/cloudflare/deploy/wrangler.jsonc || true
 
       - name: Install Bun
         uses: oven-sh/setup-bun@v2
