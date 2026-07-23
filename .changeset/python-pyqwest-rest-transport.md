@@ -18,10 +18,13 @@ Connection-establishment failures are retried with backoff
 (`E2B_CONNECTION_RETRIES`, default 3), matching the connect-only retries of
 the previous transports.
 
-`proxy` for API calls must now be a URL string (e.g.
+`proxy` for API calls now takes a URL string (e.g.
 `proxy="http://user:pass@localhost:8030"`, scheme http, https, socks5, or
-socks5h); the richer `httpx.Proxy` objects are rejected with
-`InvalidArgumentException` rather than partially honored.
+socks5h). `httpx.URL` and `httpx.Proxy` keep working when they reduce to
+such a URL (`httpx.Proxy` auth is folded back into the URL userinfo);
+`httpx.Proxy` extras pyqwest can't express — custom headers, an
+`ssl_context` — raise `InvalidArgumentException` rather than being silently
+dropped.
 
 envd traffic (sandbox commands, filesystem, PTY, file transfers) is not
 affected and stays on its existing stack.
