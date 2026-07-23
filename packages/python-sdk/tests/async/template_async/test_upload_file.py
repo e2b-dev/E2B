@@ -1,11 +1,14 @@
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from typing import Any, Dict
 from unittest import mock
 
 import httpx
+import pytest
 
 from e2b.api.client.client import AuthenticatedClient
 from e2b.template import utils as template_utils
+from e2b.exceptions import FileUploadException
 from e2b.template.consts import FILE_UPLOAD_TIMEOUT_SECONDS
 from e2b.template_async.build_api import upload_file
 
@@ -22,14 +25,23 @@ from e2b.template_async.build_api import upload_file
 
 
 def _make_server():
-    state = {"headers": None, "body_length": 0}
+    state: Dict[str, Any] = {"headers": None, "body_length": 0, "paths": []}
 
     class Handler(BaseHTTPRequestHandler):
         def do_PUT(self):
-            state["headers"] = dict(self.headers)
+            # hyper (pyqwest) sends lowercase header names where httpcore
+            # title-cased them; compare case-insensitively.
+            state["headers"] = {k.lower(): v for k, v in self.headers.items()}
+            state["paths"].append(self.path)
             length = int(self.headers.get("Content-Length", 0))
             body = self.rfile.read(length) if length else b""
             state["body_length"] = len(body)
+            if self.path.startswith("/redirect"):
+                self.send_response(307)
+                self.send_header("Location", "/upload")
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
             self.send_response(200)
             self.end_headers()
 
@@ -72,15 +84,48 @@ async def test_upload_file_sets_content_length_and_no_chunked_encoding(tmp_path)
         thread.join(timeout=5)
 
     assert state["headers"] is not None
-    content_length = state["headers"].get("Content-Length")
+    content_length = state["headers"].get("content-length")
     assert content_length is not None
     assert int(content_length) > 0
     assert int(content_length) == state["body_length"]
 
-    transfer_encoding = state["headers"].get("Transfer-Encoding")
+    transfer_encoding = state["headers"].get("transfer-encoding")
     if transfer_encoding is not None:
         assert "chunked" not in transfer_encoding.lower()
-    assert "Authorization" not in state["headers"]
+    assert "authorization" not in state["headers"]
+
+
+async def test_upload_file_leaves_redirects_to_httpx(tmp_path):
+    # reqwest would otherwise follow redirects inside the transport, replaying
+    # the archive body against the new location without httpx knowing. The
+    # upload client follows the API client's setting (off), so an unexpected
+    # hop must surface as a failed upload rather than being retried behind
+    # httpx's back.
+    (tmp_path / "hello.txt").write_text("hello world")
+
+    server, thread, state = _make_server()
+    host, port = server.server_address
+
+    try:
+        client = AuthenticatedClient(base_url="http://test", token="test")
+        assert client._follow_redirects is False
+        with pytest.raises(FileUploadException, match="307"):
+            await upload_file(
+                api_client=client,
+                file_name="*.txt",
+                context_path=str(tmp_path),
+                url=f"http://{host}:{port}/redirect",
+                ignore_patterns=[],
+                resolve_symlinks=False,
+                gzip=True,
+                stack_trace=None,
+            )
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+    assert state["paths"] == ["/redirect"]
 
 
 async def _capture_upload_timeout(tmp_path, request_timeout=None):
