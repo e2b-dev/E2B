@@ -1,5 +1,3 @@
-// Default-form imports so Vite's browser stub for node builtins doesn't
-// throw at module evaluation — property access is deferred to call time.
 import fs from 'node:fs'
 import stream from 'node:stream'
 
