@@ -7,15 +7,15 @@ import { defineConfig } from 'vitest/config'
 
 config()
 
-// Written by wrangler during `pnpm deploy:cf`, which must run first. Skip
-// locally when nothing is deployed, but fail loudly in CI where the deploy
-// step is expected to have run.
+// The suite deploys the built ESM bundle to real Cloudflare infrastructure
+// (setup.mts), so dist must exist. Skip locally to keep plain runs green,
+// but fail loudly in CI where the build step is expected to have run.
 const here = path.dirname(fileURLToPath(import.meta.url))
-const hasDeployOutput = existsSync(path.join(here, '.deploy-output.json'))
+const hasDist = existsSync(path.resolve(here, '../../../dist/index.mjs'))
 
-if (!hasDeployOutput) {
+if (!hasDist) {
   const message =
-    'no .deploy-output.json found — run `pnpm deploy:cf` before the Cloudflare Workers deploy tests'
+    'dist/index.mjs not found — run `pnpm build` in packages/js-sdk before running the Cloudflare Workers deploy tests'
   if (process.env.CI) {
     throw new Error(message)
   }
@@ -25,10 +25,9 @@ if (!hasDeployOutput) {
 export default defineConfig({
   test: {
     name: 'cloudflare-deploy',
-    include: hasDeployOutput
-      ? ['tests/runtimes/cloudflare-deploy/*.test.ts']
-      : [],
-    passWithNoTests: !hasDeployOutput,
+    include: hasDist ? ['tests/runtimes/cloudflare-deploy/*.test.ts'] : [],
+    passWithNoTests: !hasDist,
+    globalSetup: hasDist ? ['tests/runtimes/cloudflare-deploy/setup.mts'] : [],
     environment: 'node',
     testTimeout: 60_000,
   },

@@ -38,7 +38,6 @@
     "pretest": "npx playwright install --with-deps chromium",
     "postPublish": "./scripts/post-publish.sh || true",
     "test:bun": "bun test tests/runtimes/bun --env-file=.env",
-    "deploy:cf": "WRANGLER_OUTPUT_FILE_PATH=tests/runtimes/cloudflare-deploy/.deploy-output.json wrangler deploy --temporary --config tests/runtimes/cloudflare-deploy/wrangler.jsonc",
     "test:cf": "vitest run --config tests/runtimes/cloudflare/vitest.config.mts",
     "test:cf:deploy": "vitest run --config tests/runtimes/cloudflare-deploy/vitest.config.mts",
     "test:deno": "deno test tests/runtimes/deno/ --allow-net --allow-read --allow-env --unstable-sloppy-imports --trace-leaks",

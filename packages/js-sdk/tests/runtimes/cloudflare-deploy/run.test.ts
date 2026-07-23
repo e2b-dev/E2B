@@ -1,34 +1,6 @@
-import { existsSync, readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
-
-import { expect, test } from 'vitest'
+import { expect, inject, test } from 'vitest'
 
 import { template } from '../../template'
-
-// Written by wrangler during `pnpm deploy:cf` (WRANGLER_OUTPUT_FILE_PATH):
-// ndjson records, one of which is {type: 'deploy', targets: [urls]}. The
-// file appends across runs, so the last deploy record wins.
-const outputFile = fileURLToPath(
-  new URL('.deploy-output.json', import.meta.url)
-)
-
-function getDeployedUrl(): string | undefined {
-  if (!existsSync(outputFile)) {
-    return undefined
-  }
-
-  let url: string | undefined
-  for (const line of readFileSync(outputFile, 'utf8').split('\n')) {
-    if (!line.trim()) {
-      continue
-    }
-    const record = JSON.parse(line)
-    if (record.type === 'deploy' && record.targets?.length) {
-      url = record.targets[0]
-    }
-  }
-  return url
-}
 
 async function invokeWorker(url: string, body: object) {
   // Retry while the fresh workers.dev subdomain propagates.
@@ -60,14 +32,11 @@ async function invokeWorker(url: string, body: object) {
 }
 
 test('sandbox lifecycle inside a deployed Cloudflare Worker', async () => {
-  const workerUrl = getDeployedUrl()
-  expect(
-    workerUrl,
-    'no deployed worker URL found — run `pnpm deploy:cf` first'
-  ).toBeDefined()
+  // Deployed by setup.mts via `wrangler deploy --temporary`.
+  const workerUrl = inject('cfWorkerUrl')
   expect(process.env.E2B_API_KEY, 'E2B_API_KEY is required').toBeDefined()
 
-  const { status, body } = await invokeWorker(workerUrl as string, {
+  const { status, body } = await invokeWorker(workerUrl, {
     apiKey: process.env.E2B_API_KEY,
     domain: process.env.E2B_DOMAIN || undefined,
     template,
