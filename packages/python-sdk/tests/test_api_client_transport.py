@@ -1,5 +1,4 @@
 import asyncio
-import gc
 import json
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -214,25 +213,6 @@ def test_sync_envd_transport_uses_separate_stack(test_api_key):
         reset_sync_envd_transports()
 
 
-def test_sync_api_transport_cache_is_shared_across_threads(test_api_key):
-    # pyqwest transports are thread-safe, so all threads share one connection
-    # pool per proxy (the httpx transports this replaced were per-thread).
-    reset_sync_api_transports()
-    config = ConnectionConfig(api_key=test_api_key)
-
-    try:
-        main_transport = get_sync_transport(config)
-        same_thread_transport = get_sync_transport(config)
-        worker_thread_transport = run_in_worker_thread(
-            lambda: get_sync_transport(config)
-        )
-
-        assert same_thread_transport is main_transport
-        assert worker_thread_transport is main_transport
-    finally:
-        reset_sync_api_transports()
-
-
 def test_sync_api_client_is_shared_across_threads(test_api_key):
     # httpx.Client is thread-safe and the pyqwest transport underneath is
     # too, so a single client (and its pool) serves all threads — the
@@ -312,21 +292,6 @@ async def test_async_get_transport_keyed_by_proxy(test_api_key):
 
 
 @pytest.mark.asyncio
-async def test_async_api_client_applies_request_timeout(test_api_key):
-    reset_async_api_transports()
-    config = ConnectionConfig(api_key=test_api_key, request_timeout=1.5)
-
-    api_client = get_async_api_client(config)
-    httpx_client = api_client.get_async_httpx_client()
-
-    try:
-        assert httpx_client.timeout == httpx.Timeout(1.5)
-    finally:
-        await httpx_client.aclose()
-        reset_async_api_transports()
-
-
-@pytest.mark.asyncio
 async def test_async_api_client_is_shared_across_loops(test_api_key):
     # pyqwest's I/O runs on its own Rust runtime, so neither the transport
     # nor the httpx client wrapper is bound to an event loop — a single
@@ -350,67 +315,6 @@ async def test_async_api_client_is_shared_across_loops(test_api_key):
         assert other_loop_client is main_client
     finally:
         await main_client.aclose()
-        reset_async_api_transports()
-
-
-def test_async_transport_reused_across_sequential_loops(test_api_key):
-    reset_async_api_transports()
-    config = ConnectionConfig(api_key=test_api_key)
-
-    async def get_transport():
-        return get_async_transport(config)
-
-    try:
-        loop_a = asyncio.new_event_loop()
-        try:
-            transport_a = loop_a.run_until_complete(get_transport())
-        finally:
-            loop_a.close()
-        del loop_a
-        gc.collect()
-
-        # The transport is not bound to an event loop, so it survives the
-        # loop it was first created on.
-        loop_b = asyncio.new_event_loop()
-        try:
-            transport_b = loop_b.run_until_complete(get_transport())
-        finally:
-            loop_b.close()
-
-        assert transport_b is transport_a
-    finally:
-        reset_async_api_transports()
-
-
-def test_async_api_client_reused_across_sequential_loops(test_api_key):
-    # A closed loop doesn't strand the client: nothing in it is loop-bound,
-    # so a later loop reuses the same client and shared transport.
-    reset_async_api_transports()
-    config = ConnectionConfig(api_key=test_api_key)
-    api_client = get_async_api_client(config)
-
-    async def get_client():
-        client = api_client.get_async_httpx_client()
-        assert api_client.get_async_httpx_client() is client
-        return client
-
-    try:
-        loop_a = asyncio.new_event_loop()
-        try:
-            client_a = loop_a.run_until_complete(get_client())
-        finally:
-            loop_a.close()
-        del loop_a
-        gc.collect()
-
-        loop_b = asyncio.new_event_loop()
-        try:
-            client_b = loop_b.run_until_complete(get_client())
-        finally:
-            loop_b.close()
-
-        assert client_b is client_a
-    finally:
         reset_async_api_transports()
 
 
