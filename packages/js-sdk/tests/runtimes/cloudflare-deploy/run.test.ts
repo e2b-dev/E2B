@@ -4,9 +4,17 @@ import { template } from '../../template'
 
 test(
   'sandbox lifecycle inside a deployed Cloudflare Worker',
-  // Retry the whole test while the fresh workers.dev subdomain propagates
-  // (Cloudflare serves an HTML error page until the route is live).
-  { retry: { count: 5, delay: 3_000, condition: /non-JSON response/ } },
+  // Retry the whole test while the fresh workers.dev subdomain propagates:
+  // Cloudflare serves an HTML error page until the route is live ("non-JSON
+  // response"), and fetch itself can fail at the DNS/connect level first
+  // (undici throws "fetch failed").
+  {
+    retry: {
+      count: 5,
+      delay: 3_000,
+      condition: /non-JSON response|fetch failed/,
+    },
+  },
   async () => {
     // Deployed by setup.mts via `wrangler deploy --temporary`.
     const workerUrl = inject('cfWorkerUrl')
