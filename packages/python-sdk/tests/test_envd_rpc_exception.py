@@ -1,4 +1,5 @@
 import asyncio
+from http import HTTPStatus
 
 import httpx
 from connectrpc.code import Code
@@ -158,23 +159,50 @@ def test_plain_http_404_maps_to_not_found():
     assert isinstance(err, NotFoundException)
 
 
+def test_plain_http_400_maps_to_invalid_argument():
+    err = handle_rpc_exception(ConnectError(Code.INTERNAL, "Bad Request"))
+    assert isinstance(err, InvalidArgumentException)
+
+
+def test_plain_http_413_maps_to_rate_limit():
+    err = handle_rpc_exception(ConnectError(Code.UNKNOWN, HTTPStatus(413).phrase))
+    assert isinstance(err, RateLimitException)
+
+
 def test_unimplemented_with_other_message_stays_generic():
     err = handle_rpc_exception(ConnectError(Code.UNIMPLEMENTED, "unknown method"))
     assert isinstance(err, SandboxException)
     assert not isinstance(err, NotFoundException)
 
 
-def test_rpc_error_code_restores_plain_http_statuses():
+def test_rpc_error_code_restores_the_vendored_status_table():
     # connectrpc maps plain (non-Connect-encoded) HTTP error responses per
-    # the Connect spec with the synthesized reason phrase as the message; the
-    # vendored client kept the original statuses (404 → not_found,
-    # 429 → resource_exhausted, 409 → already_exists).
-    err_404 = ConnectError(Code.UNIMPLEMENTED, "Not Found")
-    err_429 = ConnectError(Code.UNAVAILABLE, "Too Many Requests")
-    err_409 = ConnectError(Code.UNKNOWN, "Conflict")
-    assert rpc_error_code(err_404) is Code.NOT_FOUND
-    assert rpc_error_code(err_429) is Code.RESOURCE_EXHAUSTED
-    assert rpc_error_code(err_409) is Code.ALREADY_EXISTS
+    # the Connect spec with the synthesized reason phrase as the message;
+    # rpc_error_code must restore the vendored client's status table (#806).
+    # Building the errors through connectrpc's own plain-response path keeps
+    # this pinned against upstream mapping or phrase changes.
+    from connectrpc._protocol import ConnectWireError
+
+    vendored_table = {
+        400: Code.INVALID_ARGUMENT,
+        401: Code.UNAUTHENTICATED,
+        403: Code.PERMISSION_DENIED,
+        404: Code.NOT_FOUND,
+        409: Code.ALREADY_EXISTS,
+        413: Code.RESOURCE_EXHAUSTED,
+        429: Code.RESOURCE_EXHAUSTED,
+        499: Code.CANCELED,
+        500: Code.INTERNAL,
+        501: Code.UNIMPLEMENTED,
+        502: Code.UNAVAILABLE,
+        503: Code.UNAVAILABLE,
+        504: Code.DEADLINE_EXCEEDED,
+        505: Code.UNIMPLEMENTED,
+        418: Code.UNKNOWN,  # unmapped statuses stay unknown, as before
+    }
+    for status, code in vendored_table.items():
+        err = ConnectWireError.from_http_status(status).to_exception()
+        assert rpc_error_code(err) is code, f"HTTP {status}"
 
 
 def test_rpc_error_code_keeps_envd_codes():

@@ -1,5 +1,6 @@
 import asyncio
 
+from http import HTTPStatus
 from typing import Awaitable, Callable, Optional
 from connectrpc.code import Code
 from connectrpc.errors import ConnectError
@@ -73,25 +74,72 @@ def format_terminated_exception(
     return e
 
 
+# How the vendored client mapped plain (non-Connect-encoded) HTTP error
+# responses — e.g. an edge proxy answering for envd — to codes (#806).
+_VENDORED_PLAIN_HTTP_CODES: dict[int, Code] = {
+    400: Code.INVALID_ARGUMENT,
+    401: Code.UNAUTHENTICATED,
+    403: Code.PERMISSION_DENIED,
+    404: Code.NOT_FOUND,
+    409: Code.ALREADY_EXISTS,
+    413: Code.RESOURCE_EXHAUSTED,
+    429: Code.RESOURCE_EXHAUSTED,
+    499: Code.CANCELED,
+    500: Code.INTERNAL,
+    501: Code.UNIMPLEMENTED,
+    502: Code.UNAVAILABLE,
+    503: Code.UNAVAILABLE,
+    504: Code.DEADLINE_EXCEEDED,
+    505: Code.UNIMPLEMENTED,
+}
+
+# How connectrpc maps them, per the Connect spec (statuses it doesn't list
+# become UNKNOWN).
+_CONNECT_SPEC_PLAIN_HTTP_CODES: dict[int, Code] = {
+    400: Code.INTERNAL,
+    401: Code.UNAUTHENTICATED,
+    403: Code.PERMISSION_DENIED,
+    404: Code.UNIMPLEMENTED,
+    429: Code.UNAVAILABLE,
+    502: Code.UNAVAILABLE,
+    503: Code.UNAVAILABLE,
+    504: Code.UNAVAILABLE,
+}
+
+
+def _plain_http_phrase(status: int) -> str:
+    # connectrpc synthesizes the error message from the stdlib reason phrase
+    # (499 isn't a stdlib status; connectrpc special-cases its phrase). Using
+    # the same call keeps the restoration in sync with phrase renames across
+    # Python versions (e.g. 413 became "Content Too Large" in 3.13).
+    if status == 499:
+        return "Client Closed Request"
+    return HTTPStatus(status).phrase
+
+
+_PLAIN_HTTP_RESTORATIONS: dict[tuple[Code, str], Code] = {
+    (
+        _CONNECT_SPEC_PLAIN_HTTP_CODES.get(status, Code.UNKNOWN),
+        _plain_http_phrase(status),
+    ): code
+    for status, code in _VENDORED_PLAIN_HTTP_CODES.items()
+    if _CONNECT_SPEC_PLAIN_HTTP_CODES.get(status, Code.UNKNOWN) is not code
+}
+
+
 def rpc_error_code(e: ConnectError) -> Code:
     """The error's code, with plain (non-Connect-encoded) HTTP error
     responses — e.g. an edge proxy answering for envd — restored to the
-    statuses the vendored client kept. connectrpc maps them per the Connect
-    spec (429 → UNAVAILABLE, 404 → UNIMPLEMENTED, 409 → no entry, so
-    UNKNOWN), with the HTTP reason phrase as the message; user code relies
-    on RateLimitException to back off, and ``kill``/``exists``/``make_dir``
-    branch on NOT_FOUND/ALREADY_EXISTS before mapping the error, so both
-    those call sites and :func:`handle_rpc_exception` resolve codes through
-    this. Connect errors parsed from a response body carry envd's own
-    message and never match these exact reason phrases.
+    statuses the vendored client kept (``_VENDORED_PLAIN_HTTP_CODES``).
+    connectrpc maps such responses per the Connect spec with the HTTP reason
+    phrase as the message, so the restoration matches (code, phrase) pairs;
+    Connect errors parsed from a response body carry envd's own message and
+    never match these exact phrases. User code relies on RateLimitException
+    to back off, and ``kill``/``exists``/``make_dir`` branch on
+    NOT_FOUND/ALREADY_EXISTS before mapping the error, so both those call
+    sites and :func:`handle_rpc_exception` resolve codes through this.
     """
-    if e.code is Code.UNAVAILABLE and e.message == "Too Many Requests":
-        return Code.RESOURCE_EXHAUSTED
-    if e.code is Code.UNIMPLEMENTED and e.message == "Not Found":
-        return Code.NOT_FOUND
-    if e.code is Code.UNKNOWN and e.message == "Conflict":
-        return Code.ALREADY_EXISTS
-    return e.code
+    return _PLAIN_HTTP_RESTORATIONS.get((e.code, e.message), e.code)
 
 
 def handle_rpc_exception(
