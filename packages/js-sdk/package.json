@@ -24,7 +24,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "prepublishOnly": "pnpm build",
-    "build": "tsc --noEmit && tsdown",
+    "build": "tsc --noEmit && tsdown && node scripts/check-bundle-edge-compat.mjs",
     "dev": "tsdown --watch",
     "example": "tsx example.mts",
     "test": "vitest run",
