@@ -1,25 +1,21 @@
-import asyncio
-import os
-import weakref
+import threading
 from typing import Dict, Optional
 
 import httpx
-from httpx import Limits
-from httpx._types import ProxyTypes
+from pyqwest import HTTPTransport
 
-from e2b.api import connection_retries, make_async_logging_event_hooks
+from e2b.api import (
+    connection_retries,
+    make_async_logging_event_hooks,
+    pool_idle_timeout,
+    pool_max_idle_per_host,
+    proxy_to_url,
+)
+from e2b.api.client_async import AsyncApiPyqwestTransport, ConnectionRetryTransport
 from e2b.api.metadata import default_headers
 from e2b.exceptions import AuthenticationException
 from e2b.volume.client.client import AuthenticatedClient as AsyncVolumeApiClient
-from e2b.volume.connection_config import VolumeConnectionConfig
-
-limits = Limits(
-    max_keepalive_connections=int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS", "20")),
-    max_connections=int(os.getenv("E2B_MAX_CONNECTIONS", "2000")),
-    keepalive_expiry=int(os.getenv("E2B_KEEPALIVE_EXPIRY", "300")),
-)
-
-TransportKey = Optional[ProxyTypes]
+from e2b.volume.connection_config import FILE_TIMEOUT, VolumeConnectionConfig
 
 
 def get_api_client(config: VolumeConnectionConfig, **kwargs) -> AsyncVolumeApiClient:
@@ -56,35 +52,38 @@ def get_api_client(config: VolumeConnectionConfig, **kwargs) -> AsyncVolumeApiCl
     )
 
 
-class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
-    # Keyed weakly by the event loop object itself, not id(loop) — CPython
-    # reuses object ids, so a new loop could otherwise inherit a transport
-    # bound to a previous, closed loop.
-    _instances: weakref.WeakKeyDictionary[
-        asyncio.AbstractEventLoop,
-        Dict[TransportKey, "AsyncTransportWithLogger"],
-    ] = weakref.WeakKeyDictionary()
-
-    @property
-    def pool(self):
-        return self._pool
+_transport_lock = threading.Lock()
+# One transport (= one connection pool) per proxy; None is the direct pool.
+# pyqwest's I/O runs on its own Rust runtime, so unlike the httpx transport
+# this replaced, the transport is not bound to an event loop and the cache
+# is process-global rather than per-loop.
+_transports: Dict[Optional[str], AsyncApiPyqwestTransport] = {}
 
 
-def get_transport(config: VolumeConnectionConfig) -> AsyncTransportWithLogger:
-    loop = asyncio.get_running_loop()
-    loop_instances = AsyncTransportWithLogger._instances.get(loop)
-    if loop_instances is None:
-        loop_instances = {}
-        AsyncTransportWithLogger._instances[loop] = loop_instances
+def get_transport(config: VolumeConnectionConfig) -> AsyncApiPyqwestTransport:
+    """The shared pyqwest-backed httpx transport for volume content API calls.
 
-    key: TransportKey = config.proxy
-    transport = loop_instances.get(key)
-    if transport is None:
-        transport = AsyncTransportWithLogger(
-            limits=limits,
-            proxy=config.proxy,
-            retries=connection_retries,
-        )
-        loop_instances[key] = transport
-
-    return transport
+    ``read_timeout`` is the idle bound on every read: it resets after each
+    successful read, so it caps how long a streamed download may stall
+    without limiting total transfer time. It is fixed per transport — the
+    adapter's per-request timeouts are whole-request deadlines, and the sync
+    adapter does not bound body reads at all.
+    """
+    proxy_url = proxy_to_url(config.proxy)
+    with _transport_lock:
+        transport = _transports.get(proxy_url)
+        if transport is None:
+            transport = AsyncApiPyqwestTransport(
+                ConnectionRetryTransport(
+                    HTTPTransport(
+                        tls_include_system_certs=True,
+                        proxy=proxy_url,
+                        pool_idle_timeout=pool_idle_timeout,
+                        pool_max_idle_per_host=pool_max_idle_per_host,
+                        read_timeout=FILE_TIMEOUT,
+                    ),
+                    max_retries=connection_retries,
+                )
+            )
+            _transports[proxy_url] = transport
+        return transport
