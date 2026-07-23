@@ -5,5 +5,6 @@ To re-generate the API client run `make codegen` in the repository root when mod
 Create or update tests covering affected codepaths and run them using `pnpm run test`.
 Generate a changeset when updating packages/cli, packages/js-sdk, packages/python-sdk with `pnpm changeset` in the repository root.
 When creating a pull request, add usage examples for user-facing changes to the PR description.
+When opening a new pull request, use the Linear MCP if available to link to related issues, or create a new issue from the PR description.
 Keep PR descriptions up-to-date with changes.
 Default credentials are stored in .env.local in the repository root or inside ~/.e2b/config.json.
