@@ -30,7 +30,37 @@ function wrangler(args: string[]) {
   return { ...result, output: `${result.stdout ?? ''}\n${result.stderr ?? ''}` }
 }
 
-export default function setup(project: TestProject) {
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+// A temporary deploy lands on a brand-new account subdomain
+// (<worker>.<random-name>.workers.dev), and Cloudflare serves its HTML 404
+// page ("nothing is here yet") until the route propagates to the edge —
+// usually seconds, occasionally minutes. Wait for the worker itself to
+// answer (405 to GET, worker.mjs is POST-only) so the test's own retries
+// only have to absorb transient network failures.
+async function waitUntilLive(workerUrl: string, timeoutMs = 240_000) {
+  const deadline = Date.now() + timeoutMs
+  for (;;) {
+    try {
+      const response = await fetch(workerUrl)
+      if (response.status === 405) {
+        return
+      }
+      console.log(`Worker route not live yet (${response.status}), waiting...`)
+    } catch (err) {
+      // DNS for the fresh subdomain can also lag behind.
+      console.log(`Worker not reachable yet (${err}), waiting...`)
+    }
+    if (Date.now() >= deadline) {
+      throw new Error(
+        `Worker at ${workerUrl} did not come up within ${timeoutMs / 1000}s of deploy`
+      )
+    }
+    await sleep(3_000)
+  }
+}
+
+export default async function setup(project: TestProject) {
   rmSync(outputFile, { force: true })
 
   console.log('Deploying worker to a temporary Cloudflare preview account...')
@@ -58,6 +88,8 @@ export default function setup(project: TestProject) {
   }
 
   console.log(`Deployed: ${workerUrl}`)
+  await waitUntilLive(workerUrl)
+  console.log('Worker is live.')
   project.provide('cfWorkerUrl', workerUrl)
 
   return function teardown() {
