@@ -18,6 +18,7 @@ import json
 import os
 from typing import Optional, TypedDict, TypeVar
 
+import httpx
 from connectrpc.code import Code
 from connectrpc.errors import ConnectError
 from protobuf import Message
@@ -172,13 +173,32 @@ ENVD_RPC_COMPRESSION: _RPCCompression = {
 def proxy_to_url(proxy: object) -> Optional[str]:
     """Narrow the ``proxy`` connection option to the proxy URL string pyqwest
     transports take (scheme http, https, socks5, or socks5h, credentials in
-    the URL userinfo). The richer httpx proxy objects the REST client accepts
-    are rejected rather than partially honored.
+    the URL userinfo). ``httpx.URL`` and ``httpx.Proxy`` — which the REST
+    client accepts and the vendored envd client used to — are converted when
+    they reduce to such a URL; ``httpx.Proxy`` extras that don't (custom
+    headers, an ssl_context) are rejected rather than silently dropped.
     """
     if proxy is None:
         return None
     if isinstance(proxy, str):
         return proxy
+    if isinstance(proxy, httpx.URL):
+        return str(proxy)
+    if isinstance(proxy, httpx.Proxy):
+        if proxy.headers:
+            raise InvalidArgumentException(
+                "Sandbox RPC calls don't support httpx.Proxy custom headers; "
+                "pass credentials in the proxy URL instead, "
+                'e.g. proxy="http://user:pass@localhost:8030"'
+            )
+        if proxy.ssl_context is not None:
+            raise InvalidArgumentException(
+                "Sandbox RPC calls don't support httpx.Proxy ssl_context"
+            )
+        url = proxy.url
+        if proxy.auth is not None:
+            url = url.copy_with(username=proxy.auth[0], password=proxy.auth[1])
+        return str(url)
     raise InvalidArgumentException(
         "Sandbox RPC calls support only URL-string proxies, "
         'e.g. proxy="http://user:pass@localhost:8030"'

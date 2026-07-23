@@ -32,10 +32,10 @@ Notes:
   re-execute a delivered call (e.g. re-send process input); such drops
   surface as errors immediately, the way they always did for streaming calls.
 - The `proxy` option applies to sandbox RPC calls the same way it does to the
-  REST API and file transfer requests. RPC calls accept only URL-string
-  proxies (credentials in the URL, e.g.
-  `proxy="http://user:pass@localhost:8030"`); `httpx.Proxy` and `httpx.URL`
-  values are rejected for RPC calls with `InvalidArgumentException`.
+  REST API and file transfer requests. URL strings, `httpx.URL`, and
+  `httpx.Proxy` values keep working (credentials in the URL or in
+  `httpx.Proxy(auth=...)`); `httpx.Proxy` custom headers and `ssl_context`
+  are not supported for RPC calls and raise `InvalidArgumentException`.
 - `CommandResult.error` (and `CommandHandle.error`) is now `None` when a
   command finishes without an error, matching the declared `Optional[str]`
   type and the JS SDK's `error?: string`. It used to be `""` on success —

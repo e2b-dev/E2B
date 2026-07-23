@@ -29,16 +29,42 @@ def test_proxy_to_url_keeps_credentials_from_url():
     )
 
 
-def test_proxy_to_url_rejects_httpx_proxy():
+def test_proxy_to_url_converts_httpx_url():
+    assert proxy_to_url(httpx.URL("http://localhost:8030")) == "http://localhost:8030"
+
+
+def test_proxy_to_url_converts_httpx_proxy_with_auth():
+    proxy = httpx.Proxy("http://localhost:8030", auth=("user@x", "p@ss"))
+    assert proxy_to_url(proxy) == "http://user%40x:p%40ss@localhost:8030"
+
+
+def test_proxy_to_url_keeps_credentials_from_httpx_proxy_url():
+    # httpx.Proxy pulls userinfo out of the URL into `.auth`; conversion
+    # has to fold it back in.
+    proxy = httpx.Proxy("http://user:pass@localhost:8030")
+    assert proxy_to_url(proxy) == "http://user:pass@localhost:8030"
+
+
+def test_proxy_to_url_rejects_httpx_proxy_headers():
     # Typed so `except SandboxException` handlers catch it at the RPC call.
-    proxy = httpx.Proxy("http://localhost:8030", auth=("user", "pass"))
-    with pytest.raises(InvalidArgumentException, match="URL-string"):
+    proxy = httpx.Proxy("http://localhost:8030", headers={"X-Custom": "1"})
+    with pytest.raises(InvalidArgumentException, match="headers"):
         proxy_to_url(proxy)
 
 
-def test_proxy_to_url_rejects_httpx_url():
+def test_proxy_to_url_rejects_httpx_proxy_ssl_context():
+    import ssl
+
+    proxy = httpx.Proxy(
+        "https://localhost:8030", ssl_context=ssl.create_default_context()
+    )
+    with pytest.raises(InvalidArgumentException, match="ssl_context"):
+        proxy_to_url(proxy)
+
+
+def test_proxy_to_url_rejects_unknown_types():
     with pytest.raises(InvalidArgumentException, match="URL-string"):
-        proxy_to_url(httpx.URL("http://localhost:8030"))
+        proxy_to_url(object())
 
 
 def test_sync_transport_is_cached_per_proxy():
