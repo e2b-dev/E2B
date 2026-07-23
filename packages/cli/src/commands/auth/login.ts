@@ -65,7 +65,7 @@ export const loginCommand = new commander.Command('login')
       }
 
       userConfig = {
-        version: 1,
+        version: 2,
         identity: {
           email: signInResponse.email,
         },
@@ -79,9 +79,9 @@ export const loginCommand = new commander.Command('login')
           refresh_token: signInResponse.refreshToken,
         },
         last_refresh: getConfigRefreshTimestamp(),
-        teamName: defaultTeam.name,
-        teamId: defaultTeam.teamID,
-        teamApiKey: defaultTeam.apiKey,
+        projectName: defaultTeam.name,
+        projectId: defaultTeam.teamID,
+        projectApiKey: defaultTeam.apiKey,
       }
 
       writeUserConfig(USER_CONFIG_PATH, userConfig)
@@ -90,7 +90,7 @@ export const loginCommand = new commander.Command('login')
     console.log(
       `Logged in as ${asBold(
         userConfig.identity.email
-      )} with selected project ${asBold(userConfig.teamName)}`
+      )} with selected project ${asBold(userConfig.projectName)}`
     )
     process.exit(0)
   })

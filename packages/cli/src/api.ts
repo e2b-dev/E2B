@@ -44,7 +44,7 @@ export function ensureAPIKey() {
   // If apiKey is not already set (either from env var or from user config), try to get it from config file
   if (!apiKey) {
     const userConfig = getUserConfig()
-    apiKey = userConfig?.teamApiKey
+    apiKey = userConfig?.projectApiKey
   }
 
   if (!apiKey) {
@@ -83,7 +83,7 @@ export function ensureAccessToken() {
  * Resolve project ID with proper precedence:
  * 1. CLI --project flag (or the deprecated --team flag)
  * 2. E2B_PROJECT_ID env var (or the deprecated E2B_TEAM_ID)
- * 3. ~/.e2b/config.json teamId (only if E2B_API_KEY env var is NOT set,
+ * 3. ~/.e2b/config.json projectId (only if E2B_API_KEY env var is NOT set,
  *    to avoid mismatch between env var API key and config file project ID)
  */
 export function resolveProjectId(cliProjectId?: string): string | undefined {
@@ -91,7 +91,7 @@ export function resolveProjectId(cliProjectId?: string): string | undefined {
   if (projectId) return projectId
   if (!process.env.E2B_API_KEY) {
     const config = getUserConfig()
-    return config?.teamId
+    return config?.projectId
   }
   return undefined
 }
@@ -102,7 +102,7 @@ const resolvedAccessToken =
   process.env.E2B_ACCESS_TOKEN || userConfig?.tokens.access_token
 
 export const connectionConfig = new e2b.ConnectionConfig({
-  apiKey: process.env.E2B_API_KEY || userConfig?.teamApiKey,
+  apiKey: process.env.E2B_API_KEY || userConfig?.projectApiKey,
   apiHeaders: resolvedAccessToken
     ? { Authorization: `Bearer ${resolvedAccessToken}` }
     : undefined,
