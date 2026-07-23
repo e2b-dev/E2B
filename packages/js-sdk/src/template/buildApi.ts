@@ -1,5 +1,7 @@
-import { createReadStream } from 'node:fs'
-import { Readable } from 'node:stream'
+// Default-form imports so Vite's browser stub for node builtins doesn't
+// throw at module evaluation — property access is deferred to call time.
+import fs from 'node:fs'
+import stream from 'node:stream'
 
 import { ApiClient, handleApiError, components } from '../api'
 import { buildRequestSignal } from '../connectionConfig'
@@ -187,7 +189,9 @@ async function putFileStream(
 
   return await fetchImpl(url, {
     method: 'PUT',
-    body: Readable.toWeb(createReadStream(filePath)) as ReadableStream,
+    body: stream.Readable.toWeb(
+      fs.createReadStream(filePath)
+    ) as ReadableStream,
     headers: {
       'Content-Length': size.toString(),
     },
