@@ -1,24 +1,22 @@
-import os
 import threading
 from typing import Dict, Optional
 
 import httpx
-from httpx import Limits
-from httpx._types import ProxyTypes
+from pyqwest import SyncHTTPTransport
 
-from e2b.api import connection_retries, make_logging_event_hooks
+from e2b.api import (
+    ProxyConfig,
+    connection_retries,
+    make_logging_event_hooks,
+    pool_idle_timeout,
+    pool_max_idle_per_host,
+    proxy_to_config,
+)
+from e2b.api.client_sync import ApiPyqwestTransport, ConnectionRetryTransport
 from e2b.api.metadata import default_headers
 from e2b.exceptions import AuthenticationException
 from e2b.volume.client.client import AuthenticatedClient as VolumeApiClient
-from e2b.volume.connection_config import VolumeConnectionConfig
-
-limits = Limits(
-    max_keepalive_connections=int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20"),
-    max_connections=int(os.getenv("E2B_MAX_CONNECTIONS") or "2000"),
-    keepalive_expiry=int(os.getenv("E2B_KEEPALIVE_EXPIRY") or "300"),
-)
-
-TransportKey = Optional[ProxyTypes]
+from e2b.volume.connection_config import FILE_TIMEOUT, VolumeConnectionConfig
 
 
 def get_api_client(config: VolumeConnectionConfig, **kwargs) -> VolumeApiClient:
@@ -55,28 +53,37 @@ def get_api_client(config: VolumeConnectionConfig, **kwargs) -> VolumeApiClient:
     )
 
 
-class TransportWithLogger(httpx.HTTPTransport):
-    _thread_local = threading.local()
+_transport_lock = threading.Lock()
+# One transport (= one connection pool) per proxy; None is the direct pool.
+# pyqwest transports are thread-safe, so unlike the httpx transport this
+# replaced, the cache is process-global rather than per-thread.
+_transports: Dict[Optional[ProxyConfig], ApiPyqwestTransport] = {}
 
-    @property
-    def pool(self):
-        return self._pool
 
+def get_transport(config: VolumeConnectionConfig) -> ApiPyqwestTransport:
+    """The shared pyqwest-backed httpx transport for volume content API calls.
 
-def get_transport(config: VolumeConnectionConfig) -> TransportWithLogger:
-    instances: Dict[TransportKey, TransportWithLogger] = getattr(
-        TransportWithLogger._thread_local, "instances", {}
-    )
-    key: TransportKey = config.proxy
-    cached = instances.get(key)
-    if cached is not None:
-        return cached
-
-    transport = TransportWithLogger(
-        limits=limits,
-        proxy=config.proxy,
-        retries=connection_retries,
-    )
-    instances[key] = transport
-    TransportWithLogger._thread_local.instances = instances
-    return transport
+    ``read_timeout`` is the idle bound on every read: it resets after each
+    successful read, so it caps how long a streamed download may stall
+    without limiting total transfer time. It is fixed per transport — the
+    adapter's per-request timeouts are whole-request deadlines, and the sync
+    adapter does not bound body reads at all.
+    """
+    proxy = proxy_to_config(config.proxy)
+    with _transport_lock:
+        transport = _transports.get(proxy)
+        if transport is None:
+            transport = ApiPyqwestTransport(
+                ConnectionRetryTransport(
+                    SyncHTTPTransport(
+                        tls_include_system_certs=True,
+                        proxy=proxy.to_pyqwest() if proxy is not None else None,
+                        pool_idle_timeout=pool_idle_timeout,
+                        pool_max_idle_per_host=pool_max_idle_per_host,
+                        read_timeout=FILE_TIMEOUT,
+                    ),
+                    max_retries=connection_retries,
+                )
+            )
+            _transports[proxy] = transport
+        return transport
