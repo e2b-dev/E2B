@@ -41,7 +41,7 @@ export default defineConfig({
   ],
   test: {
     name: 'cloudflare',
-    include: hasDist ? ['tests/runtimes/cloudflare/**/*.test.ts'] : [],
+    include: hasDist ? ['tests/runtimes/cloudflare/*.test.ts'] : [],
     passWithNoTests: !hasDist,
     testTimeout: 30_000,
   },

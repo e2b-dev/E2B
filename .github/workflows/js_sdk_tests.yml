@@ -88,6 +88,10 @@ jobs:
       # Deploys to an ephemeral Cloudflare preview account (wrangler deploy
       # --temporary), so no Cloudflare credentials are needed. Ubuntu only:
       # the deployed worker is identical across OSes.
+      - name: Deploy Cloudflare Worker to a temporary preview account
+        if: matrix.os == 'ubuntu-22.04'
+        run: pnpm deploy:cf
+
       - name: Run Cloudflare Workers deploy tests
         if: matrix.os == 'ubuntu-22.04'
         run: pnpm test:cf:deploy

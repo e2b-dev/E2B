@@ -41,4 +41,8 @@ build/Release
 logs.txt
 deno.lock
 
+# written by tests/runtimes/cloudflare/deploy/deploy.mjs
+.deployed-url
+.wrangler
+
 __screenshots__
