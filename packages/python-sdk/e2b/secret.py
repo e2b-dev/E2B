@@ -1,4 +1,4 @@
-from e2b.sandbox.sandbox_api import SandboxIamToken
+from e2b.sandbox.sandbox_api import SandboxIamToken, SandboxIamTokenType
 
 
 class Secret:
@@ -7,7 +7,7 @@ class Secret:
     """
 
     @staticmethod
-    def iam_token(*, audience: str, token_type: str) -> SandboxIamToken:
+    def iam_token(*, audience: str, token_type: SandboxIamTokenType) -> SandboxIamToken:
         """
         Define a workload identity token to pass to ``iam.tokens`` when
         creating a sandbox.

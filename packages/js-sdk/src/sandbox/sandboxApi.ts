@@ -201,6 +201,13 @@ export type SandboxNetworkUpdate = {
 }
 
 /**
+ * Workload token type. `'JWT-SVID'` is the only type the API accepts in this
+ * version; the set is defined server-side and may grow, so any string is
+ * allowed.
+ */
+export type SandboxIamTokenType = 'JWT-SVID' | (string & {})
+
+/**
  * Workload token definition for sandbox workload identity.
  */
 export interface SandboxIamToken {
@@ -212,7 +219,7 @@ export interface SandboxIamToken {
   /**
    * Workload token type.
    */
-  tokenType: string
+  tokenType: SandboxIamTokenType
 }
 
 /**

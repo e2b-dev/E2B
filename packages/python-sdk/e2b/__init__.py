@@ -77,6 +77,7 @@ from .sandbox.sandbox_api import (
     McpServer,
     SandboxIamOpts,
     SandboxIamToken,
+    SandboxIamTokenType,
     SandboxInfo,
     SandboxInfoLifecycle,
     SandboxMetrics,
@@ -210,6 +211,7 @@ __all__ = [
     # IAM
     "SandboxIamOpts",
     "SandboxIamToken",
+    "SandboxIamTokenType",
     "Secret",
     # Snapshot
     "SnapshotInfo",

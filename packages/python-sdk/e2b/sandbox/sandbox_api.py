@@ -235,6 +235,13 @@ class SandboxNetworkUpdate(TypedDict, total=False):
     """
 
 
+SandboxIamTokenType = Union[Literal["JWT-SVID"], str]
+"""
+Workload token type. ``"JWT-SVID"`` is the only type the API accepts in this
+version; the set is defined server-side and may grow, so any string is allowed.
+"""
+
+
 class SandboxIamToken(TypedDict):
     """
     Workload token definition for sandbox workload identity.
@@ -243,7 +250,7 @@ class SandboxIamToken(TypedDict):
     audience: str
     """Audience of the workload token, stored exactly as provided."""
 
-    token_type: str
+    token_type: SandboxIamTokenType
     """Workload token type."""
 
 

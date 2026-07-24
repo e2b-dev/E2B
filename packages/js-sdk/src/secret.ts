@@ -1,4 +1,4 @@
-import type { SandboxIamToken } from './sandbox/sandboxApi'
+import type { SandboxIamToken, SandboxIamTokenType } from './sandbox/sandboxApi'
 
 /**
  * Options for {@link Secret.iamToken}.
@@ -12,7 +12,7 @@ export interface SecretIamTokenOpts {
   /**
    * Workload token type.
    */
-  tokenType: string
+  tokenType: SandboxIamTokenType
 }
 
 /**

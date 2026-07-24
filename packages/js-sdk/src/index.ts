@@ -64,6 +64,7 @@ export type {
   SandboxPaginator,
   SandboxIamOpts,
   SandboxIamToken,
+  SandboxIamTokenType,
   SandboxNetworkOpts,
   SandboxNetworkInfo,
   SandboxNetworkSelector,
