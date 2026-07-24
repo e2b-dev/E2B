@@ -62,13 +62,22 @@ export function timeoutToSeconds(timeout: number): number {
   return Math.ceil(timeout / 1000)
 }
 
+/**
+ * Import an optional, runtime-resolved package (e.g. `undici`, `glob`, `tar`)
+ * without letting downstream bundlers resolve it at build time.
+ *
+ * The variable specifier plus the `webpackIgnore`/`@vite-ignore` annotations
+ * keep the import opaque to bundlers, so browser/edge builds don't try to
+ * pull node-only packages into the bundle, while plain Node resolves it
+ * natively at runtime.
+ */
 export async function dynamicImport<T>(module: string): Promise<T> {
   if (runtime === 'browser') {
     throw new Error('Browser runtime is not supported for dynamic import')
   }
 
   // @ts-ignore
-  return await import(module)
+  return await import(/* webpackIgnore: true */ /* @vite-ignore */ module)
 }
 
 // Source: https://github.com/chalk/ansi-regex/blob/main/index.js
