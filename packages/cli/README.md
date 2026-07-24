@@ -33,7 +33,7 @@ e2b auth login
 > [!NOTE]
 > To authenticate without the ability to open the browser, provide
 > `E2B_ACCESS_TOKEN` as an environment variable. You can find your token
-> in Account Settings under the Team selector at [e2b.dev/dashboard](https://e2b.dev/dashboard). Then use the CLI like this:
+> in [Account Settings](https://e2b.dev/dashboard?tab=account) in the E2B dashboard. Then use the CLI like this:
 > `E2B_ACCESS_TOKEN=sk_e2b_... e2b template create`.
 
 > [!IMPORTANT]  
