@@ -8,7 +8,7 @@ on:
         type: string
         default: ''
       node-only:
-        description: 'Run only the Node legs (skip Bun, Deno, and Cloudflare)'
+        description: 'Run only the Node legs (skip Bun, Deno, Cloudflare, and the browser)'
         required: false
         type: boolean
         default: false
@@ -29,14 +29,17 @@ jobs:
     strategy:
       fail-fast: false
       # With node-only (set by staging callers) the matrix collapses to the
-      # Node legs: the Bun/Deno/Cloudflare legs re-run suites the Node legs
-      # already cover and add sandbox/build load without extra backend
-      # signal, so the other runtimes are exercised against production only.
+      # Node legs: the Bun/Deno/Cloudflare/browser legs re-run suites the Node
+      # legs already cover and add sandbox/build load, so the other runtimes
+      # are exercised against production only. Note this does drop backend
+      # signal for the browser leg specifically — it's the only one that
+      # depends on the API's CORS headers — so a staging-only CORS regression
+      # surfaces on the production run rather than before merge.
       matrix:
         include: >-
           ${{ inputs.node-only
             && fromJSON('[{"runtime": "node", "os": "ubuntu-22.04"}, {"runtime": "node", "os": "windows-latest"}]')
-            || fromJSON('[{"runtime": "node", "os": "ubuntu-22.04"}, {"runtime": "node", "os": "windows-latest"}, {"runtime": "bun", "os": "ubuntu-22.04"}, {"runtime": "deno", "os": "ubuntu-22.04"}, {"runtime": "cloudflare", "os": "ubuntu-22.04"}, {"runtime": "cloudflare-deploy", "os": "ubuntu-22.04"}]') }}
+            || fromJSON('[{"runtime": "node", "os": "ubuntu-22.04"}, {"runtime": "node", "os": "windows-latest"}, {"runtime": "bun", "os": "ubuntu-22.04"}, {"runtime": "deno", "os": "ubuntu-22.04"}, {"runtime": "cloudflare", "os": "ubuntu-22.04"}, {"runtime": "cloudflare-deploy", "os": "ubuntu-22.04"}, {"runtime": "browser", "os": "ubuntu-22.04"}]') }}
     runs-on: ${{ matrix.os }}
     # The cloudflare-deploy leg is advisory: it deploys to a brand-new
     # Cloudflare preview account on every run, so it inherits that account's
@@ -82,22 +85,21 @@ jobs:
         run: |
           pnpm install --frozen-lockfile
 
-      # Only the Node runtime runs the vitest `browser` project, which drives
-      # Chromium through Playwright.
+      # Only the browser leg needs Chromium, which Playwright drives.
       - name: Get Playwright version
-        if: matrix.runtime == 'node'
+        if: matrix.runtime == 'browser'
         id: playwright-version
         run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
 
       - name: Cache Playwright browsers
-        if: matrix.runtime == 'node'
+        if: matrix.runtime == 'browser'
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
-          path: ${{ matrix.os == 'windows-latest' && '~/AppData/Local/ms-playwright' || '~/.cache/ms-playwright' }}
+          path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
 
       - name: Install Playwright Chromium
-        if: matrix.runtime == 'node'
+        if: matrix.runtime == 'browser'
         run: pnpm run playwright:install
 
       # The unit bundle test and the Cloudflare deploy config fail in CI when
@@ -150,6 +152,16 @@ jobs:
       - name: Run Cloudflare Workers deploy tests
         if: matrix.runtime == 'cloudflare-deploy'
         run: pnpm test:cf:deploy
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
+
+      # Full unit + connectionConfig suite inside Chromium (vitest browser mode).
+      # Chromium comes from the cached install step above; `pretest:browser`
+      # covers local runs, where it's a no-op once installed.
+      - name: Run test suite in the browser
+        if: matrix.runtime == 'browser'
+        run: pnpm test:browser
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}

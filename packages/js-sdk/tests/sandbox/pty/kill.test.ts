@@ -1,6 +1,6 @@
 import { sandboxTest } from '../../setup'
 import { assert, expect } from 'vitest'
-import { ProcessExitError } from '../../../src/index.js'
+import { CommandExitError } from '../../../src/index.js'
 
 sandboxTest('kill PTY', async ({ sandbox }) => {
   const terminal = await sandbox.pty.create({
@@ -15,7 +15,7 @@ sandboxTest('kill PTY', async ({ sandbox }) => {
   // The PTY process should no longer be running.
   await expect(
     sandbox.commands.run(`kill -0 ${terminal.pid}`)
-  ).rejects.toThrowError(ProcessExitError)
+  ).rejects.toThrowError(CommandExitError)
 })
 
 sandboxTest('kill non-existing PTY', async ({ sandbox }) => {

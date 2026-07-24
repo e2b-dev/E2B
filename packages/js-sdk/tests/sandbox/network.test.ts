@@ -1,7 +1,12 @@
 import { assert, expect, describe } from 'vitest'
 
 import { CommandExitError, Sandbox } from '../../src'
-import { sandboxTest, isDebug, template } from '../setup.js'
+import {
+  sandboxTest,
+  isDebug,
+  template,
+  canFetchSandboxServers,
+} from '../setup.js'
 import { httpbinTemplate } from '../template.js'
 
 describe('allow only 1.1.1.1', () => {
@@ -130,7 +135,7 @@ describe('allowPublicTraffic=false', () => {
     },
   })
 
-  sandboxTest.skipIf(isDebug)(
+  sandboxTest.skipIf(isDebug || !canFetchSandboxServers)(
     'sandbox requires traffic access token',
     async ({ sandbox }) => {
       // Verify the sandbox was created successfully and has a traffic access token
@@ -172,7 +177,7 @@ describe('allowPublicTraffic=true', () => {
     },
   })
 
-  sandboxTest.skipIf(isDebug)(
+  sandboxTest.skipIf(isDebug || !canFetchSandboxServers)(
     'sandbox works without token',
     async ({ sandbox }) => {
       // Start a simple HTTP server in the sandbox

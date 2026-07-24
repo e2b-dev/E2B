@@ -1,9 +1,9 @@
 import { expect } from 'vitest'
 import { TimeoutError } from '../../../src/index.js'
 
-import { sandboxTest, isDebug } from '../../setup.js'
+import { sandboxTest, isDebug, canObserveStoppedSandbox } from '../../setup.js'
 
-sandboxTest.skipIf(isDebug)(
+sandboxTest.skipIf(isDebug || !canObserveStoppedSandbox)(
   'killing the sandbox while a command is running throws an actionable error',
   async ({ sandbox }) => {
     const cmd = await sandbox.commands.run('sleep 60', { background: true })

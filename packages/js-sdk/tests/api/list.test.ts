@@ -1,8 +1,7 @@
 import { assert } from 'vitest'
-import { randomUUID } from 'crypto'
 
 import { Sandbox, SandboxInfo } from '../../src'
-import { sandboxTest, isDebug } from '../setup.js'
+import { sandboxTest, isDebug, canReadPaginationToken } from '../setup.js'
 
 sandboxTest.skipIf(isDebug)(
   'list sandboxes',
@@ -20,7 +19,7 @@ sandboxTest.skipIf(isDebug)(
 )
 
 sandboxTest.skipIf(isDebug)('list sandboxes with filter', async () => {
-  const uniqueId = randomUUID()
+  const uniqueId = crypto.randomUUID()
   const extraSbx = await Sandbox.create({ metadata: { uniqueId } })
 
   try {
@@ -86,7 +85,7 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)(
+sandboxTest.skipIf(isDebug || !canReadPaginationToken)(
   'paginate running sandboxes',
   async ({ sandbox, sandboxTestId }) => {
     // Create extra sandboxes
@@ -122,7 +121,7 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)(
+sandboxTest.skipIf(isDebug || !canReadPaginationToken)(
   'paginate paused sandboxes',
   async ({ sandbox, sandboxTestId }) => {
     await sandbox.betaPause()
@@ -161,7 +160,7 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)(
+sandboxTest.skipIf(isDebug || !canReadPaginationToken)(
   'paginate running and paused sandboxes',
   async ({ sandbox, sandboxTestId }) => {
     // Create extra sandbox
@@ -316,7 +315,7 @@ sandboxTest.skipIf(isDebug)(
 )
 
 sandboxTest.skipIf(isDebug)('list sandboxes with filter', async () => {
-  const uniqueId = randomUUID()
+  const uniqueId = crypto.randomUUID()
   const extraSbx = await Sandbox.create({ metadata: { uniqueId } })
 
   try {
@@ -382,7 +381,7 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)(
+sandboxTest.skipIf(isDebug || !canReadPaginationToken)(
   'paginate running sandboxes',
   async ({ sandbox, sandboxTestId }) => {
     // Create extra sandboxes
@@ -418,7 +417,7 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)(
+sandboxTest.skipIf(isDebug || !canReadPaginationToken)(
   'paginate paused sandboxes',
   async ({ sandbox, sandboxTestId }) => {
     await Sandbox.betaPause(sandbox.sandboxId)
@@ -457,7 +456,7 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)(
+sandboxTest.skipIf(isDebug || !canReadPaginationToken)(
   'paginate running and paused sandboxes',
   async ({ sandbox, sandboxTestId }) => {
     // Create extra sandbox
