@@ -58,6 +58,10 @@ export default defineConfig({
       enabled: true,
       // Defaults to `isCI`, so set it explicitly for local runs too.
       headless: true,
+      // These tests drive the SDK and never render anything, so a failure
+      // screenshot is a picture of a blank page. Off by default it would write
+      // one PNG per failed test into .vitest-attachments/.
+      screenshotFailures: false,
       provider: playwright(),
       instances: [{ browser: 'chromium' }],
     },
