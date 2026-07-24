@@ -1,8 +1,24 @@
 import { randomUUID } from 'node:crypto'
-import { afterAll, afterEach, beforeAll, describe, expect, test } from 'vitest'
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  test,
+  vi,
+} from 'vitest'
 
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
+
+// Force the SDK's global-fetch transport so msw can intercept requests —
+// see withGlobalFetchFallback.
+vi.mock('../../src/undici', async (importOriginal) =>
+  (await import('../globalFetchFallback')).withGlobalFetchFallback(
+    await importOriginal()
+  )
+)
 
 import { Template } from '../../src'
 import { apiUrl, buildTemplateTest, isDebug } from '../setup'
