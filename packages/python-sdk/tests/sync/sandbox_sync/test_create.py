@@ -81,11 +81,11 @@ def test_create_payload_serializes_iam_tokens():
     }
 
 
-def test_create_payload_serializes_secret_id_token():
+def test_create_payload_serializes_secret_iam_token():
     iam = build_iam_config(
         {
             "tokens": {
-                "aws": Secret.id_token(
+                "aws": Secret.iam_token(
                     audience="sts.amazonaws.com", token_type="JWT-SVID"
                 ),
             },

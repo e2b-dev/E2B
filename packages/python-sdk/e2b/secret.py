@@ -7,7 +7,7 @@ class Secret:
     """
 
     @staticmethod
-    def id_token(*, audience: str, token_type: str) -> SandboxIamToken:
+    def iam_token(*, audience: str, token_type: str) -> SandboxIamToken:
         """
         Define a workload identity token to pass to ``iam.tokens`` when
         creating a sandbox.
@@ -22,7 +22,7 @@ class Secret:
         sandbox = Sandbox.create(
             iam={
                 "tokens": {
-                    "aws": Secret.id_token(
+                    "aws": Secret.iam_token(
                         audience="sts.amazonaws.com",
                         token_type="JWT-SVID",
                     ),

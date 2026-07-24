@@ -44,12 +44,12 @@ test('Sandbox.create sends iam tokens in the request body', async () => {
   })
 })
 
-test('Sandbox.create sends Secret.idToken tokens in the request body', async () => {
+test('Sandbox.create sends Secret.iamToken tokens in the request body', async () => {
   await Sandbox.create('base', {
     apiKey: TEST_API_KEY,
     iam: {
       tokens: {
-        aws: Secret.idToken({
+        aws: Secret.iamToken({
           audience: 'sts.amazonaws.com',
           tokenType: 'JWT-SVID',
         }),

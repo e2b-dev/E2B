@@ -1,9 +1,9 @@
 import type { SandboxIamToken } from './sandbox/sandboxApi'
 
 /**
- * Options for {@link Secret.idToken}.
+ * Options for {@link Secret.iamToken}.
  */
-export interface SecretIdTokenOpts {
+export interface SecretIamTokenOpts {
   /**
    * Audience of the workload token, stored exactly as provided.
    */
@@ -32,7 +32,7 @@ export class Secret {
    * const sandbox = await Sandbox.create({
    *   iam: {
    *     tokens: {
-   *       aws: Secret.idToken({
+   *       aws: Secret.iamToken({
    *         audience: 'sts.amazonaws.com',
    *         tokenType: 'JWT-SVID',
    *       }),
@@ -41,7 +41,7 @@ export class Secret {
    * })
    * ```
    */
-  static idToken(opts: SecretIdTokenOpts): SandboxIamToken {
+  static iamToken(opts: SecretIamTokenOpts): SandboxIamToken {
     return {
       audience: opts.audience,
       tokenType: opts.tokenType,
