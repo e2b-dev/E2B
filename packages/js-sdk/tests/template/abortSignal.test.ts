@@ -1,14 +1,6 @@
-import { afterAll, afterEach, beforeAll, expect, test, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
-
-// Force the SDK's global-fetch transport so msw can intercept requests —
-// see withGlobalFetchFallback.
-vi.mock('../../src/undici', async (importOriginal) =>
-  (await import('../globalFetchFallback')).withGlobalFetchFallback(
-    await importOriginal()
-  )
-)
 
 import { Template } from '../../src'
 import { TEST_API_KEY, apiUrl } from '../setup'
