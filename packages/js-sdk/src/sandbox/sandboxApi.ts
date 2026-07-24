@@ -1265,7 +1265,10 @@ export class SandboxApi {
       secure: opts?.secure ?? true,
       allow_internet_access: opts?.allowInternetAccess ?? true,
       network: buildNetworkBody(opts?.network),
-      iam: opts?.iam,
+      // Only a non-empty tokens map enables workload identity, so an empty
+      // iam config is omitted from the payload entirely.
+      iam:
+        Object.keys(opts?.iam?.tokens ?? {}).length > 0 ? opts?.iam : undefined,
       autoPause: action === 'pause',
       autoPauseMemory: action === 'pause' ? keepMemory : undefined,
       autoResume: { enabled: autoResume },

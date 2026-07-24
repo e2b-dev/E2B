@@ -102,8 +102,10 @@ def test_create_payload_serializes_secret_iam_token():
     }
 
 
-def test_create_payload_omits_iam_when_not_provided():
+def test_create_payload_omits_iam_when_not_provided_or_empty():
     assert build_iam_config(None) is None
+    assert build_iam_config({}) is None
+    assert build_iam_config({"tokens": {}}) is None
 
     body = NewSandbox(template_id="template-id", iam=UNSET)
 

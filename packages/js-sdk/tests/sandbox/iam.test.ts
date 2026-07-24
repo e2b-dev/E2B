@@ -70,3 +70,15 @@ test('Sandbox.create omits iam from the request body when not provided', async (
   expect(lastCreateBody).toBeDefined()
   expect(lastCreateBody).not.toHaveProperty('iam')
 })
+
+test('Sandbox.create omits an empty iam config from the request body', async () => {
+  await Sandbox.create('base', { apiKey: TEST_API_KEY, iam: {} })
+
+  expect(lastCreateBody).toBeDefined()
+  expect(lastCreateBody).not.toHaveProperty('iam')
+
+  await Sandbox.create('base', { apiKey: TEST_API_KEY, iam: { tokens: {} } })
+
+  expect(lastCreateBody).toBeDefined()
+  expect(lastCreateBody).not.toHaveProperty('iam')
+})

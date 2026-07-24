@@ -450,21 +450,28 @@ def build_network_config(
 def build_iam_config(
     iam: Optional[SandboxIamOpts],
 ) -> Optional[ClientSandboxIam]:
-    """Resolve a :class:`SandboxIamOpts` into the API client body."""
+    """Resolve a :class:`SandboxIamOpts` into the API client body.
+
+    Returns ``None`` for a config with no tokens — only a non-empty tokens
+    map enables workload identity, so an empty config is omitted from the
+    request payload entirely.
+    """
     if iam is None:
         return None
 
-    body = ClientSandboxIam()
     tokens = iam.get("tokens")
-    if tokens is not None:
-        client_tokens = ClientSandboxIamTokens()
-        for name, token in tokens.items():
-            client_tokens[name] = ClientSandboxIamToken(
-                audience=token["audience"],
-                token_type=token["token_type"],
-            )
-        body.tokens = client_tokens
+    if not tokens:
+        return None
 
+    client_tokens = ClientSandboxIamTokens()
+    for name, token in tokens.items():
+        client_tokens[name] = ClientSandboxIamToken(
+            audience=token["audience"],
+            token_type=token["token_type"],
+        )
+
+    body = ClientSandboxIam()
+    body.tokens = client_tokens
     return body
 
 
