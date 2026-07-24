@@ -62,6 +62,8 @@ export type {
   SandboxState,
   SandboxListOpts,
   SandboxPaginator,
+  SandboxIamOpts,
+  SandboxIamToken,
   SandboxNetworkOpts,
   SandboxNetworkInfo,
   SandboxNetworkSelector,

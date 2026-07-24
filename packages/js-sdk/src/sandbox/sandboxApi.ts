@@ -201,6 +201,32 @@ export type SandboxNetworkUpdate = {
 }
 
 /**
+ * Workload token definition for sandbox workload identity.
+ */
+export interface SandboxIamToken {
+  /**
+   * Audience of the workload token, stored exactly as provided.
+   */
+  audience: string
+
+  /**
+   * Workload token type.
+   */
+  tokenType: string
+}
+
+/**
+ * Sandbox workload identity configuration. A non-empty `tokens` map enables
+ * workload identity for the sandbox.
+ */
+export interface SandboxIamOpts {
+  /**
+   * Named workload-token definitions, keyed by a caller-chosen token name.
+   */
+  tokens?: Record<string, SandboxIamToken>
+}
+
+/**
  * What happens when the sandbox timeout is reached. Either the bare action
  * (`'pause'` / `'kill'`), or an object form that also controls the pause
  * snapshot kind via `keepMemory`.
@@ -404,6 +430,23 @@ export interface SandboxOpts extends ConnectionOpts {
    * Sandbox network configuration
    */
   network?: SandboxNetworkOpts
+
+  /**
+   * Sandbox workload identity configuration. Providing a non-empty
+   * `tokens` map enables workload identity for the sandbox.
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create({
+   *   iam: {
+   *     tokens: {
+   *       aws: { audience: 'sts.amazonaws.com', tokenType: 'ID-JAG' },
+   *     },
+   *   },
+   * })
+   * ```
+   */
+  iam?: SandboxIamOpts
 
   /**
    * Volume mounts for the sandbox.
@@ -1211,6 +1254,7 @@ export class SandboxApi {
       secure: opts?.secure ?? true,
       allow_internet_access: opts?.allowInternetAccess ?? true,
       network: buildNetworkBody(opts?.network),
+      iam: opts?.iam,
       autoPause: action === 'pause',
       autoPauseMemory: action === 'pause' ? keepMemory : undefined,
       autoResume: { enabled: autoResume },

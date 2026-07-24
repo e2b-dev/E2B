@@ -39,6 +39,15 @@ from e2b.api.client.models import (
     SandboxNetworkTransformHeaders as ClientSandboxNetworkTransformHeaders,
 )
 from e2b.api.client.models import (
+    SandboxIam as ClientSandboxIam,
+)
+from e2b.api.client.models import (
+    SandboxIamToken as ClientSandboxIamToken,
+)
+from e2b.api.client.models import (
+    SandboxIamTokens as ClientSandboxIamTokens,
+)
+from e2b.api.client.models import (
     SandboxNetworkUpdateConfig,
 )
 from e2b.api.client.models import (
@@ -226,6 +235,28 @@ class SandboxNetworkUpdate(TypedDict, total=False):
     """
 
 
+class SandboxIamToken(TypedDict):
+    """
+    Workload token definition for sandbox workload identity.
+    """
+
+    audience: str
+    """Audience of the workload token, stored exactly as provided."""
+
+    token_type: str
+    """Workload token type."""
+
+
+class SandboxIamOpts(TypedDict, total=False):
+    """
+    Sandbox workload identity configuration. A non-empty ``tokens`` map enables
+    workload identity for the sandbox.
+    """
+
+    tokens: Dict[str, SandboxIamToken]
+    """Named workload-token definitions, keyed by a caller-chosen token name."""
+
+
 class SandboxNetworkInfo(TypedDict, total=False):
     """
     Network configuration as returned by the sandbox info endpoint.
@@ -402,6 +433,27 @@ def build_network_config(
         body["allow_public_traffic"] = network["allow_public_traffic"]
     if "mask_request_host" in network:
         body["mask_request_host"] = network["mask_request_host"]
+
+    return body
+
+
+def build_iam_config(
+    iam: Optional[SandboxIamOpts],
+) -> Optional[ClientSandboxIam]:
+    """Resolve a :class:`SandboxIamOpts` into the API client body."""
+    if iam is None:
+        return None
+
+    body = ClientSandboxIam()
+    tokens = iam.get("tokens")
+    if tokens is not None:
+        client_tokens = ClientSandboxIamTokens()
+        for name, token in tokens.items():
+            client_tokens[name] = ClientSandboxIamToken(
+                audience=token["audience"],
+                token_type=token["token_type"],
+            )
+        body.tokens = client_tokens
 
     return body
 

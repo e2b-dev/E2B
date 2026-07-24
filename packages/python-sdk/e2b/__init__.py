@@ -75,6 +75,8 @@ from .sandbox.sandbox_api import (
     GitHubMcpServer,
     GitHubMcpServerConfig,
     McpServer,
+    SandboxIamOpts,
+    SandboxIamToken,
     SandboxInfo,
     SandboxInfoLifecycle,
     SandboxMetrics,
@@ -204,6 +206,9 @@ __all__ = [
     "SandboxLifecycle",
     "SandboxOnTimeout",
     "ALL_TRAFFIC",
+    # IAM
+    "SandboxIamOpts",
+    "SandboxIamToken",
     # Snapshot
     "SnapshotInfo",
     "SnapshotPaginator",

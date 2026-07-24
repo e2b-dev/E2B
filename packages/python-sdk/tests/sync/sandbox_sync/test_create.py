@@ -9,8 +9,9 @@ from e2b.api.client.models import (
     NewSandbox,
     SandboxAutoResumeConfig,
 )
+from e2b.api.client.types import UNSET
 from e2b.exceptions import InvalidArgumentException
-from e2b.sandbox.sandbox_api import SandboxQuery
+from e2b.sandbox.sandbox_api import SandboxQuery, build_iam_config
 
 
 @pytest.mark.skip_debug()
@@ -59,6 +60,33 @@ def test_create_payload_deserializes_auto_resume_enabled():
 
     assert isinstance(body.auto_resume, SandboxAutoResumeConfig)
     assert body.auto_resume.to_dict() == {"enabled": False}
+
+
+def test_create_payload_serializes_iam_tokens():
+    iam = build_iam_config(
+        {
+            "tokens": {
+                "aws": {"audience": "sts.amazonaws.com", "token_type": "JWT-SVID"},
+            },
+        }
+    )
+    assert iam is not None
+
+    body = NewSandbox(template_id="template-id", iam=iam)
+
+    assert body.to_dict()["iam"] == {
+        "tokens": {
+            "aws": {"audience": "sts.amazonaws.com", "tokenType": "JWT-SVID"},
+        },
+    }
+
+
+def test_create_payload_omits_iam_when_not_provided():
+    assert build_iam_config(None) is None
+
+    body = NewSandbox(template_id="template-id", iam=UNSET)
+
+    assert "iam" not in body.to_dict()
 
 
 @pytest.mark.skip_debug()
