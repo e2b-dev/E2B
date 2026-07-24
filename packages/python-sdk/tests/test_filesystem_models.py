@@ -41,6 +41,45 @@ def test_map_file_type_str():
     assert map_file_type_str(None) is None
 
 
+def test_map_entry_info_maps_every_known_file_type():
+    def entry(file_type: filesystem_pb.FileType) -> filesystem_pb.EntryInfo:
+        return filesystem_pb.EntryInfo(
+            name="entry",
+            type=file_type,
+            path="/home/user/entry",
+            size=0,
+            mode=0o644,
+            permissions="-rw-r--r--",
+            owner="user",
+            group="user",
+        )
+
+    assert map_entry_info(entry(filesystem_pb.FileType.FILE)).type is FileType.FILE
+    assert map_entry_info(entry(filesystem_pb.FileType.DIRECTORY)).type is FileType.DIR
+    assert (
+        map_entry_info(entry(filesystem_pb.FileType.SYMLINK)).type is FileType.SYMLINK
+    )
+
+
+def test_map_entry_info_keeps_symlink_target_on_symlink_entries():
+    entry = filesystem_pb.EntryInfo(
+        name="link",
+        type=filesystem_pb.FileType.SYMLINK,
+        path="/home/user/link",
+        size=0,
+        mode=0o777,
+        permissions="lrwxrwxrwx",
+        owner="user",
+        group="user",
+    )
+    entry.symlink_target = "/home/user/a.txt"
+
+    info = map_entry_info(entry)
+
+    assert info.type is FileType.SYMLINK
+    assert info.symlink_target == "/home/user/a.txt"
+
+
 def test_map_entry_info_modified_time_is_timezone_aware():
     entry = filesystem_pb.EntryInfo(
         name="a.txt",

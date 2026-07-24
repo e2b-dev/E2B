@@ -28,6 +28,10 @@ class FileType(Enum):
     """
     Filesystem object is a directory.
     """
+    SYMLINK = "symlink"
+    """
+    Filesystem object is a symlink.
+    """
 
 
 def map_file_type(ft: filesystem_pb.FileType):
@@ -35,6 +39,8 @@ def map_file_type(ft: filesystem_pb.FileType):
         return FileType.FILE
     elif ft == filesystem_pb.FileType.DIRECTORY:
         return FileType.DIR
+    elif ft == filesystem_pb.FileType.SYMLINK:
+        return FileType.SYMLINK
 
 
 def map_file_type_str(value: Optional[str]) -> Optional[FileType]:

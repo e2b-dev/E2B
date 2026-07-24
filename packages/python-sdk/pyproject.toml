@@ -40,8 +40,9 @@ dev = [
 
 # Tools for local code generation (`make init` && `uv run make generate-*`).
 # Pins mirror codegen.Dockerfile so local output matches CI. `generate-api`
-# additionally needs @redocly/cli (npm) and `generate-envd` needs `buf` on
-# the PATH.
+# additionally needs @redocly/cli on the PATH (pinned as a js-sdk
+# devDependency and in codegen.Dockerfile — keep the versions in sync) and
+# `generate-envd` needs `buf`.
 codegen = [
     "black==26.3.1",
     "e2b-openapi-python-client==0.26.2",
