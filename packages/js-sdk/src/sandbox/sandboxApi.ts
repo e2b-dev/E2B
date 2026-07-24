@@ -792,6 +792,18 @@ function buildNetworkBody(
   }
 }
 
+function buildIamBody(
+  iam: SandboxIamOpts | undefined
+): components['schemas']['SandboxIam'] | undefined {
+  // Only a non-empty tokens map enables workload identity, so an empty
+  // iam config is omitted from the payload entirely.
+  if (!iam?.tokens || Object.keys(iam.tokens).length === 0) {
+    return undefined
+  }
+
+  return iam
+}
+
 function buildNetworkUpdateBody(
   network: SandboxNetworkUpdate
 ): components['schemas']['SandboxNetworkUpdateConfig'] {
@@ -1265,10 +1277,7 @@ export class SandboxApi {
       secure: opts?.secure ?? true,
       allow_internet_access: opts?.allowInternetAccess ?? true,
       network: buildNetworkBody(opts?.network),
-      // Only a non-empty tokens map enables workload identity, so an empty
-      // iam config is omitted from the payload entirely.
-      iam:
-        Object.keys(opts?.iam?.tokens ?? {}).length > 0 ? opts?.iam : undefined,
+      iam: buildIamBody(opts?.iam),
       autoPause: action === 'pause',
       autoPauseMemory: action === 'pause' ? keepMemory : undefined,
       autoResume: { enabled: autoResume },
