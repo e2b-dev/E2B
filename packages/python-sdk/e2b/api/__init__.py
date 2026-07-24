@@ -3,14 +3,21 @@ import json
 import logging
 import os
 import re
+import socket
+import sys
 import threading
 import weakref
 from dataclasses import dataclass
 from types import TracebackType
-from typing import Callable, Optional, Protocol, Union
+from typing import Any, Callable, Iterable, Optional, Protocol, TypeVar, Union, cast
 
+import httpcore
 import httpx
 from httpx import AsyncBaseTransport, BaseTransport, Limits, Timeout
+
+# NOTE: httpx private API. Kept in sync with the `httpx>=0.27.0,<1.0.0` pin in
+# pyproject.toml — re-verify this import when bumping httpx.
+from httpx._utils import get_environment_proxies
 
 from e2b.api.client.client import AuthenticatedClient
 from e2b.api.client.types import Response
@@ -69,6 +76,183 @@ limits = Limits(
 )
 
 connection_retries = int(os.getenv("E2B_CONNECTION_RETRIES") or "3")
+
+
+def _get_socket_options(
+    platform: str,
+    tcp_keepidle: Optional[int],
+    tcp_keepalive: Optional[int],
+) -> tuple[tuple[int, int, int], ...]:
+    """Build platform-specific TCP keepalive options for httpcore.
+
+    The 60-second initial-delay tuning uses ``TCP_KEEPIDLE`` where the
+    constant is available (Linux and other platforms exposing it) or macOS's
+    ``TCP_KEEPALIVE``. Windows CPython also defines ``TCP_KEEPIDLE``, but
+    setting it raises ``OSError`` on Windows releases older than 10 1709, so
+    Windows only enables ``SO_KEEPALIVE`` and keeps the OS-default probe
+    timing. Platforms without either constant likewise fall back to
+    enabling keepalive only.
+    """
+    options = [(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)]
+    if platform == "win32":
+        return tuple(options)
+    if tcp_keepidle is not None:
+        options.append((socket.IPPROTO_TCP, tcp_keepidle, 60))
+    elif platform == "darwin" and tcp_keepalive is not None:
+        options.append((socket.IPPROTO_TCP, tcp_keepalive, 60))
+    return tuple(options)
+
+
+_TCP_KEEPALIVE_SOCKET_OPTIONS = _get_socket_options(
+    sys.platform,
+    getattr(socket, "TCP_KEEPIDLE", None),
+    getattr(socket, "TCP_KEEPALIVE", None),
+)
+
+
+class _TCPKeepaliveNetworkBackend(httpcore.NetworkBackend):
+    """Force TCP keepalive options through direct and proxy connections."""
+
+    def __init__(self, backend: httpcore.NetworkBackend):
+        self._backend = backend
+
+    def connect_tcp(
+        self,
+        host: str,
+        port: int,
+        timeout: Optional[float] = None,
+        local_address: Optional[str] = None,
+        socket_options: Optional[Iterable[tuple]] = None,
+    ) -> httpcore.NetworkStream:
+        return self._backend.connect_tcp(
+            host,
+            port,
+            timeout=timeout,
+            local_address=local_address,
+            socket_options=_TCP_KEEPALIVE_SOCKET_OPTIONS,
+        )
+
+    def connect_unix_socket(
+        self,
+        path: str,
+        timeout: Optional[float] = None,
+        socket_options: Optional[Iterable[tuple]] = None,
+    ) -> httpcore.NetworkStream:
+        return self._backend.connect_unix_socket(
+            path,
+            timeout=timeout,
+            socket_options=socket_options,
+        )
+
+
+class _TCPKeepaliveAsyncNetworkBackend(httpcore.AsyncNetworkBackend):
+    """Async counterpart of :class:`_TCPKeepaliveNetworkBackend`."""
+
+    def __init__(self, backend: httpcore.AsyncNetworkBackend):
+        self._backend = backend
+
+    async def connect_tcp(
+        self,
+        host: str,
+        port: int,
+        timeout: Optional[float] = None,
+        local_address: Optional[str] = None,
+        socket_options: Optional[Iterable[tuple]] = None,
+    ) -> httpcore.AsyncNetworkStream:
+        return await self._backend.connect_tcp(
+            host,
+            port,
+            timeout=timeout,
+            local_address=local_address,
+            socket_options=_TCP_KEEPALIVE_SOCKET_OPTIONS,
+        )
+
+    async def connect_unix_socket(
+        self,
+        path: str,
+        timeout: Optional[float] = None,
+        socket_options: Optional[Iterable[tuple]] = None,
+    ) -> httpcore.AsyncNetworkStream:
+        return await self._backend.connect_unix_socket(
+            path,
+            timeout=timeout,
+            socket_options=socket_options,
+        )
+
+    async def sleep(self, seconds: float) -> None:
+        await self._backend.sleep(seconds)
+
+
+class _TCPKeepaliveHTTPTransport(httpx.HTTPTransport):
+    """HTTPX transport that also covers HTTPcore proxy sockets."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs["socket_options"] = _TCP_KEEPALIVE_SOCKET_OPTIONS
+        super().__init__(*args, **kwargs)
+        # NOTE: `_pool` / `_network_backend` are httpx/httpcore private API.
+        # HTTPcore 1.0.x drops `socket_options` when it builds proxy
+        # connections (HTTPProxy/SOCKSProxy), so wrap the backend to force
+        # the keepalive options at actual TCP connect time. Verified against
+        # the `httpcore>=1.0.5,<2.0.0` pin in pyproject.toml — re-check on bumps.
+        pool = cast(Any, self._pool)
+        pool._network_backend = _TCPKeepaliveNetworkBackend(pool._network_backend)
+
+
+class _TCPKeepaliveAsyncHTTPTransport(httpx.AsyncHTTPTransport):
+    """Async HTTPX transport that also covers HTTPcore proxy sockets."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs["socket_options"] = _TCP_KEEPALIVE_SOCKET_OPTIONS
+        super().__init__(*args, **kwargs)
+        # NOTE: `_pool` / `_network_backend` are httpx/httpcore private API —
+        # see _TCPKeepaliveHTTPTransport for the rationale and version pins.
+        pool = cast(Any, self._pool)
+        pool._network_backend = _TCPKeepaliveAsyncNetworkBackend(pool._network_backend)
+
+
+class _TCPKeepaliveTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
+    """Dual sync/async transport for directly constructed public clients."""
+
+    def __init__(self, **kwargs):
+        self._sync_transport = _TCPKeepaliveHTTPTransport(**kwargs)
+        self._async_transport = _TCPKeepaliveAsyncHTTPTransport(**kwargs)
+
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        return self._sync_transport.handle_request(request)
+
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        return await self._async_transport.handle_async_request(request)
+
+    def close(self) -> None:
+        self._sync_transport.close()
+
+    async def aclose(self) -> None:
+        await self._async_transport.aclose()
+
+
+# Any transport type produced by the factory passed to
+# _build_env_proxy_mounts; keeps the returned mount dict precisely typed for
+# both sync and async httpx clients.
+_TransportT = TypeVar("_TransportT", bound=Union[BaseTransport, AsyncBaseTransport])
+
+
+def _build_env_proxy_mounts(
+    transport_factory: Callable[[str], _TransportT],
+) -> dict[str, Optional[_TransportT]]:
+    """Rebuild httpx's environment-proxy mounts for clients that pass an
+    explicit ``transport=``.
+
+    Passing an explicit transport to an httpx client disables its
+    ``trust_env`` proxy handling entirely, so ``HTTP_PROXY``/``HTTPS_PROXY``/
+    ``ALL_PROXY`` would silently be ignored. This reconstructs the same
+    mounts httpx would have built, creating a proxied transport per proxy URL
+    via ``transport_factory``. ``NO_PROXY`` entries map to ``None`` mounts,
+    which httpx routes to the default (direct) transport.
+    """
+    return {
+        pattern: None if proxy_url is None else transport_factory(proxy_url)
+        for pattern, proxy_url in get_environment_proxies().items()
+    }
 
 
 @dataclass
@@ -222,14 +406,25 @@ class ApiClient(AuthenticatedClient):
         httpx_args = {
             "event_hooks": self._logging_event_hooks(),
         }
-        if transport is not None:
-            httpx_args["transport"] = transport
         if (
             transport is None
             and transport_factory is None
             and async_transport_factory is None
         ):
-            httpx_args["proxy"] = config.proxy
+            transport_options = {"verify": kwargs.get("verify_ssl", True)}
+            transport = _TCPKeepaliveTransport(
+                proxy=config.proxy,
+                **transport_options,
+            )
+            if config.proxy is None:
+                httpx_args["mounts"] = _build_env_proxy_mounts(
+                    lambda proxy_url: _TCPKeepaliveTransport(
+                        proxy=proxy_url,
+                        **transport_options,
+                    )
+                )
+        if transport is not None:
+            httpx_args["transport"] = transport
 
         # config.request_timeout is None when the timeout is explicitly
         # disabled (request_timeout=0), which httpx.Timeout(None) preserves.

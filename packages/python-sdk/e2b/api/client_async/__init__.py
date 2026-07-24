@@ -2,11 +2,14 @@ import asyncio
 import weakref
 from typing import Dict, Optional, Tuple
 
-import httpx
-
 from httpx._types import ProxyTypes
 
-from e2b.api import AsyncApiClient, connection_retries, limits
+from e2b.api import (
+    _TCPKeepaliveAsyncHTTPTransport,
+    AsyncApiClient,
+    connection_retries,
+    limits,
+)
 from e2b.connection_config import ConnectionConfig
 
 TransportKey = Tuple[bool, Optional[ProxyTypes]]
@@ -20,7 +23,7 @@ def get_api_client(config: ConnectionConfig, **kwargs) -> AsyncApiClient:
     )
 
 
-class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
+class AsyncTransportWithLogger(_TCPKeepaliveAsyncHTTPTransport):
     # Keyed weakly by the event loop object itself, not id(loop) — CPython
     # reuses object ids, so a new loop could otherwise inherit a transport
     # bound to a previous, closed loop.
@@ -34,6 +37,16 @@ class AsyncTransportWithLogger(httpx.AsyncHTTPTransport):
         return self._pool
 
 
+def _create_transport(cls, config: ConnectionConfig, http2: bool):
+    """Build a keepalive transport of the given class for this config."""
+    return cls(
+        limits=limits,
+        proxy=config.proxy,
+        http2=http2,
+        retries=connection_retries,
+    )
+
+
 def _get_cached_transport(cls, config: ConnectionConfig, http2: bool):
     loop = asyncio.get_running_loop()
     loop_instances = cls._instances.get(loop)
@@ -44,12 +57,7 @@ def _get_cached_transport(cls, config: ConnectionConfig, http2: bool):
     key: TransportKey = (http2, config.proxy)
     transport = loop_instances.get(key)
     if transport is None:
-        transport = cls(
-            limits=limits,
-            proxy=config.proxy,
-            http2=http2,
-            retries=connection_retries,
-        )
+        transport = _create_transport(cls, config, http2)
         loop_instances[key] = transport
 
     return transport

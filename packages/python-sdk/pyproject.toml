@@ -11,6 +11,7 @@ dependencies = [
     "wcmatch>=10.1,<11",
     "protobuf-py>=0.1.1,<0.2",
     "httpx>=0.27.0,<1.0.0",
+    "httpcore>=1.0.5,<2.0.0",
     "h2>=4,<5",
     "attrs>=23.2.0",
     "packaging>=24.1",

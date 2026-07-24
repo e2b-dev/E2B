@@ -1,11 +1,15 @@
 from typing import Dict, Optional, Tuple
 
-import httpx
 import threading
 
 from httpx._types import ProxyTypes
 
-from e2b.api import ApiClient, connection_retries, limits
+from e2b.api import (
+    _TCPKeepaliveHTTPTransport,
+    ApiClient,
+    connection_retries,
+    limits,
+)
 from e2b.connection_config import ConnectionConfig
 
 TransportKey = Tuple[bool, Optional[ProxyTypes]]
@@ -19,12 +23,22 @@ def get_api_client(config: ConnectionConfig, **kwargs) -> ApiClient:
     )
 
 
-class TransportWithLogger(httpx.HTTPTransport):
+class TransportWithLogger(_TCPKeepaliveHTTPTransport):
     _thread_local = threading.local()
 
     @property
     def pool(self):
         return self._pool
+
+
+def _create_transport(cls, config: ConnectionConfig, http2: bool):
+    """Build a keepalive transport of the given class for this config."""
+    return cls(
+        limits=limits,
+        proxy=config.proxy,
+        http2=http2,
+        retries=connection_retries,
+    )
 
 
 def get_transport(config: ConnectionConfig, http2: bool = True) -> TransportWithLogger:
@@ -36,12 +50,7 @@ def get_transport(config: ConnectionConfig, http2: bool = True) -> TransportWith
     if cached is not None:
         return cached
 
-    transport = TransportWithLogger(
-        limits=limits,
-        proxy=config.proxy,
-        http2=http2,
-        retries=connection_retries,
-    )
+    transport = _create_transport(TransportWithLogger, config, http2)
     instances[key] = transport
     TransportWithLogger._thread_local.instances = instances
     return transport
@@ -62,12 +71,7 @@ def get_envd_transport(
     if cached is not None:
         return cached
 
-    transport = EnvdTransportWithLogger(
-        limits=limits,
-        proxy=config.proxy,
-        http2=http2,
-        retries=connection_retries,
-    )
+    transport = _create_transport(EnvdTransportWithLogger, config, http2)
     instances[key] = transport
     EnvdTransportWithLogger._thread_local.instances = instances
     return transport
