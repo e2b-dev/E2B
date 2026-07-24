@@ -84,6 +84,9 @@ export type {
 
 export type { McpServer } from './sandbox/mcp'
 
+export { Secret } from './secret'
+export type { SecretIdTokenOpts } from './secret'
+
 export { ALL_TRAFFIC } from './sandbox/network'
 
 export type {

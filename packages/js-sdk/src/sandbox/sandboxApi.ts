@@ -222,6 +222,7 @@ export interface SandboxIamToken {
 export interface SandboxIamOpts {
   /**
    * Named workload-token definitions, keyed by a caller-chosen token name.
+   * Values can be created with `Secret.idToken()`.
    */
   tokens?: Record<string, SandboxIamToken>
 }
@@ -440,7 +441,10 @@ export interface SandboxOpts extends ConnectionOpts {
    * const sandbox = await Sandbox.create({
    *   iam: {
    *     tokens: {
-   *       aws: { audience: 'sts.amazonaws.com', tokenType: 'ID-JAG' },
+   *       aws: Secret.idToken({
+   *         audience: 'sts.amazonaws.com',
+   *         tokenType: 'JWT-SVID',
+   *       }),
    *     },
    *   },
    * })

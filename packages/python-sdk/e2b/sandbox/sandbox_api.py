@@ -254,7 +254,10 @@ class SandboxIamOpts(TypedDict, total=False):
     """
 
     tokens: Dict[str, SandboxIamToken]
-    """Named workload-token definitions, keyed by a caller-chosen token name."""
+    """
+    Named workload-token definitions, keyed by a caller-chosen token name.
+    Values can be created with :meth:`Secret.id_token`.
+    """
 
 
 class SandboxNetworkInfo(TypedDict, total=False):

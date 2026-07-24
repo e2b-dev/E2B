@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeAll, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
-import { Sandbox } from '../../src'
+import { Sandbox, Secret } from '../../src'
 import { TEST_API_KEY, apiUrl } from '../setup'
 
 let lastCreateBody: Record<string, unknown> | undefined
@@ -33,6 +33,26 @@ test('Sandbox.create sends iam tokens in the request body', async () => {
     iam: {
       tokens: {
         aws: { audience: 'sts.amazonaws.com', tokenType: 'JWT-SVID' },
+      },
+    },
+  })
+
+  expect(lastCreateBody?.iam).toEqual({
+    tokens: {
+      aws: { audience: 'sts.amazonaws.com', tokenType: 'JWT-SVID' },
+    },
+  })
+})
+
+test('Sandbox.create sends Secret.idToken tokens in the request body', async () => {
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    iam: {
+      tokens: {
+        aws: Secret.idToken({
+          audience: 'sts.amazonaws.com',
+          tokenType: 'JWT-SVID',
+        }),
       },
     },
   })

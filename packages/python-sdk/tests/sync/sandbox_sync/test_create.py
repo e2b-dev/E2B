@@ -4,7 +4,7 @@ from typing import Any, cast
 import httpx
 import pytest
 
-from e2b import Sandbox, SandboxState
+from e2b import Sandbox, SandboxState, Secret
 from e2b.api.client.models import (
     NewSandbox,
     SandboxAutoResumeConfig,
@@ -67,6 +67,27 @@ def test_create_payload_serializes_iam_tokens():
         {
             "tokens": {
                 "aws": {"audience": "sts.amazonaws.com", "token_type": "JWT-SVID"},
+            },
+        }
+    )
+    assert iam is not None
+
+    body = NewSandbox(template_id="template-id", iam=iam)
+
+    assert body.to_dict()["iam"] == {
+        "tokens": {
+            "aws": {"audience": "sts.amazonaws.com", "tokenType": "JWT-SVID"},
+        },
+    }
+
+
+def test_create_payload_serializes_secret_id_token():
+    iam = build_iam_config(
+        {
+            "tokens": {
+                "aws": Secret.id_token(
+                    audience="sts.amazonaws.com", token_type="JWT-SVID"
+                ),
             },
         }
     )
