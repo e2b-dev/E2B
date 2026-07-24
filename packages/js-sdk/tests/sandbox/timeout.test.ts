@@ -1,14 +1,22 @@
 import { expect } from 'vitest'
 
-import { sandboxTest, isDebug, wait } from '../setup.js'
+import {
+  sandboxTest,
+  isDebug,
+  wait,
+  canObserveStoppedSandbox,
+} from '../setup.js'
 
-sandboxTest.skipIf(isDebug)('shorten timeout', async ({ sandbox }) => {
-  await sandbox.setTimeout(5000)
+sandboxTest.skipIf(isDebug || !canObserveStoppedSandbox)(
+  'shorten timeout',
+  async ({ sandbox }) => {
+    await sandbox.setTimeout(5000)
 
-  await wait(6000)
+    await wait(6000)
 
-  expect(await sandbox.isRunning()).toBeFalsy()
-})
+    expect(await sandbox.isRunning()).toBeFalsy()
+  }
+)
 
 sandboxTest.skipIf(isDebug)(
   'shorten then lengthen timeout',

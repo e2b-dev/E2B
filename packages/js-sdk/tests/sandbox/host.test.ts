@@ -1,8 +1,8 @@
 import { assert } from 'vitest'
 
-import { isDebug, sandboxTest, wait } from '../setup.js'
+import { isDebug, sandboxTest, wait, canFetchSandboxServers } from '../setup.js'
 import { catchCmdExitErrorInBackground } from '../cmdHelper.js'
-sandboxTest(
+sandboxTest.skipIf(!canFetchSandboxServers)(
   'ping server in running sandbox',
   async ({ sandbox }) => {
     const cmd = await sandbox.commands.run('python -m http.server 8000', {
@@ -39,7 +39,7 @@ sandboxTest(
   60_000
 )
 
-sandboxTest.skipIf(isDebug)(
+sandboxTest.skipIf(isDebug || !canFetchSandboxServers)(
   'ping server in non-running sandbox',
   async ({ sandbox }) => {
     const host = sandbox.getHost(3000)

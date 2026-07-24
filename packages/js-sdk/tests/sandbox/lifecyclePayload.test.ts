@@ -1,7 +1,13 @@
 import { assert, expect, test } from 'vitest'
 
 import { InvalidArgumentError, Sandbox } from '../../src'
-import { isDebug, template, wait } from '../setup.js'
+import {
+  isDebug,
+  template,
+  wait,
+  canObserveStoppedSandbox,
+  canFetchSandboxServers,
+} from '../setup.js'
 
 test.skipIf(isDebug)(
   'filesystem-only auto-pause cannot be combined with auto-resume',
@@ -38,7 +44,7 @@ test.skipIf(isDebug)(
   }
 )
 
-test.skipIf(isDebug)(
+test.skipIf(isDebug || !canObserveStoppedSandbox)(
   'auto-pause without auto-resume requires connect to wake',
   async () => {
     const sandbox = await Sandbox.create(template, {
@@ -111,7 +117,7 @@ test.skipIf(isDebug)(
   60_000
 )
 
-test.skipIf(isDebug)(
+test.skipIf(isDebug || !canFetchSandboxServers)(
   'auto-resume wakes paused sandbox on http request',
   async () => {
     const sandbox = await Sandbox.create(template, {

@@ -8,6 +8,7 @@ import {
   TemplateClass,
   Volume,
 } from '../src'
+import { runtime } from '../src/utils'
 import { template } from './template'
 
 interface SandboxFixture {
@@ -143,6 +144,40 @@ export const isDebug = process.env.E2B_DEBUG !== undefined
 
 /** Placeholder API key with a valid format for tests that don't hit the API. */
 export const TEST_API_KEY = `e2b_${'0'.repeat(40)}`
+
+/**
+ * Whether the test can read a response from a server running inside a sandbox.
+ *
+ * A browser only exposes a cross-origin response to JS when the server opts in
+ * with CORS headers. Servers a test starts in a sandbox (`python -m
+ * http.server`, and the sandbox proxy's own 502 page) don't, so there the fetch
+ * fails as an opaque `TypeError: Failed to fetch` no matter what the server
+ * answered. Nothing the SDK can paper over — a real browser app would hit the
+ * same wall.
+ */
+export const canFetchSandboxServers = runtime !== 'browser'
+
+/**
+ * Whether the test can read the pagination cursor the API returns.
+ *
+ * `Paginator` takes its cursor from the `x-next-token` response header, and the
+ * API doesn't name that header in `Access-Control-Expose-Headers` — so a
+ * browser withholds it from JS and every page looks like the last one.
+ * Paginating with a `limit` can't work there until the API exposes the header;
+ * the SDK can't reach around CORS.
+ */
+export const canReadPaginationToken = runtime !== 'browser'
+
+/**
+ * Whether the test can observe a sandbox that has stopped.
+ *
+ * `isRunning()` reads envd's `/health` over the sandbox host, and a stopped
+ * sandbox answers 502 from the edge without CORS headers — so in a browser the
+ * probe rejects instead of reporting `false`. That also costs the health-check
+ * refinement in `handleRpcErrorWithHealthCheck`: a connection dropped by a kill
+ * stays a generic `SandboxError` there instead of a `TimeoutError`.
+ */
+export const canObserveStoppedSandbox = runtime !== 'browser'
 
 function generateRandomString(length: number = 8): string {
   return Math.random()

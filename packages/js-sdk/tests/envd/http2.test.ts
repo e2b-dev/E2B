@@ -3,8 +3,6 @@ import { afterEach, expect, test, vi } from 'vitest'
 afterEach(() => {
   vi.restoreAllMocks()
   vi.resetModules()
-  vi.doUnmock('undici')
-  vi.doUnmock('../../src/utils')
   delete process.env.E2B_ENVD_RPC_CONNECTIONS
   delete process.env.E2B_ENVD_INFLIGHT_REQUESTS
   delete process.env.E2B_ENVD_RPC_INFLIGHT_REQUESTS

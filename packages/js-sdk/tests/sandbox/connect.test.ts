@@ -1,7 +1,12 @@
 import { assert, test, expect, vi } from 'vitest'
 
 import { Sandbox } from '../../src'
-import { isDebug, sandboxTest, template } from '../setup.js'
+import {
+  isDebug,
+  sandboxTest,
+  template,
+  canObserveStoppedSandbox,
+} from '../setup.js'
 
 test('connect in debug mode does not call the API', async () => {
   const fetchSpy = vi.fn(() => {
@@ -42,7 +47,7 @@ test.skipIf(isDebug)('connect', async () => {
   }
 })
 
-sandboxTest.skipIf(isDebug)(
+sandboxTest.skipIf(isDebug || !canObserveStoppedSandbox)(
   'connect resumes paused sandbox',
   async ({ sandbox }) => {
     await sandbox.pause()

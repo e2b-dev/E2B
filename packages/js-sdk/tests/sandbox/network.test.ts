@@ -1,7 +1,7 @@
 import { assert, expect, describe } from 'vitest'
 
 import { CommandExitError } from '../../src'
-import { sandboxTest, isDebug } from '../setup.js'
+import { sandboxTest, isDebug, canFetchSandboxServers } from '../setup.js'
 
 describe('allow only 1.1.1.1', () => {
   sandboxTest.override({
@@ -129,7 +129,7 @@ describe('allowPublicTraffic=false', () => {
     },
   })
 
-  sandboxTest.skipIf(isDebug)(
+  sandboxTest.skipIf(isDebug || !canFetchSandboxServers)(
     'sandbox requires traffic access token',
     async ({ sandbox }) => {
       // Verify the sandbox was created successfully and has a traffic access token
@@ -171,7 +171,7 @@ describe('allowPublicTraffic=true', () => {
     },
   })
 
-  sandboxTest.skipIf(isDebug)(
+  sandboxTest.skipIf(isDebug || !canFetchSandboxServers)(
     'sandbox works without token',
     async ({ sandbox }) => {
       // Start a simple HTTP server in the sandbox
