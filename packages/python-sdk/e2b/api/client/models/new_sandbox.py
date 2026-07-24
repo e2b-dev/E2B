@@ -9,6 +9,7 @@ from ..types import UNSET, Unset
 if TYPE_CHECKING:
     from ..models.mcp_type_0 import McpType0
     from ..models.sandbox_auto_resume_config import SandboxAutoResumeConfig
+    from ..models.sandbox_iam import SandboxIam
     from ..models.sandbox_network_config import SandboxNetworkConfig
     from ..models.sandbox_volume_mount import SandboxVolumeMount
 
@@ -36,6 +37,8 @@ class NewSandbox:
         metadata (Union[Unset, Any]):
         env_vars (Union[Unset, Any]):
         mcp (Union['McpType0', None, Unset]): MCP configuration for the sandbox
+        iam (Union[Unset, SandboxIam]): Sandbox workload identity configuration. A non-empty, valid tokens map enables
+            workload identity for the sandbox.
         volume_mounts (Union[Unset, list['SandboxVolumeMount']]):
     """
 
@@ -50,6 +53,7 @@ class NewSandbox:
     metadata: Union[Unset, Any] = UNSET
     env_vars: Union[Unset, Any] = UNSET
     mcp: Union["McpType0", None, Unset] = UNSET
+    iam: Union[Unset, "SandboxIam"] = UNSET
     volume_mounts: Union[Unset, list["SandboxVolumeMount"]] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -88,6 +92,10 @@ class NewSandbox:
         else:
             mcp = self.mcp
 
+        iam: Union[Unset, dict[str, Any]] = UNSET
+        if not isinstance(self.iam, Unset):
+            iam = self.iam.to_dict()
+
         volume_mounts: Union[Unset, list[dict[str, Any]]] = UNSET
         if not isinstance(self.volume_mounts, Unset):
             volume_mounts = []
@@ -122,6 +130,8 @@ class NewSandbox:
             field_dict["envVars"] = env_vars
         if mcp is not UNSET:
             field_dict["mcp"] = mcp
+        if iam is not UNSET:
+            field_dict["iam"] = iam
         if volume_mounts is not UNSET:
             field_dict["volumeMounts"] = volume_mounts
 
@@ -131,6 +141,7 @@ class NewSandbox:
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.mcp_type_0 import McpType0
         from ..models.sandbox_auto_resume_config import SandboxAutoResumeConfig
+        from ..models.sandbox_iam import SandboxIam
         from ..models.sandbox_network_config import SandboxNetworkConfig
         from ..models.sandbox_volume_mount import SandboxVolumeMount
 
@@ -182,6 +193,13 @@ class NewSandbox:
 
         mcp = _parse_mcp(d.pop("mcp", UNSET))
 
+        _iam = d.pop("iam", UNSET)
+        iam: Union[Unset, SandboxIam]
+        if isinstance(_iam, Unset):
+            iam = UNSET
+        else:
+            iam = SandboxIam.from_dict(_iam)
+
         volume_mounts = []
         _volume_mounts = d.pop("volumeMounts", UNSET)
         for volume_mounts_item_data in _volume_mounts or []:
@@ -201,6 +219,7 @@ class NewSandbox:
             metadata=metadata,
             env_vars=env_vars,
             mcp=mcp,
+            iam=iam,
             volume_mounts=volume_mounts,
         )
 

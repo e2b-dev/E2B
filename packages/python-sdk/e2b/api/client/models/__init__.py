@@ -39,9 +39,11 @@ from .resumed_sandbox import ResumedSandbox
 from .sandbox import Sandbox
 from .sandbox_auto_resume_config import SandboxAutoResumeConfig
 from .sandbox_detail import SandboxDetail
-from .sandbox_egress_proxy_config_type_0 import SandboxEgressProxyConfigType0
 from .sandbox_fork_request import SandboxForkRequest
 from .sandbox_fork_result import SandboxForkResult
+from .sandbox_iam import SandboxIam
+from .sandbox_iam_token import SandboxIamToken
+from .sandbox_iam_tokens import SandboxIamTokens
 from .sandbox_lifecycle import SandboxLifecycle
 from .sandbox_log import SandboxLog
 from .sandbox_log_entry import SandboxLogEntry
@@ -132,10 +134,12 @@ __all__ = (
     "Sandbox",
     "SandboxAutoResumeConfig",
     "SandboxDetail",
-    "SandboxEgressProxyConfigType0",
     "SandboxesWithMetrics",
     "SandboxForkRequest",
     "SandboxForkResult",
+    "SandboxIam",
+    "SandboxIamToken",
+    "SandboxIamTokens",
     "SandboxLifecycle",
     "SandboxLog",
     "SandboxLogEntry",

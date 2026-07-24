@@ -298,6 +298,7 @@ components:
           items:
             type: string
         egressProxy:
+          x-not-implemented: true
           $ref: "#/components/schemas/SandboxEgressProxyConfig"
         maskRequestHost:
           type: string
@@ -328,6 +329,7 @@ components:
           items:
             type: string
         egressProxy:
+          x-not-implemented: true
           $ref: "#/components/schemas/SandboxEgressProxyConfig"
         rules:
           type: object
@@ -365,6 +367,7 @@ components:
     SandboxEgressProxyConfig:
       type: object
       nullable: true
+      x-not-implemented: true
       description: >-
         SOCKS5 proxy for sandbox egress. Outbound TCP is tunneled through the
         proxy after allow/deny filtering; the sandbox is unaware. Domain-matched
@@ -752,10 +755,41 @@ components:
           $ref: "#/components/schemas/EnvVars"
         mcp:
           $ref: "#/components/schemas/Mcp"
+        iam:
+          $ref: "#/components/schemas/SandboxIam"
         volumeMounts:
           type: array
           items:
             $ref: "#/components/schemas/SandboxVolumeMount"
+
+    SandboxIam:
+      type: object
+      description: >-
+        Sandbox workload identity configuration. A non-empty, valid tokens map
+        enables workload identity for the sandbox.
+      properties:
+        tokens:
+          $ref: "#/components/schemas/SandboxIamTokens"
+
+    SandboxIamTokens:
+      type: object
+      description: >-
+        Named workload-token definitions, keyed by a caller-chosen token name.
+      additionalProperties:
+        $ref: "#/components/schemas/SandboxIamToken"
+
+    SandboxIamToken:
+      type: object
+      required:
+        - audience
+        - tokenType
+      properties:
+        audience:
+          type: string
+          description: Audience of the workload token, stored exactly as provided.
+        tokenType:
+          type: string
+          description: Workload token type.
 
     ResumedSandbox:
       properties:
@@ -3516,6 +3550,8 @@ paths:
       responses:
         "204":
           description: The node status was changed successfully
+        "409":
+          $ref: "#/components/responses/409"
         "401":
           $ref: "#/components/responses/401"
         "404":

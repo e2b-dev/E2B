@@ -2208,6 +2208,7 @@ export interface components {
             autoPauseMemory?: boolean;
             autoResume?: components["schemas"]["SandboxAutoResumeConfig"];
             envVars?: components["schemas"]["EnvVars"];
+            iam?: components["schemas"]["SandboxIam"];
             mcp?: components["schemas"]["Mcp"];
             metadata?: components["schemas"]["SandboxMetadata"];
             network?: components["schemas"]["SandboxNetworkConfig"];
@@ -2459,15 +2460,6 @@ export interface components {
             templateID: string;
             volumeMounts?: components["schemas"]["SandboxVolumeMount"][];
         };
-        /** @description SOCKS5 proxy for sandbox egress. Outbound TCP is tunneled through the proxy after allow/deny filtering; the sandbox is unaware. Domain-matched flows use remote DNS (ATYP=domain). */
-        SandboxEgressProxyConfig: {
-            /** @description SOCKS5 proxy address in host:port format (e.g. "proxy.example.com:1080"). */
-            address: string;
-            /** @description Optional SOCKS5 password (RFC 1929), max 255 bytes. */
-            password?: string;
-            /** @description Optional SOCKS5 username (RFC 1929), max 255 bytes. */
-            username?: string;
-        } | null;
         SandboxesWithMetrics: {
             sandboxes: {
                 [key: string]: components["schemas"]["SandboxMetric"];
@@ -2491,6 +2483,20 @@ export interface components {
         SandboxForkResult: {
             error?: components["schemas"]["Error"];
             sandbox?: components["schemas"]["Sandbox"];
+        };
+        /** @description Sandbox workload identity configuration. A non-empty, valid tokens map enables workload identity for the sandbox. */
+        SandboxIam: {
+            tokens?: components["schemas"]["SandboxIamTokens"];
+        };
+        SandboxIamToken: {
+            /** @description Audience of the workload token, stored exactly as provided. */
+            audience: string;
+            /** @description Workload token type. */
+            tokenType: string;
+        };
+        /** @description Named workload-token definitions, keyed by a caller-chosen token name. */
+        SandboxIamTokens: {
+            [key: string]: components["schemas"]["SandboxIamToken"];
         };
         /** @description Sandbox lifecycle policy returned by sandbox info. */
         SandboxLifecycle: {
@@ -2596,7 +2602,6 @@ export interface components {
             allowPublicTraffic?: boolean;
             /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
             denyOut?: string[];
-            egressProxy?: components["schemas"]["SandboxEgressProxyConfig"];
             /** @description Specify host mask which will be used for all sandbox requests */
             maskRequestHost?: string;
             /** @description Per-domain transform rules applied to matching egress HTTP/HTTPS requests. Keys are domains (e.g. "api.example.com", "example.com"). A domain listed here is not automatically allowed - use allowOut to permit the traffic.
@@ -2625,7 +2630,6 @@ export interface components {
             allowOut?: string[];
             /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
             denyOut?: string[];
-            egressProxy?: components["schemas"]["SandboxEgressProxyConfig"];
             /** @description Per-domain transform rules. Replaces all existing rules when provided. */
             rules?: {
                 [key: string]: components["schemas"]["SandboxNetworkRule"][];
