@@ -1,7 +1,7 @@
 import { assert } from 'vitest'
 
 import { Sandbox, SandboxInfo } from '../../src'
-import { sandboxTest, isDebug, canReadPaginationToken } from '../setup.js'
+import { sandboxTest, isDebug } from '../setup.js'
 
 sandboxTest.skipIf(isDebug)(
   'list sandboxes',
@@ -85,7 +85,7 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug || !canReadPaginationToken)(
+sandboxTest.skipIf(isDebug)(
   'paginate running sandboxes',
   async ({ sandbox, sandboxTestId }) => {
     // Create extra sandboxes
@@ -121,7 +121,7 @@ sandboxTest.skipIf(isDebug || !canReadPaginationToken)(
   }
 )
 
-sandboxTest.skipIf(isDebug || !canReadPaginationToken)(
+sandboxTest.skipIf(isDebug)(
   'paginate paused sandboxes',
   async ({ sandbox, sandboxTestId }) => {
     await sandbox.betaPause()
@@ -160,7 +160,7 @@ sandboxTest.skipIf(isDebug || !canReadPaginationToken)(
   }
 )
 
-sandboxTest.skipIf(isDebug || !canReadPaginationToken)(
+sandboxTest.skipIf(isDebug)(
   'paginate running and paused sandboxes',
   async ({ sandbox, sandboxTestId }) => {
     // Create extra sandbox
@@ -302,7 +302,7 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug || !canReadPaginationToken)(
+sandboxTest.skipIf(isDebug)(
   'paginate running sandboxes',
   async ({ sandbox, sandboxTestId }) => {
     // Create extra sandboxes
@@ -338,7 +338,7 @@ sandboxTest.skipIf(isDebug || !canReadPaginationToken)(
   }
 )
 
-sandboxTest.skipIf(isDebug || !canReadPaginationToken)(
+sandboxTest.skipIf(isDebug)(
   'paginate paused sandboxes',
   async ({ sandbox, sandboxTestId }) => {
     await Sandbox.betaPause(sandbox.sandboxId)
@@ -377,7 +377,7 @@ sandboxTest.skipIf(isDebug || !canReadPaginationToken)(
   }
 )
 
-sandboxTest.skipIf(isDebug || !canReadPaginationToken)(
+sandboxTest.skipIf(isDebug)(
   'paginate running and paused sandboxes',
   async ({ sandbox, sandboxTestId }) => {
     // Create extra sandbox
