@@ -1,19 +1,4 @@
-import type { SandboxIamToken, SandboxIamTokenType } from './sandbox/sandboxApi'
-
-/**
- * Options for {@link Secret.iamToken}.
- */
-export interface SecretIamTokenOpts {
-  /**
-   * Audience of the workload token, stored exactly as provided.
-   */
-  audience: string
-
-  /**
-   * Workload token type.
-   */
-  tokenType: SandboxIamTokenType
-}
+import type { SandboxIamToken } from './sandbox/sandboxApi'
 
 /**
  * Secrets and workload identity helpers.
@@ -23,7 +8,7 @@ export class Secret {
    * Define a workload identity token to pass to `iam.tokens` when creating
    * a sandbox.
    *
-   * @param opts workload token definition.
+   * @param token workload token definition.
    *
    * @returns a token definition passable to `iam.tokens`.
    *
@@ -41,10 +26,7 @@ export class Secret {
    * })
    * ```
    */
-  static iamToken(opts: SecretIamTokenOpts): SandboxIamToken {
-    return {
-      audience: opts.audience,
-      tokenType: opts.tokenType,
-    }
+  static iamToken(token: SandboxIamToken): SandboxIamToken {
+    return { ...token }
   }
 }

@@ -112,6 +112,28 @@ def test_create_payload_omits_iam_when_not_provided_or_empty():
     assert "iam" not in body.to_dict()
 
 
+def test_create_payload_rejects_malformed_iam_tokens():
+    # The wire-format casing a user might copy from the JS example or a
+    # serialized payload must fail with an actionable error, not a KeyError.
+    with pytest.raises(InvalidArgumentException, match="token_type"):
+        build_iam_config(
+            cast(
+                Any,
+                {
+                    "tokens": {
+                        "aws": {
+                            "audience": "sts.amazonaws.com",
+                            "tokenType": "JWT-SVID",
+                        },
+                    },
+                },
+            )
+        )
+
+    with pytest.raises(InvalidArgumentException):
+        build_iam_config(cast(Any, {"tokens": {"aws": None}}))
+
+
 @pytest.mark.skip_debug()
 def test_filesystem_only_auto_pause_rejects_auto_resume():
     # A filesystem-only auto-pause snapshot can only be resumed explicitly, so

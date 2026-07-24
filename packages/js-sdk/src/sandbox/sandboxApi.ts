@@ -795,13 +795,36 @@ function buildNetworkBody(
 function buildIamBody(
   iam: SandboxIamOpts | undefined
 ): components['schemas']['SandboxIam'] | undefined {
+  // Rebuild the body from the known fields so stray properties on the
+  // caller's objects never reach the wire and later mutations of the
+  // caller's map cannot alter the in-flight request.
+  const tokens: components['schemas']['SandboxIamTokens'] = {}
+  for (const [name, token] of Object.entries(iam?.tokens ?? {})) {
+    // Untyped callers can leave holes in the map (conditionally included
+    // tokens); those don't count toward a non-empty config.
+    if (!token) {
+      continue
+    }
+
+    if (
+      typeof token.audience !== 'string' ||
+      typeof token.tokenType !== 'string'
+    ) {
+      throw new InvalidArgumentError(
+        `iam token '${name}' must have string 'audience' and 'tokenType' properties.`
+      )
+    }
+
+    tokens[name] = { audience: token.audience, tokenType: token.tokenType }
+  }
+
   // Only a non-empty tokens map enables workload identity, so an empty
   // iam config is omitted from the payload entirely.
-  if (!iam?.tokens || Object.keys(iam.tokens).length === 0) {
+  if (Object.keys(tokens).length === 0) {
     return undefined
   }
 
-  return iam
+  return { tokens }
 }
 
 function buildNetworkUpdateBody(

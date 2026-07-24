@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeAll, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
-import { Sandbox, Secret } from '../../src'
+import { InvalidArgumentError, Sandbox, Secret } from '../../src'
 import { TEST_API_KEY, apiUrl } from '../setup'
 
 let lastCreateBody: Record<string, unknown> | undefined
@@ -18,7 +18,7 @@ const server = setupServer(
   })
 )
 
-beforeAll(() => server.listen({ onUnhandledRequest: 'bypass' }))
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 
 afterAll(() => server.close())
 
@@ -81,4 +81,50 @@ test('Sandbox.create omits an empty iam config from the request body', async () 
 
   expect(lastCreateBody).toBeDefined()
   expect(lastCreateBody).not.toHaveProperty('iam')
+})
+
+test('Sandbox.create treats a tokens map with only undefined values as empty', async () => {
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    iam: {
+      // Untyped callers can build the map conditionally, leaving holes.
+      tokens: { aws: undefined as never },
+    },
+  })
+
+  expect(lastCreateBody).toBeDefined()
+  expect(lastCreateBody).not.toHaveProperty('iam')
+})
+
+test('Sandbox.create strips unknown token properties from the request body', async () => {
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    iam: {
+      tokens: {
+        aws: {
+          audience: 'sts.amazonaws.com',
+          tokenType: 'JWT-SVID',
+          filePath: '/run/token',
+        } as never,
+      },
+    },
+  })
+
+  expect(lastCreateBody?.iam).toEqual({
+    tokens: {
+      aws: { audience: 'sts.amazonaws.com', tokenType: 'JWT-SVID' },
+    },
+  })
+})
+
+test('Sandbox.create rejects a token missing audience or tokenType', async () => {
+  await expect(
+    Sandbox.create('base', {
+      apiKey: TEST_API_KEY,
+      iam: {
+        // The wire-format casing an untyped caller might copy from a payload.
+        tokens: { aws: { audience: 'sts.amazonaws.com' } as never },
+      },
+    })
+  ).rejects.toThrowError(InvalidArgumentError)
 })

@@ -55,6 +55,7 @@ from e2b.api.client.models import (
 )
 from e2b.api.client.types import Unset
 from e2b.connection_config import ApiParams
+from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox.mcp import McpServer as BaseMcpServer
 from e2b.sandbox.network import ALL_TRAFFIC
 from e2b.paginator import PaginatorBase
@@ -465,6 +466,19 @@ def build_iam_config(
 
     client_tokens = ClientSandboxIamTokens()
     for name, token in tokens.items():
+        # Re-check at runtime for callers that bypass the TypedDict — a bare
+        # KeyError from deep inside create would not name the option or the
+        # snake_case key the wire's camelCase 'tokenType' maps to.
+        if (
+            not isinstance(token, dict)
+            or "audience" not in token
+            or "token_type" not in token
+        ):
+            raise InvalidArgumentException(
+                f"iam token {name!r} must be a dict with 'audience' and "
+                "'token_type' keys (snake_case 'token_type', not 'tokenType')."
+            )
+
         client_tokens[name] = ClientSandboxIamToken(
             audience=token["audience"],
             token_type=token["token_type"],
