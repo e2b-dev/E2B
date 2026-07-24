@@ -149,24 +149,14 @@ export const TEST_API_KEY = `e2b_${'0'.repeat(40)}`
  * Whether the test can read a response from a server running inside a sandbox.
  *
  * A browser only exposes a cross-origin response to JS when the server opts in
- * with CORS headers. Servers a test starts in a sandbox (`python -m
- * http.server`, and the sandbox proxy's own 502 page) don't, so there the fetch
- * fails as an opaque `TypeError: Failed to fetch` no matter what the server
- * answered. Nothing the SDK can paper over — a real browser app would hit the
- * same wall.
+ * with CORS headers. A plain server a test starts in a sandbox (`python -m
+ * http.server`) doesn't, so there the fetch fails as an opaque `TypeError:
+ * Failed to fetch` no matter what the server answered. Nothing the SDK can
+ * paper over — a real browser app would hit the same wall. This is about the
+ * user's own server only: errors the sandbox proxy synthesizes do carry CORS
+ * headers (infra#3389).
  */
 export const canFetchSandboxServers = runtime !== 'browser'
-
-/**
- * Whether the test can observe a sandbox that has stopped.
- *
- * `isRunning()` reads envd's `/health` over the sandbox host, and a stopped
- * sandbox answers 502 from the edge without CORS headers — so in a browser the
- * probe rejects instead of reporting `false`. That also costs the health-check
- * refinement in `handleRpcErrorWithHealthCheck`: a connection dropped by a kill
- * stays a generic `SandboxError` there instead of a `TimeoutError`.
- */
-export const canObserveStoppedSandbox = runtime !== 'browser'
 
 function generateRandomString(length: number = 8): string {
   return Math.random()

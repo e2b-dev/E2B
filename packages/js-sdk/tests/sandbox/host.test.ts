@@ -39,7 +39,7 @@ sandboxTest.skipIf(!canFetchSandboxServers)(
   60_000
 )
 
-sandboxTest.skipIf(isDebug || !canFetchSandboxServers)(
+sandboxTest.skipIf(isDebug)(
   'ping server in non-running sandbox',
   async ({ sandbox }) => {
     const host = sandbox.getHost(3000)
