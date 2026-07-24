@@ -45,6 +45,4 @@ deno.lock
 .deploy-output.json
 .wrangler
 
-# failure screenshots from the browser suite (`pnpm test:browser`)
 __screenshots__
-.vitest-attachments

@@ -162,17 +162,6 @@ export const TEST_API_KEY = `e2b_${'0'.repeat(40)}`
 export const canFetchSandboxServers = runtime !== 'browser'
 
 /**
- * Whether the test can read the pagination cursor the API returns.
- *
- * `Paginator` takes its cursor from the `x-next-token` response header, and the
- * API doesn't name that header in `Access-Control-Expose-Headers` — so a
- * browser withholds it from JS and every page looks like the last one.
- * Paginating with a `limit` can't work there until the API exposes the header;
- * the SDK can't reach around CORS.
- */
-export const canReadPaginationToken = runtime !== 'browser'
-
-/**
  * Whether the test can observe a sandbox that has stopped.
  *
  * `isRunning()` reads envd's `/health` over the sandbox host, and a stopped
