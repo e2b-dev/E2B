@@ -298,8 +298,9 @@ components:
           items:
             type: string
         egressProxy:
+          allOf:
+            - $ref: "#/components/schemas/SandboxEgressProxyConfig"
           x-not-implemented: true
-          $ref: "#/components/schemas/SandboxEgressProxyConfig"
         maskRequestHost:
           type: string
           description: Specify host mask which will be used for all sandbox requests
@@ -329,8 +330,9 @@ components:
           items:
             type: string
         egressProxy:
+          allOf:
+            - $ref: "#/components/schemas/SandboxEgressProxyConfig"
           x-not-implemented: true
-          $ref: "#/components/schemas/SandboxEgressProxyConfig"
         rules:
           type: object
           description: Per-domain transform rules. Replaces all existing rules when provided.
