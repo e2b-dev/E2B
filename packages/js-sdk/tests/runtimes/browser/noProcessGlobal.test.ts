@@ -1,6 +1,5 @@
 import { assert, test } from 'vitest'
 
-import { Sandbox } from '../../../src'
 import { template } from '../../template'
 
 // Bundlers don't give browser apps a `process` unless asked to, so the SDK has
@@ -10,6 +9,11 @@ import { template } from '../../template'
 // processEnv.setup.ts, which would mask a regression that reintroduces a bare
 // `process` read on the create path, so this test drops the shim entirely and
 // drives a real sandbox the way a browser app has to.
+//
+// The SDK is imported dynamically inside the test, after the shim is gone: a
+// static import is evaluated at collection time, while the shim is still
+// installed, which would let a top-level `process` read anywhere in the module
+// graph pass here and still crash a browser app on import.
 //
 // Config comes from `import.meta.env` (where vitest puts the config's `env`),
 // which is also how a Vite app would hand its own build-time values over.
@@ -25,6 +29,7 @@ test.skipIf(isDebug)(
     assert.equal(typeof process, 'undefined')
 
     try {
+      const { Sandbox } = await import('../../../src')
       const sandbox = await Sandbox.create(template, { apiKey, domain })
 
       try {
