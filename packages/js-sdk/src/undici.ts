@@ -1,7 +1,7 @@
 import { compareVersions } from 'compare-versions'
 
 import { limitConcurrency } from './api/inflight'
-import { dynamicImport } from './utils'
+import { dynamicImport, isRequestLike } from './utils'
 
 type UndiciRequestInit = RequestInit & {
   dispatcher?: unknown
@@ -136,7 +136,11 @@ function toUndiciRequestInput(
   input: RequestInfo | URL,
   init?: RequestInit
 ): { input: RequestInfo | URL; init?: RequestInit & { duplex?: 'half' } } {
-  if (!(input instanceof Request)) {
+  // Shape check, not `instanceof`: a Request minted by a replaced/duplicated
+  // global Request class must still be destructured here — passed through
+  // verbatim, undici's fetch would coerce it to a URL string and crash (see
+  // isRequestLike).
+  if (!isRequestLike(input)) {
     return { input, init }
   }
 

@@ -1,9 +1,11 @@
 import { expect, test, vi } from 'vitest'
 
 import {
+  buildDispatchedFetch,
   createRuntimeFetch,
   getUndiciPackageCandidates,
   loadUndici,
+  type UndiciModule,
 } from '../src/undici'
 import { runtime } from '../src/utils'
 
@@ -51,6 +53,55 @@ test('a stale awaiter of a failed build does not clobber a newer successful buil
   // A later request must reuse C's cached build instead of building a third.
   await fetcher('https://example.com/')
   expect(build).toHaveBeenCalledTimes(2)
+})
+
+// A Request minted by a different Request class than the one `instanceof`
+// checks against. This happens in real processes: runtimes and tools replace
+// `globalThis.Request` just like they replace `globalThis.fetch` (test
+// environments, instrumentation, server shims such as @hono/node-server), and
+// two copies of one shim can coexist — each with its own class. Sibling
+// subclasses of the native Request reproduce exactly that: an instance of one
+// is a fully functional Request but fails `instanceof` against the other.
+test('destructures a Request minted by a foreign Request class instead of passing it to undici verbatim', async () => {
+  const NativeRequest = globalThis.Request
+  class MintingRequest extends NativeRequest {}
+  class GlobalShimRequest extends NativeRequest {}
+
+  const seen: Array<{ input: unknown; init?: RequestInit }> = []
+  const fakeUndici = {
+    Agent: class {},
+    ProxyAgent: class {},
+    fetch: async (input: unknown, init?: RequestInit) => {
+      seen.push({ input, init })
+      return new Response('ok')
+    },
+  } as unknown as UndiciModule
+
+  const request = new MintingRequest('https://api.example.test/sandboxes', {
+    method: 'POST',
+  })
+
+  vi.stubGlobal('Request', GlobalShimRequest)
+  try {
+    // The premise: a real Request that the current global class disowns.
+    expect(request instanceof globalThis.Request).toBe(false)
+
+    const fetcher = await buildDispatchedFetch({
+      connections: 1,
+      inflightLimit: 0,
+      loadUndici: async () => fakeUndici,
+    })
+    await fetcher(request as unknown as RequestInfo)
+  } finally {
+    vi.unstubAllGlobals()
+  }
+
+  // Undici's fetch cannot brand-check a foreign Request either — passed
+  // through verbatim it would be coerced to a URL string and crash with
+  // `Failed to parse URL from [object Request]`. It must arrive destructured.
+  expect(seen).toHaveLength(1)
+  expect(seen[0].input).toBe('https://api.example.test/sandboxes')
+  expect(seen[0].init?.method).toBe('POST')
 })
 
 // loadUndici is only reached in production when the runtime is Node; other

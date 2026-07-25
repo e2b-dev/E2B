@@ -1,3 +1,5 @@
+import { isRequestLike } from '../utils'
+
 /**
  * Simple FIFO semaphore used to cap the number of in-flight requests sent
  * through a fetch dispatcher.
@@ -66,8 +68,11 @@ export function limitConcurrency(
   const sem = new Semaphore(max)
 
   return (async (input, init) => {
+    // Shape check, not `instanceof` — a foreign-class Request (replaced or
+    // duplicated global Request) still carries the abort signal we must honor
+    // while queued (see isRequestLike).
     const signal =
-      init?.signal ?? (input instanceof Request ? input.signal : undefined)
+      init?.signal ?? (isRequestLike(input) ? input.signal : undefined)
     const release = await sem.acquire(signal)
     try {
       return await fetcher(input, init)

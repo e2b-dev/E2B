@@ -63,6 +63,30 @@ export function timeoutToSeconds(timeout: number): number {
 }
 
 /**
+ * Whether `input` should be treated as a `Request`, by shape rather than
+ * brand. A bare `input instanceof Request` misses Requests minted by a
+ * *different* `Request` class: runtimes and tools replace
+ * `globalThis.Request` just like they replace `globalThis.fetch` (test
+ * environments, instrumentation, server shims such as `@hono/node-server` —
+ * and two copies of one shim can even coexist in a process, each with its own
+ * class, so a Request built by one fails `instanceof` against the other).
+ *
+ * The miss is not benign where the SDK bridges into undici: a foreign Request
+ * passed to undici's `fetch` verbatim fails undici's own brand check too and
+ * gets coerced to a URL string, crashing with
+ * `Failed to parse URL from [object Request]`.
+ */
+export function isRequestLike(input: unknown): input is Request {
+  if (input instanceof Request) return true
+  return (
+    typeof input === 'object' &&
+    input !== null &&
+    typeof (input as Request).url === 'string' &&
+    typeof (input as Request).method === 'string'
+  )
+}
+
+/**
  * Import an optional, runtime-resolved package (e.g. `undici`, `glob`, `tar`)
  * without letting downstream bundlers resolve it at build time.
  *

@@ -73,3 +73,34 @@ test('limitConcurrency aborts queued requests when their signal fires', async ()
   const resp = await first
   expect(await resp.text()).toBe('done')
 })
+
+test('limitConcurrency honors the abort signal of a Request minted by a foreign Request class', async () => {
+  // Same real-world shape as the undici.test.ts foreign-Request case:
+  // `globalThis.Request` gets replaced (or duplicated) by a shim, so a
+  // Request built from a sibling class fails `instanceof` — but its abort
+  // signal must still count while the request waits for a slot.
+  const NativeRequest = globalThis.Request
+  class MintingRequest extends NativeRequest {}
+  class GlobalShimRequest extends NativeRequest {}
+
+  const inner = vi.fn(async () => new Response('ok')) as unknown as typeof fetch
+  const limited = limitConcurrency(inner, 1)
+
+  const controller = new AbortController()
+  controller.abort()
+  const request = new MintingRequest('https://example.com/aborted', {
+    signal: controller.signal,
+  })
+
+  vi.stubGlobal('Request', GlobalShimRequest)
+  try {
+    expect(request instanceof globalThis.Request).toBe(false)
+    await expect(
+      limited(request as unknown as RequestInfo)
+    ).rejects.toMatchObject({ name: 'AbortError' })
+  } finally {
+    vi.unstubAllGlobals()
+  }
+
+  expect(inner).not.toHaveBeenCalled()
+})
