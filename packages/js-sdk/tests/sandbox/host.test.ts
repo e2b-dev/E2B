@@ -1,11 +1,11 @@
 import { assert } from 'vitest'
 
-import { isDebug, sandboxTest, wait, canFetchSandboxServers } from '../setup.js'
+import { isDebug, sandboxTest, wait, corsHttpServerCmd } from '../setup.js'
 import { catchCmdExitErrorInBackground } from '../cmdHelper.js'
-sandboxTest.skipIf(!canFetchSandboxServers)(
+sandboxTest(
   'ping server in running sandbox',
   async ({ sandbox }) => {
-    const cmd = await sandbox.commands.run('python -m http.server 8000', {
+    const cmd = await sandbox.commands.run(corsHttpServerCmd(8000), {
       background: true,
     })
 
