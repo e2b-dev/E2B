@@ -1,6 +1,6 @@
 import { assert, describe } from 'vitest'
 
-import { sandboxTest, isDebug } from '../setup.js'
+import { sandboxTest, isDebug, canFetchSandboxServers } from '../setup.js'
 
 sandboxTest.skipIf(isDebug)(
   'pause and resume a sandbox',
@@ -137,7 +137,7 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)(
+sandboxTest.skipIf(isDebug || !canFetchSandboxServers)(
   'pause and resume a sandbox with http server',
   async ({ sandbox }) => {
     await sandbox.commands.run('python3 -m http.server 8000', {
