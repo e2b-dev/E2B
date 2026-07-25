@@ -5,7 +5,7 @@ import {
   sandboxTest,
   isDebug,
   template,
-  canFetchSandboxServers,
+  corsHttpServerCmd,
 } from '../setup.js'
 import { httpbinTemplate } from '../template.js'
 
@@ -135,7 +135,7 @@ describe('allowPublicTraffic=false', () => {
     },
   })
 
-  sandboxTest.skipIf(isDebug || !canFetchSandboxServers)(
+  sandboxTest.skipIf(isDebug)(
     'sandbox requires traffic access token',
     async ({ sandbox }) => {
       // Verify the sandbox was created successfully and has a traffic access token
@@ -143,7 +143,7 @@ describe('allowPublicTraffic=false', () => {
 
       // Start a simple HTTP server in the sandbox
       const port = 8080
-      sandbox.commands.run(`python3 -m http.server ${port}`, {
+      sandbox.commands.run(corsHttpServerCmd(port), {
         background: true,
       })
 
@@ -177,12 +177,12 @@ describe('allowPublicTraffic=true', () => {
     },
   })
 
-  sandboxTest.skipIf(isDebug || !canFetchSandboxServers)(
+  sandboxTest.skipIf(isDebug)(
     'sandbox works without token',
     async ({ sandbox }) => {
       // Start a simple HTTP server in the sandbox
       const port = 8080
-      sandbox.commands.run(`python3 -m http.server ${port}`, {
+      sandbox.commands.run(corsHttpServerCmd(port), {
         background: true,
       })
 
