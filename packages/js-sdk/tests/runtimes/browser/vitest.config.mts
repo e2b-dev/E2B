@@ -17,9 +17,11 @@ const testEnv = Object.fromEntries(
 
 // Runs the unit + connectionConfig projects (same coverage as test:bun /
 // test:deno / test:cf) inside a real Chromium via Playwright, against src.
-// Tests the browser physically can't run are skipped from the test files
-// themselves — see the capability flags in tests/setup.ts — so they stay
-// visible in the report instead of disappearing into the exclude list below.
+// Nothing is skipped for being a browser: the suites that can't run here are
+// Node-only rather than browser-hostile, and they're excluded below. Tests that
+// read a response from a server inside the sandbox start a CORS-enabled one
+// (`corsHttpServerCmd` in tests/setup.ts), the way a browser app's own server
+// would be configured.
 export default defineConfig({
   test: {
     name: 'browser',

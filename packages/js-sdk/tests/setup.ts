@@ -8,7 +8,6 @@ import {
   TemplateClass,
   Volume,
 } from '../src'
-import { runtime } from '../src/utils'
 import { template } from './template'
 
 interface SandboxFixture {
@@ -150,17 +149,36 @@ export const isDebug = process.env.E2B_DEBUG !== undefined
 export const TEST_API_KEY = `e2b_${'0'.repeat(40)}`
 
 /**
- * Whether the test can read a response from a server running inside a sandbox.
+ * Command that serves the working directory on `port` with CORS enabled, for
+ * tests that read a response from a server running inside the sandbox.
  *
- * A browser only exposes a cross-origin response to JS when the server opts in
- * with CORS headers. A plain server a test starts in a sandbox (`python -m
- * http.server`) doesn't, so there the fetch fails as an opaque `TypeError:
- * Failed to fetch` no matter what the server answered. Nothing the SDK can
- * paper over — a real browser app would hit the same wall. This is about the
- * user's own server only: errors the sandbox proxy synthesizes do carry CORS
- * headers (infra#3389).
+ * Use this instead of `python -m http.server`, which sends no CORS headers: a
+ * browser only exposes a cross-origin response to JS when the server opts in,
+ * so there the fetch fails as an opaque `TypeError: Failed to fetch` no matter
+ * what the server answered. Opting in is what a real browser app's own server
+ * does too, and it's only ever the user's server that has to — everything the
+ * sandbox proxy answers itself already carries CORS headers (infra#3389).
+ *
+ * `Access-Control-Allow-Headers` and `do_OPTIONS` cover requests that carry a
+ * custom header, which the browser preflights before sending.
  */
-export const canFetchSandboxServers = runtime !== 'browser'
+export function corsHttpServerCmd(port: number): string {
+  return `python3 -c "
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+
+class Handler(SimpleHTTPRequestHandler):
+    def end_headers(self):
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Headers', '*')
+        SimpleHTTPRequestHandler.end_headers(self)
+
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self.end_headers()
+
+ThreadingHTTPServer(('', ${port}), Handler).serve_forever()
+"`
+}
 
 function generateRandomString(length: number = 8): string {
   return Math.random()

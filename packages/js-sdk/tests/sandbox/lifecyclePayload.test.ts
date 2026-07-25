@@ -1,7 +1,7 @@
 import { assert, expect, test } from 'vitest'
 
 import { InvalidArgumentError, Sandbox } from '../../src'
-import { isDebug, template, wait, canFetchSandboxServers } from '../setup.js'
+import { isDebug, template, wait, corsHttpServerCmd } from '../setup.js'
 
 test.skipIf(isDebug)(
   'filesystem-only auto-pause cannot be combined with auto-resume',
@@ -111,7 +111,7 @@ test.skipIf(isDebug)(
   60_000
 )
 
-test.skipIf(isDebug || !canFetchSandboxServers)(
+test.skipIf(isDebug)(
   'auto-resume wakes paused sandbox on http request',
   async () => {
     const sandbox = await Sandbox.create(template, {
@@ -123,7 +123,7 @@ test.skipIf(isDebug || !canFetchSandboxServers)(
     })
 
     try {
-      await sandbox.commands.run('python3 -m http.server 8000', {
+      await sandbox.commands.run(corsHttpServerCmd(8000), {
         background: true,
       })
 
