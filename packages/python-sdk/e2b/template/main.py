@@ -846,6 +846,51 @@ class TemplateBase:
         """
         return self.from_image(f"ubuntu:{variant}")
 
+    def from_fedora_image(self, variant: str = "latest") -> TemplateBuilder:
+        """
+        Start template from a Fedora base image.
+
+        :param variant: Fedora image variant (default: 'latest')
+
+        :return: `TemplateBuilder` class
+
+        Example
+        ```python
+        Template().from_fedora_image('42')
+        ```
+        """
+        return self.from_image(f"fedora:{variant}")
+
+    def from_alpine_image(self, variant: str = "latest") -> TemplateBuilder:
+        """
+        Start template from an Alpine base image.
+
+        :param variant: Alpine image variant (default: 'latest')
+
+        :return: `TemplateBuilder` class
+
+        Example
+        ```python
+        Template().from_alpine_image('3.22')
+        ```
+        """
+        return self.from_image(f"alpine:{variant}")
+
+    def from_arch_image(self, variant: str = "latest") -> TemplateBuilder:
+        """
+        Start template from an Arch Linux base image.
+
+        :param variant: Arch Linux image variant (default: 'latest')
+
+        :return: `TemplateBuilder` class
+
+        Example
+        ```python
+        Template().from_arch_image('base-devel')
+        ```
+        """
+        return self.from_image(f"archlinux:{variant}")
+
     def from_python_image(self, version: str = "3") -> TemplateBuilder:
         """
         Start template from a Python base image.

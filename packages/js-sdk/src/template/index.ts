@@ -426,6 +426,18 @@ export class TemplateBase
     return this.fromImage(`ubuntu:${variant}`)
   }
 
+  fromFedoraImage(variant: string = 'latest'): TemplateBuilder {
+    return this.fromImage(`fedora:${variant}`)
+  }
+
+  fromAlpineImage(variant: string = 'latest'): TemplateBuilder {
+    return this.fromImage(`alpine:${variant}`)
+  }
+
+  fromArchImage(variant: string = 'latest'): TemplateBuilder {
+    return this.fromImage(`archlinux:${variant}`)
+  }
+
   fromPythonImage(version: string = '3'): TemplateBuilder {
     return this.fromImage(`python:${version}`)
   }
