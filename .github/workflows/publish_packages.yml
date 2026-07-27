@@ -72,10 +72,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Release new versions
+        id: changesets
+        # `createGithubReleases` is off because it would push the tags
+        # `changeset publish` just created, and at this point the version bump is
+        # not committed yet, so they point at the commit *before* the release.
+        # "Tag and release" below moves them onto the release commit, pushes them
+        # and cuts the GitHub releases instead.
         uses: changesets/action@v1
         with:
           publish: pnpm run publish
-          createGithubReleases: true
+          createGithubReleases: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: "" # See https://github.com/changesets/changesets/issues/1152#issuecomment-3190884868
@@ -96,7 +102,13 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git commit -am "[skip ci] Release new versions" || exit 0
+
+          # The release tags are cut from this commit, so there has to be one.
+          if git diff --quiet HEAD; then
+            echo "::error::Nothing to commit after 'changeset version'. Refusing to continue, since the release tags would point at the commit before the version bump."
+            exit 1
+          fi
+          git commit -am "[skip ci] Release new versions"
 
           # A PR merging mid-release makes this push a non-fast-forward. The
           # artifacts were already published from the checked-out tree, so we
@@ -109,7 +121,7 @@ jobs:
 
           git fetch origin "${GITHUB_REF_NAME}"
           if git diff --name-only "HEAD~1" FETCH_HEAD -- packages/ | grep -q .; then
-            echo "::error::'${GITHUB_REF_NAME}' advanced with changes under packages/ during the release. Refusing to rebase the version bump onto unpublished package code (the source would diverge from the published artifacts). Reconcile manually."
+            echo "::error::'${GITHUB_REF_NAME}' advanced with changes under packages/ during the release. Refusing to rebase the version bump onto unpublished package code (the source would diverge from the published artifacts). Reconcile manually, then tag the release commit and cut the GitHub releases by hand — neither has happened yet."
             exit 1
           fi
 
@@ -117,3 +129,44 @@ jobs:
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tag and release
+        if: steps.changesets.outputs.published == 'true'
+        # `changeset publish` already created these tags, but on the commit before
+        # the version bump, which is why the action was told not to push them.
+        # Recreate them on the release commit and cut the GitHub releases from the
+        # changelogs `changeset version` generated.
+        run: |
+          for TAG in $(jq -r '.[] | "\(.name)@\(.version)"' <<< "${PUBLISHED_PACKAGES}"); do
+            NAME=${TAG%@*}
+            VERSION=${TAG##*@}
+            DIR=$(dirname "$(jq -r --arg name "$NAME" 'select(.name == $name) | input_filename' packages/*/package.json)")
+            CHANGELOG="${DIR}/CHANGELOG.md"
+            if [ ! -f "${CHANGELOG}" ]; then
+              echo "::error::No changelog at ${CHANGELOG} to write ${TAG}'s release notes from."
+              exit 1
+            fi
+
+            # The generated changelog is a list of "## <version>" sections. Entry
+            # bodies are indented, so only real headings sit at column 0.
+            NOTES="${RUNNER_TEMP}/${VERSION}-notes.md"
+            awk -v heading="## ${VERSION}" '
+              $0 == heading { found = 1; next }
+              found && /^## / { exit }
+              found { print }
+            ' "${CHANGELOG}" > "${NOTES}"
+            if [ ! -s "${NOTES}" ]; then
+              echo "::error::${CHANGELOG} has no entry for ${VERSION}, so ${TAG} has no release notes."
+              exit 1
+            fi
+
+            git tag --force --annotate --message "${TAG}" "${TAG}"
+            git push origin "refs/tags/${TAG}"
+
+            FLAGS=(--title "${TAG}" --notes-file "${NOTES}")
+            case "${VERSION}" in *-*) FLAGS+=(--prerelease) ;; esac
+            gh release create "${TAG}" "${FLAGS[@]}"
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PUBLISHED_PACKAGES: ${{ steps.changesets.outputs.publishedPackages }}
