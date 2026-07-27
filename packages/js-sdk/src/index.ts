@@ -73,6 +73,8 @@ export type {
   SandboxNetworkRuleInfo,
   SandboxNetworkRules,
   SandboxNetworkTransform,
+  SandboxNetworkTransformContext,
+  SandboxNetworkTransformResolver,
   SandboxNetworkUpdate,
   SandboxOnTimeout,
   SandboxLifecycle,
