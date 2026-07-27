@@ -67,8 +67,9 @@ export type SandboxNetworkTransformContext = {
      * freshly minted token when it forwards the request.
      *
      * Reading a name that is not registered throws
-     * {@link InvalidArgumentError} — an unresolvable placeholder is dropped by
-     * the proxy, which would look like a missing header at the destination.
+     * {@link InvalidArgumentError} — the proxy never turns an unregistered name
+     * into a token, so a typo would surface as a confusing auth failure at the
+     * destination.
      */
     tokens: Record<string, string>
   }
@@ -802,8 +803,9 @@ function iamTokenPlaceholder(name: string): string {
  * Build the context handed to `transform` callbacks.
  *
  * `tokenNames` are the workload tokens the request registers. Referencing any
- * other name throws: the egress proxy drops placeholders it cannot resolve, so
- * a typo would silently strip the header instead of failing the request.
+ * other name throws: the proxy never turns an unregistered name into a token, so
+ * a typo would surface as a confusing auth failure at the destination instead of
+ * an error here.
  *
  * `validate: false` is for the update-network endpoint, whose payload carries no
  * `iam` config — the sandbox's registered token names are not known client-side
