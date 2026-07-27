@@ -1,7 +1,7 @@
 import { assert, expect, describe } from 'vitest'
 
 import { CommandExitError } from '../../src'
-import { sandboxTest, isDebug } from '../setup.js'
+import { sandboxTest, isDebug, corsHttpServerCmd } from '../setup.js'
 
 describe('allow only 1.1.1.1', () => {
   sandboxTest.override({
@@ -137,7 +137,7 @@ describe('allowPublicTraffic=false', () => {
 
       // Start a simple HTTP server in the sandbox
       const port = 8080
-      sandbox.commands.run(`python3 -m http.server ${port}`, {
+      sandbox.commands.run(corsHttpServerCmd(port), {
         background: true,
       })
 
@@ -176,7 +176,7 @@ describe('allowPublicTraffic=true', () => {
     async ({ sandbox }) => {
       // Start a simple HTTP server in the sandbox
       const port = 8080
-      sandbox.commands.run(`python3 -m http.server ${port}`, {
+      sandbox.commands.run(corsHttpServerCmd(port), {
         background: true,
       })
 
