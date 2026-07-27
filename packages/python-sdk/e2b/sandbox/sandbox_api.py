@@ -4,6 +4,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterable,
     List,
     Literal,
     Mapping,
@@ -101,14 +102,103 @@ class SandboxNetworkTransform(TypedDict):
     """
 
 
+def _iam_token_placeholder(name: str) -> str:
+    return f"${{e2b.identity.tokens.{name}}}"
+
+
+class _IamTokenPlaceholders(Dict[str, str]):
+    """
+    Workload token placeholders keyed by token name, as exposed to a
+    ``transform`` callable.
+
+    ``validate=False`` is for the update-network endpoint, whose payload carries
+    no ``iam`` config — the sandbox's registered token names are not known
+    client-side there, so any name resolves to its placeholder.
+    """
+
+    def __init__(self, names: Iterable[str], *, validate: bool) -> None:
+        super().__init__((name, _iam_token_placeholder(name)) for name in names)
+        self._validate = validate
+
+    def __missing__(self, name: str) -> str:
+        # The egress proxy drops placeholders it cannot resolve, so a typo would
+        # silently strip the header instead of failing the request.
+        if not self._validate:
+            return _iam_token_placeholder(name)
+
+        if not self:
+            raise InvalidArgumentException(
+                f"Network transform references iam token {name!r}, which is not "
+                f"registered. Pass it to Sandbox.create as iam={{'tokens': "
+                f"{{{name!r}: Secret.iam_token(audience=..., token_type=...)}}}}."
+            )
+
+        registered = ", ".join(repr(known) for known in self)
+        raise InvalidArgumentException(
+            f"Network transform references iam token {name!r}, which is not "
+            f"registered. Registered tokens: {registered}."
+        )
+
+
+@dataclass(frozen=True)
+class _SandboxNetworkTransformIam:
+    """Workload identity placeholders."""
+
+    tokens: Mapping[str, str]
+    """
+    Placeholder for each workload token registered in
+    :attr:`SandboxOpts.iam`, keyed by token name. ``tokens["aws"]`` is the
+    string ``"${e2b.identity.tokens.aws}"``, which the egress proxy replaces
+    with a freshly minted token when it forwards the request.
+
+    Reading a name that is not registered raises
+    :class:`InvalidArgumentException` — an unresolvable placeholder is dropped
+    by the proxy, which would look like a missing header at the destination.
+    """
+
+
+@dataclass(frozen=True)
+class SandboxNetworkTransformContext:
+    """
+    Context passed to a :class:`SandboxNetworkRule` ``transform`` callable. Its
+    values are literal placeholder strings that the egress proxy resolves per
+    request, so the secret itself never leaves the platform.
+    """
+
+    iam: _SandboxNetworkTransformIam
+    """Workload identity placeholders."""
+
+
+SandboxNetworkTransformResolver = Callable[
+    [SandboxNetworkTransformContext], SandboxNetworkTransform
+]
+"""
+Callable form of ``SandboxNetworkRule.transform``. Invoked once while the
+request is being built, with a context of placeholder strings.
+"""
+
+
 class SandboxNetworkRule(TypedDict):
     """
     Per-domain rule applied to egress requests.
     """
 
-    transform: NotRequired[SandboxNetworkTransform]
+    transform: NotRequired[
+        Union[SandboxNetworkTransform, SandboxNetworkTransformResolver]
+    ]
     """
     Transform applied to requests matching this rule.
+
+    Accepts either a static :class:`SandboxNetworkTransform` or a callable that
+    receives a :class:`SandboxNetworkTransformContext` of placeholder strings —
+    use the callable to inject a workload identity token the proxy mints per
+    request::
+
+        {
+            "transform": lambda ctx: {
+                "headers": {"Authorization": f"Bearer {ctx.iam.tokens['aws']}"},
+            },
+        }
     """
 
 
@@ -195,6 +285,23 @@ class SandboxNetworkOpts(TypedDict):
     Registering a host here does not allow egress on its own — the host must
     also appear in ``allow_out``. Hosts registered here are exposed to the
     ``allow_out``/``deny_out`` callables via ``ctx.rules``.
+
+    A rule's ``transform`` can also be a callable receiving a
+    :class:`SandboxNetworkTransformContext`, which is how a workload identity
+    token from :attr:`SandboxOpts.iam` gets injected without the SDK ever
+    seeing its value::
+
+        rules={
+            "api.internal.example.com": [
+                {
+                    "transform": lambda ctx: {
+                        "headers": {
+                            "Authorization": f"Bearer {ctx.iam.tokens['aws']}",
+                        },
+                    },
+                },
+            ],
+        }
     """
 
     allow_public_traffic: NotRequired[bool]
@@ -381,7 +488,28 @@ def _resolve_network_selector(
     return list(selector)
 
 
-def _build_client_rules(rules: SandboxNetworkRules) -> SandboxNetworkConfigRules:
+def _build_transform_context(
+    token_names: Iterable[str],
+    *,
+    validate: bool,
+) -> SandboxNetworkTransformContext:
+    """
+    Build the context handed to ``transform`` callables.
+
+    ``token_names`` are the workload tokens the request registers; see
+    :class:`_IamTokenPlaceholders` for what ``validate`` controls.
+    """
+    return SandboxNetworkTransformContext(
+        iam=_SandboxNetworkTransformIam(
+            tokens=_IamTokenPlaceholders(token_names, validate=validate),
+        ),
+    )
+
+
+def _build_client_rules(
+    rules: SandboxNetworkRules,
+    ctx: SandboxNetworkTransformContext,
+) -> SandboxNetworkConfigRules:
     client_rules = SandboxNetworkConfigRules()
     for host, host_rules in rules.items():
         converted: List[ClientSandboxNetworkRule] = []
@@ -390,6 +518,17 @@ def _build_client_rules(rules: SandboxNetworkRules) -> SandboxNetworkConfigRules
             if transform is None:
                 converted.append(ClientSandboxNetworkRule())
                 continue
+
+            if callable(transform):
+                transform = transform(ctx)
+                # A callable that returns nothing resolves to no transform at
+                # all, which would silently create the rule without the headers
+                # it is for.
+                if not isinstance(transform, dict):
+                    raise InvalidArgumentException(
+                        f"Network transform callable for {host!r} must return a "
+                        f"transform dict, got {type(transform).__name__}."
+                    )
 
             client_transform = ClientSandboxNetworkTransform()
             headers = transform.get("headers")
@@ -406,6 +545,7 @@ def _build_client_rules(rules: SandboxNetworkRules) -> SandboxNetworkConfigRules
 
 def _build_network_egress(
     network: Mapping[str, Any],
+    ctx: SandboxNetworkTransformContext,
 ) -> Dict[str, Any]:
     """
     Resolve the shared egress fields (``allow_out`` / ``deny_out`` / per-host
@@ -423,19 +563,31 @@ def _build_network_egress(
     if deny_out is not None:
         body["deny_out"] = deny_out
     if "rules" in network and network["rules"] is not None:
-        body["rules"] = _build_client_rules(network["rules"]).additional_properties
+        body["rules"] = _build_client_rules(network["rules"], ctx).additional_properties
 
     return body
 
 
 def build_network_config(
     network: Optional[SandboxNetworkOpts],
+    iam: Optional[ClientSandboxIam] = None,
 ) -> Optional[Dict[str, Any]]:
-    """Resolve a :class:`SandboxNetworkOpts` into the dict the API expects."""
+    """Resolve a :class:`SandboxNetworkOpts` into the dict the API expects.
+
+    ``iam`` is the built workload identity config of the same request — its
+    token names are what ``transform`` callables may reference.
+    """
     if network is None:
         return None
 
-    body = _build_network_egress(network)
+    token_names: List[str] = []
+    if iam is not None and not isinstance(iam.tokens, Unset):
+        token_names = iam.tokens.additional_keys
+
+    body = _build_network_egress(
+        network,
+        _build_transform_context(token_names, validate=True),
+    )
     if "rules" in body:
         client_rules = SandboxNetworkConfigRules()
         client_rules.additional_properties = body["rules"]
@@ -493,7 +645,9 @@ def build_network_update_body(
     network: SandboxNetworkUpdate,
 ) -> SandboxNetworkUpdateConfig:
     """Resolve a :class:`SandboxNetworkUpdate` into the API client body."""
-    egress = _build_network_egress(network)
+    egress = _build_network_egress(
+        network, _build_transform_context([], validate=False)
+    )
 
     body = SandboxNetworkUpdateConfig()
     if "allow_out" in egress:
