@@ -247,7 +247,7 @@ export interface TemplateFromImage {
 
   /**
    * Start from a Fedora-based Docker image.
-   * @param variant Fedora variant (default: 'latest')
+   * @param variant Fedora variant (default: '42')
    *
    * @example
    * ```ts
@@ -258,7 +258,7 @@ export interface TemplateFromImage {
 
   /**
    * Start from an Alpine-based Docker image.
-   * @param variant Alpine variant (default: 'latest')
+   * @param variant Alpine variant (default: '3.22')
    *
    * @example
    * ```ts
@@ -269,6 +269,9 @@ export interface TemplateFromImage {
 
   /**
    * Start from an Arch Linux-based Docker image.
+   *
+   * Defaults to `latest`: Arch is a rolling release and template provisioning
+   * runs `pacman -Syu`, so pinning a tag would not change the built result.
    * @param variant Arch Linux variant (default: 'latest')
    *
    * @example

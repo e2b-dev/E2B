@@ -846,11 +846,11 @@ class TemplateBase:
         """
         return self.from_image(f"ubuntu:{variant}")
 
-    def from_fedora_image(self, variant: str = "latest") -> TemplateBuilder:
+    def from_fedora_image(self, variant: str = "42") -> TemplateBuilder:
         """
         Start template from a Fedora base image.
 
-        :param variant: Fedora image variant (default: 'latest')
+        :param variant: Fedora image variant (default: '42')
 
         :return: `TemplateBuilder` class
 
@@ -861,11 +861,11 @@ class TemplateBase:
         """
         return self.from_image(f"fedora:{variant}")
 
-    def from_alpine_image(self, variant: str = "latest") -> TemplateBuilder:
+    def from_alpine_image(self, variant: str = "3.22") -> TemplateBuilder:
         """
         Start template from an Alpine base image.
 
-        :param variant: Alpine image variant (default: 'latest')
+        :param variant: Alpine image variant (default: '3.22')
 
         :return: `TemplateBuilder` class
 
@@ -879,6 +879,10 @@ class TemplateBase:
     def from_arch_image(self, variant: str = "latest") -> TemplateBuilder:
         """
         Start template from an Arch Linux base image.
+
+        Defaults to `latest`: Arch is a rolling release and template
+        provisioning runs `pacman -Syu`, so pinning a tag would not change
+        the built result.
 
         :param variant: Arch Linux image variant (default: 'latest')
 

@@ -426,14 +426,16 @@ export class TemplateBase
     return this.fromImage(`ubuntu:${variant}`)
   }
 
-  fromFedoraImage(variant: string = 'latest'): TemplateBuilder {
+  fromFedoraImage(variant: string = '42'): TemplateBuilder {
     return this.fromImage(`fedora:${variant}`)
   }
 
-  fromAlpineImage(variant: string = 'latest'): TemplateBuilder {
+  fromAlpineImage(variant: string = '3.22'): TemplateBuilder {
     return this.fromImage(`alpine:${variant}`)
   }
 
+  // Left on `latest`: Arch is a rolling release and template provisioning runs
+  // `pacman -Syu`, so pinning a tag would not change the built result.
   fromArchImage(variant: string = 'latest'): TemplateBuilder {
     return this.fromImage(`archlinux:${variant}`)
   }
