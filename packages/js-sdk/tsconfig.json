@@ -19,8 +19,7 @@
     "declaration": true,
     // TypeScript 7's native tsc does not auto-include node_modules/@types, so
     // the Node globals the SDK uses (process, Buffer, `node:*` modules) have to
-    // be requested explicitly. They used to leak in through minipass 7.1.2's
-    // `/// <reference types="node" />`, which minipass 7.1.3 dropped.
+    // be requested explicitly.
     "types": [
       "node"
     ],
