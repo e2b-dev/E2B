@@ -138,6 +138,9 @@ def _typo_network(access) -> Any:
         # None would ship the literal header "Bearer None".
         pytest.param(lambda ctx: ctx.iam.tokens["awz"], id="getitem"),
         pytest.param(lambda ctx: ctx.iam.tokens.get("awz"), id="get"),
+        # A name that shadows an object member is not a registered token either;
+        # the JS SDK checks own keys only for the same reason.
+        pytest.param(lambda ctx: ctx.iam.tokens["keys"], id="dunder-lookalike"),
     ],
 )
 def test_transform_callable_rejects_unregistered_iam_token(access):

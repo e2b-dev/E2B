@@ -157,6 +157,34 @@ test('transform callback rejects an unregistered iam token', async () => {
   expect(lastCreateBody).toBeUndefined()
 })
 
+test.for(['constructor', '__proto__', 'hasOwnProperty'])(
+  'transform callback rejects an unregistered iam token named %s',
+  async (name: string) => {
+    // Inherited Object.prototype members are not registered tokens; resolving
+    // them would put a built-in function in the header. Python's mapping treats
+    // them as missing too.
+    await expect(
+      Sandbox.create('base', {
+        apiKey: TEST_API_KEY,
+        iam: { tokens: { aws: awsToken } },
+        network: {
+          rules: {
+            'api.internal.example.com': [
+              {
+                transform: ({ iam }) => ({
+                  headers: { Authorization: `Bearer ${iam.tokens[name]}` },
+                }),
+              },
+            ],
+          },
+        },
+      })
+    ).rejects.toThrowError(`iam token '${name}', which is not registered`)
+
+    expect(lastCreateBody).toBeUndefined()
+  }
+)
+
 test('transform callback rejects an iam token when no iam config is set', async () => {
   await expect(
     Sandbox.create('base', {
@@ -182,6 +210,7 @@ test.for([
   ['undefined', () => undefined],
   ['string', () => 'headers'],
   ['array', () => [{ headers: {} }]],
+  ['Map', () => new Map([['headers', {}]])],
 ])(
   'transform callback returning a %s is rejected',
   async ([, transform]: [string, () => unknown]) => {
@@ -197,7 +226,7 @@ test.for([
         },
       })
     ).rejects.toThrowError(
-      /must return a transform object, got (undefined|string|array)/
+      /must return a transform object, got (undefined|string|array|Map)/
     )
 
     expect(lastCreateBody).toBeUndefined()

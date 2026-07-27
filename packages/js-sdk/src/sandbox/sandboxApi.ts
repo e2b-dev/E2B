@@ -805,6 +805,14 @@ function iamTokenPlaceholder(name: string): string {
 }
 
 /**
+ * Properties the language and the runtime read off any object they serialize,
+ * await, or coerce to a string. A token is never named after them, so they
+ * resolve normally instead of counting as a token reference — otherwise
+ * `JSON.stringify(iam.tokens)` inside a callback would throw.
+ */
+const RUNTIME_PROBED_PROPS = new Set(['toJSON', 'then', 'toString', 'valueOf'])
+
+/**
  * Build the context handed to `transform` callbacks.
  *
  * `tokenNames` are the workload tokens the request registers. Referencing any
@@ -831,12 +839,12 @@ function buildTransformContext(
         get(target, prop, receiver) {
           if (
             typeof prop === 'string' &&
-            !(prop in target) &&
-            // Probed by the runtime on any object it serializes or awaits — a
-            // token is never named after them, and throwing would break
-            // `JSON.stringify(iam.tokens)` in a callback.
-            prop !== 'toJSON' &&
-            prop !== 'then'
+            // Own keys only: a bare `in` also matches inherited
+            // `Object.prototype` members, so an unregistered token named
+            // `constructor` or `__proto__` would resolve to a built-in instead
+            // of being reported. Python's mapping treats them as missing too.
+            !Object.hasOwn(target, prop) &&
+            !RUNTIME_PROBED_PROPS.has(prop)
           ) {
             if (!validate) {
               return iamTokenPlaceholder(prop)
@@ -857,6 +865,28 @@ function buildTransformContext(
       }),
     },
   }
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+
+  const proto = Object.getPrototypeOf(value)
+  return proto === Object.prototype || proto === null
+}
+
+/** Name the shape a `transform` callback returned, for the error message. */
+function describeValue(value: unknown): string {
+  if (value === null) {
+    return 'null'
+  }
+
+  if (typeof value !== 'object') {
+    return typeof value
+  }
+
+  return Array.isArray(value) ? 'array' : (value.constructor?.name ?? 'object')
 }
 
 function resolveRulesForBody(
@@ -889,13 +919,11 @@ function resolveRulesForBody(
         )
       }
 
-      if (
-        typeof transform !== 'object' ||
-        transform === null ||
-        Array.isArray(transform)
-      ) {
+      // Mirrors Python's `isinstance(transform, Mapping)`: an array, `Map`,
+      // `Date` or class instance serializes to something the API cannot read.
+      if (!isPlainObject(transform)) {
         throw new InvalidArgumentError(
-          `Network transform callback for '${host}' must return a transform object, got ${Array.isArray(transform) ? 'array' : typeof transform}.`
+          `Network transform callback for '${host}' must return a transform object, got ${describeValue(transform)}.`
         )
       }
 
