@@ -1,3 +1,4 @@
+import inspect
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import (
@@ -5,6 +6,7 @@ from typing import (
     Callable,
     Dict,
     Iterable,
+    Iterator,
     List,
     Literal,
     Mapping,
@@ -106,10 +108,12 @@ def _iam_token_placeholder(name: str) -> str:
     return f"${{e2b.identity.tokens.{name}}}"
 
 
-class _IamTokenPlaceholders(Dict[str, str]):
+class _IamTokenPlaceholders(Mapping[str, str]):
     """
     Workload token placeholders keyed by token name, as exposed to a
-    ``transform`` callable.
+    ``transform`` callable. Every lookup — ``[name]``, ``get(name)`` — resolves
+    through :meth:`__getitem__`, so an unregistered name cannot slip through as
+    ``None``; iteration and ``in`` see only the registered names.
 
     ``validate=False`` is for the update-network endpoint, whose payload carries
     no ``iam`` config — the sandbox's registered token names are not known
@@ -117,28 +121,40 @@ class _IamTokenPlaceholders(Dict[str, str]):
     """
 
     def __init__(self, names: Iterable[str], *, validate: bool) -> None:
-        super().__init__((name, _iam_token_placeholder(name)) for name in names)
+        # dict.fromkeys keeps registration order while dropping duplicates.
+        self._names = tuple(dict.fromkeys(names))
         self._validate = validate
 
-    def __missing__(self, name: str) -> str:
+    def __getitem__(self, name: str) -> str:
         # The proxy never turns an unregistered name into a token, so a typo
         # would surface as a confusing auth failure at the destination instead
         # of an error here.
-        if not self._validate:
+        if not self._validate or name in self._names:
             return _iam_token_placeholder(name)
 
-        if not self:
-            raise InvalidArgumentException(
-                f"Network transform references iam token {name!r}, which is not "
-                f"registered. Pass it to Sandbox.create as iam={{'tokens': "
+        hint = (
+            f"Registered tokens: {', '.join(repr(known) for known in self._names)}."
+            if self._names
+            else (
+                f"Pass it to Sandbox.create as iam={{'tokens': "
                 f"{{{name!r}: Secret.iam_token(audience=..., token_type=...)}}}}."
             )
-
-        registered = ", ".join(repr(known) for known in self)
+        )
         raise InvalidArgumentException(
             f"Network transform references iam token {name!r}, which is not "
-            f"registered. Registered tokens: {registered}."
+            f"registered. {hint}"
         )
+
+    def __contains__(self, name: object) -> bool:
+        # Membership answers "is this registered?" and never raises, so callables
+        # can branch on it; mirrors `name in iam.tokens` in the JS SDK.
+        return name in self._names
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._names)
+
+    def __len__(self) -> int:
+        return len(self._names)
 
 
 @dataclass(frozen=True)
@@ -336,7 +352,12 @@ class SandboxNetworkUpdate(TypedDict, total=False):
     """See :attr:`SandboxNetworkOpts.deny_out`."""
 
     rules: SandboxNetworkRules
-    """See :attr:`SandboxNetworkOpts.rules`."""
+    """
+    See :attr:`SandboxNetworkOpts.rules`. A ``transform`` callable works here
+    too, but the update payload carries no ``iam`` config, so token names cannot
+    be checked against the sandbox's registered tokens — every name resolves to
+    its placeholder and a typo only surfaces at the destination.
+    """
 
     allow_internet_access: bool
     """
@@ -523,10 +544,20 @@ def _build_client_rules(
 
             if callable(transform):
                 transform = transform(ctx)
-                # A callable that returns nothing resolves to no transform at
-                # all, which would silently create the rule without the headers
-                # it is for.
-                if not isinstance(transform, dict):
+                # A callable that returns something other than a transform
+                # resolves to no headers at all, which would silently create the
+                # rule without the headers it is for.
+                if inspect.isawaitable(transform):
+                    if inspect.iscoroutine(transform):
+                        # Close it so the caller does not also get a
+                        # "coroutine was never awaited" RuntimeWarning.
+                        transform.close()
+                    raise InvalidArgumentException(
+                        f"Network transform callable for {host!r} must be "
+                        "synchronous, it returned an awaitable. Resolve the "
+                        "value before creating the sandbox."
+                    )
+                if not isinstance(transform, Mapping):
                     raise InvalidArgumentException(
                         f"Network transform callable for {host!r} must return a "
                         f"transform dict, got {type(transform).__name__}."

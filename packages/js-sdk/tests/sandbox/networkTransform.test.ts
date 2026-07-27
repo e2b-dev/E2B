@@ -85,7 +85,16 @@ test('transform callback sees every registered iam token', async () => {
         'api.internal.example.com': [
           {
             transform: ({ iam }) => ({
-              headers: { 'X-Tokens': Object.keys(iam.tokens).join(',') },
+              headers: {
+                'X-Tokens': Object.keys(iam.tokens).join(','),
+                // Membership answers "is it registered?" without throwing, so a
+                // callback can branch on it.
+                'X-Has-Aws': String('aws' in iam.tokens),
+                'X-Has-Gh': String('gh' in iam.tokens),
+                // Serializing the context must not trip the unknown-token guard
+                // on the runtime's `toJSON` probe.
+                'X-Json': JSON.stringify(iam.tokens),
+              },
             }),
           },
         ],
@@ -96,7 +105,15 @@ test('transform callback sees every registered iam token', async () => {
   expect(
     lastCreateBody?.network.rules['api.internal.example.com'][0].transform
       .headers
-  ).toEqual({ 'X-Tokens': 'aws,gcp' })
+  ).toEqual({
+    'X-Tokens': 'aws,gcp',
+    'X-Has-Aws': 'true',
+    'X-Has-Gh': 'false',
+    'X-Json': JSON.stringify({
+      aws: '${e2b.identity.tokens.aws}',
+      gcp: '${e2b.identity.tokens.gcp}',
+    }),
+  })
 })
 
 test('a static transform is still sent unchanged', async () => {
@@ -161,23 +178,66 @@ test('transform callback rejects an iam token when no iam config is set', async 
   expect(lastCreateBody).toBeUndefined()
 })
 
-test('transform callback that returns nothing is rejected', async () => {
+test.for([
+  ['undefined', () => undefined],
+  ['string', () => 'headers'],
+  ['array', () => [{ headers: {} }]],
+])(
+  'transform callback returning a %s is rejected',
+  async ([, transform]: [string, () => unknown]) => {
+    // Untyped callers can forget the return value or return the wrong shape; the
+    // rule would otherwise be created without the headers it exists for.
+    await expect(
+      Sandbox.create('base', {
+        apiKey: TEST_API_KEY,
+        network: {
+          rules: {
+            'api.internal.example.com': [{ transform: transform as never }],
+          },
+        },
+      })
+    ).rejects.toThrowError(
+      /must return a transform object, got (undefined|string|array)/
+    )
+
+    expect(lastCreateBody).toBeUndefined()
+  }
+)
+
+test('async transform callback is rejected', async () => {
   await expect(
     Sandbox.create('base', {
       apiKey: TEST_API_KEY,
       network: {
         rules: {
           'api.internal.example.com': [
-            // Untyped callers can forget the return value; the rule would
-            // otherwise be created without the headers it exists for.
-            { transform: (() => undefined) as never },
+            {
+              transform: (async () => ({
+                headers: { Authorization: 'Bearer late' },
+              })) as never,
+            },
           ],
         },
       },
     })
-  ).rejects.toThrowError(InvalidArgumentError)
+  ).rejects.toThrowError(/must be synchronous/)
 
   expect(lastCreateBody).toBeUndefined()
+})
+
+test('an explicit null transform sends an empty rule', async () => {
+  // Rules built from parsed JSON spell "no transform" as null; Python treats it
+  // the same way.
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    network: {
+      rules: { 'api.internal.example.com': [{ transform: null as never }] },
+    },
+  })
+
+  expect(lastCreateBody?.network.rules).toEqual({
+    'api.internal.example.com': [{}],
+  })
 })
 
 test('updateNetwork resolves transform callbacks without an iam config', async () => {

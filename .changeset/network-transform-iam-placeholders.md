@@ -3,7 +3,9 @@
 '@e2b/python-sdk': minor
 ---
 
-Allow a network rule's `transform` to be a callback, so a workload identity token from the `iam` option can be injected into egress requests without the SDK ever seeing its value. The callback receives placeholder strings that the egress proxy resolves per request — `iam.tokens.aws` is `${e2b.identity.tokens.aws}` on the wire — and referencing a token that is not registered in `iam.tokens` fails with `InvalidArgumentError` / `InvalidArgumentException` instead of silently sending a placeholder the proxy would drop.
+Allow a network rule's `transform` to be a callback, so a workload identity token from the `iam` option can be injected into egress requests without the SDK ever seeing its value. The callback receives placeholder strings that the egress proxy resolves per request — `iam.tokens.aws` is `${e2b.identity.tokens.aws}` on the wire — and referencing a token that is not registered in `iam.tokens` fails with `InvalidArgumentError` / `InvalidArgumentException` instead of silently sending a placeholder no token will ever replace.
+
+`updateNetwork` / `update_network` accepts the same callbacks, but its payload carries no `iam` config, so token names cannot be checked there and every name resolves to its placeholder.
 
 ```ts
 import { Sandbox, Secret } from 'e2b'
