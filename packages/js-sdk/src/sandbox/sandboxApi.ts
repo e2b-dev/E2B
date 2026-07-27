@@ -247,7 +247,12 @@ export type SandboxNetworkUpdate = {
   allowOut?: SandboxNetworkSelector
   /** See {@link SandboxNetworkOpts.denyOut}. */
   denyOut?: SandboxNetworkSelector
-  /** See {@link SandboxNetworkOpts.rules}. */
+  /**
+   * See {@link SandboxNetworkOpts.rules}. A `transform` callback works here
+   * too, but the update payload carries no `iam` config, so token names cannot
+   * be checked against the sandbox's registered tokens — every name resolves to
+   * its placeholder and a typo only surfaces at the destination.
+   */
   rules?: SandboxNetworkRules
   /**
    * Allow sandbox to access the internet. When set to `false`, it behaves the
@@ -824,17 +829,26 @@ function buildTransformContext(
     iam: {
       tokens: new Proxy(tokens, {
         get(target, prop, receiver) {
-          if (typeof prop === 'string' && !(prop in target)) {
+          if (
+            typeof prop === 'string' &&
+            !(prop in target) &&
+            // Probed by the runtime on any object it serializes or awaits — a
+            // token is never named after them, and throwing would break
+            // `JSON.stringify(iam.tokens)` in a callback.
+            prop !== 'toJSON' &&
+            prop !== 'then'
+          ) {
             if (!validate) {
               return iamTokenPlaceholder(prop)
             }
 
-            throw new InvalidArgumentError(
+            const hint =
               tokenNames.length === 0
-                ? `Network transform references iam token '${prop}', which is not registered. Pass it to Sandbox.create as iam: { tokens: { '${prop}': Secret.iamToken({ audience, tokenType }) } }.`
-                : `Network transform references iam token '${prop}', which is not registered. Registered tokens: ${tokenNames
-                    .map((name) => `'${name}'`)
-                    .join(', ')}.`
+                ? `Pass it to Sandbox.create as iam: { tokens: { '${prop}': Secret.iamToken({ audience, tokenType }) } }.`
+                : `Registered tokens: ${tokenNames.map((name) => `'${name}'`).join(', ')}.`
+
+            throw new InvalidArgumentError(
+              `Network transform references iam token '${prop}', which is not registered. ${hint}`
             )
           }
 
@@ -852,7 +866,9 @@ function resolveRulesForBody(
   const out: Record<string, { transform?: SandboxNetworkTransform }[]> = {}
   for (const [host, hostRules] of rules) {
     out[host] = hostRules.map((rule) => {
-      if (rule.transform === undefined) {
+      // `== null` also covers an explicit `transform: null`, which Python's
+      // `rule.get('transform') is None` treats as no transform too.
+      if (rule.transform == null) {
         return {}
       }
 
@@ -860,16 +876,30 @@ function resolveRulesForBody(
         return { transform: rule.transform }
       }
 
-      const transform = rule.transform(ctx)
-      // A callback that falls off the end resolves to no transform at all,
-      // which would silently create the rule without the headers it is for.
-      if (typeof transform !== 'object' || transform === null) {
+      const transform: unknown = rule.transform(ctx)
+      // A callback that returns something other than a transform resolves to no
+      // headers at all, which would silently create the rule without the headers
+      // it is for.
+      if (typeof (transform as PromiseLike<unknown>)?.then === 'function') {
+        // Swallow a later rejection so the caller gets this error instead of an
+        // unhandled rejection.
+        void Promise.resolve(transform).catch(() => {})
         throw new InvalidArgumentError(
-          `Network transform callback for '${host}' must return a transform object, got ${typeof transform}.`
+          `Network transform callback for '${host}' must be synchronous, it returned a promise. Resolve the value before creating the sandbox.`
         )
       }
 
-      return { transform }
+      if (
+        typeof transform !== 'object' ||
+        transform === null ||
+        Array.isArray(transform)
+      ) {
+        throw new InvalidArgumentError(
+          `Network transform callback for '${host}' must return a transform object, got ${Array.isArray(transform) ? 'array' : typeof transform}.`
+        )
+      }
+
+      return { transform: transform as SandboxNetworkTransform }
     })
   }
   return out
