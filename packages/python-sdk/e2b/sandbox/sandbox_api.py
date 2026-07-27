@@ -121,8 +121,9 @@ class _IamTokenPlaceholders(Dict[str, str]):
         self._validate = validate
 
     def __missing__(self, name: str) -> str:
-        # The egress proxy drops placeholders it cannot resolve, so a typo would
-        # silently strip the header instead of failing the request.
+        # The proxy never turns an unregistered name into a token, so a typo
+        # would surface as a confusing auth failure at the destination instead
+        # of an error here.
         if not self._validate:
             return _iam_token_placeholder(name)
 
@@ -152,8 +153,9 @@ class _SandboxNetworkTransformIam:
     with a freshly minted token when it forwards the request.
 
     Reading a name that is not registered raises
-    :class:`InvalidArgumentException` — an unresolvable placeholder is dropped
-    by the proxy, which would look like a missing header at the destination.
+    :class:`InvalidArgumentException` — the proxy never turns an unregistered
+    name into a token, so a typo would surface as a confusing auth failure at
+    the destination.
     """
 
 

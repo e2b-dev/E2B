@@ -325,8 +325,8 @@ def test_transform_callable_rejects_unregistered_iam_token():
         },
     }
 
-    # An unresolvable placeholder is dropped by the egress proxy, so a typo
-    # would silently strip the header instead of failing the request.
+    # The proxy never turns an unregistered name into a token, so a typo would
+    # surface as a confusing auth failure at the destination.
     with pytest.raises(InvalidArgumentException, match="Registered tokens: 'aws'"):
         build_network_config(network, iam)
 
