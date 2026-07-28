@@ -52,6 +52,15 @@ jobs:
         working-directory: packages/js-sdk
         run: pnpm run build
 
+      # The CLI declares `e2b` as `workspace:^`, which only `pnpm publish` knows how
+      # to rewrite — `npm pack` would put the protocol in the tarball and
+      # `npm install ./e2b-cli-*.tgz` would refuse it. The SDK is bundled into the
+      # CLI either way, so this range only has to resolve. Pin it before the step
+      # below renames the SDK to a prerelease that was never published.
+      - name: Pin the CLI's SDK dependency
+        working-directory: packages/cli
+        run: npm pkg set "dependencies.e2b=^$(node -p "require('../js-sdk/package.json').version")"
+
       - name: Pack JS SDK
         working-directory: packages/js-sdk
         run: |

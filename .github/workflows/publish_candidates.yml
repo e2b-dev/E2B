@@ -111,4 +111,10 @@ jobs:
           RC_TAG: ${{ inputs.tag }}
         run: |
           npm version prerelease --preid="${RC_PREID}.${{ github.run_id }}" --no-git-tag-version
+          # The CLI declares `e2b` as `workspace:^`, which only `pnpm publish` knows
+          # how to rewrite — npm would ship the protocol verbatim. The SDK is bundled
+          # into the CLI either way, so this range only has to resolve: point it at
+          # the workspace SDK's version, which is either the last release or the RC
+          # the step above just published.
+          npm pkg set "dependencies.e2b=^$(node -p "require('../js-sdk/package.json').version")"
           npm publish --tag "$RC_TAG" --provenance
