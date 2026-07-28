@@ -79,6 +79,20 @@ test('toUploadBody streams a stream from another stream implementation', async (
   expect(await readBody(body)).toBe('hello')
 })
 
+test.skipIf(!streams)(
+  'an adopted foreign stream forwards cancellation to its source',
+  async () => {
+    const stream = foreignReadableStream([encode('hello')])
+    const { body } = await toUploadBody(stream)
+
+    await (body as ReadableStream).cancel('aborted upload')
+
+    expect(
+      (stream as unknown as { cancelledWith: unknown }).cancelledWith
+    ).toBe('aborted upload')
+  }
+)
+
 test('toUploadBody leaves an async-iterable foreign stream alone', async () => {
   // The platform accepts any async iterable as a body, so adopting one would
   // only add a layer.
