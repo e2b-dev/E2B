@@ -223,12 +223,12 @@ export async function toUploadBody(
 ): Promise<UploadBody> {
   if (gzip) {
     // `toNativeStream`, not `toDispatchableStream`: `pipeThrough` below is the
-    // stricter consumer — it only accepts a stream of its own class.
+    // stricter consumer — it only accepts a stream of its own class. Everything
+    // that isn't already a stream goes through `toBlob`, whose result is always
+    // a native Blob and so always streams natively.
     const stream = isReadableStreamLike(data)
       ? toNativeStream(data)
-      : isBlobLike(data)
-        ? toNativeStream(data.stream())
-        : (await toBlob(data)).stream()
+      : (await toBlob(data)).stream()
     const compressed = stream.pipeThrough(new CompressionStream('gzip'))
     return runtime === 'browser'
       ? { body: await new Response(compressed).blob(), streamed: false }

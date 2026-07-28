@@ -61,14 +61,24 @@ export function isRequestLike(value: unknown): value is Request {
 /**
  * Whether `value` should be treated as a `Blob` (or a `File`, which is a
  * `Blob`).
+ *
+ * `arrayBuffer` is the only member required beyond the tag, because reading the
+ * bytes is all the SDK ever does with a Blob it didn't make — asking for
+ * `stream` too would turn implementations that lack it into corrupted uploads
+ * for no gain.
  */
 export function isBlobLike(value: unknown): value is Blob {
+  if (value instanceof Blob) {
+    return true
+  }
+  if (!isObject(value)) {
+    return false
+  }
+
+  const tag = platformTag(value)
   return (
-    value instanceof Blob ||
-    (isObject(value) &&
-      (platformTag(value) === 'Blob' || platformTag(value) === 'File') &&
-      typeof value.arrayBuffer === 'function' &&
-      typeof value.stream === 'function')
+    (tag === 'Blob' || tag === 'File') &&
+    typeof value.arrayBuffer === 'function'
   )
 }
 
