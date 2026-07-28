@@ -72,6 +72,9 @@ def test_transform_callable_sees_every_registered_iam_token():
                             # raising, so a callable can branch on it.
                             "X-Has-Aws": str("aws" in ctx.iam.tokens),
                             "X-Has-Gh": str("gh" in ctx.iam.tokens),
+                            # Membership must agree with a lookup: a name that
+                            # shadows a mapping member is not a token either.
+                            "X-Has-Keys": str("keys" in ctx.iam.tokens),
                         },
                     },
                 },
@@ -89,6 +92,7 @@ def test_transform_callable_sees_every_registered_iam_token():
                         "X-Tokens": "aws,gcp",
                         "X-Has-Aws": "True",
                         "X-Has-Gh": "False",
+                        "X-Has-Keys": "False",
                     },
                 },
             },
