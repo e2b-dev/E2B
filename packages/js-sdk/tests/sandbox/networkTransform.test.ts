@@ -91,6 +91,9 @@ test('transform callback sees every registered iam token', async () => {
                 // callback can branch on it.
                 'X-Has-Aws': String('aws' in iam.tokens),
                 'X-Has-Gh': String('gh' in iam.tokens),
+                // Membership must agree with a lookup: an inherited object
+                // member is not a registered token either.
+                'X-Has-Ctor': String('constructor' in iam.tokens),
                 // Serializing the context must not trip the unknown-token guard
                 // on the runtime's `toJSON` probe.
                 'X-Json': JSON.stringify(iam.tokens),
@@ -109,6 +112,7 @@ test('transform callback sees every registered iam token', async () => {
     'X-Tokens': 'aws,gcp',
     'X-Has-Aws': 'true',
     'X-Has-Gh': 'false',
+    'X-Has-Ctor': 'false',
     'X-Json': JSON.stringify({
       aws: '${e2b.identity.tokens.aws}',
       gcp: '${e2b.identity.tokens.gcp}',

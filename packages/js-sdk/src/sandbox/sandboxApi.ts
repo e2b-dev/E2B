@@ -862,6 +862,14 @@ function buildTransformContext(
 
           return Reflect.get(target, prop, receiver)
         },
+
+        // `name in iam.tokens` answers "is this token registered?", so it must
+        // agree with the `get` trap above and not report inherited
+        // `Object.prototype` members as tokens. Mirrors Python's
+        // `_IamTokenPlaceholders.__contains__`.
+        has(target, prop) {
+          return Object.hasOwn(target, prop)
+        },
       }),
     },
   }
