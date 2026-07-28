@@ -47,11 +47,17 @@ export class ForeignBlob {
 
 /**
  * A `ReadableStream` from a different stream implementation: readable through
- * the standard reader interface, but not a native stream, and — like the
- * implementations that predate async iteration — not async-iterable, which is
- * the case platform APIs silently stringify to `"[object ReadableStream]"`.
+ * the standard reader interface, but not a native stream.
+ *
+ * By default it is not async-iterable either, like the implementations that
+ * predate async iteration — that is the case platform APIs silently stringify
+ * to `"[object ReadableStream]"`. Pass `asyncIterable` for the other kind: the
+ * platform accepts those as a body, but `pipeThrough` still rejects them.
  */
-export function foreignReadableStream(chunks: Uint8Array[]): ReadableStream {
+export function foreignReadableStream(
+  chunks: Uint8Array[],
+  { asyncIterable = false }: { asyncIterable?: boolean } = {}
+): ReadableStream {
   let index = 0
   let cancelled: unknown
 
@@ -81,6 +87,13 @@ export function foreignReadableStream(chunks: Uint8Array[]): ReadableStream {
     async cancel(reason?: unknown) {
       cancelled = reason
     },
+    ...(asyncIterable && {
+      async *[Symbol.asyncIterator]() {
+        for (const chunk of chunks) {
+          yield chunk
+        }
+      },
+    }),
   }
 
   return stream as unknown as ReadableStream

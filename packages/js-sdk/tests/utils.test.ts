@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 
 import { runtime, sha256, toBlob, toUploadBody } from '../src/utils'
 import { ForeignBlob, foreignReadableStream } from './foreignPlatformObjects'
@@ -79,6 +79,49 @@ test('toUploadBody streams a stream from another stream implementation', async (
   expect(await readBody(body)).toBe('hello')
 })
 
+test('toUploadBody leaves an async-iterable foreign stream alone', async () => {
+  // The platform accepts any async iterable as a body, so adopting one would
+  // only add a layer.
+  const stream = foreignReadableStream([encode('hel'), encode('lo')], {
+    asyncIterable: true,
+  })
+  const { body, streamed } = await toUploadBody(stream)
+
+  expect(streamed).toBe(streams)
+  if (streamed) {
+    expect(body).toBe(stream)
+  }
+  expect(await readBody(body)).toBe('hello')
+})
+
+test('toUploadBody does not re-wrap a native stream when the global class was replaced', async () => {
+  // A polyfilled `globalThis.ReadableStream` used to make the adoption step
+  // wrap a perfectly good native stream into a polyfill instance the platform
+  // then stringifies — worse than doing nothing.
+  const nativeStream = new Blob(['hello']).stream()
+  class PolyfillStream {
+    getReader() {}
+    tee() {}
+    cancel() {}
+  }
+
+  vi.stubGlobal('ReadableStream', PolyfillStream)
+  let body: BodyInit
+  let streamed: boolean
+  try {
+    expect(nativeStream instanceof globalThis.ReadableStream).toBe(false)
+    ;({ body, streamed } = await toUploadBody(nativeStream))
+  } finally {
+    vi.unstubAllGlobals()
+  }
+
+  expect(streamed).toBe(streams)
+  if (streamed) {
+    expect(body).toBe(nativeStream)
+  }
+  expect(await readBody(body)).toBe('hello')
+})
+
 test('toUploadBody copies the bytes of a Blob from another Blob class', async () => {
   const { body, streamed } = await toUploadBody(new ForeignBlob(['hello']))
 
@@ -93,11 +136,20 @@ test.each([
     'foreign stream',
     () => foreignReadableStream([encode('hel'), encode('lo')]),
   ],
+  [
+    'async-iterable foreign stream',
+    () =>
+      foreignReadableStream([encode('hel'), encode('lo')], {
+        asyncIterable: true,
+      }),
+  ],
   ['foreign Blob', () => new ForeignBlob(['hello'])],
   ['string', () => 'hello'],
 ])('toUploadBody gzips a %s', async (_name, makeData) => {
   // Regression: piping a foreign stream through a native CompressionStream
   // never settles, so gzip uploads hung for anything but a native stream.
+  // Unlike a body, `pipeThrough` is not satisfied by async iterability, so
+  // every foreign stream has to be adopted here.
   const { body, streamed } = await toUploadBody(makeData(), true)
 
   expect(streamed).toBe(streams)

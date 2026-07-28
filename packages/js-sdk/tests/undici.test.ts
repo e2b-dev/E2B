@@ -8,7 +8,10 @@ import {
   type UndiciModule,
 } from '../src/undici'
 import { runtime } from '../src/utils'
-import { foreignRequestClasses } from './foreignPlatformObjects'
+import {
+  foreignReadableStream,
+  foreignRequestClasses,
+} from './foreignPlatformObjects'
 
 test.each([
   ['20.20.2', ['undici']],
@@ -94,6 +97,47 @@ test('takes apart a Request the current global Request class disowns', async () 
   expect(seen[0].input).toBe('https://api.example.test/sandboxes')
   expect(seen[0].init?.method).toBe('POST')
   expect(new Headers(seen[0].init?.headers).get('x-api-key')).toBe('secret')
+})
+
+test('adopts the body of a Request from another fetch implementation', async () => {
+  // A Request minted elsewhere exposes that implementation's stream as its
+  // body (node-fetch hands you a Node stream, a polyfill its own class), and
+  // undici stringifies those exactly like it stringifies the Request itself.
+  const seen: Array<{ input: unknown; init?: RequestInit }> = []
+  const fakeUndici = {
+    Agent: class {},
+    ProxyAgent: class {},
+    fetch: async (input: unknown, init?: RequestInit) => {
+      seen.push({ input, init })
+      return new Response('ok')
+    },
+  } as unknown as UndiciModule
+
+  const foreignRequest = {
+    url: 'https://api.example.test/files',
+    method: 'POST',
+    headers: new Headers({ 'content-type': 'application/octet-stream' }),
+    body: foreignReadableStream([
+      new TextEncoder().encode('hel'),
+      new TextEncoder().encode('lo'),
+    ]),
+    clone() {
+      return this
+    },
+  }
+
+  const fetcher = await buildDispatchedFetch({
+    connections: 1,
+    inflightLimit: 0,
+    loadUndici: async () => fakeUndici,
+  })
+  await fetcher(foreignRequest as unknown as Request)
+
+  expect(seen).toHaveLength(1)
+  expect(seen[0].input).toBe('https://api.example.test/files')
+  // Whatever arrives has to be something the platform can read; verbatim, it
+  // would have been sent as the text "[object ReadableStream]".
+  expect(await new Response(seen[0].init?.body).text()).toBe('hello')
 })
 
 // loadUndici is only reached in production when the runtime is Node; other

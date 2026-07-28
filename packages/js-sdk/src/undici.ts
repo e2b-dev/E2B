@@ -1,8 +1,8 @@
 import { compareVersions } from 'compare-versions'
 
 import { limitConcurrency } from './api/inflight'
-import { isRequestLike } from './brand'
-import { dynamicImport } from './utils'
+import { isReadableStreamLike, isRequestLike } from './brand'
+import { dynamicImport, toDispatchableStream } from './utils'
 
 type UndiciRequestInit = RequestInit & {
   dispatcher?: unknown
@@ -146,7 +146,12 @@ function toUndiciRequestInput(
   }
 
   const requestInit: RequestInit & { duplex?: 'half' } = {
-    body: input.body,
+    // A Request from another implementation exposes that implementation's
+    // stream as its body, which undici would stringify just like the Request
+    // itself. Native bodies pass through untouched.
+    body: isReadableStreamLike(input.body)
+      ? toDispatchableStream(input.body)
+      : input.body,
     cache: input.cache,
     credentials: input.credentials,
     headers: input.headers,

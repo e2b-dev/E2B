@@ -102,18 +102,18 @@ export function stripAnsi(text: string): string {
 }
 
 /**
- * Adopt a stream that isn't a native `ReadableStream` — one from a polyfill, a
- * replaced global, or another realm — by pumping it through a native one.
+ * Adopt a stream from a polyfill, a replaced global, or another realm into the
+ * current `ReadableStream` class by pumping it through a new one. Reading
+ * through the public reader is the portable part of a stream.
  *
- * Platform APIs brand-check stream bodies: handed a foreign stream directly,
- * `fetch`/`Response` stringify it to `"[object ReadableStream]"` and
- * `pipeThrough` rejects a native `CompressionStream`. Reading through its
- * public reader is the one part of a stream that is portable.
+ * Needed wherever the stream is handed to another platform primitive that
+ * brand-checks it — `pipeThrough(new CompressionStream(…))` on a foreign stream
+ * never settles.
  */
 function toNativeStream(stream: ReadableStream): ReadableStream {
-  // Kept out of the `if` condition on purpose: as a type guard it would narrow
-  // the rest of the function to `never`, and a stream whose class disagrees
-  // with the type is the whole reason this function exists.
+  // The `instanceof` is kept out of the `if` condition on purpose: as a type
+  // guard it would narrow the rest of the function to `never`, and a stream
+  // whose class disagrees with the type is the whole reason this exists.
   const isNative: boolean = stream instanceof ReadableStream
   if (isNative) {
     return stream
@@ -136,6 +136,24 @@ function toNativeStream(stream: ReadableStream): ReadableStream {
 }
 
 /**
+ * Adopt a stream only if the platform would not accept it as a request body —
+ * handed one it doesn't accept, it stringifies it to
+ * `"[object ReadableStream]"`.
+ *
+ * Two kinds are accepted: the platform's own stream class, and any async
+ * iterable. Async iterability is the half that survives a replaced global — a
+ * native stream stays async-iterable even when `globalThis.ReadableStream` is a
+ * polyfill — so re-wrapping one of those would only trade a stream the platform
+ * accepts for one it may not.
+ */
+export function toDispatchableStream(stream: ReadableStream): ReadableStream {
+  const isDispatchable: boolean =
+    stream instanceof ReadableStream || Symbol.asyncIterator in stream
+
+  return isDispatchable ? stream : toNativeStream(stream)
+}
+
+/**
  * Convert data to a Blob, avoiding unnecessary conversions when possible.
  */
 export async function toBlob(
@@ -152,7 +170,7 @@ export async function toBlob(
   }
   // ReadableStream - must consume to get Blob
   if (isReadableStreamLike(data)) {
-    return new Response(toNativeStream(data)).blob()
+    return new Response(toDispatchableStream(data)).blob()
   }
   // String or ArrayBuffer - create Blob. A cross-realm ArrayBuffer needs no
   // special handling: buffer sources are recognized by V8, not by brand.
@@ -204,6 +222,8 @@ export async function toUploadBody(
   gzip?: boolean
 ): Promise<UploadBody> {
   if (gzip) {
+    // `toNativeStream`, not `toDispatchableStream`: `pipeThrough` below is the
+    // stricter consumer — it only accepts a stream of its own class.
     const stream = isReadableStreamLike(data)
       ? toNativeStream(data)
       : isBlobLike(data)
@@ -216,7 +236,7 @@ export async function toUploadBody(
   }
 
   if (isReadableStreamLike(data) && runtime !== 'browser') {
-    return { body: toNativeStream(data), streamed: true }
+    return { body: toDispatchableStream(data), streamed: true }
   }
 
   return { body: await toBlob(data), streamed: false }
