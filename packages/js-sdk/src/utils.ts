@@ -1,5 +1,7 @@
 import platform from 'platform'
 
+import { isBlobLike, isReadableStreamLike } from './brand'
+
 declare let window: any
 
 type Runtime =
@@ -100,21 +102,61 @@ export function stripAnsi(text: string): string {
 }
 
 /**
+ * Adopt a stream that isn't a native `ReadableStream` — one from a polyfill, a
+ * replaced global, or another realm — by pumping it through a native one.
+ *
+ * Platform APIs brand-check stream bodies: handed a foreign stream directly,
+ * `fetch`/`Response` stringify it to `"[object ReadableStream]"` and
+ * `pipeThrough` rejects a native `CompressionStream`. Reading through its
+ * public reader is the one part of a stream that is portable.
+ */
+function toNativeStream(stream: ReadableStream): ReadableStream {
+  // Kept out of the `if` condition on purpose: as a type guard it would narrow
+  // the rest of the function to `never`, and a stream whose class disagrees
+  // with the type is the whole reason this function exists.
+  const isNative: boolean = stream instanceof ReadableStream
+  if (isNative) {
+    return stream
+  }
+
+  const reader = stream.getReader()
+  return new ReadableStream({
+    async pull(controller) {
+      const { done, value } = await reader.read()
+      if (done) {
+        controller.close()
+        return
+      }
+      controller.enqueue(value)
+    },
+    cancel(reason) {
+      return reader.cancel(reason)
+    },
+  })
+}
+
+/**
  * Convert data to a Blob, avoiding unnecessary conversions when possible.
  */
-export function toBlob(
+export async function toBlob(
   data: string | ArrayBuffer | Blob | ReadableStream
-): Blob | Promise<Blob> {
-  // Already a Blob - use directly
+): Promise<Blob> {
+  // Already a native Blob - use directly
   if (data instanceof Blob) {
     return data
   }
-  // String or ArrayBuffer - create Blob
-  if (typeof data === 'string' || data instanceof ArrayBuffer) {
-    return new Blob([data])
+  // A Blob from another Blob class must be copied: the platform brand-checks
+  // blob bodies and would stringify this one to "[object Blob]".
+  if (isBlobLike(data)) {
+    return new Blob([await data.arrayBuffer()], { type: data.type })
   }
   // ReadableStream - must consume to get Blob
-  return new Response(data).blob()
+  if (isReadableStreamLike(data)) {
+    return new Response(toNativeStream(data)).blob()
+  }
+  // String or ArrayBuffer - create Blob. A cross-realm ArrayBuffer needs no
+  // special handling: buffer sources are recognized by V8, not by brand.
+  return new Blob([data])
 }
 
 // Characters that are safe to leave unquoted in a POSIX shell, matching the
@@ -140,31 +182,42 @@ export function shellQuote(s: string): string {
 }
 
 /**
- * Prepare data for upload as a BodyInit, optionally gzip-compressed.
+ * The body to upload, plus whether it is streamed to the API instead of being
+ * buffered in memory. Callers need `streamed` to set half-duplex mode and to
+ * skip the client-side request timeout, so it is reported here rather than
+ * re-derived from the body — only this function knows the decision it made.
+ */
+export type UploadBody = {
+  body: BodyInit
+  streamed: boolean
+}
+
+/**
+ * Prepare data for upload, optionally gzip-compressed.
  *
- * Outside the browser, streams (and gzip-compressed data) are returned as
- * `ReadableStream` so they can be uploaded without buffering in memory.
- * Browsers don't support streaming request bodies, so data is buffered into
- * a Blob there.
+ * Outside the browser, streams (and gzip-compressed data) are uploaded as a
+ * `ReadableStream` so they don't have to be buffered in memory. Browsers don't
+ * support streaming request bodies, so data is buffered into a Blob there.
  */
 export async function toUploadBody(
   data: string | ArrayBuffer | Blob | ReadableStream,
   gzip?: boolean
-): Promise<BodyInit> {
+): Promise<UploadBody> {
   if (gzip) {
-    const stream =
-      data instanceof ReadableStream
-        ? data
-        : data instanceof Blob
-          ? data.stream()
-          : new Blob([data]).stream()
+    const stream = isReadableStreamLike(data)
+      ? toNativeStream(data)
+      : isBlobLike(data)
+        ? toNativeStream(data.stream())
+        : (await toBlob(data)).stream()
     const compressed = stream.pipeThrough(new CompressionStream('gzip'))
-    return runtime === 'browser' ? new Response(compressed).blob() : compressed
+    return runtime === 'browser'
+      ? { body: await new Response(compressed).blob(), streamed: false }
+      : { body: compressed, streamed: true }
   }
 
-  if (data instanceof ReadableStream && runtime !== 'browser') {
-    return data
+  if (isReadableStreamLike(data) && runtime !== 'browser') {
+    return { body: toNativeStream(data), streamed: true }
   }
 
-  return toBlob(data)
+  return { body: await toBlob(data), streamed: false }
 }

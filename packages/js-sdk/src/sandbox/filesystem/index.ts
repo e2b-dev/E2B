@@ -52,6 +52,7 @@ import {
   InvalidArgumentError,
   TemplateError,
 } from '../../errors'
+import { isReadableStreamLike } from '../../brand'
 import { runtime, toBlob, toUploadBody } from '../../utils'
 
 const FILESYSTEM_HTTP_ERROR_MAP: Record<number, (message: string) => Error> = {
@@ -656,7 +657,7 @@ export class Filesystem {
     // applies to the whole request body). An explicit `useOctetStream` wins.
     const hasStreamableData =
       runtime !== 'browser' &&
-      writeFiles.some((file) => file.data instanceof ReadableStream)
+      writeFiles.some((file) => isReadableStreamLike(file.data))
     const useOctetStream =
       ((writeOpts?.useOctetStream ?? hasStreamableData) || useGzip) &&
       supportsOctetStream
@@ -688,14 +689,13 @@ export class Filesystem {
       const uploadResults = await Promise.all(
         writeFiles.map(async (file) => {
           const filePath = path ?? (file as WriteEntry).path
-          const body = await toUploadBody(file.data, useGzip)
-          const isStream = body instanceof ReadableStream
+          const { body, streamed } = await toUploadBody(file.data, useGzip)
           // A streamed upload carries no client-side timeout: the socket-write
           // "wire" isn't observable through fetch, and a stalled producer is
           // the caller's own code, so a stuck streamed upload is bounded
           // server-side (or via `writeOpts.signal`). Buffered uploads keep the
           // normal request timeout.
-          const signal = isStream
+          const signal = streamed
             ? writeOpts?.signal
             : this.connectionConfig.getSignal(
                 writeOpts?.requestTimeoutMs,
@@ -715,7 +715,7 @@ export class Filesystem {
               signal,
               body: {},
               // Streaming request bodies require half-duplex mode.
-              ...(isStream && {
+              ...(streamed && {
                 duplex: 'half' as const,
               }),
             })

@@ -1,6 +1,7 @@
 import { compareVersions } from 'compare-versions'
 
 import { limitConcurrency } from './api/inflight'
+import { isRequestLike } from './brand'
 import { dynamicImport } from './utils'
 
 type UndiciRequestInit = RequestInit & {
@@ -136,7 +137,11 @@ function toUndiciRequestInput(
   input: RequestInfo | URL,
   init?: RequestInit
 ): { input: RequestInfo | URL; init?: RequestInit & { duplex?: 'half' } } {
-  if (!(input instanceof Request)) {
+  // Every Request has to be taken apart here, including one the current global
+  // class disowns: undici brand-checks against its own `Request`, so anything
+  // it didn't mint itself — even a native one — is coerced to a URL string and
+  // fails with `Failed to parse URL from [object Request]`.
+  if (!isRequestLike(input)) {
     return { input, init }
   }
 

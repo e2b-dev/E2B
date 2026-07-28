@@ -1,6 +1,7 @@
 import { expect, test, vi } from 'vitest'
 
 import { limitConcurrency } from '../../src/api/inflight'
+import { foreignRequestClasses } from '../foreignPlatformObjects'
 
 function deferred<T>() {
   let resolve!: (value: T) => void
@@ -72,4 +73,29 @@ test('limitConcurrency aborts queued requests when their signal fires', async ()
   gate.resolve(new Response('done'))
   const resp = await first
   expect(await resp.text()).toBe('done')
+})
+
+test('limitConcurrency honors the signal of a Request the global class disowns', async () => {
+  const { MintingRequest, GlobalShimRequest } = foreignRequestClasses()
+
+  const inner = vi.fn(async () => new Response('ok')) as unknown as typeof fetch
+  const limited = limitConcurrency(inner, 1)
+
+  const controller = new AbortController()
+  controller.abort()
+  const request = new MintingRequest('https://example.com/aborted', {
+    signal: controller.signal,
+  })
+
+  vi.stubGlobal('Request', GlobalShimRequest)
+  try {
+    expect(request instanceof globalThis.Request).toBe(false)
+    await expect(limited(request)).rejects.toMatchObject({
+      name: 'AbortError',
+    })
+  } finally {
+    vi.unstubAllGlobals()
+  }
+
+  expect(inner).not.toHaveBeenCalled()
 })
