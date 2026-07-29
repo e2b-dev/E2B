@@ -17,8 +17,9 @@ in this order:
    changeset files.
 2. Commits that as `[skip ci] Release new versions`, without pushing it.
 3. `pnpm run publish`, via `changesets/action` — uploads to npm (using OIDC
-   trusted publishing) and PyPI, tags the release commit, and cuts a GitHub
-   release per package with its changelog entry as the body.
+   trusted publishing) and PyPI, tags the release commit **and pushes those
+   tags**, and cuts a GitHub release per package with its changelog entry as the
+   body.
 4. Pushes the branch.
 
 The commit has to come before the publish, because `changeset publish` creates
@@ -26,9 +27,15 @@ the release tags from whatever commit it publishes from. Tagging afterwards is
 what left every tag pointing at the commit _before_ its own version bump, so that
 building from a tag gave you the previous release ([SDK-298]).
 
-Keeping the commit local until the publish succeeds is also deliberate: if the
-upload fails, the branch is untouched and the changesets are still there, so
-re-dispatching the workflow retries the whole release cleanly.
+Keeping the commit local until then is also deliberate: if the publish fails
+before it uploads anything, the branch is untouched and the changesets are still
+there, so re-dispatching the workflow retries the whole release cleanly.
+
+Once a package _has_ been uploaded, though, its tag is already on origin — so
+step 4 runs even if step 3 then failed, and it merges over anything that landed
+on the branch meanwhile. Both matter: a skipped or rebased push would leave those
+tags on a commit that is on no branch, and a re-dispatch would publish nothing
+(the versions are already on the registry), tag nothing, and still report success.
 
 Tags from `e2b@2.36.1`, `@e2b/cli@2.16.0` and `@e2b/python-sdk@2.35.0` and
 earlier are still off by one and are not going to be retagged, because moving
@@ -52,19 +59,39 @@ This also means `e2b` resolves to the workspace SDK everywhere — `tsconfig.jso
 and the tsdown bundle already did, and `vitest.config.ts` now has a matching
 alias so tests do too, rather than running against the previously released SDK.
 
+### Always pack and publish the CLI with pnpm
+
+Only pnpm resolves the protocol. Bare `npm pack` / `npm publish` / `npm install -g`
+put `workspace:^` straight into the manifest, and installing that fails with
+`EUNSUPPORTEDPROTOCOL`. So every flow that packs, publishes or globally installs
+the CLI uses pnpm — `pnpm pack` in `pkg_artifacts.yml`, `pnpm publish` in
+`publish_candidates.yml`, `pnpm link --global` in the `build-cli` action. Reach for
+the npm equivalent in a new flow and it will ship an uninstallable CLI.
+
+The production release goes through `pnpm publish` too, but only indirectly:
+`changeset publish` picks its publish tool by detecting the package manager. Rather
+than trust that, the CLI has a `prepack` guard
+(`packages/cli/scripts/assert-pnpm-packer.mjs`) that reads
+`npm_config_user_agent` and refuses to build a tarball for anyone but pnpm while a
+`workspace:` range is present. It runs on every path that produces one, so a
+detection regression fails the release instead of publishing something
+uninstallable.
+
 ### It has to stay a real `dependency`
 
 The CLI bundles the SDK, so it is tempting to demote `e2b` to a devDependency.
-Don't — it is load-bearing twice over:
+Don't: users only get a working CLI if `e2b` is genuinely installed alongside it.
+The SDK reaches `undici`, `glob` and `tar` through `dynamicImport`, which is
+deliberately opaque to bundlers, so they are resolved from `node_modules` at
+runtime rather than inlined. The CLI does not declare them; they arrive through
+`e2b`. Without it `e2b template build` loses `glob`/`tar`, and `loadUndici()`
+quietly returns `undefined` so every request falls back to the global `fetch`,
+giving up H2 and proxy support with no error.
 
-- `tsdown.config.ts` derives `alwaysBundle` from `dependencies`. Drop `e2b` from
-  there and it becomes external instead, so the CLI ships a bare `require("e2b")`
-  and dies on startup.
-- The SDK reaches `undici`, `glob` and `tar` through `dynamicImport`, which is
-  deliberately opaque to bundlers, so they are resolved from `node_modules` at
-  runtime rather than inlined. The CLI does not declare them; they arrive through
-  `e2b`. Without it `e2b template build` loses `glob`/`tar`, and `loadUndici()`
-  quietly returns `undefined` so every request falls back to the global `fetch`,
-  giving up H2 and proxy support with no error.
+The bundle itself does _not_ depend on this, and it is easy to get backwards:
+tsdown externalizes exactly the production dependencies, so listing `e2b` under
+`dependencies` is what would make it external — `alwaysBundle` in
+`tsdown.config.ts` is there to cancel that and inline it again. A devDependency
+would be inlined too. What breaks is only the runtime `node_modules` lookup above.
 
 [SDK-298]: https://linear.app/e2b/issue/SDK-298

@@ -52,42 +52,36 @@ jobs:
         working-directory: packages/js-sdk
         run: pnpm run build
 
-      # The CLI declares `e2b` as `workspace:^`, which only `pnpm publish` knows how
-      # to rewrite — `npm pack` would put the protocol in the tarball and
-      # `npm install ./e2b-cli-*.tgz` would refuse it. The SDK is bundled into the
-      # CLI either way, so this range only has to resolve. Pin it before the step
-      # below renames the SDK to a prerelease that was never published.
-      - name: Pin the CLI's SDK dependency
-        working-directory: packages/cli
-        run: npm pkg set "dependencies.e2b=^$(node -p "require('../js-sdk/package.json').version")"
-
-      - name: Pack JS SDK
-        working-directory: packages/js-sdk
-        run: |
-          npm version prerelease --preid=${{ env.BRANCH_ID }} --no-git-tag-version
-          npm pack
-
-      - name: Upload JS SDK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2b-js-sdk
-          path: packages/js-sdk/*.tgz
-
       - name: Build CLI
         working-directory: packages/cli
         run: pnpm run build
 
+      # Before the SDK is renamed below: `pnpm pack` resolves the CLI's `workspace:^`
+      # range to whatever version the workspace SDK has now, and a prerelease that
+      # was never published would leave `e2b` unresolvable.
       - name: Pack CLI
         working-directory: packages/cli
         run: |
-          npm version prerelease --preid=${{ env.BRANCH_ID }} --no-git-tag-version
-          npm pack
+          pnpm version prerelease --preid=${{ env.BRANCH_ID }} --no-git-tag-version
+          pnpm pack
 
       - name: Upload CLI artifact
         uses: actions/upload-artifact@v4
         with:
           name: e2b-cli
           path: packages/cli/*.tgz
+
+      - name: Pack JS SDK
+        working-directory: packages/js-sdk
+        run: |
+          pnpm version prerelease --preid=${{ env.BRANCH_ID }} --no-git-tag-version
+          pnpm pack
+
+      - name: Upload JS SDK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2b-js-sdk
+          path: packages/js-sdk/*.tgz
 
       - name: Install uv
         uses: astral-sh/setup-uv@v6

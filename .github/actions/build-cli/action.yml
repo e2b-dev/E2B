@@ -35,7 +35,10 @@ runs:
       run: pnpm build
       working-directory: ./packages/cli
 
+    # `pnpm link`, not `npm install -g`: npm cannot resolve the `workspace:^` range
+    # the CLI declares for `e2b`. It only gets away with it today because npm
+    # symlinks a local directory without resolving its dependencies at all.
     - name: Install the CLI globally
       shell: bash
-      run: npm install -g .
+      run: pnpm link --global
       working-directory: ./packages/cli

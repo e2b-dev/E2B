@@ -76,19 +76,24 @@ jobs:
         # it publishes from — tagging afterwards is what left every tag on the
         # commit before its own version bump (SDK-298). Nothing in the tree
         # references the artifacts about to be uploaded, so the commit is already
-        # complete. It stays local until the publish succeeds, so a failed publish
-        # leaves the branch untouched and the changesets intact for a re-run.
+        # complete. It stays local until something is actually published, so a
+        # publish that uploads nothing leaves the branch untouched and the
+        # changesets intact for a re-run.
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          if git diff --quiet HEAD; then
-            echo "::error::Nothing to commit after 'changeset version'. Refusing to continue, since the release tags would point at the commit before the version bump."
+          # `add -A`, not `commit -a`: `changeset version` writes each package's
+          # CHANGELOG.md as a new file the first time, which `-a` would drop.
+          git add -A
+          if git diff --cached --quiet; then
+            echo "::error::'changeset version' produced no changes, so there is no version bump to publish or tag."
             exit 1
           fi
-          git commit -am "[skip ci] Release new versions"
+          git commit -m "[skip ci] Release new versions"
 
       - name: Release new versions
+        id: release
         uses: changesets/action@v1
         with:
           publish: pnpm run publish
@@ -99,16 +104,29 @@ jobs:
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
       - name: Push new versions
-        # The tags pushed by the step above point at this commit, so it has to land
-        # as a fast-forward. Rewriting it — by rebasing onto a PR that merged
-        # mid-release — would strand those tags on a commit that is not on the
-        # branch, so bail out and let a human reconcile it instead.
+        # `changeset publish` tags every package it uploads and the step above
+        # pushes those tags immediately, so once anything is published the commit
+        # they point at has to reach the branch — including when the publish then
+        # failed partway (`published` is set before the non-zero exit propagates).
+        # Skipped only when nothing was uploaded at all, which leaves the branch and
+        # the changesets untouched for a clean re-dispatch.
+        if: ${{ !cancelled() && (success() || steps.release.outputs.published == 'true') }}
         run: |
+          RELEASE_SHA=$(git rev-parse HEAD)
+
           if git push; then
             exit 0
           fi
 
-          echo "::error::'${GITHUB_REF_NAME}' advanced during the release, so the version bump is no longer a fast-forward. The packages are published and their tags point at $(git rev-parse HEAD), which is not on the branch yet. Merge that commit into '${GITHUB_REF_NAME}' by hand — do not rebase it, that would orphan the release tags."
+          # A PR merged mid-release, so this is no longer a fast-forward. Merge the
+          # incoming commits in rather than rebasing — the release tags already
+          # point at this commit, and rewriting it would strand them off the branch.
+          git fetch origin "${GITHUB_REF_NAME}"
+          if git merge --no-edit FETCH_HEAD && git push; then
+            exit 0
+          fi
+
+          echo "::error::The packages are published and their tags point at ${RELEASE_SHA}, but '${GITHUB_REF_NAME}' could not be updated. Merge ${RELEASE_SHA} into '${GITHUB_REF_NAME}' by hand — do not rebase it, that would orphan the release tags."
           exit 1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
