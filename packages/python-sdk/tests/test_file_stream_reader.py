@@ -224,3 +224,71 @@ async def test_async_abandoned_reader_is_reclaimed_on_client_close():
 
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-v"]))
+
+
+class _TimeoutingResponse:
+    """Stands in for an httpx.Response whose body read hits the pyqwest
+    transport's idle read timeout (the builtin TimeoutError)."""
+
+    def __init__(self):
+        self.closed = False
+
+    def iter_bytes(self):
+        yield b"first"
+        raise TimeoutError("read timed out")
+
+    async def aiter_bytes(self):
+        yield b"first"
+        raise TimeoutError("read timed out")
+
+    def close(self):
+        self.closed = True
+
+    async def aclose(self):
+        self.closed = True
+
+
+def test_sync_reader_maps_transport_timeout_to_read_timeout():
+    response = _TimeoutingResponse()
+    reader = FileStreamReader(response)  # ty: ignore[invalid-argument-type]
+    it = iter(reader)
+    assert next(it) == b"first"
+    with pytest.raises(httpx.ReadTimeout):
+        next(it)
+    assert response.closed
+
+
+async def test_async_reader_maps_transport_timeout_to_read_timeout():
+    response = _TimeoutingResponse()
+    reader = AsyncFileStreamReader(response)  # ty: ignore[invalid-argument-type]
+    assert await reader.__anext__() == b"first"
+    with pytest.raises(httpx.ReadTimeout):
+        await reader.__anext__()
+    assert response.closed
+
+
+async def test_async_reader_explicit_idle_timeout_bounds_each_read():
+    # The per-call idle bound is enforced with wait_for around each read, so
+    # it works on the regular transport (no transport-level read timeout).
+    async with httpx.AsyncClient() as client:
+        port = _start_chunked_server(stall_before=1, stall_seconds=0.5)
+        request = client.build_request("GET", f"http://127.0.0.1:{port}/files")
+        reader = AsyncFileStreamReader(
+            await client.send(request, stream=True), idle_timeout=0.05
+        )
+        assert await reader.__anext__() == CHUNKS[0]
+        with pytest.raises(httpx.ReadTimeout):
+            await reader.__anext__()
+        assert _active_connections(client) == 0
+
+
+async def test_async_reader_explicit_idle_timeout_allows_prompt_chunks():
+    async with httpx.AsyncClient() as client:
+        port = _start_chunked_server()
+        request = client.build_request("GET", f"http://127.0.0.1:{port}/files")
+        reader = AsyncFileStreamReader(
+            await client.send(request, stream=True), idle_timeout=5.0
+        )
+        collected = b"".join([chunk async for chunk in reader])
+        assert collected == EXPECTED
+        assert _active_connections(client) == 0
