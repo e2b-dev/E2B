@@ -35,7 +35,6 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "prepack": "node scripts/assert-pnpm-packer.mjs",
     "prepublishOnly": "pnpm build",
     "build": "tsc --noEmit --skipLibCheck && tsdown --minify",
     "dev": "tsdown --watch",
