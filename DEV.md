@@ -48,8 +48,10 @@ Two consequences worth knowing:
 
 - **Pack and publish the CLI with pnpm.** Only pnpm resolves the protocol; `npm pack`
   writes `workspace:^` into the tarball verbatim and installing that fails with
-  `EUNSUPPORTEDPROTOCOL`. `pkg_artifacts.yml` installs the packed tarball with npm on
-  every PR, so a regression fails there rather than on users.
+  `EUNSUPPORTEDPROTOCOL`. Nothing enforces this, so reach for the npm equivalent in a
+  new flow and it will ship an uninstallable CLI. The existing flows use
+  `pnpm pack`/`pnpm publish`, and `changeset publish` picks pnpm by detecting the
+  workspace.
 - **`e2b` has to stay a real `dependency`.** The SDK reaches `undici`, `glob` and
   `tar` through `dynamicImport`, which is deliberately opaque to bundlers, so they
   resolve from `node_modules` at runtime. The CLI declares none of them and gets all

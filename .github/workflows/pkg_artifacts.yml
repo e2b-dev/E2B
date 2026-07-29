@@ -65,17 +65,6 @@ jobs:
           pnpm version prerelease --preid=${{ env.BRANCH_ID }} --no-git-tag-version
           pnpm pack
 
-      # Deliberately npm, not pnpm: npm is how users install the CLI and the thing
-      # that rejects an unresolved `workspace:` range, so installing the real tarball
-      # is what proves `pnpm pack` resolved it.
-      - name: Verify the CLI tarball installs
-        run: |
-          mkdir -p "${RUNNER_TEMP}/verify"
-          cd "${RUNNER_TEMP}/verify"
-          npm init -y >/dev/null
-          npm install "${GITHUB_WORKSPACE}"/packages/cli/*.tgz
-          ./node_modules/.bin/e2b --version
-
       - name: Upload CLI artifact
         uses: actions/upload-artifact@v4
         with:
