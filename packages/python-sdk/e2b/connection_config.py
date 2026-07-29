@@ -11,6 +11,13 @@ from e2b.sandbox_domains import is_supported_sandbox_domain
 
 REQUEST_TIMEOUT: float = 60.0  # 60 seconds
 
+# Idle bound for every read on the streaming envd file-transfer transport:
+# the transfer is aborted when no bytes at all arrive for this long. It
+# resets on each chunk, so it never limits total transfer time — only a
+# fully stalled stream. Matches the previous default stream idle timeout
+# (the request timeout).
+READ_TIMEOUT: float = 60.0  # 60 seconds
+
 KEEPALIVE_PING_INTERVAL_SEC = 50  # 50 seconds
 KEEPALIVE_PING_HEADER = "Keepalive-Ping-Interval"
 
