@@ -61,21 +61,34 @@ alias so tests do too, rather than running against the previously released SDK.
 
 ### Always pack and publish the CLI with pnpm
 
-Only pnpm resolves the protocol. Bare `npm pack` / `npm publish` / `npm install -g`
-put `workspace:^` straight into the manifest, and installing that fails with
-`EUNSUPPORTEDPROTOCOL`. So every flow that packs, publishes or globally installs
-the CLI uses pnpm — `pnpm pack` in `pkg_artifacts.yml`, `pnpm publish` in
-`publish_candidates.yml`, `pnpm link --global` in the `build-cli` action. Reach for
-the npm equivalent in a new flow and it will ship an uninstallable CLI.
+Only pnpm resolves the protocol. Bare `npm pack` / `npm publish` put `workspace:^`
+straight into the manifest, and installing that fails with `EUNSUPPORTEDPROTOCOL`.
+So every flow that packs or publishes the CLI uses pnpm — `pnpm pack` in
+`pkg_artifacts.yml`, `pnpm publish` in `publish_candidates.yml`. Reach for the npm
+equivalent in a new flow and it will ship an uninstallable CLI.
+
+The `build-cli` action uses `pnpm link --global` for a different reason: it never
+packs, so the protocol was never the risk there. `npm install -g <dir>` happened to
+work by symlinking without resolving dependencies at all, which is not something to
+rely on. Note that `pnpm link --global` requires pnpm's global bin directory to
+exist and be on `PATH`; `pnpm/action-setup` arranges that, so the action is coupled
+to being set up that way.
 
 The production release goes through `pnpm publish` too, but only indirectly:
-`changeset publish` picks its publish tool by detecting the package manager. Rather
-than trust that, the CLI has a `prepack` guard
-(`packages/cli/scripts/assert-pnpm-packer.mjs`) that reads
-`npm_config_user_agent` and refuses to build a tarball for anyone but pnpm while a
-`workspace:` range is present. It runs on every path that produces one, so a
-detection regression fails the release instead of publishing something
-uninstallable.
+`changeset publish` picks its publish tool by detecting the package manager. So the
+invariant is checked on the artifact rather than assumed: `pkg_artifacts.yml`
+installs the packed CLI tarball with npm on every PR, which fails if any
+`workspace:` range survived — npm is both what users install with and the thing that
+rejects the protocol.
+
+`packages/cli` also has a `prepack` guard
+(`packages/cli/scripts/assert-pnpm-packer.mjs`) that refuses to build a tarball for
+any packer but pnpm. That is a local backstop, not the guarantee, and it is worth
+knowing what it cannot see: lifecycle scripts do not run under `--ignore-scripts`,
+nor for `npm install -g <dir>`, so those paths slip past it entirely. It checks
+`npm_execpath` rather than `npm_config_user_agent`, because the latter is inherited
+— an npm spawned from pnpm still reports `pnpm/…`, which is exactly what a
+tool-detection regression would look like.
 
 ### It has to stay a real `dependency`
 

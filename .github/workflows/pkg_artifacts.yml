@@ -65,19 +65,35 @@ jobs:
           pnpm version prerelease --preid=${{ env.BRANCH_ID }} --no-git-tag-version
           pnpm pack
 
+      # Deliberately npm, not pnpm: npm is how users install the CLI, and it is the
+      # tool that rejects an unresolved `workspace:` range. Installing the real
+      # tarball is what guarantees `pnpm pack` resolved it — the `prepack` guard in
+      # packages/cli only covers callers that run lifecycle scripts.
+      - name: Verify the CLI tarball installs
+        run: |
+          mkdir -p "${RUNNER_TEMP}/verify"
+          cd "${RUNNER_TEMP}/verify"
+          npm init -y >/dev/null
+          npm install "${GITHUB_WORKSPACE}"/packages/cli/*.tgz
+          ./node_modules/.bin/e2b --version
+
       - name: Upload CLI artifact
         uses: actions/upload-artifact@v4
         with:
           name: e2b-cli
           path: packages/cli/*.tgz
 
+      # Independent of the CLI steps above: a CLI failure should still leave
+      # reviewers a usable SDK tarball, as it did before the CLI moved ahead of it.
       - name: Pack JS SDK
+        if: ${{ !cancelled() }}
         working-directory: packages/js-sdk
         run: |
           pnpm version prerelease --preid=${{ env.BRANCH_ID }} --no-git-tag-version
           pnpm pack
 
       - name: Upload JS SDK artifact
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: e2b-js-sdk

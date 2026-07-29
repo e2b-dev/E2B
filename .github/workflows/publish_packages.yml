@@ -104,29 +104,39 @@ jobs:
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
       - name: Push new versions
-        # `changeset publish` tags every package it uploads and the step above
-        # pushes those tags immediately, so once anything is published the commit
-        # they point at has to reach the branch — including when the publish then
-        # failed partway (`published` is set before the non-zero exit propagates).
-        # Skipped only when nothing was uploaded at all, which leaves the branch and
-        # the changesets untouched for a clean re-dispatch.
-        if: ${{ !cancelled() && (success() || steps.release.outputs.published == 'true') }}
+        # Gate on the tags themselves, not on the action's `published` output: that
+        # output is left unset when the action throws after tagging (a GitHub API
+        # blip in createGithubReleases), and it only reflects npm, while the tags
+        # also cover the private Python package. `changeset publish` tags at HEAD and
+        # the step above pushes those tags to origin, so if any exist the commit they
+        # point at has to reach the branch — otherwise they hang off no branch, which
+        # is the SDK-298 breakage this whole change exists to prevent.
+        if: always()
         run: |
           RELEASE_SHA=$(git rev-parse HEAD)
+          TAGS=$(git tag --points-at HEAD | tr '\n' ' ')
 
-          if git push; then
+          if [ -z "${TAGS% }" ]; then
+            echo "Nothing was published, so the version bump stays local and the changesets are intact for a clean re-dispatch."
             exit 0
           fi
 
-          # A PR merged mid-release, so this is no longer a fast-forward. Merge the
-          # incoming commits in rather than rebasing — the release tags already
-          # point at this commit, and rewriting it would strand them off the branch.
-          git fetch origin "${GITHUB_REF_NAME}"
-          if git merge --no-edit FETCH_HEAD && git push; then
-            exit 0
+          if ! git push; then
+            # A PR merged mid-release. Merge rather than rebase: the tags already
+            # point at this commit and rewriting it would strand them off the branch.
+            git fetch origin "${GITHUB_REF_NAME}"
+            if ! git merge --no-edit FETCH_HEAD || ! git push; then
+              echo "::error::Published and tagged ${RELEASE_SHA}, but '${GITHUB_REF_NAME}' could not be updated. Merge ${RELEASE_SHA} into it by hand — do not rebase, that would orphan the release tags."
+              exit 1
+            fi
           fi
 
-          echo "::error::The packages are published and their tags point at ${RELEASE_SHA}, but '${GITHUB_REF_NAME}' could not be updated. Merge ${RELEASE_SHA} into '${GITHUB_REF_NAME}' by hand — do not rebase it, that would orphan the release tags."
-          exit 1
+          # A partial publish still has to land, or the tags above would hang off no
+          # branch — but the bump is now on the branch and the changesets are gone,
+          # so re-dispatching will not retry whatever did not make it.
+          if [ "${{ steps.release.outcome }}" = "failure" ]; then
+            echo "::error::Publishing failed partway. Tagged and pushed: ${TAGS}- any package missing from that list still needs 'pnpm publish' by hand from its directory, and the PyPI upload in postPublish was skipped. Re-dispatching the release will not retry them: their version bump is already on '${GITHUB_REF_NAME}'."
+            exit 1
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
