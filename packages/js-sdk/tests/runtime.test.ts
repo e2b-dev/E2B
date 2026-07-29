@@ -1,0 +1,37 @@
+import { afterEach, expect, test, vi } from 'vitest'
+
+// The unit project also runs under Bun, Deno, and Cloudflare's workerd, where
+// the host runtime's own unstubbable marker (globalThis.Bun / globalThis.Deno /
+// the Cloudflare-Workers user agent) correctly wins detection — these
+// scenarios only exist on a Node host.
+const isNodeHost =
+  typeof (globalThis as any).Bun === 'undefined' &&
+  typeof (globalThis as any).Deno === 'undefined' &&
+  (globalThis as any).navigator?.userAgent !== 'Cloudflare-Workers'
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.resetModules()
+})
+
+test.skipIf(!isNodeHost)(
+  'Cloudflare Workers marker wins over Node-compat process.release',
+  async () => {
+    // Workers' nodejs_compat (and vitest-pool-workers) populate
+    // process.release.name, so the explicit marker must take precedence.
+    vi.stubGlobal('navigator', { userAgent: 'Cloudflare-Workers' })
+
+    const { runtime } = await import('../src/utils')
+
+    expect(runtime).toBe('cloudflare-worker')
+  }
+)
+
+test.skipIf(!isNodeHost)(
+  'Node is detected when no explicit runtime marker is present',
+  async () => {
+    const { runtime } = await import('../src/utils')
+
+    expect(runtime).toBe('node')
+  }
+)

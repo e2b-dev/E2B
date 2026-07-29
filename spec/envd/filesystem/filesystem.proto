@@ -5,148 +5,149 @@ package filesystem;
 import "google/protobuf/timestamp.proto";
 
 service Filesystem {
-    rpc Stat(StatRequest) returns (StatResponse);
-    rpc MakeDir(MakeDirRequest) returns (MakeDirResponse);
-    rpc Move(MoveRequest) returns (MoveResponse);
-    rpc ListDir(ListDirRequest) returns (ListDirResponse);
-    rpc Remove(RemoveRequest) returns (RemoveResponse);
+  rpc Stat(StatRequest) returns (StatResponse);
+  rpc MakeDir(MakeDirRequest) returns (MakeDirResponse);
+  rpc Move(MoveRequest) returns (MoveResponse);
+  rpc ListDir(ListDirRequest) returns (ListDirResponse);
+  rpc Remove(RemoveRequest) returns (RemoveResponse);
 
-    rpc WatchDir(WatchDirRequest) returns (stream WatchDirResponse);
+  rpc WatchDir(WatchDirRequest) returns (stream WatchDirResponse);
 
-    // Non-streaming versions of WatchDir
-    rpc CreateWatcher(CreateWatcherRequest) returns (CreateWatcherResponse);
-    rpc GetWatcherEvents(GetWatcherEventsRequest) returns (GetWatcherEventsResponse);
-    rpc RemoveWatcher(RemoveWatcherRequest) returns (RemoveWatcherResponse);
+  // Non-streaming versions of WatchDir
+  rpc CreateWatcher(CreateWatcherRequest) returns (CreateWatcherResponse);
+  rpc GetWatcherEvents(GetWatcherEventsRequest) returns (GetWatcherEventsResponse);
+  rpc RemoveWatcher(RemoveWatcherRequest) returns (RemoveWatcherResponse);
 }
 
 message MoveRequest {
-    string source = 1;
-    string destination = 2;
+  string source = 1;
+  string destination = 2;
 }
 
 message MoveResponse {
-    EntryInfo entry = 1;
+  EntryInfo entry = 1;
 }
 
 message MakeDirRequest {
-    string path = 1;
+  string path = 1;
 }
 
 message MakeDirResponse {
-    EntryInfo entry = 1;
+  EntryInfo entry = 1;
 }
 
 message RemoveRequest {
-    string path = 1;
+  string path = 1;
 }
 
 message RemoveResponse {}
 
 message StatRequest {
-    string path = 1;
+  string path = 1;
 }
 
 message StatResponse {
-    EntryInfo entry = 1;
+  EntryInfo entry = 1;
 }
 
 message EntryInfo {
-    string name = 1;
-    FileType type = 2;
-    string path = 3;
-    int64 size = 4;
-    uint32 mode = 5;
-    string permissions = 6;
-    string owner = 7;
-    string group = 8;
-    google.protobuf.Timestamp modified_time = 9;
-    // If the entry is a symlink, this field contains the target of the symlink.
-    optional string symlink_target = 10;
-    // User-defined metadata stored as extended attributes (xattrs) on the file.
-    // Keys live under the `user.e2b.` xattr namespace; the prefix is stripped here.
-    // Plain `user.*` xattrs written by other tooling are not reflected.
-    map<string, string> metadata = 11;
+  string name = 1;
+  FileType type = 2;
+  string path = 3;
+  int64 size = 4;
+  uint32 mode = 5;
+  string permissions = 6;
+  string owner = 7;
+  string group = 8;
+  google.protobuf.Timestamp modified_time = 9;
+  // If the entry is a symlink, this field contains the target of the symlink.
+  optional string symlink_target = 10;
+  // User-defined metadata stored as extended attributes (xattrs) on the file.
+  // Keys live under the `user.e2b.` xattr namespace; the prefix is stripped here.
+  // Plain `user.*` xattrs written by other tooling are not reflected.
+  map<string, string> metadata = 11;
 }
 
 enum FileType {
-    FILE_TYPE_UNSPECIFIED = 0;
-    FILE_TYPE_FILE = 1;
-    FILE_TYPE_DIRECTORY = 2;
+  FILE_TYPE_UNSPECIFIED = 0;
+  FILE_TYPE_FILE = 1;
+  FILE_TYPE_DIRECTORY = 2;
+  FILE_TYPE_SYMLINK = 3;
 }
 
 message ListDirRequest {
-    string path = 1;
-    uint32 depth = 2;
+  string path = 1;
+  uint32 depth = 2;
 }
 
 message ListDirResponse {
-    repeated EntryInfo entries = 1;
+  repeated EntryInfo entries = 1;
 }
 
 message WatchDirRequest {
-    string path = 1;
-    bool recursive = 2;
-    // If true, each FilesystemEvent includes the EntryInfo of the affected entry, when available.
-    bool include_entry = 3;
-    // If true, allows watching paths on network filesystem mounts (NFS, CIFS, SMB, FUSE).
-    // Events on network mounts may be unreliable or not delivered at all.
-    bool allow_network_mounts = 4;
+  string path = 1;
+  bool recursive = 2;
+  // If true, each FilesystemEvent includes the EntryInfo of the affected entry, when available.
+  bool include_entry = 3;
+  // If true, allows watching paths on network filesystem mounts (NFS, CIFS, SMB, FUSE).
+  // Events on network mounts may be unreliable or not delivered at all.
+  bool allow_network_mounts = 4;
 }
 
 message FilesystemEvent {
-    string name = 1;
-    EventType type = 2;
-    // Info of the entry that triggered the event. Only populated when include_entry
-    // was requested and the entry could be stat-ed (e.g. not set for remove/rename-away
-    // events, where the entry no longer exists at this path).
-    optional EntryInfo entry = 3;
+  string name = 1;
+  EventType type = 2;
+  // Info of the entry that triggered the event. Only populated when include_entry
+  // was requested and the entry could be stat-ed (e.g. not set for remove/rename-away
+  // events, where the entry no longer exists at this path).
+  optional EntryInfo entry = 3;
 }
 
 message WatchDirResponse {
-    oneof event {
-        StartEvent start = 1;
-        FilesystemEvent filesystem = 2;
-        KeepAlive keepalive = 3;
-    }
+  oneof event {
+    StartEvent start = 1;
+    FilesystemEvent filesystem = 2;
+    KeepAlive keepalive = 3;
+  }
 
-    message StartEvent {}
+  message StartEvent {}
 
-    message KeepAlive {}
+  message KeepAlive {}
 }
 
 message CreateWatcherRequest {
-    string path = 1;
-    bool recursive = 2;
-    // If true, each FilesystemEvent includes the EntryInfo of the affected entry, when available.
-    bool include_entry = 3;
-    // If true, allows watching paths on network filesystem mounts (NFS, CIFS, SMB, FUSE).
-    // Events on network mounts may be unreliable or not delivered at all.
-    bool allow_network_mounts = 4;
+  string path = 1;
+  bool recursive = 2;
+  // If true, each FilesystemEvent includes the EntryInfo of the affected entry, when available.
+  bool include_entry = 3;
+  // If true, allows watching paths on network filesystem mounts (NFS, CIFS, SMB, FUSE).
+  // Events on network mounts may be unreliable or not delivered at all.
+  bool allow_network_mounts = 4;
 }
 
 message CreateWatcherResponse {
-    string watcher_id = 1;
+  string watcher_id = 1;
 }
 
 message GetWatcherEventsRequest {
-    string watcher_id = 1;
+  string watcher_id = 1;
 }
 
 message GetWatcherEventsResponse {
-    repeated FilesystemEvent events = 1;
+  repeated FilesystemEvent events = 1;
 }
 
 message RemoveWatcherRequest {
-      string watcher_id = 1;
+  string watcher_id = 1;
 }
 
 message RemoveWatcherResponse {}
 
 enum EventType {
-    EVENT_TYPE_UNSPECIFIED = 0;
-    EVENT_TYPE_CREATE = 1;
-    EVENT_TYPE_WRITE = 2;
-    EVENT_TYPE_REMOVE = 3;
-    EVENT_TYPE_RENAME = 4;
-    EVENT_TYPE_CHMOD = 5;
+  EVENT_TYPE_UNSPECIFIED = 0;
+  EVENT_TYPE_CREATE = 1;
+  EVENT_TYPE_WRITE = 2;
+  EVENT_TYPE_REMOVE = 3;
+  EVENT_TYPE_RENAME = 4;
+  EVENT_TYPE_CHMOD = 5;
 }

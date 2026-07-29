@@ -36,6 +36,7 @@ const failureMap: Record<string, number | undefined> = {
   setUser: 1,
   pipInstall: 1,
   npmInstall: 1,
+  bunInstall: 1,
   aptInstall: 1,
   gitClone: 1,
   setStartCmd: 1,
@@ -366,6 +367,14 @@ buildTemplateTest('traces on npmInstall', async ({ buildTemplate }) => {
   await expectToThrowAndCheckTrace(async () => {
     await buildTemplate(template, { name: 'npmInstall' })
   }, 'npmInstall')
+})
+
+buildTemplateTest('traces on bunInstall', async ({ buildTemplate }) => {
+  let template = Template().fromBaseImage()
+  template = template.skipCache().bunInstall('nonexistent-package')
+  await expectToThrowAndCheckTrace(async () => {
+    await buildTemplate(template, { name: 'bunInstall' })
+  }, 'bunInstall')
 })
 
 buildTemplateTest('traces on aptInstall', async ({ buildTemplate }) => {

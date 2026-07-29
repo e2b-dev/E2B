@@ -56,6 +56,7 @@ export type {
   SandboxOpts,
   SandboxApiOpts,
   SandboxConnectOpts,
+  SandboxForkOpts,
   SandboxMetricsOpts,
   SandboxPauseOpts,
   SandboxState,

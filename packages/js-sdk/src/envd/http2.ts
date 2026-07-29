@@ -1,11 +1,9 @@
 import { runtime } from '../utils'
 import { parseInflightLimitEnv, parsePositiveIntEnv } from '../api/metadata'
-import { limitConcurrency } from '../api/inflight'
 import {
-  loadUndici,
-  toUndiciRequestInput,
+  buildDispatchedFetch,
+  createRuntimeFetch,
   type UndiciModule,
-  type UndiciRequestInit,
 } from '../undici'
 
 type EnvdFetchOptions = {
@@ -28,58 +26,14 @@ export function createEnvdFetchForRuntime(
   currentRuntime = runtime,
   options: EnvdFetchOptions = {}
 ): typeof fetch {
-  if (currentRuntime !== 'node') {
-    return fetch
-  }
-
-  let fetcherPromise: Promise<typeof fetch> | undefined
-
-  return (async (input, init) => {
-    fetcherPromise ??= buildEnvdFetcher(options)
-    const fetcher = await fetcherPromise
-
-    return fetcher(input, init)
-  }) as typeof fetch
-}
-
-async function buildEnvdFetcher(
-  options: EnvdFetchOptions
-): Promise<typeof fetch> {
-  const undici = await (options.loadUndici ?? loadUndici)()
-  const inflightLimit = options.inflightLimit ?? 0
-
-  if (!undici) {
-    return limitConcurrency(fetch, inflightLimit)
-  }
-
-  const { Agent, ProxyAgent, fetch: undiciFetch } = undici
-  const connections = options.connectionLimit ?? DEFAULT_ENVD_CONNECTION_LIMIT
-
-  const dispatcher = options.proxy
-    ? new ProxyAgent({
-        uri: options.proxy,
-        allowH2: true,
-        connections,
-      })
-    : new Agent({
-        allowH2: true,
-        connections,
-      })
-  const fetchWithDispatcher = undiciFetch as unknown as (
-    input: RequestInfo | URL,
-    init?: UndiciRequestInit
-  ) => Promise<Response>
-
-  const wrapped: typeof fetch = ((input, init) => {
-    const request = toUndiciRequestInput(input, init)
-
-    return fetchWithDispatcher(request.input, {
-      ...request.init,
-      dispatcher,
+  return createRuntimeFetch(currentRuntime, () =>
+    buildDispatchedFetch({
+      connections: options.connectionLimit ?? DEFAULT_ENVD_CONNECTION_LIMIT,
+      inflightLimit: options.inflightLimit ?? 0,
+      proxy: options.proxy,
+      loadUndici: options.loadUndici,
     })
-  }) as typeof fetch
-
-  return limitConcurrency(wrapped, inflightLimit)
+  )
 }
 
 export function createEnvdFetch(proxy?: string): typeof fetch {
@@ -131,7 +85,7 @@ export function getEnvdRpcConnectionLimit(): number {
  * `files.read`/`files.write`) that can be in flight at once across all
  * sandboxes in this SDK process, or `0` to disable the cap.
  *
- * Defaults to {@link DEFAULT_ENVD_INFLIGHT_LIMIT} ({@link 2000}). Override
+ * Defaults to `2000` ({@link DEFAULT_ENVD_INFLIGHT_LIMIT}). Override
  * via `E2B_ENVD_INFLIGHT_REQUESTS` env var; set to `0` to disable the cap
  * entirely.
  */
@@ -147,7 +101,7 @@ export function getEnvdInflightLimit(): number {
  * can be in flight at once across all sandboxes in this SDK process,
  * or `0` to disable the cap.
  *
- * Defaults to {@link DEFAULT_ENVD_RPC_INFLIGHT_LIMIT} ({@link 2000}). Override
+ * Defaults to `2000` ({@link DEFAULT_ENVD_RPC_INFLIGHT_LIMIT}). Override
  * via `E2B_ENVD_RPC_INFLIGHT_REQUESTS` env var; set to `0` to disable the cap
  * entirely.
  */

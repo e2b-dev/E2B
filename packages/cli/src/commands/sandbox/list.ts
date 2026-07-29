@@ -62,6 +62,23 @@ export const listCommand = new commander.Command('list')
     }
   })
 
+export function buildTableRows(sandboxes: SandboxInfo[]) {
+  return sandboxes
+    .slice()
+    .sort(
+      (a, b) =>
+        new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime() ||
+        a.sandboxId.localeCompare(b.sandboxId)
+    )
+    .map((sandbox) => ({
+      ...sandbox,
+      startedAt: new Date(sandbox.startedAt).toLocaleString(),
+      endAt: new Date(sandbox.endAt).toLocaleString(),
+      state: sandbox.state.charAt(0).toUpperCase() + sandbox.state.slice(1), // capitalize
+      metadata: JSON.stringify(sandbox.metadata),
+    }))
+}
+
 function renderTable(
   sandboxes: SandboxInfo[],
   state: components['schemas']['SandboxState'][]
@@ -91,19 +108,7 @@ function renderTable(
       { name: 'metadata', alignment: 'left', title: 'Metadata' },
     ],
     disabledColumns: ['clientID'],
-    rows: sandboxes
-      .map((sandbox) => ({
-        ...sandbox,
-        startedAt: new Date(sandbox.startedAt).toLocaleString(),
-        endAt: new Date(sandbox.endAt).toLocaleString(),
-        state: sandbox.state.charAt(0).toUpperCase() + sandbox.state.slice(1), // capitalize
-        metadata: JSON.stringify(sandbox.metadata),
-      }))
-      .sort(
-        (a, b) =>
-          a.startedAt.localeCompare(b.startedAt) ||
-          a.sandboxId.localeCompare(b.sandboxId)
-      ),
+    rows: buildTableRows(sandboxes),
     style: {
       headerTop: {
         left: '',

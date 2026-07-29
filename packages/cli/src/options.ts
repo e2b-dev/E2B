@@ -37,7 +37,30 @@ export const selectMultipleOption = new commander.Option(
   'select sandbox template from interactive list'
 )
 
-export const teamOption = new commander.Option(
-  '-t, --team <team-id>',
-  'specify the team ID that the operation will be associated with. You can find team ID in the team settings in the E2B dashboard (https://e2b.dev/dashboard?tab=team).'
+export const projectOption = new commander.Option(
+  '-t, --project <project-id>',
+  'specify the project ID that the operation will be associated with. You can find project ID in the project settings in the E2B dashboard (https://e2b.dev/dashboard?tab=team).'
 )
+
+export const deprecatedTeamOption = new commander.Option(
+  '--team <project-id>',
+  `[deprecated] use ${asBold('--project')} instead`
+).hideHelp()
+
+/**
+ * Read the project ID from parsed command options, preferring --project and
+ * warning whenever the deprecated --team flag is used.
+ */
+export function projectIdFromOptions(opts: {
+  project?: string
+  team?: string
+}): string | undefined {
+  if (opts.team) {
+    console.error(
+      `The ${asBold('--team')} flag is deprecated, use ${asBold(
+        '--project'
+      )} instead.`
+    )
+  }
+  return opts.project ?? opts.team
+}

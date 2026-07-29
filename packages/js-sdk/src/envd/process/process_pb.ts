@@ -178,6 +178,9 @@ export type StartRequest = Message<'process.StartRequest'> & {
   tag?: string
 
   /**
+   * This is optional for backwards compatibility.
+   * We default to true. New SDK versions will set this to false by default.
+   *
    * @generated from field: optional bool stdin = 4;
    */
   stdin?: boolean

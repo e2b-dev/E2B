@@ -1,8 +1,10 @@
+import datetime
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
+from dateutil.parser import isoparse
 
 from ..models.node_status import NodeStatus
 
@@ -18,78 +20,83 @@ T = TypeVar("T", bound="Node")
 class Node:
     """
     Attributes:
-        cluster_id (str): Identifier of the cluster
+        version (str): Version of the orchestrator
         commit (str): Commit of the orchestrator
-        create_fails (int): Number of sandbox create fails
-        create_successes (int): Number of sandbox create successes
         id (str): Identifier of the node
-        machine_info (MachineInfo):
-        metrics (NodeMetrics): Node metrics
-        sandbox_count (int): Number of sandboxes running on the node
-        sandbox_starting_count (int): Number of starting Sandboxes
         service_instance_id (str): Service instance identifier of the node
+        cluster_id (str): Identifier of the cluster
+        machine_info (MachineInfo):
         status (NodeStatus): Status of the node.
             - draining: the node is bound to be shut down. It will not accept new sandboxes and will stop once all existing
             sandboxes are done.
             - standby: the node is not actively used, but it can return to ready and continue serving traffic.
-        version (str): Version of the orchestrator
+        status_changed_at (datetime.datetime): Time when the node status was last changed
+        sandbox_count (int): Number of sandboxes running on the node
+        metrics (NodeMetrics): Node metrics
+        create_successes (int): Number of sandbox create successes
+        create_fails (int): Number of sandbox create fails
+        sandbox_starting_count (int): Number of starting Sandboxes
     """
 
-    cluster_id: str
-    commit: str
-    create_fails: int
-    create_successes: int
-    id: str
-    machine_info: "MachineInfo"
-    metrics: "NodeMetrics"
-    sandbox_count: int
-    sandbox_starting_count: int
-    service_instance_id: str
-    status: NodeStatus
     version: str
+    commit: str
+    id: str
+    service_instance_id: str
+    cluster_id: str
+    machine_info: "MachineInfo"
+    status: NodeStatus
+    status_changed_at: datetime.datetime
+    sandbox_count: int
+    metrics: "NodeMetrics"
+    create_successes: int
+    create_fails: int
+    sandbox_starting_count: int
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        cluster_id = self.cluster_id
+        version = self.version
 
         commit = self.commit
 
-        create_fails = self.create_fails
-
-        create_successes = self.create_successes
-
         id = self.id
-
-        machine_info = self.machine_info.to_dict()
-
-        metrics = self.metrics.to_dict()
-
-        sandbox_count = self.sandbox_count
-
-        sandbox_starting_count = self.sandbox_starting_count
 
         service_instance_id = self.service_instance_id
 
+        cluster_id = self.cluster_id
+
+        machine_info = self.machine_info.to_dict()
+
         status = self.status.value
 
-        version = self.version
+        status_changed_at = self.status_changed_at.isoformat()
+
+        sandbox_count = self.sandbox_count
+
+        metrics = self.metrics.to_dict()
+
+        create_successes = self.create_successes
+
+        create_fails = self.create_fails
+
+        sandbox_starting_count = self.sandbox_starting_count
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "clusterID": cluster_id,
-                "commit": commit,
-                "createFails": create_fails,
-                "createSuccesses": create_successes,
-                "id": id,
-                "machineInfo": machine_info,
-                "metrics": metrics,
-                "sandboxCount": sandbox_count,
-                "sandboxStartingCount": sandbox_starting_count,
-                "serviceInstanceID": service_instance_id,
-                "status": status,
                 "version": version,
+                "commit": commit,
+                "id": id,
+                "serviceInstanceID": service_instance_id,
+                "clusterID": cluster_id,
+                "machineInfo": machine_info,
+                "status": status,
+                "statusChangedAt": status_changed_at,
+                "sandboxCount": sandbox_count,
+                "metrics": metrics,
+                "createSuccesses": create_successes,
+                "createFails": create_fails,
+                "sandboxStartingCount": sandbox_starting_count,
             }
         )
 
@@ -101,43 +108,46 @@ class Node:
         from ..models.node_metrics import NodeMetrics
 
         d = dict(src_dict)
-        cluster_id = d.pop("clusterID")
+        version = d.pop("version")
 
         commit = d.pop("commit")
 
-        create_fails = d.pop("createFails")
-
-        create_successes = d.pop("createSuccesses")
-
         id = d.pop("id")
-
-        machine_info = MachineInfo.from_dict(d.pop("machineInfo"))
-
-        metrics = NodeMetrics.from_dict(d.pop("metrics"))
-
-        sandbox_count = d.pop("sandboxCount")
-
-        sandbox_starting_count = d.pop("sandboxStartingCount")
 
         service_instance_id = d.pop("serviceInstanceID")
 
+        cluster_id = d.pop("clusterID")
+
+        machine_info = MachineInfo.from_dict(d.pop("machineInfo"))
+
         status = NodeStatus(d.pop("status"))
 
-        version = d.pop("version")
+        status_changed_at = isoparse(d.pop("statusChangedAt"))
+
+        sandbox_count = d.pop("sandboxCount")
+
+        metrics = NodeMetrics.from_dict(d.pop("metrics"))
+
+        create_successes = d.pop("createSuccesses")
+
+        create_fails = d.pop("createFails")
+
+        sandbox_starting_count = d.pop("sandboxStartingCount")
 
         node = cls(
-            cluster_id=cluster_id,
-            commit=commit,
-            create_fails=create_fails,
-            create_successes=create_successes,
-            id=id,
-            machine_info=machine_info,
-            metrics=metrics,
-            sandbox_count=sandbox_count,
-            sandbox_starting_count=sandbox_starting_count,
-            service_instance_id=service_instance_id,
-            status=status,
             version=version,
+            commit=commit,
+            id=id,
+            service_instance_id=service_instance_id,
+            cluster_id=cluster_id,
+            machine_info=machine_info,
+            status=status,
+            status_changed_at=status_changed_at,
+            sandbox_count=sandbox_count,
+            metrics=metrics,
+            create_successes=create_successes,
+            create_fails=create_fails,
+            sandbox_starting_count=sandbox_starting_count,
         )
 
         node.additional_properties = d

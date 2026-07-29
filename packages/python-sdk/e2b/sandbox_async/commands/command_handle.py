@@ -14,7 +14,9 @@ from typing import (
 )
 
 from e2b.envd.rpc import ahandle_rpc_exception_with_health
-from e2b.envd.process import process_pb2
+from protobuf import Oneof
+
+from e2b.envd.process import process_pb
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.command_handle import (
     CommandExitException,
@@ -81,7 +83,7 @@ class AsyncCommandHandle:
         pid: int,
         handle_kill: Callable[[], Coroutine[Any, Any, bool]],
         events: AsyncGenerator[
-            Union[process_pb2.StartResponse, process_pb2.ConnectResponse], Any
+            Union[process_pb.StartResponse, process_pb.ConnectResponse], Any
         ],
         on_stdout: Optional[OutputHandler[Stdout]] = None,
         on_stderr: Optional[OutputHandler[Stderr]] = None,
@@ -148,33 +150,40 @@ class AsyncCommandHandle:
     ]:
         try:
             async for event in self._events:
-                if event.event.HasField("data"):
-                    if event.event.data.stdout:
-                        out = self._stdout_decoder.decode(event.event.data.stdout)
-                        if out:
-                            self._stdout_chunks.append(out)
-                            yield out, None, None
-                    if event.event.data.stderr:
-                        out = self._stderr_decoder.decode(event.event.data.stderr)
-                        if out:
-                            self._stderr_chunks.append(out)
-                            yield None, out, None
-                    if event.event.data.pty:
-                        yield None, None, event.event.data.pty
-                if event.event.HasField("end"):
-                    # Flush trailing decoder bytes into the accumulators and
-                    # record the result before yielding the flushed chunks, so a
-                    # consumer that stops iterating on the first flushed chunk
-                    # still observes the exit code.
-                    flushed = list(self._flush_decoders())
-                    self._result = CommandResult(
-                        stdout="".join(self._stdout_chunks),
-                        stderr="".join(self._stderr_chunks),
-                        exit_code=event.event.end.exit_code,
-                        error=event.event.end.error,
-                    )
-                    for f in flushed:
-                        yield f
+                # `event.event` is the ProcessEvent; its `event` oneof holds the
+                # actual payload (start/data/end/keepalive).
+                oneof = event.event.event if event.event is not None else None
+                match oneof:
+                    case Oneof(field="data", value=data):
+                        match data.output:
+                            case Oneof(field="stdout", value=chunk) if chunk:
+                                out = self._stdout_decoder.decode(chunk)
+                                if out:
+                                    self._stdout_chunks.append(out)
+                                    yield out, None, None
+                            case Oneof(field="stderr", value=chunk) if chunk:
+                                out = self._stderr_decoder.decode(chunk)
+                                if out:
+                                    self._stderr_chunks.append(out)
+                                    yield None, out, None
+                            case Oneof(field="pty", value=chunk) if chunk:
+                                yield None, None, chunk
+                    case Oneof(field="end", value=end):
+                        # Flush trailing decoder bytes into the accumulators and
+                        # record the result before yielding the flushed chunks, so a
+                        # consumer that stops iterating on the first flushed chunk
+                        # still observes the exit code.
+                        flushed = list(self._flush_decoders())
+                        self._result = CommandResult(
+                            stdout="".join(self._stdout_chunks),
+                            stderr="".join(self._stderr_chunks),
+                            exit_code=end.exit_code,
+                            # Optional scalar: unset reads as "" — the presence
+                            # check keeps it None, matching the JS SDK
+                            error=end.error if end.has_field("error") else None,
+                        )
+                        for f in flushed:
+                            yield f
         except Exception:
             # The stream raised before an end event (e.g. disconnect or RPC
             # failure). Flush any bytes still buffered in the decoders so

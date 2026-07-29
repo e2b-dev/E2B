@@ -3,7 +3,7 @@ import { assert, describe } from 'vitest'
 import { sandboxTest, isDebug } from '../../setup'
 
 describe('file signing', () => {
-  sandboxTest.scoped({
+  sandboxTest.override({
     sandboxOpts: {
       secure: true,
     },

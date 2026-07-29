@@ -16,7 +16,7 @@ import {
   uploadFile,
   waitForBuildFinish,
 } from './buildApi'
-import { GZIP, RESOLVE_SYMLINKS, STACK_TRACE_DEPTH } from './consts'
+import { GZIP, RESOLVE_SYMLINKS } from './consts'
 import { parseDockerfile } from './dockerfileParser'
 import { LogEntry, LogEntryEnd, LogEntryStart } from './logger'
 import { ReadyCmd, waitForFile } from './readycmd'
@@ -70,15 +70,11 @@ export class TemplateBase
   private fileIgnorePatterns: string[] = []
   private logsRefreshFrequency: number = 200
   private stackTraces: (string | undefined)[] = []
-  private stackTracesEnabled: boolean = true
-  private stackTracesOverride: string | undefined = undefined
 
   constructor(options?: TemplateOptions) {
     this.fileContextPath =
       options?.fileContextPath ??
-      (runtime === 'browser'
-        ? '.'
-        : (getCallerDirectory(STACK_TRACE_DEPTH) ?? '.'))
+      (runtime === 'browser' ? '.' : (getCallerDirectory() ?? '.'))
     this.fileIgnorePatterns =
       options?.fileIgnorePatterns ?? this.fileIgnorePatterns
   }
@@ -454,7 +450,7 @@ export class TemplateBase
     if (credentials && (!credentials.username || !credentials.password)) {
       throw new InvalidArgumentError(
         'Both username and password are required when providing registry credentials',
-        getCallerFrame(STACK_TRACE_DEPTH - 1)
+        getCallerFrame()
       )
     }
 
@@ -493,11 +489,9 @@ export class TemplateBase
   }
 
   fromDockerfile(dockerfileContentOrPath: string): TemplateBuilder {
-    const { baseImage } = this.runInStackTraceOverrideContext(
-      () => parseDockerfile(dockerfileContentOrPath, this),
-      // -1 as we're going up the call stack from the parseDockerfile function
-      getCallerFrame(STACK_TRACE_DEPTH - 1)
-    )
+    // Each instruction parsed from the Dockerfile collects its own stack
+    // trace, which resolves to this method's call site
+    const { baseImage } = parseDockerfile(dockerfileContentOrPath, this)
     this.baseImage = baseImage
     this.baseTemplate = undefined
 
@@ -581,7 +575,7 @@ export class TemplateBase
     }
 
     const srcs = Array.isArray(src) ? src : [src]
-    const stackTrace = getCallerFrame(STACK_TRACE_DEPTH - 1)
+    const stackTrace = getCallerFrame()
 
     for (const src of srcs) {
       const srcString = src.toString()
@@ -619,27 +613,23 @@ export class TemplateBase
     }
 
     // Stack trace that will be used to re-throw the error with
-    const stackTrace = getCallerFrame(STACK_TRACE_DEPTH - 1)
+    const stackTrace = getCallerFrame()
 
-    // Use the override so each copied item collects this stack trace,
-    // keeping build steps aligned with their stack traces
-    this.runInStackTraceOverrideContext(() => {
-      for (const item of items) {
-        try {
-          this.copy(item.src, item.dest, {
-            forceUpload: item.forceUpload,
-            user: item.user,
-            mode: item.mode,
-            resolveSymlinks: item.resolveSymlinks,
-            gzip: item.gzip,
-          })
-        } catch (error) {
-          const copyError = error as Error
-          copyError.stack = stackTrace
-          throw copyError
-        }
+    for (const item of items) {
+      try {
+        this.copy(item.src, item.dest, {
+          forceUpload: item.forceUpload,
+          user: item.user,
+          mode: item.mode,
+          resolveSymlinks: item.resolveSymlinks,
+          gzip: item.gzip,
+        })
+      } catch (error) {
+        const copyError = error as Error
+        copyError.stack = stackTrace
+        throw copyError
       }
-    }, stackTrace)
+    }
 
     return this
   }
@@ -657,9 +647,7 @@ export class TemplateBase
       args.push('-f')
     }
     args.push(...paths.map((p) => shellQuote(p.toString())))
-    return this.runInNewStackTraceContext(() =>
-      this.runCmd(args.join(' '), { user: options?.user })
-    )
+    return this.runCmd(args.join(' '), { user: options?.user })
   }
 
   rename(
@@ -671,9 +659,7 @@ export class TemplateBase
     if (options?.force) {
       args.push('-f')
     }
-    return this.runInNewStackTraceContext(() =>
-      this.runCmd(args.join(' '), { user: options?.user })
-    )
+    return this.runCmd(args.join(' '), { user: options?.user })
   }
 
   makeDir(
@@ -686,9 +672,7 @@ export class TemplateBase
       args.push(`-m ${padOctal(options.mode)}`)
     }
     args.push(...paths.map((p) => shellQuote(p.toString())))
-    return this.runInNewStackTraceContext(() =>
-      this.runCmd(args.join(' '), { user: options?.user })
-    )
+    return this.runCmd(args.join(' '), { user: options?.user })
   }
 
   makeSymlink(
@@ -701,9 +685,7 @@ export class TemplateBase
       args.push('-f')
     }
     args.push(shellQuote(src.toString()), shellQuote(dest.toString()))
-    return this.runInNewStackTraceContext(() =>
-      this.runCmd(args.join(' '), { user: options?.user })
-    )
+    return this.runCmd(args.join(' '), { user: options?.user })
   }
 
   runCmd(command: string, options?: { user?: string }): TemplateBuilder
@@ -774,11 +756,9 @@ export class TemplateBase
       args.push('.')
     }
 
-    return this.runInNewStackTraceContext(() =>
-      this.runCmd(args.join(' '), {
-        user: g ? 'root' : undefined,
-      })
-    )
+    return this.runCmd(args.join(' '), {
+      user: g ? 'root' : undefined,
+    })
   }
 
   npmInstall(
@@ -801,11 +781,9 @@ export class TemplateBase
       args.push(...packageList)
     }
 
-    return this.runInNewStackTraceContext(() =>
-      this.runCmd(args.join(' '), {
-        user: options?.g ? 'root' : undefined,
-      })
-    )
+    return this.runCmd(args.join(' '), {
+      user: options?.g ? 'root' : undefined,
+    })
   }
 
   bunInstall(
@@ -828,11 +806,9 @@ export class TemplateBase
       args.push(...packageList)
     }
 
-    return this.runInNewStackTraceContext(() =>
-      this.runCmd(args.join(' '), {
-        user: options?.g ? 'root' : undefined,
-      })
-    )
+    return this.runCmd(args.join(' '), {
+      user: options?.g ? 'root' : undefined,
+    })
   }
 
   aptInstall(
@@ -840,16 +816,14 @@ export class TemplateBase
     options?: { noInstallRecommends?: boolean; fixMissing?: boolean }
   ): TemplateBuilder {
     const packageList = Array.isArray(packages) ? packages : [packages]
-    return this.runInNewStackTraceContext(() =>
-      this.runCmd(
-        [
-          'apt-get update',
-          `DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y ${options?.noInstallRecommends ? '--no-install-recommends ' : ''}${options?.fixMissing ? '--fix-missing ' : ''}${packageList.join(
-            ' '
-          )}`,
-        ],
-        { user: 'root' }
-      )
+    return this.runCmd(
+      [
+        'apt-get update',
+        `DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes apt-get install -y ${options?.noInstallRecommends ? '--no-install-recommends ' : ''}${options?.fixMissing ? '--fix-missing ' : ''}${packageList.join(
+          ' '
+        )}`,
+      ],
+      { user: 'root' }
     )
   }
 
@@ -857,16 +831,14 @@ export class TemplateBase
     if (this.baseTemplate !== 'mcp-gateway') {
       throw new BuildError(
         'MCP servers can only be added to mcp-gateway template',
-        getCallerFrame(STACK_TRACE_DEPTH - 1)
+        getCallerFrame()
       )
     }
 
     const serverList = Array.isArray(servers) ? servers : [servers]
-    return this.runInNewStackTraceContext(() =>
-      this.runCmd(`mcp-gateway pull ${serverList.join(' ')}`, {
-        user: 'root',
-      })
-    )
+    return this.runCmd(`mcp-gateway pull ${serverList.join(' ')}`, {
+      user: 'root',
+    })
   }
 
   gitClone(
@@ -886,9 +858,7 @@ export class TemplateBase
       args.push(shellQuote(path.toString()))
     }
 
-    return this.runInNewStackTraceContext(() =>
-      this.runCmd(args.join(' '), { user: options?.user })
-    )
+    return this.runCmd(args.join(' '), { user: options?.user })
   }
 
   setStartCmd(
@@ -941,103 +911,43 @@ export class TemplateBase
     if (this.baseTemplate !== 'devcontainer') {
       throw new BuildError(
         'Devcontainers can only used in the devcontainer template',
-        getCallerFrame(STACK_TRACE_DEPTH - 1)
+        getCallerFrame()
       )
     }
 
-    return this.runInNewStackTraceContext(() => {
-      return this.runCmd(
-        `devcontainer build --workspace-folder ${shellQuote(devcontainerDirectory)}`,
-        { user: 'root' }
-      )
-    })
+    return this.runCmd(
+      `devcontainer build --workspace-folder ${shellQuote(devcontainerDirectory)}`,
+      { user: 'root' }
+    )
   }
 
   betaSetDevContainerStart(devcontainerDirectory: string): TemplateFinal {
     if (this.baseTemplate !== 'devcontainer') {
       throw new BuildError(
         'Devcontainers can only used in the devcontainer template',
-        getCallerFrame(STACK_TRACE_DEPTH - 1)
+        getCallerFrame()
       )
     }
 
-    return this.runInNewStackTraceContext(() => {
-      const dir = shellQuote(devcontainerDirectory)
-      return this.setStartCmd(
-        `sudo devcontainer up --workspace-folder ${dir} && sudo /prepare-exec.sh ${dir} | sudo tee /devcontainer.sh > /dev/null && sudo chmod +x /devcontainer.sh && sudo touch /devcontainer.up`,
-        waitForFile('/devcontainer.up')
-      )
-    })
+    const dir = shellQuote(devcontainerDirectory)
+    return this.setStartCmd(
+      `sudo devcontainer up --workspace-folder ${dir} && sudo /prepare-exec.sh ${dir} | sudo tee /devcontainer.sh > /dev/null && sudo chmod +x /devcontainer.sh && sudo touch /devcontainer.up`,
+      waitForFile('/devcontainer.up')
+    )
   }
 
   /**
    * Collect the current stack trace for debugging purposes.
    *
-   * @param stackTracesDepth Depth to traverse in the call stack
-   * @returns this for method chaining
-   */
-  private collectStackTrace(stackTracesDepth: number = STACK_TRACE_DEPTH) {
-    if (!this.stackTracesEnabled) {
-      return this
-    }
-
-    if (this.stackTracesOverride) {
-      this.stackTraces.push(this.stackTracesOverride)
-      return this
-    }
-
-    this.stackTraces.push(getCallerFrame(stackTracesDepth))
-    return this
-  }
-
-  /**
-   * Temporarily disable stack trace collection.
+   * The trace resolves to the first frame outside the SDK, so methods that
+   * delegate to other builder methods (e.g. `remove()` → `runCmd()`) collect
+   * the user's call site without any bookkeeping.
    *
    * @returns this for method chaining
    */
-  private disableStackTrace() {
-    this.stackTracesEnabled = false
+  private collectStackTrace() {
+    this.stackTraces.push(getCallerFrame())
     return this
-  }
-
-  /**
-   * Re-enable stack trace collection.
-   *
-   * @returns this for method chaining
-   */
-  private enableStackTrace() {
-    this.stackTracesEnabled = true
-    return this
-  }
-
-  /**
-   * Execute a function in a clean stack trace context.
-   *
-   * @param fn Function to execute
-   * @returns The result of the function
-   */
-  private runInNewStackTraceContext<T>(fn: () => T): T {
-    this.disableStackTrace()
-    let result: T
-    try {
-      result = fn()
-    } finally {
-      this.enableStackTrace()
-    }
-    this.collectStackTrace(STACK_TRACE_DEPTH + 1)
-    return result
-  }
-
-  private runInStackTraceOverrideContext<T>(
-    fn: () => T,
-    stackTraceOverride: string | undefined
-  ): T {
-    this.stackTracesOverride = stackTraceOverride
-    try {
-      return fn()
-    } finally {
-      this.stackTracesOverride = undefined
-    }
   }
 
   /**

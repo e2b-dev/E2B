@@ -324,37 +324,55 @@ def strip_ansi_escape_codes(text: str) -> str:
     return ansi_escape.sub("", text)
 
 
-def get_caller_frame(depth: int) -> Optional[FrameType]:
+# Root directory of the e2b package, used as the boundary between SDK frames
+# and user frames when capturing stack traces.
+_SDK_ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _is_user_file(filename: str) -> bool:
+    """Check whether a frame's file lies outside the SDK package."""
+    try:
+        return (
+            os.path.commonpath([_SDK_ROOT_DIR, os.path.abspath(filename)])
+            != _SDK_ROOT_DIR
+        )
+    except ValueError:
+        # Different drives on Windows — outside the SDK
+        return True
+
+
+def get_caller_frame() -> Optional[FrameType]:
     """
-    Get the caller's stack frame at a specific depth.
+    Get the caller's stack frame in user code.
 
     This is used to provide better error messages and debugging information
     by tracking where template methods were called from in user code.
 
-    :param depth: The depth of the stack trace to retrieve
+    The caller is the first frame whose file lies outside the SDK package.
+    Selecting frames by boundary rather than by fixed depth keeps the result
+    stable no matter how many SDK-internal frames sit in between.
 
     :return: The caller frame, or None if not available
     """
-    stack = inspect.stack()[1:]
-    if len(stack) < depth + 1:
-        return None
-    return stack[depth].frame
+    frame = inspect.currentframe()
+    while frame is not None:
+        if _is_user_file(frame.f_code.co_filename):
+            return frame
+        frame = frame.f_back
+    return None
 
 
-def get_caller_directory(depth: int) -> Optional[str]:
+def get_caller_directory() -> Optional[str]:
     """
-    Get the directory of the caller at a specific stack depth.
+    Get the directory of the caller in user code.
 
     This is used to determine the file_context_path when creating a template,
     so file paths are resolved relative to the user's template file location.
 
-    :param depth: The depth of the stack trace
-
     :return: The caller's directory path, or None if not available
     """
     try:
-        # Get the stack trace
-        caller_frame = get_caller_frame(depth)
+        caller_frame = get_caller_frame()
         if caller_frame is None:
             return None
 

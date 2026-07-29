@@ -1,11 +1,11 @@
 import * as commander from 'commander'
-import * as fs from 'fs'
 import * as chalk from 'chalk'
 import * as e2b from 'e2b'
 
 import {
   USER_CONFIG_PATH,
   getConfigRefreshTimestamp,
+  getUserConfig,
   writeUserConfig,
 } from 'src/user'
 import { ensureUserConfig, Teams } from 'src/api'
@@ -20,7 +20,9 @@ export const configureCommand = new commander.Command('configure')
 
     console.log('Configuring user...\n')
 
-    if (!fs.existsSync(USER_CONFIG_PATH)) {
+    // A file that exists but fails validation counts as signed out too —
+    // getUserConfig returns null for it (and prints the deprecation message).
+    if (!getUserConfig()) {
       console.log('No user config found, run `e2b auth login` to log in first.')
       return
     }
@@ -40,29 +42,29 @@ export const configureCommand = new commander.Command('configure')
       signal: config.getSignal(),
     })
 
-    handleE2BRequestError(res, 'Error getting teams')
+    handleE2BRequestError(res, 'Error getting projects')
     const teams = res.data as Teams
 
     const team = (
       await inquirer.default.prompt([
         {
-          name: 'team',
-          message: chalk.default.underline('Select team'),
+          name: 'project',
+          message: chalk.default.underline('Select project'),
           type: 'list',
           pageSize: 50,
           choices: teams.map((team) => ({
-            name: asFormattedTeam(team, userConfig.teamId),
+            name: asFormattedTeam(team, userConfig.projectId),
             value: team,
           })),
         },
       ])
-    )['team']
+    )['project']
 
-    userConfig.teamName = team.name
-    userConfig.teamId = team.teamID
-    userConfig.teamApiKey = team.apiKey
+    userConfig.projectName = team.name
+    userConfig.projectId = team.teamID
+    userConfig.projectApiKey = team.apiKey
     userConfig.last_refresh = getConfigRefreshTimestamp()
     writeUserConfig(USER_CONFIG_PATH, userConfig)
 
-    console.log(`Team ${asBold(team.name)} (${team.teamID}) selected.\n`)
+    console.log(`Project ${asBold(team.name)} (${team.teamID}) selected.\n`)
   })

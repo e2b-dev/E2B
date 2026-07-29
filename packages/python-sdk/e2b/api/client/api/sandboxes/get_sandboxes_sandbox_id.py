@@ -62,7 +62,9 @@ def sync_detailed(
     *,
     client: AuthenticatedClient,
 ) -> Response[Union[Error, SandboxDetail]]:
-    """Get a sandbox by id
+    """Sandbox
+
+     Get a sandbox by id
 
     Args:
         sandbox_id (str):
@@ -91,7 +93,9 @@ def sync(
     *,
     client: AuthenticatedClient,
 ) -> Optional[Union[Error, SandboxDetail]]:
-    """Get a sandbox by id
+    """Sandbox
+
+     Get a sandbox by id
 
     Args:
         sandbox_id (str):
@@ -115,7 +119,9 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
 ) -> Response[Union[Error, SandboxDetail]]:
-    """Get a sandbox by id
+    """Sandbox
+
+     Get a sandbox by id
 
     Args:
         sandbox_id (str):
@@ -142,7 +148,9 @@ async def asyncio(
     *,
     client: AuthenticatedClient,
 ) -> Optional[Union[Error, SandboxDetail]]:
-    """Get a sandbox by id
+    """Sandbox
+
+     Get a sandbox by id
 
     Args:
         sandbox_id (str):

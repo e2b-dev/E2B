@@ -1,6 +1,8 @@
 import datetime
 
-from e2b.envd.filesystem import filesystem_pb2
+from protobuf.wkt import Timestamp
+
+from e2b.envd.filesystem import filesystem_pb
 from e2b.sandbox.filesystem.filesystem import (
     FileType,
     WriteInfo,
@@ -39,10 +41,49 @@ def test_map_file_type_str():
     assert map_file_type_str(None) is None
 
 
+def test_map_entry_info_maps_every_known_file_type():
+    def entry(file_type: filesystem_pb.FileType) -> filesystem_pb.EntryInfo:
+        return filesystem_pb.EntryInfo(
+            name="entry",
+            type=file_type,
+            path="/home/user/entry",
+            size=0,
+            mode=0o644,
+            permissions="-rw-r--r--",
+            owner="user",
+            group="user",
+        )
+
+    assert map_entry_info(entry(filesystem_pb.FileType.FILE)).type is FileType.FILE
+    assert map_entry_info(entry(filesystem_pb.FileType.DIRECTORY)).type is FileType.DIR
+    assert (
+        map_entry_info(entry(filesystem_pb.FileType.SYMLINK)).type is FileType.SYMLINK
+    )
+
+
+def test_map_entry_info_keeps_symlink_target_on_symlink_entries():
+    entry = filesystem_pb.EntryInfo(
+        name="link",
+        type=filesystem_pb.FileType.SYMLINK,
+        path="/home/user/link",
+        size=0,
+        mode=0o777,
+        permissions="lrwxrwxrwx",
+        owner="user",
+        group="user",
+    )
+    entry.symlink_target = "/home/user/a.txt"
+
+    info = map_entry_info(entry)
+
+    assert info.type is FileType.SYMLINK
+    assert info.symlink_target == "/home/user/a.txt"
+
+
 def test_map_entry_info_modified_time_is_timezone_aware():
-    entry = filesystem_pb2.EntryInfo(
+    entry = filesystem_pb.EntryInfo(
         name="a.txt",
-        type=filesystem_pb2.FileType.FILE_TYPE_FILE,
+        type=filesystem_pb.FileType.FILE,
         path="/home/user/a.txt",
         size=4,
         mode=0o644,
@@ -50,7 +91,7 @@ def test_map_entry_info_modified_time_is_timezone_aware():
         owner="user",
         group="user",
     )
-    entry.modified_time.FromDatetime(
+    entry.modified_time = Timestamp.from_datetime(
         datetime.datetime(2026, 1, 2, 3, 4, 5, tzinfo=datetime.timezone.utc)
     )
 

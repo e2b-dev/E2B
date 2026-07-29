@@ -18,66 +18,66 @@ class TemplateBuild:
     """
     Attributes:
         build_id (UUID): Identifier of the build
-        cpu_count (int): CPU cores for the sandbox
-        created_at (datetime.datetime): Time when the build was created
-        memory_mb (int): Memory for the sandbox in MiB
         status (TemplateBuildStatus): Status of the template build
+        created_at (datetime.datetime): Time when the build was created
         updated_at (datetime.datetime): Time when the build was last updated
+        cpu_count (int): CPU cores for the sandbox
+        memory_mb (int): Memory for the sandbox in MiB
+        finished_at (Union[Unset, datetime.datetime]): Time when the build was finished
         disk_size_mb (Union[Unset, int]): Disk size for the sandbox in MiB
         envd_version (Union[Unset, str]): Version of the envd running in the sandbox
-        finished_at (Union[Unset, datetime.datetime]): Time when the build was finished
     """
 
     build_id: UUID
-    cpu_count: int
-    created_at: datetime.datetime
-    memory_mb: int
     status: TemplateBuildStatus
+    created_at: datetime.datetime
     updated_at: datetime.datetime
+    cpu_count: int
+    memory_mb: int
+    finished_at: Union[Unset, datetime.datetime] = UNSET
     disk_size_mb: Union[Unset, int] = UNSET
     envd_version: Union[Unset, str] = UNSET
-    finished_at: Union[Unset, datetime.datetime] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         build_id = str(self.build_id)
 
-        cpu_count = self.cpu_count
+        status = self.status.value
 
         created_at = self.created_at.isoformat()
 
-        memory_mb = self.memory_mb
-
-        status = self.status.value
-
         updated_at = self.updated_at.isoformat()
 
-        disk_size_mb = self.disk_size_mb
+        cpu_count = self.cpu_count
 
-        envd_version = self.envd_version
+        memory_mb = self.memory_mb
 
         finished_at: Union[Unset, str] = UNSET
         if not isinstance(self.finished_at, Unset):
             finished_at = self.finished_at.isoformat()
+
+        disk_size_mb = self.disk_size_mb
+
+        envd_version = self.envd_version
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
                 "buildID": build_id,
-                "cpuCount": cpu_count,
-                "createdAt": created_at,
-                "memoryMB": memory_mb,
                 "status": status,
+                "createdAt": created_at,
                 "updatedAt": updated_at,
+                "cpuCount": cpu_count,
+                "memoryMB": memory_mb,
             }
         )
+        if finished_at is not UNSET:
+            field_dict["finishedAt"] = finished_at
         if disk_size_mb is not UNSET:
             field_dict["diskSizeMB"] = disk_size_mb
         if envd_version is not UNSET:
             field_dict["envdVersion"] = envd_version
-        if finished_at is not UNSET:
-            field_dict["finishedAt"] = finished_at
 
         return field_dict
 
@@ -86,19 +86,15 @@ class TemplateBuild:
         d = dict(src_dict)
         build_id = UUID(d.pop("buildID"))
 
-        cpu_count = d.pop("cpuCount")
+        status = TemplateBuildStatus(d.pop("status"))
 
         created_at = isoparse(d.pop("createdAt"))
 
-        memory_mb = d.pop("memoryMB")
-
-        status = TemplateBuildStatus(d.pop("status"))
-
         updated_at = isoparse(d.pop("updatedAt"))
 
-        disk_size_mb = d.pop("diskSizeMB", UNSET)
+        cpu_count = d.pop("cpuCount")
 
-        envd_version = d.pop("envdVersion", UNSET)
+        memory_mb = d.pop("memoryMB")
 
         _finished_at = d.pop("finishedAt", UNSET)
         finished_at: Union[Unset, datetime.datetime]
@@ -107,16 +103,20 @@ class TemplateBuild:
         else:
             finished_at = isoparse(_finished_at)
 
+        disk_size_mb = d.pop("diskSizeMB", UNSET)
+
+        envd_version = d.pop("envdVersion", UNSET)
+
         template_build = cls(
             build_id=build_id,
-            cpu_count=cpu_count,
-            created_at=created_at,
-            memory_mb=memory_mb,
             status=status,
+            created_at=created_at,
             updated_at=updated_at,
+            cpu_count=cpu_count,
+            memory_mb=memory_mb,
+            finished_at=finished_at,
             disk_size_mb=disk_size_mb,
             envd_version=envd_version,
-            finished_at=finished_at,
         )
 
         template_build.additional_properties = d

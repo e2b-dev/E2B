@@ -387,6 +387,21 @@ test('setupRequestController handshake timeout aborts with TimeoutError reason',
   assert.equal((controller.signal.reason as DOMException).name, 'TimeoutError')
 })
 
+test('setupRequestController keeps the winning abort reason when a later abort races', async () => {
+  const userController = new AbortController()
+  const { controller } = setupRequestController(20, userController.signal)
+  await new Promise((resolve) => setTimeout(resolve, 40))
+  assert.equal(controller.signal.aborted, true)
+
+  // A user abort arriving after the timeout already aborted must not disturb
+  // the committed reason (on Bun: nor steal the pin keeping it alive).
+  userController.abort(new Error('user cancel'))
+  await new Promise((resolve) => setTimeout(resolve, 20))
+
+  assert.ok(controller.signal.reason instanceof DOMException)
+  assert.equal((controller.signal.reason as DOMException).name, 'TimeoutError')
+})
+
 test('setupRequestController user signal still cancels after clearStartTimeout', () => {
   const userController = new AbortController()
   const { controller, clearStartTimeout } = setupRequestController(

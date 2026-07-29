@@ -73,7 +73,9 @@ def sync_detailed(
     client: AuthenticatedClient,
     body: DeleteTemplateTagsRequest,
 ) -> Response[Union[Any, Error]]:
-    """Delete multiple tags from templates
+    """Delete template tags
+
+     Delete multiple tags from templates
 
     Args:
         body (DeleteTemplateTagsRequest):
@@ -102,7 +104,9 @@ def sync(
     client: AuthenticatedClient,
     body: DeleteTemplateTagsRequest,
 ) -> Optional[Union[Any, Error]]:
-    """Delete multiple tags from templates
+    """Delete template tags
+
+     Delete multiple tags from templates
 
     Args:
         body (DeleteTemplateTagsRequest):
@@ -126,7 +130,9 @@ async def asyncio_detailed(
     client: AuthenticatedClient,
     body: DeleteTemplateTagsRequest,
 ) -> Response[Union[Any, Error]]:
-    """Delete multiple tags from templates
+    """Delete template tags
+
+     Delete multiple tags from templates
 
     Args:
         body (DeleteTemplateTagsRequest):
@@ -153,7 +159,9 @@ async def asyncio(
     client: AuthenticatedClient,
     body: DeleteTemplateTagsRequest,
 ) -> Optional[Union[Any, Error]]:
-    """Delete multiple tags from templates
+    """Delete template tags
+
+     Delete multiple tags from templates
 
     Args:
         body (DeleteTemplateTagsRequest):

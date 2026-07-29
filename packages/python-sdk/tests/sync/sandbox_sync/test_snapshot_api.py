@@ -95,6 +95,27 @@ def test_list_snapshots_for_sandbox(sandbox: Sandbox):
 
 
 @pytest.mark.skip_debug()
+def test_list_snapshots_filtered_by_name(sandbox: Sandbox, sandbox_test_id: str):
+    snapshot_name = f"snap-filter-{sandbox_test_id}"
+
+    snapshot = sandbox.create_snapshot(name=snapshot_name)
+
+    try:
+        paginator = Sandbox.list_snapshots(name=snapshot_name)
+        snapshots = paginator.next_items()
+
+        found = any(s.snapshot_id == snapshot.snapshot_id for s in snapshots)
+        assert found
+
+        empty_paginator = Sandbox.list_snapshots(name=f"{snapshot_name}-does-not-exist")
+        empty_snapshots = empty_paginator.next_items()
+        assert isinstance(empty_snapshots, list)
+        assert len(empty_snapshots) == 0
+    finally:
+        Sandbox.delete_snapshot(snapshot.snapshot_id)
+
+
+@pytest.mark.skip_debug()
 def test_create_named_snapshot(sandbox: Sandbox, sandbox_test_id: str):
     snapshot_name = f"snap-{sandbox_test_id}"
 

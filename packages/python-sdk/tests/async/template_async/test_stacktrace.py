@@ -38,6 +38,7 @@ failure_map: dict[str, Optional[int]] = {
     "set_user": 1,
     "pip_install": 1,
     "npm_install": 1,
+    "bun_install": 1,
     "apt_install": 1,
     "git_clone": 1,
     "set_start_cmd": 1,
@@ -360,6 +361,16 @@ async def test_traces_on_npm_install(async_build):
     template = template.skip_cache().npm_install("nonexistent-package")
     await _expect_to_throw_and_check_trace(
         lambda: async_build(template, name="npm_install"), "npm_install"
+    )
+
+
+@pytest.mark.skip_debug()
+async def test_traces_on_bun_install(async_build):
+    template = AsyncTemplate()
+    template = template.from_base_image()
+    template = template.skip_cache().bun_install("nonexistent-package")
+    await _expect_to_throw_and_check_trace(
+        lambda: async_build(template, name="bun_install"), "bun_install"
     )
 
 

@@ -58,6 +58,7 @@ test('uses a ProxyAgent dispatcher when a proxy is configured', async () => {
       uri?: string
       allowH2?: boolean
       connections?: number
+      proxyTunnel?: boolean
     }) {
       proxyAgents.push(options)
     }
@@ -86,9 +87,63 @@ test('uses a ProxyAgent dispatcher when a proxy is configured', async () => {
       uri: 'http://user:pass@127.0.0.1:8080',
       allowH2: true,
       connections: 100,
+      proxyTunnel: true,
     },
   ])
   expect(requests[0].init?.dispatcher).toBeInstanceOf(ProxyAgent)
+})
+
+test('retries the fetcher build after a failed load instead of caching the rejection', async () => {
+  const Agent = vi.fn()
+  const undiciFetch = vi.fn(() => Promise.resolve(new Response('ok')))
+  const loadUndici = vi
+    .fn<() => Promise<unknown>>()
+    .mockRejectedValueOnce(new Error('transient import failure'))
+    .mockResolvedValue({ Agent, fetch: undiciFetch })
+
+  const { createApiFetchForRuntime } = await import('../../src/api/http2')
+
+  const fetcher = createApiFetchForRuntime('node', {
+    connectionLimit: 1,
+    loadUndici: loadUndici as never,
+  })
+
+  await expect(fetcher('https://example.com/sandboxes')).rejects.toThrow(
+    'transient import failure'
+  )
+
+  const res = await fetcher('https://example.com/sandboxes')
+  expect(await res.text()).toBe('ok')
+  expect(loadUndici).toHaveBeenCalledTimes(2)
+})
+
+test('late-binds the global fetch fallback when undici cannot be loaded', async () => {
+  const { createApiFetchForRuntime } = await import('../../src/api/http2')
+
+  const fetcher = createApiFetchForRuntime('node', {
+    loadUndici: () => Promise.resolve(undefined),
+  })
+
+  const firstFetch = vi.fn(() => Promise.resolve(new Response('first')))
+  vi.stubGlobal('fetch', firstFetch)
+  try {
+    expect(await (await fetcher('https://example.com/sandboxes')).text()).toBe(
+      'first'
+    )
+
+    // A fetch swapped in after the fallback was built (msw, instrumentation)
+    // must still be picked up.
+    const secondFetch = vi.fn(() => Promise.resolve(new Response('second')))
+    vi.stubGlobal('fetch', secondFetch)
+
+    expect(await (await fetcher('https://example.com/sandboxes')).text()).toBe(
+      'second'
+    )
+    expect(firstFetch).toHaveBeenCalledOnce()
+    expect(secondFetch).toHaveBeenCalledOnce()
+  } finally {
+    vi.unstubAllGlobals()
+  }
 })
 
 test('caches API fetchers per proxy', async () => {

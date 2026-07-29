@@ -12,25 +12,25 @@ T = TypeVar("T", bound="AssignedTemplateTags")
 class AssignedTemplateTags:
     """
     Attributes:
-        build_id (UUID): Identifier of the build associated with these tags
         tags (list[str]): Assigned tags of the template
+        build_id (UUID): Identifier of the build associated with these tags
     """
 
-    build_id: UUID
     tags: list[str]
+    build_id: UUID
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        build_id = str(self.build_id)
-
         tags = self.tags
+
+        build_id = str(self.build_id)
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "buildID": build_id,
                 "tags": tags,
+                "buildID": build_id,
             }
         )
 
@@ -39,13 +39,13 @@ class AssignedTemplateTags:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        build_id = UUID(d.pop("buildID"))
-
         tags = cast(list[str], d.pop("tags"))
 
+        build_id = UUID(d.pop("buildID"))
+
         assigned_template_tags = cls(
-            build_id=build_id,
             tags=tags,
+            build_id=build_id,
         )
 
         assigned_template_tags.additional_properties = d

@@ -156,6 +156,10 @@ export enum FileType {
    * Filesystem object is a directory.
    */
   DIR = 'dir',
+  /**
+   * Filesystem object is a symlink.
+   */
+  SYMLINK = 'symlink',
 }
 
 export type WriteEntry = {
@@ -169,6 +173,8 @@ function mapFileType(fileType: FsFileType) {
       return FileType.DIR
     case FsFileType.FILE:
       return FileType.FILE
+    case FsFileType.SYMLINK:
+      return FileType.SYMLINK
   }
 }
 
