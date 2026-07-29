@@ -426,11 +426,11 @@ export class TemplateBase
     return this.fromImage(`ubuntu:${variant}`)
   }
 
-  fromFedoraImage(variant: string = '42'): TemplateBuilder {
+  fromFedoraImage(variant: string = '44'): TemplateBuilder {
     return this.fromImage(`fedora:${variant}`)
   }
 
-  fromAlpineImage(variant: string = '3.22'): TemplateBuilder {
+  fromAlpineImage(variant: string = '3.24'): TemplateBuilder {
     return this.fromImage(`alpine:${variant}`)
   }
 
