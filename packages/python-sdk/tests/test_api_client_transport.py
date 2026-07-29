@@ -1,28 +1,17 @@
 import asyncio
 import json
-import ssl
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import cast
 
 import httpx
 import pytest
-from pyqwest import (
-    Headers,
-    Request,
-    Response,
-    SyncRequest,
-    SyncResponse,
-    SyncTransport,
-    Transport,
-)
+from pyqwest import Headers, Response, SyncResponse
 from pyqwest.httpx import AsyncPyqwestTransport, PyqwestTransport
 
 import e2b.api.client_async as client_async
 import e2b.api.client_sync as client_sync
-from e2b.api import proxy_to_url
 from e2b.api.client_async import AsyncEnvdTransportWithLogger
 from e2b.api.client_async import get_api_client as get_async_api_client
 from e2b.api.client_async import get_envd_transport as get_async_envd_transport
@@ -32,7 +21,6 @@ from e2b.api.client_sync import get_api_client as get_sync_api_client
 from e2b.api.client_sync import get_envd_transport as get_sync_envd_transport
 from e2b.api.client_sync import get_transport as get_sync_transport
 from e2b.connection_config import ConnectionConfig
-from e2b.exceptions import InvalidArgumentException
 
 
 def reset_sync_api_transports():
@@ -50,55 +38,6 @@ def reset_sync_envd_transports():
 def run_in_worker_thread(fn):
     with ThreadPoolExecutor(max_workers=1) as executor:
         return executor.submit(fn).result()
-
-
-def test_proxy_to_url_narrows_to_url_strings():
-    assert proxy_to_url(None) is None
-    assert proxy_to_url("http://127.0.0.1:9999") == "http://127.0.0.1:9999"
-    assert proxy_to_url(httpx.URL("http://127.0.0.1:9999")) == "http://127.0.0.1:9999"
-
-
-def test_proxy_to_url_reduces_httpx_proxy():
-    # httpx.Proxy converts when it reduces to a plain proxy URL, with
-    # credentials (which httpx.Proxy splits off the URL) folded back into
-    # the userinfo.
-    assert proxy_to_url(httpx.Proxy("http://127.0.0.1:9999")) == "http://127.0.0.1:9999"
-    assert (
-        proxy_to_url(httpx.Proxy("http://user:pass@127.0.0.1:9999"))
-        == "http://user:pass@127.0.0.1:9999"
-    )
-    assert (
-        proxy_to_url(httpx.Proxy("http://127.0.0.1:9999", auth=("user", "pass")))
-        == "http://user:pass@127.0.0.1:9999"
-    )
-
-    # Extras pyqwest can't express are rejected rather than silently dropped.
-    with pytest.raises(InvalidArgumentException):
-        proxy_to_url(httpx.Proxy("http://127.0.0.1:9999", headers={"X-Auth": "t"}))
-    with pytest.raises(InvalidArgumentException):
-        proxy_to_url(
-            httpx.Proxy(
-                "https://127.0.0.1:9999", ssl_context=ssl.create_default_context()
-            )
-        )
-
-
-def test_connection_retry_policy_retries_only_connection_errors():
-    # The inner transport is never invoked by should_retry_response.
-    sync_policy = client_sync.ConnectionRetryTransport(cast(SyncTransport, object()))
-    async_policy = client_async.ConnectionRetryTransport(cast(Transport, object()))
-    sync_request = SyncRequest("GET", "https://example.com")
-    async_request = Request("GET", "https://example.com")
-
-    assert sync_policy.should_retry_response(sync_request, ConnectionError("refused"))
-    # TimeoutError is an OSError but not a ConnectionError: the request
-    # may have been written, so it must not be replayed.
-    assert not sync_policy.should_retry_response(sync_request, TimeoutError())
-    assert not sync_policy.should_retry_response(sync_request, RuntimeError())
-
-    assert async_policy.should_retry_response(async_request, ConnectionError("refused"))
-    assert not async_policy.should_retry_response(async_request, TimeoutError())
-    assert not async_policy.should_retry_response(async_request, RuntimeError())
 
 
 def test_sync_api_transport_strips_host_header():
@@ -217,8 +156,9 @@ def test_sync_api_client_request_timeout_zero_disables_timeout(test_api_key):
 
 
 def test_sync_envd_transport_uses_separate_stack(test_api_key):
-    # envd file-transfer traffic stays on the httpx-native transport (its RPC
-    # migration is a separate change); only REST API calls go through pyqwest.
+    # envd file transfers stay on the httpx-native transports (envd RPC has
+    # its own pyqwest pool under connectrpc); REST API calls go through the
+    # pyqwest httpx adapter.
     reset_sync_api_transports()
     reset_sync_envd_transports()
     config = ConnectionConfig(api_key=test_api_key)

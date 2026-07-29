@@ -9,25 +9,20 @@ from typing import (
     Callable,
     Optional,
     TypeVar,
-    Union,
     cast,
 )
 
 from connectrpc.code import Code
 from connectrpc.errors import ConnectError
-from pyqwest import Client, HTTPTransport, Request, Response, Transport
-from pyqwest.middleware.retry import RetryTransport
+from pyqwest import Client, Request, Response, Transport
 
-from e2b.api import connection_retries
+from e2b.api import proxy_to_url
+from e2b.api.client_async import retrying_http_transport
 from e2b.connection_config import ConnectionConfig
 from e2b.envd.client_shared import (
     ENVD_JSON_CODEC,
     ENVD_RPC_COMPRESSION,
     plain_http_error,
-    pool_idle_timeout,
-    pool_max_idle_per_host,
-    proxy_to_url,
-    should_retry_connection,
 )
 from e2b.envd.interceptors import build_interceptors
 from e2b.exceptions import TimeoutException
@@ -70,17 +65,6 @@ class PlainHTTPErrorTransport:
         raise error
 
 
-class ConnectionRetryTransport(RetryTransport):
-    """Retry only failures establishing the connection; see
-    :func:`e2b.envd.client_shared.should_retry_connection` for the policy
-    rationale."""
-
-    def should_retry_response(
-        self, request: Request, response: Union[Response, Exception]
-    ) -> bool:
-        return should_retry_connection(response)
-
-
 def get_transport(proxy_url: Optional[str]) -> "PlainHTTPErrorTransport":
     with _transport_lock:
         transport = _transports.get(proxy_url)
@@ -89,17 +73,7 @@ def get_transport(proxy_url: Optional[str]) -> "PlainHTTPErrorTransport":
             # retry backoff counts against the request timeout. The plain-
             # error normalization sits outside the retries so it converts
             # the settled response once.
-            transport = PlainHTTPErrorTransport(
-                ConnectionRetryTransport(
-                    HTTPTransport(
-                        tls_include_system_certs=True,
-                        proxy=proxy_url,
-                        pool_idle_timeout=pool_idle_timeout,
-                        pool_max_idle_per_host=pool_max_idle_per_host,
-                    ),
-                    max_retries=connection_retries,
-                )
-            )
+            transport = PlainHTTPErrorTransport(retrying_http_transport(proxy_url))
             _transports[proxy_url] = transport
         return transport
 
@@ -111,9 +85,9 @@ def create_rpc_client(
 ) -> TClient:
     """Build a generated async connectrpc client (e.g. ``ProcessClient``)
     wired with the shared pyqwest transport (which retries failed connects,
-    see :class:`ConnectionRetryTransport`), the envd JSON codec, and the
-    SDK's default-header and logging interceptors. Compression is disabled
-    (see ``ENVD_RPC_COMPRESSION``).
+    see :class:`e2b.api.client_async.ConnectionRetryTransport`), the envd
+    JSON codec, and the SDK's default-header and logging interceptors.
+    Compression is disabled (see ``ENVD_RPC_COMPRESSION``).
     """
     http_client = Client(get_transport(proxy_to_url(config.proxy)))
     return client_cls(

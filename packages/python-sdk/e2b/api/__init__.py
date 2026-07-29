@@ -8,8 +8,6 @@ from typing import Optional, Protocol, Union
 
 import httpx
 from httpx import AsyncBaseTransport, BaseTransport, Limits, Timeout
-from httpx._types import ProxyTypes
-
 from e2b.api.client.client import AuthenticatedClient
 from e2b.api.client.types import Response
 from e2b.api.metadata import default_headers
@@ -69,16 +67,16 @@ limits = Limits(
 
 connection_retries = int(os.getenv("E2B_CONNECTION_RETRIES") or "3")
 
-# Mirror the httpx pool tuning above with pyqwest's equivalents for the REST
-# API transports. `pool_max_idle_per_host` is per host rather than httpx's
-# global idle cap, but API traffic goes to a single host, so the values map
-# directly; reqwest has no counterpart to `E2B_MAX_CONNECTIONS` (it does not
-# cap concurrent connections).
+# Mirror the httpx pool tuning above with pyqwest's equivalents, shared by
+# the REST API and envd RPC transports. `pool_max_idle_per_host` is per host
+# rather than httpx's global idle cap, which suits both: API traffic goes to
+# a single host and each sandbox is its own host. reqwest has no counterpart
+# to `E2B_MAX_CONNECTIONS` (it does not cap concurrent connections).
 pool_idle_timeout = float(os.getenv("E2B_KEEPALIVE_EXPIRY") or "300")
 pool_max_idle_per_host = int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20")
 
 
-def proxy_to_url(proxy: Optional[ProxyTypes]) -> Optional[str]:
+def proxy_to_url(proxy: object) -> Optional[str]:
     """Narrow the ``proxy`` connection option to the proxy URL string pyqwest
     transports take (scheme http, https, socks5, or socks5h, credentials in
     the URL userinfo). ``httpx.URL`` and ``httpx.Proxy`` — which the httpx
@@ -94,20 +92,18 @@ def proxy_to_url(proxy: Optional[ProxyTypes]) -> Optional[str]:
     if isinstance(proxy, httpx.Proxy):
         if proxy.headers:
             raise InvalidArgumentException(
-                "E2B API calls don't support httpx.Proxy custom headers; "
+                "httpx.Proxy custom headers are not supported; "
                 "pass credentials in the proxy URL instead, "
                 'e.g. proxy="http://user:pass@localhost:8030"'
             )
         if proxy.ssl_context is not None:
-            raise InvalidArgumentException(
-                "E2B API calls don't support httpx.Proxy ssl_context"
-            )
+            raise InvalidArgumentException("httpx.Proxy ssl_context is not supported")
         url = proxy.url
         if proxy.auth is not None:
             url = url.copy_with(username=proxy.auth[0], password=proxy.auth[1])
         return str(url)
     raise InvalidArgumentException(
-        "E2B API calls support only URL-string proxies, "
+        "Only URL-string proxies are supported, "
         'e.g. proxy="http://user:pass@localhost:8030"'
     )
 

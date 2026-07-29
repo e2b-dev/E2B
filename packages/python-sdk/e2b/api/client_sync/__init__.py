@@ -49,17 +49,36 @@ class ApiPyqwestTransport(PyqwestTransport):
 
 
 class ConnectionRetryTransport(SyncRetryTransport):
-    """Retry only failures establishing the connection, matching the
-    connect-only ``retries`` of the httpx transport this replaced: pyqwest
-    raises the builtin ``ConnectionError`` only before the request was
-    written, so these retries can never replay a request the API may have
-    received. The retry middleware's default policy would otherwise also
-    retry I/O errors and 429/5xx responses for idempotent methods."""
+    """Retry only failures establishing the connection — shared by the REST
+    API and envd RPC stacks: pyqwest raises the builtin ``ConnectionError``
+    only before the request was written, so these retries can never replay a
+    request the server may have received (a delivered REST call or unary RPC
+    like ``SendInput``). This matches the connect-only ``retries`` of the
+    httpx transports this replaced; the retry middleware's default policy
+    would otherwise also retry I/O errors and 429/5xx responses for
+    idempotent methods."""
 
     def should_retry_response(
         self, request: SyncRequest, response: Union[SyncResponse, Exception]
     ) -> bool:
         return isinstance(response, ConnectionError)
+
+
+def retrying_http_transport(proxy_url: Optional[str]) -> ConnectionRetryTransport:
+    """A fresh pyqwest transport (= its own connection pool) with the SDK's
+    shared tuning — system CA certs (without which TLS through an
+    intercepting proxy fails), the httpx-equivalent pool limits, and
+    connect-only retries. The REST API and envd RPC stacks each cache their
+    own instances (pool unification is a follow-up)."""
+    return ConnectionRetryTransport(
+        SyncHTTPTransport(
+            tls_include_system_certs=True,
+            proxy=proxy_url,
+            pool_idle_timeout=pool_idle_timeout,
+            pool_max_idle_per_host=pool_max_idle_per_host,
+        ),
+        max_retries=connection_retries,
+    )
 
 
 _transport_lock = threading.Lock()
@@ -77,17 +96,7 @@ def get_transport(config: ConnectionConfig) -> "ApiPyqwestTransport":
     with _transport_lock:
         transport = _transports.get(proxy_url)
         if transport is None:
-            transport = ApiPyqwestTransport(
-                ConnectionRetryTransport(
-                    SyncHTTPTransport(
-                        tls_include_system_certs=True,
-                        proxy=proxy_url,
-                        pool_idle_timeout=pool_idle_timeout,
-                        pool_max_idle_per_host=pool_max_idle_per_host,
-                    ),
-                    max_retries=connection_retries,
-                )
-            )
+            transport = ApiPyqwestTransport(retrying_http_transport(proxy_url))
             _transports[proxy_url] = transport
         return transport
 

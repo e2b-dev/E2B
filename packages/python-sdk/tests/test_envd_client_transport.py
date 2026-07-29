@@ -1,8 +1,10 @@
 import httpx
 import pytest
 
+import e2b.api.client_async as api_client_async
+import e2b.api.client_sync as api_client_sync
+from e2b.api import proxy_to_url
 from e2b.envd import client_async, client_sync
-from e2b.envd.client_shared import proxy_to_url
 from e2b.exceptions import InvalidArgumentException
 
 
@@ -98,7 +100,7 @@ def test_transport_stack_normalizes_plain_errors_and_retries_connects():
     async_transport = client_async.get_transport(None)
     assert isinstance(sync_transport, client_sync.PlainHTTPErrorTransport)
     assert isinstance(async_transport, client_async.PlainHTTPErrorTransport)
-    assert isinstance(sync_transport._inner, client_sync.ConnectionRetryTransport)
-    assert isinstance(async_transport._inner, client_async.ConnectionRetryTransport)
+    assert isinstance(sync_transport._inner, api_client_sync.ConnectionRetryTransport)
+    assert isinstance(async_transport._inner, api_client_async.ConnectionRetryTransport)
     assert sync_transport._inner._max_retries == connection_retries
     assert async_transport._inner._max_retries == connection_retries
