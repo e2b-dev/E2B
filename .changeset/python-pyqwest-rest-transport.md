@@ -26,5 +26,6 @@ such a URL (`httpx.Proxy` auth is folded back into the URL userinfo);
 `ssl_context` — raise `InvalidArgumentException` rather than being silently
 dropped.
 
-envd traffic (sandbox commands, filesystem, PTY, file transfers) is not
-affected and stays on its existing stack.
+envd traffic is not affected: RPC (commands, PTY, filesystem watch) already
+runs on pyqwest via `connectrpc`, and the envd HTTP API (file transfers,
+health checks) keeps its httpx transports.
