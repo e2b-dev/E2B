@@ -2,6 +2,7 @@ import asyncio
 import json
 import ssl
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import cast
@@ -364,9 +365,12 @@ async def test_async_envd_transport_uses_separate_stack(test_api_key):
 
 
 class _EchoHandler(BaseHTTPRequestHandler):
-    """Answers every GET with a JSON echo of the request headers."""
+    """Answers every GET with a JSON echo of the request headers; a path
+    starting with ``/slow`` sleeps 5 seconds first."""
 
     def do_GET(self):
+        if self.path.startswith("/slow"):
+            time.sleep(5)
         headers = {k.lower(): v for k, v in self.headers.items()}
         body = json.dumps({"path": self.path, "headers": headers}).encode()
         self.send_response(200)
@@ -466,6 +470,39 @@ async def test_async_api_client_round_trips_through_pyqwest(test_api_key, echo_s
         assert echoed["path"] == "/sandboxes"
         assert echoed["headers"]["x-api-key"] == test_api_key
         assert echoed["headers"]["package_version"]
+    finally:
+        await httpx_client.aclose()
+        reset_async_api_transports()
+
+
+def test_sync_api_client_timeout_raises_httpx_read_timeout(test_api_key, echo_server):
+    # pyqwest raises the builtin TimeoutError; the transport re-raises it as
+    # httpx.ReadTimeout to keep the httpx.TimeoutException contract.
+    reset_sync_api_transports()
+    config = ConnectionConfig(api_key=test_api_key, api_url=echo_server)
+    api_client = get_sync_api_client(config)
+    httpx_client = api_client.get_httpx_client()
+
+    try:
+        with pytest.raises(httpx.ReadTimeout):
+            httpx_client.request("GET", "/slow", timeout=0.2)
+    finally:
+        httpx_client.close()
+        reset_sync_api_transports()
+
+
+@pytest.mark.asyncio
+async def test_async_api_client_timeout_raises_httpx_read_timeout(
+    test_api_key, echo_server
+):
+    reset_async_api_transports()
+    config = ConnectionConfig(api_key=test_api_key, api_url=echo_server)
+    api_client = get_async_api_client(config)
+    httpx_client = api_client.get_async_httpx_client()
+
+    try:
+        with pytest.raises(httpx.ReadTimeout):
+            await httpx_client.request("GET", "/slow", timeout=0.2)
     finally:
         await httpx_client.aclose()
         reset_async_api_transports()

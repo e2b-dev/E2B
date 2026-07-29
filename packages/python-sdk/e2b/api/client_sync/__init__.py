@@ -26,17 +26,26 @@ def get_api_client(config: ConnectionConfig, **kwargs) -> ApiClient:
 
 
 class ApiPyqwestTransport(PyqwestTransport):
-    """Strip the ``Host`` header httpx adds to every request: hyper derives
+    """The SDK's tweaks on the stock pyqwest httpx adapter.
+
+    Strip the ``Host`` header httpx adds to every request: hyper derives
     HTTP/1 ``Host`` and HTTP/2 ``:authority`` from the URL itself, and
     forwarding an explicit ``host`` header on an HTTP/2 connection makes the
     E2B API edge reset the stream with PROTOCOL_ERROR. (Custom ``Host``
     overrides are therefore not honored, matching hyper's URL-derived
-    behavior.)"""
+    behavior.)
+
+    Re-raise pyqwest's timeouts (the builtin ``TimeoutError``) as
+    ``httpx.ReadTimeout``, preserving the ``httpx.TimeoutException`` contract
+    the httpx-native transport gave callers."""
 
     def handle_request(self, request: httpx.Request) -> httpx.Response:
         if "host" in request.headers:
             del request.headers["host"]
-        return super().handle_request(request)
+        try:
+            return super().handle_request(request)
+        except TimeoutError as e:
+            raise httpx.ReadTimeout(str(e), request=request) from e
 
 
 class ConnectionRetryTransport(SyncRetryTransport):
