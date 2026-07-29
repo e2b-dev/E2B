@@ -1,13 +1,9 @@
-import httpx
-import threading
-
 from typing import Dict, Optional
 
 from connectrpc.code import Code
 from connectrpc.errors import ConnectError
 from packaging.version import Version
-from e2b.api import make_logging_event_hooks
-from e2b.api.client_sync import get_envd_transport
+from e2b.api.client_sync import get_envd_api
 from protobuf import Oneof
 
 from e2b.envd.process import process_connect, process_pb
@@ -43,31 +39,14 @@ class Pty:
         self._envd_api_url = envd_api_url
         self._connection_config = connection_config
         self._envd_version = envd_version
-        self._thread_local = threading.local()
         self._rpc = create_rpc_client(
             process_connect.ProcessClientSync,
             envd_api_url,
             connection_config,
         )
-
-    def _create_envd_api(self) -> httpx.Client:
-        transport = get_envd_transport(self._connection_config)
-        return httpx.Client(
-            base_url=self._envd_api_url,
-            transport=transport,
-            headers=self._connection_config.sandbox_headers,
-            event_hooks=make_logging_event_hooks(self._connection_config.logger),
-        )
-
-    @property
-    def _envd_api(self) -> httpx.Client:
-        # Unlike the shared RPC client, the httpx transports are per-thread
-        # (see e2b.api.client_sync), so the client wrapping them is too.
-        envd_api = getattr(self._thread_local, "envd_api", None)
-        if envd_api is None:
-            envd_api = self._create_envd_api()
-            self._thread_local.envd_api = envd_api
-        return envd_api
+        # Like the RPC client, the pyqwest transport underneath is
+        # thread-safe, so one client serves all threads.
+        self._envd_api = get_envd_api(connection_config, envd_api_url)
 
     def _check_health(self) -> Optional[bool]:
         return check_sandbox_health(self._envd_api)

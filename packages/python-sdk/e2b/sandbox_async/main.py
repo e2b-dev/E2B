@@ -9,9 +9,8 @@ import httpx
 from packaging.version import Version
 from typing_extensions import Self, Unpack
 
-from e2b.api import make_async_logging_event_hooks
 from e2b.api.client.types import Unset
-from e2b.api.client_async import get_envd_transport as get_transport
+from e2b.api.client_async import get_envd_api
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
@@ -105,13 +104,7 @@ class AsyncSandbox(SandboxApi):
         """
         super().__init__(**opts)
 
-        self._transport = get_transport(self.connection_config)
-        self._envd_api = httpx.AsyncClient(
-            base_url=self.envd_api_url,
-            transport=self._transport,
-            headers=self.connection_config.sandbox_headers,
-            event_hooks=make_async_logging_event_hooks(self.connection_config.logger),
-        )
+        self._envd_api = get_envd_api(self.connection_config, self.envd_api_url)
         self._filesystem = Filesystem(
             self.envd_api_url,
             self._envd_version,
