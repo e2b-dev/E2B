@@ -2,12 +2,24 @@ name: Build and push prepared templates
 
 on:
   workflow_dispatch:
+    inputs:
+      template:
+        description: 'Template to build'
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - base
+          - httpbin
 
 permissions:
   contents: read
 
 jobs:
   buildAndPushImage:
+    # Only the base template has a DockerHub counterpart.
+    if: ${{ inputs.template == 'all' || inputs.template == 'base' }}
     defaults:
       run:
         working-directory: ./templates/base
@@ -46,7 +58,27 @@ jobs:
         uses: ./.github/actions/build-cli
 
       - name: Build and publish base template
+        if: ${{ inputs.template == 'all' || inputs.template == 'base' }}
         working-directory: ./templates/base
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
         run: e2b template create base --memory-mb 512
+
+      # Sidecar the network transform tests spawn as a publicly reachable echo
+      # server. Stays private to the E2B team, like the base template — the
+      # tests that use it need our API key anyway. The ready command doubles as
+      # the build-time smoke test: the build only finishes once go-httpbin
+      # answers on the port the tests connect to.
+      #
+      # The alias is passed unprefixed because the server namespaces it with the
+      # team slug: the template the tests spawn is `e2b/httpbin`. Only `base`
+      # predates namespacing and stays bare.
+      - name: Build httpbin template
+        if: ${{ inputs.template == 'all' || inputs.template == 'httpbin' }}
+        working-directory: ./templates/httpbin
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+        run: |
+          e2b template create httpbin --memory-mb 512 \
+            --cmd 'go-httpbin -host 0.0.0.0 -port 8080' \
+            --ready-cmd 'curl -fsS http://localhost:8080/status/200 > /dev/null'
