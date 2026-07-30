@@ -30,8 +30,6 @@ function wrangler(args: string[]) {
   return { ...result, output: `${result.stdout ?? ''}\n${result.stderr ?? ''}` }
 }
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
 // A temporary deploy lands on a brand-new account subdomain
 // (<worker>.<random-name>.workers.dev), and Cloudflare serves its HTML 404
 // page ("nothing is here yet") until the route propagates to the edge —
@@ -56,7 +54,7 @@ async function waitUntilLive(workerUrl: string, timeoutMs = 240_000) {
         `Worker at ${workerUrl} did not come up within ${timeoutMs / 1000}s of deploy`
       )
     }
-    await sleep(3_000)
+    await new Promise((resolve) => setTimeout(resolve, 3_000))
   }
 }
 
