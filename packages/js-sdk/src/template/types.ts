@@ -247,22 +247,22 @@ export interface TemplateFromImage {
 
   /**
    * Start from a Fedora-based Docker image.
-   * @param variant Fedora variant (default: '42')
+   * @param variant Fedora variant (default: '44')
    *
    * @example
    * ```ts
-   * Template().fromFedoraImage('42')
+   * Template().fromFedoraImage('44')
    * ```
    */
   fromFedoraImage(variant?: string): TemplateBuilder
 
   /**
    * Start from an Alpine-based Docker image.
-   * @param variant Alpine variant (default: '3.22')
+   * @param variant Alpine variant (default: '3.24')
    *
    * @example
    * ```ts
-   * Template().fromAlpineImage('3.22')
+   * Template().fromAlpineImage('3.24')
    * ```
    */
   fromAlpineImage(variant?: string): TemplateBuilder

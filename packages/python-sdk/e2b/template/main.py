@@ -846,32 +846,32 @@ class TemplateBase:
         """
         return self.from_image(f"ubuntu:{variant}")
 
-    def from_fedora_image(self, variant: str = "42") -> TemplateBuilder:
+    def from_fedora_image(self, variant: str = "44") -> TemplateBuilder:
         """
         Start template from a Fedora base image.
 
-        :param variant: Fedora image variant (default: '42')
+        :param variant: Fedora image variant (default: '44')
 
         :return: `TemplateBuilder` class
 
         Example
         ```python
-        Template().from_fedora_image('42')
+        Template().from_fedora_image('44')
         ```
         """
         return self.from_image(f"fedora:{variant}")
 
-    def from_alpine_image(self, variant: str = "3.22") -> TemplateBuilder:
+    def from_alpine_image(self, variant: str = "3.24") -> TemplateBuilder:
         """
         Start template from an Alpine base image.
 
-        :param variant: Alpine image variant (default: '3.22')
+        :param variant: Alpine image variant (default: '3.24')
 
         :return: `TemplateBuilder` class
 
         Example
         ```python
-        Template().from_alpine_image('3.22')
+        Template().from_alpine_image('3.24')
         ```
         """
         return self.from_image(f"alpine:{variant}")
