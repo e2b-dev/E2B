@@ -12,11 +12,12 @@ from pyqwest.middleware.retry import RetryTransport
 
 from e2b.api import (
     AsyncApiClient,
+    ProxyConfig,
     connection_retries,
     limits,
     pool_idle_timeout,
     pool_max_idle_per_host,
-    proxy_to_url,
+    proxy_to_config,
 )
 from e2b.connection_config import ConnectionConfig
 
@@ -71,29 +72,34 @@ _transport_lock = threading.Lock()
 # pyqwest's I/O runs on its own Rust runtime, so unlike the httpx envd
 # transports below, the transport is not bound to an event loop and the
 # cache is process-global rather than per-loop.
-_transports: Dict[Optional[str], "AsyncApiPyqwestTransport"] = {}
+_transports: Dict[Optional[ProxyConfig], "AsyncApiPyqwestTransport"] = {}
 
 
 def get_transport(config: ConnectionConfig) -> "AsyncApiPyqwestTransport":
     """The shared pyqwest-backed httpx transport for REST API calls. For TLS
     connections ALPN negotiates the HTTP version (HTTP/2 against the E2B
-    API), like the http2-enabled httpx transport this replaced."""
-    proxy_url = proxy_to_url(config.proxy)
+    API), like the http2-enabled httpx transport this replaced.
+
+    Requests are logged by pyqwest itself on the ``pyqwest.access`` and
+    ``pyqwest`` loggers at ``DEBUG`` (off unless enabled) — the transport-level
+    diagnostics httpcore used to provide. The SDK's own ``logger`` option is
+    separate and sits above this, on the httpx client."""
+    proxy = proxy_to_config(config.proxy)
     with _transport_lock:
-        transport = _transports.get(proxy_url)
+        transport = _transports.get(proxy)
         if transport is None:
             transport = AsyncApiPyqwestTransport(
                 ConnectionRetryTransport(
                     HTTPTransport(
                         tls_include_system_certs=True,
-                        proxy=proxy_url,
+                        proxy=proxy.to_pyqwest() if proxy is not None else None,
                         pool_idle_timeout=pool_idle_timeout,
                         pool_max_idle_per_host=pool_max_idle_per_host,
                     ),
                     max_retries=connection_retries,
                 )
             )
-            _transports[proxy_url] = transport
+            _transports[proxy] = transport
         return transport
 
 

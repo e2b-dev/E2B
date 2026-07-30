@@ -1,5 +1,7 @@
 import asyncio
+import base64
 import json
+import logging
 import ssl
 import threading
 import time
@@ -9,8 +11,10 @@ from typing import cast
 
 import httpx
 import pytest
+from httpx._types import ProxyTypes
 from pyqwest import (
     Headers,
+    Proxy,
     Request,
     Response,
     SyncRequest,
@@ -22,7 +26,7 @@ from pyqwest.httpx import AsyncPyqwestTransport, PyqwestTransport
 
 import e2b.api.client_async as client_async
 import e2b.api.client_sync as client_sync
-from e2b.api import proxy_to_url
+from e2b.api import ProxyConfig, proxy_to_config
 from e2b.api.client_async import AsyncEnvdTransportWithLogger
 from e2b.api.client_async import get_api_client as get_async_api_client
 from e2b.api.client_async import get_envd_transport as get_async_envd_transport
@@ -52,35 +56,56 @@ def run_in_worker_thread(fn):
         return executor.submit(fn).result()
 
 
-def test_proxy_to_url_narrows_to_url_strings():
-    assert proxy_to_url(None) is None
-    assert proxy_to_url("http://127.0.0.1:9999") == "http://127.0.0.1:9999"
-    assert proxy_to_url(httpx.URL("http://127.0.0.1:9999")) == "http://127.0.0.1:9999"
-
-
-def test_proxy_to_url_reduces_httpx_proxy():
-    # httpx.Proxy converts when it reduces to a plain proxy URL, with
-    # credentials (which httpx.Proxy splits off the URL) folded back into
-    # the userinfo.
-    assert proxy_to_url(httpx.Proxy("http://127.0.0.1:9999")) == "http://127.0.0.1:9999"
-    assert (
-        proxy_to_url(httpx.Proxy("http://user:pass@127.0.0.1:9999"))
-        == "http://user:pass@127.0.0.1:9999"
+def test_proxy_to_config_narrows_urls():
+    assert proxy_to_config(None) is None
+    assert proxy_to_config("http://127.0.0.1:9999") == ProxyConfig(
+        "http://127.0.0.1:9999"
     )
-    assert (
-        proxy_to_url(httpx.Proxy("http://127.0.0.1:9999", auth=("user", "pass")))
-        == "http://user:pass@127.0.0.1:9999"
+    assert proxy_to_config(httpx.URL("http://127.0.0.1:9999")) == ProxyConfig(
+        "http://127.0.0.1:9999"
     )
+    # Guards callers that ignore the type hint.
+    with pytest.raises(InvalidArgumentException, match="URL-string"):
+        proxy_to_config(cast(ProxyTypes, object()))
 
-    # Extras pyqwest can't express are rejected rather than silently dropped.
-    with pytest.raises(InvalidArgumentException):
-        proxy_to_url(httpx.Proxy("http://127.0.0.1:9999", headers={"X-Auth": "t"}))
-    with pytest.raises(InvalidArgumentException):
-        proxy_to_url(
+
+def test_proxy_to_config_converts_httpx_proxy():
+    # Everything pyqwest's Proxy can express carries over: the URL, the
+    # credentials httpx.Proxy splits off the URL, and headers for the proxy.
+    assert proxy_to_config(httpx.Proxy("http://127.0.0.1:9999")) == ProxyConfig(
+        "http://127.0.0.1:9999"
+    )
+    assert proxy_to_config(
+        httpx.Proxy("http://user:pass@127.0.0.1:9999")
+    ) == ProxyConfig("http://127.0.0.1:9999", auth=("user", "pass"))
+    assert proxy_to_config(
+        httpx.Proxy("http://127.0.0.1:9999", auth=("user@x", "p@ss"))
+    ) == ProxyConfig("http://127.0.0.1:9999", auth=("user@x", "p@ss"))
+    assert proxy_to_config(
+        httpx.Proxy("http://127.0.0.1:9999", headers={"X-Auth": "t"})
+    ) == ProxyConfig("http://127.0.0.1:9999", headers=(("x-auth", "t"),))
+
+    # A per-proxy TLS context has no pyqwest counterpart; rejected rather than
+    # silently dropped.
+    with pytest.raises(InvalidArgumentException, match="ssl_context"):
+        proxy_to_config(
             httpx.Proxy(
                 "https://127.0.0.1:9999", ssl_context=ssl.create_default_context()
             )
         )
+
+
+def test_proxy_config_builds_a_pyqwest_proxy():
+    config = ProxyConfig(
+        "http://127.0.0.1:9999", auth=("user", "pass"), headers=(("x-auth", "t"),)
+    )
+    assert isinstance(config.to_pyqwest(), Proxy)
+    # Equal configs are one cache key, even though the Proxy objects they
+    # build compare by identity.
+    assert config == ProxyConfig(
+        "http://127.0.0.1:9999", auth=("user", "pass"), headers=(("x-auth", "t"),)
+    )
+    assert config.to_pyqwest() != config.to_pyqwest()
 
 
 def test_connection_retry_policy_retries_only_connection_errors():
@@ -393,6 +418,56 @@ def echo_server():
     finally:
         server.shutdown()
         thread.join()
+
+
+def test_sync_transport_sends_proxy_credentials_and_headers(test_api_key, echo_server):
+    # Everything an httpx.Proxy can express reaches the proxy: the echo server
+    # stands in for one, so the request arrives in absolute form with the
+    # credentials and the extra headers configured for it.
+    reset_sync_api_transports()
+    config = ConnectionConfig(
+        api_key=test_api_key,
+        proxy=httpx.Proxy(
+            echo_server, auth=("user", "pass"), headers={"X-Proxy-Token": "t"}
+        ),
+    )
+    client = httpx.Client(transport=get_sync_transport(config))
+
+    try:
+        echoed = client.get("http://proxied.invalid/health").json()
+        assert echoed["path"] == "http://proxied.invalid/health"
+        assert echoed["headers"]["proxy-authorization"] == (
+            "Basic " + base64.b64encode(b"user:pass").decode()
+        )
+        assert echoed["headers"]["x-proxy-token"] == "t"
+    finally:
+        client.close()
+        reset_sync_api_transports()
+
+
+def test_transport_emits_pyqwest_access_log(test_api_key, echo_server, caplog):
+    # pyqwest logs every request on `pyqwest.access` at DEBUG — the
+    # transport-level diagnostics httpcore used to provide, and separate from
+    # the SDK's own `logger` option.
+    reset_sync_api_transports()
+    config = ConnectionConfig(api_key=test_api_key, api_url=echo_server)
+    api_client = get_sync_api_client(config)
+    httpx_client = api_client.get_httpx_client()
+
+    try:
+        with caplog.at_level(logging.DEBUG, logger="pyqwest.access"):
+            assert httpx_client.request("GET", "/sandboxes").status_code == 200
+
+        messages = [
+            r.getMessage() for r in caplog.records if r.name == "pyqwest.access"
+        ]
+        # The stdlib test server answers HTTP/1.0.
+        assert messages == [
+            f'HTTP Request: GET {echo_server}/sandboxes "HTTP/1.0 200 OK"'
+        ]
+    finally:
+        httpx_client.close()
+        reset_sync_api_transports()
 
 
 def test_sync_api_client_round_trips_through_pyqwest(test_api_key, echo_server):

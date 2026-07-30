@@ -19,13 +19,27 @@ Connection-establishment failures are retried with backoff
 the previous transports. Timeouts keep raising `httpx.ReadTimeout` (an
 `httpx.TimeoutException`), as before.
 
-`proxy` for API calls now takes a URL string (e.g.
+`proxy` for API calls takes a URL string (e.g.
 `proxy="http://user:pass@localhost:8030"`, scheme http, https, socks5, or
-socks5h). `httpx.URL` and `httpx.Proxy` keep working when they reduce to
-such a URL (`httpx.Proxy` auth is folded back into the URL userinfo);
-`httpx.Proxy` extras pyqwest can't express — custom headers, an
-`ssl_context` — raise `InvalidArgumentException` rather than being silently
-dropped.
+socks5h), an `httpx.URL`, or an `httpx.Proxy` — including its credentials
+(sent as `Proxy-Authorization`) and any headers configured for the proxy. The
+one `httpx.Proxy` option pyqwest cannot express, a per-proxy `ssl_context`,
+raises `InvalidArgumentException` rather than being silently dropped.
+
+Low-level HTTP logs stay available: where enabling the `httpcore` logger used
+to show connection-level detail, pyqwest logs one line per request on the
+`pyqwest.access` logger and request lifecycle records on `pyqwest`, both at
+`DEBUG` and off unless enabled:
+
+```python
+import logging
+
+logging.basicConfig()
+logging.getLogger("pyqwest.access").setLevel(logging.DEBUG)
+# DEBUG pyqwest.access - HTTP Request: POST https://api.e2b.app/sandboxes "HTTP/2 201 Created"
+```
+
+The SDK's own `logger` option is unchanged and independent of these.
 
 envd traffic is not affected: RPC (commands, PTY, filesystem watch) already
 runs on pyqwest via `connectrpc`, and the envd HTTP API (file transfers,

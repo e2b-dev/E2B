@@ -4,11 +4,12 @@ import os
 import re
 from dataclasses import dataclass
 from types import TracebackType
-from typing import Optional, Protocol, Union
+from typing import NamedTuple, Optional, Protocol, Tuple, Union
 
 import httpx
 from httpx import AsyncBaseTransport, BaseTransport, Limits, Timeout
 from httpx._types import ProxyTypes
+from pyqwest import Proxy
 
 from e2b.api.client.client import AuthenticatedClient
 from e2b.api.client.types import Response
@@ -78,37 +79,50 @@ pool_idle_timeout = float(os.getenv("E2B_KEEPALIVE_EXPIRY") or "300")
 pool_max_idle_per_host = int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20")
 
 
-def proxy_to_url(proxy: Optional[ProxyTypes]) -> Optional[str]:
-    """Narrow the ``proxy`` connection option to the proxy URL string pyqwest
-    transports take (scheme http, https, socks5, or socks5h, credentials in
-    the URL userinfo). ``httpx.URL`` and ``httpx.Proxy`` — which the httpx
-    transports accepted — are converted when they reduce to such a URL;
-    ``httpx.Proxy`` extras that don't (custom headers, an ssl_context) are
-    rejected rather than silently dropped."""
+class ProxyConfig(NamedTuple):
+    """The ``proxy`` connection option in the shape pyqwest transports take.
+
+    A tuple so it can key the transport caches directly: it is hashable and
+    compares by value, where a ``pyqwest.Proxy`` compares by identity and
+    would hand every call its own connection pool."""
+
+    url: str
+    auth: Optional[Tuple[str, str]] = None
+    headers: Tuple[Tuple[str, str], ...] = ()
+
+    def to_pyqwest(self) -> Proxy:
+        """The ``pyqwest.Proxy`` to hand a transport."""
+        return Proxy(self.url, auth=self.auth, headers=self.headers or None)
+
+
+def proxy_to_config(proxy: Optional[ProxyTypes]) -> Optional[ProxyConfig]:
+    """Convert the ``proxy`` connection option — a URL string, an
+    ``httpx.URL``, or an ``httpx.Proxy`` — to the proxy configuration pyqwest
+    transports take: a proxy URL (scheme http, https, socks5, or socks5h,
+    credentials allowed in the userinfo), basic-auth credentials, and headers
+    to send to the proxy. An ``httpx.Proxy`` ``ssl_context`` has no pyqwest
+    counterpart and is rejected rather than silently dropped."""
     if proxy is None:
         return None
     if isinstance(proxy, str):
-        return proxy
+        return ProxyConfig(proxy)
     if isinstance(proxy, httpx.URL):
-        return str(proxy)
+        return ProxyConfig(str(proxy))
     if isinstance(proxy, httpx.Proxy):
-        if proxy.headers:
-            raise InvalidArgumentException(
-                "E2B API calls don't support httpx.Proxy custom headers; "
-                "pass credentials in the proxy URL instead, "
-                'e.g. proxy="http://user:pass@localhost:8030"'
-            )
         if proxy.ssl_context is not None:
             raise InvalidArgumentException(
                 "E2B API calls don't support httpx.Proxy ssl_context"
             )
-        url = proxy.url
-        if proxy.auth is not None:
-            url = url.copy_with(username=proxy.auth[0], password=proxy.auth[1])
-        return str(url)
+        # httpx.Proxy splits userinfo out of the URL into `.auth`; pyqwest
+        # takes the credentials the same way, so they pass straight through.
+        return ProxyConfig(
+            str(proxy.url),
+            auth=proxy.auth,
+            headers=tuple(proxy.headers.items()),
+        )
     raise InvalidArgumentException(
-        "E2B API calls support only URL-string proxies, "
-        'e.g. proxy="http://user:pass@localhost:8030"'
+        "E2B API calls support only URL-string, httpx.URL, and httpx.Proxy "
+        'proxies, e.g. proxy="http://user:pass@localhost:8030"'
     )
 
 
