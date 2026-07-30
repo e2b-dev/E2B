@@ -231,7 +231,7 @@ requires-dist = [
     { name = "pyqwest", specifier = ">=0.7.0,<0.8" },
     { name = "python-dateutil", specifier = ">=2.8.2" },
     { name = "rich", specifier = ">=14.0.0" },
-    { name = "typing-extensions", specifier = ">=4.1.0" },
+    { name = "typing-extensions", specifier = ">=4.10.0" },
     { name = "wcmatch", specifier = ">=10.1,<11" },
 ]
 
