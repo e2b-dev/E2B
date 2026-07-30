@@ -131,3 +131,62 @@ COPY --chown=anotheruser config.json /config/"""
     assert (
         copy_instruction2["args"][2] == "anotheruser"
     )  # user from --chown (without group)
+
+
+@pytest.mark.skip_debug()
+def test_from_dockerfile_with_arg_in_from():
+    dockerfile = """ARG BASE_IMAGE=ghcr.io/example/base:latest
+FROM ${BASE_IMAGE}
+WORKDIR /app"""
+
+    template = Template().from_dockerfile(dockerfile)
+
+    assert template._template._base_image == "ghcr.io/example/base:latest"
+
+
+@pytest.mark.skip_debug()
+def test_from_dockerfile_with_unbraced_arg_in_from():
+    dockerfile = """ARG IMG=python:3.13-slim
+FROM $IMG"""
+
+    template = Template().from_dockerfile(dockerfile)
+
+    assert template._template._base_image == "python:3.13-slim"
+
+
+@pytest.mark.skip_debug()
+def test_from_dockerfile_with_arg_default_fallback_in_from():
+    dockerfile = """ARG IMG
+FROM ${IMG:-ubuntu:24.04}"""
+
+    template = Template().from_dockerfile(dockerfile)
+
+    assert template._template._base_image == "ubuntu:24.04"
+
+
+@pytest.mark.skip_debug()
+def test_from_dockerfile_with_valueless_arg_in_from_raises():
+    dockerfile = """ARG IMG
+FROM ${IMG}"""
+
+    with pytest.raises(ValueError, match="has no value"):
+        Template().from_dockerfile(dockerfile)
+
+
+@pytest.mark.skip_debug()
+def test_from_dockerfile_with_uppercase_as_alias():
+    dockerfile = "FROM node:18 AS builder"
+
+    template = Template().from_dockerfile(dockerfile)
+
+    assert template._template._base_image == "node:18"
+
+
+@pytest.mark.skip_debug()
+def test_from_dockerfile_with_arg_in_from_and_alias():
+    dockerfile = """ARG BASE=node:18
+FROM ${BASE} AS builder"""
+
+    template = Template().from_dockerfile(dockerfile)
+
+    assert template._template._base_image == "node:18"

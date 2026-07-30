@@ -93,6 +93,10 @@ export function parseDockerfile(
     baseImage = argumentsData[0].getValue()
   }
 
+  // Docker allows ARG declarations before FROM to be referenced in it
+  // (e.g. ARG BASE=node:18 / FROM ${BASE}) — substitute their defaults
+  baseImage = substitutePreFromArgs(baseImage, instructions)
+
   // Set the user and workdir to the Docker defaults
   templateBuilder.setUser('root')
   templateBuilder.setWorkdir('/')
@@ -313,4 +317,38 @@ function handleCmdEntrypointInstruction(
 
     templateBuilder.setStartCmd(command, waitForTimeout(20_000))
   }
+}
+
+/**
+ * Expand $VAR / ${VAR} / ${VAR:-default} in a FROM image reference using
+ * ARG instructions declared before the first FROM (Docker semantics).
+ */
+function substitutePreFromArgs(
+  baseImage: string,
+  instructions: DockerfileInstruction[]
+): string {
+  const args: Record<string, string> = {}
+  for (const instruction of instructions) {
+    const keyword = instruction.getKeyword()
+    if (keyword === 'FROM') break
+    if (keyword === 'ARG') {
+      const value = instruction.getArgumentsContent() ?? ''
+      const match = value.match(/^\s*(\w+)(?:=(.*))?\s*$/)
+      if (match) {
+        args[match[1]] = (match[2] ?? '').replace(/^["']|["']$/g, '')
+      }
+    }
+  }
+
+  return baseImage.replace(
+    /\$(?:(\w+)|\{(\w+)(?::-([^}]*))?\})/g,
+    (_, name?: string, braced?: string, defaultValue?: string) => {
+      const key = name ?? braced ?? ''
+      const value = args[key] || defaultValue || ''
+      if (!value) {
+        throw new Error(`FROM references ARG '${key}', which has no value`)
+      }
+      return value
+    }
+  )
 }

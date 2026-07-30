@@ -196,3 +196,53 @@ COPY --chown=anotheruser config.json /config/`
   assert.equal(copyInstruction2.args[1], '/config/')
   assert.equal(copyInstruction2.args[2], 'anotheruser') // user from --chown (without group)
 })
+
+buildTemplateTest('fromDockerfile with ARG in FROM', async () => {
+  const dockerfile = `ARG BASE_IMAGE=ghcr.io/example/base:latest
+FROM \${BASE_IMAGE}
+WORKDIR /app`
+
+  const template = Template().fromDockerfile(dockerfile)
+
+  assert.equal(
+    // @ts-expect-error - baseImage is not a property of TemplateBuilder
+    template.baseImage,
+    'ghcr.io/example/base:latest'
+  )
+})
+
+buildTemplateTest('fromDockerfile with unbraced ARG in FROM', async () => {
+  const dockerfile = `ARG IMG=python:3.13-slim
+FROM $IMG`
+
+  const template = Template().fromDockerfile(dockerfile)
+
+  assert.equal(
+    // @ts-expect-error - baseImage is not a property of TemplateBuilder
+    template.baseImage,
+    'python:3.13-slim'
+  )
+})
+
+buildTemplateTest('fromDockerfile with ARG default fallback in FROM', async () => {
+  const dockerfile = `ARG IMG
+FROM \${IMG:-ubuntu:24.04}`
+
+  const template = Template().fromDockerfile(dockerfile)
+
+  assert.equal(
+    // @ts-expect-error - baseImage is not a property of TemplateBuilder
+    template.baseImage,
+    'ubuntu:24.04'
+  )
+})
+
+buildTemplateTest('fromDockerfile with valueless ARG in FROM throws', async () => {
+  const dockerfile = `ARG IMG
+FROM \${IMG}`
+
+  assert.throws(
+    () => Template().fromDockerfile(dockerfile),
+    /has no value/
+  )
+})

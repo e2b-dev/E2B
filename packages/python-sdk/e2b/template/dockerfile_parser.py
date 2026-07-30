@@ -98,9 +98,12 @@ def parse_dockerfile(
 
         # Set the base image from the first FROM instruction
         base_image = from_instructions[0]["value"]
+        # Docker allows ARG declarations before FROM to be referenced in it
+        base_image = _substitute_pre_from_args(base_image, dfp.structure)
         # Remove AS alias if present (e.g., "node:18 AS builder" -> "node:18")
-        if " as " in base_image.lower():
-            base_image = base_image.split(" as ")[0].strip()
+        base_image = re.split(
+            r"\s+as\s+", base_image, maxsplit=1, flags=re.IGNORECASE
+        )[0].strip()
 
         user_changed = False
         workdir_changed = False
@@ -284,3 +287,28 @@ def _handle_cmd_entrypoint_instruction(
         return f"sleep {seconds}"
 
     template_builder.set_start_cmd(command, wait_for_timeout(20_000))
+
+
+def _substitute_pre_from_args(base_image: str, structure: list) -> str:
+    """Expand $VAR / ${VAR} / ${VAR:-default} in FROM using ARGs declared before it."""
+    args = {}
+    for ins in structure:
+        if ins["instruction"] == "FROM":
+            break
+        if ins["instruction"] == "ARG":
+            m = re.match(r"\s*(\w+)(?:=(.*))?\s*$", ins["value"])
+            if m:
+                args[m.group(1)] = (m.group(2) or "").strip("\"'")
+
+    def repl(match):
+        name = match.group("name") or match.group("braced")
+        value = args.get(name) or match.group("default") or ""
+        if not value:
+            raise ValueError(f"FROM references ARG {name!r}, which has no value")
+        return value
+
+    return re.sub(
+        r"\$(?:(?P<name>\w+)|\{(?P<braced>\w+)(?::-(?P<default>[^}]*))?\})",
+        repl,
+        base_image,
+    )
