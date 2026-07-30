@@ -1,4 +1,4 @@
-# Sidecar template for the SDK network tests, built as `e2b/httpbin`.
+# Sidecar template for the SDK network tests, built as `httpbin`.
 #
 # Firewall transforms are applied by the egress proxy on the way *out* of a
 # sandbox, so asserting them end-to-end needs a request that leaves for a
