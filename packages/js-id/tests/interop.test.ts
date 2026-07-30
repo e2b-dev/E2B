@@ -12,10 +12,10 @@ import { corpus } from './vectors'
  * The snippet below is the one in `src/codec.ts`'s documentation and in
  * `@e2b/id`'s README, verbatim: the alphabet and integer arithmetic, no bit
  * shuffling. If this passes, the format really is "the 128-bit value in 26
- * Crockford base32 digits, most significant first", so any port tested the
- * same way against the same corpus decodes what this package emits.
- * `int.to_bytes(16)` raising on 129 bits is also Python's own statement of the
- * leading-digit rule.
+ * Crockford base32 digits, most significant first", and `e2b_id` — which is
+ * tested the same way against the same corpus — decodes what this package
+ * emits. `int.to_bytes(16)` raising on 129 bits is also Python's own statement
+ * of the leading-digit rule.
  */
 const SNIPPET = `
 import sys
@@ -73,8 +73,8 @@ describe.skipIf(process.env.E2B_ID_SKIP_INTEROP === '1')(
   () => {
     test('in both directions, over the whole corpus', () => {
       // Not a skip: on CI this suite is the only thing standing between a
-      // format change and a silent fork from the other ports, so a missing
-      // interpreter has to be loud.
+      // format change and a silent fork from e2b_id, so a missing interpreter
+      // has to be loud.
       expect(
         python,
         'no python3 on PATH; set E2B_ID_SKIP_INTEROP=1 to skip this suite deliberately'

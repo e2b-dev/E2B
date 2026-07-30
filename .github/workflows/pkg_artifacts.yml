@@ -175,6 +175,19 @@ jobs:
           name: e2b-dockerfile-utils-python
           path: packages/dockerfile-utils-python/dist/*
 
+      - name: Build ID Python
+        working-directory: packages/python-id
+        run: |
+          BASE_VERSION=$(uv version --short)
+          uv version "${BASE_VERSION}+${BRANCH_ID}"
+          uv build
+
+      - name: Upload ID Python artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: e2b-id-python
+          path: packages/python-id/dist/*
+
       - name: Build Python SDK
         working-directory: packages/python-sdk
         run: |
@@ -250,6 +263,8 @@ jobs:
           CODE_INTERPRETER_PY_WHL=$(artifact_basename packages/code-interpreter-python/dist/*.whl)
           DESKTOP_PY_VERSION=$(grep '^version' packages/desktop-python/pyproject.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
           DESKTOP_PY_WHL=$(artifact_basename packages/desktop-python/dist/*.whl)
+          ID_PY_VERSION=$(grep '^version' packages/python-id/pyproject.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
+          ID_PY_WHL=$(artifact_basename packages/python-id/dist/*.whl)
 
           BODY="<!-- e2b-pkg-artifacts -->"$'\n'
           BODY+="### Package Artifacts"$'\n\n'
@@ -285,6 +300,10 @@ jobs:
           BODY+="**Desktop Python SDK** (\`e2b-desktop==${DESKTOP_PY_VERSION}\`):"$'\n'
           BODY+='```sh'$'\n'
           BODY+="pip install ./${DESKTOP_PY_WHL}"$'\n'
+          BODY+='```'$'\n\n'
+          BODY+="**ID Python** (\`e2b-id==${ID_PY_VERSION}\`):"$'\n'
+          BODY+='```sh'$'\n'
+          BODY+="pip install ./${ID_PY_WHL}"$'\n'
           BODY+='```'$'\n'
 
           COMMENT_ID=$(gh api "repos/${{ github.repository }}/issues/${PR_NUMBER}/comments" \

@@ -14,6 +14,7 @@ const labels = {
   '@e2b/dockerfile-utils': 'Dockerfile Utils JS (@e2b/dockerfile-utils)',
   '@e2b/dockerfile-utils-python': 'Dockerfile Utils Python (e2b-dockerfile-utils)',
   '@e2b/id': 'ID JS (@e2b/id)',
+  '@e2b/python-id': 'ID Python (e2b-id)',
 }
 
 const statusFile = process.argv[2]

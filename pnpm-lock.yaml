@@ -368,6 +368,8 @@ importers:
         specifier: ^4.156.1
         version: 4.156.1(@types/node@22.20.5)(bufferutil@4.0.8)(utf-8-validate@6.0.3)
 
+  packages/python-id: {}
+
   packages/python-sdk:
     dependencies:
       '@e2b/dockerfile-utils-python':

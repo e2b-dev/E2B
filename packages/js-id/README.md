@@ -25,8 +25,9 @@ isId('project', 'vol_01kyjhkfy5f16s71n5tymkmt9a')
 // false
 ```
 
-The format is deliberately portable: any TypeID library reads it, and so does
-any language with integers. A Python port lands alongside this one.
+[`e2b_id`](../python-id) is the same format in Python, name for name — its
+README lists [the one place they differ](../python-id/README.md#where-this-differs-from-e2bid)
+(Python moves `uuid.UUID` objects where JS moves hex strings).
 
 ## The format
 
@@ -146,8 +147,8 @@ pnpm test
 pnpm lint && pnpm typecheck
 ```
 
-`tests/vectors.ts` holds the golden encodings (the Go suite's among them), a
-seeded 1306-value corpus and a `CORPUS_DIGEST` over it. Every port of this format
-pins the same three, so a change to the format on one side alone cannot pass on
-the other. `pnpm test` also pipes the whole corpus through `python3` to check the
-snippet above.
+`tests/vectors.ts` and `packages/python-id/tests/vectors.py` are the same file in
+two languages: the same golden encodings (the Go suite's among them), the same
+seeded corpus, and the same `CORPUS_DIGEST` over it. Changing the format on one
+side alone fails on both. `pnpm test` also pipes the whole corpus through
+`python3` to check the snippet above.
