@@ -1,0 +1,11 @@
+# dependencies
+/node_modules
+
+# build output
+dist
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Output of 'npm pack'
+*.tgz

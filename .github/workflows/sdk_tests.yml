@@ -35,6 +35,7 @@ jobs:
       desktop_python: ${{ steps.filter.outputs.desktop_python }}
       dockerfile_utils_js: ${{ steps.filter.outputs.dockerfile_utils_js }}
       dockerfile_utils_python: ${{ steps.filter.outputs.dockerfile_utils_python }}
+      id: ${{ steps.filter.outputs.id }}
     steps:
       - name: Filter changed paths
         # On workflow_dispatch there is no PR diff and paths-filter would fall
@@ -111,6 +112,10 @@ jobs:
               - *shared
               - '.github/workflows/dockerfile_utils_python_tests.yml'
               - 'packages/dockerfile-utils-python/**/!(*.md)'
+            id:
+              - *shared
+              - '.github/workflows/id_tests.yml'
+              - 'packages/js-id/**/!(*.md)'
 
   js-tests:
     name: JS SDK Tests
@@ -135,6 +140,14 @@ jobs:
     uses: ./.github/workflows/cli_tests.yml
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+
+  id-tests:
+    name: ID Package Tests
+    needs: changes
+    if: ${{ needs.changes.outputs.id == 'true' || github.event_name == 'workflow_dispatch' }}
+    # No secrets and no staging leg: the ID packages are pure codecs that never
+    # reach the backend, so there is nothing environment-specific to re-check.
+    uses: ./.github/workflows/id_tests.yml
 
   code-interpreter-js-tests:
     name: Code Interpreter JS SDK Tests
@@ -195,6 +208,7 @@ jobs:
       - desktop-python-tests
       - dockerfile-utils-js-tests
       - dockerfile-utils-python-tests
+      - id-tests
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
