@@ -30,7 +30,47 @@ function wrangler(args: string[]) {
   return { ...result, output: `${result.stdout ?? ''}\n${result.stderr ?? ''}` }
 }
 
-export default function setup(project: TestProject) {
+// A temporary deploy lands on a brand-new account subdomain
+// (<worker>.<random-name>.workers.dev), and Cloudflare serves its HTML 404
+// page ("nothing is here yet") until the route propagates to the edge —
+// usually seconds, occasionally minutes. Wait for the worker itself to
+// answer (405 to GET, worker.mjs is POST-only) so the test's own retries
+// only have to absorb transient network failures.
+async function waitUntilLive(workerUrl: string, timeoutMs = 240_000) {
+  const deadline = Date.now() + timeoutMs
+  for (;;) {
+    // Thrown fetch errors (DNS/connect for the fresh subdomain) are also
+    // transient — keep waiting on those, but fail fast on any status other
+    // than the propagation 404 so real errors surface immediately.
+    const response = await fetch(workerUrl).catch((err) => {
+      console.log(`Worker not reachable yet (${err}), waiting...`)
+      return undefined
+    })
+    if (response) {
+      if (response.status === 405) {
+        return
+      }
+      if (response.status !== 404) {
+        const text = await response.text()
+        const title = text.match(/<title>(.*?)<\/title>/is)?.[1]?.trim()
+        throw new Error(
+          `Worker at ${workerUrl} answered ${response.status}${
+            title ? ` ("${title}")` : ''
+          } — not the propagation 404: ${text.slice(0, 200)}`
+        )
+      }
+      console.log('Worker route not live yet (404), waiting...')
+    }
+    if (Date.now() >= deadline) {
+      throw new Error(
+        `Worker at ${workerUrl} did not come up within ${timeoutMs / 1000}s of deploy`
+      )
+    }
+    await new Promise((resolve) => setTimeout(resolve, 3_000))
+  }
+}
+
+export default async function setup(project: TestProject) {
   rmSync(outputFile, { force: true })
 
   console.log('Deploying worker to a temporary Cloudflare preview account...')
@@ -58,6 +98,8 @@ export default function setup(project: TestProject) {
   }
 
   console.log(`Deployed: ${workerUrl}`)
+  await waitUntilLive(workerUrl)
+  console.log('Worker is live.')
   project.provide('cfWorkerUrl', workerUrl)
 
   return function teardown() {
