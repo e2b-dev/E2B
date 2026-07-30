@@ -19,56 +19,64 @@ T = TypeVar("T", bound="Template")
 class Template:
     """
     Attributes:
-        aliases (list[str]): Aliases of the template
-        build_count (int): Number of times the template was built
-        build_id (str): Identifier of the last successful build for given template
-        build_status (TemplateBuildStatus): Status of the template build
-        cpu_count (int): CPU cores for the sandbox
-        created_at (datetime.datetime): Time when the template was created
-        created_by (Union['TeamUser', None]):
-        disk_size_mb (int): Disk size for the sandbox in MiB
-        envd_version (str): Version of the envd running in the sandbox
-        last_spawned_at (Union[None, datetime.datetime]): Time when the template was last used
-        memory_mb (int): Memory for the sandbox in MiB
-        names (list[str]): Names of the template (namespace/alias format when namespaced)
-        public (bool): Whether the template is public or only accessible by the team
-        spawn_count (int): Number of times the template was used
         template_id (str): Identifier of the template
+        build_id (str): Identifier of the last successful build for given template
+        cpu_count (int): CPU cores for the sandbox
+        memory_mb (int): Memory for the sandbox in MiB
+        disk_size_mb (int): Disk size for the sandbox in MiB
+        public (bool): Whether the template is public or only accessible by the team
+        aliases (list[str]): Aliases of the template
+        names (list[str]): Names of the template (namespace/alias format when namespaced)
+        created_at (datetime.datetime): Time when the template was created
         updated_at (datetime.datetime): Time when the template was last updated
+        created_by (Union['TeamUser', None]):
+        last_spawned_at (Union[None, datetime.datetime]): Time when the template was last used
+        spawn_count (int): Number of times the template was used
+        build_count (int): Number of times the template was built
+        envd_version (str): Version of the envd running in the sandbox
+        build_status (TemplateBuildStatus): Status of the template build
     """
 
-    aliases: list[str]
-    build_count: int
-    build_id: str
-    build_status: TemplateBuildStatus
-    cpu_count: int
-    created_at: datetime.datetime
-    created_by: Union["TeamUser", None]
-    disk_size_mb: int
-    envd_version: str
-    last_spawned_at: Union[None, datetime.datetime]
-    memory_mb: int
-    names: list[str]
-    public: bool
-    spawn_count: int
     template_id: str
+    build_id: str
+    cpu_count: int
+    memory_mb: int
+    disk_size_mb: int
+    public: bool
+    aliases: list[str]
+    names: list[str]
+    created_at: datetime.datetime
     updated_at: datetime.datetime
+    created_by: Union["TeamUser", None]
+    last_spawned_at: Union[None, datetime.datetime]
+    spawn_count: int
+    build_count: int
+    envd_version: str
+    build_status: TemplateBuildStatus
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.team_user import TeamUser
 
-        aliases = self.aliases
-
-        build_count = self.build_count
+        template_id = self.template_id
 
         build_id = self.build_id
 
-        build_status = self.build_status.value
-
         cpu_count = self.cpu_count
 
+        memory_mb = self.memory_mb
+
+        disk_size_mb = self.disk_size_mb
+
+        public = self.public
+
+        aliases = self.aliases
+
+        names = self.names
+
         created_at = self.created_at.isoformat()
+
+        updated_at = self.updated_at.isoformat()
 
         created_by: Union[None, dict[str, Any]]
         if isinstance(self.created_by, TeamUser):
@@ -76,48 +84,40 @@ class Template:
         else:
             created_by = self.created_by
 
-        disk_size_mb = self.disk_size_mb
-
-        envd_version = self.envd_version
-
         last_spawned_at: Union[None, str]
         if isinstance(self.last_spawned_at, datetime.datetime):
             last_spawned_at = self.last_spawned_at.isoformat()
         else:
             last_spawned_at = self.last_spawned_at
 
-        memory_mb = self.memory_mb
-
-        names = self.names
-
-        public = self.public
-
         spawn_count = self.spawn_count
 
-        template_id = self.template_id
+        build_count = self.build_count
 
-        updated_at = self.updated_at.isoformat()
+        envd_version = self.envd_version
+
+        build_status = self.build_status.value
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "aliases": aliases,
-                "buildCount": build_count,
-                "buildID": build_id,
-                "buildStatus": build_status,
-                "cpuCount": cpu_count,
-                "createdAt": created_at,
-                "createdBy": created_by,
-                "diskSizeMB": disk_size_mb,
-                "envdVersion": envd_version,
-                "lastSpawnedAt": last_spawned_at,
-                "memoryMB": memory_mb,
-                "names": names,
-                "public": public,
-                "spawnCount": spawn_count,
                 "templateID": template_id,
+                "buildID": build_id,
+                "cpuCount": cpu_count,
+                "memoryMB": memory_mb,
+                "diskSizeMB": disk_size_mb,
+                "public": public,
+                "aliases": aliases,
+                "names": names,
+                "createdAt": created_at,
                 "updatedAt": updated_at,
+                "createdBy": created_by,
+                "lastSpawnedAt": last_spawned_at,
+                "spawnCount": spawn_count,
+                "buildCount": build_count,
+                "envdVersion": envd_version,
+                "buildStatus": build_status,
             }
         )
 
@@ -128,17 +128,25 @@ class Template:
         from ..models.team_user import TeamUser
 
         d = dict(src_dict)
-        aliases = cast(list[str], d.pop("aliases"))
-
-        build_count = d.pop("buildCount")
+        template_id = d.pop("templateID")
 
         build_id = d.pop("buildID")
 
-        build_status = TemplateBuildStatus(d.pop("buildStatus"))
-
         cpu_count = d.pop("cpuCount")
 
+        memory_mb = d.pop("memoryMB")
+
+        disk_size_mb = d.pop("diskSizeMB")
+
+        public = d.pop("public")
+
+        aliases = cast(list[str], d.pop("aliases"))
+
+        names = cast(list[str], d.pop("names"))
+
         created_at = isoparse(d.pop("createdAt"))
+
+        updated_at = isoparse(d.pop("updatedAt"))
 
         def _parse_created_by(data: object) -> Union["TeamUser", None]:
             if data is None:
@@ -155,10 +163,6 @@ class Template:
 
         created_by = _parse_created_by(d.pop("createdBy"))
 
-        disk_size_mb = d.pop("diskSizeMB")
-
-        envd_version = d.pop("envdVersion")
-
         def _parse_last_spawned_at(data: object) -> Union[None, datetime.datetime]:
             if data is None:
                 return data
@@ -174,35 +178,31 @@ class Template:
 
         last_spawned_at = _parse_last_spawned_at(d.pop("lastSpawnedAt"))
 
-        memory_mb = d.pop("memoryMB")
-
-        names = cast(list[str], d.pop("names"))
-
-        public = d.pop("public")
-
         spawn_count = d.pop("spawnCount")
 
-        template_id = d.pop("templateID")
+        build_count = d.pop("buildCount")
 
-        updated_at = isoparse(d.pop("updatedAt"))
+        envd_version = d.pop("envdVersion")
+
+        build_status = TemplateBuildStatus(d.pop("buildStatus"))
 
         template = cls(
-            aliases=aliases,
-            build_count=build_count,
-            build_id=build_id,
-            build_status=build_status,
-            cpu_count=cpu_count,
-            created_at=created_at,
-            created_by=created_by,
-            disk_size_mb=disk_size_mb,
-            envd_version=envd_version,
-            last_spawned_at=last_spawned_at,
-            memory_mb=memory_mb,
-            names=names,
-            public=public,
-            spawn_count=spawn_count,
             template_id=template_id,
+            build_id=build_id,
+            cpu_count=cpu_count,
+            memory_mb=memory_mb,
+            disk_size_mb=disk_size_mb,
+            public=public,
+            aliases=aliases,
+            names=names,
+            created_at=created_at,
             updated_at=updated_at,
+            created_by=created_by,
+            last_spawned_at=last_spawned_at,
+            spawn_count=spawn_count,
+            build_count=build_count,
+            envd_version=envd_version,
+            build_status=build_status,
         )
 
         template.additional_properties = d

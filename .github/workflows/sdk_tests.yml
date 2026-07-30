@@ -46,7 +46,6 @@ jobs:
               - *shared
               - '.github/workflows/python_sdk_tests.yml'
               - 'packages/python-sdk/**/!(*.md)'
-              - 'packages/connect-python/**/!(*.md)'
             cli:
               - *shared
               - '.github/workflows/cli_tests.yml'

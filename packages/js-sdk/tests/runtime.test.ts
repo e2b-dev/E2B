@@ -1,11 +1,13 @@
 import { afterEach, expect, test, vi } from 'vitest'
 
-// The unit project also runs under Bun (and prospectively Deno), where the
-// host runtime's own unstubbable marker (globalThis.Bun / globalThis.Deno)
-// correctly wins detection — these scenarios only exist on a Node host.
+// The unit project also runs under Bun, Deno, and Cloudflare's workerd, where
+// the host runtime's own unstubbable marker (globalThis.Bun / globalThis.Deno /
+// the Cloudflare-Workers user agent) correctly wins detection — these
+// scenarios only exist on a Node host.
 const isNodeHost =
   typeof (globalThis as any).Bun === 'undefined' &&
-  typeof (globalThis as any).Deno === 'undefined'
+  typeof (globalThis as any).Deno === 'undefined' &&
+  (globalThis as any).navigator?.userAgent !== 'Cloudflare-Workers'
 
 afterEach(() => {
   vi.unstubAllGlobals()

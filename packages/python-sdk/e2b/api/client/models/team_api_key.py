@@ -21,18 +21,18 @@ T = TypeVar("T", bound="TeamAPIKey")
 class TeamAPIKey:
     """
     Attributes:
-        created_at (datetime.datetime): Timestamp of API key creation
         id (UUID): Identifier of the API key
-        mask (IdentifierMaskingDetails):
         name (str): Name of the API key
+        mask (IdentifierMaskingDetails):
+        created_at (datetime.datetime): Timestamp of API key creation
         created_by (Union['TeamUser', None, Unset]):
         last_used (Union[None, Unset, datetime.datetime]): Last time this API key was used
     """
 
-    created_at: datetime.datetime
     id: UUID
-    mask: "IdentifierMaskingDetails"
     name: str
+    mask: "IdentifierMaskingDetails"
+    created_at: datetime.datetime
     created_by: Union["TeamUser", None, Unset] = UNSET
     last_used: Union[None, Unset, datetime.datetime] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -40,13 +40,13 @@ class TeamAPIKey:
     def to_dict(self) -> dict[str, Any]:
         from ..models.team_user import TeamUser
 
-        created_at = self.created_at.isoformat()
-
         id = str(self.id)
+
+        name = self.name
 
         mask = self.mask.to_dict()
 
-        name = self.name
+        created_at = self.created_at.isoformat()
 
         created_by: Union[None, Unset, dict[str, Any]]
         if isinstance(self.created_by, Unset):
@@ -68,10 +68,10 @@ class TeamAPIKey:
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "createdAt": created_at,
                 "id": id,
-                "mask": mask,
                 "name": name,
+                "mask": mask,
+                "createdAt": created_at,
             }
         )
         if created_by is not UNSET:
@@ -87,13 +87,13 @@ class TeamAPIKey:
         from ..models.team_user import TeamUser
 
         d = dict(src_dict)
-        created_at = isoparse(d.pop("createdAt"))
-
         id = UUID(d.pop("id"))
+
+        name = d.pop("name")
 
         mask = IdentifierMaskingDetails.from_dict(d.pop("mask"))
 
-        name = d.pop("name")
+        created_at = isoparse(d.pop("createdAt"))
 
         def _parse_created_by(data: object) -> Union["TeamUser", None, Unset]:
             if data is None:
@@ -130,10 +130,10 @@ class TeamAPIKey:
         last_used = _parse_last_used(d.pop("lastUsed", UNSET))
 
         team_api_key = cls(
-            created_at=created_at,
             id=id,
-            mask=mask,
             name=name,
+            mask=mask,
+            created_at=created_at,
             created_by=created_by,
             last_used=last_used,
         )

@@ -96,13 +96,14 @@ jobs:
           RC_PREID: ${{ inputs.preid }}
           RC_TAG: ${{ inputs.tag }}
         run: |
-          npm version prerelease --preid="${RC_PREID}.${{ github.run_id }}" --no-git-tag-version
-          npm publish --tag "$RC_TAG" --provenance
+          pnpm version prerelease --preid="${RC_PREID}.${{ github.run_id }}" --no-git-tag-version
+          pnpm publish --tag "$RC_TAG" --provenance --no-git-checks
 
-      - name: Reinstall dependencies
-        if: ${{ inputs.js-sdk || inputs.cli }}
-        run: pnpm install --frozen-lockfile
-
+      # `pnpm publish`, not `npm publish`: it resolves the `workspace:^` range the
+      # CLI declares for `e2b` to a concrete version — here the RC the step above
+      # just published, or the last release when only the CLI is being cut.
+      # `--no-git-checks` because candidates are cut from a feature branch with the
+      # version bump above still uncommitted.
       - name: Publish CLI RC
         if: ${{ inputs.cli }}
         working-directory: packages/cli
@@ -110,5 +111,5 @@ jobs:
           RC_PREID: ${{ inputs.preid }}
           RC_TAG: ${{ inputs.tag }}
         run: |
-          npm version prerelease --preid="${RC_PREID}.${{ github.run_id }}" --no-git-tag-version
-          npm publish --tag "$RC_TAG" --provenance
+          pnpm version prerelease --preid="${RC_PREID}.${{ github.run_id }}" --no-git-tag-version
+          pnpm publish --tag "$RC_TAG" --provenance --no-git-checks

@@ -16,24 +16,24 @@ T = TypeVar("T", bound="BuildLogEntry")
 class BuildLogEntry:
     """
     Attributes:
-        level (LogLevel): State of the sandbox
-        message (str): Log message content
         timestamp (datetime.datetime): Timestamp of the log entry
+        message (str): Log message content
+        level (LogLevel): State of the sandbox
         step (Union[Unset, str]): Step in the build process related to the log entry
     """
 
-    level: LogLevel
-    message: str
     timestamp: datetime.datetime
+    message: str
+    level: LogLevel
     step: Union[Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        level = self.level.value
+        timestamp = self.timestamp.isoformat()
 
         message = self.message
 
-        timestamp = self.timestamp.isoformat()
+        level = self.level.value
 
         step = self.step
 
@@ -41,9 +41,9 @@ class BuildLogEntry:
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "level": level,
-                "message": message,
                 "timestamp": timestamp,
+                "message": message,
+                "level": level,
             }
         )
         if step is not UNSET:
@@ -54,18 +54,18 @@ class BuildLogEntry:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        level = LogLevel(d.pop("level"))
+        timestamp = isoparse(d.pop("timestamp"))
 
         message = d.pop("message")
 
-        timestamp = isoparse(d.pop("timestamp"))
+        level = LogLevel(d.pop("level"))
 
         step = d.pop("step", UNSET)
 
         build_log_entry = cls(
-            level=level,
-            message=message,
             timestamp=timestamp,
+            message=message,
+            level=level,
             step=step,
         )
 

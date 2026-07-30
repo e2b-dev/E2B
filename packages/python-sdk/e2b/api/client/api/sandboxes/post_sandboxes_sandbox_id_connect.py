@@ -81,7 +81,9 @@ def sync_detailed(
     client: AuthenticatedClient,
     body: ConnectSandbox,
 ) -> Response[Union[Error, Sandbox]]:
-    """Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended.
+    """Connect sandbox
+
+     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended.
 
     Args:
         sandbox_id (str):
@@ -113,7 +115,9 @@ def sync(
     client: AuthenticatedClient,
     body: ConnectSandbox,
 ) -> Optional[Union[Error, Sandbox]]:
-    """Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended.
+    """Connect sandbox
+
+     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended.
 
     Args:
         sandbox_id (str):
@@ -140,7 +144,9 @@ async def asyncio_detailed(
     client: AuthenticatedClient,
     body: ConnectSandbox,
 ) -> Response[Union[Error, Sandbox]]:
-    """Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended.
+    """Connect sandbox
+
+     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended.
 
     Args:
         sandbox_id (str):
@@ -170,7 +176,9 @@ async def asyncio(
     client: AuthenticatedClient,
     body: ConnectSandbox,
 ) -> Optional[Union[Error, Sandbox]]:
-    """Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended.
+    """Connect sandbox
+
+     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended.
 
     Args:
         sandbox_id (str):

@@ -75,7 +75,9 @@ def sync_detailed(
     client: AuthenticatedClient,
     body: SandboxNetworkUpdateConfig,
 ) -> Response[Union[Any, Error]]:
-    """Update the network configuration for a running sandbox. Replaces the current egress rules with the
+    """Update sandbox network
+
+     Update the network configuration for a running sandbox. Replaces the current egress rules with the
     provided configuration. Omitting field clears it.
 
     Args:
@@ -110,7 +112,9 @@ def sync(
     client: AuthenticatedClient,
     body: SandboxNetworkUpdateConfig,
 ) -> Optional[Union[Any, Error]]:
-    """Update the network configuration for a running sandbox. Replaces the current egress rules with the
+    """Update sandbox network
+
+     Update the network configuration for a running sandbox. Replaces the current egress rules with the
     provided configuration. Omitting field clears it.
 
     Args:
@@ -140,7 +144,9 @@ async def asyncio_detailed(
     client: AuthenticatedClient,
     body: SandboxNetworkUpdateConfig,
 ) -> Response[Union[Any, Error]]:
-    """Update the network configuration for a running sandbox. Replaces the current egress rules with the
+    """Update sandbox network
+
+     Update the network configuration for a running sandbox. Replaces the current egress rules with the
     provided configuration. Omitting field clears it.
 
     Args:
@@ -173,7 +179,9 @@ async def asyncio(
     client: AuthenticatedClient,
     body: SandboxNetworkUpdateConfig,
 ) -> Optional[Union[Any, Error]]:
-    """Update the network configuration for a running sandbox. Replaces the current egress rules with the
+    """Update sandbox network
+
+     Update the network configuration for a running sandbox. Replaces the current egress rules with the
     provided configuration. Omitting field clears it.
 
     Args:

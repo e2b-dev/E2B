@@ -73,7 +73,9 @@ def sync_detailed(
     client: AuthenticatedClient,
     body: TemplateUpdateRequest,
 ) -> Response[Union[Error, TemplateUpdateResponse]]:
-    """Update template
+    """Update template (v2)
+
+     Update template
 
     Args:
         template_id (str):
@@ -105,7 +107,9 @@ def sync(
     client: AuthenticatedClient,
     body: TemplateUpdateRequest,
 ) -> Optional[Union[Error, TemplateUpdateResponse]]:
-    """Update template
+    """Update template (v2)
+
+     Update template
 
     Args:
         template_id (str):
@@ -132,7 +136,9 @@ async def asyncio_detailed(
     client: AuthenticatedClient,
     body: TemplateUpdateRequest,
 ) -> Response[Union[Error, TemplateUpdateResponse]]:
-    """Update template
+    """Update template (v2)
+
+     Update template
 
     Args:
         template_id (str):
@@ -162,7 +168,9 @@ async def asyncio(
     client: AuthenticatedClient,
     body: TemplateUpdateRequest,
 ) -> Optional[Union[Error, TemplateUpdateResponse]]:
-    """Update template
+    """Update template (v2)
+
+     Update template
 
     Args:
         template_id (str):

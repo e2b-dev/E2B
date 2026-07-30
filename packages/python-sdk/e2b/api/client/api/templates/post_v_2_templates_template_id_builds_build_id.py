@@ -69,7 +69,9 @@ def sync_detailed(
     client: AuthenticatedClient,
     body: TemplateBuildStartV2,
 ) -> Response[Union[Any, Error]]:
-    """Start the build
+    """Start template build (v2)
+
+     Start the build
 
     Args:
         template_id (str):
@@ -104,7 +106,9 @@ def sync(
     client: AuthenticatedClient,
     body: TemplateBuildStartV2,
 ) -> Optional[Union[Any, Error]]:
-    """Start the build
+    """Start template build (v2)
+
+     Start the build
 
     Args:
         template_id (str):
@@ -134,7 +138,9 @@ async def asyncio_detailed(
     client: AuthenticatedClient,
     body: TemplateBuildStartV2,
 ) -> Response[Union[Any, Error]]:
-    """Start the build
+    """Start template build (v2)
+
+     Start the build
 
     Args:
         template_id (str):
@@ -167,7 +173,9 @@ async def asyncio(
     client: AuthenticatedClient,
     body: TemplateBuildStartV2,
 ) -> Optional[Union[Any, Error]]:
-    """Start the build
+    """Start template build (v2)
+
+     Start the build
 
     Args:
         template_id (str):

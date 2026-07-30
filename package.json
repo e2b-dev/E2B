@@ -7,6 +7,9 @@
     "test": "pnpm test --recursive --if-present",
     "rm-node-modules": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +",
     "pnpm-install-hack": "cd packages/js-sdk && sed -i '' 's/\"version\": \".*\"/\"version\": \"9.9.9\"/g' package.json && cd ../.. && pnpm i && git checkout -- packages/js-sdk/package.json",
+    "fetch:api-spec": "./scripts/fetch-spec.sh api-spec",
+    "fetch:envd-spec": "./scripts/fetch-spec.sh envd-spec",
+    "fetch:volume-spec": "./scripts/fetch-spec.sh volume-api-spec",
     "lint": "pnpm --if-present --recursive run lint",
     "typecheck": "pnpm --if-present --recursive run typecheck",
     "format": "pnpm --if-present --recursive run format",
@@ -30,7 +33,7 @@
       "vite@>=6.0.0 <6.4.3": "^6.4.3",
       "lodash@<4.18.0": "^4.18.0",
       "brace-expansion@<1.1.13": "^1.1.13",
-      "brace-expansion@>=2.0.0 <2.0.3": "^2.0.3",
+      "brace-expansion@>=2.0.0 <2.1.2": "^2.1.2",
       "brace-expansion@>=5.0.0 <5.0.6": "^5.0.6",
       "underscore@<1.13.8": "^1.13.8",
       "js-yaml@<3.15.0": "^3.15.0",
@@ -44,7 +47,9 @@
       "minimatch@>=9.0.0 <9.0.7": "^9.0.7",
       "minimatch@>=10.0.0 <10.2.3": "^10.2.3",
       "ws@>=8.0.0 <8.20.1": "^8.20.1",
-      "shell-quote@<1.8.4": "^1.8.4"
+      "shell-quote@<1.9.0": "^1.9.0",
+      "sharp@<0.35.0": "^0.35.0",
+      "tar@<7.5.19": "^7.5.19"
     }
   }
 }

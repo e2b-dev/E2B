@@ -12,22 +12,22 @@ paths:
     get:
       summary: Check the health of the service
       responses:
-        '204':
+        "204":
           description: The service is healthy
 
   /metrics:
     get:
-      summary: Get the stats of the service
+      summary: Service stats
       security:
         - AccessTokenAuth: []
         - {}
       responses:
-        '200':
+        "200":
           description: The resource usage metrics of the service
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Metrics'
+                $ref: "#/components/schemas/Metrics"
 
   /init:
     post:
@@ -41,14 +41,22 @@ paths:
             schema:
               type: object
               properties:
+                volumeMounts:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/VolumeMount"
                 hyperloopIP:
                   type: string
                   description: IP address of the hyperloop server to connect to
+                lifecycleID:
+                  type: string
+                  description: Lifecycle ID of the sandbox
                 envVars:
-                  $ref: '#/components/schemas/EnvVars'
+                  $ref: "#/components/schemas/EnvVars"
                 accessToken:
                   type: string
                   description: Access token for secure access to envd service
+                  x-go-type: SecureToken
                 timestamp:
                   type: string
                   format: date-time
@@ -59,23 +67,99 @@ paths:
                 defaultWorkdir:
                   type: string
                   description: The default working directory to use for operations
+                caBundle:
+                  type: string
+                  description: PEM-encoded CA certificates to install into the system trust store (may contain multiple concatenated PEM blocks)
+
       responses:
-        '204':
+        "204":
           description: Env vars set, the time and metadata is synced with the host
 
-  /envs:
-    get:
-      summary: Get the environment variables
+  /freeze:
+    post:
+      summary: Freeze user/pty cgroups before pause. Written directly by envd to avoid Process.Start / shell overhead under load.
       security:
         - AccessTokenAuth: []
         - {}
       responses:
-        '200':
+        "204":
+          description: Cgroups frozen
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          description: Freeze lock is held by another operation
+
+  /unfreeze:
+    post:
+      summary: Unfreeze user/pty cgroups. Intended ONLY for the orchestrator's pause-failure rollback path; the normal resume thaw happens via /init's deferred unfreeze, not here.
+      security:
+        - AccessTokenAuth: []
+        - {}
+      responses:
+        "204":
+          description: Cgroups unfrozen
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          description: Freeze lock is held by another operation
+
+  /collapse:
+    post:
+      summary: Collapse envd's own anonymous heap into 2 MiB transparent hugepages before pause, so on resume envd touches fewer distinct guest-physical frames (each a cold fault). Best-effort.
+      security:
+        - AccessTokenAuth: []
+        - {}
+      responses:
+        "200":
+          description: Heap collapsed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollapseResult"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /fsfreeze:
+    post:
+      summary: Freeze the guest rootfs (FIFREEZE) before a filesystem-only pause so it is flushed to a consistent on-disk state, closing the sync->pause race. Idempotent. On a successful filesystem-only pause the VM is rebooted, so no thaw is needed; the orchestrator thaws only on the pause-failure path.
+      security:
+        - AccessTokenAuth: []
+        - {}
+      responses:
+        "204":
+          description: Rootfs frozen
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          description: Freeze lock is held by another operation
+
+  /fsthaw:
+    post:
+      summary: Thaw the guest rootfs (FITHAW). Intended ONLY for the orchestrator's pause-failure rollback path, so a frozen filesystem cannot leave the live VM deadlocked. Idempotent.
+      security:
+        - AccessTokenAuth: []
+        - {}
+      responses:
+        "204":
+          description: Rootfs thawed
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          description: Freeze lock is held by another operation
+
+  /envs:
+    get:
+      summary: Environment variables
+      security:
+        - AccessTokenAuth: []
+        - {}
+      responses:
+        "200":
           description: Environment variables
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnvVars'
+                $ref: "#/components/schemas/EnvVars"
 
   /files:
     get:
@@ -85,21 +169,23 @@ paths:
         - AccessTokenAuth: []
         - {}
       parameters:
-        - $ref: '#/components/parameters/FilePath'
-        - $ref: '#/components/parameters/User'
-        - $ref: '#/components/parameters/Signature'
-        - $ref: '#/components/parameters/SignatureExpiration'
+        - $ref: "#/components/parameters/FilePath"
+        - $ref: "#/components/parameters/User"
+        - $ref: "#/components/parameters/Signature"
+        - $ref: "#/components/parameters/SignatureExpiration"
       responses:
-        '200':
-          $ref: '#/components/responses/DownloadSuccess'
-        '401':
-          $ref: '#/components/responses/InvalidUser'
-        '400':
-          $ref: '#/components/responses/InvalidPath'
-        '404':
-          $ref: '#/components/responses/FileNotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        "200":
+          $ref: "#/components/responses/DownloadSuccess"
+        "400":
+          $ref: "#/components/responses/InvalidPath"
+        "401":
+          $ref: "#/components/responses/InvalidUser"
+        "404":
+          $ref: "#/components/responses/FileNotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
     post:
       summary: Upload a file and ensure the parent directories exist. If the file exists, it will be overwritten.
       description: |
@@ -128,29 +214,60 @@ paths:
         - AccessTokenAuth: []
         - {}
       parameters:
-        - $ref: '#/components/parameters/FilePath'
-        - $ref: '#/components/parameters/User'
-        - $ref: '#/components/parameters/Signature'
-        - $ref: '#/components/parameters/SignatureExpiration'
+        - $ref: "#/components/parameters/FilePath"
+        - $ref: "#/components/parameters/User"
+        - $ref: "#/components/parameters/Signature"
+        - $ref: "#/components/parameters/SignatureExpiration"
       requestBody:
-        $ref: '#/components/requestBodies/File'
+        $ref: "#/components/requestBodies/File"
       responses:
-        '200':
-          $ref: '#/components/responses/UploadSuccess'
-        '400':
-          $ref: '#/components/responses/InvalidPath'
-        '401':
-          $ref: '#/components/responses/InvalidUser'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '507':
-          $ref: '#/components/responses/NotEnoughDiskSpace'
+        "200":
+          $ref: "#/components/responses/UploadSuccess"
+        "400":
+          $ref: "#/components/responses/InvalidPath"
+        "401":
+          $ref: "#/components/responses/InvalidUser"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "507":
+          $ref: "#/components/responses/NotEnoughDiskSpace"
+
+  /files/compose:
+    post:
+      summary: Compose multiple files into a single file using zero-copy concatenation. Source files are deleted after successful composition.
+      tags: [files]
+      security:
+        - AccessTokenAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ComposeRequest"
+      responses:
+        "200":
+          description: Files composed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntryInfo"
+        "400":
+          $ref: "#/components/responses/InvalidPath"
+        "401":
+          $ref: "#/components/responses/InvalidUser"
+        "404":
+          $ref: "#/components/responses/FileNotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "507":
+          $ref: "#/components/responses/NotEnoughDiskSpace"
 
 components:
   securitySchemes:
     AccessTokenAuth:
       type: apiKey
-      scheme: header
+      in: header
       name: X-Access-Token
 
   parameters:
@@ -158,14 +275,14 @@ components:
       name: path
       in: query
       required: false
-      description: Path to the file, URL encoded. Can be relative to user's home directory.
+      description: Path to the file, URL encoded. Can be relative to the user's home directory (e.g. "file.txt" resolves to ~/file.txt).
       schema:
         type: string
     User:
       name: username
       in: query
       required: false
-      description: User used for setting the owner, or resolving relative paths.
+      description: User for setting file ownership and resolving relative paths. Defaults to the sandbox's default user.
       schema:
         type: string
     Signature:
@@ -179,10 +296,9 @@ components:
       name: signature_expiration
       in: query
       required: false
-      description: Signature expiration used for defining the expiration time of the signature.
+      description: Unix timestamp (seconds) after which the signature expires. Only used with the signature parameter.
       schema:
         type: integer
-
   requestBodies:
     File:
       required: true
@@ -194,6 +310,11 @@ components:
               file:
                 type: string
                 format: binary
+        application/octet-stream:
+          schema:
+            type: string
+            format: binary
+            description: Raw file content. The 'path' query parameter is required when using this content type.
 
   responses:
     UploadSuccess:
@@ -203,7 +324,11 @@ components:
           schema:
             type: array
             items:
-              $ref: '#/components/schemas/EntryInfo'
+              $ref: "#/components/schemas/EntryInfo"
+          example:
+            - path: "/home/user/hello.txt"
+              name: "hello.txt"
+              type: "file"
 
     DownloadSuccess:
       description: Entire file downloaded successfully.
@@ -212,37 +337,61 @@ components:
           schema:
             type: string
             format: binary
-            description: The file content
+            description: The raw file content
+    NotAcceptable:
+      description: Requested encoding is not supported
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            message: "no acceptable encoding found, supported: [identity, gzip]"
+            code: 406
     InvalidPath:
       description: Invalid path
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: "#/components/schemas/Error"
+          example:
+            message: "path '/home/user/docs' is a directory"
+            code: 400
     InternalServerError:
       description: Internal server error
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: "#/components/schemas/Error"
+          example:
+            message: "error opening file '/home/user/file.txt': permission denied"
+            code: 500
     FileNotFound:
       description: File not found
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: "#/components/schemas/Error"
+          example:
+            message: "path '/home/user/missing.txt' does not exist"
+            code: 404
     InvalidUser:
       description: Invalid user
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: "#/components/schemas/Error"
+          example:
+            message: "error looking up user 'nonexistent': user: unknown user nonexistent"
+            code: 401
     NotEnoughDiskSpace:
       description: Not enough disk space
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: "#/components/schemas/Error"
+          example:
+            message: "not enough disk space available"
+            code: 507
 
   schemas:
     Error:
@@ -304,9 +453,72 @@ components:
         mem_used:
           type: integer
           description: Used virtual memory in bytes
+        mem_cache:
+          type: integer
+          description: Cached memory (page cache) in bytes
+        mem_total_mib:
+          type: integer
+          description: Total virtual memory in MiB
+        mem_used_mib:
+          type: integer
+          description: Used virtual memory in MiB
         disk_used:
           type: integer
           description: Used disk space in bytes
         disk_total:
           type: integer
           description: Total disk space in bytes
+    CollapseResult:
+      type: object
+      description: Per-call statistics from a heap collapse
+      properties:
+        regions:
+          type: integer
+          description: Anonymous read-write regions scanned
+        chunks:
+          type: integer
+          description: 2 MiB chunks attempted
+        collapsed:
+          type: integer
+          description: Chunks whose base pages were actually migrated into a new hugepage (real work)
+        alreadyHuge:
+          type: integer
+          description: Chunks MADV_COLLAPSE accepted but were already hugepages (no work)
+        skipped:
+          type: integer
+          description: Chunks that could not be collapsed (empty or ineligible)
+        elapsedMs:
+          type: integer
+          format: int64
+          description: Wall-clock time spent collapsing, in milliseconds
+    ComposeRequest:
+      type: object
+      required:
+        - source_paths
+        - destination
+      properties:
+        source_paths:
+          type: array
+          items:
+            type: string
+          description: Ordered list of source file paths to concatenate
+        destination:
+          type: string
+          description: Destination file path for the composed file
+        username:
+          type: string
+          description: User for setting ownership and resolving relative paths
+    VolumeMount:
+      type: object
+      description: Volume mount configuration
+      additionalProperties: false
+      properties:
+        nfs_target:
+          type: string
+          description: Server target address
+        path:
+          type: string
+          description: Mount path inside the sandbox
+      required:
+        - nfs_target
+        - path

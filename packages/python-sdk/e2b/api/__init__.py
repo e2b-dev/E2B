@@ -63,12 +63,12 @@ def make_async_logging_event_hooks(log: Optional[logging.Logger]) -> dict:
 
 
 limits = Limits(
-    max_keepalive_connections=int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS", "20")),
-    max_connections=int(os.getenv("E2B_MAX_CONNECTIONS", "2000")),
-    keepalive_expiry=int(os.getenv("E2B_KEEPALIVE_EXPIRY", "300")),
+    max_keepalive_connections=int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20"),
+    max_connections=int(os.getenv("E2B_MAX_CONNECTIONS") or "2000"),
+    keepalive_expiry=int(os.getenv("E2B_KEEPALIVE_EXPIRY") or "300"),
 )
 
-connection_retries = int(os.getenv("E2B_CONNECTION_RETRIES", "3"))
+connection_retries = int(os.getenv("E2B_CONNECTION_RETRIES") or "3")
 
 
 @dataclass

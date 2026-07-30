@@ -72,7 +72,9 @@ def sync_detailed(
     next_token: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 100,
 ) -> Response[Union[Error, TemplateWithBuilds]]:
-    """List all builds for a template
+    """List template builds
+
+     List all builds for a template
 
     Args:
         template_id (str):
@@ -107,7 +109,9 @@ def sync(
     next_token: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 100,
 ) -> Optional[Union[Error, TemplateWithBuilds]]:
-    """List all builds for a template
+    """List template builds
+
+     List all builds for a template
 
     Args:
         template_id (str):
@@ -137,7 +141,9 @@ async def asyncio_detailed(
     next_token: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 100,
 ) -> Response[Union[Error, TemplateWithBuilds]]:
-    """List all builds for a template
+    """List template builds
+
+     List all builds for a template
 
     Args:
         template_id (str):
@@ -170,7 +176,9 @@ async def asyncio(
     next_token: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 100,
 ) -> Optional[Union[Error, TemplateWithBuilds]]:
-    """List all builds for a template
+    """List template builds
+
+     List all builds for a template
 
     Args:
         template_id (str):

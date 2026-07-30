@@ -52,33 +52,40 @@ jobs:
         working-directory: packages/js-sdk
         run: pnpm run build
 
-      - name: Pack JS SDK
-        working-directory: packages/js-sdk
-        run: |
-          npm version prerelease --preid=${{ env.BRANCH_ID }} --no-git-tag-version
-          npm pack
-
-      - name: Upload JS SDK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2b-js-sdk
-          path: packages/js-sdk/*.tgz
-
       - name: Build CLI
         working-directory: packages/cli
         run: pnpm run build
 
+      # Before the SDK is renamed below: `pnpm pack` resolves the CLI's `workspace:^`
+      # range to whatever version the workspace SDK has now, and a prerelease that
+      # was never published would leave `e2b` unresolvable.
       - name: Pack CLI
         working-directory: packages/cli
         run: |
-          npm version prerelease --preid=${{ env.BRANCH_ID }} --no-git-tag-version
-          npm pack
+          pnpm version prerelease --preid=${{ env.BRANCH_ID }} --no-git-tag-version
+          pnpm pack
 
       - name: Upload CLI artifact
         uses: actions/upload-artifact@v4
         with:
           name: e2b-cli
           path: packages/cli/*.tgz
+
+      # Independent of the CLI steps above: a CLI failure should still leave
+      # reviewers a usable SDK tarball, as it did before the CLI moved ahead of it.
+      - name: Pack JS SDK
+        if: ${{ !cancelled() }}
+        working-directory: packages/js-sdk
+        run: |
+          pnpm version prerelease --preid=${{ env.BRANCH_ID }} --no-git-tag-version
+          pnpm pack
+
+      - name: Upload JS SDK artifact
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2b-js-sdk
+          path: packages/js-sdk/*.tgz
 
       - name: Install uv
         uses: astral-sh/setup-uv@v6

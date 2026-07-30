@@ -293,5 +293,8 @@ cython_debug/
 sdk_ref/
 sdkRefRoutes.json
 
-# SDK Client generated spec
+# SDK Client generated specs (per-SDK redocly bundle outputs; the bare
+# openapi_generated.yml pattern covers stale copies from older checkouts)
+spec/openapi_generated.*.yml
 spec/openapi_generated.yml
+

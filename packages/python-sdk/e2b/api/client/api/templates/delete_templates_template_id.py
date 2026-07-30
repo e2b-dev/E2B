@@ -56,7 +56,9 @@ def sync_detailed(
     *,
     client: AuthenticatedClient,
 ) -> Response[Union[Any, Error]]:
-    """Delete a template
+    """Delete template
+
+     Delete a template
 
     Args:
         template_id (str):
@@ -85,7 +87,9 @@ def sync(
     *,
     client: AuthenticatedClient,
 ) -> Optional[Union[Any, Error]]:
-    """Delete a template
+    """Delete template
+
+     Delete a template
 
     Args:
         template_id (str):
@@ -109,7 +113,9 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
 ) -> Response[Union[Any, Error]]:
-    """Delete a template
+    """Delete template
+
+     Delete a template
 
     Args:
         template_id (str):
@@ -136,7 +142,9 @@ async def asyncio(
     *,
     client: AuthenticatedClient,
 ) -> Optional[Union[Any, Error]]:
-    """Delete a template
+    """Delete template
+
+     Delete a template
 
     Args:
         template_id (str):

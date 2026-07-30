@@ -246,6 +246,42 @@ export interface TemplateFromImage {
   fromUbuntuImage(variant?: string): TemplateBuilder
 
   /**
+   * Start from a Fedora-based Docker image.
+   * @param variant Fedora variant (default: '42')
+   *
+   * @example
+   * ```ts
+   * Template().fromFedoraImage('42')
+   * ```
+   */
+  fromFedoraImage(variant?: string): TemplateBuilder
+
+  /**
+   * Start from an Alpine-based Docker image.
+   * @param variant Alpine variant (default: '3.22')
+   *
+   * @example
+   * ```ts
+   * Template().fromAlpineImage('3.22')
+   * ```
+   */
+  fromAlpineImage(variant?: string): TemplateBuilder
+
+  /**
+   * Start from an Arch Linux-based Docker image.
+   *
+   * Defaults to `latest`: Arch is a rolling release and template provisioning
+   * runs `pacman -Syu`, so pinning a tag would not change the built result.
+   * @param variant Arch Linux variant (default: 'latest')
+   *
+   * @example
+   * ```ts
+   * Template().fromArchImage('base-devel')
+   * ```
+   */
+  fromArchImage(variant?: string): TemplateBuilder
+
+  /**
    * Start from a Python-based Docker image.
    * @param version Python version (default: '3')
    *

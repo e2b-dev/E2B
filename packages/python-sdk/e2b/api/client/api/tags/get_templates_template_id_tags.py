@@ -71,7 +71,9 @@ def sync_detailed(
     *,
     client: AuthenticatedClient,
 ) -> Response[Union[Error, list["TemplateTag"]]]:
-    """List all tags for a template
+    """List template tags
+
+     List all tags for a template
 
     Args:
         template_id (str):
@@ -100,7 +102,9 @@ def sync(
     *,
     client: AuthenticatedClient,
 ) -> Optional[Union[Error, list["TemplateTag"]]]:
-    """List all tags for a template
+    """List template tags
+
+     List all tags for a template
 
     Args:
         template_id (str):
@@ -124,7 +128,9 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
 ) -> Response[Union[Error, list["TemplateTag"]]]:
-    """List all tags for a template
+    """List template tags
+
+     List all tags for a template
 
     Args:
         template_id (str):
@@ -151,7 +157,9 @@ async def asyncio(
     *,
     client: AuthenticatedClient,
 ) -> Optional[Union[Error, list["TemplateTag"]]]:
-    """List all tags for a template
+    """List template tags
+
+     List all tags for a template
 
     Args:
         template_id (str):
