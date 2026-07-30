@@ -1,7 +1,8 @@
 import { assert, expect, describe } from 'vitest'
 
-import { CommandExitError } from '../../src'
-import { sandboxTest, isDebug } from '../setup.js'
+import { CommandExitError, Sandbox } from '../../src'
+import { sandboxTest, isDebug, template } from '../setup.js'
+import { httpbinTemplate } from '../template.js'
 
 describe('allow only 1.1.1.1', () => {
   sandboxTest.override({
@@ -194,44 +195,63 @@ describe('allowPublicTraffic=true', () => {
 })
 
 describe('firewall transform injects headers', () => {
-  const injectedHeader = 'X-E2B-Test-Token'
+  const injectedHeader = 'X-Test-Token'
   const injectedValue = 'e2b-transform-value-123'
-
-  sandboxTest.override({
-    sandboxOpts: {
-      network: {
-        rules: {
-          'httpbin.e2b.team': [
-            {
-              transform: {
-                headers: {
-                  [injectedHeader]: injectedValue,
-                },
-              },
-            },
-          ],
-        },
-      },
-    },
-  })
+  // Port the httpbin template's start command listens on.
+  const httpbinPort = 8080
 
   sandboxTest.skipIf(isDebug)(
-    'injected header is reflected by httpbin.e2b.team/headers',
-    async ({ sandbox }) => {
-      const result = await sandbox.commands.run(
-        'curl -sS --max-time 10 https://httpbin.e2b.team/headers'
-      )
-      assert.equal(result.exitCode, 0)
+    'injected header is reflected by the httpbin sidecar',
+    async ({ sandboxTestId }) => {
+      // The transform is applied by the egress proxy on the way out of the
+      // sandbox, so the target has to be reachable from the public internet —
+      // a CI service container would not be. A sidecar sandbox running the
+      // httpbin template is that target, which keeps the test off any
+      // externally hosted service. Its ready command has already passed by the
+      // time create resolves, so the server is serving.
+      const httpbin = await Sandbox.create(httpbinTemplate, {
+        metadata: { sandboxTestId },
+        network: { allowPublicTraffic: true },
+      })
+      let sandbox: Sandbox | undefined
 
-      const parsed = JSON.parse(result.stdout) as {
-        headers: Record<string, string>
+      try {
+        const httpbinHost = httpbin.getHost(httpbinPort)
+
+        sandbox = await Sandbox.create(template, {
+          metadata: { sandboxTestId },
+          network: {
+            rules: {
+              [httpbinHost]: [
+                {
+                  transform: {
+                    headers: {
+                      [injectedHeader]: injectedValue,
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        })
+
+        const result = await sandbox.commands.run(
+          `curl -sS --retry 5 --retry-connrefused --max-time 10 https://${httpbinHost}/headers`
+        )
+        assert.equal(result.exitCode, 0)
+
+        const parsed = JSON.parse(result.stdout) as {
+          headers: Record<string, string[]>
+        }
+        const reflected = parsed.headers[injectedHeader]
+        assert.deepEqual(
+          reflected,
+          [injectedValue],
+          `expected httpbin to reflect ${injectedHeader}=${injectedValue}, got headers: ${JSON.stringify(parsed.headers)}`
+        )
+      } finally {
+        await Promise.allSettled([sandbox?.kill(), httpbin.kill()])
       }
-      const reflected = parsed.headers[injectedHeader]
-      assert.equal(
-        reflected,
-        injectedValue,
-        `expected httpbin to reflect ${injectedHeader}=${injectedValue}, got headers: ${JSON.stringify(parsed.headers)}`
-      )
     }
   )
 })

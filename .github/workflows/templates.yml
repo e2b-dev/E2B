@@ -69,10 +69,6 @@ jobs:
       # tests that use it need our API key anyway. The ready command doubles as
       # the build-time smoke test: the build only finishes once go-httpbin
       # answers on the port the tests connect to.
-      #
-      # The alias is passed unprefixed because the server namespaces it with the
-      # team slug: the template the tests spawn is `e2b/httpbin`. Only `base`
-      # predates namespacing and stays bare.
       - name: Build httpbin template
         if: ${{ inputs.template == 'all' || inputs.template == 'httpbin' }}
         working-directory: ./templates/httpbin
