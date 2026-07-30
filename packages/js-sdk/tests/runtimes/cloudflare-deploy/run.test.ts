@@ -5,14 +5,14 @@ import { template } from '../../template'
 test(
   'sandbox lifecycle inside a deployed Cloudflare Worker',
   // setup.mts waits for the fresh workers.dev subdomain to propagate before
-  // tests run; these retries only absorb transient edge/network blips
-  // ("non-JSON response" for a stray Cloudflare HTML error page, "fetch
-  // failed" for undici DNS/connect errors).
+  // tests run; these retries only absorb transient blips — a stray
+  // propagation 404 or an undici DNS/connect error ("fetch failed"). Any
+  // other Cloudflare error page is a real failure and propagates.
   {
     retry: {
       count: 10,
       delay: 3_000,
-      condition: /non-JSON response|fetch failed/,
+      condition: /non-JSON response \(404|fetch failed/,
     },
   },
   async () => {

@@ -39,15 +39,27 @@ function wrangler(args: string[]) {
 async function waitUntilLive(workerUrl: string, timeoutMs = 240_000) {
   const deadline = Date.now() + timeoutMs
   for (;;) {
-    try {
-      const response = await fetch(workerUrl)
+    // Thrown fetch errors (DNS/connect for the fresh subdomain) are also
+    // transient — keep waiting on those, but fail fast on any status other
+    // than the propagation 404 so real errors surface immediately.
+    const response = await fetch(workerUrl).catch((err) => {
+      console.log(`Worker not reachable yet (${err}), waiting...`)
+      return undefined
+    })
+    if (response) {
       if (response.status === 405) {
         return
       }
-      console.log(`Worker route not live yet (${response.status}), waiting...`)
-    } catch (err) {
-      // DNS for the fresh subdomain can also lag behind.
-      console.log(`Worker not reachable yet (${err}), waiting...`)
+      if (response.status !== 404) {
+        const text = await response.text()
+        const title = text.match(/<title>(.*?)<\/title>/is)?.[1]?.trim()
+        throw new Error(
+          `Worker at ${workerUrl} answered ${response.status}${
+            title ? ` ("${title}")` : ''
+          } — not the propagation 404: ${text.slice(0, 200)}`
+        )
+      }
+      console.log('Worker route not live yet (404), waiting...')
     }
     if (Date.now() >= deadline) {
       throw new Error(
