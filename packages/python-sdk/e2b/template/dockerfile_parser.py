@@ -291,24 +291,30 @@ def _handle_cmd_entrypoint_instruction(
 
 def _substitute_pre_from_args(base_image: str, structure: list) -> str:
     """Expand $VAR / ${VAR} / ${VAR:-default} in FROM using ARGs declared before it."""
-    args = {}
+    args: dict = {}
     for ins in structure:
         if ins["instruction"] == "FROM":
             break
         if ins["instruction"] == "ARG":
             m = re.match(r"\s*(\w+)(?:=(.*))?\s*$", ins["value"])
             if m:
-                args[m.group(1)] = (m.group(2) or "").strip("\"'")
+                default = (m.group(2) or "").strip("\"'")
+                # ARG defaults may reference previously declared ARGs
+                args[m.group(1)] = _substitute_args(default, args, strict=False)
 
-    def repl(match):
+    return _substitute_args(base_image, args, strict=True)
+
+
+def _substitute_args(value: str, args: dict, strict: bool) -> str:
+    def repl(match) -> str:
         name = match.group("name") or match.group("braced")
-        value = args.get(name) or match.group("default") or ""
-        if not value:
+        resolved = args.get(name) or match.group("default") or ""
+        if not resolved and strict:
             raise ValueError(f"FROM references ARG {name!r}, which has no value")
-        return value
+        return resolved
 
     return re.sub(
         r"\$(?:(?P<name>\w+)|\{(?P<braced>\w+)(?::-(?P<default>[^}]*))?\})",
         repl,
-        base_image,
+        value,
     )

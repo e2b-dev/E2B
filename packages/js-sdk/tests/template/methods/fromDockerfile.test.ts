@@ -246,3 +246,17 @@ FROM \${IMG}`
     /has no value/
   )
 })
+
+buildTemplateTest('fromDockerfile with chained ARG defaults in FROM', async () => {
+  const dockerfile = `ARG REGISTRY=ghcr.io
+ARG IMAGE=\${REGISTRY}/org/base:latest
+FROM \${IMAGE}`
+
+  const template = Template().fromDockerfile(dockerfile)
+
+  assert.equal(
+    // @ts-expect-error - baseImage is not a property of TemplateBuilder
+    template.baseImage,
+    'ghcr.io/org/base:latest'
+  )
+})

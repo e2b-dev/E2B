@@ -190,3 +190,14 @@ FROM ${BASE} AS builder"""
     template = Template().from_dockerfile(dockerfile)
 
     assert template._template._base_image == "node:18"
+
+
+@pytest.mark.skip_debug()
+def test_from_dockerfile_with_chained_arg_defaults_in_from():
+    dockerfile = """ARG REGISTRY=ghcr.io
+ARG IMAGE=${REGISTRY}/org/base:latest
+FROM ${IMAGE}"""
+
+    template = Template().from_dockerfile(dockerfile)
+
+    assert template._template._base_image == "ghcr.io/org/base:latest"

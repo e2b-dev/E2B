@@ -322,6 +322,7 @@ function handleCmdEntrypointInstruction(
 /**
  * Expand $VAR / ${VAR} / ${VAR:-default} in a FROM image reference using
  * ARG instructions declared before the first FROM (Docker semantics).
+ * ARG defaults may themselves reference previously declared ARGs.
  */
 function substitutePreFromArgs(
   baseImage: string,
@@ -335,20 +336,30 @@ function substitutePreFromArgs(
       const value = instruction.getArgumentsContent() ?? ''
       const match = value.match(/^\s*(\w+)(?:=(.*))?\s*$/)
       if (match) {
-        args[match[1]] = (match[2] ?? '').replace(/^["']|["']$/g, '')
+        const rawDefault = (match[2] ?? '').replace(/^["']|["']$/g, '')
+        // ARG defaults may reference previously declared ARGs
+        args[match[1]] = substituteArgs(rawDefault, args, false)
       }
     }
   }
 
-  return baseImage.replace(
+  return substituteArgs(baseImage, args, true)
+}
+
+function substituteArgs(
+  value: string,
+  args: Record<string, string>,
+  strict: boolean
+): string {
+  return value.replace(
     /\$(?:(\w+)|\{(\w+)(?::-([^}]*))?\})/g,
     (_, name?: string, braced?: string, defaultValue?: string) => {
       const key = name ?? braced ?? ''
-      const value = args[key] || defaultValue || ''
-      if (!value) {
+      const resolved = args[key] || defaultValue || ''
+      if (!resolved && strict) {
         throw new Error(`FROM references ARG '${key}', which has no value`)
       }
-      return value
+      return resolved
     }
   )
 }
