@@ -1,7 +1,7 @@
 import { compareVersions } from 'compare-versions'
 
 import { limitConcurrency } from './api/inflight'
-import { isReadableStreamLike, isRequestLike } from './brand'
+import { isReadableStreamLike, isRequestLike } from './is'
 import { dynamicImport, toDispatchableStream } from './utils'
 
 type UndiciRequestInit = RequestInit & {

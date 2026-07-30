@@ -12,7 +12,7 @@ import {
   setupRequestController,
   wrapStreamWithConnectionCleanup,
 } from '../connectionConfig'
-import { isArrayBufferLike, isBlobLike } from '../brand'
+import { isArrayBufferLike, isBlobLike } from '../is'
 import { NotFoundError, VolumeError } from '../errors'
 import { toUploadBody } from '../utils'
 import { VolumeFileType } from './types'

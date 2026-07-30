@@ -52,7 +52,7 @@ import {
   InvalidArgumentError,
   TemplateError,
 } from '../../errors'
-import { isReadableStreamLike } from '../../brand'
+import { isReadableStreamLike } from '../../is'
 import { runtime, toBlob, toUploadBody } from '../../utils'
 
 const FILESYSTEM_HTTP_ERROR_MAP: Record<number, (message: string) => Error> = {

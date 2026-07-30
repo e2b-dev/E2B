@@ -1,6 +1,6 @@
 import platform from 'platform'
 
-import { isBlobLike, isReadableStreamLike } from './brand'
+import { isBlobLike, isReadableStreamLike } from './is'
 
 declare let window: any
 

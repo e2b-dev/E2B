@@ -5,7 +5,7 @@ import {
   isBlobLike,
   isReadableStreamLike,
   isRequestLike,
-} from '../src/brand'
+} from '../src/is'
 import {
   ForeignBlob,
   foreignReadableStream,

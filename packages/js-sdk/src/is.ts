@@ -8,8 +8,8 @@
  * own `Request`, remix's `installGlobals()` swaps `Request`/`Blob`/`File`,
  * `web-streams-polyfill` swaps `ReadableStream`, jsdom-based test environments
  * bring their own copies of all of them — and values also cross realms
- * (`node:vm`, `worker_threads`). A perfectly good Blob then fails the brand
- * check and the SDK silently takes the wrong branch.
+ * (`node:vm`, `worker_threads`). A perfectly good Blob then fails that check —
+ * a *brand* check, in spec terms — and the SDK silently takes the wrong branch.
  *
  * The failure modes are not theoretical; each one is covered by a test:
  * - a Request the current global class disowns is handed to undici verbatim and
@@ -34,7 +34,9 @@ function isObject(value: unknown): value is Record<string, unknown> {
 /**
  * The value's `Symbol.toStringTag`, e.g. `'Blob'` for anything implementing the
  * `Blob` interface. Spec'd for every web platform interface and inherited by
- * subclasses, so it survives both realm and class swaps.
+ * subclasses, so it survives both realm and class swaps. Same one-liner
+ * `@sindresorhus/is` uses for the types it covers (`Blob`, `ArrayBuffer`; it has
+ * no `Request` or `ReadableStream` check, which is why this module exists).
  */
 function platformTag(value: object): string {
   return Object.prototype.toString.call(value).slice('[object '.length, -1)

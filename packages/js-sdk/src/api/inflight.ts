@@ -1,4 +1,4 @@
-import { isRequestLike } from '../brand'
+import { isRequestLike } from '../is'
 
 /**
  * Simple FIFO semaphore used to cap the number of in-flight requests sent
