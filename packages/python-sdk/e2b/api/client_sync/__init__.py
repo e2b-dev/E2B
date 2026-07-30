@@ -9,36 +9,18 @@ from pyqwest.middleware.retry import SyncRetryTransport
 
 from e2b.api import (
     ApiClient,
+    ProxyConfig,
     connection_retries,
     make_logging_event_hooks,
     pool_idle_timeout,
     pool_max_idle_per_host,
-    proxy_to_url,
+    proxy_to_config,
 )
 from e2b.connection_config import READ_TIMEOUT, ConnectionConfig
 
 
 def get_api_client(config: ConnectionConfig, **kwargs) -> ApiClient:
     return ApiClient(config, transport=get_transport(config), **kwargs)
-
-
-class _SyncOnlyStream(httpx.SyncByteStream):
-    """Present a dual sync/async httpx request stream as sync-only.
-
-    httpx's ``MultipartStream`` (``files=`` uploads) implements both
-    ``SyncByteStream`` and ``AsyncByteStream``; the stock adapter's content
-    conversion matches ``AsyncByteStream`` first and raises
-    ``TypeError("unreachable")`` from inside the body iterator, which
-    surfaces as a ``WriteError`` mid-request."""
-
-    def __init__(self, stream: httpx.SyncByteStream):
-        self._stream = stream
-
-    def __iter__(self):
-        return iter(self._stream)
-
-    def close(self) -> None:
-        self._stream.close()
 
 
 class ApiPyqwestTransport(PyqwestTransport):
@@ -58,13 +40,6 @@ class ApiPyqwestTransport(PyqwestTransport):
     def handle_request(self, request: httpx.Request) -> httpx.Response:
         if "host" in request.headers:
             del request.headers["host"]
-        stream = request.stream
-        if (
-            isinstance(stream, httpx.SyncByteStream)
-            and isinstance(stream, httpx.AsyncByteStream)
-            and not isinstance(stream, httpx.ByteStream)
-        ):
-            request.stream = _SyncOnlyStream(stream)
         try:
             return super().handle_request(request)
         except TimeoutError as e:
@@ -88,7 +63,7 @@ class ConnectionRetryTransport(SyncRetryTransport):
 
 
 def retrying_http_transport(
-    proxy_url: Optional[str], read_timeout: Optional[float] = None
+    proxy: Optional[ProxyConfig], read_timeout: Optional[float] = None
 ) -> ConnectionRetryTransport:
     """A fresh pyqwest transport (= its own connection pool) with the SDK's
     shared tuning — system CA certs (without which TLS through an
@@ -97,11 +72,16 @@ def retrying_http_transport(
     each cache their own instances (pool unification is a follow-up).
 
     ``read_timeout`` bounds every read on the transport's connections; see
-    :func:`get_envd_transport` for when that is (and isn't) appropriate."""
+    :func:`get_envd_transport` for when that is (and isn't) appropriate.
+
+    Requests are logged by pyqwest itself on the ``pyqwest.access`` and
+    ``pyqwest`` loggers at ``DEBUG`` (off unless enabled) — the transport-level
+    diagnostics httpcore used to provide. The SDK's own ``logger`` option is
+    separate and sits above this, on the httpx client."""
     return ConnectionRetryTransport(
         SyncHTTPTransport(
             tls_include_system_certs=True,
-            proxy=proxy_url,
+            proxy=proxy.to_pyqwest() if proxy is not None else None,
             pool_idle_timeout=pool_idle_timeout,
             pool_max_idle_per_host=pool_max_idle_per_host,
             read_timeout=read_timeout,
@@ -114,25 +94,25 @@ _transport_lock = threading.Lock()
 # One transport (= one connection pool) per proxy; None is the direct pool.
 # pyqwest transports are thread-safe, so unlike the httpx transports they
 # replaced, the caches are process-global rather than per-thread.
-_transports: Dict[Optional[str], "ApiPyqwestTransport"] = {}
+_transports: Dict[Optional[ProxyConfig], "ApiPyqwestTransport"] = {}
 
 
 def get_transport(config: ConnectionConfig) -> "ApiPyqwestTransport":
     """The shared pyqwest-backed httpx transport for REST API calls. For TLS
     connections ALPN negotiates the HTTP version (HTTP/2 against the E2B
     API), like the http2-enabled httpx transport this replaced."""
-    proxy_url = proxy_to_url(config.proxy)
+    proxy = proxy_to_config(config.proxy)
     with _transport_lock:
-        transport = _transports.get(proxy_url)
+        transport = _transports.get(proxy)
         if transport is None:
-            transport = ApiPyqwestTransport(retrying_http_transport(proxy_url))
-            _transports[proxy_url] = transport
+            transport = ApiPyqwestTransport(retrying_http_transport(proxy))
+            _transports[proxy] = transport
         return transport
 
 
 # One transport per (proxy, streaming) pair, separate from the REST API
 # pools — envd traffic goes to per-sandbox hosts.
-_envd_transports: Dict[Tuple[Optional[str], bool], "ApiPyqwestTransport"] = {}
+_envd_transports: Dict[Tuple[Optional[ProxyConfig], bool], "ApiPyqwestTransport"] = {}
 
 
 def get_envd_transport(
@@ -152,14 +132,14 @@ def get_envd_transport(
     unary responses longer than the idle bound (those stay bounded by their
     whole-request deadlines instead).
     """
-    proxy_url = proxy_to_url(config.proxy)
-    key = (proxy_url, for_streaming)
+    proxy = proxy_to_config(config.proxy)
+    key = (proxy, for_streaming)
     with _transport_lock:
         transport = _envd_transports.get(key)
         if transport is None:
             transport = ApiPyqwestTransport(
                 retrying_http_transport(
-                    proxy_url,
+                    proxy,
                     read_timeout=READ_TIMEOUT if for_streaming else None,
                 )
             )

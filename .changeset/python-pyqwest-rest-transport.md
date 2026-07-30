@@ -19,13 +19,12 @@ Connection-establishment failures are retried with backoff
 the previous transports. Timeouts keep raising `httpx.ReadTimeout` (an
 `httpx.TimeoutException`), as before.
 
-`proxy` for API calls now takes a URL string (e.g.
+`proxy` for API calls takes a URL string (e.g.
 `proxy="http://user:pass@localhost:8030"`, scheme http, https, socks5, or
-socks5h). `httpx.URL` and `httpx.Proxy` keep working when they reduce to
-such a URL (`httpx.Proxy` auth is folded back into the URL userinfo);
-`httpx.Proxy` extras pyqwest can't express — custom headers, an
-`ssl_context` — raise `InvalidArgumentException` rather than being silently
-dropped.
+socks5h), an `httpx.URL`, or an `httpx.Proxy` — including its credentials
+and custom headers. The one `httpx.Proxy` option pyqwest cannot express, a
+per-proxy `ssl_context`, raises `InvalidArgumentException` rather than being
+silently dropped.
 
 envd traffic is not affected: RPC (commands, PTY, filesystem watch) already
 runs on pyqwest via `connectrpc`, and the envd HTTP API (file transfers,

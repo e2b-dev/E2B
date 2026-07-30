@@ -1,5 +1,7 @@
 import asyncio
+import base64
 import json
+import logging
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -12,6 +14,8 @@ from pyqwest.httpx import AsyncPyqwestTransport, PyqwestTransport
 
 import e2b.api.client_async as client_async
 import e2b.api.client_sync as client_sync
+from e2b.api import ProxyConfig
+from e2b.api.client_sync import retrying_http_transport
 from e2b.api.client_async import get_api_client as get_async_api_client
 from e2b.api.client_async import get_envd_api as get_async_envd_api
 from e2b.api.client_async import get_envd_transport as get_async_envd_transport
@@ -477,12 +481,60 @@ async def test_async_api_client_timeout_raises_httpx_read_timeout(
         reset_async_api_transports()
 
 
+def test_sync_transport_sends_proxy_credentials_and_headers(echo_server):
+    # Everything the `proxy` option can express reaches the proxy: the echo
+    # server stands in for one, so the request arrives in absolute form with
+    # the configured credentials and extra headers.
+    proxy = ProxyConfig(
+        echo_server, auth=("user", "pass"), headers=(("x-proxy-token", "t"),)
+    )
+    client = httpx.Client(
+        transport=client_sync.ApiPyqwestTransport(retrying_http_transport(proxy))
+    )
+
+    try:
+        response = client.get("http://proxied.invalid/health")
+        echoed = response.json()
+        assert echoed["path"] == "http://proxied.invalid/health"
+        assert echoed["headers"]["proxy-authorization"] == (
+            "Basic " + base64.b64encode(b"user:pass").decode()
+        )
+        assert echoed["headers"]["x-proxy-token"] == "t"
+    finally:
+        client.close()
+
+
+def test_transport_emits_pyqwest_access_log(test_api_key, echo_server, caplog):
+    # pyqwest logs every request on `pyqwest.access` at DEBUG — the
+    # transport-level diagnostics httpcore used to provide, and separate from
+    # the SDK's own `logger` option.
+    reset_sync_api_transports()
+    config = ConnectionConfig(api_key=test_api_key, api_url=echo_server)
+    api_client = get_sync_api_client(config)
+    httpx_client = api_client.get_httpx_client()
+
+    try:
+        with caplog.at_level(logging.DEBUG, logger="pyqwest.access"):
+            assert httpx_client.request("GET", "/sandboxes").status_code == 200
+
+        messages = [
+            r.getMessage() for r in caplog.records if r.name == "pyqwest.access"
+        ]
+        # The stdlib test server answers HTTP/1.0.
+        assert messages == [
+            f'HTTP Request: GET {echo_server}/sandboxes "HTTP/1.0 200 OK"'
+        ]
+    finally:
+        httpx_client.close()
+        reset_sync_api_transports()
+
+
 def test_sync_transport_sends_multipart_bodies(test_api_key, echo_server):
-    # httpx's MultipartStream implements both SyncByteStream and
-    # AsyncByteStream; the stock adapter's sync path matches AsyncByteStream
-    # first and raises from inside the body iterator, surfacing as a
-    # WriteError mid-request. The SDK transport presents such dual streams
-    # as sync-only.
+    # `files=` uploads (envd `files.write`) go out as httpx's MultipartStream,
+    # which implements both SyncByteStream and AsyncByteStream. The adapter's
+    # sync path used to match AsyncByteStream first and raise from inside the
+    # body iterator, surfacing as a WriteError mid-request; pyqwest 0.8 matches
+    # the sync case first, so the SDK no longer rewraps the stream.
     reset_sync_api_transports()
     config = ConnectionConfig(api_key=test_api_key)
     client = httpx.Client(

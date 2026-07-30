@@ -10,7 +10,7 @@ from pyqwest import (
     SyncTransport,
 )
 
-from e2b.api import proxy_to_url
+from e2b.api import ProxyConfig, proxy_to_config
 from e2b.api.client_sync import retrying_http_transport
 from e2b.connection_config import ConnectionConfig
 from e2b.envd.client_shared import (
@@ -25,7 +25,7 @@ TClient = TypeVar("TClient")
 
 _transport_lock = threading.Lock()
 # One transport (= one connection pool) per proxy; None is the direct pool.
-_transports: dict[Optional[str], "PlainHTTPErrorTransport"] = {}
+_transports: dict[Optional[ProxyConfig], "PlainHTTPErrorTransport"] = {}
 
 
 class PlainHTTPErrorTransport:
@@ -58,16 +58,16 @@ class PlainHTTPErrorTransport:
         raise error
 
 
-def get_transport(proxy_url: Optional[str]) -> "PlainHTTPErrorTransport":
+def get_transport(proxy: Optional[ProxyConfig]) -> "PlainHTTPErrorTransport":
     with _transport_lock:
-        transport = _transports.get(proxy_url)
+        transport = _transports.get(proxy)
         if transport is None:
             # connectrpc arms the per-call deadline around the transport, so
             # retry backoff counts against the request timeout. The plain-
             # error normalization sits outside the retries so it converts
             # the settled response once.
-            transport = PlainHTTPErrorTransport(retrying_http_transport(proxy_url))
-            _transports[proxy_url] = transport
+            transport = PlainHTTPErrorTransport(retrying_http_transport(proxy))
+            _transports[proxy] = transport
         return transport
 
 
@@ -84,7 +84,7 @@ def create_rpc_client(
     call and its transport is process-global, so one instance serves all
     threads.
     """
-    http_client = SyncClient(get_transport(proxy_to_url(config.proxy)))
+    http_client = SyncClient(get_transport(proxy_to_config(config.proxy)))
     return client_cls(
         base_url,
         codec=ENVD_JSON_CODEC,
