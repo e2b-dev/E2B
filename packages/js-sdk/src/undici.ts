@@ -1,7 +1,8 @@
 import { compareVersions } from 'compare-versions'
 
 import { limitConcurrency } from './api/inflight'
-import { dynamicImport } from './utils'
+import { isReadableStreamLike, isRequestLike } from './is'
+import { dynamicImport, toDispatchableStream } from './utils'
 
 type UndiciRequestInit = RequestInit & {
   dispatcher?: unknown
@@ -136,12 +137,21 @@ function toUndiciRequestInput(
   input: RequestInfo | URL,
   init?: RequestInit
 ): { input: RequestInfo | URL; init?: RequestInit & { duplex?: 'half' } } {
-  if (!(input instanceof Request)) {
+  // Every Request has to be taken apart here, including one the current global
+  // class disowns: undici brand-checks against its own `Request`, so anything
+  // it didn't mint itself — even a native one — is coerced to a URL string and
+  // fails with `Failed to parse URL from [object Request]`.
+  if (!isRequestLike(input)) {
     return { input, init }
   }
 
   const requestInit: RequestInit & { duplex?: 'half' } = {
-    body: input.body,
+    // A Request from another implementation exposes that implementation's
+    // stream as its body, which undici would stringify just like the Request
+    // itself. Native bodies pass through untouched.
+    body: isReadableStreamLike(input.body)
+      ? toDispatchableStream(input.body)
+      : input.body,
     cache: input.cache,
     credentials: input.credentials,
     headers: input.headers,
