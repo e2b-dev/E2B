@@ -178,14 +178,30 @@ async def test_allow_public_traffic_true(async_sandbox_factory):
 
 
 @pytest.mark.skip_debug()
-async def test_firewall_transform_injects_headers(async_sandbox_factory):
+async def test_firewall_transform_injects_headers(
+    async_sandbox_factory, httpbin_template
+):
     """Test that a firewall rule with a transform injects headers into outbound requests."""
-    injected_header = "X-E2B-Test-Token"
+    injected_header = "X-Test-Token"
     injected_value = "e2b-transform-value-123"
+    # Port the httpbin template's start command listens on.
+    httpbin_port = 8080
+
+    # The transform is applied by the egress proxy on the way out of the
+    # sandbox, so the target has to be reachable from the public internet — a
+    # CI service container would not be. A sidecar sandbox running the httpbin
+    # template is that target, which keeps the test off any externally hosted
+    # service. Its ready command has already passed by the time create returns,
+    # so the server is serving.
+    httpbin = await async_sandbox_factory(
+        template_name=httpbin_template,
+        network=SandboxNetworkOpts(allow_public_traffic=True),
+    )
+    httpbin_host = httpbin.get_host(httpbin_port)
 
     network: SandboxNetworkOpts = {
         "rules": {
-            "httpbin.e2b.team": [
+            httpbin_host: [
                 {"transform": {"headers": {injected_header: injected_value}}},
             ],
         },
@@ -193,13 +209,14 @@ async def test_firewall_transform_injects_headers(async_sandbox_factory):
     async_sandbox = await async_sandbox_factory(network=network)
 
     result = await async_sandbox.commands.run(
-        "curl -sS --max-time 10 https://httpbin.e2b.team/headers"
+        f"curl -sS --retry 5 --retry-connrefused --max-time 10 "
+        f"https://{httpbin_host}/headers"
     )
     assert result.exit_code == 0
 
     parsed = json.loads(result.stdout)
     reflected = parsed["headers"].get(injected_header)
-    assert reflected == injected_value, (
+    assert reflected == [injected_value], (
         f"expected httpbin to reflect {injected_header}={injected_value}, "
         f"got headers: {parsed['headers']}"
     )

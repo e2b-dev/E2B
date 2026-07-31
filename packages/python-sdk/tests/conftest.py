@@ -47,6 +47,15 @@ def template():
 
 
 @pytest.fixture()
+def httpbin_template():
+    """Template that serves go-httpbin on port 8080 — see `templates/httpbin`.
+
+    Used as a sidecar by tests that need a publicly reachable echo server.
+    """
+    return "httpbin"
+
+
+@pytest.fixture()
 def sandbox_factory(request, template, sandbox_test_id):
     def factory(*, template_name: str = template, **kwargs):
         metadata = kwargs.setdefault("metadata", dict())
