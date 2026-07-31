@@ -8,13 +8,12 @@ from typing import NamedTuple, Optional, Protocol, Tuple, Union
 
 import httpx
 from httpx import AsyncBaseTransport, BaseTransport, Limits, Timeout
-from httpx._types import ProxyTypes
 from pyqwest import Proxy
 
 from e2b.api.client.client import AuthenticatedClient
 from e2b.api.client.types import Response
 from e2b.api.metadata import default_headers
-from e2b.connection_config import ConnectionConfig
+from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.exceptions import (
     AuthenticationException,
     InvalidArgumentException,

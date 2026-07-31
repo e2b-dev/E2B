@@ -11,7 +11,6 @@ from typing import cast
 
 import httpx
 import pytest
-from httpx._types import ProxyTypes
 from pyqwest import (
     Headers,
     Proxy,
@@ -35,7 +34,7 @@ from e2b.api.client_sync import EnvdTransportWithLogger
 from e2b.api.client_sync import get_api_client as get_sync_api_client
 from e2b.api.client_sync import get_envd_transport as get_sync_envd_transport
 from e2b.api.client_sync import get_transport as get_sync_transport
-from e2b.connection_config import ConnectionConfig
+from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.exceptions import InvalidArgumentException
 
 

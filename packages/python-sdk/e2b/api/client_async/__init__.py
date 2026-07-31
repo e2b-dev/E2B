@@ -5,7 +5,6 @@ from typing import Dict, Optional, Tuple, Union
 
 import httpx
 
-from httpx._types import ProxyTypes
 from pyqwest import HTTPTransport, Request, Response
 from pyqwest.httpx import AsyncPyqwestTransport
 from pyqwest.middleware.retry import RetryTransport
@@ -19,7 +18,7 @@ from e2b.api import (
     pool_max_idle_per_host,
     proxy_to_config,
 )
-from e2b.connection_config import ConnectionConfig
+from e2b.connection_config import ConnectionConfig, ProxyTypes
 
 TransportKey = Tuple[bool, Optional[ProxyTypes]]
 
