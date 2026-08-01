@@ -231,7 +231,9 @@ describe('Volume BYOC domain', () => {
     // The BYOC domain is stored on the instance and drives the content API
     // destination (https://api.<domain>), replacing the default domain.
     expect(vol.domain).toBe(byocDomain)
-    expect(new VolumeConnectionConfig(vol).domain).toBe(byocDomain)
+    const config = new VolumeConnectionConfig(vol)
+    expect(config.domain).toBe(byocDomain)
+    expect(config.apiUrl).toBe(`https://api.${byocDomain}`)
   })
 
   it('falls back to the default domain when create returns no domain', async () => {

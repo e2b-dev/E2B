@@ -158,12 +158,14 @@ def test_create_volume_uses_byoc_domain(monkeypatch):
 
     def mock_post(*, client, body):
         vol_id = str(uuid4())
-        vol = VolumeAndToken(
-            volume_id=vol_id, name=body.name, token=f"vol-token-{uuid4()}"
+        vol = VolumeAndToken.from_dict(
+            {
+                "volumeID": vol_id,
+                "name": body.name,
+                "token": f"vol-token-{uuid4()}",
+                "domain": byoc_domain,
+            }
         )
-        # BYOC responses carry the cluster domain; the generated model captures
-        # not-yet-typed fields in additional_properties.
-        vol.additional_properties["domain"] = byoc_domain
         _volumes[vol_id] = vol
         return Response(
             status_code=HTTPStatus(201), content=b"", headers={}, parsed=vol
@@ -177,6 +179,7 @@ def test_create_volume_uses_byoc_domain(monkeypatch):
     # replacing the default domain.
     assert vol._domain == byoc_domain
     assert vol._get_volume_config().domain == byoc_domain
+    assert vol._get_volume_config().api_url == f"https://api.{byoc_domain}"
 
 
 def test_create_volume_falls_back_to_default_domain():
@@ -189,7 +192,7 @@ def test_create_volume_falls_back_to_default_domain():
 def test_connect_propagates_byoc_domain():
     byoc_domain = "cluster.example.com"
     created = Volume.create("connect-volume")
-    _volumes[created.volume_id].additional_properties["domain"] = byoc_domain
+    _volumes[created.volume_id].domain = byoc_domain
 
     info = Volume.get_info(created.volume_id)
     assert info.domain == byoc_domain

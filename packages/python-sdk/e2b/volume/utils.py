@@ -1,6 +1,7 @@
 import datetime
-from typing import Optional
+from typing import Optional, Union
 
+from e2b.api.client.types import Unset
 from e2b.volume.client.models import VolumeEntryStat as VolumeEntryStatApi
 from e2b.volume.client.types import UNSET
 from e2b.volume.types import VolumeEntryStat
@@ -13,16 +14,13 @@ def _ensure_utc(dt: datetime.datetime) -> datetime.datetime:
     return dt
 
 
-def get_response_domain(parsed) -> Optional[str]:
+def get_response_domain(domain: Union[Unset, str]) -> Optional[str]:
     """Read the optional ``domain`` returned by the volume API for BYOC teams.
 
-    The field is present on the response at runtime but is not yet part of the
-    pinned generated model, so it lands in ``additional_properties``. Once
-    ``spec/infra-ref`` is bumped and ``make codegen`` runs, ``domain`` becomes a
-    typed attribute and this can read it directly.
+    Empty strings and generated ``UNSET`` values fall back to the configured E2B
+    domain.
     """
-    domain = parsed.additional_properties.get("domain")
-    return domain if isinstance(domain, str) else None
+    return domain if isinstance(domain, str) and domain else None
 
 
 def convert_volume_entry_stat(api_stat: VolumeEntryStatApi) -> VolumeEntryStat:

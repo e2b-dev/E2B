@@ -28,15 +28,13 @@ import type {
 /**
  * Read the optional `domain` returned by the volume API for BYOC teams.
  *
- * The field is present on the response at runtime but is not yet part of the
- * pinned generated schema, so we read it defensively. Once `spec/infra-ref` is
- * bumped and `make codegen` runs, `domain` becomes a typed field and the cast
- * can be dropped.
+ * Empty strings are treated as absent so content requests fall back to the
+ * configured E2B domain.
  */
 function responseDomain(
   data: ApiComponents['schemas']['VolumeAndToken'] | undefined
 ): string | undefined {
-  return (data as { domain?: string } | undefined)?.domain
+  return data?.domain || undefined
 }
 
 /**

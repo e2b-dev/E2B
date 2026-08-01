@@ -130,7 +130,7 @@ class Volume:
             volume_id=res.parsed.volume_id,
             name=res.parsed.name,
             token=res.parsed.token,
-            domain=get_response_domain(res.parsed) or config.domain,
+            domain=get_response_domain(res.parsed.domain) or config.domain,
             debug=config.debug,
             proxy=config.proxy,
         )
@@ -189,7 +189,7 @@ class Volume:
             volume_id=res.parsed.volume_id,
             name=res.parsed.name,
             token=res.parsed.token,
-            domain=get_response_domain(res.parsed),
+            domain=get_response_domain(res.parsed.domain),
         )
 
     @staticmethod
