@@ -13,6 +13,18 @@ def _ensure_utc(dt: datetime.datetime) -> datetime.datetime:
     return dt
 
 
+def get_response_domain(parsed) -> Optional[str]:
+    """Read the optional ``domain`` returned by the volume API for BYOC teams.
+
+    The field is present on the response at runtime but is not yet part of the
+    pinned generated model, so it lands in ``additional_properties``. Once
+    ``spec/infra-ref`` is bumped and ``make codegen`` runs, ``domain`` becomes a
+    typed attribute and this can read it directly.
+    """
+    domain = parsed.additional_properties.get("domain")
+    return domain if isinstance(domain, str) else None
+
+
 def convert_volume_entry_stat(api_stat: VolumeEntryStatApi) -> VolumeEntryStat:
     """Convert API VolumeEntryStat to SDK VolumeEntryStat."""
     target: Optional[str] = None

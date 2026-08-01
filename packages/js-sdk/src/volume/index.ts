@@ -26,6 +26,20 @@ import type {
 } from './types'
 
 /**
+ * Read the optional `domain` returned by the volume API for BYOC teams.
+ *
+ * The field is present on the response at runtime but is not yet part of the
+ * pinned generated schema, so we read it defensively. Once `spec/infra-ref` is
+ * bumped and `make codegen` runs, `domain` becomes a typed field and the cast
+ * can be dropped.
+ */
+function responseDomain(
+  data: ApiComponents['schemas']['VolumeAndToken'] | undefined
+): string | undefined {
+  return (data as { domain?: string } | undefined)?.domain
+}
+
+/**
  * Convert API VolumeEntryStat to SDK VolumeEntryStat.
  */
 function convertVolumeEntryStat(
@@ -135,7 +149,7 @@ export class Volume {
       res.data.volumeID,
       res.data.name,
       res.data.token,
-      config.domain,
+      responseDomain(res.data) ?? config.domain,
       config.debug,
       config.proxy
     )
@@ -154,12 +168,12 @@ export class Volume {
     opts?: ConnectionOpts
   ): Promise<Volume> {
     const config = new ConnectionConfig(opts)
-    const { name, token } = await Volume.getInfo(volumeId, opts)
+    const { name, token, domain } = await Volume.getInfo(volumeId, opts)
     return new Volume(
       volumeId,
       name,
       token,
-      config.domain,
+      domain ?? config.domain,
       config.debug,
       config.proxy
     )
@@ -202,6 +216,7 @@ export class Volume {
       volumeId: res.data!.volumeID,
       name: res.data!.name,
       token: res.data!.token,
+      domain: responseDomain(res.data),
     }
   }
 

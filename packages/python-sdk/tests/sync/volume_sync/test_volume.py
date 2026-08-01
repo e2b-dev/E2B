@@ -4,6 +4,7 @@ from uuid import uuid4
 import pytest
 
 from e2b import Volume
+from e2b.connection_config import ConnectionConfig
 from e2b.exceptions import NotFoundException
 from e2b.api.client.models.volume_and_token import VolumeAndToken
 from e2b.api.client.types import Response
@@ -150,6 +151,52 @@ def test_volume_per_call_proxy_overrides_instance():
 
     config = vol._get_volume_config(proxy="http://127.0.0.1:9090")
     assert config.proxy == "http://127.0.0.1:9090"
+
+
+def test_create_volume_uses_byoc_domain(monkeypatch):
+    byoc_domain = "cluster.example.com"
+
+    def mock_post(*, client, body):
+        vol_id = str(uuid4())
+        vol = VolumeAndToken(
+            volume_id=vol_id, name=body.name, token=f"vol-token-{uuid4()}"
+        )
+        # BYOC responses carry the cluster domain; the generated model captures
+        # not-yet-typed fields in additional_properties.
+        vol.additional_properties["domain"] = byoc_domain
+        _volumes[vol_id] = vol
+        return Response(
+            status_code=HTTPStatus(201), content=b"", headers={}, parsed=vol
+        )
+
+    monkeypatch.setattr(post_volumes_mod, "sync_detailed", mock_post)
+
+    vol = Volume.create("byoc-volume")
+
+    # The BYOC domain drives the content API destination (https://api.<domain>),
+    # replacing the default domain.
+    assert vol._domain == byoc_domain
+    assert vol._get_volume_config().domain == byoc_domain
+
+
+def test_create_volume_falls_back_to_default_domain():
+    vol = Volume.create("default-volume")
+
+    # No domain in the response -> fall back to the connection default.
+    assert vol._domain == ConnectionConfig().domain
+
+
+def test_connect_propagates_byoc_domain():
+    byoc_domain = "cluster.example.com"
+    created = Volume.create("connect-volume")
+    _volumes[created.volume_id].additional_properties["domain"] = byoc_domain
+
+    info = Volume.get_info(created.volume_id)
+    assert info.domain == byoc_domain
+
+    connected = Volume.connect(created.volume_id)
+    assert connected._domain == byoc_domain
+    assert connected._get_volume_config().domain == byoc_domain
 
 
 def test_volume_full_lifecycle():

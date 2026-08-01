@@ -48,7 +48,11 @@ from e2b.volume.types import (
     VolumeEntryStat,
 )
 from e2b.io_utils import iter_io_chunks
-from e2b.volume.utils import DualMethod, convert_volume_entry_stat
+from e2b.volume.utils import (
+    DualMethod,
+    convert_volume_entry_stat,
+    get_response_domain,
+)
 
 
 class Volume:
@@ -126,7 +130,7 @@ class Volume:
             volume_id=res.parsed.volume_id,
             name=res.parsed.name,
             token=res.parsed.token,
-            domain=config.domain,
+            domain=get_response_domain(res.parsed) or config.domain,
             debug=config.debug,
             proxy=config.proxy,
         )
@@ -147,7 +151,7 @@ class Volume:
             volume_id=volume_id,
             name=info.name,
             token=info.token,
-            domain=config.domain,
+            domain=info.domain or config.domain,
             debug=config.debug,
             proxy=config.proxy,
         )
@@ -185,6 +189,7 @@ class Volume:
             volume_id=res.parsed.volume_id,
             name=res.parsed.name,
             token=res.parsed.token,
+            domain=get_response_domain(res.parsed),
         )
 
     @staticmethod
