@@ -51,7 +51,6 @@ from e2b.io_utils import iter_io_chunks
 from e2b.volume.utils import (
     DualMethod,
     convert_volume_entry_stat,
-    get_response_domain,
 )
 
 
@@ -126,11 +125,16 @@ class Volume:
         if isinstance(res.parsed, Error):
             raise Exception(f"{res.parsed.message}: Request failed")
 
+        domain = (
+            res.parsed.domain
+            if isinstance(res.parsed.domain, str) and res.parsed.domain
+            else None
+        )
         vol = cls(
             volume_id=res.parsed.volume_id,
             name=res.parsed.name,
             token=res.parsed.token,
-            domain=get_response_domain(res.parsed.domain) or config.domain,
+            domain=domain or config.domain,
             debug=config.debug,
             proxy=config.proxy,
         )
@@ -185,11 +189,16 @@ class Volume:
         if isinstance(res.parsed, Error):
             raise Exception(f"{res.parsed.message}: Request failed")
 
+        domain = (
+            res.parsed.domain
+            if isinstance(res.parsed.domain, str) and res.parsed.domain
+            else None
+        )
         return VolumeAndToken(
             volume_id=res.parsed.volume_id,
             name=res.parsed.name,
             token=res.parsed.token,
-            domain=get_response_domain(res.parsed.domain),
+            domain=domain,
         )
 
     @staticmethod

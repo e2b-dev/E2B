@@ -1,7 +1,6 @@
 import datetime
-from typing import Optional, Union
+from typing import Optional
 
-from e2b.api.client.types import Unset
 from e2b.volume.client.models import VolumeEntryStat as VolumeEntryStatApi
 from e2b.volume.client.types import UNSET
 from e2b.volume.types import VolumeEntryStat
@@ -12,15 +11,6 @@ def _ensure_utc(dt: datetime.datetime) -> datetime.datetime:
     if dt.tzinfo is None:
         return dt.replace(tzinfo=datetime.timezone.utc)
     return dt
-
-
-def get_response_domain(domain: Union[Unset, str]) -> Optional[str]:
-    """Read the optional ``domain`` returned by the volume API for BYOC teams.
-
-    Empty strings and generated ``UNSET`` values fall back to the configured E2B
-    domain.
-    """
-    return domain if isinstance(domain, str) and domain else None
 
 
 def convert_volume_entry_stat(api_stat: VolumeEntryStatApi) -> VolumeEntryStat:

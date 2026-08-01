@@ -26,18 +26,6 @@ import type {
 } from './types'
 
 /**
- * Read the optional `domain` returned by the volume API for BYOC teams.
- *
- * Empty strings are treated as absent so content requests fall back to the
- * configured E2B domain.
- */
-function responseDomain(
-  data: ApiComponents['schemas']['VolumeAndToken'] | undefined
-): string | undefined {
-  return data?.domain || undefined
-}
-
-/**
  * Convert API VolumeEntryStat to SDK VolumeEntryStat.
  */
 function convertVolumeEntryStat(
@@ -147,7 +135,7 @@ export class Volume {
       res.data.volumeID,
       res.data.name,
       res.data.token,
-      responseDomain(res.data) ?? config.domain,
+      res.data.domain || config.domain,
       config.debug,
       config.proxy
     )
@@ -214,7 +202,7 @@ export class Volume {
       volumeId: res.data!.volumeID,
       name: res.data!.name,
       token: res.data!.token,
-      domain: responseDomain(res.data),
+      domain: res.data!.domain || undefined,
     }
   }
 
