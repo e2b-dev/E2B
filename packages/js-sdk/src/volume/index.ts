@@ -135,7 +135,7 @@ export class Volume {
       res.data.volumeID,
       res.data.name,
       res.data.token,
-      config.domain,
+      res.data.domain || config.domain,
       config.debug,
       config.proxy
     )
@@ -154,12 +154,12 @@ export class Volume {
     opts?: ConnectionOpts
   ): Promise<Volume> {
     const config = new ConnectionConfig(opts)
-    const { name, token } = await Volume.getInfo(volumeId, opts)
+    const { name, token, domain } = await Volume.getInfo(volumeId, opts)
     return new Volume(
       volumeId,
       name,
       token,
-      config.domain,
+      domain ?? config.domain,
       config.debug,
       config.proxy
     )
@@ -202,6 +202,7 @@ export class Volume {
       volumeId: res.data!.volumeID,
       name: res.data!.name,
       token: res.data!.token,
+      domain: res.data!.domain || undefined,
     }
   }
 
