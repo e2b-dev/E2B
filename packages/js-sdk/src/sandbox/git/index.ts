@@ -1051,4 +1051,5 @@ export type {
   GitConfigScope,
   GitFileStatus,
   GitStatus,
+  GitStatusLabel,
 } from './utils'
