@@ -17,7 +17,8 @@ single httpx client serves all threads and event loops.
 Connection-establishment failures are retried with backoff
 (`E2B_CONNECTION_RETRIES`, default 3), matching the connect-only retries of
 the previous transports. Timeouts keep raising `httpx.ReadTimeout` (an
-`httpx.TimeoutException`), as before.
+`httpx.TimeoutException`), as before, whether they fire while waiting for the
+response head or while reading the response body.
 
 `proxy` for API calls takes a URL string (e.g.
 `proxy="http://user:pass@localhost:8030"`, scheme http, https, socks5, or

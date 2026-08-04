@@ -1,7 +1,7 @@
 import asyncio
 import threading
 import weakref
-from typing import Dict, Optional, Tuple, Union
+from typing import AsyncIterator, Dict, Optional, Tuple, Union, cast
 
 import httpx
 
@@ -47,9 +47,35 @@ class AsyncApiPyqwestTransport(AsyncPyqwestTransport):
         if "host" in request.headers:
             del request.headers["host"]
         try:
-            return await super().handle_async_request(request)
+            response = await super().handle_async_request(request)
         except (TimeoutError, asyncio.TimeoutError) as e:
             raise httpx.ReadTimeout(str(e), request=request) from e
+        # The adapter returns once the response head arrives and httpx reads
+        # the body afterwards, so a body that stalls times out beyond the
+        # try above — the mapping has to follow the stream.
+        response.stream = AsyncReadTimeoutByteStream(
+            cast(httpx.AsyncByteStream, response.stream), request
+        )
+        return response
+
+
+class AsyncReadTimeoutByteStream(httpx.AsyncByteStream):
+    """Maps a timeout while reading the response body to ``httpx.ReadTimeout``,
+    the way ``AsyncApiPyqwestTransport`` maps one while awaiting the head."""
+
+    def __init__(self, stream: httpx.AsyncByteStream, request: httpx.Request) -> None:
+        self._stream = stream
+        self._request = request
+
+    async def __aiter__(self) -> AsyncIterator[bytes]:
+        try:
+            async for chunk in self._stream:
+                yield chunk
+        except (TimeoutError, asyncio.TimeoutError) as e:
+            raise httpx.ReadTimeout(str(e), request=self._request) from e
+
+    async def aclose(self) -> None:
+        await self._stream.aclose()
 
 
 class ConnectionRetryTransport(RetryTransport):

@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, Iterator, Optional, Tuple, Union, cast
 
 import httpx
 import threading
@@ -43,9 +43,34 @@ class ApiPyqwestTransport(PyqwestTransport):
         if "host" in request.headers:
             del request.headers["host"]
         try:
-            return super().handle_request(request)
+            response = super().handle_request(request)
         except TimeoutError as e:
             raise httpx.ReadTimeout(str(e), request=request) from e
+        # The adapter returns once the response head arrives and httpx reads
+        # the body afterwards, so a body that stalls times out beyond the
+        # try above — the mapping has to follow the stream.
+        response.stream = ReadTimeoutByteStream(
+            cast(httpx.SyncByteStream, response.stream), request
+        )
+        return response
+
+
+class ReadTimeoutByteStream(httpx.SyncByteStream):
+    """Maps a timeout while reading the response body to ``httpx.ReadTimeout``,
+    the way ``ApiPyqwestTransport`` maps one while awaiting the head."""
+
+    def __init__(self, stream: httpx.SyncByteStream, request: httpx.Request) -> None:
+        self._stream = stream
+        self._request = request
+
+    def __iter__(self) -> Iterator[bytes]:
+        try:
+            yield from self._stream
+        except TimeoutError as e:
+            raise httpx.ReadTimeout(str(e), request=self._request) from e
+
+    def close(self) -> None:
+        self._stream.close()
 
 
 class ConnectionRetryTransport(SyncRetryTransport):

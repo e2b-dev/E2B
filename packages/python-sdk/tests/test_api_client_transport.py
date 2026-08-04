@@ -390,7 +390,8 @@ async def test_async_envd_transport_uses_separate_stack(test_api_key):
 
 class _EchoHandler(BaseHTTPRequestHandler):
     """Answers every GET with a JSON echo of the request headers; a path
-    starting with ``/slow`` sleeps 5 seconds first."""
+    starting with ``/slow`` sleeps 5 seconds first, and one starting with
+    ``/stall`` answers the head and then never sends the body."""
 
     def do_GET(self):
         if self.path.startswith("/slow"):
@@ -401,6 +402,10 @@ class _EchoHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
+        if self.path.startswith("/stall"):
+            self.wfile.flush()
+            time.sleep(5)
+            return
         self.wfile.write(body)
 
     def log_message(self, *args):
@@ -577,6 +582,41 @@ async def test_async_api_client_timeout_raises_httpx_read_timeout(
     try:
         with pytest.raises(httpx.ReadTimeout):
             await httpx_client.request("GET", "/slow", timeout=0.2)
+    finally:
+        await httpx_client.aclose()
+        reset_async_api_transports()
+
+
+def test_sync_api_client_body_timeout_raises_httpx_read_timeout(
+    test_api_key, echo_server
+):
+    # The head arrives in time and the body never does: httpx reads the body
+    # after the transport returned, so that timeout is mapped on the stream.
+    reset_sync_api_transports()
+    config = ConnectionConfig(api_key=test_api_key, api_url=echo_server)
+    api_client = get_sync_api_client(config)
+    httpx_client = api_client.get_httpx_client()
+
+    try:
+        with pytest.raises(httpx.ReadTimeout):
+            httpx_client.request("GET", "/stall", timeout=0.2)
+    finally:
+        httpx_client.close()
+        reset_sync_api_transports()
+
+
+@pytest.mark.asyncio
+async def test_async_api_client_body_timeout_raises_httpx_read_timeout(
+    test_api_key, echo_server
+):
+    reset_async_api_transports()
+    config = ConnectionConfig(api_key=test_api_key, api_url=echo_server)
+    api_client = get_async_api_client(config)
+    httpx_client = api_client.get_async_httpx_client()
+
+    try:
+        with pytest.raises(httpx.ReadTimeout):
+            await httpx_client.request("GET", "/stall", timeout=0.2)
     finally:
         await httpx_client.aclose()
         reset_async_api_transports()
