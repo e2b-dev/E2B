@@ -5,7 +5,6 @@ from http import HTTPStatus
 
 import httpx
 
-from httpx._types import ProxyTypes
 from typing_extensions import Unpack
 
 from e2b.api import handle_api_exception
@@ -21,7 +20,7 @@ from e2b.api.client.models import (
 )
 from e2b.api.client.types import Response
 from e2b.api.client_async import get_api_client as get_core_api_client
-from e2b.connection_config import ApiParams, ConnectionConfig
+from e2b.connection_config import ApiParams, ConnectionConfig, ProxyTypes
 from e2b.exceptions import NotFoundException, VolumeException
 from e2b.volume.client.api.volumes import (
     get_volumecontent_volume_id_path as get_path,

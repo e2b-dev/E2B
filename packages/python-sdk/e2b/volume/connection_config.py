@@ -3,10 +3,10 @@ import os
 
 from typing import Dict, Optional, TypedDict
 
-from httpx._types import ProxyTypes
 from typing_extensions import Unpack
 
 from e2b.api.metadata import package_version
+from e2b.connection_config import ProxyTypes
 
 REQUEST_TIMEOUT: float = 60.0  # 60 seconds
 
