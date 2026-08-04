@@ -1,11 +1,9 @@
-"""Client lifecycle in the sync sandbox modules: the httpx `envd_api` clients
-wrap per-thread transports (see `e2b.api.client_sync`) and are bound per
-calling thread, while the connectrpc RPC clients are stateless over a
-process-global transport and are built once per module and shared across
-threads."""
+"""Client lifecycle in the sync sandbox modules: the httpx `envd_api`
+clients and the connectrpc RPC clients are both cheap stateless wrappers
+over shared, process-global pyqwest transports — built once per module and
+shared across threads."""
 
 from concurrent.futures import ThreadPoolExecutor
-import threading
 from types import SimpleNamespace
 from unittest.mock import Mock, sentinel
 
@@ -27,7 +25,7 @@ def run_in_worker_thread(fn):
         return executor.submit(fn).result()
 
 
-def test_sync_sandbox_envd_api_is_bound_per_calling_thread(monkeypatch, test_api_key):
+def test_sync_sandbox_envd_api_delegates_to_filesystem(monkeypatch, test_api_key):
     config = ConnectionConfig(api_key=test_api_key)
     main_api = Mock(spec=httpx.Client)
     filesystem = SimpleNamespace(_envd_api=main_api)
@@ -53,28 +51,18 @@ def test_sync_sandbox_envd_api_is_bound_per_calling_thread(monkeypatch, test_api
     assert not hasattr(sandbox, "_transport")
 
 
-def test_sync_filesystem_envd_api_per_thread_rpc_shared(monkeypatch, test_api_key):
+def test_sync_filesystem_clients_are_shared_across_threads(monkeypatch, test_api_key):
     config = ConnectionConfig(api_key=test_api_key)
-    main_thread_id = threading.get_ident()
-    main_transport = object()
-    worker_transport = object()
-    main_api = Mock(spec=httpx.Client)
-    worker_api = Mock(spec=httpx.Client)
+    shared_api = Mock(spec=httpx.Client)
+    streaming_api = Mock(spec=httpx.Client)
     shared_rpc = sentinel.filesystem_rpc
 
     monkeypatch.setattr(
         filesystem_sync,
-        "get_envd_transport",
-        lambda *_args, **_kwargs: main_transport
-        if threading.get_ident() == main_thread_id
-        else worker_transport,
-    )
-    monkeypatch.setattr(
-        filesystem_sync.httpx,
-        "Client",
-        lambda *args, **kwargs: main_api
-        if kwargs["transport"] is main_transport
-        else worker_api,
+        "get_envd_api",
+        lambda *_args, **kwargs: streaming_api
+        if kwargs.get("for_streaming")
+        else shared_api,
     )
     monkeypatch.setattr(
         filesystem_sync,
@@ -88,12 +76,13 @@ def test_sync_filesystem_envd_api_per_thread_rpc_shared(monkeypatch, test_api_ke
         config,
     )
 
-    assert fs._envd_api is main_api
+    assert fs._envd_api is shared_api
+    assert fs._envd_api_streaming is streaming_api
     assert fs._rpc is shared_rpc
 
-    worker_api_result, worker_rpc_result = run_in_worker_thread(
-        lambda: (fs._envd_api, fs._rpc)
+    worker_api, worker_streaming, worker_rpc = run_in_worker_thread(
+        lambda: (fs._envd_api, fs._envd_api_streaming, fs._rpc)
     )
-    assert worker_api_result is worker_api
-    assert worker_rpc_result is shared_rpc
-    assert fs._envd_api is main_api
+    assert worker_api is shared_api
+    assert worker_streaming is streaming_api
+    assert worker_rpc is shared_rpc

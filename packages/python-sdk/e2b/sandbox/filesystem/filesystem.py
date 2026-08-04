@@ -1,3 +1,4 @@
+import asyncio
 import gzip
 import re
 from dataclasses import dataclass, field
@@ -181,6 +182,11 @@ class FileStreamReader(Iterator[bytes]):
     def __next__(self) -> bytes:
         try:
             return next(self._iterator)
+        except TimeoutError as e:
+            # The transport's idle read timeout is the builtin TimeoutError
+            # under pyqwest; keep the documented httpx exception.
+            self.close()
+            raise httpx.ReadTimeout(str(e)) from e
         except BaseException:
             # Covers normal end (StopIteration) and read errors alike.
             self.close()
@@ -219,9 +225,13 @@ class AsyncFileStreamReader(AsyncIterator[bytes]):
                 ...
     """
 
-    def __init__(self, response: httpx.Response):
+    def __init__(self, response: httpx.Response, idle_timeout: Optional[float] = None):
         self._response = response
         self._iterator = response.aiter_bytes()
+        # An explicit per-call idle bound, applied around each read with
+        # `wait_for` (the transport-wide idle read timeout covers the
+        # default case; see the flavor `read` implementations).
+        self._idle_timeout = idle_timeout
         self._closed = False
 
     def __aiter__(self) -> AsyncIterator[bytes]:
@@ -229,7 +239,17 @@ class AsyncFileStreamReader(AsyncIterator[bytes]):
 
     async def __anext__(self) -> bytes:
         try:
-            return await self._iterator.__anext__()
+            read = self._iterator.__anext__()
+            if self._idle_timeout:
+                return await asyncio.wait_for(read, self._idle_timeout)
+            return await read
+        except (TimeoutError, asyncio.TimeoutError) as e:
+            # Both the transport's idle read timeout (the builtin
+            # TimeoutError under pyqwest) and wait_for's expiry (a distinct
+            # asyncio.TimeoutError until 3.11); keep the documented httpx
+            # exception.
+            await self.aclose()
+            raise httpx.ReadTimeout(str(e)) from e
         except BaseException:
             # Covers normal end (StopAsyncIteration) and read errors alike.
             await self.aclose()
