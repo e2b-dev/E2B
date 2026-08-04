@@ -29,9 +29,12 @@ jobs:
       # `dependency-type` is the highest-precedence type in the pull request
       # (`direct:production` > `direct:development` > `indirect`). Only a direct
       # production dependency reaches users of a published package; dev tooling
-      # and transitive-only lockfile bumps need no release. A changeset already
-      # on the branch is left alone — a maintainer may have written a better one
-      # by hand, and this workflow also reruns on its own commit.
+      # and transitive-only lockfile bumps need no release. That type covers the
+      # whole pull request while the filters are per directory, so a group that
+      # mixes a production bump in one package with a dev-only bump in another
+      # names both — drop the extra line from the committed file if it matters.
+      # A changeset already on the branch is left alone: a maintainer may have
+      # written a better one by hand, and this workflow reruns on its own commit.
       changeset: >-
         ${{ steps.metadata.outputs.dependency-type == 'direct:production'
         && steps.filter.outputs.changeset != 'true'
@@ -50,14 +53,10 @@ jobs:
         || format('Update the `{0}` dependency to {1}.',
         steps.metadata.outputs.dependency-names, steps.metadata.outputs.new-version) }}
     steps:
-      - name: Fetch Dependabot metadata
-        id: metadata
-        uses: dependabot/fetch-metadata@v2
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Filter changed paths
-        uses: dorny/paths-filter@v3
+        # Pinned rather than floating on `v3`: this is the one third-party
+        # action reached by a `pull_request_target` trigger.
+        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.3
         id: filter
         with:
           # Dependabot edits the manifest of every workspace package it updates,
@@ -71,6 +70,17 @@ jobs:
               - 'packages/cli/**'
             changeset:
               - '.changeset/!(README).md'
+
+      - name: Fetch Dependabot metadata
+        id: metadata
+        # Not needed once a changeset is on the branch, and skipping keeps this
+        # step away from the pull request the workflow has committed to itself:
+        # the action only reports metadata for a pull request whose commits are
+        # all Dependabot's.
+        if: steps.filter.outputs.changeset != 'true'
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   changeset:
     name: Add changeset
