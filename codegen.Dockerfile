@@ -34,7 +34,10 @@ RUN ARCH=$(uname -m) && \
     curl -fsSL https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.xz | tar -xJ -C /usr/local --strip-components=1
 
 # Install Node.js deps
-ENV PNPM_VERSION=9.15.5
+# pnpm is pinned to match .tool-versions and the root `packageManager` field —
+# pnpm manages its own version from `packageManager` since v10, so a mismatch
+# would make it re-download itself on every `make generate`.
+ENV PNPM_VERSION=10.34.5
 RUN npm install -g \
     pnpm@${PNPM_VERSION} \
     @connectrpc/protoc-gen-connect-es@1.6.1 \
