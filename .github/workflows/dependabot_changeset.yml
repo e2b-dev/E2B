@@ -54,9 +54,9 @@ jobs:
         steps.metadata.outputs.dependency-names, steps.metadata.outputs.new-version) }}
     steps:
       - name: Filter changed paths
-        # Pinned rather than floating on `v3`: this is the one third-party
-        # action reached by a `pull_request_target` trigger.
-        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.3
+        # Reached by a `pull_request_target` trigger, so this action sees a
+        # privileged token — scrutinise any bump here more closely than most.
+        uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3.0.4
         id: filter
         with:
           # Dependabot edits the manifest of every workspace package it updates,
