@@ -73,6 +73,8 @@ def sync_detailed(
 ) -> Response[Union[Any, Error]]:
     """Update template
 
+     Update template
+
     Args:
         template_id (str):
         body (TemplateUpdateRequest):
@@ -105,6 +107,8 @@ def sync(
 ) -> Optional[Union[Any, Error]]:
     """Update template
 
+     Update template
+
     Args:
         template_id (str):
         body (TemplateUpdateRequest):
@@ -131,6 +135,8 @@ async def asyncio_detailed(
     body: TemplateUpdateRequest,
 ) -> Response[Union[Any, Error]]:
     """Update template
+
+     Update template
 
     Args:
         template_id (str):
@@ -161,6 +167,8 @@ async def asyncio(
     body: TemplateUpdateRequest,
 ) -> Optional[Union[Any, Error]]:
     """Update template
+
+     Update template
 
     Args:
         template_id (str):

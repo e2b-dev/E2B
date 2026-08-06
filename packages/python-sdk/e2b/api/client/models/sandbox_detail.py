@@ -22,69 +22,71 @@ T = TypeVar("T", bound="SandboxDetail")
 class SandboxDetail:
     """
     Attributes:
+        template_id (str): Identifier of the template from which is the sandbox created
+        sandbox_id (str): Identifier of the sandbox
         client_id (str): Identifier of the client
-        cpu_count (int): CPU cores for the sandbox
-        disk_size_mb (int): Disk size for the sandbox in MiB
+        started_at (datetime.datetime): Time when the sandbox was started
         end_at (datetime.datetime): Time when the sandbox will expire
         envd_version (str): Version of the envd running in the sandbox
+        cpu_count (int): CPU cores for the sandbox
         memory_mb (int): Memory for the sandbox in MiB
-        sandbox_id (str): Identifier of the sandbox
-        started_at (datetime.datetime): Time when the sandbox was started
+        disk_size_mb (int): Disk size for the sandbox in MiB
         state (SandboxState): State of the sandbox
-        template_id (str): Identifier of the template from which is the sandbox created
         alias (Union[Unset, str]): Alias of the template
+        envd_access_token (Union[Unset, str]): Access token used for envd communication
         allow_internet_access (Union[None, Unset, bool]): Whether internet access was explicitly enabled or disabled for
             the sandbox. Null means it was not explicitly set.
         domain (Union[None, Unset, str]): Base domain where the sandbox traffic is accessible
-        envd_access_token (Union[Unset, str]): Access token used for envd communication
-        lifecycle (Union[Unset, SandboxLifecycle]): Sandbox lifecycle policy returned by sandbox info.
         metadata (Union[Unset, Any]):
         network (Union[Unset, SandboxNetworkConfig]):
+        lifecycle (Union[Unset, SandboxLifecycle]): Sandbox lifecycle policy returned by sandbox info.
         volume_mounts (Union[Unset, list['SandboxVolumeMount']]):
     """
 
+    template_id: str
+    sandbox_id: str
     client_id: str
-    cpu_count: int
-    disk_size_mb: int
+    started_at: datetime.datetime
     end_at: datetime.datetime
     envd_version: str
+    cpu_count: int
     memory_mb: int
-    sandbox_id: str
-    started_at: datetime.datetime
+    disk_size_mb: int
     state: SandboxState
-    template_id: str
     alias: Union[Unset, str] = UNSET
+    envd_access_token: Union[Unset, str] = UNSET
     allow_internet_access: Union[None, Unset, bool] = UNSET
     domain: Union[None, Unset, str] = UNSET
-    envd_access_token: Union[Unset, str] = UNSET
-    lifecycle: Union[Unset, "SandboxLifecycle"] = UNSET
     metadata: Union[Unset, Any] = UNSET
     network: Union[Unset, "SandboxNetworkConfig"] = UNSET
+    lifecycle: Union[Unset, "SandboxLifecycle"] = UNSET
     volume_mounts: Union[Unset, list["SandboxVolumeMount"]] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        template_id = self.template_id
+
+        sandbox_id = self.sandbox_id
+
         client_id = self.client_id
 
-        cpu_count = self.cpu_count
-
-        disk_size_mb = self.disk_size_mb
+        started_at = self.started_at.isoformat()
 
         end_at = self.end_at.isoformat()
 
         envd_version = self.envd_version
 
+        cpu_count = self.cpu_count
+
         memory_mb = self.memory_mb
 
-        sandbox_id = self.sandbox_id
-
-        started_at = self.started_at.isoformat()
+        disk_size_mb = self.disk_size_mb
 
         state = self.state.value
 
-        template_id = self.template_id
-
         alias = self.alias
+
+        envd_access_token = self.envd_access_token
 
         allow_internet_access: Union[None, Unset, bool]
         if isinstance(self.allow_internet_access, Unset):
@@ -98,17 +100,15 @@ class SandboxDetail:
         else:
             domain = self.domain
 
-        envd_access_token = self.envd_access_token
-
-        lifecycle: Union[Unset, dict[str, Any]] = UNSET
-        if not isinstance(self.lifecycle, Unset):
-            lifecycle = self.lifecycle.to_dict()
-
         metadata = self.metadata
 
         network: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.network, Unset):
             network = self.network.to_dict()
+
+        lifecycle: Union[Unset, dict[str, Any]] = UNSET
+        if not isinstance(self.lifecycle, Unset):
+            lifecycle = self.lifecycle.to_dict()
 
         volume_mounts: Union[Unset, list[dict[str, Any]]] = UNSET
         if not isinstance(self.volume_mounts, Unset):
@@ -121,32 +121,32 @@ class SandboxDetail:
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
+                "templateID": template_id,
+                "sandboxID": sandbox_id,
                 "clientID": client_id,
-                "cpuCount": cpu_count,
-                "diskSizeMB": disk_size_mb,
+                "startedAt": started_at,
                 "endAt": end_at,
                 "envdVersion": envd_version,
+                "cpuCount": cpu_count,
                 "memoryMB": memory_mb,
-                "sandboxID": sandbox_id,
-                "startedAt": started_at,
+                "diskSizeMB": disk_size_mb,
                 "state": state,
-                "templateID": template_id,
             }
         )
         if alias is not UNSET:
             field_dict["alias"] = alias
+        if envd_access_token is not UNSET:
+            field_dict["envdAccessToken"] = envd_access_token
         if allow_internet_access is not UNSET:
             field_dict["allowInternetAccess"] = allow_internet_access
         if domain is not UNSET:
             field_dict["domain"] = domain
-        if envd_access_token is not UNSET:
-            field_dict["envdAccessToken"] = envd_access_token
-        if lifecycle is not UNSET:
-            field_dict["lifecycle"] = lifecycle
         if metadata is not UNSET:
             field_dict["metadata"] = metadata
         if network is not UNSET:
             field_dict["network"] = network
+        if lifecycle is not UNSET:
+            field_dict["lifecycle"] = lifecycle
         if volume_mounts is not UNSET:
             field_dict["volumeMounts"] = volume_mounts
 
@@ -159,27 +159,29 @@ class SandboxDetail:
         from ..models.sandbox_volume_mount import SandboxVolumeMount
 
         d = dict(src_dict)
+        template_id = d.pop("templateID")
+
+        sandbox_id = d.pop("sandboxID")
+
         client_id = d.pop("clientID")
 
-        cpu_count = d.pop("cpuCount")
-
-        disk_size_mb = d.pop("diskSizeMB")
+        started_at = isoparse(d.pop("startedAt"))
 
         end_at = isoparse(d.pop("endAt"))
 
         envd_version = d.pop("envdVersion")
 
+        cpu_count = d.pop("cpuCount")
+
         memory_mb = d.pop("memoryMB")
 
-        sandbox_id = d.pop("sandboxID")
-
-        started_at = isoparse(d.pop("startedAt"))
+        disk_size_mb = d.pop("diskSizeMB")
 
         state = SandboxState(d.pop("state"))
 
-        template_id = d.pop("templateID")
-
         alias = d.pop("alias", UNSET)
+
+        envd_access_token = d.pop("envdAccessToken", UNSET)
 
         def _parse_allow_internet_access(data: object) -> Union[None, Unset, bool]:
             if data is None:
@@ -201,15 +203,6 @@ class SandboxDetail:
 
         domain = _parse_domain(d.pop("domain", UNSET))
 
-        envd_access_token = d.pop("envdAccessToken", UNSET)
-
-        _lifecycle = d.pop("lifecycle", UNSET)
-        lifecycle: Union[Unset, SandboxLifecycle]
-        if isinstance(_lifecycle, Unset):
-            lifecycle = UNSET
-        else:
-            lifecycle = SandboxLifecycle.from_dict(_lifecycle)
-
         metadata = d.pop("metadata", UNSET)
 
         _network = d.pop("network", UNSET)
@@ -219,6 +212,13 @@ class SandboxDetail:
         else:
             network = SandboxNetworkConfig.from_dict(_network)
 
+        _lifecycle = d.pop("lifecycle", UNSET)
+        lifecycle: Union[Unset, SandboxLifecycle]
+        if isinstance(_lifecycle, Unset):
+            lifecycle = UNSET
+        else:
+            lifecycle = SandboxLifecycle.from_dict(_lifecycle)
+
         volume_mounts = []
         _volume_mounts = d.pop("volumeMounts", UNSET)
         for volume_mounts_item_data in _volume_mounts or []:
@@ -227,23 +227,23 @@ class SandboxDetail:
             volume_mounts.append(volume_mounts_item)
 
         sandbox_detail = cls(
+            template_id=template_id,
+            sandbox_id=sandbox_id,
             client_id=client_id,
-            cpu_count=cpu_count,
-            disk_size_mb=disk_size_mb,
+            started_at=started_at,
             end_at=end_at,
             envd_version=envd_version,
+            cpu_count=cpu_count,
             memory_mb=memory_mb,
-            sandbox_id=sandbox_id,
-            started_at=started_at,
+            disk_size_mb=disk_size_mb,
             state=state,
-            template_id=template_id,
             alias=alias,
+            envd_access_token=envd_access_token,
             allow_internet_access=allow_internet_access,
             domain=domain,
-            envd_access_token=envd_access_token,
-            lifecycle=lifecycle,
             metadata=metadata,
             network=network,
+            lifecycle=lifecycle,
             volume_mounts=volume_mounts,
         )
 

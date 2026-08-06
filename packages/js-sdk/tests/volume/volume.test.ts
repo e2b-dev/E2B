@@ -5,6 +5,7 @@ import { randomUUID } from 'node:crypto'
 
 import { Volume, NotFoundError, VolumeError } from '../../src'
 import { VolumeConnectionConfig } from '../../src/volume/client'
+import { runtime } from '../../src/utils'
 import { apiUrl } from '../setup'
 
 // In-memory store for mock volumes
@@ -208,6 +209,68 @@ describe('Volume CRUD', () => {
   })
 })
 
+describe('Volume BYOC domain', () => {
+  const byocDomain = 'cluster.example.com'
+  const defaultDomain = process.env.E2B_DOMAIN || 'e2b.app'
+
+  it('uses the domain returned by create for content requests', async () => {
+    server.use(
+      http.post(apiUrl('/volumes'), async ({ request }) => {
+        const { name } = (await request.clone().json()) as { name: string }
+        const volumeID = randomUUID()
+        const token = `vol-token-${randomUUID()}`
+        return HttpResponse.json(
+          { volumeID, name, token, domain: byocDomain },
+          { status: 201 }
+        )
+      })
+    )
+
+    const vol = await Volume.create('byoc-volume')
+
+    // The BYOC domain is stored on the instance and drives the content API
+    // destination (https://api.<domain>), replacing the default domain.
+    expect(vol.domain).toBe(byocDomain)
+    const config = new VolumeConnectionConfig(vol)
+    expect(config.domain).toBe(byocDomain)
+    expect(config.apiUrl).toBe(`https://api.${byocDomain}`)
+  })
+
+  it('falls back to the default domain when create returns no domain', async () => {
+    const vol = await Volume.create('default-volume')
+
+    expect(vol.domain).toBe(defaultDomain)
+    expect(new VolumeConnectionConfig(vol).domain).toBe(defaultDomain)
+  })
+
+  it('propagates the domain through getInfo and connect', async () => {
+    const created = await Volume.create('connect-volume')
+
+    server.use(
+      http.get<{ volumeID: string }>(
+        apiUrl('/volumes/:volumeID'),
+        ({ params }) => {
+          const vol = volumes.get(params.volumeID)
+          if (!vol) {
+            return HttpResponse.json(
+              { code: 404, message: 'Not found' },
+              { status: 404 }
+            )
+          }
+          return HttpResponse.json({ ...vol, domain: byocDomain })
+        }
+      )
+    )
+
+    const info = await Volume.getInfo(created.volumeId)
+    expect(info.domain).toBe(byocDomain)
+
+    const connected = await Volume.connect(created.volumeId)
+    expect(connected.domain).toBe(byocDomain)
+    expect(new VolumeConnectionConfig(connected).domain).toBe(byocDomain)
+  })
+})
+
 describe('Volume content readFile', () => {
   it('should return content for a non-empty file in every format', async () => {
     volumeFiles.set('hello.txt', 'hello world')
@@ -223,11 +286,23 @@ describe('Volume content readFile', () => {
     const blob = await vol.readFile('hello.txt', { format: 'blob' })
     expect(blob).toBeInstanceOf(Blob)
     expect(await blob.text()).toBe('hello world')
-
-    const stream = await vol.readFile('hello.txt', { format: 'stream' })
-    expect(stream).toBeInstanceOf(ReadableStream)
-    expect(await new Response(stream).text()).toBe('hello world')
   })
+
+  // Skipped on Bun: reading `response.body` of an msw-intercepted fetch via a
+  // reader yields an immediately-done stream there (msw/Bun incompatibility),
+  // while `.text()`/`.blob()` work. Real (non-mocked) streams work on Bun —
+  // covered by the sandbox files.read stream tests.
+  it.skipIf(runtime === 'bun')(
+    'should return content for a non-empty file as a stream',
+    async () => {
+      volumeFiles.set('hello.txt', 'hello world')
+      const vol = await Volume.create('content-volume')
+
+      const stream = await vol.readFile('hello.txt', { format: 'stream' })
+      expect(stream).toBeInstanceOf(ReadableStream)
+      expect(await new Response(stream).text()).toBe('hello world')
+    }
+  )
 
   it('should return empty values for an empty file in every format', async () => {
     volumeFiles.set('empty.txt', '')

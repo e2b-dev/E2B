@@ -1,22 +1,30 @@
-import e2b_connect
 import httpx
 import threading
 
 from typing import Dict, Optional
 
+from connectrpc.code import Code
+from connectrpc.errors import ConnectError
 from packaging.version import Version
 from e2b.api import make_logging_event_hooks
 from e2b.api.client_sync import get_envd_transport
-from e2b.envd.process import process_connect, process_pb2
+from protobuf import Oneof
+
+from e2b.envd.process import process_connect, process_pb
 from e2b.connection_config import (
     Username,
     ConnectionConfig,
     KEEPALIVE_PING_HEADER,
     KEEPALIVE_PING_INTERVAL_SEC,
 )
-from e2b.exceptions import SandboxException
 from e2b.envd.api import check_sandbox_health
-from e2b.envd.rpc import authentication_header, handle_rpc_exception_with_health
+from e2b.envd.rpc import handle_rpc_exception_with_health
+from e2b.envd.utils import (
+    authentication_header,
+    extract_start_pid,
+    timeout_to_ms,
+)
+from e2b.envd.client_sync import as_stream, create_rpc_client
 from e2b.sandbox.commands.command_handle import PtySize
 from e2b.sandbox_sync.commands.command_handle import CommandHandle
 
@@ -36,6 +44,11 @@ class Pty:
         self._connection_config = connection_config
         self._envd_version = envd_version
         self._thread_local = threading.local()
+        self._rpc = create_rpc_client(
+            process_connect.ProcessClientSync,
+            envd_api_url,
+            connection_config,
+        )
 
     def _create_envd_api(self) -> httpx.Client:
         transport = get_envd_transport(self._connection_config)
@@ -46,33 +59,15 @@ class Pty:
             event_hooks=make_logging_event_hooks(self._connection_config.logger),
         )
 
-    def _create_rpc(self) -> process_connect.ProcessClient:
-        transport = get_envd_transport(self._connection_config)
-        return process_connect.ProcessClient(
-            self._envd_api_url,
-            # TODO: Fix and enable compression again — the headers compression is not solved for streaming.
-            # compressor=e2b_connect.GzipCompressor,
-            pool=transport.pool,
-            json=True,
-            headers=self._connection_config.sandbox_headers,
-            logger=self._connection_config.logger,
-        )
-
     @property
     def _envd_api(self) -> httpx.Client:
+        # Unlike the shared RPC client, the httpx transports are per-thread
+        # (see e2b.api.client_sync), so the client wrapping them is too.
         envd_api = getattr(self._thread_local, "envd_api", None)
         if envd_api is None:
             envd_api = self._create_envd_api()
             self._thread_local.envd_api = envd_api
         return envd_api
-
-    @property
-    def _rpc(self) -> process_connect.ProcessClient:
-        rpc = getattr(self._thread_local, "rpc", None)
-        if rpc is None:
-            rpc = self._create_rpc()
-            self._thread_local.rpc = rpc
-        return rpc
 
     def _check_health(self) -> Optional[bool]:
         return check_sandbox_health(self._envd_api)
@@ -92,18 +87,18 @@ class Pty:
         """
         try:
             self._rpc.send_signal(
-                process_pb2.SendSignalRequest(
-                    process=process_pb2.ProcessSelector(pid=pid),
-                    signal=process_pb2.Signal.SIGNAL_SIGKILL,
+                process_pb.SendSignalRequest(
+                    process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
+                    signal=process_pb.Signal.SIGKILL,
                 ),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
                 ),
             )
             return True
         except Exception as e:
-            if isinstance(e, e2b_connect.ConnectException):
-                if e.status == e2b_connect.Code.not_found:
+            if isinstance(e, ConnectError):
+                if e.code == Code.NOT_FOUND:
                     return False
             raise handle_rpc_exception_with_health(e, self._check_health)
 
@@ -122,14 +117,14 @@ class Pty:
         """
         try:
             self._rpc.send_input(
-                process_pb2.SendInputRequest(
-                    process=process_pb2.ProcessSelector(pid=pid),
-                    input=process_pb2.ProcessInput(
-                        pty=data,
+                process_pb.SendInputRequest(
+                    process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
+                    input=process_pb.ProcessInput(
+                        input=Oneof("pty", data),
                     ),
                 ),
-                request_timeout=self._connection_config.get_request_timeout(
-                    request_timeout
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
                 ),
             )
         except Exception as e:
@@ -152,7 +147,7 @@ class Pty:
         :param cwd: Working directory for the PTY
         :param envs: Environment variables for the PTY
         :param timeout: Timeout for the PTY in **seconds**
-        :param request_timeout: Timeout for the request in **seconds**
+        :param request_timeout: Not applied to this streaming call — both opening the stream and the stream itself are bounded by `timeout` (unlimited when `0`)
 
         :return: Handle to interact with the PTY
         """
@@ -160,39 +155,34 @@ class Pty:
         envs.setdefault("TERM", "xterm-256color")
         envs.setdefault("LANG", "C.UTF-8")
         envs.setdefault("LC_ALL", "C.UTF-8")
-        events = self._rpc.start(
-            process_pb2.StartRequest(
-                process=process_pb2.ProcessConfig(
-                    cmd="/bin/bash",
-                    envs=envs,
-                    args=["-i", "-l"],
-                    cwd=cwd,
+        events = as_stream(
+            self._rpc.start(
+                process_pb.StartRequest(
+                    process=process_pb.ProcessConfig(
+                        cmd="/bin/bash",
+                        envs=envs,
+                        args=["-i", "-l"],
+                        cwd=cwd,
+                    ),
+                    pty=process_pb.PTY(
+                        size=process_pb.PTY.Size(rows=size.rows, cols=size.cols)
+                    ),
                 ),
-                pty=process_pb2.PTY(
-                    size=process_pb2.PTY.Size(rows=size.rows, cols=size.cols)
-                ),
-            ),
-            headers={
-                **authentication_header(self._envd_version, user),
-                KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
-            },
-            timeout=timeout,
-            request_timeout=self._connection_config.get_request_timeout(
-                request_timeout
-            ),
+                headers={
+                    **authentication_header(self._envd_version, user),
+                    KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
+                },
+                timeout_ms=timeout_to_ms(timeout),
+            )
         )
 
         try:
             start_event = events.__next__()
 
-            if not start_event.HasField("event"):
-                raise SandboxException(
-                    f"Failed to start process: expected start event, got {start_event}"
-                )
-
+            pid = extract_start_pid(start_event, "start process")
             return CommandHandle(
-                pid=start_event.event.start.pid,
-                handle_kill=lambda: self.kill(start_event.event.start.pid),
+                pid=pid,
+                handle_kill=lambda: self.kill(pid),
                 events=events,
                 check_health=self._check_health,
             )
@@ -214,34 +204,29 @@ class Pty:
 
         :param pid: Process ID of the PTY to connect to. You can get the list of running PTYs using `sandbox.pty.list()`.
         :param timeout: Timeout for the PTY connection in **seconds**. Using `0` will not limit the connection time
-        :param request_timeout: Timeout for the request in **seconds**
+        :param request_timeout: Not applied to this streaming call — both opening the stream and the stream itself are bounded by `timeout` (unlimited when `0`)
 
         :return: Handle to interact with the PTY
         """
-        events = self._rpc.connect(
-            process_pb2.ConnectRequest(
-                process=process_pb2.ProcessSelector(pid=pid),
-            ),
-            headers={
-                KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
-            },
-            timeout=timeout,
-            request_timeout=self._connection_config.get_request_timeout(
-                request_timeout
-            ),
+        events = as_stream(
+            self._rpc.connect(
+                process_pb.ConnectRequest(
+                    process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
+                ),
+                headers={
+                    KEEPALIVE_PING_HEADER: str(KEEPALIVE_PING_INTERVAL_SEC),
+                },
+                timeout_ms=timeout_to_ms(timeout),
+            )
         )
 
         try:
             start_event = events.__next__()
 
-            if not start_event.HasField("event"):
-                raise SandboxException(
-                    f"Failed to connect to process: expected start event, got {start_event}"
-                )
-
+            pid = extract_start_pid(start_event, "connect to process")
             return CommandHandle(
-                pid=start_event.event.start.pid,
-                handle_kill=lambda: self.kill(start_event.event.start.pid),
+                pid=pid,
+                handle_kill=lambda: self.kill(pid),
                 events=events,
                 check_health=self._check_health,
             )
@@ -266,14 +251,17 @@ class Pty:
         :param size: New size of the PTY
         :param request_timeout: Timeout for the request in **seconds**
         """
-        self._rpc.update(
-            process_pb2.UpdateRequest(
-                process=process_pb2.ProcessSelector(pid=pid),
-                pty=process_pb2.PTY(
-                    size=process_pb2.PTY.Size(rows=size.rows, cols=size.cols),
+        try:
+            self._rpc.update(
+                process_pb.UpdateRequest(
+                    process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
+                    pty=process_pb.PTY(
+                        size=process_pb.PTY.Size(rows=size.rows, cols=size.cols),
+                    ),
                 ),
-            ),
-            request_timeout=self._connection_config.get_request_timeout(
-                request_timeout
-            ),
-        )
+                timeout_ms=timeout_to_ms(
+                    self._connection_config.get_request_timeout(request_timeout)
+                ),
+            )
+        except Exception as e:
+            raise handle_rpc_exception_with_health(e, self._check_health)

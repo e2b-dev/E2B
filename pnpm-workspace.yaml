@@ -1,3 +1,6 @@
 packages:
   - packages/*
-  - spec
+
+# Delay installing freshly published versions by 3 days (value is in minutes) so a
+# compromised release has time to be caught and unpublished before it reaches us.
+minimumReleaseAge: 4320

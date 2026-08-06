@@ -56,6 +56,7 @@ export type {
   SandboxOpts,
   SandboxApiOpts,
   SandboxConnectOpts,
+  SandboxForkOpts,
   SandboxMetricsOpts,
   SandboxPauseOpts,
   SandboxState,
@@ -100,6 +101,9 @@ export type {
   GitRemoteAddOpts,
   GitCommitOpts,
   GitAddOpts,
+  GitResetMode,
+  GitResetOpts,
+  GitRestoreOpts,
   GitDeleteBranchOpts,
   GitPushOpts,
   GitPullOpts,
@@ -109,6 +113,7 @@ export type {
   GitBranches,
   GitFileStatus,
   GitStatus,
+  GitStatusLabel,
 } from './sandbox/git'
 
 export { Volume, VolumeFileType } from './volume'

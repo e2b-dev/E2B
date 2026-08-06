@@ -28,7 +28,7 @@ const domain =
   userConfig?.E2B_DOMAIN ||
   userConfig?.domain ||
   'e2b.app'
-const apiKey = process.env.E2B_API_KEY || userConfig?.teamApiKey
+const apiKey = process.env.E2B_API_KEY || userConfig?.projectApiKey
 const shouldSkip = !apiKey || isDebug
 const integrationTest = test.skipIf(shouldSkip)
 const templateId =

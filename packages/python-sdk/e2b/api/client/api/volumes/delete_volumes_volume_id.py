@@ -60,7 +60,9 @@ def sync_detailed(
     *,
     client: AuthenticatedClient,
 ) -> Response[Union[Any, Error]]:
-    """Delete a team volume
+    """Delete team volume
+
+     Delete a team volume
 
     Args:
         volume_id (str):
@@ -89,7 +91,9 @@ def sync(
     *,
     client: AuthenticatedClient,
 ) -> Optional[Union[Any, Error]]:
-    """Delete a team volume
+    """Delete team volume
+
+     Delete a team volume
 
     Args:
         volume_id (str):
@@ -113,7 +117,9 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
 ) -> Response[Union[Any, Error]]:
-    """Delete a team volume
+    """Delete team volume
+
+     Delete a team volume
 
     Args:
         volume_id (str):
@@ -140,7 +146,9 @@ async def asyncio(
     *,
     client: AuthenticatedClient,
 ) -> Optional[Union[Any, Error]]:
-    """Delete a team volume
+    """Delete team volume
+
+     Delete a team volume
 
     Args:
         volume_id (str):

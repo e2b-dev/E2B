@@ -137,11 +137,77 @@ describe('sandbox create lifecycle options', () => {
       { from: 'user' }
     )
 
-    expect(mocks.spawnConnectedTerminal).toHaveBeenCalledWith(sandbox)
+    expect(mocks.spawnConnectedTerminal).toHaveBeenCalledWith(sandbox, {
+      user: undefined,
+      cwd: undefined,
+      envs: undefined,
+    })
     expect(sandbox.setTimeout).toHaveBeenCalledWith(120_000)
     expect(sandbox.setTimeout).not.toHaveBeenCalledWith(1_000)
     expect(exitSpy).toHaveBeenCalledWith(0)
     vi.useRealTimers()
+  })
+
+  test('passes user, cwd and envs to the connected terminal', async () => {
+    const exitSpy = vi
+      .spyOn(process, 'exit')
+      .mockImplementation((() => undefined) as never)
+    const sandbox = {
+      sandboxId: 'sandbox-id',
+      setTimeout: vi.fn().mockResolvedValue(undefined),
+    }
+    mocks.create.mockResolvedValue(sandbox)
+
+    const { createCommand } = await import(
+      '../../../src/commands/sandbox/create'
+    )
+    await createCommand('create', 'cr', false).parseAsync(
+      [
+        'base',
+        '--user',
+        'root',
+        '--cwd',
+        '/app',
+        '--env',
+        'FOO=bar',
+        '--env',
+        'BAZ=qux=quux',
+      ],
+      { from: 'user' }
+    )
+
+    expect(mocks.spawnConnectedTerminal).toHaveBeenCalledWith(sandbox, {
+      user: 'root',
+      cwd: '/app',
+      envs: { FOO: 'bar', BAZ: 'qux=quux' },
+    })
+    expect(exitSpy).toHaveBeenCalledWith(0)
+  })
+
+  test('omits empty envs when no --env flags are provided', async () => {
+    const exitSpy = vi
+      .spyOn(process, 'exit')
+      .mockImplementation((() => undefined) as never)
+    const sandbox = {
+      sandboxId: 'sandbox-id',
+      setTimeout: vi.fn().mockResolvedValue(undefined),
+    }
+    mocks.create.mockResolvedValue(sandbox)
+
+    const { createCommand } = await import(
+      '../../../src/commands/sandbox/create'
+    )
+    await createCommand('create', 'cr', false).parseAsync(
+      ['base', '--user', 'root'],
+      { from: 'user' }
+    )
+
+    expect(mocks.spawnConnectedTerminal).toHaveBeenCalledWith(sandbox, {
+      user: 'root',
+      cwd: undefined,
+      envs: undefined,
+    })
+    expect(exitSpy).toHaveBeenCalledWith(0)
   })
 
   test('rejects autoresume without pause on timeout', async () => {

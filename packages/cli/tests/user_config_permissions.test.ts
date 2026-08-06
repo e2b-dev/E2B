@@ -19,7 +19,7 @@ describe('writeUserConfig', () => {
     tmpDirs.push(tmpDir)
     const configPath = path.join(tmpDir, '.e2b', 'config.json')
     const config: UserConfig = {
-      version: 1,
+      version: 2,
       identity: {
         email: 'victim@example.com',
       },
@@ -33,9 +33,9 @@ describe('writeUserConfig', () => {
         refresh_token: 'refresh-token-secret',
       },
       last_refresh: '2024-06-24T12:00:00.000Z',
-      teamName: 'default',
-      teamId: 'team-id',
-      teamApiKey: 'team-api-key-secret',
+      projectName: 'default',
+      projectId: 'project-id',
+      projectApiKey: 'project-api-key-secret',
     }
 
     writeUserConfig(configPath, config)

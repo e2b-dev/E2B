@@ -116,6 +116,7 @@ class SnapshotPaginator(SnapshotPaginatorBase):
         res = get_snapshots.sync_detailed(
             client=api_client,
             sandbox_id=self.sandbox_id if self.sandbox_id else UNSET,
+            name=self.name if self.name else UNSET,
             limit=self.limit if self.limit else UNSET,
             next_token=self._next_token if self._next_token else UNSET,
         )

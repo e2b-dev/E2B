@@ -6,16 +6,14 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
-from ...models.post_sandboxes_sandbox_id_timeout_body import (
-    PostSandboxesSandboxIDTimeoutBody,
-)
+from ...models.sandbox_timeout_request import SandboxTimeoutRequest
 from ...types import Response
 
 
 def _get_kwargs(
     sandbox_id: str,
     *,
-    body: PostSandboxesSandboxIDTimeoutBody,
+    body: SandboxTimeoutRequest,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
@@ -71,15 +69,17 @@ def sync_detailed(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: PostSandboxesSandboxIDTimeoutBody,
+    body: SandboxTimeoutRequest,
 ) -> Response[Union[Any, Error]]:
-    """Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request.
+    """Set sandbox timeout
+
+     Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request.
     Calling this method multiple times overwrites the TTL, each time using the current timestamp as the
     starting point to measure the timeout duration.
 
     Args:
         sandbox_id (str):
-        body (PostSandboxesSandboxIDTimeoutBody):
+        body (SandboxTimeoutRequest):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -105,15 +105,17 @@ def sync(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: PostSandboxesSandboxIDTimeoutBody,
+    body: SandboxTimeoutRequest,
 ) -> Optional[Union[Any, Error]]:
-    """Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request.
+    """Set sandbox timeout
+
+     Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request.
     Calling this method multiple times overwrites the TTL, each time using the current timestamp as the
     starting point to measure the timeout duration.
 
     Args:
         sandbox_id (str):
-        body (PostSandboxesSandboxIDTimeoutBody):
+        body (SandboxTimeoutRequest):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -134,15 +136,17 @@ async def asyncio_detailed(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: PostSandboxesSandboxIDTimeoutBody,
+    body: SandboxTimeoutRequest,
 ) -> Response[Union[Any, Error]]:
-    """Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request.
+    """Set sandbox timeout
+
+     Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request.
     Calling this method multiple times overwrites the TTL, each time using the current timestamp as the
     starting point to measure the timeout duration.
 
     Args:
         sandbox_id (str):
-        body (PostSandboxesSandboxIDTimeoutBody):
+        body (SandboxTimeoutRequest):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -166,15 +170,17 @@ async def asyncio(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: PostSandboxesSandboxIDTimeoutBody,
+    body: SandboxTimeoutRequest,
 ) -> Optional[Union[Any, Error]]:
-    """Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request.
+    """Set sandbox timeout
+
+     Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request.
     Calling this method multiple times overwrites the TTL, each time using the current timestamp as the
     starting point to measure the timeout duration.
 
     Args:
         sandbox_id (str):
-        body (PostSandboxesSandboxIDTimeoutBody):
+        body (SandboxTimeoutRequest):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

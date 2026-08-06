@@ -11,35 +11,35 @@ T = TypeVar("T", bound="IdentifierMaskingDetails")
 class IdentifierMaskingDetails:
     """
     Attributes:
-        masked_value_prefix (str): Prefix used in masked version of the token or key
-        masked_value_suffix (str): Suffix used in masked version of the token or key
         prefix (str): Prefix that identifies the token or key type
         value_length (int): Length of the token or key
+        masked_value_prefix (str): Prefix used in masked version of the token or key
+        masked_value_suffix (str): Suffix used in masked version of the token or key
     """
 
-    masked_value_prefix: str
-    masked_value_suffix: str
     prefix: str
     value_length: int
+    masked_value_prefix: str
+    masked_value_suffix: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        masked_value_prefix = self.masked_value_prefix
-
-        masked_value_suffix = self.masked_value_suffix
-
         prefix = self.prefix
 
         value_length = self.value_length
+
+        masked_value_prefix = self.masked_value_prefix
+
+        masked_value_suffix = self.masked_value_suffix
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "maskedValuePrefix": masked_value_prefix,
-                "maskedValueSuffix": masked_value_suffix,
                 "prefix": prefix,
                 "valueLength": value_length,
+                "maskedValuePrefix": masked_value_prefix,
+                "maskedValueSuffix": masked_value_suffix,
             }
         )
 
@@ -48,19 +48,19 @@ class IdentifierMaskingDetails:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        masked_value_prefix = d.pop("maskedValuePrefix")
-
-        masked_value_suffix = d.pop("maskedValueSuffix")
-
         prefix = d.pop("prefix")
 
         value_length = d.pop("valueLength")
 
+        masked_value_prefix = d.pop("maskedValuePrefix")
+
+        masked_value_suffix = d.pop("maskedValueSuffix")
+
         identifier_masking_details = cls(
-            masked_value_prefix=masked_value_prefix,
-            masked_value_suffix=masked_value_suffix,
             prefix=prefix,
             value_length=value_length,
+            masked_value_prefix=masked_value_prefix,
+            masked_value_suffix=masked_value_suffix,
         )
 
         identifier_masking_details.additional_properties = d

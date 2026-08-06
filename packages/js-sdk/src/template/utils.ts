@@ -2,10 +2,11 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { dynamicImport, dynamicRequire } from '../utils'
+import url from 'node:url'
+import { parse, type StackFrame } from 'error-stack-parser-es'
+import { dynamicImport } from '../utils'
 import { TemplateError } from '../errors'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
-import type { Readable } from 'node:stream'
 import type { Path } from 'glob'
 import type { BuildOptions } from './types'
 
@@ -269,74 +270,100 @@ export async function calculateFilesHash(
 }
 
 /**
- * Get the caller's stack trace frame at a specific depth.
- *
- * @param depth The depth of the stack trace to retrieve
- *   - Levels: caller (e.g., TemplateBase.fromImage) > original caller (e.g., user's template file)
- * @returns The caller frame as a string, or undefined if not available
+ * Convert a stack-trace file name to a filesystem path.
+ * In ESM modules, stack frames report file:// URLs.
  */
-export function getCallerFrame(depth: number): string | undefined {
-  const stackTrace = new Error().stack
-  if (!stackTrace) {
-    return
-  }
-
-  const lines = stackTrace.split('\n').slice(1) // Skip the this function (getCallerFrame)
-  if (lines.length < depth + 1) {
-    return
-  }
-
-  return lines.slice(depth).join('\n')
+function frameFileToPath(fileName: string): string {
+  return fileName.startsWith('file:') ? url.fileURLToPath(fileName) : fileName
 }
 
-// adopted from https://github.com/sindresorhus/callsites
-export function callsites(depth: number): NodeJS.CallSite[] {
-  const _originalPrepareStackTrace = Error.prepareStackTrace
+/**
+ * Check whether a stack-trace file name refers to user code, i.e. a file
+ * outside the SDK's own directory. Node internals (`node:*`) and native
+ * frames are never user code.
+ */
+function isUserFile(fileName: string, sdkDir: string): boolean {
+  if (fileName.startsWith('node:') || fileName === 'native') {
+    return false
+  }
   try {
-    let result: NodeJS.CallSite[] = []
-    Error.prepareStackTrace = (_, callSites) => {
-      const callSitesWithoutCurrent = callSites.slice(depth)
-      result = callSitesWithoutCurrent
-      return callSitesWithoutCurrent
-    }
-
-    // Accessing `.stack` triggers `Error.prepareStackTrace` for its side effect.
-    // oxlint-disable-next-line no-unused-expressions
-    new Error().stack
-    return result
-  } finally {
-    Error.prepareStackTrace = _originalPrepareStackTrace
+    const relative = path.relative(
+      sdkDir,
+      path.dirname(frameFileToPath(fileName))
+    )
+    return (
+      relative !== '' &&
+      (relative.startsWith('..') || path.isAbsolute(relative))
+    )
+  } catch {
+    return false
   }
 }
 
 /**
- * Get the directory of the caller at a specific stack depth.
+ * Capture the current stack and locate the first frame in user code.
  *
- * @param depth The depth of the stack trace
- * @returns The caller's directory path, or undefined if not available
+ * Frames are selected by boundary rather than by fixed depth: the SDK's own
+ * directory is derived from the top frame (which is always SDK code — this
+ * module), and the first frame whose file lies outside it is the user's call
+ * site. This keeps the result stable when transpilers inject extra frames
+ * (e.g. TS class-field initializers) or runtimes elide delegating frames
+ * (e.g. Bun's tail-call elision).
+ *
+ * @returns Parsed frames and the index of the user's frame, -1 when no user
+ *   frame is identifiable (e.g. the SDK is bundled into the caller's file)
  */
-export function getCallerDirectory(depth: number): string | undefined {
-  // +1 depth to skip this function (getCallerDirectory)
-  const callSites = callsites(depth + 1)
-  if (callSites.length === 0) {
-    return undefined
+function captureUserFrames(): {
+  frames: StackFrame[]
+  userFrameIndex: number
+} {
+  const frames = parse(new Error(), { allowEmpty: true })
+  const ownFile = frames[0]?.fileName
+  if (!ownFile) {
+    return { frames, userFrameIndex: -1 }
+  }
+  const sdkDir = path.dirname(frameFileToPath(ownFile))
+
+  const userFrameIndex = frames.findIndex(
+    (frame) =>
+      frame.fileName !== undefined && isUserFile(frame.fileName, sdkDir)
+  )
+  return { frames, userFrameIndex }
+}
+
+/**
+ * Get the stack trace starting at the caller's frame in user code.
+ *
+ * @returns The stack trace starting at the user's frame, or undefined when no
+ *   user frame is identifiable
+ */
+export function getCallerFrame(): string | undefined {
+  const { frames, userFrameIndex } = captureUserFrames()
+  if (userFrameIndex === -1) {
+    return
   }
 
-  let fileName = callSites[0].getFileName()
+  return frames
+    .slice(userFrameIndex)
+    .map((frame) => frame.source)
+    .filter((source): source is string => source !== undefined)
+    .join('\n')
+}
+
+/**
+ * Get the directory of the caller in user code.
+ *
+ * @returns The caller's directory path, or undefined if not available
+ */
+export function getCallerDirectory(): string | undefined {
+  const { frames, userFrameIndex } = captureUserFrames()
+  const fileName =
+    userFrameIndex === -1 ? undefined : frames[userFrameIndex].fileName
   if (!fileName) {
     return undefined
   }
 
-  // Handle file:// URLs returned by getFileName() in ESM modules
-  if (fileName.startsWith('file:')) {
-    // we use the dynamic import to avoid bundling node:url for browser compatibility
-    // getCallerDirectory method is not called in the browser
-    const { fileURLToPath } =
-      dynamicRequire<typeof import('node:url')>('node:url')
-    fileName = fileURLToPath(fileName)
-  }
-
-  return path.dirname(fileName)
+  return path.dirname(frameFileToPath(fileName))
 }
 
 /**
@@ -356,35 +383,31 @@ export function padOctal(mode: number): string {
 }
 
 /**
- * Create a gzipped tar archive of files matching a pattern and return a
- * readable stream over it.
+ * Create a gzipped tar archive of files matching a pattern, spooled to a
+ * temporary file on disk.
  *
- * The archive is spooled to a temporary file on disk so it can be uploaded as
- * a stream with a known `Content-Length` instead of being buffered in memory.
- * The temporary file is removed automatically once the returned stream is
- * closed — whether it was fully read, errored, or destroyed. This mirrors the
- * Python SDK's `tar_file_stream`, where closing the temp-file handle deletes
- * it (Node has no portable delete-on-close, so cleanup is tied to the stream's
- * `close` event instead).
+ * Spooling instead of buffering keeps memory bounded and gives the archive a
+ * known size, so the upload can send an exact `Content-Length`. The caller
+ * owns the archive's lifetime and must invoke `cleanup` once done with it.
+ * This mirrors the Python SDK's `tar_file_stream`.
  *
  * @param fileName Glob pattern for files to include
  * @param fileContextPath Base directory for resolving file paths
  * @param ignorePatterns Ignore patterns to exclude from the archive
  * @param resolveSymlinks Whether to follow symbolic links
  * @param gzip Whether to gzip the archive
- * @returns The readable stream and the archive size in bytes
+ * @returns The archive path, its size in bytes, and a cleanup callback that
+ *   removes the spooled archive. Cleanup is best-effort so it can never mask
+ *   the upload result — a leaked temp dir is non-fatal, the OS reclaims it.
  */
-export async function tarFileStream(
+export async function spoolTarArchive(
   fileName: string,
   fileContextPath: string,
   ignorePatterns: string[],
   resolveSymlinks: boolean,
   gzip: boolean
-): Promise<{ stream: Readable; size: number }> {
+): Promise<{ path: string; size: number; cleanup: () => Promise<void> }> {
   const { create } = await dynamicImport<typeof import('tar')>('tar')
-  // Dynamically import so the browser bundle doesn't pull in node:fs.
-  const { createReadStream } =
-    await dynamicImport<typeof import('node:fs')>('node:fs')
 
   const allFiles = await getAllFilesInPath(
     fileName,
@@ -399,9 +422,7 @@ export async function tarFileStream(
     path.join(os.tmpdir(), 'e2b-template-')
   )
   const tarPath = path.join(tmpDir, 'context.tar.gz')
-  // Best-effort removal so it can never mask the archive-creation error or the
-  // upload result. A leaked temp dir is non-fatal — the OS reclaims it.
-  const removeTmpDir = () =>
+  const cleanup = () =>
     fs.promises.rm(tmpDir, { recursive: true, force: true }).catch(() => {})
 
   try {
@@ -417,14 +438,9 @@ export async function tarFileStream(
     )
 
     const { size } = await fs.promises.stat(tarPath)
-
-    const stream = createReadStream(tarPath)
-    // Remove the spooled archive once the stream is done — `close` fires after
-    // the fd is released on every path (end, error, or destroy).
-    stream.once('close', removeTmpDir)
-    return { stream, size }
+    return { path: tarPath, size, cleanup }
   } catch (err) {
-    await removeTmpDir()
+    await cleanup()
     throw err
   }
 }
