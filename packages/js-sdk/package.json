@@ -105,7 +105,7 @@
     "undici": "^7.28.0"
   },
   "optionalDependencies": {
-    "undici8": "npm:undici@8.8.0"
+    "undici8": "npm:undici@8.10.0"
   },
   "engines": {
     "node": ">=20.18.1 <21 || >=22"
