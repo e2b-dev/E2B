@@ -7,6 +7,11 @@ on:
         required: false
         type: string
         default: ''
+      enable-volume-tests:
+        description: 'Run the volume integration tests (sets ENABLE_VOLUME_TESTS)'
+        required: false
+        type: boolean
+        default: false
     secrets:
       E2B_API_KEY:
         required: true
@@ -29,6 +34,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Enable volume tests
+        if: ${{ inputs.enable-volume-tests }}
+        run: echo "ENABLE_VOLUME_TESTS=1" >> "$GITHUB_ENV"
 
       - name: Parse .tool-versions
         uses: wistia/parse-tool-versions@v2.1.1

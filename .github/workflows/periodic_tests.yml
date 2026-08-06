@@ -1,0 +1,46 @@
+name: Periodic Tests
+
+# Runs the SDK test suites on a schedule with the volume integration tests
+# enabled, so prod-side regressions (e.g. a broken volume-content auth path)
+# are caught without waiting for a PR. See inc-2026-08-04.
+
+on:
+  schedule:
+    - cron: '19 */6 * * *' # every 6 hours
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  js:
+    name: JS SDK
+    uses: ./.github/workflows/js_sdk_tests.yml
+    with:
+      node-only: true
+      enable-volume-tests: true
+    secrets:
+      E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+
+  python:
+    name: Python SDK
+    uses: ./.github/workflows/python_sdk_tests.yml
+    with:
+      enable-volume-tests: true
+    secrets:
+      E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+
+  notify:
+    name: Notify on failure
+    needs: [js, python]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Slack notification
+        uses: rtCamp/action-slack-notify@33ca3be66c6f378fe1610fd1d5258632dbed5e58 # v2.4.0
+        env:
+          SLACK_COLOR: '#ff0000'
+          SLACK_TITLE: Periodic Tests Failed
+          SLACK_MESSAGE: 'Periodic SDK tests failed — check the run.'
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_CHANNEL: 'monitoring-releases'
