@@ -1,7 +1,7 @@
 import httpx
 import threading
 
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 from connectrpc.code import Code
 from connectrpc.errors import ConnectError
@@ -105,7 +105,7 @@ class Pty:
     def send_stdin(
         self,
         pid: int,
-        data: bytes,
+        data: Union[str, bytes],
         request_timeout: Optional[float] = None,
     ) -> None:
         """
@@ -120,7 +120,9 @@ class Pty:
                 process_pb.SendInputRequest(
                     process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
                     input=process_pb.ProcessInput(
-                        input=Oneof("pty", data),
+                        input=Oneof(
+                            "pty", data.encode() if isinstance(data, str) else data
+                        ),
                     ),
                 ),
                 timeout_ms=timeout_to_ms(
@@ -184,6 +186,9 @@ class Pty:
                 pid=pid,
                 handle_kill=lambda: self.kill(pid),
                 events=events,
+                handle_send_stdin=lambda data, request_timeout=None: self.send_stdin(
+                    pid, data, request_timeout
+                ),
                 check_health=self._check_health,
             )
         except Exception as e:
@@ -228,6 +233,9 @@ class Pty:
                 pid=pid,
                 handle_kill=lambda: self.kill(pid),
                 events=events,
+                handle_send_stdin=lambda data, request_timeout=None: self.send_stdin(
+                    pid, data, request_timeout
+                ),
                 check_health=self._check_health,
             )
         except Exception as e:
