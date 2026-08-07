@@ -1,6 +1,6 @@
 [project]
 name = "e2b"
-version = "2.37.0"
+version = "2.37.1"
 description = "E2B SDK that give agents cloud environments"
 authors = [{ name = "e2b", email = "hello@e2b.dev" }]
 license = "MIT"

@@ -1,5 +1,12 @@
 # @e2b/python-sdk
 
+## 2.37.1
+
+### Patch Changes
+
+- 88f41f3: Align ANSI stripping of template build log messages across both SDKs. The Python SDK's `strip_ansi_escape_codes` now ports the JS SDK's `stripAnsi` regex: OSC sequences (hyperlinks, window titles) are matched non-greedily up to the first string terminator — including sequences spanning newlines — and CSI sequences are stripped without requiring a terminator. Both implementations additionally strip the remaining ECMA-48 string controls (DCS/Sixel, SOS, PM, APC) through their string terminator so control payloads no longer leak into cleaned logs.
+- 998e560: Relax the Python SDK's `wcmatch` requirement from `>=10.1,<11` to `>=10.1,<12` so `e2b` can be installed alongside packages that already require `wcmatch>=11` (for example `deepagents>=0.7.0`), which previously failed to resolve. The SDK only calls `glob.glob()` with `GLOBSTAR | DOTMATCH` for template context matching; wcmatch 11.0's single breaking change affects `translate()` callers using extended-glob capture groups, so it is a no-op here. The template glob test suite passes against 10.1, 10.2.1 and 11.0.
+
 ## 2.37.0
 
 ### Minor Changes
