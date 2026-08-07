@@ -9,9 +9,22 @@ import re
 import inspect
 from types import TracebackType, FrameType
 from typing import IO, List, Optional, Union
+from urllib.parse import quote
 
 from e2b.exceptions import TemplateException
 from e2b.template.consts import BASE_STEP_NAME, FINALIZE_STEP_NAME
+
+
+def encode_path_param(value: str) -> str:
+    """
+    Percent-encode a value for use as a single URL path segment.
+
+    Namespaced template IDs and aliases contain a slash (``namespace/name``),
+    which the generated client would otherwise pass through as a path separator.
+    Encoding mirrors the JS SDK's ``encodeURIComponent``; httpx preserves the
+    result without double-encoding.
+    """
+    return quote(value, safe="")
 
 
 def make_traceback(caller_frame: Optional[FrameType]) -> Optional[TracebackType]:

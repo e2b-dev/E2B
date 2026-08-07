@@ -40,7 +40,7 @@ from e2b.template.types import (
     TemplateTagInfo,
 )
 from e2b.template.consts import FILE_UPLOAD_TIMEOUT_SECONDS
-from e2b.template.utils import get_build_step_index, tar_file_stream
+from e2b.template.utils import encode_path_param, get_build_step_index, tar_file_stream
 
 
 async def request_build(
@@ -79,7 +79,7 @@ async def get_file_upload_link(
     stack_trace: Optional[TracebackType] = None,
 ) -> TemplateBuildFileUpload:
     res = await get_templates_template_id_files_hash.asyncio_detailed(
-        template_id=template_id,
+        template_id=encode_path_param(template_id),
         hash_=files_hash,
         client=client,
     )
@@ -169,7 +169,7 @@ async def trigger_build(
     template_data = TemplateBuildStartV2.from_dict(template)
 
     res = await post_v_2_templates_template_id_builds_build_id.asyncio_detailed(
-        template_id=template_id,
+        template_id=encode_path_param(template_id),
         build_id=build_id,
         client=client,
         body=template_data,
@@ -210,7 +210,7 @@ async def get_build_status(
     client: AuthenticatedClient, template_id: str, build_id: str, logs_offset: int
 ) -> TemplateBuildStatusResponse:
     res = await get_templates_template_id_builds_build_id_status.asyncio_detailed(
-        template_id=template_id,
+        template_id=encode_path_param(template_id),
         build_id=build_id,
         client=client,
         logs_offset=logs_offset,
@@ -307,7 +307,7 @@ async def check_alias_exists(client: AuthenticatedClient, alias: str) -> bool:
         True if the alias exists, False otherwise
     """
     res = await get_templates_aliases_alias.asyncio_detailed(
-        alias=alias,
+        alias=encode_path_param(alias),
         client=client,
     )
 
@@ -396,7 +396,7 @@ async def get_template_tags(
         template_id: Template ID or name
     """
     res = await get_templates_template_id_tags.asyncio_detailed(
-        template_id=template_id,
+        template_id=encode_path_param(template_id),
         client=client,
     )
 
