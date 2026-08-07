@@ -202,6 +202,18 @@ class SandboxNetworkOpts(TypedDict):
     - Custom subdomain: `"${PORT}-myapp.example.com"`
     """
 
+    https_ports: NotRequired[List[int]]
+    """
+    Ports whose public URLs should connect to the sandbox using HTTPS.
+
+    Use this when the service listening on the port serves HTTPS (TLS) itself.
+    This is not TLS passthrough — traffic is still terminated at the E2B proxy
+    and re-encrypted on the hop to the sandbox. The backend certificate is not
+    verified, so self-signed certificates work.
+
+    Example: ``Sandbox.create(network={"https_ports": [3000]})``
+    """
+
 
 class SandboxNetworkUpdate(TypedDict, total=False):
     """
@@ -238,6 +250,7 @@ class SandboxNetworkInfo(TypedDict, total=False):
     rules: Dict[str, List[SandboxNetworkRuleInfo]]
     allow_public_traffic: bool
     mask_request_host: str
+    https_ports: List[int]
 
 
 class SandboxOnTimeoutPause(TypedDict):
@@ -402,6 +415,8 @@ def build_network_config(
         body["allow_public_traffic"] = network["allow_public_traffic"]
     if "mask_request_host" in network:
         body["mask_request_host"] = network["mask_request_host"]
+    if "https_ports" in network:
+        body["https_ports"] = list(network["https_ports"])
 
     return body
 
@@ -447,6 +462,8 @@ def from_client_network_config(
         result["allow_public_traffic"] = network.allow_public_traffic
     if not isinstance(network.mask_request_host, Unset):
         result["mask_request_host"] = network.mask_request_host
+    if not isinstance(network.https_ports, Unset):
+        result["https_ports"] = list(network.https_ports)
 
     return result
 

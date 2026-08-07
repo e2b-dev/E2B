@@ -166,6 +166,21 @@ export type SandboxNetworkOpts = {
    * @default ${PORT}-sandboxid.e2b.app
    */
   maskRequestHost?: string
+
+  /**
+   * Ports whose public URLs should connect to the sandbox using HTTPS.
+   *
+   * Use this when the service listening on the port serves HTTPS (TLS)
+   * itself. This is not TLS passthrough — traffic is still terminated at the
+   * E2B proxy and re-encrypted on the hop to the sandbox. The backend
+   * certificate is not verified, so self-signed certificates work.
+   *
+   * @example
+   * ```ts
+   * await Sandbox.create({ network: { httpsPorts: [3000] } })
+   * ```
+   */
+  httpsPorts?: number[]
 }
 
 /**
@@ -179,6 +194,7 @@ export type SandboxNetworkInfo = {
   rules?: Record<string, SandboxNetworkRuleInfo[]>
   allowPublicTraffic?: boolean
   maskRequestHost?: string
+  httpsPorts?: number[]
 }
 
 /**
@@ -735,6 +751,9 @@ function buildNetworkBody(
     ...(network.maskRequestHost !== undefined
       ? { maskRequestHost: network.maskRequestHost }
       : {}),
+    ...(network.httpsPorts !== undefined
+      ? { httpsPorts: network.httpsPorts }
+      : {}),
   }
 }
 
@@ -849,6 +868,7 @@ export class SandboxApi {
             rules: res.data.network.rules ?? undefined,
             allowPublicTraffic: res.data.network.allowPublicTraffic,
             maskRequestHost: res.data.network.maskRequestHost,
+            httpsPorts: res.data.network.httpsPorts,
           }
         : undefined,
       lifecycle: res.data.lifecycle
