@@ -1,11 +1,11 @@
 /**
  * The shared test material: golden encodings, and a deterministic corpus.
  *
- * Every port of this format carries this file value for value — the same
- * goldens, the same LCG, the same corpus in the same order. That is what keeps
- * implementations from drifting: each checks the same inputs against the same
- * fixed outputs and against its own independent reference encoder, so agreeing
- * with this file means agreeing with each other.
+ * `packages/python-id/tests/vectors.py` is the same file in Python, value for
+ * value — the same goldens, the same LCG, the same corpus in the same order.
+ * That is what keeps the two implementations from drifting: both check the same
+ * inputs against the same fixed outputs and against their own independent
+ * reference encoder, so agreeing with this file means agreeing with each other.
  */
 
 import { createHash } from 'node:crypto'
@@ -87,8 +87,8 @@ export const GOLDEN_IDS: ReadonlyArray<
 
 /**
  * sha256 of every encoding in {@link corpus}, newline-joined, in order. The same
- * constant is pinned by every port; if two implementations ever disagree about
- * the corpus or the format, one of them fails on it.
+ * constant appears in `vectors.py`; if the two implementations ever disagree
+ * about the corpus or the format, one of them fails on it.
  */
 export const CORPUS_DIGEST =
   'a83c455e0a4ffd39e51c69d832c544b6809bf836f6459e2a9797005dddc71ec0'

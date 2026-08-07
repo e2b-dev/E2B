@@ -81,6 +81,11 @@ jobs:
         run: |
           uv sync --locked
 
+      - name: Install Python dependencies (id)
+        working-directory: packages/python-id
+        run: |
+          uv sync --locked
+
       - name: Run linting
         run: |
           pnpm run lint

@@ -76,8 +76,8 @@ describe('the format', () => {
     }
   })
 
-  // The one constant every port holds: same corpus, same format, same digest.
-  test('the corpus digest is the cross-implementation contract', () => {
+  // The one constant both suites hold: same corpus, same format, same digest.
+  test('the corpus is the same corpus e2b_id checks', () => {
     expect(corpusDigest(encodeBytes)).toBe(CORPUS_DIGEST)
   })
 
