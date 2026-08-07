@@ -75,6 +75,9 @@ from .sandbox.sandbox_api import (
     GitHubMcpServer,
     GitHubMcpServerConfig,
     McpServer,
+    SandboxIamOpts,
+    SandboxIamToken,
+    SandboxIamTokenType,
     SandboxInfo,
     SandboxInfoLifecycle,
     SandboxMetrics,
@@ -98,6 +101,7 @@ from .sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from .sandbox_async.main import AsyncSandbox
 from .sandbox_async.paginator import AsyncSandboxPaginator, AsyncSnapshotPaginator
 from .sandbox_async.utils import OutputHandler
+from .secret import Secret
 from .sandbox_sync.commands.command_handle import CommandHandle
 from .sandbox_sync.filesystem.watch_handle import WatchHandle
 from .sandbox_sync.main import Sandbox
@@ -204,6 +208,11 @@ __all__ = [
     "SandboxLifecycle",
     "SandboxOnTimeout",
     "ALL_TRAFFIC",
+    # IAM
+    "SandboxIamOpts",
+    "SandboxIamToken",
+    "SandboxIamTokenType",
+    "Secret",
     # Snapshot
     "SnapshotInfo",
     "SnapshotPaginator",

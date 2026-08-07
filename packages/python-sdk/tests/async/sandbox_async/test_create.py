@@ -4,12 +4,14 @@ from typing import Any, cast
 import httpx
 import pytest
 
-from e2b import AsyncSandbox, SandboxQuery, SandboxState
+from e2b import AsyncSandbox, SandboxQuery, SandboxState, Secret
 from e2b.api.client.models import (
     NewSandbox,
     SandboxAutoResumeConfig,
 )
+from e2b.api.client.types import UNSET
 from e2b.exceptions import InvalidArgumentException
+from e2b.sandbox.sandbox_api import build_iam_config
 
 
 @pytest.mark.skip_debug()
@@ -58,6 +60,78 @@ def test_create_payload_deserializes_auto_resume_enabled():
 
     assert isinstance(body.auto_resume, SandboxAutoResumeConfig)
     assert body.auto_resume.to_dict() == {"enabled": False}
+
+
+def test_create_payload_serializes_iam_tokens():
+    iam = build_iam_config(
+        {
+            "tokens": {
+                "aws": {"audience": "sts.amazonaws.com", "token_type": "JWT-SVID"},
+            },
+        }
+    )
+    assert iam is not None
+
+    body = NewSandbox(template_id="template-id", iam=iam)
+
+    assert body.to_dict()["iam"] == {
+        "tokens": {
+            "aws": {"audience": "sts.amazonaws.com", "tokenType": "JWT-SVID"},
+        },
+    }
+
+
+def test_create_payload_serializes_secret_iam_token():
+    iam = build_iam_config(
+        {
+            "tokens": {
+                "aws": Secret.iam_token(
+                    audience="sts.amazonaws.com", token_type="JWT-SVID"
+                ),
+            },
+        }
+    )
+    assert iam is not None
+
+    body = NewSandbox(template_id="template-id", iam=iam)
+
+    assert body.to_dict()["iam"] == {
+        "tokens": {
+            "aws": {"audience": "sts.amazonaws.com", "tokenType": "JWT-SVID"},
+        },
+    }
+
+
+def test_create_payload_omits_iam_when_not_provided_or_empty():
+    assert build_iam_config(None) is None
+    assert build_iam_config({}) is None
+    assert build_iam_config({"tokens": {}}) is None
+
+    body = NewSandbox(template_id="template-id", iam=UNSET)
+
+    assert "iam" not in body.to_dict()
+
+
+def test_create_payload_rejects_malformed_iam_tokens():
+    # The wire-format casing a user might copy from the JS example or a
+    # serialized payload must fail with an actionable error, not a KeyError.
+    with pytest.raises(InvalidArgumentException, match="token_type"):
+        build_iam_config(
+            cast(
+                Any,
+                {
+                    "tokens": {
+                        "aws": {
+                            "audience": "sts.amazonaws.com",
+                            "tokenType": "JWT-SVID",
+                        },
+                    },
+                },
+            )
+        )
+
+    with pytest.raises(InvalidArgumentException):
+        build_iam_config(cast(Any, {"tokens": {"aws": None}}))
 
 
 @pytest.mark.skip_debug()

@@ -39,6 +39,15 @@ from e2b.api.client.models import (
     SandboxNetworkTransformHeaders as ClientSandboxNetworkTransformHeaders,
 )
 from e2b.api.client.models import (
+    SandboxIam as ClientSandboxIam,
+)
+from e2b.api.client.models import (
+    SandboxIamToken as ClientSandboxIamToken,
+)
+from e2b.api.client.models import (
+    SandboxIamTokens as ClientSandboxIamTokens,
+)
+from e2b.api.client.models import (
     SandboxNetworkUpdateConfig,
 )
 from e2b.api.client.models import (
@@ -46,6 +55,7 @@ from e2b.api.client.models import (
 )
 from e2b.api.client.types import Unset
 from e2b.connection_config import ApiParams
+from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox.mcp import McpServer as BaseMcpServer
 from e2b.sandbox.network import ALL_TRAFFIC
 from e2b.paginator import PaginatorBase
@@ -226,6 +236,38 @@ class SandboxNetworkUpdate(TypedDict, total=False):
     """
 
 
+SandboxIamTokenType = Union[Literal["JWT-SVID"], str]
+"""
+Workload token type. ``"JWT-SVID"`` is the only type the API accepts in this
+version; the set is defined server-side and may grow, so any string is allowed.
+"""
+
+
+class SandboxIamToken(TypedDict):
+    """
+    Workload token definition for sandbox workload identity.
+    """
+
+    audience: str
+    """Audience of the workload token, stored exactly as provided."""
+
+    token_type: SandboxIamTokenType
+    """Workload token type."""
+
+
+class SandboxIamOpts(TypedDict, total=False):
+    """
+    Sandbox workload identity configuration. A non-empty ``tokens`` map enables
+    workload identity for the sandbox.
+    """
+
+    tokens: Dict[str, SandboxIamToken]
+    """
+    Named workload-token definitions, keyed by a caller-chosen token name.
+    Values can be created with :meth:`Secret.iam_token`.
+    """
+
+
 class SandboxNetworkInfo(TypedDict, total=False):
     """
     Network configuration as returned by the sandbox info endpoint.
@@ -403,6 +445,47 @@ def build_network_config(
     if "mask_request_host" in network:
         body["mask_request_host"] = network["mask_request_host"]
 
+    return body
+
+
+def build_iam_config(
+    iam: Optional[SandboxIamOpts],
+) -> Optional[ClientSandboxIam]:
+    """Resolve a :class:`SandboxIamOpts` into the API client body.
+
+    Returns ``None`` for a config with no tokens — only a non-empty tokens
+    map enables workload identity, so an empty config is omitted from the
+    request payload entirely.
+    """
+    if iam is None:
+        return None
+
+    tokens = iam.get("tokens")
+    if not tokens:
+        return None
+
+    client_tokens = ClientSandboxIamTokens()
+    for name, token in tokens.items():
+        # Re-check at runtime for callers that bypass the TypedDict — a bare
+        # KeyError from deep inside create would not name the option or the
+        # snake_case key the wire's camelCase 'tokenType' maps to.
+        if (
+            not isinstance(token, dict)
+            or "audience" not in token
+            or "token_type" not in token
+        ):
+            raise InvalidArgumentException(
+                f"iam token {name!r} must be a dict with 'audience' and "
+                "'token_type' keys (snake_case 'token_type', not 'tokenType')."
+            )
+
+        client_tokens[name] = ClientSandboxIamToken(
+            audience=token["audience"],
+            token_type=token["token_type"],
+        )
+
+    body = ClientSandboxIam()
+    body.tokens = client_tokens
     return body
 
 

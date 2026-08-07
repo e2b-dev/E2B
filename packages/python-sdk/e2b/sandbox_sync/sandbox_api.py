@@ -48,6 +48,7 @@ from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
     build_network_update_body,
     McpServer,
+    SandboxIamOpts,
     SandboxInfo,
     SandboxLifecycle,
     SandboxMetrics,
@@ -55,6 +56,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxNetworkUpdate,
     SandboxQuery,
     SnapshotInfo,
+    build_iam_config,
     build_network_config,
 )
 from e2b.sandbox_sync.paginator import SandboxPaginator, get_api_client
@@ -206,6 +208,7 @@ class SandboxApi(SandboxBase):
         secure: bool,
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
+        iam: Optional[SandboxIamOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
         volume_mounts: Optional[List[SandboxVolumeMountAPI]] = None,
         logger: Optional[logging.Logger] = None,
@@ -266,6 +269,7 @@ class SandboxApi(SandboxBase):
             secure=secure,
             allow_internet_access=allow_internet_access,
             network=SandboxNetworkConfig(**network_body) if network_body else UNSET,
+            iam=build_iam_config(iam) or UNSET,
             volume_mounts=volume_mounts if volume_mounts else UNSET,
         )
 
