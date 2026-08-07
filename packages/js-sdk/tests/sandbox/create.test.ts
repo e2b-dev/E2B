@@ -1,6 +1,6 @@
 import { assert, expect, test } from 'vitest'
 
-import { CommandExitError, Sandbox } from '../../src'
+import { Sandbox } from '../../src'
 import { template, isDebug } from '../setup.js'
 
 test.skipIf(isDebug)('create', async () => {
@@ -51,7 +51,7 @@ test.skipIf(isDebug)(
           metadata,
           mcp: { invalid_server: {} } as never,
         })
-      ).rejects.toThrow(CommandExitError)
+      ).rejects.toThrow('Failed to start MCP gateway')
 
       remainingSandboxes = await Sandbox.list({ query }).nextItems()
       expect(remainingSandboxes).toEqual([])

@@ -11,6 +11,7 @@ import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 import { createEnvdFetch, createEnvdRpcFetch } from '../envd/http2'
 import { createRpcLogger } from '../logs'
 import { Commands, Pty } from './commands'
+import { CommandExitError } from './commands/commandHandle'
 import { Filesystem } from './filesystem'
 import { Git } from './git'
 import {
@@ -29,7 +30,7 @@ import {
 } from './sandboxApi'
 import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
-import { InvalidArgumentError, TemplateError } from '../errors'
+import { InvalidArgumentError, SandboxError, TemplateError } from '../errors'
 import { ENVD_DEBUG_FALLBACK, ENVD_DEFAULT_USER } from '../envd/versions'
 import { shellQuote } from '../utils'
 
@@ -321,7 +322,7 @@ export class Sandbox extends SandboxApi {
     if (sandboxOpts?.mcp) {
       sandbox.mcpToken = crypto.randomUUID()
       try {
-        const res = await sandbox.commands.run(
+        await sandbox.commands.run(
           `mcp-gateway --config ${shellQuote(JSON.stringify(sandboxOpts.mcp))}`,
           {
             user: 'root',
@@ -330,11 +331,11 @@ export class Sandbox extends SandboxApi {
             },
           }
         )
-        if (res.exitCode !== 0) {
-          throw new Error(`Failed to start MCP gateway: ${res.stderr}`)
-        }
       } catch (error) {
         await sandbox.kill().catch(() => undefined)
+        if (error instanceof CommandExitError) {
+          throw new SandboxError(`Failed to start MCP gateway: ${error.stderr}`)
+        }
         throw error
       }
     }
