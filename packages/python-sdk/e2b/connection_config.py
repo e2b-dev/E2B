@@ -1,13 +1,23 @@
 import logging
 import os
 
-from typing import cast, Optional, Dict, TypedDict
+from typing import cast, Optional, Dict, TypedDict, Union
 
-from httpx._types import ProxyTypes
+import httpx
 from typing_extensions import Unpack
 
 from e2b.api.metadata import package_version
 from e2b.sandbox_domains import is_supported_sandbox_domain
+
+ProxyTypes = Union[str, httpx.URL, httpx.Proxy]
+"""The forms the ``proxy`` option accepts: a URL string, an ``httpx.URL``, or
+an ``httpx.Proxy``.
+
+Identical to ``httpx._types.ProxyTypes``, spelled out here so the SDK doesn't
+import httpx's private module at runtime — and so the union can grow a pyqwest
+proxy type as the transports move off httpx. :func:`e2b.api.proxy_to_config`
+narrows it to what the pyqwest REST transports take.
+"""
 
 REQUEST_TIMEOUT: float = 60.0  # 60 seconds
 
