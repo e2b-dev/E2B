@@ -48,7 +48,7 @@ dev = [
 codegen = [
     "black==26.3.1",
     "e2b-openapi-python-client==0.26.2",
-    "datamodel-code-generator==0.64.0",
+    "datamodel-code-generator==0.72.2",
     "protoc-gen-connectrpc==0.11.1",
     "protoc-gen-py==0.1.1",
 ]
