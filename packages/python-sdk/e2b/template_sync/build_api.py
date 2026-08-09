@@ -6,7 +6,7 @@ import httpx
 from pyqwest import SyncHTTPTransport
 from pyqwest.httpx import PyqwestTransport
 
-from e2b.api import handle_api_exception, proxy_to_config
+from e2b.api import connection_retries, handle_api_exception, proxy_to_config
 from e2b.api.client.api.templates import (
     post_v3_templates,
     get_templates_template_id_files_hash,
@@ -257,7 +257,18 @@ def wait_for_build_finish(
 
     def poll_status() -> TemplateBuildStatusResponse:
         nonlocal logs_offset
-        build_status = get_build_status(client, template_id, build_id, logs_offset)
+        retries = 0
+        while True:
+            try:
+                build_status = get_build_status(
+                    client, template_id, build_id, logs_offset
+                )
+                break
+            except httpx.TransportError:
+                if retries >= connection_retries:
+                    raise
+                retries += 1
+                time.sleep(logs_refresh_frequency)
 
         logs_offset += len(build_status.log_entries)
 
