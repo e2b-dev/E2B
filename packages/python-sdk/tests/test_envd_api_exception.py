@@ -34,6 +34,13 @@ def test_maps_429_to_rate_limit():
     err = format_envd_api_exception(429, "Too many requests")
     assert isinstance(err, RateLimitException)
     assert "rate limited" in str(err)
+    assert err.retry_after is None
+
+
+def test_maps_429_to_rate_limit_with_retry_after():
+    err = format_envd_api_exception(429, "Too many requests", retry_after=60)
+    assert isinstance(err, RateLimitException)
+    assert err.retry_after == 60
 
 
 def test_maps_502_to_timeout():

@@ -241,3 +241,33 @@ export async function toUploadBody(
 
   return { body: await toBlob(data), streamed: false }
 }
+
+/**
+ * Parse a `Retry-After` header value (RFC 9110 §10.2.3): either
+ * delta-seconds or an HTTP-date. Returns `undefined` when the value is
+ * absent or doesn't parse as either form (including a negative or signed
+ * delta-seconds, which the RFC doesn't allow).
+ */
+export function parseRetryAfter(
+  retryAfter: string | null | undefined
+): number | undefined {
+  if (!retryAfter) {
+    return undefined
+  }
+
+  const trimmed = retryAfter.trim()
+  if (/^\d+$/.test(trimmed)) {
+    return Number(trimmed)
+  }
+
+  if (/^[+-]?\d/.test(trimmed)) {
+    return undefined
+  }
+
+  const retryAt = Date.parse(trimmed)
+  if (Number.isNaN(retryAt)) {
+    return undefined
+  }
+
+  return Math.max(0, Math.ceil((retryAt - Date.now()) / 1000))
+}

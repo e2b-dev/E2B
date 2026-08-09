@@ -6,6 +6,7 @@ import { createApiFetch } from './http2'
 import { ConnectionConfig } from '../connectionConfig'
 import { AuthenticationError, RateLimitError, SandboxError } from '../errors'
 import { createApiLogger } from '../logs'
+import { parseRetryAfter } from '../utils'
 
 const API_KEY_PATTERN = /^e2b_[0-9a-f]+$/
 const API_KEY_EXAMPLE = `e2b_${'0'.repeat(40)}`
@@ -35,7 +36,8 @@ export function apiErrorFromCode(
     message: string,
     stackTrace?: string
   ) => Error = SandboxError,
-  stackTrace?: string
+  stackTrace?: string,
+  retryAfter?: number
 ): Error {
   if (code === 401) {
     const message = 'Unauthorized, please check your credentials.'
@@ -46,7 +48,10 @@ export function apiErrorFromCode(
 
   if (code === 429) {
     const message = 'Rate limit exceeded, please try again later'
-    return new RateLimitError(content ? `${message} - ${content}` : message)
+    return new RateLimitError(
+      content ? `${message} - ${content}` : message,
+      retryAfter
+    )
   }
 
   return new errorClass(`${code}: ${content}`, stackTrace)
@@ -72,7 +77,10 @@ export function handleApiError(
       status,
       response.error?.message ?? response.error,
       errorClass,
-      stackTrace
+      stackTrace,
+      status === 429
+        ? parseRetryAfter(response.response.headers?.get('Retry-After'))
+        : undefined
     )
   }
 

@@ -7,7 +7,7 @@ import threading
 import weakref
 from dataclasses import dataclass
 from types import TracebackType
-from typing import Callable, Optional, Protocol, Union
+from typing import Callable, Mapping, Optional, Protocol, Union
 
 import httpx
 from httpx import AsyncBaseTransport, BaseTransport, Limits, Timeout
@@ -20,6 +20,7 @@ from e2b.exceptions import (
     AuthenticationException,
     RateLimitException,
     SandboxException,
+    parse_retry_after,
 )
 
 
@@ -85,6 +86,7 @@ def api_exception_from_code(
     message: Optional[str] = None,
     default_exception_class: type[Exception] = SandboxException,
     stack_trace: Optional[TracebackType] = None,
+    headers: Optional[Mapping[str, str]] = None,
 ) -> Exception:
     """Map an API error code and message to the matching exception class — the
     same mapping :func:`handle_api_exception` applies to HTTP responses, usable
@@ -99,7 +101,8 @@ def api_exception_from_code(
         text = f"{status_code}: Rate limit exceeded, please try again later."
         if message:
             text += f" - {message}"
-        return RateLimitException(text)
+        retry_after = parse_retry_after(headers.get("Retry-After")) if headers else None
+        return RateLimitException(text, retry_after=retry_after)
 
     return default_exception_class(f"{status_code}: {message}").with_traceback(
         stack_trace
@@ -123,7 +126,11 @@ def handle_api_exception(
         )
 
     return api_exception_from_code(
-        e.status_code, message, default_exception_class, stack_trace
+        e.status_code,
+        message,
+        default_exception_class,
+        stack_trace,
+        headers=getattr(e, "headers", None),
     )
 
 
@@ -133,6 +140,9 @@ class SupportsApiErrorResponse(Protocol):
 
     @property
     def content(self) -> Union[str, bytes]: ...
+
+    @property
+    def headers(self) -> Mapping[str, str]: ...
 
 
 _API_KEY_PATTERN = re.compile(r"\Ae2b_[0-9a-f]+\Z")

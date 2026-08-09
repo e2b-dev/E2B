@@ -1,6 +1,12 @@
 import { expect, test, vi } from 'vitest'
 
-import { runtime, sha256, toBlob, toUploadBody } from '../src/utils'
+import {
+  parseRetryAfter,
+  runtime,
+  sha256,
+  toBlob,
+  toUploadBody,
+} from '../src/utils'
 import { ForeignBlob, foreignReadableStream } from './foreignPlatformObjects'
 
 const encode = (text: string) => new TextEncoder().encode(text)
@@ -11,6 +17,35 @@ const streams = runtime !== 'browser'
 async function readBody(body: BodyInit): Promise<string> {
   return await new Response(body).text()
 }
+
+test('parseRetryAfter parses delta-seconds', () => {
+  expect(parseRetryAfter('120')).toBe(120)
+})
+
+test('parseRetryAfter trims surrounding whitespace', () => {
+  expect(parseRetryAfter(' 120 ')).toBe(120)
+})
+
+test('parseRetryAfter parses an HTTP-date', () => {
+  const retryAt = new Date(Date.now() + 60_000)
+  const parsed = parseRetryAfter(retryAt.toUTCString())
+  expect(parsed).toBeGreaterThanOrEqual(55)
+  expect(parsed).toBeLessThanOrEqual(60)
+})
+
+test('parseRetryAfter rejects negative delta-seconds', () => {
+  expect(parseRetryAfter('-1')).toBeUndefined()
+})
+
+test('parseRetryAfter rejects garbage', () => {
+  expect(parseRetryAfter('not a valid value')).toBeUndefined()
+})
+
+test('parseRetryAfter returns undefined for a missing header', () => {
+  expect(parseRetryAfter(null)).toBeUndefined()
+  expect(parseRetryAfter(undefined)).toBeUndefined()
+  expect(parseRetryAfter('')).toBeUndefined()
+})
 
 test('sha256 hashes with WebCrypto', async () => {
   expect(await sha256('hello')).toBe(

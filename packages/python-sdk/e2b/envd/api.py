@@ -12,6 +12,7 @@ from e2b.exceptions import (
     NotEnoughSpaceException,
     RateLimitException,
     format_sandbox_timeout_exception,
+    parse_retry_after,
 )
 
 
@@ -22,9 +23,6 @@ _DEFAULT_API_ERROR_MAP: dict[int, Callable[[str], Exception]] = {
     400: InvalidArgumentException,
     401: AuthenticationException,
     404: NotFoundException,
-    429: lambda message: RateLimitException(
-        f"{message}: The requests are being rate limited."
-    ),
     502: format_sandbox_timeout_exception,
     507: NotEnoughSpaceException,
 }
@@ -133,7 +131,12 @@ def handle_envd_api_exception(
 
     res.read()
 
-    return format_envd_api_exception(res.status_code, get_message(res), error_map)
+    return format_envd_api_exception(
+        res.status_code,
+        get_message(res),
+        error_map,
+        parse_retry_after(res.headers.get("Retry-After")),
+    )
 
 
 async def ahandle_envd_api_exception(
@@ -146,23 +149,36 @@ async def ahandle_envd_api_exception(
 
     await res.aread()
 
-    return format_envd_api_exception(res.status_code, get_message(res), error_map)
+    return format_envd_api_exception(
+        res.status_code,
+        get_message(res),
+        error_map,
+        parse_retry_after(res.headers.get("Retry-After")),
+    )
 
 
 def format_envd_api_exception(
     status_code: int,
     message: str,
     error_map: Optional[dict[int, Callable[[str], Exception]]] = None,
+    retry_after: Optional[int] = None,
 ):
     """Map an HTTP status code and message to the appropriate exception.
 
     :param status_code: The HTTP status code.
     :param message: The error message from the response body.
     :param error_map: Optional map of HTTP status codes to exception factories that override the defaults.
+    :param retry_after: Seconds to wait before retrying, parsed from the response's ``Retry-After`` header. Only applied to the default 429 mapping.
     :return: The corresponding exception.
     """
     if error_map and status_code in error_map:
         return error_map[status_code](message)
+
+    if status_code == 429:
+        return RateLimitException(
+            f"{message}: The requests are being rate limited.",
+            retry_after=retry_after,
+        )
 
     if status_code in _DEFAULT_API_ERROR_MAP:
         return _DEFAULT_API_ERROR_MAP[status_code](message)
