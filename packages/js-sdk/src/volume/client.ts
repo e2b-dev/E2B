@@ -59,6 +59,14 @@ export interface VolumeApiOpts {
   proxy?: string
 
   /**
+   * Path to a PEM file with CA certificates to trust when verifying TLS
+   * connections, trusted in addition to the default CA store. Node only.
+   *
+   * @default E2B_CA_BUNDLE // environment variable
+   */
+  caBundle?: string
+
+  /**
    * An optional `AbortSignal` that can be used to cancel the in-flight request.
    * When the signal is aborted, the underlying `fetch` is aborted and the
    * returned promise rejects with an `AbortError`.
@@ -76,6 +84,7 @@ export class VolumeConnectionConfig {
   readonly requestTimeoutMs: number
   readonly signal?: AbortSignal
   readonly proxy?: string
+  readonly caBundle?: string
 
   constructor(volume: Volume, opts?: VolumeApiOpts) {
     this.domain = opts?.domain || volume.domain || VolumeConnectionConfig.domain
@@ -90,6 +99,8 @@ export class VolumeConnectionConfig {
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.signal = opts?.signal
     this.proxy = opts?.proxy || volume.proxy
+    this.caBundle =
+      opts?.caBundle || volume.caBundle || VolumeConnectionConfig.caBundle
   }
 
   private static get domain() {
@@ -102,6 +113,10 @@ export class VolumeConnectionConfig {
 
   private static get volumeApiUrl() {
     return getEnvVar('E2B_VOLUME_API_URL')
+  }
+
+  private static get caBundle() {
+    return getEnvVar('E2B_CA_BUNDLE')
   }
 
   getSignal(requestTimeoutMs?: number, signal?: AbortSignal) {
@@ -121,7 +136,7 @@ class VolumeApiClient {
   constructor(config: VolumeConnectionConfig) {
     this.api = createClient<paths>({
       baseUrl: config.apiUrl,
-      fetch: createApiFetch(config.proxy),
+      fetch: createApiFetch(config),
       headers: {
         ...defaultHeaders,
         ...(config.token && { Authorization: `Bearer ${config.token}` }),

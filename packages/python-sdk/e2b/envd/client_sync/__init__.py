@@ -1,7 +1,7 @@
 """Sync envd RPC clients: shared pyqwest transports and client factory."""
 
 import threading
-from typing import Any, Callable, Generator, Iterator, Optional, TypeVar, cast
+from typing import Any, Callable, Generator, Iterator, TypeVar, cast
 
 from pyqwest import (
     SyncClient,
@@ -10,7 +10,7 @@ from pyqwest import (
     SyncTransport,
 )
 
-from e2b.api import ProxyConfig, proxy_to_config
+from e2b.api import TransportConfig
 from e2b.api.client_sync import retrying_http_transport
 from e2b.connection_config import ConnectionConfig
 from e2b.envd.client_shared import (
@@ -24,8 +24,9 @@ RES = TypeVar("RES")
 TClient = TypeVar("TClient")
 
 _transport_lock = threading.Lock()
-# One transport (= one connection pool) per proxy; None is the direct pool.
-_transports: dict[Optional[ProxyConfig], "PlainHTTPErrorTransport"] = {}
+# One transport (= one connection pool) per proxy and TLS trust; the default
+# configuration is the direct pool.
+_transports: dict[TransportConfig, "PlainHTTPErrorTransport"] = {}
 
 
 class PlainHTTPErrorTransport:
@@ -58,16 +59,18 @@ class PlainHTTPErrorTransport:
         raise error
 
 
-def get_transport(proxy: Optional[ProxyConfig]) -> "PlainHTTPErrorTransport":
+def get_transport(transport_config: TransportConfig) -> "PlainHTTPErrorTransport":
     with _transport_lock:
-        transport = _transports.get(proxy)
+        transport = _transports.get(transport_config)
         if transport is None:
             # connectrpc arms the per-call deadline around the transport, so
             # retry backoff counts against the request timeout. The plain-
             # error normalization sits outside the retries so it converts
             # the settled response once.
-            transport = PlainHTTPErrorTransport(retrying_http_transport(proxy))
-            _transports[proxy] = transport
+            transport = PlainHTTPErrorTransport(
+                retrying_http_transport(transport_config)
+            )
+            _transports[transport_config] = transport
         return transport
 
 
@@ -84,7 +87,7 @@ def create_rpc_client(
     call and its transport is process-global, so one instance serves all
     threads.
     """
-    http_client = SyncClient(get_transport(proxy_to_config(config.proxy)))
+    http_client = SyncClient(get_transport(TransportConfig.from_config(config)))
     return client_cls(
         base_url,
         codec=ENVD_JSON_CODEC,

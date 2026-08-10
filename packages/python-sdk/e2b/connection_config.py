@@ -69,6 +69,13 @@ class ApiParams(TypedDict, total=False):
     proxy: Optional[ProxyTypes]
     """Proxy to use for the request. In case of a sandbox it applies to all **requests made to the returned sandbox**."""
 
+    ca_bundle: Optional[str]
+    """Path to a PEM file with CA certificates to trust when verifying TLS
+    connections, e.g. the private CA of a self-hosted deployment. Trusted **in
+    addition to** the system CA store, so connections validating against a
+    public CA keep working. Defaults to the `E2B_CA_BUNDLE` environment
+    variable."""
+
     sandbox_url: Optional[str]
     """URL to connect to sandbox, defaults to `E2B_SANDBOX_URL` environment variable."""
 
@@ -135,6 +142,10 @@ class ConnectionConfig:
         return os.getenv("E2B_SANDBOX_URL")
 
     @staticmethod
+    def _ca_bundle():
+        return os.getenv("E2B_CA_BUNDLE")
+
+    @staticmethod
     def _access_token():
         return os.getenv("E2B_ACCESS_TOKEN")
 
@@ -181,6 +192,7 @@ class ConnectionConfig:
         api_headers: Optional[Dict[str, str]] = None,
         extra_sandbox_headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
+        ca_bundle: Optional[str] = None,
         logger: Optional[logging.Logger] = None,
     ):
         self.logger = logger
@@ -203,6 +215,7 @@ class ConnectionConfig:
         self.__extra_sandbox_headers = extra_sandbox_headers or {}
 
         self.proxy = proxy
+        self.ca_bundle = ca_bundle or ConnectionConfig._ca_bundle()
 
         self.request_timeout = ConnectionConfig._get_request_timeout(
             REQUEST_TIMEOUT,
@@ -296,6 +309,7 @@ class ConnectionConfig:
         domain = opts.get("domain")
         debug = opts.get("debug")
         proxy = opts.get("proxy")
+        ca_bundle = opts.get("ca_bundle")
         sandbox_url = opts.get("sandbox_url")
 
         req_headers = self.headers.copy()
@@ -330,6 +344,7 @@ class ConnectionConfig:
                 request_timeout=self.get_request_timeout(request_timeout),
                 headers=req_headers,
                 proxy=proxy if proxy is not None else self.proxy,
+                ca_bundle=ca_bundle if ca_bundle is not None else self.ca_bundle,
                 sandbox_url=(
                     sandbox_url
                     if sandbox_url is not None

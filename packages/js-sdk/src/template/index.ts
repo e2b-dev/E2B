@@ -1124,6 +1124,7 @@ export class TemplateBase
               ],
               resolveSymlinks: instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
               gzip: instruction.gzip ?? GZIP,
+              transport: config,
             },
             stackTrace,
             // Forward `requestTimeoutMs` only when the caller set it — we

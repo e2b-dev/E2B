@@ -89,6 +89,19 @@ export interface ConnectionOpts {
   proxy?: string
 
   /**
+   * Path to a PEM file with CA certificates to trust when verifying TLS
+   * connections, e.g. the private CA of a self-hosted deployment. They are
+   * trusted in addition to the default CA store, so connections validating
+   * against a public CA keep working.
+   *
+   * Node only — other runtimes don't let the SDK configure TLS trust.
+   *
+   * @default E2B_CA_BUNDLE // environment variable
+   * @example '/etc/ssl/certs/internal-ca.pem'
+   */
+  caBundle?: string
+
+  /**
    * Additional headers to send with E2B API requests.
    */
   apiHeaders?: Record<string, string>
@@ -416,6 +429,8 @@ export class ConnectionConfig {
 
   readonly proxy?: string
 
+  readonly caBundle?: string
+
   constructor(opts?: ConnectionOpts) {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
     this.validateApiKey =
@@ -428,6 +443,7 @@ export class ConnectionConfig {
     this.headers = { ...(opts?.headers ?? {}), ...(opts?.apiHeaders ?? {}) }
     ConnectionConfig.applyUserAgent(this.headers)
     this.proxy = opts?.proxy
+    this.caBundle = opts?.caBundle || ConnectionConfig.caBundle
 
     this.apiUrl =
       opts?.apiUrl ||
@@ -447,6 +463,10 @@ export class ConnectionConfig {
 
   private static get sandboxUrl() {
     return getEnvVar('E2B_SANDBOX_URL')
+  }
+
+  private static get caBundle() {
+    return getEnvVar('E2B_CA_BUNDLE')
   }
 
   private static get debug() {

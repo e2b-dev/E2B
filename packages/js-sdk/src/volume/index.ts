@@ -78,6 +78,12 @@ export class Volume {
   readonly proxy?: string
 
   /**
+   * Path to a PEM file with CA certificates trusted for requests to the volume
+   * content API.
+   */
+  readonly caBundle?: string
+
+  /**
    * Create a local Volume instance with no API call.
    *
    * @param volumeId volume ID.
@@ -86,6 +92,7 @@ export class Volume {
    * @param domain domain for the volume API.
    * @param debug whether to use debug mode.
    * @param proxy proxy URL for the volume content API.
+   * @param caBundle path to a PEM file with CA certificates to trust.
    */
   constructor(
     volumeId: string,
@@ -93,7 +100,8 @@ export class Volume {
     token: string,
     domain?: string,
     debug?: boolean,
-    proxy?: string
+    proxy?: string,
+    caBundle?: string
   ) {
     this.volumeId = volumeId
     this.name = name
@@ -101,6 +109,7 @@ export class Volume {
     this.domain = domain
     this.debug = debug
     this.proxy = proxy
+    this.caBundle = caBundle
   }
 
   /**
@@ -137,7 +146,8 @@ export class Volume {
       res.data.token,
       res.data.domain || config.domain,
       config.debug,
-      config.proxy
+      config.proxy,
+      config.caBundle
     )
   }
 
@@ -161,7 +171,8 @@ export class Volume {
       token,
       domain ?? config.domain,
       config.debug,
-      config.proxy
+      config.proxy,
+      config.caBundle
     )
   }
 

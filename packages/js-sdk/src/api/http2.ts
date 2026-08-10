@@ -3,6 +3,8 @@ import { parseInflightLimitEnv, parsePositiveIntEnv } from './metadata'
 import {
   buildDispatchedFetch,
   createRuntimeFetch,
+  transportCacheKey,
+  type FetchTransportOpts,
   type UndiciModule,
 } from '../undici'
 
@@ -11,19 +13,20 @@ const DEFAULT_API_CONNECTION_LIMIT = 100
 // Override via env if your workload needs different.
 const DEFAULT_API_INFLIGHT_LIMIT = 1000
 
-// Fetchers are cached per proxy so requests without a proxy keep sharing a
-// single dispatcher while each distinct proxy URL gets its own.
+// Fetchers are cached per proxy and CA bundle so requests with the default
+// connection options keep sharing a single dispatcher while each distinct
+// combination gets its own.
 const apiFetchers = new Map<string, typeof fetch>()
 
-export function createApiFetch(proxy?: string): typeof fetch {
-  const key = proxy ?? ''
+export function createApiFetch(options: FetchTransportOpts = {}): typeof fetch {
+  const key = transportCacheKey(options)
 
   const cached = apiFetchers.get(key)
   if (cached) {
     return cached
   }
 
-  const apiFetch = createApiFetchForRuntime(runtime, { proxy })
+  const apiFetch = createApiFetchForRuntime(runtime, options)
   apiFetchers.set(key, apiFetch)
 
   return apiFetch
@@ -31,22 +34,25 @@ export function createApiFetch(proxy?: string): typeof fetch {
 
 export function createApiFetchForRuntime(
   currentRuntime = runtime,
-  options: {
+  options: FetchTransportOpts & {
     connectionLimit?: number
     inflightLimit?: number
-    proxy?: string
     loadUndici?: () => Promise<UndiciModule | undefined>
   } = {}
 ): typeof fetch {
   // Defaults resolve inside the thunk so env vars are read lazily, at the
   // first request rather than at factory creation.
-  return createRuntimeFetch(currentRuntime, () =>
-    buildDispatchedFetch({
-      connections: options.connectionLimit ?? getApiConnectionLimit(),
-      inflightLimit: options.inflightLimit ?? getApiInflightLimit(),
-      proxy: options.proxy,
-      loadUndici: options.loadUndici,
-    })
+  return createRuntimeFetch(
+    currentRuntime,
+    () =>
+      buildDispatchedFetch({
+        connections: options.connectionLimit ?? getApiConnectionLimit(),
+        inflightLimit: options.inflightLimit ?? getApiInflightLimit(),
+        proxy: options.proxy,
+        caBundle: options.caBundle,
+        loadUndici: options.loadUndici,
+      }),
+    options
   )
 }
 

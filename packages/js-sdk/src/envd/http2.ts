@@ -3,18 +3,20 @@ import { parseInflightLimitEnv, parsePositiveIntEnv } from '../api/metadata'
 import {
   buildDispatchedFetch,
   createRuntimeFetch,
+  transportCacheKey,
+  type FetchTransportOpts,
   type UndiciModule,
 } from '../undici'
 
-type EnvdFetchOptions = {
+type EnvdFetchOptions = FetchTransportOpts & {
   connectionLimit?: number
   inflightLimit?: number
-  proxy?: string
   loadUndici?: () => Promise<UndiciModule | undefined>
 }
 
-// Fetchers are cached per proxy so requests without a proxy keep sharing a
-// single dispatcher while each distinct proxy URL gets its own.
+// Fetchers are cached per proxy and CA bundle so requests with the default
+// connection options keep sharing a single dispatcher while each distinct
+// combination gets its own.
 const envdFetchers = new Map<string, typeof fetch>()
 const envdRpcFetchers = new Map<string, typeof fetch>()
 const DEFAULT_ENVD_CONNECTION_LIMIT = 10
@@ -26,18 +28,24 @@ export function createEnvdFetchForRuntime(
   currentRuntime = runtime,
   options: EnvdFetchOptions = {}
 ): typeof fetch {
-  return createRuntimeFetch(currentRuntime, () =>
-    buildDispatchedFetch({
-      connections: options.connectionLimit ?? DEFAULT_ENVD_CONNECTION_LIMIT,
-      inflightLimit: options.inflightLimit ?? 0,
-      proxy: options.proxy,
-      loadUndici: options.loadUndici,
-    })
+  return createRuntimeFetch(
+    currentRuntime,
+    () =>
+      buildDispatchedFetch({
+        connections: options.connectionLimit ?? DEFAULT_ENVD_CONNECTION_LIMIT,
+        inflightLimit: options.inflightLimit ?? 0,
+        proxy: options.proxy,
+        caBundle: options.caBundle,
+        loadUndici: options.loadUndici,
+      }),
+    options
   )
 }
 
-export function createEnvdFetch(proxy?: string): typeof fetch {
-  const key = proxy ?? ''
+export function createEnvdFetch(
+  options: FetchTransportOpts = {}
+): typeof fetch {
+  const key = transportCacheKey(options)
 
   const cached = envdFetchers.get(key)
   if (cached) {
@@ -47,16 +55,18 @@ export function createEnvdFetch(proxy?: string): typeof fetch {
   // Keep one origin connection for short envd REST calls. If ALPN falls back
   // to h1, this favors connection pressure over per-sandbox throughput.
   const envdFetch = createEnvdFetchForRuntime(runtime, {
+    ...options,
     inflightLimit: getEnvdInflightLimit(),
-    proxy,
   })
   envdFetchers.set(key, envdFetch)
 
   return envdFetch
 }
 
-export function createEnvdRpcFetch(proxy?: string): typeof fetch {
-  const key = proxy ?? ''
+export function createEnvdRpcFetch(
+  options: FetchTransportOpts = {}
+): typeof fetch {
+  const key = transportCacheKey(options)
 
   const cached = envdRpcFetchers.get(key)
   if (cached) {
@@ -64,9 +74,9 @@ export function createEnvdRpcFetch(proxy?: string): typeof fetch {
   }
 
   const envdRpcFetch = createEnvdFetchForRuntime(runtime, {
+    ...options,
     connectionLimit: getEnvdRpcConnectionLimit(),
     inflightLimit: getEnvdRpcInflightLimit(),
-    proxy,
   })
   envdRpcFetchers.set(key, envdRpcFetch)
 

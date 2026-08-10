@@ -15,6 +15,7 @@ beforeEach(() => {
     E2B_SANDBOX_URL: process.env.E2B_SANDBOX_URL,
     E2B_DEBUG: process.env.E2B_DEBUG,
     E2B_VALIDATE_API_KEY: process.env.E2B_VALIDATE_API_KEY,
+    E2B_CA_BUNDLE: process.env.E2B_CA_BUNDLE,
   }
 })
 
@@ -580,4 +581,26 @@ test('wrapStreamWithConnectionCleanup does not abort a slow consumer (wire-only)
   const second = await reader.read()
   assert.equal(decoder.decode(second.value), 'b')
   assert.equal(controller.signal.aborted, false)
+})
+
+test('caBundle defaults to unset', () => {
+  delete process.env.E2B_CA_BUNDLE
+
+  assert.isUndefined(new ConnectionConfig().caBundle)
+})
+
+test('caBundle in env var', () => {
+  process.env.E2B_CA_BUNDLE = '/etc/ssl/certs/internal-ca.pem'
+
+  assert.equal(
+    new ConnectionConfig().caBundle,
+    '/etc/ssl/certs/internal-ca.pem'
+  )
+})
+
+test('caBundle has correct priority', () => {
+  process.env.E2B_CA_BUNDLE = '/etc/ssl/certs/internal-ca.pem'
+
+  const config = new ConnectionConfig({ caBundle: '/tmp/ca.pem' })
+  assert.equal(config.caBundle, '/tmp/ca.pem')
 })

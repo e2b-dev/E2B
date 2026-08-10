@@ -6,7 +6,7 @@ from pyqwest import Proxy
 
 import e2b.api.client_async as api_client_async
 import e2b.api.client_sync as api_client_sync
-from e2b.api import ProxyConfig, proxy_to_config
+from e2b.api import ProxyConfig, TransportConfig, proxy_to_config
 from e2b.connection_config import ProxyTypes
 from e2b.envd import client_async, client_sync
 from e2b.exceptions import InvalidArgumentException
@@ -98,12 +98,14 @@ def test_proxy_to_config_rejects_unknown_types():
 
 
 def test_sync_transport_is_cached_per_proxy():
-    proxy = ProxyConfig("http://127.0.0.1:8080")
-    transport_a = client_sync.get_transport(None)
-    transport_b = client_sync.get_transport(None)
-    transport_c = client_sync.get_transport(proxy)
+    proxied = TransportConfig(ProxyConfig("http://127.0.0.1:8080"))
+    transport_a = client_sync.get_transport(TransportConfig())
+    transport_b = client_sync.get_transport(TransportConfig())
+    transport_c = client_sync.get_transport(proxied)
     # A second, equal config keys the same pool.
-    transport_d = client_sync.get_transport(ProxyConfig("http://127.0.0.1:8080"))
+    transport_d = client_sync.get_transport(
+        TransportConfig(ProxyConfig("http://127.0.0.1:8080"))
+    )
 
     assert transport_a is transport_b
     assert transport_c is transport_d
@@ -114,10 +116,12 @@ def test_sync_transport_is_not_shared_across_proxy_credentials():
     # Same proxy URL, different credentials or headers: separate pools, since
     # the proxy configuration is fixed per transport.
     url = "http://127.0.0.1:8080"
-    plain = client_sync.get_transport(ProxyConfig(url))
-    with_auth = client_sync.get_transport(ProxyConfig(url, auth=("user", "pass")))
+    plain = client_sync.get_transport(TransportConfig(ProxyConfig(url)))
+    with_auth = client_sync.get_transport(
+        TransportConfig(ProxyConfig(url, auth=("user", "pass")))
+    )
     with_headers = client_sync.get_transport(
-        ProxyConfig(url, headers=(("x-custom", "1"),))
+        TransportConfig(ProxyConfig(url, headers=(("x-custom", "1"),)))
     )
 
     assert plain is not with_auth
@@ -126,13 +130,15 @@ def test_sync_transport_is_not_shared_across_proxy_credentials():
 
 
 def test_async_transport_is_cached_per_proxy():
-    transport_a = client_async.get_transport(None)
-    transport_b = client_async.get_transport(None)
-    transport_c = client_async.get_transport(ProxyConfig("http://127.0.0.1:8080"))
+    transport_a = client_async.get_transport(TransportConfig())
+    transport_b = client_async.get_transport(TransportConfig())
+    transport_c = client_async.get_transport(
+        TransportConfig(ProxyConfig("http://127.0.0.1:8080"))
+    )
 
     assert transport_a is transport_b
     assert transport_a is not transport_c
-    assert client_sync.get_transport(None) is not transport_a
+    assert client_sync.get_transport(TransportConfig()) is not transport_a
 
 
 def test_transport_stack_normalizes_plain_errors_and_retries_connects():
@@ -141,8 +147,8 @@ def test_transport_stack_normalizes_plain_errors_and_retries_connects():
     # retry layer the way it does into the httpx REST transports.
     from e2b.api import connection_retries
 
-    sync_transport = client_sync.get_transport(None)
-    async_transport = client_async.get_transport(None)
+    sync_transport = client_sync.get_transport(TransportConfig())
+    async_transport = client_async.get_transport(TransportConfig())
     assert isinstance(sync_transport, client_sync.PlainHTTPErrorTransport)
     assert isinstance(async_transport, client_async.PlainHTTPErrorTransport)
     assert isinstance(sync_transport._inner, api_client_sync.ConnectionRetryTransport)

@@ -3,7 +3,7 @@ import stream from 'node:stream'
 
 import { ApiClient, handleApiError, components } from '../api'
 import { buildRequestSignal } from '../connectionConfig'
-import { loadUndici } from '../undici'
+import { buildDispatchedFetch, type FetchTransportOpts } from '../undici'
 import { BuildError, FileUploadError, TemplateError } from '../errors'
 import { FILE_UPLOAD_TIMEOUT_MS } from './consts'
 import { LogEntry } from './logger'
@@ -114,6 +114,10 @@ export async function uploadFile(
     ignorePatterns: string[]
     resolveSymlinks: boolean
     gzip: boolean
+    // The upload doesn't go through the API client, so it repeats its
+    // connection options — a build against a private CA has to validate the
+    // presigned upload host too.
+    transport?: FetchTransportOpts
   },
   stackTrace: string | undefined,
   // Uploads (PUT to S3 presigned URL) can take a long time for large
@@ -130,6 +134,7 @@ export async function uploadFile(
     ignorePatterns,
     resolveSymlinks,
     gzip,
+    transport,
   } = options
   // Spool the archive to a temporary file and stream it from disk instead of
   // buffering it in memory. S3 presigned PUT URLs reject Transfer-Encoding:
@@ -152,7 +157,7 @@ export async function uploadFile(
       abortOpts?.signal
     )
 
-    const res = await putFileStream(url, tar.path, tar.size, signal)
+    const res = await putFileStream(url, tar.path, tar.size, signal, transport)
 
     if (!res.ok) {
       throw new FileUploadError(
@@ -174,16 +179,22 @@ async function putFileStream(
   url: string,
   filePath: string,
   size: number,
-  signal: AbortSignal | undefined
+  signal: AbortSignal | undefined,
+  transport: FetchTransportOpts | undefined
 ): Promise<{ ok: boolean; statusText: string }> {
   // Prefer undici's fetch: it honors the explicit Content-Length on stream
   // bodies on every runtime, while Deno's native fetch ignores the header and
   // falls back to chunked. Where undici isn't resolvable (e.g. bundled apps),
-  // fall back to the global fetch — Node's and Bun's native fetch also honor
-  // Content-Length on stream bodies. loadUndici tries undici 8 first and
-  // falls back to undici 7 where 8 doesn't import (Bun).
-  const undici = await loadUndici()
-  const fetchImpl = (undici?.fetch as typeof fetch | undefined) ?? fetch
+  // it falls back to the global fetch — Node's and Bun's native fetch also
+  // honor Content-Length on stream bodies. The dispatcher carries the
+  // connection options; one origin connection is enough for a single upload,
+  // and the archive must not be capped by the API inflight limit it can hold
+  // for an hour, so this is its own dispatcher rather than the API one.
+  const fetchImpl = await buildDispatchedFetch({
+    connections: 1,
+    inflightLimit: 0,
+    ...transport,
+  })
 
   return await fetchImpl(url, {
     method: 'PUT',

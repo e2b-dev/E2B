@@ -68,6 +68,7 @@ class AsyncVolume:
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         proxy: Optional[ProxyTypes] = None,
+        ca_bundle: Optional[str] = None,
     ):
         self._volume_id = volume_id
         self._name = name
@@ -75,6 +76,7 @@ class AsyncVolume:
         self._domain = domain
         self._debug = debug
         self._proxy = proxy
+        self._ca_bundle = ca_bundle
 
     @property
     def volume_id(self) -> str:
@@ -100,6 +102,7 @@ class AsyncVolume:
             headers=opts.get("headers"),
             logger=opts.get("logger"),
             proxy=opts.get("proxy") if opts.get("proxy") is not None else self._proxy,
+            ca_bundle=opts.get("ca_bundle") or self._ca_bundle,
         )
 
     @classmethod
@@ -140,6 +143,7 @@ class AsyncVolume:
             domain=domain or config.domain,
             debug=config.debug,
             proxy=config.proxy,
+            ca_bundle=config.ca_bundle,
         )
         return vol
 
@@ -161,6 +165,7 @@ class AsyncVolume:
             domain=info.domain or config.domain,
             debug=config.debug,
             proxy=config.proxy,
+            ca_bundle=config.ca_bundle,
         )
 
     @staticmethod

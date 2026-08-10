@@ -48,6 +48,11 @@ class VolumeApiParams(TypedDict, total=False):
     proxy: Optional[ProxyTypes]
     """Proxy to use for the request."""
 
+    ca_bundle: Optional[str]
+    """Path to a PEM file with CA certificates to trust when verifying TLS
+    connections, trusted in addition to the system CA store. Defaults to the
+    `E2B_CA_BUNDLE` environment variable."""
+
     logger: Optional[logging.Logger]
     """Logger used for request and response logging. Accepts a standard library `logging.Logger`."""
 
@@ -72,6 +77,10 @@ class VolumeConnectionConfig:
         return os.getenv("E2B_VOLUME_API_URL")
 
     @staticmethod
+    def _ca_bundle():
+        return os.getenv("E2B_CA_BUNDLE")
+
+    @staticmethod
     def _get_request_timeout(
         default_timeout: Optional[float],
         request_timeout: Optional[float],
@@ -92,6 +101,7 @@ class VolumeConnectionConfig:
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
+        ca_bundle: Optional[str] = None,
         logger: Optional[logging.Logger] = None,
     ):
         self.logger = logger
@@ -106,6 +116,7 @@ class VolumeConnectionConfig:
         self.access_token = token
         self.token = self.access_token
         self.proxy = proxy
+        self.ca_bundle = ca_bundle or self._ca_bundle()
 
         self.headers = dict(headers) if headers else {}
         self.headers["User-Agent"] = f"e2b-python-sdk/{package_version}"
@@ -131,6 +142,7 @@ class VolumeConnectionConfig:
         token = opts.get("token")
         api_url = opts.get("api_url")
         proxy = opts.get("proxy")
+        ca_bundle = opts.get("ca_bundle")
         logger = opts.get("logger")
 
         req_headers = self.headers.copy()
@@ -146,6 +158,7 @@ class VolumeConnectionConfig:
                 request_timeout=self.get_request_timeout(request_timeout),
                 headers=req_headers,
                 proxy=proxy if proxy is not None else self.proxy,
+                ca_bundle=ca_bundle if ca_bundle is not None else self.ca_bundle,
                 logger=logger if logger is not None else self.logger,
             )
         )

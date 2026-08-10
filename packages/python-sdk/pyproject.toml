@@ -38,6 +38,7 @@ dev = [
     "ruff>=0.11.12,<0.12",
     "pytest-timeout>=2.4.0,<3",
     "ty>=0.0.15,<0.0.16",
+    "trustme>=1.2,<2",
 ]
 
 # Tools for local code generation (`make init` && `uv run make generate-*`).

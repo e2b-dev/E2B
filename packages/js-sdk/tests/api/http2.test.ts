@@ -146,17 +146,28 @@ test('late-binds the global fetch fallback when undici cannot be loaded', async 
   }
 })
 
-test('caches API fetchers per proxy', async () => {
+test('caches API fetchers per proxy and CA bundle', async () => {
   const { createApiFetch } = await import('../../src/api/http2')
 
-  const noProxy = createApiFetch()
-  const proxyA = createApiFetch('http://127.0.0.1:8080')
-  const proxyB = createApiFetch('http://127.0.0.1:9090')
+  const plain = createApiFetch()
+  const proxyA = createApiFetch({ proxy: 'http://127.0.0.1:8080' })
+  const proxyB = createApiFetch({ proxy: 'http://127.0.0.1:9090' })
+  const trusting = createApiFetch({ caBundle: '/etc/ssl/ca.pem' })
+  const trustingOther = createApiFetch({ caBundle: '/etc/ssl/other-ca.pem' })
+  const both = createApiFetch({
+    proxy: 'http://127.0.0.1:8080',
+    caBundle: '/etc/ssl/ca.pem',
+  })
 
-  expect(createApiFetch()).toBe(noProxy)
-  expect(createApiFetch('http://127.0.0.1:8080')).toBe(proxyA)
-  expect(proxyA).not.toBe(noProxy)
+  expect(createApiFetch()).toBe(plain)
+  expect(createApiFetch({ proxy: 'http://127.0.0.1:8080' })).toBe(proxyA)
+  expect(createApiFetch({ caBundle: '/etc/ssl/ca.pem' })).toBe(trusting)
+  expect(proxyA).not.toBe(plain)
   expect(proxyA).not.toBe(proxyB)
+  expect(trusting).not.toBe(plain)
+  expect(trusting).not.toBe(trustingOther)
+  expect(both).not.toBe(proxyA)
+  expect(both).not.toBe(trusting)
 })
 
 test('getApiConnectionLimit throws on a malformed env value', async () => {

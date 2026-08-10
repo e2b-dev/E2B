@@ -3,8 +3,10 @@ import logging
 import os
 import re
 from dataclasses import dataclass
+from functools import lru_cache
+from pathlib import Path
 from types import TracebackType
-from typing import NamedTuple, Optional, Protocol, Tuple, Union
+from typing import Any, Dict, NamedTuple, Optional, Protocol, Tuple, Union
 
 import httpx
 from httpx import AsyncBaseTransport, BaseTransport, Timeout
@@ -118,6 +120,116 @@ def proxy_to_config(proxy: Optional[ProxyTypes]) -> Optional[ProxyConfig]:
     )
 
 
+_PEM_CERTIFICATE_MARKER = b"-----BEGIN CERTIFICATE-----"
+
+
+@lru_cache(maxsize=None)
+def load_ca_bundle(path: Optional[str]) -> Optional[bytes]:
+    """Read the PEM CA bundle the ``ca_bundle`` connection option points at,
+    in the ``bytes`` form pyqwest transports take. ``None`` passes through so
+    callers don't have to branch.
+
+    The file is read once per path — every transport built for the same
+    ``ca_bundle`` reuses the result — and is checked to look like PEM here,
+    because reqwest accepts an unparsable bundle at construction time and only
+    fails later, per connection attempt, with an unspecific certificate error.
+
+    :raises InvalidArgumentException: if the file can't be read or holds no PEM
+        certificate.
+    """
+    if path is None:
+        return None
+
+    try:
+        pem = Path(path).read_bytes()
+    except OSError as e:
+        raise InvalidArgumentException(
+            f"Could not read the CA bundle at {path!r}: {e}. "
+            "`ca_bundle` (or the E2B_CA_BUNDLE environment variable) must be "
+            "the path of a PEM file holding the CA certificates to trust."
+        ) from e
+
+    if _PEM_CERTIFICATE_MARKER not in pem:
+        raise InvalidArgumentException(
+            f"The CA bundle at {path!r} holds no PEM certificate: expected a "
+            f'file containing "{_PEM_CERTIFICATE_MARKER.decode()}". '
+            "Convert a DER certificate with "
+            "`openssl x509 -inform der -in ca.der -out ca.pem`."
+        )
+
+    return pem
+
+
+def reject_verify_ssl(kwargs: Dict[str, Any]) -> None:
+    """Reject the generated clients' ``verify_ssl`` argument, taken out of
+    ``kwargs``.
+
+    It configures httpx's own transport, which every SDK client replaces with a
+    pyqwest one, so honoring it is impossible and accepting it would silently
+    leave TLS trust unconfigured. ``True`` is the generated default and means
+    "nothing configured".
+
+    :raises InvalidArgumentException: if ``verify_ssl`` was set to anything else.
+    """
+    if kwargs.pop("verify_ssl", True) is not True:
+        raise InvalidArgumentException(
+            "`verify_ssl` is not supported: requests go through pyqwest "
+            "transports, which httpx's `verify` does not reach. Pass "
+            "`ca_bundle` — the path of a PEM file — to trust a private CA. "
+            "Disabling verification and `ssl.SSLContext` have no equivalent."
+        )
+
+
+class SupportsTransportOptions(Protocol):
+    """The connection-config attributes that shape a transport: implemented by
+    both :class:`e2b.connection_config.ConnectionConfig` and
+    :class:`e2b.volume.connection_config.VolumeConnectionConfig`."""
+
+    @property
+    def proxy(self) -> Optional[ProxyTypes]: ...
+
+    @property
+    def ca_bundle(self) -> Optional[str]: ...
+
+
+class TransportConfig(NamedTuple):
+    """The connection options that shape a pyqwest transport — the proxy it
+    sends through and the TLS trust it validates servers against.
+
+    A tuple so it can key the transport caches directly: it is hashable and
+    compares by value, so every client configured the same way shares one
+    connection pool while a differing one gets its own."""
+
+    proxy: Optional[ProxyConfig] = None
+    ca_bundle: Optional[str] = None
+
+    @staticmethod
+    def from_config(config: SupportsTransportOptions) -> "TransportConfig":
+        """The transport configuration a connection config asks for.
+
+        :raises InvalidArgumentException: if the ``proxy`` or ``ca_bundle``
+            option can't be honored by the pyqwest transports.
+        """
+        transport = TransportConfig(proxy_to_config(config.proxy), config.ca_bundle)
+        # Surface an unusable CA bundle where the connection is configured
+        # rather than on the first request through the transport.
+        load_ca_bundle(transport.ca_bundle)
+        return transport
+
+    def transport_kwargs(self) -> Dict[str, Any]:
+        """The proxy and TLS-trust arguments every pyqwest transport in the SDK
+        is built with.
+
+        The system CA store stays trusted (without it TLS through an
+        intercepting proxy fails) when a ``ca_bundle`` is configured: it adds
+        trust for a private CA rather than replacing the public ones."""
+        return {
+            "proxy": self.proxy.to_pyqwest() if self.proxy is not None else None,
+            "tls_include_system_certs": True,
+            "tls_ca_cert": load_ca_bundle(self.ca_bundle),
+        }
+
+
 @dataclass
 class SandboxCreateResponse:
     sandbox_id: str
@@ -215,7 +327,12 @@ class ApiClient(AuthenticatedClient):
         *args,
         **kwargs,
     ):
-        self._proxy = config.proxy
+        # The connection options of the transport this client was built on, so
+        # that a request made outside the generated client (the template build
+        # context upload) can build a matching one.
+        self._transport_config = TransportConfig.from_config(config)
+
+        reject_verify_ssl(kwargs)
 
         if config.api_key is None:
             raise AuthenticationException(
