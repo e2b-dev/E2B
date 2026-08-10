@@ -64,6 +64,9 @@ def tls_server(ca: trustme.CA):
     """An HTTPS server whose certificate only the test CA vouches for, so a
     request to it succeeds exactly when `ca_bundle` reached the transport."""
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    # `PROTOCOL_TLS_SERVER` alone would still offer TLS 1.0/1.1, which reqwest
+    # refuses to negotiate anyway.
+    context.minimum_version = ssl.TLSVersion.TLSv1_2
     ca.issue_cert("localhost", "127.0.0.1").configure_cert(context)
 
     server = ThreadingHTTPServer(("127.0.0.1", 0), _TlsHandler)
