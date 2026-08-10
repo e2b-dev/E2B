@@ -93,8 +93,7 @@ def get_streaming_transport(config: VolumeConnectionConfig) -> PyqwestTransport:
     idle bound on every read: it resets after each successful read, so it caps
     how long a streamed download may stall without limiting total transfer
     time. It is fixed per transport — the adapter's per-request timeouts are
-    whole-request deadlines, and the sync adapter does not bound body reads at
-    all.
+    whole-request deadlines rather than idle bounds.
     """
     return _transport(config, read_timeout=READ_TIMEOUT)
 

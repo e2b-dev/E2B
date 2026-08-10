@@ -1,4 +1,3 @@
-import threading
 from typing import IO, Dict, List, Literal, Optional, Union, overload
 
 import httpx
@@ -6,8 +5,7 @@ from connectrpc.code import Code
 from connectrpc.errors import ConnectError
 from packaging.version import Version
 
-from e2b.api import make_logging_event_hooks
-from e2b.api.client_sync import get_envd_transport
+from e2b.api.client_sync import get_envd_api
 from e2b.connection_config import (
     KEEPALIVE_PING_HEADER,
     KEEPALIVE_PING_INTERVAL_SEC,
@@ -46,6 +44,7 @@ from e2b.sandbox.filesystem.filesystem import (
     WriteEntry,
     WriteInfo,
     _to_httpx_file,
+    multipart_body_is_streamed,
     map_entry_info,
     map_file_type,
     metadata_to_headers,
@@ -88,31 +87,18 @@ class Filesystem:
         self._envd_api_url = envd_api_url
         self._envd_version = envd_version
         self._connection_config = connection_config
-        self._thread_local = threading.local()
         self._rpc = create_rpc_client(
             filesystem_connect.FilesystemClientSync,
             envd_api_url,
             connection_config,
         )
-
-    def _create_envd_api(self) -> httpx.Client:
-        transport = get_envd_transport(self._connection_config)
-        return httpx.Client(
-            base_url=self._envd_api_url,
-            transport=transport,
-            headers=self._connection_config.sandbox_headers,
-            event_hooks=make_logging_event_hooks(self._connection_config.logger),
+        # Like the RPC client, the pyqwest transports underneath are
+        # thread-safe, so one client (and its streaming sibling, whose
+        # transport carries the idle read timeout) serves all threads.
+        self._envd_api = get_envd_api(connection_config, envd_api_url)
+        self._envd_api_streaming = get_envd_api(
+            connection_config, envd_api_url, for_streaming=True
         )
-
-    @property
-    def _envd_api(self) -> httpx.Client:
-        # Unlike the shared RPC client, the httpx transports are per-thread
-        # (see e2b.api.client_sync), so the client wrapping them is too.
-        envd_api = getattr(self._thread_local, "envd_api", None)
-        if envd_api is None:
-            envd_api = self._create_envd_api()
-            self._thread_local.envd_api = envd_api
-        return envd_api
 
     @overload
     def read(
@@ -171,22 +157,23 @@ class Filesystem:
         """
         Read file content as a `FileStreamReader` (an `Iterator[bytes]`).
 
-        The request timeout bounds only the initial handshake—the returned
-        iterator is not killed by it while being consumed. A stalled stream is
-        reclaimed by `stream_idle_timeout` (raising `httpx.ReadTimeout`). The
-        reader releases its connection once fully consumed; if you don't read it
-        to the end, use it as a context manager or call `close()` for
-        deterministic cleanup.
+        A `request_timeout` set explicitly for this call is the deadline for
+        the whole transfer; by default the download is not bounded in total.
+        A stalled stream is reclaimed by a transport-wide idle read timeout
+        (raising `httpx.ReadTimeout`). The reader releases its connection
+        once fully consumed; if you don't read it to the end, use it as a
+        context manager or call `close()` for deterministic cleanup.
 
         :param path: Path to the file
         :param user: Run the operation as this user
         :param format: Format of the file content—`stream`
-        :param request_timeout: Timeout for the request in **seconds**
+        :param request_timeout: Deadline for the whole transfer in **seconds**
         :param gzip: Use gzip compression for the request
-        :param stream_idle_timeout: Idle timeout in **seconds** for the streamed
-            body—abort if no chunk arrives within this window. Resets on every
-            chunk, so it bounds a stalled stream without limiting total transfer
-            time. Defaults to the request timeout; pass `0` to disable.
+        :param stream_idle_timeout: Ignored — the sync client cannot
+            interrupt a blocking read. A stalled streamed read is bounded by
+            a transport-wide idle read timeout instead (60 seconds), which
+            resets on every chunk. (`AsyncSandbox.files.read` honors this
+            parameter.)
 
         :return: File content as a `FileStreamReader`
         """
@@ -217,15 +204,24 @@ class Filesystem:
 
         if format == "stream":
             # Stream the response body instead of buffering it in memory.
-            request = self._envd_api.build_request(
+            # Through the pyqwest adapter a per-request timeout is a
+            # whole-request deadline that would kill long downloads, so it is
+            # sent only when the caller set `request_timeout` explicitly
+            # (making it the total-transfer deadline). A stalled stream is
+            # instead bounded by the streaming transport's idle read timeout
+            # (see `get_envd_transport`), which resets on every chunk.
+            stream_timeout = ConnectionConfig._get_request_timeout(
+                None, request_timeout
+            )
+            request = self._envd_api_streaming.build_request(
                 "GET",
                 ENVD_API_FILES_ROUTE,
                 params=params,
                 headers=headers,
-                timeout=timeout,
+                timeout=stream_timeout,
             )
             try:
-                r = self._envd_api.send(request, stream=True)
+                r = self._envd_api_streaming.send(request, stream=True)
             except httpx.RemoteProtocolError as e:
                 raise handle_envd_api_transport_exception_with_health(e, self._envd_api)
 
@@ -233,15 +229,6 @@ class Filesystem:
             if err:
                 r.close()
                 raise err
-
-            # The request timeout bounds only the initial handshake; httpx's
-            # per-chunk `read` timeout becomes the idle-read timeout for the body
-            # (defaults to the request timeout). The timeout dict is shared by
-            # reference with the transport and read again when iteration starts.
-            idle_timeout = (
-                timeout if stream_idle_timeout is None else stream_idle_timeout
-            )
-            request.extensions.get("timeout", {})["read"] = idle_timeout or None
 
             return FileStreamReader(r)
 
@@ -285,7 +272,7 @@ class Filesystem:
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request in **seconds**
         :param gzip: Use gzip compression for the upload. Implies the `application/octet-stream` upload. Requires envd 0.5.7 or later — when not supported, the upload falls back to uncompressed `multipart/form-data`.
-        :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `None`, which uses octet-stream when `data` is a file-like object (so streamed uploads aren't buffered) and `multipart/form-data` otherwise. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`.
+        :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `None`, which uses octet-stream when `data` is a file-like object (so streamed uploads aren't buffered) and `multipart/form-data` otherwise. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`, which reads text-mode file-like data into memory (httpx only streams binary file objects in a multipart body).
         :param metadata: User-defined metadata to persist on the uploaded file as extended attributes. Keys are lowercased by the sandbox; invalid keys or values raise an `InvalidArgumentException`. Requires envd 0.6.2 or later.
 
         :return: Information about the written file
@@ -325,7 +312,7 @@ class Filesystem:
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request
         :param gzip: Use gzip compression for the upload. Implies the `application/octet-stream` upload. Requires envd 0.5.7 or later — when not supported, the upload falls back to uncompressed `multipart/form-data`.
-        :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `None`, which uses octet-stream when any entry is a file-like object (so streamed uploads aren't buffered) and `multipart/form-data` otherwise. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`.
+        :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `None`, which uses octet-stream when any entry is a file-like object (so streamed uploads aren't buffered) and `multipart/form-data` otherwise. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`, which reads text-mode file-like data into memory (httpx only streams binary file objects in a multipart body).
         :param metadata: User-defined metadata to persist on each uploaded file as extended attributes; the same map is applied to every file. Keys are lowercased by the sandbox; invalid keys or values raise an `InvalidArgumentException`. Requires envd 0.6.2 or later.
         :return: Information about the written files
         """
@@ -359,9 +346,12 @@ class Filesystem:
         # requesting gzip implies it when envd supports it.
         use_octet_stream = (use_octet_stream or gzip) and supports_octet_stream
 
-        # Each chunk send is bounded by the request timeout (httpx applies it
-        # per write); a stalled upload the per-write timeout can't observe is
-        # bounded server-side (envd's per-read idle timeout, envd >= 0.6.7).
+        # A buffered upload is bounded by the request timeout as a
+        # whole-request deadline, matching the JS SDK. A streamed (file-like)
+        # upload carries no client-side timeout — a deadline would kill any
+        # transfer outlasting it, and a stalled producer is the caller's own
+        # code — so a stuck streamed upload is bounded server-side (envd's
+        # per-read idle timeout, envd >= 0.6.7), also matching the JS SDK.
         upload_timeout = self._connection_config.get_request_timeout(request_timeout)
 
         # Metadata is sent as request-scoped X-Metadata-* headers, so the same
@@ -382,13 +372,14 @@ class Filesystem:
                 if gzip:
                     headers["Content-Encoding"] = "gzip"
 
+                is_streamed = not isinstance(file_data, (str, bytes))
                 try:
                     r = self._envd_api.post(
                         ENVD_API_FILES_ROUTE,
                         content=to_upload_body(file_data, gzip),
                         headers=headers,
                         params=params,
-                        timeout=upload_timeout,
+                        timeout=None if is_streamed else upload_timeout,
                     )
                 except httpx.RemoteProtocolError as e:
                     raise handle_envd_api_transport_exception_with_health(
@@ -425,7 +416,13 @@ class Filesystem:
                     files=httpx_files,
                     params=params,
                     headers=extra_headers,
-                    timeout=upload_timeout,
+                    # Only a streamed entry drops the deadline: httpx
+                    # forwards binary `IOBase` entries in chunks, while text
+                    # file-like data was buffered by `_to_httpx_file` (httpx
+                    # rejects text-mode objects in multipart).
+                    timeout=(
+                        None if multipart_body_is_streamed(files) else upload_timeout
+                    ),
                 )
             except httpx.RemoteProtocolError as e:
                 raise handle_envd_api_transport_exception_with_health(e, self._envd_api)

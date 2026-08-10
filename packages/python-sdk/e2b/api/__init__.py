@@ -7,7 +7,7 @@ from types import TracebackType
 from typing import NamedTuple, Optional, Protocol, Tuple, Union
 
 import httpx
-from httpx import AsyncBaseTransport, BaseTransport, Limits, Timeout
+from httpx import AsyncBaseTransport, BaseTransport, Timeout
 from pyqwest import Proxy
 
 from e2b.api.client.client import AuthenticatedClient
@@ -61,19 +61,14 @@ def make_async_logging_event_hooks(log: Optional[logging.Logger]) -> dict:
     return {"request": [on_request], "response": [on_response]}
 
 
-limits = Limits(
-    max_keepalive_connections=int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20"),
-    max_connections=int(os.getenv("E2B_MAX_CONNECTIONS") or "2000"),
-    keepalive_expiry=int(os.getenv("E2B_KEEPALIVE_EXPIRY") or "300"),
-)
-
 connection_retries = int(os.getenv("E2B_CONNECTION_RETRIES") or "3")
 
-# Mirror the httpx pool tuning above with pyqwest's equivalents for the REST
-# API transports. `pool_max_idle_per_host` is per host rather than httpx's
-# global idle cap, but API traffic goes to a single host, so the values map
-# directly; reqwest has no counterpart to `E2B_MAX_CONNECTIONS` (it does not
-# cap concurrent connections).
+# Pool tuning for the pyqwest transports, shared by the REST API, envd RPC,
+# and envd HTTP API stacks. `pool_max_idle_per_host` is per host rather than
+# the global idle cap the httpx transports took, which suits both: API traffic
+# goes to a single host and each sandbox is its own host. `E2B_MAX_CONNECTIONS`
+# has no counterpart left — reqwest does not cap concurrent connections — so it
+# is no longer read.
 pool_idle_timeout = float(os.getenv("E2B_KEEPALIVE_EXPIRY") or "300")
 pool_max_idle_per_host = int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20")
 
@@ -109,9 +104,7 @@ def proxy_to_config(proxy: Optional[ProxyTypes]) -> Optional[ProxyConfig]:
         return ProxyConfig(str(proxy))
     if isinstance(proxy, httpx.Proxy):
         if proxy.ssl_context is not None:
-            raise InvalidArgumentException(
-                "E2B API calls don't support httpx.Proxy ssl_context"
-            )
+            raise InvalidArgumentException("httpx.Proxy ssl_context is not supported")
         # httpx.Proxy splits userinfo out of the URL into `.auth`; pyqwest
         # takes the credentials the same way, so they pass straight through.
         return ProxyConfig(
@@ -120,8 +113,8 @@ def proxy_to_config(proxy: Optional[ProxyTypes]) -> Optional[ProxyConfig]:
             headers=tuple(proxy.headers.items()),
         )
     raise InvalidArgumentException(
-        "E2B API calls support only URL-string, httpx.URL, and httpx.Proxy "
-        'proxies, e.g. proxy="http://user:pass@localhost:8030"'
+        "Only URL-string, httpx.URL, and httpx.Proxy proxies are supported, "
+        'e.g. proxy="http://user:pass@localhost:8030"'
     )
 
 

@@ -529,8 +529,8 @@ class AsyncVolume:
                 return await asyncio.wait_for(awaitable, stream_idle_timeout)
 
             async def stream_file() -> AsyncIterator[bytes]:
-                # `read_bounded` expires as a bare timeout; keep the httpx
-                # exception the streamed-read contract established (the
+                # `read_bounded` expires as a `wait_for` timeout; keep the
+                # httpx exception the streamed-read contract established (the
                 # transport-wide bound already surfaces as one).
                 try:
                     stream_cm = stream_client.get_async_httpx_client().stream(
@@ -562,9 +562,7 @@ class AsyncVolume:
                             yield chunk
                     finally:
                         await stream_cm.__aexit__(None, None, None)
-                # asyncio.TimeoutError is distinct from the builtin until 3.11,
-                # and `wait_for` raises whichever the running version defines.
-                except (TimeoutError, asyncio.TimeoutError) as e:
+                except asyncio.TimeoutError as e:
                     raise httpx.ReadTimeout(str(e)) from e
 
             return stream_file()

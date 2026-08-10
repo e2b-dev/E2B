@@ -2,124 +2,41 @@ import asyncio
 import base64
 import json
 import logging
-import ssl
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import cast
 
 import httpx
 import pytest
-from pyqwest import (
-    Proxy,
-    Request,
-    SyncRequest,
-    SyncTransport,
-    Transport,
-)
 from pyqwest.httpx import AsyncPyqwestTransport, PyqwestTransport
 
 import e2b.api.client_async as client_async
 import e2b.api.client_sync as client_sync
-from e2b.api import ProxyConfig, proxy_to_config
-from e2b.api.client_async import AsyncEnvdTransportWithLogger
 from e2b.api.client_async import get_api_client as get_async_api_client
+from e2b.api.client_async import get_envd_api as get_async_envd_api
 from e2b.api.client_async import get_envd_transport as get_async_envd_transport
 from e2b.api.client_async import get_transport as get_async_transport
-from e2b.api.client_sync import EnvdTransportWithLogger
 from e2b.api.client_sync import get_api_client as get_sync_api_client
+from e2b.api.client_sync import get_envd_api as get_sync_envd_api
 from e2b.api.client_sync import get_envd_transport as get_sync_envd_transport
 from e2b.api.client_sync import get_transport as get_sync_transport
-from e2b.connection_config import ConnectionConfig, ProxyTypes
-from e2b.exceptions import InvalidArgumentException
+from e2b.connection_config import ConnectionConfig
 
 
 def reset_sync_api_transports():
     client_sync._transports.clear()
+    client_sync._envd_transports.clear()
 
 
 def reset_async_api_transports():
     client_async._transports.clear()
-
-
-def reset_sync_envd_transports():
-    EnvdTransportWithLogger._thread_local.instances = {}
+    client_async._envd_transports.clear()
 
 
 def run_in_worker_thread(fn):
     with ThreadPoolExecutor(max_workers=1) as executor:
         return executor.submit(fn).result()
-
-
-def test_proxy_to_config_narrows_urls():
-    assert proxy_to_config(None) is None
-    assert proxy_to_config("http://127.0.0.1:9999") == ProxyConfig(
-        "http://127.0.0.1:9999"
-    )
-    assert proxy_to_config(httpx.URL("http://127.0.0.1:9999")) == ProxyConfig(
-        "http://127.0.0.1:9999"
-    )
-    # Guards callers that ignore the type hint.
-    with pytest.raises(InvalidArgumentException, match="URL-string"):
-        proxy_to_config(cast(ProxyTypes, object()))
-
-
-def test_proxy_to_config_converts_httpx_proxy():
-    # Everything pyqwest's Proxy can express carries over: the URL, the
-    # credentials httpx.Proxy splits off the URL, and headers for the proxy.
-    assert proxy_to_config(httpx.Proxy("http://127.0.0.1:9999")) == ProxyConfig(
-        "http://127.0.0.1:9999"
-    )
-    assert proxy_to_config(
-        httpx.Proxy("http://user:pass@127.0.0.1:9999")
-    ) == ProxyConfig("http://127.0.0.1:9999", auth=("user", "pass"))
-    assert proxy_to_config(
-        httpx.Proxy("http://127.0.0.1:9999", auth=("user@x", "p@ss"))
-    ) == ProxyConfig("http://127.0.0.1:9999", auth=("user@x", "p@ss"))
-    assert proxy_to_config(
-        httpx.Proxy("http://127.0.0.1:9999", headers={"X-Auth": "t"})
-    ) == ProxyConfig("http://127.0.0.1:9999", headers=(("x-auth", "t"),))
-
-    # A per-proxy TLS context has no pyqwest counterpart; rejected rather than
-    # silently dropped.
-    with pytest.raises(InvalidArgumentException, match="ssl_context"):
-        proxy_to_config(
-            httpx.Proxy(
-                "https://127.0.0.1:9999", ssl_context=ssl.create_default_context()
-            )
-        )
-
-
-def test_proxy_config_builds_a_pyqwest_proxy():
-    config = ProxyConfig(
-        "http://127.0.0.1:9999", auth=("user", "pass"), headers=(("x-auth", "t"),)
-    )
-    assert isinstance(config.to_pyqwest(), Proxy)
-    # Equal configs are one cache key, even though the Proxy objects they
-    # build compare by identity.
-    assert config == ProxyConfig(
-        "http://127.0.0.1:9999", auth=("user", "pass"), headers=(("x-auth", "t"),)
-    )
-    assert config.to_pyqwest() != config.to_pyqwest()
-
-
-def test_connection_retry_policy_retries_only_connection_errors():
-    # The inner transport is never invoked by should_retry_response.
-    sync_policy = client_sync.ConnectionRetryTransport(cast(SyncTransport, object()))
-    async_policy = client_async.ConnectionRetryTransport(cast(Transport, object()))
-    sync_request = SyncRequest("GET", "https://example.com")
-    async_request = Request("GET", "https://example.com")
-
-    assert sync_policy.should_retry_response(sync_request, ConnectionError("refused"))
-    # TimeoutError is an OSError but not a ConnectionError: the request
-    # may have been written, so it must not be replayed.
-    assert not sync_policy.should_retry_response(sync_request, TimeoutError())
-    assert not sync_policy.should_retry_response(sync_request, RuntimeError())
-
-    assert async_policy.should_retry_response(async_request, ConnectionError("refused"))
-    assert not async_policy.should_retry_response(async_request, TimeoutError())
-    assert not async_policy.should_retry_response(async_request, RuntimeError())
 
 
 def test_sync_api_client_proxy_uses_explicit_transport(test_api_key):
@@ -197,26 +114,48 @@ def test_sync_api_client_request_timeout_zero_disables_timeout(test_api_key):
         reset_sync_api_transports()
 
 
-def test_sync_envd_transport_uses_separate_stack(test_api_key):
-    # envd file-transfer traffic stays on the httpx-native transport (its RPC
-    # migration is a separate change); only REST API calls go through pyqwest.
+def test_sync_envd_transports_keyed_by_streaming(test_api_key):
+    # The envd HTTP API pools are separate from the REST API pools, and the
+    # streaming variant (which carries the idle read timeout) is its own
+    # pool per proxy.
     reset_sync_api_transports()
-    reset_sync_envd_transports()
     config = ConnectionConfig(api_key=test_api_key)
 
     try:
         api_transport = get_sync_transport(config)
         envd_transport = get_sync_envd_transport(config)
+        streaming_transport = get_sync_envd_transport(config, for_streaming=True)
 
-        assert isinstance(api_transport, PyqwestTransport)
-        assert isinstance(envd_transport, httpx.HTTPTransport)
-        assert get_sync_transport(config) is api_transport
+        assert isinstance(envd_transport, PyqwestTransport)
+        assert envd_transport is not api_transport
+        assert streaming_transport is not envd_transport
         assert get_sync_envd_transport(config) is envd_transport
-        envd_pool = envd_transport._pool
-        assert envd_pool._http2 is True  # ty: ignore[possibly-missing-attribute]
+        assert (
+            get_sync_envd_transport(config, for_streaming=True) is streaming_transport
+        )
     finally:
         reset_sync_api_transports()
-        reset_sync_envd_transports()
+
+
+def test_sync_envd_api_client_wiring(test_api_key):
+    reset_sync_api_transports()
+    config = ConnectionConfig(api_key=test_api_key, access_token="tok")
+
+    client = get_sync_envd_api(config, "https://sandbox.e2b.app")
+    streaming = get_sync_envd_api(config, "https://sandbox.e2b.app", for_streaming=True)
+
+    try:
+        assert client.base_url == "https://sandbox.e2b.app"
+        assert client._transport is get_sync_envd_transport(config)
+        assert streaming._transport is get_sync_envd_transport(
+            config, for_streaming=True
+        )
+        for header, value in config.sandbox_headers.items():
+            assert client.headers[header] == value
+    finally:
+        client.close()
+        streaming.close()
+        reset_sync_api_transports()
 
 
 def test_sync_api_client_is_shared_across_threads(test_api_key):
@@ -236,23 +175,6 @@ def test_sync_api_client_is_shared_across_threads(test_api_key):
     finally:
         main_client.close()
         reset_sync_api_transports()
-
-
-def test_sync_envd_transport_cache_is_thread_local(test_api_key):
-    reset_sync_envd_transports()
-    config = ConnectionConfig(api_key=test_api_key)
-
-    try:
-        main_transport = get_sync_envd_transport(config)
-        thread_transport = run_in_worker_thread(lambda: get_sync_envd_transport(config))
-
-        assert main_transport is get_sync_envd_transport(config)
-        assert thread_transport is not main_transport
-        main_pool = main_transport._pool
-        assert main_pool._http2 is True  # ty: ignore[possibly-missing-attribute]
-        assert thread_transport._pool._http2 is True
-    finally:
-        reset_sync_envd_transports()
 
 
 @pytest.mark.asyncio
@@ -325,24 +247,41 @@ async def test_async_api_client_is_shared_across_loops(test_api_key):
 
 
 @pytest.mark.asyncio
-async def test_async_envd_transport_uses_separate_stack(test_api_key):
+async def test_async_envd_transports_keyed_by_streaming(test_api_key):
     reset_async_api_transports()
-    AsyncEnvdTransportWithLogger._instances.clear()
     config = ConnectionConfig(api_key=test_api_key)
 
     try:
         api_transport = get_async_transport(config)
         envd_transport = get_async_envd_transport(config)
+        streaming_transport = get_async_envd_transport(config, for_streaming=True)
 
-        assert isinstance(api_transport, AsyncPyqwestTransport)
-        assert isinstance(envd_transport, httpx.AsyncHTTPTransport)
-        assert get_async_transport(config) is api_transport
+        assert isinstance(envd_transport, AsyncPyqwestTransport)
+        assert envd_transport is not api_transport
+        assert streaming_transport is not envd_transport
         assert get_async_envd_transport(config) is envd_transport
-        envd_pool = envd_transport._pool
-        assert envd_pool._http2 is True  # ty: ignore[possibly-missing-attribute]
+        assert (
+            get_async_envd_transport(config, for_streaming=True) is streaming_transport
+        )
     finally:
         reset_async_api_transports()
-        AsyncEnvdTransportWithLogger._instances.clear()
+
+
+@pytest.mark.asyncio
+async def test_async_envd_api_client_wiring(test_api_key):
+    reset_async_api_transports()
+    config = ConnectionConfig(api_key=test_api_key, access_token="tok")
+
+    client = get_async_envd_api(config, "https://sandbox.e2b.app")
+
+    try:
+        assert client.base_url == "https://sandbox.e2b.app"
+        assert client._transport is get_async_envd_transport(config)
+        for header, value in config.sandbox_headers.items():
+            assert client.headers[header] == value
+    finally:
+        await client.aclose()
+        reset_async_api_transports()
 
 
 class _EchoHandler(BaseHTTPRequestHandler):
@@ -370,6 +309,16 @@ class _EchoHandler(BaseHTTPRequestHandler):
             self.wfile.flush()
             time.sleep(5)
             return
+        self.wfile.write(body)
+
+    def do_POST(self):
+        length = int(self.headers.get("Content-Length", 0))
+        received = self.rfile.read(length) if length else b""
+        body = json.dumps({"received": len(received)}).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
         self.wfile.write(body)
 
     def log_message(self, *args):
@@ -640,3 +589,24 @@ async def test_async_api_client_body_timeout_raises_httpx_read_timeout(
     finally:
         await httpx_client.aclose()
         reset_async_api_transports()
+
+
+def test_sync_transport_sends_multipart_bodies(test_api_key, echo_server):
+    # `files=` uploads (envd `files.write`) go out as httpx's MultipartStream,
+    # which implements both SyncByteStream and AsyncByteStream. The adapter's
+    # sync path used to match AsyncByteStream first and raise from inside the
+    # body iterator, surfacing as a WriteError mid-request; pyqwest 0.8 matches
+    # the sync case first, so the SDK no longer rewraps the stream.
+    reset_sync_api_transports()
+    config = ConnectionConfig(api_key=test_api_key)
+    client = httpx.Client(
+        base_url=echo_server, transport=client_sync.get_envd_transport(config)
+    )
+
+    try:
+        response = client.post("/files", files=[("file", ("a.txt", b"x" * 4096))])
+        assert response.status_code == 200
+        assert response.json()["received"] > 4096
+    finally:
+        client.close()
+        reset_sync_api_transports()
