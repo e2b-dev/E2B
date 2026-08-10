@@ -1,5 +1,7 @@
 import { afterEach, expect, test, vi } from 'vitest'
 
+import { runtime } from '../../src/utils'
+
 afterEach(() => {
   vi.restoreAllMocks()
   vi.resetModules()
@@ -91,32 +93,51 @@ test('uses a ProxyAgent dispatcher when a proxy is configured', async () => {
   expect(requests[0].init?.dispatcher).toBeInstanceOf(ProxyAgent)
 })
 
-test('caches envd fetchers per proxy and CA bundle', async () => {
+test('caches envd fetchers per proxy', async () => {
   const { createEnvdFetch, createEnvdRpcFetch } = await import(
     '../../src/envd/http2'
   )
 
   const plain = createEnvdFetch()
   const proxyA = createEnvdFetch({ proxy: 'http://127.0.0.1:8080' })
-  const trusting = createEnvdFetch({ caBundle: '/etc/ssl/ca.pem' })
 
   expect(createEnvdFetch()).toBe(plain)
   expect(createEnvdFetch({ proxy: 'http://127.0.0.1:8080' })).toBe(proxyA)
-  expect(createEnvdFetch({ caBundle: '/etc/ssl/ca.pem' })).toBe(trusting)
   expect(proxyA).not.toBe(plain)
-  expect(trusting).not.toBe(plain)
-  expect(trusting).not.toBe(proxyA)
 
   const rpcPlain = createEnvdRpcFetch()
   const rpcProxyA = createEnvdRpcFetch({ proxy: 'http://127.0.0.1:8080' })
-  const rpcTrusting = createEnvdRpcFetch({ caBundle: '/etc/ssl/ca.pem' })
 
   expect(createEnvdRpcFetch()).toBe(rpcPlain)
   expect(createEnvdRpcFetch({ proxy: 'http://127.0.0.1:8080' })).toBe(rpcProxyA)
-  expect(createEnvdRpcFetch({ caBundle: '/etc/ssl/ca.pem' })).toBe(rpcTrusting)
   expect(rpcProxyA).not.toBe(rpcPlain)
-  expect(rpcTrusting).not.toBe(rpcPlain)
 })
+
+// A CA bundle is Node-only: elsewhere the factory rejects it outright.
+test.skipIf(runtime !== 'node')(
+  'caches envd fetchers per CA bundle',
+  async () => {
+    const { createEnvdFetch, createEnvdRpcFetch } = await import(
+      '../../src/envd/http2'
+    )
+
+    const plain = createEnvdFetch()
+    const proxied = createEnvdFetch({ proxy: 'http://127.0.0.1:8080' })
+    const trusting = createEnvdFetch({ caBundle: '/etc/ssl/ca.pem' })
+
+    expect(createEnvdFetch({ caBundle: '/etc/ssl/ca.pem' })).toBe(trusting)
+    expect(trusting).not.toBe(plain)
+    expect(trusting).not.toBe(proxied)
+
+    const rpcPlain = createEnvdRpcFetch()
+    const rpcTrusting = createEnvdRpcFetch({ caBundle: '/etc/ssl/ca.pem' })
+
+    expect(createEnvdRpcFetch({ caBundle: '/etc/ssl/ca.pem' })).toBe(
+      rpcTrusting
+    )
+    expect(rpcTrusting).not.toBe(rpcPlain)
+  }
+)
 
 test('passes Request objects to undici as URL plus init', async () => {
   const requests: Array<{ input: RequestInfo | URL; init?: RequestInit }> = []

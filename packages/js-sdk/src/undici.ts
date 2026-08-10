@@ -115,6 +115,23 @@ function lateBoundGlobalFetch(): typeof fetch {
 }
 
 /**
+ * Reject a CA bundle in a runtime that cannot apply it. Only Node lets the SDK
+ * configure TLS trust per connection; failing here beats connecting with the
+ * default trust the option asked to extend and reporting an unrelated
+ * certificate error per request.
+ */
+export function assertCaBundleSupported(
+  currentRuntime: string,
+  caBundle: string | undefined
+): void {
+  if (caBundle && currentRuntime !== 'node') {
+    throw new Error(
+      `\`caBundle\` is only supported on Node, but the current runtime is ${currentRuntime}. Trust the CA through the runtime instead (e.g. the system certificate store).`
+    )
+  }
+}
+
+/**
  * Create a fetch for the given runtime. Outside Node it late-binds the global
  * fetch. On Node it lazily runs `build` on the first request and caches the
  * built fetcher; a failed build is not cached, so the next request retries
@@ -126,14 +143,7 @@ export function createRuntimeFetch(
   options: FetchTransportOpts = {}
 ): typeof fetch {
   if (currentRuntime !== 'node') {
-    if (options.caBundle) {
-      // Only Node lets the SDK configure TLS trust per connection; failing
-      // here beats connecting with the default trust the option asked to
-      // extend and reporting an unrelated certificate error per request.
-      throw new Error(
-        `\`caBundle\` is only supported on Node, but the current runtime is ${currentRuntime}. Trust the CA through the runtime instead (e.g. the system certificate store).`
-      )
-    }
+    assertCaBundleSupported(currentRuntime, options.caBundle)
 
     return lateBoundGlobalFetch()
   }

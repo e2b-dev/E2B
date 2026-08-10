@@ -3,10 +3,16 @@ import stream from 'node:stream'
 
 import { ApiClient, handleApiError, components } from '../api'
 import { buildRequestSignal } from '../connectionConfig'
-import { buildDispatchedFetch, type FetchTransportOpts } from '../undici'
+import {
+  assertCaBundleSupported,
+  buildDispatchedFetch,
+  loadUndici,
+  type FetchTransportOpts,
+} from '../undici'
 import { BuildError, FileUploadError, TemplateError } from '../errors'
 import { FILE_UPLOAD_TIMEOUT_MS } from './consts'
 import { LogEntry } from './logger'
+import { runtime } from '../utils'
 import { getBuildStepIndex, spoolTarArchive } from './utils'
 import {
   BuildStatusReason,
@@ -185,20 +191,24 @@ async function putFileStream(
   // Prefer undici's fetch: it honors the explicit Content-Length on stream
   // bodies on every runtime, while Deno's native fetch ignores the header and
   // falls back to chunked. Where undici isn't resolvable (e.g. bundled apps),
-  // it falls back to the global fetch — Node's and Bun's native fetch also
-  // honor Content-Length on stream bodies. The dispatcher carries the
-  // connection options; one origin connection is enough for a single upload,
-  // and the archive must not be capped by the API inflight limit it can hold
-  // for an hour, so this is its own dispatcher rather than the API one.
-  const fetchImpl = await buildDispatchedFetch({
-    connections: 1,
-    inflightLimit: 0,
-    // Presigned upload URLs are answered by object storage, and this path is
-    // already picky about framing (see the Content-Length note above), so it
-    // keeps the HTTP/1.1 undici used before it was given a dispatcher.
-    allowH2: false,
-    ...transport,
-  })
+  // fall back to the global fetch — Node's and Bun's native fetch also honor
+  // Content-Length on stream bodies. loadUndici tries undici 8 first and
+  // falls back to undici 7 where 8 doesn't import (Bun).
+  //
+  // A CA bundle is the one thing undici's default agent cannot express, so
+  // only then does the upload get a dispatcher of its own: one origin
+  // connection is enough for a single PUT, HTTP/1.1 like the default agent
+  // (object storage is picky about framing), and no inflight cap — an archive
+  // can hold its slot for an hour.
+  assertCaBundleSupported(runtime, transport?.caBundle)
+  const fetchImpl = transport?.caBundle
+    ? await buildDispatchedFetch({
+        connections: 1,
+        inflightLimit: 0,
+        allowH2: false,
+        ...transport,
+      })
+    : (((await loadUndici())?.fetch as typeof fetch | undefined) ?? fetch)
 
   return await fetchImpl(url, {
     method: 'PUT',

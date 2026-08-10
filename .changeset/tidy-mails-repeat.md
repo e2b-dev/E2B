@@ -27,6 +27,4 @@ trust was dropped without a word. Passing it now raises and points at
 
 In JS the option is Node-only — no other runtime lets the SDK configure TLS
 trust per connection — and setting it elsewhere raises instead of connecting
-with the trust it was meant to extend. The build-context upload now also goes
-through the SDK's dispatcher — still over HTTP/1.1, as it did before — so it
-honors `proxy` as well.
+with the trust it was meant to extend.

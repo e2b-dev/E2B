@@ -1,10 +1,16 @@
-import { describe, test, expect, beforeAll, afterAll } from 'vitest'
+import { describe, test, expect, beforeAll, afterAll, vi } from 'vitest'
 import { writeFile, mkdtemp, rm } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { createServer, type IncomingMessage, type Server } from 'http'
 import { AddressInfo } from 'net'
 import { uploadFile } from '../../src/template/buildApi'
+import { runtime } from '../../src/utils'
+
+// This suite uploads to its own HTTP server rather than mocking the network,
+// so it wants the real undici the SDK uses in production — not the
+// undici-unavailable fallback the shared setup installs for msw's sake.
+vi.unmock('../../src/undici')
 
 // Regression test for e2b-dev/e2b#1243 — uploadFile used to pass a Node
 // Readable directly to fetch, which made undici fall back to
@@ -74,4 +80,36 @@ describe('uploadFile transfer encoding', () => {
     // the storage backend reject the upload with 403 Forbidden.
     expect(capturedHeaders['content-type']).toBeUndefined()
   })
+
+  // A CA bundle is the one option that makes the upload build a dispatcher of
+  // its own, so the framing above has to survive that path too.
+  test.skipIf(runtime !== 'node')(
+    'keeps the framing when a CA bundle configures the dispatcher',
+    async () => {
+      const caBundle = join(testDir, 'ca.pem')
+      await writeFile(
+        caBundle,
+        '-----BEGIN CERTIFICATE-----\nnot-a-real-certificate\n-----END CERTIFICATE-----\n'
+      )
+
+      await uploadFile(
+        {
+          fileName: '*.txt',
+          fileContextPath: testDir,
+          url: baseUrl,
+          ignorePatterns: [],
+          resolveSymlinks: false,
+          gzip: true,
+          transport: { caBundle },
+        },
+        undefined
+      )
+
+      const contentLength = Number(capturedHeaders['content-length'])
+      expect(contentLength).toBeGreaterThan(0)
+      expect(contentLength).toBe(capturedBodyLength)
+      expect(capturedHeaders['transfer-encoding']).toBeUndefined()
+      expect(capturedHeaders['content-type']).toBeUndefined()
+    }
+  )
 })
