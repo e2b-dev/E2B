@@ -17,3 +17,10 @@ stream is by default bounded by a transport-wide idle read timeout of
 per read (including `0` to disable); the sync client ignores it — it cannot
 interrupt a blocking read. Passing `request_timeout` to a streamed read now
 bounds the whole transfer rather than individual socket operations.
+
+The same whole-transfer semantics apply to non-streamed operations:
+`read_file(format="text"/"bytes")` and uploads are bounded by
+`request_timeout` as a total deadline (default 1 hour for file content
+operations), where the previous transports bounded each socket operation
+and left total duration unbounded. Pass a larger `request_timeout` (or `0`
+to disable) for very large transfers on slow links.
