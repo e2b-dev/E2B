@@ -25,6 +25,13 @@ Timeout semantics through the adapter:
   whole-request deadline, and a streamed (file-like) upload carries no
   client-side timeout (a stalled one is bounded server-side by envd's idle
   read timeout) — both matching the JS SDK.
+- Non-streamed reads (`files.read()` as text or bytes) and buffered uploads
+  are bounded by `request_timeout` for the **whole transfer** (default
+  60 seconds), where the previous transport bounded each socket operation
+  and left total duration unbounded. Reading or writing a file too large to
+  transfer inside the deadline now raises `httpx.ReadTimeout` — pass a
+  larger `request_timeout` (or `0` to disable), or use
+  `format="stream"`/file-like data, for large transfers.
 
 `E2B_MAX_CONNECTIONS` is no longer read: it configured httpx's global
 connection cap, and the last transport that took one is gone (reqwest has no
