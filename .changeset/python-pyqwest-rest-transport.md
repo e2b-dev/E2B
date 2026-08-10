@@ -7,8 +7,14 @@ control plane) onto [`pyqwest`](https://pypi.org/project/pyqwest/) (Rust
 reqwest/hyper) via its httpx-compatible transport adapter, replacing the
 httpx-native `HTTPTransport`/`AsyncHTTPTransport`. The generated httpx client
 API is unchanged — only the transport underneath is swapped — so logging
-event hooks, per-request timeouts, headers, and redirect handling
-(`follow_redirects`, `response.history`) behave as before.
+event hooks, headers, and redirect handling (`follow_redirects`,
+`response.history`) behave as before.
+
+One timeout semantics change: through the adapter, `request_timeout` is a
+deadline for the whole API call, where the previous transports applied it to
+each phase (connect, read, write) separately — a slow request could exceed it
+in total. For the REST API's small JSON exchanges this tightening is what
+`request_timeout` reads as promising; `0` still disables it.
 
 Because pyqwest transports are thread-safe and loop-independent (I/O runs on
 a Rust runtime), the API connection pool is now shared process-wide per

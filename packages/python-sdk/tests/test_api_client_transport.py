@@ -376,9 +376,17 @@ class _EchoHandler(BaseHTTPRequestHandler):
         pass
 
 
+class _EchoServer(ThreadingHTTPServer):
+    # The concurrency tests open 32 connections at once. Windows resets
+    # connections that overflow the listen backlog (request_queue_size,
+    # default 5) instead of queueing them, which surfaces as a flaky
+    # "connection was forcibly closed" WriteError mid-test.
+    request_queue_size = 64
+
+
 @pytest.fixture
 def echo_server():
-    server = ThreadingHTTPServer(("127.0.0.1", 0), _EchoHandler)
+    server = _EchoServer(("127.0.0.1", 0), _EchoHandler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
