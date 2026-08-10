@@ -20,7 +20,7 @@ dependencies = [
     "dockerfile-parse>=2.0.1,<3",
     "rich>=14.0.0",
     "connectrpc>=0.11.1,<0.12",
-    "pyqwest>=0.7.0,<0.8",
+    "pyqwest>=0.9.0,<0.10",
 ]
 
 [project.urls]
