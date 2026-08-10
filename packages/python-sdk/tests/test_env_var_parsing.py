@@ -1,5 +1,5 @@
 """Numeric E2B_* env vars are parsed at import time; an empty-string value
-(e.g. `E2B_MAX_CONNECTIONS=` in a dotenv file) must fall back to the default
+(e.g. `E2B_KEEPALIVE_EXPIRY=` in a dotenv file) must fall back to the default
 instead of raising ValueError when the module is imported."""
 
 import importlib
@@ -9,7 +9,6 @@ import e2b.api
 _ENV_VARS = (
     "E2B_KEEPALIVE_EXPIRY",
     "E2B_MAX_KEEPALIVE_CONNECTIONS",
-    "E2B_MAX_CONNECTIONS",
     "E2B_CONNECTION_RETRIES",
 )
 
@@ -26,9 +25,6 @@ def test_empty_env_vars_fall_back_to_defaults(monkeypatch):
         assert api.pool_idle_timeout == 300
         assert api.pool_max_idle_per_host == 20
         assert api.connection_retries == 3
-        assert api.limits.max_keepalive_connections == 20
-        assert api.limits.max_connections == 2000
-        assert api.limits.keepalive_expiry == 300
     finally:
         monkeypatch.undo()
         _reload()

@@ -44,6 +44,7 @@ from e2b.sandbox.filesystem.filesystem import (
     WriteEntry,
     WriteInfo,
     _to_httpx_file,
+    multipart_body_is_streamed,
     map_entry_info,
     map_file_type,
     metadata_to_headers,
@@ -415,9 +416,12 @@ class Filesystem:
                     files=httpx_files,
                     params=params,
                     headers=extra_headers,
-                    # A multipart body with a file-like entry is streamed too
-                    # (httpx forwards `IOBase` entries in chunks).
-                    timeout=None if has_streamable_data else upload_timeout,
+                    # Only a streamed entry drops the deadline; httpx forwards
+                    # binary `IOBase` entries in chunks, while text file-like
+                    # data was already buffered by `_to_httpx_file`.
+                    timeout=(
+                        None if multipart_body_is_streamed(files) else upload_timeout
+                    ),
                 )
             except httpx.RemoteProtocolError as e:
                 raise handle_envd_api_transport_exception_with_health(e, self._envd_api)

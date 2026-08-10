@@ -25,3 +25,8 @@ Timeout semantics through the adapter:
   whole-request deadline, and a streamed (file-like) upload carries no
   client-side timeout (a stalled one is bounded server-side by envd's idle
   read timeout) — both matching the JS SDK.
+
+`E2B_MAX_CONNECTIONS` is no longer read: it configured httpx's global
+connection cap, and the last transport that took one is gone (reqwest has no
+counterpart — it does not cap concurrent connections). `E2B_KEEPALIVE_EXPIRY`
+and `E2B_MAX_KEEPALIVE_CONNECTIONS` keep tuning the pools.

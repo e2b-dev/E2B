@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from io import IOBase, TextIOBase
-from typing import IO, AsyncIterator, Dict, Iterator, Optional, Union, TypedDict
+from typing import IO, AsyncIterator, Dict, Iterator, List, Optional, Union, TypedDict
 
 import httpx
 
@@ -279,6 +279,20 @@ def _to_httpx_file(file_path: str, file_data: Union[str, bytes, IO]):
         return ("file", (file_path, file_data))
     else:
         raise InvalidArgumentException(f"Unsupported data type for file {file_path}")
+
+
+def multipart_body_is_streamed(files: List[WriteEntry]) -> bool:
+    """Whether the multipart body built from ``files`` streams any entry.
+
+    Only binary file-like data is handed to httpx as a stream:
+    :func:`_to_httpx_file` reads text file-like data into memory first (httpx
+    multipart needs a length for it), so those uploads stay bounded by the
+    request timeout like ``str``/``bytes`` ones. Compare ``to_upload_body``,
+    which streams both on the octet-stream path."""
+    return any(
+        isinstance(file["data"], IOBase) and not isinstance(file["data"], TextIOBase)
+        for file in files
+    )
 
 
 def to_upload_body(
