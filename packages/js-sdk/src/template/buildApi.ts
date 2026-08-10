@@ -193,6 +193,10 @@ async function putFileStream(
   const fetchImpl = await buildDispatchedFetch({
     connections: 1,
     inflightLimit: 0,
+    // Presigned upload URLs are answered by object storage, and this path is
+    // already picky about framing (see the Content-Length note above), so it
+    // keeps the HTTP/1.1 undici used before it was given a dispatcher.
+    allowH2: false,
     ...transport,
   })
 
