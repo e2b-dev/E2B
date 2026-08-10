@@ -83,6 +83,7 @@ class Filesystem:
         envd_api_url: str,
         envd_version: Version,
         connection_config: ConnectionConfig,
+        envd_api: httpx.Client,
     ) -> None:
         self._envd_api_url = envd_api_url
         self._envd_version = envd_version
@@ -92,10 +93,11 @@ class Filesystem:
             envd_api_url,
             connection_config,
         )
-        # Like the RPC client, the pyqwest transports underneath are
-        # thread-safe, so one client (and its streaming sibling, whose
-        # transport carries the idle read timeout) serves all threads.
-        self._envd_api = get_envd_api(connection_config, envd_api_url)
+        self._envd_api = envd_api
+        # Streamed downloads default to a sibling client whose transport
+        # carries the idle read timeout (see `get_envd_transport`). Like the
+        # RPC client, the pyqwest transports underneath are thread-safe, so
+        # one client serves all threads.
         self._envd_api_streaming = get_envd_api(
             connection_config, envd_api_url, for_streaming=True
         )

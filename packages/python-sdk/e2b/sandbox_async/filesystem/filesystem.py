@@ -94,17 +94,16 @@ class Filesystem:
         self._envd_api_url = envd_api_url
         self._envd_version = envd_version
         self._connection_config = connection_config
+        self._rpc = create_rpc_client(
+            filesystem_connect.FilesystemClient,
+            envd_api_url,
+            connection_config,
+        )
         self._envd_api = envd_api
         # Streamed downloads default to a sibling client whose transport
         # carries the idle read timeout (see `get_envd_transport`).
         self._envd_api_streaming = get_envd_api(
             connection_config, envd_api_url, for_streaming=True
-        )
-
-        self._rpc = create_rpc_client(
-            filesystem_connect.FilesystemClient,
-            envd_api_url,
-            connection_config,
         )
 
     @overload
