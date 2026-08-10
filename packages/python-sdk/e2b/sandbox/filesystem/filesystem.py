@@ -274,6 +274,10 @@ def _to_httpx_file(file_path: str, file_data: Union[str, bytes, IO]):
     if isinstance(file_data, (str, bytes)):
         return ("file", (file_path, file_data))
     elif isinstance(file_data, TextIOBase):
+        # httpx raises TypeError for text-mode objects in a multipart field, so
+        # reading it here is what lets the multipart path accept one at all —
+        # at the cost of buffering. The octet-stream path streams it instead,
+        # which is why a file-like entry defaults to that path.
         return ("file", (file_path, file_data.read()))
     elif isinstance(file_data, IOBase):
         return ("file", (file_path, file_data))
@@ -285,10 +289,12 @@ def multipart_body_is_streamed(files: List[WriteEntry]) -> bool:
     """Whether the multipart body built from ``files`` streams any entry.
 
     Only binary file-like data is handed to httpx as a stream:
-    :func:`_to_httpx_file` reads text file-like data into memory first (httpx
-    multipart needs a length for it), so those uploads stay bounded by the
-    request timeout like ``str``/``bytes`` ones. Compare ``to_upload_body``,
-    which streams both on the octet-stream path."""
+    :func:`_to_httpx_file` reads text file-like data into memory first, because
+    httpx rejects text-mode objects in a multipart field ("Multipart file
+    uploads must be opened in binary mode"). Those uploads therefore stay
+    bounded by the request timeout, like ``str``/``bytes`` ones. Compare
+    ``to_upload_body``, which streams text and binary alike on the
+    octet-stream path (``iter_io_chunks`` encodes the chunks)."""
     return any(
         isinstance(file["data"], IOBase) and not isinstance(file["data"], TextIOBase)
         for file in files
