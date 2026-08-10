@@ -1,4 +1,4 @@
-from typing import Dict, Iterator, Optional, Tuple, Union, cast
+from typing import Dict, Optional, Tuple, Union
 
 import httpx
 import threading
@@ -25,54 +25,6 @@ def get_api_client(config: ConnectionConfig, **kwargs) -> ApiClient:
     return ApiClient(config, transport=get_transport(config), **kwargs)
 
 
-class ApiPyqwestTransport(PyqwestTransport):
-    """The SDK's tweaks on the stock pyqwest httpx adapter.
-
-    Strip the ``Host`` header httpx adds to every request: hyper derives
-    HTTP/1 ``Host`` and HTTP/2 ``:authority`` from the URL itself, and
-    forwarding an explicit ``host`` header on an HTTP/2 connection makes the
-    E2B API edge reset the stream with PROTOCOL_ERROR. (Custom ``Host``
-    overrides are therefore not honored, matching hyper's URL-derived
-    behavior.)
-
-    Re-raise pyqwest's timeouts (the builtin ``TimeoutError``) as
-    ``httpx.ReadTimeout``, preserving the ``httpx.TimeoutException`` contract
-    the httpx-native transport gave callers."""
-
-    def handle_request(self, request: httpx.Request) -> httpx.Response:
-        if "host" in request.headers:
-            del request.headers["host"]
-        try:
-            response = super().handle_request(request)
-        except TimeoutError as e:
-            raise httpx.ReadTimeout(str(e), request=request) from e
-        # The adapter returns once the response head arrives and httpx reads
-        # the body afterwards, so a body that stalls times out beyond the
-        # try above — the mapping has to follow the stream.
-        response.stream = ReadTimeoutByteStream(
-            cast(httpx.SyncByteStream, response.stream), request
-        )
-        return response
-
-
-class ReadTimeoutByteStream(httpx.SyncByteStream):
-    """Maps a timeout while reading the response body to ``httpx.ReadTimeout``,
-    the way ``ApiPyqwestTransport`` maps one while awaiting the head."""
-
-    def __init__(self, stream: httpx.SyncByteStream, request: httpx.Request) -> None:
-        self._stream = stream
-        self._request = request
-
-    def __iter__(self) -> Iterator[bytes]:
-        try:
-            yield from self._stream
-        except TimeoutError as e:
-            raise httpx.ReadTimeout(str(e), request=self._request) from e
-
-    def close(self) -> None:
-        self._stream.close()
-
-
 class ConnectionRetryTransport(SyncRetryTransport):
     """Retry only failures establishing the connection, matching the
     connect-only ``retries`` of the httpx transport this replaced: pyqwest
@@ -91,10 +43,10 @@ _transport_lock = threading.Lock()
 # One transport (= one connection pool) per proxy; None is the direct pool.
 # pyqwest transports are thread-safe, so unlike the httpx envd transports
 # below, the cache is process-global rather than per-thread.
-_transports: Dict[Optional[ProxyConfig], "ApiPyqwestTransport"] = {}
+_transports: Dict[Optional[ProxyConfig], PyqwestTransport] = {}
 
 
-def get_transport(config: ConnectionConfig) -> "ApiPyqwestTransport":
+def get_transport(config: ConnectionConfig) -> PyqwestTransport:
     """The shared pyqwest-backed httpx transport for REST API calls. For TLS
     connections ALPN negotiates the HTTP version (HTTP/2 against the E2B
     API), like the http2-enabled httpx transport this replaced.
@@ -107,13 +59,16 @@ def get_transport(config: ConnectionConfig) -> "ApiPyqwestTransport":
     with _transport_lock:
         transport = _transports.get(proxy)
         if transport is None:
-            transport = ApiPyqwestTransport(
+            transport = PyqwestTransport(
                 ConnectionRetryTransport(
                     SyncHTTPTransport(
                         tls_include_system_certs=True,
                         proxy=proxy.to_pyqwest() if proxy is not None else None,
                         pool_idle_timeout=pool_idle_timeout,
                         pool_max_idle_per_host=pool_max_idle_per_host,
+                        # Redirects belong to the httpx client above (which the
+                        # generated clients leave off), not to reqwest.
+                        follow_redirects=False,
                     ),
                     max_retries=connection_retries,
                 )

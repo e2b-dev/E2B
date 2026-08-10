@@ -12,12 +12,9 @@ from typing import cast
 import httpx
 import pytest
 from pyqwest import (
-    Headers,
     Proxy,
     Request,
-    Response,
     SyncRequest,
-    SyncResponse,
     SyncTransport,
     Transport,
 )
@@ -123,46 +120,6 @@ def test_connection_retry_policy_retries_only_connection_errors():
     assert async_policy.should_retry_response(async_request, ConnectionError("refused"))
     assert not async_policy.should_retry_response(async_request, TimeoutError())
     assert not async_policy.should_retry_response(async_request, RuntimeError())
-
-
-def test_sync_api_transport_strips_host_header():
-    # Forwarding httpx's auto-added Host header on an HTTP/2 connection makes
-    # the E2B API edge reset the stream with PROTOCOL_ERROR; hyper derives
-    # Host/:authority from the URL instead.
-    captured = {}
-
-    class FakeInner:
-        def execute_sync(self, request):
-            captured["headers"] = dict(request.headers.items())
-            return SyncResponse(status=200, headers=Headers(()), content=b"")
-
-    transport = client_sync.ApiPyqwestTransport(FakeInner())
-    request = httpx.Request("GET", "https://api.example.com/health")
-    assert "host" in request.headers
-
-    response = transport.handle_request(request)
-
-    assert response.status_code == 200
-    assert "host" not in captured["headers"]
-
-
-@pytest.mark.asyncio
-async def test_async_api_transport_strips_host_header():
-    captured = {}
-
-    class FakeInner:
-        async def execute(self, request):
-            captured["headers"] = dict(request.headers.items())
-            return Response(status=200, headers=Headers(()), content=b"")
-
-    transport = client_async.AsyncApiPyqwestTransport(FakeInner())
-    request = httpx.Request("GET", "https://api.example.com/health")
-    assert "host" in request.headers
-
-    response = await transport.handle_async_request(request)
-
-    assert response.status_code == 200
-    assert "host" not in captured["headers"]
 
 
 def test_sync_api_client_proxy_uses_explicit_transport(test_api_key):
@@ -390,12 +347,19 @@ async def test_async_envd_transport_uses_separate_stack(test_api_key):
 
 class _EchoHandler(BaseHTTPRequestHandler):
     """Answers every GET with a JSON echo of the request headers; a path
-    starting with ``/slow`` sleeps 5 seconds first, and one starting with
-    ``/stall`` answers the head and then never sends the body."""
+    starting with ``/slow`` sleeps 5 seconds first, one starting with
+    ``/stall`` answers the head and then never sends the body, and one starting
+    with ``/redirect`` answers 302 pointing at ``/sandboxes``."""
 
     def do_GET(self):
         if self.path.startswith("/slow"):
             time.sleep(5)
+        if self.path.startswith("/redirect"):
+            self.send_response(302)
+            self.send_header("Location", "/sandboxes")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
         headers = {k.lower(): v for k, v in self.headers.items()}
         body = json.dumps({"path": self.path, "headers": headers}).encode()
         self.send_response(200)
@@ -549,6 +513,54 @@ async def test_async_api_client_round_trips_through_pyqwest(test_api_key, echo_s
         assert echoed["path"] == "/sandboxes"
         assert echoed["headers"]["x-api-key"] == test_api_key
         assert echoed["headers"]["package_version"]
+    finally:
+        await httpx_client.aclose()
+        reset_async_api_transports()
+
+
+def test_sync_api_client_leaves_redirects_to_httpx(test_api_key, echo_server):
+    # reqwest would otherwise follow redirects inside the transport, hiding them
+    # from httpx: the generated client asks for no redirect following, so a 302
+    # must surface as-is, and opting in must record the hop in `history`.
+    reset_sync_api_transports()
+    config = ConnectionConfig(api_key=test_api_key, api_url=echo_server)
+    api_client = get_sync_api_client(config)
+    httpx_client = api_client.get_httpx_client()
+
+    try:
+        assert httpx_client.follow_redirects is False
+        response = httpx_client.request("GET", "/redirect")
+        assert response.status_code == 302
+        assert response.headers["location"] == "/sandboxes"
+        assert response.history == []
+
+        followed = httpx_client.request("GET", "/redirect", follow_redirects=True)
+        assert followed.status_code == 200
+        assert followed.json()["path"] == "/sandboxes"
+        assert [r.status_code for r in followed.history] == [302]
+    finally:
+        httpx_client.close()
+        reset_sync_api_transports()
+
+
+@pytest.mark.asyncio
+async def test_async_api_client_leaves_redirects_to_httpx(test_api_key, echo_server):
+    reset_async_api_transports()
+    config = ConnectionConfig(api_key=test_api_key, api_url=echo_server)
+    api_client = get_async_api_client(config)
+    httpx_client = api_client.get_async_httpx_client()
+
+    try:
+        assert httpx_client.follow_redirects is False
+        response = await httpx_client.request("GET", "/redirect")
+        assert response.status_code == 302
+        assert response.headers["location"] == "/sandboxes"
+        assert response.history == []
+
+        followed = await httpx_client.request("GET", "/redirect", follow_redirects=True)
+        assert followed.status_code == 200
+        assert followed.json()["path"] == "/sandboxes"
+        assert [r.status_code for r in followed.history] == [302]
     finally:
         await httpx_client.aclose()
         reset_async_api_transports()
