@@ -1,9 +1,9 @@
 from typing import Callable, Dict, List, Literal, Optional, Union, overload
 
+import httpx
 from connectrpc.code import Code
 from connectrpc.errors import ConnectError
 from packaging.version import Version
-from e2b.api.client_sync import get_envd_api
 from e2b.connection_config import (
     ConnectionConfig,
     Username,
@@ -38,8 +38,8 @@ class Commands:
         envd_api_url: str,
         connection_config: ConnectionConfig,
         envd_version: Version,
+        envd_api: httpx.Client,
     ) -> None:
-        self._envd_api_url = envd_api_url
         self._connection_config = connection_config
         self._envd_version = envd_version
         self._rpc = create_rpc_client(
@@ -47,9 +47,7 @@ class Commands:
             envd_api_url,
             connection_config,
         )
-        # Like the RPC client, the pyqwest transport underneath is
-        # thread-safe, so one client serves all threads.
-        self._envd_api = get_envd_api(connection_config, envd_api_url)
+        self._envd_api = envd_api
 
     def _check_health(self) -> Optional[bool]:
         return check_sandbox_health(self._envd_api)

@@ -1,10 +1,9 @@
 """Client lifecycle in the sync sandbox modules: the httpx `envd_api`
 clients and the connectrpc RPC clients are both cheap stateless wrappers
-over shared, process-global pyqwest transports — built once per module and
-shared across threads."""
+over shared, process-global pyqwest transports — built once per sandbox and
+shared across the modules and across threads."""
 
 from concurrent.futures import ThreadPoolExecutor
-from types import SimpleNamespace
 from unittest.mock import Mock, sentinel
 
 import httpx
@@ -25,16 +24,23 @@ def run_in_worker_thread(fn):
         return executor.submit(fn).result()
 
 
-def test_sync_sandbox_envd_api_delegates_to_filesystem(monkeypatch, test_api_key):
+def test_sync_sandbox_shares_one_envd_api_across_modules(monkeypatch, test_api_key):
     config = ConnectionConfig(api_key=test_api_key)
     main_api = Mock(spec=httpx.Client)
-    filesystem = SimpleNamespace(_envd_api=main_api)
+    received = {}
+
+    def record(name):
+        def factory(*args, **kwargs):
+            received[name] = args[-1]
+            return object()
+
+        return factory
 
     monkeypatch.setattr(
-        sandbox_sync_main, "Filesystem", lambda *args, **kwargs: filesystem
+        sandbox_sync_main, "get_envd_api", lambda *_args, **_kwargs: main_api
     )
-    monkeypatch.setattr(sandbox_sync_main, "Commands", lambda *args, **kwargs: object())
-    monkeypatch.setattr(sandbox_sync_main, "Pty", lambda *args, **kwargs: object())
+    for module in ("Filesystem", "Commands", "Pty"):
+        monkeypatch.setattr(sandbox_sync_main, module, record(module))
     monkeypatch.setattr(sandbox_sync_main, "Git", lambda *args, **kwargs: object())
 
     sandbox = sandbox_sync_main.Sandbox(
@@ -47,7 +53,7 @@ def test_sync_sandbox_envd_api_delegates_to_filesystem(monkeypatch, test_api_key
     )
 
     assert sandbox._envd_api is main_api
-    assert sandbox._envd_api is sandbox.files._envd_api
+    assert received == {"Filesystem": main_api, "Commands": main_api, "Pty": main_api}
     assert not hasattr(sandbox, "_transport")
 
 
@@ -60,9 +66,7 @@ def test_sync_filesystem_clients_are_shared_across_threads(monkeypatch, test_api
     monkeypatch.setattr(
         filesystem_sync,
         "get_envd_api",
-        lambda *_args, **kwargs: streaming_api
-        if kwargs.get("for_streaming")
-        else shared_api,
+        lambda *_args, **_kwargs: streaming_api,
     )
     monkeypatch.setattr(
         filesystem_sync,
@@ -74,6 +78,7 @@ def test_sync_filesystem_clients_are_shared_across_threads(monkeypatch, test_api
         ENVD_API_URL,
         ENVD_VERSION,
         config,
+        shared_api,
     )
 
     assert fs._envd_api is shared_api
