@@ -1,5 +1,11 @@
 # e2b
 
+## 2.38.3
+
+### Patch Changes
+
+- cab27aa: Kill newly created sandboxes when MCP gateway startup fails. The failure now surfaces as `SandboxError` (JS) / `SandboxException` (Python) with a `Failed to start MCP gateway: <stderr>` message instead of a bare command exit error.
+
 ## 2.38.2
 
 ### Patch Changes
