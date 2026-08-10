@@ -51,10 +51,33 @@ export function transportCacheKey(options: FetchTransportOpts = {}): string {
 
 const PEM_CERTIFICATE_MARKER = '-----BEGIN CERTIFICATE-----'
 
+/** The parts of `node:tls` that say what is trusted by default. */
+type CaCertificateSource = {
+  rootCertificates: readonly string[]
+  // Node >= 22.15 only, and absent from @types/node 20.
+  getCACertificates?: (type: 'default') => string[]
+}
+
+/**
+ * The certificates the runtime itself would trust. `getCACertificates`
+ * reports the *effective* default — the bundled roots plus
+ * `NODE_EXTRA_CA_CERTS`, `--use-system-ca` and `tls.setDefaultCACertificates`
+ * — while `rootCertificates` is only the bundled subset, so older Node
+ * versions lose those additions.
+ *
+ * @internal
+ */
+export function defaultCaCertificates(
+  tls: CaCertificateSource
+): readonly string[] {
+  return tls.getCACertificates?.('default') ?? tls.rootCertificates
+}
+
 /**
  * The certificates a dispatcher trusts: the PEM bundle at `caBundle` on top of
- * the default roots, so a private CA is trusted in addition to the public ones
- * rather than instead of them.
+ * what the runtime trusts by default, so a private CA is trusted in addition
+ * to the public ones rather than instead of them (undici's `ca` replaces the
+ * trust store outright).
  *
  * Node only — `node:fs` and `node:tls` are imported at runtime so other
  * runtimes never resolve them.
@@ -62,7 +85,7 @@ const PEM_CERTIFICATE_MARKER = '-----BEGIN CERTIFICATE-----'
 async function loadCaCertificates(caBundle: string): Promise<string[]> {
   const [fs, tls] = await Promise.all([
     dynamicImport<typeof import('node:fs/promises')>('node:fs/promises'),
-    dynamicImport<typeof import('node:tls')>('node:tls'),
+    dynamicImport<CaCertificateSource>('node:tls'),
   ])
 
   let pem: string
@@ -80,7 +103,7 @@ async function loadCaCertificates(caBundle: string): Promise<string[]> {
     )
   }
 
-  return [...tls.rootCertificates, pem]
+  return [...defaultCaCertificates(tls), pem]
 }
 
 const UNDICI_8_MIN_NODE = '22.19.0'

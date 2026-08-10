@@ -1,6 +1,10 @@
 import { afterAll, beforeAll, expect, test, vi } from 'vitest'
 
-import { buildDispatchedFetch, type UndiciModule } from '../src/undici'
+import {
+  buildDispatchedFetch,
+  defaultCaCertificates,
+  type UndiciModule,
+} from '../src/undici'
 import { dynamicImport, runtime } from '../src/utils'
 
 // The `caBundle` option is Node-only: no other runtime lets the SDK configure
@@ -13,7 +17,7 @@ const CA_PEM =
   '-----BEGIN CERTIFICATE-----\nnot-a-real-certificate\n-----END CERTIFICATE-----\n'
 
 let fs: typeof import('node:fs')
-let rootCertificates: readonly string[]
+let defaultCertificates: readonly string[]
 let tempDir: string
 let caBundle: string
 
@@ -29,7 +33,7 @@ beforeAll(async () => {
     dynamicImport<typeof import('node:tls')>('node:tls'),
   ])
   fs = fsModule
-  rootCertificates = tls.rootCertificates
+  defaultCertificates = defaultCaCertificates(tls)
 
   tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'e2b-ca-'))
   caBundle = path.join(tempDir, 'ca.pem')
@@ -72,22 +76,27 @@ function fakeUndici(
   } as unknown as UndiciModule
 }
 
-nodeOnly('trusts the CA bundle on top of the default roots', async () => {
-  const agents: AgentOptions[] = []
+nodeOnly(
+  'trusts the CA bundle on top of the default certificates',
+  async () => {
+    const agents: AgentOptions[] = []
 
-  const fetcher = await buildDispatchedFetch({
-    connections: 1,
-    inflightLimit: 0,
-    caBundle,
-    loadUndici: async () => fakeUndici(agents),
-  })
-  await fetcher('https://api.example.test/sandboxes')
+    const fetcher = await buildDispatchedFetch({
+      connections: 1,
+      inflightLimit: 0,
+      caBundle,
+      loadUndici: async () => fakeUndici(agents),
+    })
+    await fetcher('https://api.example.test/sandboxes')
 
-  expect(agents).toHaveLength(1)
-  // The public roots stay trusted: the bundle adds a private CA rather than
-  // replacing the store, so connections to public hosts keep working.
-  expect(agents[0].connect?.ca).toEqual([...rootCertificates, CA_PEM])
-})
+    expect(agents).toHaveLength(1)
+    // The default trust stays in place — including what NODE_EXTRA_CA_CERTS and
+    // friends added, which `tls.rootCertificates` alone would drop: the bundle
+    // adds a private CA rather than replacing the store, so connections to
+    // public hosts keep working.
+    expect(agents[0].connect?.ca).toEqual([...defaultCertificates, CA_PEM])
+  }
+)
 
 nodeOnly('leaves the default trust alone without a CA bundle', async () => {
   const agents: AgentOptions[] = []
@@ -118,7 +127,7 @@ nodeOnly('trusts the CA bundle through a proxy tunnel', async () => {
   // A ProxyAgent builds its own `connect`, so the trust has to be configured
   // for the tunneled request to the origin — and for the proxy itself, in
   // case it is reached over HTTPS.
-  const trusted = [...rootCertificates, CA_PEM]
+  const trusted = [...defaultCertificates, CA_PEM]
   expect(proxyAgents[0].requestTls?.ca).toEqual(trusted)
   expect(proxyAgents[0].proxyTls?.ca).toEqual(trusted)
 })

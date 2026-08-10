@@ -7,6 +7,7 @@ import {
   assertCaBundleSupported,
   buildDispatchedFetch,
   loadUndici,
+  transportCacheKey,
   type FetchTransportOpts,
 } from '../undici'
 import { BuildError, FileUploadError, TemplateError } from '../errors'
@@ -181,6 +182,61 @@ export async function uploadFile(
   }
 }
 
+// One dispatcher per CA bundle for the life of the process, like the API and
+// envd fetchers: a build uploading several files would otherwise re-read the
+// bundle and leave an Agent behind per upload.
+const uploadFetchers = new Map<string, Promise<typeof fetch>>()
+
+/**
+ * The fetch a build-context upload goes out on.
+ *
+ * Prefer undici's fetch: it honors the explicit Content-Length on stream
+ * bodies on every runtime, while Deno's native fetch ignores the header and
+ * falls back to chunked. Where undici isn't resolvable (e.g. bundled apps),
+ * fall back to the global fetch — Node's and Bun's native fetch also honor
+ * Content-Length on stream bodies. loadUndici tries undici 8 first and falls
+ * back to undici 7 where 8 doesn't import (Bun).
+ *
+ * A CA bundle is the one thing undici's default agent cannot express, so only
+ * then does the upload get a dispatcher of its own: one origin connection is
+ * enough for a single PUT, HTTP/1.1 like the default agent (object storage is
+ * picky about framing), and no inflight cap — an archive can hold its slot for
+ * an hour.
+ */
+function uploadFetch(
+  transport: FetchTransportOpts | undefined
+): Promise<typeof fetch> {
+  assertCaBundleSupported(runtime, transport?.caBundle)
+
+  if (!transport?.caBundle) {
+    return loadUndici().then(
+      (undici) => (undici?.fetch as typeof fetch | undefined) ?? fetch
+    )
+  }
+
+  const key = transportCacheKey(transport)
+  const cached = uploadFetchers.get(key)
+  if (cached) {
+    return cached
+  }
+
+  const fetcher = buildDispatchedFetch({
+    connections: 1,
+    inflightLimit: 0,
+    allowH2: false,
+    ...transport,
+  })
+  uploadFetchers.set(key, fetcher)
+  // An unreadable bundle must not be replayed to every later upload.
+  fetcher.catch(() => {
+    if (uploadFetchers.get(key) === fetcher) {
+      uploadFetchers.delete(key)
+    }
+  })
+
+  return fetcher
+}
+
 async function putFileStream(
   url: string,
   filePath: string,
@@ -188,27 +244,7 @@ async function putFileStream(
   signal: AbortSignal | undefined,
   transport: FetchTransportOpts | undefined
 ): Promise<{ ok: boolean; statusText: string }> {
-  // Prefer undici's fetch: it honors the explicit Content-Length on stream
-  // bodies on every runtime, while Deno's native fetch ignores the header and
-  // falls back to chunked. Where undici isn't resolvable (e.g. bundled apps),
-  // fall back to the global fetch — Node's and Bun's native fetch also honor
-  // Content-Length on stream bodies. loadUndici tries undici 8 first and
-  // falls back to undici 7 where 8 doesn't import (Bun).
-  //
-  // A CA bundle is the one thing undici's default agent cannot express, so
-  // only then does the upload get a dispatcher of its own: one origin
-  // connection is enough for a single PUT, HTTP/1.1 like the default agent
-  // (object storage is picky about framing), and no inflight cap — an archive
-  // can hold its slot for an hour.
-  assertCaBundleSupported(runtime, transport?.caBundle)
-  const fetchImpl = transport?.caBundle
-    ? await buildDispatchedFetch({
-        connections: 1,
-        inflightLimit: 0,
-        allowH2: false,
-        ...transport,
-      })
-    : (((await loadUndici())?.fetch as typeof fetch | undefined) ?? fetch)
+  const fetchImpl = await uploadFetch(transport)
 
   return await fetchImpl(url, {
     method: 'PUT',
