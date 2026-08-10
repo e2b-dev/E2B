@@ -4,8 +4,10 @@ from types import TracebackType
 from typing import Callable, Optional, List, Union
 
 import httpx
+from pyqwest import HTTPTransport
+from pyqwest.httpx import AsyncPyqwestTransport
 
-from e2b.api import handle_api_exception
+from e2b.api import handle_api_exception, proxy_to_config
 from e2b.io_utils import aiter_io_chunks
 from e2b.api.client.api.templates import (
     post_v3_templates,
@@ -118,6 +120,7 @@ async def upload_file(
     upload_timeout = (
         request_timeout if request_timeout is not None else FILE_UPLOAD_TIMEOUT_SECONDS
     )
+    upload_proxy = proxy_to_config(getattr(api_client, "_proxy", None))
     try:
         tar_file = tar_file_stream(
             file_name, context_path, ignore_patterns, resolve_symlinks, gzip
@@ -125,16 +128,30 @@ async def upload_file(
         try:
             size = os.fstat(tar_file.fileno()).st_size
 
+            # Through the pyqwest adapter the upload timeout is a
+            # whole-request deadline for the entire transfer, not a per-write
+            # bound as with the httpx transport this replaced.
             async with httpx.AsyncClient(
                 timeout=httpx.Timeout(upload_timeout),
-                verify=api_client._verify_ssl,
                 follow_redirects=api_client._follow_redirects,
-                proxy=getattr(api_client, "_proxy", None),
-                http2=False,
+                transport=AsyncPyqwestTransport(
+                    HTTPTransport(
+                        tls_include_system_certs=True,
+                        proxy=(
+                            upload_proxy.to_pyqwest()
+                            if upload_proxy is not None
+                            else None
+                        ),
+                        # Redirects belong to the httpx client above, not to
+                        # reqwest.
+                        follow_redirects=False,
+                    )
+                ),
             ) as client:
                 # Stream the archive from disk via an async iterator. The
                 # explicit Content-Length suppresses chunked transfer
-                # encoding, which S3 presigned URLs reject.
+                # encoding, which S3 presigned URLs reject; reqwest keeps the
+                # Content-Length framing for the streamed body.
                 response = await client.put(
                     url,
                     content=aiter_io_chunks(tar_file),
