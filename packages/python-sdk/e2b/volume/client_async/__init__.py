@@ -3,6 +3,7 @@ from typing import Dict, Optional, Tuple
 
 import httpx
 from pyqwest import HTTPTransport
+from pyqwest.httpx import AsyncPyqwestTransport
 
 from e2b.api import (
     ProxyConfig,
@@ -12,7 +13,7 @@ from e2b.api import (
     pool_max_idle_per_host,
     proxy_to_config,
 )
-from e2b.api.client_async import AsyncApiPyqwestTransport, ConnectionRetryTransport
+from e2b.api.client_async import ConnectionRetryTransport
 from e2b.api.metadata import default_headers
 from e2b.exceptions import AuthenticationException
 from e2b.volume.client.client import AuthenticatedClient as AsyncVolumeApiClient
@@ -33,7 +34,7 @@ def get_streaming_api_client(
 
 
 def _api_client(
-    config: VolumeConnectionConfig, transport: AsyncApiPyqwestTransport, **kwargs
+    config: VolumeConnectionConfig, transport: AsyncPyqwestTransport, **kwargs
 ) -> AsyncVolumeApiClient:
     if config.access_token is None:
         raise AuthenticationException(
@@ -74,11 +75,11 @@ _transport_lock = threading.Lock()
 # httpx transport this replaced, the transport is not bound to an event loop
 # and the cache is process-global rather than per-loop.
 _transports: Dict[
-    Tuple[Optional[ProxyConfig], Optional[float]], AsyncApiPyqwestTransport
+    Tuple[Optional[ProxyConfig], Optional[float]], AsyncPyqwestTransport
 ] = {}
 
 
-def get_transport(config: VolumeConnectionConfig) -> AsyncApiPyqwestTransport:
+def get_transport(config: VolumeConnectionConfig) -> AsyncPyqwestTransport:
     """The shared pyqwest-backed httpx transport for volume content API calls.
 
     It carries no idle read bound: reqwest's read timer keeps running while a
@@ -92,7 +93,7 @@ def get_transport(config: VolumeConnectionConfig) -> AsyncApiPyqwestTransport:
 
 def get_streaming_transport(
     config: VolumeConnectionConfig,
-) -> AsyncApiPyqwestTransport:
+) -> AsyncPyqwestTransport:
     """The transport for streamed downloads, carrying ``READ_TIMEOUT`` as the
     idle bound on every read: it resets after each successful read, so it caps
     how long a streamed download may stall without limiting total transfer
@@ -105,13 +106,13 @@ def get_streaming_transport(
 
 def _transport(
     config: VolumeConnectionConfig, *, read_timeout: Optional[float]
-) -> AsyncApiPyqwestTransport:
+) -> AsyncPyqwestTransport:
     proxy = proxy_to_config(config.proxy)
     key = (proxy, read_timeout)
     with _transport_lock:
         transport = _transports.get(key)
         if transport is None:
-            transport = AsyncApiPyqwestTransport(
+            transport = AsyncPyqwestTransport(
                 ConnectionRetryTransport(
                     HTTPTransport(
                         tls_include_system_certs=True,
@@ -119,6 +120,9 @@ def _transport(
                         pool_idle_timeout=pool_idle_timeout,
                         pool_max_idle_per_host=pool_max_idle_per_host,
                         read_timeout=read_timeout,
+                        # Redirects belong to the httpx client above (which the
+                        # generated clients leave off), not to reqwest.
+                        follow_redirects=False,
                     ),
                     max_retries=connection_retries,
                 )

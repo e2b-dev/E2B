@@ -515,8 +515,9 @@ class AsyncVolume:
                 return await asyncio.wait_for(awaitable, stream_idle_timeout)
 
             async def stream_file() -> AsyncIterator[bytes]:
-                # pyqwest raises the builtin TimeoutError; keep the httpx
-                # exception the streamed-read contract established.
+                # `read_bounded` expires as a bare timeout; keep the httpx
+                # exception the streamed-read contract established (the
+                # transport-wide bound already surfaces as one).
                 try:
                     stream_cm = stream_client.get_async_httpx_client().stream(
                         method="GET",
@@ -548,7 +549,7 @@ class AsyncVolume:
                     finally:
                         await stream_cm.__aexit__(None, None, None)
                 # asyncio.TimeoutError is distinct from the builtin until 3.11,
-                # and wait_for and the adapter's whole-request deadline raise it.
+                # and `wait_for` raises whichever the running version defines.
                 except (TimeoutError, asyncio.TimeoutError) as e:
                     raise httpx.ReadTimeout(str(e)) from e
 

@@ -204,7 +204,7 @@ def test_sync_stream_survives_transfers_longer_than_read_timeout(short_read_time
 
 def test_sync_stream_stall_raises_read_timeout(short_read_timeout):
     # A mid-body stall longer than the idle read timeout surfaces as
-    # httpx.ReadTimeout (pyqwest's builtin TimeoutError is remapped).
+    # httpx.ReadTimeout (the pyqwest adapter remaps its own timeouts).
     api_url = _start_volume_file_server([0.0, 5.0])
     volume = Volume(volume_id="v1", name="test", token="vol-token")
 

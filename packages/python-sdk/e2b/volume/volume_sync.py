@@ -499,30 +499,25 @@ class Volume:
             stream_client = get_streaming_volume_api_client(config)
 
             def stream_file() -> Iterator[bytes]:
-                # pyqwest raises the builtin TimeoutError; keep the httpx
-                # exception the streamed-read contract established.
-                try:
-                    with stream_client.get_httpx_client().stream(
-                        method="GET",
-                        url=f"/volumecontent/{self._volume_id}/file",
-                        params=params,
-                        timeout=stream_timeout,
-                    ) as response:
-                        if response.status_code == 404:
-                            raise NotFoundException(f"Path {path} not found")
+                with stream_client.get_httpx_client().stream(
+                    method="GET",
+                    url=f"/volumecontent/{self._volume_id}/file",
+                    params=params,
+                    timeout=stream_timeout,
+                ) as response:
+                    if response.status_code == 404:
+                        raise NotFoundException(f"Path {path} not found")
 
-                        if response.status_code >= 300:
-                            api_response = Response(
-                                status_code=HTTPStatus(response.status_code),
-                                content=response.read(),
-                                headers=response.headers,
-                                parsed=None,
-                            )
-                            raise handle_api_exception(api_response, VolumeException)
+                    if response.status_code >= 300:
+                        api_response = Response(
+                            status_code=HTTPStatus(response.status_code),
+                            content=response.read(),
+                            headers=response.headers,
+                            parsed=None,
+                        )
+                        raise handle_api_exception(api_response, VolumeException)
 
-                        yield from response.iter_bytes()
-                except TimeoutError as e:
-                    raise httpx.ReadTimeout(str(e)) from e
+                    yield from response.iter_bytes()
 
             return stream_file()
 
