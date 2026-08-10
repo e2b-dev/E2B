@@ -182,11 +182,6 @@ class FileStreamReader(Iterator[bytes]):
     def __next__(self) -> bytes:
         try:
             return next(self._iterator)
-        except TimeoutError as e:
-            # The transport's idle read timeout is the builtin TimeoutError
-            # under pyqwest; keep the documented httpx exception.
-            self.close()
-            raise httpx.ReadTimeout(str(e)) from e
         except BaseException:
             # Covers normal end (StopIteration) and read errors alike.
             self.close()
@@ -243,11 +238,9 @@ class AsyncFileStreamReader(AsyncIterator[bytes]):
             if self._idle_timeout:
                 return await asyncio.wait_for(read, self._idle_timeout)
             return await read
-        except (TimeoutError, asyncio.TimeoutError) as e:
-            # Both the transport's idle read timeout (the builtin
-            # TimeoutError under pyqwest) and wait_for's expiry (a distinct
-            # asyncio.TimeoutError until 3.11); keep the documented httpx
-            # exception.
+        except asyncio.TimeoutError as e:
+            # `wait_for`'s expiry; keep the documented httpx exception. The
+            # transport's own idle read timeout already arrives as one.
             await self.aclose()
             raise httpx.ReadTimeout(str(e)) from e
         except BaseException:

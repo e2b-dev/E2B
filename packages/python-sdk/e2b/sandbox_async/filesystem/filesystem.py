@@ -250,7 +250,7 @@ class Filesystem:
                 raise await ahandle_envd_api_transport_exception_with_health(
                     e, self._envd_api
                 )
-            except (TimeoutError, asyncio.TimeoutError) as e:
+            except asyncio.TimeoutError as e:
                 # wait_for's expiry; keep the httpx exception the
                 # streamed-read contract established.
                 raise httpx.ReadTimeout(str(e)) from e
