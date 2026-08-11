@@ -4,7 +4,12 @@ import type { components, paths } from './schema.gen'
 import { defaultHeaders } from './metadata'
 import { createApiFetch } from './http2'
 import { ConnectionConfig } from '../connectionConfig'
-import { AuthenticationError, RateLimitError, SandboxError } from '../errors'
+import {
+  AuthenticationError,
+  RateLimitError,
+  SandboxError,
+  parseRetryAfter,
+} from '../errors'
 import { createApiLogger } from '../logs'
 
 const API_KEY_PATTERN = /^e2b_[0-9a-f]+$/
@@ -35,7 +40,8 @@ export function apiErrorFromCode(
     message: string,
     stackTrace?: string
   ) => Error = SandboxError,
-  stackTrace?: string
+  stackTrace?: string,
+  retryAfterHeader?: string | null
 ): Error {
   if (code === 401) {
     const message = 'Unauthorized, please check your credentials.'
@@ -46,7 +52,11 @@ export function apiErrorFromCode(
 
   if (code === 429) {
     const message = 'Rate limit exceeded, please try again later'
-    return new RateLimitError(content ? `${message} - ${content}` : message)
+    const retryAfter = parseRetryAfter(retryAfterHeader)
+    return new RateLimitError(
+      content ? `${message} - ${content}` : message,
+      { retryAfter, retryAfterHeader }
+    )
   }
 
   return new errorClass(`${code}: ${content}`, stackTrace)
@@ -72,7 +82,8 @@ export function handleApiError(
       status,
       response.error?.message ?? response.error,
       errorClass,
-      stackTrace
+      stackTrace,
+      response.response.headers?.get('Retry-After') ?? null
     )
   }
 

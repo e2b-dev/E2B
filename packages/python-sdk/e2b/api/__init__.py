@@ -20,6 +20,7 @@ from e2b.exceptions import (
     RateLimitException,
     SandboxException,
 )
+from e2b.rate_limit import append_retry_after, parse_retry_after
 
 
 def make_logging_event_hooks(log: Optional[logging.Logger]) -> dict:
@@ -132,10 +133,14 @@ def api_exception_from_code(
     message: Optional[str] = None,
     default_exception_class: type[Exception] = SandboxException,
     stack_trace: Optional[TracebackType] = None,
+    retry_after_header: Optional[str] = None,
 ) -> Exception:
     """Map an API error code and message to the matching exception class — the
     same mapping :func:`handle_api_exception` applies to HTTP responses, usable
-    for error objects embedded in response bodies (e.g. per-fork results)."""
+    for error objects embedded in response bodies (e.g. per-fork results).
+
+    :param retry_after_header: Value of the ``Retry-After`` response header, used for 429 rate-limit errors.
+    """
     if status_code == 401:
         text = f"{status_code}: Unauthorized, please check your credentials."
         if message:
@@ -146,7 +151,12 @@ def api_exception_from_code(
         text = f"{status_code}: Rate limit exceeded, please try again later."
         if message:
             text += f" - {message}"
-        return RateLimitException(text)
+        retry_after = parse_retry_after(retry_after_header)
+        return RateLimitException(
+            append_retry_after(text, retry_after),
+            retry_after=retry_after,
+            retry_after_header=retry_after_header,
+        )
 
     return default_exception_class(f"{status_code}: {message}").with_traceback(
         stack_trace
@@ -170,7 +180,11 @@ def handle_api_exception(
         )
 
     return api_exception_from_code(
-        e.status_code, message, default_exception_class, stack_trace
+        e.status_code,
+        message,
+        default_exception_class,
+        stack_trace,
+        retry_after_header=(getattr(e, "headers", None) or {}).get("Retry-After"),
     )
 
 

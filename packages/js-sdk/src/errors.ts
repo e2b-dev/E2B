@@ -134,10 +134,46 @@ export class TemplateError extends SandboxError {
  * Thrown when the API rate limit is exceeded.
  */
 export class RateLimitError extends SandboxError {
-  constructor(message: string) {
-    super(message)
+  readonly retryAfter?: number
+  readonly retryAfterHeader?: string
+
+  constructor(
+    message: string,
+    opts: { retryAfter?: number; retryAfterHeader?: string | null } = {}
+  ) {
+    super(appendRetryAfter(message, opts.retryAfter))
     this.name = 'RateLimitError'
+    this.retryAfter = opts.retryAfter
+    this.retryAfterHeader = opts.retryAfterHeader ?? undefined
   }
+}
+
+/**
+ * Parses an HTTP `Retry-After` header value into a wait time in seconds.
+ *
+ * Returns `undefined` when the header is absent or not parseable. Numeric
+ * values (the common case) are used directly; HTTP-date values are converted
+ * to a relative delay against the current time.
+ */
+export function parseRetryAfter(
+  retryAfterHeader?: string | null
+): number | undefined {
+  if (!retryAfterHeader) return undefined
+
+  const trimmedRetryAfter = retryAfterHeader.trim()
+  if (/^-?\d+$/.test(trimmedRetryAfter)) {
+    return Math.max(Number.parseInt(trimmedRetryAfter, 10), 0)
+  }
+
+  const retryAt = Date.parse(trimmedRetryAfter)
+  if (Number.isNaN(retryAt)) return undefined
+
+  return Math.max(Math.floor((retryAt - Date.now()) / 1000), 0)
+}
+
+function appendRetryAfter(message: string, retryAfter?: number): string {
+  if (retryAfter === undefined) return message
+  return `${message} Retry after ${retryAfter} seconds.`
 }
 
 /**
