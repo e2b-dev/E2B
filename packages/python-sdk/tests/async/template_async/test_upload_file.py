@@ -7,6 +7,7 @@ import httpx
 import pytest
 
 from e2b.api.client.client import AuthenticatedClient
+from e2b.api.client_async import get_upload_transport
 from e2b.template import utils as template_utils
 from e2b.exceptions import FileUploadException
 from e2b.template.consts import FILE_UPLOAD_TIMEOUT_SECONDS
@@ -128,8 +129,9 @@ async def test_upload_file_leaves_redirects_to_httpx(tmp_path):
     assert state["paths"] == ["/redirect"]
 
 
-async def _capture_upload_timeout(tmp_path, request_timeout=None):
-    """Run upload_file against a local server, capturing the httpx timeout."""
+async def _capture_upload_client_kwargs(tmp_path, request_timeout=None):
+    """Run upload_file against a local server, capturing how it built its
+    httpx client."""
     (tmp_path / "hello.txt").write_text("hello world")
 
     server, thread, state = _make_server()
@@ -140,7 +142,7 @@ async def _capture_upload_timeout(tmp_path, request_timeout=None):
     real_client = httpx.AsyncClient
 
     def spy_client(*args, **kwargs):
-        captured["timeout"] = kwargs.get("timeout")
+        captured.update(kwargs)
         return real_client(*args, **kwargs)
 
     try:
@@ -167,20 +169,29 @@ async def _capture_upload_timeout(tmp_path, request_timeout=None):
         server.server_close()
         thread.join(timeout=5)
 
-    return captured["timeout"]
+    return captured
 
 
 async def test_upload_file_defaults_to_one_hour_timeout(tmp_path):
     # Uploads of large archives need far longer than the 60s general API
     # timeout, so the default upload timeout is 1 hour (matches the JS SDK).
-    timeout = await _capture_upload_timeout(tmp_path)
-    assert timeout == httpx.Timeout(FILE_UPLOAD_TIMEOUT_SECONDS)
+    captured = await _capture_upload_client_kwargs(tmp_path)
+    assert captured["timeout"] == httpx.Timeout(FILE_UPLOAD_TIMEOUT_SECONDS)
 
 
 async def test_upload_file_honors_explicit_request_timeout(tmp_path):
     # An explicitly set request_timeout overrides the 1-hour upload default.
-    timeout = await _capture_upload_timeout(tmp_path, request_timeout=5.0)
-    assert timeout == httpx.Timeout(5.0)
+    captured = await _capture_upload_client_kwargs(tmp_path, request_timeout=5.0)
+    assert captured["timeout"] == httpx.Timeout(5.0)
+
+
+async def test_upload_file_uses_the_shared_pool_without_retries(tmp_path):
+    # The archive rides the SDK-wide connection pool instead of a transport
+    # built per build, but skips its retry layer: replaying a request means
+    # copying its body, which for a build context is the whole archive in
+    # memory (SDK-332).
+    captured = await _capture_upload_client_kwargs(tmp_path)
+    assert captured["transport"] is get_upload_transport(None)
 
 
 async def test_upload_file_ignores_post_upload_close_failure(tmp_path):

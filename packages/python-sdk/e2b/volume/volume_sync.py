@@ -38,6 +38,7 @@ from e2b.volume.client.types import File as FilePayload, UNSET
 from e2b.volume.client_sync import get_api_client as get_volume_api_client
 from e2b.volume.client_sync import (
     get_streaming_api_client as get_streaming_volume_api_client,
+    get_upload_api_client as get_upload_volume_api_client,
 )
 from e2b.volume.connection_config import (
     VolumeApiParams,
@@ -589,7 +590,10 @@ class Volume:
         upload_timeout = VolumeConnectionConfig._get_request_timeout(
             FILE_TIMEOUT, opts.get("request_timeout")
         )
-        api_client = get_volume_api_client(config)
+        # An upload streams its body, and the connect retries would make that
+        # body replayable by copying it in full — the whole file in memory
+        # (SDK-332) — so it goes out on the non-retrying client instead.
+        api_client = get_upload_volume_api_client(config)
         if upload_timeout is not None:
             api_client = api_client.with_timeout(httpx.Timeout(upload_timeout))
 

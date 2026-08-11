@@ -15,5 +15,7 @@ import e2b.api.client_sync as api_client_sync
 
 def reset_transport_caches() -> None:
     for module in (api_client_sync, api_client_async):
+        module._pools.clear()
         module._transports.clear()
         module._httpx_transports.clear()
+        module._upload_transports.clear()

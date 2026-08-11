@@ -101,6 +101,13 @@ class Filesystem:
         self._envd_api_streaming = get_envd_api(
             connection_config, envd_api_url, for_streaming=True
         )
+        # Uploads go out on a third sibling, on the same pool without the
+        # connect retries: replaying a request body means copying it, so a
+        # streamed upload on the retrying transport would be mirrored in
+        # memory in full (see `get_upload_transport`).
+        self._envd_api_upload = get_envd_api(
+            connection_config, envd_api_url, for_upload=True
+        )
 
     @overload
     def read(
@@ -375,8 +382,12 @@ class Filesystem:
                     headers["Content-Encoding"] = "gzip"
 
                 is_streamed = not isinstance(file_data, (str, bytes))
+                # Only a streamed body takes the non-retrying client: an
+                # in-memory one reaches the transport as `bytes`, which the
+                # retry layer replays without copying anything.
+                client = self._envd_api_upload if is_streamed else self._envd_api
                 try:
-                    r = self._envd_api.post(
+                    r = client.post(
                         ENVD_API_FILES_ROUTE,
                         content=to_upload_body(file_data, gzip),
                         headers=headers,
@@ -412,19 +423,20 @@ class Filesystem:
             if len(httpx_files) == 0:
                 return []
 
+            is_streamed = multipart_body_is_streamed(files)
+            client = self._envd_api_upload if is_streamed else self._envd_api
             try:
-                r = self._envd_api.post(
+                r = client.post(
                     ENVD_API_FILES_ROUTE,
                     files=httpx_files,
                     params=params,
                     headers=extra_headers,
-                    # Only a streamed entry drops the deadline: httpx
-                    # forwards binary `IOBase` entries in chunks, while text
-                    # file-like data was buffered by `_to_httpx_file` (httpx
-                    # rejects text-mode objects in multipart).
-                    timeout=(
-                        None if multipart_body_is_streamed(files) else upload_timeout
-                    ),
+                    # Only a streamed entry drops the deadline (and the retries,
+                    # whose replay copy would mirror the body): httpx forwards
+                    # binary `IOBase` entries in chunks, while text file-like
+                    # data was buffered by `_to_httpx_file` (httpx rejects
+                    # text-mode objects in multipart).
+                    timeout=None if is_streamed else upload_timeout,
                 )
             except httpx.RemoteProtocolError as e:
                 raise handle_envd_api_transport_exception_with_health(e, self._envd_api)

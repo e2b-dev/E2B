@@ -4,10 +4,9 @@ from types import TracebackType
 from typing import Callable, Optional, List, Union
 
 import httpx
-from pyqwest import HTTPTransport
-from pyqwest.httpx import AsyncPyqwestTransport
 
 from e2b.api import handle_api_exception, proxy_to_config
+from e2b.api.client_async import get_upload_transport
 from e2b.io_utils import aiter_io_chunks
 from e2b.api.client.api.templates import (
     post_v3_templates,
@@ -128,25 +127,18 @@ async def upload_file(
         try:
             size = os.fstat(tar_file.fileno()).st_size
 
+            # The archive goes out on the shared connection pool, minus the
+            # connect retries: those would make the streamed body replayable by
+            # copying it, mirroring the whole build context in memory
+            # (SDK-332). Sharing the pool is what makes a per-build transport
+            # unnecessary.
             # Through the pyqwest adapter the upload timeout is a
             # whole-request deadline for the entire transfer, not a per-write
             # bound as with the httpx transport this replaced.
             async with httpx.AsyncClient(
                 timeout=httpx.Timeout(upload_timeout),
                 follow_redirects=api_client._follow_redirects,
-                transport=AsyncPyqwestTransport(
-                    HTTPTransport(
-                        tls_include_system_certs=True,
-                        proxy=(
-                            upload_proxy.to_pyqwest()
-                            if upload_proxy is not None
-                            else None
-                        ),
-                        # Redirects belong to the httpx client above, not to
-                        # reqwest.
-                        follow_redirects=False,
-                    )
-                ),
+                transport=get_upload_transport(upload_proxy),
             ) as client:
                 # Stream the archive from disk via an async iterator. The
                 # explicit Content-Length suppresses chunked transfer

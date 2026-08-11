@@ -21,11 +21,15 @@ from e2b.volume.client_async import (
     get_streaming_transport as get_async_streaming_transport,
 )
 from e2b.volume.client_async import get_transport as get_async_transport
+from e2b.volume.client_async import (
+    get_upload_transport as get_async_upload_transport,
+)
 from e2b.volume.client_sync import get_api_client as get_sync_api_client
 from e2b.volume.client_sync import (
     get_streaming_transport as get_sync_streaming_transport,
 )
 from e2b.volume.client_sync import get_transport as get_sync_transport
+from e2b.volume.client_sync import get_upload_transport as get_sync_upload_transport
 from e2b.volume.connection_config import VolumeConnectionConfig
 from e2b.volume.volume_async import AsyncVolume
 from e2b.volume.volume_sync import Volume
@@ -114,6 +118,37 @@ def test_volume_transports_are_the_shared_sdk_pools(test_api_key):
         assert get_async_streaming_transport(config) is api_client_async.get_transport(
             api_config, for_streaming=True
         )
+    finally:
+        reset_volume_transports()
+
+
+def test_volume_uploads_skip_the_connect_retries(test_api_key):
+    # `write_file` streams its body, and the retry layer would make that body
+    # replayable by copying it in full — the whole file in memory (SDK-332). It
+    # goes out on the same pool without that layer, which is also the SDK-wide
+    # upload transport.
+    reset_volume_transports()
+    config = VolumeConnectionConfig(token="vol-token")
+    api_config = ConnectionConfig(api_key=test_api_key)
+
+    try:
+        assert get_sync_upload_transport(config) is api_client_sync.get_transport(
+            api_config, for_upload=True
+        )
+        assert get_async_upload_transport(config) is api_client_async.get_transport(
+            api_config, for_upload=True
+        )
+        assert get_sync_upload_transport(config) is not get_sync_transport(config)
+        assert get_async_upload_transport(config) is not get_async_transport(config)
+
+        upload_client = client_sync.get_upload_api_client(config)
+        try:
+            assert (
+                upload_client.get_httpx_client()._transport
+                is get_sync_upload_transport(config)
+            )
+        finally:
+            upload_client.get_httpx_client().close()
     finally:
         reset_volume_transports()
 

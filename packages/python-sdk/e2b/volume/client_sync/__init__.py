@@ -6,6 +6,7 @@ from e2b.api import (
     proxy_to_config,
 )
 from e2b.api.client_sync import get_httpx_transport
+from e2b.api.client_sync import get_upload_transport as get_upload_httpx_transport
 from e2b.api.metadata import default_headers
 from e2b.exceptions import AuthenticationException
 from e2b.volume.client.client import AuthenticatedClient as VolumeApiClient
@@ -23,6 +24,13 @@ def get_streaming_api_client(
     """The client for streamed downloads: the same client on the streaming
     transport, which bounds a stalled read (see :func:`get_streaming_transport`)."""
     return _api_client(config, get_streaming_transport(config), **kwargs)
+
+
+def get_upload_api_client(config: VolumeConnectionConfig, **kwargs) -> VolumeApiClient:
+    """The client for uploads: the same client on the upload transport, which
+    leaves the connect retries out so that a streamed body isn't copied into
+    memory to keep it replayable (see :func:`get_upload_transport`)."""
+    return _api_client(config, get_upload_transport(config), **kwargs)
 
 
 def _api_client(
@@ -74,6 +82,15 @@ def get_transport(config: VolumeConnectionConfig) -> PyqwestTransport:
     an idle bound, use :func:`get_streaming_transport`.
     """
     return get_httpx_transport(proxy_to_config(config.proxy))
+
+
+def get_upload_transport(config: VolumeConnectionConfig) -> PyqwestTransport:
+    """The transport for uploads: the same pool as :func:`get_transport` minus
+    the connect retries. The retry layer makes a request body replayable by
+    copying it in full as it is sent, so a streamed `write_file` on it would be
+    mirrored in memory (see :func:`e2b.api.client_sync.get_upload_transport`).
+    """
+    return get_upload_httpx_transport(proxy_to_config(config.proxy))
 
 
 def get_streaming_transport(config: VolumeConnectionConfig) -> PyqwestTransport:
