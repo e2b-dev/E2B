@@ -1,19 +1,11 @@
-import threading
-from typing import Dict, Optional, Tuple
-
 import httpx
-from pyqwest import HTTPTransport
 from pyqwest.httpx import AsyncPyqwestTransport
 
 from e2b.api import (
-    ProxyConfig,
-    connection_retries,
     make_async_logging_event_hooks,
-    pool_idle_timeout,
-    pool_max_idle_per_host,
     proxy_to_config,
 )
-from e2b.api.client_async import ConnectionRetryTransport
+from e2b.api.client_async import get_httpx_transport
 from e2b.api.metadata import default_headers
 from e2b.exceptions import AuthenticationException
 from e2b.volume.client.client import AuthenticatedClient as AsyncVolumeApiClient
@@ -69,18 +61,11 @@ def _api_client(
     )
 
 
-_transport_lock = threading.Lock()
-# One transport (= one connection pool) per proxy and read timeout; None is
-# the direct pool. pyqwest's I/O runs on its own Rust runtime, so unlike the
-# httpx transport this replaced, the transport is not bound to an event loop
-# and the cache is process-global rather than per-loop.
-_transports: Dict[
-    Tuple[Optional[ProxyConfig], Optional[float]], AsyncPyqwestTransport
-] = {}
-
-
 def get_transport(config: VolumeConnectionConfig) -> AsyncPyqwestTransport:
-    """The shared pyqwest-backed httpx transport for volume content API calls.
+    """The shared pyqwest-backed httpx transport for volume content API calls —
+    the same pool the control-plane REST API and the envd HTTP API draw from
+    (see :func:`e2b.api.client_async.get_pyqwest_transport`); reqwest pools per
+    host, so the volume host gets its own connections within it.
 
     It carries no idle read bound: reqwest's read timer keeps running while a
     request body is sent and while waiting for the response head, so one here
@@ -88,7 +73,7 @@ def get_transport(config: VolumeConnectionConfig) -> AsyncPyqwestTransport:
     their whole-request deadlines instead). Streamed downloads, which do need
     an idle bound, use :func:`get_streaming_transport`.
     """
-    return _transport(config, read_timeout=None)
+    return get_httpx_transport(proxy_to_config(config.proxy))
 
 
 def get_streaming_transport(
@@ -97,34 +82,9 @@ def get_streaming_transport(
     """The transport for streamed downloads, carrying ``READ_TIMEOUT`` as the
     idle bound on every read: it resets after each successful read, so it caps
     how long a streamed download may stall without limiting total transfer
-    time. It is fixed per transport — the adapter's per-request timeouts are
-    whole-request deadlines rather than idle bounds.
+    time. It is fixed per pool — the adapter's per-request timeouts are
+    whole-request deadlines rather than idle bounds — so streamed downloads get
+    their own, shared with the sandbox filesystem's streaming transport
+    whenever the two bounds agree.
     """
-    return _transport(config, read_timeout=READ_TIMEOUT)
-
-
-def _transport(
-    config: VolumeConnectionConfig, *, read_timeout: Optional[float]
-) -> AsyncPyqwestTransport:
-    proxy = proxy_to_config(config.proxy)
-    key = (proxy, read_timeout)
-    with _transport_lock:
-        transport = _transports.get(key)
-        if transport is None:
-            transport = AsyncPyqwestTransport(
-                ConnectionRetryTransport(
-                    HTTPTransport(
-                        tls_include_system_certs=True,
-                        proxy=proxy.to_pyqwest() if proxy is not None else None,
-                        pool_idle_timeout=pool_idle_timeout,
-                        pool_max_idle_per_host=pool_max_idle_per_host,
-                        read_timeout=read_timeout,
-                        # Redirects belong to the httpx client above (which the
-                        # generated clients leave off), not to reqwest.
-                        follow_redirects=False,
-                    ),
-                    max_retries=connection_retries,
-                )
-            )
-            _transports[key] = transport
-        return transport
+    return get_httpx_transport(proxy_to_config(config.proxy), READ_TIMEOUT)

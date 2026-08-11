@@ -3,22 +3,22 @@ from typing import cast
 import httpx
 import pytest
 from pyqwest import Proxy
+from transport_caches import reset_transport_caches
 
 import e2b.api.client_async as api_client_async
 import e2b.api.client_sync as api_client_sync
 from e2b.api import ProxyConfig, proxy_to_config
-from e2b.connection_config import ProxyTypes
+from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.envd import client_async, client_sync
+from e2b.envd.process.process_connect import ProcessClient, ProcessClientSync
 from e2b.exceptions import InvalidArgumentException
 
 
 @pytest.fixture(autouse=True)
-def reset_transport_caches():
-    client_sync._transports.clear()
-    client_async._transports.clear()
+def clear_transport_caches():
+    reset_transport_caches()
     yield
-    client_sync._transports.clear()
-    client_async._transports.clear()
+    reset_transport_caches()
 
 
 def test_proxy_to_config_none():
@@ -97,26 +97,28 @@ def test_proxy_to_config_rejects_unknown_types():
         proxy_to_config(cast(ProxyTypes, object()))
 
 
-def test_sync_transport_is_cached_per_proxy():
+def test_sync_pool_is_cached_per_proxy():
     proxy = ProxyConfig("http://127.0.0.1:8080")
-    transport_a = client_sync.get_transport(None)
-    transport_b = client_sync.get_transport(None)
-    transport_c = client_sync.get_transport(proxy)
+    pool_a = api_client_sync.get_pyqwest_transport(None)
+    pool_b = api_client_sync.get_pyqwest_transport(None)
+    pool_c = api_client_sync.get_pyqwest_transport(proxy)
     # A second, equal config keys the same pool.
-    transport_d = client_sync.get_transport(ProxyConfig("http://127.0.0.1:8080"))
+    pool_d = api_client_sync.get_pyqwest_transport(ProxyConfig("http://127.0.0.1:8080"))
 
-    assert transport_a is transport_b
-    assert transport_c is transport_d
-    assert transport_a is not transport_c
+    assert pool_a is pool_b
+    assert pool_c is pool_d
+    assert pool_a is not pool_c
 
 
-def test_sync_transport_is_not_shared_across_proxy_credentials():
+def test_sync_pool_is_not_shared_across_proxy_credentials():
     # Same proxy URL, different credentials or headers: separate pools, since
     # the proxy configuration is fixed per transport.
     url = "http://127.0.0.1:8080"
-    plain = client_sync.get_transport(ProxyConfig(url))
-    with_auth = client_sync.get_transport(ProxyConfig(url, auth=("user", "pass")))
-    with_headers = client_sync.get_transport(
+    plain = api_client_sync.get_pyqwest_transport(ProxyConfig(url))
+    with_auth = api_client_sync.get_pyqwest_transport(
+        ProxyConfig(url, auth=("user", "pass"))
+    )
+    with_headers = api_client_sync.get_pyqwest_transport(
         ProxyConfig(url, headers=(("x-custom", "1"),))
     )
 
@@ -125,27 +127,56 @@ def test_sync_transport_is_not_shared_across_proxy_credentials():
     assert with_auth is not with_headers
 
 
-def test_async_transport_is_cached_per_proxy():
-    transport_a = client_async.get_transport(None)
-    transport_b = client_async.get_transport(None)
-    transport_c = client_async.get_transport(ProxyConfig("http://127.0.0.1:8080"))
+def test_async_pool_is_cached_per_proxy():
+    pool_a = api_client_async.get_pyqwest_transport(None)
+    pool_b = api_client_async.get_pyqwest_transport(None)
+    pool_c = api_client_async.get_pyqwest_transport(
+        ProxyConfig("http://127.0.0.1:8080")
+    )
 
-    assert transport_a is transport_b
-    assert transport_a is not transport_c
-    assert client_sync.get_transport(None) is not transport_a
+    assert pool_a is pool_b
+    assert pool_a is not pool_c
+    # Sync and async are separate stacks all the way down.
+    assert api_client_sync.get_pyqwest_transport(None) is not pool_a
 
 
-def test_transport_stack_normalizes_plain_errors_and_retries_connects():
-    # The shared transports are the plain-HTTP-error normalization wrapping
-    # the connection retries; `E2B_CONNECTION_RETRIES` must flow into the
-    # retry layer the way it does into the httpx REST transports.
+def test_rpc_clients_run_on_the_shared_pool(test_api_key, monkeypatch):
+    # The RPC stack is the plain-HTTP-error normalization wrapping the very
+    # pool the httpx clients use, so an envd RPC and an envd HTTP call to the
+    # same sandbox share one HTTP/2 connection. `pyqwest.SyncClient` doesn't
+    # hand its transport back, so record what the normalization is given.
+    config = ConnectionConfig(api_key=test_api_key)
+    pool = api_client_sync.get_pyqwest_transport(None)
+    async_pool = api_client_async.get_pyqwest_transport(None)
+    # The httpx adapters every REST client uses sit on those same pools.
+    assert api_client_sync.get_httpx_transport(None)._transport is pool
+    assert api_client_async.get_httpx_transport(None)._transport is async_pool
+
+    wrapped = []
+    for module in (client_sync, client_async):
+        normalization = module.PlainHTTPErrorTransport
+        monkeypatch.setattr(
+            module,
+            "PlainHTTPErrorTransport",
+            lambda inner, normalization=normalization: (
+                wrapped.append(inner) or normalization(inner)
+            ),
+        )
+
+    client_sync.create_rpc_client(ProcessClientSync, "https://sandbox.e2b.app", config)
+    client_async.create_rpc_client(ProcessClient, "https://sandbox.e2b.app", config)
+
+    assert wrapped == [pool, async_pool]
+
+
+def test_shared_pool_retries_connects():
+    # `E2B_CONNECTION_RETRIES` must flow into the retry layer of the shared
+    # pool, which every stack now inherits.
     from e2b.api import connection_retries
 
-    sync_transport = client_sync.get_transport(None)
-    async_transport = client_async.get_transport(None)
-    assert isinstance(sync_transport, client_sync.PlainHTTPErrorTransport)
-    assert isinstance(async_transport, client_async.PlainHTTPErrorTransport)
-    assert isinstance(sync_transport._inner, api_client_sync.ConnectionRetryTransport)
-    assert isinstance(async_transport._inner, api_client_async.ConnectionRetryTransport)
-    assert sync_transport._inner._max_retries == connection_retries
-    assert async_transport._inner._max_retries == connection_retries
+    pool = api_client_sync.get_pyqwest_transport(None)
+    apool = api_client_async.get_pyqwest_transport(None)
+    assert isinstance(pool, api_client_sync.ConnectionRetryTransport)
+    assert isinstance(apool, api_client_async.ConnectionRetryTransport)
+    assert pool._max_retries == connection_retries
+    assert apool._max_retries == connection_retries

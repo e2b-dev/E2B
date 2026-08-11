@@ -1,7 +1,6 @@
-"""Sync envd RPC clients: shared pyqwest transports and client factory."""
+"""Sync envd RPC clients: the plain-error transport layer and client factory."""
 
-import threading
-from typing import Any, Callable, Generator, Iterator, Optional, TypeVar, cast
+from typing import Any, Callable, Generator, Iterator, TypeVar, cast
 
 from pyqwest import (
     SyncClient,
@@ -10,8 +9,8 @@ from pyqwest import (
     SyncTransport,
 )
 
-from e2b.api import ProxyConfig, proxy_to_config
-from e2b.api.client_sync import retrying_http_transport
+from e2b.api import proxy_to_config
+from e2b.api.client_sync import get_pyqwest_transport
 from e2b.connection_config import ConnectionConfig
 from e2b.envd.client_shared import (
     ENVD_JSON_CODEC,
@@ -22,10 +21,6 @@ from e2b.envd.interceptors import build_interceptors
 
 RES = TypeVar("RES")
 TClient = TypeVar("TClient")
-
-_transport_lock = threading.Lock()
-# One transport (= one connection pool) per proxy; None is the direct pool.
-_transports: dict[Optional[ProxyConfig], "PlainHTTPErrorTransport"] = {}
 
 
 class PlainHTTPErrorTransport:
@@ -58,19 +53,6 @@ class PlainHTTPErrorTransport:
         raise error
 
 
-def get_transport(proxy: Optional[ProxyConfig]) -> "PlainHTTPErrorTransport":
-    with _transport_lock:
-        transport = _transports.get(proxy)
-        if transport is None:
-            # connectrpc arms the per-call deadline around the transport, so
-            # retry backoff counts against the request timeout. The plain-
-            # error normalization sits outside the retries so it converts
-            # the settled response once.
-            transport = PlainHTTPErrorTransport(retrying_http_transport(proxy))
-            _transports[proxy] = transport
-        return transport
-
-
 def create_rpc_client(
     client_cls: Callable[..., TClient],
     base_url: str,
@@ -81,10 +63,20 @@ def create_rpc_client(
     see :class:`e2b.api.client_sync.ConnectionRetryTransport`), the envd JSON
     codec, and the SDK's default-header and logging interceptors. Compression
     is disabled (see ``ENVD_RPC_COMPRESSION``). The client is stateless per
-    call and its transport is process-global, so one instance serves all
+    call and its connection pool is process-global, so one instance serves all
     threads.
+
+    The plain-error normalization is the one RPC-only transport concern, so it
+    wraps the shared pool per client instead of being cached with it — a
+    stateless wrapper over the pool the envd HTTP API uses for the same
+    sandbox, which is what lets both share a single HTTP/2 connection.
+    connectrpc arms the per-call deadline around the transport, so retry
+    backoff counts against the request timeout, and the normalization sits
+    outside the retries so it converts the settled response once.
     """
-    http_client = SyncClient(get_transport(proxy_to_config(config.proxy)))
+    http_client = SyncClient(
+        PlainHTTPErrorTransport(get_pyqwest_transport(proxy_to_config(config.proxy)))
+    )
     return client_cls(
         base_url,
         codec=ENVD_JSON_CODEC,

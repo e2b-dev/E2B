@@ -101,7 +101,7 @@ class Filesystem:
         )
         self._envd_api = envd_api
         # Streamed downloads default to a sibling client whose transport
-        # carries the idle read timeout (see `get_envd_transport`).
+        # carries the idle read timeout (see `get_transport`).
         self._envd_api_streaming = get_envd_api(
             connection_config, envd_api_url, for_streaming=True
         )
@@ -218,7 +218,7 @@ class Filesystem:
             # sent only when the caller set `request_timeout` explicitly
             # (making it the total-transfer deadline). By default a stalled
             # stream is bounded by the streaming transport's idle read
-            # timeout (see `get_envd_transport`); an explicit
+            # timeout (see `get_transport`); an explicit
             # `stream_idle_timeout` is applied per read with `wait_for` on
             # the regular transport instead — so values above the transport
             # bound aren't capped by it and `0` disables idle bounding

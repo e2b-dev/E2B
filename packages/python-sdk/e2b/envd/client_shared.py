@@ -1,14 +1,15 @@
 """envd RPC client plumbing shared by the sync and async flavors.
 
 The envd RPC clients (process, filesystem) run on `connectrpc`, whose HTTP
-layer is `pyqwest` (Rust reqwest/hyper) — built on the same
-`retrying_http_transport` pieces as the REST API client in `e2b.api`, in a
-separately cached pool. Only the multipart file transfer endpoints stay on
-the `httpx` envd transports. Unlike the previous httpcore-based transport,
-hyper sends RST_STREAM when a server stream is closed early, so abandoned
-command/watch streams don't leak on the shared HTTP/2 connection.
+layer is `pyqwest` (Rust reqwest/hyper) — on the very connection pool the REST
+clients in `e2b.api` use (`get_pyqwest_transport`), so RPCs and the envd HTTP
+API share one HTTP/2 connection per sandbox. Only the multipart file transfer
+endpoints stay on the `httpx` side of that pool. Unlike the previous
+httpcore-based transport, hyper sends RST_STREAM when a server stream is
+closed early, so abandoned command/watch streams don't leak on the shared
+HTTP/2 connection.
 
-The flavor-specific transports and client factories live in
+The flavor-specific transport layer and client factories live in
 :mod:`e2b.envd.client_sync` and :mod:`e2b.envd.client_async`, mirroring the
 `e2b.api.client_sync`/`client_async` layout. This module exists because
 `e2b/envd/__init__.py`, the natural home by that analogy, is owned by the
