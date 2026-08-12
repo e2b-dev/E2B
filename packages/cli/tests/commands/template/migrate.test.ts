@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import * as fs from 'fs/promises'
+import * as os from 'os'
 import * as path from 'path'
 import { execSync } from 'child_process'
 import { Language } from '../../../src/commands/template/generators'
@@ -39,7 +40,7 @@ describe('Template Migration', () => {
 
   beforeEach(async () => {
     // Use Node.js built-in temp directory handling
-    testDir = await fs.mkdtemp('e2b-migrate-test-')
+    testDir = await fs.mkdtemp(path.join(os.tmpdir(), 'e2b-migrate-test-'))
   })
 
   afterEach(async () => {
