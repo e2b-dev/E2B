@@ -21,7 +21,7 @@ ENV PATH="/go/bin:${PATH}"
 # https://github.com/openapi-generators/openapi-python-client/pull/1296
 # protoc-gen-py generates the Python envd protobuf-py messages and
 # protoc-gen-connectrpc the Connect stubs.
-RUN pip install black==26.3.1 e2b-openapi-python-client==0.26.2 datamodel-code-generator==0.34.0 protoc-gen-connectrpc==0.11.1 protoc-gen-py==0.1.1
+RUN pip install black==26.3.1 e2b-openapi-python-client==0.26.2 datamodel-code-generator==0.64.0 protoc-gen-connectrpc==0.11.1 protoc-gen-py==0.1.1
 
 # Install Node.js (pinned to match .tool-versions)
 ENV NODE_VERSION=22.18.0
@@ -34,7 +34,10 @@ RUN ARCH=$(uname -m) && \
     curl -fsSL https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.xz | tar -xJ -C /usr/local --strip-components=1
 
 # Install Node.js deps
-ENV PNPM_VERSION=9.15.5
+# pnpm is pinned to match .tool-versions and the root `packageManager` field —
+# pnpm manages its own version from `packageManager` since v10, so a mismatch
+# would make it re-download itself on every `make generate`.
+ENV PNPM_VERSION=10.34.5
 RUN npm install -g \
     pnpm@${PNPM_VERSION} \
     @connectrpc/protoc-gen-connect-es@1.6.1 \

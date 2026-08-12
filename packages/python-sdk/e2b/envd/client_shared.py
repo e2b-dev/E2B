@@ -1,11 +1,12 @@
 """envd RPC client plumbing shared by the sync and async flavors.
 
 The envd RPC clients (process, filesystem) run on `connectrpc`, whose HTTP
-layer is `pyqwest` (Rust reqwest/hyper). This is a separate stack from the
-`httpx` transports in `e2b.api`, which keep serving the REST API and the
-multipart file transfer endpoints. Unlike the previous httpcore-based
-transport, hyper sends RST_STREAM when a server stream is closed early, so
-abandoned command/watch streams don't leak on the shared HTTP/2 connection.
+layer is `pyqwest` (Rust reqwest/hyper) — built on the same
+`retrying_http_transport` pieces as the REST API client in `e2b.api`, in a
+separately cached pool. Only the multipart file transfer endpoints stay on
+the `httpx` envd transports. Unlike the previous httpcore-based transport,
+hyper sends RST_STREAM when a server stream is closed early, so abandoned
+command/watch streams don't leak on the shared HTTP/2 connection.
 
 The flavor-specific transports and client factories live in
 :mod:`e2b.envd.client_sync` and :mod:`e2b.envd.client_async`, mirroring the
@@ -15,21 +16,11 @@ protobuf codegen (`make generate-envd`).
 """
 
 import json
-import os
 from typing import Optional, TypedDict, TypeVar
 
-import httpx
 from connectrpc.code import Code
 from connectrpc.errors import ConnectError
 from protobuf import Message
-
-from e2b.exceptions import InvalidArgumentException
-
-# Mirror the httpx pool tuning in `e2b.api.limits` with pyqwest's equivalents.
-# `pool_max_idle_per_host` is per host rather than httpx's global idle cap,
-# which suits envd traffic — each sandbox is its own host.
-pool_idle_timeout = float(os.getenv("E2B_KEEPALIVE_EXPIRY") or "300")
-pool_max_idle_per_host = int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20")
 
 _MESSAGE = TypeVar("_MESSAGE", bound=Message)
 
@@ -133,25 +124,6 @@ def plain_http_error(
     )
 
 
-def should_retry_connection(response: object) -> bool:
-    """Whether a transport result is a retryable connection-establishment
-    failure — the shared policy of the flavor ``ConnectionRetryTransport``s.
-
-    pyqwest raises the builtin ``ConnectionError`` only before the request
-    was written, so retrying exactly these failures can never replay a
-    request envd may have received — which could re-run a command or
-    re-deliver events — for unary and streaming RPCs alike. Anything later
-    (``WriteError``/``ReadError``/``StreamError``, error responses) surfaces
-    to the caller; the retry middleware's default policy would otherwise also
-    retry I/O errors and 429/5xx responses for idempotent methods. This
-    replaces httpcore's transport ``retries`` from the previous stack and
-    deliberately drops the vendored client's retry on connections dropped
-    mid-request, which could re-execute a delivered unary RPC like
-    ``SendInput``.
-    """
-    return isinstance(response, ConnectionError)
-
-
 class _RPCCompression(TypedDict):
     send_compression: None
     accept_compression: "tuple[()]"
@@ -168,38 +140,3 @@ ENVD_RPC_COMPRESSION: _RPCCompression = {
     "send_compression": None,
     "accept_compression": (),
 }
-
-
-def proxy_to_url(proxy: object) -> Optional[str]:
-    """Narrow the ``proxy`` connection option to the proxy URL string pyqwest
-    transports take (scheme http, https, socks5, or socks5h, credentials in
-    the URL userinfo). ``httpx.URL`` and ``httpx.Proxy`` — which the REST
-    client accepts and the vendored envd client used to — are converted when
-    they reduce to such a URL; ``httpx.Proxy`` extras that don't (custom
-    headers, an ssl_context) are rejected rather than silently dropped.
-    """
-    if proxy is None:
-        return None
-    if isinstance(proxy, str):
-        return proxy
-    if isinstance(proxy, httpx.URL):
-        return str(proxy)
-    if isinstance(proxy, httpx.Proxy):
-        if proxy.headers:
-            raise InvalidArgumentException(
-                "Sandbox RPC calls don't support httpx.Proxy custom headers; "
-                "pass credentials in the proxy URL instead, "
-                'e.g. proxy="http://user:pass@localhost:8030"'
-            )
-        if proxy.ssl_context is not None:
-            raise InvalidArgumentException(
-                "Sandbox RPC calls don't support httpx.Proxy ssl_context"
-            )
-        url = proxy.url
-        if proxy.auth is not None:
-            url = url.copy_with(username=proxy.auth[0], password=proxy.auth[1])
-        return str(url)
-    raise InvalidArgumentException(
-        "Sandbox RPC calls support only URL-string proxies, "
-        'e.g. proxy="http://user:pass@localhost:8030"'
-    )

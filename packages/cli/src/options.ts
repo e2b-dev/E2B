@@ -39,7 +39,7 @@ export const selectMultipleOption = new commander.Option(
 
 export const projectOption = new commander.Option(
   '-t, --project <project-id>',
-  'specify the project ID that the operation will be associated with. You can find project ID in the project settings in the E2B dashboard (https://e2b.dev/dashboard?tab=team).'
+  'specify the project ID that the operation will be associated with. You can find project ID in the project settings in the E2B dashboard (https://e2b.dev/dashboard?tab=general).'
 )
 
 export const deprecatedTeamOption = new commander.Option(

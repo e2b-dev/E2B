@@ -26,7 +26,7 @@ jobs:
         # back to git (failing without a checkout); the job-level `if`s below
         # force a full run for that event instead, so we only filter on pull_request.
         if: github.event_name == 'pull_request'
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3.0.4
         id: filter
         with:
           # `**/!(*.md)` excludes Markdown so docs-only changes don't trigger the suites.

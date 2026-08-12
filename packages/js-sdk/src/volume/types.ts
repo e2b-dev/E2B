@@ -33,6 +33,13 @@ export type VolumeAndToken = VolumeInfo & {
    * Volume auth token.
    */
   token: string
+
+  /**
+   * Domain to use as the destination for volume content requests, replacing
+   * the default `api.<domain>` host. Only set for teams connected to a custom
+   * (BYOC) cluster; `undefined` otherwise.
+   */
+  domain?: string
 }
 
 /**

@@ -1,8 +1,10 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
+
+from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="VolumeAndToken")
 
@@ -14,11 +16,16 @@ class VolumeAndToken:
         volume_id (str): ID of the volume
         name (str): Name of the volume
         token (str): Auth token to use for interacting with volume content
+        domain (Union[Unset, str]): Domain to use as the destination for volume content requests,
+            replacing the default `api.<E2B_DOMAIN>`. Only returned when the
+            team is connected to a custom (BYOC) cluster; absent otherwise, in
+            which case the default domain is used.
     """
 
     volume_id: str
     name: str
     token: str
+    domain: Union[Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -27,6 +34,8 @@ class VolumeAndToken:
         name = self.name
 
         token = self.token
+
+        domain = self.domain
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -37,6 +46,8 @@ class VolumeAndToken:
                 "token": token,
             }
         )
+        if domain is not UNSET:
+            field_dict["domain"] = domain
 
         return field_dict
 
@@ -49,10 +60,13 @@ class VolumeAndToken:
 
         token = d.pop("token")
 
+        domain = d.pop("domain", UNSET)
+
         volume_and_token = cls(
             volume_id=volume_id,
             name=name,
             token=token,
+            domain=domain,
         )
 
         volume_and_token.additional_properties = d

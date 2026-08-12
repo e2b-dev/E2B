@@ -15,18 +15,28 @@
     "format": "pnpm --if-present --recursive run format",
     "changeset": "pnpm dlx @changesets/cli"
   },
-  "packageManager": "pnpm@9.15.5",
+  "packageManager": "pnpm@10.34.5",
   "dependencies": {
     "@changesets/read": "^0.6.2"
   },
   "devDependencies": {
     "changeset": "^0.2.6",
-    "oxlint": "^1.72.0"
+    "oxlint": "^1.72.0",
+    "prettier": "^3.6.2"
   },
   "engines": {
-    "pnpm": ">=9.0.0 <10"
+    "pnpm": ">=10.16.0 <11"
   },
   "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "workerd"
+    ],
+    "ignoredBuiltDependencies": [
+      "bufferutil",
+      "msw",
+      "utf-8-validate"
+    ],
     "overrides": {
       "rollup@>=4": ">=4.59.0",
       "postcss@<8.5.10": "^8.5.10",
@@ -46,6 +56,7 @@
       "minimatch@>=5.0.0 <5.1.8": "^5.1.8",
       "minimatch@>=9.0.0 <9.0.7": "^9.0.7",
       "minimatch@>=10.0.0 <10.2.3": "^10.2.3",
+      "undici@>=7.0.0 <7.29.0": "^7.29.0",
       "ws@>=8.0.0 <8.20.1": "^8.20.1",
       "shell-quote@<1.9.0": "^1.9.0",
       "sharp@<0.35.0": "^0.35.0",

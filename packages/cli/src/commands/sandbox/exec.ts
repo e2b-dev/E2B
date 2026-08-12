@@ -7,6 +7,7 @@ import * as commander from 'commander'
 
 import { ensureAPIKey } from '../../api'
 import { setupSignalHandlers } from 'src/utils/signal'
+import { parseEnv } from 'src/utils/env'
 import { buildCommand, isPipedStdin, streamStdinChunks } from './exec_helpers'
 
 interface ExecOptions {
@@ -27,13 +28,7 @@ export const execCommand = new commander.Command('exec')
   .option(
     '-e, --env <KEY=VALUE>',
     'set environment variable (repeatable)',
-    (value: string, previous: Record<string, string>) => {
-      const [key, ...rest] = value.split('=')
-      if (key && rest.length > 0) {
-        previous[key] = rest.join('=')
-      }
-      return previous
-    },
+    parseEnv,
     {} as Record<string, string>
   )
   .alias('ex')

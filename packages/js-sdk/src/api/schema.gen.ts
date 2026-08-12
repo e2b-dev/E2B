@@ -716,6 +716,7 @@ export interface paths {
                 /** @description Successfully returned snapshots */
                 200: {
                     headers: {
+                        "X-Next-Token": components["headers"]["XNextToken"];
                         [name: string]: unknown;
                     };
                     content: {
@@ -980,6 +981,7 @@ export interface paths {
                 /** @description Successfully returned the template with its builds */
                 200: {
                     headers: {
+                        "X-Next-Token": components["headers"]["XNextToken"];
                         [name: string]: unknown;
                     };
                     content: {
@@ -1478,6 +1480,8 @@ export interface paths {
                 /** @description Successfully returned all running sandboxes */
                 200: {
                     headers: {
+                        "X-Next-Token": components["headers"]["XNextToken"];
+                        "X-Total-Running": components["headers"]["XTotalRunning"];
                         [name: string]: unknown;
                     };
                     content: {
@@ -1581,8 +1585,7 @@ export interface paths {
                 /** @description Successfully returned all templates */
                 200: {
                     headers: {
-                        /** @description Cursor to fetch the next page of results, if more exist */
-                        "X-Next-Token"?: string;
+                        "X-Next-Token": components["headers"]["XNextToken"];
                         [name: string]: unknown;
                     };
                     content: {
@@ -3068,6 +3071,12 @@ export interface components {
             volumeID: string;
         };
         VolumeAndToken: {
+            /** @description Domain to use as the destination for volume content requests,
+             *     replacing the default `api.<E2B_DOMAIN>`. Only returned when the
+             *     team is connected to a custom (BYOC) cluster; absent otherwise, in
+             *     which case the default domain is used.
+             *      */
+            domain?: string;
             /** @description Name of the volume */
             name: string;
             /** @description Auth token to use for interacting with volume content */
@@ -3161,7 +3170,13 @@ export interface components {
         volumeID: string;
     };
     requestBodies: never;
-    headers: never;
+    headers: {
+        /** @description Cursor to fetch the next page of results, if more exist */
+        XNextToken: string;
+        /** @description Number of running sandboxes matching the filters, before pagination is applied. Only present when running sandboxes were requested.
+         *      */
+        XTotalRunning: number;
+    };
     pathItems: never;
 }
 export type $defs = Record<string, never>;

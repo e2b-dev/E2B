@@ -1,10 +1,11 @@
+import asyncio
 import gzip
 import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from io import IOBase, TextIOBase
-from typing import IO, AsyncIterator, Dict, Iterator, Optional, Union, TypedDict
+from typing import IO, AsyncIterator, Dict, Iterator, List, Optional, Union, TypedDict
 
 import httpx
 
@@ -219,9 +220,13 @@ class AsyncFileStreamReader(AsyncIterator[bytes]):
                 ...
     """
 
-    def __init__(self, response: httpx.Response):
+    def __init__(self, response: httpx.Response, idle_timeout: Optional[float] = None):
         self._response = response
         self._iterator = response.aiter_bytes()
+        # An explicit per-call idle bound, applied around each read with
+        # `wait_for` (the transport-wide idle read timeout covers the
+        # default case; see the flavor `read` implementations).
+        self._idle_timeout = idle_timeout
         self._closed = False
 
     def __aiter__(self) -> AsyncIterator[bytes]:
@@ -229,7 +234,15 @@ class AsyncFileStreamReader(AsyncIterator[bytes]):
 
     async def __anext__(self) -> bytes:
         try:
-            return await self._iterator.__anext__()
+            read = self._iterator.__anext__()
+            if self._idle_timeout:
+                return await asyncio.wait_for(read, self._idle_timeout)
+            return await read
+        except asyncio.TimeoutError as e:
+            # `wait_for`'s expiry; keep the documented httpx exception. The
+            # transport's own idle read timeout already arrives as one.
+            await self.aclose()
+            raise httpx.ReadTimeout(str(e)) from e
         except BaseException:
             # Covers normal end (StopAsyncIteration) and read errors alike.
             await self.aclose()
@@ -254,11 +267,31 @@ def _to_httpx_file(file_path: str, file_data: Union[str, bytes, IO]):
     if isinstance(file_data, (str, bytes)):
         return ("file", (file_path, file_data))
     elif isinstance(file_data, TextIOBase):
+        # httpx raises TypeError for text-mode objects in a multipart field, so
+        # reading it here is what lets the multipart path accept one at all —
+        # at the cost of buffering. The octet-stream path streams it instead,
+        # which is why a file-like entry defaults to that path.
         return ("file", (file_path, file_data.read()))
     elif isinstance(file_data, IOBase):
         return ("file", (file_path, file_data))
     else:
         raise InvalidArgumentException(f"Unsupported data type for file {file_path}")
+
+
+def multipart_body_is_streamed(files: List[WriteEntry]) -> bool:
+    """Whether the multipart body built from ``files`` streams any entry.
+
+    Only binary file-like data is handed to httpx as a stream:
+    :func:`_to_httpx_file` reads text file-like data into memory first, because
+    httpx rejects text-mode objects in a multipart field ("Multipart file
+    uploads must be opened in binary mode"). Those uploads therefore stay
+    bounded by the request timeout, like ``str``/``bytes`` ones. Compare
+    ``to_upload_body``, which streams text and binary alike on the
+    octet-stream path (``iter_io_chunks`` encodes the chunks)."""
+    return any(
+        isinstance(file["data"], IOBase) and not isinstance(file["data"], TextIOBase)
+        for file in files
+    )
 
 
 def to_upload_body(

@@ -316,11 +316,16 @@ def strip_ansi_escape_codes(text: str) -> str:
     """
     # Valid string terminator sequences are BEL, ESC\, and 0x9c
     st = r"(?:\u0007|\u001B\u005C|\u009C)"
-    pattern = [
-        rf"[\u001B\u009B][\[\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\d/#&.:=?%@~_]+)*|[a-zA-Z\d]+(?:;[-a-zA-Z\d/#&.:=?%@~_]*)*)?{st})",
-        r"(?:(?:\d{1,4}(?:[;:]\d{0,4})*)?[\dA-PR-TZcf-nq-uy=><~]))",
-    ]
-    ansi_escape = re.compile("|".join(pattern), re.UNICODE)
+    # String controls (OSC, DCS, SOS, PM, APC): ESC ]/P/X/^/_ ... ST
+    # (non-greedy until the first ST)
+    strings = rf"(?:\u001B[\]PX^_][\s\S]*?{st})"
+    # CSI and related: ESC/C1, optional intermediates, optional params
+    # (supports ; and :) then final byte
+    csi = (
+        r"[\u001B\u009B][\[\]()#;?]*(?:\d{1,4}(?:[;:]\d{0,4})*)?[\dA-PR-TZcf-nq-uy=><~]"
+    )
+    # re.ASCII keeps \d to 0-9 like JS; [\s\S] still matches any char
+    ansi_escape = re.compile(f"{strings}|{csi}", re.ASCII)
     return ansi_escape.sub("", text)
 
 

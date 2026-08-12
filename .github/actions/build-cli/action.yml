@@ -15,12 +15,12 @@ runs:
         prefix: 'tool_version_'
 
     - name: Install pnpm
-      uses: pnpm/action-setup@v4
+      uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
       with:
         version: '${{ env.TOOL_VERSION_PNPM }}'
 
     - name: Setup Node
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
       with:
         node-version: '${{ env.TOOL_VERSION_NODEJS }}'
         cache: pnpm
@@ -35,7 +35,10 @@ runs:
       run: pnpm build
       working-directory: ./packages/cli
 
+    # `pnpm link`, not `npm install -g`: npm cannot resolve the `workspace:^` range
+    # the CLI declares for `e2b`. It only gets away with it today because npm
+    # symlinks a local directory without resolving its dependencies at all.
     - name: Install the CLI globally
       shell: bash
-      run: npm install -g .
+      run: pnpm link --global
       working-directory: ./packages/cli

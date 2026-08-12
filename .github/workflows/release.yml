@@ -21,24 +21,36 @@ jobs:
       cli: ${{ steps.cli.outputs.release }}
       itinerary: ${{ steps.itinerary.outputs.itinerary }}
     steps:
+      - name: Check the ref
+        # `workflow_dispatch` offers every branch in the picker, and a feature
+        # branch carrying changesets would otherwise publish real packages and
+        # push the version bump to that branch. Candidates cut from a branch go
+        # through release-candidate.yml.
+        if: github.ref != 'refs/heads/main'
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          echo "::error::Releases must run on main; this run is on ${REF}."
+          exit 1
+
       - name: Checkout Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3.7.0
 
       - name: Parse .tool-versions
-        uses: wistia/parse-tool-versions@v2.1.1
+        uses: wistia/parse-tool-versions@32f568a4ffd4bfa7720ebf93f171597d1ebc979a # v2.1.1
         with:
           filename: '.tool-versions'
           uppercase: 'true'
           prefix: 'tool_version_'
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
         id: pnpm-install
         with:
           version: '${{ env.TOOL_VERSION_PNPM }}'
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: '${{ env.TOOL_VERSION_NODEJS }}'
           registry-url: 'https://registry.npmjs.org'
@@ -83,16 +95,12 @@ jobs:
       - name: Build release itinerary
         id: itinerary
         if: steps.version.outputs.release == 'true'
+        # This only feeds the Slack notifications, so it must never be the thing
+        # that blocks a release; the messages fall back to a placeholder.
+        continue-on-error: true
         run: |
           pnpm changeset status --output=.cs-status.json
-          ITINERARY=$(node -e '
-            const data = require("./.cs-status.json");
-            const labels = { "e2b": "JS SDK (e2b)", "@e2b/python-sdk": "Python SDK (e2b)", "@e2b/cli": "CLI (@e2b/cli)" };
-            const order = ["e2b", "@e2b/python-sdk", "@e2b/cli"];
-            const byName = Object.fromEntries(data.releases.map(r => [r.name, r]));
-            const lines = order.filter(n => byName[n]).map(n => `• ${labels[n]} v${byName[n].newVersion}`);
-            process.stdout.write(lines.join("\n") || "• No packages were published");
-          ')
+          ITINERARY=$(node ./.github/scripts/build_release_itinerary.cjs .cs-status.json)
           rm -f .cs-status.json
           {
             echo "itinerary<<EOF"
@@ -142,13 +150,15 @@ jobs:
             :rocket: A new release has been triggered :hourglass_flowing_sand:
 
             *Releasing:*
-            ${{ needs.preflight.outputs.itinerary }}
+            ${{ needs.preflight.outputs.itinerary || '• (itinerary unavailable)' }}
           SLACK_TITLE: Release Started
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_CHANNEL: 'monitoring-releases'
 
   report-failure:
-    needs: [python-tests, js-tests, cli-tests, publish]
+    # `preflight` included so a failure there is reported too, whether or not
+    # `failure()` looks past this job's direct dependencies.
+    needs: [preflight, python-tests, js-tests, cli-tests, publish]
     if: failure()
     name: Release Failed - Slack Notification
     runs-on: ubuntu-latest
@@ -176,7 +186,7 @@ jobs:
             :tada: A new version has been released successfully! :ship-it-parrot:
 
             *Released:*
-            ${{ needs.preflight.outputs.itinerary }}
+            ${{ needs.preflight.outputs.itinerary || '• (itinerary unavailable)' }}
           SLACK_TITLE: Release Succeeded
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_CHANNEL: 'monitoring-releases'

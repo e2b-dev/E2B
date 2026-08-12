@@ -12,6 +12,7 @@ import {
   setupRequestController,
   wrapStreamWithConnectionCleanup,
 } from '../connectionConfig'
+import { isArrayBufferLike, isBlobLike } from '../is'
 import { NotFoundError, VolumeError } from '../errors'
 import { toUploadBody } from '../utils'
 import { VolumeFileType } from './types'
@@ -134,7 +135,7 @@ export class Volume {
       res.data.volumeID,
       res.data.name,
       res.data.token,
-      config.domain,
+      res.data.domain || config.domain,
       config.debug,
       config.proxy
     )
@@ -153,12 +154,12 @@ export class Volume {
     opts?: ConnectionOpts
   ): Promise<Volume> {
     const config = new ConnectionConfig(opts)
-    const { name, token } = await Volume.getInfo(volumeId, opts)
+    const { name, token, domain } = await Volume.getInfo(volumeId, opts)
     return new Volume(
       volumeId,
       name,
       token,
-      config.domain,
+      domain ?? config.domain,
       config.debug,
       config.proxy
     )
@@ -201,6 +202,7 @@ export class Volume {
       volumeId: res.data!.volumeID,
       name: res.data!.name,
       token: res.data!.token,
+      domain: res.data!.domain || undefined,
     }
   }
 
@@ -623,7 +625,7 @@ export class Volume {
 
     // When the file is empty, `res.data` is `undefined`, so empty values are synthesized below.
     if (format === 'bytes') {
-      return res.data instanceof ArrayBuffer
+      return isArrayBufferLike(res.data)
         ? new Uint8Array(res.data)
         : new Uint8Array()
     }
@@ -633,7 +635,7 @@ export class Volume {
     }
 
     // format === 'blob'
-    return res.data instanceof Blob ? res.data : new Blob([])
+    return isBlobLike(res.data) ? res.data : new Blob([])
   }
 
   /**
@@ -661,16 +663,15 @@ export class Volume {
     })
     const client = new VolumeApiClient(config)
 
-    // `toUploadBody` returns a `ReadableStream` only when the body should be
-    // streamed (non-browser stream input); otherwise it buffers into a Blob.
-    const body = await toUploadBody(data)
-    const isStream = body instanceof ReadableStream
+    // `toUploadBody` streams only for non-browser stream input; otherwise it
+    // buffers into a Blob.
+    const { body, streamed } = await toUploadBody(data)
 
     // A streamed upload carries no client-side timeout: the socket-write
     // "wire" isn't observable through fetch, and a stalled producer is the
     // caller's own code, so a stuck streamed upload is bounded server-side (or
     // via `opts.signal`). Buffered uploads keep the normal request timeout.
-    const signal = isStream ? opts?.signal : config.getSignal()
+    const signal = streamed ? opts?.signal : config.getSignal()
 
     const res = await client.api.PUT('/volumecontent/{volumeID}/file', {
       params: {
@@ -692,7 +693,7 @@ export class Volume {
       },
       signal,
       // Streaming request bodies require half-duplex mode.
-      ...(isStream && { duplex: 'half' as const }),
+      ...(streamed && { duplex: 'half' as const }),
     })
 
     if (res.response.status === 404) {

@@ -14,7 +14,7 @@ jobs:
       code: ${{ steps.filter.outputs.code }}
     steps:
       - name: Filter changed paths
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3.0.4
         id: filter
         with:
           # `**/!(*.md)` excludes Markdown so docs-only changes don't trigger typecheck.
@@ -38,21 +38,21 @@ jobs:
 
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Parse .tool-versions
-        uses: wistia/parse-tool-versions@v2.1.1
+        uses: wistia/parse-tool-versions@32f568a4ffd4bfa7720ebf93f171597d1ebc979a # v2.1.1
         with:
           filename: '.tool-versions'
           uppercase: 'true'
           prefix: 'tool_version_'
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
         with:
           version: '${{ env.TOOL_VERSION_PNPM }}'
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: '${{ env.TOOL_VERSION_NODEJS }}'
           cache: pnpm
@@ -66,7 +66,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
         with:
           version: '${{ env.TOOL_VERSION_UV }}'
           python-version: '${{ env.TOOL_VERSION_PYTHON }}'

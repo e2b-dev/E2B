@@ -4,7 +4,6 @@ from http import HTTPStatus
 
 import httpx
 
-from httpx._types import ProxyTypes
 from typing_extensions import Unpack
 
 from e2b.api import handle_api_exception
@@ -20,7 +19,7 @@ from e2b.api.client.models import (
 )
 from e2b.api.client.types import Response
 from e2b.api.client_sync import get_api_client as get_core_api_client
-from e2b.connection_config import ApiParams, ConnectionConfig
+from e2b.connection_config import ApiParams, ConnectionConfig, ProxyTypes
 from e2b.exceptions import NotFoundException, VolumeException
 from e2b.volume.client.api.volumes import (
     get_volumecontent_volume_id_path as get_path,
@@ -37,6 +36,9 @@ from e2b.volume.client.models import (
 )
 from e2b.volume.client.types import File as FilePayload, UNSET
 from e2b.volume.client_sync import get_api_client as get_volume_api_client
+from e2b.volume.client_sync import (
+    get_streaming_api_client as get_streaming_volume_api_client,
+)
 from e2b.volume.connection_config import (
     VolumeApiParams,
     VolumeConnectionConfig,
@@ -48,7 +50,10 @@ from e2b.volume.types import (
     VolumeEntryStat,
 )
 from e2b.io_utils import iter_io_chunks
-from e2b.volume.utils import DualMethod, convert_volume_entry_stat
+from e2b.volume.utils import (
+    DualMethod,
+    convert_volume_entry_stat,
+)
 
 
 class Volume:
@@ -122,11 +127,16 @@ class Volume:
         if isinstance(res.parsed, Error):
             raise Exception(f"{res.parsed.message}: Request failed")
 
+        domain = (
+            res.parsed.domain
+            if isinstance(res.parsed.domain, str) and res.parsed.domain
+            else None
+        )
         vol = cls(
             volume_id=res.parsed.volume_id,
             name=res.parsed.name,
             token=res.parsed.token,
-            domain=config.domain,
+            domain=domain or config.domain,
             debug=config.debug,
             proxy=config.proxy,
         )
@@ -147,7 +157,7 @@ class Volume:
             volume_id=volume_id,
             name=info.name,
             token=info.token,
-            domain=config.domain,
+            domain=info.domain or config.domain,
             debug=config.debug,
             proxy=config.proxy,
         )
@@ -181,10 +191,16 @@ class Volume:
         if isinstance(res.parsed, Error):
             raise Exception(f"{res.parsed.message}: Request failed")
 
+        domain = (
+            res.parsed.domain
+            if isinstance(res.parsed.domain, str) and res.parsed.domain
+            else None
+        )
         return VolumeAndToken(
             volume_id=res.parsed.volume_id,
             name=res.parsed.name,
             token=res.parsed.token,
+            domain=domain,
         )
 
     @staticmethod
@@ -463,11 +479,11 @@ class Volume:
 
         :param path: Path to the file
         :param format: Format of the file content—`text` by default
-        :param stream_idle_timeout: Idle timeout in **seconds** for a streamed
-            read (`format="stream"`)—abort if no chunk arrives within this
-            window while reading. Resets on every chunk, so it bounds a stalled
-            stream without limiting total transfer time. Defaults to the request
-            timeout; pass `0` to disable.
+        :param stream_idle_timeout: Ignored — the sync client cannot
+            interrupt a blocking read. A stalled streamed read is bounded by
+            a transport-wide idle read timeout instead (60 seconds), which
+            resets on every chunk. (`AsyncVolume.read_file` honors this
+            parameter.)
         :param opts: Connection options
 
         :return: File content as string, bytes, or iterator of bytes
@@ -481,19 +497,23 @@ class Volume:
         )
 
         if format == "stream":
-            # The request timeout bounds connection setup, not total transfer;
-            # consuming the body must not be killed by it. httpx's per-chunk
-            # `read` timeout becomes the idle-read timeout for the body
-            # (defaults to the request timeout), bounding a stalled stream
-            # without limiting total transfer time. Pass `0` to disable.
-            # Mirrors the sandbox files stream path.
-            idle_timeout = (
-                timeout if stream_idle_timeout is None else stream_idle_timeout
+            # Through the pyqwest adapter a per-request timeout is a
+            # whole-request deadline that would kill long downloads, so a
+            # streamed read is sent with one only when the caller set
+            # `request_timeout` explicitly (making it the total-transfer
+            # deadline). A stalled stream is instead bounded by the
+            # transport-wide idle read timeout (see `get_streaming_transport`), which
+            # resets on every chunk without limiting total transfer time.
+            stream_timeout = VolumeConnectionConfig._get_request_timeout(
+                None, opts.get("request_timeout")
             )
-            stream_timeout = httpx.Timeout(timeout, read=idle_timeout or None)
+            # The streaming transport carries the idle read timeout; the
+            # regular one must not (it would cut off slow uploads and
+            # responses), so streamed reads get their own client.
+            stream_client = get_streaming_volume_api_client(config)
 
             def stream_file() -> Iterator[bytes]:
-                with api_client.get_httpx_client().stream(
+                with stream_client.get_httpx_client().stream(
                     method="GET",
                     url=f"/volumecontent/{self._volume_id}/file",
                     params=params,

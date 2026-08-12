@@ -1,6 +1,10 @@
 import { compareVersions } from 'compare-versions'
 
-export type UndiciRequestInit = RequestInit & {
+import { limitConcurrency } from './api/inflight'
+import { isReadableStreamLike, isRequestLike } from './is'
+import { dynamicImport, toDispatchableStream } from './utils'
+
+type UndiciRequestInit = RequestInit & {
   dispatcher?: unknown
   duplex?: 'half'
 }
@@ -27,20 +31,9 @@ export function getUndiciPackageCandidates(nodeVersion: string): string[] {
 }
 
 export async function loadUndici(): Promise<UndiciModule | undefined> {
-  let importModule: (moduleName: string) => Promise<UndiciModule>
-  try {
-    // Keep package imports opaque so downstream bundlers resolve them at runtime.
-    // eslint-disable-next-line no-new-func
-    importModule = new Function('moduleName', 'return import(moduleName)') as (
-      moduleName: string
-    ) => Promise<UndiciModule>
-  } catch {
-    return undefined
-  }
-
   for (const packageName of getUndiciPackageCandidates(process.versions.node)) {
     try {
-      return await importModule(packageName)
+      return await dynamicImport<UndiciModule>(packageName)
     } catch {
       // Try the next package supported by this Node version.
     }
@@ -49,16 +42,116 @@ export async function loadUndici(): Promise<UndiciModule | undefined> {
   return undefined
 }
 
-export function toUndiciRequestInput(
+/**
+ * Late-bind the global fetch: runtimes and tools (msw, instrumentation) may
+ * replace `globalThis.fetch` after the SDK builds a fetcher. A factory rather
+ * than a shared const so per-proxy cache entries stay distinct closures.
+ */
+function lateBoundGlobalFetch(): typeof fetch {
+  return ((input, init) => globalThis.fetch(input, init)) as typeof fetch
+}
+
+/**
+ * Create a fetch for the given runtime. Outside Node it late-binds the global
+ * fetch. On Node it lazily runs `build` on the first request and caches the
+ * built fetcher; a failed build is not cached, so the next request retries
+ * instead of replaying the same stale rejection forever.
+ */
+export function createRuntimeFetch(
+  currentRuntime: string,
+  build: () => Promise<typeof fetch>
+): typeof fetch {
+  if (currentRuntime !== 'node') {
+    return lateBoundGlobalFetch()
+  }
+
+  let fetcherPromise: Promise<typeof fetch> | undefined
+
+  return (async (input, init) => {
+    const promise = (fetcherPromise ??= build())
+
+    let fetcher: typeof fetch
+    try {
+      fetcher = await promise
+    } catch (err) {
+      // Clear only our own failed build: a stale awaiter of an already-
+      // rejected promise must not clobber a newer in-flight build.
+      if (fetcherPromise === promise) {
+        fetcherPromise = undefined
+      }
+      throw err
+    }
+
+    return fetcher(input, init)
+  }) as typeof fetch
+}
+
+/**
+ * Build a fetch bound to a bounded undici dispatcher (HTTP/2 enabled,
+ * `connections` origin connections, optional proxy tunnel), capped at
+ * `inflightLimit` in-flight requests (`0` disables the cap). Falls back to
+ * the global fetch — still capped — when undici cannot be loaded.
+ */
+export async function buildDispatchedFetch(options: {
+  connections: number
+  inflightLimit: number
+  proxy?: string
+  loadUndici?: () => Promise<UndiciModule | undefined>
+}): Promise<typeof fetch> {
+  const undici = await (options.loadUndici ?? loadUndici)()
+
+  if (!undici) {
+    return limitConcurrency(lateBoundGlobalFetch(), options.inflightLimit)
+  }
+
+  const { Agent, ProxyAgent, fetch: undiciFetch } = undici
+  const dispatcher = options.proxy
+    ? new ProxyAgent({
+        uri: options.proxy,
+        allowH2: true,
+        connections: options.connections,
+        proxyTunnel: true,
+      })
+    : new Agent({
+        allowH2: true,
+        connections: options.connections,
+      })
+  const fetchWithDispatcher = undiciFetch as unknown as (
+    input: RequestInfo | URL,
+    init?: UndiciRequestInit
+  ) => Promise<Response>
+
+  const wrapped: typeof fetch = ((input, init) => {
+    const request = toUndiciRequestInput(input, init)
+
+    return fetchWithDispatcher(request.input, {
+      ...request.init,
+      dispatcher,
+    })
+  }) as typeof fetch
+
+  return limitConcurrency(wrapped, options.inflightLimit)
+}
+
+function toUndiciRequestInput(
   input: RequestInfo | URL,
   init?: RequestInit
 ): { input: RequestInfo | URL; init?: RequestInit & { duplex?: 'half' } } {
-  if (!(input instanceof Request)) {
+  // Every Request has to be taken apart here, including one the current global
+  // class disowns: undici brand-checks against its own `Request`, so anything
+  // it didn't mint itself — even a native one — is coerced to a URL string and
+  // fails with `Failed to parse URL from [object Request]`.
+  if (!isRequestLike(input)) {
     return { input, init }
   }
 
   const requestInit: RequestInit & { duplex?: 'half' } = {
-    body: input.body,
+    // A Request from another implementation exposes that implementation's
+    // stream as its body, which undici would stringify just like the Request
+    // itself. Native bodies pass through untouched.
+    body: isReadableStreamLike(input.body)
+      ? toDispatchableStream(input.body)
+      : input.body,
     cache: input.cache,
     credentials: input.credentials,
     headers: input.headers,

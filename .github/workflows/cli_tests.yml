@@ -27,22 +27,22 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Parse .tool-versions
-        uses: wistia/parse-tool-versions@v2.1.1
+        uses: wistia/parse-tool-versions@32f568a4ffd4bfa7720ebf93f171597d1ebc979a # v2.1.1
         with:
           filename: '.tool-versions'
           uppercase: 'true'
           prefix: 'tool_version_'
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
         with:
           version: '${{ env.TOOL_VERSION_PNPM }}'
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: '${{ env.TOOL_VERSION_NODEJS }}'
           registry-url: 'https://registry.npmjs.org'

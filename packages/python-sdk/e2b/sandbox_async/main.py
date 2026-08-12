@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import json
 import logging
@@ -9,16 +10,17 @@ import httpx
 from packaging.version import Version
 from typing_extensions import Self, Unpack
 
-from e2b.api import make_async_logging_event_hooks
 from e2b.api.client.types import Unset
-from e2b.api.client_async import get_envd_transport as get_transport
+from e2b.api.client_async import get_envd_api
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
 from e2b.exceptions import (
+    SandboxException,
     TemplateException,
     format_request_timeout_error,
 )
+from e2b.sandbox.commands.command_handle import CommandExitException
 from e2b.sandbox.main import SandboxOpts
 from e2b.sandbox.sandbox_api import (
     McpServer,
@@ -106,13 +108,7 @@ class AsyncSandbox(SandboxApi):
         """
         super().__init__(**opts)
 
-        self._transport = get_transport(self.connection_config)
-        self._envd_api = httpx.AsyncClient(
-            base_url=self.envd_api_url,
-            transport=self._transport,
-            headers=self.connection_config.sandbox_headers,
-            event_hooks=make_async_logging_event_hooks(self.connection_config.logger),
-        )
+        self._envd_api = get_envd_api(self.connection_config, self.envd_api_url)
         self._filesystem = Filesystem(
             self.envd_api_url,
             self._envd_version,
@@ -243,13 +239,24 @@ class AsyncSandbox(SandboxApi):
             token = str(uuid.uuid4())
             sandbox._mcp_token = token
 
-            res = await sandbox.commands.run(
-                f"mcp-gateway --config {shlex.quote(json.dumps(mcp))}",
-                user="root",
-                envs={"GATEWAY_ACCESS_TOKEN": token},
-            )
-            if res.exit_code != 0:
-                raise Exception(f"Failed to start MCP gateway: {res.stderr}")
+            try:
+                await sandbox.commands.run(
+                    f"mcp-gateway --config {shlex.quote(json.dumps(mcp))}",
+                    user="root",
+                    envs={"GATEWAY_ACCESS_TOKEN": token},
+                )
+            except BaseException as e:
+                try:
+                    await sandbox.kill()
+                except asyncio.CancelledError:
+                    raise
+                except Exception:
+                    pass
+                if isinstance(e, CommandExitException):
+                    raise SandboxException(
+                        f"Failed to start MCP gateway: {e.stderr}"
+                    ) from e
+                raise
 
         return sandbox
 
@@ -897,7 +904,7 @@ class AsyncSandbox(SandboxApi):
 
         :param limit: Maximum number of snapshots to return per page
         :param next_token: Token for pagination
-        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1")
+        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-project/my-snapshot" or "my-snapshot:v1")
 
         :return: Paginator for listing snapshots
         """
@@ -918,7 +925,7 @@ class AsyncSandbox(SandboxApi):
         :param sandbox_id: Filter snapshots by source sandbox ID
         :param limit: Maximum number of snapshots to return per page
         :param next_token: Token for pagination
-        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1")
+        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-project/my-snapshot" or "my-snapshot:v1")
 
         :return: Paginator for listing snapshots
         """
@@ -937,7 +944,7 @@ class AsyncSandbox(SandboxApi):
 
         :param limit: Maximum number of snapshots to return per page
         :param next_token: Token for pagination
-        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1")
+        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-project/my-snapshot" or "my-snapshot:v1")
 
         :return: Paginator for listing snapshots
         """

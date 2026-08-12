@@ -24,6 +24,10 @@ class VolumeAndToken(VolumeInfo):
 
     token: str
     """Volume auth token."""
+    domain: Optional[str] = None
+    """Domain to use as the destination for volume content requests, replacing
+    the default ``api.<domain>`` host. Only set for teams connected to a custom
+    (BYOC) cluster; ``None`` otherwise."""
 
 
 @dataclass

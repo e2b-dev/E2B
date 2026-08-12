@@ -17,37 +17,37 @@ jobs:
     name: Build and test SDK
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1.12.0
         id: app-token
         with:
           app-id: ${{ vars.VERSION_BUMPER_APPID }}
           private-key: ${{ secrets.VERSION_BUMPER_SECRET }}
 
       - name: Checkout Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3.7.0
         with:
           token: ${{ steps.app-token.outputs.token }}
 
       - name: Parse .tool-versions
-        uses: wistia/parse-tool-versions@v2.1.1
+        uses: wistia/parse-tool-versions@32f568a4ffd4bfa7720ebf93f171597d1ebc979a # v2.1.1
         with:
           filename: '.tool-versions'
           uppercase: 'true'
           prefix: 'tool_version_'
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
         with:
           version: '${{ env.TOOL_VERSION_UV }}'
           python-version: '${{ env.TOOL_VERSION_PYTHON }}'
           enable-cache: true
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
         with:
           version: '${{ env.TOOL_VERSION_PNPM }}'
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: '${{ env.TOOL_VERSION_NODEJS }}'
           registry-url: 'https://registry.npmjs.org'
@@ -71,8 +71,30 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Commit new versions
+        # Commit before publishing, because `changeset publish` tags whatever HEAD
+        # it publishes from — tagging afterwards is what left every tag on the
+        # commit before its own version bump (SDK-298). Nothing in the tree
+        # references the artifacts about to be uploaded, so the commit is already
+        # complete. It stays local until something is actually published, so a
+        # publish that uploads nothing leaves the branch untouched and the
+        # changesets intact for a re-run.
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # `add -A`, not `commit -a`: `changeset version` writes each package's
+          # CHANGELOG.md as a new file the first time, which `-a` would drop.
+          git add -A
+          if git diff --cached --quiet; then
+            echo "::error::'changeset version' produced no changes, so there is no version bump to publish or tag."
+            exit 1
+          fi
+          git commit -m "[skip ci] Release new versions"
+
       - name: Release new versions
-        uses: changesets/action@v1
+        id: release
+        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
         with:
           publish: pnpm run publish
           createGithubReleases: true
@@ -81,39 +103,25 @@ jobs:
           NPM_TOKEN: "" # See https://github.com/changesets/changesets/issues/1152#issuecomment-3190884868
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
-      - name: Update lock file
-        # The npm registry is eventually consistent: versions published
-        # seconds earlier may not resolve yet, so retry with backoff.
+      - name: Push new versions
+        # Gate on the tags rather than on whether the publish step succeeded: they
+        # are what has to end up reachable. `changeset publish` tags at HEAD and the
+        # step above pushes them to origin, so if any exist — even from a publish
+        # that then failed partway — the commit they point at has to land, or they
+        # hang off no branch, which is the SDK-298 breakage this change prevents.
+        if: always()
         run: |
-          for delay in 10 20 40 80 160; do
-            pnpm i --no-link --no-frozen-lockfile && exit 0
-            echo "Registry has not propagated the new versions yet, retrying in ${delay}s..."
-            sleep "$delay"
-          done
-          pnpm i --no-link --no-frozen-lockfile
-
-      - name: Commit new versions
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git commit -am "[skip ci] Release new versions" || exit 0
-
-          # A PR merging mid-release makes this push a non-fast-forward. The
-          # artifacts were already published from the checked-out tree, so we
-          # only rebase the version bump over incoming changes that don't touch
-          # packages/. Otherwise the source would claim the published version
-          # contains code that isn't in the artifacts, so we fail loudly.
-          if git push; then
+          if [ -z "$(git tag --points-at HEAD)" ]; then
+            echo "Nothing was published; the version bump stays local and the changesets are intact for a re-dispatch."
             exit 0
           fi
 
-          git fetch origin "${GITHUB_REF_NAME}"
-          if git diff --name-only "HEAD~1" FETCH_HEAD -- packages/ | grep -q .; then
-            echo "::error::'${GITHUB_REF_NAME}' advanced with changes under packages/ during the release. Refusing to rebase the version bump onto unpublished package code (the source would diverge from the published artifacts). Reconcile manually."
-            exit 1
+          if ! git push; then
+            # A PR merged mid-release. Merge rather than rebase: the tags already
+            # point at this commit and rewriting it would strand them off the branch.
+            git fetch origin "${GITHUB_REF_NAME}"
+            git merge --no-edit FETCH_HEAD
+            git push
           fi
-
-          git pull --rebase origin "${GITHUB_REF_NAME}"
-          git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

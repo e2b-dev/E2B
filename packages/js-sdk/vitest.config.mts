@@ -25,6 +25,7 @@ export default defineConfig({
           testTimeout: 30_000,
           environment: 'node',
           bail: 0,
+          setupFiles: ['tests/globalFetchFallback.setup.ts'],
           server: {},
           deps: {
             interopDefault: true,
@@ -59,6 +60,7 @@ export default defineConfig({
           globals: false,
           testTimeout: 180_000,
           environment: 'node',
+          setupFiles: ['tests/globalFetchFallback.setup.ts'],
         },
       },
       {
