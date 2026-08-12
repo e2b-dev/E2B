@@ -73,10 +73,83 @@ export function limitConcurrency(
     const signal =
       init?.signal ?? (isRequestLike(input) ? input.signal : undefined)
     const release = await sem.acquire(signal)
+    let res: Response
     try {
-      return await fetcher(input, init)
-    } finally {
+      res = await fetcher(input, init)
+    } catch (err) {
       release()
+      throw err
     }
+
+    if (!res.body) {
+      release()
+      return res
+    }
+
+    let released = false
+    const safeRelease = () => {
+      if (!released) {
+        released = true
+        release()
+      }
+    }
+
+    return createResponseProxy(res, safeRelease)
   }) as typeof fetch
+}
+
+function createResponseProxy(res: Response, safeRelease: () => void): Response {
+  const methods = ['arrayBuffer', 'blob', 'formData', 'json', 'text'] as const
+  for (const method of methods) {
+    const original = (res[method] as any).bind(res)
+    ;(res as any)[method] = async (...args: any[]) => {
+      try {
+        return await original(...args)
+      } finally {
+        safeRelease()
+      }
+    }
+  }
+
+  if (!res.body) return res
+
+  const bodyProxy = new Proxy(res.body as any, {
+    get(target, prop, receiver) {
+      if (prop === 'getReader') {
+        return function (...args: any[]) {
+          const reader = target.getReader(...args)
+          const originalRead = reader.read.bind(reader)
+          const originalCancel = reader.cancel.bind(reader)
+
+          reader.read = async () => {
+            try {
+              const result = await originalRead()
+              if (result.done) safeRelease()
+              return result
+            } catch (err) {
+              safeRelease()
+              throw err
+            }
+          }
+
+          reader.cancel = async (reason?: any) => {
+            try {
+              return await originalCancel(reason)
+            } finally {
+              safeRelease()
+            }
+          }
+          return reader
+        }
+      }
+      return Reflect.get(target, prop, receiver)
+    }
+  })
+
+  return new Proxy(res, {
+    get(target, prop, receiver) {
+      if (prop === 'body') return bodyProxy
+      return Reflect.get(target, prop, receiver)
+    }
+  })
 }
