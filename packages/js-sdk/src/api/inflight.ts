@@ -113,43 +113,84 @@ function createResponseProxy(res: Response, safeRelease: () => void): Response {
 
   if (!res.body) return res
 
-  const bodyProxy = new Proxy(res.body as any, {
-    get(target, prop, receiver) {
-      if (prop === 'getReader') {
-        return function (...args: any[]) {
-          const reader = target.getReader(...args)
-          const originalRead = reader.read.bind(reader)
-          const originalCancel = reader.cancel.bind(reader)
-
-          reader.read = async () => {
+  const createBodyProxy = (stream: any): any => {
+    return new Proxy(stream, {
+      get(target, prop) {
+        if (prop === 'cancel') {
+          return async (...args: any[]) => {
             try {
-              const result = await originalRead()
-              if (result.done) safeRelease()
-              return result
-            } catch (err) {
-              safeRelease()
-              throw err
-            }
-          }
-
-          reader.cancel = async (reason?: any) => {
-            try {
-              return await originalCancel(reason)
+              return await target.cancel(...args)
             } finally {
               safeRelease()
             }
           }
-          return reader
         }
+        if (prop === 'pipeTo') {
+          return async (...args: any[]) => {
+            try {
+              return await target.pipeTo(...args)
+            } finally {
+              safeRelease()
+            }
+          }
+        }
+        if (prop === 'pipeThrough') {
+          return (...args: any[]) => {
+            const newStream = target.pipeThrough(...args)
+            return createBodyProxy(newStream)
+          }
+        }
+        if (prop === 'getReader') {
+          return function (...args: any[]) {
+            const reader = target.getReader(...args)
+            const originalRead = reader.read.bind(reader)
+            const originalCancel = reader.cancel.bind(reader)
+
+            reader.read = async (...readArgs: any[]) => {
+              try {
+                const result = await originalRead(...readArgs)
+                if (result.done) safeRelease()
+                return result
+              } catch (err) {
+                safeRelease()
+                throw err
+              }
+            }
+
+            reader.cancel = async (reason?: any) => {
+              try {
+                return await originalCancel(reason)
+              } finally {
+                safeRelease()
+              }
+            }
+            return reader
+          }
+        }
+        if (prop === Symbol.asyncIterator) {
+          if (!target[Symbol.asyncIterator]) return undefined
+          return async function* (...args: any[]) {
+            try {
+              yield* target[Symbol.asyncIterator](...args)
+            } finally {
+              safeRelease()
+            }
+          }
+        }
+        
+        const value = Reflect.get(target, prop)
+        return typeof value === 'function' ? value.bind(target) : value
       }
-      return Reflect.get(target, prop, receiver)
-    }
-  })
+    })
+  }
+
+  const bodyProxy = createBodyProxy(res.body)
 
   return new Proxy(res, {
-    get(target, prop, receiver) {
+    get(target, prop) {
       if (prop === 'body') return bodyProxy
-      return Reflect.get(target, prop, receiver)
+      const value = Reflect.get(target, prop)
+      return typeof value === 'function' ? value.bind(target) : value
     }
   })
 }
