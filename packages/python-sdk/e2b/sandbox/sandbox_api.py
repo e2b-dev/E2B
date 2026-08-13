@@ -471,12 +471,12 @@ def build_iam_config(
         # snake_case key the wire's camelCase 'tokenType' maps to.
         if (
             not isinstance(token, dict)
-            or "audience" not in token
-            or "token_type" not in token
+            or not isinstance(token.get("audience"), str)
+            or not isinstance(token.get("token_type"), str)
         ):
             raise InvalidArgumentException(
-                f"iam token {name!r} must be a dict with 'audience' and "
-                "'token_type' keys (snake_case 'token_type', not 'tokenType')."
+                f"iam token {name!r} must be a dict with string 'audience' and "
+                "'token_type' values (snake_case 'token_type', not 'tokenType')."
             )
 
         client_tokens[name] = ClientSandboxIamToken(

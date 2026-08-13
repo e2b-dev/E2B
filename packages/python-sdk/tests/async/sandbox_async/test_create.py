@@ -162,6 +162,12 @@ def test_create_payload_rejects_malformed_iam_tokens():
     with pytest.raises(InvalidArgumentException):
         build_iam_config(cast(Any, {"tokens": {"aws": None}}))
 
+    # Non-string values must be rejected too, not serialized as null.
+    with pytest.raises(InvalidArgumentException):
+        build_iam_config(
+            cast(Any, {"tokens": {"aws": {"audience": None, "token_type": "JWT-SVID"}}})
+        )
+
 
 @pytest.mark.skip_debug()
 async def test_filesystem_only_auto_pause_rejects_auto_resume():
