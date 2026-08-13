@@ -23,6 +23,7 @@ from e2b.sandbox.commands.command_handle import CommandExitException
 from e2b.sandbox.main import SandboxOpts
 from e2b.sandbox.sandbox_api import (
     McpServer,
+    SandboxIamOpts,
     SandboxLifecycle,
     SandboxMetrics,
     SandboxNetworkOpts,
@@ -171,6 +172,7 @@ class Sandbox(SandboxApi):
         allow_internet_access: bool = True,
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
+        iam: Optional[SandboxIamOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
         volume_mounts: Optional[SandboxVolumeMount] = None,
         logger: Optional[logging.Logger] = None,
@@ -189,6 +191,7 @@ class Sandbox(SandboxApi):
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`. If set to `False`, it works the same as setting network `deny_out` to `[0.0.0.0/0]`.
         :param mcp: MCP server to enable in the sandbox
         :param network: Sandbox network configuration. ``allow_out``/``deny_out`` may also be a callable receiving a :class:`SandboxNetworkSelectorContext` (``ctx.all_traffic``, ``ctx.rules``) and returning a list of strings. Per-host transform rules are nested under ``network.rules``.
+        :param iam: Sandbox workload identity configuration. A non-empty ``tokens`` map enables workload identity for the sandbox; token definitions can be created with :meth:`Secret.iam_token`. Example: ``{"tokens": {"aws": Secret.iam_token(audience="sts.amazonaws.com", token_type="JWT-SVID")}}``
         :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` (default) or ``"pause"``, or an object ``{"action": "pause"|"kill", "keep_memory": bool}`` where ``keep_memory`` (default ``True``) set to ``False`` makes a timeout auto-pause filesystem-only (cold-boots on resume; cannot be combined with ``auto_resume``); ``auto_resume``: ``False`` (default) or ``True`` (only when ``on_timeout`` action is ``"pause"``). Example: ``{"on_timeout": {"action": "pause", "keep_memory": False}}``
         :param volume_mounts: Dictionary mapping mount paths to Volume instances or volume names
         :param logger: Logger used for request and response logging for this sandbox. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
@@ -221,6 +224,7 @@ class Sandbox(SandboxApi):
             allow_internet_access=allow_internet_access,
             mcp=mcp,
             network=network,
+            iam=iam,
             lifecycle=lifecycle,
             volume_mounts=transformed_mounts,
             logger=logger,
@@ -1102,6 +1106,7 @@ class Sandbox(SandboxApi):
         allow_internet_access: bool,
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
+        iam: Optional[SandboxIamOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
         volume_mounts: Optional[list] = None,
         logger: Optional[logging.Logger] = None,
@@ -1126,6 +1131,7 @@ class Sandbox(SandboxApi):
                 allow_internet_access=allow_internet_access,
                 mcp=mcp,
                 network=network,
+                iam=iam,
                 lifecycle=lifecycle,
                 volume_mounts=volume_mounts,
                 logger=logger,

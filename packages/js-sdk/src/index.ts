@@ -62,6 +62,9 @@ export type {
   SandboxState,
   SandboxListOpts,
   SandboxPaginator,
+  SandboxIamOpts,
+  SandboxIamToken,
+  SandboxIamTokenType,
   SandboxNetworkOpts,
   SandboxNetworkInfo,
   SandboxNetworkSelector,
@@ -81,6 +84,8 @@ export type {
 } from './sandbox/sandboxApi'
 
 export type { McpServer } from './sandbox/mcp'
+
+export { Secret } from './secret'
 
 export { ALL_TRAFFIC } from './sandbox/network'
 

@@ -201,6 +201,40 @@ export type SandboxNetworkUpdate = {
 }
 
 /**
+ * Workload token type. `'JWT-SVID'` is the only type the API accepts in this
+ * version; the set is defined server-side and may grow, so any string is
+ * allowed.
+ */
+export type SandboxIamTokenType = 'JWT-SVID' | (string & {})
+
+/**
+ * Workload token definition for sandbox workload identity.
+ */
+export interface SandboxIamToken {
+  /**
+   * Audience of the workload token, stored exactly as provided.
+   */
+  audience: string
+
+  /**
+   * Workload token type.
+   */
+  tokenType: SandboxIamTokenType
+}
+
+/**
+ * Sandbox workload identity configuration. A non-empty `tokens` map enables
+ * workload identity for the sandbox.
+ */
+export interface SandboxIamOpts {
+  /**
+   * Named workload-token definitions, keyed by a caller-chosen token name.
+   * Values can be created with `Secret.iamToken()`.
+   */
+  tokens?: Record<string, SandboxIamToken>
+}
+
+/**
  * What happens when the sandbox timeout is reached. Either the bare action
  * (`'pause'` / `'kill'`), or an object form that also controls the pause
  * snapshot kind via `keepMemory`.
@@ -404,6 +438,26 @@ export interface SandboxOpts extends ConnectionOpts {
    * Sandbox network configuration
    */
   network?: SandboxNetworkOpts
+
+  /**
+   * Sandbox workload identity configuration. Providing a non-empty
+   * `tokens` map enables workload identity for the sandbox.
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create({
+   *   iam: {
+   *     tokens: {
+   *       aws: Secret.iamToken({
+   *         audience: 'sts.amazonaws.com',
+   *         tokenType: 'JWT-SVID',
+   *       }),
+   *     },
+   *   },
+   * })
+   * ```
+   */
+  iam?: SandboxIamOpts
 
   /**
    * Volume mounts for the sandbox.
@@ -736,6 +790,41 @@ function buildNetworkBody(
       ? { maskRequestHost: network.maskRequestHost }
       : {}),
   }
+}
+
+function buildIamBody(
+  iam: SandboxIamOpts | undefined
+): components['schemas']['SandboxIam'] | undefined {
+  // Rebuild the body from the known fields so stray properties on the
+  // caller's objects never reach the wire and later mutations of the
+  // caller's map cannot alter the in-flight request.
+  const tokens: components['schemas']['SandboxIamTokens'] = {}
+  for (const [name, token] of Object.entries(iam?.tokens ?? {})) {
+    // Untyped callers can leave holes in the map (conditionally included
+    // tokens); those don't count toward a non-empty config.
+    if (!token) {
+      continue
+    }
+
+    if (
+      typeof token.audience !== 'string' ||
+      typeof token.tokenType !== 'string'
+    ) {
+      throw new InvalidArgumentError(
+        `iam token '${name}' must have string 'audience' and 'tokenType' properties.`
+      )
+    }
+
+    tokens[name] = { audience: token.audience, tokenType: token.tokenType }
+  }
+
+  // Only a non-empty tokens map enables workload identity, so an empty
+  // iam config is omitted from the payload entirely.
+  if (Object.keys(tokens).length === 0) {
+    return undefined
+  }
+
+  return { tokens }
 }
 
 function buildNetworkUpdateBody(
@@ -1211,6 +1300,7 @@ export class SandboxApi {
       secure: opts?.secure ?? true,
       allow_internet_access: opts?.allowInternetAccess ?? true,
       network: buildNetworkBody(opts?.network),
+      iam: buildIamBody(opts?.iam),
       autoPause: action === 'pause',
       autoPauseMemory: action === 'pause' ? keepMemory : undefined,
       autoResume: { enabled: autoResume },
