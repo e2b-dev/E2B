@@ -291,6 +291,10 @@ export interface SandboxIamOpts {
   /**
    * Named workload-token definitions, keyed by a caller-chosen token name.
    * Values can be created with `Secret.iamToken()`.
+   *
+   * A name is interpolated into the `'${e2b.identity.tokens.<name>}'`
+   * placeholder a network transform resolves, so it cannot be empty or contain
+   * `{`, `}` or control characters.
    */
   tokens?: Record<string, SandboxIamToken>
 }
@@ -800,7 +804,31 @@ function resolveNetworkSelector(
   return selector
 }
 
+/**
+ * Characters a workload token name cannot carry.
+ *
+ * The egress proxy reads a placeholder as everything between
+ * `'${e2b.identity.tokens.'` and the next `}`, then looks that name up in the
+ * registered tokens. A brace in the name breaks that in both directions: `}`
+ * ends the placeholder early, so `'a}b'` resolves the unrelated token `'a'` and
+ * leaves `'b}'` as literal text, and `{` lets a name close its own placeholder
+ * and open another one, minting a token the caller never referenced. Control
+ * characters are rejected separately because they cannot appear in an HTTP
+ * header value at all — the API would answer with an opaque 400.
+ */
+const INVALID_IAM_TOKEN_NAME_CHARS = /[{}\p{Cc}]/u
+
+function validateIamTokenName(name: string): void {
+  if (name.length === 0 || INVALID_IAM_TOKEN_NAME_CHARS.test(name)) {
+    throw new InvalidArgumentError(
+      `iam token name ${JSON.stringify(name)} is not usable: a token name cannot be empty or contain '{', '}' or control characters, because it is interpolated into the '\${e2b.identity.tokens.<name>}' placeholder the egress proxy resolves.`
+    )
+  }
+}
+
 function iamTokenPlaceholder(name: string): string {
+  validateIamTokenName(name)
+
   return `\${e2b.identity.tokens.${name}}`
 }
 
@@ -1015,6 +1043,11 @@ function buildIamBody(
         `iam token '${name}' must have string 'audience' and 'tokenType' properties.`
       )
     }
+
+    // A network transform placeholder is the only way to consume a workload
+    // token, so a name that cannot appear in one is rejected where it is
+    // registered rather than at the reference that would have used it.
+    validateIamTokenName(name)
 
     tokens[name] = { audience: token.audience, tokenType: token.tokenType }
   }

@@ -7,6 +7,8 @@ Allow a network rule's `transform` to be a callback, so a workload identity toke
 
 `updateNetwork` / `update_network` accepts the same callbacks, but its payload carries no `iam` config, so token names cannot be checked there and every name resolves to its placeholder.
 
+Token names are validated where they are registered and again before they are interpolated: a name cannot be empty or contain `{`, `}` or control characters, since the proxy reads a placeholder up to its first `}` and a brace in the name would resolve a different token than the one referenced.
+
 ```ts
 import { Sandbox, Secret } from 'e2b'
 

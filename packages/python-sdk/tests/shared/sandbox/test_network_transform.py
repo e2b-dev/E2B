@@ -195,6 +195,80 @@ def test_async_transform_callable_is_rejected():
         build_network_config(network)
 
 
+@pytest.mark.parametrize(
+    "name",
+    [
+        pytest.param("a}b", id="closing-brace"),
+        pytest.param("a{b", id="opening-brace"),
+        pytest.param("aws}${e2b.identity.tokens.gcp", id="smuggled-placeholder"),
+        pytest.param("a\nb", id="control-char"),
+        pytest.param("", id="empty"),
+    ],
+)
+def test_unusable_iam_token_names_are_rejected(name):
+    # The proxy reads a placeholder up to its first "}", so a brace in the name
+    # resolves a different token than the one referenced — "a}b" would mint "a"
+    # and leave "b}" as literal text.
+    with pytest.raises(InvalidArgumentException, match="is not usable"):
+        build_iam_config(
+            cast(Any, {"tokens": {name: {"audience": "a", "token_type": "JWT-SVID"}}})
+        )
+
+    # The update path takes any name from the callable, so it has to check again
+    # at the point of interpolation.
+    with pytest.raises(InvalidArgumentException, match="is not usable"):
+        build_network_update_body(
+            cast(
+                Any,
+                {
+                    "rules": {
+                        "api.internal.example.com": [
+                            {
+                                "transform": lambda ctx: {
+                                    "headers": {"A": ctx.iam.tokens[name]}
+                                }
+                            },
+                        ],
+                    },
+                },
+            )
+        )
+
+
+def test_ordinary_iam_token_names_are_accepted():
+    iam = build_iam_config(
+        {
+            "tokens": {
+                "aws.prod-1_x": Secret.iam_token(
+                    audience="sts.amazonaws.com", token_type="JWT-SVID"
+                ),
+            },
+        }
+    )
+    assert iam is not None
+
+    body = build_network_config(
+        {
+            "rules": {
+                "api.internal.example.com": [
+                    {
+                        "transform": lambda ctx: {
+                            "headers": {"A": ctx.iam.tokens["aws.prod-1_x"]},
+                        },
+                    },
+                ],
+            },
+        },
+        iam,
+    )
+    assert body is not None
+    assert body["rules"].to_dict() == {
+        "api.internal.example.com": [
+            {"transform": {"headers": {"A": "${e2b.identity.tokens.aws.prod-1_x}"}}},
+        ],
+    }
+
+
 def test_update_network_resolves_transform_callables_without_iam():
     # The update payload carries no iam config, so the sandbox's registered
     # token names are unknown client-side and any name resolves to its

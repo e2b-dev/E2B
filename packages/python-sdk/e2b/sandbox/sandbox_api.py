@@ -1,4 +1,5 @@
 import inspect
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import (
@@ -104,7 +105,39 @@ class SandboxNetworkTransform(TypedDict):
     """
 
 
+# Characters a workload token name cannot carry.
+#
+# The egress proxy reads a placeholder as everything between
+# "${e2b.identity.tokens." and the next "}", then looks that name up in the
+# registered tokens. A brace in the name breaks that in both directions: "}"
+# ends the placeholder early, so "a}b" resolves the unrelated token "a" and
+# leaves "b}" as literal text, and "{" lets a name close its own placeholder and
+# open another one, minting a token the caller never referenced. Control
+# characters are rejected separately because they cannot appear in an HTTP
+# header value at all — the API would answer with an opaque 400. The class is
+# the Unicode Control category (U+0000-U+001F, U+007F-U+009F), spelled
+# `\p{Cc}` in the JS SDK.
+_INVALID_IAM_TOKEN_NAME_CHARS = re.compile(r"[{}\x00-\x1f\x7f-\x9f]")
+
+
+def _validate_iam_token_name(name: str) -> None:
+    if (
+        not isinstance(name, str)
+        or not name
+        or _INVALID_IAM_TOKEN_NAME_CHARS.search(name)
+    ):
+        raise InvalidArgumentException(
+            f"iam token name {name!r} is not usable: a token name must be a "
+            "non-empty string and cannot contain '{', '}' or control "
+            "characters, because it is interpolated into the "
+            "'${e2b.identity.tokens.<name>}' placeholder the egress proxy "
+            "resolves."
+        )
+
+
 def _iam_token_placeholder(name: str) -> str:
+    _validate_iam_token_name(name)
+
     return f"${{e2b.identity.tokens.{name}}}"
 
 
@@ -395,6 +428,10 @@ class SandboxIamOpts(TypedDict, total=False):
     """
     Named workload-token definitions, keyed by a caller-chosen token name.
     Values can be created with :meth:`Secret.iam_token`.
+
+    A name is interpolated into the ``"${e2b.identity.tokens.<name>}"``
+    placeholder a network transform resolves, so it cannot be empty or contain
+    ``{``, ``}`` or control characters.
     """
 
 
@@ -663,6 +700,11 @@ def build_iam_config(
                 f"iam token {name!r} must be a dict with string 'audience' and "
                 "'token_type' values (snake_case 'token_type', not 'tokenType')."
             )
+
+        # A network transform placeholder is the only way to consume a workload
+        # token, so a name that cannot appear in one is rejected where it is
+        # registered rather than at the reference that would have used it.
+        _validate_iam_token_name(name)
 
         client_tokens[name] = ClientSandboxIamToken(
             audience=token["audience"],

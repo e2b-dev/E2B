@@ -273,6 +273,78 @@ test('an explicit null transform sends an empty rule', async () => {
   })
 })
 
+test.for([
+  ['a}b', 'closing brace'],
+  ['a{b', 'opening brace'],
+  ['aws}${e2b.identity.tokens.gcp', 'smuggled placeholder'],
+  ['a\nb', 'control character'],
+  ['', 'empty'],
+])(
+  'an iam token name with a %s is rejected',
+  async ([name]: [string, string]) => {
+    // The proxy reads a placeholder up to its first `}`, so a brace in the name
+    // resolves a different token than the one referenced — 'a}b' would mint 'a'
+    // and leave 'b}' as literal text.
+    await expect(
+      Sandbox.create('base', {
+        apiKey: TEST_API_KEY,
+        iam: { tokens: { [name]: awsToken } },
+      })
+    ).rejects.toThrowError(/is not usable/)
+
+    expect(lastCreateBody).toBeUndefined()
+
+    // The update path takes any name from the callback, so it has to check again
+    // at the point of interpolation.
+    await expect(
+      Sandbox.updateNetwork(
+        sandboxId,
+        {
+          rules: {
+            'api.internal.example.com': [
+              {
+                transform: ({ iam }) => ({
+                  headers: { Authorization: `Bearer ${iam.tokens[name]}` },
+                }),
+              },
+            ],
+          },
+        },
+        { apiKey: TEST_API_KEY }
+      )
+    ).rejects.toThrowError(/is not usable/)
+
+    expect(lastUpdateBody).toBeUndefined()
+  }
+)
+
+test('an ordinary iam token name is accepted', async () => {
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    iam: { tokens: { 'aws.prod-1_x': awsToken } },
+    network: {
+      rules: {
+        'api.internal.example.com': [
+          {
+            transform: ({ iam }) => ({
+              headers: {
+                Authorization: `Bearer ${iam.tokens['aws.prod-1_x']}`,
+              },
+            }),
+          },
+        ],
+      },
+    },
+  })
+
+  expect(
+    lastCreateBody?.network.rules['api.internal.example.com'][0].transform
+      .headers
+  ).toEqual({
+    Authorization: 'Bearer ${e2b.identity.tokens.aws.prod-1_x}',
+  })
+})
+
 test('updateNetwork resolves transform callbacks without an iam config', async () => {
   // The update payload carries no iam config, so the sandbox's registered token
   // names are unknown client-side and any name resolves to its placeholder.
