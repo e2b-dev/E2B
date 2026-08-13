@@ -25,6 +25,12 @@ clients never reached the pyqwest transports the SDK installs, so custom TLS
 trust was dropped without a word. Passing it now raises and points at
 `ca_bundle`.
 
+Self-hosted deployments that trusted a private CA through the `SSL_CERT_FILE`
+environment variable should move to `ca_bundle` / `E2B_CA_BUNDLE`: the
+transports stopped reading OpenSSL's environment variables when they moved off
+httpx (rustls doesn't consult them), and installing the CA in the system trust
+store is the only other thing they still honor.
+
 In JS the option is Node-only — no other runtime lets the SDK configure TLS
 trust per connection — and setting it elsewhere raises instead of connecting
 with the trust it was meant to extend.

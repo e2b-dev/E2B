@@ -130,9 +130,11 @@ def load_ca_bundle(path: Optional[str]) -> Optional[bytes]:
     callers don't have to branch.
 
     The file is read once per path — every transport built for the same
-    ``ca_bundle`` reuses the result — and is checked to look like PEM here,
-    because reqwest accepts an unparsable bundle at construction time and only
-    fails later, per connection attempt, with an unspecific certificate error.
+    ``ca_bundle`` reuses the result — and is checked to look like PEM here so a
+    bundle that trusts nothing is reported against the option that named it,
+    rather than as a certificate error on some later connection. pyqwest 0.9.0
+    accepts such a bundle silently; curioswitch/pyqwest#216 makes it raise, and
+    even then this check keeps the failure at configuration time.
 
     :raises InvalidArgumentException: if the file can't be read or holds no PEM
         certificate.
