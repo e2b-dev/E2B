@@ -77,10 +77,20 @@ _transport_lock = threading.Lock()
 _transports: Dict[Optional[ProxyConfig], PyqwestTransport] = {}
 
 
-def get_transport(config: ConnectionConfig) -> PyqwestTransport:
+def get_transport(
+    config: ConnectionConfig, http2: Optional[bool] = None
+) -> PyqwestTransport:
     """The shared pyqwest-backed httpx transport for REST API calls. For TLS
     connections ALPN negotiates the HTTP version (HTTP/2 against the E2B
-    API), like the http2-enabled httpx transport this replaced."""
+    API), like the http2-enabled httpx transport this replaced.
+
+    :param http2: Deprecated and ignored. The httpx transport this replaced
+        took an explicit HTTP/2 switch; ALPN negotiates the version now, so
+        the flag no longer selects anything. Accepted so that callers written
+        against the pre-pyqwest signature keep working - notably every
+        published ``e2b-code-interpreter``, which calls
+        ``get_transport(config, http2=False)``.
+    """
     proxy = proxy_to_config(config.proxy)
     with _transport_lock:
         transport = _transports.get(proxy)

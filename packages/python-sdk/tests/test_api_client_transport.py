@@ -610,3 +610,24 @@ def test_sync_transport_sends_multipart_bodies(test_api_key, echo_server):
     finally:
         client.close()
         reset_sync_api_transports()
+
+
+def test_get_transport_accepts_the_deprecated_http2_kwarg():
+    """Every published e2b-code-interpreter calls
+    ``get_transport(config, http2=False)``. The pyqwest move dropped that
+    parameter, which turned the first ``run_code()`` of any fresh
+    ``pip install e2b-code-interpreter`` into a TypeError, because
+    e2b-code-interpreter's ``e2b>=2.26.0,<3.0.0`` range resolves to a version
+    that no longer accepts it. The flag is inert now (ALPN negotiates), so it
+    is accepted and ignored rather than removed.
+    """
+    reset_sync_api_transports()
+    reset_async_api_transports()
+    config = ConnectionConfig(api_key="test-key")
+
+    assert get_sync_transport(config, http2=False) is get_sync_transport(config)
+    assert get_async_transport(config, http2=False) is get_async_transport(config)
+
+    # Positional still works, and so does omitting it entirely.
+    assert isinstance(get_sync_transport(config, False), PyqwestTransport)
+    assert isinstance(get_async_transport(config), AsyncPyqwestTransport)
