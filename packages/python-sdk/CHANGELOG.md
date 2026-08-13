@@ -1,5 +1,11 @@
 # @e2b/python-sdk
 
+## 2.39.1
+
+### Patch Changes
+
+- 0d507cd: Restore the `http2` parameter on `get_transport` and `get_envd_transport`, which the pyqwest migration dropped in 2.38.0. `http2=False` again returns a transport pinned to HTTP/1.1, on its own connection pool.
+
 ## 2.39.0
 
 ### Minor Changes
