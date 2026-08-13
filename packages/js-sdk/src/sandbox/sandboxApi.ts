@@ -6,6 +6,7 @@ import {
 } from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
 import { ALL_TRAFFIC } from './network'
+import { iamTokenPlaceholders, validateIamTokenName } from './iam'
 import {
   InvalidArgumentError,
   NotFoundError,
@@ -53,13 +54,57 @@ export type SandboxNetworkTransform = {
 }
 
 /**
+ * Context passed to a {@link SandboxNetworkRule} `transform` callback. Its
+ * values are literal placeholder strings that the egress proxy resolves per
+ * request, so the secret itself never leaves the platform.
+ */
+export type SandboxNetworkTransformContext = {
+  /** Workload identity placeholders. */
+  iam: {
+    /**
+     * Placeholder for each workload token registered in
+     * {@link SandboxOpts.iam}, keyed by token name. `tokens.aws` is the string
+     * `'${e2b.identity.tokens.aws}'`, which the egress proxy replaces with a
+     * freshly minted token when it forwards the request.
+     *
+     * Reading a name that is not registered throws
+     * {@link InvalidArgumentError} — the proxy never turns an unregistered name
+     * into a token, so a typo would surface as a confusing auth failure at the
+     * destination.
+     */
+    tokens: Record<string, string>
+  }
+}
+
+/**
+ * Callback form of {@link SandboxNetworkRule.transform}. Invoked once while the
+ * request is being built, with a context of placeholder strings.
+ */
+export type SandboxNetworkTransformResolver = (
+  ctx: SandboxNetworkTransformContext
+) => SandboxNetworkTransform
+
+/**
  * Per-domain rule applied to egress requests.
  */
 export type SandboxNetworkRule = {
   /**
    * Transform applied to requests matching this rule.
+   *
+   * Accepts either a static object or a callback that receives a
+   * {@link SandboxNetworkTransformContext} of placeholder strings — use the
+   * callback to inject a workload identity token the proxy mints per request.
+   *
+   * @example
+   * ```ts
+   * {
+   *   transform: ({ iam }) => ({
+   *     headers: { Authorization: `Bearer ${iam.tokens.aws}` },
+   *   }),
+   * }
+   * ```
    */
-  transform?: SandboxNetworkTransform
+  transform?: SandboxNetworkTransform | SandboxNetworkTransformResolver
 }
 
 /**
@@ -138,6 +183,11 @@ export type SandboxNetworkOpts = {
    * also appear in {@link allowOut}. Hosts registered here are exposed to the
    * `allowOut`/`denyOut` callbacks via `rules`.
    *
+   * A rule's `transform` can also be a callback receiving a
+   * {@link SandboxNetworkTransformContext}, which is how a workload identity
+   * token from {@link SandboxOpts.iam} gets injected without the SDK ever
+   * seeing its value.
+   *
    * @example
    * ```ts
    * await Sandbox.create({
@@ -146,6 +196,13 @@ export type SandboxNetworkOpts = {
    *     rules: {
    *       'api.openai.com': [
    *         { transform: { headers: { Authorization: `Bearer ${token}` } } },
+   *       ],
+   *       'api.internal.example.com': [
+   *         {
+   *           transform: ({ iam }) => ({
+   *             headers: { Authorization: `Bearer ${iam.tokens.aws}` },
+   *           }),
+   *         },
    *       ],
    *     },
    *   },
@@ -191,7 +248,12 @@ export type SandboxNetworkUpdate = {
   allowOut?: SandboxNetworkSelector
   /** See {@link SandboxNetworkOpts.denyOut}. */
   denyOut?: SandboxNetworkSelector
-  /** See {@link SandboxNetworkOpts.rules}. */
+  /**
+   * See {@link SandboxNetworkOpts.rules}. A `transform` callback works here
+   * too, but the update payload carries no `iam` config, so token names cannot
+   * be checked against the sandbox's registered tokens — every name resolves to
+   * its placeholder and a typo only surfaces at the destination.
+   */
   rules?: SandboxNetworkRules
   /**
    * Allow sandbox to access the internet. When set to `false`, it behaves the
@@ -230,6 +292,10 @@ export interface SandboxIamOpts {
   /**
    * Named workload-token definitions, keyed by a caller-chosen token name.
    * Values can be created with `Secret.iamToken()`.
+   *
+   * A name is interpolated into the `'${e2b.identity.tokens.<name>}'`
+   * placeholder a network transform resolves, so it cannot be empty or contain
+   * `{`, `}` or control characters.
    */
   tokens?: Record<string, SandboxIamToken>
 }
@@ -442,6 +508,10 @@ export interface SandboxOpts extends ConnectionOpts {
   /**
    * Sandbox workload identity configuration. Providing a non-empty
    * `tokens` map enables workload identity for the sandbox.
+   *
+   * Registered tokens are exposed to {@link SandboxNetworkOpts.rules}
+   * `transform` callbacks as `iam.tokens.<name>` placeholders, which the egress
+   * proxy resolves per request.
    *
    * @example
    * ```ts
@@ -735,14 +805,79 @@ function resolveNetworkSelector(
   return selector
 }
 
+/**
+ * Build the context handed to `transform` callbacks. See
+ * {@link iamTokenPlaceholders} for what `validate` controls.
+ */
+function buildTransformContext(
+  tokenNames: string[],
+  { validate }: { validate: boolean }
+): SandboxNetworkTransformContext {
+  return { iam: { tokens: iamTokenPlaceholders(tokenNames, { validate }) } }
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+
+  const proto = Object.getPrototypeOf(value)
+  return proto === Object.prototype || proto === null
+}
+
+/** Name the shape a `transform` callback returned, for the error message. */
+function describeValue(value: unknown): string {
+  if (value === null) {
+    return 'null'
+  }
+
+  if (typeof value !== 'object') {
+    return typeof value
+  }
+
+  return Array.isArray(value) ? 'array' : (value.constructor?.name ?? 'object')
+}
+
 function resolveRulesForBody(
-  rules: Map<string, SandboxNetworkRule[]>
+  rules: Map<string, SandboxNetworkRule[]>,
+  ctx: SandboxNetworkTransformContext
 ): Record<string, { transform?: SandboxNetworkTransform }[]> {
   const out: Record<string, { transform?: SandboxNetworkTransform }[]> = {}
   for (const [host, hostRules] of rules) {
-    out[host] = hostRules.map((rule) =>
-      rule.transform === undefined ? {} : { transform: rule.transform }
-    )
+    out[host] = hostRules.map((rule) => {
+      // `== null` also covers an explicit `transform: null`, which Python's
+      // `rule.get('transform') is None` treats as no transform too.
+      if (rule.transform == null) {
+        return {}
+      }
+
+      if (typeof rule.transform !== 'function') {
+        return { transform: rule.transform }
+      }
+
+      const transform: unknown = rule.transform(ctx)
+      // A callback that returns something other than a transform resolves to no
+      // headers at all, which would silently create the rule without the headers
+      // it is for.
+      if (typeof (transform as PromiseLike<unknown>)?.then === 'function') {
+        // Swallow a later rejection so the caller gets this error instead of an
+        // unhandled rejection.
+        void Promise.resolve(transform).catch(() => {})
+        throw new InvalidArgumentError(
+          `Network transform callback for '${host}' must be synchronous, it returned a promise. Resolve the value before creating the sandbox.`
+        )
+      }
+
+      // Mirrors Python's `isinstance(transform, Mapping)`: an array, `Map`,
+      // `Date` or class instance serializes to something the API cannot read.
+      if (!isPlainObject(transform)) {
+        throw new InvalidArgumentError(
+          `Network transform callback for '${host}' must return a transform object, got ${describeValue(transform)}.`
+        )
+      }
+
+      return { transform: transform as SandboxNetworkTransform }
+    })
   }
   return out
 }
@@ -753,11 +888,14 @@ type NetworkEgressBody = {
   rules?: Record<string, { transform?: SandboxNetworkTransform }[]>
 }
 
-function buildNetworkEgress(network: {
-  allowOut?: SandboxNetworkSelector
-  denyOut?: SandboxNetworkSelector
-  rules?: SandboxNetworkRules
-}): NetworkEgressBody {
+function buildNetworkEgress(
+  network: {
+    allowOut?: SandboxNetworkSelector
+    denyOut?: SandboxNetworkSelector
+    rules?: SandboxNetworkRules
+  },
+  transformContext: SandboxNetworkTransformContext
+): NetworkEgressBody {
   const rules =
     network.rules instanceof Map
       ? network.rules
@@ -769,20 +907,24 @@ function buildNetworkEgress(network: {
     ...(allowOut !== undefined ? { allowOut } : {}),
     ...(denyOut !== undefined ? { denyOut } : {}),
     ...(network.rules !== undefined
-      ? { rules: resolveRulesForBody(rules) }
+      ? { rules: resolveRulesForBody(rules, transformContext) }
       : {}),
   }
 }
 
 function buildNetworkBody(
-  network: SandboxNetworkOpts | undefined
+  network: SandboxNetworkOpts | undefined,
+  iam: components['schemas']['SandboxIam'] | undefined
 ): components['schemas']['SandboxNetworkConfig'] | undefined {
   if (!network) {
     return undefined
   }
 
   return {
-    ...buildNetworkEgress(network),
+    ...buildNetworkEgress(
+      network,
+      buildTransformContext(Object.keys(iam?.tokens ?? {}), { validate: true })
+    ),
     ...(network.allowPublicTraffic !== undefined
       ? { allowPublicTraffic: network.allowPublicTraffic }
       : {}),
@@ -815,6 +957,11 @@ function buildIamBody(
       )
     }
 
+    // A network transform placeholder is the only way to consume a workload
+    // token, so a name that cannot appear in one is rejected where it is
+    // registered rather than at the reference that would have used it.
+    validateIamTokenName(name)
+
     tokens[name] = { audience: token.audience, tokenType: token.tokenType }
   }
 
@@ -831,7 +978,10 @@ function buildNetworkUpdateBody(
   network: SandboxNetworkUpdate
 ): components['schemas']['SandboxNetworkUpdateConfig'] {
   return {
-    ...buildNetworkEgress(network),
+    ...buildNetworkEgress(
+      network,
+      buildTransformContext([], { validate: false })
+    ),
     ...(network.allowInternetAccess !== undefined
       ? { allow_internet_access: network.allowInternetAccess }
       : {}),
@@ -1291,6 +1441,10 @@ export class SandboxApi {
       )
     }
 
+    // Built before the network config: `transform` callbacks are resolved
+    // against the workload tokens this request registers.
+    const iam = buildIamBody(opts?.iam)
+
     const body: components['schemas']['NewSandbox'] = {
       templateID: template,
       metadata: opts?.metadata,
@@ -1299,8 +1453,8 @@ export class SandboxApi {
       timeout: timeoutToSeconds(timeoutMs),
       secure: opts?.secure ?? true,
       allow_internet_access: opts?.allowInternetAccess ?? true,
-      network: buildNetworkBody(opts?.network),
-      iam: buildIamBody(opts?.iam),
+      network: buildNetworkBody(opts?.network, iam),
+      iam,
       autoPause: action === 'pause',
       autoPauseMemory: action === 'pause' ? keepMemory : undefined,
       autoResume: { enabled: autoResume },

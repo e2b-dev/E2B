@@ -256,7 +256,10 @@ class SandboxApi(SandboxBase):
                 "must be resumed explicitly using Sandbox.connect()."
             )
 
-        network_body = build_network_config(network)
+        # Built before the network config: ``transform`` callables are resolved
+        # against the workload tokens this request registers.
+        iam_body = build_iam_config(iam)
+        network_body = build_network_config(network, iam_body)
         body = NewSandbox(
             template_id=template,
             auto_pause=on_timeout == "pause",
@@ -269,7 +272,7 @@ class SandboxApi(SandboxBase):
             secure=secure,
             allow_internet_access=allow_internet_access,
             network=SandboxNetworkConfig(**network_body) if network_body else UNSET,
-            iam=build_iam_config(iam) or UNSET,
+            iam=iam_body or UNSET,
             volume_mounts=volume_mounts if volume_mounts else UNSET,
         )
 
