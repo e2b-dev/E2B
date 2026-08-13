@@ -1,5 +1,4 @@
 import inspect
-import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import (
@@ -7,7 +6,6 @@ from typing import (
     Callable,
     Dict,
     Iterable,
-    Iterator,
     List,
     Literal,
     Mapping,
@@ -61,6 +59,10 @@ from e2b.api.client.types import Unset
 from e2b.connection_config import ApiParams
 from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox.mcp import McpServer as BaseMcpServer
+from e2b.sandbox.iam import (
+    IamTokenPlaceholders,
+    validate_iam_token_name,
+)
 from e2b.sandbox.network import ALL_TRAFFIC
 from e2b.paginator import PaginatorBase
 
@@ -103,91 +105,6 @@ class SandboxNetworkTransform(TypedDict):
     Headers to inject into the outbound request. Values override any headers
     already present on the request.
     """
-
-
-# Characters a workload token name cannot carry.
-#
-# The egress proxy reads a placeholder as everything between
-# "${e2b.identity.tokens." and the next "}", then looks that name up in the
-# registered tokens. A brace in the name breaks that in both directions: "}"
-# ends the placeholder early, so "a}b" resolves the unrelated token "a" and
-# leaves "b}" as literal text, and "{" lets a name close its own placeholder and
-# open another one, minting a token the caller never referenced. Control
-# characters are rejected separately because they cannot appear in an HTTP
-# header value at all — the API would answer with an opaque 400. The class is
-# the Unicode Control category (U+0000-U+001F, U+007F-U+009F), spelled
-# `\p{Cc}` in the JS SDK.
-_INVALID_IAM_TOKEN_NAME_CHARS = re.compile(r"[{}\x00-\x1f\x7f-\x9f]")
-
-
-def _validate_iam_token_name(name: str) -> None:
-    if (
-        not isinstance(name, str)
-        or not name
-        or _INVALID_IAM_TOKEN_NAME_CHARS.search(name)
-    ):
-        raise InvalidArgumentException(
-            f"iam token name {name!r} is not usable: a token name must be a "
-            "non-empty string and cannot contain '{', '}' or control "
-            "characters, because it is interpolated into the "
-            "'${e2b.identity.tokens.<name>}' placeholder the egress proxy "
-            "resolves."
-        )
-
-
-def _iam_token_placeholder(name: str) -> str:
-    _validate_iam_token_name(name)
-
-    return f"${{e2b.identity.tokens.{name}}}"
-
-
-class _IamTokenPlaceholders(Mapping[str, str]):
-    """
-    Workload token placeholders keyed by token name, as exposed to a
-    ``transform`` callable. Every lookup — ``[name]``, ``get(name)`` — resolves
-    through :meth:`__getitem__`, so an unregistered name cannot slip through as
-    ``None``; iteration and ``in`` see only the registered names.
-
-    ``validate=False`` is for the update-network endpoint, whose payload carries
-    no ``iam`` config — the sandbox's registered token names are not known
-    client-side there, so any name resolves to its placeholder.
-    """
-
-    def __init__(self, names: Iterable[str], *, validate: bool) -> None:
-        # dict.fromkeys keeps registration order while dropping duplicates.
-        self._names = tuple(dict.fromkeys(names))
-        self._validate = validate
-
-    def __getitem__(self, name: str) -> str:
-        # The proxy never turns an unregistered name into a token, so a typo
-        # would surface as a confusing auth failure at the destination instead
-        # of an error here.
-        if not self._validate or name in self._names:
-            return _iam_token_placeholder(name)
-
-        hint = (
-            f"Registered tokens: {', '.join(repr(known) for known in self._names)}."
-            if self._names
-            else (
-                f"Pass it to Sandbox.create as iam={{'tokens': "
-                f"{{{name!r}: Secret.iam_token(audience=..., token_type=...)}}}}."
-            )
-        )
-        raise InvalidArgumentException(
-            f"Network transform references iam token {name!r}, which is not "
-            f"registered. {hint}"
-        )
-
-    def __contains__(self, name: object) -> bool:
-        # Membership answers "is this registered?" and never raises, so callables
-        # can branch on it; mirrors `name in iam.tokens` in the JS SDK.
-        return name in self._names
-
-    def __iter__(self) -> Iterator[str]:
-        return iter(self._names)
-
-    def __len__(self) -> int:
-        return len(self._names)
 
 
 @dataclass(frozen=True)
@@ -561,7 +478,7 @@ def _build_transform_context(
     """
     return SandboxNetworkTransformContext(
         iam=_SandboxNetworkTransformIam(
-            tokens=_IamTokenPlaceholders(token_names, validate=validate),
+            tokens=IamTokenPlaceholders(token_names, validate=validate),
         ),
     )
 
@@ -704,7 +621,7 @@ def build_iam_config(
         # A network transform placeholder is the only way to consume a workload
         # token, so a name that cannot appear in one is rejected where it is
         # registered rather than at the reference that would have used it.
-        _validate_iam_token_name(name)
+        validate_iam_token_name(name)
 
         client_tokens[name] = ClientSandboxIamToken(
             audience=token["audience"],

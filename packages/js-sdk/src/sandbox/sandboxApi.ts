@@ -6,6 +6,7 @@ import {
 } from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
 import { ALL_TRAFFIC } from './network'
+import { iamTokenPlaceholders, validateIamTokenName } from './iam'
 import {
   InvalidArgumentError,
   NotFoundError,
@@ -805,102 +806,14 @@ function resolveNetworkSelector(
 }
 
 /**
- * Characters a workload token name cannot carry.
- *
- * The egress proxy reads a placeholder as everything between
- * `'${e2b.identity.tokens.'` and the next `}`, then looks that name up in the
- * registered tokens. A brace in the name breaks that in both directions: `}`
- * ends the placeholder early, so `'a}b'` resolves the unrelated token `'a'` and
- * leaves `'b}'` as literal text, and `{` lets a name close its own placeholder
- * and open another one, minting a token the caller never referenced. Control
- * characters are rejected separately because they cannot appear in an HTTP
- * header value at all — the API would answer with an opaque 400.
- */
-const INVALID_IAM_TOKEN_NAME_CHARS = /[{}\p{Cc}]/u
-
-function validateIamTokenName(name: string): void {
-  if (name.length === 0 || INVALID_IAM_TOKEN_NAME_CHARS.test(name)) {
-    throw new InvalidArgumentError(
-      `iam token name ${JSON.stringify(name)} is not usable: a token name cannot be empty or contain '{', '}' or control characters, because it is interpolated into the '\${e2b.identity.tokens.<name>}' placeholder the egress proxy resolves.`
-    )
-  }
-}
-
-function iamTokenPlaceholder(name: string): string {
-  validateIamTokenName(name)
-
-  return `\${e2b.identity.tokens.${name}}`
-}
-
-/**
- * Properties the language and the runtime read off any object they serialize,
- * await, or coerce to a string. A token is never named after them, so they
- * resolve normally instead of counting as a token reference — otherwise
- * `JSON.stringify(iam.tokens)` inside a callback would throw.
- */
-const RUNTIME_PROBED_PROPS = new Set(['toJSON', 'then', 'toString', 'valueOf'])
-
-/**
- * Build the context handed to `transform` callbacks.
- *
- * `tokenNames` are the workload tokens the request registers. Referencing any
- * other name throws: the proxy never turns an unregistered name into a token, so
- * a typo would surface as a confusing auth failure at the destination instead of
- * an error here.
- *
- * `validate: false` is for the update-network endpoint, whose payload carries no
- * `iam` config — the sandbox's registered token names are not known client-side
- * there, so any name resolves to its placeholder.
+ * Build the context handed to `transform` callbacks. See
+ * {@link iamTokenPlaceholders} for what `validate` controls.
  */
 function buildTransformContext(
   tokenNames: string[],
   { validate }: { validate: boolean }
 ): SandboxNetworkTransformContext {
-  const tokens: Record<string, string> = {}
-  for (const name of tokenNames) {
-    tokens[name] = iamTokenPlaceholder(name)
-  }
-
-  return {
-    iam: {
-      tokens: new Proxy(tokens, {
-        get(target, prop, receiver) {
-          if (
-            typeof prop === 'string' &&
-            // Own keys only: a bare `in` also matches inherited
-            // `Object.prototype` members, so an unregistered token named
-            // `constructor` or `__proto__` would resolve to a built-in instead
-            // of being reported. Python's mapping treats them as missing too.
-            !Object.hasOwn(target, prop) &&
-            !RUNTIME_PROBED_PROPS.has(prop)
-          ) {
-            if (!validate) {
-              return iamTokenPlaceholder(prop)
-            }
-
-            const hint =
-              tokenNames.length === 0
-                ? `Pass it to Sandbox.create as iam: { tokens: { '${prop}': Secret.iamToken({ audience, tokenType }) } }.`
-                : `Registered tokens: ${tokenNames.map((name) => `'${name}'`).join(', ')}.`
-
-            throw new InvalidArgumentError(
-              `Network transform references iam token '${prop}', which is not registered. ${hint}`
-            )
-          }
-
-          return Reflect.get(target, prop, receiver)
-        },
-
-        // `name in iam.tokens` answers "is this token registered?", so it must
-        // agree with the `get` trap above and not report inherited
-        // `Object.prototype` members as tokens. Mirrors Python's
-        // `_IamTokenPlaceholders.__contains__`.
-        has(target, prop) {
-          return Object.hasOwn(target, prop)
-        },
-      }),
-    },
-  }
+  return { iam: { tokens: iamTokenPlaceholders(tokenNames, { validate }) } }
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
