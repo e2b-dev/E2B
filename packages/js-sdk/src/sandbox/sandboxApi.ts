@@ -1455,7 +1455,10 @@ export class SandboxApi {
       allow_internet_access: opts?.allowInternetAccess ?? true,
       network: buildNetworkBody(opts?.network, iam),
       iam,
-      autoPause: action === 'pause',
+      autoPause:
+        opts?.lifecycle?.onTimeout === undefined
+          ? undefined
+          : action === 'pause',
       autoPauseMemory: action === 'pause' ? keepMemory : undefined,
       autoResume: { enabled: autoResume },
     }

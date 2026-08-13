@@ -263,7 +263,11 @@ class SandboxApi(SandboxBase):
         network_body = build_network_config(network, iam_body)
         body = NewSandbox(
             template_id=template,
-            auto_pause=on_timeout == "pause",
+            auto_pause=(
+                on_timeout == "pause"
+                if lifecycle is not None and "on_timeout" in lifecycle
+                else UNSET
+            ),
             auto_pause_memory=keep_memory if on_timeout == "pause" else UNSET,
             auto_resume=SandboxAutoResumeConfig(enabled=auto_resume),
             metadata=metadata or {},

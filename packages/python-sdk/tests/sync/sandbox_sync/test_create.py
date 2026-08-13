@@ -6,6 +6,7 @@ import httpx
 import pytest
 
 from e2b import Sandbox, SandboxException, SandboxState, Secret
+from e2b.api.client.models.sandbox import Sandbox as ApiSandbox
 from e2b.api.client.models import (
     NewSandbox,
     SandboxAutoResumeConfig,
@@ -13,6 +14,8 @@ from e2b.api.client.models import (
 from e2b.api.client.types import UNSET
 from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox.sandbox_api import SandboxQuery, build_iam_config
+from e2b.api.client.types import Response
+from http import HTTPStatus
 
 
 @pytest.mark.skip_debug()
@@ -76,6 +79,64 @@ def test_create_payload_serializes_auto_resume_enabled():
 
     assert body.to_dict()["autoPause"] is True
     assert body.to_dict()["autoResume"] == {"enabled": True}
+
+
+def test_create_payload_omits_auto_pause_when_unset():
+    body = NewSandbox(template_id="template-id", auto_pause=UNSET)
+
+    assert "autoPause" not in body.to_dict()
+
+
+def test_create_payload_serializes_explicit_auto_pause_false():
+    body = NewSandbox(template_id="template-id", auto_pause=False)
+
+    assert body.to_dict()["autoPause"] is False
+
+
+@pytest.mark.parametrize(
+    ("lifecycle", "expected_auto_pause"),
+    [(None, UNSET), ({"on_timeout": "kill"}, False), ({"on_timeout": "pause"}, True)],
+)
+def test_create_sends_auto_pause_only_when_configured(
+    monkeypatch, test_api_key, lifecycle, expected_auto_pause
+):
+    captured_body = None
+
+    def mock_create(*, body, client):
+        nonlocal captured_body
+        captured_body = body
+        return Response(
+            status_code=HTTPStatus.CREATED,
+            content=b"",
+            headers={},
+            parsed=ApiSandbox(
+                template_id="base",
+                sandbox_id="test-sandbox-id",
+                client_id="test-client-id",
+                envd_version="0.2.4",
+            ),
+        )
+
+    monkeypatch.setattr(
+        "e2b.sandbox_sync.sandbox_api.post_sandboxes.sync_detailed", mock_create
+    )
+
+    Sandbox._create_sandbox(
+        template="base",
+        timeout=15,
+        allow_internet_access=True,
+        metadata=None,
+        env_vars=None,
+        secure=True,
+        lifecycle=lifecycle,
+        api_key=test_api_key,
+    )
+
+    assert captured_body is not None
+    if expected_auto_pause is UNSET:
+        assert "autoPause" not in captured_body.to_dict()
+    else:
+        assert captured_body.to_dict()["autoPause"] is expected_auto_pause
 
 
 def test_create_payload_deserializes_auto_resume_enabled():
