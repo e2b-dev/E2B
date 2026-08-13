@@ -9,6 +9,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import httpx
 import pytest
+from pyqwest import HTTPVersion
 from pyqwest.httpx import AsyncPyqwestTransport, PyqwestTransport
 
 import e2b.api.client_async as client_async
@@ -82,6 +83,68 @@ def test_sync_get_transport_keyed_by_proxy(test_api_key):
         # The same proxy still reuses the cached instance.
         assert get_sync_transport(proxied_config) is proxied_transport
         assert get_sync_transport(direct_config) is direct_transport
+    finally:
+        reset_sync_api_transports()
+
+
+def test_sync_transports_keyed_by_http_version(test_api_key):
+    # The HTTP version is part of the cache key: without it, whichever caller
+    # asked second would get a transport pinned to the other version.
+    reset_sync_api_transports()
+    config = ConnectionConfig(api_key=test_api_key)
+    proxied_config = ConnectionConfig(
+        api_key=test_api_key,
+        proxy="http://127.0.0.1:9999",
+    )
+
+    try:
+        negotiated = get_sync_transport(config)
+        http1 = get_sync_transport(config, http2=False)
+        envd_negotiated = get_sync_envd_transport(config)
+        envd_http1 = get_sync_envd_transport(config, http2=False)
+
+        assert http1 is not negotiated
+        assert envd_http1 is not envd_negotiated
+        assert envd_http1 is not http1
+        # Each version still has one pool per proxy, and repeat calls with the
+        # same arguments reuse it.
+        assert get_sync_transport(proxied_config, http2=False) not in (
+            http1,
+            negotiated,
+        )
+        assert get_sync_transport(config, http2=False) is http1
+        assert get_sync_transport(config) is negotiated
+        assert get_sync_envd_transport(config, http2=False) is envd_http1
+        assert (
+            get_sync_envd_transport(config, http2=False, for_streaming=True)
+            is not envd_http1
+        )
+    finally:
+        reset_sync_api_transports()
+
+
+def test_sync_transports_pass_http_version_to_pyqwest(test_api_key, monkeypatch):
+    # `http_version=None` leaves the version to ALPN (HTTP/2 against the E2B
+    # API), `HTTP1` pins HTTP/1.1. Which version was negotiated is only
+    # observable over TLS — the local echo server is plaintext, where both
+    # settings speak HTTP/1 — so assert what reaches the pyqwest transport.
+    reset_sync_api_transports()
+    config = ConnectionConfig(api_key=test_api_key)
+    captured = []
+    build_transport = client_sync.SyncHTTPTransport
+
+    def record(**kwargs):
+        captured.append(kwargs["http_version"])
+        return build_transport(**kwargs)
+
+    monkeypatch.setattr(client_sync, "SyncHTTPTransport", record)
+
+    try:
+        get_sync_transport(config)
+        get_sync_transport(config, http2=False)
+        get_sync_envd_transport(config, http2=False)
+
+        assert captured == [None, HTTPVersion.HTTP1, HTTPVersion.HTTP1]
     finally:
         reset_sync_api_transports()
 
@@ -215,6 +278,54 @@ async def test_async_get_transport_keyed_by_proxy(test_api_key):
         # The same proxy still reuses the cached instance.
         assert get_async_transport(proxied_config) is proxied_transport
         assert get_async_transport(direct_config) is direct_transport
+    finally:
+        reset_async_api_transports()
+
+
+@pytest.mark.asyncio
+async def test_async_transports_keyed_by_http_version(test_api_key):
+    reset_async_api_transports()
+    config = ConnectionConfig(api_key=test_api_key)
+
+    try:
+        negotiated = get_async_transport(config)
+        http1 = get_async_transport(config, http2=False)
+        envd_negotiated = get_async_envd_transport(config)
+        envd_http1 = get_async_envd_transport(config, http2=False)
+
+        assert http1 is not negotiated
+        assert envd_http1 is not envd_negotiated
+        assert envd_http1 is not http1
+        assert get_async_transport(config, http2=False) is http1
+        assert get_async_transport(config) is negotiated
+        assert get_async_envd_transport(config, http2=False) is envd_http1
+        assert (
+            get_async_envd_transport(config, http2=False, for_streaming=True)
+            is not envd_http1
+        )
+    finally:
+        reset_async_api_transports()
+
+
+@pytest.mark.asyncio
+async def test_async_transports_pass_http_version_to_pyqwest(test_api_key, monkeypatch):
+    reset_async_api_transports()
+    config = ConnectionConfig(api_key=test_api_key)
+    captured = []
+    build_transport = client_async.HTTPTransport
+
+    def record(**kwargs):
+        captured.append(kwargs["http_version"])
+        return build_transport(**kwargs)
+
+    monkeypatch.setattr(client_async, "HTTPTransport", record)
+
+    try:
+        get_async_transport(config)
+        get_async_transport(config, http2=False)
+        get_async_envd_transport(config, http2=False)
+
+        assert captured == [None, HTTPVersion.HTTP1, HTTPVersion.HTTP1]
     finally:
         reset_async_api_transports()
 
@@ -588,6 +699,48 @@ async def test_async_api_client_body_timeout_raises_httpx_read_timeout(
             await httpx_client.request("GET", "/stall", timeout=0.2)
     finally:
         await httpx_client.aclose()
+        reset_async_api_transports()
+
+
+def test_sync_http1_transport_round_trips(test_api_key, echo_server, caplog):
+    # The HTTP/1.1-pinned transport is functional, not just configured: pinning
+    # a version reqwest can't use for a request would fail at connect time.
+    reset_sync_api_transports()
+    config = ConnectionConfig(api_key=test_api_key)
+    client = httpx.Client(
+        base_url=echo_server, transport=get_sync_transport(config, http2=False)
+    )
+
+    try:
+        with caplog.at_level(logging.DEBUG, logger="pyqwest.access"):
+            response = client.get("/sandboxes")
+
+        assert response.status_code == 200
+        assert response.json()["path"] == "/sandboxes"
+        # pyqwest logs the response's version (the stdlib test server answers
+        # HTTP/1.0); `httpx.Response.http_version` is not meaningful through the
+        # adapter, which reports HTTP/1.1 either way.
+        assert f'GET {echo_server}/sandboxes "HTTP/1.0 200 OK"' in caplog.text
+    finally:
+        client.close()
+        reset_sync_api_transports()
+
+
+@pytest.mark.asyncio
+async def test_async_http1_transport_round_trips(test_api_key, echo_server):
+    reset_async_api_transports()
+    config = ConnectionConfig(api_key=test_api_key)
+    client = httpx.AsyncClient(
+        base_url=echo_server, transport=get_async_transport(config, http2=False)
+    )
+
+    try:
+        response = await client.get("/sandboxes")
+
+        assert response.status_code == 200
+        assert response.json()["path"] == "/sandboxes"
+    finally:
+        await client.aclose()
         reset_async_api_transports()
 
 
