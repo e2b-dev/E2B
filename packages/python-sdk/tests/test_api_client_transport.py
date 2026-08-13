@@ -612,7 +612,7 @@ def test_sync_transport_sends_multipart_bodies(test_api_key, echo_server):
         reset_sync_api_transports()
 
 
-def test_get_transport_accepts_the_deprecated_http2_kwarg():
+def test_get_transport_accepts_the_deprecated_http2_kwarg(test_api_key):
     """Every published e2b-code-interpreter calls
     ``get_transport(config, http2=False)``. The pyqwest move dropped that
     parameter, which turned the first ``run_code()`` of any fresh
@@ -623,11 +623,16 @@ def test_get_transport_accepts_the_deprecated_http2_kwarg():
     """
     reset_sync_api_transports()
     reset_async_api_transports()
-    config = ConnectionConfig(api_key="test-key")
+    config = ConnectionConfig(api_key=test_api_key)
 
-    assert get_sync_transport(config, http2=False) is get_sync_transport(config)
-    assert get_async_transport(config, http2=False) is get_async_transport(config)
+    try:
+        # Ignored, so it must not key a separate cache entry.
+        assert get_sync_transport(config, http2=False) is get_sync_transport(config)
+        assert get_async_transport(config, http2=False) is get_async_transport(config)
 
-    # Positional still works, and so does omitting it entirely.
-    assert isinstance(get_sync_transport(config, False), PyqwestTransport)
-    assert isinstance(get_async_transport(config), AsyncPyqwestTransport)
+        # Positional still works, and so does omitting it entirely.
+        assert isinstance(get_sync_transport(config, False), PyqwestTransport)
+        assert isinstance(get_async_transport(config), AsyncPyqwestTransport)
+    finally:
+        reset_sync_api_transports()
+        reset_async_api_transports()
