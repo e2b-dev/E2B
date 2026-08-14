@@ -74,7 +74,7 @@ def test_handle_api_exception_without_headers_attribute():
         status_code = 429
         content = b'{"message": "Too many requests"}'
 
-    err = handle_api_exception(LegacyResponse())
+    err = handle_api_exception(LegacyResponse())  # type: ignore[arg-type]  # deliberately missing `headers` to test the getattr fallback
 
     assert isinstance(err, RateLimitException)
     assert err.retry_after is None
