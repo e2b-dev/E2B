@@ -12,8 +12,8 @@ from e2b.exceptions import (
     NotEnoughSpaceException,
     RateLimitException,
     format_sandbox_timeout_exception,
-    parse_retry_after,
 )
+from e2b.http_utils import parse_retry_after
 
 
 ENVD_API_FILES_ROUTE = "/files"

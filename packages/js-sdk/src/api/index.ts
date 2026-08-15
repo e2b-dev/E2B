@@ -73,14 +73,17 @@ export function handleApiError(
 
   const status = response.response.status
   if (status === 401 || status === 429) {
+    const retryAfter =
+      status === 429
+        ? parseRetryAfter(response.response.headers?.get('Retry-After'))
+        : undefined
+
     return apiErrorFromCode(
       status,
       response.error?.message ?? response.error,
       errorClass,
       stackTrace,
-      status === 429
-        ? parseRetryAfter(response.response.headers?.get('Retry-After'))
-        : undefined
+      retryAfter
     )
   }
 

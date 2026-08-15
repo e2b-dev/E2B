@@ -5,7 +5,8 @@ import httpx
 from e2b.api import handle_api_exception
 from e2b.api.client.types import Response
 from e2b.envd.api import handle_envd_api_exception
-from e2b.exceptions import RateLimitException, parse_retry_after
+from e2b.exceptions import RateLimitException
+from e2b.http_utils import parse_retry_after
 
 
 def test_parses_delta_seconds():

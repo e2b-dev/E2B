@@ -20,8 +20,8 @@ from e2b.exceptions import (
     AuthenticationException,
     RateLimitException,
     SandboxException,
-    parse_retry_after,
 )
+from e2b.http_utils import parse_retry_after
 
 
 def make_logging_event_hooks(log: Optional[logging.Logger]) -> dict:
