@@ -318,6 +318,145 @@ test.for([
   }
 )
 
+test.for(['toJSON', 'then', 'toString', 'valueOf'])(
+  'transform callback rejects an unregistered iam token named %s, which the runtime also probes',
+  async (name: string) => {
+    // The runtime reads these four off anything it serializes, awaits or
+    // coerces, so they used to be exempt from the guard — and an unregistered
+    // one serialized as `Bearer undefined` or as the source of a built-in
+    // instead of being reported. The runtime is served elsewhere now, so as a
+    // token name they are as unregistered as any other.
+    await expect(
+      Sandbox.create('base', {
+        apiKey: TEST_API_KEY,
+        iam: { tokens: { aws: awsToken } },
+        network: {
+          rules: {
+            'api.internal.example.com': [
+              {
+                transform: ({ iam }) => ({
+                  headers: { Authorization: `Bearer ${iam.tokens[name]}` },
+                }),
+              },
+            ],
+          },
+        },
+      })
+    ).rejects.toThrowError(`iam token '${name}', which is not registered`)
+
+    expect(lastCreateBody).toBeUndefined()
+  }
+)
+
+test.for([
+  [
+    'assignment',
+    ({ iam }: any) => {
+      iam.tokens.gcp = '${e2b.identity.tokens.gcp}'
+      return { headers: { Authorization: `Bearer ${iam.tokens.gcp}` } }
+    },
+  ],
+  [
+    'Object.defineProperty',
+    ({ iam }: any) => {
+      Object.defineProperty(iam.tokens, 'gcp', { value: 'smuggled' })
+      return { headers: { Authorization: `Bearer ${iam.tokens.gcp}` } }
+    },
+  ],
+  [
+    'delete',
+    ({ iam }: any) => {
+      delete iam.tokens.aws
+      return { headers: { Authorization: `Bearer ${iam.tokens.aws}` } }
+    },
+  ],
+])(
+  'transform callback cannot mutate iam.tokens by %s',
+  async ([, transform]: [string, (ctx: any) => unknown]) => {
+    // Writing a name the API was never told about mints a placeholder the egress
+    // proxy cannot resolve: it drops the header and forwards the request anyway,
+    // which is the silent failure the guard exists to prevent. Deleting one
+    // would make the "Registered tokens" hint contradict itself.
+    await expect(
+      Sandbox.create('base', {
+        apiKey: TEST_API_KEY,
+        iam: { tokens: { aws: awsToken } },
+        network: {
+          rules: {
+            'api.internal.example.com': [{ transform: transform as never }],
+          },
+        },
+      })
+    ).rejects.toThrowError(/iam\.tokens is read-only/)
+
+    expect(lastCreateBody).toBeUndefined()
+  }
+)
+
+test('transform callback rejects an unregistered iam token read by descriptor', async () => {
+  // `getOwnPropertyDescriptor(...)?.value` is a lookup too: it used to answer
+  // `undefined` for an unregistered name and put that on the wire.
+  await expect(
+    Sandbox.create('base', {
+      apiKey: TEST_API_KEY,
+      iam: { tokens: { aws: awsToken } },
+      network: {
+        rules: {
+          'api.internal.example.com': [
+            {
+              transform: ({ iam }) => ({
+                headers: {
+                  Authorization: `Bearer ${
+                    Object.getOwnPropertyDescriptor(iam.tokens, 'gcp')?.value
+                  }`,
+                },
+              }),
+            },
+          ],
+        },
+      },
+    })
+  ).rejects.toThrowError(`iam token 'gcp', which is not registered`)
+
+  expect(lastCreateBody).toBeUndefined()
+})
+
+test('coercing iam.tokens itself still works', async () => {
+  // Serializing, stringifying and awaiting the map must keep working — that is
+  // what the four exempt names above were there for, and it is served without
+  // reopening the guard now.
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    iam: { tokens: { aws: awsToken } },
+    network: {
+      rules: {
+        'api.internal.example.com': [
+          {
+            transform: ({ iam }) => ({
+              headers: {
+                'X-Json': JSON.stringify(iam.tokens),
+                'X-String': String(iam.tokens),
+                'X-Template': `${iam.tokens}`,
+                'X-Context': JSON.stringify({ iam }),
+              },
+            }),
+          },
+        ],
+      },
+    },
+  })
+
+  expect(
+    lastCreateBody?.network.rules['api.internal.example.com'][0].transform
+      .headers
+  ).toEqual({
+    'X-Json': '{"aws":"${e2b.identity.tokens.aws}"}',
+    'X-String': '[object Object]',
+    'X-Template': '[object Object]',
+    'X-Context': '{"iam":{"tokens":{"aws":"${e2b.identity.tokens.aws}"}}}',
+  })
+})
+
 test('an ordinary iam token name is accepted', async () => {
   await Sandbox.create('base', {
     apiKey: TEST_API_KEY,

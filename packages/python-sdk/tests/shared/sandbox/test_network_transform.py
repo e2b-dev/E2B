@@ -4,6 +4,7 @@ import pytest
 
 from e2b import SandboxNetworkOpts, Secret
 from e2b.exceptions import InvalidArgumentException
+from e2b.sandbox.iam import IamTokenPlaceholders
 from e2b.sandbox.sandbox_api import (
     build_iam_config,
     build_network_config,
@@ -156,6 +157,42 @@ def test_transform_callable_rejects_unregistered_iam_token(access):
     # Same rule without any iam config at all.
     with pytest.raises(InvalidArgumentException, match="not registered"):
         build_network_config(_typo_network(access))
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["toJSON", "then", "toString", "valueOf"],
+)
+def test_transform_callable_rejects_iam_tokens_the_js_runtime_probes(name):
+    # These four are the names the JS runtime reads off any object it
+    # serializes, awaits or coerces, so the JS SDK has to serve them without
+    # letting them pass as registered tokens. Python has no such probes and must
+    # answer the way it does for any other unregistered name.
+    with pytest.raises(InvalidArgumentException, match="Registered tokens: 'aws'"):
+        build_network_config(_typo_network(lambda ctx: ctx.iam.tokens[name]), _aws_iam())
+
+    with pytest.raises(InvalidArgumentException, match="Registered tokens: 'aws'"):
+        build_network_config(
+            _typo_network(lambda ctx: ctx.iam.tokens.get(name, "dflt")), _aws_iam()
+        )
+
+
+def test_iam_tokens_mapping_cannot_be_mutated():
+    # The JS SDK refuses assignment and deletion on iam.tokens because writing an
+    # unregistered name mints a placeholder the egress proxy cannot resolve. The
+    # Python mapping is read-only by construction; this pins that down.
+    tokens = IamTokenPlaceholders(["aws"], validate=True)
+
+    with pytest.raises(TypeError):
+        tokens["gcp"] = "${e2b.identity.tokens.gcp}"  # type: ignore[index]
+
+    with pytest.raises(TypeError):
+        del tokens["aws"]  # type: ignore[attr-defined]
+
+    # Reading, membership and iteration are unchanged by the attempts above.
+    assert tokens["aws"] == "${e2b.identity.tokens.aws}"
+    assert "gcp" not in tokens
+    assert dict(tokens) == {"aws": "${e2b.identity.tokens.aws}"}
 
 
 @pytest.mark.parametrize(
