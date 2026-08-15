@@ -13,6 +13,40 @@ function deferred<T>() {
   return { promise, resolve, reject }
 }
 
+/** A ReadableStream<Uint8Array> a test can push/close/error on demand. */
+function controllableStream() {
+  let controller!: ReadableStreamDefaultController<Uint8Array>
+  const stream = new ReadableStream<Uint8Array>({
+    start(c) {
+      controller = c
+    },
+  })
+  return {
+    stream,
+    push: (chunk: string) => controller.enqueue(new TextEncoder().encode(chunk)),
+    close: () => controller.close(),
+    error: (reason: unknown) => controller.error(reason),
+  }
+}
+
+async function readAll(body: ReadableStream<Uint8Array>): Promise<string> {
+  const reader = body.getReader()
+  const chunks: Uint8Array[] = []
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    chunks.push(value)
+  }
+  return new TextDecoder().decode(
+    chunks.reduce((acc, chunk) => {
+      const merged = new Uint8Array(acc.length + chunk.length)
+      merged.set(acc)
+      merged.set(chunk, acc.length)
+      return merged
+    }, new Uint8Array())
+  )
+}
+
 test('limitConcurrency queues requests over the cap and releases on response', async () => {
   const gate = deferred<Response>()
   let secondStarted = false
@@ -98,4 +132,114 @@ test('limitConcurrency honors the signal of a Request the global class disowns',
   }
 
   expect(inner).not.toHaveBeenCalled()
+})
+
+test('limitConcurrency holds the slot while a streaming body is still being read', async () => {
+  const first = controllableStream()
+  let secondStarted = false
+  const inner = vi.fn(async (input: RequestInfo | URL) => {
+    if (String(input).endsWith('/first')) return new Response(first.stream)
+    secondStarted = true
+    return new Response('second')
+  }) as unknown as typeof fetch
+
+  const limited = limitConcurrency(inner, 1)
+  const firstResponse = await limited('https://example.com/first')
+  const secondPromise = limited('https://example.com/second')
+
+  // Headers are back and the body hasn't been touched — the slot must still
+  // be held (this is exactly what the un-fixed version got wrong: it
+  // released here, as soon as `fetcher` resolved).
+  await Promise.resolve()
+  await Promise.resolve()
+  expect(secondStarted).toBe(false)
+
+  first.push('chunk')
+  first.close()
+  expect(await readAll(firstResponse.body!)).toBe('chunk')
+
+  // Draining the body released the slot; the queued request can now start.
+  await secondPromise
+  expect(secondStarted).toBe(true)
+})
+
+test('limitConcurrency releases the slot when the body errors mid-stream', async () => {
+  const first = controllableStream()
+  let secondStarted = false
+  const inner = vi.fn(async (input: RequestInfo | URL) => {
+    if (String(input).endsWith('/first')) return new Response(first.stream)
+    secondStarted = true
+    return new Response('second')
+  }) as unknown as typeof fetch
+
+  const limited = limitConcurrency(inner, 1)
+  const firstResponse = await limited('https://example.com/first')
+  const secondPromise = limited('https://example.com/second')
+
+  first.push('partial')
+  first.error(new Error('connection reset'))
+  await expect(readAll(firstResponse.body!)).rejects.toThrow(
+    'connection reset'
+  )
+
+  await secondPromise
+  expect(secondStarted).toBe(true)
+})
+
+test('limitConcurrency releases the slot when the consumer cancels the body', async () => {
+  const first = controllableStream()
+  let secondStarted = false
+  const inner = vi.fn(async (input: RequestInfo | URL) => {
+    if (String(input).endsWith('/first')) return new Response(first.stream)
+    secondStarted = true
+    return new Response('second')
+  }) as unknown as typeof fetch
+
+  const limited = limitConcurrency(inner, 1)
+  const firstResponse = await limited('https://example.com/first')
+  const secondPromise = limited('https://example.com/second')
+
+  await firstResponse.body!.cancel('no longer needed')
+
+  await secondPromise
+  expect(secondStarted).toBe(true)
+})
+
+test('limitConcurrency releases immediately for a response with no body', async () => {
+  let secondStarted = false
+  const inner = vi.fn(async (input: RequestInfo | URL) => {
+    if (String(input).endsWith('/first')) {
+      return new Response(null, { status: 204 })
+    }
+    secondStarted = true
+    return new Response('second')
+  }) as unknown as typeof fetch
+
+  const limited = limitConcurrency(inner, 1)
+  await limited('https://example.com/first')
+  await limited('https://example.com/second')
+
+  expect(secondStarted).toBe(true)
+})
+
+test('limitConcurrency preserves status, statusText, and headers on the wrapped response', async () => {
+  const first = controllableStream()
+  const inner = vi.fn(
+    async () =>
+      new Response(first.stream, {
+        status: 201,
+        statusText: 'Created',
+        headers: { 'x-request-id': 'abc123' },
+      })
+  ) as unknown as typeof fetch
+
+  const limited = limitConcurrency(inner, 1)
+  const response = await limited('https://example.com/first')
+
+  expect(response.status).toBe(201)
+  expect(response.statusText).toBe('Created')
+  expect(response.headers.get('x-request-id')).toBe('abc123')
+
+  first.close()
+  await readAll(response.body!)
 })
