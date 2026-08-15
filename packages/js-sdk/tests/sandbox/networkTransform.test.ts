@@ -3,6 +3,7 @@ import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
 import { InvalidArgumentError, Sandbox, Secret } from '../../src'
+import { iamTokenPlaceholders } from '../../src/sandbox/iam'
 import { TEST_API_KEY, apiUrl } from '../setup'
 
 const sandboxId = 'test-sandbox-id'
@@ -455,6 +456,40 @@ test('coercing iam.tokens itself still works', async () => {
     'X-Template': '[object Object]',
     'X-Context': '{"iam":{"tokens":{"aws":"${e2b.identity.tokens.aws}"}}}',
   })
+})
+
+test.for([true, false])(
+  'awaiting iam.tokens resolves it as a plain value (validate: %s)',
+  async (validate: boolean) => {
+    // `await` reads `then` off whatever it is handed. Serving `then` is what
+    // replaced exempting it from the guard, so the value it gets is
+    // deliberately not callable: the map stays a non-thenable and resolves as
+    // itself rather than hanging on a `then` that never settles.
+    //
+    // A transform callback is synchronous, so this is asserted against the
+    // proxy directly — `Sandbox.create` has no codepath that awaits it.
+    const tokens = iamTokenPlaceholders(['aws'], { validate })
+
+    expect(await tokens).toBe(tokens)
+    expect(await Promise.resolve(tokens)).toBe(tokens)
+    // Awaiting must not consume or disturb the map.
+    expect({ ...(await tokens) }).toEqual({
+      aws: '${e2b.identity.tokens.aws}',
+    })
+  }
+)
+
+test('an unregistered iam token named then is still reported after an await', async () => {
+  // The served `then` does the runtime's job and nothing more: spelling it into
+  // a rule throws as soon as it is coerced, which is the whole point of serving
+  // a value instead of reopening the guard.
+  const tokens = iamTokenPlaceholders(['aws'], { validate: true })
+
+  await tokens
+
+  expect(() => `Bearer ${tokens.then}`).toThrowError(
+    `iam token 'then', which is not registered`
+  )
 })
 
 test('an ordinary iam token name is accepted', async () => {
