@@ -169,7 +169,9 @@ def test_transform_callable_rejects_iam_tokens_the_js_runtime_probes(name):
     # letting them pass as registered tokens. Python has no such probes and must
     # answer the way it does for any other unregistered name.
     with pytest.raises(InvalidArgumentException, match="Registered tokens: 'aws'"):
-        build_network_config(_typo_network(lambda ctx: ctx.iam.tokens[name]), _aws_iam())
+        build_network_config(
+            _typo_network(lambda ctx: ctx.iam.tokens[name]), _aws_iam()
+        )
 
     with pytest.raises(InvalidArgumentException, match="Registered tokens: 'aws'"):
         build_network_config(
