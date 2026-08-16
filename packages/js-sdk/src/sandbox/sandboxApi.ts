@@ -1457,7 +1457,10 @@ export class SandboxApi {
       iam,
       autoPause: action === 'pause',
       autoPauseMemory: action === 'pause' ? keepMemory : undefined,
-      autoResume: { enabled: autoResume },
+      autoResume:
+        opts?.lifecycle?.autoResume === undefined
+          ? undefined
+          : { enabled: autoResume },
     }
 
     if (opts?.volumeMounts) {

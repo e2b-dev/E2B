@@ -1,4 +1,5 @@
 import asyncio
+from http import HTTPStatus
 from typing import Any, cast
 from uuid import uuid4
 
@@ -10,7 +11,8 @@ from e2b.api.client.models import (
     NewSandbox,
     SandboxAutoResumeConfig,
 )
-from e2b.api.client.types import UNSET
+from e2b.api.client.models.sandbox import Sandbox as ApiSandbox
+from e2b.api.client.types import UNSET, Response
 from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox.sandbox_api import build_iam_config
 
@@ -89,6 +91,58 @@ def test_create_payload_deserializes_auto_resume_enabled():
 
     assert isinstance(body.auto_resume, SandboxAutoResumeConfig)
     assert body.auto_resume.to_dict() == {"enabled": False}
+
+
+@pytest.mark.parametrize(
+    ("lifecycle", "expected_auto_resume"),
+    [
+        (None, UNSET),
+        ({"auto_resume": False}, False),
+        ({"on_timeout": "pause", "auto_resume": True}, True),
+    ],
+)
+async def test_create_sends_auto_resume_only_when_configured(
+    monkeypatch, test_api_key, lifecycle, expected_auto_resume
+):
+    captured_body = None
+
+    async def mock_create(*, body, client):
+        nonlocal captured_body
+        captured_body = body
+        return Response(
+            status_code=HTTPStatus.CREATED,
+            content=b"",
+            headers={},
+            parsed=ApiSandbox(
+                template_id="base",
+                sandbox_id="test-sandbox-id",
+                client_id="test-client-id",
+                envd_version="0.2.4",
+            ),
+        )
+
+    monkeypatch.setattr(
+        "e2b.sandbox_async.sandbox_api.post_sandboxes.asyncio_detailed", mock_create
+    )
+
+    await AsyncSandbox._create_sandbox(
+        template="base",
+        timeout=15,
+        allow_internet_access=True,
+        metadata=None,
+        env_vars=None,
+        secure=True,
+        lifecycle=lifecycle,
+        api_key=test_api_key,
+    )
+
+    assert captured_body is not None
+    if expected_auto_resume is UNSET:
+        assert "autoResume" not in captured_body.to_dict()
+    else:
+        assert captured_body.to_dict()["autoResume"] == {
+            "enabled": expected_auto_resume
+        }
 
 
 def test_create_payload_serializes_iam_tokens():

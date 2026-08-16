@@ -264,7 +264,11 @@ class SandboxApi(SandboxBase):
             template_id=template,
             auto_pause=on_timeout == "pause",
             auto_pause_memory=keep_memory if on_timeout == "pause" else UNSET,
-            auto_resume=SandboxAutoResumeConfig(enabled=auto_resume),
+            auto_resume=(
+                SandboxAutoResumeConfig(enabled=auto_resume)
+                if lifecycle is not None and "auto_resume" in lifecycle
+                else UNSET
+            ),
             metadata=metadata or {},
             timeout=timeout,
             env_vars=env_vars or {},
