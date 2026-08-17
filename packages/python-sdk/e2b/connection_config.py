@@ -135,10 +135,6 @@ class ConnectionConfig:
         return os.getenv("E2B_SANDBOX_URL")
 
     @staticmethod
-    def _access_token():
-        return os.getenv("E2B_ACCESS_TOKEN")
-
-    @staticmethod
     def _build_user_agent() -> str:
         user_agent_parts = [f"e2b-python-sdk/{package_version}"]
 
@@ -175,7 +171,6 @@ class ConnectionConfig:
         validate_api_key: Optional[bool] = None,
         api_url: Optional[str] = None,
         sandbox_url: Optional[str] = None,
-        access_token: Optional[str] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
         api_headers: Optional[Dict[str, str]] = None,
@@ -192,9 +187,6 @@ class ConnectionConfig:
             if validate_api_key is not None
             else ConnectionConfig._validate_api_key()
         )
-        # Deprecated: pass the token through `api_headers` instead, e.g.
-        # api_headers={"Authorization": f"Bearer {token}"}.
-        self.access_token = access_token or ConnectionConfig._access_token()
         self.headers = {**(headers or {}), **(api_headers or {})}
         self._user_agent_is_sdk_built = self._apply_user_agent(
             self.headers,
@@ -280,7 +272,6 @@ class ConnectionConfig:
         Get the parameters for the API call.
 
         This is used to avoid passing the following attributes to the API call:
-        - access_token
         - api_url
 
         It also returns a copy, so the original object is not modified.

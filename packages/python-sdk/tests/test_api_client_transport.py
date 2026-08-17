@@ -202,7 +202,7 @@ def test_sync_envd_transports_keyed_by_streaming(test_api_key):
 
 def test_sync_envd_api_client_wiring(test_api_key):
     reset_sync_api_transports()
-    config = ConnectionConfig(api_key=test_api_key, access_token="tok")
+    config = ConnectionConfig(api_key=test_api_key)
 
     client = get_sync_envd_api(config, "https://sandbox.e2b.app")
     streaming = get_sync_envd_api(config, "https://sandbox.e2b.app", for_streaming=True)
@@ -381,7 +381,7 @@ async def test_async_envd_transports_keyed_by_streaming(test_api_key):
 @pytest.mark.asyncio
 async def test_async_envd_api_client_wiring(test_api_key):
     reset_async_api_transports()
-    config = ConnectionConfig(api_key=test_api_key, access_token="tok")
+    config = ConnectionConfig(api_key=test_api_key)
 
     client = get_async_envd_api(config, "https://sandbox.e2b.app")
 

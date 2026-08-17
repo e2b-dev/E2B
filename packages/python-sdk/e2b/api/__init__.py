@@ -235,15 +235,6 @@ class ApiClient(AuthenticatedClient):
 
         headers = {
             **default_headers,
-            # Deprecated: send the access token alongside the API key when one
-            # is available, mirroring the JS SDK. Prefer `api_headers` instead.
-            # Spread before `config.headers` so a custom `Authorization` in
-            # `api_headers` wins over the deprecated access token, matching JS.
-            **(
-                {"Authorization": f"Bearer {config.access_token}"}
-                if config.access_token is not None
-                else {}
-            ),
             **(config.headers or {}),
         }
 
