@@ -32,7 +32,7 @@ describe('template create cli backend integration', () => {
   })
 
   test(
-    'template create succeeds with E2B_API_KEY alone (no E2B_ACCESS_TOKEN)',
+    'template create succeeds with E2B_API_KEY alone',
     { timeout: 300_000 },
     () => {
       const result = runCli([
@@ -49,15 +49,15 @@ describe('template create cli backend integration', () => {
       // path prints "❌ Template build failed." instead.
       expect(output).toContain('✅ Building sandbox template')
       expect(output).not.toContain('❌ Template build failed')
-      // Auth never fell through to the access-token error box.
+      // Auth never fell through to the "log in first" error box.
       expect(output).not.toMatch(/You must be logged in/)
     }
   )
 })
 
 function runCli(args: string[]): ReturnType<typeof spawnSync> {
-  // Intentionally exclude E2B_ACCESS_TOKEN from the child env so this test
-  // verifies the API-key-only auth path end-to-end.
+  // A minimal child env (API key only) so this test verifies the API-key auth
+  // path end-to-end.
   return spawnSync('node', [cliPath, ...args], {
     env: {
       PATH: process.env.PATH,
