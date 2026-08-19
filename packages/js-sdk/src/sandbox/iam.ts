@@ -60,8 +60,12 @@ function runtimeProbeValue(
   // A header value is not always coerced: `headers: { 'X-Api-Key':
   // iam.tokens.then }` puts the value itself in the payload, and
   // `JSON.stringify` consults `toJSON` — before it drops a callable value —
-  // rather than `Symbol.toPrimitive`.
-  return Object.defineProperty(value, 'toJSON', { value: resolve })
+  // rather than `Symbol.toPrimitive`. It has to be enumerable: Bun's
+  // `JSON.stringify` only finds an own `toJSON` that is.
+  return Object.defineProperty(value, 'toJSON', {
+    value: resolve,
+    enumerable: true,
+  })
 }
 
 /**
