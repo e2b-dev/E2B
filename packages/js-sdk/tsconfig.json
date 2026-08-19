@@ -25,7 +25,11 @@
     ],
   },
   "include": [
-    "src"
+    "src",
+    // Type fixtures for the generated MCP types, which `skipLibCheck` would
+    // otherwise leave unchecked. Only this directory, so the rest of the test
+    // suite stays out of `tsc`.
+    "tests/types"
   ],
   "exclude": [
     "dist",
