@@ -40,7 +40,7 @@ class ConnectionRetryTransport(SyncRetryTransport):
         return isinstance(response, ConnectionError)
 
 
-TransportKey = Tuple[Optional[ProxyConfig], Optional[float], bool]
+_TransportKey = Tuple[Optional[ProxyConfig], Optional[float], bool]
 """Cache key of the shared transports: proxy, idle read bound, HTTP version.
 
 All three are fixed when a pyqwest transport is constructed, so each distinct
@@ -58,9 +58,9 @@ _transport_lock = threading.Lock()
 #
 # pyqwest transports are thread-safe, so unlike the httpx transports they
 # replaced, the caches are process-global rather than per-thread.
-_transports: Dict[TransportKey, ConnectionRetryTransport] = {}
+_transports: Dict[_TransportKey, ConnectionRetryTransport] = {}
 # The httpx adapter over each pool, shared by every httpx client on it.
-_httpx_transports: Dict[TransportKey, PyqwestTransport] = {}
+_httpx_transports: Dict[_TransportKey, PyqwestTransport] = {}
 
 
 def get_pyqwest_transport(
@@ -179,6 +179,9 @@ def get_envd_transport(
     external importer of the older public name; nothing inside the SDK calls it
     (``e2b-code-interpreter`` imports :func:`get_transport` directly). Prefer
     :func:`get_transport`.
+
+    :deprecated: Use :func:`get_transport` instead; will be removed in the next
+        major version.
     """
     return get_transport(config, http2, for_streaming=for_streaming)
 
