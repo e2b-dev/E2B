@@ -11,9 +11,6 @@ dependencies = [
     "wcmatch>=10.1,<12",
     "protobuf-py>=0.1.1,<0.2",
     "httpx>=0.27.0,<1.0.0",
-    # 4.4.1 is the first release that rejects duplicate Host headers
-    # (CVE-2026-71554); older versions forward them to the consuming
-    # application, which is a request smuggling primitive.
     "h2>=4.4.1,<5",
     "attrs>=23.2.0",
     "packaging>=24.1",
