@@ -546,11 +546,12 @@ class SandboxLifecycle(TypedDict):
 
     auto_resume: NotRequired[bool]
     """
-    Whether activity should cause the sandbox to resume when paused. Left unset,
-    it is omitted from the create request and the API's own default (currently
-    disabled) applies. Can be `True` only when `on_timeout` is `pause`. Not
-    supported when `keep_memory` is `False` (a filesystem-only snapshot must be
-    resumed explicitly via `connect()`).
+    Whether activity should cause the sandbox to resume when paused. Leave unset
+    to let the API pick the behavior (currently disabled). Set `False` to opt out
+    explicitly and keep auto-resume off even if the API's default changes. Can be
+    `True` only when `on_timeout` is `pause`. Not supported when `keep_memory` is
+    `False` (a filesystem-only snapshot must be resumed explicitly via
+    `connect()`).
     """
 
 

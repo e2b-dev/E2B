@@ -461,10 +461,13 @@ export type SandboxLifecycle = {
   /**
    * Auto-resume enabled flag.
    *
-   * Left unset, the flag is omitted from the create request and the API's own
-   * default (currently disabled) applies. Can be `true` only when `onTimeout`
-   * is `pause`. Not supported when `keepMemory` is `false` (a filesystem-only
-   * snapshot must be resumed explicitly via `connect()`).
+   * Leave unset to let the API pick the behavior. Set `false` to opt out
+   * explicitly and keep auto-resume off even if the API's default changes.
+   * Can be `true` only when `onTimeout` is `pause`. Not supported when
+   * `keepMemory` is `false` (a filesystem-only snapshot must be resumed
+   * explicitly via `connect()`).
+   *
+   * @default false
    */
   autoResume?: boolean
 }
