@@ -8,7 +8,6 @@ from typing_extensions import Unpack
 from e2b.api import (
     SandboxCreateResponse,
     api_exception_from_code,
-    encode_path_param,
     handle_api_exception,
 )
 from e2b.api.client.api.sandboxes import (
@@ -421,7 +420,7 @@ class SandboxApi(SandboxBase):
 
         api_client = get_api_client(config)
         res = await delete_templates_template_id.asyncio_detailed(
-            encode_path_param(snapshot_id),
+            snapshot_id,
             client=api_client,
         )
 

@@ -25,19 +25,11 @@ from e2b.exceptions import (
 
 def encode_path_param(value: str) -> str:
     """
-    Percent-encode a value for use as a single URL path segment.
+    Percent-encode a namespaced alias for use as a single URL path segment.
 
-    Namespaced template IDs and aliases contain a slash (``namespace/name``),
-    and snapshot IDs additionally contain a tag separator (``name:tag``), which
-    the generated client would otherwise pass through as path/route separators.
-    Every reserved character is escaped (``safe=""``) so the whole value stays
-    within one segment; this matches the JS SDK, where ``openapi-fetch`` runs
-    each path param through ``encodeURIComponent``. The two agree on the
-    characters that appear in template identifiers (``/`` -> ``%2F``,
-    ``:`` -> ``%3A``, space -> ``%20``); ``quote`` additionally escapes a few
-    sub-delimiters (``!*'()``) that ``encodeURIComponent`` leaves alone, which
-    the server decodes to the same bytes. httpx preserves the result without
-    double-encoding.
+    Aliases like ``namespace/name`` must have ``/`` escaped so the generated
+    client sends ``/templates/aliases/namespace%2Fname`` instead of splitting
+    the route at the slash.
     """
     return quote(value, safe="")
 

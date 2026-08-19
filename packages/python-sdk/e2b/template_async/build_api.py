@@ -81,7 +81,7 @@ async def get_file_upload_link(
     stack_trace: Optional[TracebackType] = None,
 ) -> TemplateBuildFileUpload:
     res = await get_templates_template_id_files_hash.asyncio_detailed(
-        template_id=encode_path_param(template_id),
+        template_id=template_id,
         hash_=files_hash,
         client=client,
     )
@@ -186,7 +186,7 @@ async def trigger_build(
     template_data = TemplateBuildStartV2.from_dict(template)
 
     res = await post_v_2_templates_template_id_builds_build_id.asyncio_detailed(
-        template_id=encode_path_param(template_id),
+        template_id=template_id,
         build_id=build_id,
         client=client,
         body=template_data,
@@ -227,7 +227,7 @@ async def get_build_status(
     client: AuthenticatedClient, template_id: str, build_id: str, logs_offset: int
 ) -> TemplateBuildStatusResponse:
     res = await get_templates_template_id_builds_build_id_status.asyncio_detailed(
-        template_id=encode_path_param(template_id),
+        template_id=template_id,
         build_id=build_id,
         client=client,
         logs_offset=logs_offset,
@@ -413,7 +413,7 @@ async def get_template_tags(
         template_id: Template ID or name
     """
     res = await get_templates_template_id_tags.asyncio_detailed(
-        template_id=encode_path_param(template_id),
+        template_id=template_id,
         client=client,
     )
 
