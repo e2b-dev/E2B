@@ -1619,11 +1619,7 @@ export class SandboxApi {
       allow_internet_access: opts?.allowInternetAccess ?? true,
       network: buildNetworkBody(opts?.network, iam),
       iam,
-      // Omitted rather than sent as false when unconfigured, so the API can
-      // distinguish "no preference" from an explicit `kill` and own the default.
       autoPause: onTimeoutConfigured ? action === 'pause' : undefined,
-      // Same collapse for the snapshot kind: only send when the caller chose
-      // keepMemory. Locally it still defaults to true for the validation above.
       autoPauseMemory:
         action === 'pause' && hasKeepMemory ? keepMemory : undefined,
       autoResume: { enabled: autoResume },
