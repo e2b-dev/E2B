@@ -1277,7 +1277,7 @@ class McpServer(TypedDict, closed=True):
     """
     dynatrace: NotRequired[Dynatrace]
     """
-    This MCP Server allows interaction with the Dynatrace observability platform, brining real-time observability data directly into your development workflow.
+    This MCP Server allows interaction with the Dynatrace observability platform, bringing real-time observability data directly into your development workflow.
     """
     e2b: NotRequired[E2b]
     """

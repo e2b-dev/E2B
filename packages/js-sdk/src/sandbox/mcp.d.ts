@@ -633,7 +633,7 @@ export interface DreamFactoryMCPServer {
  */
 export interface DuckDuckGo {}
 /**
- * This MCP Server allows interaction with the Dynatrace observability platform, brining real-time observability data directly into your development workflow.
+ * This MCP Server allows interaction with the Dynatrace observability platform, bringing real-time observability data directly into your development workflow.
  */
 export interface DynatraceMCPServer {
   oauthClientId: string
