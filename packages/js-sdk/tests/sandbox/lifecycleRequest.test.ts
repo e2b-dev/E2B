@@ -93,17 +93,26 @@ test('Sandbox.create sends the pause snapshot kind alongside autoPause', async (
 })
 
 test('Sandbox.create omits autoPause for a lifecycle without onTimeout', async () => {
-  // Untyped callers can build the lifecycle conditionally and leave
-  // onTimeout out, or pass it as null; neither selects an action.
+  // onTimeout is optional, so opting out of auto-resume without expressing a
+  // preference about the timeout action is a typed call, not a cast.
   await Sandbox.create('base', {
     apiKey: TEST_API_KEY,
-    lifecycle: { autoResume: false } as never,
+    lifecycle: { autoResume: false },
   })
 
   expect(lastCreateBody).toBeDefined()
   expect(lastCreateBody).not.toHaveProperty('autoPause')
   expect(lastCreateBody?.autoResume).toEqual({ enabled: false })
 
+  // An empty lifecycle expresses nothing at all.
+  await Sandbox.create('base', { apiKey: TEST_API_KEY, lifecycle: {} })
+
+  expect(lastCreateBody).toBeDefined()
+  expect(lastCreateBody).not.toHaveProperty('autoPause')
+  expect(lastCreateBody).not.toHaveProperty('autoResume')
+
+  // Untyped callers can also pass onTimeout as null; that selects no action
+  // either.
   await Sandbox.create('base', {
     apiKey: TEST_API_KEY,
     lifecycle: { onTimeout: null } as never,
@@ -115,16 +124,25 @@ test('Sandbox.create omits autoPause for a lifecycle without onTimeout', async (
 })
 
 test('Sandbox.create rejects autoResume without a timeout action', async () => {
-  // An unconfigured onTimeout still resolves to kill semantics locally, so
-  // autoResume has no pause to attach to.
+  // Auto-resume only has meaning for a sandbox that pauses, so it needs an
+  // explicit 'pause' rather than whichever action the API would have picked.
   await expect(
     Sandbox.create('base', {
       apiKey: TEST_API_KEY,
-      lifecycle: { autoResume: true } as never,
+      lifecycle: { autoResume: true },
     })
   ).rejects.toThrowError(InvalidArgumentError)
 
   expect(lastCreateBody).toBeUndefined()
+
+  // The message points at the knob to turn instead of naming a default the SDK
+  // no longer decides.
+  await expect(
+    Sandbox.create('base', {
+      apiKey: TEST_API_KEY,
+      lifecycle: { autoResume: true },
+    })
+  ).rejects.toThrowError(/Set lifecycle.onTimeout to 'pause'/)
 })
 
 test('an explicit autoResume: false is sent', async () => {
@@ -153,4 +171,43 @@ test('an explicit null autoResume from an untyped caller is omitted', async () =
   })
 
   expect(lastCreateBody).not.toHaveProperty('autoResume')
+})
+
+test('a nullish keepMemory is not a choice of snapshot kind', async () => {
+  // Spreading an optional value in yields `keepMemory: undefined`, which is no
+  // more a choice than leaving the key out.
+  const unset: boolean | undefined = undefined
+
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    lifecycle: { onTimeout: { action: 'pause', keepMemory: unset } },
+  })
+
+  expect(lastCreateBody?.autoPause).toBe(true)
+  expect(lastCreateBody).not.toHaveProperty('autoPauseMemory')
+
+  // It therefore doesn't trip the pause-only guard on a kill action either.
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    lifecycle: { onTimeout: { action: 'kill', keepMemory: unset } as never },
+  })
+
+  expect(lastCreateBody?.autoPause).toBe(false)
+  expect(lastCreateBody).not.toHaveProperty('autoPauseMemory')
+})
+
+test('a nullish keepMemory still allows autoResume', async () => {
+  const unset: boolean | undefined = undefined
+
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    lifecycle: {
+      onTimeout: { action: 'pause', keepMemory: unset },
+      autoResume: true,
+    },
+  })
+
+  expect(lastCreateBody?.autoPause).toBe(true)
+  expect(lastCreateBody).not.toHaveProperty('autoPauseMemory')
+  expect(lastCreateBody?.autoResume).toEqual({ enabled: true })
 })

@@ -456,14 +456,15 @@ export type SandboxLifecycle = {
    * Omitted from the create request when unset, leaving the API's default
    * (currently `kill`) in effect.
    */
-  onTimeout: SandboxOnTimeout
+  onTimeout?: SandboxOnTimeout
 
   /**
    * Auto-resume enabled flag.
    *
    * Leave unset to let the API pick the behavior. Set `false` to opt out
    * explicitly and keep auto-resume off even if the API's default changes.
-   * Can be `true` only when `onTimeout` is `pause`. Not supported when
+   * Can be `true` only alongside an explicit `onTimeout` of `pause`, because
+   * auto-resume only has meaning for a sandbox that pauses. Not supported when
    * `keepMemory` is `false` (a filesystem-only snapshot must be resumed
    * explicitly via `connect()`).
    */
@@ -1575,18 +1576,21 @@ export class SandboxApi {
     // `{ action, keepMemory }`. The discriminated union type forbids `keepMemory`
     // on `action: 'kill'`; re-check at runtime for untyped callers.
     const requestedOnTimeout = opts?.lifecycle?.onTimeout
-    // A missing (or explicitly nullish, for untyped callers) onTimeout is not a
-    // choice of `kill` — it leaves the timeout action to the API. Locally it
-    // still resolves to kill semantics for the validation below.
+    // A missing (or explicitly nullish) onTimeout is not a choice of `kill` — it
+    // leaves the timeout action to the API. The guards below therefore never
+    // assume what the API would pick; they only constrain what the caller said.
     const onTimeoutConfigured = requestedOnTimeout != null
     const onTimeout = requestedOnTimeout ?? 'kill'
     const action = typeof onTimeout === 'string' ? onTimeout : onTimeout.action
-    const hasKeepMemory =
+    // A nullish keepMemory is not a choice of snapshot kind, the same way a
+    // nullish onTimeout is not a choice of action: the field is left out of the
+    // request and the API's default applies.
+    const requestedKeepMemory =
       typeof onTimeout !== 'string' && 'keepMemory' in onTimeout
-    const keepMemory =
-      typeof onTimeout !== 'string' && 'keepMemory' in onTimeout
-        ? (onTimeout.keepMemory ?? true)
-        : true
+        ? onTimeout.keepMemory
+        : undefined
+    const hasKeepMemory = requestedKeepMemory != null
+    const keepMemory = requestedKeepMemory ?? true
     // A missing autoResume (or an explicit null from an untyped caller) is left
     // out of the request entirely, so the API keeps ownership of the default
     // instead of receiving the SDK's local one as an explicit opt-out.
@@ -1599,8 +1603,13 @@ export class SandboxApi {
     }
 
     if (autoResume && action !== 'pause') {
+      // Without a configured action there is no `kill` to name — the SDK no
+      // longer decides what an unset onTimeout means — so point at the knob.
+      const hint = onTimeoutConfigured
+        ? ''
+        : " Set lifecycle.onTimeout to 'pause': leaving it unset defers the action to the API."
       throw new InvalidArgumentError(
-        "autoResume can only be true when onTimeout action is 'pause'."
+        `autoResume can only be true when onTimeout action is 'pause'.${hint}`
       )
     }
 

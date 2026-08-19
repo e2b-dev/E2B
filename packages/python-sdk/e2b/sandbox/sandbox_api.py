@@ -534,7 +534,7 @@ class SandboxLifecycle(TypedDict):
     `"kill"`); an omitted `auto_resume` leaves the choice to the API.
     """
 
-    on_timeout: SandboxOnTimeout
+    on_timeout: NotRequired[SandboxOnTimeout]
     """
     What should happen to the sandbox when timeout is reached. `"kill"` terminates
     the sandbox; `"pause"` pauses it for later resume. Accepts either the bare
@@ -548,8 +548,9 @@ class SandboxLifecycle(TypedDict):
     """
     Whether activity should cause the sandbox to resume when paused. Leave unset
     to let the API pick the behavior. Set `False` to opt out explicitly and keep
-    auto-resume off even if the API's default changes. Can be `True` only when
-    `on_timeout` is `pause`. Not supported when `keep_memory` is `False`
+    auto-resume off even if the API's default changes. Can be `True` only
+    alongside an explicit `on_timeout` of `pause`, because auto-resume only has
+    meaning for a sandbox that pauses. Not supported when `keep_memory` is `False`
     (a filesystem-only snapshot must be resumed explicitly via `connect()`).
     """
 
@@ -814,14 +815,17 @@ def build_lifecycle_config(
     # string, or an unexpected value from an untyped caller) passes through as
     # the action, so a non-"pause" value resolves to kill instead of crashing.
     on_timeout_raw = lifecycle.get("on_timeout") if lifecycle else None
-    # A missing on_timeout — or an explicit None from an untyped caller — is not
-    # a choice of kill. It only resolves to kill semantics locally, for the
-    # validation below and for keep_memory.
+    # A missing on_timeout — or an explicit None — is not a choice of kill. The
+    # guards below therefore never assume what the API would pick; they only
+    # constrain what the caller said.
     on_timeout_configured = on_timeout_raw is not None
     if isinstance(on_timeout_raw, dict):
         on_timeout = on_timeout_raw.get("action", "kill")
-        keep_memory_provided = "keep_memory" in on_timeout_raw
+        # A None keep_memory is not a choice of snapshot kind, the same way a
+        # None on_timeout is not a choice of action: the field is left out of
+        # the request and the API's default applies.
         keep_memory = on_timeout_raw.get("keep_memory")
+        keep_memory_provided = keep_memory is not None
     else:
         # Only fall back when unconfigured, not on other falsy-but-present
         # values an untyped caller might pass.
@@ -845,9 +849,15 @@ def build_lifecycle_config(
     auto_resume = lifecycle.get("auto_resume") if lifecycle else None
 
     if auto_resume and on_timeout != "pause":
-        raise InvalidArgumentException(
-            "auto_resume can only be True when on_timeout action is 'pause'."
-        )
+        message = "auto_resume can only be True when on_timeout action is 'pause'."
+        if not on_timeout_configured:
+            # Without a configured action there is no "kill" to name — the SDK no
+            # longer decides what an unset on_timeout means — so point at the knob.
+            message += (
+                " Set lifecycle['on_timeout'] to 'pause': leaving it unset defers"
+                " the action to the API."
+            )
+        raise InvalidArgumentException(message)
 
     if not keep_memory and auto_resume:
         raise InvalidArgumentException(

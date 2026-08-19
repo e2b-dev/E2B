@@ -47,9 +47,10 @@ AUTO_PAUSE_CASES = [
     pytest.param(None, None, id="no-lifecycle"),
     pytest.param({"on_timeout": "kill"}, False, id="explicit-kill"),
     pytest.param({"on_timeout": "pause"}, True, id="explicit-pause"),
-    # Untyped callers can build the lifecycle conditionally and leave on_timeout
-    # out, or pass it as None; neither selects an action.
-    pytest.param(cast(Any, {"auto_resume": False}), None, id="no-on-timeout-key"),
+    # on_timeout is optional, so a lifecycle can leave it out entirely; untyped
+    # callers can also pass it as None. Neither selects an action.
+    pytest.param({}, None, id="empty-lifecycle"),
+    pytest.param({"auto_resume": False}, None, id="no-on-timeout-key"),
     pytest.param(cast(Any, {"on_timeout": None}), None, id="none-on-timeout"),
 ]
 
@@ -115,36 +116,90 @@ def test_create_sends_the_pause_snapshot_kind_alongside_auto_pause(
     assert body["autoPauseMemory"] is True
 
 
-@pytest.mark.parametrize(
-    "lifecycle",
-    [
-        pytest.param(cast(Any, {"auto_resume": True}), id="no-on-timeout-key"),
-        pytest.param(
-            cast(Any, {"on_timeout": None, "auto_resume": True}), id="none-on-timeout"
-        ),
-    ],
-)
+NO_ACTION_AUTO_RESUME_CASES = [
+    pytest.param({"auto_resume": True}, id="no-on-timeout-key"),
+    pytest.param(
+        cast(Any, {"on_timeout": None, "auto_resume": True}), id="none-on-timeout"
+    ),
+]
+
+
+@pytest.mark.parametrize("lifecycle", NO_ACTION_AUTO_RESUME_CASES)
 def test_create_rejects_auto_resume_without_a_timeout_action(test_api_key, lifecycle):
-    # An unconfigured on_timeout still resolves to kill semantics locally, so
-    # auto_resume has no pause to attach to.
-    with pytest.raises(InvalidArgumentException):
+    # Auto-resume only has meaning for a sandbox that pauses, so it needs an
+    # explicit "pause" rather than whichever action the API would have picked.
+    # The message points at the knob to turn instead of naming a default the SDK
+    # no longer decides.
+    with pytest.raises(
+        InvalidArgumentException, match=r"Set lifecycle\['on_timeout'\] to 'pause'"
+    ):
         Sandbox.create(api_key=test_api_key, lifecycle=lifecycle)
 
 
-@pytest.mark.parametrize(
-    "lifecycle",
-    [
-        pytest.param(cast(Any, {"auto_resume": True}), id="no-on-timeout-key"),
-        pytest.param(
-            cast(Any, {"on_timeout": None, "auto_resume": True}), id="none-on-timeout"
-        ),
-    ],
-)
+@pytest.mark.parametrize("lifecycle", NO_ACTION_AUTO_RESUME_CASES)
 async def test_async_create_rejects_auto_resume_without_a_timeout_action(
     test_api_key, lifecycle
 ):
-    with pytest.raises(InvalidArgumentException):
+    with pytest.raises(
+        InvalidArgumentException, match=r"Set lifecycle\['on_timeout'\] to 'pause'"
+    ):
         await AsyncSandbox.create(api_key=test_api_key, lifecycle=lifecycle)
+
+
+def test_create_rejects_only_a_real_keep_memory_on_a_kill_action(
+    monkeypatch, test_api_key
+):
+    with pytest.raises(InvalidArgumentException):
+        Sandbox.create(
+            api_key=test_api_key,
+            lifecycle=cast(
+                Any, {"on_timeout": {"action": "kill", "keep_memory": True}}
+            ),
+        )
+
+    # A None keep_memory is not a choice, so it doesn't trip the pause-only
+    # guard on a kill action.
+    body = _sync_request_body(
+        monkeypatch,
+        test_api_key,
+        cast(Any, {"on_timeout": {"action": "kill", "keep_memory": None}}),
+    )
+
+    assert body["autoPause"] is False
+    assert "autoPauseMemory" not in body
+
+
+def test_create_treats_a_none_keep_memory_as_unconfigured(monkeypatch, test_api_key):
+    # Building the option dict from a value that happens to be None is no more a
+    # choice of snapshot kind than leaving the key out.
+    body = _sync_request_body(
+        monkeypatch,
+        test_api_key,
+        cast(Any, {"on_timeout": {"action": "pause", "keep_memory": None}}),
+    )
+
+    assert body["autoPause"] is True
+    assert "autoPauseMemory" not in body
+
+
+def test_create_allows_auto_resume_with_an_unconfigured_keep_memory(
+    monkeypatch, test_api_key
+):
+    body = _sync_request_body(
+        monkeypatch,
+        test_api_key,
+        cast(
+            Any,
+            {
+                "on_timeout": {"action": "pause", "keep_memory": None},
+                "auto_resume": True,
+            },
+        ),
+    )
+
+    assert body["autoPause"] is True
+    assert "autoPauseMemory" not in body
+    assert body["autoResume"] == {"enabled": True}
 
 
 # `None` expects autoResume to be absent from the payload: an unconfigured
