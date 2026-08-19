@@ -9,19 +9,24 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import httpx
 import pytest
-from pyqwest import HTTPVersion
+from pyqwest import HTTPVersion, Request, SyncRequest
 from pyqwest.httpx import AsyncPyqwestTransport, PyqwestTransport
 from transport_caches import reset_transport_caches
 
 import e2b.api.client_async as api_client_async
 import e2b.api.client_sync as api_client_sync
+from e2b.api import proxy_to_config
 from e2b.api.client_async import get_api_client as get_async_api_client
 from e2b.api.client_async import get_envd_api as get_async_envd_api
 from e2b.api.client_async import get_envd_transport as get_async_envd_transport
+from e2b.api.client_async import (
+    get_pyqwest_transport as get_async_pyqwest_transport,
+)
 from e2b.api.client_async import get_transport as get_async_transport
 from e2b.api.client_sync import get_api_client as get_sync_api_client
 from e2b.api.client_sync import get_envd_api as get_sync_envd_api
 from e2b.api.client_sync import get_envd_transport as get_sync_envd_transport
+from e2b.api.client_sync import get_pyqwest_transport as get_sync_pyqwest_transport
 from e2b.api.client_sync import get_transport as get_sync_transport
 from e2b.connection_config import ConnectionConfig
 
@@ -751,4 +756,62 @@ def test_sync_transport_sends_multipart_bodies(test_api_key, echo_server):
         assert response.json()["received"] > 4096
     finally:
         client.close()
+        reset_transport_caches()
+
+
+def test_sync_closing_one_client_leaves_the_shared_pool_open(test_api_key, echo_server):
+    # Every stack draws on one pool now, so a close reaching it would take the
+    # whole process' HTTP down with it: pyqwest pools are closable
+    # (`SyncHTTPTransport.close`) and each httpx client holds the same cached
+    # adapter over one. The adapter forwards neither `close()` nor the
+    # context-manager exit the generated clients call, so closing one client
+    # must leave the others — and the pool the envd RPC stack talks to
+    # directly — working.
+    reset_transport_caches()
+    config = ConnectionConfig(api_key=test_api_key, api_url=echo_server)
+    api_httpx = get_sync_api_client(config).get_httpx_client()
+    envd_api = get_sync_envd_api(config, echo_server)
+    pool = get_sync_pyqwest_transport(proxy_to_config(config.proxy))
+
+    try:
+        assert api_httpx._transport is envd_api._transport
+        assert api_httpx.request("GET", "/sandboxes").status_code == 200
+
+        api_httpx.close()
+
+        assert envd_api.get("/health").status_code == 200
+        rpc_response = pool.execute_sync(SyncRequest("GET", f"{echo_server}/health"))
+        try:
+            assert rpc_response.status == 200
+        finally:
+            rpc_response.close()
+    finally:
+        envd_api.close()
+        reset_transport_caches()
+
+
+@pytest.mark.asyncio
+async def test_async_closing_one_client_leaves_the_shared_pool_open(
+    test_api_key, echo_server
+):
+    reset_transport_caches()
+    config = ConnectionConfig(api_key=test_api_key, api_url=echo_server)
+    api_httpx = get_async_api_client(config).get_async_httpx_client()
+    envd_api = get_async_envd_api(config, echo_server)
+    pool = get_async_pyqwest_transport(proxy_to_config(config.proxy))
+
+    try:
+        assert api_httpx._transport is envd_api._transport
+        assert (await api_httpx.request("GET", "/sandboxes")).status_code == 200
+
+        await api_httpx.aclose()
+
+        assert (await envd_api.get("/health")).status_code == 200
+        rpc_response = await pool.execute(Request("GET", f"{echo_server}/health"))
+        try:
+            assert rpc_response.status == 200
+        finally:
+            await rpc_response.aclose()
+    finally:
+        await envd_api.aclose()
         reset_transport_caches()
