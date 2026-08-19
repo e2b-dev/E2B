@@ -108,14 +108,15 @@ export function iamTokenPlaceholders(
   }
 
   // `then` is never needed for serialization and must behave like any other
-  // unregistered name on read; the rest are installed as non-enumerable own
-  // methods so the runtime path works.
-  const runtimeMethods: Record<string, () => unknown> = {
-    toJSON: guardedRuntimeMethod('toJSON'),
-    toString: guardedRuntimeMethod('toString'),
-    valueOf: guardedRuntimeMethod('valueOf'),
-  }
-  for (const [name, method] of Object.entries(runtimeMethods)) {
+  // unregistered name on read; `toJSON`/`toString`/`valueOf` are installed as
+  // non-enumerable own methods so the runtime path works. A registered token
+  // can legitimately be named after one of these props, and in that case the
+  // registered placeholder wins: skip the guard so `iam.tokens[name]` still
+  // resolves to the placeholder and stays enumerable for serialization.
+  for (const name of ['toJSON', 'toString', 'valueOf'] as const) {
+    if (Object.hasOwn(tokens, name)) continue
+
+    const method = guardedRuntimeMethod(name)
     Object.defineProperty(tokensWithRuntimeProps, name, {
       value: method,
       enumerable: false,

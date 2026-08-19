@@ -241,6 +241,35 @@ test('transform callback can still serialize and stringify registered iam tokens
   expect(lastCreateBody).toBeDefined()
 })
 
+test('transform callback keeps a registered token named after a runtime prop', async () => {
+  // A workload can register a token literally named `toJSON`, `toString` or
+  // `valueOf`. The runtime-guard methods must not shadow such a registered
+  // token: it has to resolve to its placeholder and stay enumerable.
+  await expect(
+    Sandbox.create('base', {
+      apiKey: TEST_API_KEY,
+      iam: { tokens: { toString: awsToken } },
+      network: {
+        rules: {
+          'api.internal.example.com': [
+            {
+              transform: ({ iam }) => ({
+                'X-Placeholder': iam.tokens.toString,
+                'X-Keys': Object.keys(iam.tokens).join(','),
+              }),
+            },
+          ],
+        },
+      },
+    })
+  ).resolves.toBeDefined()
+
+  const transform =
+    lastCreateBody?.network?.rules?.['api.internal.example.com']?.[0]?.transform
+  expect(transform?.['X-Placeholder']).toBe('${e2b.identity.tokens.toString}')
+  expect(transform?.['X-Keys']).toBe('toString')
+})
+
 test('transform callback rejects an iam token when no iam config is set', async () => {
   await expect(
     Sandbox.create('base', {
