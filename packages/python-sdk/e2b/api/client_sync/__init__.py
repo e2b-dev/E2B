@@ -175,9 +175,10 @@ def get_envd_transport(
     now share one pool per key, since reqwest pools per host and envd RPC and
     the envd HTTP API hit the same sandbox host anyway.
 
-    Kept as a distinct name because external consumers reach into it
-    (``e2b-code-interpreter`` calls it with ``http2=False``); prefer
-    :func:`get_transport` inside the SDK.
+    Kept only as a backward-compatible alias of :func:`get_transport` for any
+    external importer of the older public name; nothing inside the SDK calls it
+    (``e2b-code-interpreter`` imports :func:`get_transport` directly). Prefer
+    :func:`get_transport`.
     """
     return get_transport(config, http2, for_streaming=for_streaming)
 
