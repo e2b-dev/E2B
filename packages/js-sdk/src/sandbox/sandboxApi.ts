@@ -70,7 +70,8 @@ export type SandboxNetworkTransformContext = {
      * Reading a name that is not registered throws
      * {@link InvalidArgumentError} — the proxy never turns an unregistered name
      * into a token, so a typo would surface as a confusing auth failure at the
-     * destination.
+     * destination. The map is read-only for the same reason: writing a name in
+     * registers nothing.
      */
     tokens: Record<string, string>
   }

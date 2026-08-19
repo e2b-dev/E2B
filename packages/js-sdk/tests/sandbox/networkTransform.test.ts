@@ -189,6 +189,62 @@ test.for(['constructor', '__proto__', 'hasOwnProperty'])(
   }
 )
 
+test.for(['toJSON', 'then', 'toString', 'valueOf'])(
+  'transform callback rejects the runtime-probed iam token name %s',
+  async (name: string) => {
+    // The runtime reads these names off any object it serializes, awaits or
+    // coerces, so a lookup of them cannot throw on the spot. Referencing one as
+    // a token used to put 'undefined' or a built-in's source text on the wire,
+    // where the proxy drops the header and forwards the request anyway.
+    await expect(
+      Sandbox.create('base', {
+        apiKey: TEST_API_KEY,
+        iam: { tokens: { aws: awsToken } },
+        network: {
+          rules: {
+            'api.internal.example.com': [
+              {
+                transform: ({ iam }) => ({
+                  headers: { Authorization: `Bearer ${iam.tokens[name]}` },
+                }),
+              },
+            ],
+          },
+        },
+      })
+    ).rejects.toThrowError(`iam token '${name}', which is not registered`)
+
+    expect(lastCreateBody).toBeUndefined()
+  }
+)
+
+test('transform callback cannot register an iam token by writing to the map', async () => {
+  // Writing the placeholder in registers nothing, so the read below would put a
+  // placeholder on the wire that the proxy cannot resolve to a token.
+  await expect(
+    Sandbox.create('base', {
+      apiKey: TEST_API_KEY,
+      iam: { tokens: { aws: awsToken } },
+      network: {
+        rules: {
+          'api.internal.example.com': [
+            {
+              transform: ({ iam }) => {
+                iam.tokens.gcp = '${e2b.identity.tokens.gcp}'
+                return {
+                  headers: { Authorization: `Bearer ${iam.tokens.gcp}` },
+                }
+              },
+            },
+          ],
+        },
+      },
+    })
+  ).rejects.toThrowError(/iam.tokens is read-only, cannot assign 'gcp'/)
+
+  expect(lastCreateBody).toBeUndefined()
+})
+
 test('transform callback rejects an iam token when no iam config is set', async () => {
   await expect(
     Sandbox.create('base', {

@@ -3,7 +3,10 @@ import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
 import { InvalidArgumentError, Sandbox, Secret } from '../../src'
+import { iamTokenPlaceholders } from '../../src/sandbox/iam'
 import { TEST_API_KEY, apiUrl } from '../setup'
+
+const RUNTIME_PROBED_PROPS = ['toJSON', 'then', 'toString', 'valueOf']
 
 let lastCreateBody: Record<string, unknown> | undefined
 
@@ -128,3 +131,76 @@ test('Sandbox.create rejects a token missing audience or tokenType', async () =>
     })
   ).rejects.toThrowError(InvalidArgumentError)
 })
+
+test('the token map serializes, awaits and coerces like a plain object', async () => {
+  const tokens = iamTokenPlaceholders(['aws'], { validate: true })
+
+  expect(JSON.stringify(tokens)).toBe('{"aws":"${e2b.identity.tokens.aws}"}')
+  expect(String(tokens)).toBe('[object Object]')
+  expect(`${tokens}`).toBe('[object Object]')
+  expect({ ...tokens }).toEqual({ aws: '${e2b.identity.tokens.aws}' })
+  // A non-callable `then` keeps the map a plain value rather than a thenable.
+  expect(await tokens).toBe(tokens)
+})
+
+test.for(RUNTIME_PROBED_PROPS)(
+  'reading the unregistered token %s throws instead of resolving',
+  (prop: string) => {
+    // The runtime reads these names off anything it serializes, awaits or
+    // coerces, so a lookup cannot be answered with an error — but using the
+    // value as a token has to fail like any other unregistered name, instead of
+    // putting 'undefined' or a built-in's source text on the wire.
+    const tokens = iamTokenPlaceholders(['aws'], { validate: true })
+
+    expect(() => `${tokens[prop]}`).toThrowError(
+      `iam token '${prop}', which is not registered`
+    )
+    expect(() => String(tokens[prop])).toThrowError(InvalidArgumentError)
+    expect(
+      () => `${Object.getOwnPropertyDescriptor(tokens, prop)?.value}`
+    ).toThrowError(InvalidArgumentError)
+  }
+)
+
+test('a descriptor lookup of an unregistered token throws', () => {
+  // Reporting the name as absent would resolve it to 'undefined' silently.
+  const tokens = iamTokenPlaceholders(['aws'], { validate: true })
+
+  expect(() => Object.getOwnPropertyDescriptor(tokens, 'gcp')).toThrowError(
+    /iam token 'gcp'.*Registered tokens: 'aws'/s
+  )
+  expect(Object.getOwnPropertyDescriptor(tokens, 'aws')?.value).toBe(
+    '${e2b.identity.tokens.aws}'
+  )
+})
+
+test('the token map cannot be mutated into registering a token', () => {
+  const tokens = iamTokenPlaceholders(['aws'], { validate: true })
+
+  expect(() => {
+    tokens.gcp = '${e2b.identity.tokens.gcp}'
+  }).toThrowError(/iam.tokens is read-only, cannot assign 'gcp'/)
+  expect(() =>
+    Object.defineProperty(tokens, 'gcp', { value: 'placeholder' })
+  ).toThrowError(/iam.tokens is read-only, cannot define 'gcp'/)
+  // Deleting a registered token used to leave a lookup of it claiming the name
+  // is unregistered while listing it as registered.
+  expect(() => delete tokens.aws).toThrowError(
+    /iam.tokens is read-only, cannot delete 'aws'/
+  )
+
+  expect(Object.keys(tokens)).toEqual(['aws'])
+})
+
+test.for(RUNTIME_PROBED_PROPS)(
+  'the unchecked token map resolves %s to its placeholder',
+  (prop: string) => {
+    // The update-network payload carries no iam config, so no name can be
+    // reported as unregistered; the probed names resolve like any other.
+    const tokens = iamTokenPlaceholders([], { validate: false })
+
+    expect(`${tokens[prop]}`).toBe(`\${e2b.identity.tokens.${prop}}`)
+    expect(JSON.stringify(tokens)).toBe('{}')
+    expect(String(tokens)).toBe('[object Object]')
+  }
+)
