@@ -125,16 +125,22 @@ def _parameters(
     return out, declares
 
 
-def _env_vars(entry: dict[str, Any]) -> list[str]:
+def _env_vars(name: str, entry: dict[str, Any]) -> list[str]:
     """The environment variables a server reads its credentials from."""
-    return [declared.get("env", "") for declared in entry.get(ENV_FIELD) or []]
+    declarations = entry.get(ENV_FIELD) or []
+    if any(not declared.get("env") for declared in declarations):
+        # Nothing to name the property after, and guessing one would type a
+        # value the server can't read. Say which server rather than failing
+        # somewhere down in the name mangling.
+        sys.exit(f"error: {name} declares something to set with no environment variable")
+    return [declared["env"] for declared in declarations]
 
 
 def server_schema(name: str, entry: dict[str, Any]) -> dict[str, Any]:
     properties: dict[str, Any] = {}
     required: list[str] = []
 
-    for env in _env_vars(entry):
+    for env in _env_vars(name, entry):
         prop = env_property(env, name)
         properties[prop] = {"type": "string"}
         required.append(prop)
