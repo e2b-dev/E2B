@@ -216,15 +216,16 @@ export function iamTokenPlaceholders(
     },
 
     defineProperty(target, prop, descriptor) {
-      // `Object.freeze` / `Object.seal` redefine each own property in place.
-      // Allow that when the value is unchanged — the trap's job is rejecting a
-      // name the sandbox never registered, not breaking freeze on a view that
-      // is already read-only.
+      // `Object.freeze` / `Object.seal` redefine each own property in place,
+      // often with a partial descriptor that only clears writable/configurable
+      // and omits `value`. Allow that when the value is not being changed —
+      // the trap's job is rejecting a name the sandbox never registered, not
+      // breaking freeze on a view that is already read-only.
       if (
         typeof prop === 'string' &&
         Object.hasOwn(target, prop) &&
-        'value' in descriptor &&
-        descriptor.value === target[prop]
+        !('get' in descriptor || 'set' in descriptor) &&
+        (!('value' in descriptor) || descriptor.value === target[prop])
       ) {
         return Reflect.defineProperty(target, prop, descriptor)
       }

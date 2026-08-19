@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'vitest'
 
 import { iamTokenPlaceholders } from '../../src/sandbox/iam'
-import { InvalidArgumentError } from '../../src/errors'
 
 const registered = () => iamTokenPlaceholders(['aws'], { validate: true })
 
