@@ -4,7 +4,7 @@ from typing import Callable, List, Optional, Union
 from typing_extensions import Unpack
 
 from e2b.api.client.client import AuthenticatedClient
-from e2b.connection_config import ApiParams, ConnectionConfig
+from e2b.connection_config import ApiParams
 
 from e2b.api.client_sync import get_api_client
 from e2b.template.consts import GZIP, RESOLVE_SYMLINKS
@@ -188,8 +188,9 @@ class Template(TemplateBase):
             tags=response_tags,
         )
 
-    @staticmethod
+    @classmethod
     def build(
+        cls,
         template: TemplateClass,
         name: Optional[str] = None,
         *,
@@ -242,12 +243,12 @@ class Template(TemplateBase):
                     )
                 )
 
-            config = ConnectionConfig(**opts)
+            config = cls._resolve_connection_config(**opts)
             api_client = get_api_client(
                 config,
             )
 
-            data = Template._build(
+            data = cls._build(
                 api_client,
                 template,
                 name,
@@ -275,7 +276,7 @@ class Template(TemplateBase):
                 data.template_id,
                 data.build_id,
                 on_build_logs,
-                logs_refresh_frequency=TemplateBase._logs_refresh_frequency,
+                logs_refresh_frequency=cls._logs_refresh_frequency,
                 stack_traces=template._template._stack_traces,
             )
 
@@ -289,8 +290,9 @@ class Template(TemplateBase):
                     )
                 )
 
-    @staticmethod
+    @classmethod
     def build_in_background(
+        cls,
         template: TemplateClass,
         name: Optional[str] = None,
         *,
@@ -334,12 +336,12 @@ class Template(TemplateBase):
         """
         name = normalize_build_arguments(name, alias)
 
-        config = ConnectionConfig(**opts)
+        config = cls._resolve_connection_config(**opts)
         api_client = get_api_client(
             config,
         )
 
-        return Template._build(
+        return cls._build(
             api_client,
             template,
             name,
@@ -353,8 +355,9 @@ class Template(TemplateBase):
             request_timeout=opts.get("request_timeout"),
         )
 
-    @staticmethod
+    @classmethod
     def get_build_status(
+        cls,
         build_info: BuildInfo,
         logs_offset: int = 0,
         **opts: Unpack[ApiParams],
@@ -374,7 +377,7 @@ class Template(TemplateBase):
         status = Template.get_build_status(build_info, logs_offset=0)
         ```
         """
-        config = ConnectionConfig(**opts)
+        config = cls._resolve_connection_config(**opts)
         api_client = get_api_client(
             config,
         )
@@ -386,8 +389,9 @@ class Template(TemplateBase):
             logs_offset,
         )
 
-    @staticmethod
+    @classmethod
     def exists(
+        cls,
         name: str,
         **opts: Unpack[ApiParams],
     ) -> bool:
@@ -407,10 +411,11 @@ class Template(TemplateBase):
         ```
         """
 
-        return Template.alias_exists(name, **opts)
+        return cls.alias_exists(name, **opts)
 
-    @staticmethod
+    @classmethod
     def alias_exists(
+        cls,
         alias: str,
         **opts: Unpack[ApiParams],
     ) -> bool:
@@ -431,15 +436,16 @@ class Template(TemplateBase):
             print('Template exists!')
         ```
         """
-        config = ConnectionConfig(**opts)
+        config = cls._resolve_connection_config(**opts)
         api_client = get_api_client(
             config,
         )
 
         return check_alias_exists(api_client, alias)
 
-    @staticmethod
+    @classmethod
     def assign_tags(
+        cls,
         target_name: str,
         tags: Union[str, List[str]],
         **opts: Unpack[ApiParams],
@@ -462,7 +468,7 @@ class Template(TemplateBase):
         result = Template.assign_tags('my-template:v1.0', ['production', 'stable'])
         ```
         """
-        config = ConnectionConfig(**opts)
+        config = cls._resolve_connection_config(**opts)
         api_client = get_api_client(
             config,
         )
@@ -470,8 +476,9 @@ class Template(TemplateBase):
         normalized_tags = [tags] if isinstance(tags, str) else tags
         return assign_tags(api_client, target_name, normalized_tags)
 
-    @staticmethod
+    @classmethod
     def remove_tags(
+        cls,
         name: str,
         tags: Union[str, List[str]],
         **opts: Unpack[ApiParams],
@@ -493,7 +500,7 @@ class Template(TemplateBase):
         Template.remove_tags('my-template', ['production', 'stable'])
         ```
         """
-        config = ConnectionConfig(**opts)
+        config = cls._resolve_connection_config(**opts)
         api_client = get_api_client(
             config,
         )
@@ -501,8 +508,9 @@ class Template(TemplateBase):
         normalized_tags = [tags] if isinstance(tags, str) else tags
         remove_tags(api_client, name, normalized_tags)
 
-    @staticmethod
+    @classmethod
     def get_tags(
+        cls,
         template_id: str,
         **opts: Unpack[ApiParams],
     ) -> List[TemplateTag]:
@@ -521,7 +529,7 @@ class Template(TemplateBase):
             print(f"Tag: {tag.tag}, Build: {tag.build_id}, Created: {tag.created_at}")
         ```
         """
-        config = ConnectionConfig(**opts)
+        config = cls._resolve_connection_config(**opts)
         api_client = get_api_client(
             config,
         )

@@ -50,11 +50,48 @@ import {
 } from './utils'
 
 /**
+ * Resolve the template class the static was invoked on.
+ *
+ * The top-level `Template` factory re-exposes the statics as plain properties
+ * (`Template.build = TemplateBase.build`), so `this` is not a template class
+ * for those calls — fall back to `TemplateBase`, which carries no bound
+ * options.
+ */
+function templateClassOf(context: unknown): typeof TemplateBase {
+  return context === TemplateBase ||
+    (typeof context === 'function' && context.prototype instanceof TemplateBase)
+    ? (context as typeof TemplateBase)
+    : TemplateBase
+}
+
+/**
  * Base class for building E2B sandbox templates.
  */
 export class TemplateBase
   implements TemplateFromImage, TemplateBuilder, TemplateFinal
 {
+  /**
+   * Connection options bound to this class, used as defaults for every
+   * operation that talks to the API. Empty here, so the config comes from
+   * per-call options and environment variables; per-client subclasses bind
+   * their own options.
+   */
+  protected static boundConnectionOpts: ConnectionOpts = {}
+
+  /**
+   * Resolve the connection config for an API operation, layering per-call
+   * options over the options bound to the class.
+   */
+  protected static resolveConnectionConfig(
+    opts?: ConnectionOpts
+  ): ConnectionConfig {
+    const perCallOpts = Object.fromEntries(
+      Object.entries(opts ?? {}).filter(([, value]) => value !== undefined)
+    )
+
+    return new ConnectionConfig({ ...this.boundConnectionOpts, ...perCallOpts })
+  }
+
   private defaultBaseImage: string = 'e2bdev/base'
   private baseImage: string | undefined = this.defaultBaseImage
   private baseTemplate: string | undefined = undefined
@@ -162,7 +199,7 @@ export class TemplateBase
       buildOptions.onBuildLogs?.(new LogEntryStart(new Date(), 'Build started'))
       const baseTemplate = template as TemplateBase
 
-      const config = new ConnectionConfig(buildOptions)
+      const config = templateClassOf(this).resolveConnectionConfig(buildOptions)
       const client = new ApiClient(config)
 
       const data = await baseTemplate.build(client, config, name, buildOptions)
@@ -240,7 +277,7 @@ export class TemplateBase
       options
     )
 
-    const config = new ConnectionConfig(buildOptions)
+    const config = templateClassOf(this).resolveConnectionConfig(buildOptions)
     const client = new ApiClient(config)
 
     return (template as TemplateBase).build(client, config, name, buildOptions)
@@ -261,7 +298,7 @@ export class TemplateBase
     data: Pick<BuildInfo, 'templateId' | 'buildId'>,
     options?: GetBuildStatusOptions
   ): Promise<TemplateBuildStatusResponse> {
-    const config = new ConnectionConfig(options)
+    const config = templateClassOf(this).resolveConnectionConfig(options)
     const client = new ApiClient(config)
 
     return await getBuildStatus(
@@ -294,7 +331,7 @@ export class TemplateBase
     name: string,
     options?: ConnectionOpts
   ): Promise<boolean> {
-    return TemplateBase.aliasExists(name, options)
+    return templateClassOf(this).aliasExists(name, options)
   }
 
   /**
@@ -317,7 +354,7 @@ export class TemplateBase
     alias: string,
     options?: ConnectionOpts
   ): Promise<boolean> {
-    const config = new ConnectionConfig(options)
+    const config = templateClassOf(this).resolveConnectionConfig(options)
     const client = new ApiClient(config)
 
     return checkAliasExists(
@@ -349,7 +386,7 @@ export class TemplateBase
     tags: string | string[],
     options?: ConnectionOpts
   ): Promise<TemplateTagInfo> {
-    const config = new ConnectionConfig(options)
+    const config = templateClassOf(this).resolveConnectionConfig(options)
     const client = new ApiClient(config)
     const normalizedTags = Array.isArray(tags) ? tags : [tags]
     return assignTags(
@@ -380,7 +417,7 @@ export class TemplateBase
     tags: string | string[],
     options?: ConnectionOpts
   ): Promise<void> {
-    const config = new ConnectionConfig(options)
+    const config = templateClassOf(this).resolveConnectionConfig(options)
     const client = new ApiClient(config)
     const normalizedTags = Array.isArray(tags) ? tags : [tags]
     return removeTags(
@@ -409,7 +446,7 @@ export class TemplateBase
     templateId: string,
     options?: ConnectionOpts
   ): Promise<TemplateTag[]> {
-    const config = new ConnectionConfig(options)
+    const config = templateClassOf(this).resolveConnectionConfig(options)
     const client = new ApiClient(config)
     return getTemplateTags(
       client,
