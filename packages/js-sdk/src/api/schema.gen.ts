@@ -1935,6 +1935,13 @@ export interface components {
             /** @description Number of sandboxes successfully killed */
             killedCount: number;
         };
+        /** @description Cached live sandbox index count keyed by team ID. Counts may briefly
+         *     include sandboxes transitioning out of running; teams without indexed
+         *     sandboxes are omitted.
+         *      */
+        AdminTeamRunningSandboxCounts: {
+            [key: string]: number;
+        };
         AssignedTemplateTags: {
             /**
              * Format: uuid
@@ -2276,8 +2283,6 @@ export interface components {
             version: string;
         };
         NodeDetail: {
-            /** @description List of cached builds id on the node */
-            cachedBuilds: string[];
             /** @description Identifier of the cluster */
             clusterID: string;
             /** @description Commit of the orchestrator */
@@ -2463,6 +2468,15 @@ export interface components {
             templateID: string;
             volumeMounts?: components["schemas"]["SandboxVolumeMount"][];
         };
+        /** @description SOCKS5 proxy for sandbox egress. Outbound TCP is tunneled through the proxy after allow/deny filtering; the sandbox is unaware. Domain-matched flows use remote DNS (ATYP=domain). */
+        SandboxEgressProxyConfig: {
+            /** @description SOCKS5 proxy address in host:port format (e.g. "proxy.example.com:1080"). */
+            address: string;
+            /** @description Optional SOCKS5 password (RFC 1929), max 255 bytes. */
+            password?: string;
+            /** @description Optional SOCKS5 username (RFC 1929), max 255 bytes. */
+            username?: string;
+        } | null;
         SandboxesWithMetrics: {
             sandboxes: {
                 [key: string]: components["schemas"]["SandboxMetric"];
@@ -2605,6 +2619,7 @@ export interface components {
             allowPublicTraffic?: boolean;
             /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
             denyOut?: string[];
+            egressProxy?: components["schemas"]["SandboxEgressProxyConfig"];
             /** @description Specify host mask which will be used for all sandbox requests */
             maskRequestHost?: string;
             /** @description Per-domain transform rules applied to matching egress HTTP/HTTPS requests. Keys are domains (e.g. "api.example.com", "example.com"). A domain listed here is not automatically allowed - use allowOut to permit the traffic.
@@ -2633,6 +2648,7 @@ export interface components {
             allowOut?: string[];
             /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
             denyOut?: string[];
+            egressProxy?: components["schemas"]["SandboxEgressProxyConfig"];
             /** @description Per-domain transform rules. Replaces all existing rules when provided. */
             rules?: {
                 [key: string]: components["schemas"]["SandboxNetworkRule"][];

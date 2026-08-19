@@ -1,6 +1,6 @@
 import datetime
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -33,7 +33,6 @@ class NodeDetail:
         status_changed_at (datetime.datetime): Time when the node status was last changed
         sandbox_count (int): Number of sandboxes running on the node
         metrics (NodeMetrics): Node metrics
-        cached_builds (list[str]): List of cached builds id on the node
         create_successes (int): Number of sandbox create successes
         create_fails (int): Number of sandbox create fails
     """
@@ -48,7 +47,6 @@ class NodeDetail:
     status_changed_at: datetime.datetime
     sandbox_count: int
     metrics: "NodeMetrics"
-    cached_builds: list[str]
     create_successes: int
     create_fails: int
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -74,8 +72,6 @@ class NodeDetail:
 
         metrics = self.metrics.to_dict()
 
-        cached_builds = self.cached_builds
-
         create_successes = self.create_successes
 
         create_fails = self.create_fails
@@ -94,7 +90,6 @@ class NodeDetail:
                 "statusChangedAt": status_changed_at,
                 "sandboxCount": sandbox_count,
                 "metrics": metrics,
-                "cachedBuilds": cached_builds,
                 "createSuccesses": create_successes,
                 "createFails": create_fails,
             }
@@ -128,8 +123,6 @@ class NodeDetail:
 
         metrics = NodeMetrics.from_dict(d.pop("metrics"))
 
-        cached_builds = cast(list[str], d.pop("cachedBuilds"))
-
         create_successes = d.pop("createSuccesses")
 
         create_fails = d.pop("createFails")
@@ -145,7 +138,6 @@ class NodeDetail:
             status_changed_at=status_changed_at,
             sandbox_count=sandbox_count,
             metrics=metrics,
-            cached_builds=cached_builds,
             create_successes=create_successes,
             create_fails=create_fails,
         )

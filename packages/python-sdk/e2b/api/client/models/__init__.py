@@ -2,6 +2,7 @@
 
 from .admin_build_cancel_result import AdminBuildCancelResult
 from .admin_sandbox_kill_result import AdminSandboxKillResult
+from .admin_team_running_sandbox_counts import AdminTeamRunningSandboxCounts
 from .assign_template_tags_request import AssignTemplateTagsRequest
 from .assigned_template_tags import AssignedTemplateTags
 from .aws_registry import AWSRegistry
@@ -39,6 +40,7 @@ from .resumed_sandbox import ResumedSandbox
 from .sandbox import Sandbox
 from .sandbox_auto_resume_config import SandboxAutoResumeConfig
 from .sandbox_detail import SandboxDetail
+from .sandbox_egress_proxy_config_type_0 import SandboxEgressProxyConfigType0
 from .sandbox_fork_request import SandboxForkRequest
 from .sandbox_fork_result import SandboxForkResult
 from .sandbox_iam import SandboxIam
@@ -97,6 +99,7 @@ from .volume_token import VolumeToken
 __all__ = (
     "AdminBuildCancelResult",
     "AdminSandboxKillResult",
+    "AdminTeamRunningSandboxCounts",
     "AssignedTemplateTags",
     "AssignTemplateTagsRequest",
     "AWSRegistry",
@@ -134,6 +137,7 @@ __all__ = (
     "Sandbox",
     "SandboxAutoResumeConfig",
     "SandboxDetail",
+    "SandboxEgressProxyConfigType0",
     "SandboxesWithMetrics",
     "SandboxForkRequest",
     "SandboxForkResult",
