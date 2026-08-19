@@ -1,8 +1,10 @@
 """Reset the SDK's process-global pyqwest transport caches.
 
-Every HTTP stack in the SDK — control-plane REST, envd HTTP API, envd RPC,
-volume content, template uploads — draws its connection pool from
-``e2b.api.client_sync``/``client_async``, so one helper clears them all. Tests
+Every persistent HTTP stack in the SDK — control-plane REST, envd HTTP API,
+envd RPC, volume content — draws its connection pool from
+``e2b.api.client_sync``/``client_async``, so one helper clears them all
+(template uploads deliberately build their own non-retrying transport inline
+and are not cached here). Tests
 that assert on pool identity or rebuild a pool with different tuning call this
 before and after. Not a test module itself — imported by the transport test
 modules (``pythonpath = tests`` in pytest.ini makes it importable under
