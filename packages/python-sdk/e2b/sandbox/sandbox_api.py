@@ -228,7 +228,9 @@ class SandboxEgressProxyOpts(TypedDict):
 
     Egress fails closed: when the proxy is unreachable or does not speak
     SOCKS5, outbound connections fail rather than falling back to a direct
-    connection::
+    connection.
+
+    Pass credentials when the proxy requires them::
 
         sandbox = Sandbox.create(
             network={
@@ -351,9 +353,10 @@ class SandboxNetworkOpts(TypedDict):
 
     Available on E2B Cloud and in BYOC deployments; a sandbox that names a
     proxy on a deployment built from the open source ``e2b-dev/infra``
-    repository is rejected as unsupported::
+    repository is rejected as unsupported.
 
-        # Deny everything except api.example.com, and tunnel what is left
+    Deny everything except a host, and tunnel what is left::
+
         Sandbox.create(
             network={
                 "allow_out": ["api.example.com"],
@@ -643,9 +646,22 @@ def _build_egress_proxy(
 ) -> ClientSandboxEgressProxyConfig:
     """
     Rebuild the proxy config from the known fields so stray keys in the
-    caller's dict never reach the wire. Validation is the server's — it is the
-    only side that can tell whether the address resolves, and to where.
+    caller's dict never reach the wire. Address reachability is the server's —
+    it is the only side that can tell whether the address resolves, and to where.
+    The required ``address`` key is checked here so an untyped caller that
+    omits it gets :class:`InvalidArgumentException` rather than a bare
+    ``KeyError`` from deep inside create.
     """
+    # Re-check at runtime for callers that bypass the TypedDict — a bare
+    # KeyError from deep inside create would not name the option.
+    if not isinstance(egress_proxy, Mapping) or not isinstance(
+        egress_proxy.get("address"), str
+    ):
+        raise InvalidArgumentException(
+            "network egress_proxy must be a dict with a string 'address' "
+            "(e.g. 'proxy.example.com:1080')."
+        )
+
     body = ClientSandboxEgressProxyConfig(address=egress_proxy["address"])
     if "username" in egress_proxy:
         body.username = egress_proxy["username"]
@@ -669,9 +685,11 @@ def _build_network_egress(
     rules = network.get("rules") or {}
     allow_out = _resolve_network_selector(network.get("allow_out"), rules)
     deny_out = _resolve_network_selector(network.get("deny_out"), rules)
-    # `or None` also covers an explicit `"egress_proxy": None`, which untyped
-    # callers spell "no proxy" as; the JS SDK treats it the same way.
-    egress_proxy = network.get("egress_proxy") or None
+    # `is not None` also covers an explicit `"egress_proxy": None`, which
+    # untyped callers spell "no proxy" as; the JS SDK's `!= null` does the
+    # same. Do not use truthiness — an empty dict must reach the builder so
+    # it fails loudly instead of silently disabling tunneling.
+    egress_proxy = network.get("egress_proxy")
 
     body: Dict[str, Any] = {}
     if allow_out is not None:

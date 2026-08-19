@@ -1036,9 +1036,9 @@ function buildNetworkEgress(
   return {
     ...(allowOut !== undefined ? { allowOut } : {}),
     ...(denyOut !== undefined ? { denyOut } : {}),
-    // `== null` also covers an explicit `egressProxy: null`, which untyped
-    // callers spell "no proxy" as; Python's `network.get('egress_proxy')`
-    // treats it the same way.
+    // `!= null` also covers an explicit `egressProxy: null`, which untyped
+    // callers spell "no proxy" as; Python checks `is not None` the same way
+    // (not truthiness — an empty object must still reach the builder).
     ...(network.egressProxy != null
       ? { egressProxy: buildEgressProxyBody(network.egressProxy) }
       : {}),

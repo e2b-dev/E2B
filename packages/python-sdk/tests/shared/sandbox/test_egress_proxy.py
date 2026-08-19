@@ -8,6 +8,7 @@ from e2b.api.client.models import (
     SandboxEgressProxyConfigType0 as ClientSandboxEgressProxyConfig,
 )
 from e2b.api.client.types import UNSET
+from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox.sandbox_api import (
     build_network_config,
     build_network_update_body,
@@ -66,6 +67,22 @@ def test_create_omits_the_egress_proxy(network):
     body = build_network_config(cast(Any, network))
     assert body is not None
     assert "egress_proxy" not in body
+
+
+@pytest.mark.parametrize(
+    "egress_proxy",
+    [
+        # An empty dict is falsy but present — it must not silently disable
+        # tunneling the way `or None` used to. Match JS: fail loudly.
+        pytest.param({}, id="empty"),
+        pytest.param({"username": "proxy-user"}, id="missing-address"),
+        pytest.param({"address": 1080}, id="non-string-address"),
+        pytest.param("proxy.example.com:1080", id="string"),
+    ],
+)
+def test_create_rejects_a_malformed_egress_proxy(egress_proxy):
+    with pytest.raises(InvalidArgumentException, match="egress_proxy"):
+        build_network_config(cast(Any, {"egress_proxy": egress_proxy}))
 
 
 def test_create_strips_unknown_egress_proxy_keys():
