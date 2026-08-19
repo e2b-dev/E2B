@@ -1148,7 +1148,31 @@ function buildNetworkUpdateBody(
   }
 }
 export class SandboxApi {
+  /**
+   * Connection options bound to this class by an {@link E2B} client.
+   *
+   * Empty on the base class, so the env-configured default path is unchanged.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  protected static readonly boundOpts?: ConnectionOpts
+
   protected constructor() {}
+
+  /**
+   * Merge the connection options bound to this class with the per-call options.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  protected static resolveOpts<T extends ConnectionOpts>(
+    opts?: T
+  ): T | undefined {
+    return ConnectionConfig.mergeOpts(this.boundOpts, opts)
+  }
 
   /**
    * Kill the sandbox specified by sandbox ID.
@@ -1162,7 +1186,8 @@ export class SandboxApi {
     sandboxId: string,
     opts?: SandboxApiOpts
   ): Promise<boolean> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
 
     if (config.debug) {
       // Skip killing the sandbox in debug mode
@@ -1177,7 +1202,7 @@ export class SandboxApi {
           sandboxID: sandboxId,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -1204,7 +1229,8 @@ export class SandboxApi {
     sandboxId: string,
     opts?: SandboxApiOpts
   ): Promise<SandboxInfo> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.GET('/sandboxes/{sandboxID}', {
@@ -1213,7 +1239,7 @@ export class SandboxApi {
           sandboxID: sandboxId,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -1289,7 +1315,8 @@ export class SandboxApi {
     sandboxId: string,
     opts?: SandboxMetricsOpts
   ): Promise<SandboxMetrics[]> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
 
     if (config.debug) {
       // Skip getting the metrics in debug mode
@@ -1299,10 +1326,12 @@ export class SandboxApi {
     const client = new ApiClient(config)
 
     // JS timestamp is in milliseconds, convert to unix (seconds)
-    const start = opts?.start
-      ? Math.round(opts.start.getTime() / 1000)
+    const start = apiOpts?.start
+      ? Math.round(apiOpts.start.getTime() / 1000)
       : undefined
-    const end = opts?.end ? Math.round(opts.end.getTime() / 1000) : undefined
+    const end = apiOpts?.end
+      ? Math.round(apiOpts.end.getTime() / 1000)
+      : undefined
     const res = await client.api.GET('/sandboxes/{sandboxID}/metrics', {
       params: {
         path: {
@@ -1313,7 +1342,7 @@ export class SandboxApi {
           end,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -1356,7 +1385,8 @@ export class SandboxApi {
     timeoutMs: number,
     opts?: SandboxApiOpts
   ): Promise<void> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.POST('/sandboxes/{sandboxID}/timeout', {
@@ -1368,7 +1398,7 @@ export class SandboxApi {
       body: {
         timeout: timeoutToSeconds(timeoutMs),
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -1396,7 +1426,8 @@ export class SandboxApi {
     network: SandboxNetworkUpdate,
     opts?: SandboxApiOpts
   ): Promise<void> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.PUT('/sandboxes/{sandboxID}/network', {
@@ -1406,7 +1437,7 @@ export class SandboxApi {
         },
       },
       body: buildNetworkUpdateBody(network),
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -1431,7 +1462,8 @@ export class SandboxApi {
     sandboxId: string,
     opts?: SandboxPauseOpts
   ): Promise<boolean> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.POST('/sandboxes/{sandboxID}/pause', {
@@ -1441,9 +1473,9 @@ export class SandboxApi {
         },
       },
       body: {
-        memory: opts?.keepMemory ?? true,
+        memory: apiOpts?.keepMemory ?? true,
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -1489,7 +1521,8 @@ export class SandboxApi {
     sandboxId: string,
     opts?: CreateSnapshotOpts
   ): Promise<SnapshotInfo> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.POST('/sandboxes/{sandboxID}/snapshots', {
@@ -1498,8 +1531,8 @@ export class SandboxApi {
           sandboxID: sandboxId,
         },
       },
-      body: opts?.name ? { name: opts.name } : {},
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      body: apiOpts?.name ? { name: apiOpts.name } : {},
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -1525,7 +1558,7 @@ export class SandboxApi {
    * @returns paginator for listing snapshots.
    */
   static listSnapshots(opts?: SnapshotListOpts): SnapshotPaginator {
-    return new SnapshotPaginator(opts)
+    return new SnapshotPaginator(this.resolveOpts(opts))
   }
 
   /**
@@ -1540,7 +1573,8 @@ export class SandboxApi {
     snapshotId: string,
     opts?: SandboxApiOpts
   ): Promise<boolean> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.DELETE('/templates/{templateID}', {
@@ -1549,7 +1583,7 @@ export class SandboxApi {
           templateID: snapshotId,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -1569,7 +1603,8 @@ export class SandboxApi {
     timeoutMs: number,
     opts?: SandboxOpts
   ) {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
     // onTimeout accepts a bare action (`'pause'` / `'kill'`) or the object form
     // `{ action, keepMemory }`. The discriminated union type forbids `keepMemory`
@@ -1642,7 +1677,7 @@ export class SandboxApi {
 
     const res = await client.api.POST('/sandboxes', {
       body,
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     const err = handleApiError(res)
@@ -1651,7 +1686,7 @@ export class SandboxApi {
     }
 
     if (compareVersions(res.data!.envdVersion, '0.1.0') < 0) {
-      await this.kill(res.data!.sandboxID, opts)
+      await this.kill(res.data!.sandboxID, apiOpts)
       throw new TemplateError(
         'You need to update the template to use the new SDK.'
       )
@@ -1676,7 +1711,8 @@ export class SandboxApi {
       throw new InvalidArgumentError('count must be at least 1')
     }
 
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.POST('/sandboxes/{sandboxID}/fork', {
@@ -1689,7 +1725,7 @@ export class SandboxApi {
         timeout: timeoutToSeconds(timeoutMs),
         count,
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     // check the status, not the parsed error body — openapi-fetch leaves
@@ -1738,9 +1774,10 @@ export class SandboxApi {
     sandboxId: string,
     opts?: SandboxConnectOpts
   ) {
-    const timeoutMs = opts?.timeoutMs ?? DEFAULT_SANDBOX_TIMEOUT_MS
+    const apiOpts = this.resolveOpts(opts)
+    const timeoutMs = apiOpts?.timeoutMs ?? DEFAULT_SANDBOX_TIMEOUT_MS
 
-    const config = new ConnectionConfig(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.POST('/sandboxes/{sandboxID}/connect', {
@@ -1752,7 +1789,7 @@ export class SandboxApi {
       body: {
         timeout: timeoutToSeconds(timeoutMs),
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.error?.code === 404) {

@@ -143,6 +143,8 @@ export type {
 export { Sandbox }
 import { Sandbox } from './sandbox'
 
+export { E2B } from './client'
+
 export default Sandbox
 
 export * from './template'

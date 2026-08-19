@@ -42,7 +42,29 @@ with Sandbox.create() as sandbox:
     print(result.stdout)  # Hello from E2B!
 ```
 
-### 4. Code execution with Code Interpreter
+### 4. Bind the configuration to a client
+
+The top-level `Sandbox`, `AsyncSandbox`, `Volume`, `AsyncVolume` and `Secret` exports read their configuration from the environment variables. To use an explicit configuration — e.g. several API keys or domains in one process — create an `E2B` client and use the resource classes it exposes:
+
+```py
+from e2b import E2B
+
+client = E2B(api_key="e2b_***", domain="e2b.dev")
+
+sandbox = client.Sandbox.create()
+volume = client.Volume.create("my-volume")
+
+# The async variants are exposed as well.
+async_sandbox = await client.AsyncSandbox.create()
+
+# The classes can be assigned and used like the top-level ones.
+Sandbox = client.Sandbox
+paginator = Sandbox.list()
+```
+
+Per-call params still take precedence over the client's params, and clients are isolated from each other and from the env-configured top-level exports.
+
+### 5. Code execution with Code Interpreter
 
 If you need [`run_code()`](https://e2b.dev/docs/code-interpreting), install the [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter):
 
@@ -58,8 +80,8 @@ with Sandbox.create() as sandbox:
     print(execution.text)  # outputs 2
 ```
 
-### 5. Check docs
+### 6. Check docs
 Visit [E2B documentation](https://e2b.dev/docs).
 
-### 6. E2B cookbook
+### 7. E2B cookbook
 Visit our [Cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main) to get inspired by examples with different LLMs and AI frameworks.

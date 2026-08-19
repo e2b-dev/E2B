@@ -1,7 +1,7 @@
 import logging
 import os
 
-from typing import cast, Optional, Dict, TypedDict, Union
+from typing import cast, Mapping, Optional, Dict, TypedDict, Union
 
 import httpx
 from typing_extensions import Unpack
@@ -88,6 +88,27 @@ class ApiParamsWithLogger(ApiParams, total=False):
     """
 
     logger: Optional[logging.Logger]
+
+
+def merge_api_params(
+    bound_params: Optional[ApiParams], params: Mapping[str, object]
+) -> ApiParams:
+    """
+    Merge the API params bound to a class (e.g. by an :class:`e2b.E2B` client)
+    with the per-call params. Per-call params win, then the bound params, then
+    the environment variables resolved by :class:`ConnectionConfig`.
+
+    Per-call params explicitly set to ``None`` are dropped so they fall back to
+    the bound params instead of clearing them.
+
+    :meta private:
+    """
+    if not bound_params:
+        return cast(ApiParams, params)
+
+    merged = cast(Dict[str, object], dict(bound_params))
+    merged.update({k: v for k, v in params.items() if v is not None})
+    return cast(ApiParams, merged)
 
 
 class ConnectionConfig:

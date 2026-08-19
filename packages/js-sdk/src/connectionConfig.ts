@@ -423,6 +423,36 @@ export class ConnectionConfig {
     this.sandboxUrl = opts?.sandboxUrl || ConnectionConfig.sandboxUrl
   }
 
+  /**
+   * Merge connection options bound to a class (e.g. by an `E2B` client) with
+   * the per-call options. Per-call options win, then the bound options, then
+   * the environment variables resolved by the `ConnectionConfig` constructor.
+   *
+   * Explicitly `undefined` per-call values are dropped so they fall back to the
+   * bound options instead of clearing them.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  static mergeOpts<T extends ConnectionOpts>(
+    boundOpts: ConnectionOpts | undefined,
+    opts?: T
+  ): T | undefined {
+    if (!boundOpts) {
+      return opts
+    }
+
+    const merged: Record<string, unknown> = { ...boundOpts }
+    for (const [key, value] of Object.entries(opts ?? {})) {
+      if (value !== undefined) {
+        merged[key] = value
+      }
+    }
+
+    return merged as T
+  }
+
   private static get domain() {
     return getEnvVar('E2B_DOMAIN') || 'e2b.app'
   }

@@ -20,7 +20,12 @@ from e2b.api.client.models import (
 )
 from e2b.api.client.types import Response
 from e2b.api.client_async import get_api_client as get_core_api_client
-from e2b.connection_config import ApiParams, ConnectionConfig, ProxyTypes
+from e2b.connection_config import (
+    ApiParams,
+    ConnectionConfig,
+    ProxyTypes,
+    merge_api_params,
+)
 from e2b.exceptions import NotFoundException, VolumeException
 from e2b.volume.client.api.volumes import (
     get_volumecontent_volume_id_path as get_path,
@@ -59,6 +64,23 @@ from e2b.volume.utils import (
 
 class AsyncVolume:
     """E2B Volume for persistent storage that can be mounted to sandboxes (async)."""
+
+    _bound_api_params: ApiParams = {}
+    """API params bound to this class by an :class:`e2b.E2B` client.
+
+    Empty on this class, so the env-configured default path is unchanged.
+
+    :meta private:
+    """
+
+    @classmethod
+    def _resolve_api_params(cls, **opts: Unpack[ApiParams]) -> ApiParams:
+        """
+        Merge the API params bound to this class with the per-call params.
+
+        :meta private:
+        """
+        return merge_api_params(cls._bound_api_params, opts)
 
     def __init__(
         self,
@@ -111,7 +133,7 @@ class AsyncVolume:
 
         :return: An AsyncVolume instance for the new volume
         """
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
         api_client = get_core_api_client(config)
         res = await post_volumes.asyncio_detailed(
@@ -153,7 +175,7 @@ class AsyncVolume:
         :return: An AsyncVolume instance for the existing volume
         """
         info = await cls.get_info(volume_id, **opts)
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
         return cls(
             volume_id=volume_id,
             name=info.name,
@@ -163,9 +185,9 @@ class AsyncVolume:
             proxy=config.proxy,
         )
 
-    @staticmethod
+    @classmethod
     async def _class_get_info(
-        volume_id: str, **opts: Unpack[ApiParams]
+        cls, volume_id: str, **opts: Unpack[ApiParams]
     ) -> VolumeAndToken:
         """
         Get information about a volume.
@@ -174,7 +196,7 @@ class AsyncVolume:
 
         :return: Volume info
         """
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
         api_client = get_core_api_client(config)
         res = await get_volumes_volume_id.asyncio_detailed(
@@ -206,14 +228,14 @@ class AsyncVolume:
             domain=domain,
         )
 
-    @staticmethod
-    async def _class_list(**opts: Unpack[ApiParams]) -> List[VolumeInfo]:
+    @classmethod
+    async def _class_list(cls, **opts: Unpack[ApiParams]) -> List[VolumeInfo]:
         """
         List all volumes.
 
         :return: List of volumes
         """
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
         api_client = get_core_api_client(config)
         res = await get_volumes.asyncio_detailed(
@@ -231,14 +253,14 @@ class AsyncVolume:
 
         return [VolumeInfo(volume_id=v.volume_id, name=v.name) for v in res.parsed]
 
-    @staticmethod
-    async def destroy(volume_id: str, **opts: Unpack[ApiParams]) -> bool:
+    @classmethod
+    async def destroy(cls, volume_id: str, **opts: Unpack[ApiParams]) -> bool:
         """
         Destroy a volume.
 
         :param volume_id: Volume ID
         """
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
         api_client = get_core_api_client(config)
         res = await delete_volumes_volume_id.asyncio_detailed(
@@ -394,8 +416,8 @@ class AsyncVolume:
 
         return convert_volume_entry_stat(cast(VolumeEntryStatApi, res.parsed))
 
-    get_info = DualMethod(_class_get_info.__func__, _instance_get_info)
-    list = DualMethod(_class_list.__func__, _instance_list)
+    get_info = DualMethod(_class_get_info, _instance_get_info)
+    list = DualMethod(_class_list, _instance_list)
 
     async def update_metadata(
         self,

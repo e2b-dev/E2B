@@ -45,7 +45,26 @@ const result = await sandbox.commands.run('echo "Hello from E2B!"')
 console.log(result.stdout) // Hello from E2B!
 ```
 
-### 4. Code execution with Code Interpreter
+### 4. Bind the configuration to a client
+
+The top-level `Sandbox`, `Volume` and `Secret` exports read their configuration from the environment variables. To use an explicit configuration — e.g. several API keys or domains in one process — create an `E2B` client and use the resource classes it exposes:
+
+```ts
+import { E2B } from 'e2b'
+
+const client = new E2B({ apiKey: 'e2b_***', domain: 'e2b.dev' })
+
+const sandbox = await client.Sandbox.create()
+const volume = await client.Volume.create('my-volume')
+
+// The classes can be destructured and used like the top-level ones.
+const { Sandbox } = client
+const paginator = Sandbox.list()
+```
+
+Per-call options still take precedence over the client's options, and clients are isolated from each other and from the env-configured top-level exports.
+
+### 5. Code execution with Code Interpreter
 
 If you need [`runCode()`](https://e2b.dev/docs/code-interpreting), install the [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter):
 
@@ -61,8 +80,8 @@ const execution = await sandbox.runCode('x = 1; x += 1; x')
 console.log(execution.text)  // outputs 2
 ```
 
-### 5. Check docs
+### 6. Check docs
 Visit [E2B documentation](https://e2b.dev/docs).
 
-### 6. E2B cookbook
+### 7. E2B cookbook
 Visit our [Cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main) to get inspired by examples with different LLMs and AI frameworks.

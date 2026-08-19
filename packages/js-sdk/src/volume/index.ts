@@ -48,6 +48,17 @@ function convertVolumeEntryStat(
  */
 export class Volume {
   /**
+   * Connection options bound to this class by an {@link E2B} client.
+   *
+   * Empty on the base class, so the env-configured default path is unchanged.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  protected static readonly boundOpts?: ConnectionOpts
+
+  /**
    * Volume ID.
    */
   readonly volumeId: string
@@ -112,14 +123,15 @@ export class Volume {
    * @returns new Volume instance.
    */
   static async create(name: string, opts?: ConnectionOpts): Promise<Volume> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.POST('/volumes', {
       body: {
         name,
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     const err = handleApiError(res, VolumeError)
@@ -131,7 +143,7 @@ export class Volume {
       throw new Error('Response data is missing')
     }
 
-    return new Volume(
+    return new this(
       res.data.volumeID,
       res.data.name,
       res.data.token,
@@ -153,9 +165,10 @@ export class Volume {
     volumeId: string,
     opts?: ConnectionOpts
   ): Promise<Volume> {
-    const config = new ConnectionConfig(opts)
-    const { name, token, domain } = await Volume.getInfo(volumeId, opts)
-    return new Volume(
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
+    const { name, token, domain } = await this.getInfo(volumeId, apiOpts)
+    return new this(
       volumeId,
       name,
       token,
@@ -177,7 +190,8 @@ export class Volume {
     volumeId: string,
     opts?: ConnectionOpts
   ): Promise<VolumeAndToken> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.GET('/volumes/{volumeID}', {
@@ -186,7 +200,7 @@ export class Volume {
           volumeID: volumeId,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.response.status === 404) {
@@ -214,11 +228,12 @@ export class Volume {
    * @returns list of volume information.
    */
   static async list(opts?: ConnectionOpts): Promise<VolumeInfo[]> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.GET('/volumes', {
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     const err = handleApiError(res, VolumeError)
@@ -242,7 +257,8 @@ export class Volume {
     volumeId: string,
     opts?: ConnectionOpts
   ): Promise<boolean> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.DELETE('/volumes/{volumeID}', {
@@ -251,7 +267,7 @@ export class Volume {
           volumeID: volumeId,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.response.status === 404) {
@@ -264,6 +280,19 @@ export class Volume {
     }
 
     return true
+  }
+
+  /**
+   * Merge the connection options bound to this class with the per-call options.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  protected static resolveOpts<T extends ConnectionOpts>(
+    opts?: T
+  ): T | undefined {
+    return ConnectionConfig.mergeOpts(this.boundOpts, opts)
   }
 
   /**
