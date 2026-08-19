@@ -158,6 +158,49 @@ def test_transform_callable_rejects_unregistered_iam_token(access):
         build_network_config(_typo_network(access))
 
 
+@pytest.mark.parametrize("name", ["toJSON", "then", "toString", "valueOf"])
+def test_transform_callable_rejects_a_name_the_js_runtime_probes(name):
+    # The JS SDK hands these four to the runtime, which serializes, awaits and
+    # coerces the very same object; Python reaches the mapping only through
+    # __getitem__, so they are ordinary unregistered names here. Kept in step
+    # with the JS suite so neither SDK resolves them to a value.
+    with pytest.raises(InvalidArgumentException, match="Registered tokens: 'aws'"):
+        build_network_config(
+            _typo_network(lambda ctx: ctx.iam.tokens[name]), _aws_iam()
+        )
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        pytest.param(
+            lambda tokens: tokens.__setitem__("gcp", "x"),
+            id="assign",
+        ),
+        pytest.param(lambda tokens: tokens.__delitem__("aws"), id="delete"),
+    ],
+)
+def test_transform_callable_cannot_mutate_the_iam_tokens_mapping(mutate):
+    # The mapping mirrors what the sandbox registers, so a callable that writes
+    # to it would only make the guard disagree with the sandbox: an assigned
+    # name resolves to a placeholder the proxy has no token for, and a deleted
+    # one is reported as unregistered while still being registered. The JS SDK
+    # rejects both on `iam.tokens` too.
+    network = cast(
+        Any,
+        {
+            "rules": {
+                "api.internal.example.com": [
+                    {"transform": lambda ctx: mutate(ctx.iam.tokens)},
+                ],
+            },
+        },
+    )
+
+    with pytest.raises(InvalidArgumentException, match="read-only view"):
+        build_network_config(network, _aws_iam())
+
+
 @pytest.mark.parametrize(
     "returned",
     [

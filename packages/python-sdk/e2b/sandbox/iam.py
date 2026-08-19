@@ -49,7 +49,9 @@ class IamTokenPlaceholders(Mapping[str, str]):
     Workload token placeholders keyed by token name, as exposed to a
     ``transform`` callable. Every lookup — ``[name]``, ``get(name)`` — resolves
     through :meth:`__getitem__`, so an unregistered name cannot slip through as
-    ``None``; iteration and ``in`` see only the registered names.
+    ``None``; iteration and ``in`` see only the registered names. The mapping is
+    read-only, because a name added or removed here would only make the guard
+    lie about what the sandbox registered.
 
     ``validate=False`` is for the update-network endpoint, whose payload carries
     no ``iam`` config — the sandbox's registered token names are not known
@@ -79,6 +81,28 @@ class IamTokenPlaceholders(Mapping[str, str]):
         raise InvalidArgumentException(
             f"Network transform references iam token {name!r}, which is not "
             f"registered. {hint}"
+        )
+
+    def __setitem__(self, name: str, value: object) -> None:
+        # Writing here cannot register anything: the name would resolve to a
+        # placeholder the egress proxy has no token for, and the request would
+        # go out with an unresolved header instead of failing here. The JS SDK
+        # rejects an assignment to `iam.tokens` for the same reason.
+        raise InvalidArgumentException(
+            f"Cannot assign iam token {name!r}: ctx.iam.tokens is a read-only "
+            "view of the tokens the sandbox registers. Register it as "
+            f"iam={{'tokens': {{{name!r}: Secret.iam_token(audience=..., "
+            "token_type=...)}} instead — a name assigned here resolves to a "
+            "placeholder the egress proxy has no token for."
+        )
+
+    def __delitem__(self, name: str) -> None:
+        # Dropping a name here would only make the guard contradict the
+        # sandbox, reporting a registered token as unregistered.
+        raise InvalidArgumentException(
+            f"Cannot delete iam token {name!r}: ctx.iam.tokens is a read-only "
+            "view of the tokens the sandbox registers. Drop it from the "
+            "sandbox's iam config instead."
         )
 
     def __contains__(self, name: object) -> bool:
