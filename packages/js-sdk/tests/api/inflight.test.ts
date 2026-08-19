@@ -120,9 +120,10 @@ test('limitConcurrency releases the slot when the body errors mid-stream', async
 
   const response = await limited('https://example.com/stream')
   stream.send('partial')
-  stream.fail(new Error('stream reset'))
+  // The shape a request aborted (or timed out) mid-body arrives in.
+  stream.fail(new DOMException('Aborted', 'AbortError'))
 
-  await expect(response.text()).rejects.toThrow('stream reset')
+  await expect(response.text()).rejects.toMatchObject({ name: 'AbortError' })
   expect(await slotIsFree()).toBe(true)
 })
 
