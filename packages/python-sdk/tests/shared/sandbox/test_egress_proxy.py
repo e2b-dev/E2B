@@ -85,6 +85,25 @@ def test_create_rejects_a_malformed_egress_proxy(egress_proxy):
         build_network_config(cast(Any, {"egress_proxy": egress_proxy}))
 
 
+def test_create_omits_credentials_that_are_none():
+    # ``{"username": os.environ.get("PROXY_USER")}`` on an unset variable is the
+    # way this happens; a JSON null is rejected by the API.
+    body = build_network_config(
+        cast(
+            Any,
+            {
+                "egress_proxy": {
+                    "address": "proxy.example.com:1080",
+                    "username": None,
+                    "password": None,
+                },
+            },
+        )
+    )
+    assert body is not None
+    assert body["egress_proxy"].to_dict() == {"address": "proxy.example.com:1080"}
+
+
 def test_create_strips_unknown_egress_proxy_keys():
     # An untyped caller can copy an extra key out of a config file; the API
     # rejects unknown properties.
@@ -143,6 +162,22 @@ def test_get_info_reports_the_active_egress_proxy_without_the_password():
         "address": "proxy.example.com:1080",
         "username": "proxy-user",
     }
+
+
+def test_get_info_drops_a_none_username():
+    # ``username`` is ``NotRequired[str]``, so absence is a missing key — a None
+    # from the wire has to be normalized rather than handed to a caller.
+    info = from_client_network_config(
+        SandboxNetworkConfig(
+            egress_proxy=ClientSandboxEgressProxyConfig(
+                address="proxy.example.com:1080",
+                username=cast(Any, None),
+            )
+        )
+    )
+
+    assert info is not None
+    assert info["egress_proxy"] == {"address": "proxy.example.com:1080"}
 
 
 @pytest.mark.parametrize(

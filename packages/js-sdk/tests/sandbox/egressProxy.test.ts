@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeAll, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
-import { Sandbox } from '../../src'
+import { InvalidArgumentError, Sandbox } from '../../src'
 import { TEST_API_KEY, apiUrl } from '../setup'
 
 const sandboxId = 'test-sandbox-id'
@@ -101,14 +101,64 @@ test('Sandbox.create combines the egress proxy with allow and deny lists', async
   })
 })
 
-test('Sandbox.create omits the egress proxy when not provided', async () => {
+test.for([
+  ['omitted', { allowOut: ['api.example.com'] }],
+  // Untyped callers spell "no proxy" as null; Python treats an explicit None
+  // the same way.
+  ['null', { egressProxy: null }],
+])(
+  'Sandbox.create omits the egress proxy when it is %s',
+  async ([, network]: [string, Record<string, any>]) => {
+    await Sandbox.create('base', {
+      apiKey: TEST_API_KEY,
+      network,
+    })
+
+    expect(lastCreateBody?.network).toBeDefined()
+    expect(lastCreateBody?.network).not.toHaveProperty('egressProxy')
+  }
+)
+
+test.for([
+  // An empty object is falsy but present — it must not silently disable
+  // tunneling. Match Python: fail loudly.
+  ['empty', {}],
+  ['missing-address', { username: 'proxy-user' }],
+  ['non-string-address', { address: 1080 }],
+  ['string', 'proxy.example.com:1080'],
+])(
+  'Sandbox.create rejects a %s egress proxy',
+  async ([, egressProxy]: [string, unknown]) => {
+    // Rebuilding from the known fields drops an address that isn't there, so
+    // without this the caller gets an API error about a `{}` they never wrote.
+    await expect(
+      Sandbox.create('base', {
+        apiKey: TEST_API_KEY,
+        network: { egressProxy } as never,
+      })
+    ).rejects.toThrow(InvalidArgumentError)
+
+    expect(lastCreateBody).toBeUndefined()
+  }
+)
+
+test('Sandbox.create omits credentials that are null', async () => {
+  // `{ username: process.env.PROXY_USER }` on an unset variable is the way
+  // this happens; a JSON null is rejected by the API.
   await Sandbox.create('base', {
     apiKey: TEST_API_KEY,
-    network: { allowOut: ['api.example.com'] },
+    network: {
+      egressProxy: {
+        address: 'proxy.example.com:1080',
+        username: null,
+        password: undefined,
+      } as never,
+    },
   })
 
-  expect(lastCreateBody?.network).toBeDefined()
-  expect(lastCreateBody?.network).not.toHaveProperty('egressProxy')
+  expect(lastCreateBody?.network.egressProxy).toEqual({
+    address: 'proxy.example.com:1080',
+  })
 })
 
 test('Sandbox.create strips unknown egress proxy properties', async () => {
@@ -190,6 +240,20 @@ test('getInfo drops a password the API unexpectedly returns', async () => {
       address: 'proxy.example.com:1080',
       password: 'proxy-password',
     },
+  }
+
+  const info = await Sandbox.getInfo(sandboxId, { apiKey: TEST_API_KEY })
+
+  expect(info.network?.egressProxy).toEqual({
+    address: 'proxy.example.com:1080',
+  })
+})
+
+test('getInfo drops a null username', async () => {
+  // `username?: string` says absence is `undefined`, so a null from the wire
+  // has to be normalized rather than handed to a consumer.
+  sandboxNetwork = {
+    egressProxy: { address: 'proxy.example.com:1080', username: null },
   }
 
   const info = await Sandbox.getInfo(sandboxId, { apiKey: TEST_API_KEY })
