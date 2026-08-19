@@ -96,6 +96,17 @@ jobs:
           path: ${{ matrix.os == 'windows-latest' && '~/AppData/Local/ms-playwright' || '~/.cache/ms-playwright' }}
           key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
 
+      # `--with-deps` is deliberately omitted. It shells out to apt on Linux and
+      # to a DISM Media Foundation enable on Windows on every run, cache hit or
+      # not, which cost ~21m and ~4m30s respectively. The runner images already
+      # ship every shared library Chromium needs; the only packages
+      # `--with-deps` pulled in were CJK/Cyrillic fonts that the headless
+      # `browser` project never renders. Without it this step is a no-op once
+      # the cache above hits.
+      - name: Install Playwright Chromium
+        if: matrix.runtime == 'node'
+        run: pnpm run playwright:install
+
       # The unit bundle test and the Cloudflare deploy config fail in CI when
       # the build output is missing.
       - name: Test build
