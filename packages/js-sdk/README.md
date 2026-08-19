@@ -17,7 +17,7 @@
 <img width="100%" src="/readme-assets/preview.png" alt="Cover image">
 --->
 ## What is E2B?
-[E2B](https://www.e2b.dev/) is an open-source infrastructure that allows you to run AI-generated code in secure isolated sandboxes in the cloud. To start and control sandboxes, use our [JavaScript SDK](https://www.npmjs.com/package/e2b) or [Python SDK](https://pypi.org/project/e2b).
+[E2B](https://e2b.dev/?utm_source=npm&utm_medium=referral&utm_campaign=readme&utm_content=e2b) is an open-source infrastructure that allows you to run AI-generated code in secure isolated sandboxes in the cloud. To start and control sandboxes, use our [JavaScript SDK](https://www.npmjs.com/package/e2b) or [Python SDK](https://pypi.org/project/e2b).
 
 ## Run your first Sandbox
 
@@ -28,8 +28,8 @@ npm i e2b
 ```
 
 ### 2. Get your E2B API key
-1. Sign up to E2B [here](https://e2b.dev).
-2. Get your API key [here](https://e2b.dev/dashboard?tab=keys).
+1. Sign up to E2B [here](https://e2b.dev/?utm_source=npm&utm_medium=referral&utm_campaign=readme&utm_content=e2b).
+2. Get your API key [here](https://e2b.dev/dashboard?tab=keys&utm_source=npm&utm_medium=referral&utm_campaign=readme&utm_content=e2b).
 3. Set environment variable with your API key
 ```
 E2B_API_KEY=e2b_***
@@ -47,7 +47,7 @@ console.log(result.stdout) // Hello from E2B!
 
 ### 4. Code execution with Code Interpreter
 
-If you need [`runCode()`](https://e2b.dev/docs/code-interpreting), install the [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter):
+If you need [`runCode()`](https://e2b.dev/docs/code-interpreting?utm_source=npm&utm_medium=referral&utm_campaign=readme&utm_content=e2b), install the [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter):
 
 ```bash
 npm i @e2b/code-interpreter
@@ -62,7 +62,7 @@ console.log(execution.text)  // outputs 2
 ```
 
 ### 5. Check docs
-Visit [E2B documentation](https://e2b.dev/docs).
+Visit [E2B documentation](https://e2b.dev/docs?utm_source=npm&utm_medium=referral&utm_campaign=readme&utm_content=e2b).
 
 ### 6. E2B cookbook
 Visit our [Cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main) to get inspired by examples with different LLMs and AI frameworks.
