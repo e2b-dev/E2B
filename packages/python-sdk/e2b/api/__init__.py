@@ -30,7 +30,9 @@ def encode_path_param(value: str) -> str:
     Endpoints that take a template ID also accept a name, which may be
     namespaced (``namespace/name``) and carry a ``:tag``. Escaping those
     separators keeps the value inside a single segment instead of splitting the
-    route, matching the JS SDK's ``encodeURIComponent``.
+    route, mirroring the JS SDK, where ``openapi-fetch`` runs every path param
+    through ``encodeURIComponent``. ``quote`` additionally escapes ``!'()*``,
+    which the server decodes back to the same value.
     """
     return quote(value, safe="")
 
