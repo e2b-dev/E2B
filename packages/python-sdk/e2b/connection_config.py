@@ -1,7 +1,7 @@
 import logging
 import os
 
-from typing import cast, Optional, Dict, TypedDict, Union
+from typing import Any, cast, ClassVar, Mapping, Optional, Dict, TypedDict, Union
 
 import httpx
 from typing_extensions import Unpack
@@ -88,6 +88,24 @@ class ApiParamsWithLogger(ApiParams, total=False):
     """
 
     logger: Optional[logging.Logger]
+
+
+class DefaultConnectionOptsMixin:
+    """
+    Provides class-level default connection options merged below per-call
+    options in every class-level API method. Overridden on subclasses bound
+    to an :class:`e2b.E2B` client.
+
+    :meta private:
+    """
+
+    _default_connection_opts: ClassVar[ApiParams] = {}
+
+    @classmethod
+    def _with_api_defaults(cls, opts: Mapping[str, Any]) -> Dict[str, Any]:
+        if not cls._default_connection_opts:
+            return dict(opts)
+        return {**cls._default_connection_opts, **opts}
 
 
 class ConnectionConfig:

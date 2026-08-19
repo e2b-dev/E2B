@@ -956,8 +956,9 @@ class AsyncSandbox(SandboxApi):
             **self.connection_config.get_api_params(**opts),
         )
 
-    @staticmethod
+    @classmethod
     def _cls_list_snapshots(
+        cls,
         sandbox_id: Optional[str] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
@@ -969,11 +970,12 @@ class AsyncSandbox(SandboxApi):
             name=name,
             limit=limit,
             next_token=next_token,
-            **opts,
+            **cls._with_api_defaults(opts),
         )
 
-    @staticmethod
+    @classmethod
     async def delete_snapshot(
+        cls,
         snapshot_id: str,
         **opts: Unpack[ApiParams],
     ) -> bool:
@@ -983,7 +985,7 @@ class AsyncSandbox(SandboxApi):
         :param snapshot_id: Snapshot ID
         :return: `True` if the snapshot was deleted, `False` if it was not found
         """
-        return await SandboxApi._cls_delete_snapshot(
+        return await cls._cls_delete_snapshot(
             snapshot_id=snapshot_id,
             **opts,
         )
@@ -1008,6 +1010,7 @@ class AsyncSandbox(SandboxApi):
         logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
+        opts = cls._with_api_defaults(opts)
         debug = ConnectionConfig(**opts).debug
         if debug:
             sandbox_domain = None
@@ -1059,6 +1062,7 @@ class AsyncSandbox(SandboxApi):
         logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> List[Union[Self, Exception]]:
+        opts = cls._with_api_defaults(opts)
         responses = await SandboxApi._cls_fork(
             sandbox_id=sandbox_id,
             timeout=timeout,
@@ -1116,6 +1120,7 @@ class AsyncSandbox(SandboxApi):
         logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
+        opts = cls._with_api_defaults(opts)
         extra_sandbox_headers = {}
 
         debug = ConnectionConfig(**opts).debug

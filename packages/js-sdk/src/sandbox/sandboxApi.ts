@@ -1148,7 +1148,28 @@ function buildNetworkUpdateBody(
   }
 }
 export class SandboxApi {
+  /**
+   * Default connection options merged below per-call options in every static
+   * API method. Overridden on subclasses bound to an `E2B` client.
+   *
+   * @internal
+   */
+  protected static defaultConnectionOpts?: ConnectionOpts
+
   protected constructor() {}
+
+  /**
+   * Merge the class's default connection options below the per-call options.
+   *
+   * @internal
+   */
+  protected static withDefaults<T extends object | undefined>(opts: T): T {
+    if (!this.defaultConnectionOpts) {
+      return opts
+    }
+
+    return { ...this.defaultConnectionOpts, ...opts } as T
+  }
 
   /**
    * Kill the sandbox specified by sandbox ID.
@@ -1162,6 +1183,7 @@ export class SandboxApi {
     sandboxId: string,
     opts?: SandboxApiOpts
   ): Promise<boolean> {
+    opts = this.withDefaults(opts)
     const config = new ConnectionConfig(opts)
 
     if (config.debug) {
@@ -1204,6 +1226,7 @@ export class SandboxApi {
     sandboxId: string,
     opts?: SandboxApiOpts
   ): Promise<SandboxInfo> {
+    opts = this.withDefaults(opts)
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -1289,6 +1312,7 @@ export class SandboxApi {
     sandboxId: string,
     opts?: SandboxMetricsOpts
   ): Promise<SandboxMetrics[]> {
+    opts = this.withDefaults(opts)
     const config = new ConnectionConfig(opts)
 
     if (config.debug) {
@@ -1356,6 +1380,7 @@ export class SandboxApi {
     timeoutMs: number,
     opts?: SandboxApiOpts
   ): Promise<void> {
+    opts = this.withDefaults(opts)
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -1396,6 +1421,7 @@ export class SandboxApi {
     network: SandboxNetworkUpdate,
     opts?: SandboxApiOpts
   ): Promise<void> {
+    opts = this.withDefaults(opts)
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -1431,6 +1457,7 @@ export class SandboxApi {
     sandboxId: string,
     opts?: SandboxPauseOpts
   ): Promise<boolean> {
+    opts = this.withDefaults(opts)
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -1489,6 +1516,7 @@ export class SandboxApi {
     sandboxId: string,
     opts?: CreateSnapshotOpts
   ): Promise<SnapshotInfo> {
+    opts = this.withDefaults(opts)
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -1525,7 +1553,7 @@ export class SandboxApi {
    * @returns paginator for listing snapshots.
    */
   static listSnapshots(opts?: SnapshotListOpts): SnapshotPaginator {
-    return new SnapshotPaginator(opts)
+    return new SnapshotPaginator(this.withDefaults(opts))
   }
 
   /**
@@ -1540,6 +1568,7 @@ export class SandboxApi {
     snapshotId: string,
     opts?: SandboxApiOpts
   ): Promise<boolean> {
+    opts = this.withDefaults(opts)
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 

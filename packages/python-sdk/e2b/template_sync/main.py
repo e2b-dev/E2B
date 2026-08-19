@@ -188,8 +188,9 @@ class Template(TemplateBase):
             tags=response_tags,
         )
 
-    @staticmethod
+    @classmethod
     def build(
+        cls,
         template: TemplateClass,
         name: Optional[str] = None,
         *,
@@ -232,6 +233,7 @@ class Template(TemplateBase):
         ```
         """
         name = normalize_build_arguments(name, alias)
+        opts = cls._with_api_defaults(opts)
 
         try:
             if on_build_logs:
@@ -247,7 +249,7 @@ class Template(TemplateBase):
                 config,
             )
 
-            data = Template._build(
+            data = cls._build(
                 api_client,
                 template,
                 name,
@@ -289,8 +291,9 @@ class Template(TemplateBase):
                     )
                 )
 
-    @staticmethod
+    @classmethod
     def build_in_background(
+        cls,
         template: TemplateClass,
         name: Optional[str] = None,
         *,
@@ -333,13 +336,14 @@ class Template(TemplateBase):
         ```
         """
         name = normalize_build_arguments(name, alias)
+        opts = cls._with_api_defaults(opts)
 
         config = ConnectionConfig(**opts)
         api_client = get_api_client(
             config,
         )
 
-        return Template._build(
+        return cls._build(
             api_client,
             template,
             name,
@@ -353,8 +357,9 @@ class Template(TemplateBase):
             request_timeout=opts.get("request_timeout"),
         )
 
-    @staticmethod
+    @classmethod
     def get_build_status(
+        cls,
         build_info: BuildInfo,
         logs_offset: int = 0,
         **opts: Unpack[ApiParams],
@@ -374,6 +379,7 @@ class Template(TemplateBase):
         status = Template.get_build_status(build_info, logs_offset=0)
         ```
         """
+        opts = cls._with_api_defaults(opts)
         config = ConnectionConfig(**opts)
         api_client = get_api_client(
             config,
@@ -386,8 +392,9 @@ class Template(TemplateBase):
             logs_offset,
         )
 
-    @staticmethod
+    @classmethod
     def exists(
+        cls,
         name: str,
         **opts: Unpack[ApiParams],
     ) -> bool:
@@ -407,10 +414,11 @@ class Template(TemplateBase):
         ```
         """
 
-        return Template.alias_exists(name, **opts)
+        return cls.alias_exists(name, **opts)
 
-    @staticmethod
+    @classmethod
     def alias_exists(
+        cls,
         alias: str,
         **opts: Unpack[ApiParams],
     ) -> bool:
@@ -431,6 +439,7 @@ class Template(TemplateBase):
             print('Template exists!')
         ```
         """
+        opts = cls._with_api_defaults(opts)
         config = ConnectionConfig(**opts)
         api_client = get_api_client(
             config,
@@ -438,8 +447,9 @@ class Template(TemplateBase):
 
         return check_alias_exists(api_client, alias)
 
-    @staticmethod
+    @classmethod
     def assign_tags(
+        cls,
         target_name: str,
         tags: Union[str, List[str]],
         **opts: Unpack[ApiParams],
@@ -462,6 +472,7 @@ class Template(TemplateBase):
         result = Template.assign_tags('my-template:v1.0', ['production', 'stable'])
         ```
         """
+        opts = cls._with_api_defaults(opts)
         config = ConnectionConfig(**opts)
         api_client = get_api_client(
             config,
@@ -470,8 +481,9 @@ class Template(TemplateBase):
         normalized_tags = [tags] if isinstance(tags, str) else tags
         return assign_tags(api_client, target_name, normalized_tags)
 
-    @staticmethod
+    @classmethod
     def remove_tags(
+        cls,
         name: str,
         tags: Union[str, List[str]],
         **opts: Unpack[ApiParams],
@@ -493,6 +505,7 @@ class Template(TemplateBase):
         Template.remove_tags('my-template', ['production', 'stable'])
         ```
         """
+        opts = cls._with_api_defaults(opts)
         config = ConnectionConfig(**opts)
         api_client = get_api_client(
             config,
@@ -501,8 +514,9 @@ class Template(TemplateBase):
         normalized_tags = [tags] if isinstance(tags, str) else tags
         remove_tags(api_client, name, normalized_tags)
 
-    @staticmethod
+    @classmethod
     def get_tags(
+        cls,
         template_id: str,
         **opts: Unpack[ApiParams],
     ) -> List[TemplateTag]:
@@ -521,6 +535,7 @@ class Template(TemplateBase):
             print(f"Tag: {tag.tag}, Build: {tag.build_id}, Created: {tag.created_at}")
         ```
         """
+        opts = cls._with_api_defaults(opts)
         config = ConnectionConfig(**opts)
         api_client = get_api_client(
             config,

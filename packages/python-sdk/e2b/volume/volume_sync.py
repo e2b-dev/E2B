@@ -19,7 +19,12 @@ from e2b.api.client.models import (
 )
 from e2b.api.client.types import Response
 from e2b.api.client_sync import get_api_client as get_core_api_client
-from e2b.connection_config import ApiParams, ConnectionConfig, ProxyTypes
+from e2b.connection_config import (
+    ApiParams,
+    ConnectionConfig,
+    DefaultConnectionOptsMixin,
+    ProxyTypes,
+)
 from e2b.exceptions import NotFoundException, VolumeException
 from e2b.volume.client.api.volumes import (
     get_volumecontent_volume_id_path as get_path,
@@ -56,7 +61,7 @@ from e2b.volume.utils import (
 )
 
 
-class Volume:
+class Volume(DefaultConnectionOptsMixin):
     """E2B Volume for persistent storage that can be mounted to sandboxes."""
 
     def __init__(
@@ -110,6 +115,7 @@ class Volume:
 
         :return: A Volume instance for the new volume
         """
+        opts = cls._with_api_defaults(opts)
         config = ConnectionConfig(**opts)
 
         api_client = get_core_api_client(config)
@@ -151,7 +157,8 @@ class Volume:
 
         :return: A Volume instance for the existing volume
         """
-        info = cls.get_info(volume_id, **opts)
+        opts = cls._with_api_defaults(opts)
+        info = cls._class_get_info(volume_id, **opts)
         config = ConnectionConfig(**opts)
         return cls(
             volume_id=volume_id,
@@ -162,8 +169,10 @@ class Volume:
             proxy=config.proxy,
         )
 
-    @staticmethod
-    def _class_get_info(volume_id: str, **opts: Unpack[ApiParams]) -> VolumeAndToken:
+    @classmethod
+    def _class_get_info(
+        cls, volume_id: str, **opts: Unpack[ApiParams]
+    ) -> VolumeAndToken:
         """
         Get information about a volume.
 
@@ -171,6 +180,7 @@ class Volume:
 
         :return: Volume info
         """
+        opts = cls._with_api_defaults(opts)
         config = ConnectionConfig(**opts)
 
         api_client = get_core_api_client(config)
@@ -203,13 +213,14 @@ class Volume:
             domain=domain,
         )
 
-    @staticmethod
-    def _class_list(**opts: Unpack[ApiParams]) -> List[VolumeInfo]:
+    @classmethod
+    def _class_list(cls, **opts: Unpack[ApiParams]) -> List[VolumeInfo]:
         """
         List all volumes.
 
         :return: List of volumes
         """
+        opts = cls._with_api_defaults(opts)
         config = ConnectionConfig(**opts)
 
         api_client = get_core_api_client(config)
@@ -228,13 +239,14 @@ class Volume:
 
         return [VolumeInfo(volume_id=v.volume_id, name=v.name) for v in res.parsed]
 
-    @staticmethod
-    def destroy(volume_id: str, **opts: Unpack[ApiParams]) -> bool:
+    @classmethod
+    def destroy(cls, volume_id: str, **opts: Unpack[ApiParams]) -> bool:
         """
         Destroy a volume.
 
         :param volume_id: Volume ID
         """
+        opts = cls._with_api_defaults(opts)
         config = ConnectionConfig(**opts)
 
         api_client = get_core_api_client(config)
@@ -391,8 +403,8 @@ class Volume:
 
         return convert_volume_entry_stat(cast(VolumeEntryStatApi, res.parsed))
 
-    get_info = DualMethod(_class_get_info.__func__, _instance_get_info)
-    list = DualMethod(_class_list.__func__, _instance_list)
+    get_info = DualMethod(_class_get_info, _instance_get_info)
+    list = DualMethod(_class_list, _instance_list)
 
     def update_metadata(
         self,

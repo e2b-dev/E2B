@@ -140,6 +140,7 @@ from .template_sync.main import Template
 
 from .volume.volume_sync import Volume
 from .volume.volume_async import AsyncVolume
+from .client import E2B
 from .volume.types import (
     VolumeInfo,
     VolumeAndToken,
@@ -151,6 +152,8 @@ __all__ = [
     # API
     "ApiClient",
     "client",
+    # Client
+    "E2B",
     # Connection config
     "ConnectionConfig",
     "VolumeConnectionConfig",

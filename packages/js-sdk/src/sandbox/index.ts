@@ -243,7 +243,7 @@ export class Sandbox extends SandboxApi {
    *   `await paginator.nextItems()` while `paginator.hasNext` is `true`.
    */
   static list(opts?: SandboxListOpts): SandboxPaginator {
-    return new SandboxPaginator(opts)
+    return new SandboxPaginator(this.withDefaults(opts))
   }
 
   /**
@@ -303,7 +303,8 @@ export class Sandbox extends SandboxApi {
             sandboxOpts: templateOrOpts,
           }
 
-    const config = new ConnectionConfig(sandboxOpts)
+    const resolvedOpts = this.withDefaults(sandboxOpts)
+    const config = new ConnectionConfig(resolvedOpts)
     if (config.debug) {
       return new this({
         sandboxId: 'debug_sandbox_id',
@@ -314,8 +315,8 @@ export class Sandbox extends SandboxApi {
 
     const sandboxInfo = await SandboxApi.createSandbox(
       template,
-      sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
-      sandboxOpts
+      resolvedOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
+      resolvedOpts
     )
 
     const sandbox = new this({ ...sandboxInfo, ...config }) as InstanceType<S>
@@ -369,6 +370,7 @@ export class Sandbox extends SandboxApi {
     sandboxId: string,
     opts?: SandboxConnectOpts
   ): Promise<InstanceType<S>> {
+    opts = this.withDefaults(opts)
     const config = new ConnectionConfig(opts)
     if (config.debug) {
       return new this({
@@ -424,6 +426,7 @@ export class Sandbox extends SandboxApi {
     sandboxId: string,
     opts?: SandboxForkOpts
   ): Promise<Array<InstanceType<S> | Error>> {
+    opts = this.withDefaults(opts)
     const config = new ConnectionConfig(opts)
 
     const results = await SandboxApi.forkSandbox(

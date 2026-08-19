@@ -35,18 +35,19 @@ def convert_volume_entry_stat(api_stat: VolumeEntryStatApi) -> VolumeEntryStat:
 
 
 class DualMethod:
-    """Descriptor enabling the same name for a static (class-level) and instance method.
+    """Descriptor enabling the same name for a class-level and instance method.
 
-    When accessed on the class (e.g. ``Volume.get_info``), the static function
-    is returned.  When accessed on an instance (e.g. ``vol.get_info``), the
-    instance method is returned as a bound method.
+    When accessed on the class (e.g. ``Volume.get_info``), the class function
+    is returned bound to the class (so bound client subclasses keep their
+    default connection options). When accessed on an instance (e.g.
+    ``vol.get_info``), the instance method is returned as a bound method.
     """
 
-    def __init__(self, static_fn, instance_fn):
-        self._static_fn = static_fn
+    def __init__(self, class_fn, instance_fn):
+        self._class_fn = class_fn
         self._instance_fn = instance_fn
 
     def __get__(self, obj, objtype=None):
         if obj is None:
-            return self._static_fn
+            return self._class_fn.__get__(None, objtype)
         return self._instance_fn.__get__(obj, objtype)

@@ -3,7 +3,11 @@ from typing import Optional, TypedDict
 
 from packaging.version import Version
 
-from e2b.connection_config import ConnectionConfig, default_username
+from e2b.connection_config import (
+    ConnectionConfig,
+    DefaultConnectionOptsMixin,
+    default_username,
+)
 from e2b.envd.api import ENVD_API_FILES_ROUTE
 from e2b.envd.versions import ENVD_DEFAULT_USER
 from e2b.exceptions import InvalidArgumentException
@@ -19,7 +23,7 @@ class SandboxOpts(TypedDict):
     connection_config: ConnectionConfig
 
 
-class SandboxBase:
+class SandboxBase(DefaultConnectionOptsMixin):
     mcp_port = 50005
 
     default_sandbox_timeout = 300

@@ -38,7 +38,7 @@ E2B_API_KEY=e2b_***
 ### 3. Start a sandbox and run commands
 
 ```ts
-import Sandbox from 'e2b'
+import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create()
 const result = await sandbox.commands.run('echo "Hello from E2B!"')

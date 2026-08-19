@@ -48,6 +48,14 @@ function convertVolumeEntryStat(
  */
 export class Volume {
   /**
+   * Default connection options merged below per-call options in every static
+   * API method. Overridden on subclasses bound to an `E2B` client.
+   *
+   * @internal
+   */
+  protected static defaultConnectionOpts?: ConnectionOpts
+
+  /**
    * Volume ID.
    */
   readonly volumeId: string
@@ -104,6 +112,19 @@ export class Volume {
   }
 
   /**
+   * Merge the class's default connection options below the per-call options.
+   *
+   * @internal
+   */
+  protected static withDefaults<T extends object | undefined>(opts: T): T {
+    if (!this.defaultConnectionOpts) {
+      return opts
+    }
+
+    return { ...this.defaultConnectionOpts, ...opts } as T
+  }
+
+  /**
    * Create a new volume.
    *
    * @param name name of the volume.
@@ -112,6 +133,7 @@ export class Volume {
    * @returns new Volume instance.
    */
   static async create(name: string, opts?: ConnectionOpts): Promise<Volume> {
+    opts = this.withDefaults(opts)
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -131,7 +153,7 @@ export class Volume {
       throw new Error('Response data is missing')
     }
 
-    return new Volume(
+    return new this(
       res.data.volumeID,
       res.data.name,
       res.data.token,
@@ -153,9 +175,10 @@ export class Volume {
     volumeId: string,
     opts?: ConnectionOpts
   ): Promise<Volume> {
+    opts = this.withDefaults(opts)
     const config = new ConnectionConfig(opts)
-    const { name, token, domain } = await Volume.getInfo(volumeId, opts)
-    return new Volume(
+    const { name, token, domain } = await this.getInfo(volumeId, opts)
+    return new this(
       volumeId,
       name,
       token,
@@ -177,6 +200,7 @@ export class Volume {
     volumeId: string,
     opts?: ConnectionOpts
   ): Promise<VolumeAndToken> {
+    opts = this.withDefaults(opts)
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -214,6 +238,7 @@ export class Volume {
    * @returns list of volume information.
    */
   static async list(opts?: ConnectionOpts): Promise<VolumeInfo[]> {
+    opts = this.withDefaults(opts)
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 
@@ -242,6 +267,7 @@ export class Volume {
     volumeId: string,
     opts?: ConnectionOpts
   ): Promise<boolean> {
+    opts = this.withDefaults(opts)
     const config = new ConnectionConfig(opts)
     const client = new ApiClient(config)
 

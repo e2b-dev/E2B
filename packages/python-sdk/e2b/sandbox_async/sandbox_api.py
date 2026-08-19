@@ -65,8 +65,9 @@ from e2b.sandbox_async.paginator import AsyncSandboxPaginator
 
 
 class SandboxApi(SandboxBase):
-    @staticmethod
+    @classmethod
     def list(
+        cls,
         query: Optional[SandboxQuery] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
@@ -88,7 +89,7 @@ class SandboxApi(SandboxBase):
             query=query,
             limit=limit,
             next_token=next_token,
-            **opts,
+            **cls._with_api_defaults(opts),
         )
 
     @classmethod
@@ -103,6 +104,7 @@ class SandboxApi(SandboxBase):
 
         :return: Sandbox info
         """
+        opts = cls._with_api_defaults(opts)
         config = ConnectionConfig(**opts)
 
         api_client = get_api_client(config)
@@ -131,6 +133,7 @@ class SandboxApi(SandboxBase):
         sandbox_id: str,
         **opts: Unpack[ApiParams],
     ) -> bool:
+        opts = cls._with_api_defaults(opts)
         config = ConnectionConfig(**opts)
 
         if config.debug:
@@ -158,6 +161,7 @@ class SandboxApi(SandboxBase):
         timeout: int,
         **opts: Unpack[ApiParams],
     ) -> None:
+        opts = cls._with_api_defaults(opts)
         config = ConnectionConfig(**opts)
 
         if config.debug:
@@ -184,6 +188,7 @@ class SandboxApi(SandboxBase):
         network: SandboxNetworkUpdate,
         **opts: Unpack[ApiParams],
     ) -> None:
+        opts = cls._with_api_defaults(opts)
         config = ConnectionConfig(**opts)
 
         api_client = get_api_client(config)
@@ -216,6 +221,7 @@ class SandboxApi(SandboxBase):
         logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
+        opts = cls._with_api_defaults(opts)
         config = ConnectionConfig(logger=logger, **opts)
 
         lifecycle_body = build_lifecycle_config(lifecycle)
@@ -298,6 +304,7 @@ class SandboxApi(SandboxBase):
 
         :return: List of sandbox metrics containing CPU, memory and disk usage information
         """
+        opts = cls._with_api_defaults(opts)
         config = ConnectionConfig(**opts)
 
         if config.debug:
@@ -347,6 +354,7 @@ class SandboxApi(SandboxBase):
         name: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotInfo:
+        opts = cls._with_api_defaults(opts)
         config = ConnectionConfig(**opts)
 
         api_client = get_api_client(config)
@@ -379,6 +387,7 @@ class SandboxApi(SandboxBase):
         snapshot_id: str,
         **opts: Unpack[ApiParams],
     ) -> bool:
+        opts = cls._with_api_defaults(opts)
         config = ConnectionConfig(**opts)
 
         api_client = get_api_client(config)
@@ -402,6 +411,7 @@ class SandboxApi(SandboxBase):
         keep_memory: bool = True,
         **opts: Unpack[ApiParams],
     ) -> bool:
+        opts = cls._with_api_defaults(opts)
         config = ConnectionConfig(**opts)
 
         api_client = get_api_client(config)
@@ -444,6 +454,7 @@ class SandboxApi(SandboxBase):
         if count < 1:
             raise InvalidArgumentException("count must be at least 1")
 
+        opts = cls._with_api_defaults(opts)
         config = ConnectionConfig(logger=logger, **opts)
 
         api_client = get_api_client(config)
@@ -525,6 +536,7 @@ class SandboxApi(SandboxBase):
         timeout = timeout or SandboxBase.default_sandbox_timeout
 
         # Sandbox is not running, resume it
+        opts = cls._with_api_defaults(opts)
         config = ConnectionConfig(logger=logger, **opts)
 
         api_client = get_api_client(config)
