@@ -460,10 +460,11 @@ export type SandboxLifecycle = {
 
   /**
    * Auto-resume enabled flag.
-   * @default false
-   * Can be `true` only when `onTimeout` is `pause`. Not supported when
-   * `keepMemory` is `false` (a filesystem-only snapshot must be resumed
-   * explicitly via `connect()`).
+   *
+   * Left unset, the flag is omitted from the create request and the API's own
+   * default (currently disabled) applies. Can be `true` only when `onTimeout`
+   * is `pause`. Not supported when `keepMemory` is `false` (a filesystem-only
+   * snapshot must be resumed explicitly via `connect()`).
    */
   autoResume?: boolean
 }
@@ -1585,7 +1586,10 @@ export class SandboxApi {
       typeof onTimeout !== 'string' && 'keepMemory' in onTimeout
         ? (onTimeout.keepMemory ?? true)
         : true
-    const autoResume = opts?.lifecycle?.autoResume ?? false
+    // A missing autoResume (or an explicit null from an untyped caller) is left
+    // out of the request entirely, so the API keeps ownership of the default
+    // instead of receiving the SDK's local one as an explicit opt-out.
+    const autoResume = opts?.lifecycle?.autoResume ?? undefined
 
     if (hasKeepMemory && action !== 'pause') {
       throw new InvalidArgumentError(
@@ -1622,7 +1626,8 @@ export class SandboxApi {
       autoPause: onTimeoutConfigured ? action === 'pause' : undefined,
       autoPauseMemory:
         action === 'pause' && hasKeepMemory ? keepMemory : undefined,
-      autoResume: { enabled: autoResume },
+      autoResume:
+        autoResume === undefined ? undefined : { enabled: autoResume },
     }
 
     if (opts?.volumeMounts) {
