@@ -439,7 +439,8 @@ export type SandboxOnTimeout =
        * be woken transparently by traffic and must be resumed explicitly via
        * `connect()`.
        *
-       * @default true
+       * Left unset, the flag is omitted from the create request and the API's own
+       * default (currently enabled) applies.
        */
       keepMemory?: boolean
     }
@@ -452,13 +453,16 @@ export type SandboxLifecycle = {
   /**
    * Action to take when sandbox timeout is reached. Accepts either `'pause'` /
    * `'kill'`, or `{ action, keepMemory }` to also control the pause snapshot kind.
-   * @default "kill"
+   * Omitted from the create request when unset, leaving the API's default
+   * (currently `kill`) in effect.
    */
   onTimeout: SandboxOnTimeout
 
   /**
    * Auto-resume enabled flag.
-   * @default false
+   *
+   * Leave unset to let the API pick the behavior. Set `false` to opt out
+   * explicitly and keep auto-resume off even if the API's default changes.
    * Can be `true` only when `onTimeout` is `pause`. Not supported when
    * `keepMemory` is `false` (a filesystem-only snapshot must be resumed
    * explicitly via `connect()`).
@@ -1569,8 +1573,13 @@ export class SandboxApi {
     const client = new ApiClient(config)
     // onTimeout accepts a bare action (`'pause'` / `'kill'`) or the object form
     // `{ action, keepMemory }`. The discriminated union type forbids `keepMemory`
-    // on `action: 'kill'`; re-check at runtime for untyped (JS) callers.
-    const onTimeout = opts?.lifecycle?.onTimeout ?? 'kill'
+    // on `action: 'kill'`; re-check at runtime for untyped callers.
+    const requestedOnTimeout = opts?.lifecycle?.onTimeout
+    // A missing (or explicitly nullish, for untyped callers) onTimeout is not a
+    // choice of `kill` — it leaves the timeout action to the API. Locally it
+    // still resolves to kill semantics for the validation below.
+    const onTimeoutConfigured = requestedOnTimeout != null
+    const onTimeout = requestedOnTimeout ?? 'kill'
     const action = typeof onTimeout === 'string' ? onTimeout : onTimeout.action
     const hasKeepMemory =
       typeof onTimeout !== 'string' && 'keepMemory' in onTimeout
@@ -1578,7 +1587,10 @@ export class SandboxApi {
       typeof onTimeout !== 'string' && 'keepMemory' in onTimeout
         ? (onTimeout.keepMemory ?? true)
         : true
-    const autoResume = opts?.lifecycle?.autoResume ?? false
+    // A missing autoResume (or an explicit null from an untyped caller) is left
+    // out of the request entirely, so the API keeps ownership of the default
+    // instead of receiving the SDK's local one as an explicit opt-out.
+    const autoResume = opts?.lifecycle?.autoResume ?? undefined
 
     if (hasKeepMemory && action !== 'pause') {
       throw new InvalidArgumentError(
@@ -1612,9 +1624,11 @@ export class SandboxApi {
       allow_internet_access: opts?.allowInternetAccess ?? true,
       network: buildNetworkBody(opts?.network, iam),
       iam,
-      autoPause: action === 'pause',
-      autoPauseMemory: action === 'pause' ? keepMemory : undefined,
-      autoResume: { enabled: autoResume },
+      autoPause: onTimeoutConfigured ? action === 'pause' : undefined,
+      autoPauseMemory:
+        action === 'pause' && hasKeepMemory ? keepMemory : undefined,
+      autoResume:
+        autoResume === undefined ? undefined : { enabled: autoResume },
     }
 
     if (opts?.volumeMounts) {

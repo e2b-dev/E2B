@@ -19,6 +19,11 @@ FILE_TIMEOUT: float = 3600.0  # 1 hour
 # aborted when no bytes at all arrive for this long. It resets on each chunk,
 # so it never limits total transfer time — only a fully stalled connection.
 # Matches the JS SDK's default stream idle timeout (REQUEST_TIMEOUT_MS).
+#
+# Kept equal to `e2b.connection_config.READ_TIMEOUT` on purpose: the read bound
+# is part of the transport cache key, so the volume streaming pool shares the
+# sandbox-filesystem streaming pool only while the two constants agree. Change
+# one and they silently split into two reqwest pools.
 READ_TIMEOUT: float = 60.0  # 60 seconds
 
 

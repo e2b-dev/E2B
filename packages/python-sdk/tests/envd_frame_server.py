@@ -16,10 +16,11 @@ import socket
 import struct
 import threading
 import time
-from typing import Iterator, Optional
+from typing import Iterator, List, Optional
 
 import h2.config
 import h2.connection
+import h2.errors
 import h2.events
 from protobuf import Oneof
 from pyqwest import (
@@ -33,6 +34,7 @@ from pyqwest import (
 )
 
 from e2b.connection_config import ConnectionConfig
+from e2b.envd.api import ENVD_API_HEALTH_ROUTE
 from e2b.envd.client_shared import ENVD_JSON_CODEC, ENVD_RPC_COMPRESSION
 from e2b.envd.interceptors import build_interceptors
 from e2b.envd.process.process_connect import ProcessClient, ProcessClientSync
@@ -170,6 +172,148 @@ def frame_recording_server(
     plain_error: Optional[tuple[int, str, bytes]] = None,
 ) -> Iterator[FrameRecordingServer]:
     server = FrameRecordingServer(server_ends_stream, respond, plain_error)
+    server.start()
+    try:
+        yield server
+    finally:
+        server.listener.close()
+
+
+class SharedPoolServer(threading.Thread):
+    """Multi-connection plaintext HTTP/2 server for the shared-pool tests.
+
+    Serves both sides of a sandbox's traffic — the process ``connect`` server
+    stream and the envd HTTP ``/health`` route — so a single connection pool
+    can be pointed at it the way the SDK points one at a real sandbox. After
+    the first stream event it breaks the RPC the way a sandbox going away
+    does:
+
+    * ``fault="reset"`` sends ``RST_STREAM``, which kills the RPC stream and
+      leaves the HTTP/2 connection healthy;
+    * ``fault="drop"`` tears the whole TCP connection down with a RST.
+
+    ``/health`` is always answered 200, so a probe that comes back anything
+    but ``True`` failed at the transport layer. ``connections`` counts the
+    accepted TCP connections, which is what tells reuse from a redial.
+    """
+
+    def __init__(self, fault: str):
+        super().__init__(daemon=True)
+        self.fault = fault
+        self.listener = socket.create_server(("127.0.0.1", 0))
+        self.listener.settimeout(10)
+        self.port = self.listener.getsockname()[1]
+        self.connections: List[socket.socket] = []
+        self.paths: List[str] = []
+        self.errors: List[str] = []
+        self._lock = threading.Lock()
+        # Set by the test in "drop" mode once it has consumed the event written
+        # before the fault, so the RST cannot race the response head: an
+        # immediate RST lets hyper fail the in-flight request with the
+        # connection error instead of yielding the event it already received.
+        self.drop_when = threading.Event()
+
+    def run(self):
+        while True:
+            try:
+                sock, _ = self.listener.accept()
+            except (OSError, socket.timeout):
+                # The listener was closed by the context manager, or nothing
+                # else connected — either way there is nothing left to serve.
+                return
+            with self._lock:
+                self.connections.append(sock)
+            threading.Thread(target=self._serve, args=(sock,), daemon=True).start()
+
+    def _serve(self, sock: socket.socket):
+        sock.settimeout(0.1)
+        conn = h2.connection.H2Connection(
+            config=h2.config.H2Configuration(client_side=False)
+        )
+        conn.initiate_connection()
+        sock.sendall(conn.data_to_send())
+        paths: dict[int, str] = {}
+        drop_connection = False
+        deadline = time.monotonic() + 10
+        try:
+            while time.monotonic() < deadline:
+                try:
+                    data = sock.recv(65535)
+                except socket.timeout:
+                    continue
+                except OSError:
+                    break
+                if not data:
+                    break
+                for event in conn.receive_data(data):
+                    if isinstance(event, h2.events.RequestReceived):
+                        path = dict(event.headers).get(b":path", b"").decode()
+                        paths[event.stream_id] = path
+                        with self._lock:
+                            self.paths.append(path)
+                    elif isinstance(event, h2.events.StreamEnded):
+                        # The client finished sending the request: respond.
+                        if paths.get(event.stream_id, "") == ENVD_API_HEALTH_ROUTE:
+                            body = b'{"version":"0.0.0"}'
+                            conn.send_headers(
+                                event.stream_id,
+                                [
+                                    (":status", "200"),
+                                    ("content-type", "application/json"),
+                                    ("content-length", str(len(body))),
+                                ],
+                            )
+                            conn.send_data(event.stream_id, body, end_stream=True)
+                            continue
+                        conn.send_headers(
+                            event.stream_id,
+                            [
+                                (":status", "200"),
+                                ("content-type", "application/connect+json"),
+                            ],
+                        )
+                        conn.send_data(event.stream_id, event_envelope())
+                        if self.fault == "reset":
+                            conn.reset_stream(
+                                event.stream_id,
+                                error_code=h2.errors.ErrorCodes.INTERNAL_ERROR,
+                            )
+                        else:
+                            drop_connection = True
+                    elif isinstance(event, h2.events.DataReceived):
+                        conn.acknowledge_received_data(
+                            event.flow_controlled_length, event.stream_id
+                        )
+                    elif isinstance(event, h2.events.ConnectionTerminated):
+                        return
+                out = conn.data_to_send()
+                if out:
+                    sock.sendall(out)
+                if drop_connection:
+                    # Only tear the connection down once the client has read the
+                    # event just written: an immediate RST races the response
+                    # head, and hyper then fails the request itself instead of
+                    # yielding the event.
+                    self.drop_when.wait(5)
+                    # RST the connection rather than closing it cleanly: a
+                    # GOAWAY would tell the client to retire the connection,
+                    # which is not what a sandbox disappearing looks like.
+                    sock.setsockopt(
+                        socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0)
+                    )
+                    return
+        except Exception as e:  # noqa: BLE001 — surfaced via assert_no_errors
+            self.errors.append(repr(e))
+        finally:
+            sock.close()
+
+    def assert_no_errors(self):
+        assert not self.errors, self.errors
+
+
+@contextlib.contextmanager
+def shared_pool_server(fault: str) -> Iterator[SharedPoolServer]:
+    server = SharedPoolServer(fault)
     server.start()
     try:
         yield server

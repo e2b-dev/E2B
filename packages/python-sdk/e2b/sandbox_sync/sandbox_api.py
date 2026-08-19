@@ -30,7 +30,6 @@ from e2b.api.client.models import (
     NewSandbox,
     SandboxSnapshotRequest,
     SandboxTimeoutRequest,
-    SandboxAutoResumeConfig,
     SandboxForkRequest,
     SandboxNetworkConfig,
     SandboxPauseRequest,
@@ -58,6 +57,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxQuery,
     SnapshotInfo,
     build_iam_config,
+    build_lifecycle_config,
     build_network_config,
 )
 from e2b.sandbox_sync.paginator import SandboxPaginator, get_api_client
@@ -217,45 +217,7 @@ class SandboxApi(SandboxBase):
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(logger=logger, **opts)
 
-        # on_timeout accepts a bare action or {"action", "keep_memory"}; normalize.
-        # Only the object form carries keep_memory; anything else (a bare action
-        # string, or an unexpected value from an untyped caller) passes through as
-        # the action, so a non-"pause" value resolves to kill instead of crashing.
-        on_timeout_raw = lifecycle.get("on_timeout", "kill") if lifecycle else "kill"
-        if isinstance(on_timeout_raw, dict):
-            on_timeout = on_timeout_raw.get("action", "kill")
-            keep_memory_provided = "keep_memory" in on_timeout_raw
-            keep_memory = on_timeout_raw.get("keep_memory")
-        else:
-            on_timeout = on_timeout_raw
-            keep_memory = None
-            keep_memory_provided = False
-
-        # keep_memory only governs a pause action. The discriminated union type
-        # forbids it on action="kill"; re-check at runtime for callers that
-        # bypass the type.
-        if keep_memory_provided and on_timeout != "pause":
-            raise InvalidArgumentException(
-                "keep_memory is only allowed when on_timeout action is 'pause'."
-            )
-
-        # A missing or explicit None keep_memory defaults to True (full memory),
-        # mirroring the JS SDK; sending null would wrongly read as filesystem-only.
-        if keep_memory is None:
-            keep_memory = True
-        auto_resume = lifecycle.get("auto_resume", False) if lifecycle else False
-
-        if auto_resume and on_timeout != "pause":
-            raise InvalidArgumentException(
-                "auto_resume can only be True when on_timeout action is 'pause'."
-            )
-
-        if not keep_memory and auto_resume:
-            raise InvalidArgumentException(
-                "auto_resume: True is not a valid value when keep_memory: False - "
-                "a filesystem-only snapshot cannot be auto-resumed by traffic and "
-                "must be resumed explicitly using Sandbox.connect()."
-            )
+        lifecycle_body = build_lifecycle_config(lifecycle)
 
         # Built before the network config: ``transform`` callables are resolved
         # against the workload tokens this request registers.
@@ -263,9 +225,9 @@ class SandboxApi(SandboxBase):
         network_body = build_network_config(network, iam_body)
         body = NewSandbox(
             template_id=template,
-            auto_pause=on_timeout == "pause",
-            auto_pause_memory=keep_memory if on_timeout == "pause" else UNSET,
-            auto_resume=SandboxAutoResumeConfig(enabled=auto_resume),
+            auto_pause=lifecycle_body.auto_pause,
+            auto_pause_memory=lifecycle_body.auto_pause_memory,
+            auto_resume=lifecycle_body.auto_resume,
             metadata=metadata or {},
             timeout=timeout,
             env_vars=env_vars or {},
