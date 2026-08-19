@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "outDir": "dist",
+    "target": "es2022",
+    "module": "esnext",
+    "lib": [
+      "dom",
+      "es2022"
+    ],
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": false,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "moduleResolution": "bundler",
+    "isolatedModules": true,
+    "declaration": true,
+    // TypeScript 7's native tsc does not auto-include node_modules/@types, so
+    // the Node globals the tests use (`node:*` modules) have to be requested
+    // explicitly.
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "src",
+    "tests"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules",
+    "tsdown.config.ts"
+  ]
+}

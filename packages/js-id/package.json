@@ -1,0 +1,67 @@
+{
+  "name": "@e2b/id",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Prefixed, human-legible IDs for E2B resources",
+  "homepage": "https://e2b.dev",
+  "license": "MIT",
+  "author": {
+    "name": "FoundryLabs, Inc.",
+    "email": "hello@e2b.dev",
+    "url": "https://e2b.dev"
+  },
+  "bugs": "https://github.com/e2b-dev/e2b/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/e2b-dev/e2b",
+    "directory": "packages/js-id"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "prepublishOnly": "pnpm build",
+    "build": "tsc --noEmit && tsdown",
+    "dev": "tsdown --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint --config ../../.oxlintrc.json src tests",
+    "format": "prettier --write src/ tests/"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.19",
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "prettier": "^3.6.2",
+    "tsdown": "^0.22.3",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "vitest": "^4.1.10"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "package.json"
+  ],
+  "keywords": [
+    "e2b",
+    "id",
+    "uuid",
+    "uuidv7",
+    "base32",
+    "identifier",
+    "typescript"
+  ],
+  "engines": {
+    "node": ">=20.18.1 <21 || >=22"
+  }
+}
