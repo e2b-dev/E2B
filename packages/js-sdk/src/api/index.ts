@@ -116,9 +116,6 @@ class ApiClient {
       headers: {
         ...defaultHeaders,
         ...(config.apiKey && { 'X-API-KEY': config.apiKey }),
-        ...(config.accessToken && {
-          Authorization: `Bearer ${config.accessToken}`,
-        }),
         ...config.headers,
       },
       querySerializer: {

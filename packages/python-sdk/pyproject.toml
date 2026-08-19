@@ -1,6 +1,6 @@
 [project]
 name = "e2b"
-version = "2.38.0"
+version = "2.40.0"
 description = "E2B SDK that give agents cloud environments"
 authors = [{ name = "e2b", email = "hello@e2b.dev" }]
 license = "MIT"
@@ -11,7 +11,7 @@ dependencies = [
     "wcmatch>=10.1,<12",
     "protobuf-py>=0.1.1,<0.2",
     "httpx>=0.27.0,<1.0.0",
-    "h2>=4,<5",
+    "h2>=4.4.1,<5",
     "attrs>=23.2.0",
     "packaging>=24.1",
     # 4.10 is the first release whose TypedDict accepts PEP 728's `closed`,
