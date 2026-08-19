@@ -96,6 +96,10 @@ jobs:
           path: ${{ matrix.os == 'windows-latest' && '~/AppData/Local/ms-playwright' || '~/.cache/ms-playwright' }}
           key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
 
+      - name: Install Playwright Chromium
+        if: matrix.runtime == 'node'
+        run: pnpm run playwright:install
+
       # The unit bundle test and the Cloudflare deploy config fail in CI when
       # the build output is missing.
       - name: Test build
