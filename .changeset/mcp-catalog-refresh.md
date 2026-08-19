@@ -3,28 +3,32 @@
 '@e2b/python-sdk': minor
 ---
 
-Refresh the MCP server schema from Docker's MCP catalog, which the `mcp` sandbox option is typed from. 52 servers are new — among them `curl`, `docker`, `ffmpeg`, `n8n`, `neo4j`, `temporal`, `playwright`, and 26 AWS servers — and every server's title and description now matches what the catalog publishes today.
+Refresh the MCP server schema from Docker's MCP catalog, which the `mcp` sandbox option is typed from. 52 servers are new — among them `curl`, `docker`, `ffmpeg`, `n8n`, `neo4j`, `temporal`, `proxmox`, `testkube`, `zen`, and 26 AWS servers — and every server's title and description now matches what the catalog publishes today.
 
 ```ts
 import { Sandbox } from 'e2b'
 
-const sandbox = await Sandbox.betaCreate({
+const sandbox = await Sandbox.create({
   mcp: {
     docker: {},
+    ffmpeg: {},
     n8n: { apiUrl: 'https://n8n.example.com/api/v1', apiKey: process.env.N8N_API_KEY! },
   },
 })
 ```
 
 ```python
+import os
+
 from e2b import Sandbox
 
-sandbox = Sandbox.beta_create(
+sandbox = Sandbox.create(
     mcp={
         "docker": {},
+        "ffmpeg": {},
         "n8n": {"apiUrl": "https://n8n.example.com/api/v1", "apiKey": os.environ["N8N_API_KEY"]},
     },
 )
 ```
 
-Six servers the catalog no longer publishes are gone from the type: `cdataConnectcloud`, `flexprice`, `postgres`, `root`, `tembo`, and `triplewhale`. Four more changed what they accept: `awsDiagram` takes `outputDir`, `context7` takes `apiKey`, `neo4jCypher` takes `schemaSampleSize`, and `onlyofficeDocspace` is down to `docspaceApiKey`. The configuration is still handed to the gateway as you write it, so a server the catalog dropped can be kept by casting past the type — whether it starts is up to the gateway.
+Some servers changed in ways that stop existing configuration from type-checking. Six the catalog no longer publishes are gone: `cdataConnectcloud`, `flexprice`, `postgres`, `root`, `tembo`, and `triplewhale`. `awsDiagram` and `context7` took no options before and now require one (`outputDir` and `apiKey`), so `awsDiagram: {}` and `context7: {}` need a value. `onlyofficeDocspace` is down to `baseUrl` and `docspaceApiKey`, having lost `docspaceAuthToken`, `docspacePassword`, `docspaceUsername`, `dynamic`, `origin`, `toolsets`, and `userAgent`. `neo4jCypher` gained `schemaSampleSize`. Configuration is still handed to the gateway as you write it, so a server the catalog dropped can be kept by casting past the type — whether it starts is up to the gateway.
