@@ -65,6 +65,8 @@ export type {
   SandboxIamOpts,
   SandboxIamToken,
   SandboxIamTokenType,
+  SandboxEgressProxyOpts,
+  SandboxEgressProxyInfo,
   SandboxNetworkOpts,
   SandboxNetworkInfo,
   SandboxNetworkSelector,

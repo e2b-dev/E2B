@@ -75,6 +75,8 @@ from .sandbox.sandbox_api import (
     GitHubMcpServer,
     GitHubMcpServerConfig,
     McpServer,
+    SandboxEgressProxyInfo,
+    SandboxEgressProxyOpts,
     SandboxIamOpts,
     SandboxIamToken,
     SandboxIamTokenType,
@@ -198,6 +200,8 @@ __all__ = [
     "WriteInfo",
     "FileType",
     # Network
+    "SandboxEgressProxyOpts",
+    "SandboxEgressProxyInfo",
     "SandboxNetworkOpts",
     "SandboxNetworkInfo",
     "SandboxNetworkSelector",

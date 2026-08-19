@@ -146,6 +146,72 @@ export type SandboxNetworkSelector =
   | string[]
   | ((ctx: SandboxNetworkSelectorContext) => string[])
 
+/**
+ * SOCKS5 proxy the sandbox's outbound TCP is tunneled through — "bring your
+ * own proxy".
+ *
+ * Tunneling happens on the host, after
+ * {@link SandboxNetworkOpts.allowOut}/{@link SandboxNetworkOpts.denyOut}
+ * filtering, so nothing runs inside the sandbox and code running there can
+ * neither see the proxy nor route around it. UDP-based traffic — DNS and
+ * QUIC/HTTP3 — is not tunneled and leaves the sandbox the usual way.
+ *
+ * Egress fails closed: when the proxy is unreachable or does not speak SOCKS5,
+ * outbound connections fail rather than falling back to a direct connection.
+ *
+ * @example
+ * ```ts
+ * const sandbox = await Sandbox.create({
+ *   network: {
+ *     egressProxy: {
+ *       address: 'proxy.example.com:1080',
+ *       username: 'proxy-user',
+ *       password: 'proxy-password',
+ *     },
+ *   },
+ * })
+ * ```
+ */
+export type SandboxEgressProxyOpts = {
+  /**
+   * SOCKS5 proxy address in `host:port` form, e.g.
+   * `'proxy.example.com:1080'`. The host can be a hostname or an IP literal;
+   * a hostname is re-resolved at dial time and the resolved address is pinned
+   * for that connection, so a DNS change cannot redirect a connection that is
+   * already being established.
+   *
+   * The proxy has to be reachable from E2B's infrastructure: an address that
+   * does not resolve, or that resolves into a private or otherwise internal
+   * range, is rejected before the sandbox exists.
+   */
+  address: string
+
+  /**
+   * SOCKS5 username
+   * ([RFC 1929](https://datatracker.ietf.org/doc/html/rfc1929)), up to 255
+   * bytes. Omit it for a proxy that takes no credentials.
+   */
+  username?: string
+
+  /**
+   * SOCKS5 password, up to 255 bytes. Only valid together with
+   * {@link SandboxEgressProxyOpts.username}.
+   */
+  password?: string
+}
+
+/**
+ * Egress proxy as returned by the sandbox info endpoint. Mirrors
+ * {@link SandboxEgressProxyOpts} without `password` — the API never returns
+ * it.
+ */
+export type SandboxEgressProxyInfo = {
+  /** See {@link SandboxEgressProxyOpts.address}. */
+  address: string
+  /** See {@link SandboxEgressProxyOpts.username}. */
+  username?: string
+}
+
 export type SandboxNetworkOpts = {
   /**
    * Allow outbound traffic from the sandbox to the specified addresses.
@@ -212,6 +278,31 @@ export type SandboxNetworkOpts = {
   rules?: SandboxNetworkRules
 
   /**
+   * Tunnel the sandbox's outbound TCP through a SOCKS5 proxy you operate.
+   *
+   * Filtering runs first, so a connection {@link denyOut} blocks never reaches
+   * the proxy, and per-host {@link rules} transforms still apply before the
+   * connection is dialed. Omit it to send the sandbox's traffic out directly.
+   *
+   * Available on E2B Cloud and in BYOC deployments; a sandbox that names a
+   * proxy on a deployment built from the open source `e2b-dev/infra`
+   * repository is rejected as unsupported.
+   *
+   * @example
+   * ```ts
+   * // Deny everything except api.example.com, and tunnel what is left
+   * await Sandbox.create({
+   *   network: {
+   *     allowOut: ['api.example.com'],
+   *     denyOut: ({ allTraffic }) => [allTraffic],
+   *     egressProxy: { address: 'proxy.example.com:1080' },
+   *   },
+   * })
+   * ```
+   */
+  egressProxy?: SandboxEgressProxyOpts
+
+  /**
    * Specify if the sandbox URLs should be accessible only with authentication.
    * @default true
    */
@@ -234,6 +325,12 @@ export type SandboxNetworkInfo = {
   allowOut?: string[]
   denyOut?: string[]
   rules?: Record<string, SandboxNetworkRuleInfo[]>
+  /**
+   * Proxy the sandbox's egress is currently tunneled through, absent when it
+   * goes out directly. See {@link SandboxEgressProxyInfo} for why the password
+   * is missing.
+   */
+  egressProxy?: SandboxEgressProxyInfo
   allowPublicTraffic?: boolean
   maskRequestHost?: string
 }
@@ -255,6 +352,17 @@ export type SandboxNetworkUpdate = {
    * its placeholder and a typo only surfaces at the destination.
    */
   rules?: SandboxNetworkRules
+  /**
+   * See {@link SandboxNetworkOpts.egressProxy}. Sets or replaces the proxy on a
+   * sandbox that is already running, with no restart.
+   *
+   * The update replaces the whole configuration instead of merging into it, so
+   * an update that leaves this out stops tunneling and sends the sandbox's
+   * traffic out directly — even when the update was only meant to change the
+   * allow and deny lists. Repeat it in every update that should keep
+   * tunneling.
+   */
+  egressProxy?: SandboxEgressProxyOpts
   /**
    * Allow sandbox to access the internet. When set to `false`, it behaves the
    * same as specifying `denyOut: ['0.0.0.0/0']` in the network config.
@@ -882,9 +990,30 @@ function resolveRulesForBody(
   return out
 }
 
+/**
+ * Rebuild the proxy config from the known fields so stray properties on the
+ * caller's object never reach the wire and a later mutation of it cannot alter
+ * the in-flight request. Validation is the server's — it is the only side that
+ * can tell whether the address resolves, and to where.
+ */
+function buildEgressProxyBody(
+  egressProxy: SandboxEgressProxyOpts
+): components['schemas']['SandboxEgressProxyConfig'] {
+  return {
+    address: egressProxy.address,
+    ...(egressProxy.username !== undefined
+      ? { username: egressProxy.username }
+      : {}),
+    ...(egressProxy.password !== undefined
+      ? { password: egressProxy.password }
+      : {}),
+  }
+}
+
 type NetworkEgressBody = {
   allowOut?: string[]
   denyOut?: string[]
+  egressProxy?: components['schemas']['SandboxEgressProxyConfig']
   rules?: Record<string, { transform?: SandboxNetworkTransform }[]>
 }
 
@@ -892,6 +1021,7 @@ function buildNetworkEgress(
   network: {
     allowOut?: SandboxNetworkSelector
     denyOut?: SandboxNetworkSelector
+    egressProxy?: SandboxEgressProxyOpts
     rules?: SandboxNetworkRules
   },
   transformContext: SandboxNetworkTransformContext
@@ -906,8 +1036,34 @@ function buildNetworkEgress(
   return {
     ...(allowOut !== undefined ? { allowOut } : {}),
     ...(denyOut !== undefined ? { denyOut } : {}),
+    // `== null` also covers an explicit `egressProxy: null`, which untyped
+    // callers spell "no proxy" as; Python's `network.get('egress_proxy')`
+    // treats it the same way.
+    ...(network.egressProxy != null
+      ? { egressProxy: buildEgressProxyBody(network.egressProxy) }
+      : {}),
     ...(network.rules !== undefined
       ? { rules: resolveRulesForBody(rules, transformContext) }
+      : {}),
+  }
+}
+
+/**
+ * Map the wire proxy config into the SDK-owned shape: `password` is dropped
+ * because the API never returns it, and the wire's `null` for "no proxy" is
+ * normalized so the union never reaches a consumer.
+ */
+function fromApiEgressProxy(
+  egressProxy: components['schemas']['SandboxEgressProxyConfig'] | undefined
+): SandboxEgressProxyInfo | undefined {
+  if (!egressProxy) {
+    return undefined
+  }
+
+  return {
+    address: egressProxy.address,
+    ...(egressProxy.username !== undefined
+      ? { username: egressProxy.username }
       : {}),
   }
 }
@@ -1086,6 +1242,7 @@ export class SandboxApi {
             allowOut: res.data.network.allowOut,
             denyOut: res.data.network.denyOut,
             rules: res.data.network.rules ?? undefined,
+            egressProxy: fromApiEgressProxy(res.data.network.egressProxy),
             allowPublicTraffic: res.data.network.allowPublicTraffic,
             maskRequestHost: res.data.network.maskRequestHost,
           }
