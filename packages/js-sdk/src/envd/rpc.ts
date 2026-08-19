@@ -75,10 +75,16 @@ const DEFAULT_ERROR_MAP: Partial<Record<Code, (message: string) => Error>> = {
       `${message}: Rate limit exceeded, please try again later.`
     ),
   [Code.Unavailable]: formatSandboxTimeoutError,
-  [Code.Canceled]: (message) =>
-    new TimeoutError(
+  [Code.Canceled]: (message) => {
+    // A request aborted while still queued under limitConcurrency already
+    // names the E2B_*_INFLIGHT_REQUESTS knob; do not also blame requestTimeoutMs.
+    if (/E2B_\w+_INFLIGHT_REQUESTS/.test(message)) {
+      return new TimeoutError(message)
+    }
+    return new TimeoutError(
       `${message}: This error is likely due to exceeding 'requestTimeoutMs'. You can pass the request timeout value as an option when making the request.`
-    ),
+    )
+  },
   [Code.DeadlineExceeded]: (message) =>
     new TimeoutError(
       `${message}: This error is likely due to exceeding 'timeoutMs' — the total time a long running request (like command execution or directory watch) can be active. It can be modified by passing 'timeoutMs' when making the request. Use '0' to disable the timeout.`

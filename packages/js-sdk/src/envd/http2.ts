@@ -9,9 +9,17 @@ import {
 type EnvdFetchOptions = {
   connectionLimit?: number
   inflightLimit?: number
+  /** Forwarded to {@link limitConcurrency} (env-var name, reserved unary slots). */
+  inflight?: {
+    envVarName?: string
+    reserved?: number
+  }
   proxy?: string
   loadUndici?: () => Promise<UndiciModule | undefined>
 }
+
+/** Unary/control headroom on the envd RPC semaphore while streams are open. */
+const ENVD_RPC_RESERVED_UNARY_SLOTS = 1
 
 // Fetchers are cached per proxy so requests without a proxy keep sharing a
 // single dispatcher while each distinct proxy URL gets its own.
@@ -30,6 +38,7 @@ export function createEnvdFetchForRuntime(
     buildDispatchedFetch({
       connections: options.connectionLimit ?? DEFAULT_ENVD_CONNECTION_LIMIT,
       inflightLimit: options.inflightLimit ?? 0,
+      inflight: options.inflight,
       proxy: options.proxy,
       loadUndici: options.loadUndici,
     })
@@ -48,6 +57,7 @@ export function createEnvdFetch(proxy?: string): typeof fetch {
   // to h1, this favors connection pressure over per-sandbox throughput.
   const envdFetch = createEnvdFetchForRuntime(runtime, {
     inflightLimit: getEnvdInflightLimit(),
+    inflight: { envVarName: 'E2B_ENVD_INFLIGHT_REQUESTS' },
     proxy,
   })
   envdFetchers.set(key, envdFetch)
@@ -66,6 +76,12 @@ export function createEnvdRpcFetch(proxy?: string): typeof fetch {
   const envdRpcFetch = createEnvdFetchForRuntime(runtime, {
     connectionLimit: getEnvdRpcConnectionLimit(),
     inflightLimit: getEnvdRpcInflightLimit(),
+    // Keep unary/control RPCs (kill, stdin, list) runnable while Connect
+    // streams hold their slots for the lifetime of the open body.
+    inflight: {
+      envVarName: 'E2B_ENVD_RPC_INFLIGHT_REQUESTS',
+      reserved: ENVD_RPC_RESERVED_UNARY_SLOTS,
+    },
     proxy,
   })
   envdRpcFetchers.set(key, envdRpcFetch)
@@ -81,9 +97,10 @@ export function getEnvdRpcConnectionLimit(): number {
 }
 
 /**
- * Returns the configured max number of envd REST requests (e.g.
- * `files.read`/`files.write`) that can be in flight at once across all
- * sandboxes in this SDK process, or `0` to disable the cap.
+ * Returns the configured max number of envd REST response bodies that can be
+ * open at once across all sandboxes in this SDK process, or `0` to disable
+ * the cap. Streaming reads (`files.read` with `format: 'stream'`) hold a slot
+ * for as long as the caller keeps the body open, not just until headers arrive.
  *
  * Defaults to `2000` ({@link DEFAULT_ENVD_INFLIGHT_LIMIT}). Override
  * via `E2B_ENVD_INFLIGHT_REQUESTS` env var; set to `0` to disable the cap
@@ -97,13 +114,16 @@ export function getEnvdInflightLimit(): number {
 }
 
 /**
- * Returns the configured max number of envd RPC requests that
- * can be in flight at once across all sandboxes in this SDK process,
- * or `0` to disable the cap.
+ * Returns the configured max number of envd RPC response bodies that can be
+ * open at once across all sandboxes in this SDK process, or `0` to disable
+ * the cap. Long-lived Connect streams (commands, PTYs, directory watches) hold
+ * a slot for their whole lifetime; one slot is reserved for unary/control
+ * RPCs (`kill`, `sendStdin`, `list`) so teardown is never queued behind the
+ * streams it needs to end.
  *
  * Defaults to `2000` ({@link DEFAULT_ENVD_RPC_INFLIGHT_LIMIT}). Override
- * via `E2B_ENVD_RPC_INFLIGHT_REQUESTS` env var; set to `0` to disable the cap
- * entirely.
+ * via `E2B_ENVD_RPC_INFLIGHT_REQUESTS` env var; set to `0` to disable the
+ * cap entirely.
  */
 export function getEnvdRpcInflightLimit(): number {
   return parseInflightLimitEnv(

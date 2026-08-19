@@ -44,6 +44,7 @@ export function createApiFetchForRuntime(
     buildDispatchedFetch({
       connections: options.connectionLimit ?? getApiConnectionLimit(),
       inflightLimit: options.inflightLimit ?? getApiInflightLimit(),
+      inflight: { envVarName: 'E2B_API_INFLIGHT_REQUESTS' },
       proxy: options.proxy,
       loadUndici: options.loadUndici,
     })
@@ -58,8 +59,9 @@ export function getApiConnectionLimit(): number {
 }
 
 /**
- * Returns the configured max number of API requests that can be in flight at
- * once, or `0` to disable the cap.
+ * Returns the configured max number of API response bodies that can be open
+ * at once, or `0` to disable the cap. Streaming endpoints (e.g. sandbox logs)
+ * hold a slot for as long as the body is open, not just until headers arrive.
  *
  * Defaults to `1000` ({@link DEFAULT_API_INFLIGHT_LIMIT}). Override via
  * `E2B_API_INFLIGHT_REQUESTS` env var; set to `0` to disable the cap entirely.

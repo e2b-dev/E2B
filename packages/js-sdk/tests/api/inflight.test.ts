@@ -228,6 +228,176 @@ test('limitConcurrency releases the slot for a body an interceptor already read'
   expect(await slotIsFree()).toBe(true)
 })
 
+test('a body an interceptor holds a reader on is not tracked', async () => {
+  const response = new Response('locked by an interceptor')
+  const heldReader = response.body!.getReader()
+
+  const inner = vi.fn(async () => response) as unknown as typeof fetch
+  const limited = limitConcurrency(inner, 1)
+
+  await expect(limited('https://example.com/a')).resolves.toBe(response)
+
+  const second = limited('https://example.com/b')
+  await flush()
+  expect(inner).toHaveBeenCalledTimes(2) // the slot came back
+  await heldReader.cancel()
+  await second
+})
+
+test('cancelling does not hand the same slot back twice', async () => {
+  const streams: Array<ReturnType<typeof streamingResponse>> = []
+  const inner = vi.fn(async () => {
+    const s = streamingResponse()
+    streams.push(s)
+    return s.response
+  }) as unknown as typeof fetch
+
+  const limited = limitConcurrency(inner, 1)
+  const first = await limited('https://example.com/a')
+
+  // Cancel while the wrapper's first pull is still pending: the pull and the
+  // cancel path can both reach release().
+  await first.body!.cancel()
+  await flush()
+
+  const second = limited('https://example.com/b')
+  const third = limited('https://example.com/c')
+  await flush()
+
+  expect(inner).toHaveBeenCalledTimes(2) // a and b, never c
+  streams[1].send('b')
+  streams[1].end()
+  await (await second).text()
+  await flush()
+  expect(inner).toHaveBeenCalledTimes(3)
+  streams[2].send('c')
+  streams[2].end()
+  await (await third).text()
+})
+
+test('cancelling with a buffered chunk releases the slot', async () => {
+  const streams: Array<ReturnType<typeof streamingResponse>> = []
+  const inner = vi.fn(async () => {
+    const s = streamingResponse()
+    streams.push(s)
+    return s.response
+  }) as unknown as typeof fetch
+
+  const limited = limitConcurrency(inner, 1)
+  const first = await limited('https://example.com/a')
+
+  // Fill the wrapper's queue so no pull is outstanding when we cancel.
+  streams[0].send('buffered')
+  await flush()
+  await first.body!.cancel()
+  await flush()
+
+  const second = limited('https://example.com/b')
+  await flush()
+  expect(inner).toHaveBeenCalledTimes(2)
+  streams[1].send('b')
+  streams[1].end()
+  expect(await (await second).text()).toBe('b')
+})
+
+test('reserved capacity lets a unary call through while a Connect stream is open', async () => {
+  const stream = streamingResponse()
+  let unaryStarted = false
+  const inner = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+    const ct = new Headers(init?.headers).get('content-type') ?? ''
+    if (ct.startsWith('application/connect+')) return stream.response
+    unaryStarted = true
+    return new Response('killed')
+  }) as unknown as typeof fetch
+
+  const limited = limitConcurrency(inner, 1, {
+    reserved: 1,
+    envVarName: 'E2B_ENVD_RPC_INFLIGHT_REQUESTS',
+  })
+
+  // Occupy the only configured slot with a long-lived Connect stream.
+  const streaming = await limited('https://example.com/process/start', {
+    method: 'POST',
+    headers: { 'content-type': 'application/connect+json' },
+  })
+  await flush()
+
+  // A second Connect stream must wait — reserved capacity is for unary only.
+  let secondStreamStarted = false
+  const secondStream = limited('https://example.com/process/start2', {
+    method: 'POST',
+    headers: { 'content-type': 'application/connect+json' },
+  }).then((r) => {
+    secondStreamStarted = true
+    return r
+  })
+  await flush()
+  expect(secondStreamStarted).toBe(false)
+
+  // Unary/control must still get through (overflow when max === reserved).
+  const kill = limited('https://example.com/process/sendSignal', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+  })
+  await flush()
+  expect(unaryStarted).toBe(true)
+  expect(await (await kill).text()).toBe('killed')
+  expect(secondStreamStarted).toBe(false)
+
+  await streaming.body!.cancel()
+  await flush()
+  expect(secondStreamStarted).toBe(true)
+  const second = await secondStream
+  await second.body?.cancel().catch(() => {})
+})
+
+test('a queued abort names the inflight env var instead of requestTimeoutMs', async () => {
+  const stream = streamingResponse()
+  const inner = vi.fn(async () => stream.response) as unknown as typeof fetch
+  const limited = limitConcurrency(inner, 1, {
+    envVarName: 'E2B_ENVD_RPC_INFLIGHT_REQUESTS',
+  })
+
+  await limited('https://example.com/first')
+  const controller = new AbortController()
+  const queued = limited('https://example.com/queued', {
+    signal: controller.signal,
+  })
+  await flush()
+  controller.abort()
+
+  const err = await queued.catch((e) => e)
+  expect(err).toMatchObject({ name: 'TimeoutError' })
+  expect(err.message).toContain('E2B_ENVD_RPC_INFLIGHT_REQUESTS')
+  expect(err.message).not.toContain('requestTimeoutMs')
+})
+
+test('Connect streaming requests respect the reserved unary budget', async () => {
+  const streams: Array<ReturnType<typeof streamingResponse>> = []
+  const inner = vi.fn(async () => {
+    const s = streamingResponse()
+    streams.push(s)
+    return s.response
+  }) as unknown as typeof fetch
+
+  // max=2, reserved=1 → only one Connect stream at a time.
+  const limited = limitConcurrency(inner, 2, { reserved: 1 })
+  const headers = { 'content-type': 'application/connect+json' }
+
+  const first = await limited('https://example.com/a', {
+    method: 'POST',
+    headers,
+  })
+  const second = limited('https://example.com/b', { method: 'POST', headers })
+  await flush()
+  expect(inner).toHaveBeenCalledTimes(1)
+
+  await first.body!.cancel()
+  await flush()
+  expect(inner).toHaveBeenCalledTimes(2)
+  await (await second).body!.cancel()
+})
+
 test('limitConcurrency keeps the status and headers of the wrapped response', async () => {
   const inner = vi.fn(
     async () =>

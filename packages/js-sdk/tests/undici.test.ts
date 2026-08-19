@@ -195,7 +195,9 @@ test.skipIf(runtime !== 'node')(
     try {
       const fetcher = await buildDispatchedFetch({
         connections: 1,
-        inflightLimit: 0,
+        // Exercise limitConcurrency against a real undici body, not the
+        // inflightLimit: 0 bypass that returns the fetcher unwrapped.
+        inflightLimit: 1,
         loadUndici: async () => ({
           ...undici,
           // buildDispatchedFetch builds its own dispatcher; hand it the mock.

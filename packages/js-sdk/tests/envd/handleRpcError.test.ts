@@ -42,6 +42,24 @@ describe('handleRpcError', () => {
     assert.instanceOf(err, TimeoutError)
   })
 
+  test('Canceled from an inflight-queue abort names the concurrency knob, not requestTimeoutMs', () => {
+    const err = handleRpcError(
+      new ConnectError(
+        "Request was aborted while queued for an in-flight slot under 'E2B_ENVD_RPC_INFLIGHT_REQUESTS' (currently 1).",
+        Code.Canceled
+      )
+    )
+    assert.instanceOf(err, TimeoutError)
+    assert.include(err.message, 'E2B_ENVD_RPC_INFLIGHT_REQUESTS')
+    assert.notInclude(err.message, 'requestTimeoutMs')
+  })
+
+  test('Canceled otherwise advises requestTimeoutMs', () => {
+    const err = handleRpcError(new ConnectError('canceled', Code.Canceled))
+    assert.instanceOf(err, TimeoutError)
+    assert.include(err.message, 'requestTimeoutMs')
+  })
+
   test('falls back to SandboxError for unmapped code', () => {
     const err = handleRpcError(new ConnectError('boom', Code.Internal))
     assert.instanceOf(err, SandboxError)
