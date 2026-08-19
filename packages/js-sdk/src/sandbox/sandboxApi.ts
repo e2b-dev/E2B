@@ -466,8 +466,6 @@ export type SandboxLifecycle = {
    * Can be `true` only when `onTimeout` is `pause`. Not supported when
    * `keepMemory` is `false` (a filesystem-only snapshot must be resumed
    * explicitly via `connect()`).
-   *
-   * @default false
    */
   autoResume?: boolean
 }
