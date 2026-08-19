@@ -4,12 +4,13 @@ import os
 import re
 from dataclasses import dataclass
 from types import TracebackType
-from typing import NamedTuple, Optional, Protocol, Tuple, Union
+from typing import Any, NamedTuple, Optional, Protocol, Tuple, Union
 from urllib.parse import quote
 
 import httpx
 from httpx import AsyncBaseTransport, BaseTransport, Timeout
 from pyqwest import Proxy
+from pyqwest.middleware import retry as retry_middleware
 
 from e2b.api.client.client import AuthenticatedClient
 from e2b.api.client.types import Response
@@ -84,6 +85,32 @@ connection_retries = int(os.getenv("E2B_CONNECTION_RETRIES") or "3")
 # is no longer read.
 pool_idle_timeout = float(os.getenv("E2B_KEEPALIVE_EXPIRY") or "300")
 pool_max_idle_per_host = int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20")
+
+# The retry policy the shared transports declare per request (see
+# `ConnectionRetryTransport` in client_sync/client_async).
+#
+# pyqwest's retry middleware keeps a request replayable, and for a body that
+# isn't already `bytes` it does that by growing a copy of it in memory as it is
+# sent. A streamed upload therefore went to the wire incrementally *and* was
+# mirrored whole in RAM, so peak memory scaled with file size for
+# `files.write`, `volume.write_file` and template context uploads even though
+# nothing in the SDK buffers (SDK-332).
+#
+# `RetryMode.UNBUFFERED` drops the copy: a streamed body is replayed only while
+# nothing has been read from it, which is all a connect-only policy ever needs,
+# since a connect error means the request was never written. `bytes` bodies —
+# every unary RPC payload and every in-memory write — are replayable as they
+# are and keep their retries either way.
+#
+# Releases without `RetryMode` keep the buffered behavior they ship — `True` is
+# what the middleware understood before the mode existed — because going
+# unbuffered there would trade the copy for the connect retries rather than get
+# them both: reqwest used to read ahead into its body channel while connecting,
+# so a connect error surfaced with the body already started (measured: the one
+# chunk of a unary RPC body, up to a whole small-chunked upload) and neither
+# buffered nor rewindable.
+_retry_mode = getattr(retry_middleware, "RetryMode", None)
+unbuffered_retries: Any = True if _retry_mode is None else _retry_mode.UNBUFFERED
 
 
 class ProxyConfig(NamedTuple):

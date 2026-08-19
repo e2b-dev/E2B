@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import httpx
 import threading
@@ -15,6 +15,7 @@ from e2b.api import (
     pool_idle_timeout,
     pool_max_idle_per_host,
     proxy_to_config,
+    unbuffered_retries,
 )
 from e2b.connection_config import READ_TIMEOUT, ConnectionConfig
 
@@ -32,7 +33,13 @@ class ConnectionRetryTransport(SyncRetryTransport):
     call or unary RPC like ``SendInput``). This matches the connect-only
     ``retries`` of the httpx transports this replaced; the retry middleware's
     default policy would otherwise also retry I/O errors and 429/5xx responses
-    for idempotent methods."""
+    for idempotent methods.
+
+    Streamed bodies are retried without being buffered, so an upload is not
+    mirrored in memory as it is sent (see ``unbuffered_retries``)."""
+
+    def should_retry_request(self, request: SyncRequest) -> Any:
+        return unbuffered_retries
 
     def should_retry_response(
         self, request: SyncRequest, response: Union[SyncResponse, Exception]
