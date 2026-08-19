@@ -25,11 +25,12 @@ from e2b.exceptions import (
 
 def encode_path_param(value: str) -> str:
     """
-    Percent-encode a namespaced alias for use as a single URL path segment.
+    Percent-encode a template ID, name, or alias for use as one URL path segment.
 
-    Aliases like ``namespace/name`` must have ``/`` escaped so the generated
-    client sends ``/templates/aliases/namespace%2Fname`` instead of splitting
-    the route at the slash.
+    Endpoints that take a template ID also accept a name, which may be
+    namespaced (``namespace/name``) and carry a ``:tag``. Escaping those
+    separators keeps the value inside a single segment instead of splitting the
+    route, matching the JS SDK's ``encodeURIComponent``.
     """
     return quote(value, safe="")
 

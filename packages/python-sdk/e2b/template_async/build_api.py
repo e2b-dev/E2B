@@ -81,7 +81,7 @@ async def get_file_upload_link(
     stack_trace: Optional[TracebackType] = None,
 ) -> TemplateBuildFileUpload:
     res = await get_templates_template_id_files_hash.asyncio_detailed(
-        template_id=template_id,
+        template_id=encode_path_param(template_id),
         hash_=files_hash,
         client=client,
     )
@@ -186,7 +186,7 @@ async def trigger_build(
     template_data = TemplateBuildStartV2.from_dict(template)
 
     res = await post_v_2_templates_template_id_builds_build_id.asyncio_detailed(
-        template_id=template_id,
+        template_id=encode_path_param(template_id),
         build_id=build_id,
         client=client,
         body=template_data,
@@ -227,7 +227,7 @@ async def get_build_status(
     client: AuthenticatedClient, template_id: str, build_id: str, logs_offset: int
 ) -> TemplateBuildStatusResponse:
     res = await get_templates_template_id_builds_build_id_status.asyncio_detailed(
-        template_id=template_id,
+        template_id=encode_path_param(template_id),
         build_id=build_id,
         client=client,
         logs_offset=logs_offset,
@@ -403,17 +403,17 @@ async def remove_tags(client: AuthenticatedClient, name: str, tags: List[str]) -
 
 
 async def get_template_tags(
-    client: AuthenticatedClient, template_id: str
+    client: AuthenticatedClient, template_id_or_name: str
 ) -> List[TemplateTag]:
     """
     Get all tags for a template.
 
     Args:
         client: Authenticated API client
-        template_id: Template ID or name
+        template_id_or_name: Template ID or name (a name may be namespaced)
     """
     res = await get_templates_template_id_tags.asyncio_detailed(
-        template_id=template_id,
+        template_id=encode_path_param(template_id_or_name),
         client=client,
     )
 
