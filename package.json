@@ -10,6 +10,7 @@
     "fetch:api-spec": "./scripts/fetch-spec.sh api-spec",
     "fetch:envd-spec": "./scripts/fetch-spec.sh envd-spec",
     "fetch:volume-spec": "./scripts/fetch-spec.sh volume-api-spec",
+    "generate:mcp-spec": "uv run scripts/generate-mcp-spec.py && pnpm --recursive --if-present run generate:mcp",
     "lint": "pnpm --if-present --recursive run lint",
     "typecheck": "pnpm --if-present --recursive run typecheck",
     "format": "pnpm --if-present --recursive run format",

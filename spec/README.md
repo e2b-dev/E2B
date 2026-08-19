@@ -31,7 +31,19 @@ E2B_INFRA_REF=main pnpm fetch:api-spec     # try the latest without moving the p
 E2B_BELT_REF=main pnpm fetch:volume-spec
 ```
 
-The remaining files (`mcp-server.json`, `envd/buf-*.gen.yaml`) are owned by
-this repository. The SDK generate pipelines filter `openapi.yml` down to the
-tags each SDK exposes with Redocly CLI (see `../redocly.yaml`) before
-generating the clients.
+`mcp-server.json` describes the MCP servers a sandbox can run and is
+generated from [Docker's MCP catalog](https://hub.docker.com/mcp) — **don't
+edit it by hand**, refresh it from the catalog instead:
+
+```sh
+pnpm generate:mcp-spec  # spec/mcp-server.json, then the SDK types
+```
+
+Unlike the pinned specs above, this one tracks whatever the catalog publishes
+today, so `make codegen` leaves it alone and refreshing it is a deliberate
+step. Expect servers to appear, disappear, and change their configuration
+between refreshes.
+
+`envd/buf-*.gen.yaml` is owned by this repository. The SDK generate pipelines
+filter `openapi.yml` down to the tags each SDK exposes with Redocly CLI (see
+`../redocly.yaml`) before generating the clients.
