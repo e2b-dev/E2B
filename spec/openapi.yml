@@ -311,13 +311,7 @@ components:
           items:
             type: string
         egressProxy:
-          allOf:
-            - $ref: "#/components/schemas/SandboxEgressProxyConfig"
-          description: >-
-            SOCKS5 proxy for sandbox egress. Outbound TCP is tunneled through the
-            proxy after allow/deny filtering; the sandbox is unaware. Domain-matched
-            flows use remote DNS (ATYP=domain).
-          x-not-implemented: true
+          $ref: "#/components/schemas/SandboxEgressProxyConfig"
         maskRequestHost:
           type: string
           description: Specify host mask which will be used for all sandbox requests
@@ -347,13 +341,7 @@ components:
           items:
             type: string
         egressProxy:
-          allOf:
-            - $ref: "#/components/schemas/SandboxEgressProxyConfig"
-          description: >-
-            SOCKS5 proxy for sandbox egress. Outbound TCP is tunneled through the
-            proxy after allow/deny filtering; the sandbox is unaware. Domain-matched
-            flows use remote DNS (ATYP=domain).
-          x-not-implemented: true
+          $ref: "#/components/schemas/SandboxEgressProxyConfig"
         rules:
           type: object
           description: Per-domain transform rules. Replaces all existing rules when provided.
@@ -390,7 +378,6 @@ components:
     SandboxEgressProxyConfig:
       type: object
       nullable: true
-      x-not-implemented: true
       description: >-
         SOCKS5 proxy for sandbox egress. Outbound TCP is tunneled through the
         proxy after allow/deny filtering; the sandbox is unaware. Domain-matched
@@ -969,6 +956,17 @@ components:
         failedCount:
           type: integer
           description: Number of sandboxes that failed to kill
+
+    AdminTeamRunningSandboxCounts:
+      type: object
+      description: |
+        Cached live sandbox index count keyed by team ID. Counts may briefly
+        include sandboxes transitioning out of running; teams without indexed
+        sandboxes are omitted.
+      additionalProperties:
+        type: integer
+        format: int64
+        minimum: 1
 
     AdminBuildCancelResult:
       required:
@@ -1775,7 +1773,6 @@ components:
         - status
         - statusChangedAt
         - sandboxCount
-        - cachedBuilds
         - createSuccesses
         - createFails
         - version
@@ -1812,11 +1809,6 @@ components:
           description: Number of sandboxes running on the node
         metrics:
           $ref: "#/components/schemas/NodeMetrics"
-        cachedBuilds:
-          type: array
-          description: List of cached builds id on the node
-          items:
-            type: string
         createSuccesses:
           type: integer
           format: uint64
@@ -3624,6 +3616,27 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /admin/sandboxes/running-counts:
+    get:
+      summary: Count running sandboxes by team
+      description: |
+        Returns a shared snapshot normally refreshed after five seconds. A
+        sandbox transitioning out of running can remain counted until removal.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+      responses:
+        "200":
+          description: Running sandbox counts keyed by team ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTeamRunningSandboxCounts"
+        "401":
+          $ref: "#/components/responses/401"
         "500":
           $ref: "#/components/responses/500"
 

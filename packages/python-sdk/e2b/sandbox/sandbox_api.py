@@ -26,6 +26,9 @@ from e2b.api.client.models import (
     SandboxLifecycle as ClientSandboxLifecycle,
 )
 from e2b.api.client.models import (
+    SandboxEgressProxyConfigType0 as ClientSandboxEgressProxyConfig,
+)
+from e2b.api.client.models import (
     SandboxNetworkConfig as ClientSandboxNetworkConfig,
 )
 from e2b.api.client.models import (
@@ -212,6 +215,74 @@ and returns the same.
 """
 
 
+class SandboxEgressProxyOpts(TypedDict):
+    """
+    SOCKS5 proxy the sandbox's outbound TCP is tunneled through — "bring your
+    own proxy".
+
+    Tunneling happens on the host, after :attr:`SandboxNetworkOpts.allow_out` /
+    :attr:`SandboxNetworkOpts.deny_out` filtering, so nothing runs inside the
+    sandbox and code running there can neither see the proxy nor route around
+    it. UDP-based traffic — DNS and QUIC/HTTP3 — is not tunneled and leaves the
+    sandbox the usual way.
+
+    Egress fails closed: when the proxy is unreachable or does not speak
+    SOCKS5, outbound connections fail rather than falling back to a direct
+    connection.
+
+    Pass credentials when the proxy requires them::
+
+        sandbox = Sandbox.create(
+            network={
+                "egress_proxy": {
+                    "address": "proxy.example.com:1080",
+                    "username": "proxy-user",
+                    "password": "proxy-password",
+                },
+            },
+        )
+    """
+
+    address: str
+    """
+    SOCKS5 proxy address in ``host:port`` form, e.g.
+    ``"proxy.example.com:1080"``. The host can be a hostname or an IP literal;
+    a hostname is re-resolved at dial time and the resolved address is pinned
+    for that connection, so a DNS change cannot redirect a connection that is
+    already being established.
+
+    The proxy has to be reachable from E2B's infrastructure: an address that
+    does not resolve, or that resolves into a private or otherwise internal
+    range, is rejected before the sandbox exists.
+    """
+
+    username: NotRequired[str]
+    """
+    SOCKS5 username (`RFC 1929 <https://datatracker.ietf.org/doc/html/rfc1929>`_),
+    up to 255 bytes. Omit it for a proxy that takes no credentials.
+    """
+
+    password: NotRequired[str]
+    """
+    SOCKS5 password, up to 255 bytes. Only valid together with
+    :attr:`username`.
+    """
+
+
+class SandboxEgressProxyInfo(TypedDict):
+    """
+    Egress proxy as returned by the sandbox info endpoint. Mirrors
+    :class:`SandboxEgressProxyOpts` without ``password`` — the API never
+    returns it.
+    """
+
+    address: str
+    """See :attr:`SandboxEgressProxyOpts.address`."""
+
+    username: NotRequired[str]
+    """See :attr:`SandboxEgressProxyOpts.username`."""
+
+
 class SandboxNetworkOpts(TypedDict):
     """
     Sandbox network configuration options.
@@ -272,6 +343,29 @@ class SandboxNetworkOpts(TypedDict):
         }
     """
 
+    egress_proxy: NotRequired[SandboxEgressProxyOpts]
+    """
+    Tunnel the sandbox's outbound TCP through a SOCKS5 proxy you operate.
+
+    Filtering runs first, so a connection ``deny_out`` blocks never reaches the
+    proxy, and per-host :attr:`rules` transforms still apply before the
+    connection is dialed. Omit it to send the sandbox's traffic out directly.
+
+    Available on E2B Cloud and in BYOC deployments; a sandbox that names a
+    proxy on a deployment built from the open source ``e2b-dev/infra``
+    repository is rejected as unsupported.
+
+    Deny everything except a host, and tunnel what is left::
+
+        Sandbox.create(
+            network={
+                "allow_out": ["api.example.com"],
+                "deny_out": lambda ctx: [ctx.all_traffic],
+                "egress_proxy": {"address": "proxy.example.com:1080"},
+            },
+        )
+    """
+
     allow_public_traffic: NotRequired[bool]
     """
     Controls whether sandbox URLs should be publicly accessible or require authentication.
@@ -307,6 +401,17 @@ class SandboxNetworkUpdate(TypedDict, total=False):
     too, but the update payload carries no ``iam`` config, so token names cannot
     be checked against the sandbox's registered tokens — every name resolves to
     its placeholder and a typo only surfaces at the destination.
+    """
+
+    egress_proxy: SandboxEgressProxyOpts
+    """
+    See :attr:`SandboxNetworkOpts.egress_proxy`. Sets or replaces the proxy on a
+    sandbox that is already running, with no restart.
+
+    The update replaces the whole configuration instead of merging into it, so
+    an update that leaves this out stops tunneling and sends the sandbox's
+    traffic out directly — even when the update was only meant to change the
+    allow and deny lists. Repeat it in every update that should keep tunneling.
     """
 
     allow_internet_access: bool
@@ -362,6 +467,12 @@ class SandboxNetworkInfo(TypedDict, total=False):
     allow_out: List[str]
     deny_out: List[str]
     rules: Dict[str, List[SandboxNetworkRuleInfo]]
+    egress_proxy: SandboxEgressProxyInfo
+    """
+    Proxy the sandbox's egress is currently tunneled through, absent when it
+    goes out directly. See :class:`SandboxEgressProxyInfo` for why the password
+    is missing.
+    """
     allow_public_traffic: bool
     mask_request_host: str
 
@@ -530,25 +641,63 @@ def _build_client_rules(
     return client_rules
 
 
+def _build_egress_proxy(
+    egress_proxy: SandboxEgressProxyOpts,
+) -> ClientSandboxEgressProxyConfig:
+    """
+    Rebuild the proxy config from the known fields so stray keys in the
+    caller's dict never reach the wire. Address reachability is the server's —
+    it is the only side that can tell whether the address resolves, and to where.
+    The required ``address`` key is checked here so an untyped caller that
+    omits it gets :class:`InvalidArgumentException` rather than a bare
+    ``KeyError`` from deep inside create.
+    """
+    # Re-check at runtime for callers that bypass the TypedDict — a bare
+    # KeyError from deep inside create would not name the option.
+    if not isinstance(egress_proxy, Mapping) or not isinstance(
+        egress_proxy.get("address"), str
+    ):
+        raise InvalidArgumentException(
+            "network egress_proxy must be a dict with a string 'address' "
+            "(e.g. 'proxy.example.com:1080')."
+        )
+
+    body = ClientSandboxEgressProxyConfig(address=egress_proxy["address"])
+    if "username" in egress_proxy:
+        body.username = egress_proxy["username"]
+    if "password" in egress_proxy:
+        body.password = egress_proxy["password"]
+
+    return body
+
+
 def _build_network_egress(
     network: Mapping[str, Any],
     ctx: SandboxNetworkTransformContext,
 ) -> Dict[str, Any]:
     """
-    Resolve the shared egress fields (``allow_out`` / ``deny_out`` / per-host
-    ``rules``) used by both the create and update endpoints. ``rules`` in the
-    returned dict is the inner ``Dict[host, List[ClientSandboxNetworkRule]]``
-    — callers wrap it in their endpoint-specific rules attrs class.
+    Resolve the shared egress fields (``allow_out`` / ``deny_out`` /
+    ``egress_proxy`` / per-host ``rules``) used by both the create and update
+    endpoints. ``rules`` in the returned dict is the inner
+    ``Dict[host, List[ClientSandboxNetworkRule]]`` — callers wrap it in their
+    endpoint-specific rules attrs class.
     """
     rules = network.get("rules") or {}
     allow_out = _resolve_network_selector(network.get("allow_out"), rules)
     deny_out = _resolve_network_selector(network.get("deny_out"), rules)
+    # `is not None` also covers an explicit `"egress_proxy": None`, which
+    # untyped callers spell "no proxy" as; the JS SDK's `!= null` does the
+    # same. Do not use truthiness — an empty dict must reach the builder so
+    # it fails loudly instead of silently disabling tunneling.
+    egress_proxy = network.get("egress_proxy")
 
     body: Dict[str, Any] = {}
     if allow_out is not None:
         body["allow_out"] = allow_out
     if deny_out is not None:
         body["deny_out"] = deny_out
+    if egress_proxy is not None:
+        body["egress_proxy"] = _build_egress_proxy(egress_proxy)
     if "rules" in network and network["rules"] is not None:
         body["rules"] = _build_client_rules(network["rules"], ctx).additional_properties
 
@@ -646,6 +795,8 @@ def build_network_update_body(
         body.allow_out = egress["allow_out"]
     if "deny_out" in egress:
         body.deny_out = egress["deny_out"]
+    if "egress_proxy" in egress:
+        body.egress_proxy = egress["egress_proxy"]
     if "rules" in egress:
         rules = SandboxNetworkUpdateConfigRules()
         rules.additional_properties = egress["rules"]
@@ -654,6 +805,24 @@ def build_network_update_body(
         body.allow_internet_access = network["allow_internet_access"]
 
     return body
+
+
+def _from_client_egress_proxy(
+    egress_proxy: Union[ClientSandboxEgressProxyConfig, None, Unset],
+) -> Optional[SandboxEgressProxyInfo]:
+    """
+    Map the wire proxy config into the SDK-owned shape: ``password`` is dropped
+    because the API never returns it, and the wire's ``None`` for "no proxy"
+    becomes an absent key.
+    """
+    if not isinstance(egress_proxy, ClientSandboxEgressProxyConfig):
+        return None
+
+    result: SandboxEgressProxyInfo = {"address": egress_proxy.address}
+    if not isinstance(egress_proxy.username, Unset):
+        result["username"] = egress_proxy.username
+
+    return result
 
 
 def from_client_network_config(
@@ -672,6 +841,9 @@ def from_client_network_config(
         result["rules"] = cast(
             Dict[str, List[SandboxNetworkRuleInfo]], network.rules.to_dict()
         )
+    egress_proxy = _from_client_egress_proxy(network.egress_proxy)
+    if egress_proxy is not None:
+        result["egress_proxy"] = egress_proxy
     if not isinstance(network.allow_public_traffic, Unset):
         result["allow_public_traffic"] = network.allow_public_traffic
     if not isinstance(network.mask_request_host, Unset):
