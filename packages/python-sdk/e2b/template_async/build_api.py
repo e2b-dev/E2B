@@ -7,7 +7,7 @@ import httpx
 from pyqwest import HTTPTransport
 from pyqwest.httpx import AsyncPyqwestTransport
 
-from e2b.api import handle_api_exception, proxy_to_config
+from e2b.api import encode_path_param, handle_api_exception, proxy_to_config
 from e2b.io_utils import aiter_io_chunks
 from e2b.api.client.api.templates import (
     post_v3_templates,
@@ -42,7 +42,7 @@ from e2b.template.types import (
     TemplateTagInfo,
 )
 from e2b.template.consts import FILE_UPLOAD_TIMEOUT_SECONDS
-from e2b.template.utils import encode_path_param, get_build_step_index, tar_file_stream
+from e2b.template.utils import get_build_step_index, tar_file_stream
 
 
 async def request_build(

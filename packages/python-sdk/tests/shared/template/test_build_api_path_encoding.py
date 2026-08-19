@@ -1,14 +1,19 @@
 import httpx
 
 from e2b.api.client.client import AuthenticatedClient
+from e2b.sandbox_async.sandbox_api import SandboxApi as AsyncSandboxApi
+from e2b.sandbox_sync.sandbox_api import SandboxApi as SyncSandboxApi
 from e2b.template_async import build_api as async_build_api
 from e2b.template_sync import build_api as sync_build_api
 
 NAMESPACED = "my-team/my-template"
+NAMESPACED_SNAPSHOT = "team-slug/my-snapshot:default"
 BASE_URL = "https://api.e2b.dev"
 
 
 def _handler(request: httpx.Request) -> httpx.Response:
+    if request.method == "DELETE":
+        return httpx.Response(200, json={})
     if request.url.path.endswith("/tags"):
         return httpx.Response(200, json=[])
     return httpx.Response(404, json={"code": 404, "message": "not found"})
@@ -79,3 +84,29 @@ async def test_async_get_template_tags_sends_encoded_template_id():
     assert await async_build_api.get_template_tags(client, NAMESPACED) == []
 
     assert requests[0].url.raw_path == b"/templates/my-team%2Fmy-template/tags"
+
+
+def test_sync_delete_snapshot_sends_encoded_snapshot_id(monkeypatch):
+    client, requests = _recording_client()
+    monkeypatch.setattr(
+        "e2b.sandbox_sync.sandbox_api.get_api_client", lambda config: client
+    )
+
+    assert SyncSandboxApi._cls_delete_snapshot(NAMESPACED_SNAPSHOT, api_key="e2b_test")
+
+    # Snapshot IDs carry both a namespace slash and a `:tag`; both must stay
+    # encoded so DELETE /templates/{id} targets one path segment.
+    assert requests[0].url.raw_path == b"/templates/team-slug%2Fmy-snapshot%3Adefault"
+
+
+async def test_async_delete_snapshot_sends_encoded_snapshot_id(monkeypatch):
+    client, requests = _recording_client()
+    monkeypatch.setattr(
+        "e2b.sandbox_async.sandbox_api.get_api_client", lambda config: client
+    )
+
+    assert await AsyncSandboxApi._cls_delete_snapshot(
+        NAMESPACED_SNAPSHOT, api_key="e2b_test"
+    )
+
+    assert requests[0].url.raw_path == b"/templates/team-slug%2Fmy-snapshot%3Adefault"

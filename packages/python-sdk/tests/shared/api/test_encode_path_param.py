@@ -1,4 +1,4 @@
-from e2b.template.utils import encode_path_param
+from e2b.api import encode_path_param
 
 
 def test_leaves_simple_names_unchanged():
@@ -24,3 +24,12 @@ def test_encodes_other_reserved_characters():
     # Mirrors JS `encodeURIComponent`, which also encodes ":" and spaces.
     assert encode_path_param("name:tag") == "name%3Atag"
     assert encode_path_param("a b") == "a%20b"
+
+
+def test_encodes_namespaced_snapshot_id_with_tag():
+    # Snapshot IDs are `namespace/name:tag`; both separators must be encoded so
+    # DELETE /templates/{id} stays a single path segment.
+    assert (
+        encode_path_param("team-slug/my-snapshot:default")
+        == "team-slug%2Fmy-snapshot%3Adefault"
+    )

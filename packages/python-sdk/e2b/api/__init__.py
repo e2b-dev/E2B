@@ -5,6 +5,7 @@ import re
 from dataclasses import dataclass
 from types import TracebackType
 from typing import NamedTuple, Optional, Protocol, Tuple, Union
+from urllib.parse import quote
 
 import httpx
 from httpx import AsyncBaseTransport, BaseTransport, Timeout
@@ -20,6 +21,25 @@ from e2b.exceptions import (
     RateLimitException,
     SandboxException,
 )
+
+
+def encode_path_param(value: str) -> str:
+    """
+    Percent-encode a value for use as a single URL path segment.
+
+    Namespaced template IDs and aliases contain a slash (``namespace/name``),
+    and snapshot IDs additionally contain a tag separator (``name:tag``), which
+    the generated client would otherwise pass through as path/route separators.
+    Every reserved character is escaped (``safe=""``) so the whole value stays
+    within one segment; this matches the JS SDK, where ``openapi-fetch`` runs
+    each path param through ``encodeURIComponent``. The two agree on the
+    characters that appear in template identifiers (``/`` -> ``%2F``,
+    ``:`` -> ``%3A``, space -> ``%20``); ``quote`` additionally escapes a few
+    sub-delimiters (``!*'()``) that ``encodeURIComponent`` leaves alone, which
+    the server decodes to the same bytes. httpx preserves the result without
+    double-encoding.
+    """
+    return quote(value, safe="")
 
 
 def make_logging_event_hooks(log: Optional[logging.Logger]) -> dict:
