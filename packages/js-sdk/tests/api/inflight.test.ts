@@ -13,7 +13,7 @@ function deferred<T>() {
   return { promise, resolve, reject }
 }
 
-test('limitConcurrency queues requests over the cap and releases on response', async () => {
+test('limitConcurrency queues requests over the cap and releases on body end', async () => {
   const gate = deferred<Response>()
   let secondStarted = false
   const inner = vi.fn(async (input: RequestInfo | URL) => {
@@ -30,10 +30,107 @@ test('limitConcurrency queues requests over the cap and releases on response', a
   await Promise.resolve()
   expect(secondStarted).toBe(false)
 
+  // Headers arriving must not free the slot while the body is unread.
   gate.resolve(new Response('first'))
-  expect(await (await first).text()).toBe('first')
+  const firstResponse = await first
+  await Promise.resolve()
+  await Promise.resolve()
+  expect(secondStarted).toBe(false)
+
+  expect(await firstResponse.text()).toBe('first')
   expect(await (await second).text()).toBe('second')
   expect(secondStarted).toBe(true)
+})
+
+test('limitConcurrency releases when the response body is cancelled', async () => {
+  const inner = vi.fn(
+    async () =>
+      new Response(
+        // A stream that never ends on its own; only cancel frees the slot.
+        new ReadableStream<Uint8Array>({ pull: () => new Promise(() => {}) })
+      )
+  ) as unknown as typeof fetch
+
+  const limited = limitConcurrency(inner, 1)
+  const first = await limited('https://example.com/first')
+
+  let secondStarted = false
+  const second = limited('https://example.com/second').then((res) => {
+    secondStarted = true
+    return res
+  })
+
+  await Promise.resolve()
+  await Promise.resolve()
+  expect(secondStarted).toBe(false)
+
+  await first.body!.cancel()
+  const secondResponse = await second
+  expect(secondStarted).toBe(true)
+  await secondResponse.body!.cancel()
+})
+
+test('limitConcurrency releases when the response body errors', async () => {
+  let calls = 0
+  const inner = vi.fn(async () => {
+    calls++
+    if (calls === 1) {
+      return new Response(
+        new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.error(new Error('body boom'))
+          },
+        })
+      )
+    }
+    return new Response('ok')
+  }) as unknown as typeof fetch
+
+  const limited = limitConcurrency(inner, 1)
+  const first = await limited('https://example.com/first')
+  await expect(first.text()).rejects.toThrow('body boom')
+
+  const second = await limited('https://example.com/second')
+  expect(await second.text()).toBe('ok')
+})
+
+test('limitConcurrency releases immediately for bodiless responses', async () => {
+  const inner = vi.fn(
+    async () => new Response(null, { status: 204 })
+  ) as unknown as typeof fetch
+
+  const limited = limitConcurrency(inner, 1)
+  const first = await limited('https://example.com/first')
+  expect(first.status).toBe(204)
+
+  // The slot must be free even though the first body was never consumed.
+  const second = await limited('https://example.com/second')
+  expect(second.status).toBe(204)
+})
+
+test('limitConcurrency preserves response fields on the wrapped response', async () => {
+  const inner = vi.fn(async (input: RequestInfo | URL) => {
+    const res = new Response('payload', {
+      status: 201,
+      statusText: 'Created',
+      headers: { 'x-custom': 'yes' },
+    })
+    Object.defineProperties(res, {
+      url: { get: () => String(input) },
+      redirected: { get: () => true },
+    })
+    return res
+  }) as unknown as typeof fetch
+
+  const limited = limitConcurrency(inner, 1)
+  const res = await limited('https://example.com/resource')
+
+  expect(res.status).toBe(201)
+  expect(res.statusText).toBe('Created')
+  expect(res.headers.get('x-custom')).toBe('yes')
+  expect(res.url).toBe('https://example.com/resource')
+  expect(res.redirected).toBe(true)
+  expect(await res.text()).toBe('payload')
 })
 
 test('limitConcurrency releases when the underlying fetch rejects', async () => {
