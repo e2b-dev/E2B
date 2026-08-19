@@ -1,5 +1,16 @@
 # @e2b/cli
 
+## 2.16.3
+
+### Patch Changes
+
+- 2daced6: Tag the package homepage and README links with UTM parameters (`utm_source=npm`/`pypi`) so registry traffic to e2b.dev is attributed correctly. No functional change.
+- Updated dependencies [15bd48b]
+- Updated dependencies [5367693]
+- Updated dependencies [7af41e9]
+- Updated dependencies [2daced6]
+  - e2b@2.42.0
+
 ## 2.16.2
 
 ### Patch Changes
