@@ -207,6 +207,11 @@ class SharedPoolServer(threading.Thread):
         self.paths: List[str] = []
         self.errors: List[str] = []
         self._lock = threading.Lock()
+        # Set by the test in "drop" mode once it has consumed the event written
+        # before the fault, so the RST cannot race the response head: an
+        # immediate RST lets hyper fail the in-flight request with the
+        # connection error instead of yielding the event it already received.
+        self.drop_when = threading.Event()
 
     def run(self):
         while True:
@@ -285,6 +290,11 @@ class SharedPoolServer(threading.Thread):
                 if out:
                     sock.sendall(out)
                 if drop_connection:
+                    # Only tear the connection down once the client has read the
+                    # event just written: an immediate RST races the response
+                    # head, and hyper then fails the request itself instead of
+                    # yielding the event.
+                    self.drop_when.wait(5)
                     # RST the connection rather than closing it cleanly: a
                     # GOAWAY would tell the client to retire the connection,
                     # which is not what a sandbox disappearing looks like.

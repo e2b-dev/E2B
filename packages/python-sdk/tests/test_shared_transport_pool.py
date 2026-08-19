@@ -60,17 +60,22 @@ def _async_pool() -> ConnectionRetryTransport:
     )
 
 
-def _break_sync_stream(events) -> ConnectError:
+def _break_sync_stream(events, server) -> ConnectError:
     """Read the first event, then the failure the server injects after it."""
     assert_stdout_event(next(events))
+    # Release a "drop" server's RST only now that the event has been consumed,
+    # so the connection reset cannot race the response head (harmless for the
+    # "reset" server, which never waits on it).
+    server.drop_when.set()
     with pytest.raises(ConnectError) as excinfo:
         next(events)
     assert is_transport_failure(excinfo.value), excinfo.value
     return excinfo.value
 
 
-async def _break_async_stream(events) -> ConnectError:
+async def _break_async_stream(events, server) -> ConnectError:
     assert_stdout_event(await events.__anext__())
+    server.drop_when.set()
     with pytest.raises(ConnectError) as excinfo:
         await events.__anext__()
     assert is_transport_failure(excinfo.value), excinfo.value
@@ -88,7 +93,8 @@ def test_sync_stream_reset_leaves_the_shared_connection_usable():
             _break_sync_stream(
                 make_sync_client(
                     server.port, transport=SyncPlainHTTPErrorTransport(pool)
-                ).connect(ConnectRequest())
+                ).connect(ConnectRequest()),
+                server,
             )
             assert check_sandbox_health(envd_api) is True
             # One TCP connection served the RPC and the probe: the reset took
@@ -110,7 +116,8 @@ def test_sync_dropped_connection_redials_for_the_health_probe():
             _break_sync_stream(
                 make_sync_client(
                     server.port, transport=SyncPlainHTTPErrorTransport(pool)
-                ).connect(ConnectRequest())
+                ).connect(ConnectRequest()),
+                server,
             )
             # The probe must not be answered from the dead pooled connection.
             assert check_sandbox_health(envd_api) is True
@@ -130,7 +137,8 @@ async def test_async_stream_reset_leaves_the_shared_connection_usable():
             await _break_async_stream(
                 make_async_client(
                     server.port, transport=PlainHTTPErrorTransport(pool)
-                ).connect(ConnectRequest())
+                ).connect(ConnectRequest()),
+                server,
             )
             assert await acheck_sandbox_health(envd_api) is True
             assert len(server.connections) == 1
@@ -150,7 +158,8 @@ async def test_async_dropped_connection_redials_for_the_health_probe():
             await _break_async_stream(
                 make_async_client(
                     server.port, transport=PlainHTTPErrorTransport(pool)
-                ).connect(ConnectRequest())
+                ).connect(ConnectRequest()),
+                server,
             )
             assert await acheck_sandbox_health(envd_api) is True
             assert len(server.connections) == 2
