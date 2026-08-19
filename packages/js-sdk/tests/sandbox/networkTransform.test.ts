@@ -3,6 +3,10 @@ import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
 import { InvalidArgumentError, Sandbox, Secret } from '../../src'
+import type {
+  SandboxNetworkTransformContext,
+  SandboxNetworkTransformResolver,
+} from '../../src'
 import { TEST_API_KEY, apiUrl } from '../setup'
 
 const sandboxId = 'test-sandbox-id'
@@ -161,7 +165,19 @@ test('transform callback rejects an unregistered iam token', async () => {
   expect(lastCreateBody).toBeUndefined()
 })
 
-test.for(['constructor', '__proto__', 'hasOwnProperty'])(
+test.for([
+  'constructor',
+  '__proto__',
+  'hasOwnProperty',
+  // The runtime reads these four off any object it serializes, awaits or
+  // coerces, which used to exempt them from the guard: 'then' and 'toJSON'
+  // shipped "Bearer undefined", 'toString' and 'valueOf' the source of a
+  // built-in function.
+  'toJSON',
+  'then',
+  'toString',
+  'valueOf',
+])(
   'transform callback rejects an unregistered iam token named %s',
   async (name: string) => {
     // Inherited Object.prototype members are not registered tokens; resolving
@@ -184,6 +200,42 @@ test.for(['constructor', '__proto__', 'hasOwnProperty'])(
         },
       })
     ).rejects.toThrowError(`iam token '${name}', which is not registered`)
+
+    expect(lastCreateBody).toBeUndefined()
+  }
+)
+
+test.for([
+  [
+    'assigning',
+    ({ iam }: SandboxNetworkTransformContext) => {
+      iam.tokens.gcp = '${e2b.identity.tokens.gcp}'
+      return { headers: { Authorization: `Bearer ${iam.tokens.gcp}` } }
+    },
+  ],
+  [
+    'deleting',
+    ({ iam }: SandboxNetworkTransformContext) => {
+      delete iam.tokens.aws
+      return { headers: { Authorization: `Bearer ${iam.tokens.aws}` } }
+    },
+  ],
+])(
+  'transform callback rejects %s an iam token',
+  async ([, transform]: [string, SandboxNetworkTransformResolver]) => {
+    // iam.tokens mirrors what the sandbox registers, so a callback that writes
+    // to it would only make the guard disagree with the sandbox: an assigned
+    // name resolves to a placeholder the proxy has no token for, and a deleted
+    // one is reported as unregistered while still being registered.
+    await expect(
+      Sandbox.create('base', {
+        apiKey: TEST_API_KEY,
+        iam: { tokens: { aws: awsToken } },
+        network: {
+          rules: { 'api.internal.example.com': [{ transform }] },
+        },
+      })
+    ).rejects.toThrowError(/iam\.tokens is a read-only view/)
 
     expect(lastCreateBody).toBeUndefined()
   }
