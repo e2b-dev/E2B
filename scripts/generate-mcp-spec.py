@@ -14,12 +14,14 @@ catalog into the JSON Schema the SDKs generate their `McpServer` types from,
 so the schema stays a mechanical projection of the catalog and is never
 edited by hand.
 
-Property names follow the catalog entry they come from: secrets are named
-after their environment variable (minus a redundant server-name prefix, which
-is how the catalog spells server-scoped variables such as `ATLAN_API_KEY`),
-parameters after their config key, with nested parameter objects flattened
-into one camelCase name. A server is required to have all of its secrets set
-unless its parameters declare their own `required` list.
+Property names follow the catalog entry they come from. Secrets are named
+after their environment variable, minus the server's own name when the
+catalog repeats it there — `ATLAN_API_KEY` on `atlan` is `apiKey`, while
+`GEMINI_API_KEY` on `browserbase` stays `geminiApiKey`. That comparison is
+against the catalog name as spelled, so a hyphenated name never matches the
+underscored variable and keeps the prefix: `AIRTABLE_API_KEY` on
+`airtable-mcp-server` is `airtableApiKey`. Parameters are named after their
+config key, with nested parameter objects flattened into one camelCase name.
 
 `pnpm generate:mcp-spec` runs this and then refreshes the generated SDK types.
 """
@@ -33,8 +35,6 @@ import sys
 import urllib.request
 from pathlib import Path
 from typing import Any
-
-import yaml
 
 CATALOG_URL = "https://desktop.docker.com/mcp/catalog/v2/catalog.yaml"
 SPEC_PATH = Path(__file__).resolve().parent.parent / "spec" / "mcp-server.json"
@@ -61,18 +61,15 @@ def _camel(words: list[str]) -> str:
 def option_name(name: str) -> str:
     """`aws-cdk-mcp-server` -> `awsCdk`."""
     for suffix in NAME_SUFFIXES:
-        if name.endswith(suffix):
-            name = name[: -len(suffix)]
-    if name.startswith(NAME_PREFIX):
-        name = name[len(NAME_PREFIX) :]
+        name = name.removesuffix(suffix)
+    name = name.removeprefix(NAME_PREFIX)
     return _camel([w.lower() for w in re.split(r"[-_ ]+", name) if w])
 
 
 def env_property(env: str, server: str) -> str:
-    """`ATLAN_API_KEY` on server `atlan` -> `apiKey`."""
-    prefix = f"{server.upper()}_"
-    if env.startswith(prefix):
-        env = env[len(prefix) :]
+    """`ATLAN_API_KEY` on `atlan` -> `apiKey`, but `airtable-mcp-server` keeps
+    the prefix of `AIRTABLE_API_KEY` because its name doesn't match."""
+    env = env.removeprefix(f"{server.upper()}_")
     return _camel([w.lower() for w in env.split("_") if w])
 
 
@@ -83,7 +80,9 @@ def parameter_property(path: list[str]) -> str:
         words = [w for w in re.split(r"[-_]+", segment) if w]
         # Keys that aren't snake_case are already spelled the way the catalog
         # wants them (`SchemaPath`, `nodeenv`), so leave their casing alone.
-        segments.append(segment if len(words) < 2 else _camel([w.lower() for w in words]))
+        segments.append(
+            segment if len(words) < 2 else _camel([w.lower() for w in words])
+        )
     return _camel(segments)
 
 
@@ -103,19 +102,26 @@ def _parameters(
     """Flattens a parameters object into (property name, schema, required) triples.
 
     Also reports whether the object (or any object nested in it) says which of
-    its properties are required.
+    its properties are required. When none of them does, every property is
+    taken as required, which is how the schema this generates has always read
+    those blocks — the alternative reading, that such a block requires nothing,
+    would make 187 properties across 78 servers optional.
     """
     declared = schema.get("required")
     out = []
     declares = declared is not None
     for prop, sub in (schema.get("properties") or {}).items():
-        required = required_parent and (prop in declared if declared is not None else True)
+        required = required_parent and (
+            prop in declared if declared is not None else True
+        )
         if sub.get("type") == "object" and sub.get("properties"):
             nested, nested_declares = _parameters(sub, path + [prop], required)
             out += nested
             declares = declares or nested_declares
         else:
-            out.append((parameter_property(path + [prop]), _property_schema(sub), required))
+            out.append(
+                (parameter_property(path + [prop]), _property_schema(sub), required)
+            )
     return out, declares
 
 
@@ -133,10 +139,8 @@ def server_schema(name: str, entry: dict[str, Any]) -> dict[str, Any]:
         properties[prop] = {"type": "string"}
         required.append(prop)
 
-    declares_required = False
     for config in entry.get("config") or []:
         parameters, declares = _parameters(config, [], True)
-        declares_required = declares_required or declares
         for prop, schema, _ in parameters:
             properties[prop] = schema
         needed = [prop for prop, _, is_required in parameters if is_required]
@@ -144,8 +148,6 @@ def server_schema(name: str, entry: dict[str, Any]) -> dict[str, Any]:
         # replace the secrets, which the server only needs for the features the
         # caller opts into.
         required = needed if declares else required + needed
-    if not declares_required:
-        required.sort()
 
     schema: dict[str, Any] = {}
     if entry.get("title"):
@@ -153,7 +155,9 @@ def server_schema(name: str, entry: dict[str, Any]) -> dict[str, Any]:
     if entry.get("description"):
         schema["description"] = entry["description"]
     if required:
-        schema["required"] = required
+        # An unordered set in JSON Schema, sorted so that the file doesn't move
+        # when the catalog reorders a server's keys.
+        schema["required"] = sorted(required)
     schema["additionalProperties"] = False
     if properties:
         schema["properties"] = {prop: properties[prop] for prop in sorted(properties)}
@@ -162,11 +166,25 @@ def server_schema(name: str, entry: dict[str, Any]) -> dict[str, Any]:
     return schema
 
 
+def dropped_by_collision(catalog: dict[str, Any]) -> dict[str, list[str]]:
+    """Catalog entries that lose their option name to a later one.
+
+    A few servers share an option name once the "mcp server" wording is
+    dropped, e.g. `apify` and `apify-mcp-server`. The longer name wins, which
+    is what the schema this generates has always shipped, so `playwright`
+    configures ExecuteAutomation's server and Docker's own is unreachable.
+    """
+    taken: dict[str, list[str]] = {}
+    for name in sorted(catalog):
+        taken.setdefault(option_name(name), []).append(name)
+    return {option: names[:-1] for option, names in taken.items() if len(names) > 1}
+
+
 def generate(catalog: dict[str, Any]) -> dict[str, Any]:
-    # A few servers share a name once the "mcp server" wording is dropped, e.g.
-    # `apify` and `apify-mcp-server`. Going through the names in order keeps the
-    # more specifically named entry, which is the one the catalog maintains.
-    servers = {option_name(name): server_schema(name, catalog[name]) for name in sorted(catalog)}
+    servers = {
+        option_name(name): server_schema(name, catalog[name])
+        for name in sorted(catalog)
+    }
     return {
         "additionalProperties": False,
         "properties": {prop: servers[prop] for prop in sorted(servers)},
@@ -175,6 +193,8 @@ def generate(catalog: dict[str, Any]) -> dict[str, Any]:
 
 
 def read_catalog(source: str) -> dict[str, Any]:
+    import yaml
+
     if source.startswith(("http://", "https://")):
         with urllib.request.urlopen(source, timeout=60) as response:
             raw = response.read()
@@ -189,17 +209,22 @@ def read_catalog(source: str) -> dict[str, Any]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--catalog", default=CATALOG_URL, help="catalog URL or local file")
+    parser.add_argument(
+        "--catalog", default=CATALOG_URL, help="catalog URL or local file"
+    )
     args = parser.parse_args()
 
     registry = read_catalog(args.catalog)
-    spec = json.dumps(generate(registry), indent=2, ensure_ascii=False)
+    spec = generate(registry)
+    for option, names in dropped_by_collision(registry).items():
+        print(f"Dropped {', '.join(names)}: {option} is taken by a longer catalog name")
+    text = json.dumps(spec, indent=2, ensure_ascii=False)
     # Match the escaping of the Go encoder the catalog is published with, so
     # that re-running the generator doesn't rewrite unrelated descriptions.
     for char, escape in (("&", "\\u0026"), ("<", "\\u003c"), (">", "\\u003e")):
-        spec = spec.replace(char, escape)
-    SPEC_PATH.write_text(spec, encoding="utf-8")
-    print(f"Wrote {len(registry)} MCP servers to {SPEC_PATH}")
+        text = text.replace(char, escape)
+    SPEC_PATH.write_text(text, encoding="utf-8")
+    print(f"Wrote {len(spec['properties'])} MCP servers to {SPEC_PATH}")
 
 
 if __name__ == "__main__":

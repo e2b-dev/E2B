@@ -24,9 +24,9 @@
       "title": "Azure Kubernetes Service (AKS)",
       "description": "Azure Kubernetes Service (AKS) official MCP server.",
       "required": [
+        "accessLevel",
         "azureDir",
-        "kubeconfig",
-        "accessLevel"
+        "kubeconfig"
       ],
       "additionalProperties": false,
       "properties": {
@@ -3942,9 +3942,9 @@
       "title": "SchemaCrawler AI",
       "description": "The SchemaCrawler AI MCP Server enables natural language interaction with your database schema using an MCP client in \"Agent\" mode. It allows users to explore tables, columns, foreign keys, triggers, stored procedures and more simply by asking questions like \"Explain the code for the interest calculation stored procedure\". You can also ask it to help with SQL, since it knows your schema. This is ideal for developers, DBAs, and data analysts who want to streamline schema comprehension and query development without diving into dense documentation.",
       "required": [
-        "urlConnectionJdbcUrl",
-        "serverConnectionServer",
         "generalInfoLevel",
+        "serverConnectionServer",
+        "urlConnectionJdbcUrl",
         "volumeHostShare"
       ],
       "additionalProperties": false,
