@@ -1,0 +1,5 @@
+---
+'e2b': patch
+---
+
+Count a request as in-flight until its response body ends rather than until the response headers arrive, so the cap set by `E2B_API_INFLIGHT_REQUESTS`/`E2B_ENVD_INFLIGHT_REQUESTS` matches what the dispatcher is actually holding. `fetch` resolves at the headers while the connection — an HTTP/2 stream — stays busy for as long as the body streams, so a workload of streaming requests (`logs`, command execution, file reads) could run far past the configured limit and still exhaust the dispatcher with `ERR_HTTP2_TOO_MANY_CONCURRENT_STREAMS`. A slot is now handed back when the body is read to its end, cancelled, or errors, and right away for responses that carry no body (a null-body status, `Content-Length: 0`, or a HEAD response), which the HTTP clients return without ever reading.
