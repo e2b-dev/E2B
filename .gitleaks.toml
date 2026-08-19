@@ -1,0 +1,31 @@
+title = "E2B secret scanning"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = """
+Known non-secrets.
+
+paths: lockfiles and the Copybara-synced specs carry integrity hashes and
+base64 blobs that trip the entropy rules but never hold credentials. Listing a
+path here skips the whole file, so it is reserved for generated content.
+
+regexes (matched against the whole line, so the surrounding files stay
+scanned): the envd access token in the 'static signing key comparison' test is
+a fixed input chosen so the SHA-256 signature is deterministic, and the digest
+asserted in that same test is derived from it. It grants nothing, and
+parameterising it would break the assertion without removing a real secret.
+"""
+regexTarget = "line"
+
+paths = [
+  '''(^|/)pnpm-lock\.yaml$''',
+  '''(^|/)uv\.lock$''',
+  '''(^|/)spec/.*\.(ya?ml|json)$''',
+  '''(^|/)readme-assets/''',
+]
+
+regexes = [
+  '''const envdAccessToken = '[A-Za-z0-9]{32}'''',
+]
