@@ -145,3 +145,51 @@ async def test_async_create_rejects_auto_resume_without_a_timeout_action(
 ):
     with pytest.raises(InvalidArgumentException):
         await AsyncSandbox.create(api_key=test_api_key, lifecycle=lifecycle)
+
+
+# `None` expects autoResume to be absent from the payload: an unconfigured
+# preference is not an explicit opt-out, so the API keeps ownership of the
+# default instead of receiving {"enabled": False}.
+AUTO_RESUME_CASES = [
+    pytest.param(None, None, id="no-lifecycle"),
+    pytest.param({"on_timeout": "pause"}, None, id="only-on-timeout"),
+    pytest.param(
+        {"on_timeout": "pause", "auto_resume": False},
+        {"enabled": False},
+        id="explicit-false",
+    ),
+    pytest.param(
+        {"on_timeout": "pause", "auto_resume": True},
+        {"enabled": True},
+        id="explicit-true",
+    ),
+    pytest.param(
+        cast(Any, {"on_timeout": "pause", "auto_resume": None}),
+        None,
+        id="explicit-none",
+    ),
+]
+
+
+@pytest.mark.parametrize("lifecycle, auto_resume", AUTO_RESUME_CASES)
+def test_create_sends_auto_resume_only_when_configured(
+    monkeypatch, test_api_key, lifecycle, auto_resume
+):
+    body = _sync_request_body(monkeypatch, test_api_key, lifecycle)
+
+    if auto_resume is None:
+        assert "autoResume" not in body
+    else:
+        assert body["autoResume"] == auto_resume
+
+
+@pytest.mark.parametrize("lifecycle, auto_resume", AUTO_RESUME_CASES)
+async def test_async_create_sends_auto_resume_only_when_configured(
+    monkeypatch, test_api_key, lifecycle, auto_resume
+):
+    body = await _async_request_body(monkeypatch, test_api_key, lifecycle)
+
+    if auto_resume is None:
+        assert "autoResume" not in body
+    else:
+        assert body["autoResume"] == auto_resume

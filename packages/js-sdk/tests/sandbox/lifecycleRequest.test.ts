@@ -35,6 +35,7 @@ test('Sandbox.create omits autoPause when no lifecycle is configured', async () 
   expect(lastCreateBody).toBeDefined()
   expect(lastCreateBody).not.toHaveProperty('autoPause')
   expect(lastCreateBody).not.toHaveProperty('autoPauseMemory')
+  expect(lastCreateBody).not.toHaveProperty('autoResume')
 })
 
 test('Sandbox.create sends autoPause: false for an explicit kill', async () => {
@@ -45,6 +46,7 @@ test('Sandbox.create sends autoPause: false for an explicit kill', async () => {
 
   expect(lastCreateBody?.autoPause).toBe(false)
   expect(lastCreateBody).not.toHaveProperty('autoPauseMemory')
+  expect(lastCreateBody).not.toHaveProperty('autoResume')
 })
 
 test('Sandbox.create sends autoPause: true for an explicit pause', async () => {
@@ -56,6 +58,7 @@ test('Sandbox.create sends autoPause: true for an explicit pause', async () => {
   expect(lastCreateBody?.autoPause).toBe(true)
   // Bare 'pause' expresses no preference about the snapshot kind.
   expect(lastCreateBody).not.toHaveProperty('autoPauseMemory')
+  expect(lastCreateBody).not.toHaveProperty('autoResume')
 })
 
 test('Sandbox.create omits autoPauseMemory when pause omits keepMemory', async () => {
@@ -66,6 +69,7 @@ test('Sandbox.create omits autoPauseMemory when pause omits keepMemory', async (
 
   expect(lastCreateBody?.autoPause).toBe(true)
   expect(lastCreateBody).not.toHaveProperty('autoPauseMemory')
+  expect(lastCreateBody).not.toHaveProperty('autoResume')
 })
 
 test('Sandbox.create sends the pause snapshot kind alongside autoPause', async () => {
@@ -76,6 +80,7 @@ test('Sandbox.create sends the pause snapshot kind alongside autoPause', async (
 
   expect(lastCreateBody?.autoPause).toBe(true)
   expect(lastCreateBody?.autoPauseMemory).toBe(false)
+  expect(lastCreateBody).not.toHaveProperty('autoResume')
 
   await Sandbox.create('base', {
     apiKey: TEST_API_KEY,
@@ -84,6 +89,7 @@ test('Sandbox.create sends the pause snapshot kind alongside autoPause', async (
 
   expect(lastCreateBody?.autoPause).toBe(true)
   expect(lastCreateBody?.autoPauseMemory).toBe(true)
+  expect(lastCreateBody).not.toHaveProperty('autoResume')
 })
 
 test('Sandbox.create omits autoPause for a lifecycle without onTimeout', async () => {
@@ -96,6 +102,7 @@ test('Sandbox.create omits autoPause for a lifecycle without onTimeout', async (
 
   expect(lastCreateBody).toBeDefined()
   expect(lastCreateBody).not.toHaveProperty('autoPause')
+  expect(lastCreateBody?.autoResume).toEqual({ enabled: false })
 
   await Sandbox.create('base', {
     apiKey: TEST_API_KEY,
@@ -104,6 +111,7 @@ test('Sandbox.create omits autoPause for a lifecycle without onTimeout', async (
 
   expect(lastCreateBody).toBeDefined()
   expect(lastCreateBody).not.toHaveProperty('autoPause')
+  expect(lastCreateBody).not.toHaveProperty('autoResume')
 })
 
 test('Sandbox.create rejects autoResume without a timeout action', async () => {
@@ -117,4 +125,32 @@ test('Sandbox.create rejects autoResume without a timeout action', async () => {
   ).rejects.toThrowError(InvalidArgumentError)
 
   expect(lastCreateBody).toBeUndefined()
+})
+
+test('an explicit autoResume: false is sent', async () => {
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    lifecycle: { onTimeout: 'pause', autoResume: false },
+  })
+
+  expect(lastCreateBody?.autoResume).toEqual({ enabled: false })
+})
+
+test('an explicit autoResume: true is sent', async () => {
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    lifecycle: { onTimeout: 'pause', autoResume: true },
+  })
+
+  expect(lastCreateBody?.autoResume).toEqual({ enabled: true })
+})
+
+test('an explicit null autoResume from an untyped caller is omitted', async () => {
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    // @ts-expect-error null is not a valid autoResume value
+    lifecycle: { onTimeout: 'pause', autoResume: null },
+  })
+
+  expect(lastCreateBody).not.toHaveProperty('autoResume')
 })

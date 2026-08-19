@@ -531,7 +531,7 @@ class SandboxLifecycle(TypedDict):
     """
     Sandbox lifecycle configuration; defines post-timeout behavior and auto-resume
     settings. An omitted `on_timeout` leaves the choice to the API (currently
-    `"kill"`); `auto_resume` defaults to `False`.
+    `"kill"`); an omitted `auto_resume` leaves the choice to the API.
     """
 
     on_timeout: SandboxOnTimeout
@@ -546,10 +546,11 @@ class SandboxLifecycle(TypedDict):
 
     auto_resume: NotRequired[bool]
     """
-    Whether activity should cause the sandbox to resume when paused. Defaults to `False`.
-    Can be `True` only when `on_timeout` is `pause`. Not supported when
-    `keep_memory` is `False` (a filesystem-only snapshot must be resumed
-    explicitly via `connect()`).
+    Whether activity should cause the sandbox to resume when paused. Leave unset
+    to let the API pick the behavior. Set `False` to opt out explicitly and keep
+    auto-resume off even if the API's default changes. Can be `True` only when
+    `on_timeout` is `pause`. Not supported when `keep_memory` is `False`
+    (a filesystem-only snapshot must be resumed explicitly via `connect()`).
     """
 
 
@@ -795,7 +796,7 @@ class SandboxLifecycleBody:
 
     auto_pause: Union[Unset, bool]
     auto_pause_memory: Union[Unset, bool]
-    auto_resume: ClientSandboxAutoResumeConfig
+    auto_resume: Union[Unset, ClientSandboxAutoResumeConfig]
 
 
 def build_lifecycle_config(
@@ -841,7 +842,7 @@ def build_lifecycle_config(
     # actually provided.
     if keep_memory is None:
         keep_memory = True
-    auto_resume = lifecycle.get("auto_resume", False) if lifecycle else False
+    auto_resume = lifecycle.get("auto_resume") if lifecycle else None
 
     if auto_resume and on_timeout != "pause":
         raise InvalidArgumentException(
@@ -860,7 +861,11 @@ def build_lifecycle_config(
         auto_pause_memory=(
             keep_memory if on_timeout == "pause" and keep_memory_provided else UNSET
         ),
-        auto_resume=ClientSandboxAutoResumeConfig(enabled=auto_resume),
+        auto_resume=(
+            ClientSandboxAutoResumeConfig(enabled=auto_resume)
+            if auto_resume is not None
+            else UNSET
+        ),
     )
 
 
