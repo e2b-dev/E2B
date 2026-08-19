@@ -14,4 +14,4 @@ of one per stack. Streamed downloads keep a pool of their own, the only one
 carrying the idle `read_timeout`: reqwest's read timer runs during body send and
 TTFB, so on a shared pool it would cut off long uploads. No signature changes —
 `get_transport` and `get_envd_transport` keep the `http2` parameter restored in
-2.38.1, and the two are now the same pool per key rather than two.
+2.39.1, and the two are now the same pool per key rather than two.
