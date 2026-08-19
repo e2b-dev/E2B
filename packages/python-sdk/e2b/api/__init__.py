@@ -5,6 +5,7 @@ import re
 from dataclasses import dataclass
 from types import TracebackType
 from typing import NamedTuple, Optional, Protocol, Tuple, Union
+from urllib.parse import quote
 
 import httpx
 from httpx import AsyncBaseTransport, BaseTransport, Timeout
@@ -20,6 +21,18 @@ from e2b.exceptions import (
     RateLimitException,
     SandboxException,
 )
+
+
+def encode_path_param(value: str) -> str:
+    """
+    Percent-encode a template ID, name, or alias for use as one URL path segment.
+
+    Endpoints that take a template ID also accept a name, which may be
+    namespaced (``namespace/name``) and carry a ``:tag``. Escaping those
+    separators keeps the value inside a single segment instead of splitting the
+    route, matching the JS SDK's ``encodeURIComponent``.
+    """
+    return quote(value, safe="")
 
 
 def make_logging_event_hooks(log: Optional[logging.Logger]) -> dict:
