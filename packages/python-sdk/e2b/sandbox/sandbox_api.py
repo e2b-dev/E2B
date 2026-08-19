@@ -23,9 +23,6 @@ from e2b.api.client.models import (
     SandboxState,
 )
 from e2b.api.client.models import (
-    SandboxAutoResumeConfig as ClientSandboxAutoResumeConfig,
-)
-from e2b.api.client.models import (
     SandboxLifecycle as ClientSandboxLifecycle,
 )
 from e2b.api.client.models import (
@@ -61,7 +58,7 @@ from e2b.api.client.models import (
 from e2b.api.client.models import (
     SandboxNetworkUpdateConfigRules,
 )
-from e2b.api.client.types import UNSET, Unset
+from e2b.api.client.types import Unset
 from e2b.connection_config import ApiParams
 from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox.mcp import McpServer as BaseMcpServer
@@ -783,75 +780,6 @@ def build_iam_config(
     body = ClientSandboxIam()
     body.tokens = client_tokens
     return body
-
-
-@dataclass(frozen=True)
-class SandboxLifecycleBody:
-    """Lifecycle fields of a create-sandbox request, as ``NewSandbox`` takes them."""
-
-    auto_pause: Union[Unset, bool]
-    auto_pause_memory: Union[Unset, bool]
-    auto_resume: ClientSandboxAutoResumeConfig
-
-
-def build_lifecycle_config(
-    lifecycle: Optional[SandboxLifecycle],
-) -> SandboxLifecycleBody:
-    """Resolve a :class:`SandboxLifecycle` into the create-request lifecycle fields.
-
-    ``auto_pause`` is left unset when no ``on_timeout`` was configured: sending
-    ``False`` would be indistinguishable from an explicit ``"kill"`` and would
-    override the default the API owns.
-    """
-    # on_timeout accepts a bare action or {"action", "keep_memory"}; normalize.
-    # Only the object form carries keep_memory; anything else (a bare action
-    # string, or an unexpected value from an untyped caller) passes through as
-    # the action, so a non-"pause" value resolves to kill instead of crashing.
-    on_timeout_raw = lifecycle.get("on_timeout") if lifecycle else None
-    # A missing on_timeout — or an explicit None from an untyped caller — is not
-    # a choice of kill. It only resolves to kill semantics locally, for the
-    # validation below and for keep_memory.
-    on_timeout_configured = on_timeout_raw is not None
-    if isinstance(on_timeout_raw, dict):
-        on_timeout = on_timeout_raw.get("action", "kill")
-        keep_memory_provided = "keep_memory" in on_timeout_raw
-        keep_memory = on_timeout_raw.get("keep_memory")
-    else:
-        on_timeout = on_timeout_raw or "kill"
-        keep_memory = None
-        keep_memory_provided = False
-
-    # keep_memory only governs a pause action. The discriminated union type
-    # forbids it on action="kill"; re-check at runtime for callers that
-    # bypass the type.
-    if keep_memory_provided and on_timeout != "pause":
-        raise InvalidArgumentException(
-            "keep_memory is only allowed when on_timeout action is 'pause'."
-        )
-
-    # A missing or explicit None keep_memory defaults to True (full memory),
-    # mirroring the JS SDK; sending null would wrongly read as filesystem-only.
-    if keep_memory is None:
-        keep_memory = True
-    auto_resume = lifecycle.get("auto_resume", False) if lifecycle else False
-
-    if auto_resume and on_timeout != "pause":
-        raise InvalidArgumentException(
-            "auto_resume can only be True when on_timeout action is 'pause'."
-        )
-
-    if not keep_memory and auto_resume:
-        raise InvalidArgumentException(
-            "auto_resume: True is not a valid value when keep_memory: False - "
-            "a filesystem-only snapshot cannot be auto-resumed by traffic and "
-            "must be resumed explicitly using Sandbox.connect()."
-        )
-
-    return SandboxLifecycleBody(
-        auto_pause=(on_timeout == "pause") if on_timeout_configured else UNSET,
-        auto_pause_memory=keep_memory if on_timeout == "pause" else UNSET,
-        auto_resume=ClientSandboxAutoResumeConfig(enabled=auto_resume),
-    )
 
 
 def build_network_update_body(
