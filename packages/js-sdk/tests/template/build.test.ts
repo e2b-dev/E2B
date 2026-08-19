@@ -6,11 +6,13 @@ import { defaultBuildLogger, Template, waitForTimeout } from '../../src'
 import { buildTemplateTest } from '../setup'
 
 // The file context lives in a temp directory so a test run never writes into
-// the repository tree.
-const contextPath = fs.mkdtempSync(path.join(os.tmpdir(), 'js-build-test-'))
-const folderPath = path.join(contextPath, 'folder')
+// the repository tree. It is created in beforeAll rather than at module load so
+// that a skipped or filtered run does not orphan a temp directory.
+let contextPath: string
 
 beforeAll(async () => {
+  contextPath = fs.mkdtempSync(path.join(os.tmpdir(), 'js-build-test-'))
+  const folderPath = path.join(contextPath, 'folder')
   fs.mkdirSync(folderPath, { recursive: true })
   fs.writeFileSync(path.join(folderPath, 'test.txt'), 'This is a test file.')
 
@@ -28,7 +30,9 @@ beforeAll(async () => {
 })
 
 afterAll(() => {
-  fs.rmSync(contextPath, { recursive: true, force: true })
+  if (contextPath) {
+    fs.rmSync(contextPath, { recursive: true, force: true })
+  }
 })
 
 buildTemplateTest('build template', async ({ buildTemplate }) => {
