@@ -1180,7 +1180,7 @@ export class SandboxApi {
       signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
-    if (res.error?.code === 404) {
+    if (res.response.status === 404) {
       return false
     }
 
@@ -1216,7 +1216,7 @@ export class SandboxApi {
       signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
-    if (res.error?.code === 404) {
+    if (res.response.status === 404) {
       throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
@@ -1316,7 +1316,7 @@ export class SandboxApi {
       signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
-    if (res.error?.code === 404) {
+    if (res.response.status === 404) {
       throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
@@ -1371,7 +1371,7 @@ export class SandboxApi {
       signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
-    if (res.error?.code === 404) {
+    if (res.response.status === 404) {
       throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
@@ -1409,7 +1409,7 @@ export class SandboxApi {
       signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
-    if (res.error?.code === 404) {
+    if (res.response.status === 404) {
       throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
@@ -1446,11 +1446,11 @@ export class SandboxApi {
       signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
-    if (res.error?.code === 404) {
+    if (res.response.status === 404) {
       throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
-    if (res.error?.code === 409) {
+    if (res.response.status === 409) {
       // Sandbox is already paused
       return false
     }
@@ -1502,7 +1502,7 @@ export class SandboxApi {
       signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
-    if (res.error?.code === 404) {
+    if (res.response.status === 404) {
       throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
@@ -1552,7 +1552,7 @@ export class SandboxApi {
       signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
-    if (res.error?.code === 404) {
+    if (res.response.status === 404) {
       return false
     }
 
@@ -1755,7 +1755,7 @@ export class SandboxApi {
       signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
     })
 
-    if (res.error?.code === 404) {
+    if (res.response.status === 404) {
       throw new SandboxNotFoundError(`Paused sandbox ${sandboxId} not found`)
     }
 
