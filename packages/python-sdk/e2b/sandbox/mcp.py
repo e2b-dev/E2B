@@ -40,6 +40,31 @@ class Aks(TypedDict, closed=True):
     """
 
 
+class Alfresco(TypedDict, closed=True):
+    alfrescoHost: str
+
+
+class AmazonKendraIndex(TypedDict, closed=True):
+    awsProfile: NotRequired[str]
+    awsRegion: NotRequired[str]
+    kendraIndexId: str
+
+
+class AmazonNeptune(TypedDict, closed=True):
+    awsProfile: NotRequired[str]
+    awsRegion: NotRequired[str]
+    neptuneEndpoint: str
+
+
+class AmazonQbusinessAnonymous(TypedDict, closed=True):
+    awsAccessKeyId: NotRequired[str]
+    awsProfile: NotRequired[str]
+    awsRegion: NotRequired[str]
+    awsSecretAccessKey: NotRequired[str]
+    awsSessionToken: NotRequired[str]
+    qbusinessApplicationId: str
+
+
 class ApiGateway(TypedDict, closed=True):
     api1HeaderAuthorization: str
     api1Name: str
@@ -52,6 +77,18 @@ class Apify(TypedDict, closed=True):
     """
     Comma-separated list of tools to enable. Can be either a tool category, a specific tool, or an Apify Actor. For example: "actors,docs,apify/rag-web-browser". For more details visit https://mcp.apify.com.
     """
+
+
+class Arm(TypedDict, closed=True):
+    sshKnownHostsPath: NotRequired[str]
+    """
+    Optional path to an SSH known_hosts file for Arm Performix remote target access
+    """
+    sshPrivateKeyPath: NotRequired[str]
+    """
+    Optional path to an SSH private key for Arm Performix remote target access
+    """
+    workspacePath: str
 
 
 class Arxiv(TypedDict, closed=True):
@@ -96,9 +133,179 @@ class AudienseInsights(TypedDict, closed=True):
     twitterBearerToken: NotRequired[str]
 
 
+class AwsApi(TypedDict, closed=True):
+    awsAccessKeyId: str
+    awsProfileName: str
+    awsRegion: str
+    awsSecretAccessKey: str
+    awsSessionToken: str
+
+
+class AwsAppsync(TypedDict, closed=True):
+    awsAccessKeyId: str
+    awsProfile: str
+    awsRegion: str
+    awsSecretAccessKey: str
+    awsSessionToken: str
+
+
+class AwsBedrockCustomModelImport(TypedDict, closed=True):
+    awsAccessKeyId: str
+    awsProfile: str
+    awsRegion: str
+    awsSecretAccessKey: str
+    awsSessionToken: str
+    bedrockModelImportS3Bucket: str
+
+
+class AwsBedrockDataAutomation(TypedDict, closed=True):
+    awsBucketName: str
+    awsProfile: NotRequired[str]
+    awsRegion: NotRequired[str]
+
+
+class AwsDataprocessing(TypedDict, closed=True):
+    awsProfile: str
+    awsRegion: str
+
+
+class AwsDiagram(TypedDict, closed=True):
+    outputDir: str
+
+
+class AwsHealthomics(TypedDict, closed=True):
+    awsProfile: str
+    awsRegion: str
+
+
+class AwsIotSitewise(TypedDict, closed=True):
+    awsProfile: str
+    awsRegion: str
+
+
 class AwsKbRetrievalServer(TypedDict, closed=True):
     accessKeyId: str
     awsSecretAccessKey: NotRequired[str]
+
+
+class AwsLocation(TypedDict, closed=True):
+    awsAccessKeyId: str
+    awsProfile: str
+    awsRegion: str
+    awsSecretAccessKey: str
+    awsSessionToken: str
+
+
+class AwsMsk(TypedDict, closed=True):
+    awsAccessKeyId: str
+    awsProfile: str
+    awsRegion: str
+    awsSecretAccessKey: str
+    awsSessionToken: str
+
+
+class AwsPricing(TypedDict, closed=True):
+    awsAccessKeyId: str
+    awsProfile: str
+    awsRegion: str
+    awsSecretAccessKey: str
+    awsSessionToken: str
+
+
+class AwslabsBillingCostManagement(TypedDict, closed=True):
+    awsProfile: str
+    awsRegion: str
+    storageLensManifestLocation: str
+
+
+class AwslabsCcapi(TypedDict, closed=True):
+    awsAccessKeyId: str
+    awsProfile: str
+    awsRegion: str
+    awsSecretAccessKey: str
+
+
+class AwslabsCfn(TypedDict, closed=True):
+    awsAccessKeyId: str
+    awsProfile: str
+    awsRegion: str
+    awsSecretAccessKey: str
+    awsSessionToken: str
+
+
+class AwslabsCloudtrail(TypedDict, closed=True):
+    awsProfile: str
+
+
+class AwslabsCloudwatch(TypedDict, closed=True):
+    awsProfile: str
+    awsRegion: str
+
+
+class AwslabsCloudwatchAppsignals(TypedDict, closed=True):
+    awsProfile: str
+    awsRegion: str
+
+
+class AwslabsCostExplorer(TypedDict, closed=True):
+    awsAccessKeyId: str
+    awsProfile: str
+    awsRegion: str
+    awsSecretAccessKey: str
+    awsSessionToken: str
+
+
+class AwslabsDynamodb(TypedDict, closed=True):
+    awsProfile: str
+    awsRegion: str
+
+
+class AwslabsElasticache(TypedDict, closed=True):
+    awsProfile: str
+    awsRegion: str
+
+
+class AwslabsIam(TypedDict, closed=True):
+    awsAccessKeyId: str
+    awsProfile: str
+    awsRegion: str
+    awsSecretAccessKey: str
+
+
+class AwslabsMemcached(TypedDict, closed=True):
+    memcachedHost: str
+    memcachedPort: NotRequired[str]
+
+
+class AwslabsNovaCanvas(TypedDict, closed=True):
+    awsAccessKeyId: str
+    awsProfile: str
+    awsRegion: str
+    awsSecretAccessKey: str
+    awsSessionToken: str
+
+
+class AwslabsRedshift(TypedDict, closed=True):
+    awsProfile: str
+    awsRegion: str
+
+
+class AwslabsS3Tables(TypedDict, closed=True):
+    awsAccessKeyId: str
+    awsProfile: str
+    awsRegion: str
+    awsSecretAccessKey: str
+    awsSessionToken: str
+
+
+class AwslabsTimestreamForInfluxdb(TypedDict, closed=True):
+    awsProfile: str
+    awsRegion: str
+
+
+class AwslabsValkey(TypedDict, closed=True):
+    valkeyHost: str
+    valkeyPort: str
 
 
 class BeagleSecurity(TypedDict, closed=True):
@@ -131,11 +338,6 @@ class Buildkite(TypedDict, closed=True):
 
 class Camunda(TypedDict, closed=True):
     camundahost: str
-
-
-class CdataConnectcloud(TypedDict, closed=True):
-    cdataPat: NotRequired[str]
-    username: str
 
 
 class Charmhealth(TypedDict, closed=True):
@@ -189,6 +391,10 @@ class Cockroachdb(TypedDict, closed=True):
     sslKeyfile: str
     sslMode: str
     username: str
+
+
+class Context7(TypedDict, closed=True):
+    apiKey: str
 
 
 class Couchbase(TypedDict, closed=True):
@@ -345,11 +551,6 @@ class Firewalla(TypedDict, closed=True):
     """
     Your Firewalla MSP domain (e.g., yourdomain.firewalla.net)
     """
-
-
-class Flexprice(TypedDict, closed=True):
-    apiKey: str
-    baseUrl: str
 
 
 class Git(TypedDict, closed=True):
@@ -581,12 +782,29 @@ class MultiversxMx(TypedDict, closed=True):
     wallet: str
 
 
+class N8n(TypedDict, closed=True):
+    apiKey: str
+    apiUrl: str
+    """
+    The URL of your n8n instance (use http://host.docker.internal:5678 for local instances)
+    """
+
+
 class NasdaqDataLink(TypedDict, closed=True):
     nasdaqDataLinkApiKey: str
 
 
 class Needle(TypedDict, closed=True):
     needleApiKey: str
+
+
+class Neo4j(TypedDict, closed=True):
+    database: str
+    password: str
+    readOnly: bool
+    telemetry: bool
+    uri: str
+    username: str
 
 
 class Neo4jCloudAuraApi(TypedDict, closed=True):
@@ -607,6 +825,7 @@ class Neo4jCypher(TypedDict, closed=True):
     readOnly: NotRequired[bool]
     readTimeout: NotRequired[str]
     responseTokenLimit: NotRequired[str]
+    schemaSampleSize: NotRequired[str]
     serverAllowOrigins: NotRequired[str]
     serverAllowedHosts: NotRequired[str]
     serverHost: NotRequired[str]
@@ -651,6 +870,16 @@ class Obsidian(TypedDict, closed=True):
     apiKey: str
 
 
+class Okta(TypedDict, closed=True):
+    logPath: str
+    oktaClientId: str
+    oktaKeyId: str
+    oktaLogLevel: str
+    oktaOrgUrl: str
+    oktaPrivateKey: str
+    oktaScopes: str
+
+
 class OktaMcpFctr(TypedDict, closed=True):
     clientOrgurl: str
     """
@@ -674,13 +903,6 @@ class Omi(TypedDict, closed=True):
 class OnlyofficeDocspace(TypedDict, closed=True):
     baseUrl: str
     docspaceApiKey: str
-    docspaceAuthToken: str
-    docspacePassword: str
-    docspaceUsername: str
-    dynamic: bool
-    origin: str
-    toolsets: str
-    userAgent: str
 
 
 class Openapi(TypedDict, closed=True):
@@ -749,10 +971,6 @@ class Pomodash(TypedDict, closed=True):
     apiKey: str
 
 
-class Postgres(TypedDict, closed=True):
-    url: str
-
-
 class Postman(TypedDict, closed=True):
     apiKey: str
 
@@ -761,6 +979,35 @@ class Prometheus(TypedDict, closed=True):
     prometheusUrl: str
     """
     The URL of your Prometheus server
+    """
+
+
+class Proxmox(TypedDict, closed=True):
+    host: str
+    """
+    Proxmox VE hostname or IP address
+    """
+    password: NotRequired[str]
+    port: NotRequired[str]
+    """
+    Proxmox VE API port
+    """
+    timeout: NotRequired[str]
+    """
+    Request timeout in seconds
+    """
+    tokenName: str
+    """
+    API token name
+    """
+    tokenValue: NotRequired[str]
+    user: NotRequired[str]
+    """
+    Proxmox VE user (e.g. root@pam)
+    """
+    verifySsl: NotRequired[str]
+    """
+    Verify SSL certificates (true/false)
     """
 
 
@@ -824,10 +1071,6 @@ class Resend(TypedDict, closed=True):
 class Risken(TypedDict, closed=True):
     accessToken: str
     url: str
-
-
-class Root(TypedDict, closed=True):
-    apiAccessToken: str
 
 
 class Rube(TypedDict, closed=True):
@@ -975,8 +1218,38 @@ class Telnyx(TypedDict, closed=True):
     apiKey: str
 
 
-class Tembo(TypedDict, closed=True):
-    apiKey: str
+class Temporal(TypedDict, closed=True):
+    apiKey: NotRequired[str]
+    temporalHost: str
+    """
+    Temporal frontend host and port.
+    """
+    temporalNamespace: str
+    """
+    Temporal namespace to connect to.
+    """
+    temporalTlsClientCertPath: NotRequired[str]
+    """
+    Optional path inside the container to an mTLS client certificate.
+    """
+    temporalTlsClientKeyPath: NotRequired[str]
+    """
+    Optional path inside the container to an mTLS client private key.
+    """
+    temporalTlsEnabled: NotRequired[str]
+    """
+    Whether to force TLS for the Temporal connection.
+    """
+
+
+class Testkube(TypedDict, closed=True):
+    tkAccessToken: str
+    tkControlPlaneUrl: str
+    """
+    The URL of the Testkube Control Plane
+    """
+    tkEnvId: str
+    tkOrgId: str
 
 
 class TextToGraphql(TypedDict, closed=True):
@@ -997,14 +1270,19 @@ class TextToGraphql(TypedDict, closed=True):
     openaiApiKey: str
 
 
+class Thingsboard(TypedDict, closed=True):
+    password: NotRequired[str]
+    url: str
+    """
+    URL of your ThingsBoard Platform instance
+    """
+    username: NotRequired[str]
+
+
 class Tigris(TypedDict, closed=True):
     awsAccessKeyId: str
     awsEndpointUrlS3: str
     awsSecretAccessKey: NotRequired[str]
-
-
-class Triplewhale(TypedDict, closed=True):
-    apiKey: str
 
 
 class UnrealEngine(TypedDict, closed=True):
@@ -1026,8 +1304,112 @@ class UnrealEngine(TypedDict, closed=True):
     """
 
 
+class VectraAiRux(TypedDict, closed=True):
+    vectraClientId: str
+    """
+    The client ID of the Vectra AI RUX MCP Server
+    """
+    vectraClientSecret: NotRequired[str]
+    vectraUrl: NotRequired[str]
+    """
+    The base URL of the Vectra AI RUX MCP Server
+    """
+
+
 class Veyrax(TypedDict, closed=True):
     apiKey: str
+
+
+class Victorialogs(TypedDict, closed=True):
+    mcpDisabledTools: NotRequired[str]
+    """
+    Comma-separated list of tools to disable (possible values: export, metric_statistics, test_rules)
+    """
+    mcpHeartbeatInterval: NotRequired[str]
+    """
+    Defines the heartbeat interval for the streamable-http protocol. It means the MCP server will send a heartbeat to the client through the GET connection, to keep the connection alive from being closed by the network infrastructure (e.g. gateways)
+    """
+    mcpListenAddr: NotRequired[str]
+    """
+    Address and port on which the MCP server listens for incoming connections (e.g., ':8081')
+    """
+    mcpServerMode: NotRequired[str]
+    """
+    Mode in which the MCP server operates (possible values: stdio, http, sse)
+    """
+    vlInstanceBearerToken: NotRequired[str]
+    vlInstanceEntrypoint: str
+    """
+    URL of VictoriaLogs instance (it should be root URL of vlsingle or vlselect)
+    """
+    vlInstanceHeaders: NotRequired[str]
+    """
+    Optional custom headers to include in requests to VictoriaLogs instance, formatted as 'header1=value1,header2=value2'
+    """
+
+
+class Victoriametrics(TypedDict, closed=True):
+    mcpDisableResources: NotRequired[str]
+    """
+    Set to 'true' to disable all resource endpoints
+    """
+    mcpDisabledTools: NotRequired[str]
+    """
+    Comma-separated list of tools to disable (possible values: export, metric_statistics, test_rules)
+    """
+    mcpHeartbeatInterval: NotRequired[str]
+    """
+    Defines the heartbeat interval for the streamable-http protocol. It means the MCP server will send a heartbeat to the client through the GET connection, to keep the connection alive from being closed by the network infrastructure (e.g. gateways)
+    """
+    mcpListenAddr: NotRequired[str]
+    """
+    Address and port on which the MCP server listens for incoming connections (e.g., ':8080')
+    """
+    mcpServerMode: NotRequired[str]
+    """
+    Mode in which the MCP server operates (possible values: stdio, http, sse)
+    """
+    vmInstanceBearerToken: NotRequired[str]
+    vmInstanceEntrypoint: str
+    """
+    URL of VictoriaMetrics instance (it should be root URL of vmsingle or vmselect)
+    """
+    vmInstanceHeaders: NotRequired[str]
+    """
+    Optional custom headers to include in requests to VictoriaMetrics instance, formatted as 'header1=value1,header2=value2'
+    """
+    vmInstanceType: str
+    """
+    Type of VictoriaMetrics instance (possible values: single, cluster)
+    """
+
+
+class Victoriatraces(TypedDict, closed=True):
+    mcpDisabledTools: NotRequired[str]
+    """
+    Comma-separated list of tools to disable (possible values: export, metric_statistics, test_rules)
+    """
+    mcpHeartbeatInterval: NotRequired[str]
+    """
+    Defines the heartbeat interval for the streamable-http protocol. It means the MCP server will send a heartbeat to the client through the GET connection, to keep the connection alive from being closed by the network infrastructure (e.g. gateways)
+    """
+    mcpListenAddr: NotRequired[str]
+    """
+    Address and port on which the MCP server listens for incoming connections (e.g., ':8081')
+    """
+    mcpServerMode: NotRequired[str]
+    """
+    Mode in which the MCP server operates (possible values: stdio, http, sse)
+    """
+    vtInstanceBearerToken: NotRequired[str]
+    vtInstanceEntrypoint: str
+    """
+    URL of VictoriaTraces instance (it should be root URL of vtsingle or vtselect)
+    """
+    vtInstanceHeaders: NotRequired[str]
+    """
+    Optional custom headers to include in requests to VictoriaTraces instance, formatted as 'header1=value1,header2=value2'
+    """
 
 
 class Wayfound(TypedDict, closed=True):
@@ -1040,6 +1422,13 @@ class Webflow(TypedDict, closed=True):
 
 class WolframAlpha(TypedDict, closed=True):
     wolframApiKey: str
+
+
+class Zen(TypedDict, closed=True):
+    geminiApiKey: str
+    openaiApiKey: str
+    openrouterApiKey: str
+    xaiApiKey: str
 
 
 class ZerodhaKite(TypedDict, closed=True):
@@ -1058,6 +1447,34 @@ class ZerodhaKite(TypedDict, closed=True):
     """
 
 
+class Zscaler(TypedDict, closed=True):
+    disabledServices: str
+    """
+    Comma-separated services to disable (zcc,zdx,zpa,zia,ztw,zid,zeasm,zins,zms)
+    """
+    disabledTools: str
+    """
+    Comma-separated tool name patterns to disable (e.g. zia_delete_*,zpa_bulk_*)
+    """
+    skipConfirmations: str
+    """
+    Skip HMAC confirmation prompts for destructive operations (true/false)
+    """
+    writeEnabled: str
+    """
+    Enable write operations (true/false)
+    """
+    writeTools: str
+    """
+    Comma-separated write tool patterns to allow (e.g. zpa_create_*,zia_update_*)
+    """
+    zscalerClientId: str
+    zscalerClientSecret: str
+    zscalerCloud: str
+    zscalerCustomerId: str
+    zscalerVanityDomain: str
+
+
 class McpServer(TypedDict, closed=True):
     airtable: NotRequired[Airtable]
     """
@@ -1067,6 +1484,26 @@ class McpServer(TypedDict, closed=True):
     """
     Azure Kubernetes Service (AKS) official MCP server.
     """
+    alfresco: NotRequired[Alfresco]
+    """
+    A minimal Model Context Protocol (MCP) server for Alfresco providing tools via the Alfresco REST API.
+    """
+    amazonBedrockAgentcore: NotRequired[dict[str, Any]]
+    """
+    Documentation on AgentCore platform services.
+    """
+    amazonKendraIndex: NotRequired[AmazonKendraIndex]
+    """
+    Enterprise search and RAG enhancement.
+    """
+    amazonNeptune: NotRequired[AmazonNeptune]
+    """
+    Graph database queries with Cypher and Gremlin.
+    """
+    amazonQbusinessAnonymous: NotRequired[AmazonQbusinessAnonymous]
+    """
+    AI assistant for ingested content with anonymous access.
+    """
     apiGateway: NotRequired[ApiGateway]
     """
     A universal MCP (Model Context Protocol) server to integrate any API with Claude Desktop using only Docker configurations.
@@ -1074,6 +1511,10 @@ class McpServer(TypedDict, closed=True):
     apify: NotRequired[Apify]
     """
     Apify is the world's largest marketplace of tools for web scraping, data extraction, and web automation. You can extract structured data from social media, e-commerce, search engines, maps, travel sites, or any other website.
+    """
+    arm: NotRequired[Arm]
+    """
+    Provides AI assistants with specialized tools for Arm architecture development, migration, optimization, and profiling. Includes knowledge base search, code migration analysis, container architecture inspection, Arm Performix workload profiling, and assembly performance analysis.
     """
     arxiv: NotRequired[Arxiv]
     """
@@ -1107,6 +1548,22 @@ class McpServer(TypedDict, closed=True):
     """
     Audiense Insights MCP Server is a server based on the Model Context Protocol (MCP) that allows Claude and other MCP-compatible clients to interact with your Audiense Insights account.
     """
+    awsApi: NotRequired[AwsApi]
+    """
+    Comprehensive AWS API support with command validation and access to all services.
+    """
+    awsAppsync: NotRequired[AwsAppsync]
+    """
+    Manage applications powered by AWS AppSync.
+    """
+    awsBedrockCustomModelImport: NotRequired[AwsBedrockCustomModelImport]
+    """
+    Manage custom models in Bedrock.
+    """
+    awsBedrockDataAutomation: NotRequired[AwsBedrockDataAutomation]
+    """
+    Analyze documents, images, videos, and audio.
+    """
     awsCdk: NotRequired[dict[str, Any]]
     """
     AWS Cloud Development Kit (CDK) best practices, infrastructure as code patterns, and security compliance with CDK Nag.
@@ -1115,7 +1572,11 @@ class McpServer(TypedDict, closed=True):
     """
     Starting point for using the awslabs MCP servers.
     """
-    awsDiagram: NotRequired[dict[str, Any]]
+    awsDataprocessing: NotRequired[AwsDataprocessing]
+    """
+    Data processing and transformation services.
+    """
+    awsDiagram: NotRequired[AwsDiagram]
     """
     Seamlessly create diagrams using the Python diagrams package DSL. This server allows you to generate AWS diagrams, sequence diagrams, flow diagrams, and class diagrams using Python code.
     """
@@ -1123,17 +1584,101 @@ class McpServer(TypedDict, closed=True):
     """
     Tools to access AWS documentation, search for content, and get recommendations.
     """
+    awsHealthomics: NotRequired[AwsHealthomics]
+    """
+    Generate, run, debug lifescience workflows.
+    """
+    awsIotSitewise: NotRequired[AwsIotSitewise]
+    """
+    Industrial IoT asset management.
+    """
     awsKbRetrievalServer: NotRequired[AwsKbRetrievalServer]
     """
     An MCP server implementation for retrieving information from the AWS Knowledge Base using the Bedrock Agent Runtime.
+    """
+    awsLocation: NotRequired[AwsLocation]
+    """
+    Place search, geocoding, and route optimization.
+    """
+    awsMsk: NotRequired[AwsMsk]
+    """
+    Managed Kafka cluster operations.
+    """
+    awsPricing: NotRequired[AwsPricing]
+    """
+    AWS service pricing and cost estimates.
     """
     awsTerraform: NotRequired[dict[str, Any]]
     """
     Terraform on AWS best practices, infrastructure as code patterns, and security compliance with Checkov.
     """
+    awslabsBillingCostManagement: NotRequired[AwslabsBillingCostManagement]
+    """
+    Billing and cost management.
+    """
+    awslabsCcapi: NotRequired[AwslabsCcapi]
+    """
+    Direct resource management with security scanning.
+    """
+    awslabsCfn: NotRequired[AwslabsCfn]
+    """
+    CloudFormation resource management via Cloud Control API.
+    """
+    awslabsCloudtrail: NotRequired[AwslabsCloudtrail]
+    """
+    AWS CloudTrail audit logging and monitoring.
+    """
+    awslabsCloudwatch: NotRequired[AwslabsCloudwatch]
+    """
+    Metrics, alarms, and logs analysis.
+    """
+    awslabsCloudwatchAppsignals: NotRequired[AwslabsCloudwatchAppsignals]
+    """
+    Application performance monitoring and insights.
+    """
+    awslabsCostExplorer: NotRequired[AwslabsCostExplorer]
+    """
+    Detailed cost analysis and reporting.
+    """
+    awslabsDynamodb: NotRequired[AwslabsDynamodb]
+    """
+    Complete DynamoDB operations and table management.
+    """
+    awslabsElasticache: NotRequired[AwslabsElasticache]
+    """
+    ElastiCache control plane operations.
+    """
+    awslabsIam: NotRequired[AwslabsIam]
+    """
+    IAM user, role, group, and policy management.
+    """
+    awslabsMemcached: NotRequired[AwslabsMemcached]
+    """
+    High-speed caching with Memcached.
+    """
+    awslabsNovaCanvas: NotRequired[AwslabsNovaCanvas]
+    """
+    AI image generation using Amazon Nova Canvas.
+    """
+    awslabsRedshift: NotRequired[AwslabsRedshift]
+    """
+    Data warehouse operations and queries.
+    """
+    awslabsS3Tables: NotRequired[AwslabsS3Tables]
+    """
+    Manage S3 Tables for analytics.
+    """
+    awslabsTimestreamForInfluxdb: NotRequired[AwslabsTimestreamForInfluxdb]
+    """
+    Time-series database operations.
+    """
+    awslabsValkey: NotRequired[AwslabsValkey]
+    """
+    Advanced data structures with Valkey.
+    """
     azure: NotRequired[dict[str, Any]]
     """
-    The Azure MCP Server, bringing the power of Azure to your agents.
+    Catalog of official Microsoft MCP (Model Context Protocol) server implementations for AI-powered data access and tool integration.
     """
     beagleSecurity: NotRequired[BeagleSecurity]
     """
@@ -1162,10 +1707,6 @@ class McpServer(TypedDict, closed=True):
     camunda: NotRequired[Camunda]
     """
     Tools to interact with the Camunda 7 Community Edition Engine using the Model Context Protocol (MCP). Whether you're automating workflows, querying process instances, or integrating with external systems, Camunda MCP Server is your agentic solution for seamless interaction with Camunda.
-    """
-    cdataConnectcloud: NotRequired[CdataConnectcloud]
-    """
-    This fully functional MCP Server allows you to connect to any data source in Connect Cloud from Claude Desktop.
     """
     charmhealth: NotRequired[Charmhealth]
     """
@@ -1203,13 +1744,17 @@ class McpServer(TypedDict, closed=True):
     """
     A Python-based execution tool that mimics a Jupyter notebook environment. It accepts code snippets, executes them, and maintains state across sessions — preserving variables, imports, and past results. Ideal for iterative development, debugging, or code execution.
     """
-    context7: NotRequired[dict[str, Any]]
+    context7: NotRequired[Context7]
     """
-    Context7 MCP Server -- Up-to-date code documentation for LLMs and AI code editors.
+    Pull up-to-date, version-specific documentation and code examples for any library or framework straight into your prompt.
     """
     couchbase: NotRequired[Couchbase]
     """
     Couchbase is a distributed document database with a powerful search engine and in-built operational and analytical capabilities.
+    """
+    curl: NotRequired[dict[str, Any]]
+    """
+    Standard curl tool.
     """
     cylera: NotRequired[Cylera]
     """
@@ -1259,6 +1804,10 @@ class McpServer(TypedDict, closed=True):
     """
     Interact with the Discord platform.
     """
+    docker: NotRequired[dict[str, Any]]
+    """
+    Use the Docker CLI.
+    """
     dockerhub: NotRequired[Dockerhub]
     """
     Docker Hub official MCP server.
@@ -1267,13 +1816,17 @@ class McpServer(TypedDict, closed=True):
     """
     Tools for cross-border payments, taxes, and compliance.
     """
+    dotnetTypesExplorer: NotRequired[dict[str, Any]]
+    """
+    Provides detailed type information from .NET projects including assembly exploration, namespace discovery, type reflection, and NuGet integration for AI coding agents.
+    """
     dreamfactory: NotRequired[Dreamfactory]
     """
     DreamFactory is a REST API generation platform with support for hundreds of data sources, including Microsoft SQL Server, MySQL, PostgreSQL, and MongoDB. The DreamFactory MCP Server makes it easy for users to securely interact with their data sources via an MCP client.
     """
     duckduckgo: NotRequired[dict[str, Any]]
     """
-    A Model Context Protocol (MCP) server that provides web search capabilities through DuckDuckGo, with additional features for content fetching and parsing.
+    Community-maintained server for DuckDuckGo search. Not published by or affiliated with DuckDuckGo.
     """
     dynatrace: NotRequired[Dynatrace]
     """
@@ -1315,6 +1868,10 @@ class McpServer(TypedDict, closed=True):
     """
     Fetches a URL from the internet and extracts its contents as markdown.
     """
+    ffmpeg: NotRequired[dict[str, Any]]
+    """
+    Use ffmpeg to process video files.
+    """
     fibery: NotRequired[Fibery]
     """
     Interact with your Fibery workspace.
@@ -1335,9 +1892,9 @@ class McpServer(TypedDict, closed=True):
     """
     Real-time network monitoring, security analysis, and firewall management through 28 specialized tools. Access security alerts, network flows, device status, and firewall rules directly from your Firewalla device.
     """
-    flexprice: NotRequired[Flexprice]
+    geminiApiDocs: NotRequired[dict[str, Any]]
     """
-    Official flexprice MCP Server.
+    Provides tools to search and retrieve Google Gemini API documentation.
     """
     git: NotRequired[Git]
     """
@@ -1365,11 +1922,15 @@ class McpServer(TypedDict, closed=True):
     """
     glif: NotRequired[Glif]
     """
-    Easily run glif.app AI workflows inside your LLM: image generators, memes, selfies, and more. Glif supports all major multimedia AI models inside one app.
+    Deprecated — use the hosted Glif MCP server at https://glif.app/mcp.
     """
     gmail: NotRequired[Gmail]
     """
     A Model Context Protocol server for Gmail operations using IMAP/SMTP with app password authentication. Supports listing messages, searching emails, and sending messages. To create your app password, visit your Google Account settings under Security > App Passwords. Or visit the link https://myaccount.google.com/apppasswords.
+    """
+    googleFlights: NotRequired[dict[str, Any]]
+    """
+    Interact with Google Flights data to search for one-way, round-trip, and date range flight options between airports.
     """
     googleMaps: NotRequired[GoogleMaps]
     """
@@ -1461,7 +2022,7 @@ class McpServer(TypedDict, closed=True):
     """
     kagisearch: NotRequired[Kagisearch]
     """
-    The Official Model Context Protocol (MCP) server for Kagi search & other tools.
+    The Official Model Context Protocol (MCP) server for Kagi Search & other tools.
     """
     keboola: NotRequired[Keboola]
     """
@@ -1551,6 +2112,10 @@ class McpServer(TypedDict, closed=True):
     """
     MCP Server for MultiversX.
     """
+    n8n: NotRequired[N8n]
+    """
+    Bridges n8n's workflow automation platform with AI models, providing access to 543 n8n nodes, workflow templates, and AI-capable automation tools.
+    """
     nasdaqDataLink: NotRequired[NasdaqDataLink]
     """
     MCP server to interact with the data feeds provided by the Nasdaq Data Link. Developed by the community and maintained by Stefano Amorelli.
@@ -1558,6 +2123,10 @@ class McpServer(TypedDict, closed=True):
     needle: NotRequired[Needle]
     """
     Production-ready RAG service to search and retrieve data from your documents.
+    """
+    neo4j: NotRequired[Neo4j]
+    """
+    Official MCP server for Neo4j. Interact with Neo4j using Cypher graph queries.
     """
     neo4jCloudAuraApi: NotRequired[Neo4jCloudAuraApi]
     """
@@ -1579,6 +2148,10 @@ class McpServer(TypedDict, closed=True):
     """
     MCP server for interacting with Neon Management API and databases.
     """
+    nextDevtools: NotRequired[dict[str, Any]]
+    """
+    next-devtools-mcp is a Model Context Protocol (MCP) server that provides Next.js development tools and utilities for AI coding assistants.
+    """
     nodeCodeSandbox: NotRequired[dict[str, Any]]
     """
     A Node.js–based Model Context Protocol server that spins up disposable Docker containers to execute arbitrary JavaScript.
@@ -1598,6 +2171,10 @@ class McpServer(TypedDict, closed=True):
     obsidian: NotRequired[Obsidian]
     """
     MCP server that interacts with Obsidian via the Obsidian rest API community plugin.
+    """
+    okta: NotRequired[Okta]
+    """
+    ## :tada: __It's Official__ :tada: The Okta Open-Source MCP Server integrates with LLMs and AI agents, allowing you to perform various Okta management operations using natural language and is Generally Available (GA).
     """
     oktaMcpFctr: NotRequired[OktaMcpFctr]
     """
@@ -1649,7 +2226,7 @@ class McpServer(TypedDict, closed=True):
     """
     opik: NotRequired[Opik]
     """
-    Model Context Protocol (MCP) implementation for Opik enabling seamless IDE integration and unified access to prompts, projects, traces, and metrics.
+    Model Context Protocol (MCP) server for Opik, the open-source LLM observability and evaluation platform, built by Comet. Read traces, log scores, and manage prompts from Claude Code, Cursor, or VS Code.
     """
     opine: NotRequired[Opine]
     """
@@ -1669,7 +2246,7 @@ class McpServer(TypedDict, closed=True):
     """
     paperSearch: NotRequired[dict[str, Any]]
     """
-    A MCP for searching and downloading academic papers from multiple sources like arXiv, PubMed, bioRxiv, etc.
+    MCP, CLI, Skills for searching and downloading academic papers from multiple sources like arXiv, PubMed, bioRxiv, etc.
     """
     perplexityAsk: NotRequired[PerplexityAsk]
     """
@@ -1699,10 +2276,6 @@ class McpServer(TypedDict, closed=True):
     """
     Connect your AI assistant to PomoDash for seamless task and project management.
     """
-    postgres: NotRequired[Postgres]
-    """
-    Connect with read-only access to PostgreSQL databases. This server enables LLMs to inspect database schemas and execute read-only queries.
-    """
     postman: NotRequired[Postman]
     """
     Postman's MCP server connects AI agents, assistants, and chatbots directly to your APIs on Postman. Use natural language to prompt AI to automate work across your Postman collections, environments, workspaces, and more.
@@ -1715,13 +2288,17 @@ class McpServer(TypedDict, closed=True):
     """
     A Model Context Protocol (MCP) server that enables AI assistants to query and analyze Prometheus metrics through standardized interfaces. Connect to your Prometheus instance to retrieve metrics, perform queries, and gain insights into your system's performance and health.
     """
+    proxmox: NotRequired[Proxmox]
+    """
+    Manage Proxmox VE infrastructure including virtual machines, containers, storage, networking, firewall rules, high availability, and more.
+    """
     puppeteer: NotRequired[dict[str, Any]]
     """
     Browser automation and web scraping using Puppeteer.
     """
     pythonRefactoring: NotRequired[dict[str, Any]]
     """
-    Educational Python refactoring assistant that provides guided suggestions for AI assistants.  Features: • Step-by-step refactoring instructions without modifying code • Comprehensive code analysis using professional tools (Rope, Radon, Vulture, Jedi, LibCST, Pyrefly) • Educational approach teaching refactoring patterns through guided practice • Support for both guide-only and apply-changes modes • Identifies long functions, high complexity, dead code, and type issues • Provides precise line numbers and specific refactoring instructions • Compatible with all AI assistants (Claude, GPT, Cursor, Continue, etc.)  Perfect for developers learning refactoring patterns while maintaining full control over code changes. Acts as a refactoring mentor rather than an automated code modifier.
+    Educational Python refactoring assistant that provides guided suggestions for AI assistants.
     """
     quantconnect: NotRequired[Quantconnect]
     """
@@ -1737,7 +2314,7 @@ class McpServer(TypedDict, closed=True):
     """
     reddit: NotRequired[Reddit]
     """
-    A comprehensive Model Context Protocol (MCP) server for Reddit integration. This server enables AI agents to interact with Reddit programmatically through a standardized interface.
+    This server provides AI agents with tools to fetch, post and search on Reddit.
     """
     redis: NotRequired[Redis]
     """
@@ -1761,15 +2338,11 @@ class McpServer(TypedDict, closed=True):
     """
     resend: NotRequired[Resend]
     """
-    Send emails directly from Cursor with this email sending MCP server.
+    The official MCP server to send emails and interact with Resend.
     """
     risken: NotRequired[Risken]
     """
     RISKEN's official MCP Server.
-    """
-    root: NotRequired[Root]
-    """
-    MCP server that provides container image vulnerability scanning and remediation capabilities through Root.io.
     """
     ros2: NotRequired[dict[str, Any]]
     """
@@ -1883,17 +2456,25 @@ class McpServer(TypedDict, closed=True):
     """
     Enables interaction with powerful telephony, messaging, and AI assistant APIs.
     """
-    tembo: NotRequired[Tembo]
+    temporal: NotRequired[Temporal]
     """
-    MCP server for Tembo Cloud's platform API.
+    Manage Temporal workflows, schedules, namespaces, task queues, and workflow execution history from MCP clients.
     """
     terraform: NotRequired[dict[str, Any]]
     """
     The Terraform MCP Server provides seamless integration with Terraform ecosystem, enabling advanced automation and interaction capabilities for Infrastructure as Code (IaC) development.
     """
+    testkube: NotRequired[Testkube]
+    """
+    The Testkube MCP Server exposes continuous testing capabilities (test orchestration, execution, troubleshooting and anlysis) to AI tools and workflows.
+    """
     textToGraphql: NotRequired[TextToGraphql]
     """
     Transform natural language queries into GraphQL queries using an AI agent. Provides schema management, query validation, execution, and history tracking.
+    """
+    thingsboard: NotRequired[Thingsboard]
+    """
+    Connect your AI workflows to the ThingsBoard IoT Platform through this MCP server.  Enables LLMs to query device telemetry, manage IoT entities (devices, assets, customers), and analyze sensor data - all through natural language.  Perfect for building AI-powered IoT monitoring, predictive maintenance, and automated device management workflows. Supports both ThingsBoard Community Edition and Professional Edition.
     """
     tigris: NotRequired[Tigris]
     """
@@ -1903,17 +2484,29 @@ class McpServer(TypedDict, closed=True):
     """
     Time and timezone conversion capabilities.
     """
-    triplewhale: NotRequired[Triplewhale]
-    """
-    Triplewhale MCP Server.
-    """
     unrealEngine: NotRequired[UnrealEngine]
     """
     A comprehensive Model Context Protocol (MCP) server that enables AI assistants to control Unreal Engine via Remote Control API. Built with TypeScript and designed for game development automation.
     """
+    vectraAiRux: NotRequired[VectraAiRux]
+    """
+    Vectra AI MCP Server - An MCP server that connects AI assistants & agents to the Vectra AI security platform, enabling intelligent threat analysis and automated incident response.
+    """
     veyrax: NotRequired[Veyrax]
     """
     VeyraX MCP is the only connection you need to access all your tools in any MCP-compatible environment.
+    """
+    victorialogs: NotRequired[Victorialogs]
+    """
+    Provides access to your VictoriaLogs instance and seamless integration with VictoriaLogs APIs and documentation. It can give you a comprehensive interface for logs, observability, and debugging tasks related to your VictoriaLogs instances, enable advanced automation and interaction capabilities for engineers and tools.
+    """
+    victoriametrics: NotRequired[Victoriametrics]
+    """
+    Provides access to your VictoriaMetrics instance and seamless integration with VictoriaMetrics APIs and documentation. It can give you a comprehensive interface for monitoring, observability, and debugging tasks related to your VictoriaMetrics instances, enable advanced automation and interaction capabilities for engineers and tools.
+    """
+    victoriatraces: NotRequired[Victoriatraces]
+    """
+    Provides access to your VictoriaTraces instance and seamless integration with VictoriaTraces APIs and documentation. It can give you a comprehensive interface for tracing, observability, and debugging tasks related to your VictoriaTraces instances, enable advanced automation and interaction capabilities for engineers and tools.
     """
     vizro: NotRequired[dict[str, Any]]
     """
@@ -1943,7 +2536,15 @@ class McpServer(TypedDict, closed=True):
     """
     Retrieves transcripts for given YouTube video URLs.
     """
+    zen: NotRequired[Zen]
+    """
+    Bridges multiple AI models and CLIs, enabling orchestrated workflows across Claude Code, Gemini CLI, Codex CLI, and other AI development tools.
+    """
     zerodhaKite: NotRequired[ZerodhaKite]
     """
     MCP server for Zerodha Kite Connect API - India's leading stock broker trading platform. Execute trades, manage portfolios, and access real-time market data for NSE, BSE, and other Indian exchanges.
+    """
+    zscaler: NotRequired[Zscaler]
+    """
+    Manage the Zscaler Zero Trust Exchange platform via 300+ tools across ZPA (private access), ZIA (internet access), ZDX (digital experience), ZCC (client connector), ZTW (workload segmentation), ZMS (microsegmentation), EASM (attack surface management), Z-Insights (security analytics), and ZIdentity (identity management). Create and manage policies, troubleshoot connectivity, audit security configurations, and investigate incidents — all from your AI assistant.
     """

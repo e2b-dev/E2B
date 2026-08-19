@@ -2,7 +2,7 @@
   "additionalProperties": false,
   "properties": {
     "airtable": {
-      "title": "Airtable MCP Server",
+      "title": "Airtable",
       "description": "Provides AI assistants with direct access to Airtable bases, allowing them to read schemas, query records, and interact with your Airtable data. Supports listing bases, retrieving table structures, and searching through records to help automate workflows and answer questions about your organized data.",
       "required": [
         "airtableApiKey",
@@ -58,8 +58,102 @@
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/aks/overview"
     },
+    "alfresco": {
+      "title": "Alfresco",
+      "description": "A minimal Model Context Protocol (MCP) server for Alfresco providing tools via the Alfresco REST API.",
+      "required": [
+        "alfrescoHost"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "alfrescoHost": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/alfresco/overview"
+    },
+    "amazonBedrockAgentcore": {
+      "title": "AWS Bedrock AgentCore",
+      "description": "Documentation on AgentCore platform services.",
+      "additionalProperties": false,
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/amazon-bedrock-agentcore/overview"
+    },
+    "amazonKendraIndex": {
+      "title": "Amazon Kendra Index",
+      "description": "Enterprise search and RAG enhancement.",
+      "required": [
+        "kendraIndexId"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsProfile": {
+          "type": "string"
+        },
+        "awsRegion": {
+          "type": "string"
+        },
+        "kendraIndexId": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/amazon-kendra-index/overview"
+    },
+    "amazonNeptune": {
+      "title": "Amazon Neptune",
+      "description": "Graph database queries with Cypher and Gremlin.",
+      "required": [
+        "neptuneEndpoint"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsProfile": {
+          "type": "string"
+        },
+        "awsRegion": {
+          "type": "string"
+        },
+        "neptuneEndpoint": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/amazon-neptune/overview"
+    },
+    "amazonQbusinessAnonymous": {
+      "title": "Amazon Q Business",
+      "description": "AI assistant for ingested content with anonymous access.",
+      "required": [
+        "qbusinessApplicationId"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsAccessKeyId": {
+          "type": "string"
+        },
+        "awsProfile": {
+          "type": "string"
+        },
+        "awsRegion": {
+          "type": "string"
+        },
+        "awsSecretAccessKey": {
+          "type": "string"
+        },
+        "awsSessionToken": {
+          "type": "string"
+        },
+        "qbusinessApplicationId": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/amazon-qbusiness-anonymous/overview"
+    },
     "apiGateway": {
-      "title": "Api-gateway",
+      "title": "API Gateway",
       "description": "A universal MCP (Model Context Protocol) server to integrate any API with Claude Desktop using only Docker configurations.",
       "required": [
         "api1HeaderAuthorization",
@@ -82,7 +176,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/mcp-api-gateway/overview"
     },
     "apify": {
-      "title": "Apify MCP Server",
+      "title": "Apify",
       "description": "Apify is the world's largest marketplace of tools for web scraping, data extraction, and web automation. You can extract structured data from social media, e-commerce, search engines, maps, travel sites, or any other website.",
       "required": [
         "apifyToken",
@@ -101,8 +195,31 @@
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/apify-mcp-server/overview"
     },
+    "arm": {
+      "title": "Arm",
+      "description": "Provides AI assistants with specialized tools for Arm architecture development, migration, optimization, and profiling. Includes knowledge base search, code migration analysis, container architecture inspection, Arm Performix workload profiling, and assembly performance analysis.",
+      "required": [
+        "workspacePath"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "sshKnownHostsPath": {
+          "description": "Optional path to an SSH known_hosts file for Arm Performix remote target access",
+          "type": "string"
+        },
+        "sshPrivateKeyPath": {
+          "description": "Optional path to an SSH private key for Arm Performix remote target access",
+          "type": "string"
+        },
+        "workspacePath": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/arm-mcp/overview"
+    },
     "arxiv": {
-      "title": "ArXiv MCP Server",
+      "title": "ArXiv",
       "description": "The ArXiv MCP Server provides a comprehensive bridge between AI assistants and arXiv's research repository through the Model Context Protocol (MCP).   Features: • Search arXiv papers with advanced filtering • Download and store papers locally as markdown • Read and analyze paper content • Deep research analysis prompts • Local paper management and storage • Enhanced tool descriptions optimized for local AI models • Docker MCP Gateway compatible with detailed context  Perfect for researchers, academics, and AI assistants conducting literature reviews and research analysis.  **Recent Update**: Enhanced tool descriptions specifically designed to resolve local AI model confusion and improve Docker MCP Gateway compatibility.",
       "required": [
         "storagePath"
@@ -159,7 +276,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/astro-docs/overview"
     },
     "atlan": {
-      "title": "Atlan MCP Server",
+      "title": "Atlan",
       "description": "MCP server for interacting with Atlan services including asset search, updates, and lineage traversal for comprehensive data governance and discovery.",
       "required": [
         "apiKey",
@@ -196,8 +313,8 @@
       "title": "Atlassian",
       "description": "Tools for Atlassian products (Confluence and Jira). This integration supports both Atlassian Cloud and Jira Server/Data Center deployments.",
       "required": [
-        "jiraUrl",
-        "confluenceUrl"
+        "confluenceUrl",
+        "jiraUrl"
       ],
       "additionalProperties": false,
       "properties": {
@@ -250,6 +367,124 @@
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/audiense-insights/overview"
     },
+    "awsApi": {
+      "title": "AWS API",
+      "description": "Comprehensive AWS API support with command validation and access to all services.",
+      "required": [
+        "awsAccessKeyId",
+        "awsProfileName",
+        "awsRegion",
+        "awsSecretAccessKey",
+        "awsSessionToken"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsAccessKeyId": {
+          "type": "string"
+        },
+        "awsProfileName": {
+          "type": "string"
+        },
+        "awsRegion": {
+          "type": "string"
+        },
+        "awsSecretAccessKey": {
+          "type": "string"
+        },
+        "awsSessionToken": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/aws-api/overview"
+    },
+    "awsAppsync": {
+      "title": "AWS AppSync",
+      "description": "Manage applications powered by AWS AppSync.",
+      "required": [
+        "awsAccessKeyId",
+        "awsProfile",
+        "awsRegion",
+        "awsSecretAccessKey",
+        "awsSessionToken"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsAccessKeyId": {
+          "type": "string"
+        },
+        "awsProfile": {
+          "type": "string"
+        },
+        "awsRegion": {
+          "type": "string"
+        },
+        "awsSecretAccessKey": {
+          "type": "string"
+        },
+        "awsSessionToken": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/aws-appsync/overview"
+    },
+    "awsBedrockCustomModelImport": {
+      "title": "AWS Bedrock Custom Model Import",
+      "description": "Manage custom models in Bedrock.",
+      "required": [
+        "awsAccessKeyId",
+        "awsProfile",
+        "awsRegion",
+        "awsSecretAccessKey",
+        "awsSessionToken",
+        "bedrockModelImportS3Bucket"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsAccessKeyId": {
+          "type": "string"
+        },
+        "awsProfile": {
+          "type": "string"
+        },
+        "awsRegion": {
+          "type": "string"
+        },
+        "awsSecretAccessKey": {
+          "type": "string"
+        },
+        "awsSessionToken": {
+          "type": "string"
+        },
+        "bedrockModelImportS3Bucket": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/aws-bedrock-custom-model-import/overview"
+    },
+    "awsBedrockDataAutomation": {
+      "title": "AWS Bedrock Data Automation",
+      "description": "Analyze documents, images, videos, and audio.",
+      "required": [
+        "awsBucketName"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsBucketName": {
+          "type": "string"
+        },
+        "awsProfile": {
+          "type": "string"
+        },
+        "awsRegion": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/aws-bedrock-data-automation/overview"
+    },
     "awsCdk": {
       "title": "AWS CDK",
       "description": "AWS Cloud Development Kit (CDK) best practices, infrastructure as code patterns, and security compliance with CDK Nag.",
@@ -258,16 +493,43 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/aws-cdk-mcp-server/overview"
     },
     "awsCore": {
-      "title": "AWS Core MCP Server",
+      "title": "AWS Core",
       "description": "Starting point for using the awslabs MCP servers.",
       "additionalProperties": false,
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/aws-core-mcp-server/overview"
     },
+    "awsDataprocessing": {
+      "title": "AWS Data Processing",
+      "description": "Data processing and transformation services.",
+      "required": [
+        "awsProfile",
+        "awsRegion"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsProfile": {
+          "type": "string"
+        },
+        "awsRegion": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/aws-dataprocessing/overview"
+    },
     "awsDiagram": {
       "title": "AWS Diagram",
       "description": "Seamlessly create diagrams using the Python diagrams package DSL. This server allows you to generate AWS diagrams, sequence diagrams, flow diagrams, and class diagrams using Python code.",
+      "required": [
+        "outputDir"
+      ],
       "additionalProperties": false,
+      "properties": {
+        "outputDir": {
+          "type": "string"
+        }
+      },
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/aws-diagram/overview"
     },
@@ -277,6 +539,44 @@
       "additionalProperties": false,
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/aws-documentation/overview"
+    },
+    "awsHealthomics": {
+      "title": "AWS HealthOmics",
+      "description": "Generate, run, debug lifescience workflows.",
+      "required": [
+        "awsProfile",
+        "awsRegion"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsProfile": {
+          "type": "string"
+        },
+        "awsRegion": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/aws-healthomics/overview"
+    },
+    "awsIotSitewise": {
+      "title": "AWS IoT SiteWise",
+      "description": "Industrial IoT asset management.",
+      "required": [
+        "awsProfile",
+        "awsRegion"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsProfile": {
+          "type": "string"
+        },
+        "awsRegion": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/aws-iot-sitewise/overview"
     },
     "awsKbRetrievalServer": {
       "title": "AWS KB Retrieval (Archived)",
@@ -296,6 +596,99 @@
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/aws-kb-retrieval-server/overview"
     },
+    "awsLocation": {
+      "title": "Amazon Location Service",
+      "description": "Place search, geocoding, and route optimization.",
+      "required": [
+        "awsAccessKeyId",
+        "awsProfile",
+        "awsRegion",
+        "awsSecretAccessKey",
+        "awsSessionToken"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsAccessKeyId": {
+          "type": "string"
+        },
+        "awsProfile": {
+          "type": "string"
+        },
+        "awsRegion": {
+          "type": "string"
+        },
+        "awsSecretAccessKey": {
+          "type": "string"
+        },
+        "awsSessionToken": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/aws-location/overview"
+    },
+    "awsMsk": {
+      "title": "Amazon MSK",
+      "description": "Managed Kafka cluster operations.",
+      "required": [
+        "awsAccessKeyId",
+        "awsProfile",
+        "awsRegion",
+        "awsSecretAccessKey",
+        "awsSessionToken"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsAccessKeyId": {
+          "type": "string"
+        },
+        "awsProfile": {
+          "type": "string"
+        },
+        "awsRegion": {
+          "type": "string"
+        },
+        "awsSecretAccessKey": {
+          "type": "string"
+        },
+        "awsSessionToken": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/aws-msk/overview"
+    },
+    "awsPricing": {
+      "title": "AWS Pricing",
+      "description": "AWS service pricing and cost estimates.",
+      "required": [
+        "awsAccessKeyId",
+        "awsProfile",
+        "awsRegion",
+        "awsSecretAccessKey",
+        "awsSessionToken"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsAccessKeyId": {
+          "type": "string"
+        },
+        "awsProfile": {
+          "type": "string"
+        },
+        "awsRegion": {
+          "type": "string"
+        },
+        "awsSecretAccessKey": {
+          "type": "string"
+        },
+        "awsSessionToken": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/aws-pricing/overview"
+    },
     "awsTerraform": {
       "title": "AWS Terraform",
       "description": "Terraform on AWS best practices, infrastructure as code patterns, and security compliance with Checkov.",
@@ -303,15 +696,382 @@
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/aws-terraform/overview"
     },
+    "awslabsBillingCostManagement": {
+      "title": "AWS Billing and Cost Management",
+      "description": "Billing and cost management.",
+      "required": [
+        "awsProfile",
+        "awsRegion",
+        "storageLensManifestLocation"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsProfile": {
+          "type": "string"
+        },
+        "awsRegion": {
+          "type": "string"
+        },
+        "storageLensManifestLocation": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/awslabs-billing-cost-management/overview"
+    },
+    "awslabsCcapi": {
+      "title": "AWS Cloud Control API",
+      "description": "Direct resource management with security scanning.",
+      "required": [
+        "awsAccessKeyId",
+        "awsProfile",
+        "awsRegion",
+        "awsSecretAccessKey"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsAccessKeyId": {
+          "type": "string"
+        },
+        "awsProfile": {
+          "type": "string"
+        },
+        "awsRegion": {
+          "type": "string"
+        },
+        "awsSecretAccessKey": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/awslabs-ccapi/overview"
+    },
+    "awslabsCfn": {
+      "title": "AWS CloudFormation",
+      "description": "CloudFormation resource management via Cloud Control API.",
+      "required": [
+        "awsAccessKeyId",
+        "awsProfile",
+        "awsRegion",
+        "awsSecretAccessKey",
+        "awsSessionToken"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsAccessKeyId": {
+          "type": "string"
+        },
+        "awsProfile": {
+          "type": "string"
+        },
+        "awsRegion": {
+          "type": "string"
+        },
+        "awsSecretAccessKey": {
+          "type": "string"
+        },
+        "awsSessionToken": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/awslabs-cfn/overview"
+    },
+    "awslabsCloudtrail": {
+      "title": "AWS CloudTrail",
+      "description": "AWS CloudTrail audit logging and monitoring.",
+      "required": [
+        "awsProfile"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsProfile": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/awslabs-cloudtrail/overview"
+    },
+    "awslabsCloudwatch": {
+      "title": "Amazon CloudWatch",
+      "description": "Metrics, alarms, and logs analysis.",
+      "required": [
+        "awsProfile",
+        "awsRegion"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsProfile": {
+          "type": "string"
+        },
+        "awsRegion": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/awslabs-cloudwatch/overview"
+    },
+    "awslabsCloudwatchAppsignals": {
+      "title": "Amazon CloudWatch Application Signals",
+      "description": "Application performance monitoring and insights.",
+      "required": [
+        "awsProfile",
+        "awsRegion"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsProfile": {
+          "type": "string"
+        },
+        "awsRegion": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/awslabs-cloudwatch-appsignals/overview"
+    },
+    "awslabsCostExplorer": {
+      "title": "AWS Cost Explorer",
+      "description": "Detailed cost analysis and reporting.",
+      "required": [
+        "awsAccessKeyId",
+        "awsProfile",
+        "awsRegion",
+        "awsSecretAccessKey",
+        "awsSessionToken"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsAccessKeyId": {
+          "type": "string"
+        },
+        "awsProfile": {
+          "type": "string"
+        },
+        "awsRegion": {
+          "type": "string"
+        },
+        "awsSecretAccessKey": {
+          "type": "string"
+        },
+        "awsSessionToken": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/awslabs-cost-explorer/overview"
+    },
+    "awslabsDynamodb": {
+      "title": "Amazon DynamoDB",
+      "description": "Complete DynamoDB operations and table management.",
+      "required": [
+        "awsProfile",
+        "awsRegion"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsProfile": {
+          "type": "string"
+        },
+        "awsRegion": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/awslabs-dynamodb/overview"
+    },
+    "awslabsElasticache": {
+      "title": "Amazon ElastiCache",
+      "description": "ElastiCache control plane operations.",
+      "required": [
+        "awsProfile",
+        "awsRegion"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsProfile": {
+          "type": "string"
+        },
+        "awsRegion": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/awslabs-elasticache/overview"
+    },
+    "awslabsIam": {
+      "title": "AWS IAM",
+      "description": "IAM user, role, group, and policy management.",
+      "required": [
+        "awsAccessKeyId",
+        "awsProfile",
+        "awsRegion",
+        "awsSecretAccessKey"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsAccessKeyId": {
+          "type": "string"
+        },
+        "awsProfile": {
+          "type": "string"
+        },
+        "awsRegion": {
+          "type": "string"
+        },
+        "awsSecretAccessKey": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/awslabs-iam/overview"
+    },
+    "awslabsMemcached": {
+      "title": "Amazon ElastiCache for Memcached",
+      "description": "High-speed caching with Memcached.",
+      "required": [
+        "memcachedHost"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "memcachedHost": {
+          "type": "string"
+        },
+        "memcachedPort": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/awslabs-memcached/overview"
+    },
+    "awslabsNovaCanvas": {
+      "title": "AWS Labs Nova Canvas",
+      "description": "AI image generation using Amazon Nova Canvas.",
+      "required": [
+        "awsAccessKeyId",
+        "awsProfile",
+        "awsRegion",
+        "awsSecretAccessKey",
+        "awsSessionToken"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsAccessKeyId": {
+          "type": "string"
+        },
+        "awsProfile": {
+          "type": "string"
+        },
+        "awsRegion": {
+          "type": "string"
+        },
+        "awsSecretAccessKey": {
+          "type": "string"
+        },
+        "awsSessionToken": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/awslabs-nova-canvas/overview"
+    },
+    "awslabsRedshift": {
+      "title": "Amazon Redshift",
+      "description": "Data warehouse operations and queries.",
+      "required": [
+        "awsProfile",
+        "awsRegion"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsProfile": {
+          "type": "string"
+        },
+        "awsRegion": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/awslabs-redshift/overview"
+    },
+    "awslabsS3Tables": {
+      "title": "AWS S3 Tables",
+      "description": "Manage S3 Tables for analytics.",
+      "required": [
+        "awsAccessKeyId",
+        "awsProfile",
+        "awsRegion",
+        "awsSecretAccessKey",
+        "awsSessionToken"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsAccessKeyId": {
+          "type": "string"
+        },
+        "awsProfile": {
+          "type": "string"
+        },
+        "awsRegion": {
+          "type": "string"
+        },
+        "awsSecretAccessKey": {
+          "type": "string"
+        },
+        "awsSessionToken": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/awslabs-s3-tables/overview"
+    },
+    "awslabsTimestreamForInfluxdb": {
+      "title": "Amazon Timestream for InfluxDB",
+      "description": "Time-series database operations.",
+      "required": [
+        "awsProfile",
+        "awsRegion"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "awsProfile": {
+          "type": "string"
+        },
+        "awsRegion": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/awslabs-timestream-for-influxdb/overview"
+    },
+    "awslabsValkey": {
+      "title": "Amazon ElastiCache/MemoryDB for Valkey",
+      "description": "Advanced data structures with Valkey.",
+      "required": [
+        "valkeyHost",
+        "valkeyPort"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "valkeyHost": {
+          "type": "string"
+        },
+        "valkeyPort": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/awslabs-valkey/overview"
+    },
     "azure": {
       "title": "Azure",
-      "description": "The Azure MCP Server, bringing the power of Azure to your agents.",
+      "description": "Catalog of official Microsoft MCP (Model Context Protocol) server implementations for AI-powered data access and tool integration.",
       "additionalProperties": false,
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/azure/overview"
     },
     "beagleSecurity": {
-      "title": "Beagle security MCP server",
+      "title": "Beagle Security",
       "description": "Connects with the Beagle Security backend using a user token to manage applications, run automated security tests, track vulnerabilities across environments, and gain intelligence from Application and API vulnerability data.",
       "required": [
         "beagleSecurityApiToken"
@@ -415,7 +1175,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/buildkite/overview"
     },
     "camunda": {
-      "title": "Camunda BPM process engine MCP Server",
+      "title": "Camunda BPM Process Engine",
       "description": "Tools to interact with the Camunda 7 Community Edition Engine using the Model Context Protocol (MCP). Whether you're automating workflows, querying process instances, or integrating with external systems, Camunda MCP Server is your agentic solution for seamless interaction with Camunda.",
       "required": [
         "camundahost"
@@ -429,26 +1189,8 @@
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/camunda/overview"
     },
-    "cdataConnectcloud": {
-      "title": "CData Connect Cloud",
-      "description": "This fully functional MCP Server allows you to connect to any data source in Connect Cloud from Claude Desktop.",
-      "required": [
-        "username"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "cdataPat": {
-          "type": "string"
-        },
-        "username": {
-          "type": "string"
-        }
-      },
-      "type": "object",
-      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/cdata-connectcloud/overview"
-    },
     "charmhealth": {
-      "title": "CharmHealth MCP Server",
+      "title": "CharmHealth",
       "description": "An MCP server for CharmHealth EHR that allows LLMs and MCP clients to interact with patient records, encounters, and practice information.",
       "required": [
         "charmhealthApiKey",
@@ -521,7 +1263,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/circleci/overview"
     },
     "clickhouse": {
-      "title": "Official ClickHouse MCP Server",
+      "title": "Official ClickHouse",
       "description": "Official ClickHouse MCP Server.",
       "required": [
         "connectTimeout",
@@ -579,7 +1321,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/close/overview"
     },
     "cloudRun": {
-      "title": "Cloud Run MCP",
+      "title": "Cloud Run",
       "description": "MCP server to deploy apps to Cloud Run.",
       "required": [
         "credentialsPath"
@@ -657,8 +1399,16 @@
     },
     "context7": {
       "title": "Context7",
-      "description": "Context7 MCP Server -- Up-to-date code documentation for LLMs and AI code editors.",
+      "description": "Pull up-to-date, version-specific documentation and code examples for any library or framework straight into your prompt.",
+      "required": [
+        "apiKey"
+      ],
       "additionalProperties": false,
+      "properties": {
+        "apiKey": {
+          "type": "string"
+        }
+      },
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/context7/overview"
     },
@@ -697,8 +1447,15 @@
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/couchbase/overview"
     },
+    "curl": {
+      "title": "Curl",
+      "description": "Standard curl tool.",
+      "additionalProperties": false,
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/curl/overview"
+    },
     "cylera": {
-      "title": "The official MCP Server for Cylera.",
+      "title": "Cylera",
       "description": "Brings context about device inventory, threats, risks and utilization powered by the Cylera Partner API into an LLM.",
       "required": [
         "cyleraBaseUrl",
@@ -751,7 +1508,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/dappier/overview"
     },
     "dappierRemote": {
-      "title": "Dappier Remote MCP Server",
+      "title": "Dappier Remote",
       "description": "Enable fast, free real-time web search and access premium data from trusted media brands—news, financial markets, sports, entertainment, weather, and more. Build powerful AI agents with Dappier.",
       "required": [
         "dappierRemoteApiKey"
@@ -887,6 +1644,13 @@
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/mcp-discord/overview"
     },
+    "docker": {
+      "title": "Docker",
+      "description": "Use the Docker CLI.",
+      "additionalProperties": false,
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/docker/overview"
+    },
     "dockerhub": {
       "title": "Docker Hub",
       "description": "Docker Hub official MCP server.",
@@ -921,8 +1685,15 @@
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/dodo-payments/overview"
     },
+    "dotnetTypesExplorer": {
+      "title": ".NET Types Explorer",
+      "description": "Provides detailed type information from .NET projects including assembly exploration, namespace discovery, type reflection, and NuGet integration for AI coding agents.",
+      "additionalProperties": false,
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/dotnet-types-explorer/overview"
+    },
     "dreamfactory": {
-      "title": "DreamFactory MCP Server",
+      "title": "DreamFactory",
       "description": "DreamFactory is a REST API generation platform with support for hundreds of data sources, including Microsoft SQL Server, MySQL, PostgreSQL, and MongoDB. The DreamFactory MCP Server makes it easy for users to securely interact with their data sources via an MCP client.",
       "required": [
         "dreamfactoryapikey",
@@ -941,14 +1712,14 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/dreamfactory-mcp/overview"
     },
     "duckduckgo": {
-      "title": "DuckDuckGo",
-      "description": "A Model Context Protocol (MCP) server that provides web search capabilities through DuckDuckGo, with additional features for content fetching and parsing.",
+      "title": "Private Web Search",
+      "description": "Community-maintained server for DuckDuckGo search. Not published by or affiliated with DuckDuckGo.",
       "additionalProperties": false,
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/duckduckgo/overview"
     },
     "dynatrace": {
-      "title": "Dynatrace MCP Server",
+      "title": "Dynatrace",
       "description": "This MCP Server allows interaction with the Dynatrace observability platform, brining real-time observability data directly into your development workflow.",
       "required": [
         "oauthClientId",
@@ -1008,7 +1779,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/edubase/overview"
     },
     "effect": {
-      "title": "Effect MCP",
+      "title": "Effect",
       "description": "Tools and resources for writing Effect code in Typescript.",
       "additionalProperties": false,
       "type": "object",
@@ -1033,7 +1804,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/elasticsearch/overview"
     },
     "elevenlabs": {
-      "title": "Elevenlabs MCP",
+      "title": "ElevenLabs",
       "description": "Official ElevenLabs Model Context Protocol (MCP) server that enables interaction with powerful Text to Speech and audio processing APIs.",
       "required": [
         "data"
@@ -1101,6 +1872,13 @@
       "additionalProperties": false,
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/fetch/overview"
+    },
+    "ffmpeg": {
+      "title": "FFmpeg",
+      "description": "Use ffmpeg to process video files.",
+      "additionalProperties": false,
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/ffmpeg/overview"
     },
     "fibery": {
       "title": "Fibery",
@@ -1190,7 +1968,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/firecrawl/overview"
     },
     "firewalla": {
-      "title": "Firewalla MCP Server",
+      "title": "Firewalla",
       "description": "Real-time network monitoring, security analysis, and firewall management through 28 specialized tools. Access security alerts, network flows, device status, and firewall rules directly from your Firewalla device.",
       "required": [
         "boxId",
@@ -1214,24 +1992,12 @@
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/firewalla-mcp-server/overview"
     },
-    "flexprice": {
-      "title": "FlexPrice",
-      "description": "Official flexprice MCP Server.",
-      "required": [
-        "apiKey",
-        "baseUrl"
-      ],
+    "geminiApiDocs": {
+      "title": "Gemini API Docs",
+      "description": "Provides tools to search and retrieve Google Gemini API documentation.",
       "additionalProperties": false,
-      "properties": {
-        "apiKey": {
-          "type": "string"
-        },
-        "baseUrl": {
-          "type": "string"
-        }
-      },
       "type": "object",
-      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/flexprice/overview"
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/gemini-api-docs/overview"
     },
     "git": {
       "title": "Git (Reference)",
@@ -1325,7 +2091,7 @@
     },
     "glif": {
       "title": "glif.app",
-      "description": "Easily run glif.app AI workflows inside your LLM: image generators, memes, selfies, and more. Glif supports all major multimedia AI models inside one app.",
+      "description": "Deprecated — use the hosted Glif MCP server at https://glif.app/mcp.",
       "required": [
         "apiToken",
         "ids",
@@ -1347,7 +2113,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/glif/overview"
     },
     "gmail": {
-      "title": "Gmail MCP Server",
+      "title": "Gmail",
       "description": "A Model Context Protocol server for Gmail operations using IMAP/SMTP with app password authentication. Supports listing messages, searching emails, and sending messages. To create your app password, visit your Google Account settings under Security \u003e App Passwords. Or visit the link https://myaccount.google.com/apppasswords.",
       "required": [
         "emailAddress"
@@ -1365,6 +2131,13 @@
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/gmail-mcp/overview"
     },
+    "googleFlights": {
+      "title": "Google Flights",
+      "description": "Interact with Google Flights data to search for one-way, round-trip, and date range flight options between airports.",
+      "additionalProperties": false,
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/google-flights/overview"
+    },
     "googleMaps": {
       "title": "Google Maps (Archived)",
       "description": "Tools for interacting with the Google Maps API.",
@@ -1381,7 +2154,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/google-maps/overview"
     },
     "googleMapsComprehensive": {
-      "title": "Google Maps Comprehensive MCP",
+      "title": "Google Maps Comprehensive",
       "description": "Complete Google Maps integration with 8 tools including geocoding, places search, directions, elevation data, and more using Google's latest APIs.",
       "required": [
         "googleMapsApiKey"
@@ -1430,7 +2203,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/gyazo/overview"
     },
     "hackernews": {
-      "title": "Hackernews mcp",
+      "title": "Hacker News",
       "description": "A Model Context Protocol (MCP) server that provides access to Hacker News stories, comments, and user data, with support for search and content retrieval.",
       "additionalProperties": false,
       "type": "object",
@@ -1467,7 +2240,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/handwriting-ocr/overview"
     },
     "hdx": {
-      "title": "Humanitarian Data Exchange MCP Server",
+      "title": "Humanitarian Data Exchange",
       "description": "HDX MCP Server provides access to humanitarian data through the Humanitarian Data Exchange (HDX) API - https://data.humdata.org/hapi. This server offers 33 specialized tools for retrieving humanitarian information including affected populations (refugees, IDPs, returnees), baseline demographics, food security indicators, conflict data, funding information, and operational presence across hundreds of countries and territories. See repository for instructions on getting a free HDX_APP_INDENTIFIER for access.",
       "required": [
         "appIdentifier"
@@ -1497,7 +2270,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/heroku/overview"
     },
     "hostinger": {
-      "title": "Hostinger API MCP Server",
+      "title": "Hostinger API",
       "description": "Interact with Hostinger services over the Hostinger API.",
       "required": [
         "apitoken"
@@ -1512,7 +2285,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/hostinger-mcp-server/overview"
     },
     "hoverfly": {
-      "title": "Hoverfly MCP Server",
+      "title": "Hoverfly",
       "description": "A Model Context Protocol (MCP) server that exposes Hoverfly as a programmable tool for AI assistants like Cursor, Claude, GitHub Copilot, and others supporting MCP. It enables dynamic mocking of third-party APIs to unblock development, automate testing, and simulate unavailable services during integration.",
       "required": [
         "data"
@@ -1549,7 +2322,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/hugging-face/overview"
     },
     "hummingbot": {
-      "title": "Hummingbot MCP: Trading Agent",
+      "title": "Hummingbot: Trading Agent",
       "description": "Hummingbot MCP is an open-source toolset that lets you control and monitor your Hummingbot trading bots through AI-powered commands and automation.",
       "required": [
         "apiUrl"
@@ -1687,7 +2460,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/jetbrains/overview"
     },
     "kafkaSchemaReg": {
-      "title": "Kafka Schema Registry MCP",
+      "title": "Kafka Schema Registry",
       "description": "Comprehensive MCP server for Kafka Schema Registry operations. Features multi-registry support, schema contexts, migration tools, OAuth authentication, and 57+ tools for complete schema management. Supports SLIM_MODE for optimal performance.",
       "required": [
         "registryUrl"
@@ -1717,8 +2490,8 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/kafka-schema-reg-mcp/overview"
     },
     "kagisearch": {
-      "title": "Kagi search",
-      "description": "The Official Model Context Protocol (MCP) server for Kagi search \u0026 other tools.",
+      "title": "Kagi Search",
+      "description": "The Official Model Context Protocol (MCP) server for Kagi Search \u0026 other tools.",
       "required": [
         "engine",
         "kagiApiKey"
@@ -1736,7 +2509,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/kagisearch/overview"
     },
     "keboola": {
-      "title": "Keboola MCP Server",
+      "title": "Keboola",
       "description": "Keboola MCP Server is an open-source bridge between your Keboola project and modern AI tools.",
       "required": [
         "kbcStorageToken",
@@ -1774,7 +2547,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/kong/overview"
     },
     "kubectl": {
-      "title": "Kubectl MCP Server",
+      "title": "Kubectl",
       "description": "MCP Server that enables AI assistants to interact with Kubernetes clusters via kubectl operations.",
       "required": [
         "kubeconfig"
@@ -1841,7 +2614,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/line/overview"
     },
     "linkedin": {
-      "title": "LinkedIn MCP Server",
+      "title": "LinkedIn",
       "description": "This MCP server allows Claude and other AI assistants to access your LinkedIn. Scrape LinkedIn profiles and companies, get your recommended jobs, and perform job searches. Set your li_at LinkedIn cookie to use this server.",
       "required": [
         "linkedinCookie",
@@ -1868,7 +2641,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/llmtxt/overview"
     },
     "maestro": {
-      "title": "Maestro MCP Server",
+      "title": "Maestro",
       "description": "A Model Context Protocol (MCP) server exposing Bitcoin blockchain data through the Maestro API platform. Provides tools to explore blocks, transactions, addresses, inscriptions, runes, and other metaprotocol data.",
       "required": [
         "apiKeyApiKey"
@@ -1890,7 +2663,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/manifold/overview"
     },
     "mapbox": {
-      "title": "Mapbox MCP Server",
+      "title": "Mapbox",
       "description": "Transform any AI agent into a geospatially-aware system with Mapbox APIs. Provides geocoding, POI search, routing, travel time matrices, isochrones, and static map generation.",
       "required": [
         "accessToken"
@@ -1905,7 +2678,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/mapbox/overview"
     },
     "mapboxDevkit": {
-      "title": "Mapbox Developer MCP Server",
+      "title": "Mapbox Developer",
       "description": "Direct access to Mapbox developer APIs for AI assistants. Enables style management, token management, GeoJSON preview, and other developer tools for building Mapbox applications.",
       "required": [
         "mapboxAccessToken"
@@ -1956,7 +2729,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/markitdown/overview"
     },
     "mavenTools": {
-      "title": "Maven Tools MCP Server",
+      "title": "Maven Tools",
       "description": "JVM dependency intelligence for any build tool using Maven Central Repository. Includes Context7 integration for upgrade documentation and guidance.",
       "additionalProperties": false,
       "type": "object",
@@ -2000,7 +2773,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/mercado-pago/overview"
     },
     "metabase": {
-      "title": "Metabase MCP",
+      "title": "Metabase",
       "description": "A comprehensive MCP server for Metabase with 70+ tools.",
       "required": [
         "apiKey",
@@ -2067,6 +2840,26 @@
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/multiversx-mx/overview"
     },
+    "n8n": {
+      "title": "n8n",
+      "description": "Bridges n8n's workflow automation platform with AI models, providing access to 543 n8n nodes, workflow templates, and AI-capable automation tools.",
+      "required": [
+        "apiKey",
+        "apiUrl"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "apiKey": {
+          "type": "string"
+        },
+        "apiUrl": {
+          "description": "The URL of your n8n instance (use http://host.docker.internal:5678 for local instances)",
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/n8n/overview"
+    },
     "nasdaqDataLink": {
       "title": "Nasdaq Data Link",
       "description": "MCP server to interact with the data feeds provided by the Nasdaq Data Link. Developed by the community and maintained by Stefano Amorelli.",
@@ -2096,6 +2889,41 @@
       },
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/needle-mcp/overview"
+    },
+    "neo4j": {
+      "title": "Neo4j",
+      "description": "Official MCP server for Neo4j. Interact with Neo4j using Cypher graph queries.",
+      "required": [
+        "database",
+        "password",
+        "readOnly",
+        "telemetry",
+        "uri",
+        "username"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "database": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "telemetry": {
+          "type": "boolean"
+        },
+        "uri": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/neo4j/overview"
     },
     "neo4jCloudAuraApi": {
       "title": "Neo4j Cloud Aura Api",
@@ -2158,6 +2986,9 @@
           "type": "string"
         },
         "responseTokenLimit": {
+          "type": "string"
+        },
+        "schemaSampleSize": {
           "type": "string"
         },
         "serverAllowOrigins": {
@@ -2281,6 +3112,13 @@
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/neon/overview"
     },
+    "nextDevtools": {
+      "title": "Next.js DevTools",
+      "description": "next-devtools-mcp is a Model Context Protocol (MCP) server that provides Next.js development tools and utilities for AI coding assistants.",
+      "additionalProperties": false,
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/next-devtools-mcp/overview"
+    },
     "nodeCodeSandbox": {
       "title": "Node.js Sandbox",
       "description": "A Node.js–based Model Context Protocol server that spins up disposable Docker containers to execute arbitrary JavaScript.",
@@ -2332,8 +3170,47 @@
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/obsidian/overview"
     },
+    "okta": {
+      "title": "Okta",
+      "description": "## :tada: __It's Official__ :tada: The Okta Open-Source MCP Server integrates with LLMs and AI agents, allowing you to perform various Okta management operations using natural language and is Generally Available (GA).",
+      "required": [
+        "logPath",
+        "oktaClientId",
+        "oktaKeyId",
+        "oktaLogLevel",
+        "oktaOrgUrl",
+        "oktaPrivateKey",
+        "oktaScopes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "logPath": {
+          "type": "string"
+        },
+        "oktaClientId": {
+          "type": "string"
+        },
+        "oktaKeyId": {
+          "type": "string"
+        },
+        "oktaLogLevel": {
+          "type": "string"
+        },
+        "oktaOrgUrl": {
+          "type": "string"
+        },
+        "oktaPrivateKey": {
+          "type": "string"
+        },
+        "oktaScopes": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/okta-mcp-server/overview"
+    },
     "oktaMcpFctr": {
-      "title": "Okta MCP Server",
+      "title": "Okta",
       "description": "Secure Okta identity and access management via Model Context Protocol (MCP). Access Okta users, groups, applications, logs, and policies through AI assistants with enterprise-grade security.",
       "required": [
         "clientOrgurl"
@@ -2360,7 +3237,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/okta-mcp-fctr/overview"
     },
     "omi": {
-      "title": "omi-mcp",
+      "title": "Omi",
       "description": "A Model Context Protocol server for Omi interaction and automation. This server provides tools to read, search, and manipulate Memories and Conversations.",
       "required": [
         "apiKey"
@@ -2379,14 +3256,7 @@
       "description": "ONLYOFFICE DocSpace is a room-based collaborative platform which allows organizing a clear file structure depending on users' needs or project goals.",
       "required": [
         "baseUrl",
-        "docspaceApiKey",
-        "docspaceAuthToken",
-        "docspacePassword",
-        "docspaceUsername",
-        "dynamic",
-        "origin",
-        "toolsets",
-        "userAgent"
+        "docspaceApiKey"
       ],
       "additionalProperties": false,
       "properties": {
@@ -2395,34 +3265,13 @@
         },
         "docspaceApiKey": {
           "type": "string"
-        },
-        "docspaceAuthToken": {
-          "type": "string"
-        },
-        "docspacePassword": {
-          "type": "string"
-        },
-        "docspaceUsername": {
-          "type": "string"
-        },
-        "dynamic": {
-          "type": "boolean"
-        },
-        "origin": {
-          "type": "string"
-        },
-        "toolsets": {
-          "type": "string"
-        },
-        "userAgent": {
-          "type": "string"
         }
       },
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/onlyoffice-docspace/overview"
     },
     "openapi": {
-      "title": "OpenAPI Toolkit for MCP",
+      "title": "OpenAPI Toolkit",
       "description": "Fetch, validate, and generate code or curl from any OpenAPI or Swagger spec - all from a single URL.",
       "required": [
         "mode"
@@ -2510,7 +3359,7 @@
     },
     "opik": {
       "title": "Opik",
-      "description": "Model Context Protocol (MCP) implementation for Opik enabling seamless IDE integration and unified access to prompts, projects, traces, and metrics.",
+      "description": "Model Context Protocol (MCP) server for Opik, the open-source LLM observability and evaluation platform, built by Comet. Read traces, log scores, and manage prompts from Claude Code, Cursor, or VS Code.",
       "required": [
         "apiBaseUrl",
         "apiKey",
@@ -2532,7 +3381,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/opik/overview"
     },
     "opine": {
-      "title": "Opine MCP Server",
+      "title": "Opine",
       "description": "A Model Context Protocol (MCP) server for querying deals and evaluations from the Opine CRM API.",
       "required": [
         "opineApiKey"
@@ -2547,7 +3396,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/opine-mcp-server/overview"
     },
     "oracle": {
-      "title": "Oracle Database MCP Server",
+      "title": "Oracle Database",
       "description": "Connect to Oracle databases via MCP, providing secure read-only access with support for schema exploration, query execution, and metadata inspection.",
       "required": [
         "oracleConnectionString",
@@ -2596,7 +3445,7 @@
     },
     "paperSearch": {
       "title": "Paper Search",
-      "description": "A MCP for searching and downloading academic papers from multiple sources like arXiv, PubMed, bioRxiv, etc.",
+      "description": "MCP, CLI, Skills for searching and downloading academic papers from multiple sources like arXiv, PubMed, bioRxiv, etc.",
       "additionalProperties": false,
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/paper-search/overview"
@@ -2651,7 +3500,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/pinecone/overview"
     },
     "playwright": {
-      "title": "ExecuteAutomation Playwright MCP",
+      "title": "ExecuteAutomation Playwright",
       "description": "Playwright Model Context Protocol Server - Tool to automate Browsers and APIs in Claude Desktop, Cline, Cursor IDE and More 🔌.",
       "required": [
         "data"
@@ -2666,7 +3515,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/playwright-mcp-server/overview"
     },
     "pluggedinMcpProxy": {
-      "title": "Plugged.in MCP Proxy",
+      "title": "Plugged.in Proxy",
       "description": "A unified MCP proxy that aggregates multiple MCP servers into one interface, enabling seamless tool discovery and management across all your AI interactions. Manage all your MCP servers from a single connection point with RAG capabilities and real-time notifications.",
       "required": [
         "pluggedinApiBaseUrl",
@@ -2715,23 +3564,8 @@
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/pomodash/overview"
     },
-    "postgres": {
-      "title": "PostgreSQL readonly (Archived)",
-      "description": "Connect with read-only access to PostgreSQL databases. This server enables LLMs to inspect database schemas and execute read-only queries.",
-      "required": [
-        "url"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "url": {
-          "type": "string"
-        }
-      },
-      "type": "object",
-      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/postgres/overview"
-    },
     "postman": {
-      "title": "Postman MCP server",
+      "title": "Postman",
       "description": "Postman's MCP server connects AI agents, assistants, and chatbots directly to your APIs on Postman. Use natural language to prompt AI to automate work across your Postman collections, environments, workspaces, and more.",
       "required": [
         "apiKey"
@@ -2768,6 +3602,49 @@
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/prometheus/overview"
     },
+    "proxmox": {
+      "title": "Proxmox VE",
+      "description": "Manage Proxmox VE infrastructure including virtual machines, containers, storage, networking, firewall rules, high availability, and more.",
+      "required": [
+        "host",
+        "tokenName"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "host": {
+          "description": "Proxmox VE hostname or IP address",
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "port": {
+          "description": "Proxmox VE API port",
+          "type": "string"
+        },
+        "timeout": {
+          "description": "Request timeout in seconds",
+          "type": "string"
+        },
+        "tokenName": {
+          "description": "API token name",
+          "type": "string"
+        },
+        "tokenValue": {
+          "type": "string"
+        },
+        "user": {
+          "description": "Proxmox VE user (e.g. root@pam)",
+          "type": "string"
+        },
+        "verifySsl": {
+          "description": "Verify SSL certificates (true/false)",
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/proxmox/overview"
+    },
     "puppeteer": {
       "title": "Puppeteer (Archived)",
       "description": "Browser automation and web scraping using Puppeteer.",
@@ -2777,13 +3654,13 @@
     },
     "pythonRefactoring": {
       "title": "Python Refactoring Assistant",
-      "description": "Educational Python refactoring assistant that provides guided suggestions for AI assistants.  Features: • Step-by-step refactoring instructions without modifying code • Comprehensive code analysis using professional tools (Rope, Radon, Vulture, Jedi, LibCST, Pyrefly) • Educational approach teaching refactoring patterns through guided practice • Support for both guide-only and apply-changes modes • Identifies long functions, high complexity, dead code, and type issues • Provides precise line numbers and specific refactoring instructions • Compatible with all AI assistants (Claude, GPT, Cursor, Continue, etc.)  Perfect for developers learning refactoring patterns while maintaining full control over code changes. Acts as a refactoring mentor rather than an automated code modifier.",
+      "description": "Educational Python refactoring assistant that provides guided suggestions for AI assistants.",
       "additionalProperties": false,
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/mcp-python-refactoring/overview"
     },
     "quantconnect": {
-      "title": "QuantConnect MCP Server",
+      "title": "QuantConnect",
       "description": "The QuantConnect MCP Server is a bridge for AIs (such as Claude and OpenAI o3 Pro) to interact with our cloud platform. When equipped with our MCP, the AI can perform tasks on your behalf through our API such as updating projects, writing strategies, backtesting, and deploying strategies to production live-trading.",
       "required": [
         "agentname",
@@ -2806,7 +3683,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/quantconnect/overview"
     },
     "ramparts": {
-      "title": "Ramparts MCP Security Scanner",
+      "title": "Ramparts Security Scanner",
       "description": "A comprehensive security scanner for MCP servers with YARA rules and static analysis capabilities.",
       "additionalProperties": false,
       "type": "object",
@@ -2831,8 +3708,8 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/razorpay/overview"
     },
     "reddit": {
-      "title": "Mcp reddit",
-      "description": "A comprehensive Model Context Protocol (MCP) server for Reddit integration. This server enables AI agents to interact with Reddit programmatically through a standardized interface.",
+      "title": "Reddit",
+      "description": "This server provides AI agents with tools to fetch, post and search on Reddit.",
       "required": [
         "redditClientId",
         "redditClientSecret",
@@ -2931,7 +3808,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/redis-cloud/overview"
     },
     "ref": {
-      "title": "Ref - up-to-date docs",
+      "title": "Ref - Up-To-Date Docs",
       "description": "Ref powerful search tool connets your coding tools with documentation context. It includes an up-to-date index of public documentation and it can ingest your private documentation (eg. GitHub repos, PDFs) as well.",
       "required": [
         "apiKey"
@@ -2968,8 +3845,8 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/render/overview"
     },
     "resend": {
-      "title": "Send emails",
-      "description": "Send emails directly from Cursor with this email sending MCP server.",
+      "title": "Resend",
+      "description": "The official MCP server to send emails and interact with Resend.",
       "required": [
         "replyTo",
         "sender"
@@ -3010,23 +3887,8 @@
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/risken/overview"
     },
-    "root": {
-      "title": "Root.io Vulnerability Remediation MCP",
-      "description": "MCP server that provides container image vulnerability scanning and remediation capabilities through Root.io.",
-      "required": [
-        "apiAccessToken"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "apiAccessToken": {
-          "type": "string"
-        }
-      },
-      "type": "object",
-      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/root/overview"
-    },
     "ros2": {
-      "title": "WiseVision ROS2 MCP Server",
+      "title": "WiseVision ROS2",
       "description": "Python server implementing Model Context Protocol (MCP) for ROS2.",
       "additionalProperties": false,
       "type": "object",
@@ -3048,7 +3910,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/rube/overview"
     },
     "rustMcpFilesystem": {
-      "title": "Blazing-fast, asynchronous MCP server for seamless filesystem operations.",
+      "title": "Rust Filesystem",
       "description": "The Rust MCP Filesystem is a high-performance, asynchronous, and lightweight Model Context Protocol (MCP) server built in Rust for secure and efficient filesystem operations. Designed with security in mind, it operates in read-only mode by default and restricts clients from updating allowed directories via MCP Roots unless explicitly enabled, ensuring robust protection against unauthorized access. Leveraging asynchronous I/O, it delivers blazingly fast performance with a minimal resource footprint. Optimized for token efficiency, the Rust MCP Filesystem enables large language models (LLMs) to precisely target searches and edits within specific sections of large files and restrict operations by file size range, making it ideal for efficient file exploration, automation, and system integration.",
       "required": [
         "allowWrite",
@@ -3129,7 +3991,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/schemacrawler-ai/overview"
     },
     "schoginiMcpImageBorder": {
-      "title": "Schogini MCP Image Border",
+      "title": "Schogini Image Border",
       "description": "This adds a border to an image and returns base64 encoded image.",
       "additionalProperties": false,
       "type": "object",
@@ -3166,7 +4028,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/scrapezy/overview"
     },
     "securenoteLink": {
-      "title": "Securenote.link mcp server",
+      "title": "Securenote.link",
       "description": "SecureNote.link MCP Server - allowing AI agents to securely share sensitive information through end-to-end encrypted notes.",
       "additionalProperties": false,
       "type": "object",
@@ -3236,7 +4098,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/short-io/overview"
     },
     "simplechecklist": {
-      "title": "SimpleCheckList MCP Server",
+      "title": "SimpleCheckList",
       "description": "Advanced SimpleCheckList with MCP server and SQLite database for comprehensive task management.  Features: • Complete project and task management system • Hierarchical organization (Projects → Groups → Task Lists → Tasks → Subtasks) • SQLite database for data persistence • RESTful API with comprehensive endpoints • MCP protocol compliance for AI assistant integration • Docker-optimized deployment with stability improvements  **v1.0.1 Update**: Enhanced Docker stability with improved container lifecycle management. Default mode optimized for containerized deployment with reliable startup and shutdown processes.  Perfect for AI assistants managing complex project workflows and task hierarchies.",
       "additionalProperties": false,
       "type": "object",
@@ -3279,7 +4141,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/slack/overview"
     },
     "smartbear": {
-      "title": "SmartBear MCP Server",
+      "title": "SmartBear",
       "description": "MCP server for AI access to SmartBear tools, including BugSnag, Reflect, API Hub, PactFlow.",
       "required": [
         "apiHubApiKey",
@@ -3422,7 +4284,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/supadata/overview"
     },
     "suzieq": {
-      "title": "Suzieq MCP",
+      "title": "Suzieq",
       "description": "MCP Server to interact with a SuzieQ network observability instance via its REST API.",
       "required": [
         "apiEndpoint",
@@ -3441,7 +4303,7 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/suzieq/overview"
     },
     "taskOrchestrator": {
-      "title": "Task orchestrator",
+      "title": "Task Orchestrator",
       "description": "Model Context Protocol (MCP) server for comprehensive task and feature management, providing AI assistants with a structured, context-efficient way to interact with project data.",
       "additionalProperties": false,
       "type": "object",
@@ -3492,20 +4354,41 @@
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/telnyx/overview"
     },
-    "tembo": {
-      "title": "Tembo",
-      "description": "MCP server for Tembo Cloud's platform API.",
+    "temporal": {
+      "title": "Temporal",
+      "description": "Manage Temporal workflows, schedules, namespaces, task queues, and workflow execution history from MCP clients.",
       "required": [
-        "apiKey"
+        "temporalHost",
+        "temporalNamespace"
       ],
       "additionalProperties": false,
       "properties": {
         "apiKey": {
           "type": "string"
+        },
+        "temporalHost": {
+          "description": "Temporal frontend host and port.",
+          "type": "string"
+        },
+        "temporalNamespace": {
+          "description": "Temporal namespace to connect to.",
+          "type": "string"
+        },
+        "temporalTlsClientCertPath": {
+          "description": "Optional path inside the container to an mTLS client certificate.",
+          "type": "string"
+        },
+        "temporalTlsClientKeyPath": {
+          "description": "Optional path inside the container to an mTLS client private key.",
+          "type": "string"
+        },
+        "temporalTlsEnabled": {
+          "description": "Whether to force TLS for the Temporal connection.",
+          "type": "string"
         }
       },
       "type": "object",
-      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/tembo/overview"
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/temporal/overview"
     },
     "terraform": {
       "title": "Hashicorp Terraform",
@@ -3513,6 +4396,34 @@
       "additionalProperties": false,
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/terraform/overview"
+    },
+    "testkube": {
+      "title": "Testkube",
+      "description": "The Testkube MCP Server exposes continuous testing capabilities (test orchestration, execution, troubleshooting and anlysis) to AI tools and workflows.",
+      "required": [
+        "tkAccessToken",
+        "tkControlPlaneUrl",
+        "tkEnvId",
+        "tkOrgId"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "tkAccessToken": {
+          "type": "string"
+        },
+        "tkControlPlaneUrl": {
+          "description": "The URL of the Testkube Control Plane",
+          "type": "string"
+        },
+        "tkEnvId": {
+          "type": "string"
+        },
+        "tkOrgId": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/testkube/overview"
     },
     "textToGraphql": {
       "title": "Text-to-GraphQL",
@@ -3552,6 +4463,28 @@
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/text-to-graphql/overview"
     },
+    "thingsboard": {
+      "title": "ThingsBoard",
+      "description": "Connect your AI workflows to the ThingsBoard IoT Platform through this MCP server.  Enables LLMs to query device telemetry, manage IoT entities (devices, assets, customers), and analyze sensor data - all through natural language.  Perfect for building AI-powered IoT monitoring, predictive maintenance, and automated device management workflows. Supports both ThingsBoard Community Edition and Professional Edition.",
+      "required": [
+        "url"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "password": {
+          "type": "string"
+        },
+        "url": {
+          "description": "URL of your ThingsBoard Platform instance",
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/thingsboard/overview"
+    },
     "tigris": {
       "title": "Tigris Data",
       "description": "Tigris is a globally distributed S3-compatible object storage service that provides low latency anywhere in the world, enabling developers to store and access any amount of data for a wide range of use cases.",
@@ -3581,23 +4514,8 @@
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/time/overview"
     },
-    "triplewhale": {
-      "title": "Triplewhale",
-      "description": "Triplewhale MCP Server.",
-      "required": [
-        "apiKey"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "apiKey": {
-          "type": "string"
-        }
-      },
-      "type": "object",
-      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/triplewhale/overview"
-    },
     "unrealEngine": {
-      "title": "Unreal Engine MCP Server",
+      "title": "Unreal Engine",
       "description": "A comprehensive Model Context Protocol (MCP) server that enables AI assistants to control Unreal Engine via Remote Control API. Built with TypeScript and designed for game development automation.",
       "required": [
         "ueHost",
@@ -3626,6 +4544,29 @@
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/unreal-engine-mcp-server/overview"
     },
+    "vectraAiRux": {
+      "title": "Vectra AI RUX MCP Server",
+      "description": "Vectra AI MCP Server - An MCP server that connects AI assistants \u0026 agents to the Vectra AI security platform, enabling intelligent threat analysis and automated incident response.",
+      "required": [
+        "vectraClientId"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "vectraClientId": {
+          "description": "The client ID of the Vectra AI RUX MCP Server",
+          "type": "string"
+        },
+        "vectraClientSecret": {
+          "type": "string"
+        },
+        "vectraUrl": {
+          "description": "The base URL of the Vectra AI RUX MCP Server",
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/vectra-ai-rux-mcp-server/overview"
+    },
     "veyrax": {
       "title": "VeyraX",
       "description": "VeyraX MCP is the only connection you need to access all your tools in any MCP-compatible environment.",
@@ -3641,6 +4582,132 @@
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/veyrax/overview"
     },
+    "victorialogs": {
+      "title": "VictoriaLogs",
+      "description": "Provides access to your VictoriaLogs instance and seamless integration with VictoriaLogs APIs and documentation. It can give you a comprehensive interface for logs, observability, and debugging tasks related to your VictoriaLogs instances, enable advanced automation and interaction capabilities for engineers and tools.",
+      "required": [
+        "vlInstanceEntrypoint"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "mcpDisabledTools": {
+          "description": "Comma-separated list of tools to disable (possible values: export, metric_statistics, test_rules)",
+          "type": "string"
+        },
+        "mcpHeartbeatInterval": {
+          "description": "Defines the heartbeat interval for the streamable-http protocol. It means the MCP server will send a heartbeat to the client through the GET connection, to keep the connection alive from being closed by the network infrastructure (e.g. gateways)",
+          "type": "string"
+        },
+        "mcpListenAddr": {
+          "description": "Address and port on which the MCP server listens for incoming connections (e.g., ':8081')",
+          "type": "string"
+        },
+        "mcpServerMode": {
+          "description": "Mode in which the MCP server operates (possible values: stdio, http, sse)",
+          "type": "string"
+        },
+        "vlInstanceBearerToken": {
+          "type": "string"
+        },
+        "vlInstanceEntrypoint": {
+          "description": "URL of VictoriaLogs instance (it should be root URL of vlsingle or vlselect)",
+          "type": "string"
+        },
+        "vlInstanceHeaders": {
+          "description": "Optional custom headers to include in requests to VictoriaLogs instance, formatted as 'header1=value1,header2=value2'",
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/victorialogs/overview"
+    },
+    "victoriametrics": {
+      "title": "VictoriaMetrics",
+      "description": "Provides access to your VictoriaMetrics instance and seamless integration with VictoriaMetrics APIs and documentation. It can give you a comprehensive interface for monitoring, observability, and debugging tasks related to your VictoriaMetrics instances, enable advanced automation and interaction capabilities for engineers and tools.",
+      "required": [
+        "vmInstanceEntrypoint",
+        "vmInstanceType"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "mcpDisableResources": {
+          "description": "Set to 'true' to disable all resource endpoints",
+          "type": "string"
+        },
+        "mcpDisabledTools": {
+          "description": "Comma-separated list of tools to disable (possible values: export, metric_statistics, test_rules)",
+          "type": "string"
+        },
+        "mcpHeartbeatInterval": {
+          "description": "Defines the heartbeat interval for the streamable-http protocol. It means the MCP server will send a heartbeat to the client through the GET connection, to keep the connection alive from being closed by the network infrastructure (e.g. gateways)",
+          "type": "string"
+        },
+        "mcpListenAddr": {
+          "description": "Address and port on which the MCP server listens for incoming connections (e.g., ':8080')",
+          "type": "string"
+        },
+        "mcpServerMode": {
+          "description": "Mode in which the MCP server operates (possible values: stdio, http, sse)",
+          "type": "string"
+        },
+        "vmInstanceBearerToken": {
+          "type": "string"
+        },
+        "vmInstanceEntrypoint": {
+          "description": "URL of VictoriaMetrics instance (it should be root URL of vmsingle or vmselect)",
+          "type": "string"
+        },
+        "vmInstanceHeaders": {
+          "description": "Optional custom headers to include in requests to VictoriaMetrics instance, formatted as 'header1=value1,header2=value2'",
+          "type": "string"
+        },
+        "vmInstanceType": {
+          "description": "Type of VictoriaMetrics instance (possible values: single, cluster)",
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/victoriametrics/overview"
+    },
+    "victoriatraces": {
+      "title": "VictoriaTraces",
+      "description": "Provides access to your VictoriaTraces instance and seamless integration with VictoriaTraces APIs and documentation. It can give you a comprehensive interface for tracing, observability, and debugging tasks related to your VictoriaTraces instances, enable advanced automation and interaction capabilities for engineers and tools.",
+      "required": [
+        "vtInstanceEntrypoint"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "mcpDisabledTools": {
+          "description": "Comma-separated list of tools to disable (possible values: export, metric_statistics, test_rules)",
+          "type": "string"
+        },
+        "mcpHeartbeatInterval": {
+          "description": "Defines the heartbeat interval for the streamable-http protocol. It means the MCP server will send a heartbeat to the client through the GET connection, to keep the connection alive from being closed by the network infrastructure (e.g. gateways)",
+          "type": "string"
+        },
+        "mcpListenAddr": {
+          "description": "Address and port on which the MCP server listens for incoming connections (e.g., ':8081')",
+          "type": "string"
+        },
+        "mcpServerMode": {
+          "description": "Mode in which the MCP server operates (possible values: stdio, http, sse)",
+          "type": "string"
+        },
+        "vtInstanceBearerToken": {
+          "type": "string"
+        },
+        "vtInstanceEntrypoint": {
+          "description": "URL of VictoriaTraces instance (it should be root URL of vtsingle or vtselect)",
+          "type": "string"
+        },
+        "vtInstanceHeaders": {
+          "description": "Optional custom headers to include in requests to VictoriaTraces instance, formatted as 'header1=value1,header2=value2'",
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/victoriatraces/overview"
+    },
     "vizro": {
       "title": "Vizro",
       "description": "provides tools and templates to create a functioning Vizro chart or dashboard step by step.",
@@ -3649,14 +4716,14 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/vizro/overview"
     },
     "vulnNist": {
-      "title": "Vuln nist mcp server",
+      "title": "Vuln NIST",
       "description": "This MCP server exposes tools to query the NVD/CVE REST API and return formatted text results suitable for LLM consumption via the MCP protocol. It includes automatic query chunking for large date ranges and parallel processing for improved performance.",
       "additionalProperties": false,
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/vuln-nist-mcp-server/overview"
     },
     "wayfound": {
-      "title": "Wayfound MCP",
+      "title": "Wayfound",
       "description": "Wayfound’s MCP server allows business users to govern, supervise, and improve AI Agents.",
       "required": [
         "mcpApiKey"
@@ -3708,11 +4775,38 @@
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/wolfram-alpha/overview"
     },
     "youtubeTranscript": {
-      "title": "YouTube transcripts",
+      "title": "YouTube Transcripts",
       "description": "Retrieves transcripts for given YouTube video URLs.",
       "additionalProperties": false,
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/youtube_transcript/overview"
+    },
+    "zen": {
+      "title": "Zen",
+      "description": "Bridges multiple AI models and CLIs, enabling orchestrated workflows across Claude Code, Gemini CLI, Codex CLI, and other AI development tools.",
+      "required": [
+        "geminiApiKey",
+        "openaiApiKey",
+        "openrouterApiKey",
+        "xaiApiKey"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "geminiApiKey": {
+          "type": "string"
+        },
+        "openaiApiKey": {
+          "type": "string"
+        },
+        "openrouterApiKey": {
+          "type": "string"
+        },
+        "xaiApiKey": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/zen/overview"
     },
     "zerodhaKite": {
       "title": "Zerodha Kite Connect",
@@ -3740,6 +4834,62 @@
       },
       "type": "object",
       "x-dockerHubUrl": "https://hub.docker.com/mcp/server/zerodha-kite/overview"
+    },
+    "zscaler": {
+      "title": "Zscaler",
+      "description": "Manage the Zscaler Zero Trust Exchange platform via 300+ tools across ZPA (private access), ZIA (internet access), ZDX (digital experience), ZCC (client connector), ZTW (workload segmentation), ZMS (microsegmentation), EASM (attack surface management), Z-Insights (security analytics), and ZIdentity (identity management). Create and manage policies, troubleshoot connectivity, audit security configurations, and investigate incidents — all from your AI assistant.",
+      "required": [
+        "disabledServices",
+        "disabledTools",
+        "skipConfirmations",
+        "writeEnabled",
+        "writeTools",
+        "zscalerClientId",
+        "zscalerClientSecret",
+        "zscalerCloud",
+        "zscalerCustomerId",
+        "zscalerVanityDomain"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "disabledServices": {
+          "description": "Comma-separated services to disable (zcc,zdx,zpa,zia,ztw,zid,zeasm,zins,zms)",
+          "type": "string"
+        },
+        "disabledTools": {
+          "description": "Comma-separated tool name patterns to disable (e.g. zia_delete_*,zpa_bulk_*)",
+          "type": "string"
+        },
+        "skipConfirmations": {
+          "description": "Skip HMAC confirmation prompts for destructive operations (true/false)",
+          "type": "string"
+        },
+        "writeEnabled": {
+          "description": "Enable write operations (true/false)",
+          "type": "string"
+        },
+        "writeTools": {
+          "description": "Comma-separated write tool patterns to allow (e.g. zpa_create_*,zia_update_*)",
+          "type": "string"
+        },
+        "zscalerClientId": {
+          "type": "string"
+        },
+        "zscalerClientSecret": {
+          "type": "string"
+        },
+        "zscalerCloud": {
+          "type": "string"
+        },
+        "zscalerCustomerId": {
+          "type": "string"
+        },
+        "zscalerVanityDomain": {
+          "type": "string"
+        }
+      },
+      "type": "object",
+      "x-dockerHubUrl": "https://hub.docker.com/mcp/server/zscaler-mcp-server/overview"
     }
   },
   "type": "object"
