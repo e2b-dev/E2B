@@ -169,6 +169,20 @@ def test_async_transport_is_shared_across_loops():
 CHUNK = b"x" * 1024
 
 
+def _read_request_head(conn) -> None:
+    """Read up to the end of the request head.
+
+    Accumulates across reads, since the head can arrive split across TCP
+    segments, and stops on a closed peer rather than spinning on empty reads.
+    """
+    buffered = b""
+    while b"\r\n\r\n" not in buffered:
+        received = conn.recv(65536)
+        if not received:
+            return
+        buffered += received
+
+
 def _start_volume_file_server(
     chunk_delays: List[float], ttfb_delay: float = 0.0
 ) -> str:
@@ -183,8 +197,7 @@ def _start_volume_file_server(
     def serve():
         try:
             conn, _ = sock.accept()
-            while b"\r\n\r\n" not in conn.recv(65536):
-                pass
+            _read_request_head(conn)
             time.sleep(ttfb_delay)
             conn.sendall(
                 b"HTTP/1.1 200 OK\r\n"
@@ -244,6 +257,38 @@ def test_sync_stream_stall_raises_read_timeout(short_read_timeout):
     assert received == [CHUNK]
 
 
+# A body far past the ~500 KiB the socket and reqwest buffers hold between
+# them, so a stall a quarter of the way in provably lands mid-transfer with the
+# server still pushing, rather than after the whole body was read ahead.
+SLOW_CONSUMER_CHUNKS = 2048
+SLOW_CONSUMER_STALL_AT = SLOW_CONSUMER_CHUNKS // 4
+
+
+def test_sync_stream_survives_a_consumer_slower_than_read_timeout(short_read_timeout):
+    # The idle read timeout is wire-only: the server sends every chunk
+    # promptly and the consumer then pauses for far longer than the bound,
+    # which must not abort the stream (parity with the JS SDK's
+    # "wrapStreamWithConnectionCleanup does not abort a slow consumer").
+    # This guards the bound staying an idle one — putting a wall-clock deadline
+    # back on the streaming path would fail here while every stall test above
+    # kept passing.
+    api_url = _start_volume_file_server([0.0] * SLOW_CONSUMER_CHUNKS)
+    volume = Volume(volume_id="v1", name="test", token="vol-token")
+
+    stream = volume.read_file("file.bin", format="stream", api_url=api_url)
+    received = 0
+    stalled = False
+    for chunk in stream:
+        received += len(chunk)
+        # A threshold rather than an exact count: the transport is free to
+        # coalesce or split the chunks it hands back.
+        if not stalled and received >= len(CHUNK) * SLOW_CONSUMER_STALL_AT:
+            stalled = True
+            time.sleep(short_read_timeout * 3)
+    assert stalled
+    assert received == len(CHUNK) * SLOW_CONSUMER_CHUNKS
+
+
 def test_async_stream_survives_transfers_longer_than_read_timeout(short_read_timeout):
     api_url = _start_volume_file_server([0.15] * 4)
     volume = AsyncVolume(volume_id="v1", name="test", token="vol-token")
@@ -253,6 +298,54 @@ def test_async_stream_survives_transfers_longer_than_read_timeout(short_read_tim
         return b"".join([chunk async for chunk in stream])
 
     assert asyncio.run(run()) == CHUNK * 4
+
+
+def test_async_stream_survives_a_consumer_slower_than_read_timeout(short_read_timeout):
+    # Async counterpart of the sync slow-consumer case above, against the
+    # async streaming transport.
+    api_url = _start_volume_file_server([0.0] * SLOW_CONSUMER_CHUNKS)
+    volume = AsyncVolume(volume_id="v1", name="test", token="vol-token")
+
+    async def run():
+        stream = await volume.read_file("file.bin", format="stream", api_url=api_url)
+        received = 0
+        stalled = False
+        async for chunk in stream:
+            received += len(chunk)
+            if not stalled and received >= len(CHUNK) * SLOW_CONSUMER_STALL_AT:
+                stalled = True
+                await asyncio.sleep(short_read_timeout * 3)
+        return stalled, received
+
+    assert asyncio.run(run()) == (True, len(CHUNK) * SLOW_CONSUMER_CHUNKS)
+
+
+def test_sync_stream_explicit_request_timeout_is_a_total_transfer_deadline(
+    short_read_timeout,
+):
+    # The counterpart that makes the two tests above meaningful: same fixture,
+    # same body, same stall — the only difference is the explicit
+    # `request_timeout`, which is documented as a whole-transfer deadline and
+    # so *does* cut off a slow consumer. Without this A/B, a regression that
+    # turned the default idle bound into a wall-clock one would look
+    # indistinguishable from correct behavior. The stall is longer than the
+    # total deadline, and the tests above establish that a slow consumer never
+    # trips the idle bound, so the timeout here can only be the deadline.
+    api_url = _start_volume_file_server([0.0] * SLOW_CONSUMER_CHUNKS)
+    volume = Volume(volume_id="v1", name="test", token="vol-token")
+
+    stream = volume.read_file(
+        "file.bin", format="stream", request_timeout=1.0, api_url=api_url
+    )
+    received = 0
+    stalled = False
+    with pytest.raises(httpx.TimeoutException):
+        for chunk in stream:
+            received += len(chunk)
+            if not stalled and received >= len(CHUNK) * SLOW_CONSUMER_STALL_AT:
+                stalled = True
+                time.sleep(2.0)
+    assert stalled
 
 
 def test_async_stream_stall_raises_read_timeout(short_read_timeout):
