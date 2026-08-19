@@ -94,6 +94,42 @@ test('limitConcurrency releases when the response body errors', async () => {
   expect(await second.text()).toBe('ok')
 })
 
+test('limitConcurrency releases when the body errors between pulls', async () => {
+  let controllerRef!: ReadableStreamDefaultController<Uint8Array>
+  const inner = vi.fn(
+    async () =>
+      new Response(
+        new ReadableStream<Uint8Array>({
+          start(controller) {
+            controllerRef = controller
+            // One chunk fills the passthrough queue so no read is pending
+            // when the source errors later.
+            controller.enqueue(new Uint8Array([1]))
+          },
+        })
+      )
+  ) as unknown as typeof fetch
+
+  const limited = limitConcurrency(inner, 1)
+  await limited('https://example.com/first')
+
+  let secondStarted = false
+  const second = limited('https://example.com/second').then((res) => {
+    secondStarted = true
+    return res
+  })
+
+  await Promise.resolve()
+  await Promise.resolve()
+  expect(secondStarted).toBe(false)
+
+  // The consumer never reads; only the source terminating can free the slot.
+  controllerRef.error(new Error('late boom'))
+  const secondResponse = await second
+  expect(secondStarted).toBe(true)
+  await secondResponse.body!.cancel()
+})
+
 test('limitConcurrency releases immediately for bodiless responses', async () => {
   const inner = vi.fn(
     async () => new Response(null, { status: 204 })

@@ -110,6 +110,10 @@ function releaseOnBodyEnd(response: Response, release: () => void): Response {
   // a foreign stream (cross-realm, ponyfill) would fail the platform's brand
   // check, while a native wrapper reading through the reader always passes.
   const reader = body.getReader()
+  // The pull loop below cannot observe a source that terminates between
+  // pulls (e.g. an abort erroring the stream while a chunk sits in the
+  // queue and no read is pending); `closed` settles on any termination.
+  void reader.closed.then(done, done)
   const passthrough = new ReadableStream<Uint8Array>({
     async pull(controller) {
       let result: ReadableStreamReadResult<Uint8Array>
