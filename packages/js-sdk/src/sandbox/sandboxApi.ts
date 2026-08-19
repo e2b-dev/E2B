@@ -1570,7 +1570,12 @@ export class SandboxApi {
     // onTimeout accepts a bare action (`'pause'` / `'kill'`) or the object form
     // `{ action, keepMemory }`. The discriminated union type forbids `keepMemory`
     // on `action: 'kill'`; re-check at runtime for untyped (JS) callers.
-    const onTimeout = opts?.lifecycle?.onTimeout ?? 'kill'
+    const requestedOnTimeout = opts?.lifecycle?.onTimeout
+    // A missing (or explicitly nullish, for untyped callers) onTimeout is not a
+    // choice of `kill` — it leaves the timeout action to the API. Locally it
+    // still resolves to kill semantics for the validation below.
+    const onTimeoutConfigured = requestedOnTimeout != null
+    const onTimeout = requestedOnTimeout ?? 'kill'
     const action = typeof onTimeout === 'string' ? onTimeout : onTimeout.action
     const hasKeepMemory =
       typeof onTimeout !== 'string' && 'keepMemory' in onTimeout
@@ -1612,7 +1617,9 @@ export class SandboxApi {
       allow_internet_access: opts?.allowInternetAccess ?? true,
       network: buildNetworkBody(opts?.network, iam),
       iam,
-      autoPause: action === 'pause',
+      // Omitted rather than sent as false when unconfigured, so the API can
+      // distinguish "no preference" from an explicit `kill` and own the default.
+      autoPause: onTimeoutConfigured ? action === 'pause' : undefined,
       autoPauseMemory: action === 'pause' ? keepMemory : undefined,
       autoResume: { enabled: autoResume },
     }
