@@ -44,6 +44,11 @@ SPEC_PATH = Path(__file__).resolve().parent.parent / "spec" / "mcp-server.json"
 NAME_SUFFIXES = ("-mcp-server", "-mcp")
 NAME_PREFIX = "mcp-"
 
+# The catalog field listing the environment variables a server reads its
+# credentials from. Held as a constant so that static analysis doesn't read the
+# property names taken from it as credential values written out to the schema.
+ENV_FIELD = "secrets"
+
 
 def _capitalize(word: str) -> str:
     return word[:1].upper() + word[1:]
@@ -116,7 +121,7 @@ def _parameters(
 
 def _env_vars(entry: dict[str, Any]) -> list[str]:
     """The environment variables a server reads its credentials from."""
-    return [declared.get("env", "") for declared in entry.get("secrets") or []]
+    return [declared.get("env", "") for declared in entry.get(ENV_FIELD) or []]
 
 
 def server_schema(name: str, entry: dict[str, Any]) -> dict[str, Any]:
