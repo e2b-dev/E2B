@@ -180,8 +180,10 @@ async def test_async_failed_connect_replays_an_untouched_streamed_body():
     response = await _retrying(inner).execute(request)
     assert response.status == 200
     assert inner.attempts == 2
-    # The retry sent the body from the start: nothing had been read from it.
+    # The retry sent the body from the start, reading the source exactly once:
+    # nothing had been read from it when the connect failed.
     assert inner.received == BODY_SIZE
+    assert sum(pulled) == BODY_SIZE
 
 
 def test_sync_failed_connect_replays_an_untouched_streamed_body():
@@ -192,6 +194,7 @@ def test_sync_failed_connect_replays_an_untouched_streamed_body():
     assert response.status == 200
     assert inner.attempts == 2
     assert inner.received == BODY_SIZE
+    assert sum(pulled) == BODY_SIZE
 
 
 @unbuffered_only
@@ -205,6 +208,7 @@ async def test_async_streamed_body_is_not_replayed_once_it_was_read():
     with pytest.raises(ConnectionError):
         await _retrying(inner).execute(request)
     assert inner.attempts == 1
+    assert inner.received == CHUNK_SIZE
 
 
 @unbuffered_only
@@ -215,6 +219,7 @@ def test_sync_streamed_body_is_not_replayed_once_it_was_read():
     with pytest.raises(ConnectionError):
         _retrying_sync(inner).execute_sync(request)
     assert inner.attempts == 1
+    assert inner.received == CHUNK_SIZE
 
 
 # Through a real pyqwest transport: the retries above are only safe because a
