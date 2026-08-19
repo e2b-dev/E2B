@@ -27,36 +27,41 @@ const RUNTIME_PROBED_PROPS = new Set(['toJSON', 'then', 'toString', 'valueOf'])
  * registered token.
  *
  * It answers the probe — `JSON.stringify`, `await` and `String()` read these
- * names off any object — while `toPrimitive` decides what a callback that reads
- * the name as a token gets. Coercing the value to a string is the one thing no
- * probe does and every token reference does, so the probe stays silent and the
- * reference is treated like any other unregistered name instead of serializing
- * `undefined` or a built-in's source text.
+ * names off any object — while `resolve` decides what a callback that read the
+ * name as a token gets. A probe never coerces the value it reads and never
+ * serializes it, while a token reference does one or the other, so the probe
+ * stays silent and the reference is treated like any other unregistered name
+ * instead of serializing `undefined` or a built-in's source text.
  *
  * @param prop probed property name.
- * @param target registered placeholders, for the built-ins that read them.
- * @param toPrimitive what the value coerces to.
+ * @param tokens the guarded map, for the built-ins that read it.
+ * @param resolve what the value coerces to and serializes as.
  */
 function runtimeProbeValue(
   prop: string,
-  target: Record<string, string>,
-  toPrimitive: () => string
+  tokens: () => Record<string, string>,
+  resolve: () => string
 ): unknown {
   // `then` and `toJSON` are only ever probed with a `typeof … === 'function'`
   // check, so a non-callable value answers the probe: `await` resolves the
   // object as a plain value and `JSON.stringify` falls back to its own keys.
   // `toString` and `valueOf` are called — `String(iam.tokens)` needs one of
-  // them to return a primitive — so they keep the built-in behaviour.
+  // them to return a primitive — so they keep the built-in behaviour, over the
+  // guarded map rather than the bare record behind it: `iam.tokens.valueOf()`
+  // must not hand out an unguarded lookup.
   const value =
     prop === 'toString'
-      ? () => Object.prototype.toString.call(target)
+      ? () => Object.prototype.toString.call(tokens())
       : prop === 'valueOf'
-        ? () => target
+        ? () => tokens()
         : {}
 
-  return Object.defineProperty(value, Symbol.toPrimitive, {
-    value: toPrimitive,
-  })
+  Object.defineProperty(value, Symbol.toPrimitive, { value: resolve })
+  // A header value is not always coerced: `headers: { 'X-Api-Key':
+  // iam.tokens.then }` puts the value itself in the payload, and
+  // `JSON.stringify` consults `toJSON` — before it drops a callable value —
+  // rather than `Symbol.toPrimitive`.
+  return Object.defineProperty(value, 'toJSON', { value: resolve })
 }
 
 /**
@@ -94,6 +99,13 @@ export function iamTokenPlaceholder(name: string): string {
  * a typo would surface as a confusing auth failure at the destination instead of
  * an error here.
  *
+ * A presence check spells that as `name in iam.tokens`, which answers `false`
+ * for an unregistered name. `Object.hasOwn` cannot: it is `false` only when the
+ * descriptor trap reports the name as absent, which is the same `undefined` that
+ * makes `Object.getOwnPropertyDescriptor(iam.tokens, 'typo').value` a silent
+ * `undefined` on the wire. The lookup guard wins that trade, so `Object.hasOwn`
+ * throws for an unregistered name instead of answering it.
+ *
  * `validate: false` is for the update-network endpoint, whose payload carries no
  * `iam` config — the sandbox's registered token names are not known client-side
  * there, so any name resolves to its placeholder.
@@ -126,13 +138,26 @@ export function iamTokenPlaceholders(
     )
   }
 
+  /**
+   * Refuse a write. The hint depends on what the name is: registering a token
+   * that is already registered is not the fix for a `delete`, and on the
+   * unchecked path there is no create call in flight to point at.
+   */
   const readOnly = (action: string, prop: string | symbol): never => {
+    const name = String(prop)
+
+    const hint = Object.hasOwn(tokens, name)
+      ? `'${name}' is already registered — iam.tokens only exposes its placeholder, so change the iam config of the call that creates the sandbox instead.`
+      : validate
+        ? `Registering a workload token is what makes it resolvable, so pass it to Sandbox.create as iam: { tokens: { '${name}': Secret.iamToken({ audience, tokenType }) } }.`
+        : `A token is registered when the sandbox is created, not here — the update-network payload carries no iam config.`
+
     throw new InvalidArgumentError(
-      `iam.tokens is read-only, cannot ${action} '${String(prop)}'. Registering a workload token is what makes it resolvable, so pass it to Sandbox.create as iam: { tokens: { '${String(prop)}': Secret.iamToken({ audience, tokenType }) } }.`
+      `iam.tokens is read-only, cannot ${action} '${name}'. ${hint}`
     )
   }
 
-  return new Proxy(tokens, {
+  const proxy: Record<string, string> = new Proxy(tokens, {
     get(target, prop, receiver) {
       // Own keys only: a bare `in` also matches inherited `Object.prototype`
       // members, so an unregistered token named `constructor` or `__proto__`
@@ -140,8 +165,10 @@ export function iamTokenPlaceholders(
       // mapping treats them as missing too.
       if (typeof prop === 'string' && !Object.hasOwn(target, prop)) {
         if (RUNTIME_PROBED_PROPS.has(prop)) {
-          return runtimeProbeValue(prop, target, () =>
-            resolveUnregistered(prop)
+          return runtimeProbeValue(
+            prop,
+            () => proxy,
+            () => resolveUnregistered(prop)
           )
         }
 
@@ -158,7 +185,11 @@ export function iamTokenPlaceholders(
       if (typeof prop === 'string' && !Object.hasOwn(target, prop)) {
         return {
           value: RUNTIME_PROBED_PROPS.has(prop)
-            ? runtimeProbeValue(prop, target, () => resolveUnregistered(prop))
+            ? runtimeProbeValue(
+                prop,
+                () => proxy,
+                () => resolveUnregistered(prop)
+              )
             : resolveUnregistered(prop),
           writable: false,
           enumerable: false,
@@ -176,7 +207,23 @@ export function iamTokenPlaceholders(
       return readOnly('assign', prop)
     },
 
-    defineProperty(_target, prop) {
+    defineProperty(target, prop, descriptor) {
+      // `Object.freeze` and `Object.seal` redefine every own property in place,
+      // and hardening a map it was handed is what a defensive callback does, so
+      // a redefinition that leaves the placeholder as it is goes through.
+      const keepsPlaceholder =
+        !('get' in descriptor || 'set' in descriptor) &&
+        (!('value' in descriptor) ||
+          descriptor.value === Reflect.get(target, prop))
+
+      if (
+        typeof prop === 'string' &&
+        Object.hasOwn(target, prop) &&
+        keepsPlaceholder
+      ) {
+        return Reflect.defineProperty(target, prop, descriptor)
+      }
+
       return readOnly('define', prop)
     },
 
@@ -192,4 +239,6 @@ export function iamTokenPlaceholders(
       return Object.hasOwn(target, prop)
     },
   })
+
+  return proxy
 }

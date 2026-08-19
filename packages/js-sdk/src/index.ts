@@ -77,6 +77,7 @@ export type {
   SandboxNetworkTransform,
   SandboxNetworkTransformContext,
   SandboxNetworkTransformResolver,
+  SandboxIamTokenPlaceholders,
   SandboxNetworkUpdate,
   SandboxOnTimeout,
   SandboxLifecycle,

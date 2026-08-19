@@ -195,7 +195,8 @@ test.for(['toJSON', 'then', 'toString', 'valueOf'])(
     // The runtime reads these names off any object it serializes, awaits or
     // coerces, so a lookup of them cannot throw on the spot. Referencing one as
     // a token used to put 'undefined' or a built-in's source text on the wire,
-    // where the proxy drops the header and forwards the request anyway.
+    // which carries no placeholder for the proxy to resolve, so the destination
+    // answered 401 on a garbage credential.
     await expect(
       Sandbox.create('base', {
         apiKey: TEST_API_KEY,
@@ -218,6 +219,61 @@ test.for(['toJSON', 'then', 'toString', 'valueOf'])(
   }
 )
 
+test.for(['toJSON', 'then', 'toString', 'valueOf'])(
+  'transform callback rejects the uncoerced runtime-probed iam token name %s',
+  async (name: string) => {
+    // A header value is not always interpolated: assigned straight through, the
+    // value is serialized instead of coerced, which used to send an object where
+    // the API wants a string, or drop the header entirely for the two names that
+    // resolve to a function.
+    await expect(
+      Sandbox.create('base', {
+        apiKey: TEST_API_KEY,
+        iam: { tokens: { aws: awsToken } },
+        network: {
+          rules: {
+            'api.internal.example.com': [
+              {
+                transform: ({ iam }) => ({
+                  headers: { 'X-Api-Key': iam.tokens[name] },
+                }),
+              },
+            ],
+          },
+        },
+      })
+    ).rejects.toThrowError(`iam token '${name}', which is not registered`)
+
+    expect(lastCreateBody).toBeUndefined()
+  }
+)
+
+test('transform callback cannot reach an unguarded token map through valueOf', async () => {
+  // `valueOf` has to stay callable for `String(iam.tokens)`, so it answers with
+  // the guarded map rather than the record behind it.
+  await expect(
+    Sandbox.create('base', {
+      apiKey: TEST_API_KEY,
+      iam: { tokens: { aws: awsToken } },
+      network: {
+        rules: {
+          'api.internal.example.com': [
+            {
+              transform: ({ iam }) => ({
+                headers: {
+                  Authorization: `Bearer ${iam.tokens.valueOf().gcp}`,
+                },
+              }),
+            },
+          ],
+        },
+      },
+    })
+  ).rejects.toThrowError(`iam token 'gcp', which is not registered`)
+
+  expect(lastCreateBody).toBeUndefined()
+})
+
 test('transform callback cannot register an iam token by writing to the map', async () => {
   // Writing the placeholder in registers nothing, so the read below would put a
   // placeholder on the wire that the proxy cannot resolve to a token.
@@ -230,6 +286,7 @@ test('transform callback cannot register an iam token by writing to the map', as
           'api.internal.example.com': [
             {
               transform: ({ iam }) => {
+                // @ts-expect-error the map is typed read-only.
                 iam.tokens.gcp = '${e2b.identity.tokens.gcp}'
                 return {
                   headers: { Authorization: `Bearer ${iam.tokens.gcp}` },

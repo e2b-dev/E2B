@@ -156,11 +156,30 @@ test.for(RUNTIME_PROBED_PROPS)(
       `iam token '${prop}', which is not registered`
     )
     expect(() => String(tokens[prop])).toThrowError(InvalidArgumentError)
-    expect(
-      () => `${Object.getOwnPropertyDescriptor(tokens, prop)?.value}`
-    ).toThrowError(InvalidArgumentError)
+    // A header value is serialized rather than coerced when a callback assigns
+    // the value straight through instead of interpolating it.
+    expect(() => JSON.stringify({ header: tokens[prop] })).toThrowError(
+      InvalidArgumentError
+    )
+
+    // The descriptor resolves the name; reading it is what throws, so a lookup
+    // by that spelling cannot answer 'undefined' either.
+    const descriptor = Object.getOwnPropertyDescriptor(tokens, prop)
+    expect(descriptor).toBeDefined()
+    expect(() => `${descriptor?.value}`).toThrowError(InvalidArgumentError)
   }
 )
+
+test('the runtime-probed valueOf answers with the guarded map', () => {
+  // It stays callable for `String(iam.tokens)`, so it must not hand out the
+  // unguarded record, whose unregistered names read as 'undefined'.
+  const tokens = iamTokenPlaceholders(['aws'], { validate: true })
+
+  expect(tokens.valueOf().aws).toBe('${e2b.identity.tokens.aws}')
+  expect(() => `${tokens.valueOf().gcp}`).toThrowError(
+    /iam token 'gcp'.*Registered tokens: 'aws'/s
+  )
+})
 
 test('a descriptor lookup of an unregistered token throws', () => {
   // Reporting the name as absent would resolve it to 'undefined' silently.
@@ -169,9 +188,24 @@ test('a descriptor lookup of an unregistered token throws', () => {
   expect(() => Object.getOwnPropertyDescriptor(tokens, 'gcp')).toThrowError(
     /iam token 'gcp'.*Registered tokens: 'aws'/s
   )
-  expect(Object.getOwnPropertyDescriptor(tokens, 'aws')?.value).toBe(
-    '${e2b.identity.tokens.aws}'
-  )
+  expect(Object.getOwnPropertyDescriptor(tokens, 'aws')).toEqual({
+    value: '${e2b.identity.tokens.aws}',
+    writable: true,
+    enumerable: true,
+    configurable: true,
+  })
+})
+
+test('a presence check is spelled with `in`, not `Object.hasOwn`', () => {
+  // `hasOwn` is false only when the descriptor trap reports the name as absent,
+  // which is the 'undefined' the trap above exists to prevent. `in` answers
+  // membership without a value, so it can stay non-throwing.
+  const tokens = iamTokenPlaceholders(['aws'], { validate: true })
+
+  expect('aws' in tokens).toBe(true)
+  expect('gcp' in tokens).toBe(false)
+  expect(Object.hasOwn(tokens, 'aws')).toBe(true)
+  expect(() => Object.hasOwn(tokens, 'gcp')).toThrowError(InvalidArgumentError)
 })
 
 test('the token map cannot be mutated into registering a token', () => {
@@ -179,17 +213,45 @@ test('the token map cannot be mutated into registering a token', () => {
 
   expect(() => {
     tokens.gcp = '${e2b.identity.tokens.gcp}'
-  }).toThrowError(/iam.tokens is read-only, cannot assign 'gcp'/)
+  }).toThrowError(/read-only, cannot assign 'gcp'.*pass it to Sandbox.create/s)
   expect(() =>
     Object.defineProperty(tokens, 'gcp', { value: 'placeholder' })
-  ).toThrowError(/iam.tokens is read-only, cannot define 'gcp'/)
+  ).toThrowError(/read-only, cannot define 'gcp'/)
   // Deleting a registered token used to leave a lookup of it claiming the name
-  // is unregistered while listing it as registered.
+  // is unregistered while listing it as registered. The name is registered, so
+  // the message must not ask for it to be registered.
   expect(() => delete tokens.aws).toThrowError(
-    /iam.tokens is read-only, cannot delete 'aws'/
+    /read-only, cannot delete 'aws'\. 'aws' is already registered/
   )
+  expect(() => {
+    tokens.aws = 'other'
+  }).toThrowError(/'aws' is already registered/)
 
   expect(Object.keys(tokens)).toEqual(['aws'])
+})
+
+test('the token map can be hardened without changing a placeholder', () => {
+  // Freezing a map it was handed is what a defensive callback does, and it
+  // redefines every own property in place.
+  const tokens = iamTokenPlaceholders(['aws'], { validate: true })
+
+  expect(() => Object.freeze(tokens)).not.toThrow()
+  expect(tokens.aws).toBe('${e2b.identity.tokens.aws}')
+  expect(() => {
+    tokens.gcp = '${e2b.identity.tokens.gcp}'
+  }).toThrowError(/read-only, cannot assign 'gcp'/)
+})
+
+test('the unchecked token map refuses a write without pointing at create', () => {
+  // The update-network payload carries no iam config, so registering a token is
+  // not something the call in flight can do.
+  const tokens = iamTokenPlaceholders([], { validate: false })
+
+  expect(() => {
+    tokens.gcp = '${e2b.identity.tokens.gcp}'
+  }).toThrowError(
+    /read-only, cannot assign 'gcp'\. A token is registered when the sandbox is created/
+  )
 })
 
 test.for(RUNTIME_PROBED_PROPS)(
