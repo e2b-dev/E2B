@@ -5,47 +5,27 @@ pyqwest's retry middleware keeps a request replayable, and for a body that is
 not already ``bytes`` it does that by copying the stream into memory as it is
 sent — a streamed upload (``files.write`` of a file-like object,
 ``volume.write_file``) reached the wire in chunks yet grew a full mirror in
-RAM. ``ConnectionRetryTransport`` now returns ``e2b.api.retry_request_policy``
-from ``should_retry_request``: pyqwest's ``RetryMode.UNBUFFERED`` when the
-installed release has it, which replays a streamed body only while nothing has
+RAM. ``ConnectionRetryTransport`` now returns ``RetryMode.UNBUFFERED`` from
+``should_retry_request``, which replays a streamed body only while nothing has
 been read from it — exactly what the connect-only retry policy needs, since a
-``ConnectionError`` is raised only before the request was written. On releases
-without ``RetryMode`` the policy stays ``True``, keeping the buffered replay
-they ship rather than trading the copy for the connect retries.
+``ConnectionError`` is raised only before the request was written.
 
-Which behavior is live depends on the installed pyqwest, so the behavioral
-tests are gated on whether its retry middleware exposes ``RetryMode``; the
-policy resolution and the overrides themselves are pinned on every release.
 ``bytes`` bodies are replayable as they are — their retries are covered by
 ``test_envd_retry_transport.py``.
 """
 
 import tracemalloc
-from types import SimpleNamespace
 from typing import AsyncIterator, Iterator, List
 
 import httpx
 import pytest
 from pyqwest import Request, Response, SyncRequest, SyncResponse
 from pyqwest.httpx import AsyncPyqwestTransport, PyqwestTransport
-from pyqwest.middleware import retry as retry_middleware
+from pyqwest.middleware.retry import RetryMode
 
-from e2b.api import resolve_retry_request_policy, retry_request_policy
 from e2b.api.client_async import ConnectionRetryTransport
 from e2b.api.client_sync import (
     ConnectionRetryTransport as SyncConnectionRetryTransport,
-)
-
-RETRY_MODE = getattr(retry_middleware, "RetryMode", None)
-"""``pyqwest.middleware.retry.RetryMode``, or ``None`` on a release without it."""
-
-unbuffered_only = pytest.mark.skipif(
-    RETRY_MODE is None,
-    reason="pyqwest without RetryMode buffers streamed bodies for replay",
-)
-buffered_only = pytest.mark.skipif(
-    RETRY_MODE is not None,
-    reason="pyqwest with RetryMode keeps streamed bodies unbuffered",
 )
 
 CHUNK = 256 * 1024
@@ -143,39 +123,16 @@ def _retrying_sync(inner) -> SyncConnectionRetryTransport:
     )
 
 
-# The policy itself — resolution and the overrides declaring it — is pinned on
-# every pyqwest release; on the pinned one the inherited hook also returns
-# `True`, so nothing behavioral would fail if the override silently vanished.
-
-
-def test_policy_is_unbuffered_when_retry_mode_exists():
-    mode = SimpleNamespace(UNBUFFERED=object())
-    policy = resolve_retry_request_policy(SimpleNamespace(RetryMode=mode))
-    assert policy is mode.UNBUFFERED
-
-
-def test_policy_keeps_buffered_retries_without_retry_mode():
-    # `True` is what the middleware understood before RetryMode existed.
-    assert resolve_retry_request_policy(SimpleNamespace()) is True
-
-
-def test_policy_tracks_the_installed_pyqwest():
-    # Says out loud which behavioral half of this module is live, so a pyqwest
-    # bump flips a test instead of quietly switching skips.
-    if RETRY_MODE is None:
-        assert retry_request_policy is True
-    else:
-        assert retry_request_policy is RETRY_MODE.UNBUFFERED
-
-
 @pytest.mark.parametrize(
     "transport_cls",
     [SyncConnectionRetryTransport, ConnectionRetryTransport],
     ids=["sync", "async"],
 )
 def test_transports_declare_the_policy(transport_cls):
+    # The inherited hook returns `True` — buffered — so nothing behavioral
+    # below would fail loudly if the override silently vanished.
     assert "should_retry_request" in transport_cls.__dict__
-    assert transport_cls(None).should_retry_request(None) is retry_request_policy
+    assert transport_cls(None).should_retry_request(None) is RetryMode.UNBUFFERED
 
 
 # A failed connect leaves the body untouched, so the same stream serves the
@@ -206,12 +163,10 @@ def test_sync_failed_connect_replays_untouched_streamed_body():
     assert sum(pulled) == BODY_SIZE
 
 
-# Unbuffered: no mirror grows while the body is sent, and a body that was
-# already read cannot be replayed (truncated replays would be worse than the
-# error).
+# No mirror grows while the body is sent, and a body that was already read
+# cannot be replayed (truncated replays would be worse than the error).
 
 
-@unbuffered_only
 async def test_async_streamed_body_is_not_mirrored():
     inner = ReadingTransport()
     pulled: List[int] = []
@@ -227,7 +182,6 @@ async def test_async_streamed_body_is_not_mirrored():
     assert peak < MAX_UNBUFFERED_PEAK, peak
 
 
-@unbuffered_only
 def test_sync_streamed_body_is_not_mirrored():
     inner = ReadingSyncTransport()
     pulled: List[int] = []
@@ -243,7 +197,6 @@ def test_sync_streamed_body_is_not_mirrored():
     assert peak < MAX_UNBUFFERED_PEAK, peak
 
 
-@unbuffered_only
 async def test_async_started_streamed_body_is_not_replayed():
     inner = ReadingTransport(connect_failures=1, after_first_chunk=True)
     request = Request("PUT", UPLOAD_URL, content=_achunks([]))
@@ -253,7 +206,6 @@ async def test_async_started_streamed_body_is_not_replayed():
     assert inner.received == CHUNK
 
 
-@unbuffered_only
 def test_sync_started_streamed_body_is_not_replayed():
     inner = ReadingSyncTransport(connect_failures=1, after_first_chunk=True)
     request = SyncRequest("PUT", UPLOAD_URL, content=_chunks([]))
@@ -261,36 +213,6 @@ def test_sync_started_streamed_body_is_not_replayed():
         _retrying_sync(inner).execute_sync(request)
     assert inner.attempts == 1
     assert inner.received == CHUNK
-
-
-# The pinned pyqwest has no RetryMode: the copy it grows is what makes the
-# same failure replayable, which is why the fallback keeps it.
-
-
-@buffered_only
-async def test_async_buffered_fallback_replays_from_the_copy():
-    inner = ReadingTransport(connect_failures=1, after_first_chunk=True)
-    pulled: List[int] = []
-    request = Request("PUT", UPLOAD_URL, content=_achunks(pulled))
-    response = await _retrying(inner).execute(request)
-    assert response.status == 200
-    assert inner.attempts == 2
-    # The replay resent the first attempt's chunk from the copy, then streamed
-    # the rest; the source itself was only read once.
-    assert inner.received == CHUNK + BODY_SIZE
-    assert sum(pulled) == BODY_SIZE
-
-
-@buffered_only
-def test_sync_buffered_fallback_replays_from_the_copy():
-    inner = ReadingSyncTransport(connect_failures=1, after_first_chunk=True)
-    pulled: List[int] = []
-    request = SyncRequest("PUT", UPLOAD_URL, content=_chunks(pulled))
-    response = _retrying_sync(inner).execute_sync(request)
-    assert response.status == 200
-    assert inner.attempts == 2
-    assert inner.received == CHUNK + BODY_SIZE
-    assert sum(pulled) == BODY_SIZE
 
 
 # Through the httpx adapter — the way every affected call site reaches the

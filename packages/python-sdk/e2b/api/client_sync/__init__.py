@@ -1,11 +1,11 @@
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 import httpx
 import threading
 
 from pyqwest import HTTPVersion, SyncHTTPTransport, SyncRequest, SyncResponse
 from pyqwest.httpx import PyqwestTransport
-from pyqwest.middleware.retry import SyncRetryTransport
+from pyqwest.middleware.retry import RetryMode, SyncRetryTransport
 
 from e2b.api import (
     ApiClient,
@@ -15,7 +15,6 @@ from e2b.api import (
     pool_idle_timeout,
     pool_max_idle_per_host,
     proxy_to_config,
-    retry_request_policy,
 )
 from e2b.connection_config import READ_TIMEOUT, ConnectionConfig
 
@@ -35,13 +34,13 @@ class ConnectionRetryTransport(SyncRetryTransport):
     default policy would otherwise also retry I/O errors and 429/5xx responses
     for idempotent methods.
 
-    On a pyqwest whose retry middleware has ``RetryMode``, streamed request
-    bodies stay unbuffered: the middleware would otherwise mirror them into
-    memory as they are sent to keep them replayable, which a connect-only
-    policy never needs (see :data:`e2b.api.retry_request_policy`)."""
+    Streamed request bodies stay unbuffered: the middleware would otherwise
+    mirror them into memory as they are sent to keep them replayable, which a
+    connect-only policy never needs — the body is untouched on every failure
+    it retries. ``bytes`` bodies are replayable as they are in either mode."""
 
-    def should_retry_request(self, request: SyncRequest) -> Any:
-        return retry_request_policy
+    def should_retry_request(self, request: SyncRequest) -> RetryMode:
+        return RetryMode.UNBUFFERED
 
     def should_retry_response(
         self, request: SyncRequest, response: Union[SyncResponse, Exception]
