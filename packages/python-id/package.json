@@ -1,0 +1,12 @@
+{
+  "name": "@e2b/python-id",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "test": "uv run pytest --verbose",
+    "postVersion": "uv version $(pnpm pkg get version --workspaces=false | tr -d \\\")",
+    "typecheck": "uv run make typecheck",
+    "lint": "uv run make lint",
+    "format": "uv run make format"
+  }
+}
