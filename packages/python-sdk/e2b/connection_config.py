@@ -26,6 +26,11 @@ REQUEST_TIMEOUT: float = 60.0  # 60 seconds
 # resets on each chunk, so it never limits total transfer time — only a
 # fully stalled stream. Matches the previous default stream idle timeout
 # (the request timeout).
+#
+# Kept equal to `e2b.volume.connection_config.READ_TIMEOUT` on purpose: the
+# read bound is part of the transport cache key, so the volume streaming pool
+# and the sandbox-filesystem streaming pool are the same reqwest pool only
+# while the two constants agree. Change one and they silently split in two.
 READ_TIMEOUT: float = 60.0  # 60 seconds
 
 KEEPALIVE_PING_INTERVAL_SEC = 50  # 50 seconds

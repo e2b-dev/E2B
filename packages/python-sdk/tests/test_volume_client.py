@@ -8,8 +8,13 @@ import httpx
 import pytest
 from pyqwest.httpx import AsyncPyqwestTransport, PyqwestTransport
 
+from transport_caches import reset_transport_caches
+
+import e2b.api.client_async as api_client_async
+import e2b.api.client_sync as api_client_sync
 import e2b.volume.client_async as client_async
 import e2b.volume.client_sync as client_sync
+from e2b.connection_config import ConnectionConfig
 from e2b.exceptions import AuthenticationException
 from e2b.volume.client_async import get_api_client as get_async_api_client
 from e2b.volume.client_async import (
@@ -27,8 +32,8 @@ from e2b.volume.volume_sync import Volume
 
 
 def reset_volume_transports():
-    client_sync._transports.clear()
-    client_async._transports.clear()
+    # The volume clients draw from the SDK-wide pools in `e2b.api.client_*`.
+    reset_transport_caches()
 
 
 def test_sync_client_requires_volume_token(monkeypatch):
@@ -86,6 +91,29 @@ def test_sync_transport_is_cached_per_proxy():
         assert isinstance(transport_a, PyqwestTransport)
         assert transport_a is transport_b
         assert transport_a is not transport_c
+    finally:
+        reset_volume_transports()
+
+
+def test_volume_transports_are_the_shared_sdk_pools(test_api_key):
+    # The volume content API draws from the same pools as the control-plane
+    # REST API and the envd HTTP API — reqwest pools per host, so the volume
+    # host doesn't cost the process a pool of its own. Streamed downloads land
+    # in the streaming pool, whose 60s idle read bound the sandbox
+    # filesystem's streamed downloads ask for too.
+    reset_volume_transports()
+    config = VolumeConnectionConfig(token="vol-token")
+    api_config = ConnectionConfig(api_key=test_api_key)
+
+    try:
+        assert get_sync_transport(config) is api_client_sync.get_transport(api_config)
+        assert get_sync_streaming_transport(config) is api_client_sync.get_transport(
+            api_config, for_streaming=True
+        )
+        assert get_async_transport(config) is api_client_async.get_transport(api_config)
+        assert get_async_streaming_transport(config) is api_client_async.get_transport(
+            api_config, for_streaming=True
+        )
     finally:
         reset_volume_transports()
 

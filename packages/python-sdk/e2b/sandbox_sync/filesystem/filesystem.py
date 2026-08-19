@@ -95,7 +95,7 @@ class Filesystem:
         )
         self._envd_api = envd_api
         # Streamed downloads default to a sibling client whose transport
-        # carries the idle read timeout (see `get_envd_transport`). Like the
+        # carries the idle read timeout (see `get_transport`). Like the
         # RPC client, the pyqwest transports underneath are thread-safe, so
         # one client serves all threads.
         self._envd_api_streaming = get_envd_api(
@@ -211,7 +211,7 @@ class Filesystem:
             # sent only when the caller set `request_timeout` explicitly
             # (making it the total-transfer deadline). A stalled stream is
             # instead bounded by the streaming transport's idle read timeout
-            # (see `get_envd_transport`), which resets on every chunk.
+            # (see `get_transport`), which resets on every chunk.
             stream_timeout = ConnectionConfig._get_request_timeout(
                 None, request_timeout
             )
