@@ -87,7 +87,7 @@ test('Sandbox.create sends the pause snapshot kind alongside autoPause', async (
 })
 
 test('Sandbox.create omits autoPause for a lifecycle without onTimeout', async () => {
-  // Untyped (JS) callers can build the lifecycle conditionally and leave
+  // Untyped callers can build the lifecycle conditionally and leave
   // onTimeout out, or pass it as null; neither selects an action.
   await Sandbox.create('base', {
     apiKey: TEST_API_KEY,

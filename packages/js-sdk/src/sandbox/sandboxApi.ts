@@ -1571,7 +1571,7 @@ export class SandboxApi {
     const client = new ApiClient(config)
     // onTimeout accepts a bare action (`'pause'` / `'kill'`) or the object form
     // `{ action, keepMemory }`. The discriminated union type forbids `keepMemory`
-    // on `action: 'kill'`; re-check at runtime for untyped (JS) callers.
+    // on `action: 'kill'`; re-check at runtime for untyped callers.
     const requestedOnTimeout = opts?.lifecycle?.onTimeout
     // A missing (or explicitly nullish, for untyped callers) onTimeout is not a
     // choice of `kill` — it leaves the timeout action to the API. Locally it

@@ -822,8 +822,8 @@ def build_lifecycle_config(
         keep_memory_provided = "keep_memory" in on_timeout_raw
         keep_memory = on_timeout_raw.get("keep_memory")
     else:
-        # Match JS `?? 'kill'`: only fall back when unconfigured, not on other
-        # falsy-but-present values an untyped caller might pass.
+        # Only fall back when unconfigured, not on other falsy-but-present
+        # values an untyped caller might pass.
         on_timeout = on_timeout_raw if on_timeout_configured else "kill"
         keep_memory = None
         keep_memory_provided = False
@@ -836,9 +836,9 @@ def build_lifecycle_config(
             "keep_memory is only allowed when on_timeout action is 'pause'."
         )
 
-    # A missing or explicit None keep_memory defaults to True (full memory),
-    # mirroring the JS SDK; used only for local validation below. The wire
-    # field is omitted unless keep_memory was actually provided.
+    # A missing or explicit None keep_memory defaults to True (full memory) for
+    # local validation below. The wire field is omitted unless keep_memory was
+    # actually provided.
     if keep_memory is None:
         keep_memory = True
     auto_resume = lifecycle.get("auto_resume", False) if lifecycle else False
