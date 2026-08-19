@@ -15,7 +15,7 @@ from transport_caches import reset_transport_caches
 
 import e2b.api.client_async as api_client_async
 import e2b.api.client_sync as api_client_sync
-from e2b.api import proxy_to_config
+from e2b.api import pool_idle_timeout, pool_max_idle_per_host, proxy_to_config
 from e2b.api.client_async import get_api_client as get_async_api_client
 from e2b.api.client_async import get_envd_api as get_async_envd_api
 from e2b.api.client_async import get_envd_transport as get_async_envd_transport
@@ -28,7 +28,7 @@ from e2b.api.client_sync import get_envd_api as get_sync_envd_api
 from e2b.api.client_sync import get_envd_transport as get_sync_envd_transport
 from e2b.api.client_sync import get_pyqwest_transport as get_sync_pyqwest_transport
 from e2b.api.client_sync import get_transport as get_sync_transport
-from e2b.connection_config import ConnectionConfig
+from e2b.connection_config import READ_TIMEOUT, ConnectionConfig
 
 
 def run_in_worker_thread(fn):
@@ -147,6 +147,39 @@ def test_sync_transports_pass_http_version_to_pyqwest(test_api_key, monkeypatch)
         get_sync_envd_transport(config, http2=False, for_streaming=True)
 
         assert captured == [None, HTTPVersion.HTTP1, HTTPVersion.HTTP1]
+    finally:
+        reset_transport_caches()
+
+
+def test_sync_transport_passes_pool_tuning_to_pyqwest(test_api_key, monkeypatch):
+    # The tuning that keeps a sandbox on one reused connection has to reach the
+    # pyqwest constructor: dropping any of it (`pool_max_idle_per_host=0`, no
+    # system CA certs, `follow_redirects=True`) would leave every identity and
+    # frame-level test green while a sandbox redialed on every request or TLS
+    # broke through an intercepting proxy. The identity assertions only prove
+    # one pool is reused, not how it was built.
+    reset_transport_caches()
+    config = ConnectionConfig(api_key=test_api_key)
+    captured = {}
+    build_transport = api_client_sync.SyncHTTPTransport
+
+    def record(**kwargs):
+        captured.update(kwargs)
+        return build_transport(**kwargs)
+
+    monkeypatch.setattr(api_client_sync, "SyncHTTPTransport", record)
+
+    try:
+        # The streaming pool is the one carrying the idle read bound, so it
+        # pins `read_timeout` reaching the constructor as well.
+        get_sync_transport(config, for_streaming=True)
+
+        assert captured["tls_include_system_certs"] is True
+        assert captured["proxy"] is None
+        assert captured["pool_idle_timeout"] == pool_idle_timeout
+        assert captured["pool_max_idle_per_host"] == pool_max_idle_per_host
+        assert captured["read_timeout"] == READ_TIMEOUT
+        assert captured["follow_redirects"] is False
     finally:
         reset_transport_caches()
 
@@ -326,6 +359,32 @@ async def test_async_transports_pass_http_version_to_pyqwest(test_api_key, monke
         get_async_envd_transport(config, http2=False, for_streaming=True)
 
         assert captured == [None, HTTPVersion.HTTP1, HTTPVersion.HTTP1]
+    finally:
+        reset_transport_caches()
+
+
+@pytest.mark.asyncio
+async def test_async_transport_passes_pool_tuning_to_pyqwest(test_api_key, monkeypatch):
+    reset_transport_caches()
+    config = ConnectionConfig(api_key=test_api_key)
+    captured = {}
+    build_transport = api_client_async.HTTPTransport
+
+    def record(**kwargs):
+        captured.update(kwargs)
+        return build_transport(**kwargs)
+
+    monkeypatch.setattr(api_client_async, "HTTPTransport", record)
+
+    try:
+        get_async_transport(config, for_streaming=True)
+
+        assert captured["tls_include_system_certs"] is True
+        assert captured["proxy"] is None
+        assert captured["pool_idle_timeout"] == pool_idle_timeout
+        assert captured["pool_max_idle_per_host"] == pool_max_idle_per_host
+        assert captured["read_timeout"] == READ_TIMEOUT
+        assert captured["follow_redirects"] is False
     finally:
         reset_transport_caches()
 
