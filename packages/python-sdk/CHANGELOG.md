@@ -1,5 +1,131 @@
 # @e2b/python-sdk
 
+## 2.41.0
+
+### Minor Changes
+
+- 6824cdf: Add `network.egressProxy` / `network["egress_proxy"]` for routing a sandbox's outbound TCP through a SOCKS5 proxy you operate ("bring your own proxy"). Tunneling happens on the host after the `allowOut` / `denyOut` lists are evaluated, so nothing runs inside the sandbox and code running there can neither see the proxy nor route around it. UDP-based traffic — DNS and QUIC/HTTP3 — is not tunneled.
+
+  ```ts
+  import { Sandbox } from 'e2b'
+
+  const sandbox = await Sandbox.create({
+    network: {
+      egressProxy: {
+        address: 'proxy.example.com:1080',
+        username: 'proxy-user',
+        password: 'proxy-password',
+      },
+    },
+  })
+  ```
+
+  ```python
+  from e2b import Sandbox
+
+  sandbox = Sandbox.create(
+      network={
+          "egress_proxy": {
+              "address": "proxy.example.com:1080",
+              "username": "proxy-user",
+              "password": "proxy-password",
+          },
+      },
+  )
+  ```
+
+  It combines with the rest of the network configuration — here everything except `api.example.com` is denied, and the traffic that is allowed goes through your proxy:
+
+  ```ts
+  await Sandbox.create({
+    network: {
+      allowOut: ['api.example.com'],
+      denyOut: ({ allTraffic }) => [allTraffic],
+      egressProxy: { address: 'proxy.example.com:1080' },
+    },
+  })
+  ```
+
+  ```python
+  Sandbox.create(
+      network={
+          "allow_out": ["api.example.com"],
+          "deny_out": lambda ctx: [ctx.all_traffic],
+          "egress_proxy": {"address": "proxy.example.com:1080"},
+      },
+  )
+  ```
+
+  `updateNetwork` / `update_network` sets or replaces the proxy on a sandbox that is already running, with no restart. The update replaces the whole configuration instead of merging into it, so an update that leaves the proxy out stops tunneling — repeat it in every update that should keep it.
+
+  ```ts
+  // Start tunneling on the running sandbox
+  await sandbox.updateNetwork({
+    allowOut: ['api.example.com'],
+    denyOut: ({ allTraffic }) => [allTraffic],
+    egressProxy: { address: 'proxy.example.com:1080' },
+  })
+
+  // Stop tunneling: an update without egressProxy clears it
+  await sandbox.updateNetwork({})
+  ```
+
+  ```python
+  # Start tunneling on the running sandbox
+  sandbox.update_network({
+      "allow_out": ["api.example.com"],
+      "deny_out": lambda ctx: [ctx.all_traffic],
+      "egress_proxy": {"address": "proxy.example.com:1080"},
+  })
+
+  # Stop tunneling: an update without egress_proxy clears it
+  sandbox.update_network({})
+  ```
+
+  `getInfo` / `get_info` reports the proxy the sandbox's egress is currently tunneled through. The password is never returned, so the returned `SandboxEgressProxyInfo` does not have the field at all:
+
+  ```ts
+  const info = await sandbox.getInfo()
+  console.log(info.network?.egressProxy)
+  // { address: 'proxy.example.com:1080', username: 'proxy-user' }
+  ```
+
+  ```python
+  info = sandbox.get_info()
+  print(info.network["egress_proxy"])
+  # {'address': 'proxy.example.com:1080', 'username': 'proxy-user'}
+  ```
+
+  Egress fails closed: when the proxy is unreachable or does not speak SOCKS5, outbound connections fail rather than falling back to a direct connection. The address is validated server-side when the sandbox is created — a rejected create leaves nothing behind. Available on E2B Cloud and in BYOC deployments; a sandbox that names a proxy on a deployment built from the open source `e2b-dev/infra` repository is rejected as unsupported.
+
+### Patch Changes
+
+- 02ba746: Raise the `h2` floor to `>=4.4.1` so it can no longer resolve to a version affected by CVE-2026-71554, where a duplicate `Host` header is forwarded to the consuming application and becomes a request smuggling primitive once HTTP/2 is downgraded to HTTP/1.1.
+- e2eebd5: Fix URL encoding of namespaced template names and aliases in the Python SDK.
+
+  The endpoints that take a template ID also accept a template name, and names may
+  be namespaced (e.g. `namespace/name`). The SDK interpolated them into the request
+  path without encoding, so a call like `Template.exists("namespace/name")` hit
+  `/templates/aliases/namespace/name` instead of
+  `/templates/aliases/namespace%2Fname` — the slash split the route rather than
+  staying inside one path segment. Every method that takes a template ID or name,
+  an alias, or a snapshot ID in the path — `Template.exists` / `alias_exists`,
+  `get_tags`, the build/upload/status calls, and `Sandbox.delete_snapshot` (whose
+  snapshot IDs are `namespace/name:tag`) — now percent-encodes the value, matching
+  the JavaScript SDK (which already encodes path parameters via
+  `encodeURIComponent`).
+
+  ```python
+  from e2b import Template, Sandbox
+
+  # Namespaced templates now resolve correctly
+  Template.exists("my-team/my-template")
+  Template.get_tags("my-team/my-template")
+
+  # Namespaced snapshots can now be deleted
+  Sandbox.delete_snapshot("my-team/my-snapshot:default")
+  ```
+
 ## 2.40.0
 
 ### Minor Changes
