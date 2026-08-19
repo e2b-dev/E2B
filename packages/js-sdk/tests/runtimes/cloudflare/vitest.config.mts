@@ -83,7 +83,9 @@ export default defineConfig({
           // the sandbox mid-request.
           message === 'Network connection lost.' ||
           // Stub rejection from tests/sandbox/git/validation.test.ts.
-          message === 'commands.run should not be called')
+          message === 'commands.run should not be called' ||
+          // Stub body-stream error from tests/api/inflight.test.ts.
+          message === 'body boom')
       if (expectedRejection) return false
     },
   },
