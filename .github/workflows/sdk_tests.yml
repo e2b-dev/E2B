@@ -46,6 +46,9 @@ jobs:
               - *shared
               - '.github/workflows/python_sdk_tests.yml'
               - 'packages/python-sdk/**/!(*.md)'
+              # The tests pinning scripts/generate-mcp-spec.py live in this
+              # package, so a generator-only change has to run them too.
+              - 'scripts/**'
             cli:
               - *shared
               - '.github/workflows/cli_tests.yml'
