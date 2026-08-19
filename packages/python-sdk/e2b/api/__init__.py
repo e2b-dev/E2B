@@ -86,15 +86,17 @@ connection_retries = int(os.getenv("E2B_CONNECTION_RETRIES") or "3")
 pool_idle_timeout = float(os.getenv("E2B_KEEPALIVE_EXPIRY") or "300")
 pool_max_idle_per_host = int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20")
 
+
 # The retry policy the shared transports declare per request (see
 # `ConnectionRetryTransport` in client_sync/client_async).
 #
 # pyqwest's retry middleware keeps a request replayable, and for a body that
 # isn't already `bytes` it does that by growing a copy of it in memory as it is
 # sent. A streamed upload therefore went to the wire incrementally *and* was
-# mirrored whole in RAM, so peak memory scaled with file size for
-# `files.write`, `volume.write_file` and template context uploads even though
-# nothing in the SDK buffers (SDK-332).
+# mirrored whole in RAM, so peak memory scaled with file size for `files.write`
+# of a file-like object and for `volume.write_file`, even though nothing in the
+# SDK buffers (SDK-332). Template context uploads were never affected: they
+# build their own transport with no retry middleware in it.
 #
 # `RetryMode.UNBUFFERED` drops the copy: a streamed body is replayed only while
 # nothing has been read from it, which is all a connect-only policy ever needs,
@@ -109,8 +111,16 @@ pool_max_idle_per_host = int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20")
 # so a connect error surfaced with the body already started (measured: the one
 # chunk of a unary RPC body, up to a whole small-chunked upload) and neither
 # buffered nor rewindable.
-_retry_mode = getattr(retry_middleware, "RetryMode", None)
-unbuffered_retries: Any = True if _retry_mode is None else _retry_mode.UNBUFFERED
+#
+# Typed `Any` rather than the union it is: the pinned release declares
+# `should_retry_request` as `-> bool`, so annotating the override with a union
+# that admits `RetryMode` fails the Liskov check until the pin moves.
+def _resolve_retry_request_policy(middleware: Any) -> Any:
+    retry_mode = getattr(middleware, "RetryMode", None)
+    return True if retry_mode is None else retry_mode.UNBUFFERED
+
+
+_retry_request_policy: Any = _resolve_retry_request_policy(retry_middleware)
 
 
 class ProxyConfig(NamedTuple):

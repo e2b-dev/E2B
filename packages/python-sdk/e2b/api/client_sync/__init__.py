@@ -10,12 +10,12 @@ from pyqwest.middleware.retry import SyncRetryTransport
 from e2b.api import (
     ApiClient,
     ProxyConfig,
+    _retry_request_policy,
     connection_retries,
     make_logging_event_hooks,
     pool_idle_timeout,
     pool_max_idle_per_host,
     proxy_to_config,
-    unbuffered_retries,
 )
 from e2b.connection_config import READ_TIMEOUT, ConnectionConfig
 
@@ -35,11 +35,13 @@ class ConnectionRetryTransport(SyncRetryTransport):
     default policy would otherwise also retry I/O errors and 429/5xx responses
     for idempotent methods.
 
-    Streamed bodies are retried without being buffered, so an upload is not
-    mirrored in memory as it is sent (see ``unbuffered_retries``)."""
+    On a pyqwest whose retry middleware exposes ``RetryMode``, streamed bodies
+    are retried without being buffered, so an upload is not mirrored in memory
+    as it is sent; earlier releases keep the buffered replay they ship (see
+    ``_retry_request_policy``)."""
 
     def should_retry_request(self, request: SyncRequest) -> Any:
-        return unbuffered_retries
+        return _retry_request_policy
 
     def should_retry_response(
         self, request: SyncRequest, response: Union[SyncResponse, Exception]
