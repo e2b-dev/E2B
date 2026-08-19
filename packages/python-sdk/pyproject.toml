@@ -24,7 +24,7 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://e2b.dev/"
+Homepage = "https://e2b.dev/?utm_source=pypi&utm_medium=referral&utm_campaign=package_homepage&utm_content=e2b"
 Repository = "https://github.com/e2b-dev/e2b/tree/main/packages/python-sdk"
 "Bug Tracker" = "https://github.com/e2b-dev/e2b/issues"
 
