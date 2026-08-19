@@ -1,16 +1,18 @@
 from time import sleep
 from typing import Any, cast
+from uuid import uuid4
 
 import httpx
 import pytest
 
-from e2b import Sandbox, SandboxState
+from e2b import Sandbox, SandboxException, SandboxState, Secret
 from e2b.api.client.models import (
     NewSandbox,
     SandboxAutoResumeConfig,
 )
+from e2b.api.client.types import UNSET
 from e2b.exceptions import InvalidArgumentException
-from e2b.sandbox.sandbox_api import SandboxQuery
+from e2b.sandbox.sandbox_api import SandboxQuery, build_iam_config
 
 
 @pytest.mark.skip_debug()
@@ -37,6 +39,34 @@ def test_metadata(sandbox_factory):
         assert False, "Sandbox not found"
 
 
+@pytest.mark.skip_debug()
+def test_mcp_gateway_start_failure_kills_created_sandbox(template):
+    metadata = {"mcp_gateway_cleanup_test_id": str(uuid4())}
+    query = SandboxQuery(state=[SandboxState.RUNNING], metadata=metadata)
+    remaining_sandboxes = []
+
+    try:
+        # The base template has no mcp-gateway binary, so gateway startup
+        # reliably fails after the sandbox has been allocated.
+        with pytest.raises(SandboxException, match="Failed to start MCP gateway"):
+            Sandbox.create(
+                template,
+                timeout=60,
+                metadata=metadata,
+                mcp=cast(Any, {"invalid_server": {}}),
+            )
+
+        remaining_sandboxes = Sandbox.list(query=query).next_items()
+        assert remaining_sandboxes == []
+    finally:
+        try:
+            remaining_sandboxes = Sandbox.list(query=query).next_items()
+        except Exception:
+            pass
+        for sandbox in remaining_sandboxes:
+            Sandbox.kill(sandbox.sandbox_id)
+
+
 def test_create_payload_serializes_auto_resume_enabled():
     body = NewSandbox(
         template_id="template-id",
@@ -59,6 +89,84 @@ def test_create_payload_deserializes_auto_resume_enabled():
 
     assert isinstance(body.auto_resume, SandboxAutoResumeConfig)
     assert body.auto_resume.to_dict() == {"enabled": False}
+
+
+def test_create_payload_serializes_iam_tokens():
+    iam = build_iam_config(
+        {
+            "tokens": {
+                "aws": {"audience": "sts.amazonaws.com", "token_type": "JWT-SVID"},
+            },
+        }
+    )
+    assert iam is not None
+
+    body = NewSandbox(template_id="template-id", iam=iam)
+
+    assert body.to_dict()["iam"] == {
+        "tokens": {
+            "aws": {"audience": "sts.amazonaws.com", "tokenType": "JWT-SVID"},
+        },
+    }
+
+
+def test_create_payload_serializes_secret_iam_token():
+    iam = build_iam_config(
+        {
+            "tokens": {
+                "aws": Secret.iam_token(
+                    audience="sts.amazonaws.com", token_type="JWT-SVID"
+                ),
+            },
+        }
+    )
+    assert iam is not None
+
+    body = NewSandbox(template_id="template-id", iam=iam)
+
+    assert body.to_dict()["iam"] == {
+        "tokens": {
+            "aws": {"audience": "sts.amazonaws.com", "tokenType": "JWT-SVID"},
+        },
+    }
+
+
+def test_create_payload_omits_iam_when_not_provided_or_empty():
+    assert build_iam_config(None) is None
+    assert build_iam_config({}) is None
+    assert build_iam_config({"tokens": {}}) is None
+
+    body = NewSandbox(template_id="template-id", iam=UNSET)
+
+    assert "iam" not in body.to_dict()
+
+
+def test_create_payload_rejects_malformed_iam_tokens():
+    # The wire-format casing a user might copy from the JS example or a
+    # serialized payload must fail with an actionable error, not a KeyError.
+    with pytest.raises(InvalidArgumentException, match="token_type"):
+        build_iam_config(
+            cast(
+                Any,
+                {
+                    "tokens": {
+                        "aws": {
+                            "audience": "sts.amazonaws.com",
+                            "tokenType": "JWT-SVID",
+                        },
+                    },
+                },
+            )
+        )
+
+    with pytest.raises(InvalidArgumentException):
+        build_iam_config(cast(Any, {"tokens": {"aws": None}}))
+
+    # Non-string values must be rejected too, not serialized as null.
+    with pytest.raises(InvalidArgumentException):
+        build_iam_config(
+            cast(Any, {"tokens": {"aws": {"audience": None, "token_type": "JWT-SVID"}}})
+        )
 
 
 @pytest.mark.skip_debug()

@@ -1,5 +1,13 @@
 # @e2b/cli
 
+## 2.16.2
+
+### Patch Changes
+
+- 65cd85d: Remove the `E2B_ACCESS_TOKEN` auth path. Authentication moved to Hydra OAuth, so the CLI no longer reads an access token — from the environment or from `~/.e2b/config.json` — to authorize API requests. The API key alone scopes every endpoint the CLI calls, and `e2b auth login` / `e2b auth configure` build their own clients with Hydra JWTs.
+- Updated dependencies [6248b12]
+  - e2b@2.40.0
+
 ## 2.16.1
 
 ### Patch Changes

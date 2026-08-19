@@ -44,12 +44,15 @@ class Pty:
     ) -> None:
         self._connection_config = connection_config
         self._envd_version = envd_version
-        self._check_health = lambda: acheck_sandbox_health(envd_api)
         self._rpc = create_rpc_client(
             process_connect.ProcessClient,
             envd_api_url,
             connection_config,
         )
+        self._envd_api = envd_api
+
+    async def _check_health(self) -> Optional[bool]:
+        return await acheck_sandbox_health(self._envd_api)
 
     async def kill(
         self,

@@ -1,5 +1,275 @@
 # @e2b/python-sdk
 
+## 2.40.0
+
+### Minor Changes
+
+- 6248b12: Remove the deprecated `accessToken` / `access_token` option and its `E2B_ACCESS_TOKEN` environment fallback. E2B access tokens are no longer accepted for API authentication, so the SDKs no longer resolve one or send it as an `Authorization: Bearer` header — requests authenticate with the API key alone.
+
+  If you were relying on the option to send a bearer token to a custom deployment, pass the header directly, which is what the deprecation notice already pointed to:
+
+  ```ts
+  // Before
+  const sandbox = await Sandbox.create({ accessToken: token })
+
+  // After
+  const sandbox = await Sandbox.create({
+    apiHeaders: { Authorization: `Bearer ${token}` },
+  })
+  ```
+
+  ```python
+  # Before
+  config = ConnectionConfig(access_token=token)
+
+  # After
+  config = ConnectionConfig(api_headers={"Authorization": f"Bearer {token}"})
+  ```
+
+  Note that `Sandbox.envd_access_token` / `traffic_access_token` are unrelated per-sandbox tokens and are unaffected.
+
+## 2.39.1
+
+### Patch Changes
+
+- 0d507cd: Restore the `http2` parameter on `get_transport` and `get_envd_transport`, which the pyqwest migration dropped in 2.38.0. `http2=False` again returns a transport pinned to HTTP/1.1, on its own connection pool.
+
+## 2.39.0
+
+### Minor Changes
+
+- 07eb9be: Allow a network rule's `transform` to be a callback, so a workload identity token from the `iam` option can be injected into egress requests without the SDK ever seeing its value. The callback receives placeholder strings that the egress proxy resolves per request — `iam.tokens.aws` is `${e2b.identity.tokens.aws}` on the wire — and referencing a token that is not registered in `iam.tokens` fails with `InvalidArgumentError` / `InvalidArgumentException` instead of silently sending a placeholder no token will ever replace.
+
+  `updateNetwork` / `update_network` accepts the same callbacks, but its payload carries no `iam` config, so token names cannot be checked there and every name resolves to its placeholder.
+
+  Token names are validated where they are registered and again before they are interpolated: a name cannot be empty or contain `{`, `}` or control characters, since the proxy reads a placeholder up to its first `}` and a brace in the name would resolve a different token than the one referenced.
+
+  ```ts
+  import { Sandbox, Secret } from 'e2b'
+
+  const sandbox = await Sandbox.create({
+    iam: {
+      tokens: {
+        aws: Secret.iamToken({
+          audience: 'sts.amazonaws.com',
+          tokenType: 'JWT-SVID',
+        }),
+      },
+    },
+    network: {
+      allowOut: ({ rules }) => [...rules.keys()],
+      rules: {
+        'api.internal.example.com': [
+          {
+            transform: ({ iam }) => ({
+              headers: { Authorization: `Bearer ${iam.tokens.aws}` },
+            }),
+          },
+        ],
+      },
+    },
+  })
+  ```
+
+  ```python
+  from e2b import Sandbox, Secret
+
+  sandbox = Sandbox.create(
+      iam={
+          "tokens": {
+              "aws": Secret.iam_token(audience="sts.amazonaws.com", token_type="JWT-SVID"),
+          },
+      },
+      network={
+          "allow_out": lambda ctx: list(ctx.rules.keys()),
+          "rules": {
+              "api.internal.example.com": [
+                  {
+                      "transform": lambda ctx: {
+                          "headers": {"Authorization": f"Bearer {ctx.iam.tokens['aws']}"},
+                      },
+                  },
+              ],
+          },
+      },
+  )
+  ```
+
+- 64b25bb: Add the `iam` option to `Sandbox.create` for configuring sandbox workload identity, and a `Secret` class with an `iamToken` / `iam_token` method for defining the workload tokens. Passing a non-empty `tokens` map (name → `{ audience, tokenType }`) enables workload identity for the sandbox:
+
+  ```ts
+  import { Sandbox, Secret } from 'e2b'
+
+  const sandbox = await Sandbox.create({
+    iam: {
+      tokens: {
+        aws: Secret.iamToken({
+          audience: 'sts.amazonaws.com',
+          tokenType: 'JWT-SVID',
+        }),
+      },
+    },
+  })
+  ```
+
+  ```python
+  from e2b import Sandbox, Secret
+
+  sandbox = Sandbox.create(
+      iam={
+          "tokens": {
+              "aws": Secret.iam_token(audience="sts.amazonaws.com", token_type="JWT-SVID"),
+          },
+      },
+  )
+  ```
+
+  Plain `{ audience, tokenType }` objects (`{"audience": ..., "token_type": ...}` dicts in Python) are accepted as token values too.
+
+### Patch Changes
+
+- 11912ff: Build the envd HTTP API client once per sync `Sandbox` and share it across the
+  filesystem, commands, and PTY modules, which now receive it instead of each
+  constructing their own — matching `AsyncSandbox`. No behavior change: the
+  pyqwest transport underneath is already cached process-wide per
+  `(proxy, for_streaming)`, so the separate clients shared one connection pool
+  either way. `Filesystem` still builds the streaming sibling client whose
+  transport carries the idle read timeout, in both flavors.
+
+## 2.38.0
+
+### Minor Changes
+
+- b048369: Move the envd HTTP API client (sandbox file transfers, health checks) onto
+  [`pyqwest`](https://pypi.org/project/pyqwest/) via its httpx-compatible
+  transport adapter. envd RPC already runs on pyqwest through `connectrpc`, so
+  all sandbox traffic now shares one HTTP stack built from the same transport
+  pieces (with separate connection pools per use).
+
+  The per-thread (sync) and per-loop (async) envd httpx clients are gone: the
+  pyqwest transports are thread-safe and loop-independent, so a single client
+  per module serves all threads and event loops.
+
+  Timeout semantics through the adapter:
+  - Streamed downloads (`files.read(format="stream")`): a `request_timeout`
+    set explicitly for the call is the deadline for the whole transfer — by
+    default the transfer is unbounded in total, as before. A stalled stream is
+    reclaimed by a 60-second idle read timeout that resets on every chunk.
+    `stream_idle_timeout` keeps working on the async client (applied per
+    read); the sync client cannot interrupt a blocking read, so it relies on
+    the transport-wide idle bound and now ignores the parameter.
+  - Uploads: a buffered upload is bounded by `request_timeout` as a
+    whole-request deadline, and a streamed (file-like) upload carries no
+    client-side timeout (a stalled one is bounded server-side by envd's idle
+    read timeout) — both matching the JS SDK.
+  - Non-streamed reads (`files.read()` as text or bytes) and buffered uploads
+    are bounded by `request_timeout` for the **whole transfer** (default
+    60 seconds), where the previous transport bounded each socket operation
+    and left total duration unbounded. Reading or writing a file too large to
+    transfer inside the deadline now raises `httpx.ReadTimeout` — pass a
+    larger `request_timeout` (or `0` to disable), or use
+    `format="stream"`/file-like data, for large transfers.
+
+  `E2B_MAX_CONNECTIONS` is no longer read: it configured httpx's global
+  connection cap, and the last transport that took one is gone (reqwest has no
+  counterpart — it does not cap concurrent connections). `E2B_KEEPALIVE_EXPIRY`
+  and `E2B_MAX_KEEPALIVE_CONNECTIONS` keep tuning the pools.
+
+- a874ced: Move the REST API client (sandbox lifecycle, listing, templates, volumes
+  control plane) onto [`pyqwest`](https://pypi.org/project/pyqwest/) (Rust
+  reqwest/hyper) via its httpx-compatible transport adapter, replacing the
+  httpx-native `HTTPTransport`/`AsyncHTTPTransport`. The generated httpx client
+  API is unchanged — only the transport underneath is swapped — so logging
+  event hooks, headers, and redirect handling (`follow_redirects`,
+  `response.history`) behave as before.
+
+  One timeout semantics change: through the adapter, `request_timeout` is a
+  deadline for the whole API call, where the previous transports applied it to
+  each phase (connect, read, write) separately — a slow request could exceed it
+  in total. For the REST API's small JSON exchanges this tightening is what
+  `request_timeout` reads as promising; `0` still disables it.
+
+  Because pyqwest transports are thread-safe and loop-independent (I/O runs on
+  a Rust runtime), the API connection pool is now shared process-wide per
+  proxy, instead of one pool per thread (sync) or per event loop (async), and
+  `ApiClient` no longer maintains per-thread/per-loop httpx client caches — a
+  single httpx client serves all threads and event loops.
+  Connection-establishment failures are retried with backoff
+  (`E2B_CONNECTION_RETRIES`, default 3), matching the connect-only retries of
+  the previous transports. Timeouts keep raising `httpx.ReadTimeout` (an
+  `httpx.TimeoutException`), as before, whether they fire while waiting for the
+  response head or while reading the response body, and connection, network, and
+  protocol failures keep raising their `httpx` counterparts (`httpx.ConnectError`,
+  `httpx.ReadError`, `httpx.RemoteProtocolError`).
+
+  `proxy` for API calls takes a URL string (e.g.
+  `proxy="http://user:pass@localhost:8030"`, scheme http, https, socks5, or
+  socks5h), an `httpx.URL`, or an `httpx.Proxy` — including its credentials
+  (sent as `Proxy-Authorization`) and any headers configured for the proxy. The
+  one `httpx.Proxy` option pyqwest cannot express, a per-proxy `ssl_context`,
+  raises `InvalidArgumentException` rather than being silently dropped.
+
+  Low-level HTTP logs stay available: where enabling the `httpcore` logger used
+  to show connection-level detail, pyqwest logs one line per request on the
+  `pyqwest.access` logger and request lifecycle records on `pyqwest`, both at
+  `DEBUG` and off unless enabled:
+
+  ```python
+  import logging
+
+  logging.basicConfig()
+  logging.getLogger("pyqwest.access").setLevel(logging.DEBUG)
+  # DEBUG pyqwest.access - HTTP Request: POST https://api.e2b.app/sandboxes "HTTP/2 201 Created"
+  ```
+
+  The SDK's own `logger` option is unchanged and independent of these.
+
+  envd traffic is not affected: RPC (commands, PTY, filesystem watch) already
+  runs on pyqwest via `connectrpc`, and the envd HTTP API (file transfers,
+  health checks) keeps its httpx transports.
+
+- b3a7c9f: Move template build-context uploads (to S3 presigned URLs) onto
+  [`pyqwest`](https://pypi.org/project/pyqwest/) via its httpx-compatible
+  transport adapter. Content-Length framing for the streamed archive body is
+  preserved (S3 rejects chunked transfer encoding), and redirects stay with the
+  httpx client instead of being followed inside the transport. The 1-hour upload
+  timeout now bounds the entire upload rather than each socket operation, and
+  `verify_ssl=False` on the client is no longer honored for uploads (pyqwest
+  has no insecure-TLS option).
+- 458c2c4: Move the volume content client (`Volume`/`AsyncVolume` file operations) onto
+  [`pyqwest`](https://pypi.org/project/pyqwest/) via its httpx-compatible
+  transport adapter, the same stack the REST API client uses. The connection
+  pool is shared process-wide per proxy instead of one pool per thread (sync)
+  or per event loop (async), and connection-establishment failures are retried
+  with backoff (`E2B_CONNECTION_RETRIES`, default 3), as before.
+
+  For streamed volume reads (`Volume.read_file(format="stream")`), a stalled
+  stream is by default bounded by a transport-wide idle read timeout of
+  60 seconds that resets on every chunk (still surfaced as
+  `httpx.ReadTimeout`; matches the JS SDK's default stream idle timeout).
+  `AsyncVolume.read_file` keeps honoring an explicit `stream_idle_timeout`
+  per read (including `0` to disable); the sync client ignores it — it cannot
+  interrupt a blocking read. Passing `request_timeout` to a streamed read now
+  bounds the whole transfer rather than individual socket operations.
+
+  The same whole-transfer semantics apply to non-streamed operations:
+  `read_file(format="text"/"bytes")` and uploads are bounded by
+  `request_timeout` as a total deadline (default 1 hour for file content
+  operations), where the previous transports bounded each socket operation
+  and left total duration unbounded. Pass a larger `request_timeout` (or `0`
+  to disable) for very large transfers on slow links.
+
+### Patch Changes
+
+- cab27aa: Kill newly created sandboxes when MCP gateway startup fails. The failure now surfaces as `SandboxError` (JS) / `SandboxException` (Python) with a `Failed to start MCP gateway: <stderr>` message instead of a bare command exit error.
+
+## 2.37.1
+
+### Patch Changes
+
+- 88f41f3: Align ANSI stripping of template build log messages across both SDKs. The Python SDK's `strip_ansi_escape_codes` now ports the JS SDK's `stripAnsi` regex: OSC sequences (hyperlinks, window titles) are matched non-greedily up to the first string terminator — including sequences spanning newlines — and CSI sequences are stripped without requiring a terminator. Both implementations additionally strip the remaining ECMA-48 string controls (DCS/Sixel, SOS, PM, APC) through their string terminator so control payloads no longer leak into cleaned logs.
+- 998e560: Relax the Python SDK's `wcmatch` requirement from `>=10.1,<11` to `>=10.1,<12` so `e2b` can be installed alongside packages that already require `wcmatch>=11` (for example `deepagents>=0.7.0`), which previously failed to resolve. The SDK only calls `glob.glob()` with `GLOBSTAR | DOTMATCH` for template context matching; wcmatch 11.0's single breaking change affects `translate()` callers using extended-glob capture groups, so it is a no-op here. The template glob test suite passes against 10.1, 10.2.1 and 11.0.
+
 ## 2.37.0
 
 ### Minor Changes

@@ -1,5 +1,144 @@
 # e2b
 
+## 2.40.0
+
+### Minor Changes
+
+- 6248b12: Remove the deprecated `accessToken` / `access_token` option and its `E2B_ACCESS_TOKEN` environment fallback. E2B access tokens are no longer accepted for API authentication, so the SDKs no longer resolve one or send it as an `Authorization: Bearer` header — requests authenticate with the API key alone.
+
+  If you were relying on the option to send a bearer token to a custom deployment, pass the header directly, which is what the deprecation notice already pointed to:
+
+  ```ts
+  // Before
+  const sandbox = await Sandbox.create({ accessToken: token })
+
+  // After
+  const sandbox = await Sandbox.create({
+    apiHeaders: { Authorization: `Bearer ${token}` },
+  })
+  ```
+
+  ```python
+  # Before
+  config = ConnectionConfig(access_token=token)
+
+  # After
+  config = ConnectionConfig(api_headers={"Authorization": f"Bearer {token}"})
+  ```
+
+  Note that `Sandbox.envd_access_token` / `traffic_access_token` are unrelated per-sandbox tokens and are unaffected.
+
+## 2.39.0
+
+### Minor Changes
+
+- 07eb9be: Allow a network rule's `transform` to be a callback, so a workload identity token from the `iam` option can be injected into egress requests without the SDK ever seeing its value. The callback receives placeholder strings that the egress proxy resolves per request — `iam.tokens.aws` is `${e2b.identity.tokens.aws}` on the wire — and referencing a token that is not registered in `iam.tokens` fails with `InvalidArgumentError` / `InvalidArgumentException` instead of silently sending a placeholder no token will ever replace.
+
+  `updateNetwork` / `update_network` accepts the same callbacks, but its payload carries no `iam` config, so token names cannot be checked there and every name resolves to its placeholder.
+
+  Token names are validated where they are registered and again before they are interpolated: a name cannot be empty or contain `{`, `}` or control characters, since the proxy reads a placeholder up to its first `}` and a brace in the name would resolve a different token than the one referenced.
+
+  ```ts
+  import { Sandbox, Secret } from 'e2b'
+
+  const sandbox = await Sandbox.create({
+    iam: {
+      tokens: {
+        aws: Secret.iamToken({
+          audience: 'sts.amazonaws.com',
+          tokenType: 'JWT-SVID',
+        }),
+      },
+    },
+    network: {
+      allowOut: ({ rules }) => [...rules.keys()],
+      rules: {
+        'api.internal.example.com': [
+          {
+            transform: ({ iam }) => ({
+              headers: { Authorization: `Bearer ${iam.tokens.aws}` },
+            }),
+          },
+        ],
+      },
+    },
+  })
+  ```
+
+  ```python
+  from e2b import Sandbox, Secret
+
+  sandbox = Sandbox.create(
+      iam={
+          "tokens": {
+              "aws": Secret.iam_token(audience="sts.amazonaws.com", token_type="JWT-SVID"),
+          },
+      },
+      network={
+          "allow_out": lambda ctx: list(ctx.rules.keys()),
+          "rules": {
+              "api.internal.example.com": [
+                  {
+                      "transform": lambda ctx: {
+                          "headers": {"Authorization": f"Bearer {ctx.iam.tokens['aws']}"},
+                      },
+                  },
+              ],
+          },
+      },
+  )
+  ```
+
+- 64b25bb: Add the `iam` option to `Sandbox.create` for configuring sandbox workload identity, and a `Secret` class with an `iamToken` / `iam_token` method for defining the workload tokens. Passing a non-empty `tokens` map (name → `{ audience, tokenType }`) enables workload identity for the sandbox:
+
+  ```ts
+  import { Sandbox, Secret } from 'e2b'
+
+  const sandbox = await Sandbox.create({
+    iam: {
+      tokens: {
+        aws: Secret.iamToken({
+          audience: 'sts.amazonaws.com',
+          tokenType: 'JWT-SVID',
+        }),
+      },
+    },
+  })
+  ```
+
+  ```python
+  from e2b import Sandbox, Secret
+
+  sandbox = Sandbox.create(
+      iam={
+          "tokens": {
+              "aws": Secret.iam_token(audience="sts.amazonaws.com", token_type="JWT-SVID"),
+          },
+      },
+  )
+  ```
+
+  Plain `{ audience, tokenType }` objects (`{"audience": ..., "token_type": ...}` dicts in Python) are accepted as token values too.
+
+## 2.38.3
+
+### Patch Changes
+
+- cab27aa: Kill newly created sandboxes when MCP gateway startup fails. The failure now surfaces as `SandboxError` (JS) / `SandboxException` (Python) with a `Failed to start MCP gateway: <stderr>` message instead of a bare command exit error.
+
+## 2.38.2
+
+### Patch Changes
+
+- d5a382e: Bump both undici dependencies past the 2026-07-24 security advisories: the required `undici` from `^7.28.0` to `^7.29.0`, and the optional `undici8` (`npm:undici@…`) from 8.8.0 to 8.10.0. Both releases fix one High ([GHSA-4cwx-7wf7-3272](https://github.com/nodejs/undici/security/advisories/GHSA-4cwx-7wf7-3272)) and four Medium advisories, and undici 8.10.0 additionally fixes HTTP/2 request settling, refused-stream retries and GOAWAY handling, which the SDK exercises because every dispatcher it builds sets `allowH2: true`. Neither bump moves a Node floor — 7.29.0 still requires Node `>=20.18.1` and 8.10.0 still requires `>=22.19.0`, matching the `UNDICI_8_MIN_NODE` gate — so package selection and behaviour are unchanged.
+
+## 2.38.1
+
+### Patch Changes
+
+- 88f41f3: Align ANSI stripping of template build log messages across both SDKs. The Python SDK's `strip_ansi_escape_codes` now ports the JS SDK's `stripAnsi` regex: OSC sequences (hyperlinks, window titles) are matched non-greedily up to the first string terminator — including sequences spanning newlines — and CSI sequences are stripped without requiring a terminator. Both implementations additionally strip the remaining ECMA-48 string controls (DCS/Sixel, SOS, PM, APC) through their string terminator so control payloads no longer leak into cleaned logs.
+- 86f7b8e: Export `GitResetMode`, `GitResetOpts`, `GitRestoreOpts` and `GitStatusLabel` from the JS SDK entry point, so the argument and status types of the public `git.reset()`, `git.restore()` and `git.status()` methods can be named by callers
+
 ## 2.38.0
 
 ### Minor Changes

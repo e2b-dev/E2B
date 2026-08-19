@@ -1,15 +1,32 @@
 import logging
 import os
 
-from typing import cast, Optional, Dict, TypedDict
+from typing import cast, Optional, Dict, TypedDict, Union
 
-from httpx._types import ProxyTypes
+import httpx
 from typing_extensions import Unpack
 
 from e2b.api.metadata import package_version
 from e2b.sandbox_domains import is_supported_sandbox_domain
 
+ProxyTypes = Union[str, httpx.URL, httpx.Proxy]
+"""The forms the ``proxy`` option accepts: a URL string, an ``httpx.URL``, or
+an ``httpx.Proxy``.
+
+Identical to ``httpx._types.ProxyTypes``, spelled out here so the SDK doesn't
+import httpx's private module at runtime — and so the union can grow a pyqwest
+proxy type as the transports move off httpx. :func:`e2b.api.proxy_to_config`
+narrows it to what the pyqwest REST transports take.
+"""
+
 REQUEST_TIMEOUT: float = 60.0  # 60 seconds
+
+# Idle bound for every read on the streaming envd file-transfer transport:
+# the transfer is aborted when no bytes at all arrive for this long. It
+# resets on each chunk, so it never limits total transfer time — only a
+# fully stalled stream. Matches the previous default stream idle timeout
+# (the request timeout).
+READ_TIMEOUT: float = 60.0  # 60 seconds
 
 KEEPALIVE_PING_INTERVAL_SEC = 50  # 50 seconds
 KEEPALIVE_PING_HEADER = "Keepalive-Ping-Interval"
@@ -118,10 +135,6 @@ class ConnectionConfig:
         return os.getenv("E2B_SANDBOX_URL")
 
     @staticmethod
-    def _access_token():
-        return os.getenv("E2B_ACCESS_TOKEN")
-
-    @staticmethod
     def _build_user_agent() -> str:
         user_agent_parts = [f"e2b-python-sdk/{package_version}"]
 
@@ -158,7 +171,6 @@ class ConnectionConfig:
         validate_api_key: Optional[bool] = None,
         api_url: Optional[str] = None,
         sandbox_url: Optional[str] = None,
-        access_token: Optional[str] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
         api_headers: Optional[Dict[str, str]] = None,
@@ -175,9 +187,6 @@ class ConnectionConfig:
             if validate_api_key is not None
             else ConnectionConfig._validate_api_key()
         )
-        # Deprecated: pass the token through `api_headers` instead, e.g.
-        # api_headers={"Authorization": f"Bearer {token}"}.
-        self.access_token = access_token or ConnectionConfig._access_token()
         self.headers = {**(headers or {}), **(api_headers or {})}
         self._user_agent_is_sdk_built = self._apply_user_agent(
             self.headers,
@@ -263,7 +272,6 @@ class ConnectionConfig:
         Get the parameters for the API call.
 
         This is used to avoid passing the following attributes to the API call:
-        - access_token
         - api_url
 
         It also returns a copy, so the original object is not modified.
