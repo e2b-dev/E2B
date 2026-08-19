@@ -39,10 +39,10 @@ import yaml
 CATALOG_URL = "https://desktop.docker.com/mcp/catalog/v2/catalog.yaml"
 SPEC_PATH = Path(__file__).resolve().parent.parent / "spec" / "mcp-server.json"
 
-# Suffixes and prefixes that only say "this is an MCP server", dropped from
-# the server key so that e.g. `airtable-mcp-server` is configured as `airtable`.
-KEY_SUFFIXES = ("-mcp-server", "-mcp")
-KEY_PREFIX = "mcp-"
+# Suffixes and prefixes that only say "this is an MCP server", dropped so that
+# e.g. `airtable-mcp-server` is configured as `airtable`.
+NAME_SUFFIXES = ("-mcp-server", "-mcp")
+NAME_PREFIX = "mcp-"
 
 
 def _capitalize(word: str) -> str:
@@ -53,17 +53,17 @@ def _camel(words: list[str]) -> str:
     return words[0] + "".join(_capitalize(w) for w in words[1:])
 
 
-def server_key(name: str) -> str:
+def option_name(name: str) -> str:
     """`aws-cdk-mcp-server` -> `awsCdk`."""
-    for suffix in KEY_SUFFIXES:
+    for suffix in NAME_SUFFIXES:
         if name.endswith(suffix):
             name = name[: -len(suffix)]
-    if name.startswith(KEY_PREFIX):
-        name = name[len(KEY_PREFIX) :]
+    if name.startswith(NAME_PREFIX):
+        name = name[len(NAME_PREFIX) :]
     return _camel([w.lower() for w in re.split(r"[-_ ]+", name) if w])
 
 
-def secret_property(env: str, server: str) -> str:
+def env_property(env: str, server: str) -> str:
     """`ATLAN_API_KEY` on server `atlan` -> `apiKey`."""
     prefix = f"{server.upper()}_"
     if env.startswith(prefix):
@@ -103,33 +103,38 @@ def _parameters(
     declared = schema.get("required")
     out = []
     declares = declared is not None
-    for key, sub in (schema.get("properties") or {}).items():
-        required = required_parent and (key in declared if declared is not None else True)
+    for prop, sub in (schema.get("properties") or {}).items():
+        required = required_parent and (prop in declared if declared is not None else True)
         if sub.get("type") == "object" and sub.get("properties"):
-            nested, nested_declares = _parameters(sub, path + [key], required)
+            nested, nested_declares = _parameters(sub, path + [prop], required)
             out += nested
             declares = declares or nested_declares
         else:
-            out.append((parameter_property(path + [key]), _property_schema(sub), required))
+            out.append((parameter_property(path + [prop]), _property_schema(sub), required))
     return out, declares
+
+
+def _env_vars(entry: dict[str, Any]) -> list[str]:
+    """The environment variables a server reads its credentials from."""
+    return [declared.get("env", "") for declared in entry.get("secrets") or []]
 
 
 def server_schema(name: str, entry: dict[str, Any]) -> dict[str, Any]:
     properties: dict[str, Any] = {}
     required: list[str] = []
 
-    for secret in entry.get("secrets") or []:
-        key = secret_property(secret.get("env", ""), name)
-        properties[key] = {"type": "string"}
-        required.append(key)
+    for env in _env_vars(entry):
+        prop = env_property(env, name)
+        properties[prop] = {"type": "string"}
+        required.append(prop)
 
     declares_required = False
     for config in entry.get("config") or []:
         parameters, declares = _parameters(config, [], True)
         declares_required = declares_required or declares
-        for key, schema, _ in parameters:
-            properties[key] = schema
-        needed = [key for key, _, is_required in parameters if is_required]
+        for prop, schema, _ in parameters:
+            properties[prop] = schema
+        needed = [prop for prop, _, is_required in parameters if is_required]
         # Parameters that say what they need describe the whole server, so they
         # replace the secrets, which the server only needs for the features the
         # caller opts into.
@@ -146,20 +151,20 @@ def server_schema(name: str, entry: dict[str, Any]) -> dict[str, Any]:
         schema["required"] = required
     schema["additionalProperties"] = False
     if properties:
-        schema["properties"] = {key: properties[key] for key in sorted(properties)}
+        schema["properties"] = {prop: properties[prop] for prop in sorted(properties)}
     schema["type"] = "object"
     schema["x-dockerHubUrl"] = f"https://hub.docker.com/mcp/server/{name}/overview"
     return schema
 
 
 def generate(catalog: dict[str, Any]) -> dict[str, Any]:
-    # A few servers share a key once the "mcp server" wording is dropped, e.g.
+    # A few servers share a name once the "mcp server" wording is dropped, e.g.
     # `apify` and `apify-mcp-server`. Going through the names in order keeps the
     # more specifically named entry, which is the one the catalog maintains.
-    servers = {server_key(name): server_schema(name, catalog[name]) for name in sorted(catalog)}
+    servers = {option_name(name): server_schema(name, catalog[name]) for name in sorted(catalog)}
     return {
         "additionalProperties": False,
-        "properties": {key: servers[key] for key in sorted(servers)},
+        "properties": {prop: servers[prop] for prop in sorted(servers)},
         "type": "object",
     }
 
