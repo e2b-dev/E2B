@@ -7,6 +7,7 @@ import pytest
 from e2b import AsyncSandbox, Sandbox
 from e2b.api.client.api.sandboxes import post_sandboxes
 from e2b.api.client.models import Sandbox as SandboxModel
+from e2b.exceptions import InvalidArgumentException
 
 
 def _created_sandbox():
@@ -63,6 +64,7 @@ def test_create_sends_auto_pause_only_when_configured(
         assert "autoPause" not in body
     else:
         assert body["autoPause"] is auto_pause
+    assert "autoPauseMemory" not in body
 
 
 @pytest.mark.parametrize("lifecycle, auto_pause", AUTO_PAUSE_CASES)
@@ -75,6 +77,20 @@ async def test_async_create_sends_auto_pause_only_when_configured(
         assert "autoPause" not in body
     else:
         assert body["autoPause"] is auto_pause
+    assert "autoPauseMemory" not in body
+
+
+def test_create_omits_auto_pause_memory_when_pause_omits_keep_memory(
+    monkeypatch, test_api_key
+):
+    body = _sync_request_body(
+        monkeypatch,
+        test_api_key,
+        {"on_timeout": {"action": "pause"}},
+    )
+
+    assert body["autoPause"] is True
+    assert "autoPauseMemory" not in body
 
 
 def test_create_sends_the_pause_snapshot_kind_alongside_auto_pause(
@@ -88,3 +104,44 @@ def test_create_sends_the_pause_snapshot_kind_alongside_auto_pause(
 
     assert body["autoPause"] is True
     assert body["autoPauseMemory"] is False
+
+    body = _sync_request_body(
+        monkeypatch,
+        test_api_key,
+        {"on_timeout": {"action": "pause", "keep_memory": True}},
+    )
+
+    assert body["autoPause"] is True
+    assert body["autoPauseMemory"] is True
+
+
+@pytest.mark.parametrize(
+    "lifecycle",
+    [
+        pytest.param(cast(Any, {"auto_resume": True}), id="no-on-timeout-key"),
+        pytest.param(
+            cast(Any, {"on_timeout": None, "auto_resume": True}), id="none-on-timeout"
+        ),
+    ],
+)
+def test_create_rejects_auto_resume_without_a_timeout_action(test_api_key, lifecycle):
+    # An unconfigured on_timeout still resolves to kill semantics locally, so
+    # auto_resume has no pause to attach to.
+    with pytest.raises(InvalidArgumentException):
+        Sandbox.create(api_key=test_api_key, lifecycle=lifecycle)
+
+
+@pytest.mark.parametrize(
+    "lifecycle",
+    [
+        pytest.param(cast(Any, {"auto_resume": True}), id="no-on-timeout-key"),
+        pytest.param(
+            cast(Any, {"on_timeout": None, "auto_resume": True}), id="none-on-timeout"
+        ),
+    ],
+)
+async def test_async_create_rejects_auto_resume_without_a_timeout_action(
+    test_api_key, lifecycle
+):
+    with pytest.raises(InvalidArgumentException):
+        await AsyncSandbox.create(api_key=test_api_key, lifecycle=lifecycle)

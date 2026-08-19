@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeAll, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
-import { Sandbox } from '../../src'
+import { InvalidArgumentError, Sandbox } from '../../src'
 import { TEST_API_KEY, apiUrl } from '../setup'
 
 let lastCreateBody: Record<string, unknown> | undefined
@@ -34,6 +34,7 @@ test('Sandbox.create omits autoPause when no lifecycle is configured', async () 
 
   expect(lastCreateBody).toBeDefined()
   expect(lastCreateBody).not.toHaveProperty('autoPause')
+  expect(lastCreateBody).not.toHaveProperty('autoPauseMemory')
 })
 
 test('Sandbox.create sends autoPause: false for an explicit kill', async () => {
@@ -43,6 +44,7 @@ test('Sandbox.create sends autoPause: false for an explicit kill', async () => {
   })
 
   expect(lastCreateBody?.autoPause).toBe(false)
+  expect(lastCreateBody).not.toHaveProperty('autoPauseMemory')
 })
 
 test('Sandbox.create sends autoPause: true for an explicit pause', async () => {
@@ -52,6 +54,18 @@ test('Sandbox.create sends autoPause: true for an explicit pause', async () => {
   })
 
   expect(lastCreateBody?.autoPause).toBe(true)
+  // Bare 'pause' expresses no preference about the snapshot kind.
+  expect(lastCreateBody).not.toHaveProperty('autoPauseMemory')
+})
+
+test('Sandbox.create omits autoPauseMemory when pause omits keepMemory', async () => {
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    lifecycle: { onTimeout: { action: 'pause' } },
+  })
+
+  expect(lastCreateBody?.autoPause).toBe(true)
+  expect(lastCreateBody).not.toHaveProperty('autoPauseMemory')
 })
 
 test('Sandbox.create sends the pause snapshot kind alongside autoPause', async () => {
@@ -62,6 +76,14 @@ test('Sandbox.create sends the pause snapshot kind alongside autoPause', async (
 
   expect(lastCreateBody?.autoPause).toBe(true)
   expect(lastCreateBody?.autoPauseMemory).toBe(false)
+
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    lifecycle: { onTimeout: { action: 'pause', keepMemory: true } },
+  })
+
+  expect(lastCreateBody?.autoPause).toBe(true)
+  expect(lastCreateBody?.autoPauseMemory).toBe(true)
 })
 
 test('Sandbox.create omits autoPause for a lifecycle without onTimeout', async () => {
@@ -82,4 +104,17 @@ test('Sandbox.create omits autoPause for a lifecycle without onTimeout', async (
 
   expect(lastCreateBody).toBeDefined()
   expect(lastCreateBody).not.toHaveProperty('autoPause')
+})
+
+test('Sandbox.create rejects autoResume without a timeout action', async () => {
+  // An unconfigured onTimeout still resolves to kill semantics locally, so
+  // autoResume has no pause to attach to.
+  await expect(
+    Sandbox.create('base', {
+      apiKey: TEST_API_KEY,
+      lifecycle: { autoResume: true } as never,
+    })
+  ).rejects.toThrowError(InvalidArgumentError)
+
+  expect(lastCreateBody).toBeUndefined()
 })

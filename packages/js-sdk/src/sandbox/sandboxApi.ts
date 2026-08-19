@@ -439,7 +439,8 @@ export type SandboxOnTimeout =
        * be woken transparently by traffic and must be resumed explicitly via
        * `connect()`.
        *
-       * @default true
+       * Left unset, the flag is omitted from the create request and the API's own
+       * default (currently enabled) applies.
        */
       keepMemory?: boolean
     }
@@ -452,7 +453,8 @@ export type SandboxLifecycle = {
   /**
    * Action to take when sandbox timeout is reached. Accepts either `'pause'` /
    * `'kill'`, or `{ action, keepMemory }` to also control the pause snapshot kind.
-   * @default "kill"
+   * Omitted from the create request when unset, leaving the API's default
+   * (currently `kill`) in effect.
    */
   onTimeout: SandboxOnTimeout
 
@@ -1620,7 +1622,10 @@ export class SandboxApi {
       // Omitted rather than sent as false when unconfigured, so the API can
       // distinguish "no preference" from an explicit `kill` and own the default.
       autoPause: onTimeoutConfigured ? action === 'pause' : undefined,
-      autoPauseMemory: action === 'pause' ? keepMemory : undefined,
+      // Same collapse for the snapshot kind: only send when the caller chose
+      // keepMemory. Locally it still defaults to true for the validation above.
+      autoPauseMemory:
+        action === 'pause' && hasKeepMemory ? keepMemory : undefined,
       autoResume: { enabled: autoResume },
     }
 

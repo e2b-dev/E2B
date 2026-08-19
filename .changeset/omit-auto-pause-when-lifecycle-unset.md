@@ -3,7 +3,7 @@
 '@e2b/python-sdk': patch
 ---
 
-Omit `autoPause` from the create-sandbox request when no timeout lifecycle is configured. Sending `autoPause: false` for an unconfigured sandbox was indistinguishable from an explicit `kill`, so the API could not tell "no preference" from a client choice and own its default. An explicit action is still always sent, so behavior is unchanged for callers that configure one:
+Omit `autoPause` from the create-sandbox request when no timeout lifecycle is configured, and omit `autoPauseMemory` unless `keepMemory` / `keep_memory` was chosen. Sending the SDK's local defaults for those fields was indistinguishable from an explicit choice, so the API could not tell "no preference" from a client choice and own its defaults. Explicit values are still always sent:
 
 ```ts
 import { Sandbox } from 'e2b'
@@ -14,6 +14,11 @@ await Sandbox.create()
 // Explicit action: autoPause: false / autoPause: true, as before.
 await Sandbox.create({ lifecycle: { onTimeout: 'kill' } })
 await Sandbox.create({ lifecycle: { onTimeout: 'pause' } })
+
+// Snapshot kind is only sent when keepMemory is set.
+await Sandbox.create({
+  lifecycle: { onTimeout: { action: 'pause', keepMemory: false } },
+})
 ```
 
 ```python
@@ -25,4 +30,9 @@ Sandbox.create()
 # Explicit action: autoPause: false / autoPause: true, as before.
 Sandbox.create(lifecycle={"on_timeout": "kill"})
 Sandbox.create(lifecycle={"on_timeout": "pause"})
+
+# Snapshot kind is only sent when keep_memory is set.
+Sandbox.create(
+    lifecycle={"on_timeout": {"action": "pause", "keep_memory": False}}
+)
 ```
