@@ -20,9 +20,14 @@ describe('a registered token', () => {
     expect({ ...tokens }).toEqual({ aws: '${e2b.identity.tokens.aws}' })
     expect('aws' in tokens).toBe(true)
     expect('gcp' in tokens).toBe(false)
+    // Membership checks must agree with `in` and `Object.keys` — they used to
+    // throw (or report every name under validate: false) via getOwnPropertyDescriptor.
+    expect(Object.hasOwn(tokens, 'aws')).toBe(true)
+    expect(Object.hasOwn(tokens, 'gcp')).toBe(false)
     expect(Object.getOwnPropertyDescriptor(tokens, 'aws')?.value).toBe(
       '${e2b.identity.tokens.aws}'
     )
+    expect(Object.getOwnPropertyDescriptor(tokens, 'gcp')).toBeUndefined()
   })
 })
 
@@ -31,14 +36,6 @@ describe('an unregistered token', () => {
     expect(() => `Bearer ${registered().gpc}`).toThrowError(
       /iam token 'gpc', which is not registered. Registered tokens: 'aws'/
     )
-  })
-
-  // `Object.getOwnPropertyDescriptor(...)?.value` is a second way to read the
-  // same name; answering `undefined` would put "Bearer undefined" on the wire.
-  test('is rejected when read as a descriptor', () => {
-    expect(() =>
-      Object.getOwnPropertyDescriptor(registered(), 'gpc')
-    ).toThrowError(InvalidArgumentError)
   })
 
   test.for(probedNames)(
@@ -78,14 +75,36 @@ describe('the object is read-only', () => {
   // request would go out with a placeholder the egress proxy drops.
   test('rejects an assignment', () => {
     expect(() => {
-      registered().gcp = '${e2b.identity.tokens.gcp}'
-    }).toThrowError(/Cannot assign iam token 'gcp'/)
+      // Readonly at the type level; the trap still has to refuse at runtime.
+      ;(registered() as { gcp?: string }).gcp = '${e2b.identity.tokens.gcp}'
+    }).toThrowError(
+      /Cannot assign iam token 'gcp'.*Register it as iam: \{ tokens: \{ 'gcp'/s
+    )
   })
 
-  test('rejects a defineProperty', () => {
+  test('rejects assigning a registered name without telling the caller to re-register it', () => {
+    expect(() => {
+      ;(registered() as { aws: string }).aws = 'x'
+    }).toThrowError(
+      /Cannot assign iam token 'aws'.*already registered — iam\.tokens only exposes its placeholder/s
+    )
+  })
+
+  test('rejects a defineProperty that changes a value', () => {
     expect(() =>
       Object.defineProperty(registered(), 'gcp', { value: 'anything' })
     ).toThrowError(/Cannot define iam token 'gcp'/)
+  })
+
+  test('allows freeze and seal on registered names', () => {
+    const frozen = registered()
+    expect(() => Object.freeze(frozen)).not.toThrow()
+    expect(Object.isFrozen(frozen)).toBe(true)
+    expect(frozen.aws).toBe('${e2b.identity.tokens.aws}')
+
+    const sealed = registered()
+    expect(() => Object.seal(sealed)).not.toThrow()
+    expect(Object.isSealed(sealed)).toBe(true)
   })
 
   // Deleting used to leave the guard contradicting itself: reading 'aws' back
@@ -93,9 +112,9 @@ describe('the object is read-only', () => {
   test('rejects a delete', () => {
     const tokens = registered()
 
-    expect(() => delete tokens.aws).toThrowError(
-      /Cannot delete iam token 'aws'/
-    )
+    expect(() => {
+      delete (tokens as { aws?: string }).aws
+    }).toThrowError(/Cannot delete iam token 'aws'/)
     expect(tokens.aws).toBe('${e2b.identity.tokens.aws}')
   })
 })
@@ -105,6 +124,13 @@ describe('without a known set of registered tokens', () => {
 
   test('any name resolves to its placeholder', () => {
     expect(unvalidated().aws).toBe('${e2b.identity.tokens.aws}')
+  })
+
+  test('still reports owning only the registered names', () => {
+    // validate: false resolves any name on read, but membership must not claim
+    // every string is an own property — that used to break Object.hasOwn.
+    expect(Object.hasOwn(unvalidated(), 'aws')).toBe(false)
+    expect(Object.keys(unvalidated())).toEqual([])
   })
 
   test.for(probedNames)(

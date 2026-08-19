@@ -520,6 +520,17 @@ def _build_client_rules(
             client_transform = ClientSandboxNetworkTransform()
             headers = transform.get("headers")
             if headers:
+                # Require string values before they reach the wire — a non-string
+                # would be dropped or mis-serialized, and mirrors the JS SDK's
+                # validateTransformHeaders (which also coerces stand-ins for the
+                # runtime-probed names).
+                for header_name, header_value in headers.items():
+                    if not isinstance(header_value, str):
+                        raise InvalidArgumentException(
+                            f"Network transform callable for {host!r} returned a "
+                            f"non-string value for header {header_name!r}, got "
+                            f"{type(header_value).__name__}."
+                        )
                 client_headers = ClientSandboxNetworkTransformHeaders()
                 client_headers.additional_properties = dict(headers)
                 client_transform.headers = client_headers

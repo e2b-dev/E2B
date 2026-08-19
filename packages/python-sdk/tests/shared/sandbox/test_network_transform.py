@@ -174,10 +174,14 @@ def test_transform_callable_rejects_a_name_the_js_runtime_probes(name):
     "mutate",
     [
         pytest.param(
-            lambda tokens: tokens.__setitem__("gcp", "x"),
+            # Exercise the spelling users write — not tokens.__setitem__.
+            lambda tokens: _assign_token(tokens, "gcp", "x"),
             id="assign",
         ),
-        pytest.param(lambda tokens: tokens.__delitem__("aws"), id="delete"),
+        pytest.param(
+            lambda tokens: _delete_token(tokens, "aws"),
+            id="delete",
+        ),
     ],
 )
 def test_transform_callable_cannot_mutate_the_iam_tokens_mapping(mutate):
@@ -199,6 +203,49 @@ def test_transform_callable_cannot_mutate_the_iam_tokens_mapping(mutate):
 
     with pytest.raises(InvalidArgumentException, match="read-only view"):
         build_network_config(network, _aws_iam())
+
+
+def _assign_token(tokens, name, value):
+    tokens[name] = value
+
+
+def _delete_token(tokens, name):
+    del tokens[name]
+
+
+def test_assigning_a_registered_iam_token_does_not_tell_the_caller_to_re_register_it():
+    def transform(ctx):
+        ctx.iam.tokens["aws"] = "x"
+        return {"headers": {"Authorization": f"Bearer {ctx.iam.tokens['aws']}"}}
+
+    network = cast(
+        Any,
+        {"rules": {"api.internal.example.com": [{"transform": transform}]}},
+    )
+
+    with pytest.raises(
+        InvalidArgumentException,
+        match="already registered — ctx.iam.tokens only exposes its placeholder",
+    ):
+        build_network_config(network, _aws_iam())
+
+
+def test_transform_callable_rejects_a_non_string_header_value():
+    network = cast(
+        Any,
+        {
+            "rules": {
+                "api.internal.example.com": [
+                    {"transform": lambda ctx: {"headers": {"X-Token": 1}}},
+                ],
+            },
+        },
+    )
+
+    with pytest.raises(
+        InvalidArgumentException, match="non-string value for header 'X-Token'"
+    ):
+        build_network_config(network)
 
 
 @pytest.mark.parametrize(

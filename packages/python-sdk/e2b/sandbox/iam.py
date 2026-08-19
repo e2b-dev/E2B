@@ -5,6 +5,8 @@ Workload identity (iam) helpers for E2B sandboxes.
 import re
 from typing import Iterable, Iterator, Mapping
 
+from typing_extensions import Never
+
 from e2b.exceptions import InvalidArgumentException
 
 
@@ -51,7 +53,8 @@ class IamTokenPlaceholders(Mapping[str, str]):
     through :meth:`__getitem__`, so an unregistered name cannot slip through as
     ``None``; iteration and ``in`` see only the registered names. The mapping is
     read-only, because a name added or removed here would only make the guard
-    lie about what the sandbox registered.
+    lie about what the sandbox registered — assigning or deleting raises
+    :class:`~e2b.exceptions.InvalidArgumentException`.
 
     ``validate=False`` is for the update-network endpoint, whose payload carries
     no ``iam`` config — the sandbox's registered token names are not known
@@ -83,26 +86,37 @@ class IamTokenPlaceholders(Mapping[str, str]):
             f"registered. {hint}"
         )
 
-    def __setitem__(self, name: str, value: object) -> None:
+    def __setitem__(self, name: str, value: Never) -> None:
         # Writing here cannot register anything: the name would resolve to a
         # placeholder the egress proxy has no token for, and the request would
         # go out with an unresolved header instead of failing here. The JS SDK
         # rejects an assignment to `iam.tokens` for the same reason.
+        # `value: Never` keeps subscript assignment a static error (Mapping is
+        # read-only) while still raising at runtime for untyped callers.
+        if name in self._names:
+            hint = (
+                f"{name!r} is already registered — ctx.iam.tokens only exposes "
+                "its placeholder."
+            )
+        else:
+            hint = (
+                f"Register it as iam={{'tokens': {{{name!r}: "
+                "Secret.iam_token(audience=..., token_type=...)}}} instead — a "
+                "name assigned here resolves to a placeholder the egress proxy "
+                "has no token for."
+            )
         raise InvalidArgumentException(
             f"Cannot assign iam token {name!r}: ctx.iam.tokens is a read-only "
-            "view of the tokens the sandbox registers. Register it as "
-            f"iam={{'tokens': {{{name!r}: Secret.iam_token(audience=..., "
-            "token_type=...)}} instead — a name assigned here resolves to a "
-            "placeholder the egress proxy has no token for."
+            f"view of the tokens the sandbox registers. {hint}"
         )
 
-    def __delitem__(self, name: str) -> None:
+    def __delitem__(self, name: Never) -> None:
         # Dropping a name here would only make the guard contradict the
         # sandbox, reporting a registered token as unregistered.
         raise InvalidArgumentException(
             f"Cannot delete iam token {name!r}: ctx.iam.tokens is a read-only "
-            "view of the tokens the sandbox registers. Drop it from the "
-            "sandbox's iam config instead."
+            "view of the tokens the sandbox registers. Drop it from "
+            "Sandbox.create's iam config instead."
         )
 
     def __contains__(self, name: object) -> bool:

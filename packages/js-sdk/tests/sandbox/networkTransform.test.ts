@@ -98,6 +98,9 @@ test('transform callback sees every registered iam token', async () => {
                 // Membership must agree with a lookup: an inherited object
                 // member is not a registered token either.
                 'X-Has-Ctor': String('constructor' in iam.tokens),
+                // Object.hasOwn must agree with `in` — getOwnPropertyDescriptor
+                // used to throw (or report every name under updateNetwork).
+                'X-HasOwn-Gh': String(Object.hasOwn(iam.tokens, 'gh')),
                 // Serializing the context must not trip the unknown-token guard
                 // on the runtime's `toJSON` probe.
                 'X-Json': JSON.stringify(iam.tokens),
@@ -117,6 +120,7 @@ test('transform callback sees every registered iam token', async () => {
     'X-Has-Aws': 'true',
     'X-Has-Gh': 'false',
     'X-Has-Ctor': 'false',
+    'X-HasOwn-Gh': 'false',
     'X-Json': JSON.stringify({
       aws: '${e2b.identity.tokens.aws}',
       gcp: '${e2b.identity.tokens.gcp}',
@@ -205,18 +209,70 @@ test.for([
   }
 )
 
+test.for(['toJSON', 'then', 'toString', 'valueOf'])(
+  'transform callback rejects a bare reference to unregistered iam token %s',
+  async (name: string) => {
+    // Without a template literal the stand-in is never coerced, so the wire
+    // validation has to catch it — otherwise `then`/`toJSON` ship `{}` and
+    // `toString`/`valueOf` drop the header entirely.
+    await expect(
+      Sandbox.create('base', {
+        apiKey: TEST_API_KEY,
+        iam: { tokens: { aws: awsToken } },
+        network: {
+          rules: {
+            'api.internal.example.com': [
+              {
+                transform: ({ iam }) => ({
+                  headers: {
+                    'X-Token': iam.tokens[name] as unknown as string,
+                  },
+                }),
+              },
+            ],
+          },
+        },
+      })
+    ).rejects.toThrowError(`iam token '${name}', which is not registered`)
+
+    expect(lastCreateBody).toBeUndefined()
+  }
+)
+
+test('transform callback rejects a non-string header value', async () => {
+  await expect(
+    Sandbox.create('base', {
+      apiKey: TEST_API_KEY,
+      network: {
+        rules: {
+          'api.internal.example.com': [
+            {
+              transform: () => ({
+                headers: { 'X-Token': 1 as unknown as string },
+              }),
+            },
+          ],
+        },
+      },
+    })
+  ).rejects.toThrowError(/non-string value for header 'X-Token'/)
+
+  expect(lastCreateBody).toBeUndefined()
+})
+
 test.for([
   [
     'assigning',
     ({ iam }: SandboxNetworkTransformContext) => {
-      iam.tokens.gcp = '${e2b.identity.tokens.gcp}'
+      // Readonly at the type level; the runtime trap still has to refuse.
+      ;(iam.tokens as { gcp?: string }).gcp = '${e2b.identity.tokens.gcp}'
       return { headers: { Authorization: `Bearer ${iam.tokens.gcp}` } }
     },
   ],
   [
     'deleting',
     ({ iam }: SandboxNetworkTransformContext) => {
-      delete iam.tokens.aws
+      delete (iam.tokens as { aws?: string }).aws
       return { headers: { Authorization: `Bearer ${iam.tokens.aws}` } }
     },
   ],

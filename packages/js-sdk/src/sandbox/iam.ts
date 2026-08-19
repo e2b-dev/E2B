@@ -25,6 +25,12 @@ const RUNTIME_PROBED_PROPS = ['toJSON', 'then', 'toString', 'valueOf'] as const
 type RuntimeProbedProp = (typeof RUNTIME_PROBED_PROPS)[number]
 
 /**
+ * Read-only view of workload token placeholders keyed by token name, as exposed
+ * to a network `transform` callback.
+ */
+export type SandboxIamTokenPlaceholders = Readonly<Record<string, string>>
+
+/**
  * Value a lookup of a runtime-probed name that is not a registered token
  * resolves to.
  *
@@ -36,6 +42,9 @@ type RuntimeProbedProp = (typeof RUNTIME_PROBED_PROPS)[number]
  * and `String(iam.tokens)` a `toString` that behaves like the built-in, and it
  * defers to `resolve` as soon as anything coerces it to a primitive, which is
  * what a token reference does and a probe never does.
+ *
+ * A bare assignment into a header (`headers: { 'X-Token': iam.tokens.then }`)
+ * never coerces; {@link validateTransformHeaders} catches that at the wire.
  */
 function runtimeProbeStandIn(
   prop: RuntimeProbedProp,
@@ -58,8 +67,19 @@ function describeProp(prop: string | symbol): string {
   return typeof prop === 'string' ? `'${prop}'` : String(prop)
 }
 
-/** Where a token has to be registered for a placeholder to resolve. */
-function registerHint(prop: string | symbol): string {
+/**
+ * Guidance for a write that cannot register a token. A name that is already
+ * registered gets a different hint — telling the caller to register it again
+ * would contradict the sandbox.
+ */
+function writeHint(
+  prop: string | symbol,
+  tokens: Record<string, string>
+): string {
+  if (typeof prop === 'string' && Object.hasOwn(tokens, prop)) {
+    return `${describeProp(prop)} is already registered — iam.tokens only exposes its placeholder.`
+  }
+
   return `Register it as iam: { tokens: { ${describeProp(prop)}: Secret.iamToken({ audience, tokenType }) } } instead — a name assigned here resolves to a placeholder the egress proxy has no token for.`
 }
 
@@ -116,7 +136,7 @@ export function iamTokenPlaceholder(name: string): string {
  * an error here. That holds for the names the runtime probes too — see
  * {@link runtimeProbeStandIn} — and the view is read-only, because a name added
  * or removed here would only make the guard lie about what the sandbox
- * registered.
+ * registered. Assigning or deleting throws {@link InvalidArgumentError}.
  *
  * `validate: false` is for the update-network endpoint, whose payload carries no
  * `iam` config — the sandbox's registered token names are not known client-side
@@ -125,7 +145,7 @@ export function iamTokenPlaceholder(name: string): string {
 export function iamTokenPlaceholders(
   tokenNames: string[],
   { validate }: { validate: boolean }
-): Record<string, string> {
+): SandboxIamTokenPlaceholders {
   const tokens: Record<string, string> = {}
   for (const name of tokenNames) {
     tokens[name] = iamTokenPlaceholder(name)
@@ -173,25 +193,14 @@ export function iamTokenPlaceholders(
         : Reflect.get(target, prop, receiver)
     },
 
-    // A descriptor is the other way to read a value off the object, so it has
-    // to answer like `get` — otherwise
-    // `Object.getOwnPropertyDescriptor(iam.tokens, 'gpc')?.value` hands a typo
-    // back as `undefined` and puts "Bearer undefined" on the wire.
+    // Own-property membership must agree with `has` and `ownKeys`: only
+    // registered names are owned. Returning a descriptor for an unregistered
+    // name made `Object.hasOwn(iam.tokens, 'gcp')` throw (or report true under
+    // `validate: false`) instead of answering like `'gcp' in iam.tokens`.
+    // Putting an unregistered name in a header without coercing it is caught
+    // when the transform is validated for the wire.
     getOwnPropertyDescriptor(target, prop) {
-      if (typeof prop !== 'string' || Object.hasOwn(target, prop)) {
-        return Reflect.getOwnPropertyDescriptor(target, prop)
-      }
-
-      return {
-        value: resolve(prop),
-        writable: false,
-        // `ownKeys` still reports the registered names only, so a stand-in
-        // cannot leak into `Object.keys` or `JSON.stringify`. `configurable`
-        // has to stay true for a property the target does not have, or the
-        // proxy invariants reject the descriptor.
-        enumerable: false,
-        configurable: true,
-      }
+      return Reflect.getOwnPropertyDescriptor(target, prop)
     },
 
     // `name in iam.tokens` answers "is this token registered?", so it must
@@ -203,11 +212,24 @@ export function iamTokenPlaceholders(
     },
 
     set(_target, prop) {
-      throw readOnlyIamTokensError('assign', prop, registerHint(prop))
+      throw readOnlyIamTokensError('assign', prop, writeHint(prop, tokens))
     },
 
-    defineProperty(_target, prop) {
-      throw readOnlyIamTokensError('define', prop, registerHint(prop))
+    defineProperty(target, prop, descriptor) {
+      // `Object.freeze` / `Object.seal` redefine each own property in place.
+      // Allow that when the value is unchanged — the trap's job is rejecting a
+      // name the sandbox never registered, not breaking freeze on a view that
+      // is already read-only.
+      if (
+        typeof prop === 'string' &&
+        Object.hasOwn(target, prop) &&
+        'value' in descriptor &&
+        descriptor.value === target[prop]
+      ) {
+        return Reflect.defineProperty(target, prop, descriptor)
+      }
+
+      throw readOnlyIamTokensError('define', prop, writeHint(prop, tokens))
     },
 
     deleteProperty(_target, prop) {

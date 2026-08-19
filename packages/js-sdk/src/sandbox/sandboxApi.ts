@@ -6,7 +6,13 @@ import {
 } from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
 import { ALL_TRAFFIC } from './network'
-import { iamTokenPlaceholders, validateIamTokenName } from './iam'
+import {
+  iamTokenPlaceholders,
+  validateIamTokenName,
+  type SandboxIamTokenPlaceholders,
+} from './iam'
+
+export type { SandboxIamTokenPlaceholders } from './iam'
 import {
   InvalidArgumentError,
   NotFoundError,
@@ -70,10 +76,11 @@ export type SandboxNetworkTransformContext = {
      * Reading a name that is not registered throws
      * {@link InvalidArgumentError} — the proxy never turns an unregistered name
      * into a token, so a typo would surface as a confusing auth failure at the
-     * destination. The map is read-only for the same reason: a name assigned
-     * here is not registered with the sandbox either.
+     * destination. The map is read-only for the same reason: assigning or
+     * deleting a name also throws {@link InvalidArgumentError}, because a name
+     * written here is not registered with the sandbox either.
      */
-    tokens: Record<string, string>
+    tokens: SandboxIamTokenPlaceholders
   }
 }
 
@@ -839,6 +846,37 @@ function describeValue(value: unknown): string {
   return Array.isArray(value) ? 'array' : (value.constructor?.name ?? 'object')
 }
 
+/**
+ * Require every header value to be a string before it reaches the wire.
+ *
+ * Coercing first surfaces an unregistered iam-token stand-in (`then`,
+ * `toJSON`, …) that a bare `headers: { 'X-Token': iam.tokens.then }` never
+ * interpolates — `String(standIn)` throws the token-name error via
+ * `Symbol.toPrimitive`. Any other non-string is rejected next so a number,
+ * object or `undefined` cannot be serialized into (or dropped from) the rule.
+ */
+function validateTransformHeaders(
+  host: string,
+  transform: SandboxNetworkTransform
+): void {
+  const headers = transform.headers
+  if (headers == null) {
+    return
+  }
+
+  for (const [name, value] of Object.entries(headers)) {
+    if (typeof value === 'string') {
+      continue
+    }
+
+    // Throws for an unregistered iam token stand-in, naming the token.
+    String(value)
+    throw new InvalidArgumentError(
+      `Network transform callback for '${host}' returned a non-string value for header '${name}', got ${describeValue(value)}.`
+    )
+  }
+}
+
 function resolveRulesForBody(
   rules: Map<string, SandboxNetworkRule[]>,
   ctx: SandboxNetworkTransformContext
@@ -853,6 +891,7 @@ function resolveRulesForBody(
       }
 
       if (typeof rule.transform !== 'function') {
+        validateTransformHeaders(host, rule.transform)
         return { transform: rule.transform }
       }
 
@@ -877,7 +916,9 @@ function resolveRulesForBody(
         )
       }
 
-      return { transform: transform as SandboxNetworkTransform }
+      const resolved = transform as SandboxNetworkTransform
+      validateTransformHeaders(host, resolved)
+      return { transform: resolved }
     })
   }
   return out
