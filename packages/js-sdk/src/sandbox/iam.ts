@@ -10,17 +10,9 @@ import { InvalidArgumentError } from '../errors'
  * leaves `'b}'` as literal text, and `{` lets a name close its own placeholder
  * and open another one, minting a token the caller never referenced. Control
  * characters are rejected separately because they cannot appear in an HTTP
- * header value at all — the API would answer with an opaque 400.
+  * header value at all, so the API would answer with an opaque 400.
  */
 const INVALID_IAM_TOKEN_NAME_CHARS = /[{}\p{Cc}]/u
-
-/**
- * Properties the language and the runtime read off any object they serialize,
- * await, or coerce to a string. A token is never named after them, so they
- * resolve normally instead of counting as a token reference — otherwise
- * `JSON.stringify(iam.tokens)` inside a callback would throw.
- */
-const RUNTIME_PROBED_PROPS = new Set(['toJSON', 'then', 'toString', 'valueOf'])
 
 /**
  * Reject a token name that cannot survive the placeholder grammar.
@@ -58,7 +50,7 @@ export function iamTokenPlaceholder(name: string): string {
  * an error here.
  *
  * `validate: false` is for the update-network endpoint, whose payload carries no
- * `iam` config — the sandbox's registered token names are not known client-side
+  * `iam` config, since the sandbox's registered token names are not known client-side
  * there, so any name resolves to its placeholder.
  */
 export function iamTokenPlaceholders(
@@ -70,7 +62,69 @@ export function iamTokenPlaceholders(
     tokens[name] = iamTokenPlaceholder(name)
   }
 
-  return new Proxy(tokens, {
+  const tokensWithRuntimeProps = tokens as Record<string, string | (() => unknown)>
+
+  let proxy: Record<string, string | (() => unknown)>
+  const unregistered = (name: string): never => {
+    const hint =
+      tokenNames.length === 0
+        ? `Pass it to Sandbox.create as iam: { tokens: { '${name}': Secret.iamToken({ audience, tokenType }) } }.`
+        : `Registered tokens: ${tokenNames.map((n) => `'${n}'`).join(', ')}.`
+
+    throw new InvalidArgumentError(
+      `Network transform references iam token '${name}', which is not registered. ${hint}`
+    )
+  }
+
+  // The runtime reads `toJSON`, `toString` and `valueOf` off the object to
+  // serialize / coerce it (`JSON.stringify(iam.tokens)`, `String(iam.tokens)`).
+  // Those reads are indistinguishable from a user's name lookup, so the
+  // methods are guarded: calling them as methods of the proxy keeps the
+  // runtime path working, but coercing the read value itself, the typo
+  // `` `Bearer ${iam.tokens.toString}` ``, raises like any other
+  // unregistered name.
+  const guardedRuntimeMethod = (name: string) => {
+    const method = function (this: unknown) {
+      if (this === proxy) {
+        if (name === 'toJSON') {
+          const result: Record<string, string> = {}
+          for (const key of Object.keys(tokens)) {
+            result[key] = tokens[key]
+          }
+          return result
+        }
+        return 'iam.tokens'
+      }
+      unregistered(name)
+    }
+    // Coercing the method itself must raise instead of emitting source text.
+    Object.defineProperty(method, 'toString', {
+      value: () => unregistered(name),
+    })
+    Object.defineProperty(method, Symbol.toPrimitive, {
+      value: () => unregistered(name),
+    })
+    return method
+  }
+
+  // `then` is never needed for serialization and must behave like any other
+  // unregistered name on read; the rest are installed as non-enumerable own
+  // methods so the runtime path works.
+  const runtimeMethods: Record<string, () => unknown> = {
+    toJSON: guardedRuntimeMethod('toJSON'),
+    toString: guardedRuntimeMethod('toString'),
+    valueOf: guardedRuntimeMethod('valueOf'),
+  }
+  for (const [name, method] of Object.entries(runtimeMethods)) {
+    Object.defineProperty(tokensWithRuntimeProps, name, {
+      value: method,
+      enumerable: false,
+      configurable: false,
+      writable: false,
+    })
+  }
+
+  proxy = new Proxy(tokensWithRuntimeProps, {
     get(target, prop, receiver) {
       if (
         typeof prop === 'string' &&
@@ -78,21 +132,12 @@ export function iamTokenPlaceholders(
         // members, so an unregistered token named `constructor` or `__proto__`
         // would resolve to a built-in instead of being reported. Python's
         // mapping treats them as missing too.
-        !Object.hasOwn(target, prop) &&
-        !RUNTIME_PROBED_PROPS.has(prop)
+        !Object.hasOwn(target, prop)
       ) {
         if (!validate) {
           return iamTokenPlaceholder(prop)
         }
-
-        const hint =
-          tokenNames.length === 0
-            ? `Pass it to Sandbox.create as iam: { tokens: { '${prop}': Secret.iamToken({ audience, tokenType }) } }.`
-            : `Registered tokens: ${tokenNames.map((name) => `'${name}'`).join(', ')}.`
-
-        throw new InvalidArgumentError(
-          `Network transform references iam token '${prop}', which is not registered. ${hint}`
-        )
+        unregistered(prop)
       }
 
       return Reflect.get(target, prop, receiver)
@@ -106,4 +151,8 @@ export function iamTokenPlaceholders(
       return Object.hasOwn(target, prop)
     },
   })
+
+  // The runtime methods live on the proxy but are never exposed as token
+  // placeholders, so the public shape stays `Record<string, string>`.
+  return proxy as unknown as Record<string, string>
 }

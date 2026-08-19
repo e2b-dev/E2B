@@ -189,6 +189,58 @@ test.for(['constructor', '__proto__', 'hasOwnProperty'])(
   }
 )
 
+test.for(['then', 'toJSON', 'toString', 'valueOf'])(
+  'transform callback rejects runtime-probed iam token name %s',
+  async (name: string) => {
+    // `then`, `toJSON`, `toString` and `valueOf` are properties the language
+    // runtime probes when it serializes or coerces an object. A reference to an
+    // unregistered token by one of those names must still be reported like any
+    // other missing token instead of silently returning a built-in (issue #1673).
+    await expect(
+      Sandbox.create('base', {
+        apiKey: TEST_API_KEY,
+        iam: { tokens: { aws: awsToken } },
+        network: {
+          rules: {
+            'api.internal.example.com': [
+              {
+                transform: ({ iam }) => ({
+                  headers: { Authorization: `Bearer ${iam.tokens[name]}` },
+                }),
+              },
+            ],
+          },
+        },
+      })
+    ).rejects.toThrowError(`iam token '${name}', which is not registered`)
+
+    expect(lastCreateBody).toBeUndefined()
+  }
+)
+
+test('transform callback can still serialize and stringify registered iam tokens', async () => {
+  await expect(
+    Sandbox.create('base', {
+      apiKey: TEST_API_KEY,
+      iam: { tokens: { aws: awsToken } },
+      network: {
+        rules: {
+          'api.internal.example.com': [
+            {
+              transform: ({ iam }) => ({
+                'X-Json': JSON.stringify(iam.tokens),
+                'X-String': String(iam.tokens),
+              }),
+            },
+          ],
+        },
+      },
+    })
+  ).resolves.toBeDefined()
+
+  expect(lastCreateBody).toBeDefined()
+})
+
 test('transform callback rejects an iam token when no iam config is set', async () => {
   await expect(
     Sandbox.create('base', {
