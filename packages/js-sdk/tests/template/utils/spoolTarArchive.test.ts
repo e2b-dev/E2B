@@ -1,5 +1,13 @@
 import { expect, test, describe, beforeAll, afterAll, beforeEach } from 'vitest'
-import { writeFile, mkdir, rm, symlink, readFile, access } from 'fs/promises'
+import {
+  writeFile,
+  mkdir,
+  mkdtemp,
+  rm,
+  symlink,
+  readFile,
+  access,
+} from 'fs/promises'
 import { join, dirname } from 'path'
 import { tmpdir } from 'os'
 import { spoolTarArchive } from '../../../src/template/utils'
@@ -7,11 +15,11 @@ import * as tar from 'tar'
 import { ReadEntry } from 'tar'
 
 describe('spoolTarArchive', () => {
-  const testDir = join(__dirname, 'tar-test-folder')
+  // A temp directory, so a test run never writes into the repository tree.
+  let testDir: string
 
   beforeAll(async () => {
-    await rm(testDir, { recursive: true, force: true })
-    await mkdir(testDir, { recursive: true })
+    testDir = await mkdtemp(join(tmpdir(), 'spoolTarArchive-test-'))
   })
 
   afterAll(async () => {

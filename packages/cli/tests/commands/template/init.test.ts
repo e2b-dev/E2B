@@ -1,6 +1,7 @@
 import { execSync } from 'child_process'
 import { existsSync } from 'fs'
 import * as fs from 'fs/promises'
+import * as os from 'os'
 import * as path from 'path'
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { Language } from '../../../src/commands/template/generators'
@@ -11,7 +12,7 @@ describe('Template Init', () => {
 
   beforeEach(async () => {
     // Use Node.js built-in temp directory handling
-    testDir = await fs.mkdtemp('e2b-init-test-')
+    testDir = await fs.mkdtemp(path.join(os.tmpdir(), 'e2b-init-test-'))
   })
 
   afterEach(async () => {

@@ -1,12 +1,18 @@
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { afterAll, beforeAll } from 'vitest'
 import { defaultBuildLogger, Template, waitForTimeout } from '../../src'
 import { buildTemplateTest } from '../setup'
 
-const folderPath = path.join(__dirname, 'folder')
+// The file context lives in a temp directory so a test run never writes into
+// the repository tree. It is created in beforeAll rather than at module load so
+// that a skipped or filtered run does not orphan a temp directory.
+let contextPath: string
 
 beforeAll(async () => {
+  contextPath = fs.mkdtempSync(path.join(os.tmpdir(), 'js-build-test-'))
+  const folderPath = path.join(contextPath, 'folder')
   fs.mkdirSync(folderPath, { recursive: true })
   fs.writeFileSync(path.join(folderPath, 'test.txt'), 'This is a test file.')
 
@@ -24,11 +30,13 @@ beforeAll(async () => {
 })
 
 afterAll(() => {
-  fs.rmSync(folderPath, { recursive: true })
+  if (contextPath) {
+    fs.rmSync(contextPath, { recursive: true, force: true })
+  }
 })
 
 buildTemplateTest('build template', async ({ buildTemplate }) => {
-  const template = Template()
+  const template = Template({ fileContextPath: contextPath })
     // using base image to avoid re-building ubuntu:22.04 image
     .fromBaseImage()
     .copy('folder/*', 'folder', { forceUpload: true })
@@ -48,7 +56,7 @@ buildTemplateTest(
 )
 
 buildTemplateTest('build template with symlinks', async ({ buildTemplate }) => {
-  const template = Template()
+  const template = Template({ fileContextPath: contextPath })
     .fromImage('ubuntu:22.04')
     .skipCache()
     .copy('folder/*', 'folder', { forceUpload: true })
@@ -60,7 +68,7 @@ buildTemplateTest('build template with symlinks', async ({ buildTemplate }) => {
 buildTemplateTest(
   'build template with resolveSymlinks',
   async ({ buildTemplate }) => {
-    const template = Template()
+    const template = Template({ fileContextPath: contextPath })
       .fromImage('ubuntu:22.04')
       .skipCache()
       .copy('folder/symlink.txt', 'folder/symlink.txt', {

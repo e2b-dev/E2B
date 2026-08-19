@@ -1,14 +1,15 @@
 import { expect, test, describe, beforeAll, afterAll, beforeEach } from 'vitest'
-import { writeFile, mkdir, rm } from 'fs/promises'
+import { writeFile, mkdir, mkdtemp, rm } from 'fs/promises'
+import { tmpdir } from 'os'
 import { join, basename } from 'path'
 import { getAllFilesInPath } from '../../../src/template/utils'
 
 describe('getAllFilesInPath', () => {
-  const testDir = join(__dirname, 'folder')
+  // A temp directory, so a test run never writes into the repository tree.
+  let testDir: string
 
   beforeAll(async () => {
-    await rm(testDir, { recursive: true, force: true })
-    await mkdir(testDir, { recursive: true })
+    testDir = await mkdtemp(join(tmpdir(), 'getAllFilesInPath-test-'))
   })
 
   afterAll(async () => {

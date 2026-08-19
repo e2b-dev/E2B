@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process'
 import * as fs from 'node:fs/promises'
+import * as os from 'node:os'
 import * as path from 'node:path'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 
@@ -18,7 +19,7 @@ describe('template create cli backend integration', () => {
         'E2B_API_KEY must be set to run template create backend tests'
       )
     }
-    testDir = await fs.mkdtemp('e2b-create-test-')
+    testDir = await fs.mkdtemp(path.join(os.tmpdir(), 'e2b-create-test-'))
     await fs.writeFile(
       path.join(testDir, 'e2b.Dockerfile'),
       'FROM ubuntu:latest\n'

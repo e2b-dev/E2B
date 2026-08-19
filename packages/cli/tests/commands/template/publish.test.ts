@@ -1,4 +1,5 @@
 import * as fs from 'fs/promises'
+import * as os from 'os'
 import * as path from 'path'
 import { execSync } from 'child_process'
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
@@ -7,7 +8,9 @@ describe('Template Publish --config', () => {
     let testDir: string
 
     beforeEach(async () => {
-        testDir = await fs.mkdtemp('e2b-publish-config-test-')
+        testDir = await fs.mkdtemp(
+            path.join(os.tmpdir(), 'e2b-publish-config-test-')
+        )
 
         const defaultConfig = `template_id = "default-template-id"
 dockerfile = "e2b.Dockerfile"`
