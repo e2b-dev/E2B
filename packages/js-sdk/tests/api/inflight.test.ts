@@ -103,6 +103,62 @@ test('limitConcurrency queues requests over the cap and releases on body end', a
   expect(secondStarted).toBe(true)
 })
 
+test('limitConcurrency never has more bodies open than the cap', async () => {
+  const streams: Array<ReturnType<typeof streamingResponse>> = []
+  const inner = vi.fn(async () => {
+    const stream = streamingResponse()
+    streams.push(stream)
+    return stream.response
+  }) as unknown as typeof fetch
+
+  const limited = limitConcurrency(inner, 2)
+  const responses = ['a', 'b', 'c'].map((path) =>
+    limited(`https://example.com/${path}`)
+  )
+
+  await flush()
+  expect(inner).toHaveBeenCalledTimes(2)
+
+  streams[0].send('a')
+  streams[0].end()
+  expect(await (await responses[0]).text()).toBe('a')
+
+  // The slot the finished body gave up is what let the third request go.
+  await flush()
+  expect(inner).toHaveBeenCalledTimes(3)
+
+  streams[1].send('b')
+  streams[1].end()
+  streams[2].send('c')
+  streams[2].end()
+  expect(await (await responses[1]).text()).toBe('b')
+  expect(await (await responses[2]).text()).toBe('c')
+})
+
+test('limitConcurrency passes a multi-chunk binary body through byte for byte', async () => {
+  const chunks = [
+    Uint8Array.from([0, 1, 2, 253, 254, 255]),
+    Uint8Array.from([128, 0, 42]),
+  ]
+  const inner = vi.fn(
+    async () =>
+      new Response(
+        new ReadableStream<Uint8Array>({
+          start(controller) {
+            chunks.forEach((chunk) => controller.enqueue(chunk))
+            controller.close()
+          },
+        })
+      )
+  ) as unknown as typeof fetch
+
+  const response = await limitConcurrency(inner, 1)('https://example.com/blob')
+
+  expect(new Uint8Array(await response.arrayBuffer())).toEqual(
+    Uint8Array.from([...chunks[0], ...chunks[1]])
+  )
+})
+
 test('limitConcurrency releases the slot when the body is cancelled', async () => {
   const stream = streamingResponse()
   const { limited, slotIsFree } = singleSlotLimiter(() => stream.response)
