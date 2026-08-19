@@ -1,5 +1,5 @@
 import threading
-from typing import Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import httpx
 
@@ -15,6 +15,7 @@ from e2b.api import (
     pool_idle_timeout,
     pool_max_idle_per_host,
     proxy_to_config,
+    retry_request_policy,
 )
 from e2b.connection_config import READ_TIMEOUT, ConnectionConfig
 
@@ -32,7 +33,15 @@ class ConnectionRetryTransport(RetryTransport):
     call or unary RPC like ``SendInput``). This matches the connect-only
     ``retries`` of the httpx transports this replaced; the retry middleware's
     default policy would otherwise also retry I/O errors and 429/5xx responses
-    for idempotent methods."""
+    for idempotent methods.
+
+    On a pyqwest whose retry middleware has ``RetryMode``, streamed request
+    bodies stay unbuffered: the middleware would otherwise mirror them into
+    memory as they are sent to keep them replayable, which a connect-only
+    policy never needs (see :data:`e2b.api.retry_request_policy`)."""
+
+    def should_retry_request(self, request: Request) -> Any:
+        return retry_request_policy
 
     def should_retry_response(
         self, request: Request, response: Union[Response, Exception]

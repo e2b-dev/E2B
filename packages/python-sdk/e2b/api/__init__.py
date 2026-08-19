@@ -4,12 +4,13 @@ import os
 import re
 from dataclasses import dataclass
 from types import TracebackType
-from typing import NamedTuple, Optional, Protocol, Tuple, Union
+from typing import Any, NamedTuple, Optional, Protocol, Tuple, Union
 from urllib.parse import quote
 
 import httpx
 from httpx import AsyncBaseTransport, BaseTransport, Timeout
 from pyqwest import Proxy
+from pyqwest.middleware import retry as _pyqwest_retry
 
 from e2b.api.client.client import AuthenticatedClient
 from e2b.api.client.types import Response
@@ -84,6 +85,43 @@ connection_retries = int(os.getenv("E2B_CONNECTION_RETRIES") or "3")
 # is no longer read.
 pool_idle_timeout = float(os.getenv("E2B_KEEPALIVE_EXPIRY") or "300")
 pool_max_idle_per_host = int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20")
+
+
+def resolve_retry_request_policy(retry_middleware: Any) -> Any:
+    """What the shared retrying transports return from
+    ``should_retry_request`` (see ``ConnectionRetryTransport`` in
+    ``client_sync``/``client_async``).
+
+    pyqwest's retry middleware keeps a request replayable so it can be
+    retried, and for a body that is not already ``bytes`` it does that by
+    mirroring the stream into memory as it is sent — so a streamed upload
+    (``files.write`` of a file-like object, ``volume.write_file``) reached the
+    wire in chunks yet had its whole body accumulated in RAM.
+
+    ``RetryMode.UNBUFFERED`` (pyqwest > 0.9) drops that copy: a streamed body
+    is handed to the next attempt only while nothing has been read from it.
+    That is all the SDK's connect-only retry policy needs — pyqwest raises the
+    builtin ``ConnectionError`` only before the request was written, so the
+    body is still untouched on every failure the SDK retries. ``bytes`` bodies
+    (unary RPC payloads, in-memory writes) are replayable as they are and keep
+    their retries in either mode.
+
+    On a pyqwest whose retry middleware has no ``RetryMode``, ``True`` keeps
+    the buffered replay those releases ship: they have no way to express
+    "retry connects without buffering", and ``False`` would drop the connect
+    retries along with the copy.
+
+    Typed ``Any`` because the union it really is cannot be spelled against the
+    pinned pyqwest: releases without ``RetryMode`` declare
+    ``should_retry_request`` as ``-> bool``.
+    """
+    retry_mode = getattr(retry_middleware, "RetryMode", None)
+    if retry_mode is None:
+        return True
+    return retry_mode.UNBUFFERED
+
+
+retry_request_policy: Any = resolve_retry_request_policy(_pyqwest_retry)
 
 
 class ProxyConfig(NamedTuple):
