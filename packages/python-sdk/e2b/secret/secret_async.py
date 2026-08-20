@@ -18,7 +18,7 @@ from e2b.api.client.models import (
 )
 from e2b.api.client.types import UNSET
 from e2b.api.client_async import get_api_client
-from e2b.connection_config import ApiParams, ConnectionConfig
+from e2b.connection_config import ApiParams, ConnectionConfig, merge_api_params
 from e2b.exceptions import SecretException, SecretNotFoundException
 from e2b.secret.base import SecretBase, SecretPaginatorBase
 from e2b.secret.types import SecretInfo
@@ -60,7 +60,7 @@ class AsyncSecretPaginator(SecretPaginatorBase):
         if not self.has_next:
             raise Exception("No more items to fetch")
 
-        config = ConnectionConfig(**{**self._opts, **opts})
+        config = ConnectionConfig(**merge_api_params(self._opts, opts))
         api_client = get_api_client(config)
         res = await get_secrets.asyncio_detailed(
             client=api_client,
@@ -90,8 +90,9 @@ class AsyncSecret(SecretBase):
     ``update`` but never returned by any read surface.
     """
 
-    @staticmethod
+    @classmethod
     async def create(
+        cls,
         name: str,
         value: str,
         metadata: Optional[Dict[str, str]] = None,
@@ -107,7 +108,7 @@ class AsyncSecret(SecretBase):
         :return: The secret's ID, name, current version (`1` for a new
             secret), metadata, and creation and update times.
         """
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
         api_client = get_api_client(config)
         res = await post_secrets.asyncio_detailed(
             client=api_client,
@@ -129,8 +130,9 @@ class AsyncSecret(SecretBase):
 
         return SecretInfo._from_model(res.parsed)
 
-    @staticmethod
+    @classmethod
     async def update(
+        cls,
         secret: str,
         value: str,
         metadata: Optional[Dict[str, str]] = None,
@@ -147,7 +149,7 @@ class AsyncSecret(SecretBase):
         :return: The secret's ID, name, new current version, metadata, and
             creation and update times.
         """
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
         api_client = get_api_client(config)
         res = await post_secrets_secret_id.asyncio_detailed(
             secret,
@@ -172,8 +174,8 @@ class AsyncSecret(SecretBase):
 
         return SecretInfo._from_model(res.parsed)
 
-    @staticmethod
-    async def get_info(secret: str, **opts: Unpack[ApiParams]) -> SecretInfo:
+    @classmethod
+    async def get_info(cls, secret: str, **opts: Unpack[ApiParams]) -> SecretInfo:
         """
         Get a secret's metadata.
 
@@ -182,7 +184,7 @@ class AsyncSecret(SecretBase):
         :return: The secret's ID, name, current version, metadata, and
             creation and update times.
         """
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
         api_client = get_api_client(config)
         res = await get_secrets_secret_id.asyncio_detailed(
             secret,
@@ -203,8 +205,9 @@ class AsyncSecret(SecretBase):
 
         return SecretInfo._from_model(res.parsed)
 
-    @staticmethod
+    @classmethod
     def list(
+        cls,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
         **opts: Unpack[ApiParams],
@@ -223,10 +226,14 @@ class AsyncSecret(SecretBase):
                 secrets = await paginator.next_items()
             ```
         """
-        return AsyncSecretPaginator(limit=limit, next_token=next_token, **opts)
+        return AsyncSecretPaginator(
+            limit=limit,
+            next_token=next_token,
+            **cls._resolve_api_params(**opts),
+        )
 
-    @staticmethod
-    async def exists(secret: str, **opts: Unpack[ApiParams]) -> bool:
+    @classmethod
+    async def exists(cls, secret: str, **opts: Unpack[ApiParams]) -> bool:
         """
         Check whether a secret exists.
 
@@ -235,13 +242,13 @@ class AsyncSecret(SecretBase):
         :return: `True` if the secret exists, `False` otherwise.
         """
         try:
-            await AsyncSecret.get_info(secret, **opts)
+            await cls.get_info(secret, **opts)
             return True
         except SecretNotFoundException:
             return False
 
-    @staticmethod
-    async def destroy(secret: str, **opts: Unpack[ApiParams]) -> bool:
+    @classmethod
+    async def destroy(cls, secret: str, **opts: Unpack[ApiParams]) -> bool:
         """
         Destroy a secret, making all its versions inaccessible.
 
@@ -249,7 +256,7 @@ class AsyncSecret(SecretBase):
 
         :return: `True` if the secret was destroyed, `False` if it was not found.
         """
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
         api_client = get_api_client(config)
         res = await delete_secrets_secret_id.asyncio_detailed(
             secret,

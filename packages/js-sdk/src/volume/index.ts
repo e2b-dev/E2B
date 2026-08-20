@@ -7,6 +7,7 @@ import {
   FILE_TIMEOUT_MS,
 } from './client'
 import {
+  ClientFactory,
   ConnectionConfig,
   ConnectionOpts,
   setupRequestController,
@@ -14,7 +15,6 @@ import {
 } from '../connectionConfig'
 import { isArrayBufferLike, isBlobLike } from '../is'
 import {
-  NotFoundError,
   VolumeError,
   VolumeNotFoundError,
   VolumePathNotFoundError,
@@ -51,7 +51,7 @@ function convertVolumeEntryStat(
  * Create a `Volume` instance to interact with a volume by its ID,
  * or use the static methods to manage volumes.
  */
-export class Volume {
+export class Volume extends ClientFactory {
   /**
    * Volume ID.
    */
@@ -100,6 +100,7 @@ export class Volume {
     debug?: boolean,
     proxy?: string
   ) {
+    super()
     this.volumeId = volumeId
     this.name = name
     this.token = token
@@ -116,15 +117,20 @@ export class Volume {
    *
    * @returns new Volume instance.
    */
-  static async create(name: string, opts?: ConnectionOpts): Promise<Volume> {
-    const config = new ConnectionConfig(opts)
+  static async create<V extends typeof Volume>(
+    this: V,
+    name: string,
+    opts?: ConnectionOpts
+  ): Promise<InstanceType<V>> {
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.POST('/volumes', {
       body: {
         name,
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     const err = handleApiError(res, VolumeError)
@@ -136,14 +142,14 @@ export class Volume {
       throw new Error('Response data is missing')
     }
 
-    return new Volume(
+    return new this(
       res.data.volumeID,
       res.data.name,
       res.data.token,
       res.data.domain || config.domain,
       config.debug,
       config.proxy
-    )
+    ) as InstanceType<V>
   }
 
   /**
@@ -154,20 +160,22 @@ export class Volume {
    *
    * @returns Volume instance.
    */
-  static async connect(
+  static async connect<V extends typeof Volume>(
+    this: V,
     volumeId: string,
     opts?: ConnectionOpts
-  ): Promise<Volume> {
-    const config = new ConnectionConfig(opts)
-    const { name, token, domain } = await Volume.getInfo(volumeId, opts)
-    return new Volume(
+  ): Promise<InstanceType<V>> {
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
+    const { name, token, domain } = await this.getInfo(volumeId, apiOpts)
+    return new this(
       volumeId,
       name,
       token,
       domain ?? config.domain,
       config.debug,
       config.proxy
-    )
+    ) as InstanceType<V>
   }
 
   /**
@@ -182,7 +190,8 @@ export class Volume {
     volumeId: string,
     opts?: ConnectionOpts
   ): Promise<VolumeAndToken> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.GET('/volumes/{volumeID}', {
@@ -191,7 +200,7 @@ export class Volume {
           volumeID: volumeId,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.response.status === 404) {
@@ -219,11 +228,12 @@ export class Volume {
    * @returns list of volume information.
    */
   static async list(opts?: ConnectionOpts): Promise<VolumeInfo[]> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.GET('/volumes', {
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     const err = handleApiError(res, VolumeError)
@@ -247,7 +257,8 @@ export class Volume {
     volumeId: string,
     opts?: ConnectionOpts
   ): Promise<boolean> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.DELETE('/volumes/{volumeID}', {
@@ -256,7 +267,7 @@ export class Volume {
           volumeID: volumeId,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.response.status === 404) {
@@ -420,7 +431,7 @@ export class Volume {
       await this.getInfo(path, opts)
       return true
     } catch (err) {
-      if (err instanceof NotFoundError) {
+      if (err instanceof VolumePathNotFoundError) {
         return false
       }
       throw err

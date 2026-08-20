@@ -245,7 +245,7 @@ export class Sandbox extends SandboxApi {
    *   `await paginator.nextItems()` while `paginator.hasNext` is `true`.
    */
   static list(opts?: SandboxListOpts): SandboxPaginator {
-    return new SandboxPaginator(opts)
+    return new SandboxPaginator(this.resolveOpts(opts))
   }
 
   /**
@@ -305,7 +305,8 @@ export class Sandbox extends SandboxApi {
             sandboxOpts: templateOrOpts,
           }
 
-    const config = new ConnectionConfig(sandboxOpts)
+    const apiOpts = this.resolveOpts(sandboxOpts)
+    const config = new ConnectionConfig(apiOpts)
     if (config.debug) {
       return new this({
         sandboxId: 'debug_sandbox_id',
@@ -314,10 +315,10 @@ export class Sandbox extends SandboxApi {
       }) as InstanceType<S>
     }
 
-    const sandboxInfo = await SandboxApi.createSandbox(
+    const sandboxInfo = await this.createSandbox(
       template,
-      sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
-      sandboxOpts
+      apiOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
+      apiOpts
     )
 
     const sandbox = new this({ ...sandboxInfo, ...config }) as InstanceType<S>
@@ -371,7 +372,8 @@ export class Sandbox extends SandboxApi {
     sandboxId: string,
     opts?: SandboxConnectOpts
   ): Promise<InstanceType<S>> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     if (config.debug) {
       return new this({
         sandboxId,
@@ -380,7 +382,7 @@ export class Sandbox extends SandboxApi {
       }) as InstanceType<S>
     }
 
-    const sandbox = await SandboxApi.connectSandbox(sandboxId, opts)
+    const sandbox = await this.connectSandbox(sandboxId, apiOpts)
 
     return new this({
       sandboxId,
@@ -426,13 +428,14 @@ export class Sandbox extends SandboxApi {
     sandboxId: string,
     opts?: SandboxForkOpts
   ): Promise<Array<InstanceType<S> | Error>> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
 
-    const results = await SandboxApi.forkSandbox(
+    const results = await this.forkSandbox(
       sandboxId,
-      opts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
-      opts?.count ?? 1,
-      opts
+      apiOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
+      apiOpts?.count ?? 1,
+      apiOpts
     )
 
     return results.map((result) =>
@@ -887,10 +890,10 @@ export class Sandbox extends SandboxApi {
   private resolveApiOpts<T extends ConnectionOpts>(
     opts?: T
   ): ConnectionOpts & T {
-    return {
-      ...this.connectionConfig,
-      ...(opts ?? {}),
-    } as ConnectionOpts & T
+    return ConnectionConfig.mergeOpts(
+      this.connectionConfig,
+      opts
+    ) as ConnectionOpts & T
   }
 
   private fileUrl(path: string | undefined, username: string | undefined) {
