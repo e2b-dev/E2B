@@ -7,7 +7,7 @@ import { sandboxTest, isDebug } from '../setup.js'
 // Sandbox list ordering and the startedAfter/template filters require API
 // support that is not yet deployed to production (only E2B_DOMAIN-configured
 // environments like staging).
-const hasListFilters = process.env.E2B_DOMAIN !== undefined
+const hasListFilters = !!process.env.E2B_DOMAIN
 
 sandboxTest.skipIf(isDebug)(
   'list sandboxes',
