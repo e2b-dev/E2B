@@ -162,6 +162,8 @@ export class CommandHandle
    * If the command exits with a non-zero exit code, it throws a `CommandExitError`.
    *
    * @returns `CommandResult` result of command execution.
+   * @throws {CommandExitError} the command exited with a non-zero exit code
+   * @throws {SandboxError} the command stream ended before an exit event was received, e.g. the sandbox was killed or timed out
    */
   async wait() {
     await this._wait
@@ -171,7 +173,7 @@ export class CommandHandle
     }
 
     if (!this.result) {
-      throw new SandboxError('Process exited without a result')
+      throw new SandboxError('Command stream ended without an exit event. The sandbox is no longer running — it may have been killed, paused, or timed out.')
     }
 
     if (this.result.exitCode !== 0) {

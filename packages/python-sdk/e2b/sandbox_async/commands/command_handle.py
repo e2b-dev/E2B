@@ -244,6 +244,8 @@ class AsyncCommandHandle:
         If the command exits with a non-zero exit code, it throws a `CommandExitException`.
 
         :return: `CommandResult` result of command execution
+        :raises CommandExitException: the command exited with a non-zero exit code
+        :raises SandboxException: the command stream ended before an exit event was received, e.g. the sandbox was killed or timed out
         """
         await self._wait
         if self._iteration_exception:
