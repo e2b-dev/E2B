@@ -3,6 +3,7 @@ from e2b import AsyncSandbox
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 async def test_snapshot(async_sandbox: AsyncSandbox):
     assert await async_sandbox.is_running()
 

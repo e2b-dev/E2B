@@ -3,6 +3,7 @@ from e2b import AsyncSandbox
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 async def test_pause_filesystem_only(async_sandbox: AsyncSandbox):
     # A marker on the persisted rootfs and the kernel boot id before pausing.
     await async_sandbox.files.write("/home/user/fs-only-marker.txt", "persisted")

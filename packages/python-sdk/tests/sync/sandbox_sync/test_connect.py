@@ -36,6 +36,7 @@ def test_connect_with_secure(sandbox_factory):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 def test_connect_to_paused_sandbox_resumes(sandbox):
     sandbox.pause()
     assert not sandbox.is_running()

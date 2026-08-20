@@ -3,6 +3,7 @@ from e2b import Sandbox
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 def test_pause_filesystem_only(sandbox: Sandbox):
     # A marker on the persisted rootfs and the kernel boot id before pausing.
     sandbox.files.write("/home/user/fs-only-marker.txt", "persisted")

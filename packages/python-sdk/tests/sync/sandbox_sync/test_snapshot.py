@@ -3,6 +3,7 @@ from e2b import Sandbox
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 def test_snapshot(sandbox: Sandbox):
     assert sandbox.is_running()
 

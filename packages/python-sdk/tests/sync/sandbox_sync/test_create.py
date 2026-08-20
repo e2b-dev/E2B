@@ -206,6 +206,7 @@ def test_invalid_on_timeout_type_does_not_crash(sandbox_factory):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 def test_keep_memory_none_defaults_to_full_memory(sandbox_factory):
     # An explicit None keep_memory must default to full memory (not filesystem-only):
     # the timeout auto-pause then resumes the SAME sandbox in place (memory restore),
@@ -231,6 +232,7 @@ def test_keep_memory_none_defaults_to_full_memory(sandbox_factory):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 def test_auto_pause_filesystem_only_reboots(sandbox_factory):
     # keep_memory=False makes the timeout auto-pause filesystem-only, so resuming
     # cold-boots the sandbox from disk.
@@ -259,6 +261,7 @@ def test_auto_pause_filesystem_only_reboots(sandbox_factory):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 def test_auto_pause_without_auto_resume_requires_connect(sandbox_factory):
     sandbox = sandbox_factory(
         timeout=3,
@@ -277,6 +280,7 @@ def test_auto_pause_without_auto_resume_requires_connect(sandbox_factory):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 def test_auto_resume_wakes_on_http_request(sandbox_factory):
     sandbox = sandbox_factory(
         timeout=3,

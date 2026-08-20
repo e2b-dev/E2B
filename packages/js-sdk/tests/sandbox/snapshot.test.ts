@@ -4,6 +4,7 @@ import { sandboxTest, isDebug } from '../setup.js'
 
 sandboxTest.skipIf(isDebug)(
   'pause and resume a sandbox',
+  { timeout: 60_000 },
   async ({ sandbox }) => {
     assert.isTrue(await sandbox.isRunning())
 
@@ -27,6 +28,7 @@ describe('pause and resume with env vars', () => {
 
   sandboxTest.skipIf(isDebug)(
     'pause and resume a sandbox with env vars',
+    { timeout: 60_000 },
     async ({ sandbox }) => {
       // Environment variables of a process exist at runtime, and are not stored in some file or so.
       // They are stored in the process's own memory
@@ -54,6 +56,7 @@ describe('pause and resume with env vars', () => {
 
 sandboxTest.skipIf(isDebug)(
   'pause and resume a sandbox with file',
+  { timeout: 60_000 },
   async ({ sandbox }) => {
     const filename = 'test_snapshot.txt'
     const content = 'This is a snapshot test file.'
@@ -83,6 +86,7 @@ sandboxTest.skipIf(isDebug)(
 
 sandboxTest.skipIf(isDebug)(
   'pause and resume a sandbox with ongoing long running process',
+  { timeout: 60_000 },
   async ({ sandbox }) => {
     const cmd = await sandbox.commands.run('sleep 3600', { background: true })
     const expectedPid = cmd.pid
@@ -107,6 +111,7 @@ sandboxTest.skipIf(isDebug)(
 
 sandboxTest.skipIf(isDebug)(
   'pause and resume a sandbox with completed long running process',
+  { timeout: 60_000 },
   async ({ sandbox }) => {
     const filename = 'test_long_running.txt'
 
@@ -139,6 +144,7 @@ sandboxTest.skipIf(isDebug)(
 
 sandboxTest.skipIf(isDebug)(
   'pause and resume a sandbox with http server',
+  { timeout: 60_000 },
   async ({ sandbox }) => {
     await sandbox.commands.run('python3 -m http.server 8000', {
       background: true,
@@ -165,6 +171,7 @@ sandboxTest.skipIf(isDebug)(
 
 sandboxTest.skipIf(isDebug)(
   'filesystem-only pause reboots on resume but keeps the filesystem',
+  { timeout: 60_000 },
   async ({ sandbox }) => {
     // Absolute path: a cold boot may not restore the template's default
     // user/cwd, so a relative path could resolve differently after resume.

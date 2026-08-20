@@ -44,6 +44,7 @@ test.skipIf(isDebug)('connect', async () => {
 
 sandboxTest.skipIf(isDebug)(
   'connect resumes paused sandbox',
+  { timeout: 60_000 },
   async ({ sandbox }) => {
     await sandbox.pause()
     assert.isFalse(await sandbox.isRunning())

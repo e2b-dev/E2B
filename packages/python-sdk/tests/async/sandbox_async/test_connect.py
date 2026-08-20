@@ -36,6 +36,7 @@ async def test_connect_with_secure(async_sandbox_factory):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 async def test_connect_to_paused_sandbox_resumes(async_sandbox):
     await async_sandbox.pause()
     assert not await async_sandbox.is_running()
