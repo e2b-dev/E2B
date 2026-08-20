@@ -177,3 +177,23 @@ export class VolumeError extends Error {
     this.name = 'VolumeError'
   }
 }
+
+/**
+ * Thrown when a volume is not found.
+ */
+export class VolumeNotFoundError extends NotFoundError {
+  constructor(message: string, stackTrace?: string) {
+    super(message, stackTrace)
+    this.name = 'VolumeNotFoundError'
+  }
+}
+
+/**
+ * Thrown when a file or directory is not found inside a volume.
+ */
+export class VolumePathNotFoundError extends NotFoundError {
+  constructor(message: string, stackTrace?: string) {
+    super(message, stackTrace)
+    this.name = 'VolumePathNotFoundError'
+  }
+}

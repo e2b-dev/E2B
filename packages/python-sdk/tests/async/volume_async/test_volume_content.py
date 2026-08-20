@@ -2,7 +2,7 @@ import httpx
 import pytest
 
 from e2b import AsyncVolume
-from e2b.exceptions import NotFoundException
+from e2b.exceptions import VolumePathNotFoundException
 import e2b.volume.volume_async as volume_async_mod
 
 _files = {
@@ -50,7 +50,7 @@ async def test_read_file_stream_yields_content(volume: AsyncVolume):
 
 
 async def test_read_file_stream_raises_for_missing_path(volume: AsyncVolume):
-    with pytest.raises(NotFoundException):
+    with pytest.raises(VolumePathNotFoundException):
         async for _ in await volume.read_file("missing.txt", format="stream"):
             pass
 
@@ -72,5 +72,5 @@ async def test_read_file_text_and_bytes_of_empty_file(volume: AsyncVolume):
 
 
 async def test_read_file_missing_path_raises(volume: AsyncVolume):
-    with pytest.raises(NotFoundException):
+    with pytest.raises(VolumePathNotFoundException):
         await volume.read_file("missing.txt")
