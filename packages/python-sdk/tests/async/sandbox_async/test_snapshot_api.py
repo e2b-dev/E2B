@@ -3,6 +3,7 @@ from e2b import AsyncSandbox
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 async def test_create_snapshot(async_sandbox: AsyncSandbox):
     snapshot = await async_sandbox.create_snapshot()
 
@@ -13,6 +14,7 @@ async def test_create_snapshot(async_sandbox: AsyncSandbox):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 async def test_create_sandbox_from_snapshot(async_sandbox: AsyncSandbox):
     test_content = "content from original sandbox"
     await async_sandbox.files.write("/home/user/test.txt", test_content)
@@ -32,6 +34,7 @@ async def test_create_sandbox_from_snapshot(async_sandbox: AsyncSandbox):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 async def test_create_multiple_sandboxes_from_snapshot(async_sandbox: AsyncSandbox):
     test_content = "shared snapshot content"
     await async_sandbox.files.write("/home/user/shared.txt", test_content)
@@ -64,6 +67,7 @@ async def test_create_multiple_sandboxes_from_snapshot(async_sandbox: AsyncSandb
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 async def test_list_snapshots(async_sandbox: AsyncSandbox):
     snapshot = await async_sandbox.create_snapshot()
 
@@ -81,6 +85,7 @@ async def test_list_snapshots(async_sandbox: AsyncSandbox):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 async def test_list_snapshots_for_sandbox(async_sandbox: AsyncSandbox):
     snapshot = await async_sandbox.create_snapshot()
 
@@ -97,6 +102,7 @@ async def test_list_snapshots_for_sandbox(async_sandbox: AsyncSandbox):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 async def test_list_snapshots_filtered_by_name(
     async_sandbox: AsyncSandbox, sandbox_test_id: str
 ):
@@ -122,6 +128,7 @@ async def test_list_snapshots_filtered_by_name(
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 async def test_create_named_snapshot(async_sandbox: AsyncSandbox, sandbox_test_id: str):
     snapshot_name = f"snap-{sandbox_test_id}"
 
@@ -137,6 +144,7 @@ async def test_create_named_snapshot(async_sandbox: AsyncSandbox, sandbox_test_i
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 async def test_delete_snapshot(async_sandbox: AsyncSandbox):
     snapshot = await async_sandbox.create_snapshot()
 
@@ -148,6 +156,7 @@ async def test_delete_snapshot(async_sandbox: AsyncSandbox):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 async def test_snapshot_preserves_filesystem(async_sandbox: AsyncSandbox):
     app_dir = "/home/user/app"
     config_path = f"{app_dir}/config.json"
@@ -180,6 +189,7 @@ async def test_snapshot_preserves_filesystem(async_sandbox: AsyncSandbox):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 async def test_create_snapshot_class_method(async_sandbox: AsyncSandbox):
     snapshot = await AsyncSandbox.create_snapshot(async_sandbox.sandbox_id)
 

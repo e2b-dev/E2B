@@ -3,6 +3,7 @@ from e2b import Sandbox
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 def test_create_snapshot(sandbox: Sandbox):
     snapshot = sandbox.create_snapshot()
 
@@ -13,6 +14,7 @@ def test_create_snapshot(sandbox: Sandbox):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 def test_create_sandbox_from_snapshot(sandbox: Sandbox):
     test_content = "content from original sandbox"
     sandbox.files.write("/home/user/test.txt", test_content)
@@ -32,6 +34,7 @@ def test_create_sandbox_from_snapshot(sandbox: Sandbox):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 def test_create_multiple_sandboxes_from_snapshot(sandbox: Sandbox):
     test_content = "shared snapshot content"
     sandbox.files.write("/home/user/shared.txt", test_content)
@@ -64,6 +67,7 @@ def test_create_multiple_sandboxes_from_snapshot(sandbox: Sandbox):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 def test_list_snapshots(sandbox: Sandbox):
     snapshot = sandbox.create_snapshot()
 
@@ -81,6 +85,7 @@ def test_list_snapshots(sandbox: Sandbox):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 def test_list_snapshots_for_sandbox(sandbox: Sandbox):
     snapshot = sandbox.create_snapshot()
 
@@ -95,6 +100,7 @@ def test_list_snapshots_for_sandbox(sandbox: Sandbox):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 def test_list_snapshots_filtered_by_name(sandbox: Sandbox, sandbox_test_id: str):
     snapshot_name = f"snap-filter-{sandbox_test_id}"
 
@@ -116,6 +122,7 @@ def test_list_snapshots_filtered_by_name(sandbox: Sandbox, sandbox_test_id: str)
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 def test_create_named_snapshot(sandbox: Sandbox, sandbox_test_id: str):
     snapshot_name = f"snap-{sandbox_test_id}"
 
@@ -131,6 +138,7 @@ def test_create_named_snapshot(sandbox: Sandbox, sandbox_test_id: str):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 def test_delete_snapshot(sandbox: Sandbox):
     snapshot = sandbox.create_snapshot()
 
@@ -142,6 +150,7 @@ def test_delete_snapshot(sandbox: Sandbox):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 def test_snapshot_preserves_filesystem(sandbox: Sandbox):
     app_dir = "/home/user/app"
     config_path = f"{app_dir}/config.json"
@@ -174,6 +183,7 @@ def test_snapshot_preserves_filesystem(sandbox: Sandbox):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(60)
 def test_create_snapshot_class_method(sandbox: Sandbox):
     snapshot = Sandbox.create_snapshot(sandbox.sandbox_id)
 
