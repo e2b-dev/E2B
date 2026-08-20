@@ -17,38 +17,24 @@ const INVALID_IAM_TOKEN_NAME_CHARS = /[{}\p{Cc}]/u
 /**
  * Properties the language and the runtime read off any object they serialize,
  * await, or coerce to a string. A token is never named after them, so reading
- * one cannot be reported as a missing token — otherwise
- * `JSON.stringify(iam.tokens)` inside a callback would throw.
+ * one cannot throw — otherwise `JSON.stringify(iam.tokens)` inside a callback
+ * would.
  */
 const RUNTIME_PROBED_PROPS = new Set(['toJSON', 'then', 'toString', 'valueOf'])
 
 /**
- * Value a runtime-probed property resolves to, for a name that is not a
- * registered token.
- *
- * It answers the probe — `JSON.stringify`, `await` and `String()` read these
- * names off any object — while `resolve` decides what a callback that read the
- * name as a token gets. A probe never coerces the value it reads and never
- * serializes it, while a token reference does one or the other, so the probe
- * stays silent and the reference is treated like any other unregistered name
- * instead of serializing `undefined` or a built-in's source text.
- *
- * @param prop probed property name.
- * @param tokens the guarded map, for the built-ins that read it.
- * @param resolve what the value coerces to and serializes as.
+ * Stand-in for a runtime-probed name that is not a registered token: it answers
+ * the probe, and `resolve` decides what using it as a token does — a probe never
+ * coerces or serializes what it reads, a token reference does one or the other.
  */
 function runtimeProbeValue(
   prop: string,
   tokens: () => Record<string, string>,
   resolve: () => string
 ): unknown {
-  // `then` and `toJSON` are only ever probed with a `typeof … === 'function'`
-  // check, so a non-callable value answers the probe: `await` resolves the
-  // object as a plain value and `JSON.stringify` falls back to its own keys.
-  // `toString` and `valueOf` are called — `String(iam.tokens)` needs one of
-  // them to return a primitive — so they keep the built-in behaviour, over the
-  // guarded map rather than the bare record behind it: `iam.tokens.valueOf()`
-  // must not hand out an unguarded lookup.
+  // `then` and `toJSON` are only probed for callability, so a non-callable value
+  // reads as absent. `toString` and `valueOf` are called — `String(iam.tokens)`
+  // needs a primitive — and answer over the guarded map, not the record.
   const value =
     prop === 'toString'
       ? () => Object.prototype.toString.call(tokens())
@@ -57,11 +43,8 @@ function runtimeProbeValue(
         : {}
 
   Object.defineProperty(value, Symbol.toPrimitive, { value: resolve })
-  // A header value is not always coerced: `headers: { 'X-Api-Key':
-  // iam.tokens.then }` puts the value itself in the payload, and
-  // `JSON.stringify` consults `toJSON` — before it drops a callable value —
-  // rather than `Symbol.toPrimitive`. It has to be enumerable: Bun's
-  // `JSON.stringify` only finds an own `toJSON` that is.
+  // A header value assigned straight through is serialized rather than coerced,
+  // and Bun's `JSON.stringify` only finds an own `toJSON` that is enumerable.
   return Object.defineProperty(value, 'toJSON', {
     value: resolve,
     enumerable: true,
@@ -116,10 +99,7 @@ export function iamTokenPlaceholders(
     tokens[name] = iamTokenPlaceholder(name)
   }
 
-  /**
-   * Resolve a name that is not a registered token: its placeholder when names
-   * cannot be checked, and otherwise the error the guard exists for.
-   */
+  /** Placeholder when names cannot be checked, otherwise the guard's error. */
   const resolveUnregistered = (prop: string): string => {
     if (!validate) {
       return iamTokenPlaceholder(prop)

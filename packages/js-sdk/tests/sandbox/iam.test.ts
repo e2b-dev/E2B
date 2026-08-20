@@ -146,18 +146,13 @@ test('the token map serializes, awaits and coerces like a plain object', async (
 test.for(RUNTIME_PROBED_PROPS)(
   'reading the unregistered token %s throws instead of resolving',
   (prop: string) => {
-    // The runtime reads these names off anything it serializes, awaits or
-    // coerces, so a lookup cannot be answered with an error — but using the
-    // value as a token has to fail like any other unregistered name, instead of
-    // putting 'undefined' or a built-in's source text on the wire.
     const tokens = iamTokenPlaceholders(['aws'], { validate: true })
 
     expect(() => `${tokens[prop]}`).toThrowError(
       `iam token '${prop}', which is not registered`
     )
     expect(() => String(tokens[prop])).toThrowError(InvalidArgumentError)
-    // A header value is serialized rather than coerced when a callback assigns
-    // the value straight through instead of interpolating it.
+    // Assigned straight through, a header value is serialized, not coerced.
     expect(() => JSON.stringify({ header: tokens[prop] })).toThrowError(
       InvalidArgumentError
     )
@@ -166,7 +161,7 @@ test.for(RUNTIME_PROBED_PROPS)(
 
 test('the runtime-probed valueOf answers with the guarded map', () => {
   // It stays callable for `String(iam.tokens)`, so it must not hand out the
-  // unguarded record, whose unregistered names read as 'undefined'.
+  // unguarded record.
   const tokens = iamTokenPlaceholders(['aws'], { validate: true })
 
   expect(tokens.valueOf().aws).toBe('${e2b.identity.tokens.aws}')
@@ -179,7 +174,7 @@ test.for(RUNTIME_PROBED_PROPS)(
   'the unchecked token map resolves %s to its placeholder',
   (prop: string) => {
     // The update-network payload carries no iam config, so no name can be
-    // reported as unregistered; the probed names resolve like any other.
+    // reported as unregistered.
     const tokens = iamTokenPlaceholders([], { validate: false })
 
     expect(`${tokens[prop]}`).toBe(`\${e2b.identity.tokens.${prop}}`)

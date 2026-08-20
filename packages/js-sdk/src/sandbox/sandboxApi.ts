@@ -70,11 +70,9 @@ export type SandboxNetworkTransformContext = {
      * Reading a name that is not registered throws
      * {@link InvalidArgumentError} — the proxy never turns an unregistered name
      * into a token, so a typo would surface as a confusing auth failure at the
-     * destination. The four names the runtime itself reads off any object it
+     * destination. The four names the runtime reads off any object it
      * serializes, awaits or coerces (`toJSON`, `then`, `toString`, `valueOf`)
-     * cannot throw on the read; they throw as soon as the value is used as a
-     * token, that is when it is coerced to a string or serialized into the
-     * request.
+     * throw on use rather than on the read.
      */
     tokens: Record<string, string>
   }

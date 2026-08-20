@@ -192,11 +192,9 @@ test.for(['constructor', '__proto__', 'hasOwnProperty'])(
 test.for(['toJSON', 'then', 'toString', 'valueOf'])(
   'transform callback rejects the runtime-probed iam token name %s',
   async (name: string) => {
-    // The runtime reads these names off any object it serializes, awaits or
-    // coerces, so a lookup of them cannot throw on the spot. Referencing one as
-    // a token used to put 'undefined' or a built-in's source text on the wire,
-    // which carries no placeholder for the proxy to resolve, so the destination
-    // answered 401 on a garbage credential.
+    // Referencing one as a token used to put 'undefined' or a built-in's source
+    // text on the wire, which carries no placeholder for the proxy to resolve,
+    // so the destination answered 401 on a garbage credential.
     await expect(
       Sandbox.create('base', {
         apiKey: TEST_API_KEY,
@@ -222,10 +220,9 @@ test.for(['toJSON', 'then', 'toString', 'valueOf'])(
 test.for(['toJSON', 'then', 'toString', 'valueOf'])(
   'transform callback rejects the uncoerced runtime-probed iam token name %s',
   async (name: string) => {
-    // A header value is not always interpolated: assigned straight through, the
-    // value is serialized instead of coerced, which used to send an object where
-    // the API wants a string, or drop the header entirely for the two names that
-    // resolve to a function.
+    // Assigned straight through, the value is serialized instead of coerced,
+    // which used to send an object where the API wants a string, or drop the
+    // header entirely for the two names that resolve to a function.
     await expect(
       Sandbox.create('base', {
         apiKey: TEST_API_KEY,
@@ -249,8 +246,6 @@ test.for(['toJSON', 'then', 'toString', 'valueOf'])(
 )
 
 test('transform callback cannot reach an unguarded token map through valueOf', async () => {
-  // `valueOf` has to stay callable for `String(iam.tokens)`, so it answers with
-  // the guarded map rather than the record behind it.
   await expect(
     Sandbox.create('base', {
       apiKey: TEST_API_KEY,
