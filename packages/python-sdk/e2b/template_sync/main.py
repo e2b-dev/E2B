@@ -111,13 +111,7 @@ class Template(TemplateBase):
             if src is None or files_hash is None:
                 raise ValueError("Source path and files hash are required")
 
-            stack_trace = None
-            if index + 1 < len(template._template._stack_traces):
-                stack_trace = template._template._stack_traces[index + 1]
-
-            file_info = get_file_upload_link(
-                api_client, template_id, files_hash, stack_trace
-            )
+            file_info = get_file_upload_link(api_client, template_id, files_hash)
 
             if (force_upload and file_info.url) or (
                 file_info.present is False and file_info.url
@@ -133,7 +127,6 @@ class Template(TemplateBase):
                     ],
                     resolve_symlinks,
                     gzip,
-                    stack_trace,
                     request_timeout=request_timeout,
                 )
                 if on_build_logs:

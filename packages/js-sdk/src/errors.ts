@@ -11,12 +11,9 @@ export function formatSandboxTimeoutError(message: string) {
  * Thrown when general sandbox errors occur.
  */
 export class SandboxError extends Error {
-  constructor(message?: string, stackTrace?: string) {
+  constructor(message?: string) {
     super(message)
     this.name = 'SandboxError'
-    if (stackTrace) {
-      this.stack = stackTrace
-    }
   }
 }
 
@@ -32,8 +29,8 @@ export class SandboxError extends Error {
  * The [unknown] error type is sometimes caused by the sandbox timeout when the request is not processed correctly.
  */
 export class TimeoutError extends SandboxError {
-  constructor(message: string, stackTrace?: string) {
-    super(message, stackTrace)
+  constructor(message: string) {
+    super(message)
     this.name = 'TimeoutError'
   }
 }
@@ -42,8 +39,8 @@ export class TimeoutError extends SandboxError {
  * Thrown when an invalid argument is provided.
  */
 export class InvalidArgumentError extends SandboxError {
-  constructor(message: string, stackTrace?: string) {
-    super(message, stackTrace)
+  constructor(message: string) {
+    super(message)
     this.name = 'InvalidArgumentError'
   }
 }
@@ -52,8 +49,8 @@ export class InvalidArgumentError extends SandboxError {
  * Thrown when there is not enough disk space.
  */
 export class NotEnoughSpaceError extends SandboxError {
-  constructor(message: string, stackTrace?: string) {
-    super(message, stackTrace)
+  constructor(message: string) {
+    super(message)
     this.name = 'NotEnoughSpaceError'
   }
 }
@@ -64,8 +61,8 @@ export class NotEnoughSpaceError extends SandboxError {
  * @deprecated Use {@link FileNotFoundError} or {@link SandboxNotFoundError} instead. This class will be removed in the next major version.
  */
 export class NotFoundError extends SandboxError {
-  constructor(message: string, stackTrace?: string) {
-    super(message, stackTrace)
+  constructor(message: string) {
+    super(message)
     this.name = 'NotFoundError'
   }
 }
@@ -74,8 +71,8 @@ export class NotFoundError extends SandboxError {
  * Thrown when a file or directory is not found inside a sandbox.
  */
 export class FileNotFoundError extends NotFoundError {
-  constructor(message: string, stackTrace?: string) {
-    super(message, stackTrace)
+  constructor(message: string) {
+    super(message)
     this.name = 'FileNotFoundError'
   }
 }
@@ -84,8 +81,8 @@ export class FileNotFoundError extends NotFoundError {
  * Thrown when a sandbox is not found (e.g. it doesn't exist or is no longer running).
  */
 export class SandboxNotFoundError extends NotFoundError {
-  constructor(message: string, stackTrace?: string) {
-    super(message, stackTrace)
+  constructor(message: string) {
+    super(message)
     this.name = 'SandboxNotFoundError'
   }
 }
@@ -114,8 +111,8 @@ export class GitAuthError extends AuthenticationError {
  * Thrown when git upstream tracking is missing.
  */
 export class GitUpstreamError extends SandboxError {
-  constructor(message: string, stackTrace?: string) {
-    super(message, stackTrace)
+  constructor(message: string) {
+    super(message)
     this.name = 'GitUpstreamError'
   }
 }
@@ -124,8 +121,8 @@ export class GitUpstreamError extends SandboxError {
  * Thrown when the template uses old envd version. It isn't compatible with the new SDK.
  */
 export class TemplateError extends SandboxError {
-  constructor(message: string, stackTrace?: string) {
-    super(message, stackTrace)
+  constructor(message: string) {
+    super(message)
     this.name = 'TemplateError'
   }
 }
@@ -157,8 +154,8 @@ export class BuildError extends Error {
  * Thrown when the file upload fails.
  */
 export class FileUploadError extends BuildError {
-  constructor(message: string, stackTrace?: string) {
-    super(message, stackTrace)
+  constructor(message: string) {
+    super(message)
     this.name = 'FileUploadError'
   }
 }

@@ -31,11 +31,7 @@ export function validateApiKey(apiKey: string): void {
 export function apiErrorFromCode(
   code: number,
   content: unknown,
-  errorClass: new (
-    message: string,
-    stackTrace?: string
-  ) => Error = SandboxError,
-  stackTrace?: string
+  errorClass: new (message: string) => Error = SandboxError
 ): Error {
   if (code === 401) {
     const message = 'Unauthorized, please check your credentials.'
@@ -49,16 +45,12 @@ export function apiErrorFromCode(
     return new RateLimitError(content ? `${message} - ${content}` : message)
   }
 
-  return new errorClass(`${code}: ${content}`, stackTrace)
+  return new errorClass(`${code}: ${content}`)
 }
 
 export function handleApiError(
   response: FetchResponse<any, any, any>,
-  errorClass: new (
-    message: string,
-    stackTrace?: string
-  ) => Error = SandboxError,
-  stackTrace?: string
+  errorClass: new (message: string) => Error = SandboxError
 ): Error | undefined {
   // openapi-fetch leaves `error` undefined for non-2xx responses with
   // Content-Length: 0, so check the status instead
@@ -71,16 +63,14 @@ export function handleApiError(
     return apiErrorFromCode(
       status,
       response.error?.message ?? response.error,
-      errorClass,
-      stackTrace
+      errorClass
     )
   }
 
   return apiErrorFromCode(
     status,
     response.error?.message || response.error || response.response.statusText,
-    errorClass,
-    stackTrace
+    errorClass
   )
 }
 

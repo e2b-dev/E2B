@@ -78,7 +78,6 @@ export async function requestBuild(
 export async function getFileUploadLink(
   client: ApiClient,
   { templateID, filesHash }: GetFileUploadLinkInput,
-  stackTrace?: string,
   signal?: AbortSignal
 ) {
   const fileUploadLinkRes = await client.api.GET(
@@ -94,13 +93,13 @@ export async function getFileUploadLink(
     }
   )
 
-  const error = handleApiError(fileUploadLinkRes, FileUploadError, stackTrace)
+  const error = handleApiError(fileUploadLinkRes, FileUploadError)
   if (error) {
     throw error
   }
 
   if (!fileUploadLinkRes.data) {
-    throw new FileUploadError('Failed to get file upload link', stackTrace)
+    throw new FileUploadError('Failed to get file upload link')
   }
 
   return fileUploadLinkRes.data
@@ -115,7 +114,6 @@ export async function uploadFile(
     resolveSymlinks: boolean
     gzip: boolean
   },
-  stackTrace: string | undefined,
   // Uploads (PUT to S3 presigned URL) can take a long time for large
   // archives — the 60s API default would break them, so we use a 1-hour
   // upload default (`FILE_UPLOAD_TIMEOUT_MS`) when `requestTimeoutMs` is
@@ -155,16 +153,13 @@ export async function uploadFile(
     const res = await putFileStream(url, tar.path, tar.size, signal)
 
     if (!res.ok) {
-      throw new FileUploadError(
-        `Failed to upload file: ${res.statusText}`,
-        stackTrace
-      )
+      throw new FileUploadError(`Failed to upload file: ${res.statusText}`)
     }
   } catch (error) {
     if (error instanceof FileUploadError) {
       throw error
     }
-    throw new FileUploadError(`Failed to upload file: ${error}`, stackTrace)
+    throw new FileUploadError(`Failed to upload file: ${error}`)
   } finally {
     await cleanup?.()
   }

@@ -31,17 +31,13 @@ def make_traceback(caller_frame: Optional[FrameType]) -> Optional[TracebackType]
     )
 
 
-def validate_relative_path(
-    src: str,
-    stack_trace: Optional[TracebackType],
-) -> None:
+def validate_relative_path(src: str) -> None:
     """
     Validate that a source path for copy operations is a relative path that stays
     within the context directory. This prevents path traversal attacks and ensures
     files are copied from within the expected directory.
 
     :param src: The source path to validate
-    :param stack_trace: Optional stack trace for error reporting
 
     :raises TemplateException: If the path is absolute or escapes the context directory
 
@@ -59,7 +55,7 @@ def validate_relative_path(
         raise TemplateException(
             f'Invalid source path "{src}": absolute paths are not allowed. '
             "Use a relative path within the context directory."
-        ).with_traceback(stack_trace)
+        )
 
     # Normalize the path and check if it escapes the context directory
     normalized = os.path.normpath(src)
@@ -79,7 +75,7 @@ def validate_relative_path(
         raise TemplateException(
             f'Invalid source path "{src}": path escapes the context directory. '
             "The path must stay within the context directory."
-        ).with_traceback(stack_trace)
+        )
 
 
 def normalize_build_arguments(
@@ -189,7 +185,6 @@ def calculate_files_hash(
     context_path: str,
     ignore_patterns: List[str],
     resolve_symlinks: bool,
-    stack_trace: Optional[TracebackType],
 ) -> str:
     """
     Calculate a hash of files being copied to detect changes for cache invalidation.
@@ -202,7 +197,6 @@ def calculate_files_hash(
     :param context_path: Base directory for resolving relative paths
     :param ignore_patterns: Glob patterns to ignore
     :param resolve_symlinks: Whether to resolve symbolic links when hashing
-    :param stack_trace: Optional stack trace for error reporting
 
     :return: Hex string hash of all files
 
@@ -217,7 +211,7 @@ def calculate_files_hash(
     files = get_all_files_in_path(src, context_path, ignore_patterns, True)
 
     if len(files) == 0:
-        raise ValueError(f"No files found in {src_path}").with_traceback(stack_trace)
+        raise ValueError(f"No files found in {src_path}")
 
     def hash_stats(stat_info: os.stat_result) -> None:
         # Only include stable metadata (mode, size)

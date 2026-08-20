@@ -3,7 +3,6 @@ import logging
 import os
 import re
 from dataclasses import dataclass
-from types import TracebackType
 from typing import NamedTuple, Optional, Protocol, Tuple, Union
 from urllib.parse import quote
 
@@ -144,7 +143,6 @@ def api_exception_from_code(
     status_code: int,
     message: Optional[str] = None,
     default_exception_class: type[Exception] = SandboxException,
-    stack_trace: Optional[TracebackType] = None,
 ) -> Exception:
     """Map an API error code and message to the matching exception class — the
     same mapping :func:`handle_api_exception` applies to HTTP responses, usable
@@ -161,15 +159,12 @@ def api_exception_from_code(
             text += f" - {message}"
         return RateLimitException(text)
 
-    return default_exception_class(f"{status_code}: {message}").with_traceback(
-        stack_trace
-    )
+    return default_exception_class(f"{status_code}: {message}")
 
 
 def handle_api_exception(
     e: "SupportsApiErrorResponse",
     default_exception_class: type[Exception] = SandboxException,
-    stack_trace: Optional[TracebackType] = None,
 ):
     try:
         body = json.loads(e.content) if e.content else {}
@@ -178,13 +173,9 @@ def handle_api_exception(
 
     message = body["message"] if "message" in body else None
     if message is None and e.status_code not in (401, 429):
-        return default_exception_class(f"{e.status_code}: {e.content}").with_traceback(
-            stack_trace
-        )
+        return default_exception_class(f"{e.status_code}: {e.content}")
 
-    return api_exception_from_code(
-        e.status_code, message, default_exception_class, stack_trace
-    )
+    return api_exception_from_code(e.status_code, message, default_exception_class)
 
 
 class SupportsApiErrorResponse(Protocol):

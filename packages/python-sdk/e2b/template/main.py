@@ -71,15 +71,11 @@ class TemplateBuilder:
         """
         srcs = [src] if isinstance(src, (str, Path)) else src
 
-        # Get the caller frame for stack trace in validation errors
-        caller_frame = get_caller_frame()
-        stack_trace = make_traceback(caller_frame)
-
         for src_item in srcs:
             src_string = str(src_item)
 
             # Validate that the source path is a relative path within the context directory
-            validate_relative_path(src_string, stack_trace)
+            validate_relative_path(src_string)
 
             args = [
                 src_string,
@@ -122,29 +118,17 @@ class TemplateBuilder:
         ])
         ```
         """
-        # Get the stack trace at the copy_items call site
-        caller_frame = get_caller_frame()
-        stack_trace = make_traceback(caller_frame)
+        for item in items:
+            self.copy(
+                item["src"],
+                item["dest"],
+                item.get("forceUpload"),
+                item.get("user"),
+                item.get("mode"),
+                item.get("resolveSymlinks"),
+                item.get("gzip"),
+            )
 
-        def _copy_items():
-            for item in items:
-                try:
-                    self.copy(
-                        item["src"],
-                        item["dest"],
-                        item.get("forceUpload"),
-                        item.get("user"),
-                        item.get("mode"),
-                        item.get("resolveSymlinks"),
-                        item.get("gzip"),
-                    )
-                except Exception as error:
-                    # Re-raise the error with the captured stack trace
-                    if stack_trace is not None:
-                        raise error.with_traceback(stack_trace)
-                    raise
-
-        _copy_items()
         return self
 
     def remove(
@@ -504,11 +488,9 @@ class TemplateBuilder:
         ```
         """
         if self._template._base_template != "mcp-gateway":
-            caller_frame = get_caller_frame()
-            stack_trace = make_traceback(caller_frame)
             raise BuildException(
                 "MCP servers can only be added to mcp-gateway template"
-            ).with_traceback(stack_trace)
+            )
 
         if isinstance(servers, str):
             servers = [servers]
@@ -569,11 +551,9 @@ class TemplateBuilder:
         ```
         """
         if self._template._base_template != "devcontainer":
-            caller_frame = get_caller_frame()
-            stack_trace = make_traceback(caller_frame)
             raise BuildException(
                 "Devcontainers can only used in the devcontainer template"
-            ).with_traceback(stack_trace)
+            )
 
         return self.run_cmd(
             f"devcontainer build --workspace-folder {shlex.quote(str(devcontainer_directory))}",
@@ -606,11 +586,9 @@ class TemplateBuilder:
         ```
         """
         if self._template._base_template != "devcontainer":
-            caller_frame = get_caller_frame()
-            stack_trace = make_traceback(caller_frame)
             raise BuildException(
                 "Devcontainers can only used in the devcontainer template"
-            ).with_traceback(stack_trace)
+            )
 
         def _set_start():
             dir_ = shlex.quote(str(devcontainer_directory))
@@ -996,11 +974,9 @@ class TemplateBase:
         # Validate (and resolve the registry config) before mutating the builder.
         if username is not None or password is not None:
             if not username or not password:
-                caller_frame = get_caller_frame()
-                stack_trace = make_traceback(caller_frame)
                 raise InvalidArgumentException(
                     "Both username and password are required when providing registry credentials"
-                ).with_traceback(stack_trace)
+                )
 
             self._registry_config = {
                 "type": "registry",
@@ -1254,10 +1230,6 @@ class TemplateBase:
             }
 
             if instruction["type"] == InstructionType.COPY:
-                stack_trace = None
-                if index + 1 < len(self._stack_traces):
-                    stack_trace = self._stack_traces[index + 1]
-
                 args = instruction.get("args", [])
                 src = args[0] if len(args) > 0 else None
                 dest = args[1] if len(args) > 1 else None
@@ -1276,7 +1248,6 @@ class TemplateBase:
                     resolve_symlinks
                     if resolve_symlinks is not None
                     else RESOLVE_SYMLINKS,
-                    stack_trace,
                 )
 
             steps.append(step)

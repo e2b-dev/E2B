@@ -494,8 +494,7 @@ export class TemplateBase
     // Validate before mutating the builder.
     if (credentials && (!credentials.username || !credentials.password)) {
       throw new InvalidArgumentError(
-        'Both username and password are required when providing registry credentials',
-        getCallerFrame()
+        'Both username and password are required when providing registry credentials'
       )
     }
 
@@ -620,13 +619,12 @@ export class TemplateBase
     }
 
     const srcs = Array.isArray(src) ? src : [src]
-    const stackTrace = getCallerFrame()
 
     for (const src of srcs) {
       const srcString = src.toString()
 
       // Validate that the source path is a relative path within the context directory
-      validateRelativePath(srcString, stackTrace)
+      validateRelativePath(srcString)
 
       const args = [
         srcString,
@@ -657,23 +655,14 @@ export class TemplateBase
       throw new Error('Browser runtime is not supported for copyItems')
     }
 
-    // Stack trace that will be used to re-throw the error with
-    const stackTrace = getCallerFrame()
-
     for (const item of items) {
-      try {
-        this.copy(item.src, item.dest, {
-          forceUpload: item.forceUpload,
-          user: item.user,
-          mode: item.mode,
-          resolveSymlinks: item.resolveSymlinks,
-          gzip: item.gzip,
-        })
-      } catch (error) {
-        const copyError = error as Error
-        copyError.stack = stackTrace
-        throw copyError
-      }
+      this.copy(item.src, item.dest, {
+        forceUpload: item.forceUpload,
+        user: item.user,
+        mode: item.mode,
+        resolveSymlinks: item.resolveSymlinks,
+        gzip: item.gzip,
+      })
     }
 
     return this
@@ -875,8 +864,7 @@ export class TemplateBase
   addMcpServer(servers: McpServerName | McpServerName[]): TemplateBuilder {
     if (this.baseTemplate !== 'mcp-gateway') {
       throw new BuildError(
-        'MCP servers can only be added to mcp-gateway template',
-        getCallerFrame()
+        'MCP servers can only be added to mcp-gateway template'
       )
     }
 
@@ -955,8 +943,7 @@ export class TemplateBase
   betaDevContainerPrebuild(devcontainerDirectory: string): TemplateBuilder {
     if (this.baseTemplate !== 'devcontainer') {
       throw new BuildError(
-        'Devcontainers can only used in the devcontainer template',
-        getCallerFrame()
+        'Devcontainers can only used in the devcontainer template'
       )
     }
 
@@ -969,8 +956,7 @@ export class TemplateBase
   betaSetDevContainerStart(devcontainerDirectory: string): TemplateFinal {
     if (this.baseTemplate !== 'devcontainer') {
       throw new BuildError(
-        'Devcontainers can only used in the devcontainer template',
-        getCallerFrame()
+        'Devcontainers can only used in the devcontainer template'
       )
     }
 
@@ -1113,7 +1099,7 @@ export class TemplateBase
 
     // Upload files in parallel
     const uploadPromises = instructionsWithHashes.map(
-      async (instruction, index) => {
+      async (instruction) => {
         if (instruction.type !== InstructionType.COPY) {
           return
         }
@@ -1125,18 +1111,12 @@ export class TemplateBase
         }
 
         const forceUpload = instruction.forceUpload
-        let stackTrace = undefined
-        if (index + 1 >= 0 && index + 1 < this.stackTraces.length) {
-          stackTrace = this.stackTraces[index + 1]
-        }
-
         const { present, url } = await getFileUploadLink(
           client,
           {
             templateID,
             filesHash,
           },
-          stackTrace,
           config.getSignal(undefined, options.signal)
         )
 
@@ -1156,7 +1136,6 @@ export class TemplateBase
               resolveSymlinks: instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
               gzip: instruction.gzip ?? GZIP,
             },
-            stackTrace,
             // Forward `requestTimeoutMs` only when the caller set it — we
             // never want to slap the 60s default on a multi-hundred-MB S3
             // upload, but a user-set per-build timeout should govern the
@@ -1218,7 +1197,7 @@ export class TemplateBase
    */
   private async instructionsWithHashes(): Promise<Instruction[]> {
     return Promise.all(
-      this.instructions.map(async (instruction, index) => {
+      this.instructions.map(async (instruction) => {
         if (instruction.type !== InstructionType.COPY) {
           return instruction
         }
@@ -1227,11 +1206,6 @@ export class TemplateBase
         const dest = instruction.args.length > 1 ? instruction.args[1] : null
         if (src === null || dest === null) {
           throw new Error('Source path and destination path are required')
-        }
-
-        let stackTrace = undefined
-        if (index + 1 >= 0 && index + 1 < this.stackTraces.length) {
-          stackTrace = this.stackTraces[index + 1]
         }
 
         return {
@@ -1246,8 +1220,7 @@ export class TemplateBase
                 ? []
                 : readDockerignore(this.fileContextPath.toString())),
             ],
-            instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
-            stackTrace
+            instruction.resolveSymlinks ?? RESOLVE_SYMLINKS
           ),
         }
       })
