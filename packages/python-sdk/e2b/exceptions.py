@@ -153,7 +153,7 @@ class SecretException(Exception):
     """
 
 
-class SecretNotFoundException(NotFoundException):
+class SecretNotFoundException(SecretException):
     """
     Raised when a secret is not found.
     """
