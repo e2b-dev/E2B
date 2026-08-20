@@ -32,7 +32,7 @@
     "generate:api": "redocly bundle js-sdk --config ../../redocly.yaml -o ../../spec/openapi_generated.js-sdk.yml && openapi-typescript ../../spec/openapi_generated.js-sdk.yml -x api_key --array-length --alphabetize --default-non-nullable false --output src/api/schema.gen.ts",
     "generate:envd": "cd ../../spec/envd && buf generate --template buf-js.gen.yaml\n",
     "generate:envd-api": "redocly bundle envd --config ../../redocly.yaml -o ../../spec/openapi_generated.envd.yml && openapi-typescript ../../spec/openapi_generated.envd.yml -x api_key --array-length --alphabetize --output src/envd/schema.gen.ts",
-    "generate:volume-api": "openapi-typescript ../../spec/openapi-volumecontent.yml -x api_key --array-length --alphabetize --output src/volume/schema.gen.ts",
+    "generate:volume-api": "redocly bundle volume --config ../../redocly.yaml -o ../../spec/openapi_generated.volume.yml && openapi-typescript ../../spec/openapi_generated.volume.yml -x api_key --array-length --alphabetize --output src/volume/schema.gen.ts",
     "generate:mcp": "json2ts -i ./../../spec/mcp-server.json -o src/sandbox/mcp.d.ts --unreachableDefinitions --style.singleQuote --no-style.semi",
     "check-deps": "knip",
     "playwright:install": "playwright install chromium",
