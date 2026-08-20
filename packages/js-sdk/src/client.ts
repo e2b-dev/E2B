@@ -20,14 +20,14 @@ import { Volume } from './volume'
  * ```ts
  * import { E2B } from 'e2b'
  *
- * const client = E2B({ apiKey: 'e2b_...', domain: 'e2b.dev' })
+ * const client = new E2B({ apiKey: 'e2b_...', domain: 'e2b.dev' })
  *
  * const sandbox = await client.Sandbox.create()
  * const volumes = await client.Volume.list()
  * await client.Template.build(client.Template().fromPythonImage('3'), 'my-env')
  * ```
  */
-class E2BClient {
+export class E2B {
   /**
    * `Sandbox` class bound to this client's connection configuration.
    */
@@ -78,30 +78,3 @@ class E2BClient {
     )
   }
 }
-
-/**
- * E2B client with an explicitly bound connection configuration.
- */
-export type E2B = E2BClient
-
-/**
- * Create an E2B client with the connection options bound to it. Callable with
- * or without `new`.
- *
- * @param opts connection options used as the defaults for every call made
- *   through the client's resource classes.
- *
- * @example
- * ```ts
- * import { E2B } from 'e2b'
- *
- * const client = E2B({ apiKey: 'e2b_...', domain: 'e2b.dev' })
- * const sandbox = await client.Sandbox.create()
- * ```
- */
-export const E2B: typeof E2BClient & ((opts?: ConnectionOpts) => E2B) =
-  new Proxy(E2BClient, {
-    apply(target, _thisArg, args: [ConnectionOpts?]) {
-      return new target(...args)
-    },
-  }) as typeof E2BClient & ((opts?: ConnectionOpts) => E2B)

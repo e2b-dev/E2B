@@ -116,7 +116,7 @@ afterEach(() => {
 })
 
 test('client.Sandbox.create uses the client config instead of env vars', async () => {
-  const client = E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
+  const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
 
   const sandbox = await client.Sandbox.create()
 
@@ -284,20 +284,4 @@ test('the default export is still Sandbox', async () => {
 
   assert.equal(lastRequest().url, `https://api.${DOMAIN_ENV}/sandboxes`)
   assert.equal(lastRequest().apiKey, TEST_API_KEY)
-})
-
-test('E2B works with and without new', async () => {
-  const withNew = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
-  const withoutNew = E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
-
-  assert.instanceOf(withNew, E2B)
-  assert.instanceOf(withoutNew, E2B)
-
-  await withNew.Sandbox.create()
-  await withoutNew.Sandbox.create()
-
-  for (const request of requests) {
-    expect(request.url).toContain(`api.${DOMAIN_A}`)
-    assert.equal(request.apiKey, API_KEY_A)
-  }
 })

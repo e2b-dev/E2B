@@ -52,7 +52,7 @@ The top-level `Sandbox`, `Volume`, `Template` and `Secret` exports read their co
 ```ts
 import { E2B } from 'e2b'
 
-const client = E2B({ apiKey: 'e2b_***', domain: 'e2b.dev' })
+const client = new E2B({ apiKey: 'e2b_***', domain: 'e2b.dev' })
 
 const sandbox = await client.Sandbox.create()
 const volume = await client.Volume.create('my-volume')
