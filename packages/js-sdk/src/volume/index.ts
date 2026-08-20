@@ -15,7 +15,6 @@ import {
 } from '../connectionConfig'
 import { isArrayBufferLike, isBlobLike } from '../is'
 import {
-  NotFoundError,
   VolumeError,
   VolumeNotFoundError,
   VolumePathNotFoundError,
@@ -432,7 +431,7 @@ export class Volume extends ClientFactory {
       await this.getInfo(path, opts)
       return true
     } catch (err) {
-      if (err instanceof NotFoundError) {
+      if (err instanceof VolumePathNotFoundError) {
         return false
       }
       throw err
