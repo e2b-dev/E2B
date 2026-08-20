@@ -56,6 +56,9 @@ async function buildTemplate(
       memoryMB: 1024,
       skipCache: options?.skipCache,
       onBuildLogs: captureLogs,
+      // The placeholder key keeps the mocked template tests independent of
+      // E2B_API_KEY being set in the environment.
+      apiKey: process.env.E2B_API_KEY ?? TEST_API_KEY,
     })
   } catch (e) {
     console.error(

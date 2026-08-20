@@ -1,9 +1,6 @@
-import pytest
-
 from e2b import Template
 
 
-@pytest.mark.skip_debug()
 def test_make_symlink(build):
     template = (
         Template()
@@ -16,7 +13,6 @@ def test_make_symlink(build):
     build(template)
 
 
-@pytest.mark.skip_debug()
 def test_make_symlink_force(build):
     template = (
         Template()

@@ -2,8 +2,15 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { afterAll, beforeAll } from 'vitest'
+import { setupServer } from 'msw/node'
 import { defaultBuildLogger, Template, waitForTimeout } from '../../src'
 import { buildTemplateTest } from '../setup'
+import { createMockBuildApi } from './mockBuildApi'
+
+const server = setupServer(...createMockBuildApi().handlers)
+
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
+afterAll(() => server.close())
 
 // The file context lives in a temp directory so a test run never writes into
 // the repository tree. It is created in beforeAll rather than at module load so

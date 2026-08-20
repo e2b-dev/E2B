@@ -40,7 +40,6 @@ def setup_test_folder():
     shutil.rmtree(test_dir, ignore_errors=True)
 
 
-@pytest.mark.skip_debug()
 async def test_build_template(async_build, setup_test_folder):
     template = (
         AsyncTemplate(file_context_path=setup_test_folder)
@@ -54,13 +53,11 @@ async def test_build_template(async_build, setup_test_folder):
     await async_build(template, skip_cache=True, on_build_logs=default_build_logger())
 
 
-@pytest.mark.skip_debug()
 async def test_build_template_from_base_template(async_build):
     template = AsyncTemplate().from_template("base")
     await async_build(template, skip_cache=True, on_build_logs=default_build_logger())
 
 
-@pytest.mark.skip_debug()
 async def test_build_template_with_symlinks(async_build, setup_test_folder):
     template = (
         AsyncTemplate(file_context_path=setup_test_folder)
@@ -73,7 +70,6 @@ async def test_build_template_with_symlinks(async_build, setup_test_folder):
     await async_build(template)
 
 
-@pytest.mark.skip_debug()
 async def test_build_template_with_resolve_symlinks(async_build, setup_test_folder):
     template = (
         AsyncTemplate(file_context_path=setup_test_folder)
@@ -91,7 +87,6 @@ async def test_build_template_with_resolve_symlinks(async_build, setup_test_fold
     await async_build(template)
 
 
-@pytest.mark.skip_debug()
 async def test_build_template_with_skip_cache(async_build, setup_test_folder):
     template = (
         AsyncTemplate(file_context_path=setup_test_folder)

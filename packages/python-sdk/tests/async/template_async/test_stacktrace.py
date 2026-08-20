@@ -107,7 +107,6 @@ async def _expect_to_throw_and_check_trace(func, expected_method: str):
         assert saw_expected_method, traceback.format_exc()
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_from_image(async_build):
     template = AsyncTemplate().from_image("e2b.dev/this-image-does-not-exist")
     await _expect_to_throw_and_check_trace(
@@ -115,7 +114,6 @@ async def test_traces_on_from_image(async_build):
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_from_template(async_build):
     template = AsyncTemplate().from_template("this-template-does-not-exist")
     await _expect_to_throw_and_check_trace(
@@ -124,7 +122,6 @@ async def test_traces_on_from_template(async_build):
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_from_dockerfile(async_build):
     template = AsyncTemplate().from_dockerfile("FROM ubuntu:22.04\nRUN nonexistent")
     await _expect_to_throw_and_check_trace(
@@ -133,7 +130,6 @@ async def test_traces_on_from_dockerfile(async_build):
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_from_image_registry(async_build):
     template = AsyncTemplate().from_image(
         "registry.example.com/nonexistent:latest",
@@ -146,7 +142,6 @@ async def test_traces_on_from_image_registry(async_build):
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_from_image_credentials():
     await _expect_to_throw_and_check_trace(
         lambda: AsyncTemplate().from_image("ubuntu:22.04", username="user"),
@@ -154,7 +149,6 @@ async def test_traces_on_from_image_credentials():
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_from_aws_registry(async_build):
     template = AsyncTemplate().from_aws_registry(
         "123456789.dkr.ecr.us-east-1.amazonaws.com/nonexistent:latest",
@@ -167,7 +161,6 @@ async def test_traces_on_from_aws_registry(async_build):
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_from_gcp_registry(async_build):
     template = AsyncTemplate().from_gcp_registry(
         "gcr.io/nonexistent-project/nonexistent:latest",
@@ -180,7 +173,6 @@ async def test_traces_on_from_gcp_registry(async_build):
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_copy(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
@@ -190,7 +182,6 @@ async def test_traces_on_copy(async_build):
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_copyItems(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
@@ -202,7 +193,6 @@ async def test_traces_on_copyItems(async_build):
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_second_source_of_multi_source_copy(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
@@ -212,7 +202,6 @@ async def test_traces_on_second_source_of_multi_source_copy(async_build):
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_step_after_multi_source_copy(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
@@ -223,7 +212,6 @@ async def test_traces_on_step_after_multi_source_copy(async_build):
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_second_item_of_copy_items(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
@@ -238,7 +226,6 @@ async def test_traces_on_second_item_of_copy_items(async_build):
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_step_after_copy_items(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
@@ -254,7 +241,6 @@ async def test_traces_on_step_after_copy_items(async_build):
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_copy_absolute_path():
     await _expect_to_throw_and_check_trace(
         lambda: AsyncTemplate()
@@ -264,7 +250,6 @@ async def test_traces_on_copy_absolute_path():
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_copyItems_absolute_path():
     await _expect_to_throw_and_check_trace(
         lambda: AsyncTemplate()
@@ -274,7 +259,6 @@ async def test_traces_on_copyItems_absolute_path():
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_remove(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
@@ -284,7 +268,6 @@ async def test_traces_on_remove(async_build):
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_rename(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
@@ -294,7 +277,6 @@ async def test_traces_on_rename(async_build):
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_make_dir(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
@@ -304,7 +286,6 @@ async def test_traces_on_make_dir(async_build):
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_make_symlink(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
@@ -314,7 +295,6 @@ async def test_traces_on_make_symlink(async_build):
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_run_cmd(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
@@ -324,7 +304,6 @@ async def test_traces_on_run_cmd(async_build):
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_set_workdir(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
@@ -334,7 +313,6 @@ async def test_traces_on_set_workdir(async_build):
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_set_user(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
@@ -344,7 +322,6 @@ async def test_traces_on_set_user(async_build):
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_pip_install(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
@@ -354,7 +331,6 @@ async def test_traces_on_pip_install(async_build):
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_npm_install(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
@@ -364,7 +340,6 @@ async def test_traces_on_npm_install(async_build):
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_bun_install(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
@@ -374,7 +349,6 @@ async def test_traces_on_bun_install(async_build):
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_apt_install(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
@@ -384,7 +358,6 @@ async def test_traces_on_apt_install(async_build):
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_git_clone(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
@@ -394,7 +367,6 @@ async def test_traces_on_git_clone(async_build):
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_start_cmd(async_build):
     template = AsyncTemplate()
     template = template.from_base_image()
@@ -406,7 +378,6 @@ async def test_traces_on_start_cmd(async_build):
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_add_mcp_server():
     # needs mcp-gateway as base template, without it no mcp servers can be added
     await _expect_to_throw_and_check_trace(
@@ -415,7 +386,6 @@ async def test_traces_on_add_mcp_server():
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_dev_container_prebuild(async_build):
     template = AsyncTemplate()
     template = template.from_template("devcontainer")
@@ -426,7 +396,6 @@ async def test_traces_on_dev_container_prebuild(async_build):
     )
 
 
-@pytest.mark.skip_debug()
 async def test_traces_on_set_dev_container_start(async_build):
     template = AsyncTemplate()
     template = template.from_template("devcontainer")

@@ -40,7 +40,6 @@ def setup_test_folder():
     shutil.rmtree(test_dir, ignore_errors=True)
 
 
-@pytest.mark.skip_debug()
 def test_build_template(build, setup_test_folder):
     template = (
         Template(file_context_path=setup_test_folder)
@@ -55,13 +54,11 @@ def test_build_template(build, setup_test_folder):
     build(template, skip_cache=True, on_build_logs=default_build_logger())
 
 
-@pytest.mark.skip_debug()
 def test_build_template_from_base_template(build):
     template = Template().from_template("base")
     build(template, skip_cache=True, on_build_logs=default_build_logger())
 
 
-@pytest.mark.skip_debug()
 def test_build_template_with_symlinks(build, setup_test_folder):
     template = (
         Template(file_context_path=setup_test_folder)
@@ -74,7 +71,6 @@ def test_build_template_with_symlinks(build, setup_test_folder):
     build(template)
 
 
-@pytest.mark.skip_debug()
 def test_build_template_with_resolve_symlinks(build, setup_test_folder):
     template = (
         Template(file_context_path=setup_test_folder)

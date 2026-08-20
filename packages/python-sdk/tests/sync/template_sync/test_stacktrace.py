@@ -107,7 +107,6 @@ def _expect_to_throw_and_check_trace(func, expected_method: str):
         assert saw_expected_method, traceback.format_exc()
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_from_image(build):
     template = Template()
     template = template.from_image("e2b.dev/this-image-does-not-exist")
@@ -116,7 +115,6 @@ def test_traces_on_from_image(build):
     )
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_from_template(build):
     template = Template().from_template("this-template-does-not-exist")
     _expect_to_throw_and_check_trace(
@@ -124,7 +122,6 @@ def test_traces_on_from_template(build):
     )
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_from_dockerfile(build):
     template = Template()
     template = template.from_dockerfile("FROM ubuntu:22.04\nRUN nonexistent")
@@ -134,7 +131,6 @@ def test_traces_on_from_dockerfile(build):
     )
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_from_image_registry(build):
     template = Template()
     template = template.from_image(
@@ -148,7 +144,6 @@ def test_traces_on_from_image_registry(build):
     )
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_from_image_credentials():
     _expect_to_throw_and_check_trace(
         lambda: Template().from_image("ubuntu:22.04", username="user"),
@@ -156,7 +151,6 @@ def test_traces_on_from_image_credentials():
     )
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_from_aws_registry(build):
     template = Template()
     template = template.from_aws_registry(
@@ -170,7 +164,6 @@ def test_traces_on_from_aws_registry(build):
     )
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_from_gcp_registry(build):
     template = Template()
     template = template.from_gcp_registry(
@@ -184,7 +177,6 @@ def test_traces_on_from_gcp_registry(build):
     )
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_copy(build):
     template = Template()
     template = template.from_base_image()
@@ -192,7 +184,6 @@ def test_traces_on_copy(build):
     _expect_to_throw_and_check_trace(lambda: build(template, name="copy"), "copy")
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_copyItems(build):
     template = Template()
     template = template.from_base_image()
@@ -204,7 +195,6 @@ def test_traces_on_copyItems(build):
     )
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_second_source_of_multi_source_copy(build):
     template = Template()
     template = template.from_base_image()
@@ -214,7 +204,6 @@ def test_traces_on_second_source_of_multi_source_copy(build):
     )
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_step_after_multi_source_copy(build):
     template = Template()
     template = template.from_base_image()
@@ -225,7 +214,6 @@ def test_traces_on_step_after_multi_source_copy(build):
     )
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_second_item_of_copy_items(build):
     template = Template()
     template = template.from_base_image()
@@ -240,7 +228,6 @@ def test_traces_on_second_item_of_copy_items(build):
     )
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_step_after_copy_items(build):
     template = Template()
     template = template.from_base_image()
@@ -256,7 +243,6 @@ def test_traces_on_step_after_copy_items(build):
     )
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_copy_absolute_path():
     _expect_to_throw_and_check_trace(
         lambda: Template().from_base_image().copy("/absolute/path", "/absolute/path"),
@@ -264,7 +250,6 @@ def test_traces_on_copy_absolute_path():
     )
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_copyItems_absolute_path():
     _expect_to_throw_and_check_trace(
         lambda: (
@@ -276,7 +261,6 @@ def test_traces_on_copyItems_absolute_path():
     )
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_remove(build):
     template = Template()
     template = template.from_base_image()
@@ -284,7 +268,6 @@ def test_traces_on_remove(build):
     _expect_to_throw_and_check_trace(lambda: build(template, name="remove"), "remove")
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_rename(build):
     template = Template()
     template = template.from_base_image()
@@ -292,7 +275,6 @@ def test_traces_on_rename(build):
     _expect_to_throw_and_check_trace(lambda: build(template, name="rename"), "rename")
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_make_dir(build):
     template = Template()
     template = template.from_base_image()
@@ -302,7 +284,6 @@ def test_traces_on_make_dir(build):
     )
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_make_symlink(build):
     template = Template()
     template = template.from_base_image()
@@ -312,7 +293,6 @@ def test_traces_on_make_symlink(build):
     )
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_run_cmd(build):
     template = Template()
     template = template.from_base_image()
@@ -320,7 +300,6 @@ def test_traces_on_run_cmd(build):
     _expect_to_throw_and_check_trace(lambda: build(template, name="run_cmd"), "run_cmd")
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_set_workdir(build):
     template = Template()
     template = template.from_base_image()
@@ -330,7 +309,6 @@ def test_traces_on_set_workdir(build):
     )
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_set_user(build):
     template = Template()
     template = template.from_base_image()
@@ -340,7 +318,6 @@ def test_traces_on_set_user(build):
     )
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_pip_install(build):
     template = Template()
     template = template.from_base_image()
@@ -350,7 +327,6 @@ def test_traces_on_pip_install(build):
     )
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_npm_install(build):
     template = Template()
     template = template.from_base_image()
@@ -360,7 +336,6 @@ def test_traces_on_npm_install(build):
     )
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_bun_install(build):
     template = Template()
     template = template.from_base_image()
@@ -370,7 +345,6 @@ def test_traces_on_bun_install(build):
     )
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_apt_install(build):
     template = Template()
     template = template.from_base_image()
@@ -380,7 +354,6 @@ def test_traces_on_apt_install(build):
     )
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_git_clone(build):
     template = Template()
     template = template.from_base_image()
@@ -390,7 +363,6 @@ def test_traces_on_git_clone(build):
     )
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_set_start_cmd(build):
     template = Template()
     template = template.from_base_image()
@@ -402,7 +374,6 @@ def test_traces_on_set_start_cmd(build):
     )
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_add_mcp_server():
     # needs mcp-gateway as base template, without it no mcp servers can be added
     _expect_to_throw_and_check_trace(
@@ -411,7 +382,6 @@ def test_traces_on_add_mcp_server():
     )
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_dev_container_prebuild(build):
     template = Template()
     template = template.from_template("devcontainer")
@@ -422,7 +392,6 @@ def test_traces_on_dev_container_prebuild(build):
     )
 
 
-@pytest.mark.skip_debug()
 def test_traces_on_set_dev_container_start(build):
     template = Template()
     template = template.from_template("devcontainer")

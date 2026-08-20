@@ -1,5 +1,13 @@
+import { afterAll, beforeAll } from 'vitest'
+import { setupServer } from 'msw/node'
 import { Template } from '../../../src'
 import { buildTemplateTest } from '../../setup'
+import { createMockBuildApi } from '../mockBuildApi'
+
+const server = setupServer(...createMockBuildApi().handlers)
+
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
+afterAll(() => server.close())
 
 buildTemplateTest('make symlink', async ({ buildTemplate }) => {
   const template = Template()

@@ -1,9 +1,6 @@
-import pytest
-
 from e2b import Template
 
 
-@pytest.mark.skip_debug()
 def test_to_dockerfile():
     template = (
         Template()
@@ -21,7 +18,6 @@ RUN echo "Hello, World!"
     assert dockerfile == expected_dockerfile
 
 
-@pytest.mark.skip_debug()
 def test_to_dockerfile_with_options():
     template = (
         Template()
@@ -39,7 +35,6 @@ RUN echo "Hello, World!"
     assert dockerfile == expected_dockerfile
 
 
-@pytest.mark.skip_debug()
 def test_to_dockerfile_with_env_instructions():
     template = (
         Template()

@@ -1,9 +1,6 @@
-import pytest
-
 from e2b import AsyncTemplate
 
 
-@pytest.mark.skip_debug()
 async def test_make_symlink(async_build):
     template = (
         AsyncTemplate()
@@ -16,7 +13,6 @@ async def test_make_symlink(async_build):
     await async_build(template)
 
 
-@pytest.mark.skip_debug()
 async def test_make_symlink_force(async_build):
     template = (
         AsyncTemplate()

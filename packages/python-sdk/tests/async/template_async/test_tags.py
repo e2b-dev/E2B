@@ -175,7 +175,6 @@ class TestGetTags:
 class TestTagsIntegration:
     """Integration tests for AsyncTemplate tags functionality."""
 
-    @pytest.mark.skip_debug()
     async def test_build_template_with_tags_assign_and_delete(self, async_build):
         """Test building a template with tags, assigning new tags, and deleting."""
         template_name = "e2b-tags-test"
@@ -198,7 +197,6 @@ class TestTagsIntegration:
         assert "production" in tag_info.tags
         assert "latest" in tag_info.tags
 
-    @pytest.mark.skip_debug()
     async def test_assign_single_tag_to_existing_template(self, async_build):
         """Test assigning a single tag (not array) to an existing template."""
         template_name = "e2b-tags-test"
@@ -214,7 +212,6 @@ class TestTagsIntegration:
         # API returns just the tag portion, not the full alias:tag
         assert "stable" in tag_info.tags
 
-    @pytest.mark.skip_debug()
     async def test_rejects_invalid_tag_format_missing_alias(self, async_build):
         """Test that tag without alias (starts with colon) is rejected."""
         template_name = "e2b-tags-test"
@@ -227,7 +224,6 @@ class TestTagsIntegration:
         with pytest.raises(Exception):
             await AsyncTemplate.assign_tags(initial_tag, ":invalid-tag")
 
-    @pytest.mark.skip_debug()
     async def test_rejects_invalid_tag_format_missing_tag(self, async_build):
         """Test that tag without tag portion (ends with colon) is rejected."""
         template_name = "e2b-tags-test"

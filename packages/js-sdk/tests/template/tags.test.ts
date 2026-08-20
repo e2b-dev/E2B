@@ -5,7 +5,8 @@ import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
 import { Template } from '../../src'
-import { apiUrl, buildTemplateTest, isDebug } from '../setup'
+import { apiUrl, buildTemplateTest, TEST_API_KEY } from '../setup'
+import { createMockBuildApi } from './mockBuildApi'
 
 // Mock handlers for tag API endpoints
 const mockHandlers = [
@@ -58,6 +59,10 @@ const mockHandlers = [
 
 const server = setupServer(...mockHandlers)
 
+// The placeholder key keeps the mocked template tests independent of
+// E2B_API_KEY being set in the environment.
+const apiKey = process.env.E2B_API_KEY ?? TEST_API_KEY
+
 // Unit tests with mock server
 describe('Template tags unit tests', () => {
   beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
@@ -66,16 +71,21 @@ describe('Template tags unit tests', () => {
 
   describe('Template.assignTags', () => {
     test('assigns a single tag', async () => {
-      const result = await Template.assignTags('my-template:v1.0', 'production')
+      const result = await Template.assignTags(
+        'my-template:v1.0',
+        'production',
+        { apiKey }
+      )
       expect(result.buildId).toBe('00000000-0000-0000-0000-000000000000')
       expect(result.tags).toContain('production')
     })
 
     test('assigns multiple tags', async () => {
-      const result = await Template.assignTags('my-template:v1.0', [
-        'production',
-        'stable',
-      ])
+      const result = await Template.assignTags(
+        'my-template:v1.0',
+        ['production', 'stable'],
+        { apiKey }
+      )
       expect(result.buildId).toBe('00000000-0000-0000-0000-000000000000')
       expect(result.tags).toContain('production')
       expect(result.tags).toContain('stable')
@@ -86,27 +96,29 @@ describe('Template tags unit tests', () => {
     test('deletes a single tag', async () => {
       // Should not throw
       await expect(
-        Template.removeTags('my-template', 'production')
+        Template.removeTags('my-template', 'production', { apiKey })
       ).resolves.toBeUndefined()
     })
 
     test('deletes multiple tags', async () => {
       // Should not throw
       await expect(
-        Template.removeTags('my-template', ['production', 'staging'])
+        Template.removeTags('my-template', ['production', 'staging'], {
+          apiKey,
+        })
       ).resolves.toBeUndefined()
     })
 
     test('handles 404 error for nonexistent template', async () => {
       await expect(
-        Template.removeTags('nonexistent', ['tag'])
+        Template.removeTags('nonexistent', ['tag'], { apiKey })
       ).rejects.toThrow()
     })
   })
 
   describe('Template.getTags', () => {
     test('returns tags for a template', async () => {
-      const tags = await Template.getTags('my-template-id')
+      const tags = await Template.getTags('my-template-id', { apiKey })
       expect(tags).toHaveLength(2)
       expect(tags[0].tag).toBe('v1.0')
       expect(tags[0].buildId).toBe('00000000-0000-0000-0000-000000000000')
@@ -117,86 +129,94 @@ describe('Template tags unit tests', () => {
     })
 
     test('handles 404 for nonexistent template', async () => {
-      await expect(Template.getTags('nonexistent')).rejects.toThrow()
+      await expect(
+        Template.getTags('nonexistent', { apiKey })
+      ).rejects.toThrow()
     })
   })
 })
 
-// Integration tests
-buildTemplateTest.skipIf(isDebug)(
-  'build template with tags, assign and delete',
-  { timeout: 300_000 },
-  async ({ buildTemplate }) => {
-    const templateName = 'e2b-tags-test'
-    const initialTag = `${templateName}:v1-${randomUUID()}`
+// Integration tests against the stateful mock build API
+describe('Template tags integration tests', () => {
+  const integrationServer = setupServer(...createMockBuildApi().handlers)
 
-    // Build a template with initial tag
-    const template = Template().fromBaseImage()
-    const buildInfo = await buildTemplate(template, { name: initialTag })
+  beforeAll(() => integrationServer.listen({ onUnhandledRequest: 'error' }))
+  afterAll(() => integrationServer.close())
 
-    expect(buildInfo.buildId).toBeTruthy()
-    expect(buildInfo.templateId).toBeTruthy()
+  buildTemplateTest(
+    'build template with tags, assign and delete',
+    async ({ buildTemplate }) => {
+      const templateName = 'e2b-tags-test'
+      const initialTag = `${templateName}:v1-${randomUUID()}`
 
-    // Assign additional tags (just tag names, not full alias:tag format)
-    const tagInfo = await Template.assignTags(initialTag, [
-      'production',
-      'latest',
-    ])
+      // Build a template with initial tag
+      const template = Template().fromBaseImage()
+      const buildInfo = await buildTemplate(template, { name: initialTag })
 
-    expect(tagInfo.buildId).toBeTruthy()
-    expect(tagInfo.tags).toContain('production')
-    expect(tagInfo.tags).toContain('latest')
-  }
-)
+      expect(buildInfo.buildId).toBeTruthy()
+      expect(buildInfo.templateId).toBeTruthy()
 
-buildTemplateTest.skipIf(isDebug)(
-  'assign single tag to existing template',
-  { timeout: 300_000 },
-  async ({ buildTemplate }) => {
-    const templateName = 'e2b-tags-test'
-    const initialTag = `${templateName}:v1-${randomUUID()}`
+      // Assign additional tags (just tag names, not full alias:tag format)
+      const tagInfo = await Template.assignTags(
+        initialTag,
+        ['production', 'latest'],
+        { apiKey }
+      )
 
-    const template = Template().fromBaseImage()
-    await buildTemplate(template, { name: initialTag })
+      expect(tagInfo.buildId).toBeTruthy()
+      expect(tagInfo.tags).toContain('production')
+      expect(tagInfo.tags).toContain('latest')
+    }
+  )
 
-    // Assign single tag (just tag name, not full alias:tag format)
-    const tagInfo = await Template.assignTags(initialTag, 'stable')
+  buildTemplateTest(
+    'assign single tag to existing template',
+    async ({ buildTemplate }) => {
+      const templateName = 'e2b-tags-test'
+      const initialTag = `${templateName}:v1-${randomUUID()}`
 
-    expect(tagInfo.buildId).toBeTruthy()
-    expect(tagInfo.tags).toContain('stable')
-  }
-)
+      const template = Template().fromBaseImage()
+      await buildTemplate(template, { name: initialTag })
 
-buildTemplateTest.skipIf(isDebug)(
-  'rejects invalid tag format - missing alias',
-  { timeout: 300_000 },
-  async ({ buildTemplate }) => {
-    const templateName = 'e2b-tags-test'
-    const initialTag = `${templateName}:v1-${randomUUID()}`
+      // Assign single tag (just tag name, not full alias:tag format)
+      const tagInfo = await Template.assignTags(initialTag, 'stable', {
+        apiKey,
+      })
 
-    const template = Template().fromBaseImage()
-    await buildTemplate(template, { name: initialTag })
+      expect(tagInfo.buildId).toBeTruthy()
+      expect(tagInfo.tags).toContain('stable')
+    }
+  )
 
-    // Tag without alias (starts with colon) should be rejected
-    await expect(
-      Template.assignTags(initialTag, ':invalid-tag')
-    ).rejects.toThrow()
-  }
-)
+  buildTemplateTest(
+    'rejects invalid tag format - missing alias',
+    async ({ buildTemplate }) => {
+      const templateName = 'e2b-tags-test'
+      const initialTag = `${templateName}:v1-${randomUUID()}`
 
-buildTemplateTest.skipIf(isDebug)(
-  'rejects invalid tag format - missing tag',
-  { timeout: 300_000 },
-  async ({ buildTemplate }) => {
-    const templateName = 'e2b-tags-test'
-    const initialTag = `${templateName}:v1-${randomUUID()}`
+      const template = Template().fromBaseImage()
+      await buildTemplate(template, { name: initialTag })
 
-    const template = Template().fromBaseImage()
-    await buildTemplate(template, { name: initialTag })
+      // Tag without alias (starts with colon) should be rejected
+      await expect(
+        Template.assignTags(initialTag, ':invalid-tag', { apiKey })
+      ).rejects.toThrow()
+    }
+  )
 
-    // Tag without tag portion (ends with colon) should be rejected
-    await expect(
-      Template.assignTags(initialTag, `${templateName}:`)
-    ).rejects.toThrow()
-  }
-)
+  buildTemplateTest(
+    'rejects invalid tag format - missing tag',
+    async ({ buildTemplate }) => {
+      const templateName = 'e2b-tags-test'
+      const initialTag = `${templateName}:v1-${randomUUID()}`
+
+      const template = Template().fromBaseImage()
+      await buildTemplate(template, { name: initialTag })
+
+      // Tag without tag portion (ends with colon) should be rejected
+      await expect(
+        Template.assignTags(initialTag, `${templateName}:`, { apiKey })
+      ).rejects.toThrow()
+    }
+  )
+})

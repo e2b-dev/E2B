@@ -1,10 +1,7 @@
-import pytest
-
 from e2b import AsyncTemplate
 from e2b.template.types import InstructionType
 
 
-@pytest.mark.skip_debug()
 async def test_from_dockerfile():
     dockerfile = """FROM node:24
 WORKDIR /app
@@ -42,7 +39,6 @@ ENTRYPOINT ["sleep", "20"]"""
     assert template._template._start_cmd == "sleep 20"
 
 
-@pytest.mark.skip_debug()
 async def test_from_dockerfile_with_default_user_and_workdir():
     dockerfile = "FROM node:24"
 
@@ -54,7 +50,6 @@ async def test_from_dockerfile_with_default_user_and_workdir():
     assert template._template._instructions[-1]["args"][0] == "/home/user"
 
 
-@pytest.mark.skip_debug()
 async def test_from_dockerfile_with_custom_user_and_workdir():
     dockerfile = "FROM node:24\nUSER mish\nWORKDIR /home/mish"
 
@@ -66,7 +61,6 @@ async def test_from_dockerfile_with_custom_user_and_workdir():
     assert template._template._instructions[-1]["args"][0] == "/home/mish"
 
 
-@pytest.mark.skip_debug()
 async def test_from_dockerfile_with_multi_source_copy():
     dockerfile = """FROM node:24
 COPY file1.txt file2.txt file3.txt /dest/"""
@@ -86,7 +80,6 @@ COPY file1.txt file2.txt file3.txt /dest/"""
     assert copy_instructions[2]["args"][1] == "/dest/"
 
 
-@pytest.mark.skip_debug()
 async def test_from_dockerfile_with_multi_source_copy_chown():
     dockerfile = """FROM node:24
 COPY --chown=myuser:mygroup pkg.json pkg-lock.json /app/"""
@@ -106,7 +99,6 @@ COPY --chown=myuser:mygroup pkg.json pkg-lock.json /app/"""
     assert copy_instructions[1]["args"][2] == "myuser:mygroup"
 
 
-@pytest.mark.skip_debug()
 async def test_from_dockerfile_with_copy_chown():
     dockerfile = """FROM node:24
 COPY --chown=myuser:mygroup app.js /app/

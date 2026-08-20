@@ -3,14 +3,12 @@ import pytest
 from e2b import Template
 
 
-@pytest.mark.skip_debug()
 def test_run_command(build):
     template = Template().from_image("ubuntu:22.04").skip_cache().run_cmd("ls -l")
 
     build(template)
 
 
-@pytest.mark.skip_debug()
 def test_run_command_as_different_user(build):
     template = (
         Template()
@@ -22,7 +20,6 @@ def test_run_command_as_different_user(build):
     build(template)
 
 
-@pytest.mark.skip_debug()
 def test_run_command_as_user_that_does_not_exist(build):
     template = (
         Template()
