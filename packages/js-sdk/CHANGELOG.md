@@ -1,5 +1,86 @@
 # e2b
 
+## 2.42.0
+
+### Minor Changes
+
+- 7af41e9: Refresh the MCP server types from the current MCP gateway catalog: 49 servers are new (`n8n`, `neo4j`, `okta`, `temporal`, `proxmox`, `zscaler`, the AWS Labs family, ...), 61 titles and 10 descriptions were rewritten, and 4 servers changed their options (`awsDiagram`, `context7`, `neo4jCypher`, `onlyofficeDocspace`).
+
+  Six servers the catalog no longer publishes are gone from `McpServer`: `postgres`, `root`, `tembo`, `flexprice`, `triplewhale`, `cdataConnectcloud`. `awsDiagram` and `context7` now require an option (`outputDir` and `apiKey`), so `awsDiagram: {}` and `context7: {}` stop type-checking, and `onlyofficeDocspace` is down to `baseUrl` and `docspaceApiKey`. The removals also narrow `McpServerName`, so `Template().addMcpServer('postgres')` stops compiling. The config is still passed to the gateway as written, so a dropped server can be kept by casting past the type — whether it starts is up to the gateway.
+
+  ```ts
+  import { Sandbox } from 'e2b'
+
+  const sandbox = await Sandbox.create({
+    mcp: {
+      n8n: {
+        apiKey: process.env.N8N_API_KEY!,
+        apiUrl: 'https://n8n.example.com/api/v1',
+      },
+    },
+  })
+  ```
+
+### Patch Changes
+
+- 15bd48b: Omit `autoPause` from the create-sandbox request when no timeout lifecycle is configured, and omit `autoPauseMemory` unless `keepMemory` / `keep_memory` was chosen. Sending the SDK's local defaults for those fields was indistinguishable from an explicit choice, so the API could not tell "no preference" from a client choice and own its defaults. Explicit values are still always sent:
+
+  ```ts
+  import { Sandbox } from 'e2b'
+
+  // No timeout lifecycle: autoPause is omitted, the API applies its default.
+  await Sandbox.create()
+
+  // Explicit action: autoPause: false / autoPause: true, as before.
+  await Sandbox.create({ lifecycle: { onTimeout: 'kill' } })
+  await Sandbox.create({ lifecycle: { onTimeout: 'pause' } })
+
+  // Snapshot kind is only sent when keepMemory is set.
+  await Sandbox.create({
+    lifecycle: { onTimeout: { action: 'pause', keepMemory: false } },
+  })
+  ```
+
+  ```python
+  from e2b import Sandbox
+
+  # No timeout lifecycle: auto_pause is omitted, the API applies its default.
+  Sandbox.create()
+
+  # Explicit action: autoPause: false / autoPause: true, as before.
+  Sandbox.create(lifecycle={"on_timeout": "kill"})
+  Sandbox.create(lifecycle={"on_timeout": "pause"})
+
+  # Snapshot kind is only sent when keep_memory is set.
+  Sandbox.create(
+      lifecycle={"on_timeout": {"action": "pause", "keep_memory": False}}
+  )
+  ```
+
+- 5367693: Omit `autoResume` from the `POST /sandboxes` request when `lifecycle.autoResume` / `lifecycle["auto_resume"]` is not configured, instead of sending the SDK's local default as `{ "autoResume": { "enabled": false } }`. The API can now tell an unset preference from an explicit opt-out and own the default itself. Explicit values are unchanged on the wire.
+
+  ```ts
+  import { Sandbox } from 'e2b'
+
+  // autoResume is left out of the request entirely — the API's default applies
+  await Sandbox.create({ lifecycle: { onTimeout: 'pause' } })
+
+  // an explicit choice is still sent as before
+  await Sandbox.create({ lifecycle: { onTimeout: 'pause', autoResume: true } })
+  ```
+
+  ```python
+  from e2b import Sandbox
+
+  # auto_resume is left out of the request entirely — the API's default applies
+  Sandbox.create(lifecycle={"on_timeout": "pause"})
+
+  # an explicit choice is still sent as before
+  Sandbox.create(lifecycle={"on_timeout": "pause", "auto_resume": True})
+  ```
+
+- 2daced6: Tag the package homepage and README links with UTM parameters (`utm_source=npm`/`pypi`) so registry traffic to e2b.dev is attributed correctly. No functional change.
+
 ## 2.41.0
 
 ### Minor Changes

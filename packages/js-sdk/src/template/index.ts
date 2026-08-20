@@ -55,6 +55,34 @@ import {
 export class TemplateBase
   implements TemplateFromImage, TemplateBuilder, TemplateFinal
 {
+  /**
+   * Connection options bound to this class, used as defaults for every
+   * operation that talks to the API. Undefined here, so the config comes from
+   * per-call options and environment variables; per-client subclasses bind
+   * their own options.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  protected static readonly boundOpts?: Omit<ConnectionOpts, 'signal'>
+
+  /**
+   * Layer per-call options over the options bound to the class. Per-call
+   * options explicitly set to `undefined` don't clear the bound ones.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  protected static resolveOpts<T extends ConnectionOpts>(opts?: T): T {
+    const perCallOpts = Object.fromEntries(
+      Object.entries(opts ?? {}).filter(([, value]) => value !== undefined)
+    )
+
+    return { ...this.boundOpts, ...perCallOpts } as T
+  }
+
   private defaultBaseImage: string = 'e2bdev/base'
   private baseImage: string | undefined = this.defaultBaseImage
   private baseTemplate: string | undefined = undefined
@@ -158,32 +186,34 @@ export class TemplateBase
       options
     )
 
+    const buildOpts = this.resolveOpts(buildOptions)
+
     try {
-      buildOptions.onBuildLogs?.(new LogEntryStart(new Date(), 'Build started'))
+      buildOpts.onBuildLogs?.(new LogEntryStart(new Date(), 'Build started'))
       const baseTemplate = template as TemplateBase
 
-      const config = new ConnectionConfig(buildOptions)
+      const config = new ConnectionConfig(buildOpts)
       const client = new ApiClient(config)
 
-      const data = await baseTemplate.build(client, config, name, buildOptions)
+      const data = await baseTemplate.build(client, config, name, buildOpts)
 
-      buildOptions.onBuildLogs?.(
+      buildOpts.onBuildLogs?.(
         new LogEntry(new Date(), 'info', 'Waiting for logs...')
       )
 
       await waitForBuildFinish(client, {
         templateID: data.templateId,
         buildID: data.buildId,
-        onBuildLogs: buildOptions.onBuildLogs,
+        onBuildLogs: buildOpts.onBuildLogs,
         logsRefreshFrequency: baseTemplate.logsRefreshFrequency,
         stackTraces: baseTemplate.stackTraces,
-        signal: buildOptions.signal,
+        signal: buildOpts.signal,
         requestTimeoutMs: config.requestTimeoutMs,
       })
 
       return data
     } finally {
-      buildOptions.onBuildLogs?.(new LogEntryEnd(new Date(), 'Build finished'))
+      buildOpts.onBuildLogs?.(new LogEntryEnd(new Date(), 'Build finished'))
     }
   }
 
@@ -240,10 +270,11 @@ export class TemplateBase
       options
     )
 
-    const config = new ConnectionConfig(buildOptions)
+    const buildOpts = this.resolveOpts(buildOptions)
+    const config = new ConnectionConfig(buildOpts)
     const client = new ApiClient(config)
 
-    return (template as TemplateBase).build(client, config, name, buildOptions)
+    return (template as TemplateBase).build(client, config, name, buildOpts)
   }
 
   /**
@@ -261,7 +292,7 @@ export class TemplateBase
     data: Pick<BuildInfo, 'templateId' | 'buildId'>,
     options?: GetBuildStatusOptions
   ): Promise<TemplateBuildStatusResponse> {
-    const config = new ConnectionConfig(options)
+    const config = new ConnectionConfig(this.resolveOpts(options))
     const client = new ApiClient(config)
 
     return await getBuildStatus(
@@ -294,7 +325,7 @@ export class TemplateBase
     name: string,
     options?: ConnectionOpts
   ): Promise<boolean> {
-    return TemplateBase.aliasExists(name, options)
+    return this.aliasExists(name, options)
   }
 
   /**
@@ -317,7 +348,7 @@ export class TemplateBase
     alias: string,
     options?: ConnectionOpts
   ): Promise<boolean> {
-    const config = new ConnectionConfig(options)
+    const config = new ConnectionConfig(this.resolveOpts(options))
     const client = new ApiClient(config)
 
     return checkAliasExists(
@@ -349,7 +380,7 @@ export class TemplateBase
     tags: string | string[],
     options?: ConnectionOpts
   ): Promise<TemplateTagInfo> {
-    const config = new ConnectionConfig(options)
+    const config = new ConnectionConfig(this.resolveOpts(options))
     const client = new ApiClient(config)
     const normalizedTags = Array.isArray(tags) ? tags : [tags]
     return assignTags(
@@ -380,7 +411,7 @@ export class TemplateBase
     tags: string | string[],
     options?: ConnectionOpts
   ): Promise<void> {
-    const config = new ConnectionConfig(options)
+    const config = new ConnectionConfig(this.resolveOpts(options))
     const client = new ApiClient(config)
     const normalizedTags = Array.isArray(tags) ? tags : [tags]
     return removeTags(
@@ -409,7 +440,7 @@ export class TemplateBase
     templateId: string,
     options?: ConnectionOpts
   ): Promise<TemplateTag[]> {
-    const config = new ConnectionConfig(options)
+    const config = new ConnectionConfig(this.resolveOpts(options))
     const client = new ApiClient(config)
     return getTemplateTags(
       client,
@@ -1275,14 +1306,23 @@ export function Template(options?: TemplateOptions): TemplateFromImage {
   return new TemplateBase(options)
 }
 
-Template.build = TemplateBase.build
-Template.buildInBackground = TemplateBase.buildInBackground
-Template.getBuildStatus = TemplateBase.getBuildStatus
-Template.exists = TemplateBase.exists
-Template.aliasExists = TemplateBase.aliasExists
-Template.assignTags = TemplateBase.assignTags
-Template.removeTags = TemplateBase.removeTags
-Template.getTags = TemplateBase.getTags
+/**
+ * The statics resolve their connection options off `this`, so they are bound to
+ * `TemplateBase` (which carries no bound options) when re-exposed as plain
+ * properties of the `Template` factory function.
+ */
+function boundToBase<T extends (...args: never[]) => unknown>(fn: T): T {
+  return fn.bind(TemplateBase) as T
+}
+
+Template.build = boundToBase(TemplateBase.build)
+Template.buildInBackground = boundToBase(TemplateBase.buildInBackground)
+Template.getBuildStatus = boundToBase(TemplateBase.getBuildStatus)
+Template.exists = boundToBase(TemplateBase.exists)
+Template.aliasExists = boundToBase(TemplateBase.aliasExists)
+Template.assignTags = boundToBase(TemplateBase.assignTags)
+Template.removeTags = boundToBase(TemplateBase.removeTags)
+Template.getTags = boundToBase(TemplateBase.getTags)
 Template.toJSON = TemplateBase.toJSON
 Template.toDockerfile = TemplateBase.toDockerfile
 

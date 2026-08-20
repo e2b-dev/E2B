@@ -6,13 +6,15 @@ test(
   'sandbox lifecycle inside a deployed Cloudflare Worker',
   // setup.mts waits for the fresh workers.dev subdomain to propagate before
   // tests run; these retries only absorb transient blips — a stray
-  // propagation 404 or an undici DNS/connect error ("fetch failed"). Any
-  // other Cloudflare error page is a real failure and propagates.
+  // propagation error page (404 "nothing is here yet" for the route, 500
+  // "Script not found" from a colo that lags behind the one setup.mts
+  // probed) or an undici DNS/connect error ("fetch failed"). Any other
+  // Cloudflare error page is a real failure and propagates.
   {
     retry: {
       count: 10,
       delay: 3_000,
-      condition: /non-JSON response \(404|fetch failed/,
+      condition: /non-JSON response \(404|Script not found|fetch failed/,
     },
   },
   async () => {
