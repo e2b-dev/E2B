@@ -14,6 +14,11 @@ from e2b.volume.volume_sync import Volume
 T = TypeVar("T")
 
 
+class E2BClientParams(ApiParams, total=False):
+    """Params bound to an :class:`E2B` client, used as the defaults for every
+    call made through its resource classes. Same shape as :class:`ApiParams`."""
+
+
 def _bind(cls: Type[T], api_params: ApiParams) -> Type[T]:
     """Generate a subclass of ``cls`` carrying ``api_params`` as its bound params."""
     return cast(
@@ -48,7 +53,7 @@ class E2B:
     ```
     """
 
-    def __init__(self, **opts: Unpack[ApiParams]):
+    def __init__(self, **opts: Unpack[E2BClientParams]):
         """
         Create a new client with the API params bound to it.
 
