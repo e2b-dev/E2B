@@ -1326,6 +1326,43 @@ Template.getTags = boundToBase(TemplateBase.getTags)
 Template.toJSON = TemplateBase.toJSON
 Template.toDockerfile = TemplateBase.toDockerfile
 
+/**
+ * Create a `Template` surface whose statics resolve their connection options
+ * against `boundOpts` instead of the environment variables. Lives in this
+ * module so the factory frame is not mistaken for the caller's frame when
+ * resolving the default file context path.
+ *
+ * @internal
+ * @hidden
+ * @hide
+ */
+export function createBoundTemplate(
+  boundOpts: Omit<ConnectionOpts, 'signal'>
+): typeof Template {
+  class BoundTemplate extends TemplateBase {
+    protected static override readonly boundOpts = boundOpts
+  }
+
+  const template = (options?: TemplateOptions): TemplateFromImage =>
+    new BoundTemplate(options)
+
+  const boundToClass = <T extends (...args: never[]) => unknown>(fn: T): T =>
+    fn.bind(BoundTemplate) as T
+
+  return Object.assign(template, {
+    build: boundToClass(TemplateBase.build),
+    buildInBackground: boundToClass(TemplateBase.buildInBackground),
+    getBuildStatus: boundToClass(TemplateBase.getBuildStatus),
+    exists: boundToClass(TemplateBase.exists),
+    aliasExists: boundToClass(TemplateBase.aliasExists),
+    assignTags: boundToClass(TemplateBase.assignTags),
+    removeTags: boundToClass(TemplateBase.removeTags),
+    getTags: boundToClass(TemplateBase.getTags),
+    toJSON: TemplateBase.toJSON,
+    toDockerfile: TemplateBase.toDockerfile,
+  })
+}
+
 export type {
   BuildInfo,
   BuildOptions,

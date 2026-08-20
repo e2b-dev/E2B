@@ -38,7 +38,7 @@ E2B_API_KEY=e2b_***
 ### 3. Start a sandbox and run commands
 
 ```ts
-import Sandbox from 'e2b'
+import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create()
 const result = await sandbox.commands.run('echo "Hello from E2B!"')
@@ -47,15 +47,16 @@ console.log(result.stdout) // Hello from E2B!
 
 ### 4. Bind the configuration to a client
 
-The top-level `Sandbox`, `Volume` and `Secret` exports read their configuration from the environment variables. To use an explicit configuration — e.g. several API keys or domains in one process — create an `E2B` client and use the resource classes it exposes:
+The top-level `Sandbox`, `Volume`, `Template` and `Secret` exports read their configuration from the environment variables. To use an explicit configuration — e.g. several API keys or domains in one process — create an `E2B` client (the default export) and use the resources it exposes:
 
 ```ts
-import { E2B } from 'e2b'
+import E2B from 'e2b'
 
 const client = new E2B({ apiKey: 'e2b_***', domain: 'e2b.dev' })
 
 const sandbox = await client.Sandbox.create()
 const volume = await client.Volume.create('my-volume')
+const exists = await client.Template.exists('my-template')
 
 // The classes can be destructured and used like the top-level ones.
 const { Sandbox } = client

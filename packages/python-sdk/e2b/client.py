@@ -6,6 +6,8 @@ from e2b.connection_config import ApiParams
 from e2b.sandbox_async.main import AsyncSandbox
 from e2b.sandbox_sync.main import Sandbox
 from e2b.secret import Secret
+from e2b.template_async.main import AsyncTemplate
+from e2b.template_sync.main import Template
 from e2b.volume.volume_async import AsyncVolume
 from e2b.volume.volume_sync import Volume
 
@@ -25,10 +27,10 @@ class E2B:
     E2B client with an explicitly bound connection configuration.
 
     The resource classes exposed by the client (`Sandbox`, `AsyncSandbox`,
-    `Volume`, `AsyncVolume`) behave exactly like the top-level `Sandbox` /
-    `AsyncSandbox` / `Volume` / `AsyncVolume` exports, except the params passed
-    to the client are used as the defaults instead of the environment
-    variables. Per-call params still take precedence over the client's params.
+    `Volume`, `AsyncVolume`, `Template`, `AsyncTemplate`) behave exactly like
+    the top-level exports of the same name, except the params passed to the
+    client are used as the defaults instead of the environment variables.
+    Per-call params still take precedence over the client's params.
 
     Multiple clients are fully isolated from each other and from the top-level
     env-configured exports.
@@ -41,6 +43,7 @@ class E2B:
 
     sandbox = client.Sandbox.create()
     volumes = client.Volume.list()
+    exists = client.Template.exists("my-template")
     ```
     """
 
@@ -66,6 +69,12 @@ class E2B:
 
         self.AsyncVolume = _bind(AsyncVolume, api_params)
         """`AsyncVolume` class bound to this client's connection configuration."""
+
+        self.Template = _bind(Template, api_params)
+        """`Template` class bound to this client's connection configuration."""
+
+        self.AsyncTemplate = _bind(AsyncTemplate, api_params)
+        """`AsyncTemplate` class bound to this client's connection configuration."""
 
         self.Secret: Type[Secret] = Secret
         """`Secret` class. Secrets are resolved inside the sandbox, so there is

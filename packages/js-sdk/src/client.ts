@@ -1,16 +1,17 @@
 import { ConnectionOpts } from './connectionConfig'
 import { Sandbox } from './sandbox'
 import { Secret } from './secret'
+import { createBoundTemplate, Template } from './template'
 import { Volume } from './volume'
 
 /**
  * E2B client with an explicitly bound connection configuration.
  *
- * The resource classes exposed by the client ({@link E2B.Sandbox},
- * {@link E2B.Volume}) behave exactly like the top-level `Sandbox` / `Volume`
- * exports, except the options passed to the client are used as the defaults
- * instead of the environment variables. Per-call options still take precedence
- * over the client's options.
+ * The resources exposed by the client ({@link E2B.Sandbox},
+ * {@link E2B.Volume}, {@link E2B.Template}) behave exactly like the top-level
+ * `Sandbox` / `Volume` / `Template` exports, except the options passed to the
+ * client are used as the defaults instead of the environment variables.
+ * Per-call options still take precedence over the client's options.
  *
  * Multiple clients are fully isolated from each other and from the top-level
  * env-configured exports.
@@ -23,6 +24,7 @@ import { Volume } from './volume'
  *
  * const sandbox = await client.Sandbox.create()
  * const volumes = await client.Volume.list()
+ * await client.Template.build(client.Template().fromPythonImage('3'), 'my-env')
  * ```
  */
 export class E2B {
@@ -35,6 +37,14 @@ export class E2B {
    * `Volume` class bound to this client's connection configuration.
    */
   readonly Volume: typeof Volume
+
+  /**
+   * `Template` builder factory bound to this client's connection
+   * configuration. Both `client.Template()` and the statics
+   * (`client.Template.build(...)`, `client.Template.exists(...)`, …) work like
+   * the top-level `Template`.
+   */
+  readonly Template: typeof Template
 
   /**
    * `Secret` class. Secrets are resolved inside the sandbox, so there is no
@@ -60,5 +70,7 @@ export class E2B {
     this.Volume = class extends Volume {
       protected static override readonly boundOpts = boundOpts
     }
+
+    this.Template = createBoundTemplate(boundOpts)
   }
 }

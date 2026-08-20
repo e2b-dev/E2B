@@ -2,7 +2,14 @@ import { afterAll, afterEach, assert, beforeAll, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
-import DefaultExport, { E2B, Sandbox, Secret, Volume } from '../src'
+import DefaultExport, {
+  E2B,
+  Sandbox,
+  Secret,
+  Template,
+  TemplateBase,
+  Volume,
+} from '../src'
 import { TEST_API_KEY } from './setup'
 
 const API_KEY_A = `e2b_${'a'.repeat(40)}`
@@ -56,6 +63,14 @@ const server = setupServer(
     })
   }),
   http.get(/\/volumes$/, ({ request }) => {
+    record(request)
+    return HttpResponse.json([])
+  }),
+  http.get(/\/templates\/aliases\/[^/]+$/, ({ request }) => {
+    record(request)
+    return HttpResponse.json({ aliases: [], templateID: 'test-template-id' })
+  }),
+  http.get(/\/templates\/[^/]+\/tags$/, ({ request }) => {
     record(request)
     return HttpResponse.json([])
   })
@@ -185,6 +200,57 @@ test('client.Volume.create uses the client config', async () => {
   assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/volumes`)
 })
 
+test('client.Template statics use the client config', async () => {
+  const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
+
+  await client.Template.exists('test-template')
+  await client.Template.getTags('test-template-id')
+
+  for (const request of requests) {
+    expect(request.url).toContain(`api.${DOMAIN_A}`)
+    assert.equal(request.apiKey, API_KEY_A)
+  }
+
+  // Per-call options still win.
+  await client.Template.getTags('test-template-id', {
+    apiKey: API_KEY_B,
+    domain: DOMAIN_B,
+  })
+  assert.equal(
+    lastRequest().url,
+    `https://api.${DOMAIN_B}/templates/test-template-id/tags`
+  )
+  assert.equal(lastRequest().apiKey, API_KEY_B)
+})
+
+test('client.Template builds template instances', async () => {
+  const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
+  const template = client.Template().fromPythonImage('3')
+
+  assert.instanceOf(template, TemplateBase)
+  assert.equal(
+    await client.Template.toDockerfile(template),
+    await Template.toDockerfile(Template().fromPythonImage('3'))
+  )
+
+  // The default file context is the caller's directory, not the SDK's.
+  const withCopy = client.Template().fromBaseImage().copy('setup.ts', '/app/')
+  await client.Template.toJSON(withCopy)
+})
+
+test('client.Template statics can be rebound to a variable', async () => {
+  const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
+  const { exists } = client.Template
+
+  await exists('test-template')
+
+  assert.equal(
+    lastRequest().url,
+    `https://api.${DOMAIN_A}/templates/aliases/test-template`
+  )
+  assert.equal(lastRequest().apiKey, API_KEY_A)
+})
+
 test('client.Secret is the top-level Secret class', () => {
   const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
 
@@ -205,7 +271,20 @@ test('top-level exports keep using the environment configuration', async () => {
   assert.equal(lastRequest().url, `https://api.${DOMAIN_ENV}/volumes`)
   assert.equal(lastRequest().apiKey, TEST_API_KEY)
 
-  assert.equal(DefaultExport, Sandbox)
-  await DefaultExport.create()
-  assert.equal(lastRequest().url, `https://api.${DOMAIN_ENV}/sandboxes`)
+  await Template.exists('test-template')
+  assert.equal(
+    lastRequest().url,
+    `https://api.${DOMAIN_ENV}/templates/aliases/test-template`
+  )
+  assert.equal(lastRequest().apiKey, TEST_API_KEY)
+})
+
+test('the default export is the E2B client', async () => {
+  assert.equal(DefaultExport, E2B)
+
+  const client = new DefaultExport({ apiKey: API_KEY_A, domain: DOMAIN_A })
+  await client.Sandbox.create()
+
+  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/sandboxes`)
+  assert.equal(lastRequest().apiKey, API_KEY_A)
 })

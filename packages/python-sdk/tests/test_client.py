@@ -9,9 +9,11 @@ import pytest
 from e2b import (
     E2B,
     AsyncSandbox,
+    AsyncTemplate,
     AsyncVolume,
     Sandbox,
     Secret,
+    Template,
     Volume,
 )
 
@@ -65,6 +67,13 @@ class _Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path.startswith("/volumes"):
+            self._record_and_respond(200, [])
+        elif self.path.startswith("/templates/aliases/"):
+            self._record_and_respond(
+                200,
+                {"aliases": [], "templateID": "tmpl-test", "public": False},
+            )
+        elif self.path.startswith("/templates/"):
             self._record_and_respond(200, [])
         else:
             self._record_and_respond(404, {"code": 404, "message": "not found"})
@@ -190,6 +199,40 @@ def test_async_client_volume_uses_client_config(api_server):
     assert api_keys() == [API_KEY_A, API_KEY_A]
 
 
+def test_client_template_uses_client_config(api_server):
+    client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
+
+    assert issubclass(client.Template, Template)
+    assert client.Template.exists("tmpl") is True
+    client.Template.get_tags("tmpl-test")
+
+    assert api_keys() == [API_KEY_A, API_KEY_A]
+    # Per-call params still win.
+    client.Template.get_tags("tmpl-test", api_key=API_KEY_B)
+    assert api_keys()[-1] == API_KEY_B
+
+
+def test_client_template_builder_is_usable(api_server):
+    client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
+
+    template = client.Template().from_python_image("3")
+
+    assert client.Template.to_dockerfile(template) == Template.to_dockerfile(
+        Template().from_python_image("3")
+    )
+
+
+def test_async_client_template_uses_client_config(api_server):
+    client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
+
+    async def run():
+        return await client.AsyncTemplate.exists("tmpl")
+
+    assert issubclass(client.AsyncTemplate, AsyncTemplate)
+    assert asyncio.run(run()) is True
+    assert api_keys() == [API_KEY_A]
+
+
 def test_client_secret_is_the_top_level_class(api_server):
     client = E2B(api_key=API_KEY_A, api_url=api_server)
 
@@ -207,6 +250,11 @@ def test_top_level_classes_keep_using_the_env_config(api_server):
     assert AsyncSandbox._bound_api_params == {}
     assert Volume._bound_api_params == {}
     assert AsyncVolume._bound_api_params == {}
+    assert Template._bound_api_params == {}
+    assert AsyncTemplate._bound_api_params == {}
+
+    assert Template.exists("tmpl", api_url=api_server) is True
+    assert api_keys()[-1] == ENV_API_KEY
 
 
 def test_client_params_are_copied(api_server):

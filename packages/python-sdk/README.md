@@ -44,7 +44,7 @@ with Sandbox.create() as sandbox:
 
 ### 4. Bind the configuration to a client
 
-The top-level `Sandbox`, `AsyncSandbox`, `Volume`, `AsyncVolume` and `Secret` exports read their configuration from the environment variables. To use an explicit configuration — e.g. several API keys or domains in one process — create an `E2B` client and use the resource classes it exposes:
+The top-level `Sandbox`, `AsyncSandbox`, `Volume`, `AsyncVolume`, `Template`, `AsyncTemplate` and `Secret` exports read their configuration from the environment variables. To use an explicit configuration — e.g. several API keys or domains in one process — create an `E2B` client and use the resource classes it exposes:
 
 ```py
 from e2b import E2B
@@ -53,6 +53,7 @@ client = E2B(api_key="e2b_***", domain="e2b.dev")
 
 sandbox = client.Sandbox.create()
 volume = client.Volume.create("my-volume")
+exists = client.Template.exists("my-template")
 
 # The async variants are exposed as well.
 async_sandbox = await client.AsyncSandbox.create()
