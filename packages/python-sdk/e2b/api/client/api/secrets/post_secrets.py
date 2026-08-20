@@ -6,20 +6,20 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
-from ...models.new_sandbox import NewSandbox
-from ...models.sandbox import Sandbox
+from ...models.new_secret import NewSecret
+from ...models.secret import Secret
 from ...types import Response
 
 
 def _get_kwargs(
     *,
-    body: NewSandbox,
+    body: NewSecret,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     _kwargs: dict[str, Any] = {
         "method": "post",
-        "url": "/sandboxes",
+        "url": "/secrets",
     }
 
     _kwargs["json"] = body.to_dict()
@@ -32,9 +32,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[Error, Sandbox]]:
+) -> Optional[Union[Error, Secret]]:
     if response.status_code == 201:
-        response_201 = Sandbox.from_dict(response.json())
+        response_201 = Secret.from_dict(response.json())
 
         return response_201
     if response.status_code == 400:
@@ -45,14 +45,30 @@ def _parse_response(
         response_401 = Error.from_dict(response.json())
 
         return response_401
+    if response.status_code == 403:
+        response_403 = Error.from_dict(response.json())
+
+        return response_403
+    if response.status_code == 404:
+        response_404 = Error.from_dict(response.json())
+
+        return response_404
+    if response.status_code == 409:
+        response_409 = Error.from_dict(response.json())
+
+        return response_409
+    if response.status_code == 429:
+        response_429 = Error.from_dict(response.json())
+
+        return response_429
     if response.status_code == 500:
         response_500 = Error.from_dict(response.json())
 
         return response_500
-    if response.status_code == 503:
-        response_503 = Error.from_dict(response.json())
+    if response.status_code == 502:
+        response_502 = Error.from_dict(response.json())
 
-        return response_503
+        return response_502
     if response.status_code == 504:
         response_504 = Error.from_dict(response.json())
 
@@ -65,7 +81,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Error, Sandbox]]:
+) -> Response[Union[Error, Secret]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -77,21 +93,22 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient,
-    body: NewSandbox,
-) -> Response[Union[Error, Sandbox]]:
-    """Create sandbox
+    body: NewSecret,
+) -> Response[Union[Error, Secret]]:
+    """Create a secret
 
-     Create a sandbox from the template
+     Create a secret by storing a runtime marker as its first version. The response carries metadata
+    only.
 
     Args:
-        body (NewSandbox):
+        body (NewSecret):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, Sandbox]]
+        Response[Union[Error, Secret]]
     """
 
     kwargs = _get_kwargs(
@@ -108,21 +125,22 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient,
-    body: NewSandbox,
-) -> Optional[Union[Error, Sandbox]]:
-    """Create sandbox
+    body: NewSecret,
+) -> Optional[Union[Error, Secret]]:
+    """Create a secret
 
-     Create a sandbox from the template
+     Create a secret by storing a runtime marker as its first version. The response carries metadata
+    only.
 
     Args:
-        body (NewSandbox):
+        body (NewSecret):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, Sandbox]
+        Union[Error, Secret]
     """
 
     return sync_detailed(
@@ -134,21 +152,22 @@ def sync(
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
-    body: NewSandbox,
-) -> Response[Union[Error, Sandbox]]:
-    """Create sandbox
+    body: NewSecret,
+) -> Response[Union[Error, Secret]]:
+    """Create a secret
 
-     Create a sandbox from the template
+     Create a secret by storing a runtime marker as its first version. The response carries metadata
+    only.
 
     Args:
-        body (NewSandbox):
+        body (NewSecret):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, Sandbox]]
+        Response[Union[Error, Secret]]
     """
 
     kwargs = _get_kwargs(
@@ -163,21 +182,22 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient,
-    body: NewSandbox,
-) -> Optional[Union[Error, Sandbox]]:
-    """Create sandbox
+    body: NewSecret,
+) -> Optional[Union[Error, Secret]]:
+    """Create a secret
 
-     Create a sandbox from the template
+     Create a secret by storing a runtime marker as its first version. The response carries metadata
+    only.
 
     Args:
-        body (NewSandbox):
+        body (NewSecret):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, Sandbox]
+        Union[Error, Secret]
     """
 
     return (

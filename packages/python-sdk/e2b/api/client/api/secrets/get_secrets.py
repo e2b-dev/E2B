@@ -6,38 +6,44 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
-from ...models.resumed_sandbox import ResumedSandbox
-from ...models.sandbox import Sandbox
-from ...types import Response
+from ...models.secret import Secret
+from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
-    sandbox_id: str,
     *,
-    body: ResumedSandbox,
+    next_token: Union[Unset, str] = UNSET,
+    limit: Union[Unset, int] = 100,
 ) -> dict[str, Any]:
-    headers: dict[str, Any] = {}
+    params: dict[str, Any] = {}
+
+    params["nextToken"] = next_token
+
+    params["limit"] = limit
+
+    params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
     _kwargs: dict[str, Any] = {
-        "method": "post",
-        "url": f"/sandboxes/{sandbox_id}/resume",
+        "method": "get",
+        "url": "/secrets",
+        "params": params,
     }
 
-    _kwargs["json"] = body.to_dict()
-
-    headers["Content-Type"] = "application/json"
-
-    _kwargs["headers"] = headers
     return _kwargs
 
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[Error, Sandbox]]:
-    if response.status_code == 201:
-        response_201 = Sandbox.from_dict(response.json())
+) -> Optional[Union[Error, list["Secret"]]]:
+    if response.status_code == 200:
+        response_200 = []
+        _response_200 = response.json()
+        for response_200_item_data in _response_200:
+            response_200_item = Secret.from_dict(response_200_item_data)
 
-        return response_201
+            response_200.append(response_200_item)
+
+        return response_200
     if response.status_code == 400:
         response_400 = Error.from_dict(response.json())
 
@@ -46,6 +52,10 @@ def _parse_response(
         response_401 = Error.from_dict(response.json())
 
         return response_401
+    if response.status_code == 403:
+        response_403 = Error.from_dict(response.json())
+
+        return response_403
     if response.status_code == 404:
         response_404 = Error.from_dict(response.json())
 
@@ -54,14 +64,18 @@ def _parse_response(
         response_409 = Error.from_dict(response.json())
 
         return response_409
+    if response.status_code == 429:
+        response_429 = Error.from_dict(response.json())
+
+        return response_429
     if response.status_code == 500:
         response_500 = Error.from_dict(response.json())
 
         return response_500
-    if response.status_code == 503:
-        response_503 = Error.from_dict(response.json())
+    if response.status_code == 502:
+        response_502 = Error.from_dict(response.json())
 
-        return response_503
+        return response_502
     if response.status_code == 504:
         response_504 = Error.from_dict(response.json())
 
@@ -74,7 +88,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Error, Sandbox]]:
+) -> Response[Union[Error, list["Secret"]]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -84,30 +98,30 @@ def _build_response(
 
 
 def sync_detailed(
-    sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: ResumedSandbox,
-) -> Response[Union[Error, Sandbox]]:
-    """Resume sandbox
+    next_token: Union[Unset, str] = UNSET,
+    limit: Union[Unset, int] = 100,
+) -> Response[Union[Error, list["Secret"]]]:
+    """List project secrets
 
-     Resume the sandbox
+     List the project's secrets. No response carries a secret value.
 
     Args:
-        sandbox_id (str):
-        body (ResumedSandbox):
+        next_token (Union[Unset, str]):
+        limit (Union[Unset, int]):  Default: 100.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, Sandbox]]
+        Response[Union[Error, list['Secret']]]
     """
 
     kwargs = _get_kwargs(
-        sandbox_id=sandbox_id,
-        body=body,
+        next_token=next_token,
+        limit=limit,
     )
 
     response = client.get_httpx_client().request(
@@ -118,59 +132,59 @@ def sync_detailed(
 
 
 def sync(
-    sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: ResumedSandbox,
-) -> Optional[Union[Error, Sandbox]]:
-    """Resume sandbox
+    next_token: Union[Unset, str] = UNSET,
+    limit: Union[Unset, int] = 100,
+) -> Optional[Union[Error, list["Secret"]]]:
+    """List project secrets
 
-     Resume the sandbox
+     List the project's secrets. No response carries a secret value.
 
     Args:
-        sandbox_id (str):
-        body (ResumedSandbox):
+        next_token (Union[Unset, str]):
+        limit (Union[Unset, int]):  Default: 100.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, Sandbox]
+        Union[Error, list['Secret']]
     """
 
     return sync_detailed(
-        sandbox_id=sandbox_id,
         client=client,
-        body=body,
+        next_token=next_token,
+        limit=limit,
     ).parsed
 
 
 async def asyncio_detailed(
-    sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: ResumedSandbox,
-) -> Response[Union[Error, Sandbox]]:
-    """Resume sandbox
+    next_token: Union[Unset, str] = UNSET,
+    limit: Union[Unset, int] = 100,
+) -> Response[Union[Error, list["Secret"]]]:
+    """List project secrets
 
-     Resume the sandbox
+     List the project's secrets. No response carries a secret value.
 
     Args:
-        sandbox_id (str):
-        body (ResumedSandbox):
+        next_token (Union[Unset, str]):
+        limit (Union[Unset, int]):  Default: 100.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, Sandbox]]
+        Response[Union[Error, list['Secret']]]
     """
 
     kwargs = _get_kwargs(
-        sandbox_id=sandbox_id,
-        body=body,
+        next_token=next_token,
+        limit=limit,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -179,31 +193,31 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: ResumedSandbox,
-) -> Optional[Union[Error, Sandbox]]:
-    """Resume sandbox
+    next_token: Union[Unset, str] = UNSET,
+    limit: Union[Unset, int] = 100,
+) -> Optional[Union[Error, list["Secret"]]]:
+    """List project secrets
 
-     Resume the sandbox
+     List the project's secrets. No response carries a secret value.
 
     Args:
-        sandbox_id (str):
-        body (ResumedSandbox):
+        next_token (Union[Unset, str]):
+        limit (Union[Unset, int]):  Default: 100.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, Sandbox]
+        Union[Error, list['Secret']]
     """
 
     return (
         await asyncio_detailed(
-            sandbox_id=sandbox_id,
             client=client,
-            body=body,
+            next_token=next_token,
+            limit=limit,
         )
     ).parsed

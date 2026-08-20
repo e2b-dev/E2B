@@ -29,6 +29,7 @@ from .max_team_metric import MaxTeamMetric
 from .mcp_type_0 import McpType0
 from .new_access_token import NewAccessToken
 from .new_sandbox import NewSandbox
+from .new_secret import NewSecret
 from .new_team_api_key import NewTeamAPIKey
 from .new_volume import NewVolume
 from .node import Node
@@ -36,6 +37,7 @@ from .node_detail import NodeDetail
 from .node_metrics import NodeMetrics
 from .node_status import NodeStatus
 from .node_status_change import NodeStatusChange
+from .order_direction import OrderDirection
 from .resumed_sandbox import ResumedSandbox
 from .sandbox import Sandbox
 from .sandbox_auto_resume_config import SandboxAutoResumeConfig
@@ -68,6 +70,9 @@ from .sandbox_state import SandboxState
 from .sandbox_timeout_request import SandboxTimeoutRequest
 from .sandbox_volume_mount import SandboxVolumeMount
 from .sandboxes_with_metrics import SandboxesWithMetrics
+from .secret import Secret
+from .secret_metadata import SecretMetadata
+from .secret_update import SecretUpdate
 from .snapshot_info import SnapshotInfo
 from .team import Team
 from .team_api_key import TeamAPIKey
@@ -126,6 +131,7 @@ __all__ = (
     "McpType0",
     "NewAccessToken",
     "NewSandbox",
+    "NewSecret",
     "NewTeamAPIKey",
     "NewVolume",
     "Node",
@@ -133,6 +139,7 @@ __all__ = (
     "NodeMetrics",
     "NodeStatus",
     "NodeStatusChange",
+    "OrderDirection",
     "ResumedSandbox",
     "Sandbox",
     "SandboxAutoResumeConfig",
@@ -165,6 +172,9 @@ __all__ = (
     "SandboxState",
     "SandboxTimeoutRequest",
     "SandboxVolumeMount",
+    "Secret",
+    "SecretMetadata",
+    "SecretUpdate",
     "SnapshotInfo",
     "Team",
     "TeamAPIKey",
