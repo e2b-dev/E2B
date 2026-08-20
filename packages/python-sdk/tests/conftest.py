@@ -2,14 +2,21 @@ import asyncio
 import os
 import random
 import string
+from http import HTTPStatus
 from typing import Callable, Dict, Optional
+from uuid import uuid4
 
+import attrs
 import httpx
 import pytest
 import pytest_asyncio
 
+import e2b.api.client.api.volumes.delete_volumes_volume_id as delete_volume_mod
+import e2b.api.client.api.volumes.post_volumes as post_volumes_mod
 import e2b.volume.volume_async as volume_async_mod
 import e2b.volume.volume_sync as volume_sync_mod
+from e2b.api.client.models.volume_and_token import VolumeAndToken
+from e2b.api.client.types import Response
 from mock_volume_content import MockVolumeContentAPI
 
 from e2b import (
@@ -258,14 +265,12 @@ def _generate_random_string(length: int = 8) -> str:
 
 
 def _mock_volume_transport(monkeypatch, module, transport: httpx.MockTransport):
-    # The mock transport rides in `httpx_args` rather than via
-    # `set_httpx_client` so it survives `with_timeout` (attrs' `evolve`
-    # keeps init fields like `httpx_args` but drops a manually set client).
+    # The mock transport rides in `httpx_args` (an init field, rebuilt with
+    # `attrs.evolve` rather than mutated) so it survives `with_timeout`.
     def wrap(real_factory):
         def factory(config, **kwargs):
             client = real_factory(config, **kwargs)
-            client._httpx_args = {**client._httpx_args, "transport": transport}
-            return client
+            return attrs.evolve(client, httpx_args={"transport": transport})
 
         return factory
 
@@ -275,27 +280,56 @@ def _mock_volume_transport(monkeypatch, module, transport: httpx.MockTransport):
         monkeypatch.setattr(module, name, wrap(getattr(module, name)))
 
 
+def _mock_volume_crud(monkeypatch, detailed_attr: str):
+    """Mock the control-plane create/destroy calls the volume fixtures use."""
+
+    def post_volumes(*, client, body):
+        vol = VolumeAndToken(
+            volume_id=str(uuid4()), name=body.name, token=f"vol-token-{uuid4()}"
+        )
+        return Response(
+            status_code=HTTPStatus(201), content=b"", headers={}, parsed=vol
+        )
+
+    def delete_volume(volume_id, *, client):
+        return Response(
+            status_code=HTTPStatus(204), content=b"", headers={}, parsed=None
+        )
+
+    if detailed_attr == "asyncio_detailed":
+
+        async def async_post_volumes(*, client, body):
+            return post_volumes(client=client, body=body)
+
+        async def async_delete_volume(volume_id, *, client):
+            return delete_volume(volume_id, client=client)
+
+        monkeypatch.setattr(post_volumes_mod, detailed_attr, async_post_volumes)
+        monkeypatch.setattr(delete_volume_mod, detailed_attr, async_delete_volume)
+    else:
+        monkeypatch.setattr(post_volumes_mod, detailed_attr, post_volumes)
+        monkeypatch.setattr(delete_volume_mod, detailed_attr, delete_volume)
+
+
 @pytest.fixture
-def volume(monkeypatch) -> Volume:
+def volume(request, monkeypatch, test_api_key) -> Volume:
+    monkeypatch.setenv("E2B_API_KEY", test_api_key)
     mock = MockVolumeContentAPI()
     _mock_volume_transport(
         monkeypatch, volume_sync_mod, httpx.MockTransport(mock.handler)
     )
-    return Volume(
-        volume_id=f"test-vol-{_generate_random_string()}",
-        name="test-volume",
-        token="vol-token",
-    )
+    _mock_volume_crud(monkeypatch, "sync_detailed")
+    vol = Volume.create(f"test-vol-{_generate_random_string()}")
+    request.addfinalizer(lambda: Volume.destroy(vol.volume_id))
+    return vol
 
 
-@pytest.fixture
-def async_volume(monkeypatch) -> AsyncVolume:
+@pytest_asyncio.fixture
+async def async_volume(request, monkeypatch, test_api_key) -> AsyncVolume:
+    monkeypatch.setenv("E2B_API_KEY", test_api_key)
     mock = MockVolumeContentAPI()
     _mock_volume_transport(
         monkeypatch, volume_async_mod, httpx.MockTransport(mock.async_handler)
     )
-    return AsyncVolume(
-        volume_id=f"test-vol-{_generate_random_string()}",
-        name="test-volume",
-        token="vol-token",
-    )
+    _mock_volume_crud(monkeypatch, "asyncio_detailed")
+    return await AsyncVolume.create(f"test-vol-{_generate_random_string()}")

@@ -1,18 +1,17 @@
-import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect } from 'vitest'
 import { setupServer } from 'msw/node'
 
 import { NotFoundError, VolumeError, VolumeFileType } from '../../src'
 import { volumeTest } from '../setup'
-import { mockVolumeApiHandlers, resetMockVolumeApi } from './mockVolumeContent'
+import { createMockVolumeApi } from './mockVolumeContent'
 
-const server = setupServer(...mockVolumeApiHandlers)
+const server = setupServer()
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 afterAll(() => server.close())
-afterEach(() => {
-  server.resetHandlers()
-  resetMockVolumeApi()
-})
+// A fresh mock per test gives isolated state (same as the per-fixture
+// MockVolumeContentAPI in the Python SDK tests).
+beforeEach(() => server.resetHandlers(...createMockVolumeApi()))
 
 describe('Volume File Operations', () => {
   describe('writeFile and readFile', () => {

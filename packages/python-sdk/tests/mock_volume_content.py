@@ -12,6 +12,8 @@ from typing import Dict, Optional
 
 import httpx
 
+from e2b.volume.types import VolumeFileType
+
 DEFAULT_FILE_MODE = 0o644
 DEFAULT_DIR_MODE = 0o755
 
@@ -19,7 +21,7 @@ DEFAULT_DIR_MODE = 0o755
 @dataclass
 class _Entry:
     name: str
-    type: str  # "file" | "directory"
+    type: VolumeFileType
     path: str
     uid: int = 0
     gid: int = 0
@@ -64,7 +66,12 @@ class MockVolumeContentAPI:
 
     def __init__(self):
         self.entries: Dict[str, _Entry] = {
-            "/": _Entry(name="/", type="directory", path="/", mode=DEFAULT_DIR_MODE)
+            "/": _Entry(
+                name="/",
+                type=VolumeFileType.DIRECTORY,
+                path="/",
+                mode=DEFAULT_DIR_MODE,
+            )
         }
 
     def handler(self, request: httpx.Request) -> httpx.Response:
@@ -119,7 +126,7 @@ class MockVolumeContentAPI:
 
     def _read_file(self, path: str) -> httpx.Response:
         entry = self.entries.get(path)
-        if entry is None or entry.type != "file":
+        if entry is None or entry.type != VolumeFileType.FILE:
             return _error(404, f"Path {path} not found")
         return httpx.Response(
             200,
@@ -132,18 +139,18 @@ class MockVolumeContentAPI:
     ) -> httpx.Response:
         existing = self.entries.get(path)
         if existing is not None:
-            if existing.type != "file":
+            if existing.type != VolumeFileType.FILE:
                 return _error(409, f"Path {path} is a directory")
             if not self._bool_param(params, "force"):
                 return _error(409, f"Path {path} already exists")
 
         parent = self.entries.get(posixpath.dirname(path))
-        if parent is None or parent.type != "directory":
+        if parent is None or parent.type != VolumeFileType.DIRECTORY:
             return _error(404, f"Path {path} not found")
 
         entry = _Entry(
             name=posixpath.basename(path),
-            type="file",
+            type=VolumeFileType.FILE,
             path=path,
             uid=self._int_param(params, "uid") or 0,
             gid=self._int_param(params, "gid") or 0,
@@ -157,7 +164,7 @@ class MockVolumeContentAPI:
         force = self._bool_param(params, "force")
         existing = self.entries.get(path)
         if existing is not None:
-            if not force or existing.type != "directory":
+            if not force or existing.type != VolumeFileType.DIRECTORY:
                 return _error(409, f"Path {path} already exists")
             return httpx.Response(201, json=existing.stat())
 
@@ -166,13 +173,15 @@ class MockVolumeContentAPI:
         if parent is None:
             if not force:
                 return _error(404, f"Path {parent_path} not found")
-            self._make_dir(parent_path, params)
-        elif parent.type != "directory":
+            res = self._make_dir(parent_path, params)
+            if res.status_code >= 400:
+                return res
+        elif parent.type != VolumeFileType.DIRECTORY:
             return _error(409, f"Path {parent_path} is not a directory")
 
         entry = _Entry(
             name=posixpath.basename(path),
-            type="directory",
+            type=VolumeFileType.DIRECTORY,
             path=path,
             uid=self._int_param(params, "uid") or 0,
             gid=self._int_param(params, "gid") or 0,
@@ -183,7 +192,7 @@ class MockVolumeContentAPI:
 
     def _list_dir(self, path: str) -> httpx.Response:
         entry = self.entries.get(path)
-        if entry is None or entry.type != "directory":
+        if entry is None or entry.type != VolumeFileType.DIRECTORY:
             return _error(404, f"Path {path} not found")
         prefix = "/" if path == "/" else path + "/"
         children = [

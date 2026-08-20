@@ -119,7 +119,11 @@ export const volumeTest = base.extend<VolumeFixture>({
   volume: [
     // eslint-disable-next-line no-empty-pattern
     async ({}, use) => {
-      const volume = await Volume.create(`test-vol-${generateRandomString()}`)
+      // The placeholder key keeps the mocked volume tests independent of
+      // E2B_API_KEY being set in the environment.
+      const volume = await Volume.create(`test-vol-${generateRandomString()}`, {
+        apiKey: process.env.E2B_API_KEY ?? TEST_API_KEY,
+      })
       onTestFailed(() => {
         console.error(`\n[TEST FAILED] Volume ID: ${volume.volumeId}`)
       })
@@ -127,7 +131,9 @@ export const volumeTest = base.extend<VolumeFixture>({
         await use(volume)
       } finally {
         try {
-          await Volume.destroy(volume.volumeId)
+          await Volume.destroy(volume.volumeId, {
+            apiKey: process.env.E2B_API_KEY ?? TEST_API_KEY,
+          })
         } catch {
           // Ignore cleanup errors
         }
