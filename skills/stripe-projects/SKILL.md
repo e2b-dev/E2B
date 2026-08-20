@@ -106,7 +106,7 @@ e2b sandbox exec <sandbox_id> -- bash -lc 'ls -la /tmp'
 Use `Sandbox.create()` with `E2B_API_KEY` for a fresh sandbox:
 
 ```ts
-import { Sandbox } from 'e2b'
+import Sandbox from 'e2b'
 
 const sandbox = await Sandbox.create('base')
 const result = await sandbox.commands.run('echo "hello from e2b"')
@@ -124,7 +124,7 @@ const sandbox = await Sandbox.create('base', {
 Use `Sandbox.connect()` when a CLI step already created the sandbox:
 
 ```ts
-import { Sandbox } from 'e2b'
+import Sandbox from 'e2b'
 
 const sandbox = await Sandbox.connect(process.env.SANDBOX_ID!)
 const result = await sandbox.commands.run('cat important_file.md')
