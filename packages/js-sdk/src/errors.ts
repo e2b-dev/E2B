@@ -174,3 +174,13 @@ export class VolumeError extends Error {
     this.name = 'VolumeError'
   }
 }
+
+/**
+ * Thrown when a volume is not found.
+ */
+export class VolumeNotFoundError extends NotFoundError {
+  constructor(message: string) {
+    super(message)
+    this.name = 'VolumeNotFoundError'
+  }
+}

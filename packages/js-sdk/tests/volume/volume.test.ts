@@ -3,7 +3,12 @@ import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import { randomUUID } from 'node:crypto'
 
-import { Volume, NotFoundError, VolumeError } from '../../src'
+import {
+  Volume,
+  NotFoundError,
+  VolumeError,
+  VolumeNotFoundError,
+} from '../../src'
 import { VolumeConnectionConfig } from '../../src/volume/client'
 import { runtime } from '../../src/utils'
 import { apiUrl } from '../setup'
@@ -140,10 +145,10 @@ describe('Volume CRUD', () => {
     expect(result).toBe(false)
   })
 
-  it('should throw NotFoundError when getting info of non-existent volume', async () => {
-    await expect(Volume.getInfo('non-existent-id')).rejects.toThrow(
-      NotFoundError
-    )
+  it('should throw VolumeNotFoundError when getting info of non-existent volume', async () => {
+    const err = await Volume.getInfo('non-existent-id').catch((err) => err)
+    expect(err).toBeInstanceOf(VolumeNotFoundError)
+    expect(err).toBeInstanceOf(NotFoundError)
   })
 
   it('should throw VolumeError for a non-2xx response without content', async () => {

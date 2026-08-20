@@ -131,3 +131,9 @@ class VolumeException(Exception):
 
     Raised when general volume errors occur.
     """
+
+
+class VolumeNotFoundException(NotFoundException):
+    """
+    Raised when a volume is not found.
+    """

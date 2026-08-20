@@ -13,7 +13,7 @@ import {
   wrapStreamWithConnectionCleanup,
 } from '../connectionConfig'
 import { isArrayBufferLike, isBlobLike } from '../is'
-import { NotFoundError, VolumeError } from '../errors'
+import { NotFoundError, VolumeError, VolumeNotFoundError } from '../errors'
 import { toUploadBody } from '../utils'
 import { VolumeFileType } from './types'
 import type {
@@ -190,7 +190,7 @@ export class Volume {
     })
 
     if (res.response.status === 404) {
-      throw new NotFoundError(`Volume ${volumeId} not found`)
+      throw new VolumeNotFoundError(`Volume ${volumeId} not found`)
     }
 
     const err = handleApiError(res, VolumeError)
