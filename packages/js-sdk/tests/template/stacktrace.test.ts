@@ -19,6 +19,8 @@ const failureMap: Record<string, number | undefined> = {
   fromImageRegistry: 0,
   fromAWSRegistry: 0,
   fromGCPRegistry: 0,
+  copy: undefined,
+  copyItems: undefined,
   // multi-source copy produces two COPY instructions (steps 1 and 2),
   // the runCmd after it is step 3
   multiSourceCopySecondSource: 2,
@@ -38,6 +40,7 @@ const failureMap: Record<string, number | undefined> = {
   aptInstall: 1,
   gitClone: 1,
   setStartCmd: 1,
+  addMcpServer: undefined,
   betaDevContainerPrebuild: 1,
   betaSetDevContainerStart: 1,
 }
@@ -201,6 +204,31 @@ buildTemplateTest('traces on fromGCPRegistry', async ({ buildTemplate }) => {
   }, 'fromGCPRegistry')
 })
 
+buildTemplateTest('traces on fromImage credentials', async () => {
+  await expectToThrowAndCheckTrace(async () => {
+    // @ts-expect-error - testing runtime validation with partial credentials
+    Template().fromImage('ubuntu:22.04', { username: 'user' })
+  }, 'fromImage')
+})
+
+buildTemplateTest('traces on copy', async ({ buildTemplate }) => {
+  let template = Template().fromBaseImage()
+  template = template.skipCache().copy(nonExistentPath, nonExistentPath)
+  await expectToThrowAndCheckTrace(async () => {
+    await buildTemplate(template, { name: 'copy' })
+  }, 'copy')
+})
+
+buildTemplateTest('traces on copyItems', async ({ buildTemplate }) => {
+  let template = Template().fromBaseImage()
+  template = template
+    .skipCache()
+    .copyItems([{ src: nonExistentPath, dest: nonExistentPath }])
+  await expectToThrowAndCheckTrace(async () => {
+    await buildTemplate(template, { name: 'copyItems' })
+  }, 'copyItems')
+})
+
 buildTemplateTest(
   'traces on second source of multi-source copy',
   async ({ buildTemplate }) => {
@@ -254,6 +282,20 @@ buildTemplateTest(
     }, 'runCmd')
   }
 )
+
+buildTemplateTest('traces on copy absolute path', async () => {
+  await expectToThrowAndCheckTrace(async () => {
+    Template().fromBaseImage().copy('/absolute/path', '/absolute/path')
+  }, 'copy')
+})
+
+buildTemplateTest('traces on copyItems absolute path', async () => {
+  await expectToThrowAndCheckTrace(async () => {
+    Template()
+      .fromBaseImage()
+      .copyItems([{ src: '/absolute/path', dest: '/absolute/path' }])
+  }, 'copyItems')
+})
 
 buildTemplateTest('traces on remove', async ({ buildTemplate }) => {
   let template = Template().fromBaseImage()
@@ -362,6 +404,13 @@ buildTemplateTest('traces on setStartCmd', async ({ buildTemplate }) => {
   await expectToThrowAndCheckTrace(async () => {
     await buildTemplate(template, { name: 'setStartCmd' })
   }, 'setStartCmd')
+})
+
+buildTemplateTest('traces on addMcpServer', async () => {
+  // needs mcp-gateway as base template, without it no mcp servers can be added
+  await expectToThrowAndCheckTrace(async () => {
+    Template().fromBaseImage().skipCache().addMcpServer('exa')
+  }, 'addMcpServer')
 })
 
 buildTemplateTest(

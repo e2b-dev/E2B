@@ -21,6 +21,8 @@ failure_map: dict[str, Optional[int]] = {
     "from_image_registry": 0,
     "from_aws_registry": 0,
     "from_gcp_registry": 0,
+    "copy": None,
+    "copy_items": None,
     # multi-source copy produces two COPY instructions (steps 1 and 2),
     # the run_cmd after it is step 3
     "multi_source_copy_second_source": 2,
@@ -179,6 +181,26 @@ def test_traces_on_from_gcp_registry(build):
     )
     _expect_to_throw_and_check_trace(
         lambda: build(template, name="from_gcp_registry"), "from_gcp_registry"
+    )
+
+
+@pytest.mark.skip_debug()
+def test_traces_on_copy(build):
+    template = Template()
+    template = template.from_base_image()
+    template = template.skip_cache().copy(non_existent_path, non_existent_path)
+    _expect_to_throw_and_check_trace(lambda: build(template, name="copy"), "copy")
+
+
+@pytest.mark.skip_debug()
+def test_traces_on_copyItems(build):
+    template = Template()
+    template = template.from_base_image()
+    template = template.skip_cache().copy_items(
+        [CopyItem(src=non_existent_path, dest=non_existent_path)]
+    )
+    _expect_to_throw_and_check_trace(
+        lambda: build(template, name="copy_items"), "copy_items"
     )
 
 

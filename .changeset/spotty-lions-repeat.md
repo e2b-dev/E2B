@@ -3,4 +3,4 @@
 '@e2b/python-sdk': patch
 ---
 
-Only build errors carry user-code stack traces; validation, API, and file upload errors now use ordinary stacks from where they are thrown
+Scope user-code stack trace attachment to template and build code: generic error classes and API error helpers no longer accept caller stack traces; template/build call sites attach them explicitly instead.

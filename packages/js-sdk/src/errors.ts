@@ -154,8 +154,8 @@ export class BuildError extends Error {
  * Thrown when the file upload fails.
  */
 export class FileUploadError extends BuildError {
-  constructor(message: string) {
-    super(message)
+  constructor(message: string, stackTrace?: string) {
+    super(message, stackTrace)
     this.name = 'FileUploadError'
   }
 }

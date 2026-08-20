@@ -493,9 +493,14 @@ export class TemplateBase
   ): TemplateBuilder {
     // Validate before mutating the builder.
     if (credentials && (!credentials.username || !credentials.password)) {
-      throw new InvalidArgumentError(
+      const error = new InvalidArgumentError(
         'Both username and password are required when providing registry credentials'
       )
+      const stackTrace = getCallerFrame()
+      if (stackTrace) {
+        error.stack = stackTrace
+      }
+      throw error
     }
 
     this.baseImage = baseImage
@@ -619,12 +624,13 @@ export class TemplateBase
     }
 
     const srcs = Array.isArray(src) ? src : [src]
+    const stackTrace = getCallerFrame()
 
     for (const src of srcs) {
       const srcString = src.toString()
 
       // Validate that the source path is a relative path within the context directory
-      validateRelativePath(srcString)
+      validateRelativePath(srcString, stackTrace)
 
       const args = [
         srcString,
@@ -655,14 +661,23 @@ export class TemplateBase
       throw new Error('Browser runtime is not supported for copyItems')
     }
 
+    // Stack trace that will be used to re-throw the error with
+    const stackTrace = getCallerFrame()
+
     for (const item of items) {
-      this.copy(item.src, item.dest, {
-        forceUpload: item.forceUpload,
-        user: item.user,
-        mode: item.mode,
-        resolveSymlinks: item.resolveSymlinks,
-        gzip: item.gzip,
-      })
+      try {
+        this.copy(item.src, item.dest, {
+          forceUpload: item.forceUpload,
+          user: item.user,
+          mode: item.mode,
+          resolveSymlinks: item.resolveSymlinks,
+          gzip: item.gzip,
+        })
+      } catch (error) {
+        const copyError = error as Error
+        copyError.stack = stackTrace
+        throw copyError
+      }
     }
 
     return this
@@ -864,7 +879,8 @@ export class TemplateBase
   addMcpServer(servers: McpServerName | McpServerName[]): TemplateBuilder {
     if (this.baseTemplate !== 'mcp-gateway') {
       throw new BuildError(
-        'MCP servers can only be added to mcp-gateway template'
+        'MCP servers can only be added to mcp-gateway template',
+        getCallerFrame()
       )
     }
 
@@ -943,7 +959,8 @@ export class TemplateBase
   betaDevContainerPrebuild(devcontainerDirectory: string): TemplateBuilder {
     if (this.baseTemplate !== 'devcontainer') {
       throw new BuildError(
-        'Devcontainers can only used in the devcontainer template'
+        'Devcontainers can only used in the devcontainer template',
+        getCallerFrame()
       )
     }
 
@@ -956,7 +973,8 @@ export class TemplateBase
   betaSetDevContainerStart(devcontainerDirectory: string): TemplateFinal {
     if (this.baseTemplate !== 'devcontainer') {
       throw new BuildError(
-        'Devcontainers can only used in the devcontainer template'
+        'Devcontainers can only used in the devcontainer template',
+        getCallerFrame()
       )
     }
 
@@ -1098,62 +1116,74 @@ export class TemplateBase
     const instructionsWithHashes = await this.instructionsWithHashes()
 
     // Upload files in parallel
-    const uploadPromises = instructionsWithHashes.map(async (instruction) => {
-      if (instruction.type !== InstructionType.COPY) {
-        return
-      }
+    const uploadPromises = instructionsWithHashes.map(
+      async (instruction, index) => {
+        if (instruction.type !== InstructionType.COPY) {
+          return
+        }
 
-      const src = instruction.args.length > 0 ? instruction.args[0] : null
-      const filesHash = instruction.filesHash ?? null
-      if (src === null || filesHash === null) {
-        throw new Error('Source path and files hash are required')
-      }
+        const src = instruction.args.length > 0 ? instruction.args[0] : null
+        const filesHash = instruction.filesHash ?? null
+        if (src === null || filesHash === null) {
+          throw new Error('Source path and files hash are required')
+        }
 
-      const forceUpload = instruction.forceUpload
-      const { present, url } = await getFileUploadLink(
-        client,
-        {
-          templateID,
-          filesHash,
-        },
-        config.getSignal(undefined, options.signal)
-      )
+        const forceUpload = instruction.forceUpload
+        let stackTrace = undefined
+        if (index + 1 >= 0 && index + 1 < this.stackTraces.length) {
+          stackTrace = this.stackTraces[index + 1]
+        }
 
-      if ((forceUpload && url != null) || (present === false && url != null)) {
-        await uploadFile(
+        const { present, url } = await getFileUploadLink(
+          client,
           {
-            fileName: src,
-            fileContextPath: this.fileContextPath.toString(),
-            url,
-            ignorePatterns: [
-              ...this.fileIgnorePatterns,
-              ...readDockerignore(this.fileContextPath.toString()),
-            ],
-            resolveSymlinks: instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
-            gzip: instruction.gzip ?? GZIP,
+            templateID,
+            filesHash,
           },
-          // Forward `requestTimeoutMs` only when the caller set it — we
-          // never want to slap the 60s default on a multi-hundred-MB S3
-          // upload, but a user-set per-build timeout should govern the
-          // whole operation, including uploads.
-          {
-            signal: options.signal,
-            requestTimeoutMs: options.requestTimeoutMs,
-          }
+          stackTrace,
+          config.getSignal(undefined, options.signal)
         )
-        options.onBuildLogs?.(
-          new LogEntry(new Date(), 'info', `Uploaded '${src}'`)
-        )
-      } else {
-        options.onBuildLogs?.(
-          new LogEntry(
-            new Date(),
-            'info',
-            `Skipping upload of '${src}', already cached`
+
+        if (
+          (forceUpload && url != null) ||
+          (present === false && url != null)
+        ) {
+          await uploadFile(
+            {
+              fileName: src,
+              fileContextPath: this.fileContextPath.toString(),
+              url,
+              ignorePatterns: [
+                ...this.fileIgnorePatterns,
+                ...readDockerignore(this.fileContextPath.toString()),
+              ],
+              resolveSymlinks: instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
+              gzip: instruction.gzip ?? GZIP,
+            },
+            stackTrace,
+            // Forward `requestTimeoutMs` only when the caller set it — we
+            // never want to slap the 60s default on a multi-hundred-MB S3
+            // upload, but a user-set per-build timeout should govern the
+            // whole operation, including uploads.
+            {
+              signal: options.signal,
+              requestTimeoutMs: options.requestTimeoutMs,
+            }
           )
-        )
+          options.onBuildLogs?.(
+            new LogEntry(new Date(), 'info', `Uploaded '${src}'`)
+          )
+        } else {
+          options.onBuildLogs?.(
+            new LogEntry(
+              new Date(),
+              'info',
+              `Skipping upload of '${src}', already cached`
+            )
+          )
+        }
       }
-    })
+    )
 
     await Promise.all(uploadPromises)
 
@@ -1192,7 +1222,7 @@ export class TemplateBase
    */
   private async instructionsWithHashes(): Promise<Instruction[]> {
     return Promise.all(
-      this.instructions.map(async (instruction) => {
+      this.instructions.map(async (instruction, index) => {
         if (instruction.type !== InstructionType.COPY) {
           return instruction
         }
@@ -1201,6 +1231,11 @@ export class TemplateBase
         const dest = instruction.args.length > 1 ? instruction.args[1] : null
         if (src === null || dest === null) {
           throw new Error('Source path and destination path are required')
+        }
+
+        let stackTrace = undefined
+        if (index + 1 >= 0 && index + 1 < this.stackTraces.length) {
+          stackTrace = this.stackTraces[index + 1]
         }
 
         return {
@@ -1215,7 +1250,8 @@ export class TemplateBase
                 ? []
                 : readDockerignore(this.fileContextPath.toString())),
             ],
-            instruction.resolveSymlinks ?? RESOLVE_SYMLINKS
+            instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
+            stackTrace
           ),
         }
       })

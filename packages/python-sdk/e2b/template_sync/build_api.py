@@ -76,6 +76,7 @@ def get_file_upload_link(
     client: AuthenticatedClient,
     template_id: str,
     files_hash: str,
+    stack_trace: Optional[TracebackType] = None,
 ) -> TemplateBuildFileUpload:
     res = get_templates_template_id_files_hash.sync_detailed(
         template_id=encode_path_param(template_id),
@@ -84,13 +85,17 @@ def get_file_upload_link(
     )
 
     if res.status_code >= 300:
-        raise handle_api_exception(res, FileUploadException)
+        raise handle_api_exception(res, FileUploadException).with_traceback(stack_trace)
 
     if isinstance(res.parsed, Error):
-        raise FileUploadException(f"API error: {res.parsed.message}")
+        raise FileUploadException(f"API error: {res.parsed.message}").with_traceback(
+            stack_trace
+        )
 
     if res.parsed is None:
-        raise FileUploadException("Failed to get file upload link")
+        raise FileUploadException("Failed to get file upload link").with_traceback(
+            stack_trace
+        )
 
     return res.parsed
 
@@ -103,6 +108,7 @@ def upload_file(
     ignore_patterns: List[str],
     resolve_symlinks: bool,
     gzip: bool,
+    stack_trace: Optional[TracebackType],
     request_timeout: Optional[float] = None,
 ):
     # Uploading a large build-context archive can take far longer than the 60s
@@ -153,9 +159,13 @@ def upload_file(
             except Exception:
                 pass
     except httpx.HTTPStatusError as e:
-        raise FileUploadException(f"Failed to upload file: {e}")
+        raise FileUploadException(f"Failed to upload file: {e}").with_traceback(
+            stack_trace
+        )
     except Exception as e:
-        raise FileUploadException(f"Failed to upload file: {e}")
+        raise FileUploadException(f"Failed to upload file: {e}").with_traceback(
+            stack_trace
+        )
 
 
 def trigger_build(

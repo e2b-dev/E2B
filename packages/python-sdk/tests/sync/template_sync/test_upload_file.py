@@ -72,6 +72,7 @@ def test_upload_file_sets_content_length_and_no_chunked_encoding(tmp_path):
             ignore_patterns=[],
             resolve_symlinks=False,
             gzip=True,
+            stack_trace=None,
         )
     finally:
         server.shutdown()
@@ -113,6 +114,7 @@ def test_upload_file_leaves_redirects_to_httpx(tmp_path):
                 ignore_patterns=[],
                 resolve_symlinks=False,
                 gzip=True,
+                stack_trace=None,
             )
     finally:
         server.shutdown()
@@ -153,6 +155,7 @@ def _capture_upload_timeout(tmp_path, request_timeout=None):
                 ignore_patterns=[],
                 resolve_symlinks=False,
                 gzip=True,
+                stack_trace=None,
                 **kwargs,
             )
     finally:
@@ -225,6 +228,7 @@ def test_upload_file_ignores_post_upload_close_failure(tmp_path):
                 ignore_patterns=[],
                 resolve_symlinks=False,
                 gzip=True,
+                stack_trace=None,
             )
     finally:
         server.shutdown()

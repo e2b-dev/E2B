@@ -16,6 +16,7 @@ import type { BuildOptions } from './types'
  * files are copied from within the expected directory.
  *
  * @param src The source path to validate
+ * @param stackTrace Optional stack trace for error reporting
  * @throws TemplateError if the path is absolute or escapes the context directory
  *
  * Invalid paths:
@@ -27,12 +28,19 @@ import type { BuildOptions } from './types'
  * - Current directory prefix: ./foo, ./foo/bar
  * - Internal parent refs that don't escape: foo/../bar (stays within context)
  */
-export function validateRelativePath(src: string): void {
+export function validateRelativePath(
+  src: string,
+  stackTrace: string | undefined
+): void {
   // Check for absolute paths using Node's cross-platform implementation
   if (path.isAbsolute(src)) {
-    throw new TemplateError(
+    const error = new TemplateError(
       `Invalid source path "${src}": absolute paths are not allowed. Use a relative path within the context directory.`
     )
+    if (stackTrace) {
+      error.stack = stackTrace
+    }
+    throw error
   }
 
   // Normalize the path and check if it escapes the context directory
@@ -50,9 +58,13 @@ export function validateRelativePath(src: string): void {
   const escapes = normalized === '..' || normalized.startsWith('..' + path.sep)
 
   if (escapes) {
-    throw new TemplateError(
+    const error = new TemplateError(
       `Invalid source path "${src}": path escapes the context directory. The path must stay within the context directory.`
     )
+    if (stackTrace) {
+      error.stack = stackTrace
+    }
+    throw error
   }
 }
 
@@ -188,6 +200,7 @@ export async function getAllFilesInPath(
  * @param contextPath Base directory for resolving relative paths
  * @param ignorePatterns Glob patterns to ignore
  * @param resolveSymlinks Whether to resolve symbolic links when hashing
+ * @param stackTrace Optional stack trace for error reporting
  * @returns Hex string hash of all files
  * @throws Error if no files match the source pattern
  */
@@ -196,7 +209,8 @@ export async function calculateFilesHash(
   dest: string,
   contextPath: string,
   ignorePatterns: string[],
-  resolveSymlinks: boolean
+  resolveSymlinks: boolean,
+  stackTrace: string | undefined
 ): Promise<string> {
   const srcPath = path.join(contextPath, src)
   const hash = crypto.createHash('sha256')
@@ -207,7 +221,11 @@ export async function calculateFilesHash(
   const files = await getAllFilesInPath(src, contextPath, ignorePatterns, true)
 
   if (files.length === 0) {
-    throw new Error(`No files found in ${srcPath}`)
+    const error = new Error(`No files found in ${srcPath}`)
+    if (stackTrace) {
+      error.stack = stackTrace
+    }
+    throw error
   }
 
   // Hash stats - only include stable metadata (mode, size)
