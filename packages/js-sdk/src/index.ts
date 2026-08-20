@@ -23,6 +23,8 @@ export {
   BuildError,
   FileUploadError,
   VolumeError,
+  VolumeNotFoundError,
+  VolumePathNotFoundError,
 } from './errors'
 export type { Logger } from './logs'
 
