@@ -121,3 +121,26 @@ def test_build_resolves_build_impl_and_config_off_cls(configs, monkeypatch):
     mock_build.assert_called_once()
     assert configs[0].api_key == BOUND_API_KEY
     assert configs[0].domain == BOUND_DOMAIN
+
+
+def test_bound_request_timeout_reaches_the_build(configs, monkeypatch):
+    class TimeoutTemplate(Template):
+        _bound_api_params: ApiParams = {
+            "api_key": BOUND_API_KEY,
+            "request_timeout": 12.5,
+        }
+
+    mock_build = Mock(
+        return_value=BuildInfo(
+            template_id="template-id",
+            build_id="build-id",
+            alias="my-template",
+            name="my-template",
+            tags=[],
+        )
+    )
+    monkeypatch.setattr(TimeoutTemplate, "_build", staticmethod(mock_build))
+
+    TimeoutTemplate.build_in_background(Template().from_base_image(), "my-template")
+
+    assert mock_build.call_args.kwargs["request_timeout"] == 12.5

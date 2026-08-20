@@ -141,3 +141,29 @@ async def test_build_resolves_build_impl_and_config_off_cls(configs, monkeypatch
     mock_build.assert_awaited_once()
     assert configs[0].api_key == BOUND_API_KEY
     assert configs[0].domain == BOUND_DOMAIN
+
+
+@pytest.mark.asyncio
+async def test_bound_request_timeout_reaches_the_build(configs, monkeypatch):
+    class TimeoutAsyncTemplate(AsyncTemplate):
+        _bound_api_params: ApiParams = {
+            "api_key": BOUND_API_KEY,
+            "request_timeout": 12.5,
+        }
+
+    mock_build = AsyncMock(
+        return_value=BuildInfo(
+            template_id="template-id",
+            build_id="build-id",
+            alias="my-template",
+            name="my-template",
+            tags=[],
+        )
+    )
+    monkeypatch.setattr(TimeoutAsyncTemplate, "_build", staticmethod(mock_build))
+
+    await TimeoutAsyncTemplate.build_in_background(
+        Template().from_base_image(), "my-template"
+    )
+
+    assert mock_build.call_args.kwargs["request_timeout"] == 12.5

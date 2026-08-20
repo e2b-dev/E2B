@@ -57,24 +57,30 @@ export class TemplateBase
 {
   /**
    * Connection options bound to this class, used as defaults for every
-   * operation that talks to the API. Empty here, so the config comes from
+   * operation that talks to the API. Undefined here, so the config comes from
    * per-call options and environment variables; per-client subclasses bind
    * their own options.
+   *
+   * @internal
+   * @hidden
+   * @hide
    */
-  protected static boundConnectionOpts: ConnectionOpts = {}
+  protected static readonly boundOpts?: Omit<ConnectionOpts, 'signal'>
 
   /**
-   * Resolve the connection config for an API operation, layering per-call
-   * options over the options bound to the class.
+   * Layer per-call options over the options bound to the class. Per-call
+   * options explicitly set to `undefined` don't clear the bound ones.
+   *
+   * @internal
+   * @hidden
+   * @hide
    */
-  protected static resolveConnectionConfig(
-    opts?: ConnectionOpts
-  ): ConnectionConfig {
+  protected static resolveOpts<T extends ConnectionOpts>(opts?: T): T {
     const perCallOpts = Object.fromEntries(
       Object.entries(opts ?? {}).filter(([, value]) => value !== undefined)
     )
 
-    return new ConnectionConfig({ ...this.boundConnectionOpts, ...perCallOpts })
+    return { ...this.boundOpts, ...perCallOpts } as T
   }
 
   private defaultBaseImage: string = 'e2bdev/base'
@@ -180,32 +186,34 @@ export class TemplateBase
       options
     )
 
+    const buildOpts = this.resolveOpts(buildOptions)
+
     try {
-      buildOptions.onBuildLogs?.(new LogEntryStart(new Date(), 'Build started'))
+      buildOpts.onBuildLogs?.(new LogEntryStart(new Date(), 'Build started'))
       const baseTemplate = template as TemplateBase
 
-      const config = this.resolveConnectionConfig(buildOptions)
+      const config = new ConnectionConfig(buildOpts)
       const client = new ApiClient(config)
 
-      const data = await baseTemplate.build(client, config, name, buildOptions)
+      const data = await baseTemplate.build(client, config, name, buildOpts)
 
-      buildOptions.onBuildLogs?.(
+      buildOpts.onBuildLogs?.(
         new LogEntry(new Date(), 'info', 'Waiting for logs...')
       )
 
       await waitForBuildFinish(client, {
         templateID: data.templateId,
         buildID: data.buildId,
-        onBuildLogs: buildOptions.onBuildLogs,
+        onBuildLogs: buildOpts.onBuildLogs,
         logsRefreshFrequency: baseTemplate.logsRefreshFrequency,
         stackTraces: baseTemplate.stackTraces,
-        signal: buildOptions.signal,
+        signal: buildOpts.signal,
         requestTimeoutMs: config.requestTimeoutMs,
       })
 
       return data
     } finally {
-      buildOptions.onBuildLogs?.(new LogEntryEnd(new Date(), 'Build finished'))
+      buildOpts.onBuildLogs?.(new LogEntryEnd(new Date(), 'Build finished'))
     }
   }
 
@@ -262,10 +270,11 @@ export class TemplateBase
       options
     )
 
-    const config = this.resolveConnectionConfig(buildOptions)
+    const buildOpts = this.resolveOpts(buildOptions)
+    const config = new ConnectionConfig(buildOpts)
     const client = new ApiClient(config)
 
-    return (template as TemplateBase).build(client, config, name, buildOptions)
+    return (template as TemplateBase).build(client, config, name, buildOpts)
   }
 
   /**
@@ -283,7 +292,7 @@ export class TemplateBase
     data: Pick<BuildInfo, 'templateId' | 'buildId'>,
     options?: GetBuildStatusOptions
   ): Promise<TemplateBuildStatusResponse> {
-    const config = this.resolveConnectionConfig(options)
+    const config = new ConnectionConfig(this.resolveOpts(options))
     const client = new ApiClient(config)
 
     return await getBuildStatus(
@@ -339,7 +348,7 @@ export class TemplateBase
     alias: string,
     options?: ConnectionOpts
   ): Promise<boolean> {
-    const config = this.resolveConnectionConfig(options)
+    const config = new ConnectionConfig(this.resolveOpts(options))
     const client = new ApiClient(config)
 
     return checkAliasExists(
@@ -371,7 +380,7 @@ export class TemplateBase
     tags: string | string[],
     options?: ConnectionOpts
   ): Promise<TemplateTagInfo> {
-    const config = this.resolveConnectionConfig(options)
+    const config = new ConnectionConfig(this.resolveOpts(options))
     const client = new ApiClient(config)
     const normalizedTags = Array.isArray(tags) ? tags : [tags]
     return assignTags(
@@ -402,7 +411,7 @@ export class TemplateBase
     tags: string | string[],
     options?: ConnectionOpts
   ): Promise<void> {
-    const config = this.resolveConnectionConfig(options)
+    const config = new ConnectionConfig(this.resolveOpts(options))
     const client = new ApiClient(config)
     const normalizedTags = Array.isArray(tags) ? tags : [tags]
     return removeTags(
@@ -431,7 +440,7 @@ export class TemplateBase
     templateId: string,
     options?: ConnectionOpts
   ): Promise<TemplateTag[]> {
-    const config = this.resolveConnectionConfig(options)
+    const config = new ConnectionConfig(this.resolveOpts(options))
     const client = new ApiClient(config)
     return getTemplateTags(
       client,

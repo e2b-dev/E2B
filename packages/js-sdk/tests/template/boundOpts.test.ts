@@ -3,7 +3,7 @@ import { afterAll, afterEach, beforeAll, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
-import { Template, TemplateBase } from '../../src'
+import { BuildOptions, Template, TemplateBase } from '../../src'
 import { apiUrl, TEST_API_KEY } from '../setup'
 
 const BOUND_API_KEY = `e2b_${'1'.repeat(40)}`
@@ -11,7 +11,7 @@ const BOUND_DOMAIN = 'bound.example.com'
 
 /** Stands in for the per-client `client.Template` — same statics, bound config. */
 class BoundTemplate extends TemplateBase {
-  protected static boundConnectionOpts = {
+  protected static readonly boundOpts = {
     apiKey: BOUND_API_KEY,
     domain: BOUND_DOMAIN,
   }
@@ -137,4 +137,29 @@ test('undefined per-call options do not clear bound options', async () => {
   await BoundTemplate.getTags('my-template-id', { apiKey: undefined })
 
   expect(requests[0].apiKey).toBe(BOUND_API_KEY)
+})
+
+test('build options carry the bound options into the build', async () => {
+  class ProbeTemplate extends TemplateBase {
+    protected static readonly boundOpts = {
+      apiKey: BOUND_API_KEY,
+      requestTimeoutMs: 1234,
+    }
+
+    static probeBuildOpts(options?: BuildOptions) {
+      return this.resolveOpts(options)
+    }
+  }
+
+  // The whole merged object is handed to the build, so file uploads and the
+  // build-log polling see the bound request timeout too.
+  expect(ProbeTemplate.probeBuildOpts({ tags: ['v1.0'] })).toEqual({
+    apiKey: BOUND_API_KEY,
+    requestTimeoutMs: 1234,
+    tags: ['v1.0'],
+  })
+  expect(ProbeTemplate.probeBuildOpts({ requestTimeoutMs: 42 })).toEqual({
+    apiKey: BOUND_API_KEY,
+    requestTimeoutMs: 42,
+  })
 })

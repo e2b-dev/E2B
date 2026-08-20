@@ -4,7 +4,7 @@ from typing import Callable, List, Optional, Union
 from typing_extensions import Unpack
 
 from e2b.api.client.client import AuthenticatedClient
-from e2b.connection_config import ApiParams
+from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.template.consts import GZIP, RESOLVE_SYMLINKS
 from e2b.template.logger import LogEntry, LogEntryEnd, LogEntryStart
 from e2b.template.main import TemplateBase, TemplateClass
@@ -243,7 +243,8 @@ class AsyncTemplate(TemplateBase):
                     )
                 )
 
-            config = cls._resolve_connection_config(**opts)
+            api_params = cls._resolve_api_params(**opts)
+            config = ConnectionConfig(**api_params)
             api_client = get_api_client(
                 config,
             )
@@ -259,7 +260,7 @@ class AsyncTemplate(TemplateBase):
                 on_build_logs=on_build_logs,
                 # Only honor an explicitly set request_timeout for uploads;
                 # otherwise upload_file applies its 1-hour default.
-                request_timeout=opts.get("request_timeout"),
+                request_timeout=api_params.get("request_timeout"),
             )
 
             if on_build_logs:
@@ -336,7 +337,8 @@ class AsyncTemplate(TemplateBase):
         """
         name = normalize_build_arguments(name, alias)
 
-        config = cls._resolve_connection_config(**opts)
+        api_params = cls._resolve_api_params(**opts)
+        config = ConnectionConfig(**api_params)
         api_client = get_api_client(
             config,
         )
@@ -352,7 +354,7 @@ class AsyncTemplate(TemplateBase):
             on_build_logs=on_build_logs,
             # Only honor an explicitly set request_timeout for uploads;
             # otherwise upload_file applies its 1-hour default.
-            request_timeout=opts.get("request_timeout"),
+            request_timeout=api_params.get("request_timeout"),
         )
 
     @classmethod
@@ -377,7 +379,7 @@ class AsyncTemplate(TemplateBase):
         status = await AsyncTemplate.get_build_status(build_info, logs_offset=0)
         ```
         """
-        config = cls._resolve_connection_config(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
         api_client = get_api_client(
             config,
         )
@@ -435,7 +437,7 @@ class AsyncTemplate(TemplateBase):
             print('Template exists!')
         ```
         """
-        config = cls._resolve_connection_config(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
         api_client = get_api_client(
             config,
         )
@@ -467,7 +469,7 @@ class AsyncTemplate(TemplateBase):
         result = await AsyncTemplate.assign_tags('my-template:v1.0', ['production', 'stable'])
         ```
         """
-        config = cls._resolve_connection_config(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
         api_client = get_api_client(
             config,
         )
@@ -499,7 +501,7 @@ class AsyncTemplate(TemplateBase):
         await AsyncTemplate.remove_tags('my-template', ['production', 'stable'])
         ```
         """
-        config = cls._resolve_connection_config(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
         api_client = get_api_client(
             config,
         )
@@ -528,7 +530,7 @@ class AsyncTemplate(TemplateBase):
             print(f"Tag: {tag.tag}, Build: {tag.build_id}, Created: {tag.created_at}")
         ```
         """
-        config = cls._resolve_connection_config(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
         api_client = get_api_client(
             config,
         )

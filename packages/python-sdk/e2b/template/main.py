@@ -5,7 +5,7 @@ from pathlib import Path
 
 from typing_extensions import Unpack
 
-from e2b.connection_config import ApiParams, ConnectionConfig
+from e2b.connection_config import ApiParams
 from e2b.exceptions import BuildException, InvalidArgumentException
 from e2b.template.consts import RESOLVE_SYMLINKS
 from e2b.template.dockerfile_parser import parse_dockerfile
@@ -762,17 +762,21 @@ class TemplateBase:
     """API parameters bound to this class, used as defaults for every operation
     that talks to the API. Empty here, so the config comes from per-call
     parameters and environment variables; per-client subclasses bind their own.
+
+    :meta private:
     """
 
     @classmethod
-    def _resolve_connection_config(cls, **opts: Unpack[ApiParams]) -> ConnectionConfig:
+    def _resolve_api_params(cls, **opts: Unpack[ApiParams]) -> ApiParams:
         """
-        Resolve the connection config for an API operation, layering per-call
-        parameters over the parameters bound to the class.
+        Layer per-call API parameters over the parameters bound to the class.
+        Per-call parameters explicitly set to `None` don't clear the bound ones.
+
+        :meta private:
         """
         per_call_opts = {key: value for key, value in opts.items() if value is not None}
 
-        return ConnectionConfig(**{**cls._bound_api_params, **per_call_opts})
+        return {**cls._bound_api_params, **per_call_opts}
 
     def __init__(
         self,
