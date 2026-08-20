@@ -20,14 +20,14 @@ export type UndiciModule = {
   fetch: unknown
 }
 
-const UNDICI_8_MIN_NODE = '22.19.0'
+const UNDICI_MIN_NODE = '22.19.0'
 
 export function getUndiciPackageCandidates(nodeVersion: string): string[] {
-  if (compareVersions(nodeVersion, UNDICI_8_MIN_NODE) >= 0) {
-    return ['undici8', 'undici']
+  if (compareVersions(nodeVersion, UNDICI_MIN_NODE) >= 0) {
+    return ['undici']
   }
 
-  return ['undici']
+  return []
 }
 
 export async function loadUndici(): Promise<UndiciModule | undefined> {
@@ -35,7 +35,7 @@ export async function loadUndici(): Promise<UndiciModule | undefined> {
     try {
       return await dynamicImport<UndiciModule>(packageName)
     } catch {
-      // Try the next package supported by this Node version.
+      // Fall back to the capped global fetch when undici cannot load.
     }
   }
 
