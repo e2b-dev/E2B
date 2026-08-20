@@ -13,7 +13,7 @@ const INVALID_SECRET_NAME_CHARS = /[{}\p{Cc}]/u
 function validateSecretName(name: string): void {
   if (name.length === 0 || INVALID_SECRET_NAME_CHARS.test(name)) {
     throw new InvalidArgumentError(
-      `secret name ${JSON.stringify(name)} is not usable: a secret name cannot be empty or contain '{', '}' or control characters, because it is interpolated into the '\${e2b.secrets.<name>}' placeholder the runtime resolves.`
+      `secret name ${JSON.stringify(name)} is not usable: a secret name cannot be empty or contain '{', '}' or control characters, because it is interpolated into the '\${e2b.secrets.<name>}' marker the egress proxy resolves.`
     )
   }
 }
@@ -356,21 +356,37 @@ export class Secret {
   }
 
   /**
-   * Format a placeholder that the runtime resolves to the secret's current
-   * value.
+   * Format a marker referencing the secret by name, for use in a network
+   * rule's request transform. The egress proxy replaces the marker with the
+   * secret's current value each time it forwards a matching request, so the
+   * value never enters the sandbox.
    *
    * This is a local formatting helper and makes no network call — it does
-   * not check whether the named secret exists. An unknown reference fails
-   * server-side when the placeholder is resolved.
+   * not check whether the named secret exists. An unresolvable marker fails
+   * open: the request is still forwarded, but every header containing it is
+   * omitted.
    *
    * @param secret secret name.
    *
-   * @returns placeholder string resolving to the secret's value.
+   * @returns marker string the egress proxy resolves to the secret's value.
    *
    * @example
    * ```ts
-   * Secret.fill('openai-api-key')
-   * // '${e2b.secrets.openai-api-key}'
+   * const sandbox = await Sandbox.create({
+   *   network: {
+   *     rules: {
+   *       'api.stripe.com': [
+   *         {
+   *           transform: {
+   *             headers: {
+   *               Authorization: `Bearer ${Secret.fill('stripe_api_key')}`,
+   *             },
+   *           },
+   *         },
+   *       ],
+   *     },
+   *   },
+   * })
    * ```
    */
   static fill(secret: string): string {
