@@ -11,7 +11,7 @@ import { Volume } from './volume'
  * Same as {@link ConnectionOpts} without `signal`, which cancels a single
  * request and therefore can only be passed per call.
  */
-export type E2BOpts = Omit<ConnectionOpts, 'signal'>
+export type E2BClientOpts = Omit<ConnectionOpts, 'signal'>
 
 /**
  * E2B client with an explicitly bound connection configuration.
@@ -67,10 +67,10 @@ export class E2B {
    * @param opts connection options used as the defaults for every call made
    *   through this client's resource classes.
    */
-  constructor(opts?: E2BOpts) {
+  constructor(opts?: E2BClientOpts) {
     // Options are copied so later mutations of the caller's object cannot
     // change the bound configuration.
-    const boundOpts: E2BOpts = { ...(opts ?? {}) }
+    const boundOpts: E2BClientOpts = { ...(opts ?? {}) }
 
     this.Sandbox = class extends Sandbox {
       protected static override readonly boundOpts = boundOpts
