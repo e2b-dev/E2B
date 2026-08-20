@@ -2,7 +2,7 @@ import { Template } from '../../../src'
 import { buildTemplateTest } from '../../setup'
 
 buildTemplateTest('make symlink', async ({ buildTemplate }) => {
-  const template = new Template()
+  const template = Template()
     .fromImage('ubuntu:22.04')
     .skipCache()
     .makeSymlink('.bashrc', '.bashrc.local')
@@ -12,7 +12,7 @@ buildTemplateTest('make symlink', async ({ buildTemplate }) => {
 })
 
 buildTemplateTest('make symlink (force)', async ({ buildTemplate }) => {
-  const template = new Template()
+  const template = Template()
     .fromImage('ubuntu:22.04')
     .makeSymlink('.bashrc', '.bashrc.local')
     .skipCache()

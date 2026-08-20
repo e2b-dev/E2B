@@ -131,7 +131,7 @@ buildTemplateTest.skipIf(isDebug)(
     const initialTag = `${templateName}:v1-${randomUUID()}`
 
     // Build a template with initial tag
-    const template = new Template().fromBaseImage()
+    const template = Template().fromBaseImage()
     const buildInfo = await buildTemplate(template, { name: initialTag })
 
     expect(buildInfo.buildId).toBeTruthy()
@@ -156,7 +156,7 @@ buildTemplateTest.skipIf(isDebug)(
     const templateName = 'e2b-tags-test'
     const initialTag = `${templateName}:v1-${randomUUID()}`
 
-    const template = new Template().fromBaseImage()
+    const template = Template().fromBaseImage()
     await buildTemplate(template, { name: initialTag })
 
     // Assign single tag (just tag name, not full alias:tag format)
@@ -174,7 +174,7 @@ buildTemplateTest.skipIf(isDebug)(
     const templateName = 'e2b-tags-test'
     const initialTag = `${templateName}:v1-${randomUUID()}`
 
-    const template = new Template().fromBaseImage()
+    const template = Template().fromBaseImage()
     await buildTemplate(template, { name: initialTag })
 
     // Tag without alias (starts with colon) should be rejected
@@ -191,7 +191,7 @@ buildTemplateTest.skipIf(isDebug)(
     const templateName = 'e2b-tags-test'
     const initialTag = `${templateName}:v1-${randomUUID()}`
 
-    const template = new Template().fromBaseImage()
+    const template = Template().fromBaseImage()
     await buildTemplate(template, { name: initialTag })
 
     // Tag without tag portion (ends with colon) should be rejected

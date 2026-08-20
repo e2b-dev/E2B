@@ -3,14 +3,14 @@ import { afterAll, afterEach, beforeAll, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
-import { BuildOptions, Template } from '../../src'
+import { BuildOptions, Template, TemplateBase } from '../../src'
 import { apiUrl, TEST_API_KEY } from '../setup'
 
 const BOUND_API_KEY = `e2b_${'1'.repeat(40)}`
 const BOUND_DOMAIN = 'bound.example.com'
 
 /** Stands in for the per-client `client.Template` — same statics, bound config. */
-class BoundTemplate extends Template {
+class BoundTemplate extends TemplateBase {
   protected static readonly boundOpts = {
     apiKey: BOUND_API_KEY,
     domain: BOUND_DOMAIN,
@@ -93,13 +93,9 @@ test('top-level statics resolve config from per-call options', async () => {
   await Template.removeTags('my-template', 'production', {
     apiKey: TEST_API_KEY,
   })
-  await Template.buildInBackground(
-    new Template().fromBaseImage(),
-    'my-template',
-    {
-      apiKey: TEST_API_KEY,
-    }
-  )
+  await Template.buildInBackground(Template().fromBaseImage(), 'my-template', {
+    apiKey: TEST_API_KEY,
+  })
 
   expect(requests.length).toBe(6)
   for (const request of requests) {
@@ -115,7 +111,7 @@ test('subclass bound options are used as defaults', async () => {
   await BoundTemplate.assignTags('my-template:v1.0', 'production')
   await BoundTemplate.removeTags('my-template', 'production')
   await BoundTemplate.buildInBackground(
-    new Template().fromBaseImage(),
+    Template().fromBaseImage(),
     'my-template'
   )
 
@@ -144,7 +140,7 @@ test('undefined per-call options do not clear bound options', async () => {
 })
 
 test('build options carry the bound options into the build', async () => {
-  class ProbeTemplate extends Template {
+  class ProbeTemplate extends TemplateBase {
     protected static readonly boundOpts = {
       apiKey: BOUND_API_KEY,
       requestTimeoutMs: 1234,

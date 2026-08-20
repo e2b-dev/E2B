@@ -27,7 +27,7 @@ async function migrateToLanguage(
   nameOverride?: string
 ): Promise<void> {
   // Initialize template with file context
-  const template = new Template({
+  const template = Template({
     fileContextPath: root,
   })
 

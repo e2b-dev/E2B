@@ -115,7 +115,7 @@ export const createCommand = new commander.Command('create')
         )
 
         // Initialize template builder with file context and parse Dockerfile
-        const baseTemplate = new Template({
+        const baseTemplate = Template({
           fileContextPath: root,
         }).fromDockerfile(dockerfileContent)
 

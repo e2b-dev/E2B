@@ -51,8 +51,10 @@ import {
 
 /**
  * Builder for E2B sandbox templates, and the entrypoint for the template API.
+ *
+ * Exposed as {@link Template}, which can be called with or without `new`.
  */
-export class Template
+export class TemplateBase
   implements TemplateFromImage, TemplateBuilder, TemplateFinal
 {
   /**
@@ -118,7 +120,7 @@ export class Template
     template: TemplateClass,
     computeHashes: boolean = true
   ): Promise<string> {
-    return (template as Template).toJSON(computeHashes)
+    return (template as TemplateBase).toJSON(computeHashes)
   }
 
   /**
@@ -130,7 +132,7 @@ export class Template
    * @throws Error if the template is based on another E2B template
    */
   static toDockerfile(template: TemplateClass): string {
-    return (template as Template).toDockerfile()
+    return (template as TemplateBase).toDockerfile()
   }
 
   /**
@@ -190,7 +192,7 @@ export class Template
 
     try {
       buildOpts.onBuildLogs?.(new LogEntryStart(new Date(), 'Build started'))
-      const baseTemplate = template as Template
+      const baseTemplate = template as TemplateBase
 
       const config = new ConnectionConfig(buildOpts)
       const client = new ApiClient(config)
@@ -274,7 +276,7 @@ export class Template
     const config = new ConnectionConfig(buildOpts)
     const client = new ApiClient(config)
 
-    return (template as Template).build(client, config, name, buildOpts)
+    return (template as TemplateBase).build(client, config, name, buildOpts)
   }
 
   /**
@@ -1285,12 +1287,52 @@ export class Template
 }
 
 /**
- * Alias kept for backwards compatibility with the previous `TemplateBase`
- * export.
- *
- * @deprecated Use {@link Template} instead.
+ * A template class that can also be called without `new`.
  */
-export { Template as TemplateBase }
+export type CallableTemplate<T extends typeof TemplateBase> = T &
+  ((options?: TemplateOptions) => TemplateFromImage)
+
+/**
+ * Make a template class callable without `new`, so `Template(opts)` stays
+ * equivalent to `new Template(opts)`. Everything else — statics, `instanceof`,
+ * subclassing — goes straight to the class.
+ *
+ * @internal
+ * @hidden
+ * @hide
+ */
+export function callableTemplate<T extends typeof TemplateBase>(
+  cls: T
+): CallableTemplate<T> {
+  return new Proxy(cls, {
+    apply(target, _thisArg, args: [TemplateOptions?]) {
+      return new target(...args)
+    },
+  }) as CallableTemplate<T>
+}
+
+/**
+ * Builder and API entrypoint for E2B sandbox templates.
+ *
+ * `Template` is the {@link TemplateBase} class, wrapped so it can also be
+ * called as a factory: `Template()` and `new Template()` are equivalent, and
+ * the statics (`Template.build`, `Template.exists`, …) resolve their
+ * connection options off the class they are called on — so a subclass can bind
+ * its own defaults.
+ *
+ * @example
+ * ```ts
+ * import { Template } from 'e2b'
+ *
+ * const template = Template()
+ *   .fromPythonImage('3')
+ *   .copy('requirements.txt', '/app/')
+ *   .pipInstall()
+ *
+ * await Template.build(template, 'my-python-app:v1.0')
+ * ```
+ */
+export const Template = callableTemplate(TemplateBase)
 
 export type {
   BuildInfo,

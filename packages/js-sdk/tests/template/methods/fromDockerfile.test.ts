@@ -10,7 +10,7 @@ COPY package.json .
 RUN npm install
 ENTRYPOINT ["sleep", "20"]`
 
-  const template = new Template().fromDockerfile(dockerfile)
+  const template = Template().fromDockerfile(dockerfile)
 
   assert.equal(
     // @ts-expect-error - baseImage is not a property of TemplateBuilder
@@ -81,7 +81,7 @@ ENTRYPOINT ["sleep", "20"]`
 
 buildTemplateTest('fromDockerfile with default user and workdir', () => {
   const dockerfile = 'FROM node:24'
-  const template = new Template().fromDockerfile(dockerfile)
+  const template = Template().fromDockerfile(dockerfile)
 
   assert.equal(
     // @ts-expect-error - instructions is not a property of TemplateBuilder
@@ -107,7 +107,7 @@ buildTemplateTest('fromDockerfile with default user and workdir', () => {
 
 buildTemplateTest('fromDockerfile with custom user and workdir', () => {
   const dockerfile = 'FROM node:24\nUSER mish\nWORKDIR /home/mish'
-  const template = new Template().fromDockerfile(dockerfile)
+  const template = Template().fromDockerfile(dockerfile)
 
   assert.equal(
     // @ts-expect-error - instructions is not a property of TemplateBuilder
@@ -135,7 +135,7 @@ buildTemplateTest('fromDockerfile with multi-source COPY', () => {
   const dockerfile = `FROM node:24
 COPY file1.txt file2.txt file3.txt /dest/`
 
-  const template = new Template().fromDockerfile(dockerfile)
+  const template = Template().fromDockerfile(dockerfile)
 
   // After initial USER root and WORKDIR /, the multi-source COPY should
   // expand into one COPY instruction per source.
@@ -157,7 +157,7 @@ buildTemplateTest('fromDockerfile with multi-source COPY --chown', () => {
   const dockerfile = `FROM node:24
 COPY --chown=myuser:mygroup pkg.json pkg-lock.json /app/`
 
-  const template = new Template().fromDockerfile(dockerfile)
+  const template = Template().fromDockerfile(dockerfile)
 
   // @ts-expect-error - instructions is not a property of TemplateBuilder
   const copyInstructions = template.instructions.filter(
@@ -178,7 +178,7 @@ buildTemplateTest('fromDockerfile with COPY --chown', () => {
 COPY --chown=myuser:mygroup app.js /app/
 COPY --chown=anotheruser config.json /config/`
 
-  const template = new Template().fromDockerfile(dockerfile)
+  const template = Template().fromDockerfile(dockerfile)
 
   // First COPY instruction (after initial USER root and WORKDIR /)
   // @ts-expect-error - instructions is not a property of TemplateBuilder

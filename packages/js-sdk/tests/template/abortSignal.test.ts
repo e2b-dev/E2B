@@ -77,7 +77,7 @@ test('Template.build rejects when AbortSignal is aborted', async () => {
   const controller = new AbortController()
   const requestStarted = nextRequestStart()
 
-  const template = new Template().fromBaseImage()
+  const template = Template().fromBaseImage()
   const promise = Template.build(template, 'test-template', {
     apiKey: TEST_API_KEY,
     signal: controller.signal,
@@ -93,7 +93,7 @@ test('Template.build rejects immediately when signal is already aborted', async 
   const controller = new AbortController()
   controller.abort()
 
-  const template = new Template().fromBaseImage()
+  const template = Template().fromBaseImage()
   await expect(
     Template.build(template, 'test-template', {
       apiKey: TEST_API_KEY,
@@ -106,7 +106,7 @@ test('Template.buildInBackground rejects when AbortSignal is aborted', async () 
   const controller = new AbortController()
   const requestStarted = nextRequestStart()
 
-  const template = new Template().fromBaseImage()
+  const template = Template().fromBaseImage()
   const promise = Template.buildInBackground(template, 'test-template', {
     apiKey: TEST_API_KEY,
     signal: controller.signal,

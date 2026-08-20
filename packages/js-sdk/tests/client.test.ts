@@ -2,7 +2,14 @@ import { afterAll, afterEach, assert, beforeAll, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
-import DefaultExport, { E2B, Sandbox, Secret, Template, Volume } from '../src'
+import DefaultExport, {
+  E2B,
+  Sandbox,
+  Secret,
+  Template,
+  TemplateBase,
+  Volume,
+} from '../src'
 import { TEST_API_KEY } from './setup'
 
 const API_KEY_A = `e2b_${'a'.repeat(40)}`
@@ -218,13 +225,14 @@ test('client.Template statics use the client config', async () => {
 
 test('client.Template builds template instances', async () => {
   const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
-  const template = new client.Template().fromPythonImage('3')
+  const template = client.Template().fromPythonImage('3')
 
-  assert.instanceOf(template, Template)
+  assert.instanceOf(template, TemplateBase)
   assert.instanceOf(template, client.Template)
+  assert.instanceOf(new client.Template(), client.Template)
   assert.equal(
     await client.Template.toDockerfile(template),
-    await Template.toDockerfile(new Template().fromPythonImage('3'))
+    await Template.toDockerfile(Template().fromPythonImage('3'))
   )
 })
 
