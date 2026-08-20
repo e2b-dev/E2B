@@ -20,7 +20,7 @@ def _validate_secret_name(name: str) -> None:
             f"secret name {name!r} is not usable: a secret name must be a "
             "non-empty string and cannot contain '{', '}' or control "
             "characters, because it is interpolated into the "
-            "'${e2b.secrets.<name>}' marker the egress proxy resolves."
+            "'${e2b.secrets.<name>}' placeholder the runtime resolves."
         )
 
 
@@ -35,37 +35,21 @@ class SecretBase:
     @staticmethod
     def fill(secret: str) -> str:
         """
-        Format a marker referencing the secret by name, for use in a network
-        rule's request transform. The egress proxy replaces the marker with
-        the secret's current value each time it forwards a matching request,
-        so the value never enters the sandbox.
+        Format a placeholder that the runtime resolves to the secret's
+        current value.
 
         This is a local formatting helper and makes no network call — it does
-        not check whether the named secret exists. An unresolvable marker
-        fails open: the request is still forwarded, but every header
-        containing it is omitted.
+        not check whether the named secret exists. An unknown reference fails
+        server-side when the placeholder is resolved.
 
         :param secret: Secret name.
 
-        :return: Marker string the egress proxy resolves to the secret's value.
+        :return: Placeholder string resolving to the secret's value.
 
         Example:
         ```python
-        sandbox = Sandbox.create(
-            network={
-                "rules": {
-                    "api.stripe.com": [
-                        {
-                            "transform": {
-                                "headers": {
-                                    "Authorization": f"Bearer {Secret.fill('stripe_api_key')}",
-                                },
-                            },
-                        },
-                    ],
-                },
-            },
-        )
+        Secret.fill("openai-api-key")
+        # '${e2b.secrets.openai-api-key}'
         ```
         """
         _validate_secret_name(secret)
