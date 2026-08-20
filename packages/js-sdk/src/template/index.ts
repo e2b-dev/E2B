@@ -1098,67 +1098,62 @@ export class TemplateBase
     const instructionsWithHashes = await this.instructionsWithHashes()
 
     // Upload files in parallel
-    const uploadPromises = instructionsWithHashes.map(
-      async (instruction) => {
-        if (instruction.type !== InstructionType.COPY) {
-          return
-        }
-
-        const src = instruction.args.length > 0 ? instruction.args[0] : null
-        const filesHash = instruction.filesHash ?? null
-        if (src === null || filesHash === null) {
-          throw new Error('Source path and files hash are required')
-        }
-
-        const forceUpload = instruction.forceUpload
-        const { present, url } = await getFileUploadLink(
-          client,
-          {
-            templateID,
-            filesHash,
-          },
-          config.getSignal(undefined, options.signal)
-        )
-
-        if (
-          (forceUpload && url != null) ||
-          (present === false && url != null)
-        ) {
-          await uploadFile(
-            {
-              fileName: src,
-              fileContextPath: this.fileContextPath.toString(),
-              url,
-              ignorePatterns: [
-                ...this.fileIgnorePatterns,
-                ...readDockerignore(this.fileContextPath.toString()),
-              ],
-              resolveSymlinks: instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
-              gzip: instruction.gzip ?? GZIP,
-            },
-            // Forward `requestTimeoutMs` only when the caller set it — we
-            // never want to slap the 60s default on a multi-hundred-MB S3
-            // upload, but a user-set per-build timeout should govern the
-            // whole operation, including uploads.
-            {
-              signal: options.signal,
-              requestTimeoutMs: options.requestTimeoutMs,
-            }
-          )
-          options.onBuildLogs?.(
-            new LogEntry(new Date(), 'info', `Uploaded '${src}'`)
-          )
-        } else {
-          options.onBuildLogs?.(
-            new LogEntry(
-              new Date(),
-              'info',
-              `Skipping upload of '${src}', already cached`
-            )
-          )
-        }
+    const uploadPromises = instructionsWithHashes.map(async (instruction) => {
+      if (instruction.type !== InstructionType.COPY) {
+        return
       }
-    )
+
+      const src = instruction.args.length > 0 ? instruction.args[0] : null
+      const filesHash = instruction.filesHash ?? null
+      if (src === null || filesHash === null) {
+        throw new Error('Source path and files hash are required')
+      }
+
+      const forceUpload = instruction.forceUpload
+      const { present, url } = await getFileUploadLink(
+        client,
+        {
+          templateID,
+          filesHash,
+        },
+        config.getSignal(undefined, options.signal)
+      )
+
+      if ((forceUpload && url != null) || (present === false && url != null)) {
+        await uploadFile(
+          {
+            fileName: src,
+            fileContextPath: this.fileContextPath.toString(),
+            url,
+            ignorePatterns: [
+              ...this.fileIgnorePatterns,
+              ...readDockerignore(this.fileContextPath.toString()),
+            ],
+            resolveSymlinks: instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
+            gzip: instruction.gzip ?? GZIP,
+          },
+          // Forward `requestTimeoutMs` only when the caller set it — we
+          // never want to slap the 60s default on a multi-hundred-MB S3
+          // upload, but a user-set per-build timeout should govern the
+          // whole operation, including uploads.
+          {
+            signal: options.signal,
+            requestTimeoutMs: options.requestTimeoutMs,
+          }
+        )
+        options.onBuildLogs?.(
+          new LogEntry(new Date(), 'info', `Uploaded '${src}'`)
+        )
+      } else {
+        options.onBuildLogs?.(
+          new LogEntry(
+            new Date(),
+            'info',
+            `Skipping upload of '${src}', already cached`
+          )
+        )
+      }
+    })
 
     await Promise.all(uploadPromises)
 
