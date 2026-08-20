@@ -10,27 +10,28 @@ Nothing existing changes: `Template` is now the `TemplateBase` class made callab
 ```ts
 import { E2B } from 'e2b'
 
-const client = new E2B({ apiKey: 'e2b_***', domain: 'e2b.dev' })
+const { Sandbox, Volume, Template } = new E2B({
+  apiKey: 'e2b_***',
+  domain: 'e2b.dev',
+})
 
-const sandbox = await client.Sandbox.create()
-const volume = await client.Volume.create('my-volume')
-const exists = await client.Template.exists('my-template')
-await client.Template.build(client.Template().fromPythonImage('3'), 'my-env')
-
-// The classes can be destructured and used like the top-level ones.
-const { Sandbox } = client
-const paginator = Sandbox.list()
+const sandbox = await Sandbox.create()
+const volume = await Volume.create('my-volume')
+const exists = await Template.exists('my-template')
+await Template.build(Template().fromPythonImage('3'), 'my-env')
 ```
 
 ```python
 from e2b import E2B
 
 client = E2B(api_key="e2b_***", domain="e2b.dev")
+Sandbox, Volume, Template = client.Sandbox, client.Volume, client.Template
 
-sandbox = client.Sandbox.create()
-volume = client.Volume.create("my-volume")
-exists = client.Template.exists("my-template")
+sandbox = Sandbox.create()
+volume = Volume.create("my-volume")
+exists = Template.exists("my-template")
 
 # Async variants are exposed too.
-async_sandbox = await client.AsyncSandbox.create()
+AsyncSandbox = client.AsyncSandbox
+async_sandbox = await AsyncSandbox.create()
 ```
