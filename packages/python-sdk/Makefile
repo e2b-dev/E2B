@@ -9,8 +9,7 @@ generate-api:
 	ruff format .
 
 generate-volume-api:
-	redocly bundle volume --config $(ROOT_DIR)/redocly.yaml -o $(ROOT_DIR)/spec/openapi_generated.volume.yml
-	openapi-python-client generate --output-path $(ROOT_DIR)/packages/python-sdk/e2b/volume/api --overwrite --path $(ROOT_DIR)/spec/openapi_generated.volume.yml
+	openapi-python-client generate --output-path $(ROOT_DIR)/packages/python-sdk/e2b/volume/api --overwrite --path $(ROOT_DIR)/spec/openapi-volumecontent.yml
 	rm -rf e2b/volume/client
 	mv e2b/volume/api/e2b_api_client e2b/volume/client
 	rm -rf e2b/volume/api
