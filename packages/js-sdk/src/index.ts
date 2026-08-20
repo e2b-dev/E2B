@@ -144,9 +144,8 @@ export { Sandbox }
 import { Sandbox } from './sandbox'
 
 export { E2B } from './client'
-import { E2B } from './client'
 
-export default E2B
+export default Sandbox
 
 export * from './template'
 

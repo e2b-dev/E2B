@@ -52,7 +52,7 @@ import {
 /**
  * Builder for E2B sandbox templates, and the entrypoint for the template API.
  *
- * Exposed as {@link Template}, which can be called with or without `new`.
+ * Exposed as {@link Template}, which can be called as a factory.
  */
 export class TemplateBase
   implements TemplateFromImage, TemplateBuilder, TemplateFinal
@@ -144,7 +144,7 @@ export class TemplateBase
    *
    * @example
    * ```ts
-   * const template = new Template().fromPythonImage('3')
+   * const template = Template().fromPythonImage('3')
    *
    * // Build with single tag in name
    * await Template.build(template, 'my-python-env:v1.0')
@@ -228,7 +228,7 @@ export class TemplateBase
    *
    * @example
    * ```ts
-   * const template = new Template().fromPythonImage('3')
+   * const template = Template().fromPythonImage('3')
    *
    * // Build with single tag in name
    * const data = await Template.buildInBackground(template, 'my-python-env:v1.0')
@@ -1293,8 +1293,8 @@ export type CallableTemplate<T extends typeof TemplateBase> = T &
   ((options?: TemplateOptions) => TemplateFromImage)
 
 /**
- * Make a template class callable without `new`, so `Template(opts)` stays
- * equivalent to `new Template(opts)`. Everything else — statics, `instanceof`,
+ * Make a template class callable as a factory, so `Template(opts)` keeps
+ * returning a builder. Everything else — construction, statics, `instanceof`,
  * subclassing — goes straight to the class.
  *
  * @internal
@@ -1315,10 +1315,9 @@ export function callableTemplate<T extends typeof TemplateBase>(
  * Builder and API entrypoint for E2B sandbox templates.
  *
  * `Template` is the {@link TemplateBase} class, wrapped so it can also be
- * called as a factory: `Template()` and `new Template()` are equivalent, and
- * the statics (`Template.build`, `Template.exists`, …) resolve their
- * connection options off the class they are called on — so a subclass can bind
- * its own defaults.
+ * called as a factory returning a builder. The statics (`Template.build`,
+ * `Template.exists`, …) resolve their connection options off the class they are
+ * called on — so a subclass can bind its own defaults.
  *
  * @example
  * ```ts

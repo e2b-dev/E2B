@@ -47,12 +47,12 @@ console.log(result.stdout) // Hello from E2B!
 
 ### 4. Bind the configuration to a client
 
-The top-level `Sandbox`, `Volume`, `Template` and `Secret` exports read their configuration from the environment variables. To use an explicit configuration — e.g. several API keys or domains in one process — create an `E2B` client (the default export) and use the resources it exposes:
+The top-level `Sandbox`, `Volume`, `Template` and `Secret` exports read their configuration from the environment variables. To use an explicit configuration — e.g. several API keys or domains in one process — create an `E2B` client and use the resources it exposes:
 
 ```ts
-import E2B from 'e2b'
+import { E2B } from 'e2b'
 
-const client = new E2B({ apiKey: 'e2b_***', domain: 'e2b.dev' })
+const client = E2B({ apiKey: 'e2b_***', domain: 'e2b.dev' })
 
 const sandbox = await client.Sandbox.create()
 const volume = await client.Volume.create('my-volume')
