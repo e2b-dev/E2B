@@ -54,6 +54,7 @@ client = E2B(api_key="e2b_***", domain="e2b.dev")
 sandbox = client.Sandbox.create()
 volume = client.Volume.create("my-volume")
 exists = client.Template.exists("my-template")
+secret = client.Secret.create("openai-api-key", "sk-***")
 
 # The async variants are exposed as well.
 async_sandbox = await client.AsyncSandbox.create()

@@ -17,9 +17,10 @@ export type E2BOpts = Omit<ConnectionOpts, 'signal'>
  * E2B client with an explicitly bound connection configuration.
  *
  * The resources exposed by the client ({@link E2B.Sandbox},
- * {@link E2B.Volume}, {@link E2B.Template}) behave exactly like the top-level
- * `Sandbox` / `Volume` / `Template` exports, except the options passed to the
- * client are used as the defaults instead of the environment variables.
+ * {@link E2B.Volume}, {@link E2B.Template}, {@link E2B.Secret}) behave exactly
+ * like the top-level `Sandbox` / `Volume` / `Template` / `Secret` exports,
+ * except the options passed to the client are used as the defaults instead of
+ * the environment variables.
  * Per-call options still take precedence over the client's options.
  *
  * Multiple clients are fully isolated from each other and from the top-level
@@ -56,10 +57,9 @@ export class E2B {
   readonly Template: typeof Template
 
   /**
-   * `Secret` class. Secrets are resolved inside the sandbox, so there is no
-   * connection configuration to bind — this is the top-level `Secret` class.
+   * `Secret` class bound to this client's connection configuration.
    */
-  readonly Secret: typeof Secret = Secret
+  readonly Secret: typeof Secret
 
   /**
    * Create a new client with the connection options bound to it.
@@ -77,6 +77,10 @@ export class E2B {
     }
 
     this.Volume = class extends Volume {
+      protected static override readonly boundOpts = boundOpts
+    }
+
+    this.Secret = class extends Secret {
       protected static override readonly boundOpts = boundOpts
     }
 

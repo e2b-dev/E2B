@@ -9,6 +9,7 @@ import pytest
 from e2b import (
     E2B,
     AsyncSandbox,
+    AsyncSecret,
     AsyncTemplate,
     AsyncVolume,
     Sandbox,
@@ -30,6 +31,15 @@ SANDBOX_RESPONSE = {
     "sandboxID": "sbx-test",
     "clientID": "client-test",
     "envdVersion": "0.2.0",
+}
+
+SECRET_RESPONSE = {
+    "secretID": "secret-test",
+    "name": "secret",
+    "currentVersion": 1,
+    "metadata": {},
+    "createdAt": "2026-01-01T00:00:00Z",
+    "updatedAt": "2026-01-01T00:00:00Z",
 }
 
 
@@ -62,6 +72,8 @@ class _Handler(BaseHTTPRequestHandler):
                 201,
                 {"volumeID": "vol-test", "name": "vol", "token": "vol-token"},
             )
+        elif self.path.startswith("/secrets"):
+            self._record_and_respond(201, SECRET_RESPONSE)
         else:
             self._record_and_respond(404, {"code": 404, "message": "not found"})
 
@@ -77,6 +89,10 @@ class _Handler(BaseHTTPRequestHandler):
             )
         elif self.path.startswith("/templates/"):
             self._record_and_respond(200, [])
+        elif self.path == "/secrets":
+            self._record_and_respond(200, [SECRET_RESPONSE])
+        elif self.path.startswith("/secrets/"):
+            self._record_and_respond(200, SECRET_RESPONSE)
         else:
             self._record_and_respond(404, {"code": 404, "message": "not found"})
 
@@ -246,10 +262,32 @@ def test_async_client_template_uses_client_config(api_server):
     assert api_keys() == [API_KEY_A]
 
 
-def test_client_secret_is_the_top_level_class(api_server):
-    client = E2B(api_key=API_KEY_A, api_url=api_server)
+def test_client_secret_uses_client_config(api_server):
+    client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
 
-    assert client.Secret is Secret
+    assert issubclass(client.Secret, Secret)
+
+    client.Secret.create("secret", "value")
+    client.Secret.get_info("secret")
+    client.Secret.list().next_items()
+
+    assert api_keys() == [API_KEY_A, API_KEY_A, API_KEY_A]
+    # Per-call params still win, and `None` does not erase the client's.
+    client.Secret.get_info("secret", api_key=API_KEY_B)
+    assert api_keys()[-1] == API_KEY_B
+    client.Secret.get_info("secret", api_key=None)
+    assert api_keys()[-1] == API_KEY_A
+
+
+def test_client_async_secret_uses_client_config(api_server):
+    client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
+
+    async def run():
+        return await client.AsyncSecret.exists("secret")
+
+    assert issubclass(client.AsyncSecret, AsyncSecret)
+    assert asyncio.run(run()) is True
+    assert api_keys() == [API_KEY_A]
 
 
 def test_top_level_classes_keep_using_the_env_config(api_server):
@@ -265,6 +303,8 @@ def test_top_level_classes_keep_using_the_env_config(api_server):
     assert AsyncVolume._bound_api_params == {}
     assert Template._bound_api_params == {}
     assert AsyncTemplate._bound_api_params == {}
+    assert Secret._bound_api_params == {}
+    assert AsyncSecret._bound_api_params == {}
 
     assert Template.exists("tmpl", api_url=api_server) is True
     assert api_keys()[-1] == ENV_API_KEY

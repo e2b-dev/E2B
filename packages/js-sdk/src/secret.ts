@@ -118,7 +118,8 @@ export class SecretPaginator extends Paginator<SecretInfo> {
       throw new Error('No more items to fetch')
     }
 
-    const config = new ConnectionConfig({ ...this.opts, ...opts })
+    const apiOpts = ConnectionConfig.mergeOpts(this.opts, opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.GET('/secrets', {
@@ -128,7 +129,7 @@ export class SecretPaginator extends Paginator<SecretInfo> {
           nextToken: this.nextToken,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     const err = handleApiError(res, SecretError)
@@ -150,6 +151,31 @@ export class SecretPaginator extends Paginator<SecretInfo> {
  */
 export class Secret {
   /**
+   * Connection options bound to this class by an {@link E2B} client.
+   *
+   * Empty on the base class, so the env-configured default path is unchanged.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  protected static readonly boundOpts?: Omit<ConnectionOpts, 'signal'>
+
+  /**
+   * Merge the class-bound connection options with the per-call ones, with
+   * per-call options taking precedence.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  protected static resolveOpts<T extends ConnectionOpts>(
+    opts?: T
+  ): T | undefined {
+    return ConnectionConfig.mergeOpts(this.boundOpts, opts)
+  }
+
+  /**
    * Create a new secret and its first value.
    *
    * @param name name of the secret, unique within the project.
@@ -164,16 +190,17 @@ export class Secret {
     value: string,
     opts?: SecretCreateOpts
   ): Promise<SecretInfo> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.POST('/secrets', {
       body: {
         name,
         value,
-        metadata: opts?.metadata,
+        metadata: apiOpts?.metadata,
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     const err = handleApiError(res, SecretError)
@@ -203,7 +230,8 @@ export class Secret {
     value: string,
     opts?: SecretUpdateOpts
   ): Promise<SecretInfo> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.POST('/secrets/{secretID}', {
@@ -214,9 +242,9 @@ export class Secret {
       },
       body: {
         value,
-        metadata: opts?.metadata,
+        metadata: apiOpts?.metadata,
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.response.status === 404) {
@@ -248,7 +276,8 @@ export class Secret {
     secret: string,
     opts?: SecretGetInfoOpts
   ): Promise<SecretInfo> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.GET('/secrets/{secretID}', {
@@ -257,7 +286,7 @@ export class Secret {
           secretID: secret,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.response.status === 404) {
@@ -293,7 +322,7 @@ export class Secret {
    * ```
    */
   static list(opts?: SecretListOpts): SecretPaginator {
-    return new SecretPaginator(opts)
+    return new SecretPaginator(this.resolveOpts(opts))
   }
 
   /**
@@ -309,7 +338,7 @@ export class Secret {
     opts?: SecretExistsOpts
   ): Promise<boolean> {
     try {
-      await Secret.getInfo(secret, opts)
+      await this.getInfo(secret, opts)
       return true
     } catch (err) {
       if (err instanceof SecretNotFoundError) {
@@ -331,7 +360,8 @@ export class Secret {
     secret: string,
     opts?: SecretDestroyOpts
   ): Promise<boolean> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.DELETE('/secrets/{secretID}', {
@@ -340,7 +370,7 @@ export class Secret {
           secretID: secret,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.response.status === 404) {

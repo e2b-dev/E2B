@@ -57,6 +57,7 @@ const client = new E2B({ apiKey: 'e2b_***', domain: 'e2b.dev' })
 const sandbox = await client.Sandbox.create()
 const volume = await client.Volume.create('my-volume')
 const exists = await client.Template.exists('my-template')
+await client.Secret.create('openai-api-key', 'sk-***')
 
 // The classes can be destructured and used like the top-level ones.
 const { Sandbox } = client

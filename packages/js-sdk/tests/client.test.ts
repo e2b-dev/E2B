@@ -41,6 +41,15 @@ const sandboxResponse = {
   envdVersion: '0.2.4',
 }
 
+const secretResponse = {
+  secretID: 'test-secret-id',
+  name: 'test-secret',
+  currentVersion: 1,
+  metadata: {},
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+}
+
 const server = setupServer(
   http.post(/\/sandboxes$/, async ({ request }) => {
     record(request)
@@ -73,6 +82,18 @@ const server = setupServer(
   http.get(/\/templates\/[^/]+\/tags$/, ({ request }) => {
     record(request)
     return HttpResponse.json([])
+  }),
+  http.post(/\/secrets$/, ({ request }) => {
+    record(request)
+    return HttpResponse.json(secretResponse)
+  }),
+  http.get(/\/secrets$/, ({ request }) => {
+    record(request)
+    return HttpResponse.json([secretResponse])
+  }),
+  http.get(/\/secrets\/[^/]+$/, ({ request }) => {
+    record(request)
+    return HttpResponse.json(secretResponse)
   })
 )
 
@@ -288,10 +309,41 @@ test('client.Template can be rebound to a variable', async () => {
   assert.equal(lastRequest().apiKey, API_KEY_A)
 })
 
-test('client.Secret is the top-level Secret class', () => {
+test('client.Secret uses the client config instead of env vars', async () => {
   const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
 
-  assert.equal(client.Secret, Secret)
+  await client.Secret.create('test-secret', 'value')
+  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/secrets`)
+  assert.equal(lastRequest().apiKey, API_KEY_A)
+
+  await client.Secret.getInfo('test-secret')
+  assert.equal(lastRequest().apiKey, API_KEY_A)
+
+  await client.Secret.list().nextItems()
+  expect(lastRequest().url).toContain(`api.${DOMAIN_A}/secrets`)
+  assert.equal(lastRequest().apiKey, API_KEY_A)
+
+  // Per-call options win over the client's.
+  await client.Secret.exists('test-secret', {
+    apiKey: API_KEY_B,
+    domain: DOMAIN_B,
+  })
+  assert.equal(lastRequest().apiKey, API_KEY_B)
+  expect(lastRequest().url).toContain(`api.${DOMAIN_B}`)
+
+  // Explicit undefined does not erase the client's config.
+  await client.Secret.getInfo('test-secret', { apiKey: undefined })
+  assert.equal(lastRequest().apiKey, API_KEY_A)
+
+  // Rebinding the class keeps the client's config.
+  const S = client.Secret
+  await S.getInfo('test-secret')
+  assert.equal(lastRequest().apiKey, API_KEY_A)
+
+  // The top-level Secret keeps using the environment configuration.
+  await Secret.getInfo('test-secret')
+  assert.equal(lastRequest().apiKey, TEST_API_KEY)
+  expect(lastRequest().url).toContain(`api.${DOMAIN_ENV}`)
 })
 
 test('top-level exports keep using the environment configuration', async () => {
