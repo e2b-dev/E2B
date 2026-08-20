@@ -143,3 +143,17 @@ class VolumePathNotFoundException(NotFoundException):
     """
     Raised when a file or directory is not found inside a volume.
     """
+
+
+class SecretException(Exception):
+    """
+    Base class for all secret errors.
+
+    Raised when general secret errors occur.
+    """
+
+
+class SecretNotFoundException(SecretException):
+    """
+    Raised when a secret is not found.
+    """

@@ -122,6 +122,15 @@ components:
       required: true
       schema:
         type: string
+    secretID:
+      name: secretID
+      in: path
+      required: true
+      schema:
+        type: string
+        description: >
+          Identifier of the secret (sec_ prefixed), or its canonical
+          lower-case name
 
   headers:
     XNextToken:
@@ -173,8 +182,32 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
+    "429":
+      description: Too many requests
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
     "500":
       description: Server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    "502":
+      description: Backend error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    "503":
+      description: Service unavailable
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    "504":
+      description: Backend timeout
       content:
         application/json:
           schema:
@@ -266,6 +299,14 @@ components:
       enum:
         - running
         - paused
+
+    OrderDirection:
+      type: string
+      description: Sort direction
+      default: desc
+      enum:
+        - asc
+        - desc
 
     SnapshotInfo:
       type: object
@@ -2001,6 +2042,12 @@ components:
           type: integer
           format: int32
           description: Error code
+        error_code:
+          type: string
+          description: >-
+            Machine-readable semantic error code. Not a closed set; initial values:
+            sandbox_capacity_unavailable, sandbox_placement_timeout,
+            sandbox_no_compatible_node, sandbox_create_failed, internal_server_error.
         message:
           type: string
           description: Error
@@ -2072,6 +2119,81 @@ components:
       required:
         - name
 
+    SecretMetadata:
+      type: object
+      description: >
+        Customer metadata of the secret. Always present, empty when unset.
+        At most 32 entries; keys are limited to 128 bytes, values to 1024
+        bytes, and a secret's metadata to 8192 bytes in total.
+      maxProperties: 32
+      additionalProperties:
+        type: string
+        maxLength: 1024
+
+    Secret:
+      type: object
+      description: Metadata of a secret. It never carries the secret value.
+      required:
+        - secretID
+        - name
+        - currentVersion
+        - metadata
+        - createdAt
+        - updatedAt
+      properties:
+        secretID:
+          type: string
+          description: Identifier of the secret
+        name:
+          type: string
+          description: Name of the secret, unique within the project
+        currentVersion:
+          type: integer
+          format: int64
+          description: Version served to readers that do not name one
+        metadata:
+          $ref: "#/components/schemas/SecretMetadata"
+        createdAt:
+          type: string
+          format: date-time
+          description: Time when the secret was created
+        updatedAt:
+          type: string
+          format: date-time
+          description: Time when the secret was last updated
+
+    NewSecret:
+      type: object
+      required:
+        - name
+        - value
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 128
+          pattern: '^[a-zA-Z0-9_-]+$'
+          description: >
+            Name of the secret, unique within the project. Names are
+            lower-cased before storage and returned in that canonical form;
+            the sec_ prefix is reserved for secret identifiers.
+        value:
+          type: string
+          description: Runtime marker stored as the secret's first version. The runtime resolves it to a value at sandbox egress.
+        metadata:
+          $ref: "#/components/schemas/SecretMetadata"
+
+    SecretUpdate:
+      type: object
+      required:
+        - value
+      properties:
+        value:
+          type: string
+          description: Runtime marker stored as the secret's new version. The runtime resolves it to a value at sandbox egress.
+        metadata:
+          $ref: "#/components/schemas/SecretMetadata"
+
 tags:
   - name: templates
   - name: sandboxes
@@ -2080,6 +2202,7 @@ tags:
   - name: api-keys
   - name: tags
   - name: volumes
+  - name: secrets
 
 paths:
   /health:
@@ -2272,6 +2395,10 @@ paths:
           $ref: "#/components/responses/400"
         "500":
           $ref: "#/components/responses/500"
+        "503":
+          $ref: "#/components/responses/503"
+        "504":
+          $ref: "#/components/responses/504"
 
   /v2/sandboxes:
     get:
@@ -2301,6 +2428,25 @@ paths:
               $ref: "#/components/schemas/SandboxState"
           style: form
           explode: false
+        - name: order
+          in: query
+          description: Sort direction by sandbox start time. Defaults to desc (newest first).
+          required: false
+          schema:
+            $ref: "#/components/schemas/OrderDirection"
+        - name: startedAfter
+          in: query
+          description: Return sandboxes started at or after this timestamp.
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: template
+          in: query
+          description: Filter sandboxes by a template ID or alias.
+          required: false
+          schema:
+            type: string
         - $ref: "#/components/parameters/paginationNextToken"
         - $ref: "#/components/parameters/paginationLimit"
       responses:
@@ -2621,10 +2767,16 @@ paths:
           $ref: "#/components/responses/409"
         "404":
           $ref: "#/components/responses/404"
+        "400":
+          $ref: "#/components/responses/400"
         "401":
           $ref: "#/components/responses/401"
         "500":
           $ref: "#/components/responses/500"
+        "503":
+          $ref: "#/components/responses/503"
+        "504":
+          $ref: "#/components/responses/504"
 
   /sandboxes/{sandboxID}/fork:
     post:
@@ -2671,6 +2823,8 @@ paths:
           $ref: "#/components/responses/401"
         "500":
           $ref: "#/components/responses/500"
+        "503":
+          $ref: "#/components/responses/503"
 
   /sandboxes/{sandboxID}/connect:
     post:
@@ -2710,8 +2864,14 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
+        "409":
+          $ref: "#/components/responses/409"
         "500":
           $ref: "#/components/responses/500"
+        "503":
+          $ref: "#/components/responses/503"
+        "504":
+          $ref: "#/components/responses/504"
 
   /sandboxes/{sandboxID}/timeout:
     post:
@@ -3982,3 +4142,207 @@ paths:
           $ref: "#/components/responses/404"
         "500":
           $ref: "#/components/responses/500"
+
+  /secrets:
+    get:
+      summary: List project secrets
+      description: List the project's secrets. No response carries a secret value.
+      tags: [secrets]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/paginationNextToken"
+        - $ref: "#/components/parameters/paginationLimit"
+      responses:
+        "200":
+          description: Successfully listed the project's secrets
+          headers:
+            X-Next-Token:
+              $ref: "#/components/headers/XNextToken"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Secret"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "404":
+          $ref: "#/components/responses/404"
+        "409":
+          $ref: "#/components/responses/409"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+        "502":
+          $ref: "#/components/responses/502"
+        "504":
+          $ref: "#/components/responses/504"
+
+    post:
+      summary: Create a secret
+      description: Create a secret by storing a runtime marker as its first version. The response carries metadata only.
+      tags: [secrets]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewSecret"
+      responses:
+        "201":
+          description: Successfully created the secret
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Secret"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "404":
+          $ref: "#/components/responses/404"
+        "409":
+          $ref: "#/components/responses/409"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+        "502":
+          $ref: "#/components/responses/502"
+        "504":
+          $ref: "#/components/responses/504"
+
+  /secrets/{secretID}:
+    get:
+      summary: Get a secret
+      description: Get one secret's metadata, selected by identifier or name.
+      tags: [secrets]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/secretID"
+      responses:
+        "200":
+          description: Successfully retrieved the secret
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Secret"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "404":
+          $ref: "#/components/responses/404"
+        "409":
+          $ref: "#/components/responses/409"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+        "502":
+          $ref: "#/components/responses/502"
+        "504":
+          $ref: "#/components/responses/504"
+
+    post:
+      summary: Update a secret
+      description: Replace the secret's stored marker by appending a new version. The response carries metadata only.
+      tags: [secrets]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/secretID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SecretUpdate"
+      responses:
+        "200":
+          description: Successfully updated the secret
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Secret"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "404":
+          $ref: "#/components/responses/404"
+        "409":
+          $ref: "#/components/responses/409"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+        "502":
+          $ref: "#/components/responses/502"
+        "504":
+          $ref: "#/components/responses/504"
+
+    delete:
+      summary: Delete a secret
+      description: Revoke the secret and schedule its versions for cleanup.
+      tags: [secrets]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/secretID"
+      responses:
+        "204":
+          description: Successfully deleted the secret
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "404":
+          $ref: "#/components/responses/404"
+        "409":
+          $ref: "#/components/responses/409"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+        "502":
+          $ref: "#/components/responses/502"
+        "504":
+          $ref: "#/components/responses/504"

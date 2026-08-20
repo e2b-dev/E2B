@@ -72,6 +72,8 @@ export interface paths {
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 500: components["responses"]["500"];
+                503: components["responses"]["503"];
+                504: components["responses"]["504"];
             };
         };
         delete?: never;
@@ -199,7 +201,10 @@ export interface paths {
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                409: components["responses"]["409"];
                 500: components["responses"]["500"];
+                503: components["responses"]["503"];
+                504: components["responses"]["504"];
             };
         };
         delete?: never;
@@ -249,6 +254,7 @@ export interface paths {
                 404: components["responses"]["404"];
                 409: components["responses"]["409"];
                 500: components["responses"]["500"];
+                503: components["responses"]["503"];
             };
         };
         delete?: never;
@@ -533,10 +539,13 @@ export interface paths {
                         "application/json": components["schemas"]["Sandbox"];
                     };
                 };
+                400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
                 409: components["responses"]["409"];
                 500: components["responses"]["500"];
+                503: components["responses"]["503"];
+                504: components["responses"]["504"];
             };
         };
         delete?: never;
@@ -680,6 +689,216 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/secrets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List project secrets
+         * @description List the project's secrets. No response carries a secret value.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Maximum number of items to return per page */
+                    limit?: components["parameters"]["paginationLimit"];
+                    /** @description Cursor to start the list from */
+                    nextToken?: components["parameters"]["paginationNextToken"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully listed the project's secrets */
+                200: {
+                    headers: {
+                        "X-Next-Token": components["headers"]["XNextToken"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Secret"][];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                404: components["responses"]["404"];
+                409: components["responses"]["409"];
+                429: components["responses"]["429"];
+                500: components["responses"]["500"];
+                502: components["responses"]["502"];
+                504: components["responses"]["504"];
+            };
+        };
+        put?: never;
+        /**
+         * Create a secret
+         * @description Create a secret by storing a runtime marker as its first version. The response carries metadata only.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["NewSecret"];
+                };
+            };
+            responses: {
+                /** @description Successfully created the secret */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Secret"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                404: components["responses"]["404"];
+                409: components["responses"]["409"];
+                429: components["responses"]["429"];
+                500: components["responses"]["500"];
+                502: components["responses"]["502"];
+                504: components["responses"]["504"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/secrets/{secretID}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a secret
+         * @description Get one secret's metadata, selected by identifier or name.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    secretID: components["parameters"]["secretID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully retrieved the secret */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Secret"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                404: components["responses"]["404"];
+                409: components["responses"]["409"];
+                429: components["responses"]["429"];
+                500: components["responses"]["500"];
+                502: components["responses"]["502"];
+                504: components["responses"]["504"];
+            };
+        };
+        put?: never;
+        /**
+         * Update a secret
+         * @description Replace the secret's stored marker by appending a new version. The response carries metadata only.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    secretID: components["parameters"]["secretID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SecretUpdate"];
+                };
+            };
+            responses: {
+                /** @description Successfully updated the secret */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Secret"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                404: components["responses"]["404"];
+                409: components["responses"]["409"];
+                429: components["responses"]["429"];
+                500: components["responses"]["500"];
+                502: components["responses"]["502"];
+                504: components["responses"]["504"];
+            };
+        };
+        /**
+         * Delete a secret
+         * @description Revoke the secret and schedule its versions for cleanup.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    secretID: components["parameters"]["secretID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully deleted the secret */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                404: components["responses"]["404"];
+                409: components["responses"]["409"];
+                429: components["responses"]["429"];
+                500: components["responses"]["500"];
+                502: components["responses"]["502"];
+                504: components["responses"]["504"];
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -1468,8 +1687,14 @@ export interface paths {
                     metadata?: string;
                     /** @description Cursor to start the list from */
                     nextToken?: components["parameters"]["paginationNextToken"];
+                    /** @description Sort direction by sandbox start time. Defaults to desc (newest first). */
+                    order?: components["schemas"]["OrderDirection"];
+                    /** @description Return sandboxes started at or after this timestamp. */
+                    startedAfter?: string;
                     /** @description Filter sandboxes by one or more states */
                     state?: components["schemas"]["SandboxState"][];
+                    /** @description Filter sandboxes by a template ID or alias. */
+                    template?: string;
                 };
                 header?: never;
                 path?: never;
@@ -2085,6 +2310,8 @@ export interface components {
              * @description Error code
              */
             code: number;
+            /** @description Machine-readable semantic error code. Not a closed set; initial values: sandbox_capacity_unavailable, sandbox_placement_timeout, sandbox_no_compatible_node, sandbox_create_failed, internal_server_error. */
+            error_code?: string;
             /** @description Error */
             message: string;
         };
@@ -2233,6 +2460,14 @@ export interface components {
              */
             timeout?: number;
             volumeMounts?: components["schemas"]["SandboxVolumeMount"][];
+        };
+        NewSecret: {
+            metadata?: components["schemas"]["SecretMetadata"];
+            /** @description Name of the secret, unique within the project. Names are lower-cased before storage and returned in that canonical form; the sec_ prefix is reserved for secret identifiers.
+             *      */
+            name: string;
+            /** @description Runtime marker stored as the secret's first version. The runtime resolves it to a value at sandbox egress. */
+            value: string;
         };
         NewTeamAPIKey: {
             /** @description Name of the API key */
@@ -2388,6 +2623,12 @@ export interface components {
             clusterID?: string;
             status: components["schemas"]["NodeStatus"];
         };
+        /**
+         * @description Sort direction
+         * @default desc
+         * @enum {string}
+         */
+        OrderDirection: "asc" | "desc";
         ResumedSandbox: {
             /**
              * @deprecated
@@ -2691,6 +2932,39 @@ export interface components {
             name: string;
             /** @description Path of the volume */
             path: string;
+        };
+        /** @description Metadata of a secret. It never carries the secret value. */
+        Secret: {
+            /**
+             * Format: date-time
+             * @description Time when the secret was created
+             */
+            createdAt: string;
+            /**
+             * Format: int64
+             * @description Version served to readers that do not name one
+             */
+            currentVersion: number;
+            metadata: components["schemas"]["SecretMetadata"];
+            /** @description Name of the secret, unique within the project */
+            name: string;
+            /** @description Identifier of the secret */
+            secretID: string;
+            /**
+             * Format: date-time
+             * @description Time when the secret was last updated
+             */
+            updatedAt: string;
+        };
+        /** @description Customer metadata of the secret. Always present, empty when unset. At most 32 entries; keys are limited to 128 bytes, values to 1024 bytes, and a secret's metadata to 8192 bytes in total.
+         *      */
+        SecretMetadata: {
+            [key: string]: string;
+        };
+        SecretUpdate: {
+            metadata?: components["schemas"]["SecretMetadata"];
+            /** @description Runtime marker stored as the secret's new version. The runtime resolves it to a value at sandbox egress. */
+            value: string;
         };
         SnapshotInfo: {
             /** @description Full names of the snapshot template including team namespace and tag (e.g. team-slug/my-snapshot:v2) */
@@ -3159,8 +3433,44 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
+        /** @description Too many requests */
+        429: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
         /** @description Server error */
         500: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Backend error */
+        502: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Service unavailable */
+        503: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Backend timeout */
+        504: {
             headers: {
                 [name: string]: unknown;
             };
@@ -3179,6 +3489,7 @@ export interface components {
         /** @description Cursor to start the list from */
         paginationNextToken: string;
         sandboxID: string;
+        secretID: string;
         snapshotID: string;
         tag: string;
         teamID: string;

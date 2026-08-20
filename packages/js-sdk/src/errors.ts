@@ -197,3 +197,25 @@ export class VolumePathNotFoundError extends VolumeError {
     this.name = 'VolumePathNotFoundError'
   }
 }
+
+/**
+ * Base class for all secret errors.
+ *
+ * Thrown when general secret errors occur.
+ */
+export class SecretError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'SecretError'
+  }
+}
+
+/**
+ * Thrown when a secret is not found.
+ */
+export class SecretNotFoundError extends SecretError {
+  constructor(message: string) {
+    super(message)
+    this.name = 'SecretNotFoundError'
+  }
+}
