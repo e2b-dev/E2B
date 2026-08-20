@@ -7,7 +7,7 @@ import {
   FILE_TIMEOUT_MS,
 } from './client'
 import {
-  ClientBoundResource,
+  ClientFactory,
   ConnectionConfig,
   ConnectionOpts,
   setupRequestController,
@@ -52,7 +52,7 @@ function convertVolumeEntryStat(
  * Create a `Volume` instance to interact with a volume by its ID,
  * or use the static methods to manage volumes.
  */
-export class Volume extends ClientBoundResource {
+export class Volume extends ClientFactory {
   /**
    * Volume ID.
    */

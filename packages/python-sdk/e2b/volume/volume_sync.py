@@ -21,7 +21,7 @@ from e2b.api.client.types import Response
 from e2b.api.client_sync import get_api_client as get_core_api_client
 from e2b.connection_config import (
     ApiParams,
-    ClientBoundResource,
+    ClientFactory,
     ConnectionConfig,
     ProxyTypes,
 )
@@ -66,7 +66,7 @@ from e2b.volume.utils import (
 )
 
 
-class Volume(ClientBoundResource):
+class Volume(ClientFactory):
     """E2B Volume for persistent storage that can be mounted to sandboxes."""
 
     def __init__(

@@ -1,7 +1,7 @@
 import re
 
 
-from e2b.connection_config import ApiParams, ClientBoundResource
+from e2b.connection_config import ApiParams, ClientFactory
 from e2b.exceptions import InvalidArgumentException
 from e2b.paginator import PaginatorBase
 from e2b.sandbox.sandbox_api import SandboxIamToken, SandboxIamTokenType
@@ -25,7 +25,7 @@ def _validate_secret_name(name: str) -> None:
         )
 
 
-class SecretBase(ClientBoundResource):
+class SecretBase(ClientFactory):
     """
     Module for managing E2B secrets and workload identity helpers.
 

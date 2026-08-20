@@ -541,13 +541,13 @@ export class ConnectionConfig {
  * `Secret`) whose static methods build a `ConnectionConfig` from per-call
  * options. An {@link E2B} client exposes subclasses of these with its own
  * options bound, and every static method resolves them through
- * {@link ClientBoundResource.resolveOpts}.
+ * {@link ClientFactory.resolveOpts}.
  *
  * @internal
  * @hidden
  * @hide
  */
-export class ClientBoundResource {
+export class ClientFactory {
   /**
    * Connection options bound to this class by an {@link E2B} client.
    *

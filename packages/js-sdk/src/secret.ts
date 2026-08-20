@@ -1,6 +1,6 @@
 import { ApiClient, components, handleApiError } from './api'
 import {
-  ClientBoundResource,
+  ClientFactory,
   ConnectionConfig,
   ConnectionOpts,
 } from './connectionConfig'
@@ -153,7 +153,7 @@ export class SecretPaginator extends Paginator<SecretInfo> {
  * Secret values are write-only: they are accepted by {@link Secret.create}
  * and {@link Secret.update} but never returned by any read surface.
  */
-export class Secret extends ClientBoundResource {
+export class Secret extends ClientFactory {
   /**
    * Create a new secret and its first value.
    *

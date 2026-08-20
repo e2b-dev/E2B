@@ -1,6 +1,6 @@
 import { ApiClient, apiErrorFromCode, components, handleApiError } from '../api'
 import {
-  ClientBoundResource,
+  ClientFactory,
   ConnectionConfig,
   ConnectionOpts,
   DEFAULT_SANDBOX_TIMEOUT_MS,
@@ -1150,7 +1150,7 @@ function buildNetworkUpdateBody(
       : {}),
   }
 }
-export class SandboxApi extends ClientBoundResource {
+export class SandboxApi extends ClientFactory {
   protected constructor() {
     super()
   }

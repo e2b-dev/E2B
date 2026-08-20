@@ -5,7 +5,7 @@ from packaging.version import Version
 
 
 from e2b.connection_config import (
-    ClientBoundResource,
+    ClientFactory,
     ConnectionConfig,
     default_username,
 )
@@ -24,7 +24,7 @@ class SandboxOpts(TypedDict):
     connection_config: ConnectionConfig
 
 
-class SandboxBase(ClientBoundResource):
+class SandboxBase(ClientFactory):
     mcp_port = 50005
 
     default_sandbox_timeout = 300

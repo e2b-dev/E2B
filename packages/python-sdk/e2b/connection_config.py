@@ -111,7 +111,7 @@ def merge_api_params(
     return cast(ApiParams, merged)
 
 
-class ClientBoundResource:
+class ClientFactory:
     """
     Base class for the resource classes (`Sandbox`, `Volume`, `Template`,
     `Secret`) whose classmethods build a :class:`ConnectionConfig` from per-call

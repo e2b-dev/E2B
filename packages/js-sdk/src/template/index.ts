@@ -1,7 +1,7 @@
 import type { PathLike } from 'node:fs'
 import { ApiClient } from '../api'
 import {
-  ClientBoundResource,
+  ClientFactory,
   ConnectionConfig,
   ConnectionOpts,
 } from '../connectionConfig'
@@ -60,7 +60,7 @@ import {
  * Exposed as {@link Template}, which can be called as a factory.
  */
 export class TemplateBase
-  extends ClientBoundResource
+  extends ClientFactory
   implements TemplateFromImage, TemplateBuilder, TemplateFinal
 {
   private defaultBaseImage: string = 'e2bdev/base'
