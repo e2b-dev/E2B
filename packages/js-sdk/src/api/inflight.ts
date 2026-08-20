@@ -1,47 +1,218 @@
 import { isRequestLike } from '../is'
 
+export type LimitConcurrencyOptions = {
+  /**
+   * Name of the env var that configured `max` (e.g.
+   * `E2B_ENVD_RPC_INFLIGHT_REQUESTS`). Named in the error when a request is
+   * aborted while still queued for a slot, so the failure points at the
+   * concurrency cap rather than `requestTimeoutMs`.
+   */
+  envVarName?: string
+  /**
+   * Slots that long-lived (Connect streaming) requests cannot occupy, so
+   * short unary/control RPCs — `commands.kill`, `sendStdin`, `list`,
+   * `pty.kill` — always have headroom on the same semaphore. Clamped so a
+   * cap of 1 can still open a stream; in that case unary may use a single
+   * overflow slot beyond `max` so teardown is never wedged behind the
+   * stream it needs to end.
+   */
+  reserved?: number
+}
+
+type QueuedAcquire = {
+  streaming: boolean
+  resume: () => void
+}
+
 /**
  * Simple FIFO semaphore used to cap the number of in-flight requests sent
- * through a fetch dispatcher.
+ * through a fetch dispatcher. Optional reserved capacity keeps short unary
+ * calls runnable while long-lived streaming bodies hold their slots.
  */
 class Semaphore {
   private active = 0
-  private readonly queue: Array<() => void> = []
+  private streamingActive = 0
+  private readonly queue: QueuedAcquire[] = []
+  private readonly streamingLimit: number
+  private readonly unaryLimit: number
 
-  constructor(private readonly max: number) {}
+  constructor(
+    private readonly max: number,
+    reserved = 0
+  ) {
+    // Never reduce the streaming budget below 1 when max >= 1: a reserved
+    // equal to max would otherwise make every Connect stream un-startable.
+    const effectiveReserved = Math.min(
+      Math.max(0, reserved),
+      Math.max(0, max - 1)
+    )
+    this.streamingLimit = max - effectiveReserved
+    // When the caller asked for reserved slots but max was too small to carve
+    // them out of the pool, allow unary a matching overflow so control RPCs
+    // still get through (e.g. max=1, reserved=1 → one stream + one kill).
+    this.unaryLimit =
+      max + (reserved > effectiveReserved ? reserved - effectiveReserved : 0)
+  }
 
-  async acquire(signal?: AbortSignal): Promise<() => void> {
+  async acquire(
+    signal: AbortSignal | undefined,
+    streaming: boolean,
+    onQueuedAbort: () => unknown
+  ): Promise<() => void> {
     if (signal?.aborted) throw abortReason(signal)
-    if (this.active < this.max) {
-      this.active++
-      return () => this.release()
+    if (this.canAcquire(streaming)) {
+      this.admit(streaming)
+      return this.slot(streaming)
     }
 
     return new Promise<() => void>((resolve, reject) => {
-      const onAcquire = () => {
-        signal?.removeEventListener('abort', onAbort)
-        this.active++
-        resolve(() => this.release())
+      const entry: QueuedAcquire = {
+        streaming,
+        resume: () => {
+          signal?.removeEventListener('abort', onAbort)
+          this.admit(streaming)
+          resolve(this.slot(streaming))
+        },
       }
       const onAbort = () => {
-        const i = this.queue.indexOf(onAcquire)
+        const i = this.queue.indexOf(entry)
         if (i >= 0) this.queue.splice(i, 1)
-        reject(abortReason(signal))
+        reject(onQueuedAbort())
       }
-      this.queue.push(onAcquire)
+      this.queue.push(entry)
       signal?.addEventListener('abort', onAbort, { once: true })
     })
   }
 
-  private release() {
+  private canAcquire(streaming: boolean): boolean {
+    if (streaming) {
+      return (
+        this.active < this.max && this.streamingActive < this.streamingLimit
+      )
+    }
+    return this.active < this.unaryLimit
+  }
+
+  private admit(streaming: boolean) {
+    this.active++
+    if (streaming) this.streamingActive++
+  }
+
+  /**
+   * A handle that frees the slot it was handed out with, at most once. The
+   * body-end tracking below releases from several stream callbacks —
+   * cancelling while a pull is in flight settles both paths — and a slot
+   * handed back twice would raise the effective cap for every request that
+   * follows.
+   */
+  private slot(streaming: boolean): () => void {
+    let released = false
+    return () => {
+      if (released) return
+      released = true
+      this.release(streaming)
+    }
+  }
+
+  private release(streaming: boolean) {
     this.active--
-    const next = this.queue.shift()
-    if (next) next()
+    if (streaming) this.streamingActive--
+    this.pump()
+  }
+
+  /**
+   * Wake the oldest waiter that fits under the limits. Unary waiters are
+   * preferred when both kinds are queued: they are the short calls that end
+   * streams, and starving them is what reserved capacity exists to prevent.
+   */
+  private pump() {
+    const unaryIdx = this.queue.findIndex((e) => !e.streaming)
+    if (unaryIdx >= 0 && this.canAcquire(false)) {
+      const [entry] = this.queue.splice(unaryIdx, 1)
+      entry.resume()
+      return
+    }
+
+    const streamingIdx = this.queue.findIndex((e) => e.streaming)
+    if (streamingIdx >= 0 && this.canAcquire(true)) {
+      const [entry] = this.queue.splice(streamingIdx, 1)
+      entry.resume()
+    }
   }
 }
 
 function abortReason(signal: AbortSignal | undefined): unknown {
   return signal?.reason ?? new DOMException('Aborted', 'AbortError')
+}
+
+/**
+ * Reason for a request aborted while it was still waiting for a semaphore
+ * slot. Prefer naming the concurrency env var over echoing the caller's
+ * `requestTimeoutMs` abort: the request never left the process, so raising
+ * the request timeout only makes the hang longer.
+ */
+function queuedAbortReason(
+  signal: AbortSignal | undefined,
+  envVarName: string | undefined,
+  max: number
+): unknown {
+  if (!envVarName) return abortReason(signal)
+
+  return new DOMException(
+    `Request was aborted while queued for an in-flight slot under '${envVarName}' ` +
+      `(currently ${max}). That cap counts open response bodies — including ` +
+      `long-lived streams — not just requests awaiting headers. Raise ` +
+      `'${envVarName}', close or cancel open streams, or set it to 0 to ` +
+      `disable the cap.`,
+    'TimeoutError'
+  )
+}
+
+/**
+ * Connect streaming RPCs advertise themselves with `application/connect+…`
+ * Content-Types; unary Connect and every non-Connect request use something
+ * else (`application/json`, `application/proto`, …). That is the signal this
+ * layer has for "will hold a body open for a long time".
+ */
+function isConnectStreamingRequest(
+  input: RequestInfo | URL,
+  init?: RequestInit
+): boolean {
+  const headers =
+    init?.headers ?? (isRequestLike(input) ? input.headers : undefined)
+  if (!headers) return false
+
+  const contentType = new Headers(headers).get('content-type')
+  return contentType != null && /^application\/connect\+/i.test(contentType)
+}
+
+/**
+ * Whether `response` carries a body a slot has to stay held for. The HTTP
+ * clients return no-byte responses to their caller without ever touching the
+ * body (`openapi-fetch` short-circuits on the same conditions), so a slot
+ * waiting on one of them would never be handed back and the cap would
+ * deadlock.
+ */
+function hasBodyToTrack(response: Response, method: string): boolean {
+  // A null-body status (204/205/304) or an opaque cross-origin response. A
+  // body already read or locked by a mock or an interceptor is equally
+  // spoken for — we could not read it to its end even if we wanted to.
+  if (!response.body || response.bodyUsed || response.body.locked) {
+    return false
+  }
+
+  // A HEAD response sends no bytes: its `Content-Length` describes the body
+  // the same GET would have returned.
+  if (method.toUpperCase() === 'HEAD') {
+    return false
+  }
+
+  // An empty body — the stream exists but EOF is all it will ever yield.
+  if (response.headers.get('content-length') === '0') {
+    return false
+  }
+
+  return true
 }
 
 /**
@@ -52,24 +223,38 @@ function abortReason(signal: AbortSignal | undefined): unknown {
  * A slot is held until the response body ends (fully consumed, cancelled, or
  * errored), not just until the headers arrive, so the SDK-level cap aligns
  * with the dispatcher's connection accounting — a streaming body still
- * occupies an HTTP/2 stream.
+ * occupies an HTTP/2 stream. Responses that carry no bytes (null-body
+ * statuses, `Content-Length: 0`, HEAD, already-consumed bodies) release
+ * immediately.
+ *
+ * When `reserved` is set, Connect streaming requests (`Content-Type:
+ * application/connect+…`) are limited to `max - reserved` so unary/control
+ * RPCs on the same fetcher can still acquire a slot while streams are open.
  */
 export function limitConcurrency(
   fetcher: typeof fetch,
-  max: number
+  max: number,
+  options: LimitConcurrencyOptions = {}
 ): typeof fetch {
   if (!Number.isFinite(max) || max <= 0) {
     return fetcher
   }
 
-  const sem = new Semaphore(max)
+  const { envVarName, reserved = 0 } = options
+  const sem = new Semaphore(max, reserved)
 
   return (async (input, init) => {
     // A Request the current global class disowns still carries the signal we
-    // have to honor while it waits for a slot.
-    const signal =
-      init?.signal ?? (isRequestLike(input) ? input.signal : undefined)
-    const release = await sem.acquire(signal)
+    // have to honor while it waits for a slot, and the method that tells us
+    // whether to expect a body.
+    const requestLike = isRequestLike(input) ? input : undefined
+    const signal = init?.signal ?? requestLike?.signal
+    const method = init?.method ?? requestLike?.method ?? 'GET'
+    const streaming = isConnectStreamingRequest(input, init)
+
+    const release = await sem.acquire(signal, streaming, () =>
+      queuedAbortReason(signal, envVarName, max)
+    )
 
     let response: Response
     try {
@@ -79,32 +264,23 @@ export function limitConcurrency(
       throw err
     }
 
+    if (!hasBodyToTrack(response, method)) {
+      release()
+      return response
+    }
+
     return releaseOnBodyEnd(response, release)
   }) as typeof fetch
-}
-
-function releaseOnce(release: () => void): () => void {
-  let released = false
-  return () => {
-    if (released) return
-    released = true
-    release()
-  }
 }
 
 /**
  * Hold the slot until `response`'s body ends: swap in a passthrough body that
  * releases when the underlying stream is drained, errored, or cancelled.
- * Bodiless responses release immediately.
+ * `release` is idempotent (see {@link Semaphore.slot}), so the racing
+ * callbacks below can each call it safely.
  */
 function releaseOnBodyEnd(response: Response, release: () => void): Response {
-  const body = response.body
-  if (!body) {
-    release()
-    return response
-  }
-
-  const done = releaseOnce(release)
+  const body = response.body as ReadableStream<Uint8Array>
 
   // `getReader` rather than piping the stream itself into the new Response:
   // a foreign stream (cross-realm, ponyfill) would fail the platform's brand
@@ -113,19 +289,19 @@ function releaseOnBodyEnd(response: Response, release: () => void): Response {
   // The pull loop below cannot observe a source that terminates between
   // pulls (e.g. an abort erroring the stream while a chunk sits in the
   // queue and no read is pending); `closed` settles on any termination.
-  void reader.closed.then(done, done)
+  void reader.closed.then(release, release)
   const passthrough = new ReadableStream<Uint8Array>({
     async pull(controller) {
       let result: ReadableStreamReadResult<Uint8Array>
       try {
         result = await reader.read()
       } catch (err) {
-        done()
+        release()
         controller.error(err)
         return
       }
       if (result.done) {
-        done()
+        release()
         controller.close()
         return
       }
@@ -135,7 +311,7 @@ function releaseOnBodyEnd(response: Response, release: () => void): Response {
       try {
         await reader.cancel(reason)
       } finally {
-        done()
+        release()
       }
     },
   })
@@ -148,7 +324,7 @@ function releaseOnBodyEnd(response: Response, release: () => void): Response {
     // carrying a body on a null-body status). Give up on body accounting
     // for this response rather than break the request.
     reader.releaseLock()
-    done()
+    release()
     return response
   }
 

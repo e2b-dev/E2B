@@ -144,6 +144,167 @@ test('limitConcurrency releases immediately for bodiless responses', async () =>
   expect(second.status).toBe(204)
 })
 
+test('limitConcurrency releases immediately for content-length: 0 responses', async () => {
+  const inner = vi.fn(
+    async () =>
+      new Response('', { status: 200, headers: { 'content-length': '0' } })
+  ) as unknown as typeof fetch
+
+  const limited = limitConcurrency(inner, 1)
+  const first = await limited('https://example.com/first')
+  expect(first.status).toBe(200)
+  // openapi-fetch never touches these bodies; releasing must not depend on a
+  // consumer (or an eager pull) reading them.
+  expect(first.bodyUsed).toBe(false)
+  expect(first.body?.locked ?? false).toBe(false)
+
+  const second = await limited('https://example.com/second')
+  expect(second.status).toBe(200)
+})
+
+test('limitConcurrency releases immediately for HEAD responses', async () => {
+  const inner = vi.fn(
+    async () =>
+      // A HEAD response's Content-Length describes the body the same GET
+      // would have returned; no bytes ever arrive.
+      new Response(null, { status: 200, headers: { 'content-length': '42' } })
+  ) as unknown as typeof fetch
+
+  const limited = limitConcurrency(inner, 1)
+  await limited('https://example.com/first', { method: 'HEAD' })
+
+  const second = await limited('https://example.com/second', {
+    method: 'HEAD',
+  })
+  expect(second.status).toBe(200)
+})
+
+test('limitConcurrency releases immediately when the body is already locked or used', async () => {
+  let calls = 0
+  const inner = vi.fn(async () => {
+    calls++
+    if (calls === 1) {
+      // A mock/interceptor got to the body first.
+      const res = new Response('spoken for')
+      res.body!.getReader()
+      return res
+    }
+    if (calls === 2) {
+      const res = new Response('consumed')
+      await res.text()
+      return res
+    }
+    return new Response('ok')
+  }) as unknown as typeof fetch
+
+  const limited = limitConcurrency(inner, 1)
+  // Must not throw (getReader on a locked body) and must not leak the slot.
+  const locked = await limited('https://example.com/locked')
+  expect(locked.body!.locked).toBe(true)
+
+  const used = await limited('https://example.com/used')
+  expect(used.bodyUsed).toBe(true)
+
+  const third = await limited('https://example.com/third')
+  expect(await third.text()).toBe('ok')
+})
+
+test('limitConcurrency reserves unary capacity from Connect streaming requests', async () => {
+  const streams: ReadableStreamDefaultController<Uint8Array>[] = []
+  const inner = vi.fn(async (input: RequestInfo | URL) => {
+    if (String(input).includes('/stream')) {
+      return new Response(
+        new ReadableStream<Uint8Array>({
+          start(controller) {
+            streams.push(controller)
+          },
+        })
+      )
+    }
+    return new Response(null, { status: 204 })
+  }) as unknown as typeof fetch
+
+  const limited = limitConcurrency(inner, 2, { reserved: 1 })
+  const streamingInit = {
+    method: 'POST',
+    headers: { 'content-type': 'application/connect+json' },
+  }
+
+  // Only max - reserved = 1 streaming slot: the second stream queues.
+  await limited('https://example.com/stream/1', streamingInit)
+  let secondStreamStarted = false
+  const secondStream = limited('https://example.com/stream/2', streamingInit)
+  void secondStream.then(() => {
+    secondStreamStarted = true
+  })
+  await Promise.resolve()
+  await Promise.resolve()
+  expect(secondStreamStarted).toBe(false)
+
+  // The reserved slot keeps unary/control calls runnable while the stream
+  // holds its slot open.
+  const unary = await limited('https://example.com/kill')
+  expect(unary.status).toBe(204)
+  expect(secondStreamStarted).toBe(false)
+
+  // Ending the first stream admits the queued one.
+  streams[0].close()
+  const second = await secondStream
+  expect(secondStreamStarted).toBe(true)
+  await second.body!.cancel()
+})
+
+test('limitConcurrency lets unary overflow when the cap is too small to reserve', async () => {
+  const inner = vi.fn(async (input: RequestInfo | URL) => {
+    if (String(input).includes('/stream')) {
+      return new Response(
+        new ReadableStream<Uint8Array>({ pull: () => new Promise(() => {}) })
+      )
+    }
+    return new Response(null, { status: 204 })
+  }) as unknown as typeof fetch
+
+  // max=1, reserved=1: the stream may still start (streaming budget never
+  // drops below 1) and unary gets one overflow slot beyond max.
+  const limited = limitConcurrency(inner, 1, { reserved: 1 })
+  const stream = await limited('https://example.com/stream', {
+    method: 'POST',
+    headers: { 'content-type': 'application/connect+json' },
+  })
+
+  const kill = await limited('https://example.com/kill')
+  expect(kill.status).toBe(204)
+
+  await stream.body!.cancel()
+})
+
+test('limitConcurrency names the env var when a queued request aborts', async () => {
+  const inner = vi.fn(
+    async () =>
+      new Response(
+        new ReadableStream<Uint8Array>({ pull: () => new Promise(() => {}) })
+      )
+  ) as unknown as typeof fetch
+
+  const limited = limitConcurrency(inner, 1, {
+    envVarName: 'E2B_TEST_INFLIGHT_REQUESTS',
+  })
+  const first = await limited('https://example.com/first')
+
+  const controller = new AbortController()
+  const queued = limited('https://example.com/queued', {
+    signal: controller.signal,
+  })
+  controller.abort(new DOMException('deadline', 'TimeoutError'))
+
+  await expect(queued).rejects.toMatchObject({
+    name: 'TimeoutError',
+    message: expect.stringContaining('E2B_TEST_INFLIGHT_REQUESTS'),
+  })
+
+  await first.body!.cancel()
+})
+
 test('limitConcurrency preserves response fields on the wrapped response', async () => {
   const inner = vi.fn(async (input: RequestInfo | URL) => {
     const res = new Response('payload', {
