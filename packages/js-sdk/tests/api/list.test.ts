@@ -222,6 +222,85 @@ sandboxTest.skipIf(isDebug)(
 )
 
 sandboxTest.skipIf(isDebug)(
+  'list sandboxes with order',
+  async ({ sandbox, sandboxTestId }) => {
+    const extraSbx = await Sandbox.create({ metadata: { sandboxTestId } })
+
+    try {
+      const asc = await Sandbox.list({
+        query: { metadata: { sandboxTestId } },
+        order: 'asc',
+      }).nextItems()
+
+      assert.isAtLeast(asc.length, 2)
+      assert.equal(asc[0].sandboxId, sandbox.sandboxId)
+      assert.equal(asc[asc.length - 1].sandboxId, extraSbx.sandboxId)
+
+      const desc = await Sandbox.list({
+        query: { metadata: { sandboxTestId } },
+        order: 'desc',
+      }).nextItems()
+
+      assert.isAtLeast(desc.length, 2)
+      assert.equal(desc[0].sandboxId, extraSbx.sandboxId)
+      assert.equal(desc[desc.length - 1].sandboxId, sandbox.sandboxId)
+    } finally {
+      await extraSbx.kill()
+    }
+  }
+)
+
+sandboxTest.skipIf(isDebug)(
+  'list sandboxes started after',
+  async ({ sandbox, sandboxTestId }) => {
+    const info = await sandbox.getInfo()
+
+    const paginator = Sandbox.list({
+      query: {
+        metadata: { sandboxTestId },
+        startedAfter: info.startedAt,
+      },
+    })
+    const sandboxes = await paginator.nextItems()
+
+    assert.isTrue(sandboxes.some((s) => s.sandboxId === sandbox.sandboxId))
+
+    const afterPaginator = Sandbox.list({
+      query: {
+        metadata: { sandboxTestId },
+        startedAfter: new Date(info.startedAt.getTime() + 1000),
+      },
+    })
+    const laterSandboxes = await afterPaginator.nextItems()
+
+    assert.isFalse(
+      laterSandboxes.some((s) => s.sandboxId === sandbox.sandboxId)
+    )
+  }
+)
+
+sandboxTest.skipIf(isDebug)(
+  'list sandboxes with template filter',
+  async ({ sandbox, sandboxTestId }) => {
+    const info = await sandbox.getInfo()
+
+    const paginator = Sandbox.list({
+      query: { metadata: { sandboxTestId }, template: info.templateId },
+    })
+    const sandboxes = await paginator.nextItems()
+
+    assert.isTrue(sandboxes.some((s) => s.sandboxId === sandbox.sandboxId))
+
+    const unknownPaginator = Sandbox.list({
+      query: { metadata: { sandboxTestId }, template: 'unknown-template' },
+    })
+    const unknownSandboxes = await unknownPaginator.nextItems()
+
+    assert.equal(unknownSandboxes.length, 0)
+  }
+)
+
+sandboxTest.skipIf(isDebug)(
   'list sandboxes',
   async ({ sandbox, sandboxTestId }) => {
     const paginator = Sandbox.list({

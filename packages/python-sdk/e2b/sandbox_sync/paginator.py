@@ -7,6 +7,7 @@ from e2b.api import handle_api_exception
 from e2b.api.client.api.sandboxes import get_v2_sandboxes
 from e2b.api.client.api.snapshots import get_snapshots
 from e2b.api.client.models.error import Error
+from e2b.api.client.models.order_direction import OrderDirection
 from e2b.api.client.types import UNSET
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.exceptions import SandboxException
@@ -63,6 +64,15 @@ class SandboxPaginator(SandboxPaginatorBase):
             client=api_client,
             metadata=metadata if metadata else UNSET,
             state=self.query.state if self.query and self.query.state else UNSET,
+            started_after=(
+                self.query.started_after
+                if self.query and self.query.started_after
+                else UNSET
+            ),
+            template=(
+                self.query.template if self.query and self.query.template else UNSET
+            ),
+            order=OrderDirection(self.order) if self.order else UNSET,
             limit=self.limit if self.limit else UNSET,
             next_token=self._next_token if self._next_token else UNSET,
         )

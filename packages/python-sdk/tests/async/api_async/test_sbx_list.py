@@ -1,4 +1,5 @@
 import uuid
+from datetime import timedelta
 
 import pytest
 
@@ -173,6 +174,83 @@ async def test_paginate_running_and_paused_sandboxes(
     assert paginator.has_next is False
     assert paginator.next_token is None
     assert sandboxes2[0].sandbox_id == async_sandbox.sandbox_id
+
+
+@pytest.mark.skip_debug()
+async def test_list_sandboxes_with_order(
+    async_sandbox: AsyncSandbox, async_sandbox_factory, sandbox_test_id: str
+):
+    extra_sbx = await async_sandbox_factory(
+        metadata={"sandbox_test_id": sandbox_test_id}
+    )
+
+    paginator = AsyncSandbox.list(
+        query=SandboxQuery(metadata={"sandbox_test_id": sandbox_test_id}),
+        order="asc",
+    )
+    asc = await paginator.next_items()
+    assert len(asc) >= 2
+    assert asc[0].sandbox_id == async_sandbox.sandbox_id
+    assert asc[-1].sandbox_id == extra_sbx.sandbox_id
+
+    paginator = AsyncSandbox.list(
+        query=SandboxQuery(metadata={"sandbox_test_id": sandbox_test_id}),
+        order="desc",
+    )
+    desc = await paginator.next_items()
+    assert len(desc) >= 2
+    assert desc[0].sandbox_id == extra_sbx.sandbox_id
+    assert desc[-1].sandbox_id == async_sandbox.sandbox_id
+
+
+@pytest.mark.skip_debug()
+async def test_list_sandboxes_started_after(
+    async_sandbox: AsyncSandbox, sandbox_test_id: str
+):
+    info = await async_sandbox.get_info()
+
+    paginator = AsyncSandbox.list(
+        query=SandboxQuery(
+            metadata={"sandbox_test_id": sandbox_test_id},
+            started_after=info.started_at,
+        )
+    )
+    sandboxes = await paginator.next_items()
+    assert async_sandbox.sandbox_id in [sbx.sandbox_id for sbx in sandboxes]
+
+    paginator = AsyncSandbox.list(
+        query=SandboxQuery(
+            metadata={"sandbox_test_id": sandbox_test_id},
+            started_after=info.started_at + timedelta(seconds=1),
+        )
+    )
+    later_sandboxes = await paginator.next_items()
+    assert async_sandbox.sandbox_id not in [sbx.sandbox_id for sbx in later_sandboxes]
+
+
+@pytest.mark.skip_debug()
+async def test_list_sandboxes_with_template_filter(
+    async_sandbox: AsyncSandbox, sandbox_test_id: str
+):
+    info = await async_sandbox.get_info()
+
+    paginator = AsyncSandbox.list(
+        query=SandboxQuery(
+            metadata={"sandbox_test_id": sandbox_test_id},
+            template=info.template_id,
+        )
+    )
+    sandboxes = await paginator.next_items()
+    assert async_sandbox.sandbox_id in [sbx.sandbox_id for sbx in sandboxes]
+
+    paginator = AsyncSandbox.list(
+        query=SandboxQuery(
+            metadata={"sandbox_test_id": sandbox_test_id},
+            template="unknown-template",
+        )
+    )
+    unknown_sandboxes = await paginator.next_items()
+    assert len(unknown_sandboxes) == 0
 
 
 @pytest.mark.skip_debug()

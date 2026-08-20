@@ -236,7 +236,8 @@ export class Sandbox extends SandboxApi {
    * `opts.query.state = [...]`.
    *
    * @param opts connection options, plus optional `query` to filter by
-   *   metadata / state and `limit` / `nextToken` for pagination.
+   *   metadata / state / start time / template, `order` to sort by start
+   *   time, and `limit` / `nextToken` for pagination.
    *
    * @returns a {@link SandboxPaginator} that yields pages of sandboxes
    *   (running and paused by default). Iterate pages via
