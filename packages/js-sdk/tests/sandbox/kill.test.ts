@@ -1,9 +1,9 @@
 import { expect } from 'vitest'
 
 import { Sandbox } from '../../src'
-import { sandboxTest, isDebug } from '../setup.js'
+import { sandboxTest } from '../setup.js'
 
-sandboxTest.skipIf(isDebug)('kill', async ({ sandbox, sandboxTestId }) => {
+sandboxTest('kill', async ({ sandbox, sandboxTestId }) => {
   const killed = await sandbox.kill()
   expect(killed).toBe(true)
 

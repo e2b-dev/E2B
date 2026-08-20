@@ -1,0 +1,56 @@
+name: SDK E2E Tests
+
+# The opt-in tier. These jobs provision sandboxes, talk to envd and build
+# templates against live infrastructure, so they are not part of the required
+# PR checks (see sdk_tests.yml, which runs the fully mocked default tier).
+#
+# Run them manually from the Actions tab, or by adding the `e2e` label to a PR.
+on:
+  workflow_dispatch:
+    inputs:
+      staging:
+        description: 'Run against staging instead of production'
+        required: false
+        type: boolean
+        default: false
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened, labeled]
+
+permissions:
+  contents: read
+
+jobs:
+  js-e2e:
+    name: E2E / JS SDK
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'e2e') }}
+    uses: ./.github/workflows/js_sdk_tests.yml
+    with:
+      e2e: true
+      # The e2e tier only runs under Node — the Bun/Deno/Cloudflare legs cover
+      # the mocked tier in the default workflow.
+      node-only: true
+      E2B_DOMAIN: ${{ inputs.staging && vars.E2B_DOMAIN_STAGING || '' }}
+    secrets:
+      E2B_API_KEY: ${{ inputs.staging && secrets.E2B_API_KEY_STAGING || secrets.E2B_API_KEY }}
+
+  python-e2e:
+    name: E2E / Python SDK
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'e2e') }}
+    uses: ./.github/workflows/python_sdk_tests.yml
+    with:
+      e2e: true
+      E2B_DOMAIN: ${{ inputs.staging && vars.E2B_DOMAIN_STAGING || '' }}
+    secrets:
+      E2B_API_KEY: ${{ inputs.staging && secrets.E2B_API_KEY_STAGING || secrets.E2B_API_KEY }}
+
+  cli-e2e:
+    name: E2E / CLI
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'e2e') }}
+    uses: ./.github/workflows/cli_tests.yml
+    with:
+      e2e: true
+      E2B_DOMAIN: ${{ inputs.staging && vars.E2B_DOMAIN_STAGING || '' }}
+    secrets:
+      E2B_API_KEY: ${{ inputs.staging && secrets.E2B_API_KEY_STAGING || secrets.E2B_API_KEY }}

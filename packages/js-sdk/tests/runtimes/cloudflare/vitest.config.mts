@@ -2,6 +2,8 @@ import { cloudflareTest } from '@cloudflare/vitest-pool-workers'
 import { config } from 'dotenv'
 import { defineConfig } from 'vitest/config'
 
+import { e2eFiles } from '../../e2eFiles.mjs'
+
 const env = config()
 
 // Error names thrown by src/errors.ts (plus CommandExitError) — the shapes
@@ -56,6 +58,8 @@ export default defineConfig({
       // virtual filesystem can never see (and throws in CI when the file is
       // "missing"); the Node unit project keeps running it.
       'tests/bundle/**',
+      // The e2e tier provisions sandboxes; workerd only runs the mocked tier.
+      ...e2eFiles,
     ],
     globals: false,
     testTimeout: 30_000,
@@ -82,7 +86,7 @@ export default defineConfig({
           // workerd's teardown error for in-flight streams when a test kills
           // the sandbox mid-request.
           message === 'Network connection lost.' ||
-          // Stub rejection from tests/sandbox/git/validation.test.ts.
+          // Stub rejection from tests/sandbox/gitValidation.test.ts.
           message === 'commands.run should not be called')
       if (expectedRejection) return false
     },

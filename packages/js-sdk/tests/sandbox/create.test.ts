@@ -1,9 +1,9 @@
-import { assert, expect, test } from 'vitest'
+import { assert, expect } from 'vitest'
 
 import { Sandbox } from '../../src'
-import { template, isDebug } from '../setup.js'
+import { e2eTest, template } from '../setup.js'
 
-test.skipIf(isDebug)('create', async () => {
+e2eTest('create', async () => {
   const sbx = await Sandbox.create(template, { timeoutMs: 5_000 })
   try {
     const isRunning = await sbx.isRunning()
@@ -15,7 +15,7 @@ test.skipIf(isDebug)('create', async () => {
   }
 })
 
-test.skipIf(isDebug)('metadata', async () => {
+e2eTest('metadata', async () => {
   const metadata = {
     'test-key': 'test-value',
   }
@@ -33,37 +33,34 @@ test.skipIf(isDebug)('metadata', async () => {
   }
 })
 
-test.skipIf(isDebug)(
-  'MCP gateway start failure kills the created sandbox',
-  async () => {
-    const metadata = { mcpGatewayCleanupTestId: crypto.randomUUID() }
-    const query = { state: ['running' as const], metadata }
-    let remainingSandboxes: Awaited<
-      ReturnType<ReturnType<typeof Sandbox.list>['nextItems']>
-    > = []
+e2eTest('MCP gateway start failure kills the created sandbox', async () => {
+  const metadata = { mcpGatewayCleanupTestId: crypto.randomUUID() }
+  const query = { state: ['running' as const], metadata }
+  let remainingSandboxes: Awaited<
+    ReturnType<ReturnType<typeof Sandbox.list>['nextItems']>
+  > = []
 
-    try {
-      // The base template has no mcp-gateway binary, so gateway startup
-      // reliably fails after the sandbox has been allocated.
-      await expect(
-        Sandbox.create(template, {
-          timeoutMs: 60_000,
-          metadata,
-          mcp: { invalid_server: {} } as never,
-        })
-      ).rejects.toThrow('Failed to start MCP gateway')
+  try {
+    // The base template has no mcp-gateway binary, so gateway startup
+    // reliably fails after the sandbox has been allocated.
+    await expect(
+      Sandbox.create(template, {
+        timeoutMs: 60_000,
+        metadata,
+        mcp: { invalid_server: {} } as never,
+      })
+    ).rejects.toThrow('Failed to start MCP gateway')
 
-      remainingSandboxes = await Sandbox.list({ query }).nextItems()
-      expect(remainingSandboxes).toEqual([])
-    } finally {
-      remainingSandboxes = await Sandbox.list({ query })
-        .nextItems()
-        .catch(() => remainingSandboxes)
-      await Promise.all(
-        remainingSandboxes.map((sandbox) =>
-          Sandbox.kill(sandbox.sandboxId).catch(() => false)
-        )
+    remainingSandboxes = await Sandbox.list({ query }).nextItems()
+    expect(remainingSandboxes).toEqual([])
+  } finally {
+    remainingSandboxes = await Sandbox.list({ query })
+      .nextItems()
+      .catch(() => remainingSandboxes)
+    await Promise.all(
+      remainingSandboxes.map((sandbox) =>
+        Sandbox.kill(sandbox.sandboxId).catch(() => false)
       )
-    }
+    )
   }
-)
+})

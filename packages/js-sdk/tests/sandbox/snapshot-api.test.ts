@@ -1,26 +1,23 @@
 import { assert } from 'vitest'
 
-import { sandboxTest, isDebug } from '../setup.js'
+import { sandboxTest } from '../setup.js'
 import { Sandbox } from '../../src'
 
-sandboxTest.skipIf(isDebug)(
-  'create a snapshot from sandbox',
-  async ({ sandbox }) => {
-    // Write a file to the sandbox
-    await sandbox.files.write('/home/user/test.txt', 'snapshot test content')
+sandboxTest('create a snapshot from sandbox', async ({ sandbox }) => {
+  // Write a file to the sandbox
+  await sandbox.files.write('/home/user/test.txt', 'snapshot test content')
 
-    // Create a snapshot
-    const snapshot = await sandbox.createSnapshot()
+  // Create a snapshot
+  const snapshot = await sandbox.createSnapshot()
 
-    assert.isString(snapshot.snapshotId)
-    assert.isTrue(snapshot.snapshotId.length > 0)
+  assert.isString(snapshot.snapshotId)
+  assert.isTrue(snapshot.snapshotId.length > 0)
 
-    // Cleanup
-    await Sandbox.deleteSnapshot(snapshot.snapshotId)
-  }
-)
+  // Cleanup
+  await Sandbox.deleteSnapshot(snapshot.snapshotId)
+})
 
-sandboxTest.skipIf(isDebug)(
+sandboxTest(
   'create sandbox from snapshot',
   async ({ sandbox, sandboxTestId }) => {
     const testContent = 'content from original sandbox'
@@ -50,7 +47,7 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)(
+sandboxTest(
   'create multiple sandboxes from same snapshot',
   async ({ sandbox, sandboxTestId }) => {
     const testContent = 'shared snapshot content'
@@ -101,7 +98,7 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)('list snapshots', async ({ sandbox }) => {
+sandboxTest('list snapshots', async ({ sandbox }) => {
   // Create a snapshot
   const snapshot = await sandbox.createSnapshot()
 
@@ -121,45 +118,39 @@ sandboxTest.skipIf(isDebug)('list snapshots', async ({ sandbox }) => {
   }
 })
 
-sandboxTest.skipIf(isDebug)(
-  'list snapshots for specific sandbox',
-  async ({ sandbox }) => {
-    // Create a snapshot
-    const snapshot = await sandbox.createSnapshot()
+sandboxTest('list snapshots for specific sandbox', async ({ sandbox }) => {
+  // Create a snapshot
+  const snapshot = await sandbox.createSnapshot()
 
-    try {
-      // List snapshots for this sandbox using instance method
-      const paginator = sandbox.listSnapshots()
-      const snapshots = await paginator.nextItems()
+  try {
+    // List snapshots for this sandbox using instance method
+    const paginator = sandbox.listSnapshots()
+    const snapshots = await paginator.nextItems()
 
-      // Should find our snapshot
-      const found = snapshots.find((s) => s.snapshotId === snapshot.snapshotId)
-      assert.isDefined(found)
-    } finally {
-      await Sandbox.deleteSnapshot(snapshot.snapshotId)
-    }
+    // Should find our snapshot
+    const found = snapshots.find((s) => s.snapshotId === snapshot.snapshotId)
+    assert.isDefined(found)
+  } finally {
+    await Sandbox.deleteSnapshot(snapshot.snapshotId)
   }
-)
+})
 
-sandboxTest.skipIf(isDebug)(
-  'create a named snapshot',
-  async ({ sandbox, sandboxTestId }) => {
-    const snapshotName = `snap-${sandboxTestId}`
+sandboxTest('create a named snapshot', async ({ sandbox, sandboxTestId }) => {
+  const snapshotName = `snap-${sandboxTestId}`
 
-    const snapshot = await sandbox.createSnapshot({ name: snapshotName })
+  const snapshot = await sandbox.createSnapshot({ name: snapshotName })
 
-    try {
-      assert.isString(snapshot.snapshotId)
-      assert.isArray(snapshot.names)
-      assert.isTrue(snapshot.names.length > 0)
-      assert.isTrue(snapshot.names.some((n) => n.includes(snapshotName)))
-    } finally {
-      await Sandbox.deleteSnapshot(snapshot.snapshotId)
-    }
+  try {
+    assert.isString(snapshot.snapshotId)
+    assert.isArray(snapshot.names)
+    assert.isTrue(snapshot.names.length > 0)
+    assert.isTrue(snapshot.names.some((n) => n.includes(snapshotName)))
+  } finally {
+    await Sandbox.deleteSnapshot(snapshot.snapshotId)
   }
-)
+})
 
-sandboxTest.skipIf(isDebug)(
+sandboxTest(
   'list snapshots filtered by name',
   async ({ sandbox, sandboxTestId }) => {
     const snapshotName = `snap-filter-${sandboxTestId}`
@@ -187,7 +178,7 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)('delete snapshot', async ({ sandbox }) => {
+sandboxTest('delete snapshot', async ({ sandbox }) => {
   const snapshot = await sandbox.createSnapshot()
 
   // Delete should succeed
@@ -199,7 +190,7 @@ sandboxTest.skipIf(isDebug)('delete snapshot', async ({ sandbox }) => {
   assert.isFalse(deletedAgain)
 })
 
-sandboxTest.skipIf(isDebug)(
+sandboxTest(
   'snapshot preserves file system state',
   async ({ sandbox, sandboxTestId }) => {
     const appDir = '/home/user/app'

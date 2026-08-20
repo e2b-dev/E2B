@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { EventType } from '../../../src/envd/filesystem/filesystem_pb'
+import { EventType } from '../../src/envd/filesystem/filesystem_pb'
 import {
   FilesystemEventType,
   WatchHandle,
-} from '../../../src/sandbox/filesystem/watchHandle'
+} from '../../src/sandbox/filesystem/watchHandle'
 
 function filesystemEvent(name: string, type: EventType = EventType.WRITE) {
   return {

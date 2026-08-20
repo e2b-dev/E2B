@@ -1,6 +1,6 @@
-import { assert, test, describe } from 'vitest'
+import { assert, describe } from 'vitest'
 import { getSignature, Sandbox } from '../../src'
-import { sandboxTest, isDebug } from '../setup'
+import { e2eTest, sandboxTest } from '../setup'
 import { randomUUID, createHash } from 'node:crypto'
 
 describe('secure sandbox', () => {
@@ -10,33 +10,27 @@ describe('secure sandbox', () => {
     },
   })
 
-  sandboxTest.skipIf(isDebug)(
-    'test access file with signing',
-    async ({ sandbox }) => {
-      await sandbox.files.write('hello.txt', 'hello world')
+  sandboxTest('test access file with signing', async ({ sandbox }) => {
+    await sandbox.files.write('hello.txt', 'hello world')
 
-      const fileUrlWithSigning = await sandbox.downloadUrl('hello.txt')
+    const fileUrlWithSigning = await sandbox.downloadUrl('hello.txt')
 
-      const res = await fetch(fileUrlWithSigning)
-      const resBody = await res.text()
-      const resStatus = res.status
+    const res = await fetch(fileUrlWithSigning)
+    const resBody = await res.text()
+    const resStatus = res.status
 
-      assert.equal(resStatus, 200)
-      assert.equal(resBody, 'hello world')
-    }
-  )
+    assert.equal(resStatus, 200)
+    assert.equal(resBody, 'hello world')
+  })
 
-  sandboxTest.skipIf(isDebug)(
-    'try to re-connect to sandbox',
-    async ({ sandbox }) => {
-      const sbxReconnect = await Sandbox.connect(sandbox.sandboxId)
+  sandboxTest('try to re-connect to sandbox', async ({ sandbox }) => {
+    const sbxReconnect = await Sandbox.connect(sandbox.sandboxId)
 
-      await sbxReconnect.files.write('hello.txt', 'hello world')
-    }
-  )
+    await sbxReconnect.files.write('hello.txt', 'hello world')
+  })
 })
 
-test.skipIf(isDebug)('signing generation', async () => {
+e2eTest('signing generation', async () => {
   const operation = 'read'
   const path = '/home/user/hello.txt'
   const user = 'root'
@@ -63,7 +57,7 @@ test.skipIf(isDebug)('signing generation', async () => {
   assert.deepEqual(readSignatureExpected, readSignatureReceived)
 })
 
-test.skipIf(isDebug)('signing generation with expiration', async () => {
+e2eTest('signing generation with expiration', async () => {
   const operation = 'read'
   const path = '/home/user/hello.txt'
   const user = 'root'
@@ -95,7 +89,7 @@ test.skipIf(isDebug)('signing generation with expiration', async () => {
   assert.deepEqual(readSignatureExpected, readSignatureReceived)
 })
 
-test.skipIf(isDebug)('static signing key comparison', async () => {
+e2eTest('static signing key comparison', async () => {
   const operation = 'read'
   const path = 'hello.txt'
   const user = 'user'

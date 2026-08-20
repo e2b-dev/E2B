@@ -16,6 +16,7 @@ def test_kill_existing_sandbox(sandbox: Sandbox, sandbox_test_id: str):
     assert sandbox.sandbox_id not in [s.sandbox_id for s in sandboxes]
 
 
+@pytest.mark.e2e
 @pytest.mark.skip_debug()
 def test_kill_non_existing_sandbox():
     assert not Sandbox.kill("nonexistingsandbox")

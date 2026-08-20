@@ -1,7 +1,50 @@
 import { execSync, spawn, spawnSync } from 'node:child_process'
 import path from 'node:path'
 
+import { test } from 'vitest'
+
+import { getUserConfig } from 'src/user'
+
 export const isDebug = process.env.E2B_DEBUG !== undefined
+
+/**
+ * Opt-in flag for the e2e tier: tests that drive the CLI against live
+ * infrastructure. The default `pnpm test` run stays fully mocked.
+ */
+export const isE2E = process.env.E2B_E2E !== undefined
+
+type UserConfigWithDomain = NonNullable<ReturnType<typeof getUserConfig>> & {
+  domain?: string
+  E2B_DOMAIN?: string
+}
+
+function safeGetUserConfig(): UserConfigWithDomain | null {
+  try {
+    return getUserConfig() as UserConfigWithDomain | null
+  } catch (err) {
+    console.warn(`Failed to read ~/.e2b/config.json: ${String(err)}`)
+    return null
+  }
+}
+
+const userConfig = safeGetUserConfig()
+
+export const e2eDomain =
+  process.env.E2B_DOMAIN ||
+  userConfig?.E2B_DOMAIN ||
+  userConfig?.domain ||
+  'e2b.app'
+
+export const e2eApiKey = process.env.E2B_API_KEY || userConfig?.projectApiKey
+
+/**
+ * True when the e2e tier can't run: it needs the explicit opt-in and
+ * credentials, and debug mode points the CLI at a local stack instead.
+ */
+export const skipE2E = !isE2E || !e2eApiKey || isDebug
+
+/** `test` for the e2e tier — skipped unless `E2B_E2E=1` and credentials are set. */
+export const e2eTest = test.skipIf(skipE2E)
 
 type CliRunOptions = {
   timeoutMs: number
