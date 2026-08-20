@@ -1,8 +1,13 @@
 import type { PathLike } from 'node:fs'
 import { ApiClient } from '../api'
-import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
+import {
+  ClientFactory,
+  ConnectionConfig,
+  ConnectionOpts,
+} from '../connectionConfig'
 import { BuildError, InvalidArgumentError } from '../errors'
 import { runtime, shellQuote } from '../utils'
+import { callableTemplate } from './callable'
 import {
   assignTags,
   checkAliasExists,
@@ -50,39 +55,14 @@ import {
 } from './utils'
 
 /**
- * Base class for building E2B sandbox templates.
+ * Builder for E2B sandbox templates, and the entrypoint for the template API.
+ *
+ * Exposed as {@link Template}, which can be called as a factory.
  */
 export class TemplateBase
+  extends ClientFactory
   implements TemplateFromImage, TemplateBuilder, TemplateFinal
 {
-  /**
-   * Connection options bound to this class, used as defaults for every
-   * operation that talks to the API. Undefined here, so the config comes from
-   * per-call options and environment variables; per-client subclasses bind
-   * their own options.
-   *
-   * @internal
-   * @hidden
-   * @hide
-   */
-  protected static readonly boundOpts?: Omit<ConnectionOpts, 'signal'>
-
-  /**
-   * Layer per-call options over the options bound to the class. Per-call
-   * options explicitly set to `undefined` don't clear the bound ones.
-   *
-   * @internal
-   * @hidden
-   * @hide
-   */
-  protected static resolveOpts<T extends ConnectionOpts>(opts?: T): T {
-    const perCallOpts = Object.fromEntries(
-      Object.entries(opts ?? {}).filter(([, value]) => value !== undefined)
-    )
-
-    return { ...this.boundOpts, ...perCallOpts } as T
-  }
-
   private defaultBaseImage: string = 'e2bdev/base'
   private baseImage: string | undefined = this.defaultBaseImage
   private baseTemplate: string | undefined = undefined
@@ -100,6 +80,7 @@ export class TemplateBase
   private stackTraces: (string | undefined)[] = []
 
   constructor(options?: TemplateOptions) {
+    super()
     this.fileContextPath =
       options?.fileContextPath ??
       (runtime === 'browser' ? '.' : (getCallerDirectory() ?? '.'))
@@ -186,7 +167,7 @@ export class TemplateBase
       options
     )
 
-    const buildOpts = this.resolveOpts(buildOptions)
+    const buildOpts = this.resolveOpts(buildOptions) ?? {}
 
     try {
       buildOpts.onBuildLogs?.(new LogEntryStart(new Date(), 'Build started'))
@@ -270,7 +251,7 @@ export class TemplateBase
       options
     )
 
-    const buildOpts = this.resolveOpts(buildOptions)
+    const buildOpts = this.resolveOpts(buildOptions) ?? {}
     const config = new ConnectionConfig(buildOpts)
     const client = new ApiClient(config)
 
@@ -1285,10 +1266,16 @@ export class TemplateBase
 }
 
 /**
- * Create a new E2B template builder instance.
+ * Builder and API entrypoint for E2B sandbox templates.
  *
- * @param options Optional configuration for the template builder
- * @returns A new template builder instance
+ * `Template` is the {@link TemplateBase} class, wrapped so it can also be
+ * called as a factory returning a builder. The statics (`Template.build`,
+ * `Template.exists`, …) resolve their connection options off the class they are
+ * called on — so a subclass can bind its own defaults.
+ *
+ * @param options Optional builder options, e.g. the file context path used to
+ *   resolve relative paths passed to `copy`
+ * @returns A template builder
  *
  * @example
  * ```ts
@@ -1302,29 +1289,7 @@ export class TemplateBase
  * await Template.build(template, 'my-python-app:v1.0')
  * ```
  */
-export function Template(options?: TemplateOptions): TemplateFromImage {
-  return new TemplateBase(options)
-}
-
-/**
- * The statics resolve their connection options off `this`, so they are bound to
- * `TemplateBase` (which carries no bound options) when re-exposed as plain
- * properties of the `Template` factory function.
- */
-function boundToBase<T extends (...args: never[]) => unknown>(fn: T): T {
-  return fn.bind(TemplateBase) as T
-}
-
-Template.build = boundToBase(TemplateBase.build)
-Template.buildInBackground = boundToBase(TemplateBase.buildInBackground)
-Template.getBuildStatus = boundToBase(TemplateBase.getBuildStatus)
-Template.exists = boundToBase(TemplateBase.exists)
-Template.aliasExists = boundToBase(TemplateBase.aliasExists)
-Template.assignTags = boundToBase(TemplateBase.assignTags)
-Template.removeTags = boundToBase(TemplateBase.removeTags)
-Template.getTags = boundToBase(TemplateBase.getTags)
-Template.toJSON = TemplateBase.toJSON
-Template.toDockerfile = TemplateBase.toDockerfile
+export const Template = callableTemplate(TemplateBase)
 
 export type {
   BuildInfo,

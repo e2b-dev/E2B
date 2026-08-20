@@ -423,6 +423,43 @@ export class ConnectionConfig {
     this.sandboxUrl = opts?.sandboxUrl || ConnectionConfig.sandboxUrl
   }
 
+  /**
+   * Merge connection options bound to a class (e.g. by an `E2B` client) with
+   * the per-call options. Per-call options win, then the bound options, then
+   * the environment variables resolved by the `ConnectionConfig` constructor.
+   *
+   * Explicitly `undefined` per-call values are dropped so they fall back to the
+   * bound options instead of clearing them.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  static mergeOpts<T extends ConnectionOpts>(
+    boundOpts: ConnectionOpts | undefined,
+    opts?: T
+  ): T | undefined {
+    if (!boundOpts) {
+      return opts
+    }
+
+    const merged: Record<string, unknown> = { ...boundOpts }
+    for (const [key, value] of Object.entries(opts ?? {})) {
+      if (value !== undefined) {
+        // `defineProperty` so a `__proto__` key (e.g. from parsed JSON) becomes
+        // a plain own property instead of changing the prototype.
+        Object.defineProperty(merged, key, {
+          value,
+          enumerable: true,
+          writable: true,
+          configurable: true,
+        })
+      }
+    }
+
+    return merged as T
+  }
+
   private static get domain() {
     return getEnvVar('E2B_DOMAIN') || 'e2b.app'
   }
@@ -496,6 +533,44 @@ export class ConnectionConfig {
     }
 
     return `${port}-${sandboxId}.${sandboxDomain ?? this.domain}`
+  }
+}
+
+/**
+ * Base class for the resource classes (`Sandbox`, `Volume`, `Template`,
+ * `Secret`) whose static methods build a `ConnectionConfig` from per-call
+ * options. An {@link E2B} client exposes subclasses of these with its own
+ * options bound, and every static method resolves them through
+ * {@link ClientFactory.resolveOpts}.
+ *
+ * @internal
+ * @hidden
+ * @hide
+ */
+export class ClientFactory {
+  /**
+   * Connection options bound to this class by an {@link E2B} client.
+   *
+   * Empty on the base classes, so the env-configured default path is unchanged.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  protected static readonly boundOpts?: Omit<ConnectionOpts, 'signal'>
+
+  /**
+   * Merge the connection options bound to this class with the per-call options,
+   * with the per-call options taking precedence.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  protected static resolveOpts<T extends ConnectionOpts>(
+    opts?: T
+  ): T | undefined {
+    return ConnectionConfig.mergeOpts(this.boundOpts, opts)
   }
 }
 

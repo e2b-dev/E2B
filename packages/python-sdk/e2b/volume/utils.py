@@ -40,6 +40,10 @@ class DualMethod:
     When accessed on the class (e.g. ``Volume.get_info``), the static function
     is returned.  When accessed on an instance (e.g. ``vol.get_info``), the
     instance method is returned as a bound method.
+
+    ``static_fn`` may be a ``classmethod``, in which case it is bound to the
+    accessed class so it can read class-level state (e.g. the API params an
+    :class:`e2b.E2B` client bound to a generated subclass).
     """
 
     def __init__(self, static_fn, instance_fn):
@@ -48,5 +52,5 @@ class DualMethod:
 
     def __get__(self, obj, objtype=None):
         if obj is None:
-            return self._static_fn
+            return self._static_fn.__get__(None, objtype)
         return self._instance_fn.__get__(obj, objtype)
