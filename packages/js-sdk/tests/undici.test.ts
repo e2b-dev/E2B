@@ -83,7 +83,6 @@ test('takes apart a Request the current global Request class disowns', async () 
 
     const fetcher = await buildDispatchedFetch({
       connections: 1,
-      inflightLimit: 0,
       loadUndici: async () => fakeUndici,
     })
     await fetcher(request)
@@ -128,7 +127,6 @@ test('adopts the body of a Request from another fetch implementation', async () 
 
   const fetcher = await buildDispatchedFetch({
     connections: 1,
-    inflightLimit: 0,
     loadUndici: async () => fakeUndici,
   })
   await fetcher(foreignRequest as unknown as Request)
@@ -195,7 +193,6 @@ test.skipIf(runtime !== 'node')(
     try {
       const fetcher = await buildDispatchedFetch({
         connections: 1,
-        inflightLimit: 0,
         loadUndici: async () => ({
           ...undici,
           // buildDispatchedFetch builds its own dispatcher; hand it the mock.

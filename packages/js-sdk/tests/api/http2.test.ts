@@ -6,7 +6,6 @@ afterEach(() => {
   vi.doUnmock('undici')
   vi.doUnmock('../../src/utils')
   delete process.env.E2B_API_CONNECTIONS
-  delete process.env.E2B_API_INFLIGHT_REQUESTS
 })
 
 test('uses undici with a bounded HTTP/2 dispatcher for API requests', async () => {
@@ -165,28 +164,4 @@ test('getApiConnectionLimit throws on a malformed env value', async () => {
   const { getApiConnectionLimit } = await import('../../src/api/http2')
 
   expect(() => getApiConnectionLimit()).toThrow(/E2B_API_CONNECTIONS/)
-})
-
-test('getApiInflightLimit throws on a malformed env value', async () => {
-  process.env.E2B_API_INFLIGHT_REQUESTS = 'not-a-number'
-
-  const { getApiInflightLimit } = await import('../../src/api/http2')
-
-  expect(() => getApiInflightLimit()).toThrow(/E2B_API_INFLIGHT_REQUESTS/)
-})
-
-test('getApiInflightLimit returns 0 when explicitly disabled', async () => {
-  process.env.E2B_API_INFLIGHT_REQUESTS = '0'
-
-  const { getApiInflightLimit } = await import('../../src/api/http2')
-
-  expect(getApiInflightLimit()).toBe(0)
-})
-
-test('getApiInflightLimit throws on negative env value', async () => {
-  process.env.E2B_API_INFLIGHT_REQUESTS = '-5'
-
-  const { getApiInflightLimit } = await import('../../src/api/http2')
-
-  expect(() => getApiInflightLimit()).toThrow(/E2B_API_INFLIGHT_REQUESTS=-5/)
 })
