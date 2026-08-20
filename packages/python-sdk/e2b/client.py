@@ -32,8 +32,8 @@ class E2B:
     E2B client with an explicitly bound connection configuration.
 
     The resource classes exposed by the client (`Sandbox`, `AsyncSandbox`,
-    `Volume`, `AsyncVolume`, `Template`, `AsyncTemplate`, `Secret`,
-    `AsyncSecret`) behave exactly like the top-level exports of the same name,
+    `Volume`, `AsyncVolume`, `Template`, `AsyncTemplate`) behave exactly
+    like the top-level exports of the same name,
     except the params passed to the client are used as the defaults instead of
     the environment variables.
     Per-call params still take precedence over the client's params.

@@ -17,8 +17,8 @@ export type E2BClientOpts = Omit<ConnectionOpts, 'signal'>
  * E2B client with an explicitly bound connection configuration.
  *
  * The resources exposed by the client ({@link E2B.Sandbox},
- * {@link E2B.Volume}, {@link E2B.Template}, {@link E2B.Secret}) behave exactly
- * like the top-level `Sandbox` / `Volume` / `Template` / `Secret` exports,
+ * {@link E2B.Volume}, {@link E2B.Template}) behave exactly
+ * like the top-level `Sandbox` / `Volume` / `Template` exports,
  * except the options passed to the client are used as the defaults instead of
  * the environment variables.
  * Per-call options still take precedence over the client's options.
