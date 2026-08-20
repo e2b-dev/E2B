@@ -1,5 +1,6 @@
 import { ApiClient, apiErrorFromCode, components, handleApiError } from '../api'
 import {
+  ClientBoundResource,
   ConnectionConfig,
   ConnectionOpts,
   DEFAULT_SANDBOX_TIMEOUT_MS,
@@ -1149,31 +1150,9 @@ function buildNetworkUpdateBody(
       : {}),
   }
 }
-export class SandboxApi {
-  /**
-   * Connection options bound to this class by an {@link E2B} client.
-   *
-   * Empty on the base class, so the env-configured default path is unchanged.
-   *
-   * @internal
-   * @hidden
-   * @hide
-   */
-  protected static readonly boundOpts?: Omit<ConnectionOpts, 'signal'>
-
-  protected constructor() {}
-
-  /**
-   * Merge the connection options bound to this class with the per-call options.
-   *
-   * @internal
-   * @hidden
-   * @hide
-   */
-  protected static resolveOpts<T extends ConnectionOpts>(
-    opts?: T
-  ): T | undefined {
-    return ConnectionConfig.mergeOpts(this.boundOpts, opts)
+export class SandboxApi extends ClientBoundResource {
+  protected constructor() {
+    super()
   }
 
   /**

@@ -7,6 +7,7 @@ import {
   FILE_TIMEOUT_MS,
 } from './client'
 import {
+  ClientBoundResource,
   ConnectionConfig,
   ConnectionOpts,
   setupRequestController,
@@ -51,18 +52,7 @@ function convertVolumeEntryStat(
  * Create a `Volume` instance to interact with a volume by its ID,
  * or use the static methods to manage volumes.
  */
-export class Volume {
-  /**
-   * Connection options bound to this class by an {@link E2B} client.
-   *
-   * Empty on the base class, so the env-configured default path is unchanged.
-   *
-   * @internal
-   * @hidden
-   * @hide
-   */
-  protected static readonly boundOpts?: Omit<ConnectionOpts, 'signal'>
-
+export class Volume extends ClientBoundResource {
   /**
    * Volume ID.
    */
@@ -111,6 +101,7 @@ export class Volume {
     debug?: boolean,
     proxy?: string
   ) {
+    super()
     this.volumeId = volumeId
     this.name = name
     this.token = token
@@ -290,19 +281,6 @@ export class Volume {
     }
 
     return true
-  }
-
-  /**
-   * Merge the connection options bound to this class with the per-call options.
-   *
-   * @internal
-   * @hidden
-   * @hide
-   */
-  protected static resolveOpts<T extends ConnectionOpts>(
-    opts?: T
-  ): T | undefined {
-    return ConnectionConfig.mergeOpts(this.boundOpts, opts)
   }
 
   /**

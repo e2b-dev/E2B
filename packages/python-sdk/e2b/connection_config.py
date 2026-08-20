@@ -111,6 +111,35 @@ def merge_api_params(
     return cast(ApiParams, merged)
 
 
+class ClientBoundResource:
+    """
+    Base class for the resource classes (`Sandbox`, `Volume`, `Template`,
+    `Secret`) whose classmethods build a :class:`ConnectionConfig` from per-call
+    params. An :class:`e2b.E2B` client exposes subclasses of these with its own
+    params bound, and every classmethod resolves them through
+    :meth:`_resolve_api_params`.
+
+    :meta private:
+    """
+
+    _bound_api_params: ApiParams = {}
+    """API params bound to this class by an :class:`e2b.E2B` client.
+
+    Empty on the base classes, so the env-configured default path is unchanged.
+
+    :meta private:
+    """
+
+    @classmethod
+    def _resolve_api_params(cls, **opts: Unpack[ApiParams]) -> ApiParams:
+        """
+        Merge the API params bound to this class with the per-call params.
+
+        :meta private:
+        """
+        return merge_api_params(cls._bound_api_params, opts)
+
+
 class ConnectionConfig:
     """
     Configuration for the connection to the API.

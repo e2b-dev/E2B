@@ -3,9 +3,8 @@ import shlex
 from typing import Dict, List, Optional, Union, Literal
 from pathlib import Path
 
-from typing_extensions import Unpack
 
-from e2b.connection_config import ApiParams
+from e2b.connection_config import ClientBoundResource
 from e2b.exceptions import BuildException, InvalidArgumentException
 from e2b.template.consts import RESOLVE_SYMLINKS
 from e2b.template.dockerfile_parser import parse_dockerfile
@@ -751,32 +750,12 @@ class TemplateFinal:
         self._template = template
 
 
-class TemplateBase:
+class TemplateBase(ClientBoundResource):
     """
     Base class for building E2B sandbox templates.
     """
 
     _logs_refresh_frequency = 0.2
-
-    _bound_api_params: ApiParams = {}
-    """API parameters bound to this class, used as defaults for every operation
-    that talks to the API. Empty here, so the config comes from per-call
-    parameters and environment variables; per-client subclasses bind their own.
-
-    :meta private:
-    """
-
-    @classmethod
-    def _resolve_api_params(cls, **opts: Unpack[ApiParams]) -> ApiParams:
-        """
-        Layer per-call API parameters over the parameters bound to the class.
-        Per-call parameters explicitly set to `None` don't clear the bound ones.
-
-        :meta private:
-        """
-        per_call_opts = {key: value for key, value in opts.items() if value is not None}
-
-        return {**cls._bound_api_params, **per_call_opts}
 
     def __init__(
         self,

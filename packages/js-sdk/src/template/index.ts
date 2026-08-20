@@ -1,6 +1,10 @@
 import type { PathLike } from 'node:fs'
 import { ApiClient } from '../api'
-import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
+import {
+  ClientBoundResource,
+  ConnectionConfig,
+  ConnectionOpts,
+} from '../connectionConfig'
 import { BuildError, InvalidArgumentError } from '../errors'
 import { runtime, shellQuote } from '../utils'
 import { callableTemplate } from './callable'
@@ -56,32 +60,9 @@ import {
  * Exposed as {@link Template}, which can be called as a factory.
  */
 export class TemplateBase
+  extends ClientBoundResource
   implements TemplateFromImage, TemplateBuilder, TemplateFinal
 {
-  /**
-   * Connection options bound to this class, used as defaults for every
-   * operation that talks to the API. Undefined here, so the config comes from
-   * per-call options and environment variables; per-client subclasses bind
-   * their own options.
-   *
-   * @internal
-   * @hidden
-   * @hide
-   */
-  protected static readonly boundOpts?: Omit<ConnectionOpts, 'signal'>
-
-  /**
-   * Layer per-call options over the options bound to the class. Per-call
-   * options explicitly set to `undefined` don't clear the bound ones.
-   *
-   * @internal
-   * @hidden
-   * @hide
-   */
-  protected static resolveOpts<T extends ConnectionOpts>(opts?: T): T {
-    return (ConnectionConfig.mergeOpts(this.boundOpts, opts) ?? {}) as T
-  }
-
   private defaultBaseImage: string = 'e2bdev/base'
   private baseImage: string | undefined = this.defaultBaseImage
   private baseTemplate: string | undefined = undefined
@@ -99,6 +80,7 @@ export class TemplateBase
   private stackTraces: (string | undefined)[] = []
 
   constructor(options?: TemplateOptions) {
+    super()
     this.fileContextPath =
       options?.fileContextPath ??
       (runtime === 'browser' ? '.' : (getCallerDirectory() ?? '.'))
@@ -185,7 +167,7 @@ export class TemplateBase
       options
     )
 
-    const buildOpts = this.resolveOpts(buildOptions)
+    const buildOpts = this.resolveOpts(buildOptions) ?? {}
 
     try {
       buildOpts.onBuildLogs?.(new LogEntryStart(new Date(), 'Build started'))
@@ -269,7 +251,7 @@ export class TemplateBase
       options
     )
 
-    const buildOpts = this.resolveOpts(buildOptions)
+    const buildOpts = this.resolveOpts(buildOptions) ?? {}
     const config = new ConnectionConfig(buildOpts)
     const client = new ApiClient(config)
 

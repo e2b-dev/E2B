@@ -537,6 +537,44 @@ export class ConnectionConfig {
 }
 
 /**
+ * Base class for the resource classes (`Sandbox`, `Volume`, `Template`,
+ * `Secret`) whose static methods build a `ConnectionConfig` from per-call
+ * options. An {@link E2B} client exposes subclasses of these with its own
+ * options bound, and every static method resolves them through
+ * {@link ClientBoundResource.resolveOpts}.
+ *
+ * @internal
+ * @hidden
+ * @hide
+ */
+export class ClientBoundResource {
+  /**
+   * Connection options bound to this class by an {@link E2B} client.
+   *
+   * Empty on the base classes, so the env-configured default path is unchanged.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  protected static readonly boundOpts?: Omit<ConnectionOpts, 'signal'>
+
+  /**
+   * Merge the connection options bound to this class with the per-call options,
+   * with the per-call options taking precedence.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  protected static resolveOpts<T extends ConnectionOpts>(
+    opts?: T
+  ): T | undefined {
+    return ConnectionConfig.mergeOpts(this.boundOpts, opts)
+  }
+}
+
+/**
  * User used for the operation in the sandbox.
  */
 

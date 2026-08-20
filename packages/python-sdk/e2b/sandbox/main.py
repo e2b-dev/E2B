@@ -3,13 +3,11 @@ from typing import Optional, TypedDict
 
 from packaging.version import Version
 
-from typing_extensions import Unpack
 
 from e2b.connection_config import (
-    ApiParams,
+    ClientBoundResource,
     ConnectionConfig,
     default_username,
-    merge_api_params,
 )
 from e2b.envd.api import ENVD_API_FILES_ROUTE
 from e2b.envd.versions import ENVD_DEFAULT_USER
@@ -26,30 +24,13 @@ class SandboxOpts(TypedDict):
     connection_config: ConnectionConfig
 
 
-class SandboxBase:
+class SandboxBase(ClientBoundResource):
     mcp_port = 50005
 
     default_sandbox_timeout = 300
 
     default_template = "base"
     default_mcp_template = "mcp-gateway"
-
-    _bound_api_params: ApiParams = {}
-    """API params bound to this class by an :class:`e2b.E2B` client.
-
-    Empty on the base classes, so the env-configured default path is unchanged.
-
-    :meta private:
-    """
-
-    @classmethod
-    def _resolve_api_params(cls, **opts: Unpack[ApiParams]) -> ApiParams:
-        """
-        Merge the API params bound to this class with the per-call params.
-
-        :meta private:
-        """
-        return merge_api_params(cls._bound_api_params, opts)
 
     def __init__(
         self,

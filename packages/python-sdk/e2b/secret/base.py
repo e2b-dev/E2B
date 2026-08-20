@@ -1,8 +1,7 @@
 import re
 
-from typing_extensions import Unpack
 
-from e2b.connection_config import ApiParams, merge_api_params
+from e2b.connection_config import ApiParams, ClientBoundResource
 from e2b.exceptions import InvalidArgumentException
 from e2b.paginator import PaginatorBase
 from e2b.sandbox.sandbox_api import SandboxIamToken, SandboxIamTokenType
@@ -26,30 +25,13 @@ def _validate_secret_name(name: str) -> None:
         )
 
 
-class SecretBase:
+class SecretBase(ClientBoundResource):
     """
     Module for managing E2B secrets and workload identity helpers.
 
     Secret values are write-only: they are accepted by ``create`` and
     ``update`` but never returned by any read surface.
     """
-
-    _bound_api_params: ApiParams = {}
-    """API params bound to this class by an :class:`e2b.E2B` client.
-
-    Empty on this class, so the env-configured default path is unchanged.
-
-    :meta private:
-    """
-
-    @classmethod
-    def _resolve_api_params(cls, **opts: Unpack[ApiParams]) -> ApiParams:
-        """
-        Merge the API params bound to this class with the per-call params.
-
-        :meta private:
-        """
-        return merge_api_params(cls._bound_api_params, opts)
 
     @staticmethod
     def fill(secret: str) -> str:

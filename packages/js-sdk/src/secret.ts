@@ -1,5 +1,9 @@
 import { ApiClient, components, handleApiError } from './api'
-import { ConnectionConfig, ConnectionOpts } from './connectionConfig'
+import {
+  ClientBoundResource,
+  ConnectionConfig,
+  ConnectionOpts,
+} from './connectionConfig'
 import {
   InvalidArgumentError,
   SecretError,
@@ -149,32 +153,7 @@ export class SecretPaginator extends Paginator<SecretInfo> {
  * Secret values are write-only: they are accepted by {@link Secret.create}
  * and {@link Secret.update} but never returned by any read surface.
  */
-export class Secret {
-  /**
-   * Connection options bound to this class by an {@link E2B} client.
-   *
-   * Empty on the base class, so the env-configured default path is unchanged.
-   *
-   * @internal
-   * @hidden
-   * @hide
-   */
-  protected static readonly boundOpts?: Omit<ConnectionOpts, 'signal'>
-
-  /**
-   * Merge the class-bound connection options with the per-call ones, with
-   * per-call options taking precedence.
-   *
-   * @internal
-   * @hidden
-   * @hide
-   */
-  protected static resolveOpts<T extends ConnectionOpts>(
-    opts?: T
-  ): T | undefined {
-    return ConnectionConfig.mergeOpts(this.boundOpts, opts)
-  }
-
+export class Secret extends ClientBoundResource {
   /**
    * Create a new secret and its first value.
    *

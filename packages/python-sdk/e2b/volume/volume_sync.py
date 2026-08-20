@@ -21,9 +21,9 @@ from e2b.api.client.types import Response
 from e2b.api.client_sync import get_api_client as get_core_api_client
 from e2b.connection_config import (
     ApiParams,
+    ClientBoundResource,
     ConnectionConfig,
     ProxyTypes,
-    merge_api_params,
 )
 from e2b.exceptions import (
     NotFoundException,
@@ -66,25 +66,8 @@ from e2b.volume.utils import (
 )
 
 
-class Volume:
+class Volume(ClientBoundResource):
     """E2B Volume for persistent storage that can be mounted to sandboxes."""
-
-    _bound_api_params: ApiParams = {}
-    """API params bound to this class by an :class:`e2b.E2B` client.
-
-    Empty on this class, so the env-configured default path is unchanged.
-
-    :meta private:
-    """
-
-    @classmethod
-    def _resolve_api_params(cls, **opts: Unpack[ApiParams]) -> ApiParams:
-        """
-        Merge the API params bound to this class with the per-call params.
-
-        :meta private:
-        """
-        return merge_api_params(cls._bound_api_params, opts)
 
     def __init__(
         self,
