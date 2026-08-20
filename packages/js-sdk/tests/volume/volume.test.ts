@@ -3,7 +3,13 @@ import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import { randomUUID } from 'node:crypto'
 
-import { Volume, NotFoundError, VolumeError } from '../../src'
+import {
+  Volume,
+  NotFoundError,
+  VolumeError,
+  VolumeNotFoundError,
+  VolumePathNotFoundError,
+} from '../../src'
 import { VolumeConnectionConfig } from '../../src/volume/client'
 import { runtime } from '../../src/utils'
 import { apiUrl } from '../setup'
@@ -140,10 +146,10 @@ describe('Volume CRUD', () => {
     expect(result).toBe(false)
   })
 
-  it('should throw NotFoundError when getting info of non-existent volume', async () => {
-    await expect(Volume.getInfo('non-existent-id')).rejects.toThrow(
-      NotFoundError
-    )
+  it('should throw VolumeNotFoundError when getting info of non-existent volume', async () => {
+    const err = await Volume.getInfo('non-existent-id').catch((err) => err)
+    expect(err).toBeInstanceOf(VolumeNotFoundError)
+    expect(err).toBeInstanceOf(NotFoundError)
   })
 
   it('should throw VolumeError for a non-2xx response without content', async () => {
@@ -324,10 +330,12 @@ describe('Volume content readFile', () => {
     expect(await new Response(stream).text()).toBe('')
   })
 
-  it('should throw NotFoundError for a missing file', async () => {
+  it('should throw VolumePathNotFoundError for a missing file', async () => {
     const vol = await Volume.create('content-volume')
 
-    await expect(vol.readFile('missing.txt')).rejects.toThrow(NotFoundError)
+    const err = await vol.readFile('missing.txt').catch((err) => err)
+    expect(err).toBeInstanceOf(VolumePathNotFoundError)
+    expect(err).toBeInstanceOf(NotFoundError)
   })
 
   it('should reject at call time for a missing file with stream format', async () => {
@@ -335,7 +343,7 @@ describe('Volume content readFile', () => {
 
     await expect(
       vol.readFile('missing.txt', { format: 'stream' })
-    ).rejects.toThrow(NotFoundError)
+    ).rejects.toThrow(VolumePathNotFoundError)
   })
 })
 

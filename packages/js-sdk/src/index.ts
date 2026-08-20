@@ -23,6 +23,8 @@ export {
   BuildError,
   FileUploadError,
   VolumeError,
+  VolumeNotFoundError,
+  VolumePathNotFoundError,
   SecretError,
   SecretNotFoundError,
 } from './errors'

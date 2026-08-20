@@ -52,6 +52,8 @@ from .exceptions import (
     TemplateException,
     TimeoutException,
     VolumeException,
+    VolumeNotFoundException,
+    VolumePathNotFoundException,
     SecretException,
     SecretNotFoundException,
 )
@@ -182,6 +184,8 @@ __all__ = [
     "FileUploadException",
     "RateLimitException",
     "VolumeException",
+    "VolumeNotFoundException",
+    "VolumePathNotFoundException",
     # Sandbox API
     "SandboxInfo",
     "SandboxInfoLifecycle",
