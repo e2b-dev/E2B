@@ -3,6 +3,7 @@ import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
 import DefaultExport, {
+  type ConnectionOpts,
   E2B,
   Sandbox,
   Secret,
@@ -220,6 +221,21 @@ test('per-call options explicitly set to undefined keep the client config', asyn
   const sandbox = await client.Sandbox.create()
   await sandbox.kill({ apiKey: undefined })
   assert.equal(lastRequest().apiKey, API_KEY_A)
+})
+
+test('a signal is not bound to the client', async () => {
+  const controller = new AbortController()
+  const opts: ConnectionOpts = {
+    apiKey: API_KEY_A,
+    domain: DOMAIN_A,
+    signal: controller.signal,
+  }
+  const client = new E2B(opts)
+  controller.abort()
+
+  await client.Sandbox.create()
+
+  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/sandboxes`)
 })
 
 test('a __proto__ option does not pollute the prototype', async () => {
