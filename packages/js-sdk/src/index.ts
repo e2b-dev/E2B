@@ -143,7 +143,7 @@ export type {
 export { Sandbox }
 import { Sandbox } from './sandbox'
 
-export { E2B } from './client'
+export { E2B, type E2BOpts } from './client'
 
 export default Sandbox
 

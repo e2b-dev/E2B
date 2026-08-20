@@ -4,7 +4,7 @@ from http import HTTPStatus
 
 import httpx
 
-from typing_extensions import Unpack
+from typing_extensions import Self, Unpack
 
 from e2b.api import handle_api_exception
 from e2b.api.client.api.volumes import (
@@ -124,7 +124,7 @@ class Volume:
         )
 
     @classmethod
-    def create(cls, name: str, **opts: Unpack[ApiParams]) -> "Volume":
+    def create(cls, name: str, **opts: Unpack[ApiParams]) -> Self:
         """
         Create a new volume.
 
@@ -165,7 +165,7 @@ class Volume:
         return vol
 
     @classmethod
-    def connect(cls, volume_id: str, **opts: Unpack[ApiParams]) -> "Volume":
+    def connect(cls, volume_id: str, **opts: Unpack[ApiParams]) -> Self:
         """
         Connect to an existing volume by ID.
 

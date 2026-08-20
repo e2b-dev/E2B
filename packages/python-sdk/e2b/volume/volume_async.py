@@ -5,7 +5,7 @@ from http import HTTPStatus
 
 import httpx
 
-from typing_extensions import Unpack
+from typing_extensions import Self, Unpack
 
 from e2b.api import handle_api_exception
 from e2b.api.client.api.volumes import (
@@ -125,7 +125,7 @@ class AsyncVolume:
         )
 
     @classmethod
-    async def create(cls, name: str, **opts: Unpack[ApiParams]) -> "AsyncVolume":
+    async def create(cls, name: str, **opts: Unpack[ApiParams]) -> Self:
         """
         Create a new volume.
 
@@ -166,7 +166,7 @@ class AsyncVolume:
         return vol
 
     @classmethod
-    async def connect(cls, volume_id: str, **opts: Unpack[ApiParams]) -> "AsyncVolume":
+    async def connect(cls, volume_id: str, **opts: Unpack[ApiParams]) -> Self:
         """
         Connect to an existing volume by ID.
 

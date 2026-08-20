@@ -446,7 +446,14 @@ export class ConnectionConfig {
     const merged: Record<string, unknown> = { ...boundOpts }
     for (const [key, value] of Object.entries(opts ?? {})) {
       if (value !== undefined) {
-        merged[key] = value
+        // `defineProperty` so a `__proto__` key (e.g. from parsed JSON) becomes
+        // a plain own property instead of changing the prototype.
+        Object.defineProperty(merged, key, {
+          value,
+          enumerable: true,
+          writable: true,
+          configurable: true,
+        })
       }
     }
 

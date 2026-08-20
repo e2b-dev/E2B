@@ -888,10 +888,10 @@ export class Sandbox extends SandboxApi {
   private resolveApiOpts<T extends ConnectionOpts>(
     opts?: T
   ): ConnectionOpts & T {
-    return {
-      ...this.connectionConfig,
-      ...(opts ?? {}),
-    } as ConnectionOpts & T
+    return ConnectionConfig.mergeOpts(
+      this.connectionConfig,
+      opts
+    ) as ConnectionOpts & T
   }
 
   private fileUrl(path: string | undefined, username: string | undefined) {

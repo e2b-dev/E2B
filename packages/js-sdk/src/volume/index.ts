@@ -56,7 +56,7 @@ export class Volume {
    * @hidden
    * @hide
    */
-  protected static readonly boundOpts?: ConnectionOpts
+  protected static readonly boundOpts?: Omit<ConnectionOpts, 'signal'>
 
   /**
    * Volume ID.
@@ -122,7 +122,11 @@ export class Volume {
    *
    * @returns new Volume instance.
    */
-  static async create(name: string, opts?: ConnectionOpts): Promise<Volume> {
+  static async create<V extends typeof Volume>(
+    this: V,
+    name: string,
+    opts?: ConnectionOpts
+  ): Promise<InstanceType<V>> {
     const apiOpts = this.resolveOpts(opts)
     const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
@@ -150,7 +154,7 @@ export class Volume {
       res.data.domain || config.domain,
       config.debug,
       config.proxy
-    )
+    ) as InstanceType<V>
   }
 
   /**
@@ -161,10 +165,11 @@ export class Volume {
    *
    * @returns Volume instance.
    */
-  static async connect(
+  static async connect<V extends typeof Volume>(
+    this: V,
     volumeId: string,
     opts?: ConnectionOpts
-  ): Promise<Volume> {
+  ): Promise<InstanceType<V>> {
     const apiOpts = this.resolveOpts(opts)
     const config = new ConnectionConfig(apiOpts)
     const { name, token, domain } = await this.getInfo(volumeId, apiOpts)
@@ -175,7 +180,7 @@ export class Volume {
       domain ?? config.domain,
       config.debug,
       config.proxy
-    )
+    ) as InstanceType<V>
   }
 
   /**

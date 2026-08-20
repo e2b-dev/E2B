@@ -185,6 +185,45 @@ test('mutating the options object does not change the bound config', async () =>
   assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/sandboxes`)
 })
 
+test('per-call options explicitly set to undefined keep the client config', async () => {
+  const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
+
+  await client.Sandbox.create({ apiKey: undefined, domain: undefined })
+  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/sandboxes`)
+  assert.equal(lastRequest().apiKey, API_KEY_A)
+
+  await client.Sandbox.list().nextItems({ domain: undefined })
+  expect(lastRequest().url).toContain(`api.${DOMAIN_A}`)
+  assert.equal(lastRequest().apiKey, API_KEY_A)
+
+  const sandbox = await client.Sandbox.create()
+  await sandbox.kill({ apiKey: undefined })
+  assert.equal(lastRequest().apiKey, API_KEY_A)
+})
+
+test('a __proto__ option does not pollute the prototype', async () => {
+  const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
+
+  await client.Sandbox.create(
+    JSON.parse('{"__proto__": {"polluted": "yes"}}') as Record<string, never>
+  )
+
+  assert.isUndefined(({} as Record<string, unknown>).polluted)
+  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/sandboxes`)
+})
+
+test('Template statics work detached from the class', async () => {
+  const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
+  const { exists: clientExists } = client.Template
+  const { exists } = Template
+
+  await clientExists('test-template')
+  assert.equal(lastRequest().apiKey, API_KEY_A)
+
+  await exists('test-template')
+  assert.equal(lastRequest().apiKey, TEST_API_KEY)
+})
+
 test('client.Volume.create uses the client config', async () => {
   const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
 

@@ -1,8 +1,17 @@
 import { ConnectionOpts } from './connectionConfig'
 import { Sandbox } from './sandbox'
 import { Secret } from './secret'
-import { callableTemplate, Template, TemplateBase } from './template'
+import { Template, TemplateBase } from './template'
+import { callableTemplate } from './template/callable'
 import { Volume } from './volume'
+
+/**
+ * Connection options bound to an {@link E2B} client.
+ *
+ * Same as {@link ConnectionOpts} without `signal`, which cancels a single
+ * request and therefore can only be passed per call.
+ */
+export type E2BOpts = Omit<ConnectionOpts, 'signal'>
 
 /**
  * E2B client with an explicitly bound connection configuration.
@@ -58,10 +67,10 @@ export class E2B {
    * @param opts connection options used as the defaults for every call made
    *   through this client's resource classes.
    */
-  constructor(opts?: ConnectionOpts) {
+  constructor(opts?: E2BOpts) {
     // Options are copied so later mutations of the caller's object cannot
     // change the bound configuration.
-    const boundOpts: ConnectionOpts = { ...(opts ?? {}) }
+    const boundOpts: E2BOpts = { ...(opts ?? {}) }
 
     this.Sandbox = class extends Sandbox {
       protected static override readonly boundOpts = boundOpts

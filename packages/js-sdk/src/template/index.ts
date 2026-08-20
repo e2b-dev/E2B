@@ -3,6 +3,7 @@ import { ApiClient } from '../api'
 import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
 import { BuildError, InvalidArgumentError } from '../errors'
 import { runtime, shellQuote } from '../utils'
+import { callableTemplate } from './callable'
 import {
   assignTags,
   checkAliasExists,
@@ -78,11 +79,7 @@ export class TemplateBase
    * @hide
    */
   protected static resolveOpts<T extends ConnectionOpts>(opts?: T): T {
-    const perCallOpts = Object.fromEntries(
-      Object.entries(opts ?? {}).filter(([, value]) => value !== undefined)
-    )
-
-    return { ...this.boundOpts, ...perCallOpts } as T
+    return (ConnectionConfig.mergeOpts(this.boundOpts, opts) ?? {}) as T
   }
 
   private defaultBaseImage: string = 'e2bdev/base'
@@ -1287,37 +1284,16 @@ export class TemplateBase
 }
 
 /**
- * A template class that can also be called without `new`.
- */
-export type CallableTemplate<T extends typeof TemplateBase> = T &
-  ((options?: TemplateOptions) => TemplateFromImage)
-
-/**
- * Make a template class callable as a factory, so `Template(opts)` keeps
- * returning a builder. Everything else — construction, statics, `instanceof`,
- * subclassing — goes straight to the class.
- *
- * @internal
- * @hidden
- * @hide
- */
-export function callableTemplate<T extends typeof TemplateBase>(
-  cls: T
-): CallableTemplate<T> {
-  return new Proxy(cls, {
-    apply(target, _thisArg, args: [TemplateOptions?]) {
-      return new target(...args)
-    },
-  }) as CallableTemplate<T>
-}
-
-/**
  * Builder and API entrypoint for E2B sandbox templates.
  *
  * `Template` is the {@link TemplateBase} class, wrapped so it can also be
  * called as a factory returning a builder. The statics (`Template.build`,
  * `Template.exists`, …) resolve their connection options off the class they are
  * called on — so a subclass can bind its own defaults.
+ *
+ * @param options Optional builder options, e.g. the file context path used to
+ *   resolve relative paths passed to `copy`
+ * @returns A template builder
  *
  * @example
  * ```ts

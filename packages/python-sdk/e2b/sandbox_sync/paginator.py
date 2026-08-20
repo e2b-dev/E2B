@@ -8,7 +8,7 @@ from e2b.api.client.api.sandboxes import get_v2_sandboxes
 from e2b.api.client.api.snapshots import get_snapshots
 from e2b.api.client.models.error import Error
 from e2b.api.client.types import UNSET
-from e2b.connection_config import ApiParams, ConnectionConfig
+from e2b.connection_config import ApiParams, ConnectionConfig, merge_api_params
 from e2b.exceptions import SandboxException
 from e2b.sandbox.sandbox_api import (
     SandboxPaginatorBase,
@@ -41,7 +41,7 @@ class SandboxPaginator(SandboxPaginatorBase):
 
         :param opts: Per-call connection options (e.g. `api_key`, `domain`,
             `headers`, `request_timeout`). When provided, this call uses these
-            options instead of the ones the paginator was constructed with.
+            options on top of the ones the paginator was constructed with.
 
         :returns: List of sandboxes
         """
@@ -57,7 +57,7 @@ class SandboxPaginator(SandboxPaginatorBase):
             }
             metadata = urllib.parse.urlencode(quoted_metadata)
 
-        config = ConnectionConfig(**{**self._opts, **opts})
+        config = ConnectionConfig(**merge_api_params(self._opts, opts))
         api_client = get_api_client(config)
         res = get_v2_sandboxes.sync_detailed(
             client=api_client,
@@ -104,14 +104,14 @@ class SnapshotPaginator(SnapshotPaginatorBase):
 
         :param opts: Per-call connection options (e.g. `api_key`, `domain`,
             `headers`, `request_timeout`). When provided, this call uses these
-            options instead of the ones the paginator was constructed with.
+            options on top of the ones the paginator was constructed with.
 
         :returns: List of snapshots
         """
         if not self.has_next:
             raise Exception("No more items to fetch")
 
-        config = ConnectionConfig(**{**self._opts, **opts})
+        config = ConnectionConfig(**merge_api_params(self._opts, opts))
         api_client = get_api_client(config)
         res = get_snapshots.sync_detailed(
             client=api_client,

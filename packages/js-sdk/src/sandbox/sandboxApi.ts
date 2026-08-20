@@ -1157,7 +1157,7 @@ export class SandboxApi {
    * @hidden
    * @hide
    */
-  protected static readonly boundOpts?: ConnectionOpts
+  protected static readonly boundOpts?: Omit<ConnectionOpts, 'signal'>
 
   protected constructor() {}
 
@@ -1849,7 +1849,8 @@ export class SandboxPaginator extends Paginator<SandboxInfo, SandboxApiOpts> {
       metadata = new URLSearchParams(encodedPairs).toString()
     }
 
-    const config = new ConnectionConfig({ ...this.opts, ...opts })
+    const apiOpts = ConnectionConfig.mergeOpts(this.opts, opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.GET('/v2/sandboxes', {
@@ -1861,7 +1862,7 @@ export class SandboxPaginator extends Paginator<SandboxInfo, SandboxApiOpts> {
           nextToken: this.nextToken,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     const err = handleApiError(res)
@@ -1917,7 +1918,8 @@ export class SnapshotPaginator extends Paginator<SnapshotInfo, SandboxApiOpts> {
       throw new Error('No more items to fetch')
     }
 
-    const config = new ConnectionConfig({ ...this.opts, ...opts })
+    const apiOpts = ConnectionConfig.mergeOpts(this.opts, opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.GET('/snapshots', {
@@ -1929,7 +1931,7 @@ export class SnapshotPaginator extends Paginator<SnapshotInfo, SandboxApiOpts> {
           nextToken: this.nextToken,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     const err = handleApiError(res)

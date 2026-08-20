@@ -66,7 +66,9 @@ class _Handler(BaseHTTPRequestHandler):
             self._record_and_respond(404, {"code": 404, "message": "not found"})
 
     def do_GET(self):
-        if self.path.startswith("/volumes"):
+        if self.path.startswith("/v2/sandboxes"):
+            self._record_and_respond(200, [])
+        elif self.path.startswith("/volumes"):
             self._record_and_respond(200, [])
         elif self.path.startswith("/templates/aliases/"):
             self._record_and_respond(
@@ -144,6 +146,17 @@ def test_client_class_can_be_rebound(api_server):
 
     assert api_keys() == [API_KEY_A]
     assert sandbox.connection_config.api_key == API_KEY_A
+
+
+def test_per_call_params_set_to_none_keep_the_client_config(api_server):
+    client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
+
+    sandbox = client.Sandbox.create(api_key=None, domain=None)
+    assert sandbox.connection_config.api_key == API_KEY_A
+    assert sandbox.connection_config.domain == DOMAIN_A
+
+    client.Sandbox.list().next_items(api_key=None)
+    assert api_keys() == [API_KEY_A, API_KEY_A]
 
 
 def test_two_clients_stay_isolated(api_server):
