@@ -10,6 +10,12 @@
 # flag must work on schemas as well as operations. A kept operation that
 # still references a dropped schema loses that media-type entry rather
 # than keeping a dangling $ref.
+#
+# The envd api filters the synced envd spec (spec/envd/envd.yaml) the same
+# way: operations the upstream spec marks `x-internal: true` belong to the
+# orchestrator's control plane, not to SDKs, so they are dropped before the
+# js-sdk envd schema is generated. remove-unused-components then drops the
+# component schemas only those operations referenced.
 apis:
   js-sdk:
     root: spec/openapi.yml
@@ -33,3 +39,10 @@ apis:
       filter-out:
         property: x-not-implemented
         value: [true]
+  envd:
+    root: spec/envd/envd.yaml
+    decorators:
+      filter-out:
+        property: x-internal
+        value: [true]
+      remove-unused-components: on
