@@ -16,11 +16,40 @@ const INVALID_IAM_TOKEN_NAME_CHARS = /[{}\p{Cc}]/u
 
 /**
  * Properties the language and the runtime read off any object they serialize,
- * await, or coerce to a string. A token is never named after them, so they
- * resolve normally instead of counting as a token reference — otherwise
- * `JSON.stringify(iam.tokens)` inside a callback would throw.
+ * await, or coerce to a string. A token is never named after them, so reading
+ * one cannot throw — otherwise `JSON.stringify(iam.tokens)` inside a callback
+ * would.
  */
 const RUNTIME_PROBED_PROPS = new Set(['toJSON', 'then', 'toString', 'valueOf'])
+
+/**
+ * Stand-in for a runtime-probed name that is not a registered token: it answers
+ * the probe, and `resolve` decides what using it as a token does — a probe never
+ * coerces or serializes what it reads, a token reference does one or the other.
+ */
+function runtimeProbeValue(
+  prop: string,
+  tokens: () => Record<string, string>,
+  resolve: () => string
+): unknown {
+  // `then` and `toJSON` are only probed for callability, so a non-callable value
+  // reads as absent. `toString` and `valueOf` are called — `String(iam.tokens)`
+  // needs a primitive — and answer over the guarded map, not the record.
+  const value =
+    prop === 'toString'
+      ? () => Object.prototype.toString.call(tokens())
+      : prop === 'valueOf'
+        ? () => tokens()
+        : {}
+
+  Object.defineProperty(value, Symbol.toPrimitive, { value: resolve })
+  // A header value assigned straight through is serialized rather than coerced,
+  // and Bun's `JSON.stringify` only finds an own `toJSON` that is enumerable.
+  return Object.defineProperty(value, 'toJSON', {
+    value: resolve,
+    enumerable: true,
+  })
+}
 
 /**
  * Reject a token name that cannot survive the placeholder grammar.
@@ -70,29 +99,38 @@ export function iamTokenPlaceholders(
     tokens[name] = iamTokenPlaceholder(name)
   }
 
-  return new Proxy(tokens, {
+  /** Placeholder when names cannot be checked, otherwise the guard's error. */
+  const resolveUnregistered = (prop: string): string => {
+    if (!validate) {
+      return iamTokenPlaceholder(prop)
+    }
+
+    const hint =
+      tokenNames.length === 0
+        ? `Pass it to Sandbox.create as iam: { tokens: { '${prop}': Secret.iamToken({ audience, tokenType }) } }.`
+        : `Registered tokens: ${tokenNames.map((name) => `'${name}'`).join(', ')}.`
+
+    throw new InvalidArgumentError(
+      `Network transform references iam token '${prop}', which is not registered. ${hint}`
+    )
+  }
+
+  const proxy: Record<string, string> = new Proxy(tokens, {
     get(target, prop, receiver) {
-      if (
-        typeof prop === 'string' &&
-        // Own keys only: a bare `in` also matches inherited `Object.prototype`
-        // members, so an unregistered token named `constructor` or `__proto__`
-        // would resolve to a built-in instead of being reported. Python's
-        // mapping treats them as missing too.
-        !Object.hasOwn(target, prop) &&
-        !RUNTIME_PROBED_PROPS.has(prop)
-      ) {
-        if (!validate) {
-          return iamTokenPlaceholder(prop)
+      // Own keys only: a bare `in` also matches inherited `Object.prototype`
+      // members, so an unregistered token named `constructor` or `__proto__`
+      // would resolve to a built-in instead of being reported. Python's
+      // mapping treats them as missing too.
+      if (typeof prop === 'string' && !Object.hasOwn(target, prop)) {
+        if (RUNTIME_PROBED_PROPS.has(prop)) {
+          return runtimeProbeValue(
+            prop,
+            () => proxy,
+            () => resolveUnregistered(prop)
+          )
         }
 
-        const hint =
-          tokenNames.length === 0
-            ? `Pass it to Sandbox.create as iam: { tokens: { '${prop}': Secret.iamToken({ audience, tokenType }) } }.`
-            : `Registered tokens: ${tokenNames.map((name) => `'${name}'`).join(', ')}.`
-
-        throw new InvalidArgumentError(
-          `Network transform references iam token '${prop}', which is not registered. ${hint}`
-        )
+        return resolveUnregistered(prop)
       }
 
       return Reflect.get(target, prop, receiver)
@@ -106,4 +144,6 @@ export function iamTokenPlaceholders(
       return Object.hasOwn(target, prop)
     },
   })
+
+  return proxy
 }

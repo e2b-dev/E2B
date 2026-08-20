@@ -3,7 +3,10 @@ import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
 import { InvalidArgumentError, Sandbox, Secret } from '../../src'
+import { iamTokenPlaceholders } from '../../src/sandbox/iam'
 import { TEST_API_KEY, apiUrl } from '../setup'
+
+const RUNTIME_PROBED_PROPS = ['toJSON', 'then', 'toString', 'valueOf']
 
 let lastCreateBody: Record<string, unknown> | undefined
 
@@ -128,3 +131,54 @@ test('Sandbox.create rejects a token missing audience or tokenType', async () =>
     })
   ).rejects.toThrowError(InvalidArgumentError)
 })
+
+test('the token map serializes, awaits and coerces like a plain object', async () => {
+  const tokens = iamTokenPlaceholders(['aws'], { validate: true })
+
+  expect(JSON.stringify(tokens)).toBe('{"aws":"${e2b.identity.tokens.aws}"}')
+  expect(String(tokens)).toBe('[object Object]')
+  expect(`${tokens}`).toBe('[object Object]')
+  expect({ ...tokens }).toEqual({ aws: '${e2b.identity.tokens.aws}' })
+  // A non-callable `then` keeps the map a plain value rather than a thenable.
+  expect(await tokens).toBe(tokens)
+})
+
+test.for(RUNTIME_PROBED_PROPS)(
+  'reading the unregistered token %s throws instead of resolving',
+  (prop: string) => {
+    const tokens = iamTokenPlaceholders(['aws'], { validate: true })
+
+    expect(() => `${tokens[prop]}`).toThrowError(
+      `iam token '${prop}', which is not registered`
+    )
+    expect(() => String(tokens[prop])).toThrowError(InvalidArgumentError)
+    // Assigned straight through, a header value is serialized, not coerced.
+    expect(() => JSON.stringify({ header: tokens[prop] })).toThrowError(
+      InvalidArgumentError
+    )
+  }
+)
+
+test('the runtime-probed valueOf answers with the guarded map', () => {
+  // It stays callable for `String(iam.tokens)`, so it must not hand out the
+  // unguarded record.
+  const tokens = iamTokenPlaceholders(['aws'], { validate: true })
+
+  expect(tokens.valueOf().aws).toBe('${e2b.identity.tokens.aws}')
+  expect(() => `${tokens.valueOf().gcp}`).toThrowError(
+    /iam token 'gcp'.*Registered tokens: 'aws'/s
+  )
+})
+
+test.for(RUNTIME_PROBED_PROPS)(
+  'the unchecked token map resolves %s to its placeholder',
+  (prop: string) => {
+    // The update-network payload carries no iam config, so no name can be
+    // reported as unregistered.
+    const tokens = iamTokenPlaceholders([], { validate: false })
+
+    expect(`${tokens[prop]}`).toBe(`\${e2b.identity.tokens.${prop}}`)
+    expect(JSON.stringify(tokens)).toBe('{}')
+    expect(String(tokens)).toBe('[object Object]')
+  }
+)

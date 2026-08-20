@@ -189,6 +189,86 @@ test.for(['constructor', '__proto__', 'hasOwnProperty'])(
   }
 )
 
+test.for(['toJSON', 'then', 'toString', 'valueOf'])(
+  'transform callback rejects the runtime-probed iam token name %s',
+  async (name: string) => {
+    // Referencing one as a token used to put 'undefined' or a built-in's source
+    // text on the wire, which carries no placeholder for the proxy to resolve,
+    // so the destination answered 401 on a garbage credential.
+    await expect(
+      Sandbox.create('base', {
+        apiKey: TEST_API_KEY,
+        iam: { tokens: { aws: awsToken } },
+        network: {
+          rules: {
+            'api.internal.example.com': [
+              {
+                transform: ({ iam }) => ({
+                  headers: { Authorization: `Bearer ${iam.tokens[name]}` },
+                }),
+              },
+            ],
+          },
+        },
+      })
+    ).rejects.toThrowError(`iam token '${name}', which is not registered`)
+
+    expect(lastCreateBody).toBeUndefined()
+  }
+)
+
+test.for(['toJSON', 'then', 'toString', 'valueOf'])(
+  'transform callback rejects the uncoerced runtime-probed iam token name %s',
+  async (name: string) => {
+    // Assigned straight through, the value is serialized instead of coerced,
+    // which used to send an object where the API wants a string, or drop the
+    // header entirely for the two names that resolve to a function.
+    await expect(
+      Sandbox.create('base', {
+        apiKey: TEST_API_KEY,
+        iam: { tokens: { aws: awsToken } },
+        network: {
+          rules: {
+            'api.internal.example.com': [
+              {
+                transform: ({ iam }) => ({
+                  headers: { 'X-Api-Key': iam.tokens[name] },
+                }),
+              },
+            ],
+          },
+        },
+      })
+    ).rejects.toThrowError(`iam token '${name}', which is not registered`)
+
+    expect(lastCreateBody).toBeUndefined()
+  }
+)
+
+test('transform callback cannot reach an unguarded token map through valueOf', async () => {
+  await expect(
+    Sandbox.create('base', {
+      apiKey: TEST_API_KEY,
+      iam: { tokens: { aws: awsToken } },
+      network: {
+        rules: {
+          'api.internal.example.com': [
+            {
+              transform: ({ iam }) => ({
+                headers: {
+                  Authorization: `Bearer ${iam.tokens.valueOf().gcp}`,
+                },
+              }),
+            },
+          ],
+        },
+      },
+    })
+  ).rejects.toThrowError(`iam token 'gcp', which is not registered`)
+
+  expect(lastCreateBody).toBeUndefined()
+})
+
 test('transform callback rejects an iam token when no iam config is set', async () => {
   await expect(
     Sandbox.create('base', {
