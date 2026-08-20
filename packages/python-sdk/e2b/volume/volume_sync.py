@@ -25,7 +25,12 @@ from e2b.connection_config import (
     ProxyTypes,
     merge_api_params,
 )
-from e2b.exceptions import NotFoundException, VolumeException
+from e2b.exceptions import (
+    NotFoundException,
+    VolumeException,
+    VolumeNotFoundException,
+    VolumePathNotFoundException,
+)
 from e2b.volume.client.api.volumes import (
     get_volumecontent_volume_id_path as get_path,
     get_volumecontent_volume_id_dir as get_dir,
@@ -204,7 +209,7 @@ class Volume:
         )
 
         if res.status_code == 404:
-            raise NotFoundException(f"Volume {volume_id} not found")
+            raise VolumeNotFoundException(f"Volume {volume_id} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
@@ -298,7 +303,7 @@ class Volume:
         )
 
         if res.status_code == 404:
-            raise NotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(f"Path {path} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
@@ -350,7 +355,7 @@ class Volume:
         )
 
         if res.status_code == 404:
-            raise NotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(f"Path {path} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
@@ -402,7 +407,7 @@ class Volume:
         )
 
         if res.status_code == 404:
-            raise NotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(f"Path {path} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
@@ -454,7 +459,7 @@ class Volume:
         )
 
         if res.status_code == 404:
-            raise NotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(f"Path {path} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
@@ -544,7 +549,7 @@ class Volume:
                     timeout=stream_timeout,
                 ) as response:
                     if response.status_code == 404:
-                        raise NotFoundException(f"Path {path} not found")
+                        raise VolumePathNotFoundException(f"Path {path} not found")
 
                     if response.status_code >= 300:
                         api_response = Response(
@@ -567,7 +572,7 @@ class Volume:
         )
 
         if response.status_code == 404:
-            raise NotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(f"Path {path} not found")
 
         if response.status_code >= 300:
             api_response = Response(
@@ -643,7 +648,7 @@ class Volume:
         )
 
         if res.status_code == 404:
-            raise NotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(f"Path {path} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
@@ -677,7 +682,7 @@ class Volume:
         )
 
         if res.status_code == 404:
-            raise NotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(f"Path {path} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
