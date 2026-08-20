@@ -16,7 +16,7 @@ apis:
     decorators:
       filter-in:
         property: tags
-        value: [sandboxes, snapshots, templates, tags, auth, volumes]
+        value: [sandboxes, snapshots, templates, tags, auth, volumes, secrets]
         matchStrategy: any
         applyTo: Operation
       filter-out:
@@ -27,7 +27,7 @@ apis:
     decorators:
       filter-in:
         property: tags
-        value: [sandboxes, snapshots, templates, tags, volumes]
+        value: [sandboxes, snapshots, templates, tags, volumes, secrets]
         matchStrategy: any
         applyTo: Operation
       filter-out:

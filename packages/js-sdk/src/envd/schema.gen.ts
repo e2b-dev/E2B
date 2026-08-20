@@ -221,17 +221,55 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Freeze user/pty cgroups before pause. Written directly by envd to avoid Process.Start / shell overhead under load. */
+        /**
+         * Freeze user/pty cgroups before pause and wait for them to stop. Written directly by envd to avoid Process.Start / shell overhead under load.
+         * @description Writing cgroup.freeze only requests a freeze; the kernel stops each task at its
+         *     next signal-delivery point. This endpoint therefore polls cgroup.events until the
+         *     cgroups read back frozen, and returns what it observed, so a caller can tell a
+         *     freeze that took effect from one that was merely issued.
+         *
+         *     cgroup.events reports STATE, not an acknowledgement of our write: a cgroup the
+         *     guest froze itself reads frozen too. The counts below say what was observed, not
+         *     what this call caused.
+         *
+         *     Best-effort by design: a workload that will not quiesce within the budget is
+         *     reported as unconfirmed rather than failing the call, and cgroups that reject the
+         *     write are counted in failed, because neither an unfreezable customer task nor a
+         *     cgroup disappearing mid-sweep may block their pause.
+         *
+         *     Whether this endpoint waits is the caller's choice, expressed by supplying
+         *     maxWaitMs: see that parameter.
+         *
+         */
         post: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description How long to wait for the cgroups to read back frozen, in milliseconds. The
+                     *     caller owns this budget because it also owns the request timeout, and a wait
+                     *     longer than that timeout cannot be observed.
+                     *
+                     *     Supplying it also selects the response: with it, the call waits and answers 200
+                     *     with a FreezeResult; omitted or non-positive, the call does not wait at all and
+                     *     answers 204, which is the contract callers older than this parameter expect.
+                     *      */
+                    maxWaitMs?: number;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
             };
             requestBody?: never;
             responses: {
-                /** @description Cgroups frozen */
+                /** @description Freeze issued and the frozen state awaited (maxWaitMs was supplied); the body reports what was observed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["FreezeResult"];
+                    };
+                };
+                /** @description Freeze issued without waiting (maxWaitMs absent), for callers predating the structured result */
                 204: {
                     headers: {
                         [name: string]: unknown;
@@ -562,6 +600,29 @@ export interface components {
             code: number;
             /** @description Error message */
             message: string;
+        };
+        /** @description Per-call statistics from a pre-pause workload freeze */
+        FreezeResult: {
+            /** @description Cgroups whose freeze write or state read errored (expected for a threaded cgroup, and for one removed mid-sweep) */
+            failed?: number;
+            /** @description Cgroups that read back "frozen 1" from cgroup.events within the budget; their tasks have stopped */
+            frozen?: number;
+            /** @description Cgroups still reading "frozen 0" when the budget expired; their tasks may still be running, so a snapshot taken now can capture a live workload */
+            notFrozen?: number;
+            /** @description Cgroups this call wrote cgroup.freeze to */
+            requested?: number;
+            /**
+             * Format: int64
+             * @description Time spent issuing the freeze writes, in milliseconds (scales with cgroup count)
+             */
+            sweepMs?: number;
+            /** @description Cgroups whose freeze state cannot be read because this guest has no cgroup manager; the write was accepted but nothing can be read back, so these are neither frozen nor notFrozen */
+            unobservable?: number;
+            /**
+             * Format: int64
+             * @description Time spent polling cgroup.events, in milliseconds (scales with how deep in I/O the guest tasks were). Outcome neutral - the wait ends either because everything stopped or because the budget ran out
+             */
+            waitMs?: number;
         };
         /** @description Resource usage metrics */
         Metrics: {

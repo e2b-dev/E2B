@@ -131,3 +131,17 @@ class VolumeException(Exception):
 
     Raised when general volume errors occur.
     """
+
+
+class SecretException(Exception):
+    """
+    Base class for all secret errors.
+
+    Raised when general secret errors occur.
+    """
+
+
+class SecretNotFoundException(SecretException):
+    """
+    Raised when a secret is not found.
+    """

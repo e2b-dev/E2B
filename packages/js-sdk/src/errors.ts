@@ -174,3 +174,28 @@ export class VolumeError extends Error {
     this.name = 'VolumeError'
   }
 }
+
+/**
+ * Base class for all secret errors.
+ *
+ * Thrown when general secret errors occur.
+ */
+export class SecretError extends Error {
+  constructor(message: string, stackTrace?: string) {
+    super(message)
+    this.name = 'SecretError'
+    if (stackTrace) {
+      this.stack = stackTrace
+    }
+  }
+}
+
+/**
+ * Thrown when a secret is not found.
+ */
+export class SecretNotFoundError extends SecretError {
+  constructor(message: string, stackTrace?: string) {
+    super(message, stackTrace)
+    this.name = 'SecretNotFoundError'
+  }
+}

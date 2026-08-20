@@ -1,3 +1,4 @@
+import datetime
 from http import HTTPStatus
 from typing import Any, Optional, Union
 
@@ -7,6 +8,7 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
 from ...models.listed_sandbox import ListedSandbox
+from ...models.order_direction import OrderDirection
 from ...models.sandbox_state import SandboxState
 from ...types import UNSET, Response, Unset
 
@@ -15,6 +17,9 @@ def _get_kwargs(
     *,
     metadata: Union[Unset, str] = UNSET,
     state: Union[Unset, list[SandboxState]] = UNSET,
+    order: Union[Unset, OrderDirection] = UNSET,
+    started_after: Union[Unset, datetime.datetime] = UNSET,
+    template: Union[Unset, str] = UNSET,
     next_token: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 100,
 ) -> dict[str, Any]:
@@ -31,6 +36,19 @@ def _get_kwargs(
 
     if not isinstance(json_state, Unset):
         params["state"] = ",".join(str(item) for item in json_state)
+
+    json_order: Union[Unset, str] = UNSET
+    if not isinstance(order, Unset):
+        json_order = order.value
+
+    params["order"] = json_order
+
+    json_started_after: Union[Unset, str] = UNSET
+    if not isinstance(started_after, Unset):
+        json_started_after = started_after.isoformat()
+    params["startedAfter"] = json_started_after
+
+    params["template"] = template
 
     params["nextToken"] = next_token
 
@@ -93,6 +111,9 @@ def sync_detailed(
     client: AuthenticatedClient,
     metadata: Union[Unset, str] = UNSET,
     state: Union[Unset, list[SandboxState]] = UNSET,
+    order: Union[Unset, OrderDirection] = UNSET,
+    started_after: Union[Unset, datetime.datetime] = UNSET,
+    template: Union[Unset, str] = UNSET,
     next_token: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 100,
 ) -> Response[Union[Error, list["ListedSandbox"]]]:
@@ -103,6 +124,9 @@ def sync_detailed(
     Args:
         metadata (Union[Unset, str]):
         state (Union[Unset, list[SandboxState]]):
+        order (Union[Unset, OrderDirection]): Sort direction
+        started_after (Union[Unset, datetime.datetime]):
+        template (Union[Unset, str]):
         next_token (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 100.
 
@@ -117,6 +141,9 @@ def sync_detailed(
     kwargs = _get_kwargs(
         metadata=metadata,
         state=state,
+        order=order,
+        started_after=started_after,
+        template=template,
         next_token=next_token,
         limit=limit,
     )
@@ -133,6 +160,9 @@ def sync(
     client: AuthenticatedClient,
     metadata: Union[Unset, str] = UNSET,
     state: Union[Unset, list[SandboxState]] = UNSET,
+    order: Union[Unset, OrderDirection] = UNSET,
+    started_after: Union[Unset, datetime.datetime] = UNSET,
+    template: Union[Unset, str] = UNSET,
     next_token: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 100,
 ) -> Optional[Union[Error, list["ListedSandbox"]]]:
@@ -143,6 +173,9 @@ def sync(
     Args:
         metadata (Union[Unset, str]):
         state (Union[Unset, list[SandboxState]]):
+        order (Union[Unset, OrderDirection]): Sort direction
+        started_after (Union[Unset, datetime.datetime]):
+        template (Union[Unset, str]):
         next_token (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 100.
 
@@ -158,6 +191,9 @@ def sync(
         client=client,
         metadata=metadata,
         state=state,
+        order=order,
+        started_after=started_after,
+        template=template,
         next_token=next_token,
         limit=limit,
     ).parsed
@@ -168,6 +204,9 @@ async def asyncio_detailed(
     client: AuthenticatedClient,
     metadata: Union[Unset, str] = UNSET,
     state: Union[Unset, list[SandboxState]] = UNSET,
+    order: Union[Unset, OrderDirection] = UNSET,
+    started_after: Union[Unset, datetime.datetime] = UNSET,
+    template: Union[Unset, str] = UNSET,
     next_token: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 100,
 ) -> Response[Union[Error, list["ListedSandbox"]]]:
@@ -178,6 +217,9 @@ async def asyncio_detailed(
     Args:
         metadata (Union[Unset, str]):
         state (Union[Unset, list[SandboxState]]):
+        order (Union[Unset, OrderDirection]): Sort direction
+        started_after (Union[Unset, datetime.datetime]):
+        template (Union[Unset, str]):
         next_token (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 100.
 
@@ -192,6 +234,9 @@ async def asyncio_detailed(
     kwargs = _get_kwargs(
         metadata=metadata,
         state=state,
+        order=order,
+        started_after=started_after,
+        template=template,
         next_token=next_token,
         limit=limit,
     )
@@ -206,6 +251,9 @@ async def asyncio(
     client: AuthenticatedClient,
     metadata: Union[Unset, str] = UNSET,
     state: Union[Unset, list[SandboxState]] = UNSET,
+    order: Union[Unset, OrderDirection] = UNSET,
+    started_after: Union[Unset, datetime.datetime] = UNSET,
+    template: Union[Unset, str] = UNSET,
     next_token: Union[Unset, str] = UNSET,
     limit: Union[Unset, int] = 100,
 ) -> Optional[Union[Error, list["ListedSandbox"]]]:
@@ -216,6 +264,9 @@ async def asyncio(
     Args:
         metadata (Union[Unset, str]):
         state (Union[Unset, list[SandboxState]]):
+        order (Union[Unset, OrderDirection]): Sort direction
+        started_after (Union[Unset, datetime.datetime]):
+        template (Union[Unset, str]):
         next_token (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 100.
 
@@ -232,6 +283,9 @@ async def asyncio(
             client=client,
             metadata=metadata,
             state=state,
+            order=order,
+            started_after=started_after,
+            template=template,
             next_token=next_token,
             limit=limit,
         )
