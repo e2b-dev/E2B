@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect } from 'vitest'
 import { setupServer } from 'msw/node'
 
-import { NotFoundError, VolumeError, VolumeFileType } from '../../src'
+import { VolumeError, VolumeFileType, VolumePathNotFoundError } from '../../src'
 import { volumeTest } from '../setup'
 import { createMockVolumeApi } from './mockVolumeContent'
 
@@ -232,11 +232,11 @@ describe('Volume File Operations', () => {
     })
 
     volumeTest(
-      'should throw NotFoundError when updating non-existent file',
+      'should throw VolumePathNotFoundError when updating non-existent file',
       async ({ volume }) => {
         await expect(
           volume.updateMetadata('/non-existent.txt', { mode: 0o644 })
-        ).rejects.toThrow(NotFoundError)
+        ).rejects.toThrow(VolumePathNotFoundError)
       }
     )
   })
@@ -328,10 +328,10 @@ describe('Volume File Operations', () => {
     })
 
     volumeTest(
-      'should throw NotFoundError for non-existent directory',
+      'should throw VolumePathNotFoundError for non-existent directory',
       async ({ volume }) => {
         await expect(volume.list('/non-existent')).rejects.toThrow(
-          NotFoundError
+          VolumePathNotFoundError
         )
       }
     )
@@ -367,10 +367,10 @@ describe('Volume File Operations', () => {
     })
 
     volumeTest(
-      'should throw NotFoundError when removing non-existent file',
+      'should throw VolumePathNotFoundError when removing non-existent file',
       async ({ volume }) => {
         await expect(volume.remove('/non-existent.txt')).rejects.toThrow(
-          NotFoundError
+          VolumePathNotFoundError
         )
       }
     )
