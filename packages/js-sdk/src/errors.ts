@@ -11,12 +11,9 @@ export function formatSandboxTimeoutError(message: string) {
  * Thrown when general sandbox errors occur.
  */
 export class SandboxError extends Error {
-  constructor(message?: string, stackTrace?: string) {
+  constructor(message?: string) {
     super(message)
     this.name = 'SandboxError'
-    if (stackTrace) {
-      this.stack = stackTrace
-    }
   }
 }
 
@@ -43,8 +40,11 @@ export class TimeoutError extends SandboxError {
  */
 export class InvalidArgumentError extends SandboxError {
   constructor(message: string, stackTrace?: string) {
-    super(message, stackTrace)
+    super(message)
     this.name = 'InvalidArgumentError'
+    if (stackTrace) {
+      this.stack = stackTrace
+    }
   }
 }
 
@@ -125,8 +125,11 @@ export class GitUpstreamError extends SandboxError {
  */
 export class TemplateError extends SandboxError {
   constructor(message: string, stackTrace?: string) {
-    super(message, stackTrace)
+    super(message)
     this.name = 'TemplateError'
+    if (stackTrace) {
+      this.stack = stackTrace
+    }
   }
 }
 
