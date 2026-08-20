@@ -1,8 +1,22 @@
 import { ApiClient, components, handleApiError } from './api'
 import { ConnectionConfig, ConnectionOpts } from './connectionConfig'
-import { SecretError, SecretNotFoundError } from './errors'
+import {
+  InvalidArgumentError,
+  SecretError,
+  SecretNotFoundError,
+} from './errors'
 import { Paginator } from './paginator'
 import type { SandboxIamToken } from './sandbox/sandboxApi'
+
+const INVALID_SECRET_NAME_CHARS = /[{}\p{Cc}]/u
+
+function validateSecretName(name: string): void {
+  if (name.length === 0 || INVALID_SECRET_NAME_CHARS.test(name)) {
+    throw new InvalidArgumentError(
+      `secret name ${JSON.stringify(name)} is not usable: a secret name cannot be empty or contain '{', '}' or control characters, because it is interpolated into the '\${e2b.secrets.<name>}' placeholder the runtime resolves.`
+    )
+  }
+}
 
 /**
  * Metadata of a secret. Secret values are write-only and never returned.
@@ -360,6 +374,8 @@ export class Secret {
    * ```
    */
   static fill(secret: string): string {
+    validateSecretName(secret)
+
     return `\${e2b.secrets.${secret}}`
   }
 

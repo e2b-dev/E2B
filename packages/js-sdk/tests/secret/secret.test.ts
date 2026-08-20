@@ -3,7 +3,7 @@ import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import { randomUUID } from 'node:crypto'
 
-import { Secret, SecretNotFoundError } from '../../src'
+import { InvalidArgumentError, Secret, SecretNotFoundError } from '../../src'
 import { apiUrl } from '../setup'
 
 interface MockSecret {
@@ -200,4 +200,11 @@ describe('Secret.fill', () => {
   it('should format a placeholder', () => {
     expect(Secret.fill('openai-api-key')).toBe('${e2b.secrets.openai-api-key}')
   })
+
+  it.each(['', '{name', 'name}', 'name\n', 'name\x00'])(
+    'should throw InvalidArgumentError for invalid name %j',
+    (name) => {
+      expect(() => Secret.fill(name)).toThrow(InvalidArgumentError)
+    }
+  )
 })

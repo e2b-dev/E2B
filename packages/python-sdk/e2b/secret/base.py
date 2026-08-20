@@ -1,4 +1,7 @@
+import re
+
 from e2b.connection_config import ApiParams
+from e2b.exceptions import InvalidArgumentException
 from e2b.paginator import PaginatorBase
 from e2b.sandbox.sandbox_api import SandboxIamToken, SandboxIamTokenType
 from e2b.secret.types import SecretInfo
@@ -6,6 +9,19 @@ from e2b.secret.types import SecretInfo
 
 class SecretPaginatorBase(PaginatorBase[SecretInfo, ApiParams]):
     pass
+
+
+INVALID_SECRET_NAME_CHARS = re.compile(r"[{}\x00-\x1f\x7f-\x9f]")
+
+
+def _validate_secret_name(name: str) -> None:
+    if not isinstance(name, str) or not name or INVALID_SECRET_NAME_CHARS.search(name):
+        raise InvalidArgumentException(
+            f"secret name {name!r} is not usable: a secret name must be a "
+            "non-empty string and cannot contain '{', '}' or control "
+            "characters, because it is interpolated into the "
+            "'${e2b.secrets.<name>}' placeholder the runtime resolves."
+        )
 
 
 class SecretBase:
@@ -36,6 +52,7 @@ class SecretBase:
         # '${e2b.secrets.openai-api-key}'
         ```
         """
+        _validate_secret_name(secret)
         return f"${{e2b.secrets.{secret}}}"
 
     @staticmethod

@@ -11,10 +11,11 @@
 # still references a dropped schema loses that media-type entry rather
 # than keeping a dangling $ref.
 #
-# The envd api filters the synced envd spec (spec/envd/envd.yaml) the same
-# way: operations the upstream spec marks `x-internal: true` belong to the
+# The envd and volume apis filter the synced envd and volume-content specs
+# (spec/envd/envd.yaml, spec/openapi-volumecontent.yml) the same way:
+# operations the upstream specs mark `x-internal: true` belong to the
 # orchestrator's control plane, not to SDKs, so they are dropped before the
-# js-sdk envd schema is generated. remove-unused-components then drops the
+# SDK schemas are generated. remove-unused-components then drops the
 # component schemas only those operations referenced.
 apis:
   js-sdk:
@@ -41,6 +42,13 @@ apis:
         value: [true]
   envd:
     root: spec/envd/envd.yaml
+    decorators:
+      filter-out:
+        property: x-internal
+        value: [true]
+      remove-unused-components: on
+  volume:
+    root: spec/openapi-volumecontent.yml
     decorators:
       filter-out:
         property: x-internal

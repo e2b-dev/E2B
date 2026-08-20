@@ -8,7 +8,7 @@ from e2b import Secret
 from e2b.api.client.models.secret import Secret as SecretModel
 from e2b.api.client.models.secret_metadata import SecretMetadata
 from e2b.api.client.types import UNSET, Response
-from e2b.exceptions import SecretNotFoundException
+from e2b.exceptions import InvalidArgumentException, SecretNotFoundException
 import e2b.api.client.api.secrets.delete_secrets_secret_id as delete_secret_mod
 import e2b.api.client.api.secrets.get_secrets as get_secrets_mod
 import e2b.api.client.api.secrets.get_secrets_secret_id as get_secret_mod
@@ -196,3 +196,9 @@ def test_destroy_nonexistent_secret():
 
 def test_fill():
     assert Secret.fill("openai-api-key") == "${e2b.secrets.openai-api-key}"
+
+
+@pytest.mark.parametrize("name", ["", "{name", "name}", "name\n", "name\x00"])
+def test_fill_invalid_name_raises(name):
+    with pytest.raises(InvalidArgumentException):
+        Secret.fill(name)
