@@ -1,5 +1,11 @@
 # e2b
 
+## 2.44.1
+
+### Patch Changes
+
+- d000bbd: Fix `Volume.exists()` to return `false` for missing paths again — `getInfo()` now throws `VolumePathNotFoundError` (which no longer subclasses the deprecated `NotFoundError`), so the 404 catch is updated accordingly.
+
 ## 2.44.0
 
 ### Minor Changes
