@@ -2,7 +2,7 @@ import httpx
 import pytest
 
 from e2b import Volume
-from e2b.exceptions import NotFoundException
+from e2b.exceptions import VolumePathNotFoundException
 import e2b.volume.volume_sync as volume_sync_mod
 
 _files = {
@@ -47,7 +47,7 @@ def test_read_file_stream_yields_content(volume: Volume):
 
 
 def test_read_file_stream_raises_for_missing_path(volume: Volume):
-    with pytest.raises(NotFoundException):
+    with pytest.raises(VolumePathNotFoundException):
         for _ in volume.read_file("missing.txt", format="stream"):
             pass
 
@@ -68,5 +68,5 @@ def test_read_file_text_and_bytes_of_empty_file(volume: Volume):
 
 
 def test_read_file_missing_path_raises(volume: Volume):
-    with pytest.raises(NotFoundException):
+    with pytest.raises(VolumePathNotFoundException):
         volume.read_file("missing.txt")

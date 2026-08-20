@@ -3,4 +3,4 @@
 '@e2b/python-sdk': patch
 ---
 
-Add `VolumeNotFoundError` (JS) and `VolumeNotFoundException` (Python), thrown when a volume is not found. Both subclass the existing `NotFoundError` / `NotFoundException`, so existing catches keep working.
+Add typed not-found errors for volumes: `VolumeNotFoundError` / `VolumeNotFoundException` (thrown when a volume is not found) and `VolumePathNotFoundError` / `VolumePathNotFoundException` (thrown when a path inside a volume is not found). All subclass the existing `NotFoundError` / `NotFoundException`, so existing catches keep working.

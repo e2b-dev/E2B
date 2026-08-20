@@ -53,6 +53,7 @@ from .exceptions import (
     TimeoutException,
     VolumeException,
     VolumeNotFoundException,
+    VolumePathNotFoundException,
 )
 from .sandbox.commands.command_handle import (
     CommandExitException,
@@ -176,6 +177,7 @@ __all__ = [
     "RateLimitException",
     "VolumeException",
     "VolumeNotFoundException",
+    "VolumePathNotFoundException",
     # Sandbox API
     "SandboxInfo",
     "SandboxInfoLifecycle",
