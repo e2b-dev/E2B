@@ -198,10 +198,3 @@ async def test_destroy_nonexistent_secret():
 
 def test_fill():
     assert AsyncSecret.fill("openai-api-key") == "${e2b.secrets.openai-api-key}"
-
-
-def test_fill_with_version():
-    assert (
-        AsyncSecret.fill("openai-api-key", version=2)
-        == "${e2b.secrets.openai-api-key:2}"
-    )

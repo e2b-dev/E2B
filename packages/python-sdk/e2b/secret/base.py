@@ -1,5 +1,3 @@
-from typing import Optional
-
 from e2b.connection_config import ApiParams
 from e2b.paginator import PaginatorBase
 from e2b.sandbox.sandbox_api import SandboxIamToken, SandboxIamTokenType
@@ -19,17 +17,16 @@ class SecretBase:
     """
 
     @staticmethod
-    def fill(secret: str, version: Optional[int] = None) -> str:
+    def fill(secret: str) -> str:
         """
-        Format a placeholder that the runtime resolves to the secret's value.
+        Format a placeholder that the runtime resolves to the secret's
+        current value.
 
         This is a local formatting helper and makes no network call — it does
-        not check whether the named secret or requested version exists. An
-        unknown reference fails server-side when the placeholder is resolved.
+        not check whether the named secret exists. An unknown reference fails
+        server-side when the placeholder is resolved.
 
         :param secret: Secret name.
-        :param version: Pin the placeholder to an immutable version instead of
-            the current one.
 
         :return: Placeholder string resolving to the secret's value.
 
@@ -37,13 +34,9 @@ class SecretBase:
         ```python
         Secret.fill("openai-api-key")
         # '${e2b.secrets.openai-api-key}'
-
-        Secret.fill("openai-api-key", version=2)
-        # '${e2b.secrets.openai-api-key:2}'
         ```
         """
-        pin = f":{version}" if version is not None else ""
-        return f"${{e2b.secrets.{secret}{pin}}}"
+        return f"${{e2b.secrets.{secret}}}"
 
     @staticmethod
     def iam_token(*, audience: str, token_type: SandboxIamTokenType) -> SandboxIamToken:

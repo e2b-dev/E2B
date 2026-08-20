@@ -3,4 +3,4 @@
 '@e2b/python-sdk': minor
 ---
 
-Add Secrets Management to the SDK. The `Secret` class (and `AsyncSecret` in Python) now manages E2B secrets: `create` and `update` store secret values (write-only — no read surface returns them), `getInfo` / `get_info` and the paginated `list` read metadata, `exists` and `destroy` are idempotent existence and lifecycle helpers, and `fill` formats the `${e2b.secrets.name}` placeholder (optionally version-pinned) that the runtime resolves to the secret's value.
+Add Secrets Management to the SDK. The `Secret` class (and `AsyncSecret` in Python) now manages E2B secrets: `create` and `update` store secret values (write-only — no read surface returns them), `getInfo` / `get_info` and the paginated `list` read metadata, `exists` and `destroy` are idempotent existence and lifecycle helpers, and `fill` formats the `${e2b.secrets.name}` placeholder that the runtime resolves to the secret's current value.

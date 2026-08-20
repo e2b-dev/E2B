@@ -69,13 +69,6 @@ export interface SecretListOpts extends Omit<ConnectionOpts, 'signal'> {
   nextToken?: string
 }
 
-export interface SecretFillOpts {
-  /**
-   * Pin the placeholder to an immutable version instead of the current one.
-   */
-  version?: number
-}
-
 function convertSecretInfo(
   secret: components['schemas']['Secret']
 ): SecretInfo {
@@ -349,15 +342,14 @@ export class Secret {
   }
 
   /**
-   * Format a placeholder that the runtime resolves to the secret's value.
+   * Format a placeholder that the runtime resolves to the secret's current
+   * value.
    *
    * This is a local formatting helper and makes no network call — it does
-   * not check whether the named secret or requested version exists. An
-   * unknown reference fails server-side when the placeholder is resolved.
+   * not check whether the named secret exists. An unknown reference fails
+   * server-side when the placeholder is resolved.
    *
    * @param secret secret name.
-   * @param opts fill options.
-   * @param [opts.version] pin the placeholder to an immutable version.
    *
    * @returns placeholder string resolving to the secret's value.
    *
@@ -365,14 +357,10 @@ export class Secret {
    * ```ts
    * Secret.fill('openai-api-key')
    * // '${e2b.secrets.openai-api-key}'
-   *
-   * Secret.fill('openai-api-key', { version: 2 })
-   * // '${e2b.secrets.openai-api-key:2}'
    * ```
    */
-  static fill(secret: string, opts?: SecretFillOpts): string {
-    const version = opts?.version !== undefined ? `:${opts.version}` : ''
-    return `\${e2b.secrets.${secret}${version}}`
+  static fill(secret: string): string {
+    return `\${e2b.secrets.${secret}}`
   }
 
   /**

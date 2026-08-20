@@ -200,10 +200,4 @@ describe('Secret.fill', () => {
   it('should format a placeholder', () => {
     expect(Secret.fill('openai-api-key')).toBe('${e2b.secrets.openai-api-key}')
   })
-
-  it('should format a version-pinned placeholder', () => {
-    expect(Secret.fill('openai-api-key', { version: 2 })).toBe(
-      '${e2b.secrets.openai-api-key:2}'
-    )
-  })
 })

@@ -100,7 +100,6 @@ export type {
   SecretExistsOpts,
   SecretDestroyOpts,
   SecretListOpts,
-  SecretFillOpts,
 } from './secret'
 
 export { ALL_TRAFFIC } from './sandbox/network'
