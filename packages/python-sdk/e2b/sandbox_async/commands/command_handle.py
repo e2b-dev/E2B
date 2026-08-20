@@ -250,7 +250,9 @@ class AsyncCommandHandle:
             raise self._iteration_exception
 
         if self._result is None:
-            raise Exception("Command ended without an end event")
+            raise SandboxException(
+                "Command stream ended without an exit event. The sandbox may have been killed, paused, or timed out."
+            )
 
         if self._result.exit_code != 0:
             raise CommandExitException(
