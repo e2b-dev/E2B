@@ -1,5 +1,47 @@
 # e2b
 
+## 2.43.0
+
+### Minor Changes
+
+- f89f8c3: Add Secrets Management to the SDK. The `Secret` class (and `AsyncSecret` in Python) now manages E2B secrets: `create` and `update` store secret values (write-only — no read surface returns them), `getInfo` / `get_info` and the paginated `list` read metadata, `exists` and `destroy` are idempotent existence and lifecycle helpers, and `fill` formats the `${e2b.secrets.name}` placeholder that the runtime resolves to the secret's current value.
+
+### Patch Changes
+
+- 61503f7: Report `iam.tokens.toJSON`, `.then`, `.toString` and `.valueOf` as unregistered workload tokens in a network `transform` callback. These four names were exempt from the unknown-token guard because the runtime reads them off any object it serializes, awaits or coerces, so referencing one as a token name used to serialize `Bearer undefined` or a built-in's source text into the rule. Such a value carries no placeholder for the egress proxy to resolve, so it was forwarded verbatim and the destination answered 401 on a garbage credential, with no error from E2B. They now throw `InvalidArgumentError` like any other unregistered name — on use rather than on the read, so serializing, awaiting and coercing the map itself keep working. The Python SDK was not affected.
+
+  ```ts
+  import { Sandbox, Secret } from 'e2b'
+
+  await Sandbox.create({
+    iam: {
+      tokens: {
+        aws: Secret.iamToken({
+          audience: 'sts.amazonaws.com',
+          tokenType: 'JWT-SVID',
+        }),
+      },
+    },
+    network: {
+      rules: {
+        'api.example.com': [
+          {
+            // InvalidArgumentError: Network transform references iam token
+            // 'then', which is not registered. Registered tokens: 'aws'.
+            transform: ({ iam }) => ({
+              headers: { Authorization: `Bearer ${iam.tokens.then}` },
+            }),
+          },
+        ],
+      },
+    },
+  })
+  ```
+
+- d79c6cd: Remove the unused `stackTrace` constructor parameter from error classes that never have a caller stack trace attached (`TimeoutError`, `NotEnoughSpaceError`, `NotFoundError`, `FileNotFoundError`, `SandboxNotFoundError`, `GitUpstreamError`, `VolumeNotFoundError`, `VolumePathNotFoundError`).
+- 2be6c12: Internal refactor: the template API operations resolve their connection config through a class-level hook, so a `TemplateBase` subclass can carry bound connection options. No behavior change — `Template` / `AsyncTemplate` keep reading config from per-call options and environment variables. In the Python SDK the terminal template operations (`build`, `build_in_background`, `get_build_status`, `exists`, `alias_exists`, `assign_tags`, `remove_tags`, `get_tags`) became `classmethod`s, with signatures unchanged for callers.
+- 05aa03c: Add typed not-found errors for volumes: `VolumeNotFoundError` / `VolumeNotFoundException` (thrown when a volume is not found) and `VolumePathNotFoundError` / `VolumePathNotFoundException` (thrown when a path inside a volume is not found). All subclass the existing `NotFoundError` / `NotFoundException`, so existing catches keep working.
+
 ## 2.42.0
 
 ### Minor Changes
