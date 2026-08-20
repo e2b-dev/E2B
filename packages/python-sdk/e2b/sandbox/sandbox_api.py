@@ -1060,7 +1060,7 @@ class SandboxQuery:
     """Filter sandboxes by state."""
 
     started_after: Optional[datetime] = None
-    """Filter sandboxes to those started at or after this time."""
+    """Filter sandboxes to those started at or after this time. Naive datetimes are interpreted as local time."""
 
     template: Optional[str] = None
     """Filter sandboxes by a template ID or name."""

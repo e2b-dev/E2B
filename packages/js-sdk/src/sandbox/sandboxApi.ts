@@ -711,7 +711,8 @@ export interface SandboxListOpts extends Omit<SandboxApiOpts, 'signal'> {
   }
 
   /**
-   * Sort order of the list of sandboxes by start time.
+   * Sort order of the list of sandboxes by start time, applied across the
+   * whole result set before pagination (not within a page).
    *
    * @default 'desc'
    */
@@ -1810,7 +1811,7 @@ export class SandboxApi {
  */
 export class SandboxPaginator extends Paginator<SandboxInfo, SandboxApiOpts> {
   private query: SandboxListOpts['query']
-  private order: SandboxListOpts['order']
+  private order: SandboxListOrder | undefined
 
   constructor(opts?: SandboxListOpts) {
     super(opts, opts?.limit, opts?.nextToken)
@@ -1845,7 +1846,7 @@ export class SandboxPaginator extends Paginator<SandboxInfo, SandboxApiOpts> {
           metadata,
           state: this.query?.state,
           startedAfter: this.query?.startedAfter?.toISOString(),
-          template: this.query?.template,
+          template: this.query?.template || undefined,
           order: this.order,
           limit: this.limit,
           nextToken: this.nextToken,
