@@ -54,31 +54,6 @@ export type SandboxNetworkTransform = {
 }
 
 /**
- * Placeholder for each workload token registered in {@link SandboxOpts.iam},
- * keyed by token name. `tokens.aws` is the string
- * `'${e2b.identity.tokens.aws}'`, which the egress proxy replaces with a freshly
- * minted token when it forwards the request.
- *
- * Reading a name that is not registered throws {@link InvalidArgumentError} —
- * the proxy never turns an unregistered name into a token, so a typo would
- * surface as a confusing auth failure at the destination rather than an error
- * here. The four names the runtime itself reads off any object it serializes,
- * awaits or coerces (`toJSON`, `then`, `toString`, `valueOf`) cannot throw on
- * the read; they throw as soon as the value is used as a token, that is when it
- * is coerced to a string or serialized into the request.
- *
- * A presence check is `name in tokens`, which answers `false` for an
- * unregistered name; `Object.hasOwn` throws instead, because answering it
- * `false` is what made a descriptor read of a typo resolve to `undefined`.
- *
- * The map is read-only: writing a name in registers nothing, so an assignment,
- * a `delete` or a `defineProperty` that changes a placeholder throws
- * {@link InvalidArgumentError} (`Object.freeze` and `Object.seal` are allowed,
- * as they leave the placeholders as they are).
- */
-export type SandboxIamTokenPlaceholders = Readonly<Record<string, string>>
-
-/**
  * Context passed to a {@link SandboxNetworkRule} `transform` callback. Its
  * values are literal placeholder strings that the egress proxy resolves per
  * request, so the secret itself never leaves the platform.
@@ -86,8 +61,22 @@ export type SandboxIamTokenPlaceholders = Readonly<Record<string, string>>
 export type SandboxNetworkTransformContext = {
   /** Workload identity placeholders. */
   iam: {
-    /** Workload token placeholders, keyed by token name. */
-    tokens: SandboxIamTokenPlaceholders
+    /**
+     * Placeholder for each workload token registered in
+     * {@link SandboxOpts.iam}, keyed by token name. `tokens.aws` is the string
+     * `'${e2b.identity.tokens.aws}'`, which the egress proxy replaces with a
+     * freshly minted token when it forwards the request.
+     *
+     * Reading a name that is not registered throws
+     * {@link InvalidArgumentError} — the proxy never turns an unregistered name
+     * into a token, so a typo would surface as a confusing auth failure at the
+     * destination. The four names the runtime itself reads off any object it
+     * serializes, awaits or coerces (`toJSON`, `then`, `toString`, `valueOf`)
+     * cannot throw on the read; they throw as soon as the value is used as a
+     * token, that is when it is coerced to a string or serialized into the
+     * request.
+     */
+    tokens: Record<string, string>
   }
 }
 

@@ -103,13 +103,6 @@ export function iamTokenPlaceholder(name: string): string {
  * a typo would surface as a confusing auth failure at the destination instead of
  * an error here.
  *
- * A presence check spells that as `name in iam.tokens`, which answers `false`
- * for an unregistered name. `Object.hasOwn` cannot: it is `false` only when the
- * descriptor trap reports the name as absent, which is the same `undefined` that
- * makes `Object.getOwnPropertyDescriptor(iam.tokens, 'typo').value` a silent
- * `undefined` on the wire. The lookup guard wins that trade, so `Object.hasOwn`
- * throws for an unregistered name instead of answering it.
- *
  * `validate: false` is for the update-network endpoint, whose payload carries no
  * `iam` config — the sandbox's registered token names are not known client-side
  * there, so any name resolves to its placeholder.
@@ -142,25 +135,6 @@ export function iamTokenPlaceholders(
     )
   }
 
-  /**
-   * Refuse a write. The hint depends on what the name is: registering a token
-   * that is already registered is not the fix for a `delete`, and on the
-   * unchecked path there is no create call in flight to point at.
-   */
-  const readOnly = (action: string, prop: string | symbol): never => {
-    const name = String(prop)
-
-    const hint = Object.hasOwn(tokens, name)
-      ? `'${name}' is already registered — iam.tokens only exposes its placeholder, so change the iam config of the call that creates the sandbox instead.`
-      : validate
-        ? `Registering a workload token is what makes it resolvable, so pass it to Sandbox.create as iam: { tokens: { '${name}': Secret.iamToken({ audience, tokenType }) } }.`
-        : `A token is registered when the sandbox is created, not here — the update-network payload carries no iam config.`
-
-    throw new InvalidArgumentError(
-      `iam.tokens is read-only, cannot ${action} '${name}'. ${hint}`
-    )
-  }
-
   const proxy: Record<string, string> = new Proxy(tokens, {
     get(target, prop, receiver) {
       // Own keys only: a bare `in` also matches inherited `Object.prototype`
@@ -180,59 +154,6 @@ export function iamTokenPlaceholders(
       }
 
       return Reflect.get(target, prop, receiver)
-    },
-
-    // A descriptor lookup is a token lookup by another spelling, so it resolves
-    // like the `get` trap instead of reporting an unregistered name as absent
-    // and putting `undefined` on the wire.
-    getOwnPropertyDescriptor(target, prop) {
-      if (typeof prop === 'string' && !Object.hasOwn(target, prop)) {
-        return {
-          value: RUNTIME_PROBED_PROPS.has(prop)
-            ? runtimeProbeValue(
-                prop,
-                () => proxy,
-                () => resolveUnregistered(prop)
-              )
-            : resolveUnregistered(prop),
-          writable: false,
-          enumerable: false,
-          configurable: true,
-        }
-      }
-
-      return Reflect.getOwnPropertyDescriptor(target, prop)
-    },
-
-    // The map is a view of what the request registers: writing a name here
-    // registers nothing, it only makes a later read of that name resolve to a
-    // placeholder the proxy cannot mint a token for.
-    set(_target, prop) {
-      return readOnly('assign', prop)
-    },
-
-    defineProperty(target, prop, descriptor) {
-      // `Object.freeze` and `Object.seal` redefine every own property in place,
-      // and hardening a map it was handed is what a defensive callback does, so
-      // a redefinition that leaves the placeholder as it is goes through.
-      const keepsPlaceholder =
-        !('get' in descriptor || 'set' in descriptor) &&
-        (!('value' in descriptor) ||
-          descriptor.value === Reflect.get(target, prop))
-
-      if (
-        typeof prop === 'string' &&
-        Object.hasOwn(target, prop) &&
-        keepsPlaceholder
-      ) {
-        return Reflect.defineProperty(target, prop, descriptor)
-      }
-
-      return readOnly('define', prop)
-    },
-
-    deleteProperty(_target, prop) {
-      return readOnly('delete', prop)
     },
 
     // `name in iam.tokens` answers "is this token registered?", so it must

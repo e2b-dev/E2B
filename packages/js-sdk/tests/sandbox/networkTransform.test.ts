@@ -274,34 +274,6 @@ test('transform callback cannot reach an unguarded token map through valueOf', a
   expect(lastCreateBody).toBeUndefined()
 })
 
-test('transform callback cannot register an iam token by writing to the map', async () => {
-  // Writing the placeholder in registers nothing, so the read below would put a
-  // placeholder on the wire that the proxy cannot resolve to a token.
-  await expect(
-    Sandbox.create('base', {
-      apiKey: TEST_API_KEY,
-      iam: { tokens: { aws: awsToken } },
-      network: {
-        rules: {
-          'api.internal.example.com': [
-            {
-              transform: ({ iam }) => {
-                // @ts-expect-error the map is typed read-only.
-                iam.tokens.gcp = '${e2b.identity.tokens.gcp}'
-                return {
-                  headers: { Authorization: `Bearer ${iam.tokens.gcp}` },
-                }
-              },
-            },
-          ],
-        },
-      },
-    })
-  ).rejects.toThrowError(/iam.tokens is read-only, cannot assign 'gcp'/)
-
-  expect(lastCreateBody).toBeUndefined()
-})
-
 test('transform callback rejects an iam token when no iam config is set', async () => {
   await expect(
     Sandbox.create('base', {
