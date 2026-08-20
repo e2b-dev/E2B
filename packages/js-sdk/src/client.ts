@@ -1,7 +1,7 @@
 import { ConnectionOpts } from './connectionConfig'
 import { Sandbox } from './sandbox'
 import { Secret } from './secret'
-import { createBoundTemplate, Template } from './template'
+import { Template } from './template'
 import { Volume } from './volume'
 
 /**
@@ -24,7 +24,7 @@ import { Volume } from './volume'
  *
  * const sandbox = await client.Sandbox.create()
  * const volumes = await client.Volume.list()
- * await client.Template.build(client.Template().fromPythonImage('3'), 'my-env')
+ * await client.Template.build(new client.Template().fromPythonImage('3'), 'my-env')
  * ```
  */
 export class E2B {
@@ -39,8 +39,8 @@ export class E2B {
   readonly Volume: typeof Volume
 
   /**
-   * `Template` builder factory bound to this client's connection
-   * configuration. Both `client.Template()` and the statics
+   * `Template` class bound to this client's connection configuration. Both the
+   * builder (`new client.Template()`) and the statics
    * (`client.Template.build(...)`, `client.Template.exists(...)`, …) work like
    * the top-level `Template`.
    */
@@ -71,6 +71,8 @@ export class E2B {
       protected static override readonly boundOpts = boundOpts
     }
 
-    this.Template = createBoundTemplate(boundOpts)
+    this.Template = class extends Template {
+      protected static override readonly boundOpts = boundOpts
+    }
   }
 }

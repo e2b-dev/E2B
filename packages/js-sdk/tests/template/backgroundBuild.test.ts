@@ -3,7 +3,7 @@ import { expect, test } from 'vitest'
 import { Template, waitForTimeout } from '../../src'
 
 test('build template in background', async () => {
-  const template = Template()
+  const template = new Template()
     .fromImage('ubuntu:22.04')
     .skipCache()
     .runCmd('sleep 5') // Add a delay to ensure build takes time

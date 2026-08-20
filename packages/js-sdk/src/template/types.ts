@@ -229,7 +229,7 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * Template().fromDebianImage('bookworm')
+   * new Template().fromDebianImage('bookworm')
    * ```
    */
   fromDebianImage(variant?: string): TemplateBuilder
@@ -240,7 +240,7 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * Template().fromUbuntuImage('24.04')
+   * new Template().fromUbuntuImage('24.04')
    * ```
    */
   fromUbuntuImage(variant?: string): TemplateBuilder
@@ -251,7 +251,7 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * Template().fromFedoraImage('44')
+   * new Template().fromFedoraImage('44')
    * ```
    */
   fromFedoraImage(variant?: string): TemplateBuilder
@@ -262,7 +262,7 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * Template().fromAlpineImage('3.24')
+   * new Template().fromAlpineImage('3.24')
    * ```
    */
   fromAlpineImage(variant?: string): TemplateBuilder
@@ -276,7 +276,7 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * Template().fromArchImage('base-devel')
+   * new Template().fromArchImage('base-devel')
    * ```
    */
   fromArchImage(variant?: string): TemplateBuilder
@@ -287,7 +287,7 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * Template().fromPythonImage('3')
+   * new Template().fromPythonImage('3')
    * ```
    */
   fromPythonImage(version?: string): TemplateBuilder
@@ -298,7 +298,7 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * Template().fromNodeImage('24')
+   * new Template().fromNodeImage('24')
    * ```
    */
   fromNodeImage(variant?: string): TemplateBuilder
@@ -309,7 +309,7 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * Template().fromBunImage('1.3')
+   * new Template().fromBunImage('1.3')
    * ```
    */
   fromBunImage(variant?: string): TemplateBuilder
@@ -319,7 +319,7 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * Template().fromBaseImage()
+   * new Template().fromBaseImage()
    * ```
    */
   fromBaseImage(): TemplateBuilder
@@ -331,10 +331,10 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * Template().fromImage('python:3')
+   * new Template().fromImage('python:3')
    *
    * // With credentials (optional)
-   * Template().fromImage('myregistry.com/myimage:latest', {
+   * new Template().fromImage('myregistry.com/myimage:latest', {
    *   username: 'user',
    *   password: 'pass'
    * })
@@ -351,7 +351,7 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * Template().fromTemplate('my-base-template')
+   * new Template().fromTemplate('my-base-template')
    * ```
    */
   fromTemplate(template: string): TemplateBuilder
@@ -362,8 +362,8 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * Template().fromDockerfile('Dockerfile')
-   * Template().fromDockerfile('FROM python:3\nRUN pip install numpy')
+   * new Template().fromDockerfile('Dockerfile')
+   * new Template().fromDockerfile('FROM python:3\nRUN pip install numpy')
    * ```
    */
   fromDockerfile(dockerfileContentOrPath: string): TemplateBuilder
@@ -375,7 +375,7 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * Template().fromAWSRegistry(
+   * new Template().fromAWSRegistry(
    *   '123456789.dkr.ecr.us-west-2.amazonaws.com/myimage:latest',
    *   {
    *     accessKeyId: 'AKIA...',
@@ -401,7 +401,7 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * Template().fromGCPRegistry(
+   * new Template().fromGCPRegistry(
    *   'gcr.io/myproject/myimage:latest',
    *   { serviceAccountJSON: 'path/to/service-account.json' }
    * )
@@ -419,7 +419,7 @@ export interface TemplateFromImage {
    *
    * @example
    * ```ts
-   * Template().skipCache().fromPythonImage('3')
+   * new Template().skipCache().fromPythonImage('3')
    * ```
    */
   skipCache(): this

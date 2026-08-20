@@ -2,7 +2,7 @@ import { expect, test } from 'vitest'
 import { Template } from '../../../src'
 
 test('toDockerfile', { timeout: 180000 }, async () => {
-  const template = Template()
+  const template = new Template()
     .fromUbuntuImage('24.04')
     .copy('README.md', '/app/README.md')
     .runCmd('echo "Hello, World!"')
@@ -17,7 +17,7 @@ RUN echo "Hello, World!"
 })
 
 test('toDockerfile with options', { timeout: 180000 }, async () => {
-  const template = Template()
+  const template = new Template()
     .fromUbuntuImage('24.04')
     .copy('README.md', '/app/README.md', { user: 'root' })
     .runCmd('echo "Hello, World!"', { user: 'root' })
@@ -32,7 +32,7 @@ RUN echo "Hello, World!"
 })
 
 test('toDockerfile with ENV instructions', { timeout: 180000 }, async () => {
-  const template = Template()
+  const template = new Template()
     .fromUbuntuImage('24.04')
     .setEnvs({ NODE_ENV: 'production', PORT: '8080' })
     .setEnvs({ DEBUG: 'false' })

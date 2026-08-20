@@ -3,7 +3,7 @@ import { Template } from '../../../src'
 import { buildTemplateTest } from '../../setup'
 
 buildTemplateTest('run command', async ({ buildTemplate }) => {
-  const template = Template()
+  const template = new Template()
     .fromImage('ubuntu:22.04')
     .skipCache()
     .runCmd('ls -l')
@@ -14,7 +14,7 @@ buildTemplateTest('run command', async ({ buildTemplate }) => {
 buildTemplateTest(
   'run command as a different user',
   async ({ buildTemplate }) => {
-    const template = Template()
+    const template = new Template()
       .fromImage('ubuntu:22.04')
       .skipCache()
       .runCmd('test "$(whoami)" = "root"', { user: 'root' })
@@ -26,7 +26,7 @@ buildTemplateTest(
 buildTemplateTest(
   'run command as user that does not exist',
   async ({ buildTemplate }) => {
-    const template = Template()
+    const template = new Template()
       .fromImage('ubuntu:22.04')
       .skipCache()
       .runCmd('whoami', { user: 'root123' })

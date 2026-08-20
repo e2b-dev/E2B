@@ -1,6 +1,6 @@
 import { Template } from 'e2b'
 
-export const template = Template()
+export const template = new Template()
   .fromImage('node:18')
   .setUser('root')
   .setWorkdir('/')

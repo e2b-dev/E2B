@@ -50,9 +50,9 @@ import {
 } from './utils'
 
 /**
- * Base class for building E2B sandbox templates.
+ * Builder for E2B sandbox templates, and the entrypoint for the template API.
  */
-export class TemplateBase
+export class Template
   implements TemplateFromImage, TemplateBuilder, TemplateFinal
 {
   /**
@@ -118,7 +118,7 @@ export class TemplateBase
     template: TemplateClass,
     computeHashes: boolean = true
   ): Promise<string> {
-    return (template as TemplateBase).toJSON(computeHashes)
+    return (template as Template).toJSON(computeHashes)
   }
 
   /**
@@ -130,7 +130,7 @@ export class TemplateBase
    * @throws Error if the template is based on another E2B template
    */
   static toDockerfile(template: TemplateClass): string {
-    return (template as TemplateBase).toDockerfile()
+    return (template as Template).toDockerfile()
   }
 
   /**
@@ -142,7 +142,7 @@ export class TemplateBase
    *
    * @example
    * ```ts
-   * const template = Template().fromPythonImage('3')
+   * const template = new Template().fromPythonImage('3')
    *
    * // Build with single tag in name
    * await Template.build(template, 'my-python-env:v1.0')
@@ -190,7 +190,7 @@ export class TemplateBase
 
     try {
       buildOpts.onBuildLogs?.(new LogEntryStart(new Date(), 'Build started'))
-      const baseTemplate = template as TemplateBase
+      const baseTemplate = template as Template
 
       const config = new ConnectionConfig(buildOpts)
       const client = new ApiClient(config)
@@ -226,7 +226,7 @@ export class TemplateBase
    *
    * @example
    * ```ts
-   * const template = Template().fromPythonImage('3')
+   * const template = new Template().fromPythonImage('3')
    *
    * // Build with single tag in name
    * const data = await Template.buildInBackground(template, 'my-python-env:v1.0')
@@ -274,7 +274,7 @@ export class TemplateBase
     const config = new ConnectionConfig(buildOpts)
     const client = new ApiClient(config)
 
-    return (template as TemplateBase).build(client, config, name, buildOpts)
+    return (template as Template).build(client, config, name, buildOpts)
   }
 
   /**
@@ -1285,83 +1285,12 @@ export class TemplateBase
 }
 
 /**
- * Create a new E2B template builder instance.
+ * Alias kept for backwards compatibility with the previous `TemplateBase`
+ * export.
  *
- * @param options Optional configuration for the template builder
- * @returns A new template builder instance
- *
- * @example
- * ```ts
- * import { Template } from 'e2b'
- *
- * const template = Template()
- *   .fromPythonImage('3')
- *   .copy('requirements.txt', '/app/')
- *   .pipInstall()
- *
- * await Template.build(template, 'my-python-app:v1.0')
- * ```
+ * @deprecated Use {@link Template} instead.
  */
-export function Template(options?: TemplateOptions): TemplateFromImage {
-  return new TemplateBase(options)
-}
-
-/**
- * The statics resolve their connection options off `this`, so they are bound to
- * `TemplateBase` (which carries no bound options) when re-exposed as plain
- * properties of the `Template` factory function.
- */
-function boundToBase<T extends (...args: never[]) => unknown>(fn: T): T {
-  return fn.bind(TemplateBase) as T
-}
-
-Template.build = boundToBase(TemplateBase.build)
-Template.buildInBackground = boundToBase(TemplateBase.buildInBackground)
-Template.getBuildStatus = boundToBase(TemplateBase.getBuildStatus)
-Template.exists = boundToBase(TemplateBase.exists)
-Template.aliasExists = boundToBase(TemplateBase.aliasExists)
-Template.assignTags = boundToBase(TemplateBase.assignTags)
-Template.removeTags = boundToBase(TemplateBase.removeTags)
-Template.getTags = boundToBase(TemplateBase.getTags)
-Template.toJSON = TemplateBase.toJSON
-Template.toDockerfile = TemplateBase.toDockerfile
-
-/**
- * Create a `Template` surface whose statics resolve their connection options
- * against `boundOpts` instead of the environment variables. Lives in this
- * module so the factory frame is not mistaken for the caller's frame when
- * resolving the default file context path.
- *
- * @internal
- * @hidden
- * @hide
- */
-export function createBoundTemplate(
-  boundOpts: Omit<ConnectionOpts, 'signal'>
-): typeof Template {
-  class BoundTemplate extends TemplateBase {
-    protected static override readonly boundOpts = boundOpts
-  }
-
-  const template = (options?: TemplateOptions): TemplateFromImage =>
-    new BoundTemplate(options)
-
-  const boundToClass = <T extends (...args: never[]) => unknown>(fn: T): T =>
-    fn.bind(BoundTemplate) as T
-
-  return Object.assign(template, {
-    build: boundToClass(TemplateBase.build),
-    buildInBackground: boundToClass(TemplateBase.buildInBackground),
-    getBuildStatus: boundToClass(TemplateBase.getBuildStatus),
-    exists: boundToClass(TemplateBase.exists),
-    aliasExists: boundToClass(TemplateBase.aliasExists),
-    assignTags: boundToClass(TemplateBase.assignTags),
-    removeTags: boundToClass(TemplateBase.removeTags),
-    getTags: boundToClass(TemplateBase.getTags),
-    toJSON: TemplateBase.toJSON,
-    toDockerfile: TemplateBase.toDockerfile,
-  })
-}
+export { Template as TemplateBase }
 
 export type {
   BuildInfo,

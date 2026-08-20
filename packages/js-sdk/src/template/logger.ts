@@ -199,7 +199,7 @@ class DefaultBuildLogger {
  * ```ts
  * import { Template, defaultBuildLogger } from 'e2b'
  *
- * const template = Template().fromPythonImage()
+ * const template = new Template().fromPythonImage()
  *
  * await Template.build(template, {
  *   alias: 'my-template',

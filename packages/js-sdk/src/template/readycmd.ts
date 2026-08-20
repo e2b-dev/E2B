@@ -26,7 +26,7 @@ export class ReadyCmd {
  * ```ts
  * import { Template, waitForPort } from 'e2b'
  *
- * const template = Template()
+ * const template = new Template()
  *   .fromPythonImage()
  *   .setStartCmd('python -m http.server 8000', waitForPort(8000))
  * ```
@@ -51,7 +51,7 @@ export function waitForPort(port: number): ReadyCmd {
  * ```ts
  * import { Template, waitForURL } from 'e2b'
  *
- * const template = Template()
+ * const template = new Template()
  *   .fromNodeImage()
  *   .setStartCmd('npm start', waitForURL('http://localhost:3000/health'))
  * ```
@@ -72,7 +72,7 @@ export function waitForURL(url: string, statusCode: number = 200): ReadyCmd {
  * ```ts
  * import { Template, waitForProcess } from 'e2b'
  *
- * const template = Template()
+ * const template = new Template()
  *   .fromBaseImage()
  *   .setStartCmd('./my-daemon', waitForProcess('my-daemon'))
  * ```
@@ -93,7 +93,7 @@ export function waitForProcess(processName: string): ReadyCmd {
  * ```ts
  * import { Template, waitForFile } from 'e2b'
  *
- * const template = Template()
+ * const template = new Template()
  *   .fromBaseImage()
  *   .setStartCmd('./init.sh', waitForFile('/tmp/ready'))
  * ```
@@ -114,7 +114,7 @@ export function waitForFile(filename: string): ReadyCmd {
  * ```ts
  * import { Template, waitForTimeout } from 'e2b'
  *
- * const template = Template()
+ * const template = new Template()
  *   .fromNodeImage()
  *   .setStartCmd('npm start', waitForTimeout(5000)) // Wait 5 seconds
  * ```

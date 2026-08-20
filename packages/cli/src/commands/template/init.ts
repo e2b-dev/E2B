@@ -28,7 +28,9 @@ async function generateTemplateFiles(
   cpuCount?: number,
   memoryMB?: number
 ): Promise<GeneratedFiles> {
-  const template = Template().fromBaseImage().runCmd('echo Hello World E2B!')
+  const template = new Template()
+    .fromBaseImage()
+    .runCmd('echo Hello World E2B!')
 
   return generateAndWriteTemplateFiles(
     root,

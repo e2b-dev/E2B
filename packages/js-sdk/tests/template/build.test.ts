@@ -36,7 +36,7 @@ afterAll(() => {
 })
 
 buildTemplateTest('build template', async ({ buildTemplate }) => {
-  const template = Template({ fileContextPath: contextPath })
+  const template = new Template({ fileContextPath: contextPath })
     // using base image to avoid re-building ubuntu:22.04 image
     .fromBaseImage()
     .copy('folder/*', 'folder', { forceUpload: true })
@@ -50,13 +50,13 @@ buildTemplateTest('build template', async ({ buildTemplate }) => {
 buildTemplateTest(
   'build template from base template',
   async ({ buildTemplate }) => {
-    const template = Template().fromTemplate('base')
+    const template = new Template().fromTemplate('base')
     await buildTemplate(template, { skipCache: true })
   }
 )
 
 buildTemplateTest('build template with symlinks', async ({ buildTemplate }) => {
-  const template = Template({ fileContextPath: contextPath })
+  const template = new Template({ fileContextPath: contextPath })
     .fromImage('ubuntu:22.04')
     .skipCache()
     .copy('folder/*', 'folder', { forceUpload: true })
@@ -68,7 +68,7 @@ buildTemplateTest('build template with symlinks', async ({ buildTemplate }) => {
 buildTemplateTest(
   'build template with resolveSymlinks',
   async ({ buildTemplate }) => {
-    const template = Template({ fileContextPath: contextPath })
+    const template = new Template({ fileContextPath: contextPath })
       .fromImage('ubuntu:22.04')
       .skipCache()
       .copy('folder/symlink.txt', 'folder/symlink.txt', {

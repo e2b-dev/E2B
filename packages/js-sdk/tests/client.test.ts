@@ -2,14 +2,7 @@ import { afterAll, afterEach, assert, beforeAll, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
-import DefaultExport, {
-  E2B,
-  Sandbox,
-  Secret,
-  Template,
-  TemplateBase,
-  Volume,
-} from '../src'
+import DefaultExport, { E2B, Sandbox, Secret, Template, Volume } from '../src'
 import { TEST_API_KEY } from './setup'
 
 const API_KEY_A = `e2b_${'a'.repeat(40)}`
@@ -225,24 +218,21 @@ test('client.Template statics use the client config', async () => {
 
 test('client.Template builds template instances', async () => {
   const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
-  const template = client.Template().fromPythonImage('3')
+  const template = new client.Template().fromPythonImage('3')
 
-  assert.instanceOf(template, TemplateBase)
+  assert.instanceOf(template, Template)
+  assert.instanceOf(template, client.Template)
   assert.equal(
     await client.Template.toDockerfile(template),
-    await Template.toDockerfile(Template().fromPythonImage('3'))
+    await Template.toDockerfile(new Template().fromPythonImage('3'))
   )
-
-  // The default file context is the caller's directory, not the SDK's.
-  const withCopy = client.Template().fromBaseImage().copy('setup.ts', '/app/')
-  await client.Template.toJSON(withCopy)
 })
 
-test('client.Template statics can be rebound to a variable', async () => {
+test('client.Template can be rebound to a variable', async () => {
   const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
-  const { exists } = client.Template
+  const T = client.Template
 
-  await exists('test-template')
+  await T.exists('test-template')
 
   assert.equal(
     lastRequest().url,

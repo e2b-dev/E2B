@@ -255,7 +255,7 @@ build/%:
 
       // Verify basic structure
       expect(templateContent).toContain("import { Template } from 'e2b'")
-      expect(templateContent).toContain('export const template = Template()')
+      expect(templateContent).toContain('export const template = new Template()')
       expect(templateContent).toContain('fromImage')
       expect(templateContent).toContain('e2bdev/base')
     })
@@ -275,7 +275,7 @@ build/%:
       // Verify basic structure
       expect(templateContent).toContain('from e2b import Template')
       expect(templateContent).toContain('template = (')
-      expect(templateContent).toContain('Template()')
+      expect(templateContent).toContain('new Template()')
       expect(templateContent).toContain('from_image')
       expect(templateContent).toContain('e2bdev/base')
     })

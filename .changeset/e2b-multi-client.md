@@ -7,6 +7,8 @@ Add an `E2B` client that binds a connection config once and exposes the resource
 
 **Breaking (JS):** the default export of `e2b` is now the `E2B` client instead of `Sandbox`. Use the named import (`import { Sandbox } from 'e2b'`) instead of `import Sandbox from 'e2b'`.
 
+**Breaking (JS):** `Template` is now a class instead of a factory function, mirroring the Python SDK, so the builder is constructed with `new Template(...)` instead of `Template(...)`. The statics (`Template.build`, `Template.exists`, …) are unchanged, and `TemplateBase` is kept as a deprecated alias of `Template`.
+
 ```ts
 import E2B from 'e2b'
 
@@ -15,6 +17,7 @@ const client = new E2B({ apiKey: 'e2b_***', domain: 'e2b.dev' })
 const sandbox = await client.Sandbox.create()
 const volume = await client.Volume.create('my-volume')
 const exists = await client.Template.exists('my-template')
+await client.Template.build(new client.Template().fromPythonImage('3'), 'my-env')
 
 // The classes can be destructured and used like the top-level ones.
 const { Sandbox } = client

@@ -1,6 +1,6 @@
 import { Template } from 'e2b'
 
-export const template = Template()
+export const template = new Template()
   .fromImage('ubuntu:latest')
   .setUser('root')
   .setWorkdir('/')
