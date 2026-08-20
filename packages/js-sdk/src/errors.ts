@@ -181,12 +181,9 @@ export class VolumeError extends Error {
  * Thrown when general secret errors occur.
  */
 export class SecretError extends Error {
-  constructor(message: string, stackTrace?: string) {
+  constructor(message: string) {
     super(message)
     this.name = 'SecretError'
-    if (stackTrace) {
-      this.stack = stackTrace
-    }
   }
 }
 
@@ -194,8 +191,8 @@ export class SecretError extends Error {
  * Thrown when a secret is not found.
  */
 export class SecretNotFoundError extends SecretError {
-  constructor(message: string, stackTrace?: string) {
-    super(message, stackTrace)
+  constructor(message: string) {
+    super(message)
     this.name = 'SecretNotFoundError'
   }
 }
