@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict
 
@@ -15,11 +15,11 @@ class SecretInfo:
     """Secret name, unique within the project."""
     version: int
     """Version served to readers that do not name one."""
-    metadata: Dict[str, str] = field(default_factory=dict)
+    metadata: Dict[str, str]
     """Customer metadata of the secret."""
-    created_at: datetime = datetime.min
+    created_at: datetime
     """Time when the secret was created."""
-    updated_at: datetime = datetime.min
+    updated_at: datetime
     """Time when the secret was last updated."""
 
     @classmethod

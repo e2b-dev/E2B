@@ -149,7 +149,8 @@ export class Secret {
    * @param value secret value. Write-only — never returned by the API.
    * @param opts connection options.
    *
-   * @returns metadata of the created secret.
+   * @returns the secret's ID, name, current version (`1` for a new secret),
+   * metadata, and creation and update times.
    */
   static async create(
     name: string,
@@ -187,7 +188,8 @@ export class Secret {
    * @param value new secret value. Write-only — never returned by the API.
    * @param opts connection options.
    *
-   * @returns metadata of the updated secret.
+   * @returns the secret's ID, name, new current version, metadata, and
+   * creation and update times.
    */
   static async update(
     secret: string,
@@ -232,7 +234,8 @@ export class Secret {
    * @param secret secret ID or name.
    * @param opts connection options.
    *
-   * @returns metadata of the secret.
+   * @returns the secret's ID, name, current version, metadata, and creation
+   * and update times.
    */
   static async getInfo(
     secret: string,
@@ -271,7 +274,16 @@ export class Secret {
    *
    * @param opts connection options.
    *
-   * @returns paginator of secret metadata.
+   * @returns paginator over the project's secrets. Drain it page by page:
+   * `while (paginator.hasNext) { const secrets = await paginator.nextItems() }`.
+   *
+   * @example
+   * ```ts
+   * const paginator = Secret.list({ limit: 50 })
+   * while (paginator.hasNext) {
+   *   const secrets = await paginator.nextItems()
+   * }
+   * ```
    */
   static list(opts?: SecretListOpts): SecretPaginator {
     return new SecretPaginator(opts)

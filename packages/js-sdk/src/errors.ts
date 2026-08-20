@@ -190,7 +190,7 @@ export class SecretError extends Error {
 /**
  * Thrown when a secret is not found.
  */
-export class SecretNotFoundError extends SecretError {
+export class SecretNotFoundError extends NotFoundError {
   constructor(message: string) {
     super(message)
     this.name = 'SecretNotFoundError'

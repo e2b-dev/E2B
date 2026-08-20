@@ -104,7 +104,8 @@ class AsyncSecret(SecretBase):
         :param value: Secret value. Write-only — never returned by the API.
         :param metadata: Customer metadata to store with the secret.
 
-        :return: Metadata of the created secret.
+        :return: The secret's ID, name, current version (`1` for a new
+            secret), metadata, and creation and update times.
         """
         config = ConnectionConfig(**opts)
         api_client = get_api_client(config)
@@ -113,7 +114,7 @@ class AsyncSecret(SecretBase):
             body=NewSecretModel(
                 name=name,
                 value=value,
-                metadata=_metadata_model(metadata) if metadata else UNSET,
+                metadata=_metadata_model(metadata) if metadata is not None else UNSET,
             ),
         )
 
@@ -143,7 +144,8 @@ class AsyncSecret(SecretBase):
         :param metadata: Customer metadata to store with the secret. When
             provided, replaces the stored metadata.
 
-        :return: Metadata of the updated secret.
+        :return: The secret's ID, name, new current version, metadata, and
+            creation and update times.
         """
         config = ConnectionConfig(**opts)
         api_client = get_api_client(config)
@@ -152,7 +154,7 @@ class AsyncSecret(SecretBase):
             client=api_client,
             body=SecretUpdateModel(
                 value=value,
-                metadata=_metadata_model(metadata) if metadata else UNSET,
+                metadata=_metadata_model(metadata) if metadata is not None else UNSET,
             ),
         )
 
@@ -177,7 +179,8 @@ class AsyncSecret(SecretBase):
 
         :param secret: Secret ID or name.
 
-        :return: Metadata of the secret.
+        :return: The secret's ID, name, current version, metadata, and
+            creation and update times.
         """
         config = ConnectionConfig(**opts)
         api_client = get_api_client(config)
@@ -212,7 +215,13 @@ class AsyncSecret(SecretBase):
         :param limit: Number of secrets to return per page.
         :param next_token: Token to the next page.
 
-        :return: Paginator of secret metadata.
+        :return: Paginator over the project's secrets. Drain it page by page:
+
+            ```python
+            paginator = AsyncSecret.list(limit=50)
+            while paginator.has_next:
+                secrets = await paginator.next_items()
+            ```
         """
         return AsyncSecretPaginator(limit=limit, next_token=next_token, **opts)
 
