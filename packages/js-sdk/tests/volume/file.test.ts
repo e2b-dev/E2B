@@ -1,6 +1,18 @@
-import { describe, expect } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
+import { setupServer } from 'msw/node'
+
 import { NotFoundError, VolumeError, VolumeFileType } from '../../src'
 import { volumeTest } from '../setup'
+import { mockVolumeApiHandlers, resetMockVolumeApi } from './mockVolumeContent'
+
+const server = setupServer(...mockVolumeApiHandlers)
+
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
+afterAll(() => server.close())
+afterEach(() => {
+  server.resetHandlers()
+  resetMockVolumeApi()
+})
 
 describe('Volume File Operations', () => {
   describe('writeFile and readFile', () => {

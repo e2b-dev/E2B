@@ -4,8 +4,13 @@ import random
 import string
 from typing import Callable, Dict, Optional
 
+import httpx
 import pytest
 import pytest_asyncio
+
+import e2b.volume.volume_async as volume_async_mod
+import e2b.volume.volume_sync as volume_sync_mod
+from mock_volume_content import MockVolumeContentAPI
 
 from e2b import (
     AsyncCommandHandle,
@@ -252,38 +257,45 @@ def _generate_random_string(length: int = 8) -> str:
     return "".join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
 
-def _skip_unless_volume_tests_enabled():
-    if os.getenv("ENABLE_VOLUME_TESTS") is None:
-        pytest.skip("skipped because ENABLE_VOLUME_TESTS is not set")
+def _mock_volume_transport(monkeypatch, module, transport: httpx.MockTransport):
+    # The mock transport rides in `httpx_args` rather than via
+    # `set_httpx_client` so it survives `with_timeout` (attrs' `evolve`
+    # keeps init fields like `httpx_args` but drops a manually set client).
+    def wrap(real_factory):
+        def factory(config, **kwargs):
+            client = real_factory(config, **kwargs)
+            client._httpx_args = {**client._httpx_args, "transport": transport}
+            return client
+
+        return factory
+
+    # Streamed reads run on their own client (the streaming transport), so
+    # both factories need the mock transport.
+    for name in ("get_volume_api_client", "get_streaming_volume_api_client"):
+        monkeypatch.setattr(module, name, wrap(getattr(module, name)))
 
 
 @pytest.fixture
-def volume(request):
-    _skip_unless_volume_tests_enabled()
-    vol = Volume.create(f"test-vol-{_generate_random_string()}")
-
-    def finalizer():
-        if getattr(request.node, "_test_failed", False):
-            print(f"\n[TEST FAILED] Volume ID: {vol.volume_id}")
-        try:
-            Volume.destroy(vol.volume_id)
-        except Exception:
-            pass
-
-    request.addfinalizer(finalizer)
-    return vol
+def volume(monkeypatch) -> Volume:
+    mock = MockVolumeContentAPI()
+    _mock_volume_transport(
+        monkeypatch, volume_sync_mod, httpx.MockTransport(mock.handler)
+    )
+    return Volume(
+        volume_id=f"test-vol-{_generate_random_string()}",
+        name="test-volume",
+        token="vol-token",
+    )
 
 
-@pytest_asyncio.fixture
-async def async_volume(request):
-    _skip_unless_volume_tests_enabled()
-    vol = await AsyncVolume.create(f"test-vol-{_generate_random_string()}")
-    try:
-        yield vol
-    finally:
-        if getattr(request.node, "_test_failed", False):
-            print(f"\n[TEST FAILED] Volume ID: {vol.volume_id}")
-        try:
-            await AsyncVolume.destroy(vol.volume_id)
-        except Exception:
-            pass
+@pytest.fixture
+def async_volume(monkeypatch) -> AsyncVolume:
+    mock = MockVolumeContentAPI()
+    _mock_volume_transport(
+        monkeypatch, volume_async_mod, httpx.MockTransport(mock.async_handler)
+    )
+    return AsyncVolume(
+        volume_id=f"test-vol-{_generate_random_string()}",
+        name="test-volume",
+        token="vol-token",
+    )
