@@ -1,8 +1,10 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
+
+from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="Error")
 
@@ -13,16 +15,22 @@ class Error:
     Attributes:
         code (int): Error code
         message (str): Error
+        error_code (Union[Unset, str]): Machine-readable semantic error code. Not a closed set; initial values:
+            sandbox_capacity_unavailable, sandbox_placement_timeout, sandbox_no_compatible_node, sandbox_create_failed,
+            internal_server_error.
     """
 
     code: int
     message: str
+    error_code: Union[Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         code = self.code
 
         message = self.message
+
+        error_code = self.error_code
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -32,6 +40,8 @@ class Error:
                 "message": message,
             }
         )
+        if error_code is not UNSET:
+            field_dict["error_code"] = error_code
 
         return field_dict
 
@@ -42,9 +52,12 @@ class Error:
 
         message = d.pop("message")
 
+        error_code = d.pop("error_code", UNSET)
+
         error = cls(
             code=code,
             message=message,
+            error_code=error_code,
         )
 
         error.additional_properties = d

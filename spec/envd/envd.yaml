@@ -7,6 +7,12 @@ info:
 tags:
   - name: files
 
+# Operations marked `x-internal: true` are the orchestrator's control plane. The
+# orchestrator reaches them over the host network, straight at the sandbox slot
+# IP, so they are never a legitimate destination for traffic arriving through the
+# public sandbox URL. The sandbox proxy generates its rejection list from this
+# marker, so adding a control operation here is what closes it to the outside;
+# see the orchestrator's `pkg/sandbox/envd` package.
 paths:
   /health:
     get:
@@ -32,6 +38,7 @@ paths:
   /init:
     post:
       summary: Set initial vars, ensure the time and metadata is synced with the host
+      x-internal: true
       security:
         - AccessTokenAuth: []
         - {}
@@ -77,13 +84,52 @@ paths:
 
   /freeze:
     post:
-      summary: Freeze user/pty cgroups before pause. Written directly by envd to avoid Process.Start / shell overhead under load.
+      summary: Freeze user/pty cgroups before pause and wait for them to stop. Written directly by envd to avoid Process.Start / shell overhead under load.
+      description: |
+        Writing cgroup.freeze only requests a freeze; the kernel stops each task at its
+        next signal-delivery point. This endpoint therefore polls cgroup.events until the
+        cgroups read back frozen, and returns what it observed, so a caller can tell a
+        freeze that took effect from one that was merely issued.
+
+        cgroup.events reports STATE, not an acknowledgement of our write: a cgroup the
+        guest froze itself reads frozen too. The counts below say what was observed, not
+        what this call caused.
+
+        Best-effort by design: a workload that will not quiesce within the budget is
+        reported as unconfirmed rather than failing the call, and cgroups that reject the
+        write are counted in failed, because neither an unfreezable customer task nor a
+        cgroup disappearing mid-sweep may block their pause.
+
+        Whether this endpoint waits is the caller's choice, expressed by supplying
+        maxWaitMs: see that parameter.
+      x-internal: true
+      parameters:
+        - name: maxWaitMs
+          in: query
+          required: false
+          description: |
+            How long to wait for the cgroups to read back frozen, in milliseconds. The
+            caller owns this budget because it also owns the request timeout, and a wait
+            longer than that timeout cannot be observed.
+
+            Supplying it also selects the response: with it, the call waits and answers 200
+            with a FreezeResult; omitted or non-positive, the call does not wait at all and
+            answers 204, which is the contract callers older than this parameter expect.
+          schema:
+            type: integer
+            format: int64
       security:
         - AccessTokenAuth: []
         - {}
       responses:
+        "200":
+          description: Freeze issued and the frozen state awaited (maxWaitMs was supplied); the body reports what was observed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreezeResult"
         "204":
-          description: Cgroups frozen
+          description: Freeze issued without waiting (maxWaitMs absent), for callers predating the structured result
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -92,6 +138,7 @@ paths:
   /unfreeze:
     post:
       summary: Unfreeze user/pty cgroups. Intended ONLY for the orchestrator's pause-failure rollback path; the normal resume thaw happens via /init's deferred unfreeze, not here.
+      x-internal: true
       security:
         - AccessTokenAuth: []
         - {}
@@ -106,6 +153,7 @@ paths:
   /collapse:
     post:
       summary: Collapse envd's own anonymous heap into 2 MiB transparent hugepages before pause, so on resume envd touches fewer distinct guest-physical frames (each a cold fault). Best-effort.
+      x-internal: true
       security:
         - AccessTokenAuth: []
         - {}
@@ -122,6 +170,7 @@ paths:
   /fsfreeze:
     post:
       summary: Freeze the guest rootfs (FIFREEZE) before a filesystem-only pause so it is flushed to a consistent on-disk state, closing the sync->pause race. Idempotent. On a successful filesystem-only pause the VM is rebooted, so no thaw is needed; the orchestrator thaws only on the pause-failure path.
+      x-internal: true
       security:
         - AccessTokenAuth: []
         - {}
@@ -136,6 +185,7 @@ paths:
   /fsthaw:
     post:
       summary: Thaw the guest rootfs (FITHAW). Intended ONLY for the orchestrator's pause-failure rollback path, so a frozen filesystem cannot leave the live VM deadlocked. Idempotent.
+      x-internal: true
       security:
         - AccessTokenAuth: []
         - {}
@@ -468,6 +518,33 @@ components:
         disk_total:
           type: integer
           description: Total disk space in bytes
+    FreezeResult:
+      type: object
+      description: Per-call statistics from a pre-pause workload freeze
+      properties:
+        requested:
+          type: integer
+          description: Cgroups this call wrote cgroup.freeze to
+        frozen:
+          type: integer
+          description: Cgroups that read back "frozen 1" from cgroup.events within the budget; their tasks have stopped
+        notFrozen:
+          type: integer
+          description: Cgroups still reading "frozen 0" when the budget expired; their tasks may still be running, so a snapshot taken now can capture a live workload
+        failed:
+          type: integer
+          description: Cgroups whose freeze write or state read errored (expected for a threaded cgroup, and for one removed mid-sweep)
+        unobservable:
+          type: integer
+          description: Cgroups whose freeze state cannot be read because this guest has no cgroup manager; the write was accepted but nothing can be read back, so these are neither frozen nor notFrozen
+        sweepMs:
+          type: integer
+          format: int64
+          description: Time spent issuing the freeze writes, in milliseconds (scales with cgroup count)
+        waitMs:
+          type: integer
+          format: int64
+          description: Time spent polling cgroup.events, in milliseconds (scales with how deep in I/O the guest tasks were). Outcome neutral - the wait ends either because everything stopped or because the budget ran out
     CollapseResult:
       type: object
       description: Per-call statistics from a heap collapse
