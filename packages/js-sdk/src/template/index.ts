@@ -476,7 +476,7 @@ export class TemplateBase
     if (credentials && (!credentials.username || !credentials.password)) {
       throw new InvalidArgumentError(
         'Both username and password are required when providing registry credentials',
-        getCallerFrame()
+        { stackTrace: getCallerFrame() }
       )
     }
 
@@ -857,7 +857,7 @@ export class TemplateBase
     if (this.baseTemplate !== 'mcp-gateway') {
       throw new BuildError(
         'MCP servers can only be added to mcp-gateway template',
-        getCallerFrame()
+        { stackTrace: getCallerFrame() }
       )
     }
 
@@ -937,7 +937,7 @@ export class TemplateBase
     if (this.baseTemplate !== 'devcontainer') {
       throw new BuildError(
         'Devcontainers can only used in the devcontainer template',
-        getCallerFrame()
+        { stackTrace: getCallerFrame() }
       )
     }
 
@@ -951,7 +951,7 @@ export class TemplateBase
     if (this.baseTemplate !== 'devcontainer') {
       throw new BuildError(
         'Devcontainers can only used in the devcontainer template',
-        getCallerFrame()
+        { stackTrace: getCallerFrame() }
       )
     }
 

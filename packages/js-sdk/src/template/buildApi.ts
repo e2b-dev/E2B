@@ -94,13 +94,15 @@ export async function getFileUploadLink(
     }
   )
 
-  const error = handleApiError(fileUploadLinkRes, FileUploadError, stackTrace)
+  const error = handleApiError(fileUploadLinkRes, FileUploadError, {
+    stackTrace,
+  })
   if (error) {
     throw error
   }
 
   if (!fileUploadLinkRes.data) {
-    throw new FileUploadError('Failed to get file upload link', stackTrace)
+    throw new FileUploadError('Failed to get file upload link', { stackTrace })
   }
 
   return fileUploadLinkRes.data
@@ -155,16 +157,17 @@ export async function uploadFile(
     const res = await putFileStream(url, tar.path, tar.size, signal)
 
     if (!res.ok) {
-      throw new FileUploadError(
-        `Failed to upload file: ${res.statusText}`,
-        stackTrace
-      )
+      throw new FileUploadError(`Failed to upload file: ${res.statusText}`, {
+        stackTrace,
+      })
     }
   } catch (error) {
     if (error instanceof FileUploadError) {
       throw error
     }
-    throw new FileUploadError(`Failed to upload file: ${error}`, stackTrace)
+    throw new FileUploadError(`Failed to upload file: ${error}`, {
+      stackTrace,
+    })
   } finally {
     await cleanup?.()
   }
@@ -388,10 +391,9 @@ export async function waitForBuildFinish(
           stackError = stackTraces[step]
         }
 
-        throw new BuildError(
-          buildStatus?.reason?.message ?? 'Unknown error',
-          stackError
-        )
+        throw new BuildError(buildStatus?.reason?.message ?? 'Unknown error', {
+          stackTrace: stackError,
+        })
       }
       case 'waiting': {
         break

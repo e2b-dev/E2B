@@ -19,6 +19,7 @@ import {
   VolumeNotFoundError,
   VolumePathNotFoundError,
 } from '../errors'
+import { extractTraceId } from '../traceId'
 import { toUploadBody } from '../utils'
 import { VolumeFileType } from './types'
 import type {
@@ -204,7 +205,9 @@ export class Volume extends ClientFactory {
     })
 
     if (res.response.status === 404) {
-      throw new VolumeNotFoundError(`Volume ${volumeId} not found`)
+      throw new VolumeNotFoundError(`Volume ${volumeId} not found`, {
+        traceId: extractTraceId(res.response.headers),
+      })
     }
 
     const err = handleApiError(res, VolumeError)
@@ -312,7 +315,9 @@ export class Volume extends ClientFactory {
     })
 
     if (res.response.status === 404) {
-      throw new VolumePathNotFoundError(`Path ${path} not found`)
+      throw new VolumePathNotFoundError(`Path ${path} not found`, {
+        traceId: extractTraceId(res.response.headers),
+      })
     }
 
     const err = handleApiError(res, VolumeError)
@@ -356,7 +361,9 @@ export class Volume extends ClientFactory {
     })
 
     if (res.response.status === 404) {
-      throw new VolumePathNotFoundError(`Path ${path} not found`)
+      throw new VolumePathNotFoundError(`Path ${path} not found`, {
+        traceId: extractTraceId(res.response.headers),
+      })
     }
 
     const err = handleApiError(res, VolumeError)
@@ -398,7 +405,9 @@ export class Volume extends ClientFactory {
     })
 
     if (res.response.status === 404) {
-      throw new VolumePathNotFoundError(`Path ${path} not found`)
+      throw new VolumePathNotFoundError(`Path ${path} not found`, {
+        traceId: extractTraceId(res.response.headers),
+      })
     }
 
     const err = handleApiError(res, VolumeError)
@@ -473,7 +482,9 @@ export class Volume extends ClientFactory {
     })
 
     if (res.response.status === 404) {
-      throw new VolumePathNotFoundError(`Path ${path} not found`)
+      throw new VolumePathNotFoundError(`Path ${path} not found`, {
+        traceId: extractTraceId(res.response.headers),
+      })
     }
 
     const err = handleApiError(res, VolumeError)
@@ -590,7 +601,9 @@ export class Volume extends ClientFactory {
             await res.response.body.cancel().catch(() => {})
           }
           cleanup()
-          throw new VolumePathNotFoundError(`Path ${path} not found`)
+          throw new VolumePathNotFoundError(`Path ${path} not found`, {
+            traceId: extractTraceId(res.response.headers),
+          })
         }
 
         const err = handleApiError(res, VolumeError)
@@ -631,7 +644,9 @@ export class Volume extends ClientFactory {
     })
 
     if (res.response.status === 404) {
-      throw new VolumePathNotFoundError(`Path ${path} not found`)
+      throw new VolumePathNotFoundError(`Path ${path} not found`, {
+        traceId: extractTraceId(res.response.headers),
+      })
     }
 
     const err = handleApiError(res, VolumeError)
@@ -713,7 +728,9 @@ export class Volume extends ClientFactory {
     })
 
     if (res.response.status === 404) {
-      throw new VolumePathNotFoundError(`Path ${path} not found`)
+      throw new VolumePathNotFoundError(`Path ${path} not found`, {
+        traceId: extractTraceId(res.response.headers),
+      })
     }
 
     const err = handleApiError(res, VolumeError)
@@ -753,7 +770,9 @@ export class Volume extends ClientFactory {
     })
 
     if (res.response.status === 404) {
-      throw new VolumePathNotFoundError(`Path ${path} not found`)
+      throw new VolumePathNotFoundError(`Path ${path} not found`, {
+        traceId: extractTraceId(res.response.headers),
+      })
     }
 
     const err = handleApiError(res, VolumeError)

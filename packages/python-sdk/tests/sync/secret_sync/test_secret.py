@@ -161,6 +161,26 @@ def test_get_info_nonexistent_secret():
         Secret.get_info("missing")
 
 
+def test_get_info_nonexistent_secret_carries_trace_id(monkeypatch):
+    """The 404 is raised before handle_api_exception sees the response, so the
+    trace ID has to be read at the raise site."""
+
+    def mock_get_secret(secret_id, *, client):
+        return Response(
+            status_code=HTTPStatus(404),
+            content=b"",
+            headers={"X-Trace-ID": "abc123"},
+            parsed=None,
+        )
+
+    monkeypatch.setattr(get_secret_mod, "sync_detailed", mock_get_secret)
+
+    with pytest.raises(SecretNotFoundException) as exc_info:
+        Secret.get_info("missing")
+    assert exc_info.value.trace_id == "abc123"
+    assert "(trace ID: abc123)" in str(exc_info.value)
+
+
 def test_list_secrets_with_pagination():
     Secret.create("key-a", "a")
     Secret.create("key-b", "b")

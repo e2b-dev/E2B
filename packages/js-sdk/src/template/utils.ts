@@ -36,7 +36,7 @@ export function validateRelativePath(
   if (path.isAbsolute(src)) {
     const error = new TemplateError(
       `Invalid source path "${src}": absolute paths are not allowed. Use a relative path within the context directory.`,
-      stackTrace
+      { stackTrace }
     )
     throw error
   }
@@ -58,7 +58,7 @@ export function validateRelativePath(
   if (escapes) {
     const error = new TemplateError(
       `Invalid source path "${src}": path escapes the context directory. The path must stay within the context directory.`,
-      stackTrace
+      { stackTrace }
     )
     throw error
   }

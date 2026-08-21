@@ -163,6 +163,26 @@ async def test_get_info_nonexistent_secret():
         await AsyncSecret.get_info("missing")
 
 
+async def test_get_info_nonexistent_secret_carries_trace_id(monkeypatch):
+    """The 404 is raised before handle_api_exception sees the response, so the
+    trace ID has to be read at the raise site."""
+
+    async def mock_get_secret(secret_id, *, client):
+        return Response(
+            status_code=HTTPStatus(404),
+            content=b"",
+            headers={"X-Trace-ID": "abc123"},
+            parsed=None,
+        )
+
+    monkeypatch.setattr(get_secret_mod, "asyncio_detailed", mock_get_secret)
+
+    with pytest.raises(SecretNotFoundException) as exc_info:
+        await AsyncSecret.get_info("missing")
+    assert exc_info.value.trace_id == "abc123"
+    assert "(trace ID: abc123)" in str(exc_info.value)
+
+
 async def test_list_secrets_with_pagination():
     await AsyncSecret.create("key-a", "a")
     await AsyncSecret.create("key-b", "b")

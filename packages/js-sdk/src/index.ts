@@ -28,7 +28,10 @@ export {
   SecretError,
   SecretNotFoundError,
 } from './errors'
+export type { ErrorOpts, ErrorOptsWithStackTrace } from './errors'
 export type { Logger } from './logs'
+
+export { extractTraceId } from './traceId'
 
 export { getSignature } from './sandbox/signature'
 

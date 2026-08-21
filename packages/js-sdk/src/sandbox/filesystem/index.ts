@@ -47,6 +47,7 @@ import {
   ENVD_VERSION_RECURSIVE_WATCH,
   ENVD_VERSION_WATCH_NETWORK_MOUNTS,
 } from '../../envd/versions'
+import type { ErrorOpts } from '../../errors'
 import {
   FileNotFoundError,
   InvalidArgumentError,
@@ -55,8 +56,12 @@ import {
 import { isReadableStreamLike } from '../../is'
 import { runtime, toBlob, toUploadBody } from '../../utils'
 
-const FILESYSTEM_HTTP_ERROR_MAP: Record<number, (message: string) => Error> = {
-  404: (message: string) => new FileNotFoundError(message),
+const FILESYSTEM_HTTP_ERROR_MAP: Record<
+  number,
+  (message: string, opts?: ErrorOpts) => Error
+> = {
+  404: (message: string, opts?: ErrorOpts) =>
+    new FileNotFoundError(message, opts),
 }
 
 const FILESYSTEM_RPC_ERROR_MAP: Partial<

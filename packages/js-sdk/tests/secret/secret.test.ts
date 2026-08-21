@@ -162,6 +162,24 @@ describe('Secret CRUD', () => {
     await expect(Secret.getInfo('missing')).rejects.toThrow(SecretNotFoundError)
   })
 
+  // The 404 is thrown before handleApiError sees the response, so the trace ID
+  // has to be read at the throw site
+  it('should carry the trace ID on SecretNotFoundError', async () => {
+    server.use(
+      http.get(apiUrl('/secrets/:secretID'), () =>
+        HttpResponse.json(
+          { code: 404, message: 'Not found' },
+          { status: 404, headers: { 'X-Trace-ID': 'abc123' } }
+        )
+      )
+    )
+
+    const err = await Secret.getInfo('missing').catch((err) => err)
+    expect(err).toBeInstanceOf(SecretNotFoundError)
+    expect(err.traceId).toBe('abc123')
+    expect(err.message).toContain('(trace ID: abc123)')
+  })
+
   it('should list secrets with pagination', async () => {
     await Secret.create('key-a', 'a')
     await Secret.create('key-b', 'b')
