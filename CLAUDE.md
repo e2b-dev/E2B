@@ -4,7 +4,7 @@ When modifying the SDK packages, ensure equivalent changes are applied to both J
 Design the SDK in accordance with the design principles in TASTE.md.
 Never edit the API, envd, or volume-content specs in spec/ by hand; they are synced with Copybara from e2b-dev/infra and e2b-dev/belt at the commits pinned in spec/infra-ref and spec/belt-ref (see copy.bara.sky and spec/README.md). To update the specs, bump the pins and re-run `make codegen`, which re-fetches them before generating.
 Create or update tests covering affected codepaths and run them using `pnpm run test`.
-Generate a changeset when updating packages/cli, packages/js-sdk, packages/python-sdk with `pnpm changeset` in the repository root.
+Generate a changeset with `pnpm changeset` in the repository root when changing the public surface of packages/cli, packages/js-sdk, or packages/python-sdk; internal scripts, devtools, and tests don't need one.
 When creating a pull request, add usage examples for user-facing changes to the PR description.
 When opening a new pull request, use the Linear MCP if available to link to related issues, or create a new issue from the PR description.
 Keep PR descriptions up-to-date with changes.
