@@ -20,6 +20,8 @@ expect(lines).toEqual(['SANDBOX ID   NAME', 'sbx-1        alpha'])
 
 Keep row-building logic in exported pure functions (e.g. `buildTableRows` in `src/commands/sandbox/list.ts`) so formatting is testable without the API.
 
+To exercise the renderer directly (e.g. wide chars in a padded middle column), run a small script importing `packages/cli/src/utils/table.ts` with `npx tsx`.
+
 ## 2. Eyeball the real output
 
 ```bash
@@ -31,7 +33,8 @@ Checks to make by eye:
 - Headers uppercase; columns aligned even with wide cells (widths use `wcswidth`, so CJK/emoji count as 2 cells).
 - No borders, no trailing whitespace (`node dist/index.js sandbox list | cat -A` — no spaces before `$`).
 - Long values (metadata JSON) don't break alignment of preceding columns.
-- Empty result sets print a sensible message, not a lone header or a crash.
+- Empty result sets print a sensible message, not a lone header or a crash. The team account usually has live sandboxes, so simulate the empty state with a non-matching filter: `node dist/index.js sandbox list --metadata nomatch=zzz` → "No sandboxes found".
+- `template list` and `snapshot list` outputs are long; pipe through `head` when capturing.
 
 ## 3. TTY vs piped behavior
 
@@ -49,3 +52,8 @@ Interactive commands (spinners, prompts via `inquirer`) need a PTY — use the `
 ## 4. Screenshot for PRs
 
 For user-facing output changes, run the command in a real terminal, take a screenshot, and embed it in the PR description — reviewers care about how it looks, not just the strings.
+
+GUI tips: in a 1024px-wide terminal, shrink the font (Konsole: Ctrl+minus x2) so wide tables don't wrap. Typing CJK/emoji via computer-use keyboard drops characters — write test scripts to a file with a file tool and run them from the terminal instead.
+
+## Devin Secrets Needed
+- `E2B_API_KEY`

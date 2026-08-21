@@ -10,7 +10,9 @@ All commands run in `packages/cli`. Use Node 24 (`nvm use 24`) and pnpm.
 ## Build and run locally
 
 ```bash
+source ~/.nvm/nvm.sh && nvm use 24
 pnpm build                       # tsc typecheck + tsdown bundle -> dist/index.js
+# or from the repo root: pnpm --filter @e2b/cli build
 node dist/index.js --help
 node dist/index.js sandbox list
 ```
@@ -20,10 +22,16 @@ Auth: the CLI reads `E2B_API_KEY` from the environment first, then `~/.e2b/confi
 Useful non-interactive patterns:
 
 ```bash
-node dist/index.js sandbox create base --detach          # returns sandbox ID, no attached terminal
+node dist/index.js sandbox create base -d                # detach: prints sandbox ID, no attached terminal
 node dist/index.js sandbox exec <id> -- bash -lc 'pwd'   # `--` stops CLI flag parsing
 node dist/index.js sandbox kill <id>
 ```
+
+The team account usually has other live sandboxes/snapshots, so a truly empty list state may be unreachable; simulate it with a non-matching filter: `node dist/index.js sandbox list --metadata nomatch=zzz` → "No sandboxes found".
+
+There is no CLI flag for custom sandbox metadata — create such sandboxes via the JS SDK instead (build it with `pnpm --filter e2b build`, then `require('<repo>/packages/js-sdk')` from a small node script).
+
+Validate JSON output mode: `node dist/index.js <cmd> --format json | node -e 'JSON.parse(require("fs").readFileSync(0,"utf8"))'`.
 
 ## Automated tests
 
@@ -45,3 +53,6 @@ pnpm run lint && pnpm run typecheck
 ```
 
 Public-surface changes need a changeset (`pnpm changeset` at repo root).
+
+## Devin Secrets Needed
+- `E2B_API_KEY`
