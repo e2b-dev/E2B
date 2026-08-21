@@ -670,10 +670,13 @@ def _build_egress_proxy(
             "(e.g. 'proxy.example.com:1080')."
         )
 
+    # `is not None` also skips a ``None`` credential, which is what reading one
+    # out of an unset environment variable yields and what "this proxy takes no
+    # credentials" means; the API only accepts a string.
     body = ClientSandboxEgressProxyConfig(address=egress_proxy["address"])
-    if "username" in egress_proxy:
+    if egress_proxy.get("username") is not None:
         body.username = egress_proxy["username"]
-    if "password" in egress_proxy:
+    if egress_proxy.get("password") is not None:
         body.password = egress_proxy["password"]
 
     return body
