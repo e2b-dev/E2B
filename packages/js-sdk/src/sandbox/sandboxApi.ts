@@ -1030,8 +1030,16 @@ function buildEgressProxyBody(
   egressProxy: SandboxEgressProxyOpts
 ): components['schemas']['SandboxEgressProxyConfig'] {
   // Re-check at runtime for callers that bypass the type; Python's
-  // `_build_egress_proxy` checks the same way.
-  if (!isPlainObject(egressProxy) || typeof egressProxy.address !== 'string') {
+  // `_build_egress_proxy` checks the same way. The check is structural like
+  // Python's `Mapping` one — the body is rebuilt field by field, so a class
+  // instance or an object from another realm carries the config just as well
+  // as an object literal.
+  if (
+    typeof egressProxy !== 'object' ||
+    egressProxy === null ||
+    Array.isArray(egressProxy) ||
+    typeof egressProxy.address !== 'string'
+  ) {
     throw new InvalidArgumentError(
       `network egressProxy must be an object with a string 'address' (e.g. 'proxy.example.com:1080').`
     )

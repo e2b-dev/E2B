@@ -148,6 +148,30 @@ test.for([
   }
 )
 
+test('Sandbox.create accepts a class instance as the egress proxy', async () => {
+  // The body is rebuilt field by field, so anything that satisfies the type
+  // structurally carries the config — the guard must not require an object
+  // literal (Python accepts any `Mapping` the same way).
+  class ProxyConfig {
+    constructor(
+      readonly address: string,
+      readonly username: string
+    ) {}
+  }
+
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    network: {
+      egressProxy: new ProxyConfig('proxy.example.com:1080', 'proxy-user'),
+    },
+  })
+
+  expect(lastCreateBody?.network.egressProxy).toEqual({
+    address: 'proxy.example.com:1080',
+    username: 'proxy-user',
+  })
+})
+
 test('Sandbox.create omits null credentials', async () => {
   // Reading a credential out of an unset environment variable is how a caller
   // lands here, and it means the proxy takes no credentials — the API only
