@@ -1,5 +1,12 @@
 # @e2b/cli
 
+## 2.17.1
+
+### Patch Changes
+
+- f69a9c0: `e2b sandbox list --format json` now applies the same start-time sorting as the pretty table output (ascending by default, respecting `--order`).
+- bc14dd0: Render CLI tables in kubectl style: uppercase headers, space-aligned columns, no borders or titles
+
 ## 2.17.0
 
 ### Minor Changes
