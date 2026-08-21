@@ -38,8 +38,13 @@ pnpm run test:deno   # deno: same projects
 ## Writing tests
 
 - Use the helpers in `tests/setup.ts`: `sandboxTest` / `templateTest` fixtures create and clean up sandboxes; `isDebug` gates behavior when `E2B_DEBUG` is set (local envd at debug port).
-- Offline tests that need HTTP mock the API with `msw`; see `tests/api/` for patterns. Test isolation is required (`isolate: true`) because suites patch global fetch.
+- Offline tests that need HTTP mock the API with `msw`; see `tests/api/` for patterns, and `tests/volume/mockVolumeContent.ts` for stateful in-process mocks of a whole API surface. Test isolation is required (`isolate: true`) because suites patch global fetch.
 - SDK changes must be mirrored in the Python SDK (sync + async) with equivalent tests — see `testing-python-sdk`.
+
+## CI notes
+
+- SDK integration jobs run against both **production and staging**; staging jobs are known to flake (template-build 500s, network-egress curl errors). Before assuming your change broke CI, check whether the same job fails on the base branch or rerun the job.
+- New API parameters often work on staging before production — a production-only failure of a new-feature test usually means the API isn't deployed there yet, not a code bug.
 
 ## Before committing
 

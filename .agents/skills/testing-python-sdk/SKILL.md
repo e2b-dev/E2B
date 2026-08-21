@@ -35,6 +35,12 @@ The `skip_debug` marker skips a test when `E2B_DEBUG` is set (local envd).
 - Async tests need no decorator (`asyncio_mode=auto`).
 - Reuse conftest fixtures rather than creating sandboxes by hand.
 
+## CI notes
+
+- Integration jobs run against both **production and staging**; staging jobs are known to flake (template-build 500s, transient backend errors). Check the base branch or rerun before blaming your change.
+- New API parameters often reach staging before production — a production-only failure of a new-feature test usually means the API isn't deployed there yet.
+- `tests/shared/` holds offline suites shared between sync and async (request shaping, encoding, proxy config); prefer extending those for behavior that doesn't need a live sandbox.
+
 ## Before committing
 
 ```bash
