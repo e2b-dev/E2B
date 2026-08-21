@@ -128,7 +128,7 @@ function renderSandboxTable(
   renderTable(buildTableRows(sandboxes, order), [
     { header: 'Sandbox ID', value: (row) => row.sandboxId },
     { header: 'Template ID', value: (row) => row.templateId },
-    { header: 'Alias', value: (row) => row.name ?? '' },
+    { header: 'Alias', value: (row) => row.name },
     { header: 'Started at', value: (row) => row.startedAt },
     { header: 'End at', value: (row) => row.endAt },
     { header: 'State', value: (row) => row.state },

@@ -62,13 +62,13 @@ function renderTemplateTable(
     { header: 'Template ID', value: (template) => template.templateID },
     {
       header: 'Template Name',
-      value: (template) => listAliases(template.aliases) ?? '',
+      value: (template) => listAliases(template.aliases),
     },
     { header: 'vCPUs', value: (template) => String(template.cpuCount) },
     { header: 'RAM MiB', value: (template) => String(template.memoryMB) },
     {
       header: 'Created by',
-      value: (template) => template.createdBy?.email ?? '',
+      value: (template) => template.createdBy?.email,
     },
     {
       header: 'Created at',
