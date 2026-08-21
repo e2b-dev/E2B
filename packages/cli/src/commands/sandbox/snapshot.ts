@@ -81,6 +81,40 @@ const listSnapshotsCommand = new commander.Command('list')
     }
   )
 
+const deleteSnapshotCommand = new commander.Command('delete')
+  .description('delete snapshots')
+  .argument(
+    '<snapshotIDs...>',
+    `delete the snapshots specified by ${asBold('<snapshotIDs...>')}`
+  )
+  .alias('dl')
+  .action(async (snapshotIDs: string[]) => {
+    try {
+      const apiKey = ensureAPIKey()
+
+      await Promise.all(
+        snapshotIDs.map(async (snapshotID) => {
+          const deleted = await Sandbox.deleteSnapshot(snapshotID, { apiKey })
+          if (deleted) {
+            console.log(`Snapshot ${asBold(snapshotID)} has been deleted`)
+          } else {
+            console.error(`Snapshot ${asBold(snapshotID)} wasn't found`)
+          }
+        })
+      )
+    } catch (err: any) {
+      console.error(err)
+      process.exit(1)
+    }
+  })
+
+export const snapshotCommand = new commander.Command('snapshot')
+  .description('work with sandbox snapshots')
+  .alias('snap')
+  .addCommand(createSnapshotCommand)
+  .addCommand(listSnapshotsCommand)
+  .addCommand(deleteSnapshotCommand)
+
 function renderTable(snapshots: SnapshotInfo[]) {
   if (!snapshots?.length) {
     console.log('No snapshots found')
@@ -126,37 +160,3 @@ function renderTable(snapshots: SnapshotInfo[]) {
 
   process.stdout.write('\n')
 }
-
-const deleteSnapshotCommand = new commander.Command('delete')
-  .description('delete snapshots')
-  .argument(
-    '<snapshotIDs...>',
-    `delete the snapshots specified by ${asBold('<snapshotIDs...>')}`
-  )
-  .alias('dl')
-  .action(async (snapshotIDs: string[]) => {
-    try {
-      const apiKey = ensureAPIKey()
-
-      await Promise.all(
-        snapshotIDs.map(async (snapshotID) => {
-          const deleted = await Sandbox.deleteSnapshot(snapshotID, { apiKey })
-          if (deleted) {
-            console.log(`Snapshot ${asBold(snapshotID)} has been deleted`)
-          } else {
-            console.error(`Snapshot ${asBold(snapshotID)} wasn't found`)
-          }
-        })
-      )
-    } catch (err: any) {
-      console.error(err)
-      process.exit(1)
-    }
-  })
-
-export const snapshotCommand = new commander.Command('snapshot')
-  .description('work with sandbox snapshots')
-  .alias('snap')
-  .addCommand(createSnapshotCommand)
-  .addCommand(listSnapshotsCommand)
-  .addCommand(deleteSnapshotCommand)
