@@ -1,11 +1,12 @@
 import { randomBytes } from 'node:crypto'
-import { describe, expect, test } from 'vitest'
+import { describe, expect } from 'vitest'
 import { Sandbox } from 'e2b'
-import { getUserConfig } from 'src/user'
 import {
   type CliRunResult,
   bufferToText,
-  isDebug,
+  e2eApiKey,
+  e2eDomain,
+  e2eTest,
   parseEnvInt,
   runCliWithPipedStdin,
 } from '../../setup'
@@ -17,20 +18,6 @@ type PipeCase = {
   timeoutMs?: number
 }
 
-type UserConfigWithDomain = NonNullable<ReturnType<typeof getUserConfig>> & {
-  domain?: string
-  E2B_DOMAIN?: string
-}
-
-const userConfig = safeGetUserConfig() as UserConfigWithDomain | null
-const domain =
-  process.env.E2B_DOMAIN ||
-  userConfig?.E2B_DOMAIN ||
-  userConfig?.domain ||
-  'e2b.app'
-const apiKey = process.env.E2B_API_KEY || userConfig?.projectApiKey
-const shouldSkip = !apiKey || isDebug
-const integrationTest = test.skipIf(shouldSkip)
 const templateId =
   process.env.E2B_PIPE_TEMPLATE_ID ||
   process.env.E2B_TEMPLATE_ID ||
@@ -47,8 +34,8 @@ const defaultCmdTimeoutMs = parseEnvInt(
 )
 const cliEnv: NodeJS.ProcessEnv = {
   ...process.env,
-  E2B_DOMAIN: domain,
-  E2B_API_KEY: apiKey,
+  E2B_DOMAIN: e2eDomain,
+  E2B_API_KEY: e2eApiKey,
 }
 
 delete cliEnv.E2B_DEBUG
@@ -100,13 +87,13 @@ const largeBinaryCases: PipeCase[] = [
 ]
 
 describe('sandbox exec stdin piping (integration)', () => {
-  integrationTest(
+  e2eTest(
     'pipes stdin to remote command',
     { timeout: testTimeoutMs },
     async () => {
       const sandbox = await Sandbox.create(templateId, {
-        apiKey,
-        domain,
+        apiKey: e2eApiKey,
+        domain: e2eDomain,
         timeoutMs: sandboxTimeoutMs,
       })
 
@@ -175,14 +162,5 @@ function assertExecSucceeded(
   const stderr = bufferToText(result.stderr).trim()
   if (result.status !== 0) {
     throw new Error(`${name} failed with rc=${result.status} stderr=${stderr}`)
-  }
-}
-
-function safeGetUserConfig(): ReturnType<typeof getUserConfig> | null {
-  try {
-    return getUserConfig()
-  } catch (err) {
-    console.warn(`Failed to read ~/.e2b/config.json: ${String(err)}`)
-    return null
   }
 }

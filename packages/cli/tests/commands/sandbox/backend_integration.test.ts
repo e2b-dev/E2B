@@ -1,28 +1,16 @@
-import { afterAll, beforeAll, describe, expect, test } from 'vitest'
+import { afterAll, beforeAll, describe, expect } from 'vitest'
 import { Sandbox } from 'e2b'
-import { getUserConfig } from 'src/user'
 import {
   bufferToText,
-  isDebug,
+  e2eApiKey,
+  e2eDomain,
+  e2eTest,
   parseEnvInt,
   runCli,
   runCliWithPipedStdin,
+  skipE2E,
 } from '../../setup'
 
-type UserConfigWithDomain = NonNullable<ReturnType<typeof getUserConfig>> & {
-  domain?: string
-  E2B_DOMAIN?: string
-}
-
-const userConfig = safeGetUserConfig() as UserConfigWithDomain | null
-const domain =
-  process.env.E2B_DOMAIN ||
-  userConfig?.E2B_DOMAIN ||
-  userConfig?.domain ||
-  'e2b.app'
-const apiKey = process.env.E2B_API_KEY || userConfig?.projectApiKey
-const shouldSkip = !apiKey || isDebug
-const integrationTest = test.skipIf(shouldSkip)
 const templateId =
   process.env.E2B_CLI_BACKEND_TEMPLATE_ID ||
   process.env.E2B_TEMPLATE_ID ||
@@ -35,8 +23,8 @@ const perTestTimeoutMs = parseEnvInt('E2B_CLI_BACKEND_TEST_TIMEOUT_MS', 30_000)
 const spawnTimeoutMs = perTestTimeoutMs
 const cliEnv: NodeJS.ProcessEnv = {
   ...process.env,
-  E2B_DOMAIN: domain,
-  E2B_API_KEY: apiKey,
+  E2B_DOMAIN: e2eDomain,
+  E2B_API_KEY: e2eApiKey,
 }
 
 delete cliEnv.E2B_DEBUG
@@ -50,11 +38,11 @@ describe('sandbox cli backend integration', () => {
   let sandbox: Sandbox
 
   beforeAll(async () => {
-    if (shouldSkip) return
+    if (skipE2E) return
 
     sandbox = await Sandbox.create(templateId, {
-      apiKey,
-      domain,
+      apiKey: e2eApiKey,
+      domain: e2eDomain,
       timeoutMs: sandboxTimeoutMs,
     })
   }, 30_000)
@@ -71,7 +59,7 @@ describe('sandbox cli backend integration', () => {
     }
   }, 15_000)
 
-  integrationTest(
+  e2eTest(
     'list shows the sandbox',
     { timeout: perTestTimeoutMs },
     async () => {
@@ -81,7 +69,7 @@ describe('sandbox cli backend integration', () => {
     }
   )
 
-  integrationTest(
+  e2eTest(
     'info shows the sandbox details',
     { timeout: perTestTimeoutMs },
     async () => {
@@ -104,7 +92,7 @@ describe('sandbox cli backend integration', () => {
     }
   )
 
-  integrationTest(
+  e2eTest(
     'exec runs a command without piped stdin',
     { timeout: perTestTimeoutMs },
     async () => {
@@ -122,7 +110,7 @@ describe('sandbox cli backend integration', () => {
     }
   )
 
-  integrationTest(
+  e2eTest(
     'exec runs a command with piped stdin',
     { timeout: perTestTimeoutMs },
     async () => {
@@ -138,7 +126,7 @@ describe('sandbox cli backend integration', () => {
     }
   )
 
-  integrationTest(
+  e2eTest(
     'metrics returns successfully',
     { timeout: perTestTimeoutMs },
     async () => {
@@ -153,7 +141,7 @@ describe('sandbox cli backend integration', () => {
     }
   )
 
-  integrationTest(
+  e2eTest(
     'kill removes the sandbox',
     { timeout: perTestTimeoutMs },
     async () => {
@@ -195,13 +183,4 @@ function sandboxExistsInList(
 
   const parsed = JSON.parse(text) as Array<{ sandboxId?: string }>
   return parsed.some((item) => item.sandboxId === sandboxId)
-}
-
-function safeGetUserConfig(): ReturnType<typeof getUserConfig> | null {
-  try {
-    return getUserConfig()
-  } catch (err) {
-    console.warn(`Failed to read ~/.e2b/config.json: ${String(err)}`)
-    return null
-  }
 }

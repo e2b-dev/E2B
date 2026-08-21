@@ -1,5 +1,8 @@
 name: SDK Tests
 
+# The default tier: fully mocked, deterministic, no sandboxes and no template
+# builds. The behavioral tests that need live infrastructure live in the opt-in
+# sdk_e2e_tests.yml workflow (`e2e` PR label or manual dispatch).
 on:
   pull_request:
     branches:
@@ -76,6 +79,9 @@ jobs:
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
+  # The staging legs re-run the same mocked tier against the staging domain, so
+  # they only catch environment-specific breakage now; backend compatibility is
+  # verified by the e2e workflow (`workflow_dispatch` with `staging: true`).
   js-tests-staging:
     name: Staging / JS SDK Tests
     needs: changes

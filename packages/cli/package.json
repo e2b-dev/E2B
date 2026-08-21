@@ -43,6 +43,7 @@
     "format": "prettier --write src",
     "test:interactive": "pnpm build && ./dist/index.js",
     "test": "vitest run",
+    "test:e2e": "vitest run --config vitest.e2e.config.mts",
     "test:watch": "vitest watch",
     "test:coverage": "vitest run --coverage",
     "check-deps": "knip"

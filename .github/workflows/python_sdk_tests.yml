@@ -7,6 +7,11 @@ on:
         required: false
         type: string
         default: ''
+      e2e:
+        description: 'Run the e2e tier (provisions sandboxes and builds templates) instead of the mocked unit tier'
+        required: false
+        type: boolean
+        default: false
     secrets:
       E2B_API_KEY:
         required: true
@@ -50,8 +55,18 @@ jobs:
       - name: Test build
         run: uv build
 
+      # The default tier: fully mocked, no sandboxes, no credentials needed.
       - name: Run tests
+        if: ${{ !inputs.e2e }}
         run: uv run pytest --verbose --numprocesses=4
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
+
+      # The opt-in tier: real sandboxes, envd round-trips and template builds.
+      - name: Run e2e tests
+        if: ${{ inputs.e2e }}
+        run: uv run pytest -m e2e --verbose --numprocesses=4
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
