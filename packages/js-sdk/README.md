@@ -68,7 +68,7 @@ Per-call options still take precedence over the client's options, and clients ar
 
 ### 5. Code execution with Code Interpreter
 
-If you need [`runCode()`](https://docs.e2b.dev/code-interpreting?utm_source=npm&utm_medium=referral&utm_campaign=readme&utm_content=e2b), install the [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter):
+If you need [`runCode()`](https://docs.e2b.dev/code-interpreting/analyze-data-with-ai?utm_source=npm&utm_medium=referral&utm_campaign=readme&utm_content=e2b), install the [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter):
 
 ```bash
 npm i @e2b/code-interpreter
