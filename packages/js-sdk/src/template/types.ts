@@ -34,12 +34,10 @@ export type BasicBuildOptions = {
   tags?: string[]
   /**
    * Number of CPUs allocated to the sandbox.
-   * When not set, the API default applies.
    */
   cpuCount?: number
   /**
    * Amount of memory in MB allocated to the sandbox.
-   * When not set, the API default applies.
    */
   memoryMB?: number
   /**

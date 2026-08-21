@@ -513,8 +513,6 @@ export interface SandboxPauseOpts extends SandboxApiOpts {
    * When `false`, the in-memory state is dropped and only the filesystem is
    * persisted (a filesystem-only snapshot); resuming such a sandbox cold-boots
    * (reboots) it from disk, losing running processes and open connections.
-   *
-   * When not set, the API default (currently a full memory snapshot) applies.
    */
   keepMemory?: boolean
 }
@@ -529,16 +527,12 @@ export interface SandboxForkOpts extends ConnectionOpts {
    * All forks boot from the same snapshot — the snapshot is captured once
    * regardless of count. Each fork succeeds or fails independently; the
    * outcome of each is reported in its entry of the returned array.
-   *
-   * When not set, the API default (currently 1) applies.
    */
   count?: number
 
   /**
    * Timeout for the forked sandboxes in **milliseconds**.
    * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
-   *
-   * When not set, the API default timeout applies.
    */
   timeoutMs?: number
 }
@@ -590,8 +584,6 @@ export interface SandboxOpts extends ConnectionOpts {
   /**
    * Timeout for the sandbox in **milliseconds**.
    * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
-   *
-   * When not set, the API default timeout applies.
    */
   timeoutMs?: number
 
@@ -604,8 +596,6 @@ export interface SandboxOpts extends ConnectionOpts {
 
   /**
    * Allow sandbox to access the internet. If set to `False`, it works the same as setting network `denyOut` to `[0.0.0.0/0]`.
-   *
-   * When not set, the API default (currently allowed) applies.
    */
   allowInternetAccess?: boolean
 
@@ -714,7 +704,6 @@ export interface SandboxListOpts extends Omit<SandboxApiOpts, 'signal'> {
   /**
    * Sort order of the list of sandboxes by start time, applied across the
    * whole result set before pagination (not within a page).
-   * When not set, the API default (currently `'desc'`, newest first) applies.
    */
   order?: SandboxListOrder
 
