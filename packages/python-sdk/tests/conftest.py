@@ -44,7 +44,8 @@ def test_api_key() -> str:
 # server-side template build. Any test requesting one belongs to the e2e tier,
 # which `pytest.ini` excludes by default (`-m "not e2e"`); run it with
 # `pytest -m e2e` and credentials. Tests that reach the control plane without
-# these fixtures carry an explicit `@pytest.mark.e2e`.
+# these fixtures carry an explicit `@pytest.mark.e2e`, and tests that mock the
+# fixture's API calls opt back out with `@pytest.mark.mocked`.
 E2E_FIXTURES = frozenset(
     {
         "sandbox",
@@ -59,9 +60,13 @@ E2E_FIXTURES = frozenset(
 
 def pytest_collection_modifyitems(items):
     for item in items:
-        if isinstance(item, pytest.Function) and not E2E_FIXTURES.isdisjoint(
-            item.fixturenames
-        ):
+        if not isinstance(item, pytest.Function):
+            continue
+        # `pytest.mark.mocked` opts out: the test replaces the API calls the
+        # fixture would make, so nothing is provisioned.
+        if item.get_closest_marker("mocked"):
+            continue
+        if not E2E_FIXTURES.isdisjoint(item.fixturenames):
             item.add_marker(pytest.mark.e2e)
 
 

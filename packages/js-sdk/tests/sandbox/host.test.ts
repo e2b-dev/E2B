@@ -1,6 +1,6 @@
 import { assert } from 'vitest'
 
-import { isDebug, sandboxTest, wait } from '../setup.js'
+import { hostedSandboxTest, isDebug, sandboxTest, wait } from '../setup.js'
 import { catchCmdExitErrorInBackground } from '../cmdHelper.js'
 sandboxTest(
   'ping server in running sandbox',
@@ -39,7 +39,7 @@ sandboxTest(
   60_000
 )
 
-sandboxTest('ping server in non-running sandbox', async ({ sandbox }) => {
+hostedSandboxTest('ping server in non-running sandbox', async ({ sandbox }) => {
   const host = sandbox.getHost(3000)
   const url = `https://${host}`
 

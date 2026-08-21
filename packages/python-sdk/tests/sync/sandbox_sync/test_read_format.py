@@ -11,7 +11,13 @@ import httpx
 import pytest
 from packaging.version import Version
 
+from envd_versions import below_envd_version
+
 import e2b.sandbox_sync.filesystem.filesystem as filesystem_module
+from e2b.envd.versions import (
+    ENVD_DEBUG_FALLBACK,
+    ENVD_DEFAULT_USER,
+)
 from e2b.connection_config import ConnectionConfig, default_username
 from e2b.exceptions import FileNotFoundException
 from e2b.sandbox_sync.filesystem.filesystem import Filesystem
@@ -24,7 +30,7 @@ def _filesystem(
     monkeypatch,
     api_key: str,
     requests: List[httpx.Request],
-    envd_version: str = "0.6.4",
+    envd_version: str = str(ENVD_DEBUG_FALLBACK),
     status_code: int = 200,
 ) -> Filesystem:
     def handler(request: httpx.Request) -> httpx.Response:
@@ -81,7 +87,12 @@ def test_read_returns_stream(monkeypatch, test_api_key):
 
 def test_read_sends_default_username_on_old_envd(monkeypatch, test_api_key):
     requests: List[httpx.Request] = []
-    filesystem = _filesystem(monkeypatch, test_api_key, requests, envd_version="0.3.9")
+    filesystem = _filesystem(
+        monkeypatch,
+        test_api_key,
+        requests,
+        envd_version=below_envd_version(ENVD_DEFAULT_USER),
+    )
 
     filesystem.read("/home/user/a.txt")
 

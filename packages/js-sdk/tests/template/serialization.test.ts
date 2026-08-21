@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { afterAll, assert, beforeAll, expect, test } from 'vitest'
 
 import { Template } from '../../src'
+import { InstructionType } from '../../src/template/types'
 import { calculateFilesHash } from '../../src/template/utils'
 
 let contextPath: string
@@ -45,6 +46,8 @@ test('hash covers the source and destination paths', async () => {
 })
 
 test('hashing a source that matches no file fails', async () => {
+  // TODO: should reject with TemplateError once calculateFilesHash stops
+  // throwing a bare Error.
   await expect(filesHash('nope.txt', '/app/')).rejects.toThrow()
 })
 
@@ -63,7 +66,7 @@ test('serializes a build payload from the builder', async () => {
   assert.isUndefined(payload.fromTemplate)
   assert.deepEqual(
     payload.steps.map((step: { type: string }) => step.type),
-    ['RUN', 'WORKDIR']
+    [InstructionType.RUN, InstructionType.WORKDIR]
   )
 })
 
@@ -99,7 +102,7 @@ test('computeHashes adds the copy hash to the payload', async () => {
 
   const copyStep = (payload: {
     steps: { type: string; filesHash?: string }[]
-  }) => payload.steps.find((step) => step.type === 'COPY')
+  }) => payload.steps.find((step) => step.type === InstructionType.COPY)
 
   assert.isUndefined(copyStep(withoutHashes)?.filesHash)
   assert.equal(

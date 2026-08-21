@@ -1,9 +1,9 @@
 import { assert, expect } from 'vitest'
 
 import { Sandbox } from '../../src'
-import { isDebug, e2eTest, sandboxTest, template } from '../setup.js'
+import { hostedSandboxTest, hostedTest, isDebug, template } from '../setup.js'
 
-e2eTest('connect', async () => {
+hostedTest('connect', async () => {
   const sbx = await Sandbox.create(template, { timeoutMs: 10_000 })
 
   try {
@@ -20,7 +20,7 @@ e2eTest('connect', async () => {
   }
 })
 
-sandboxTest('connect resumes paused sandbox', async ({ sandbox }) => {
+hostedSandboxTest('connect resumes paused sandbox', async ({ sandbox }) => {
   await sandbox.pause()
   assert.isFalse(await sandbox.isRunning())
 
@@ -28,7 +28,7 @@ sandboxTest('connect resumes paused sandbox', async ({ sandbox }) => {
   assert.isTrue(await resumed.isRunning())
 })
 
-sandboxTest('connect to non-running sandbox', async ({ sandbox }) => {
+hostedSandboxTest('connect to non-running sandbox', async ({ sandbox }) => {
   const isRunning = await sandbox.isRunning()
   assert.isTrue(isRunning)
   await sandbox.kill()
@@ -41,7 +41,7 @@ sandboxTest('connect to non-running sandbox', async ({ sandbox }) => {
   )
 })
 
-e2eTest('connect does not shorten timeout on running sandbox', async () => {
+hostedTest('connect does not shorten timeout on running sandbox', async () => {
   // Create sandbox with a 300 second timeout
   const sbx = await Sandbox.create(template, { timeoutMs: 300_000 })
 
@@ -69,7 +69,7 @@ e2eTest('connect does not shorten timeout on running sandbox', async () => {
   }
 })
 
-sandboxTest(
+hostedSandboxTest(
   'connect extends timeout on running sandbox',
   async ({ sandbox }) => {
     // Get initial info to check endAt

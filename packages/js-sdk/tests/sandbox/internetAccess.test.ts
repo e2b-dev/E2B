@@ -1,7 +1,7 @@
 import { assert, describe } from 'vitest'
 
 import { CommandExitError } from '../../src'
-import { sandboxTest } from '../setup.js'
+import { hostedSandboxTest, sandboxTest } from '../setup.js'
 
 describe('internet access enabled', () => {
   sandboxTest.override({
@@ -10,7 +10,7 @@ describe('internet access enabled', () => {
     },
   })
 
-  sandboxTest('internet access enabled', async ({ sandbox }) => {
+  hostedSandboxTest('internet access enabled', async ({ sandbox }) => {
     // Test internet connectivity by making a curl request to a reliable external site
     const result = await sandbox.commands.run(
       "curl -s -o /dev/null -w '%{http_code}' https://connectivitycheck.gstatic.com/generate_204"
@@ -27,7 +27,7 @@ describe('internet access disabled', () => {
     },
   })
 
-  sandboxTest('internet access disabled', async ({ sandbox }) => {
+  hostedSandboxTest('internet access disabled', async ({ sandbox }) => {
     // Test that internet connectivity is blocked by making a curl request
     try {
       await sandbox.commands.run(
@@ -44,7 +44,7 @@ describe('internet access disabled', () => {
 })
 
 describe('internet access default', () => {
-  sandboxTest('internet access default', async ({ sandbox }) => {
+  hostedSandboxTest('internet access default', async ({ sandbox }) => {
     // Test internet connectivity by making a curl request to a reliable external site
     const result = await sandbox.commands.run(
       "curl -s -o /dev/null -w '%{http_code}' https://connectivitycheck.gstatic.com/generate_204"

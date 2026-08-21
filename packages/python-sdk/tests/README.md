@@ -32,7 +32,14 @@ Tests land in this tier automatically when they use one of the live fixtures
 (`sandbox`, `sandbox_factory`, `async_sandbox`, `async_sandbox_factory`, `build`,
 `async_build`) — see `pytest_collection_modifyitems` in
 [`conftest.py`](./conftest.py). A test that calls live APIs without such a
-fixture needs an explicit `@pytest.mark.e2e`.
+fixture needs an explicit `@pytest.mark.e2e`; conversely, a test that mocks the
+API calls its fixture would make (e.g. the template stacktrace tests) opts back
+into the default tier with `@pytest.mark.mocked`.
+
+Serialization and hashing are shared synchronous logic, so
+`tests/sync/template_sync/test_serialization.py` has no async mirror; the same
+goes for the request-shaping tests under `tests/shared/`, which cover both
+clients in one file.
 
 `skip_debug`/`E2B_DEBUG` is a separate axis: it points the SDK at a local envd
 instead of a provisioned sandbox and does not enable or disable either tier.

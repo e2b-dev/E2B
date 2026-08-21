@@ -1,8 +1,8 @@
 import { assert, describe } from 'vitest'
 
-import { sandboxTest } from '../setup.js'
+import { hostedSandboxTest, sandboxTest } from '../setup.js'
 
-sandboxTest('pause and resume a sandbox', async ({ sandbox }) => {
+hostedSandboxTest('pause and resume a sandbox', async ({ sandbox }) => {
   assert.isTrue(await sandbox.isRunning())
 
   await sandbox.pause()
@@ -22,7 +22,7 @@ describe('pause and resume with env vars', () => {
     },
   })
 
-  sandboxTest(
+  hostedSandboxTest(
     'pause and resume a sandbox with env vars',
     async ({ sandbox }) => {
       // Environment variables of a process exist at runtime, and are not stored in some file or so.
@@ -49,33 +49,36 @@ describe('pause and resume with env vars', () => {
   )
 })
 
-sandboxTest('pause and resume a sandbox with file', async ({ sandbox }) => {
-  const filename = 'test_snapshot.txt'
-  const content = 'This is a snapshot test file.'
+hostedSandboxTest(
+  'pause and resume a sandbox with file',
+  async ({ sandbox }) => {
+    const filename = 'test_snapshot.txt'
+    const content = 'This is a snapshot test file.'
 
-  const info = await sandbox.files.write(filename, content)
-  assert.equal(info.name, filename)
-  assert.equal(info.type, 'file')
-  assert.equal(info.path, `/home/user/${filename}`)
+    const info = await sandbox.files.write(filename, content)
+    assert.equal(info.name, filename)
+    assert.equal(info.type, 'file')
+    assert.equal(info.path, `/home/user/${filename}`)
 
-  const exists = await sandbox.files.exists(filename)
-  assert.isTrue(exists)
-  const readContent = await sandbox.files.read(filename)
-  assert.equal(readContent, content)
+    const exists = await sandbox.files.exists(filename)
+    assert.isTrue(exists)
+    const readContent = await sandbox.files.read(filename)
+    assert.equal(readContent, content)
 
-  await sandbox.pause()
-  assert.isFalse(await sandbox.isRunning())
+    await sandbox.pause()
+    assert.isFalse(await sandbox.isRunning())
 
-  await sandbox.connect()
-  assert.isTrue(await sandbox.isRunning())
+    await sandbox.connect()
+    assert.isTrue(await sandbox.isRunning())
 
-  const exists2 = await sandbox.files.exists(filename)
-  assert.isTrue(exists2)
-  const readContent2 = await sandbox.files.read(filename)
-  assert.equal(readContent2, content)
-})
+    const exists2 = await sandbox.files.exists(filename)
+    assert.isTrue(exists2)
+    const readContent2 = await sandbox.files.read(filename)
+    assert.equal(readContent2, content)
+  }
+)
 
-sandboxTest(
+hostedSandboxTest(
   'pause and resume a sandbox with ongoing long running process',
   async ({ sandbox }) => {
     const cmd = await sandbox.commands.run('sleep 3600', { background: true })
@@ -99,7 +102,7 @@ sandboxTest(
   }
 )
 
-sandboxTest(
+hostedSandboxTest(
   'pause and resume a sandbox with completed long running process',
   async ({ sandbox }) => {
     const filename = 'test_long_running.txt'
@@ -131,7 +134,7 @@ sandboxTest(
   }
 )
 
-sandboxTest(
+hostedSandboxTest(
   'pause and resume a sandbox with http server',
   async ({ sandbox }) => {
     await sandbox.commands.run('python3 -m http.server 8000', {
@@ -157,7 +160,7 @@ sandboxTest(
   }
 )
 
-sandboxTest(
+hostedSandboxTest(
   'filesystem-only pause reboots on resume but keeps the filesystem',
   async ({ sandbox }) => {
     // Absolute path: a cold boot may not restore the template's default

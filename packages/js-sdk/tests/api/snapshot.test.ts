@@ -1,9 +1,9 @@
 import { assert } from 'vitest'
 
-import { sandboxTest } from '../setup.js'
+import { hostedSandboxTest } from '../setup.js'
 import { Sandbox } from '../../src'
 
-sandboxTest('pause sandbox', async ({ sandbox }) => {
+hostedSandboxTest('pause sandbox', async ({ sandbox }) => {
   await Sandbox.pause(sandbox.sandboxId)
   assert.isFalse(
     await sandbox.isRunning(),
@@ -11,7 +11,7 @@ sandboxTest('pause sandbox', async ({ sandbox }) => {
   )
 })
 
-sandboxTest('resume sandbox', async ({ sandbox }) => {
+hostedSandboxTest('resume sandbox', async ({ sandbox }) => {
   await Sandbox.pause(sandbox.sandboxId)
   assert.isFalse(
     await sandbox.isRunning(),

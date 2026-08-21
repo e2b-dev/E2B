@@ -1,9 +1,9 @@
 import { expect } from 'vitest'
 
 import { Sandbox } from '../../src'
-import { sandboxTest } from '../setup.js'
+import { hostedSandboxTest } from '../setup.js'
 
-sandboxTest('kill', async ({ sandbox, sandboxTestId }) => {
+hostedSandboxTest('kill', async ({ sandbox, sandboxTestId }) => {
   const killed = await sandbox.kill()
   expect(killed).toBe(true)
 

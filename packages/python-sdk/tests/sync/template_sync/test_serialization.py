@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 
 from e2b import Template
+from e2b.template.types import InstructionType
 from e2b.template.utils import calculate_files_hash
 
 
@@ -48,6 +49,8 @@ def test_hash_covers_the_source_and_destination_paths(context_path: Path):
 
 
 def test_hashing_a_source_that_matches_no_file_fails(context_path: Path):
+    # TODO: should raise TemplateException once calculate_files_hash stops
+    # raising a bare ValueError.
     with pytest.raises(ValueError):
         _files_hash(context_path, "nope.txt", "/app/")
 
@@ -67,7 +70,10 @@ def test_serializes_a_build_payload_from_the_builder(context_path: Path):
     assert payload["startCmd"] == "python main.py"
     assert payload["readyCmd"] == "curl -f http://localhost:8000"
     assert payload.get("fromTemplate") is None
-    assert [step["type"] for step in payload["steps"]] == ["RUN", "WORKDIR"]
+    assert [step["type"] for step in payload["steps"]] == [
+        InstructionType.RUN,
+        InstructionType.WORKDIR,
+    ]
 
 
 def test_serializes_from_template_instead_of_from_image():
@@ -99,6 +105,8 @@ def test_copy_step_carries_the_files_hash(context_path: Path):
     )
 
     payload = json.loads(Template.to_json(template))
-    copy_step = next(step for step in payload["steps"] if step["type"] == "COPY")
+    copy_step = next(
+        step for step in payload["steps"] if step["type"] == InstructionType.COPY
+    )
 
     assert copy_step["filesHash"] == _files_hash(context_path, "app.txt", "/app/")

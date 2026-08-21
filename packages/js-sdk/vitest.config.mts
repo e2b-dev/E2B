@@ -87,6 +87,10 @@ export default defineConfig({
           env: {
             ...(process.env as Record<string, string>),
             ...env.parsed,
+            // Selecting this project is the opt-in, so the flag the tests gate
+            // on is set here instead of in the package script, which would
+            // need POSIX-only `VAR=value` syntax and break on Windows.
+            E2B_E2E: '1',
           },
         },
       },

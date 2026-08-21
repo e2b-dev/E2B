@@ -17,5 +17,6 @@ export const e2eFiles = [
   'tests/sandbox/pty/**/*.test.ts',
   'tests/sandbox/{connect,create,fork,host,internetAccess,kill,lifecycleBehavior,metrics,network,secure,snapshot,snapshot-api,timeout}.test.ts',
   'tests/template/{backgroundBuild,build,exists,tagsBuild}.test.ts',
+  'tests/volume/mount.test.ts',
   'tests/template/methods/{makeSymlink,runCmd}.test.ts',
 ]

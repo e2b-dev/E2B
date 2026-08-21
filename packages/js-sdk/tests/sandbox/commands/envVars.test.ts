@@ -1,6 +1,6 @@
 import { assert, describe } from 'vitest'
 
-import { sandboxTest } from '../../setup.js'
+import { hostedSandboxTest, sandboxTest } from '../../setup.js'
 
 describe('sandbox global env vars', () => {
   sandboxTest.override({
@@ -9,7 +9,7 @@ describe('sandbox global env vars', () => {
     },
   })
 
-  sandboxTest('sandbox global env vars', async ({ sandbox }) => {
+  hostedSandboxTest('sandbox global env vars', async ({ sandbox }) => {
     const cmd = await sandbox.commands.run('echo $FOO')
 
     assert.equal(cmd.exitCode, 0)

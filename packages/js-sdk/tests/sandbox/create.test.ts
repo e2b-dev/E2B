@@ -1,9 +1,9 @@
 import { assert, expect } from 'vitest'
 
 import { Sandbox } from '../../src'
-import { e2eTest, template } from '../setup.js'
+import { hostedTest, template } from '../setup.js'
 
-e2eTest('create', async () => {
+hostedTest('create', async () => {
   const sbx = await Sandbox.create(template, { timeoutMs: 5_000 })
   try {
     const isRunning = await sbx.isRunning()
@@ -15,7 +15,7 @@ e2eTest('create', async () => {
   }
 })
 
-e2eTest('metadata', async () => {
+hostedTest('metadata', async () => {
   const metadata = {
     'test-key': 'test-value',
   }
@@ -33,7 +33,7 @@ e2eTest('metadata', async () => {
   }
 })
 
-e2eTest('MCP gateway start failure kills the created sandbox', async () => {
+hostedTest('MCP gateway start failure kills the created sandbox', async () => {
   const metadata = { mcpGatewayCleanupTestId: crypto.randomUUID() }
   const query = { state: ['running' as const], metadata }
   let remainingSandboxes: Awaited<

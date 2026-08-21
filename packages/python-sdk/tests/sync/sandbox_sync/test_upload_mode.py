@@ -8,6 +8,12 @@ from typing import List
 import httpx
 from packaging.version import Version
 
+from envd_versions import below_envd_version
+
+from e2b.envd.versions import (
+    ENVD_DEBUG_FALLBACK,
+    ENVD_OCTET_STREAM_UPLOAD,
+)
 from e2b.connection_config import ConnectionConfig
 from e2b.sandbox_sync.filesystem.filesystem import Filesystem
 
@@ -18,7 +24,7 @@ WRITE_RESPONSE = [{"name": "a.txt", "path": "/home/user/a.txt", "type": "file"}]
 def _filesystem(
     api_key: str,
     requests: List[httpx.Request],
-    envd_version: str = "0.6.4",
+    envd_version: str = str(ENVD_DEBUG_FALLBACK),
 ) -> Filesystem:
     def handler(request: httpx.Request) -> httpx.Response:
         requests.append(request)
@@ -67,7 +73,11 @@ def test_file_like_data_defaults_to_octet_stream(test_api_key):
 
 def test_octet_stream_falls_back_to_multipart_on_old_envd(test_api_key):
     requests: List[httpx.Request] = []
-    filesystem = _filesystem(test_api_key, requests, envd_version="0.5.6")
+    filesystem = _filesystem(
+        test_api_key,
+        requests,
+        envd_version=below_envd_version(ENVD_OCTET_STREAM_UPLOAD),
+    )
 
     filesystem.write("/home/user/a.txt", io.BytesIO(b"hello"))
 

@@ -29,11 +29,13 @@ function safeGetUserConfig(): UserConfigWithDomain | null {
 
 const userConfig = safeGetUserConfig()
 
+const DEFAULT_E2E_DOMAIN = 'e2b.dev'
+
 export const e2eDomain =
   process.env.E2B_DOMAIN ||
   userConfig?.E2B_DOMAIN ||
   userConfig?.domain ||
-  'e2b.app'
+  DEFAULT_E2E_DOMAIN
 
 export const e2eApiKey = process.env.E2B_API_KEY || userConfig?.projectApiKey
 

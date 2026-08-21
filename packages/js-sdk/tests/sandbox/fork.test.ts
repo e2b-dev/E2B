@@ -1,10 +1,10 @@
 import { assert, expect } from 'vitest'
 
-import { e2eTest, sandboxTest } from '../setup.js'
+import { hostedSandboxTest, hostedTest } from '../setup.js'
 import { Sandbox } from '../../src'
 import { SandboxNotFoundError } from '../../src/errors'
 
-sandboxTest('fork a sandbox', async ({ sandbox }) => {
+hostedSandboxTest('fork a sandbox', async ({ sandbox }) => {
   await sandbox.files.write('/home/user/state.txt', 'state before fork')
 
   const forks = await sandbox.fork()
@@ -36,7 +36,7 @@ sandboxTest('fork a sandbox', async ({ sandbox }) => {
   }
 })
 
-sandboxTest('fork a sandbox multiple times', async ({ sandbox }) => {
+hostedSandboxTest('fork a sandbox multiple times', async ({ sandbox }) => {
   const forks = await sandbox.fork({ count: 2, timeoutMs: 60_000 })
   assert.equal(forks.length, 2)
 
@@ -59,7 +59,7 @@ sandboxTest('fork a sandbox multiple times', async ({ sandbox }) => {
   }
 })
 
-sandboxTest(
+hostedSandboxTest(
   'fork a sandbox by ID with the static method',
   async ({ sandbox }) => {
     const forks = await Sandbox.fork(sandbox.sandboxId)
@@ -77,7 +77,7 @@ sandboxTest(
   }
 )
 
-e2eTest('fork a killed sandbox fails', async () => {
+hostedTest('fork a killed sandbox fails', async () => {
   const sandbox = await Sandbox.create()
   await sandbox.kill()
 

@@ -1,7 +1,7 @@
 import { assert, expect, describe } from 'vitest'
 
 import { CommandExitError, Sandbox } from '../../src'
-import { sandboxTest, template } from '../setup.js'
+import { hostedSandboxTest, sandboxTest, template } from '../setup.js'
 import { httpbinTemplate } from '../template.js'
 
 describe('allow only 1.1.1.1', () => {
@@ -14,7 +14,7 @@ describe('allow only 1.1.1.1', () => {
     },
   })
 
-  sandboxTest(
+  hostedSandboxTest(
     'allow specific IP with deny all traffic',
     async ({ sandbox }) => {
       // Test that allowed IP works
@@ -43,7 +43,7 @@ describe('deny specific IP address', () => {
     },
   })
 
-  sandboxTest('deny specific IP address', async ({ sandbox }) => {
+  hostedSandboxTest('deny specific IP address', async ({ sandbox }) => {
     // Test that denied IP fails
     await expect(
       sandbox.commands.run(
@@ -69,7 +69,7 @@ describe('deny all traffic using allTraffic selector', () => {
     },
   })
 
-  sandboxTest(
+  hostedSandboxTest(
     'deny all traffic using allTraffic selector',
     async ({ sandbox }) => {
       // Test that all traffic is denied
@@ -98,7 +98,7 @@ describe('allow takes precedence over deny', () => {
     },
   })
 
-  sandboxTest('allow takes precedence over deny', async ({ sandbox }) => {
+  hostedSandboxTest('allow takes precedence over deny', async ({ sandbox }) => {
     // Test that 1.1.1.1 works (explicitly allowed)
     const result1 = await sandbox.commands.run(
       "curl -s -o /dev/null -w '%{http_code}' https://1.1.1.1"
@@ -124,34 +124,37 @@ describe('allowPublicTraffic=false', () => {
     },
   })
 
-  sandboxTest('sandbox requires traffic access token', async ({ sandbox }) => {
-    // Verify the sandbox was created successfully and has a traffic access token
-    assert(sandbox.trafficAccessToken)
+  hostedSandboxTest(
+    'sandbox requires traffic access token',
+    async ({ sandbox }) => {
+      // Verify the sandbox was created successfully and has a traffic access token
+      assert(sandbox.trafficAccessToken)
 
-    // Start a simple HTTP server in the sandbox
-    const port = 8080
-    sandbox.commands.run(`python3 -m http.server ${port}`, {
-      background: true,
-    })
+      // Start a simple HTTP server in the sandbox
+      const port = 8080
+      sandbox.commands.run(`python3 -m http.server ${port}`, {
+        background: true,
+      })
 
-    // Wait for server to start
-    await new Promise((resolve) => setTimeout(resolve, 3000))
+      // Wait for server to start
+      await new Promise((resolve) => setTimeout(resolve, 3000))
 
-    // Get the public URL for the sandbox
-    const sandboxUrl = `https://${sandbox.getHost(port)}`
+      // Get the public URL for the sandbox
+      const sandboxUrl = `https://${sandbox.getHost(port)}`
 
-    // Test 1: Request without traffic access token should fail with 403
-    const response1 = await fetch(sandboxUrl)
-    assert.equal(response1.status, 403)
+      // Test 1: Request without traffic access token should fail with 403
+      const response1 = await fetch(sandboxUrl)
+      assert.equal(response1.status, 403)
 
-    // Test 2: Request with valid traffic access token should succeed
-    const response2 = await fetch(sandboxUrl, {
-      headers: {
-        'e2b-traffic-access-token': sandbox.trafficAccessToken,
-      },
-    })
-    assert.equal(response2.status, 200)
-  })
+      // Test 2: Request with valid traffic access token should succeed
+      const response2 = await fetch(sandboxUrl, {
+        headers: {
+          'e2b-traffic-access-token': sandbox.trafficAccessToken,
+        },
+      })
+      assert.equal(response2.status, 200)
+    }
+  )
 })
 
 describe('allowPublicTraffic=true', () => {
@@ -163,7 +166,7 @@ describe('allowPublicTraffic=true', () => {
     },
   })
 
-  sandboxTest('sandbox works without token', async ({ sandbox }) => {
+  hostedSandboxTest('sandbox works without token', async ({ sandbox }) => {
     // Start a simple HTTP server in the sandbox
     const port = 8080
     sandbox.commands.run(`python3 -m http.server ${port}`, {
@@ -188,7 +191,7 @@ describe('firewall transform injects headers', () => {
   // Port the httpbin template's start command listens on.
   const httpbinPort = 8080
 
-  sandboxTest(
+  hostedSandboxTest(
     'injected header is reflected by the httpbin sidecar',
     async ({ sandboxTestId }) => {
       // The transform is applied by the egress proxy on the way out of the
@@ -245,7 +248,7 @@ describe('firewall transform injects headers', () => {
 })
 
 describe('updateNetwork applies new egress rules', () => {
-  sandboxTest(
+  hostedSandboxTest(
     'denies a previously reachable IP after update',
     async ({ sandbox }) => {
       // Baseline: 8.8.8.8 is reachable.
@@ -282,7 +285,7 @@ describe('updateNetwork clears existing rules when fields are omitted', () => {
     },
   })
 
-  sandboxTest(
+  hostedSandboxTest(
     'omitting fields replaces all egress rules',
     async ({ sandbox }) => {
       // Baseline from create-time config: 8.8.8.8 denied.
@@ -317,7 +320,7 @@ describe('maskRequestHost option', () => {
     },
   })
 
-  sandboxTest(
+  hostedSandboxTest(
     'verify maskRequestHost modifies Host header correctly',
     async ({ sandbox }) => {
       const port = 8080

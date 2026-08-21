@@ -156,11 +156,34 @@ const E2E_SKIP_REASON = 'set E2B_E2E=1 to run the e2e tier'
 /** A test that needs real infrastructure — skipped unless E2B_E2E is set. */
 export const e2eTest = base.skipIf(!isE2E)
 
-/** A template build against real infrastructure — skipped unless E2B_E2E is set. */
-export const e2eBuildTemplateTest = buildTemplateTest.skipIf(!isE2E)
+/**
+ * A test that needs hosted infrastructure — the control plane, the traffic
+ * proxy, snapshots — which a local envd can't stand in for, so it stays
+ * skipped under E2B_DEBUG on top of the e2e opt-in.
+ */
+export const hostedTest = e2eTest.skipIf(isDebug)
+
+/** {@link sandboxTest} for a test that needs hosted infrastructure. */
+export const hostedSandboxTest = sandboxTest.skipIf(isDebug)
+
+/**
+ * A template build against real infrastructure — skipped unless E2B_E2E is
+ * set. Builds always run server-side, so E2B_DEBUG skips them too.
+ */
+export const e2eBuildTemplateTest = buildTemplateTest.skipIf(!isE2E || isDebug)
 
 /** Placeholder API key with a valid format for tests that don't hit the API. */
 export const TEST_API_KEY = `e2b_${'0'.repeat(40)}`
+
+/**
+ * The highest envd version below one of the `ENVD_*` thresholds, for
+ * exercising the reject branch of a version gate without hardcoding a version
+ * that stops being below the threshold when it moves. A prerelease of a
+ * version sorts below the version itself.
+ */
+export function belowEnvdVersion(version: string): string {
+  return `${version}-0`
+}
 
 function generateRandomString(length: number = 8): string {
   return Math.random()

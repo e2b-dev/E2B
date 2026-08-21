@@ -1,9 +1,9 @@
 import { expect } from 'vitest'
 
 import { SandboxMetrics } from '../../src'
-import { sandboxTest, wait } from '../setup.js'
+import { hostedSandboxTest, wait } from '../setup.js'
 
-sandboxTest('sbx metrics', { timeout: 60_000 }, async ({ sandbox }) => {
+hostedSandboxTest('sbx metrics', { timeout: 60_000 }, async ({ sandbox }) => {
   // Wait for the sandbox to have some metrics
   let metrics: SandboxMetrics[] = []
   for (let i = 0; i < 60; i++) {
@@ -24,7 +24,7 @@ sandboxTest('sbx metrics', { timeout: 60_000 }, async ({ sandbox }) => {
   expect(metric.cpuCount).toBeDefined()
 })
 
-sandboxTest(
+hostedSandboxTest(
   'sbx metrics time range',
   { timeout: 60_000 },
   async ({ sandbox }) => {

@@ -3,8 +3,9 @@ import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
 import { ConnectionConfig, Sandbox } from '../../src'
-import { NotFoundError } from '../../src/errors'
-import { TEST_API_KEY } from '../setup'
+import { ENVD_DEBUG_FALLBACK, ENVD_DEFAULT_USER } from '../../src/envd/versions'
+import { FileNotFoundError } from '../../src/errors'
+import { belowEnvdVersion, TEST_API_KEY } from '../setup'
 
 const sandboxId = 'sbx-read-format'
 const envdUrl = `https://49983-${sandboxId}.sandbox.e2b.dev`
@@ -25,7 +26,7 @@ afterEach(() => {
   server.resetHandlers()
 })
 
-function sandbox(envdVersion = '0.6.4'): Sandbox {
+function sandbox(envdVersion = ENVD_DEBUG_FALLBACK): Sandbox {
   const config = new ConnectionConfig({ apiKey: TEST_API_KEY })
   return new Sandbox({
     ...config,
@@ -81,13 +82,15 @@ test('reads a stream', async () => {
 })
 
 test('sends the default username below ENVD_DEFAULT_USER', async () => {
-  await sandbox('0.3.9').files.read('/home/user/hello.txt')
+  await sandbox(belowEnvdVersion(ENVD_DEFAULT_USER)).files.read(
+    '/home/user/hello.txt'
+  )
 
   assert.equal(lastQuery?.get('username'), 'user')
 })
 
 test('omits the username on newer envd', async () => {
-  await sandbox('0.4.0').files.read('/home/user/hello.txt')
+  await sandbox(ENVD_DEFAULT_USER).files.read('/home/user/hello.txt')
 
   assert.equal(lastQuery?.get('username'), null)
 })
@@ -125,7 +128,7 @@ test('returns an empty value per format for an empty file', async () => {
   )
 })
 
-test('maps an envd 404 to NotFoundError for every format', async () => {
+test('maps an envd 404 to FileNotFoundError for every format', async () => {
   server.use(
     http.get(`${envdUrl}/files`, () =>
       HttpResponse.json(
@@ -137,9 +140,9 @@ test('maps an envd 404 to NotFoundError for every format', async () => {
 
   const files = sandbox().files
   await expect(files.read('/home/user/missing.txt')).rejects.toThrowError(
-    NotFoundError
+    FileNotFoundError
   )
   await expect(
     files.read('/home/user/missing.txt', { format: 'stream' })
-  ).rejects.toThrowError(NotFoundError)
+  ).rejects.toThrowError(FileNotFoundError)
 })

@@ -1,8 +1,8 @@
 import { expect } from 'vitest'
 
-import { sandboxTest, wait } from '../setup.js'
+import { hostedSandboxTest, wait } from '../setup.js'
 
-sandboxTest('shorten timeout', async ({ sandbox }) => {
+hostedSandboxTest('shorten timeout', async ({ sandbox }) => {
   await sandbox.setTimeout(5000)
 
   await wait(6000)
@@ -10,7 +10,7 @@ sandboxTest('shorten timeout', async ({ sandbox }) => {
   expect(await sandbox.isRunning()).toBeFalsy()
 })
 
-sandboxTest('shorten then lengthen timeout', async ({ sandbox }) => {
+hostedSandboxTest('shorten then lengthen timeout', async ({ sandbox }) => {
   await sandbox.setTimeout(5000)
 
   await wait(1000)
@@ -22,7 +22,7 @@ sandboxTest('shorten then lengthen timeout', async ({ sandbox }) => {
   expect(await sandbox.isRunning()).toBeTruthy()
 })
 
-sandboxTest('get sandbox timeout', async ({ sandbox }) => {
+hostedSandboxTest('get sandbox timeout', async ({ sandbox }) => {
   const { endAt } = await sandbox.getInfo()
   expect(endAt).toBeInstanceOf(Date)
 })

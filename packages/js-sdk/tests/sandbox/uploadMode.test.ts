@@ -3,8 +3,13 @@ import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
 import { ConnectionConfig, Sandbox } from '../../src'
+import {
+  ENVD_DEBUG_FALLBACK,
+  ENVD_FILE_METADATA,
+  ENVD_OCTET_STREAM_UPLOAD,
+} from '../../src/envd/versions'
 import { TemplateError } from '../../src/errors'
-import { TEST_API_KEY } from '../setup'
+import { belowEnvdVersion, TEST_API_KEY } from '../setup'
 
 const sandboxId = 'sbx-upload-mode'
 const envdUrl = `https://49983-${sandboxId}.sandbox.e2b.dev`
@@ -45,7 +50,7 @@ afterEach(() => {
   server.resetHandlers()
 })
 
-function sandbox(envdVersion = '0.6.4'): Sandbox {
+function sandbox(envdVersion = ENVD_DEBUG_FALLBACK): Sandbox {
   const config = new ConnectionConfig({ apiKey: TEST_API_KEY })
   return new Sandbox({
     ...config,
@@ -72,9 +77,11 @@ test('uploads as octet-stream when asked', async () => {
 })
 
 test('falls back to multipart below ENVD_OCTET_STREAM_UPLOAD', async () => {
-  await sandbox('0.5.6').files.write('/home/user/hello.txt', 'hello world', {
-    useOctetStream: true,
-  })
+  await sandbox(belowEnvdVersion(ENVD_OCTET_STREAM_UPLOAD)).files.write(
+    '/home/user/hello.txt',
+    'hello world',
+    { useOctetStream: true }
+  )
 
   assert.include(uploads[0].contentType ?? '', 'multipart/form-data')
 })
@@ -110,11 +117,15 @@ test('sends metadata as request headers', async () => {
   assert.equal(uploads[0].metadataHeaders['x-metadata-origin'], 'unit-test')
 })
 
+// TODO: the gate should reject with InvalidArgumentError — this is
+// argument validation on `sandbox.files`, not a template build.
 test('rejects metadata below ENVD_FILE_METADATA', async () => {
   await expect(
-    sandbox('0.6.1').files.write('/home/user/hello.txt', 'hello world', {
-      metadata: { origin: 'unit-test' },
-    })
+    sandbox(belowEnvdVersion(ENVD_FILE_METADATA)).files.write(
+      '/home/user/hello.txt',
+      'hello world',
+      { metadata: { origin: 'unit-test' } }
+    )
   ).rejects.toThrowError(TemplateError)
   assert.lengthOf(uploads, 0)
 })

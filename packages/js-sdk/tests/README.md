@@ -34,10 +34,20 @@ The file list lives in [`e2eFiles.mts`](./e2eFiles.mts) and drives both the
 `e2e` project and the exclusions of the default projects, so a new behavioral
 test only needs to be added there. Use `e2eTest`, `e2eBuildTemplateTest` or the
 `sandboxTest` fixture from [`setup.ts`](./setup.ts) — all three skip unless
-`E2B_E2E` is set.
+`E2B_E2E` is set — and their `hostedTest`/`hostedSandboxTest` variants when a
+local envd can't stand in for the real thing (control plane, traffic proxy,
+snapshots), which additionally skip under `E2B_DEBUG`.
 
 `E2B_DEBUG` is a separate axis: it points the SDK at a local envd instead of a
 provisioned sandbox and does not enable or disable either tier.
+
+## Where a module's tests land
+
+Volume and Secret are entirely request-shaping, error mapping and pagination, so
+they sit in the unit tier over an in-memory mock of their APIs. The one
+exception is real mount content: `volume/mount.test.ts` writes through a mounted
+volume in one sandbox and reads it back in another, which only a live mount can
+exercise.
 
 ## CI
 
