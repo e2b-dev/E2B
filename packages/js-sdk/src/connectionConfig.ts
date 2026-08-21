@@ -22,6 +22,13 @@ export interface ConnectionOpts {
    */
   apiKey?: string
   /**
+   * Whether to validate the format of the E2B API key on the client side.
+   *
+   * @deprecated The API key format is no longer validated on the client side;
+   * this option has no effect.
+   */
+  validateApiKey?: boolean
+  /**
    * Domain to use for the API.
    *
    * @default E2B_DOMAIN // environment variable or `e2b.app`
@@ -389,6 +396,11 @@ export class ConnectionConfig {
   readonly requestTimeoutMs: number
 
   readonly apiKey?: string
+  /**
+   * @deprecated The API key format is no longer validated on the client side;
+   * this option has no effect.
+   */
+  readonly validateApiKey?: boolean
 
   readonly headers?: Record<string, string>
 
@@ -396,6 +408,7 @@ export class ConnectionConfig {
 
   constructor(opts?: ConnectionOpts) {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
+    this.validateApiKey = opts?.validateApiKey
     this.debug = opts?.debug ?? ConnectionConfig.debug
     this.domain = opts?.domain || ConnectionConfig.domain
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS

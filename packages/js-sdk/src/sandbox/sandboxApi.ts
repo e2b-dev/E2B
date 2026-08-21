@@ -493,6 +493,7 @@ export interface SandboxApiOpts
     Pick<
       ConnectionOpts,
       | 'apiKey'
+      | 'validateApiKey'
       | 'headers'
       | 'apiHeaders'
       | 'debug'
