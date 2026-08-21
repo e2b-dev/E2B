@@ -1,6 +1,6 @@
 ---
 name: testing-cli
-description: "Build, run, and test the E2B CLI (packages/cli) locally. Use when changing CLI commands, running its vitest suites, or executing the CLI against real sandboxes."
+description: "Build, run, and test the E2B CLI (packages/cli) locally. Use when running its vitest suites or executing the CLI against real sandboxes."
 ---
 
 # Testing the CLI
@@ -42,17 +42,10 @@ npx vitest run tests/utils/table.test.ts   # single file
 
 - Tests spawn the **built** CLI (`dist/index.js`) via helpers in `tests/setup.ts` (`runCli`, `runCliWithPipedStdin`) — rebuild happens automatically through globalSetup, but if you bypass vitest, run `pnpm build` yourself after editing `src/`.
 - `tests/commands/**` cover command behavior; some hit the real API and need `E2B_API_KEY`.
-- Unit tests import from `src/` directly (vitest aliases `e2b` to `../js-sdk/src`), so keep command logic in exported, testable functions (see `buildTableRows`/`sortSandboxes` in `src/commands/sandbox/list.ts`).
+- Unit tests import from `src/` directly (vitest aliases `e2b` to `../js-sdk/src`), so they run without building the SDK.
 
 For checking rendered output (tables, colors, alignment), use the `verifying-cli-visual-output` skill.
 
-## Before committing
-
-```bash
-pnpm run lint && pnpm run typecheck
-```
-
-Public-surface changes need a changeset (`pnpm changeset` at repo root).
 
 ## Devin Secrets Needed
 - `E2B_API_KEY`

@@ -1,6 +1,6 @@
 ---
 name: testing-python-sdk
-description: "Run and write tests for the E2B Python SDK (packages/python-sdk). Use when changing python-sdk code (sync or async), running pytest suites, or mirroring JS SDK changes in Python."
+description: "Run tests for the E2B Python SDK (packages/python-sdk). Use when running its pytest suites (sync or async) or verifying SDK behavior against real sandboxes."
 ---
 
 # Testing the Python SDK
@@ -29,22 +29,8 @@ uv run pytest tests --ignore=tests/sync --ignore=tests/async -q
 
 The `skip_debug` marker skips a test when `E2B_DEBUG` is set (local envd).
 
-## Writing tests
-
-- Every behavior change must land in **both** sync and async implementations with matching tests in `tests/sync/` and `tests/async/` (and mirror the JS SDK — see `testing-js-sdk`).
-- Async tests need no decorator (`asyncio_mode=auto`).
-- Reuse conftest fixtures rather than creating sandboxes by hand.
-
 ## CI notes
 
 - Integration jobs run against both **production and staging**; staging jobs are known to flake (template-build 500s, transient backend errors). Check the base branch or rerun before blaming your change.
 - New API parameters often reach staging before production — a production-only failure of a new-feature test usually means the API isn't deployed there yet.
-- `tests/shared/` holds offline suites shared between sync and async (request shaping, encoding, proxy config); prefer extending those for behavior that doesn't need a live sandbox.
-
-## Before committing
-
-```bash
-pnpm run lint && pnpm run typecheck   # ruff check/format + ty check
-```
-
-Public-surface changes need a changeset (`pnpm changeset` at repo root).
+- `tests/shared/` holds offline suites shared between sync and async (request shaping, encoding, proxy config) — the fastest signal when no key is available.

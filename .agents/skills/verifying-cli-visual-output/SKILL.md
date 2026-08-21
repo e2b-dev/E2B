@@ -7,20 +7,9 @@ description: "Verify the visual/terminal output of the E2B CLI: tables, colors, 
 
 The CLI's output style follows kubectl: borderless tables, uppercase headers, left-aligned columns with 3-space padding, no trailing whitespace (`packages/cli/src/utils/table.ts` → `renderTable`). Colors/bold come from `chalk` (`src/utils/format.ts`).
 
-## 1. Unit-test the rendering (preferred)
+## 1. Run the rendering tests
 
-Capture `console.log` lines and assert exact strings — see `tests/utils/table.test.ts`:
-
-```ts
-const lines: string[] = []
-vi.spyOn(console, 'log').mockImplementation((l: string) => lines.push(l))
-renderTable(rows, columns)
-expect(lines).toEqual(['SANDBOX ID   NAME', 'sbx-1        alpha'])
-```
-
-Keep row-building logic in exported pure functions (e.g. `buildTableRows` in `src/commands/sandbox/list.ts`) so formatting is testable without the API.
-
-To exercise the renderer directly (e.g. wide chars in a padded middle column), run a small script importing `packages/cli/src/utils/table.ts` with `npx tsx`.
+Exact-string assertions for the renderer live in `tests/utils/table.test.ts` (`npx vitest run tests/utils/table.test.ts`). To exercise the renderer directly (e.g. wide chars in a padded middle column), run a small script importing `packages/cli/src/utils/table.ts` with `npx tsx`.
 
 ## 2. Eyeball the real output
 
