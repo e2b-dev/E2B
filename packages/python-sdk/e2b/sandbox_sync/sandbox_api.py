@@ -25,7 +25,6 @@ from e2b.api.client.api.sandboxes import (
 )
 from e2b.api.client.api.templates import delete_templates_template_id
 from e2b.api.client.models import (
-    ConnectSandbox,
     Error,
     NewSandbox,
     SandboxSnapshotRequest,
@@ -38,7 +37,6 @@ from e2b.api.client.models import (
 from e2b.api.client.types import UNSET, Unset
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.exceptions import (
-    InvalidArgumentException,
     NotFoundException,
     SandboxException,
     SandboxNotFoundException,
@@ -47,6 +45,7 @@ from e2b.exceptions import (
 from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
     build_network_update_body,
+    ConnectSandboxBody,
     McpServer,
     SandboxIamOpts,
     SandboxInfo,
@@ -83,7 +82,7 @@ class SandboxApi(SandboxBase):
         :param query: Filter the list of sandboxes by metadata, state, start time, or template, e.g. `SandboxQuery(metadata={"key": "value"})` or `SandboxQuery(state=[SandboxState.RUNNING])`
         :param limit: Maximum number of sandboxes to return per page
         :param next_token: Token for pagination
-        :param order: Sort order of the list of sandboxes by start time, applied across the whole result set before pagination (not within a page), defaults to `"desc"` (newest first)
+        :param order: Sort order of the list of sandboxes by start time, applied across the whole result set before pagination (not within a page)
 
         :return: A `SandboxPaginator` that yields pages of sandboxes (running and paused by default). Iterate pages via `paginator.next_items()` while `paginator.has_next` is True.
         """
@@ -207,11 +206,11 @@ class SandboxApi(SandboxBase):
     def _create_sandbox(
         cls,
         template: str,
-        timeout: int,
-        allow_internet_access: bool,
+        timeout: Optional[int],
+        allow_internet_access: Optional[bool],
         metadata: Optional[Dict[str, str]],
         env_vars: Optional[Dict[str, str]],
-        secure: bool,
+        secure: Optional[bool],
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
         iam: Optional[SandboxIamOpts] = None,
@@ -235,11 +234,13 @@ class SandboxApi(SandboxBase):
             auto_pause_memory=lifecycle_body.auto_pause_memory,
             auto_resume=lifecycle_body.auto_resume,
             metadata=metadata or {},
-            timeout=timeout,
+            timeout=timeout if timeout is not None else UNSET,
             env_vars=env_vars or {},
             mcp=cast(Any, mcp) or UNSET,
-            secure=secure,
-            allow_internet_access=allow_internet_access,
+            secure=secure if secure is not None else UNSET,
+            allow_internet_access=(
+                allow_internet_access if allow_internet_access is not None else UNSET
+            ),
             network=SandboxNetworkConfig(**network_body) if network_body else UNSET,
             iam=iam_body or UNSET,
             volume_mounts=volume_mounts if volume_mounts else UNSET,
@@ -343,15 +344,13 @@ class SandboxApi(SandboxBase):
         logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
-        timeout = timeout or SandboxBase.default_sandbox_timeout
-
         config = ConnectionConfig(logger=logger, **cls._resolve_api_params(**opts))
 
         api_client = get_api_client(config)
         res = post_sandboxes_sandbox_id_connect.sync_detailed(
             sandbox_id,
             client=api_client,
-            body=ConnectSandbox(timeout=timeout),
+            body=ConnectSandboxBody(timeout=timeout),
         )
 
         if res.status_code == 404:
@@ -395,21 +394,16 @@ class SandboxApi(SandboxBase):
         logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> List[Union[SandboxCreateResponse, Exception]]:
-        timeout = (
-            timeout if timeout is not None else SandboxBase.default_sandbox_timeout
-        )
-        count = count if count is not None else 1
-
-        if count < 1:
-            raise InvalidArgumentException("count must be at least 1")
-
         config = ConnectionConfig(logger=logger, **cls._resolve_api_params(**opts))
 
         api_client = get_api_client(config)
         res = post_sandboxes_sandbox_id_fork.sync_detailed(
             sandbox_id,
             client=api_client,
-            body=SandboxForkRequest(timeout=timeout, count=count),
+            body=SandboxForkRequest(
+                timeout=timeout if timeout is not None else UNSET,
+                count=count if count is not None else UNSET,
+            ),
         )
 
         if res.status_code == 404:
@@ -532,7 +526,7 @@ class SandboxApi(SandboxBase):
     def _cls_pause(
         cls,
         sandbox_id: str,
-        keep_memory: bool = True,
+        keep_memory: Optional[bool] = None,
         **opts: Unpack[ApiParams],
     ) -> bool:
         config = ConnectionConfig(**cls._resolve_api_params(**opts))
@@ -541,7 +535,9 @@ class SandboxApi(SandboxBase):
         res = post_sandboxes_sandbox_id_pause.sync_detailed(
             sandbox_id,
             client=api_client,
-            body=SandboxPauseRequest(memory=keep_memory),
+            body=SandboxPauseRequest(
+                memory=keep_memory if keep_memory is not None else UNSET
+            ),
         )
 
         if res.status_code == 404:
