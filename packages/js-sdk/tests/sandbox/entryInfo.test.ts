@@ -4,8 +4,8 @@ import { expect, test } from 'vitest'
 import {
   EntryInfoSchema,
   FileType as FsFileType,
-} from '../../../src/envd/filesystem/filesystem_pb'
-import { FileType, mapEntryInfo } from '../../../src/sandbox/filesystem'
+} from '../../src/envd/filesystem/filesystem_pb'
+import { FileType, mapEntryInfo } from '../../src/sandbox/filesystem'
 
 function entry(type: FsFileType, symlinkTarget?: string) {
   return create(EntryInfoSchema, {

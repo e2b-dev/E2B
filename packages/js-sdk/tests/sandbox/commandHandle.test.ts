@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { CommandHandle } from '../../../src/sandbox/commands/commandHandle'
+import { CommandHandle } from '../../src/sandbox/commands/commandHandle'
 
 type EventKind = 'stdout' | 'stderr' | 'pty'
 
