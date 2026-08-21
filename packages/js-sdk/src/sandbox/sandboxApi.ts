@@ -1160,6 +1160,8 @@ function buildNetworkUpdateBody(
   }
 }
 export class SandboxApi extends ClientFactory {
+  protected static readonly defaultSandboxTimeoutMs = DEFAULT_SANDBOX_TIMEOUT_MS
+
   protected constructor() {
     super()
   }
@@ -1767,7 +1769,7 @@ export class SandboxApi extends ClientFactory {
     opts?: SandboxConnectOpts
   ) {
     const apiOpts = this.resolveOpts(opts)
-    const timeoutMs = apiOpts?.timeoutMs ?? DEFAULT_SANDBOX_TIMEOUT_MS
+    const timeoutMs = apiOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs
 
     const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)

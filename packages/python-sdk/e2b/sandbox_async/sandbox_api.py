@@ -84,7 +84,7 @@ class SandboxApi(SandboxBase):
         :param query: Filter the list of sandboxes by metadata, state, start time, or template, e.g. `SandboxQuery(metadata={"key": "value"})` or `SandboxQuery(state=[SandboxState.RUNNING])`
         :param limit: Maximum number of sandboxes to return per page
         :param next_token: Token for pagination
-        :param order: Sort order of the list of sandboxes by start time, applied across the whole result set before pagination (not within a page), when not set, the API default (currently `"desc"`, newest first) applies
+        :param order: Sort order of the list of sandboxes by start time, applied across the whole result set before pagination (not within a page)
 
         :return: An `AsyncSandboxPaginator` that yields pages of sandboxes (running and paused by default). Iterate pages via `await paginator.next_items()` while `paginator.has_next` is True.
         """
