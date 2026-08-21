@@ -267,7 +267,7 @@
 
   ```python
   info = sandbox.get_info()
-  print(info.network.get("egress_proxy"))
+  print(info.network["egress_proxy"])
   # {'address': 'proxy.example.com:1080', 'username': 'proxy-user'}
   ```
 

@@ -1009,30 +1009,20 @@ function resolveRulesForBody(
 /**
  * Rebuild the proxy config from the known fields so stray properties on the
  * caller's object never reach the wire and a later mutation of it cannot alter
- * the in-flight request. Address reachability is the server's — it is the only
- * side that can tell whether the address resolves, and to where.
+ * the in-flight request. Validation is the server's — it is the only side that
+ * can tell whether the address resolves, and to where.
  */
 function buildEgressProxyBody(
   egressProxy: SandboxEgressProxyOpts
 ): components['schemas']['SandboxEgressProxyConfig'] {
-  // Re-check at runtime for callers that bypass the type — rebuilding from the
-  // known fields drops an address that isn't there, and the API error for the
-  // resulting `{}` names neither the option the caller typed nor the mistake.
-  // Python raises `InvalidArgumentException` on the same input.
-  if (typeof egressProxy.address !== 'string') {
-    throw new InvalidArgumentError(
-      "network egressProxy must be an object with a string 'address' " +
-        "(e.g. 'proxy.example.com:1080')."
-    )
-  }
-
   return {
     address: egressProxy.address,
-    // `!= null` so a credential read out of an unset environment variable
-    // reads as "no credentials" rather than reaching the wire as JSON null,
-    // which the API rejects. Same reasoning as `egressProxy: null` itself.
-    ...(egressProxy.username != null ? { username: egressProxy.username } : {}),
-    ...(egressProxy.password != null ? { password: egressProxy.password } : {}),
+    ...(egressProxy.username !== undefined
+      ? { username: egressProxy.username }
+      : {}),
+    ...(egressProxy.password !== undefined
+      ? { password: egressProxy.password }
+      : {}),
   }
 }
 
@@ -1076,9 +1066,8 @@ function buildNetworkEgress(
 
 /**
  * Map the wire proxy config into the SDK-owned shape: `password` is dropped
- * because the API never returns it, and the wire's `null` — for "no proxy" and
- * for an anonymous proxy's `username` alike — is normalized so it never reaches
- * a consumer typed to see `undefined`.
+ * because the API never returns it, and the wire's `null` for "no proxy" is
+ * normalized so the union never reaches a consumer.
  */
 function fromApiEgressProxy(
   egressProxy: components['schemas']['SandboxEgressProxyConfig'] | undefined
@@ -1089,7 +1078,9 @@ function fromApiEgressProxy(
 
   return {
     address: egressProxy.address,
-    ...(egressProxy.username != null ? { username: egressProxy.username } : {}),
+    ...(egressProxy.username !== undefined
+      ? { username: egressProxy.username }
+      : {}),
   }
 }
 

@@ -671,12 +671,9 @@ def _build_egress_proxy(
         )
 
     body = ClientSandboxEgressProxyConfig(address=egress_proxy["address"])
-    # `is not None` so a credential read out of an unset environment variable
-    # reads as "no credentials" rather than reaching the wire as JSON null,
-    # which the API rejects. Same reasoning as ``"egress_proxy": None`` itself.
-    if egress_proxy.get("username") is not None:
+    if "username" in egress_proxy:
         body.username = egress_proxy["username"]
-    if egress_proxy.get("password") is not None:
+    if "password" in egress_proxy:
         body.password = egress_proxy["password"]
 
     return body
@@ -902,16 +899,15 @@ def _from_client_egress_proxy(
 ) -> Optional[SandboxEgressProxyInfo]:
     """
     Map the wire proxy config into the SDK-owned shape: ``password`` is dropped
-    because the API never returns it, and the wire's ``None`` — for "no proxy"
-    and for an anonymous proxy's ``username`` alike — becomes an absent key.
+    because the API never returns it, and the wire's ``None`` for "no proxy"
+    becomes an absent key.
     """
     if not isinstance(egress_proxy, ClientSandboxEgressProxyConfig):
         return None
 
     result: SandboxEgressProxyInfo = {"address": egress_proxy.address}
-    username = egress_proxy.username
-    if not isinstance(username, Unset) and username is not None:
-        result["username"] = username
+    if not isinstance(egress_proxy.username, Unset):
+        result["username"] = egress_proxy.username
 
     return result
 
