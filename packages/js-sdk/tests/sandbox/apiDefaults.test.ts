@@ -47,12 +47,12 @@ afterEach(() => {
   server.resetHandlers()
 })
 
-test('Sandbox.create omits timeout, secure and allow_internet_access when unset', async () => {
+test('Sandbox.create omits timeout and allow_internet_access when unset and defaults secure to true', async () => {
   await Sandbox.create('base', { apiKey: TEST_API_KEY })
 
   expect(lastCreateBody).toBeDefined()
   expect(lastCreateBody).not.toHaveProperty('timeout')
-  expect(lastCreateBody).not.toHaveProperty('secure')
+  expect(lastCreateBody?.secure).toBe(true)
   expect(lastCreateBody).not.toHaveProperty('allow_internet_access')
 })
 

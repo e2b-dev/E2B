@@ -45,7 +45,7 @@ def test_create_omits_api_owned_fields_when_unset(monkeypatch, test_api_key):
     body = _sync_create_body(monkeypatch, test_api_key)
 
     assert "timeout" not in body
-    assert "secure" not in body
+    assert body["secure"] is True
     assert "allow_internet_access" not in body
 
 
@@ -69,7 +69,7 @@ async def test_async_create_omits_api_owned_fields_when_unset(
     body = await _async_create_body(monkeypatch, test_api_key)
 
     assert "timeout" not in body
-    assert "secure" not in body
+    assert body["secure"] is True
     assert "allow_internet_access" not in body
 
 

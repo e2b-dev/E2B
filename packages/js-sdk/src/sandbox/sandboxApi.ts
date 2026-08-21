@@ -598,7 +598,7 @@ export interface SandboxOpts extends ConnectionOpts {
   /**
    * Secure all traffic coming to the sandbox controller with auth token
    *
-   * When not set, the API default (currently enabled) applies.
+   * @default true
    */
   secure?: boolean
 
@@ -1657,7 +1657,7 @@ export class SandboxApi extends ClientFactory {
       envVars: opts?.envs,
       timeout:
         timeoutMs === undefined ? undefined : timeoutToSeconds(timeoutMs),
-      secure: opts?.secure,
+      secure: opts?.secure ?? true,
       allow_internet_access: opts?.allowInternetAccess,
       network: buildNetworkBody(opts?.network, iam),
       iam,

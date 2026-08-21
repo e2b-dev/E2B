@@ -239,7 +239,7 @@ class SandboxApi(SandboxBase):
             timeout=timeout if timeout is not None else UNSET,
             env_vars=env_vars or {},
             mcp=cast(Any, mcp) or UNSET,
-            secure=secure if secure is not None else UNSET,
+            secure=secure if secure is not None else True,
             allow_internet_access=(
                 allow_internet_access if allow_internet_access is not None else UNSET
             ),
