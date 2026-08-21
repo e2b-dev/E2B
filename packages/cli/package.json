@@ -84,6 +84,7 @@
     "handlebars": "^4.7.9",
     "inquirer": "^12.10.0",
     "simple-update-notifier": "^2.0.0",
+    "simple-wcswidth": "^1.1.2",
     "statuses": "^2.0.1",
     "yup": "^1.3.2"
   },

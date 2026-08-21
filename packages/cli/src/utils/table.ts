@@ -1,3 +1,5 @@
+import { wcswidth } from 'simple-wcswidth'
+
 // Renders tables in the style of kubectl (k8s.io/cli-runtime/pkg/printers):
 // uppercase headers, left-aligned columns separated by spaces, no borders.
 // https://github.com/kubernetes/cli-runtime/blob/master/pkg/printers/tableprinter.go
@@ -31,14 +33,16 @@ export function renderTable<T>(items: T[], columns: Column<T>[]) {
   )
 
   const widths = headers.map((header, i) =>
-    Math.max(header.length, ...rows.map((row) => row[i].length))
+    rows.reduce((max, row) => Math.max(max, wcswidth(row[i])), wcswidth(header))
   )
 
   for (const line of [headers, ...rows]) {
     console.log(
       line
         .map((cell, i) =>
-          i === line.length - 1 ? cell : cell.padEnd(widths[i] + COLUMN_PADDING)
+          i === line.length - 1
+            ? cell
+            : cell + ' '.repeat(widths[i] + COLUMN_PADDING - wcswidth(cell))
         )
         .join('')
         .trimEnd()

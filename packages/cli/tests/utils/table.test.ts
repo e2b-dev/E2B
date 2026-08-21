@@ -49,4 +49,25 @@ describe('renderTable', () => {
 
     expect(lines).toEqual(['A   B', 'x'])
   })
+
+  it('aligns columns containing wide (CJK) characters by display width', () => {
+    const lines = capture()
+
+    renderTable(
+      [
+        { name: '日本語', state: 'ok' },
+        { name: 'abcdef', state: 'ok' },
+      ],
+      [
+        { header: 'Name', value: (row) => row.name },
+        { header: 'State', value: (row) => row.state },
+      ]
+    )
+
+    expect(lines).toEqual([
+      'NAME     STATE',
+      '日本語   ok',
+      'abcdef   ok',
+    ])
+  })
 })
