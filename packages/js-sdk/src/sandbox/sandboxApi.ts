@@ -1021,20 +1021,29 @@ function resolveRulesForBody(
 /**
  * Rebuild the proxy config from the known fields so stray properties on the
  * caller's object never reach the wire and a later mutation of it cannot alter
- * the in-flight request. Validation is the server's — it is the only side that
- * can tell whether the address resolves, and to where.
+ * the in-flight request. Address reachability is the server's — it is the only
+ * side that can tell whether the address resolves, and to where. The required
+ * `address` is checked here so an untyped caller that omits it is told which
+ * option is wrong instead of getting an API error about a body it never wrote.
  */
 function buildEgressProxyBody(
   egressProxy: SandboxEgressProxyOpts
 ): components['schemas']['SandboxEgressProxyConfig'] {
+  // Re-check at runtime for callers that bypass the type; Python's
+  // `_build_egress_proxy` checks the same way.
+  if (!isPlainObject(egressProxy) || typeof egressProxy.address !== 'string') {
+    throw new InvalidArgumentError(
+      `network egressProxy must be an object with a string 'address' (e.g. 'proxy.example.com:1080').`
+    )
+  }
+
+  // `!= null` also skips a `null` credential, which is what reading one out of
+  // an unset environment variable yields and what "this proxy takes no
+  // credentials" means; the API only accepts a string.
   return {
     address: egressProxy.address,
-    ...(egressProxy.username !== undefined
-      ? { username: egressProxy.username }
-      : {}),
-    ...(egressProxy.password !== undefined
-      ? { password: egressProxy.password }
-      : {}),
+    ...(egressProxy.username != null ? { username: egressProxy.username } : {}),
+    ...(egressProxy.password != null ? { password: egressProxy.password } : {}),
   }
 }
 
