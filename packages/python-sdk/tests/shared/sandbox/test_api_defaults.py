@@ -119,9 +119,7 @@ def test_fork_sends_explicit_timeout_and_count(monkeypatch, test_api_key):
     assert body["count"] == 2
 
 
-async def test_async_fork_omits_timeout_and_count_when_unset(
-    monkeypatch, test_api_key
-):
+async def test_async_fork_omits_timeout_and_count_when_unset(monkeypatch, test_api_key):
     body = await _async_fork_body(monkeypatch, test_api_key)
 
     assert "timeout" not in body
