@@ -151,6 +151,24 @@ describe('Volume CRUD', () => {
     expect(err).toBeInstanceOf(VolumeError)
   })
 
+  // The 404 is thrown before handleApiError sees the response, so the trace ID
+  // has to be read at the throw site
+  it('should carry the trace ID on VolumeNotFoundError', async () => {
+    server.use(
+      http.get(apiUrl('/volumes/:volumeID'), () =>
+        HttpResponse.json(
+          { code: 404, message: 'Not found' },
+          { status: 404, headers: { 'X-Trace-ID': 'abc123' } }
+        )
+      )
+    )
+
+    const err = await Volume.getInfo('non-existent-id').catch((err) => err)
+    expect(err).toBeInstanceOf(VolumeNotFoundError)
+    expect(err.traceId).toBe('abc123')
+    expect(err.message).toContain('(trace ID: abc123)')
+  })
+
   it('should throw VolumeError for a non-2xx response without content', async () => {
     server.use(
       http.post(
@@ -335,6 +353,23 @@ describe('Volume content readFile', () => {
     const err = await vol.readFile('missing.txt').catch((err) => err)
     expect(err).toBeInstanceOf(VolumePathNotFoundError)
     expect(err).toBeInstanceOf(VolumeError)
+  })
+
+  it('should carry the trace ID on VolumePathNotFoundError', async () => {
+    const vol = await Volume.create('content-volume')
+    server.use(
+      http.get(apiUrl('/volumecontent/:volumeID/file'), () =>
+        HttpResponse.json(
+          { code: 404, message: 'Not found' },
+          { status: 404, headers: { 'X-Trace-ID': 'abc123' } }
+        )
+      )
+    )
+
+    const err = await vol.readFile('missing.txt').catch((err) => err)
+    expect(err).toBeInstanceOf(VolumePathNotFoundError)
+    expect(err.traceId).toBe('abc123')
+    expect(err.message).toContain('(trace ID: abc123)')
   })
 
   it('should reject at call time for a missing file with stream format', async () => {

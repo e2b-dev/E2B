@@ -10,6 +10,7 @@ import {
   SecretNotFoundError,
 } from './errors'
 import { Paginator } from './paginator'
+import { extractTraceId } from './traceId'
 import type { SandboxIamToken } from './sandbox/sandboxApi'
 
 const INVALID_SECRET_NAME_CHARS = /[{}\p{Cc}]/u
@@ -227,7 +228,9 @@ export class Secret extends ClientFactory {
     })
 
     if (res.response.status === 404) {
-      throw new SecretNotFoundError(`Secret ${secret} not found`)
+      throw new SecretNotFoundError(`Secret ${secret} not found`, {
+        traceId: extractTraceId(res.response.headers),
+      })
     }
 
     const err = handleApiError(res, SecretError)
@@ -269,7 +272,9 @@ export class Secret extends ClientFactory {
     })
 
     if (res.response.status === 404) {
-      throw new SecretNotFoundError(`Secret ${secret} not found`)
+      throw new SecretNotFoundError(`Secret ${secret} not found`, {
+        traceId: extractTraceId(res.response.headers),
+      })
     }
 
     const err = handleApiError(res, SecretError)
