@@ -1709,10 +1709,6 @@ export class SandboxApi extends ClientFactory {
     count: number,
     opts?: SandboxApiOpts
   ): Promise<SandboxForkResponse[]> {
-    if (count < 1) {
-      throw new InvalidArgumentError('count must be at least 1')
-    }
-
     const apiOpts = this.resolveOpts(opts)
     const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)

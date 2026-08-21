@@ -39,7 +39,6 @@ from e2b.api.client.types import UNSET, Unset
 from e2b.api.client_async import get_api_client
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.exceptions import (
-    InvalidArgumentException,
     NotFoundException,
     SandboxException,
     SandboxNotFoundException,
@@ -446,9 +445,6 @@ class SandboxApi(SandboxBase):
             timeout if timeout is not None else SandboxBase.default_sandbox_timeout
         )
         count = count if count is not None else 1
-
-        if count < 1:
-            raise InvalidArgumentException("count must be at least 1")
 
         config = ConnectionConfig(logger=logger, **cls._resolve_api_params(**opts))
 
