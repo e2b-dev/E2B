@@ -5,6 +5,7 @@ import pytest
 from e2b import Template
 
 
+@pytest.mark.e2e
 @pytest.mark.skip_debug()
 def test_check_base_template_name_exists():
     """Test that the base template name exists."""
@@ -12,6 +13,7 @@ def test_check_base_template_name_exists():
     assert exists is True
 
 
+@pytest.mark.e2e
 @pytest.mark.skip_debug()
 def test_check_non_existing_name():
     """Test that a non-existing name returns False."""

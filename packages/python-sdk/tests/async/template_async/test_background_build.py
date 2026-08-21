@@ -5,6 +5,7 @@ import pytest
 from e2b import AsyncTemplate, wait_for_timeout
 
 
+@pytest.mark.e2e
 @pytest.mark.skip_debug()
 @pytest.mark.timeout(10)
 async def test_build_in_background_should_start_build_and_return_info():

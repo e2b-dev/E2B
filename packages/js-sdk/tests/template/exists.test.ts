@@ -1,13 +1,14 @@
 import { randomUUID } from 'node:crypto'
-import { expect, test } from 'vitest'
+import { expect } from 'vitest'
 import { Template } from '../../src'
+import { e2eTest } from '../setup'
 
-test('check if base template name exists', async () => {
+e2eTest('check if base template name exists', async () => {
   const exists = await Template.exists('base')
   expect(exists).toBe(true)
 })
 
-test('check non existing name', async () => {
+e2eTest('check non existing name', async () => {
   const nonExistingName = `nonexistent-${randomUUID()}`
   const exists = await Template.exists(nonExistingName)
   expect(exists).toBe(false)

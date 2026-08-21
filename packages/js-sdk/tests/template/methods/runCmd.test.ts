@@ -1,8 +1,8 @@
 import { expect } from 'vitest'
 import { Template } from '../../../src'
-import { buildTemplateTest } from '../../setup'
+import { e2eBuildTemplateTest } from '../../setup'
 
-buildTemplateTest('run command', async ({ buildTemplate }) => {
+e2eBuildTemplateTest('run command', async ({ buildTemplate }) => {
   const template = Template()
     .fromImage('ubuntu:22.04')
     .skipCache()
@@ -11,7 +11,7 @@ buildTemplateTest('run command', async ({ buildTemplate }) => {
   await buildTemplate(template)
 })
 
-buildTemplateTest(
+e2eBuildTemplateTest(
   'run command as a different user',
   async ({ buildTemplate }) => {
     const template = Template()
@@ -23,7 +23,7 @@ buildTemplateTest(
   }
 )
 
-buildTemplateTest(
+e2eBuildTemplateTest(
   'run command as user that does not exist',
   async ({ buildTemplate }) => {
     const template = Template()
