@@ -684,6 +684,11 @@ export type SandboxConnectOpts = ConnectionOpts & {
  */
 export type SandboxState = 'running' | 'paused'
 
+/**
+ * Sort order for listing sandboxes by start time.
+ */
+export type SandboxListOrder = 'asc' | 'desc'
+
 export interface SandboxListOpts extends Omit<SandboxApiOpts, 'signal'> {
   /**
    * Filter the list of sandboxes, e.g. by metadata `metadata:{"key": "value"}`, if there are multiple filters they are combined with AND.
@@ -696,7 +701,23 @@ export interface SandboxListOpts extends Omit<SandboxApiOpts, 'signal'> {
      * @default ['running', 'paused']
      */
     state?: Array<SandboxState>
+    /**
+     * Filter the list of sandboxes to those started at or after this time.
+     */
+    startedAfter?: Date
+    /**
+     * Filter the list of sandboxes by a template ID or name.
+     */
+    template?: string
   }
+
+  /**
+   * Sort order of the list of sandboxes by start time, applied across the
+   * whole result set before pagination (not within a page).
+   *
+   * @default 'desc'
+   */
+  order?: SandboxListOrder
 
   /**
    * Number of sandboxes to return per page.
@@ -1806,11 +1827,13 @@ export class SandboxApi extends ClientFactory {
  */
 export class SandboxPaginator extends Paginator<SandboxInfo, SandboxApiOpts> {
   private query: SandboxListOpts['query']
+  private order: SandboxListOrder | undefined
 
   constructor(opts?: SandboxListOpts) {
     super(opts, opts?.limit, opts?.nextToken)
 
     this.query = opts?.query
+    this.order = opts?.order
   }
 
   async nextItems(opts?: SandboxApiOpts): Promise<SandboxInfo[]> {
@@ -1839,6 +1862,9 @@ export class SandboxPaginator extends Paginator<SandboxInfo, SandboxApiOpts> {
         query: {
           metadata,
           state: this.query?.state,
+          startedAfter: this.query?.startedAfter?.toISOString(),
+          template: this.query?.template || undefined,
+          order: this.order,
           limit: this.limit,
           nextToken: this.nextToken,
         },

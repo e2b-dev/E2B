@@ -65,6 +65,7 @@ export type {
   SandboxPauseOpts,
   SandboxState,
   SandboxListOpts,
+  SandboxListOrder,
   SandboxPaginator,
   SandboxIamOpts,
   SandboxIamToken,
