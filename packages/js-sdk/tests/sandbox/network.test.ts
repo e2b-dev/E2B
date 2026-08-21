@@ -1,12 +1,7 @@
 import { assert, expect, describe } from 'vitest'
 
 import { CommandExitError, Sandbox } from '../../src'
-import {
-  sandboxTest,
-  isDebug,
-  template,
-  corsHttpServerCmd,
-} from '../setup.js'
+import { sandboxTest, isDebug, template, corsHttpServerCmd } from '../setup.js'
 import { httpbinTemplate } from '../template.js'
 
 describe('allow only 1.1.1.1', () => {

@@ -5,14 +5,11 @@ import { defineConfig } from 'vitest/config'
 // Real env vars win over `.env`, matching dotenv's own precedence.
 const env = { ...config().parsed, ...process.env }
 
-// Config the shared suites read from the environment. Everything the SDK takes
-// is `E2B_`-prefixed; ENABLE_VOLUME_TESTS gates the volume suite. Forwarded by
-// name rather than as the whole environment, which would inline every host
-// variable into JS served to the browser.
+// Config the shared suites read from the environment; everything the SDK takes
+// is `E2B_`-prefixed. Forwarded by name rather than as the whole environment,
+// which would inline every host variable into JS served to the browser.
 const testEnv = Object.fromEntries(
-  Object.entries(env).filter(
-    ([name]) => name.startsWith('E2B_') || name === 'ENABLE_VOLUME_TESTS'
-  )
+  Object.entries(env).filter(([name]) => name.startsWith('E2B_'))
 ) as Record<string, string>
 
 // Runs the unit + connectionConfig projects (same coverage as test:bun /
@@ -46,7 +43,16 @@ export default defineConfig({
       // These mock the API with msw's `setupServer`, whose `msw/node` entry
       // pulls in node:http and can't be served to the browser. Porting them
       // means `setupWorker` plus a service worker served from a public dir.
+      // Any new suite that imports `msw/node` belongs here — `grep -rl msw/node
+      // tests/` lists the full set (tests/template/** is already excluded).
+      'tests/client.test.ts',
       'tests/sandbox/abortSignal.test.ts',
+      'tests/sandbox/egressProxy.test.ts',
+      'tests/sandbox/iam.test.ts',
+      'tests/sandbox/lifecycleRequest.test.ts',
+      'tests/sandbox/networkTransform.test.ts',
+      'tests/secret/secret.test.ts',
+      'tests/volume/file.test.ts',
       'tests/volume/volume.test.ts',
     ],
     globals: false,
