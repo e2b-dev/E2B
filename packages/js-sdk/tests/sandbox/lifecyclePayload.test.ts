@@ -1,7 +1,7 @@
 import { assert, expect, test } from 'vitest'
 
 import { InvalidArgumentError, Sandbox } from '../../src'
-import { isDebug, template, wait } from '../setup.js'
+import { isDebug, template, wait, corsHttpServerCmd } from '../setup.js'
 
 test.skipIf(isDebug)(
   'filesystem-only auto-pause cannot be combined with auto-resume',
@@ -123,7 +123,7 @@ test.skipIf(isDebug)(
     })
 
     try {
-      await sandbox.commands.run('python3 -m http.server 8000', {
+      await sandbox.commands.run(corsHttpServerCmd(8000), {
         background: true,
       })
 
