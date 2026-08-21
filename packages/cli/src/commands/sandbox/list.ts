@@ -83,7 +83,9 @@ export const listCommand = new commander.Command('list')
           )
         }
       } else if (format === 'json') {
-        console.log(JSON.stringify(sandboxes, null, 2))
+        console.log(
+          JSON.stringify(sortSandboxes(sandboxes, options.order), null, 2)
+        )
       } else {
         console.error(`Unsupported output format: ${format}`)
         process.exit(1)
@@ -94,7 +96,7 @@ export const listCommand = new commander.Command('list')
     }
   })
 
-export function buildTableRows(
+export function sortSandboxes(
   sandboxes: SandboxInfo[],
   order: SandboxListOrder = 'asc'
 ) {
@@ -107,13 +109,19 @@ export function buildTableRows(
           (new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime()) ||
         a.sandboxId.localeCompare(b.sandboxId)
     )
-    .map((sandbox) => ({
-      ...sandbox,
-      startedAt: new Date(sandbox.startedAt).toLocaleString(),
-      endAt: new Date(sandbox.endAt).toLocaleString(),
-      state: sandbox.state.charAt(0).toUpperCase() + sandbox.state.slice(1), // capitalize
-      metadata: JSON.stringify(sandbox.metadata),
-    }))
+}
+
+export function buildTableRows(
+  sandboxes: SandboxInfo[],
+  order: SandboxListOrder = 'asc'
+) {
+  return sortSandboxes(sandboxes, order).map((sandbox) => ({
+    ...sandbox,
+    startedAt: new Date(sandbox.startedAt).toLocaleString(),
+    endAt: new Date(sandbox.endAt).toLocaleString(),
+    state: sandbox.state.charAt(0).toUpperCase() + sandbox.state.slice(1), // capitalize
+    metadata: JSON.stringify(sandbox.metadata),
+  }))
 }
 
 function renderTable(
