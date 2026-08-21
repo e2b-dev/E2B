@@ -232,8 +232,6 @@ class ConnectionConfig:
         self.debug = debug if debug is not None else ConnectionConfig._debug()
         self.api_key = api_key or ConnectionConfig._api_key()
         self.validate_api_key = validate_api_key
-        """Deprecated: the API key format is no longer validated on the client
-        side; this option has no effect."""
         self.headers = {**(headers or {}), **(api_headers or {})}
         self._user_agent_is_sdk_built = self._apply_user_agent(
             self.headers,
