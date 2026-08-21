@@ -4,11 +4,6 @@ import { randomUUID } from 'crypto'
 import { Sandbox, SandboxInfo } from '../../src'
 import { sandboxTest, isDebug } from '../setup.js'
 
-// Sandbox list ordering and the startedAfter/template filters require API
-// support that is not yet deployed to production (only E2B_DOMAIN-configured
-// environments like staging).
-const hasListFilters = !!process.env.E2B_DOMAIN
-
 sandboxTest.skipIf(isDebug)(
   'list sandboxes',
   async ({ sandbox, sandboxTestId }) => {
@@ -226,7 +221,7 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug || !hasListFilters)(
+sandboxTest.skipIf(isDebug)(
   'list sandboxes with order',
   async ({ sandbox, sandboxTestId }) => {
     const extraSbx = await Sandbox.create({ metadata: { sandboxTestId } })
@@ -255,7 +250,7 @@ sandboxTest.skipIf(isDebug || !hasListFilters)(
   }
 )
 
-sandboxTest.skipIf(isDebug || !hasListFilters)(
+sandboxTest.skipIf(isDebug)(
   'list sandboxes started after',
   async ({ sandbox, sandboxTestId }) => {
     const info = await sandbox.getInfo()
@@ -284,7 +279,7 @@ sandboxTest.skipIf(isDebug || !hasListFilters)(
   }
 )
 
-sandboxTest.skipIf(isDebug || !hasListFilters)(
+sandboxTest.skipIf(isDebug)(
   'list sandboxes with template filter',
   async ({ sandbox, sandboxTestId }) => {
     const info = await sandbox.getInfo()

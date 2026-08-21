@@ -1,18 +1,9 @@
-import os
 import uuid
 from datetime import timedelta
 
 import pytest
 
 from e2b import AsyncSandbox, SandboxQuery, SandboxState
-
-# Sandbox list ordering and the started_after/template filters require API
-# support that is not yet deployed to production (only E2B_DOMAIN-configured
-# environments like staging).
-skip_without_list_filters = pytest.mark.skipif(
-    not os.getenv("E2B_DOMAIN"),
-    reason="sandbox list order/started_after/template require staging API",
-)
 
 
 @pytest.mark.skip_debug()
@@ -186,7 +177,6 @@ async def test_paginate_running_and_paused_sandboxes(
 
 
 @pytest.mark.skip_debug()
-@skip_without_list_filters
 async def test_list_sandboxes_with_order(
     async_sandbox: AsyncSandbox, async_sandbox_factory, sandbox_test_id: str
 ):
@@ -214,7 +204,6 @@ async def test_list_sandboxes_with_order(
 
 
 @pytest.mark.skip_debug()
-@skip_without_list_filters
 async def test_list_sandboxes_started_after(
     async_sandbox: AsyncSandbox, sandbox_test_id: str
 ):
@@ -240,7 +229,6 @@ async def test_list_sandboxes_started_after(
 
 
 @pytest.mark.skip_debug()
-@skip_without_list_filters
 async def test_list_sandboxes_with_template_filter(
     async_sandbox: AsyncSandbox, sandbox_test_id: str
 ):
