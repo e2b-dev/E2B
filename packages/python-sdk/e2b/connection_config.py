@@ -57,10 +57,8 @@ class ApiParams(TypedDict, total=False):
     """E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable."""
 
     validate_api_key: Optional[bool]
-    """Whether to validate the format of the E2B API key on the client side.
-    Disable this when your deployment issues API keys that don't match the
-    default `e2b_` format. Defaults to `E2B_VALIDATE_API_KEY` environment
-    variable or `True`."""
+    """Deprecated: the API key format is no longer validated on the client side;
+    this option has no effect."""
 
     domain: Optional[str]
     """E2B domain to use for authentication, defaults to `E2B_DOMAIN` environment variable."""
@@ -178,10 +176,6 @@ class ConnectionConfig:
         return os.getenv("E2B_API_KEY")
 
     @staticmethod
-    def _validate_api_key():
-        return os.getenv("E2B_VALIDATE_API_KEY", "true").lower() != "false"
-
-    @staticmethod
     def _api_url():
         return os.getenv("E2B_API_URL")
 
@@ -237,11 +231,7 @@ class ConnectionConfig:
         self.domain = domain or ConnectionConfig._domain()
         self.debug = debug if debug is not None else ConnectionConfig._debug()
         self.api_key = api_key or ConnectionConfig._api_key()
-        self.validate_api_key = (
-            validate_api_key
-            if validate_api_key is not None
-            else ConnectionConfig._validate_api_key()
-        )
+        self.validate_api_key = validate_api_key
         self.headers = {**(headers or {}), **(api_headers or {})}
         self._user_agent_is_sdk_built = self._apply_user_agent(
             self.headers,
