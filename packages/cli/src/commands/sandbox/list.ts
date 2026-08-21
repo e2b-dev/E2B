@@ -1,6 +1,6 @@
 import * as tablePrinter from 'console-table-printer'
 import * as commander from 'commander'
-import { components, Sandbox, SandboxInfo } from 'e2b'
+import { components, Sandbox, SandboxInfo, SandboxListOrder } from 'e2b'
 
 import { ensureAPIKey } from 'src/api'
 import { parseMetadata } from './utils'
@@ -26,6 +26,35 @@ export const listCommand = new commander.Command('list')
   )
   .option('-m, --metadata <metadata>', 'filter by metadata, eg. key1=value1')
   .option(
+    '-t, --template <template>',
+    'filter by template ID or alias, eg. base'
+  )
+  .option(
+    '--started-after <date>',
+    'filter by start time, only sandboxes started at or after this time are returned, eg. 2025-01-01T00:00:00Z',
+    (value) => {
+      const date = new Date(value)
+      if (isNaN(date.getTime())) {
+        throw new commander.InvalidArgumentError(
+          'Invalid date, expected an ISO 8601 timestamp, eg. 2025-01-01T00:00:00Z'
+        )
+      }
+      return date
+    }
+  )
+  .option(
+    '-o, --order <order>',
+    'sort order by start time, asc or desc (default: desc)',
+    (value) => {
+      if (value !== 'asc' && value !== 'desc') {
+        throw new commander.InvalidArgumentError(
+          "Invalid order, expected 'asc' or 'desc'"
+        )
+      }
+      return value
+    }
+  )
+  .option(
     '-l, --limit <limit>',
     `limit the number of sandboxes returned (default: ${DEFAULT_LIMIT}, 0 for no limit)`,
     (value) => parseInt(value)
@@ -41,10 +70,13 @@ export const listCommand = new commander.Command('list')
         limit,
         state,
         metadataRaw: options.metadata,
+        template: options.template,
+        startedAfter: options.startedAfter,
+        order: options.order,
       })
 
       if (format === 'pretty') {
-        renderTable(sandboxes, state)
+        renderTable(sandboxes, state, options.order)
         if (hasMore) {
           console.log(
             `Showing first ${limit} sandboxes. Use --limit to change.`
@@ -62,12 +94,17 @@ export const listCommand = new commander.Command('list')
     }
   })
 
-export function buildTableRows(sandboxes: SandboxInfo[]) {
+export function buildTableRows(
+  sandboxes: SandboxInfo[],
+  order: SandboxListOrder = 'asc'
+) {
+  const sign = order === 'desc' ? -1 : 1
   return sandboxes
     .slice()
     .sort(
       (a, b) =>
-        new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime() ||
+        sign *
+          (new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime()) ||
         a.sandboxId.localeCompare(b.sandboxId)
     )
     .map((sandbox) => ({
@@ -81,7 +118,8 @@ export function buildTableRows(sandboxes: SandboxInfo[]) {
 
 function renderTable(
   sandboxes: SandboxInfo[],
-  state: components['schemas']['SandboxState'][]
+  state: components['schemas']['SandboxState'][],
+  order?: SandboxListOrder
 ) {
   if (!sandboxes?.length) {
     console.log('No sandboxes found')
@@ -108,7 +146,7 @@ function renderTable(
       { name: 'metadata', alignment: 'left', title: 'Metadata' },
     ],
     disabledColumns: ['clientID'],
-    rows: buildTableRows(sandboxes),
+    rows: buildTableRows(sandboxes, order),
     style: {
       headerTop: {
         left: '',
@@ -143,6 +181,9 @@ type ListSandboxesOptions = {
   limit?: number
   state?: components['schemas']['SandboxState'][]
   metadataRaw?: string
+  template?: string
+  startedAfter?: Date
+  order?: SandboxListOrder
 }
 
 type ListSandboxesResult = {
@@ -154,6 +195,9 @@ export async function listSandboxes({
   limit,
   state,
   metadataRaw,
+  template,
+  startedAfter,
+  order,
 }: ListSandboxesOptions = {}): Promise<ListSandboxesResult> {
   const apiKey = ensureAPIKey()
   const metadata = parseMetadata(metadataRaw)
@@ -167,7 +211,8 @@ export async function listSandboxes({
   const iterator = Sandbox.list({
     apiKey: apiKey,
     limit: pageLimit,
-    query: { state, metadata },
+    query: { state, metadata, template, startedAfter },
+    order,
   })
 
   while (iterator.hasNext && (!limit || sandboxes.length < limit)) {
