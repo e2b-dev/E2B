@@ -329,8 +329,7 @@ export class Volume extends ClientFactory {
    * Create a directory.
    *
    * @param path path to the directory to create.
-   * @param options directory creation options.
-   * @param opts connection options.
+   * @param opts directory creation and connection options.
    */
   async makeDir(
     path: string,
@@ -663,8 +662,7 @@ export class Volume extends ClientFactory {
    *
    * @param path path to the file.
    * @param data data to write to the file. Data can be a string, `ArrayBuffer`, `Blob`, or `ReadableStream`. Outside the browser, `ReadableStream` data is streamed to the API instead of being buffered in memory.
-   * @param options file creation options.
-   * @param opts connection options.
+   * @param opts file creation and connection options.
    *
    * @returns information about the written file
    */
