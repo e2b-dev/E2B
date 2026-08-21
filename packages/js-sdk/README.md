@@ -68,7 +68,7 @@ Per-call options still take precedence over the client's options, and clients ar
 
 ### 5. Code execution with Code Interpreter
 
-If you need [`runCode()`](https://e2b.dev/docs/code-interpreting?utm_source=npm&utm_medium=referral&utm_campaign=readme&utm_content=e2b), install the [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter):
+If you need [`runCode()`](https://docs.e2b.dev/code-interpreting?utm_source=npm&utm_medium=referral&utm_campaign=readme&utm_content=e2b), install the [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter):
 
 ```bash
 npm i @e2b/code-interpreter
@@ -83,7 +83,7 @@ console.log(execution.text)  // outputs 2
 ```
 
 ### 6. Check docs
-Visit [E2B documentation](https://e2b.dev/docs?utm_source=npm&utm_medium=referral&utm_campaign=readme&utm_content=e2b).
+Visit [E2B documentation](https://docs.e2b.dev/?utm_source=npm&utm_medium=referral&utm_campaign=readme&utm_content=e2b).
 
 ### 7. E2B cookbook
 Visit our [Cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main) to get inspired by examples with different LLMs and AI frameworks.
