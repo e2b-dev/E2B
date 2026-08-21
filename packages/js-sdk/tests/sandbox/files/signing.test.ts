@@ -1,6 +1,6 @@
 import { assert, describe } from 'vitest'
 
-import { sandboxTest, isDebug } from '../../setup'
+import { hostedSandboxTest, sandboxTest } from '../../setup'
 
 describe('file signing', () => {
   sandboxTest.override({
@@ -9,7 +9,7 @@ describe('file signing', () => {
     },
   })
 
-  sandboxTest.skipIf(isDebug)(
+  hostedSandboxTest(
     'test access file with expired signing',
     async ({ sandbox }) => {
       await sandbox.files.write('hello.txt', 'hello world')
@@ -30,7 +30,7 @@ describe('file signing', () => {
     }
   )
 
-  sandboxTest.skipIf(isDebug)(
+  hostedSandboxTest(
     'test access file with valid signing',
     async ({ sandbox }) => {
       await sandbox.files.write('hello.txt', 'hello world')
@@ -48,7 +48,7 @@ describe('file signing', () => {
     }
   )
 
-  sandboxTest.skipIf(isDebug)(
+  hostedSandboxTest(
     'test access file with valid signing as root',
     async ({ sandbox }) => {
       await sandbox.files.write('hello.txt', 'hello world', { user: 'root' })
@@ -67,7 +67,7 @@ describe('file signing', () => {
     }
   )
 
-  sandboxTest.skipIf(isDebug)(
+  hostedSandboxTest(
     'test upload file with valid signing',
     async ({ sandbox }) => {
       const fileUrlWithSigning = await sandbox.uploadUrl('hello.txt', {
@@ -91,7 +91,7 @@ describe('file signing', () => {
     }
   )
 
-  sandboxTest.skipIf(isDebug)(
+  hostedSandboxTest(
     'test upload file with valid signing as root user',
     async ({ sandbox }) => {
       const fileUrlWithSigning = await sandbox.uploadUrl('hello.txt', {
@@ -116,7 +116,7 @@ describe('file signing', () => {
     }
   )
 
-  sandboxTest.skipIf(isDebug)(
+  hostedSandboxTest(
     'test upload file with invalid signing',
     async ({ sandbox }) => {
       const fileUrlWithSigning = await sandbox.uploadUrl('hello.txt', {
@@ -141,7 +141,7 @@ describe('file signing', () => {
     }
   )
 
-  sandboxTest.skipIf(isDebug)(
+  hostedSandboxTest(
     'test command run with secured sbx',
     async ({ sandbox }) => {
       const response = await sandbox.commands.run('echo Hello World!')

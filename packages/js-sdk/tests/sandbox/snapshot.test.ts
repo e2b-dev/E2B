@@ -1,22 +1,19 @@
 import { assert, describe } from 'vitest'
 
-import { sandboxTest, isDebug } from '../setup.js'
+import { hostedSandboxTest, sandboxTest } from '../setup.js'
 
-sandboxTest.skipIf(isDebug)(
-  'pause and resume a sandbox',
-  async ({ sandbox }) => {
-    assert.isTrue(await sandbox.isRunning())
+hostedSandboxTest('pause and resume a sandbox', async ({ sandbox }) => {
+  assert.isTrue(await sandbox.isRunning())
 
-    await sandbox.pause()
+  await sandbox.pause()
 
-    assert.isFalse(await sandbox.isRunning())
+  assert.isFalse(await sandbox.isRunning())
 
-    const resumedSandbox = await sandbox.connect()
-    assert.equal(resumedSandbox.sandboxId, sandbox.sandboxId)
+  const resumedSandbox = await sandbox.connect()
+  assert.equal(resumedSandbox.sandboxId, sandbox.sandboxId)
 
-    assert.isTrue(await sandbox.isRunning())
-  }
-)
+  assert.isTrue(await sandbox.isRunning())
+})
 
 describe('pause and resume with env vars', () => {
   sandboxTest.override({
@@ -25,7 +22,7 @@ describe('pause and resume with env vars', () => {
     },
   })
 
-  sandboxTest.skipIf(isDebug)(
+  hostedSandboxTest(
     'pause and resume a sandbox with env vars',
     async ({ sandbox }) => {
       // Environment variables of a process exist at runtime, and are not stored in some file or so.
@@ -52,7 +49,7 @@ describe('pause and resume with env vars', () => {
   )
 })
 
-sandboxTest.skipIf(isDebug)(
+hostedSandboxTest(
   'pause and resume a sandbox with file',
   async ({ sandbox }) => {
     const filename = 'test_snapshot.txt'
@@ -81,7 +78,7 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)(
+hostedSandboxTest(
   'pause and resume a sandbox with ongoing long running process',
   async ({ sandbox }) => {
     const cmd = await sandbox.commands.run('sleep 3600', { background: true })
@@ -105,7 +102,7 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)(
+hostedSandboxTest(
   'pause and resume a sandbox with completed long running process',
   async ({ sandbox }) => {
     const filename = 'test_long_running.txt'
@@ -137,7 +134,7 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)(
+hostedSandboxTest(
   'pause and resume a sandbox with http server',
   async ({ sandbox }) => {
     await sandbox.commands.run('python3 -m http.server 8000', {
@@ -163,7 +160,7 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)(
+hostedSandboxTest(
   'filesystem-only pause reboots on resume but keeps the filesystem',
   async ({ sandbox }) => {
     // Absolute path: a cold boot may not restore the template's default

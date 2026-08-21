@@ -1,9 +1,9 @@
 import { expect } from 'vitest'
 
-import { sandboxTest, isDebug } from '../setup.js'
+import { hostedSandboxTest } from '../setup.js'
 import { Sandbox } from '../../src'
 
-sandboxTest.skipIf(isDebug)(
+hostedSandboxTest(
   'kill existing sandbox',
   async ({ sandbox, sandboxTestId }) => {
     await Sandbox.kill(sandbox.sandboxId)
@@ -16,6 +16,6 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)('kill non-existing sandbox', async () => {
+hostedSandboxTest('kill non-existing sandbox', async () => {
   await expect(Sandbox.kill('nonexistingsandbox')).resolves.toBe(false)
 })

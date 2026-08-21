@@ -2,24 +2,21 @@ import { assert } from 'vitest'
 import { randomUUID } from 'crypto'
 
 import { Sandbox, SandboxInfo } from '../../src'
-import { sandboxTest, isDebug } from '../setup.js'
+import { hostedSandboxTest } from '../setup.js'
 
-sandboxTest.skipIf(isDebug)(
-  'list sandboxes',
-  async ({ sandbox, sandboxTestId }) => {
-    const paginator = Sandbox.list({
-      query: { metadata: { sandboxTestId } },
-    })
-    const sandboxes = await paginator.nextItems()
+hostedSandboxTest('list sandboxes', async ({ sandbox, sandboxTestId }) => {
+  const paginator = Sandbox.list({
+    query: { metadata: { sandboxTestId } },
+  })
+  const sandboxes = await paginator.nextItems()
 
-    assert.isAtLeast(sandboxes.length, 1)
+  assert.isAtLeast(sandboxes.length, 1)
 
-    const found = sandboxes.some((s) => s.sandboxId === sandbox.sandboxId)
-    assert.isTrue(found)
-  }
-)
+  const found = sandboxes.some((s) => s.sandboxId === sandbox.sandboxId)
+  assert.isTrue(found)
+})
 
-sandboxTest.skipIf(isDebug)('list sandboxes with filter', async () => {
+hostedSandboxTest('list sandboxes with filter', async () => {
   const uniqueId = randomUUID()
   const extraSbx = await Sandbox.create({ metadata: { uniqueId } })
 
@@ -36,57 +33,51 @@ sandboxTest.skipIf(isDebug)('list sandboxes with filter', async () => {
   }
 })
 
-sandboxTest.skipIf(isDebug)(
-  'list running sandboxes',
-  async ({ sandboxTestId }) => {
-    const extraSbx = await Sandbox.create({ metadata: { sandboxTestId } })
+hostedSandboxTest('list running sandboxes', async ({ sandboxTestId }) => {
+  const extraSbx = await Sandbox.create({ metadata: { sandboxTestId } })
 
-    try {
-      const paginator = Sandbox.list({
-        query: { metadata: { sandboxTestId }, state: ['running'] },
-      })
-      const sandboxes = await paginator.nextItems()
+  try {
+    const paginator = Sandbox.list({
+      query: { metadata: { sandboxTestId }, state: ['running'] },
+    })
+    const sandboxes = await paginator.nextItems()
 
-      assert.isAtLeast(sandboxes.length, 1)
+    assert.isAtLeast(sandboxes.length, 1)
 
-      // Verify our running sandbox is in the list
-      const found = sandboxes.some(
-        (s) => s.sandboxId === extraSbx.sandboxId && s.state === 'running'
-      )
-      assert.isTrue(found)
-    } finally {
-      await extraSbx.kill()
-    }
+    // Verify our running sandbox is in the list
+    const found = sandboxes.some(
+      (s) => s.sandboxId === extraSbx.sandboxId && s.state === 'running'
+    )
+    assert.isTrue(found)
+  } finally {
+    await extraSbx.kill()
   }
-)
+})
 
-sandboxTest.skipIf(isDebug)(
-  'list paused sandboxes',
-  async ({ sandboxTestId }) => {
-    // Create and pause a sandbox
-    const extraSbx = await Sandbox.create({ metadata: { sandboxTestId } })
-    await extraSbx.betaPause()
+hostedSandboxTest('list paused sandboxes', async ({ sandboxTestId }) => {
+  // Create and pause a sandbox
+  const extraSbx = await Sandbox.create({ metadata: { sandboxTestId } })
+  await extraSbx.betaPause()
 
-    try {
-      const paginator = Sandbox.list({
-        query: { metadata: { sandboxTestId }, state: ['paused'] },
-      })
-      const sandboxes = await paginator.nextItems()
+  try {
+    const paginator = Sandbox.list({
+      query: { metadata: { sandboxTestId }, state: ['paused'] },
+    })
+    const sandboxes = await paginator.nextItems()
 
-      assert.isAtLeast(sandboxes.length, 1)
+    assert.isAtLeast(sandboxes.length, 1)
 
-      // Verify our paused sandbox is in the list
-      const found = sandboxes.some(
-        (s) => s.sandboxId === extraSbx.sandboxId && s.state === 'paused'
-      )
-      assert.isTrue(found)
-    } finally {
-      await extraSbx.kill()
-    }
+    // Verify our paused sandbox is in the list
+    const found = sandboxes.some(
+      (s) => s.sandboxId === extraSbx.sandboxId && s.state === 'paused'
+    )
+    assert.isTrue(found)
+  } finally {
+    await extraSbx.kill()
   }
-)
+})
 
-sandboxTest.skipIf(isDebug)(
+hostedSandboxTest(
   'paginate running sandboxes',
   async ({ sandbox, sandboxTestId }) => {
     // Create extra sandboxes
@@ -122,7 +113,7 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)(
+hostedSandboxTest(
   'paginate paused sandboxes',
   async ({ sandbox, sandboxTestId }) => {
     await sandbox.betaPause()
@@ -161,7 +152,7 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)(
+hostedSandboxTest(
   'paginate running and paused sandboxes',
   async ({ sandbox, sandboxTestId }) => {
     // Create extra sandbox
@@ -203,25 +194,22 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)(
-  'paginate iterator',
-  async ({ sandbox, sandboxTestId }) => {
-    const paginator = Sandbox.list({
-      query: { metadata: { sandboxTestId } },
-    })
-    const sandboxes: SandboxInfo[] = []
+hostedSandboxTest('paginate iterator', async ({ sandbox, sandboxTestId }) => {
+  const paginator = Sandbox.list({
+    query: { metadata: { sandboxTestId } },
+  })
+  const sandboxes: SandboxInfo[] = []
 
-    while (paginator.hasNext) {
-      const sbxs = await paginator.nextItems()
-      sandboxes.push(...sbxs)
-    }
-
-    assert.isAtLeast(sandboxes.length, 1)
-    assert.isTrue(sandboxes.some((s) => s.sandboxId === sandbox.sandboxId))
+  while (paginator.hasNext) {
+    const sbxs = await paginator.nextItems()
+    sandboxes.push(...sbxs)
   }
-)
 
-sandboxTest.skipIf(isDebug)(
+  assert.isAtLeast(sandboxes.length, 1)
+  assert.isTrue(sandboxes.some((s) => s.sandboxId === sandbox.sandboxId))
+})
+
+hostedSandboxTest(
   'list sandboxes with order',
   async ({ sandbox, sandboxTestId }) => {
     const extraSbx = await Sandbox.create({ metadata: { sandboxTestId } })
@@ -250,7 +238,7 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)(
+hostedSandboxTest(
   'list sandboxes started after',
   async ({ sandbox, sandboxTestId }) => {
     const info = await sandbox.getInfo()
@@ -279,7 +267,7 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)(
+hostedSandboxTest(
   'list sandboxes with template filter',
   async ({ sandbox, sandboxTestId }) => {
     const info = await sandbox.getInfo()
@@ -300,22 +288,19 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)(
-  'list sandboxes',
-  async ({ sandbox, sandboxTestId }) => {
-    const paginator = Sandbox.list({
-      query: { metadata: { sandboxTestId } },
-    })
-    const sandboxes = await paginator.nextItems()
+hostedSandboxTest('list sandboxes', async ({ sandbox, sandboxTestId }) => {
+  const paginator = Sandbox.list({
+    query: { metadata: { sandboxTestId } },
+  })
+  const sandboxes = await paginator.nextItems()
 
-    assert.isAtLeast(sandboxes.length, 1)
+  assert.isAtLeast(sandboxes.length, 1)
 
-    const found = sandboxes.some((s) => s.sandboxId === sandbox.sandboxId)
-    assert.isTrue(found)
-  }
-)
+  const found = sandboxes.some((s) => s.sandboxId === sandbox.sandboxId)
+  assert.isTrue(found)
+})
 
-sandboxTest.skipIf(isDebug)('list sandboxes with filter', async () => {
+hostedSandboxTest('list sandboxes with filter', async () => {
   const uniqueId = randomUUID()
   const extraSbx = await Sandbox.create({ metadata: { uniqueId } })
 
@@ -332,57 +317,51 @@ sandboxTest.skipIf(isDebug)('list sandboxes with filter', async () => {
   }
 })
 
-sandboxTest.skipIf(isDebug)(
-  'list running sandboxes',
-  async ({ sandboxTestId }) => {
-    const extraSbx = await Sandbox.create({ metadata: { sandboxTestId } })
+hostedSandboxTest('list running sandboxes', async ({ sandboxTestId }) => {
+  const extraSbx = await Sandbox.create({ metadata: { sandboxTestId } })
 
-    try {
-      const paginator = Sandbox.list({
-        query: { metadata: { sandboxTestId }, state: ['running'] },
-      })
-      const sandboxes = await paginator.nextItems()
+  try {
+    const paginator = Sandbox.list({
+      query: { metadata: { sandboxTestId }, state: ['running'] },
+    })
+    const sandboxes = await paginator.nextItems()
 
-      assert.isAtLeast(sandboxes.length, 1)
+    assert.isAtLeast(sandboxes.length, 1)
 
-      // Verify our running sandbox is in the list
-      const found = sandboxes.some(
-        (s) => s.sandboxId === extraSbx.sandboxId && s.state === 'running'
-      )
-      assert.isTrue(found)
-    } finally {
-      await extraSbx.kill()
-    }
+    // Verify our running sandbox is in the list
+    const found = sandboxes.some(
+      (s) => s.sandboxId === extraSbx.sandboxId && s.state === 'running'
+    )
+    assert.isTrue(found)
+  } finally {
+    await extraSbx.kill()
   }
-)
+})
 
-sandboxTest.skipIf(isDebug)(
-  'list paused sandboxes',
-  async ({ sandboxTestId }) => {
-    // Create and pause a sandbox
-    const extraSbx = await Sandbox.create({ metadata: { sandboxTestId } })
-    await Sandbox.betaPause(extraSbx.sandboxId)
+hostedSandboxTest('list paused sandboxes', async ({ sandboxTestId }) => {
+  // Create and pause a sandbox
+  const extraSbx = await Sandbox.create({ metadata: { sandboxTestId } })
+  await Sandbox.betaPause(extraSbx.sandboxId)
 
-    try {
-      const paginator = Sandbox.list({
-        query: { metadata: { sandboxTestId }, state: ['paused'] },
-      })
-      const sandboxes = await paginator.nextItems()
+  try {
+    const paginator = Sandbox.list({
+      query: { metadata: { sandboxTestId }, state: ['paused'] },
+    })
+    const sandboxes = await paginator.nextItems()
 
-      assert.isAtLeast(sandboxes.length, 1)
+    assert.isAtLeast(sandboxes.length, 1)
 
-      // Verify our paused sandbox is in the list
-      const found = sandboxes.some(
-        (s) => s.sandboxId === extraSbx.sandboxId && s.state === 'paused'
-      )
-      assert.isTrue(found)
-    } finally {
-      await extraSbx.kill()
-    }
+    // Verify our paused sandbox is in the list
+    const found = sandboxes.some(
+      (s) => s.sandboxId === extraSbx.sandboxId && s.state === 'paused'
+    )
+    assert.isTrue(found)
+  } finally {
+    await extraSbx.kill()
   }
-)
+})
 
-sandboxTest.skipIf(isDebug)(
+hostedSandboxTest(
   'paginate running sandboxes',
   async ({ sandbox, sandboxTestId }) => {
     // Create extra sandboxes
@@ -418,7 +397,7 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)(
+hostedSandboxTest(
   'paginate paused sandboxes',
   async ({ sandbox, sandboxTestId }) => {
     await Sandbox.betaPause(sandbox.sandboxId)
@@ -457,7 +436,7 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)(
+hostedSandboxTest(
   'paginate running and paused sandboxes',
   async ({ sandbox, sandboxTestId }) => {
     // Create extra sandbox
@@ -500,20 +479,17 @@ sandboxTest.skipIf(isDebug)(
   }
 )
 
-sandboxTest.skipIf(isDebug)(
-  'paginate iterator',
-  async ({ sandbox, sandboxTestId }) => {
-    const paginator = Sandbox.list({
-      query: { metadata: { sandboxTestId } },
-    })
-    const sandboxes: SandboxInfo[] = []
+hostedSandboxTest('paginate iterator', async ({ sandbox, sandboxTestId }) => {
+  const paginator = Sandbox.list({
+    query: { metadata: { sandboxTestId } },
+  })
+  const sandboxes: SandboxInfo[] = []
 
-    while (paginator.hasNext) {
-      const sbxs = await paginator.nextItems()
-      sandboxes.push(...sbxs)
-    }
-
-    assert.isAtLeast(sandboxes.length, 1)
-    assert.isTrue(sandboxes.some((s) => s.sandboxId === sandbox.sandboxId))
+  while (paginator.hasNext) {
+    const sbxs = await paginator.nextItems()
+    sandboxes.push(...sbxs)
   }
-)
+
+  assert.isAtLeast(sandboxes.length, 1)
+  assert.isTrue(sandboxes.some((s) => s.sandboxId === sandbox.sandboxId))
+})
