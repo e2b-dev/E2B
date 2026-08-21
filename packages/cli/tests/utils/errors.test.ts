@@ -45,4 +45,81 @@ describe('handleE2BRequestError', () => {
       '[502] Bad Gateway: upstream down'
     )
   })
+
+  test('appends the trace ID from X-Trace-ID to the message', () => {
+    const res = {
+      error: { code: 500, message: 'internal error' },
+      response: { headers: new Headers({ 'X-Trace-ID': 'abc123' }) },
+    }
+    expect(() => handleE2BRequestError(res, 'Request failed')).toThrow(
+      'Request failed: [500] internal server error: internal error (trace ID: abc123)'
+    )
+  })
+
+  test('appends the trace ID from the GCP edge header', () => {
+    const res = {
+      error: { code: 500, message: 'internal error' },
+      response: {
+        headers: new Headers({
+          'X-Cloud-Trace-Context': '105445aa7843bc8bf206b12000100000/1;o=1',
+        }),
+      },
+    }
+    expect(() => handleE2BRequestError(res)).toThrow(
+      '(trace ID: 105445aa7843bc8bf206b12000100000)'
+    )
+  })
+
+  test('normalizes the AWS edge header to the 32-hex trace ID', () => {
+    const res = {
+      error: { code: 500, message: 'internal error' },
+      response: {
+        headers: new Headers({
+          'X-Amzn-Trace-Id': 'Root=1-5759e988-bd862e3fe1be46a994272793;Sampled=1',
+        }),
+      },
+    }
+    expect(() => handleE2BRequestError(res)).toThrow(
+      '(trace ID: 5759e988bd862e3fe1be46a994272793)'
+    )
+  })
+
+  test('falls back to the raw Root value for an unexpected AWS format', () => {
+    const res = {
+      error: { code: 500, message: 'internal error' },
+      response: {
+        headers: new Headers({ 'X-Amzn-Trace-Id': 'Root=custom-value' }),
+      },
+    }
+    expect(() => handleE2BRequestError(res)).toThrow(
+      '(trace ID: custom-value)'
+    )
+  })
+
+  test('prefers X-Trace-ID over the cloud edge headers', () => {
+    const res = {
+      error: { code: 500, message: 'internal error' },
+      response: {
+        headers: new Headers({
+          'X-Trace-ID': 'explicit',
+          'X-Cloud-Trace-Context': '105445aa7843bc8bf206b12000100000/1;o=1',
+          'X-Amzn-Trace-Id': 'Root=1-5759e988-bd862e3fe1be46a994272793',
+        }),
+      },
+    }
+    expect(() => handleE2BRequestError(res)).toThrow('(trace ID: explicit)')
+  })
+
+  test('leaves the message unchanged without trace headers', () => {
+    const res = {
+      error: { code: 500, message: 'internal error' },
+      response: { headers: new Headers() },
+    }
+    expect(() => handleE2BRequestError(res, 'Request failed')).toThrow(
+      'Request failed: [500] internal server error: internal error'
+    )
+    expect(() => handleE2BRequestError(res, 'Request failed')).not.toThrow(
+      'trace ID'
+    )
+  })
 })

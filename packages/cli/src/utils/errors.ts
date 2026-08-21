@@ -1,3 +1,4 @@
+import { extractTraceId } from 'e2b'
 import status from 'statuses'
 
 /**
@@ -16,13 +17,19 @@ type E2BResponse<TData> =
   | {
       data: TData
       error?: undefined
+      response?: { headers?: Headers }
     }
   | {
       data?: undefined
       error: E2BResponseError
+      response?: { headers?: Headers }
     }
 
-function throwE2BRequestError(error: E2BResponseError, errMsg?: string): never {
+function throwE2BRequestError(
+  error: E2BResponseError,
+  errMsg?: string,
+  traceId?: string
+): never {
   let message: string
   const code = error.code ?? 0
   switch (code) {
@@ -49,12 +56,12 @@ function throwE2BRequestError(error: E2BResponseError, errMsg?: string): never {
   throw new E2BRequestError(
     `${errMsg && `${errMsg}: `}[${code}] ${message && `${message}: `}${
       error.message ?? 'no message'
-    }`
+    }${traceId ? ` (trace ID: ${traceId})` : ''}`
   )
 }
 
 export function handleE2BRequestError(
-  res: { error: E2BResponseError },
+  res: { error: E2BResponseError; response?: { headers?: Headers } },
   errMsg?: string
 ): never
 export function handleE2BRequestError<TData>(
@@ -68,5 +75,5 @@ export function handleE2BRequestError(
   if (!res.error) {
     return
   }
-  throwE2BRequestError(res.error, errMsg)
+  throwE2BRequestError(res.error, errMsg, extractTraceId(res.response?.headers))
 }

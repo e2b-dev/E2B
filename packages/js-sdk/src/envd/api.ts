@@ -3,6 +3,7 @@ import createClient from 'openapi-fetch'
 import type { components, paths } from './schema.gen'
 import { ConnectionConfig } from '../connectionConfig'
 import { createApiLogger } from '../logs'
+import type { ErrorOpts } from '../errors'
 import {
   SandboxError,
   InvalidArgumentError,
@@ -18,17 +19,24 @@ import { StartResponse, ConnectResponse } from './process/process_pb'
 import { Code, ConnectError } from '@connectrpc/connect'
 import { WatchDirResponse } from './filesystem/filesystem_pb'
 import { isConnectionTerminatedMessage, SandboxHealthCheck } from './rpc'
+import { extractTraceId } from '../traceId'
 
 type ApiError = { message?: string } | string
 
-const DEFAULT_ERROR_MAP: Record<number, (message: string) => Error> = {
-  400: (message) => new InvalidArgumentError(message),
-  401: (message) => new AuthenticationError(message),
-  404: (message) => new NotFoundError(message),
-  429: (message) =>
-    new RateLimitError(`${message}: The requests are being rate limited.`),
+const DEFAULT_ERROR_MAP: Record<
+  number,
+  (message: string, opts?: ErrorOpts) => Error
+> = {
+  400: (message, opts) => new InvalidArgumentError(message, opts),
+  401: (message, opts) => new AuthenticationError(message, opts),
+  404: (message, opts) => new NotFoundError(message, opts),
+  429: (message, opts) =>
+    new RateLimitError(
+      `${message}: The requests are being rate limited.`,
+      opts
+    ),
   502: formatSandboxTimeoutError,
-  507: (message) => new NotEnoughSpaceError(message),
+  507: (message, opts) => new NotEnoughSpaceError(message, opts),
 }
 
 const HEALTH_CHECK_TIMEOUT_MS = 5_000
@@ -102,7 +110,7 @@ export async function handleEnvdApiError(
     error?: ApiError
     response: Response
   },
-  errorMap?: Record<number, (message: string) => Error>
+  errorMap?: Record<number, (message: string, opts?: ErrorOpts) => Error>
 ) {
   // openapi-fetch leaves `error` empty for non-2xx responses without content
   // (undefined for Content-Length: 0, '' for an empty body without the
@@ -126,18 +134,20 @@ export async function handleEnvdApiError(
 
   message = message || res.response.statusText
 
+  const traceId = extractTraceId(res.response.headers)
+
   // Check if a custom error mapping is provided for this error code
   if (errorMap && res.response.status in errorMap) {
-    return errorMap[res.response.status]?.(message)
+    return errorMap[res.response.status]?.(message, { traceId })
   }
 
   // Check if there is a default error mapping for this error code
   if (res.response.status in DEFAULT_ERROR_MAP) {
-    return DEFAULT_ERROR_MAP[res.response.status]?.(message)
+    return DEFAULT_ERROR_MAP[res.response.status]?.(message, { traceId })
   }
 
   // Fallback to a generic SandboxError if no specific mapping is found
-  return new SandboxError(`${res.response.status}: ${message}`)
+  return new SandboxError(`${res.response.status}: ${message}`, { traceId })
 }
 
 export async function handleProcessStartEvent(

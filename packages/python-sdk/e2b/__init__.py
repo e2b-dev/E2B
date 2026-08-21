@@ -57,6 +57,7 @@ from .exceptions import (
     SecretException,
     SecretNotFoundException,
 )
+from .trace_id import extract_trace_id
 from .sandbox.commands.command_handle import (
     CommandExitException,
     CommandResult,
@@ -191,6 +192,7 @@ __all__ = [
     "VolumeException",
     "VolumeNotFoundException",
     "VolumePathNotFoundException",
+    "extract_trace_id",
     # Sandbox API
     "SandboxInfo",
     "SandboxInfoLifecycle",
