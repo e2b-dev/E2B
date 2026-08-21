@@ -30,6 +30,14 @@ except SandboxException as error:
     report_to_sentry(trace_id=error.trace_id)
 ```
 
+Every error class carries the field, but per-domain: the SDK has one root per
+domain rather than a single shared base, so narrow to the root for the call you
+made — `SandboxError`/`SandboxException` for sandbox operations,
+`VolumeError`/`VolumeException` for volumes, `SecretError`/`SecretException` for
+secrets, `BuildError`/`BuildException` for template builds, and
+`AuthenticationError`/`AuthenticationException`, which is orthogonal to all of
+them and can surface from any of these calls.
+
 The error classes take the trace ID as optional constructor context — a trailing
 options object in JS (`new SandboxError(message, { traceId })`) and a
 keyword-only argument in Python (`SandboxException(message, trace_id=...)`).

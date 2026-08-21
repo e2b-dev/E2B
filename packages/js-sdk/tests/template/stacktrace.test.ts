@@ -4,7 +4,12 @@ import { assert, afterAll, afterEach, beforeAll } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
-import { Template, waitForTimeout } from '../../src'
+import {
+  AuthenticationError,
+  RateLimitError,
+  Template,
+  waitForTimeout,
+} from '../../src'
 import { apiUrl, buildTemplateTest } from '../setup'
 import { randomUUID } from 'node:crypto'
 
@@ -139,6 +144,65 @@ async function expectToThrowAndCheckTrace(
     assert.include(callerMethod, expectedMethod)
   }
 }
+
+// `getFileUploadLink` is the one caller that hands `handleApiError` a stack
+// trace, so a 401 or 429 on that request is the path where
+// AuthenticationError / RateLimitError have to apply one
+buildTemplateTest(
+  'traces on 401 from the file upload link',
+  async ({ buildTemplate }) => {
+    server.use(
+      http.get(apiUrl('/templates/:templateID/files/:hash'), () =>
+        HttpResponse.json({ message: 'Expired key' }, { status: 401 })
+      )
+    )
+
+    let thrown: unknown
+    try {
+      await buildTemplate(
+        Template().fromBaseImage().copy('stacktrace.test.ts', '.'),
+        { name: 'fileUploadLink401' }
+      )
+      assert.fail('Expected Template.build to throw an error')
+    } catch (error) {
+      thrown = error
+    }
+
+    assert.instanceOf(thrown, AuthenticationError)
+    assert.equal(
+      getStackTraceCallerMethod(__fileContent, (thrown as Error).stack),
+      'copy'
+    )
+  }
+)
+
+buildTemplateTest(
+  'traces on 429 from the file upload link',
+  async ({ buildTemplate }) => {
+    server.use(
+      http.get(apiUrl('/templates/:templateID/files/:hash'), () =>
+        HttpResponse.json({ message: 'Slow down' }, { status: 429 })
+      )
+    )
+
+    let thrown: unknown
+    try {
+      await buildTemplate(
+        Template().fromBaseImage().copy('stacktrace.test.ts', '.'),
+        { name: 'fileUploadLink429' }
+      )
+      assert.fail('Expected Template.build to throw an error')
+    } catch (error) {
+      thrown = error
+    }
+
+    assert.instanceOf(thrown, RateLimitError)
+    assert.equal(
+      getStackTraceCallerMethod(__fileContent, (thrown as Error).stack),
+      'copy'
+    )
+  }
+)
 
 buildTemplateTest('traces on fromImage', async ({ buildTemplate }) => {
   const template = Template().fromImage('e2b.dev/this-image-does-not-exist')
