@@ -3,7 +3,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { afterAll, beforeAll } from 'vitest'
 import { defaultBuildLogger, Template, waitForTimeout } from '../../src'
-import { buildTemplateTest } from '../setup'
+import { e2eBuildTemplateTest } from '../setup'
 
 // The file context lives in a temp directory so a test run never writes into
 // the repository tree. It is created in beforeAll rather than at module load so
@@ -35,7 +35,7 @@ afterAll(() => {
   }
 })
 
-buildTemplateTest('build template', async ({ buildTemplate }) => {
+e2eBuildTemplateTest('build template', async ({ buildTemplate }) => {
   const template = Template({ fileContextPath: contextPath })
     // using base image to avoid re-building ubuntu:22.04 image
     .fromBaseImage()
@@ -47,7 +47,7 @@ buildTemplateTest('build template', async ({ buildTemplate }) => {
   await buildTemplate(template, { skipCache: true }, defaultBuildLogger())
 })
 
-buildTemplateTest(
+e2eBuildTemplateTest(
   'build template from base template',
   async ({ buildTemplate }) => {
     const template = Template().fromTemplate('base')
@@ -55,17 +55,20 @@ buildTemplateTest(
   }
 )
 
-buildTemplateTest('build template with symlinks', async ({ buildTemplate }) => {
-  const template = Template({ fileContextPath: contextPath })
-    .fromImage('ubuntu:22.04')
-    .skipCache()
-    .copy('folder/*', 'folder', { forceUpload: true })
-    .runCmd('cat folder/symlink.txt')
+e2eBuildTemplateTest(
+  'build template with symlinks',
+  async ({ buildTemplate }) => {
+    const template = Template({ fileContextPath: contextPath })
+      .fromImage('ubuntu:22.04')
+      .skipCache()
+      .copy('folder/*', 'folder', { forceUpload: true })
+      .runCmd('cat folder/symlink.txt')
 
-  await buildTemplate(template)
-})
+    await buildTemplate(template)
+  }
+)
 
-buildTemplateTest(
+e2eBuildTemplateTest(
   'build template with resolveSymlinks',
   async ({ buildTemplate }) => {
     const template = Template({ fileContextPath: contextPath })

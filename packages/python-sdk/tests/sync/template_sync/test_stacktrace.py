@@ -48,6 +48,11 @@ failure_map: dict[str, Optional[int]] = {
 }
 
 
+# Every build API call is mocked below, so these stay in the default unit tier
+# despite requesting the `build` fixture.
+pytestmark = pytest.mark.mocked
+
+
 @pytest.fixture(autouse=True)
 def mock_template_build(monkeypatch):
     def mock_request_build(
