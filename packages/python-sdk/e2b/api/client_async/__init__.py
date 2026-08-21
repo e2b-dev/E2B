@@ -5,7 +5,7 @@ import httpx
 
 from pyqwest import HTTPTransport, HTTPVersion, Request, Response
 from pyqwest.httpx import AsyncPyqwestTransport
-from pyqwest.middleware.retry import RetryTransport
+from pyqwest.middleware.retry import RetryMode, RetryTransport
 
 from e2b.api import (
     AsyncApiClient,
@@ -32,7 +32,15 @@ class ConnectionRetryTransport(RetryTransport):
     call or unary RPC like ``SendInput``). This matches the connect-only
     ``retries`` of the httpx transports this replaced; the retry middleware's
     default policy would otherwise also retry I/O errors and 429/5xx responses
-    for idempotent methods."""
+    for idempotent methods.
+
+    Streamed request bodies stay unbuffered: the middleware would otherwise
+    mirror them into memory as they are sent to keep them replayable, which a
+    connect-only policy never needs — the body is untouched on every failure
+    it retries. ``bytes`` bodies are replayable as they are in either mode."""
+
+    def should_retry_request(self, request: Request) -> RetryMode:
+        return RetryMode.UNBUFFERED
 
     def should_retry_response(
         self, request: Request, response: Union[Response, Exception]
