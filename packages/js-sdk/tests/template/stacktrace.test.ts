@@ -146,10 +146,23 @@ async function expectToThrowAndCheckTrace(
 }
 
 // `getFileUploadLink` is the one caller that hands `handleApiError` a stack
-// trace, so a 401 or 429 on that request is the path where
-// AuthenticationError / RateLimitError have to apply one
+// trace, and 401/429 are the two statuses it can hit that swap in a different
+// error class. A bad key or a rate limit belongs to the request rather than to
+// the builder step that made it, so those two do not take the builder's frame.
+async function buildAndCatch(buildTemplate: any, name: string) {
+  try {
+    await buildTemplate(
+      Template().fromBaseImage().copy('stacktrace.test.ts', '.'),
+      { name }
+    )
+    assert.fail('Expected Template.build to throw an error')
+  } catch (error) {
+    return error
+  }
+}
+
 buildTemplateTest(
-  'traces on 401 from the file upload link',
+  'does not trace a 401 from the file upload link to the builder call',
   async ({ buildTemplate }) => {
     server.use(
       http.get(apiUrl('/templates/:templateID/files/:hash'), () =>
@@ -157,27 +170,18 @@ buildTemplateTest(
       )
     )
 
-    let thrown: unknown
-    try {
-      await buildTemplate(
-        Template().fromBaseImage().copy('stacktrace.test.ts', '.'),
-        { name: 'fileUploadLink401' }
-      )
-      assert.fail('Expected Template.build to throw an error')
-    } catch (error) {
-      thrown = error
-    }
+    const error = await buildAndCatch(buildTemplate, 'fileUploadLink401')
 
-    assert.instanceOf(thrown, AuthenticationError)
-    assert.equal(
-      getStackTraceCallerMethod(__fileContent, (thrown as Error).stack),
+    assert.instanceOf(error, AuthenticationError)
+    assert.notEqual(
+      getStackTraceCallerMethod(__fileContent, (error as Error).stack),
       'copy'
     )
   }
 )
 
 buildTemplateTest(
-  'traces on 429 from the file upload link',
+  'does not trace a 429 from the file upload link to the builder call',
   async ({ buildTemplate }) => {
     server.use(
       http.get(apiUrl('/templates/:templateID/files/:hash'), () =>
@@ -185,20 +189,11 @@ buildTemplateTest(
       )
     )
 
-    let thrown: unknown
-    try {
-      await buildTemplate(
-        Template().fromBaseImage().copy('stacktrace.test.ts', '.'),
-        { name: 'fileUploadLink429' }
-      )
-      assert.fail('Expected Template.build to throw an error')
-    } catch (error) {
-      thrown = error
-    }
+    const error = await buildAndCatch(buildTemplate, 'fileUploadLink429')
 
-    assert.instanceOf(thrown, RateLimitError)
-    assert.equal(
-      getStackTraceCallerMethod(__fileContent, (thrown as Error).stack),
+    assert.instanceOf(error, RateLimitError)
+    assert.notEqual(
+      getStackTraceCallerMethod(__fileContent, (error as Error).stack),
       'copy'
     )
   }

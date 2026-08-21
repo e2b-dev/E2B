@@ -152,20 +152,22 @@ def api_exception_from_code(
 ) -> Exception:
     """Map an API error code and message to the matching exception class — the
     same mapping :func:`handle_api_exception` applies to HTTP responses, usable
-    for error objects embedded in response bodies (e.g. per-fork results)."""
+    for error objects embedded in response bodies (e.g. per-fork results).
+
+    An expired key or a rate limit is a property of the request, not of the
+    builder step that happened to make it, so 401 and 429 keep their own
+    traceback even when ``stack_trace`` is supplied."""
     if status_code == 401:
         text = f"{status_code}: Unauthorized, please check your credentials."
         if message:
             text += f" - {message}"
-        return AuthenticationException(text, trace_id=trace_id).with_traceback(
-            stack_trace
-        )
+        return AuthenticationException(text, trace_id=trace_id)
 
     if status_code == 429:
         text = f"{status_code}: Rate limit exceeded, please try again later."
         if message:
             text += f" - {message}"
-        return RateLimitException(text, trace_id=trace_id).with_traceback(stack_trace)
+        return RateLimitException(text, trace_id=trace_id)
 
     return default_exception_class(
         f"{status_code}: {message}", trace_id=trace_id

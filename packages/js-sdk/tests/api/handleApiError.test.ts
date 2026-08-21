@@ -136,18 +136,20 @@ describe('handleApiError', () => {
       assert.equal(err?.stack, stackTrace)
     })
 
-    test('applies the caller stack trace to 401 errors', () => {
+    // A bad key or a rate limit belongs to the request, not to the builder step
+    // that made it, so these two keep the frame where they were constructed
+    test('leaves the caller stack trace off 401 errors', () => {
       const res = createMockResponse(401, { message: 'Invalid token' })
       const err = handleApiError(res as any, FileUploadError, { stackTrace })
       assert.instanceOf(err, AuthenticationError)
-      assert.equal(err?.stack, stackTrace)
+      assert.notEqual(err?.stack, stackTrace)
     })
 
-    test('applies the caller stack trace to 429 errors', () => {
+    test('leaves the caller stack trace off 429 errors', () => {
       const res = createMockResponse(429, { message: 'Too many requests' })
       const err = handleApiError(res as any, FileUploadError, { stackTrace })
       assert.instanceOf(err, RateLimitError)
-      assert.equal(err?.stack, stackTrace)
+      assert.notEqual(err?.stack, stackTrace)
     })
   })
 

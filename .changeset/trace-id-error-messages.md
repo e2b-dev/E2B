@@ -43,12 +43,11 @@ options object in JS (`new SandboxError(message, { traceId })`) and a
 keyword-only argument in Python (`SandboxException(message, trace_id=...)`).
 
 Two exported option types describe that context: `ErrorOpts` (`traceId`) and
-`ErrorOptsWithStackTrace` (adds `stackTrace`). Only the classes that are actually
-handed a stack trace take the latter — `InvalidArgumentError`, `TemplateError`,
-`BuildError`, `FileUploadError`, and `AuthenticationError` / `RateLimitError`,
-which a 401 or 429 during a template file upload can produce. Every other class
-takes `ErrorOpts`, so passing `stackTrace` to one is a type error instead of
-being silently ignored.
+`ErrorOptsWithStackTrace` (adds `stackTrace`). Only the four classes that are
+actually handed a stack trace take the latter — `InvalidArgumentError`,
+`TemplateError`, `BuildError`, and `FileUploadError`. Every other class takes
+`ErrorOpts`, so passing `stackTrace` to one is a type error instead of being
+silently ignored.
 
 **Breaking (JS):** the options object replaces the positional `stackTrace`
 parameter on the four classes that had one, so

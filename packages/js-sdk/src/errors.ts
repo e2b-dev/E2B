@@ -133,13 +133,10 @@ export class AuthenticationError extends Error {
    */
   readonly traceId?: string
 
-  constructor(message: string, opts?: ErrorOptsWithStackTrace) {
+  constructor(message: string, opts?: ErrorOpts) {
     super(formatMessage(message, opts?.traceId))
     this.name = 'AuthenticationError'
     this.traceId = opts?.traceId
-    if (opts?.stackTrace) {
-      this.stack = opts.stackTrace
-    }
   }
 }
 
@@ -180,12 +177,9 @@ export class TemplateError extends SandboxError {
  * Thrown when the API rate limit is exceeded.
  */
 export class RateLimitError extends SandboxError {
-  constructor(message: string, opts?: ErrorOptsWithStackTrace) {
+  constructor(message: string, opts?: ErrorOpts) {
     super(message, opts)
     this.name = 'RateLimitError'
-    if (opts?.stackTrace) {
-      this.stack = opts.stackTrace
-    }
   }
 }
 

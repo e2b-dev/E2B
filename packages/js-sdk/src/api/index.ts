@@ -39,20 +39,22 @@ export function apiErrorFromCode(
   ) => Error = SandboxError,
   opts?: ErrorOptsWithStackTrace
 ): Error {
+  // An expired key or a rate limit is a property of the request, not of the
+  // builder step that happened to make it, so these two keep the frame where
+  // they were constructed even when the caller supplied one.
   if (code === 401) {
     const message = 'Unauthorized, please check your credentials.'
     return new AuthenticationError(
       content ? `${message} - ${content}` : message,
-      opts
+      { traceId: opts?.traceId }
     )
   }
 
   if (code === 429) {
     const message = 'Rate limit exceeded, please try again later'
-    return new RateLimitError(
-      content ? `${message} - ${content}` : message,
-      opts
-    )
+    return new RateLimitError(content ? `${message} - ${content}` : message, {
+      traceId: opts?.traceId,
+    })
   }
 
   return new errorClass(`${code}: ${content}`, opts)

@@ -147,20 +147,21 @@ def test_api_exception_applies_the_stack_trace():
     assert err.__traceback__ is stack_trace
 
 
-def test_authentication_exception_applies_the_stack_trace():
-    stack_trace = _caller_traceback()
+# A bad key or a rate limit belongs to the request rather than to the builder
+# step that made it, so these two keep their own traceback — mirroring the JS
+# side, where AuthenticationError / RateLimitError take no `stackTrace`
+def test_authentication_exception_keeps_its_own_traceback():
     res = FakeApiResponse(401, b'{"message": "Invalid token"}')
-    err = handle_api_exception(res, stack_trace=stack_trace)
+    err = handle_api_exception(res, stack_trace=_caller_traceback())
     assert isinstance(err, AuthenticationException)
-    assert err.__traceback__ is stack_trace
+    assert err.__traceback__ is None
 
 
-def test_rate_limit_exception_applies_the_stack_trace():
-    stack_trace = _caller_traceback()
+def test_rate_limit_exception_keeps_its_own_traceback():
     res = FakeApiResponse(429, b'{"message": "Too many requests"}')
-    err = handle_api_exception(res, stack_trace=stack_trace)
+    err = handle_api_exception(res, stack_trace=_caller_traceback())
     assert isinstance(err, RateLimitException)
-    assert err.__traceback__ is stack_trace
+    assert err.__traceback__ is None
 
 
 def test_envd_api_exception_includes_trace_id():
