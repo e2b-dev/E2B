@@ -68,7 +68,7 @@ Per-call params still take precedence over the client's params, and clients are 
 
 ### 5. Code execution with Code Interpreter
 
-If you need [`run_code()`](https://docs.e2b.dev/code-interpreting?utm_source=pypi&utm_medium=referral&utm_campaign=readme&utm_content=e2b), install the [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter):
+If you need [`run_code()`](https://docs.e2b.dev/code-interpreting/analyze-data-with-ai?utm_source=pypi&utm_medium=referral&utm_campaign=readme&utm_content=e2b), install the [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter):
 
 ```
 pip install e2b-code-interpreter
