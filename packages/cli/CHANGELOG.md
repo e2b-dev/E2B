@@ -1,5 +1,17 @@
 # @e2b/cli
 
+## 2.17.0
+
+### Minor Changes
+
+- b53deac: Add `e2b sandbox snapshot` commands: `create <sandboxID>` (with optional `--name`) to create a snapshot from a sandbox, `list [sandboxID]` (with optional `--name` filter and `--format json`) to list snapshots, and `delete <snapshotIDs...>` to delete snapshots.
+- 8787dfe: Add sorting and new filters to `Sandbox.list`. The `order` option (`'asc'` / `'desc'`, default `'desc'`) sorts sandboxes by start time across the whole paginated dataset, and the query now supports `startedAfter` / `started_after` (inclusive lower bound on start time) and `template` (exact template ID or alias) filters, all applied server-side before pagination. The CLI `e2b sandbox list` command exposes these via `--order`, `--started-after`, and `--template`.
+
+### Patch Changes
+
+- Updated dependencies [8787dfe]
+  - e2b@2.45.0
+
 ## 2.16.3
 
 ### Patch Changes
