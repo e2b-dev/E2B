@@ -1,9 +1,12 @@
 import * as tablePrinter from 'console-table-printer'
 import * as commander from 'commander'
-import { Sandbox, SnapshotInfo } from 'e2b'
+import { NotFoundError, Sandbox, SnapshotInfo } from 'e2b'
 
 import { ensureAPIKey } from 'src/api'
 import { asBold } from 'src/utils/format'
+
+const DEFAULT_LIMIT = 1000
+const PAGE_LIMIT = 100
 
 const createSnapshotCommand = new commander.Command('create')
   .description('create a snapshot from a sandbox')
@@ -28,7 +31,11 @@ const createSnapshotCommand = new commander.Command('create')
         )}`
       )
     } catch (err: any) {
-      console.error(err)
+      if (err instanceof NotFoundError) {
+        console.error(`Sandbox ${asBold(sandboxID)} wasn't found`)
+      } else {
+        console.error(err)
+      }
       process.exit(1)
     }
   })
@@ -44,30 +51,52 @@ const listSnapshotsCommand = new commander.Command('list')
     '-n, --name <name>',
     'filter by snapshot name or ID, optionally tag-qualified, eg. my-snapshot:v1'
   )
+  .option(
+    '-l, --limit <limit>',
+    `limit the number of snapshots returned (default: ${DEFAULT_LIMIT}, 0 for no limit)`,
+    (value) => parseInt(value)
+  )
   .option('-f, --format <format>', 'output format, eg. json, pretty')
   .action(
     async (
       sandboxID: string | undefined,
-      options: { name?: string; format?: string }
+      options: { name?: string; format?: string; limit?: number }
     ) => {
       try {
         const apiKey = ensureAPIKey()
         const format = options.format || 'pretty'
+        const limit =
+          options.limit === 0 ? undefined : (options.limit ?? DEFAULT_LIMIT)
 
-        const snapshots: SnapshotInfo[] = []
+        let pageLimit = limit
+        if (!limit || limit > PAGE_LIMIT) {
+          pageLimit = PAGE_LIMIT
+        }
+
+        const allSnapshots: SnapshotInfo[] = []
         const paginator = Sandbox.listSnapshots({
           apiKey,
           sandboxId: sandboxID,
           name: options.name,
+          limit: pageLimit,
         })
 
-        while (paginator.hasNext) {
+        while (paginator.hasNext && (!limit || allSnapshots.length < limit)) {
           const batch = await paginator.nextItems()
-          snapshots.push(...batch)
+          allSnapshots.push(...batch)
         }
+
+        const snapshots = limit ? allSnapshots.slice(0, limit) : allSnapshots
+        const hasMore =
+          paginator.hasNext || (limit ? allSnapshots.length > limit : false)
 
         if (format === 'pretty') {
           renderTable(snapshots)
+          if (hasMore) {
+            console.log(
+              `Showing first ${limit} snapshots. Use --limit to change.`
+            )
+          }
         } else if (format === 'json') {
           console.log(JSON.stringify(snapshots, null, 2))
         } else {
@@ -92,7 +121,7 @@ const deleteSnapshotCommand = new commander.Command('delete')
     try {
       const apiKey = ensureAPIKey()
 
-      await Promise.all(
+      const results = await Promise.allSettled(
         snapshotIDs.map(async (snapshotID) => {
           const deleted = await Sandbox.deleteSnapshot(snapshotID, { apiKey })
           if (deleted) {
@@ -102,6 +131,17 @@ const deleteSnapshotCommand = new commander.Command('delete')
           }
         })
       )
+
+      const failures = results.filter(
+        (result): result is PromiseRejectedResult =>
+          result.status === 'rejected'
+      )
+      for (const failure of failures) {
+        console.error(failure.reason)
+      }
+      if (failures.length > 0) {
+        process.exit(1)
+      }
     } catch (err: any) {
       console.error(err)
       process.exit(1)
@@ -129,7 +169,7 @@ function renderTable(snapshots: SnapshotInfo[]) {
     ],
     rows: snapshots.map((snapshot) => ({
       ...snapshot,
-      names: snapshot.names.join(', '),
+      names: snapshot.names.map(stripControlChars).join(', '),
     })),
     style: {
       headerTop: {
@@ -159,4 +199,9 @@ function renderTable(snapshots: SnapshotInfo[]) {
   table.printTable()
 
   process.stdout.write('\n')
+}
+
+function stripControlChars(value: string) {
+  // eslint-disable-next-line no-control-regex
+  return value.replace(/[\u0000-\u001f\u007f-\u009f]/g, '')
 }
