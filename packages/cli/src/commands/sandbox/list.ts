@@ -1,20 +1,12 @@
-import * as tablePrinter from 'console-table-printer'
 import * as commander from 'commander'
 import { components, Sandbox, SandboxInfo, SandboxListOrder } from 'e2b'
 
 import { ensureAPIKey } from 'src/api'
+import { renderTable } from 'src/utils/table'
 import { parseMetadata } from './utils'
 
 const DEFAULT_LIMIT = 1000
 const PAGE_LIMIT = 100
-
-function getStateTitle(state?: components['schemas']['SandboxState'][]) {
-  if (state?.length === 1) {
-    if (state?.includes('running')) return 'Running sandboxes'
-    if (state?.includes('paused')) return 'Paused sandboxes'
-  }
-  return 'Sandboxes'
-}
 
 export const listCommand = new commander.Command('list')
   .description('list all sandboxes, by default it list only running ones')
@@ -76,7 +68,7 @@ export const listCommand = new commander.Command('list')
       })
 
       if (format === 'pretty') {
-        renderTable(sandboxes, state, options.order)
+        renderSandboxTable(sandboxes, options.order)
         if (hasMore) {
           console.log(
             `Showing first ${limit} sandboxes. Use --limit to change.`
@@ -124,9 +116,8 @@ export function buildTableRows(
   }))
 }
 
-function renderTable(
+function renderSandboxTable(
   sandboxes: SandboxInfo[],
-  state: components['schemas']['SandboxState'][],
   order?: SandboxListOrder
 ) {
   if (!sandboxes?.length) {
@@ -134,55 +125,18 @@ function renderTable(
     return
   }
 
-  const table = new tablePrinter.Table({
-    title: getStateTitle(state),
-    columns: [
-      { name: 'sandboxId', alignment: 'left', title: 'Sandbox ID' },
-      {
-        name: 'templateId',
-        alignment: 'left',
-        title: 'Template ID',
-        maxLen: 20,
-      },
-      { name: 'name', alignment: 'left', title: 'Alias' },
-      { name: 'startedAt', alignment: 'left', title: 'Started at' },
-      { name: 'endAt', alignment: 'left', title: 'End at' },
-      { name: 'state', alignment: 'left', title: 'State' },
-      { name: 'cpuCount', alignment: 'left', title: 'vCPUs' },
-      { name: 'memoryMB', alignment: 'left', title: 'RAM MiB' },
-      { name: 'envdVersion', alignment: 'left', title: 'Envd version' },
-      { name: 'metadata', alignment: 'left', title: 'Metadata' },
-    ],
-    disabledColumns: ['clientID'],
-    rows: buildTableRows(sandboxes, order),
-    style: {
-      headerTop: {
-        left: '',
-        right: '',
-        mid: '',
-        other: '',
-      },
-      headerBottom: {
-        left: '',
-        right: '',
-        mid: '',
-        other: '',
-      },
-      tableBottom: {
-        left: '',
-        right: '',
-        mid: '',
-        other: '',
-      },
-      vertical: '',
-    },
-    colorMap: {
-      orange: '\x1b[38;5;216m',
-    },
-  })
-  table.printTable()
-
-  process.stdout.write('\n')
+  renderTable(buildTableRows(sandboxes, order), [
+    { header: 'Sandbox ID', value: (row) => row.sandboxId },
+    { header: 'Template ID', value: (row) => row.templateId },
+    { header: 'Alias', value: (row) => row.name ?? '' },
+    { header: 'Started at', value: (row) => row.startedAt },
+    { header: 'End at', value: (row) => row.endAt },
+    { header: 'State', value: (row) => row.state },
+    { header: 'vCPUs', value: (row) => String(row.cpuCount) },
+    { header: 'RAM MiB', value: (row) => String(row.memoryMB) },
+    { header: 'Envd version', value: (row) => row.envdVersion },
+    { header: 'Metadata', value: (row) => row.metadata },
+  ])
 }
 
 type ListSandboxesOptions = {
