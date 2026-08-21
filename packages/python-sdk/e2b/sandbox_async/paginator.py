@@ -7,7 +7,7 @@ from e2b.api.client.api.sandboxes import get_v2_sandboxes
 from e2b.api.client.api.snapshots import get_snapshots
 from e2b.api.client.types import UNSET
 from e2b.connection_config import ApiParams, ConnectionConfig, merge_api_params
-from e2b.exceptions import SandboxException
+from e2b.exceptions import InvalidArgumentException, SandboxException
 from e2b.sandbox.sandbox_api import (
     SandboxPaginatorBase,
     SandboxInfo,
@@ -16,6 +16,7 @@ from e2b.sandbox.sandbox_api import (
 )
 from e2b.api import handle_api_exception
 from e2b.api.client.models.error import Error
+from e2b.api.client.models.order_direction import OrderDirection
 from e2b.api.client_async import get_api_client
 
 
@@ -57,12 +58,31 @@ class AsyncSandboxPaginator(SandboxPaginatorBase):
             }
             metadata = urllib.parse.urlencode(quoted_metadata)
 
+        if self.order is None:
+            order = UNSET
+        else:
+            try:
+                order = OrderDirection(self.order)
+            except ValueError:
+                raise InvalidArgumentException(
+                    f"Invalid order {self.order!r}, expected 'asc' or 'desc'"
+                )
+
         config = ConnectionConfig(**merge_api_params(self._opts, opts))
         api_client = get_api_client(config)
         res = await get_v2_sandboxes.asyncio_detailed(
             client=api_client,
             metadata=metadata if metadata else UNSET,
             state=self.query.state if self.query and self.query.state else UNSET,
+            started_after=(
+                self.query.started_after.astimezone()
+                if self.query and self.query.started_after
+                else UNSET
+            ),
+            template=(
+                self.query.template if self.query and self.query.template else UNSET
+            ),
+            order=order,
             limit=self.limit if self.limit else UNSET,
             next_token=self._next_token if self._next_token else UNSET,
         )

@@ -51,6 +51,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxIamOpts,
     SandboxInfo,
     SandboxLifecycle,
+    SandboxListOrder,
     SandboxMetrics,
     SandboxNetworkOpts,
     SandboxNetworkUpdate,
@@ -70,6 +71,7 @@ class SandboxApi(SandboxBase):
         query: Optional[SandboxQuery] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
+        order: Optional[SandboxListOrder] = None,
         **opts: Unpack[ApiParams],
     ) -> SandboxPaginator:
         """
@@ -78,9 +80,10 @@ class SandboxApi(SandboxBase):
         By default (no `query.state` set), returns sandboxes in both `running`
         and `paused` states. To filter by state, pass `query=SandboxQuery(state=[...])`.
 
-        :param query: Filter the list of sandboxes by metadata or state, e.g. `SandboxQuery(metadata={"key": "value"})` or `SandboxQuery(state=[SandboxState.RUNNING])`
+        :param query: Filter the list of sandboxes by metadata, state, start time, or template, e.g. `SandboxQuery(metadata={"key": "value"})` or `SandboxQuery(state=[SandboxState.RUNNING])`
         :param limit: Maximum number of sandboxes to return per page
         :param next_token: Token for pagination
+        :param order: Sort order of the list of sandboxes by start time, applied across the whole result set before pagination (not within a page), defaults to `"desc"` (newest first)
 
         :return: A `SandboxPaginator` that yields pages of sandboxes (running and paused by default). Iterate pages via `paginator.next_items()` while `paginator.has_next` is True.
         """
@@ -88,6 +91,7 @@ class SandboxApi(SandboxBase):
             query=query,
             limit=limit,
             next_token=next_token,
+            order=order,
             **cls._resolve_api_params(**opts),
         )
 

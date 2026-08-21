@@ -1045,6 +1045,10 @@ class SandboxInfo:
         )
 
 
+SandboxListOrder = Literal["asc", "desc"]
+"""Sort order for listing sandboxes by start time."""
+
+
 @dataclass
 class SandboxQuery:
     """Query parameters for listing sandboxes."""
@@ -1054,6 +1058,12 @@ class SandboxQuery:
 
     state: Optional[list[SandboxState]] = None
     """Filter sandboxes by state."""
+
+    started_after: Optional[datetime] = None
+    """Filter sandboxes to those started at or after this time. Naive datetimes are interpreted as local time."""
+
+    template: Optional[str] = None
+    """Filter sandboxes by a template ID or name."""
 
 
 @dataclass
@@ -1108,7 +1118,9 @@ class SandboxPaginatorBase(PaginatorBase[SandboxInfo, ApiParams]):
         query: Optional[SandboxQuery] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
+        order: Optional[SandboxListOrder] = None,
         **opts: Unpack[ApiParams],
     ):
         super().__init__(limit=limit, next_token=next_token, **opts)
         self.query = query
+        self.order = order
