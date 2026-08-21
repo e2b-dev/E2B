@@ -9,7 +9,7 @@ All commands run in `packages/python-sdk`. Use uv for everything (`uv run ...`);
 
 ## Layout
 
-- `tests/sync/` and `tests/async/` — integration tests against real sandboxes (need `E2B_API_KEY`). Sync and async variants must stay equivalent.
+- `tests/sync/` and `tests/async/` — integration tests against real sandboxes (need `E2B_API_KEY`). Sync and async variants must stay equivalent, except for streaming: sync has no background pump, so callbacks are passed to `wait()` and `watch_dir` is polled via `get_new_events()`.
 - `tests/test_*.py` (top level) — offline unit tests (transports, codecs, config parsing, etc.).
 - `tests/conftest.py` — fixtures that create/clean up sandboxes; `pytest.ini` sets `asyncio_mode=auto`, a 30s per-test timeout, and `pythonpath = tests` for shared helpers like `envd_frame_server`.
 
