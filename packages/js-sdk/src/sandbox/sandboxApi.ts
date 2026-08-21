@@ -514,7 +514,7 @@ export interface SandboxPauseOpts extends SandboxApiOpts {
    * persisted (a filesystem-only snapshot); resuming such a sandbox cold-boots
    * (reboots) it from disk, losing running processes and open connections.
    *
-   * @default true
+   * When not set, the API default (currently a full memory snapshot) applies.
    */
   keepMemory?: boolean
 }
@@ -530,7 +530,7 @@ export interface SandboxForkOpts extends ConnectionOpts {
    * regardless of count. Each fork succeeds or fails independently; the
    * outcome of each is reported in its entry of the returned array.
    *
-   * @default 1
+   * When not set, the API default (currently 1) applies.
    */
   count?: number
 
@@ -538,7 +538,7 @@ export interface SandboxForkOpts extends ConnectionOpts {
    * Timeout for the forked sandboxes in **milliseconds**.
    * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
    *
-   * @default 300_000 // 5 minutes
+   * When not set, the API default timeout applies.
    */
   timeoutMs?: number
 }
@@ -591,21 +591,21 @@ export interface SandboxOpts extends ConnectionOpts {
    * Timeout for the sandbox in **milliseconds**.
    * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
    *
-   * @default 300_000 // 5 minutes
+   * When not set, the API default timeout applies.
    */
   timeoutMs?: number
 
   /**
    * Secure all traffic coming to the sandbox controller with auth token
    *
-   * @default true
+   * When not set, the API default (currently enabled) applies.
    */
   secure?: boolean
 
   /**
    * Allow sandbox to access the internet. If set to `False`, it works the same as setting network `denyOut` to `[0.0.0.0/0]`.
    *
-   * @default true
+   * When not set, the API default (currently allowed) applies.
    */
   allowInternetAccess?: boolean
 
@@ -714,8 +714,7 @@ export interface SandboxListOpts extends Omit<SandboxApiOpts, 'signal'> {
   /**
    * Sort order of the list of sandboxes by start time, applied across the
    * whole result set before pagination (not within a page).
-   *
-   * @default 'desc'
+   * When not set, the API default (currently `'desc'`, newest first) applies.
    */
   order?: SandboxListOrder
 
@@ -1475,7 +1474,7 @@ export class SandboxApi extends ClientFactory {
         },
       },
       body: {
-        memory: apiOpts?.keepMemory ?? true,
+        memory: apiOpts?.keepMemory,
       },
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
@@ -1602,7 +1601,7 @@ export class SandboxApi extends ClientFactory {
 
   protected static async createSandbox(
     template: string,
-    timeoutMs: number,
+    timeoutMs?: number,
     opts?: SandboxOpts
   ) {
     const apiOpts = this.resolveOpts(opts)
@@ -1656,9 +1655,10 @@ export class SandboxApi extends ClientFactory {
       metadata: opts?.metadata,
       mcp: opts?.mcp as Record<string, unknown> | undefined,
       envVars: opts?.envs,
-      timeout: timeoutToSeconds(timeoutMs),
-      secure: opts?.secure ?? true,
-      allow_internet_access: opts?.allowInternetAccess ?? true,
+      timeout:
+        timeoutMs === undefined ? undefined : timeoutToSeconds(timeoutMs),
+      secure: opts?.secure,
+      allow_internet_access: opts?.allowInternetAccess,
       network: buildNetworkBody(opts?.network, iam),
       iam,
       autoPause: onTimeoutConfigured ? action === 'pause' : undefined,
@@ -1705,11 +1705,11 @@ export class SandboxApi extends ClientFactory {
 
   protected static async forkSandbox(
     sandboxId: string,
-    timeoutMs: number,
-    count: number,
+    timeoutMs?: number,
+    count?: number,
     opts?: SandboxApiOpts
   ): Promise<SandboxForkResponse[]> {
-    if (count < 1) {
+    if (count !== undefined && count < 1) {
       throw new InvalidArgumentError('count must be at least 1')
     }
 
@@ -1724,7 +1724,8 @@ export class SandboxApi extends ClientFactory {
         },
       },
       body: {
-        timeout: timeoutToSeconds(timeoutMs),
+        timeout:
+          timeoutMs === undefined ? undefined : timeoutToSeconds(timeoutMs),
         count,
       },
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),

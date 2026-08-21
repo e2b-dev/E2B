@@ -172,8 +172,8 @@ class AsyncSandbox(SandboxApi):
         timeout: Optional[int] = None,
         metadata: Optional[Dict[str, str]] = None,
         envs: Optional[Dict[str, str]] = None,
-        secure: bool = True,
-        allow_internet_access: bool = True,
+        secure: Optional[bool] = None,
+        allow_internet_access: Optional[bool] = None,
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
         iam: Optional[SandboxIamOpts] = None,
@@ -188,11 +188,11 @@ class AsyncSandbox(SandboxApi):
         By default, the sandbox is created from the default `base` sandbox template.
 
         :param template: Sandbox template name or ID
-        :param timeout: Timeout for the sandbox in **seconds**, default to 300 seconds. The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
+        :param timeout: Timeout for the sandbox in **seconds**. When not set, the API default timeout applies. The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
         :param metadata: Custom metadata for the sandbox
         :param envs: Custom environment variables for the sandbox
-        :param secure: Envd is secured with access token and cannot be used without it, defaults to `True`.
-        :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`. If set to `False`, it works the same as setting network `deny_out` to `[0.0.0.0/0]`.
+        :param secure: Envd is secured with access token and cannot be used without it. When not set, the API default (currently enabled) applies.
+        :param allow_internet_access: Allow sandbox to access the internet. When not set, the API default (currently allowed) applies. If set to `False`, it works the same as setting network `deny_out` to `[0.0.0.0/0]`.
         :param mcp: MCP server to enable in the sandbox
         :param network: Sandbox network configuration. ``allow_out``/``deny_out`` may also be a callable receiving a :class:`SandboxNetworkSelectorContext` (``ctx.all_traffic``, ``ctx.rules``) and returning a list of strings. Per-host transform rules are nested under ``network.rules``; a rule's ``transform`` may be a callable receiving a :class:`SandboxNetworkTransformContext` of placeholder strings (``ctx.iam.tokens[name]``).
         :param iam: Sandbox workload identity configuration. A non-empty ``tokens`` map enables workload identity for the sandbox; token definitions can be created with :meth:`Secret.iam_token`. Example: ``{"tokens": {"aws": Secret.iam_token(audience="sts.amazonaws.com", token_type="JWT-SVID")}}``. Registered tokens are exposed to ``network.rules`` ``transform`` callables as ``ctx.iam.tokens[name]`` placeholders, which the egress proxy resolves per request
@@ -377,8 +377,8 @@ class AsyncSandbox(SandboxApi):
         error codes map to the same exception classes as other API errors
         (e.g. 429 to `RateLimitException`).
 
-        :param timeout: Timeout for the forked sandboxes in **seconds**, defaults to 300 seconds
-        :param count: Number of forked sandboxes to create, defaults to 1
+        :param timeout: Timeout for the forked sandboxes in **seconds**. When not set, the API default timeout applies
+        :param count: Number of forked sandboxes to create. When not set, the API default (currently 1) applies
 
         :return: List with one entry per requested fork — a sandbox instance or an exception
 
@@ -416,8 +416,8 @@ class AsyncSandbox(SandboxApi):
         (e.g. 429 to `RateLimitException`).
 
         :param sandbox_id: Sandbox ID
-        :param timeout: Timeout for the forked sandboxes in **seconds**, defaults to 300 seconds
-        :param count: Number of forked sandboxes to create, defaults to 1
+        :param timeout: Timeout for the forked sandboxes in **seconds**. When not set, the API default timeout applies
+        :param count: Number of forked sandboxes to create. When not set, the API default (currently 1) applies
         :param logger: Logger used for request and response logging for the forked sandboxes. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
 
         :return: List with one entry per requested fork — a sandbox instance or an exception
@@ -453,8 +453,8 @@ class AsyncSandbox(SandboxApi):
         error codes map to the same exception classes as other API errors
         (e.g. 429 to `RateLimitException`).
 
-        :param timeout: Timeout for the forked sandboxes in **seconds**, defaults to 300 seconds
-        :param count: Number of forked sandboxes to create, defaults to 1
+        :param timeout: Timeout for the forked sandboxes in **seconds**. When not set, the API default timeout applies
+        :param count: Number of forked sandboxes to create. When not set, the API default (currently 1) applies
 
         :return: List with one entry per requested fork — a sandbox instance or an exception
 
@@ -749,13 +749,13 @@ class AsyncSandbox(SandboxApi):
     @overload
     async def pause(
         self,
-        keep_memory: bool = True,
+        keep_memory: Optional[bool] = None,
         **opts: Unpack[ApiParams],
     ) -> bool:
         """
         Pause the sandbox.
 
-        :param keep_memory: When `False`, the in-memory state is dropped and only the filesystem is persisted (no memory snapshot); resuming such a sandbox cold-boots (reboots) it from disk. Defaults to `True`.
+        :param keep_memory: When `False`, the in-memory state is dropped and only the filesystem is persisted (no memory snapshot); resuming such a sandbox cold-boots (reboots) it from disk. When not set, the API default (currently a full memory snapshot) applies.
 
         :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
@@ -765,14 +765,14 @@ class AsyncSandbox(SandboxApi):
     @staticmethod
     async def pause(
         sandbox_id: str,
-        keep_memory: bool = True,
+        keep_memory: Optional[bool] = None,
         **opts: Unpack[ApiParams],
     ) -> bool:
         """
         Pause the sandbox specified by sandbox ID.
 
         :param sandbox_id: Sandbox ID
-        :param keep_memory: When `False`, the in-memory state is dropped and only the filesystem is persisted (no memory snapshot); resuming such a sandbox cold-boots (reboots) it from disk. Defaults to `True`.
+        :param keep_memory: When `False`, the in-memory state is dropped and only the filesystem is persisted (no memory snapshot); resuming such a sandbox cold-boots (reboots) it from disk. When not set, the API default (currently a full memory snapshot) applies.
 
         :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
@@ -781,13 +781,13 @@ class AsyncSandbox(SandboxApi):
     @class_method_variant("_cls_pause")
     async def pause(
         self,
-        keep_memory: bool = True,
+        keep_memory: Optional[bool] = None,
         **opts: Unpack[ApiParams],
     ) -> bool:
         """
         Pause the sandbox.
 
-        :param keep_memory: When `False`, the in-memory state is dropped and only the filesystem is persisted (no memory snapshot); resuming such a sandbox cold-boots (reboots) it from disk, losing running processes and open connections. Defaults to `True` (full memory snapshot).
+        :param keep_memory: When `False`, the in-memory state is dropped and only the filesystem is persisted (no memory snapshot); resuming such a sandbox cold-boots (reboots) it from disk, losing running processes and open connections. When not set, the API default (currently a full memory snapshot) applies.
 
         :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
@@ -801,7 +801,7 @@ class AsyncSandbox(SandboxApi):
     @overload
     async def beta_pause(
         self,
-        keep_memory: bool = True,
+        keep_memory: Optional[bool] = None,
         **opts: Unpack[ApiParams],
     ) -> bool: ...
 
@@ -809,14 +809,14 @@ class AsyncSandbox(SandboxApi):
     @staticmethod
     async def beta_pause(
         sandbox_id: str,
-        keep_memory: bool = True,
+        keep_memory: Optional[bool] = None,
         **opts: Unpack[ApiParams],
     ) -> bool: ...
 
     @class_method_variant("_cls_pause")
     async def beta_pause(
         self,
-        keep_memory: bool = True,
+        keep_memory: Optional[bool] = None,
         **opts: Unpack[ApiParams],
     ) -> bool:
         """
@@ -1110,8 +1110,8 @@ class AsyncSandbox(SandboxApi):
         timeout: Optional[int],
         metadata: Optional[Dict[str, str]],
         envs: Optional[Dict[str, str]],
-        secure: bool,
-        allow_internet_access: bool,
+        secure: Optional[bool],
+        allow_internet_access: Optional[bool],
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
         iam: Optional[SandboxIamOpts] = None,
@@ -1133,7 +1133,7 @@ class AsyncSandbox(SandboxApi):
         else:
             response = await SandboxApi._create_sandbox(
                 template=template or cls.default_template,
-                timeout=timeout or cls.default_sandbox_timeout,
+                timeout=timeout,
                 metadata=metadata,
                 env_vars=envs,
                 secure=secure,

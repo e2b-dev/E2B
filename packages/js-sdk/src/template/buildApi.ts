@@ -19,8 +19,8 @@ import {
 type RequestBuildInput = {
   name: string
   tags?: string[]
-  cpuCount: number
-  memoryMB: number
+  cpuCount?: number
+  memoryMB?: number
 }
 
 type GetFileUploadLinkInput = {
