@@ -2,7 +2,10 @@ import { defineConfig } from 'vitest/config'
 import { playwright } from '@vitest/browser-playwright'
 import { config } from 'dotenv'
 
+import { e2eFiles } from './tests/e2eFiles.mjs'
+
 const env = config()
+
 export default defineConfig({
   test: {
     projects: [
@@ -14,6 +17,7 @@ export default defineConfig({
             'tests/runtimes/**',
             'tests/template/**',
             'tests/connectionConfig.test.ts',
+            ...e2eFiles,
           ],
           // Isolation is required: several suites patch global fetch via msw
           // and rely on module mocks (vi.doMock / vi.resetModules). Under
@@ -38,6 +42,8 @@ export default defineConfig({
       },
       {
         test: {
+          // Provisions a real sandbox from a browser bundle, so it belongs to
+          // the e2e tier: run with `pnpm test:browser`.
           name: 'browser',
           include: ['tests/runtimes/browser/**/*.{test,spec}.tsx'],
           browser: {
@@ -57,10 +63,35 @@ export default defineConfig({
         test: {
           name: 'template',
           include: ['tests/template/**/*.test.ts'],
+          exclude: e2eFiles,
           globals: false,
           testTimeout: 180_000,
           environment: 'node',
           setupFiles: ['tests/globalFetchFallback.setup.ts'],
+        },
+      },
+      {
+        test: {
+          // Opt-in tier: run with `pnpm test:e2e` (needs E2B_E2E=1 and
+          // credentials). Excluded from the default `pnpm test` run.
+          name: 'e2e',
+          include: e2eFiles,
+          isolate: true,
+          globals: false,
+          testTimeout: 180_000,
+          environment: 'node',
+          setupFiles: ['tests/globalFetchFallback.setup.ts'],
+          deps: {
+            interopDefault: true,
+          },
+          env: {
+            ...(process.env as Record<string, string>),
+            ...env.parsed,
+            // Selecting this project is the opt-in, so the flag the tests gate
+            // on is set here instead of in the package script, which would
+            // need POSIX-only `VAR=value` syntax and break on Windows.
+            E2B_E2E: '1',
+          },
         },
       },
       {

@@ -12,6 +12,11 @@ on:
         required: false
         type: boolean
         default: false
+      e2e:
+        description: 'Run the e2e tier (provisions sandboxes and builds templates) instead of the mocked unit tier'
+        required: false
+        type: boolean
+        default: false
     secrets:
       E2B_API_KEY:
         required: true
@@ -83,21 +88,22 @@ jobs:
           pnpm install --frozen-lockfile
 
       # Only the Node runtime runs the vitest `browser` project, which drives
-      # Chromium through Playwright.
+      # Chromium through Playwright — and that project is e2e (it provisions a
+      # sandbox from a browser bundle).
       - name: Get Playwright version
-        if: matrix.runtime == 'node'
+        if: matrix.runtime == 'node' && inputs.e2e
         id: playwright-version
         run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
 
       - name: Cache Playwright browsers
-        if: matrix.runtime == 'node'
+        if: matrix.runtime == 'node' && inputs.e2e
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ matrix.os == 'windows-latest' && '~/AppData/Local/ms-playwright' || '~/.cache/ms-playwright' }}
           key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
 
       - name: Install Playwright Chromium
-        if: matrix.runtime == 'node'
+        if: matrix.runtime == 'node' && inputs.e2e
         run: pnpm run playwright:install
 
       # The unit bundle test and the Cloudflare deploy config fail in CI when
@@ -105,32 +111,43 @@ jobs:
       - name: Test build
         run: pnpm build
 
+      # The default tier: fully mocked, no sandboxes, no credentials needed.
       - name: Run Node tests
-        if: matrix.runtime == 'node'
+        if: matrix.runtime == 'node' && !inputs.e2e
         run: pnpm test
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
 
+      # The opt-in tier: real sandboxes, envd round-trips and template builds.
+      - name: Run Node e2e tests
+        if: matrix.runtime == 'node' && inputs.e2e
+        run: |
+          pnpm test:e2e
+          pnpm test:browser
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
+
       - name: Install Bun
-        if: matrix.runtime == 'bun'
+        if: matrix.runtime == 'bun' && !inputs.e2e
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
 
       - name: Run test suite under Bun
-        if: matrix.runtime == 'bun'
+        if: matrix.runtime == 'bun' && !inputs.e2e
         run: pnpm test:bun
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
 
       - name: Install Deno
-        if: matrix.runtime == 'deno'
+        if: matrix.runtime == 'deno' && !inputs.e2e
         uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
         with:
           deno-version: v${{ env.TOOL_VERSION_DENO }}
 
       - name: Run test suite under Deno
-        if: matrix.runtime == 'deno'
+        if: matrix.runtime == 'deno' && !inputs.e2e
         run: pnpm test:deno
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
@@ -138,7 +155,7 @@ jobs:
 
       # Full unit + connectionConfig suite inside workerd (vitest-pool-workers).
       - name: Run test suite under Cloudflare workerd
-        if: matrix.runtime == 'cloudflare'
+        if: matrix.runtime == 'cloudflare' && !inputs.e2e
         run: pnpm test:cf
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
@@ -148,7 +165,7 @@ jobs:
       # global setup (wrangler deploy --temporary, no Cloudflare credentials
       # needed) and deletes the worker in teardown.
       - name: Run Cloudflare Workers deploy tests
-        if: matrix.runtime == 'cloudflare-deploy'
+        if: matrix.runtime == 'cloudflare-deploy' && !inputs.e2e
         run: pnpm test:cf:deploy
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
