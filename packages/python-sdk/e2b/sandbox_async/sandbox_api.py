@@ -25,7 +25,6 @@ from e2b.api.client.api.sandboxes import (
 )
 from e2b.api.client.api.templates import delete_templates_template_id
 from e2b.api.client.models import (
-    ConnectSandbox,
     Error,
     NewSandbox,
     SandboxSnapshotRequest,
@@ -48,6 +47,7 @@ from e2b.exceptions import (
 from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
     build_network_update_body,
+    ConnectSandboxBody,
     McpServer,
     SandboxIamOpts,
     SandboxInfo,
@@ -239,7 +239,7 @@ class SandboxApi(SandboxBase):
             timeout=timeout if timeout is not None else UNSET,
             env_vars=env_vars or {},
             mcp=cast(Any, mcp) or UNSET,
-            secure=secure if secure is not None else True,
+            secure=secure if secure is not None else UNSET,
             allow_internet_access=(
                 allow_internet_access if allow_internet_access is not None else UNSET
             ),
@@ -530,8 +530,6 @@ class SandboxApi(SandboxBase):
         logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
-        timeout = timeout or SandboxBase.default_sandbox_timeout
-
         # Sandbox is not running, resume it
         config = ConnectionConfig(logger=logger, **cls._resolve_api_params(**opts))
 
@@ -539,7 +537,7 @@ class SandboxApi(SandboxBase):
         res = await post_sandboxes_sandbox_id_connect.asyncio_detailed(
             sandbox_id,
             client=api_client,
-            body=ConnectSandbox(timeout=timeout),
+            body=ConnectSandboxBody(timeout=timeout),
         )
 
         if res.status_code == 404:

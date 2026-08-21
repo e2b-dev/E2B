@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, Mock
 from e2b import AsyncSandbox, Sandbox
 from e2b.api.client.api.sandboxes import (
     post_sandboxes,
+    post_sandboxes_sandbox_id_connect,
     post_sandboxes_sandbox_id_fork,
     post_sandboxes_sandbox_id_pause,
 )
@@ -45,7 +46,7 @@ def test_create_omits_api_owned_fields_when_unset(monkeypatch, test_api_key):
     body = _sync_create_body(monkeypatch, test_api_key)
 
     assert "timeout" not in body
-    assert body["secure"] is True
+    assert "secure" not in body
     assert "allow_internet_access" not in body
 
 
@@ -69,7 +70,7 @@ async def test_async_create_omits_api_owned_fields_when_unset(
     body = await _async_create_body(monkeypatch, test_api_key)
 
     assert "timeout" not in body
-    assert body["secure"] is True
+    assert "secure" not in body
     assert "allow_internet_access" not in body
 
 
@@ -175,3 +176,45 @@ async def test_async_pause_sends_explicit_keep_memory(monkeypatch, test_api_key)
     body = await _async_pause_body(monkeypatch, test_api_key, keep_memory=False)
 
     assert body["memory"] is False
+
+
+def _sync_connect_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, Any]:
+    request = Mock(return_value=_created_sandbox())
+    monkeypatch.setattr(post_sandboxes_sandbox_id_connect, "sync_detailed", request)
+
+    Sandbox.connect("sbx-test", api_key=api_key, **kwargs)
+
+    return request.call_args.kwargs["body"].to_dict()
+
+
+async def _async_connect_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, Any]:
+    request = AsyncMock(return_value=_created_sandbox())
+    monkeypatch.setattr(post_sandboxes_sandbox_id_connect, "asyncio_detailed", request)
+
+    await AsyncSandbox.connect("sbx-test", api_key=api_key, **kwargs)
+
+    return request.call_args.kwargs["body"].to_dict()
+
+
+def test_connect_omits_timeout_when_unset(monkeypatch, test_api_key):
+    body = _sync_connect_body(monkeypatch, test_api_key)
+
+    assert "timeout" not in body
+
+
+def test_connect_sends_explicit_timeout(monkeypatch, test_api_key):
+    body = _sync_connect_body(monkeypatch, test_api_key, timeout=60)
+
+    assert body["timeout"] == 60
+
+
+async def test_async_connect_omits_timeout_when_unset(monkeypatch, test_api_key):
+    body = await _async_connect_body(monkeypatch, test_api_key)
+
+    assert "timeout" not in body
+
+
+async def test_async_connect_sends_explicit_timeout(monkeypatch, test_api_key):
+    body = await _async_connect_body(monkeypatch, test_api_key, timeout=60)
+
+    assert body["timeout"] == 60

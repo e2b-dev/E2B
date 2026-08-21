@@ -8,10 +8,19 @@ import { TEST_API_KEY, apiUrl } from '../setup'
 let lastCreateBody: Record<string, unknown> | undefined
 let lastForkBody: Record<string, unknown> | undefined
 let lastPauseBody: Record<string, unknown> | undefined
+let lastConnectBody: Record<string, unknown> | undefined
 
 const server = setupServer(
   http.post(apiUrl('/sandboxes'), async ({ request }) => {
     lastCreateBody = (await request.json()) as Record<string, unknown>
+    return HttpResponse.json({
+      sandboxID: 'test-sandbox-id',
+      templateID: 'base',
+      envdVersion: '0.2.4',
+    })
+  }),
+  http.post(apiUrl('/sandboxes/:sandboxID/connect'), async ({ request }) => {
+    lastConnectBody = (await request.json()) as Record<string, unknown>
     return HttpResponse.json({
       sandboxID: 'test-sandbox-id',
       templateID: 'base',
@@ -44,15 +53,16 @@ afterEach(() => {
   lastCreateBody = undefined
   lastForkBody = undefined
   lastPauseBody = undefined
+  lastConnectBody = undefined
   server.resetHandlers()
 })
 
-test('Sandbox.create omits timeout and allow_internet_access when unset and defaults secure to true', async () => {
+test('Sandbox.create omits timeout, secure and allow_internet_access when unset', async () => {
   await Sandbox.create('base', { apiKey: TEST_API_KEY })
 
   expect(lastCreateBody).toBeDefined()
   expect(lastCreateBody).not.toHaveProperty('timeout')
-  expect(lastCreateBody?.secure).toBe(true)
+  expect(lastCreateBody).not.toHaveProperty('secure')
   expect(lastCreateBody).not.toHaveProperty('allow_internet_access')
 })
 
@@ -102,4 +112,20 @@ test('Sandbox.pause sends an explicit keepMemory', async () => {
   })
 
   expect(lastPauseBody?.memory).toBe(false)
+})
+
+test('Sandbox.connect omits timeout when unset', async () => {
+  await Sandbox.connect('test-sandbox-id', { apiKey: TEST_API_KEY })
+
+  expect(lastConnectBody).toBeDefined()
+  expect(lastConnectBody).not.toHaveProperty('timeout')
+})
+
+test('Sandbox.connect sends an explicit timeout', async () => {
+  await Sandbox.connect('test-sandbox-id', {
+    apiKey: TEST_API_KEY,
+    timeoutMs: 60_000,
+  })
+
+  expect(lastConnectBody?.timeout).toBe(60)
 })

@@ -3,7 +3,6 @@ import {
   ClientFactory,
   ConnectionConfig,
   ConnectionOpts,
-  DEFAULT_SANDBOX_TIMEOUT_MS,
 } from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
 import { ALL_TRAFFIC } from './network'
@@ -589,8 +588,6 @@ export interface SandboxOpts extends ConnectionOpts {
 
   /**
    * Secure all traffic coming to the sandbox controller with auth token
-   *
-   * @default true
    */
   secure?: boolean
 
@@ -663,8 +660,6 @@ export type SandboxConnectOpts = ConnectionOpts & {
    * Timeout for the sandbox in **milliseconds**.
    * For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
    * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
-   *
-   * @default 300_000 // 5 minutes
    */
   timeoutMs?: number
 }
@@ -1160,8 +1155,6 @@ function buildNetworkUpdateBody(
   }
 }
 export class SandboxApi extends ClientFactory {
-  protected static readonly defaultSandboxTimeoutMs = DEFAULT_SANDBOX_TIMEOUT_MS
-
   protected constructor() {
     super()
   }
@@ -1648,7 +1641,7 @@ export class SandboxApi extends ClientFactory {
       envVars: opts?.envs,
       timeout:
         timeoutMs === undefined ? undefined : timeoutToSeconds(timeoutMs),
-      secure: opts?.secure ?? true,
+      secure: opts?.secure,
       allow_internet_access: opts?.allowInternetAccess,
       network: buildNetworkBody(opts?.network, iam),
       iam,
@@ -1769,7 +1762,7 @@ export class SandboxApi extends ClientFactory {
     opts?: SandboxConnectOpts
   ) {
     const apiOpts = this.resolveOpts(opts)
-    const timeoutMs = apiOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs
+    const timeoutMs = apiOpts?.timeoutMs
 
     const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
@@ -1780,9 +1773,11 @@ export class SandboxApi extends ClientFactory {
           sandboxID: sandboxId,
         },
       },
+      // TODO: drop the cast once the API spec makes `timeout` optional
       body: {
-        timeout: timeoutToSeconds(timeoutMs),
-      },
+        timeout:
+          timeoutMs === undefined ? undefined : timeoutToSeconds(timeoutMs),
+      } as components['schemas']['ConnectSandbox'],
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
