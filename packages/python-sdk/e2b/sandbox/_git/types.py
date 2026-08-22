@@ -37,7 +37,8 @@ class GitStatus:
     :param upstream: Upstream branch name, if available
     :param ahead: Number of commits the branch is ahead of upstream
     :param behind: Number of commits the branch is behind upstream
-    :param detached: Whether HEAD is detached
+    :param detached: Whether HEAD is detached; ``current_branch`` and
+        ``upstream`` are ``None`` when true
     :param file_status: List of file status entries
     """
 

@@ -72,7 +72,8 @@ export interface GitStatus {
    */
   behind: number
   /**
-   * Whether HEAD is detached.
+   * Whether HEAD is detached. When true, `currentBranch` and `upstream` are
+   * undefined.
    */
   detached: boolean
   /**
@@ -302,9 +303,11 @@ function parseAheadBehind(segment?: string): { ahead: number; behind: number } {
   return { ahead, behind }
 }
 
+const DETACHED_HEAD_PREFIX = 'HEAD (detached at '
+
 function normalizeBranchName(name: string): string {
-  if (name.startsWith('HEAD (detached at ')) {
-    return name.replace('HEAD (detached at ', '').replace(/\)$/, '')
+  if (name.startsWith(DETACHED_HEAD_PREFIX)) {
+    return name.replace(DETACHED_HEAD_PREFIX, '').replace(/\)$/, '')
   }
 
   return name
@@ -380,10 +383,9 @@ export function parseGitStatus(output: string): GitStatus {
     const aheadPart =
       aheadStart === -1 ? undefined : branchInfo.slice(aheadStart + 2, -1)
     const normalizedBranch = normalizeBranchName(branchPart)
-    const rawBranch = branchPart
-    const isDetached = rawBranch.startsWith('HEAD (detached at ')
+    const isDetached = branchPart.startsWith(DETACHED_HEAD_PREFIX)
 
-    if (isDetached || normalizedBranch.startsWith('HEAD')) {
+    if (isDetached || normalizedBranch === 'HEAD') {
       detached = true
     } else if (normalizedBranch.includes('...')) {
       const [branch, upstreamBranch] = normalizedBranch.split('...')
