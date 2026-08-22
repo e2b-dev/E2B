@@ -1,24 +1,17 @@
 import * as commander from 'commander'
 import * as chalk from 'chalk'
-import * as fs from 'fs'
 
 import {
   asBold,
   asFormattedError,
   asFormattedSandboxTemplate,
-  asLocal,
-  asLocalRelative,
 } from 'src/utils/format'
 import {
-  configOption,
   deprecatedTeamOption,
-  pathOption,
   projectIdFromOptions,
   projectOption,
   selectMultipleOption,
 } from 'src/options'
-import { configName, E2BConfig, getConfigPath, loadConfig } from 'src/config'
-import { getRoot } from 'src/utils/filesystem'
 import { listSandboxTemplates } from './list'
 import { getPromptTemplates } from 'src/utils/templatePrompt'
 import { confirm } from 'src/utils/confirm'
@@ -49,8 +42,6 @@ async function templateAction(
   publish: boolean,
   template: string,
   opts: {
-    path?: string
-    config?: string
     yes?: boolean
     select?: boolean
     project?: string
@@ -60,11 +51,7 @@ async function templateAction(
   try {
     let projectId = projectIdFromOptions(opts)
 
-    const root = getRoot(opts.path)
-
-    const templates: (Pick<E2BConfig, 'template_id'> & {
-      configPath?: string
-    })[] = []
+    const templates: { template_id: string; aliases?: string[] }[] = []
 
     if (template) {
       templates.push({
@@ -97,7 +84,7 @@ async function templateAction(
       templates.push(
         ...selectedTemplates.map((e) => ({
           template_id: e.templateID,
-          ...e,
+          aliases: e.aliases,
         }))
       )
 
@@ -105,27 +92,6 @@ async function templateAction(
         console.log('No sandbox templates selected')
         return
       }
-    } else {
-      const configPath = getConfigPath(root, opts.config)
-      const config = fs.existsSync(configPath)
-        ? await loadConfig(configPath)
-        : undefined
-
-      if (!config) {
-        console.log(
-          `No ${asLocal(configName)} found in ${asLocalRelative(
-            root
-          )}. Specify sandbox template with ${asBold(
-            '[template]'
-          )} argument or use interactive mode with ${asBold('-s')} flag.`
-        )
-        return
-      }
-
-      templates.push({
-        ...config,
-        configPath,
-      })
     }
 
     if (!templates || templates.length === 0) {
@@ -144,10 +110,10 @@ async function templateAction(
     )
     templates.forEach((e) =>
       console.log(
-        asFormattedSandboxTemplate(
-          { ...e, templateID: e.template_id },
-          e.configPath
-        )
+        asFormattedSandboxTemplate({
+          templateID: e.template_id,
+          aliases: e.aliases,
+        })
       )
     )
     process.stdout.write('\n')
@@ -176,10 +142,10 @@ async function templateAction(
         console.log(
           `- ${
             publish ? 'Publishing' : 'Unpublishing'
-          } sandbox template ${asFormattedSandboxTemplate(
-            { ...e, templateID: e.template_id },
-            e.configPath
-          )}`
+          } sandbox template ${asFormattedSandboxTemplate({
+            templateID: e.template_id,
+            aliases: e.aliases,
+          })}`
         )
         const names = await publishTemplate(e.template_id, publish)
         if (publish && names.length > 0) {
@@ -196,18 +162,7 @@ async function templateAction(
 
 export const publishCommand = new commander.Command('publish')
   .description('publish sandbox template')
-  .argument(
-    '[template]',
-    `specify ${asBold(
-      '[template]'
-    )} to publish it. If you dont specify ${asBold(
-      '[template]'
-    )} the command will try to publish sandbox template defined by ${asLocal(
-      'e2b.toml'
-    )}.`
-  )
-  .addOption(pathOption)
-  .addOption(configOption)
+  .argument('[template]', `specify ${asBold('[template]')} to publish it`)
   .addOption(selectMultipleOption)
   .addOption(projectOption)
   .addOption(deprecatedTeamOption)
@@ -217,18 +172,7 @@ export const publishCommand = new commander.Command('publish')
 
 export const unPublishCommand = new commander.Command('unpublish')
   .description('unpublish sandbox template')
-  .argument(
-    '[template]',
-    `specify ${asBold(
-      '[template]'
-    )} to unpublish it. If you don't specify ${asBold(
-      '[template]'
-    )} the command will try to unpublish sandbox template defined by ${asLocal(
-      'e2b.toml'
-    )}.`
-  )
-  .addOption(pathOption)
-  .addOption(configOption)
+  .argument('[template]', `specify ${asBold('[template]')} to unpublish it`)
   .addOption(selectMultipleOption)
   .addOption(projectOption)
   .addOption(deprecatedTeamOption)
