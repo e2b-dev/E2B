@@ -1,4 +1,5 @@
 import * as fs from 'fs'
+import * as commander from 'commander'
 
 const SHELL_SAFE_RE = /^[A-Za-z0-9_@%+=:,./-]+$/
 
@@ -16,6 +17,10 @@ export const shellQuote = (arg: string): string => {
 export const buildCommand = (commandParts: string[]): string => {
   // `--` only separates e2b options from the command, it is not part of it.
   const parts = commandParts[0] === '--' ? commandParts.slice(1) : commandParts
+
+  if (parts.length === 0) {
+    throw new commander.InvalidArgumentError('missing command to execute')
+  }
 
   if (parts.length === 1) {
     return parts[0]

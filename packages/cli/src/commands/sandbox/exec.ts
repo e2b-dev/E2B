@@ -21,7 +21,7 @@ const NO_COMMAND_TIMEOUT = 0
 export const execCommand = new commander.Command('exec')
   .description(
     'execute a command in a running sandbox\n\n' +
-      'Everything after the command is passed to it verbatim, so e2b options must come before it:\n' +
+      'Everything after the sandbox ID is passed through to the remote command, so e2b options must come before the sandbox ID:\n' +
       '  e2b sandbox exec -u root <sandboxID> codex exec "prompt" --help'
   )
   .argument('<sandboxID>', 'sandbox ID to execute command in')
@@ -41,7 +41,16 @@ export const execCommand = new commander.Command('exec')
     async (sandboxID: string, commandParts: string[], opts: ExecOptions) => {
       const hasPipedStdin = isPipedStdin()
 
-      const command = buildCommand(commandParts)
+      let command: string
+      try {
+        command = buildCommand(commandParts)
+      } catch (err) {
+        if (err instanceof commander.InvalidArgumentError) {
+          execCommand.error(`error: ${err.message}`)
+        }
+        throw err
+      }
+
       try {
         const apiKey = ensureAPIKey()
         const sandbox = await Sandbox.connect(sandboxID, { apiKey })
