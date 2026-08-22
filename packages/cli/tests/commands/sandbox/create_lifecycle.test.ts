@@ -4,11 +4,13 @@ const mocks = vi.hoisted(() => {
   const create = vi.fn()
   const ensureAPIKey = vi.fn(() => 'test-api-key')
   const spawnConnectedTerminal = vi.fn()
+  const printDashboardSandboxInspectUrl = vi.fn()
 
   return {
     create,
     ensureAPIKey,
     spawnConnectedTerminal,
+    printDashboardSandboxInspectUrl,
   }
 })
 
@@ -23,7 +25,7 @@ vi.mock('../../../src/api', () => ({
 }))
 
 vi.mock('src/utils/urls', () => ({
-  printDashboardSandboxInspectUrl: vi.fn(),
+  printDashboardSandboxInspectUrl: mocks.printDashboardSandboxInspectUrl,
 }))
 
 vi.mock('src/terminal', () => ({
@@ -294,6 +296,25 @@ describe('sandbox create lifecycle options', () => {
 
     expect(mocks.create).not.toHaveBeenCalled()
     expect(exitSpy).toHaveBeenCalledWith(1)
+  })
+
+  test('prints only the sandbox ID to stdout when detached', async () => {
+    const exitSpy = vi
+      .spyOn(process, 'exit')
+      .mockImplementation((() => undefined) as never)
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    const { createCommand } = await import(
+      '../../../src/commands/sandbox/create'
+    )
+    await createCommand('create', 'cr', false).parseAsync(
+      ['base', '--detach'],
+      { from: 'user' }
+    )
+
+    expect(logSpy.mock.calls).toEqual([['sandbox-id']])
+    expect(mocks.printDashboardSandboxInspectUrl).not.toHaveBeenCalled()
+    expect(exitSpy).toHaveBeenCalledWith(0)
   })
 
   test('passes lifecycle and timeout together to Sandbox.create', async () => {

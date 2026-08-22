@@ -73,6 +73,11 @@ export function createCommand(
             `Warning: The '${name}' command is deprecated and will be removed in future releases. Please use 'e2b sandbox create' instead.`
           )
         }
+        // in detached mode stdout carries only the sandbox ID so it stays parseable
+        const info = opts.detach
+          ? (message: string) => console.error(message)
+          : (message: string) => console.log(message)
+
         try {
           const apiKey = ensureAPIKey()
           let templateID = template
@@ -86,7 +91,7 @@ export function createCommand(
           const relativeConfigPath = path.relative(root, configPath)
 
           if (!templateID && config) {
-            console.log(
+            info(
               `Found sandbox template ${asFormattedSandboxTemplate(
                 {
                   templateID: config.template_id,
@@ -114,9 +119,9 @@ export function createCommand(
             ...(opts.timeout !== undefined ? { timeoutMs: opts.timeout } : {}),
           }
           const sandbox = await e2b.Sandbox.create(templateID, sandboxOpts)
-          printDashboardSandboxInspectUrl(sandbox.sandboxId)
 
           if (!opts.detach) {
+            printDashboardSandboxInspectUrl(sandbox.sandboxId)
             await connectSandbox({
               sandbox,
               template: { templateID },
@@ -131,9 +136,7 @@ export function createCommand(
               },
             })
           } else {
-            console.log(
-              `Sandbox created with ID ${sandbox.sandboxId} using template ${templateID}`
-            )
+            console.log(sandbox.sandboxId)
           }
           process.exit(0)
         } catch (err: any) {
