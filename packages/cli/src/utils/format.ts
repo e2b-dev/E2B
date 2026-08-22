@@ -31,19 +31,14 @@ export function asFormattedTeam(
 export function asFormattedSandboxTemplate(
   template: Pick<e2b.components['schemas']['Template'], 'templateID'> & {
     aliases?: e2b.components['schemas']['Template']['aliases']
-  },
-  configLocalPath?: string
+  }
 ) {
   const aliases = listAliases(template.aliases)
 
   const name = aliases ? asBold(aliases) : ''
-  const configPath = configLocalPath
-    ? asDim(' <-> ') + asLocalRelative(configLocalPath)
-    : ''
-
   const id = `${template.templateID} `
 
-  return `${id}${name}${configPath}`.trim()
+  return `${id}${name}`.trim()
 }
 
 export function asRed(text: string) {
