@@ -4,6 +4,8 @@ from urllib.parse import urlparse
 from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox._git.types import GitBranches, GitFileStatus, GitStatus
 
+_DETACHED_HEAD_PREFIX = "HEAD (detached at "
+
 
 def derive_repo_dir_from_url(url: str) -> Optional[str]:
     """
@@ -55,8 +57,8 @@ def _normalize_branch_name(name: str) -> str:
     :param name: Raw branch name section
     :return: Normalized branch name
     """
-    if name.startswith("HEAD (detached at "):
-        return name.replace("HEAD (detached at ", "").rstrip(")")
+    if name.startswith(_DETACHED_HEAD_PREFIX):
+        return name.replace(_DETACHED_HEAD_PREFIX, "").rstrip(")")
     return (
         name.replace("HEAD (no branch)", "HEAD")
         .replace("No commits yet on ", "")
@@ -124,12 +126,9 @@ def parse_git_status(output: str) -> GitStatus:
         branch_part = branch_info if ahead_start == -1 else branch_info[:ahead_start]
         ahead_part = None if ahead_start == -1 else branch_info[ahead_start + 2 : -1]
         normalized_branch = _normalize_branch_name(branch_part)
-        raw_branch = branch_part
-        is_detached = raw_branch.startswith("HEAD (detached at ") or (
-            "detached" in raw_branch
-        )
+        is_detached = branch_part.startswith(_DETACHED_HEAD_PREFIX)
 
-        if is_detached or normalized_branch.startswith("HEAD"):
+        if is_detached or normalized_branch == "HEAD":
             detached = True
         elif "..." in normalized_branch:
             branch, upstream_branch = normalized_branch.split("...")
