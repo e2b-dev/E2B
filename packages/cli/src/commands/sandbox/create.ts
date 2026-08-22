@@ -32,10 +32,7 @@ export function createCommand(
     )
     .addOption(pathOption)
     .addOption(configOption)
-    .option(
-      '-d, --detach',
-      'create sandbox without connecting terminal to it, printing only the sandbox ID'
-    )
+    .option('-d, --detach', 'create sandbox without connecting terminal to it')
     .option(
       '--lifecycle.ontimeout <action>',
       'action when sandbox timeout is reached: pause or kill',
