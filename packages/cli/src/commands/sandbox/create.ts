@@ -119,11 +119,9 @@ export function createCommand(
             ...(opts.timeout !== undefined ? { timeoutMs: opts.timeout } : {}),
           }
           const sandbox = await e2b.Sandbox.create(templateID, sandboxOpts)
-          printDashboardSandboxInspectUrl(sandbox.sandboxId, {
-            stream: opts.detach ? 'stderr' : 'stdout',
-          })
 
           if (!opts.detach) {
+            printDashboardSandboxInspectUrl(sandbox.sandboxId)
             await connectSandbox({
               sandbox,
               template: { templateID },

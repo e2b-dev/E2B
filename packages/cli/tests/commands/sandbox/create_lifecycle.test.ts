@@ -313,10 +313,7 @@ describe('sandbox create lifecycle options', () => {
     )
 
     expect(logSpy.mock.calls).toEqual([['sandbox-id']])
-    expect(mocks.printDashboardSandboxInspectUrl).toHaveBeenCalledWith(
-      'sandbox-id',
-      { stream: 'stderr' }
-    )
+    expect(mocks.printDashboardSandboxInspectUrl).not.toHaveBeenCalled()
     expect(exitSpy).toHaveBeenCalledWith(0)
   })
 
