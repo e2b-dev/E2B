@@ -38,6 +38,16 @@ describe('exec helpers', () => {
     expect(buildCommand(['echo', "it's ok"])).toBe("echo 'it'\"'\"'s ok'")
   })
 
+  test('buildCommand strips a leading -- separator', () => {
+    expect(buildCommand(['--', 'codex', 'exec', '--help'])).toBe(
+      'codex exec --help'
+    )
+  })
+
+  test('buildCommand rejects a separator without a command', () => {
+    expect(() => buildCommand(['--'])).toThrow('missing command to execute')
+  })
+
   test('readStdinFrom reads full input and resolves on EOF', async () => {
     const stream = Readable.from(['foo', 'bar'])
     await expect(readStdinFrom(stream)).resolves.toEqual(Buffer.from('foobar'))
