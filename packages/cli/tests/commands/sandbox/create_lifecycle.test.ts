@@ -2,19 +2,24 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => {
   const create = vi.fn()
+  const getInfo = vi.fn()
   const ensureAPIKey = vi.fn(() => 'test-api-key')
   const spawnConnectedTerminal = vi.fn()
+  const printDashboardSandboxInspectUrl = vi.fn()
 
   return {
     create,
+    getInfo,
     ensureAPIKey,
     spawnConnectedTerminal,
+    printDashboardSandboxInspectUrl,
   }
 })
 
 vi.mock('e2b', () => ({
   Sandbox: {
     create: mocks.create,
+    getInfo: mocks.getInfo,
   },
 }))
 
@@ -23,7 +28,7 @@ vi.mock('../../../src/api', () => ({
 }))
 
 vi.mock('src/utils/urls', () => ({
-  printDashboardSandboxInspectUrl: vi.fn(),
+  printDashboardSandboxInspectUrl: mocks.printDashboardSandboxInspectUrl,
 }))
 
 vi.mock('src/terminal', () => ({
@@ -40,6 +45,11 @@ describe('sandbox create lifecycle options', () => {
       setTimeout: vi.fn().mockResolvedValue(undefined),
     })
     mocks.spawnConnectedTerminal.mockResolvedValue(undefined)
+    mocks.getInfo.mockResolvedValue({
+      sandboxId: 'sandbox-id',
+      templateId: 'base',
+      state: 'running',
+    })
   })
 
   afterEach(() => {
@@ -326,5 +336,72 @@ describe('sandbox create lifecycle options', () => {
       timeoutMs: 120_000,
     })
     expect(exitSpy).toHaveBeenCalledWith(0)
+  })
+
+  test('prints sandbox JSON and skips the terminal with --format json', async () => {
+    const exitSpy = vi
+      .spyOn(process, 'exit')
+      .mockImplementation((() => undefined) as never)
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    const { createCommand } = await import(
+      '../../../src/commands/sandbox/create'
+    )
+    await createCommand('create', 'cr', false).parseAsync(
+      ['base', '--format', 'json'],
+      { from: 'user' }
+    )
+
+    expect(mocks.getInfo).toHaveBeenCalledWith('sandbox-id', {
+      apiKey: 'test-api-key',
+    })
+    expect(mocks.spawnConnectedTerminal).not.toHaveBeenCalled()
+    expect(mocks.printDashboardSandboxInspectUrl).not.toHaveBeenCalled()
+    expect(logSpy).toHaveBeenCalledTimes(1)
+    expect(JSON.parse(logSpy.mock.calls[0][0] as string)).toEqual({
+      sandboxId: 'sandbox-id',
+      templateId: 'base',
+      state: 'running',
+    })
+    expect(exitSpy).toHaveBeenCalledWith(0)
+  })
+
+  test('keeps the pretty output by default', async () => {
+    const exitSpy = vi
+      .spyOn(process, 'exit')
+      .mockImplementation((() => undefined) as never)
+
+    const { createCommand } = await import(
+      '../../../src/commands/sandbox/create'
+    )
+    await createCommand('create', 'cr', false).parseAsync(
+      ['base', '--detach', '--format', 'pretty'],
+      { from: 'user' }
+    )
+
+    expect(mocks.getInfo).not.toHaveBeenCalled()
+    expect(mocks.printDashboardSandboxInspectUrl).toHaveBeenCalledWith(
+      'sandbox-id'
+    )
+    expect(exitSpy).toHaveBeenCalledWith(0)
+  })
+
+  test('rejects an unsupported format', async () => {
+    const exitSpy = vi
+      .spyOn(process, 'exit')
+      .mockImplementation((() => undefined) as never)
+
+    const { createCommand } = await import(
+      '../../../src/commands/sandbox/create'
+    )
+    await expect(
+      createCommand('create', 'cr', false).parseAsync(
+        ['base', '--detach', '--format', 'yaml'],
+        { from: 'user' }
+      )
+    ).rejects.toThrow('--format must be one of: json, pretty')
+
+    expect(mocks.create).not.toHaveBeenCalled()
+    expect(exitSpy).toHaveBeenCalledWith(1)
   })
 })

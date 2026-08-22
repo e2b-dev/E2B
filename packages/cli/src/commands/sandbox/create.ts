@@ -11,6 +11,7 @@ import fs from 'fs'
 import { configOption, pathOption } from '../../options'
 import { parseEnv } from '../../utils/env'
 import { printDashboardSandboxInspectUrl } from 'src/utils/urls'
+import { Format, formatEnum } from './utils'
 
 type SandboxLifecycle = {
   onTimeout: 'pause' | 'kill'
@@ -33,6 +34,11 @@ export function createCommand(
     .addOption(pathOption)
     .addOption(configOption)
     .option('-d, --detach', 'create sandbox without connecting terminal to it')
+    .option(
+      '-f, --format <format>',
+      `output format (${formatEnum(Format)}), json implies --detach`,
+      parseFormat
+    )
     .option(
       '--lifecycle.ontimeout <action>',
       'action when sandbox timeout is reached: pause or kill',
@@ -60,6 +66,7 @@ export function createCommand(
           path?: string
           config?: string
           detach?: boolean
+          format?: Format
           'lifecycle.ontimeout'?: SandboxLifecycle['onTimeout']
           'lifecycle.autoresume'?: boolean
           timeout?: number
@@ -74,6 +81,8 @@ export function createCommand(
           )
         }
         try {
+          const format = opts.format ?? Format.PRETTY
+          const json = format === Format.JSON
           const apiKey = ensureAPIKey()
           let templateID = template
 
@@ -86,17 +95,19 @@ export function createCommand(
           const relativeConfigPath = path.relative(root, configPath)
 
           if (!templateID && config) {
-            console.log(
-              `Found sandbox template ${asFormattedSandboxTemplate(
-                {
-                  templateID: config.template_id,
-                  aliases: config.template_name
-                    ? [config.template_name]
-                    : undefined,
-                },
-                relativeConfigPath
-              )}`
-            )
+            if (!json) {
+              console.log(
+                `Found sandbox template ${asFormattedSandboxTemplate(
+                  {
+                    templateID: config.template_id,
+                    aliases: config.template_name
+                      ? [config.template_name]
+                      : undefined,
+                  },
+                  relativeConfigPath
+                )}`
+              )
+            }
             templateID = config.template_id
           }
 
@@ -114,26 +125,34 @@ export function createCommand(
             ...(opts.timeout !== undefined ? { timeoutMs: opts.timeout } : {}),
           }
           const sandbox = await e2b.Sandbox.create(templateID, sandboxOpts)
-          printDashboardSandboxInspectUrl(sandbox.sandboxId)
 
-          if (!opts.detach) {
-            await connectSandbox({
-              sandbox,
-              template: { templateID },
-              timeoutMs: opts.timeout,
-              terminal: {
-                user: opts.user,
-                cwd: opts.cwd,
-                envs:
-                  opts.env && Object.keys(opts.env).length > 0
-                    ? opts.env
-                    : undefined,
-              },
+          if (json) {
+            const info = await e2b.Sandbox.getInfo(sandbox.sandboxId, {
+              apiKey,
             })
+            console.log(JSON.stringify(info, null, 2))
           } else {
-            console.log(
-              `Sandbox created with ID ${sandbox.sandboxId} using template ${templateID}`
-            )
+            printDashboardSandboxInspectUrl(sandbox.sandboxId)
+
+            if (!opts.detach) {
+              await connectSandbox({
+                sandbox,
+                template: { templateID },
+                timeoutMs: opts.timeout,
+                terminal: {
+                  user: opts.user,
+                  cwd: opts.cwd,
+                  envs:
+                    opts.env && Object.keys(opts.env).length > 0
+                      ? opts.env
+                      : undefined,
+                },
+              })
+            } else {
+              console.log(
+                `Sandbox created with ID ${sandbox.sandboxId} using template ${templateID}`
+              )
+            }
           }
           process.exit(0)
         } catch (err: any) {
@@ -142,6 +161,17 @@ export function createCommand(
         }
       }
     )
+}
+
+function parseFormat(format: string): Format {
+  const normalized = format.toLowerCase()
+  if (!Object.values(Format).includes(normalized as Format)) {
+    throw new commander.InvalidArgumentError(
+      `--format must be one of: ${Object.values(Format).join(', ')}`
+    )
+  }
+
+  return normalized as Format
 }
 
 function parseTimeout(timeoutRaw: string): number {
