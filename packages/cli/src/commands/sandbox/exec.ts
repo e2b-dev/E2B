@@ -19,9 +19,15 @@ interface ExecOptions {
 
 const NO_COMMAND_TIMEOUT = 0
 export const execCommand = new commander.Command('exec')
-  .description('execute a command in a running sandbox')
+  .description(
+    'execute a command in a running sandbox\n\n' +
+      'Everything after the command is passed to it verbatim, so e2b options must come before it:\n' +
+      '  e2b sandbox exec -u root <sandboxID> codex exec "prompt" --help'
+  )
   .argument('<sandboxID>', 'sandbox ID to execute command in')
   .argument('<command...>', 'command to execute')
+  // Options after the command are part of the remote command, not e2b flags.
+  .passThroughOptions()
   .option('-b, --background', 'run in background and return immediately')
   .option('-c, --cwd <dir>', 'working directory')
   .option('-u, --user <user>', 'run as specified user')
