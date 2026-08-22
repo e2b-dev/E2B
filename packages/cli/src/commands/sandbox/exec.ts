@@ -19,9 +19,11 @@ interface ExecOptions {
 
 const NO_COMMAND_TIMEOUT = 0
 export const execCommand = new commander.Command('exec')
-  .description(
-    'execute a command in a running sandbox\n\n' +
-      'Everything after the sandbox ID is passed through to the remote command, so e2b options must come before the sandbox ID:\n' +
+  .description('execute a command in a running sandbox')
+  .addHelpText(
+    'after',
+    '\nEverything after the sandbox ID is passed through to the remote command,\n' +
+      'so e2b options must come before the sandbox ID:\n' +
       '  e2b sandbox exec -u root <sandboxID> codex exec "prompt" --help'
   )
   .argument('<sandboxID>', 'sandbox ID to execute command in')
