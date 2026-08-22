@@ -26,7 +26,6 @@ export const execCommand = new commander.Command('exec')
   )
   .argument('<sandboxID>', 'sandbox ID to execute command in')
   .argument('<command...>', 'command to execute')
-  // Options after the command are part of the remote command, not e2b flags.
   .passThroughOptions()
   .option('-b, --background', 'run in background and return immediately')
   .option('-c, --cwd <dir>', 'working directory')
