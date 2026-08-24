@@ -5,6 +5,7 @@ import {
   asBold,
   asFormattedError,
   asFormattedSandboxTemplate,
+  SandboxTemplateRef,
 } from 'src/utils/format'
 import {
   deprecatedTeamOption,
@@ -51,11 +52,11 @@ async function templateAction(
   try {
     let projectId = projectIdFromOptions(opts)
 
-    const templates: { template_id: string; aliases?: string[] }[] = []
+    const templates: SandboxTemplateRef[] = []
 
     if (template) {
       templates.push({
-        template_id: template,
+        templateID: template,
       })
     } else if (opts.select) {
       projectId = resolveProjectId(projectId)
@@ -83,7 +84,7 @@ async function templateAction(
       )
       templates.push(
         ...selectedTemplates.map((e) => ({
-          template_id: e.templateID,
+          templateID: e.templateID,
           aliases: e.aliases,
         }))
       )
@@ -108,14 +109,7 @@ async function templateAction(
         `Sandbox templates to ${publish ? 'publish' : 'unpublish'}`
       )
     )
-    templates.forEach((e) =>
-      console.log(
-        asFormattedSandboxTemplate({
-          templateID: e.template_id,
-          aliases: e.aliases,
-        })
-      )
-    )
+    templates.forEach((e) => console.log(asFormattedSandboxTemplate(e)))
     process.stdout.write('\n')
 
     if (!opts.yes) {
@@ -142,12 +136,9 @@ async function templateAction(
         console.log(
           `- ${
             publish ? 'Publishing' : 'Unpublishing'
-          } sandbox template ${asFormattedSandboxTemplate({
-            templateID: e.template_id,
-            aliases: e.aliases,
-          })}`
+          } sandbox template ${asFormattedSandboxTemplate(e)}`
         )
-        const names = await publishTemplate(e.template_id, publish)
+        const names = await publishTemplate(e.templateID, publish)
         if (publish && names.length > 0) {
           console.log(`  Published as: ${asBold(names.join(', '))}`)
         }
@@ -162,7 +153,12 @@ async function templateAction(
 
 export const publishCommand = new commander.Command('publish')
   .description('publish sandbox template')
-  .argument('[template]', `specify ${asBold('[template]')} to publish it`)
+  .argument(
+    '[template]',
+    `specify ${asBold(
+      '[template]'
+    )} to publish it, or select templates interactively with ${asBold('-s')}`
+  )
   .addOption(selectMultipleOption)
   .addOption(projectOption)
   .addOption(deprecatedTeamOption)
@@ -172,7 +168,12 @@ export const publishCommand = new commander.Command('publish')
 
 export const unPublishCommand = new commander.Command('unpublish')
   .description('unpublish sandbox template')
-  .argument('[template]', `specify ${asBold('[template]')} to unpublish it`)
+  .argument(
+    '[template]',
+    `specify ${asBold(
+      '[template]'
+    )} to unpublish it, or select templates interactively with ${asBold('-s')}`
+  )
   .addOption(selectMultipleOption)
   .addOption(projectOption)
   .addOption(deprecatedTeamOption)

@@ -5,6 +5,7 @@ import {
   asBold,
   asFormattedError,
   asFormattedSandboxTemplate,
+  SandboxTemplateRef,
 } from 'src/utils/format'
 import {
   selectMultipleOption,
@@ -33,7 +34,12 @@ async function deleteTemplate(templateID: string) {
 
 export const deleteCommand = new commander.Command('delete')
   .description('delete sandbox template')
-  .argument('[template]', `specify ${asBold('[template]')} to delete it`)
+  .argument(
+    '[template]',
+    `specify ${asBold(
+      '[template]'
+    )} to delete it, or select templates interactively with ${asBold('-s')}`
+  )
   .addOption(selectMultipleOption)
   .addOption(projectOption)
   .addOption(deprecatedTeamOption)
@@ -52,11 +58,11 @@ export const deleteCommand = new commander.Command('delete')
       try {
         let projectId = projectIdFromOptions(opts)
 
-        const templates: { template_id: string; aliases?: string[] }[] = []
+        const templates: SandboxTemplateRef[] = []
 
         if (template) {
           templates.push({
-            template_id: template,
+            templateID: template,
           })
         } else if (opts.select) {
           projectId = resolveProjectId(projectId)
@@ -71,7 +77,7 @@ export const deleteCommand = new commander.Command('delete')
           )
           templates.push(
             ...selectedTemplates.map((e) => ({
-              template_id: e.templateID,
+              templateID: e.templateID,
               aliases: e.aliases,
             }))
           )
@@ -96,14 +102,7 @@ export const deleteCommand = new commander.Command('delete')
             chalk.default.underline('\nSandbox templates to delete')
           )
         )
-        templates.forEach((e) =>
-          console.log(
-            asFormattedSandboxTemplate({
-              templateID: e.template_id,
-              aliases: e.aliases,
-            })
-          )
-        )
+        templates.forEach((e) => console.log(asFormattedSandboxTemplate(e)))
         process.stdout.write('\n')
 
         if (!opts.yes) {
@@ -122,12 +121,9 @@ export const deleteCommand = new commander.Command('delete')
         await Promise.all(
           templates.map(async (e) => {
             console.log(
-              `- Deleting sandbox template ${asFormattedSandboxTemplate({
-                templateID: e.template_id,
-                aliases: e.aliases,
-              })}`
+              `- Deleting sandbox template ${asFormattedSandboxTemplate(e)}`
             )
-            await deleteTemplate(e.template_id)
+            await deleteTemplate(e.templateID)
           })
         )
         process.stdout.write('\n')

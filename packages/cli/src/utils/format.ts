@@ -28,11 +28,14 @@ export function asFormattedTeam(
   return `${name} (${id})${isSelected}`
 }
 
-export function asFormattedSandboxTemplate(
-  template: Pick<e2b.components['schemas']['Template'], 'templateID'> & {
-    aliases?: e2b.components['schemas']['Template']['aliases']
-  }
-) {
+export type SandboxTemplateRef = Pick<
+  e2b.components['schemas']['Template'],
+  'templateID'
+> & {
+  aliases?: e2b.components['schemas']['Template']['aliases']
+}
+
+export function asFormattedSandboxTemplate(template: SandboxTemplateRef) {
   const aliases = listAliases(template.aliases)
 
   const name = aliases ? asBold(aliases) : ''

@@ -1,9 +1,12 @@
 import * as e2b from 'e2b'
 import * as commander from 'commander'
+import * as fs from 'fs'
+import * as path from 'path'
 
 import { ensureAPIKey } from 'src/api'
 import { spawnConnectedTerminal, TerminalOpts } from 'src/terminal'
-import { asBold, asFormattedSandboxTemplate } from 'src/utils/format'
+import { asBold, asFormattedSandboxTemplate, asLocal } from 'src/utils/format'
+import { configName } from '../../config'
 import { parseEnv } from '../../utils/env'
 import { printDashboardSandboxInspectUrl } from 'src/utils/urls'
 
@@ -13,6 +16,7 @@ type SandboxLifecycle = {
 }
 
 const MIN_TIMEOUT_MS = 30_000
+const DEFAULT_TEMPLATE = 'base'
 
 export function createCommand(
   name: string,
@@ -23,7 +27,9 @@ export function createCommand(
     .description('create sandbox and connect terminal to it')
     .argument(
       '[template]',
-      `create and connect to sandbox specified by ${asBold('[template]')}`
+      `create and connect to sandbox specified by ${asBold(
+        '[template]'
+      )}. Defaults to ${asBold(DEFAULT_TEMPLATE)}`
     )
     .option('-d, --detach', 'create sandbox without connecting terminal to it')
     .option(
@@ -66,7 +72,23 @@ export function createCommand(
         }
         try {
           const apiKey = ensureAPIKey()
-          const templateID = template ?? 'base'
+
+          if (
+            !template &&
+            fs.existsSync(path.join(process.cwd(), configName))
+          ) {
+            console.log(
+              `Found ${asLocal(
+                configName
+              )}, but it is no longer read. Pass the template as ${asBold(
+                '[template]'
+              )}, or convert the config with ${asBold(
+                'e2b template migrate'
+              )}. Using ${asBold(DEFAULT_TEMPLATE)}.`
+            )
+          }
+
+          const templateID = template ?? DEFAULT_TEMPLATE
 
           const lifecycle = buildLifecycle(
             opts['lifecycle.ontimeout'],

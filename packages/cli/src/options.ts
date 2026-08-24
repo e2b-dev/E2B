@@ -25,6 +25,14 @@ export const pathOption = new commander.Option(
   )} directory`
 )
 
+// Only `template migrate` reads e2b.toml; no other command accepts this option.
+export const configOption = new commander.Option(
+  '--config <e2b-toml>',
+  `specify path to the E2B config toml. By default E2B tries to find ${asBold(
+    './e2b.toml'
+  )} in root directory. We recommend using the new build system (https://e2b.dev/docs/template/defining-template) that does not use config files.`
+)
+
 export const selectMultipleOption = new commander.Option(
   '-s, --select',
   'select sandbox template from interactive list'

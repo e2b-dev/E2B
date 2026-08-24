@@ -5,9 +5,9 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { E2BConfig, getConfigPath, loadConfig } from '../../config'
 import { defaultDockerfileName } from '../../docker/constants'
-import { parsePositiveInt, pathOption } from '../../options'
+import { configOption, parsePositiveInt, pathOption } from '../../options'
 import { getRoot } from '../../utils/filesystem'
-import { asBold, asLocal, asLocalRelative, asPrimary } from '../../utils/format'
+import { asLocal, asLocalRelative, asPrimary } from '../../utils/format'
 import { getDockerfile } from './dockerfile'
 import { validateTemplateName } from '../../utils/templateName'
 import {
@@ -94,14 +94,7 @@ export const migrateCommand = new commander.Command('migrate')
     '-d, --dockerfile <file>',
     `specify path to Dockerfile. Defaults to ${asLocal('e2b.Dockerfile')}`
   )
-  .addOption(
-    new commander.Option(
-      '--config <e2b-toml>',
-      `specify path to the E2B config toml. By default E2B tries to find ${asBold(
-        './e2b.toml'
-      )} in root directory.`
-    )
-  )
+  .addOption(configOption)
   .option(
     '-n, --name <name>',
     'override the template name used in the generated files. Defaults to the template name or ID from the config file.',
