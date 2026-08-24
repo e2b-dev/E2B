@@ -40,13 +40,15 @@ describe('e2b.toml is not read outside template migrate', () => {
     expect(output).toContain('No sandbox templates selected')
   })
 
-  test('template delete rejects --config', () => {
+  test('template delete accepts but ignores the deprecated --config', () => {
     const output = runCli(
       ['template', 'delete', '--yes', '--config', 'e2b.toml'],
       testDir
     )
 
-    expect(output).toContain("unknown option '--config'")
+    expect(output).toContain('--config')
+    expect(output).toContain('no longer read here')
+    expect(output).not.toContain('config-template-id')
   })
 
   test('template publish without an argument does not use e2b.toml', () => {

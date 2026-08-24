@@ -7,6 +7,7 @@ import { ensureAPIKey } from 'src/api'
 import { spawnConnectedTerminal, TerminalOpts } from 'src/terminal'
 import { asBold, asFormattedSandboxTemplate, asLocal } from 'src/utils/format'
 import { configName } from '../../config'
+import { deprecatedConfigOption, warnIgnoredConfigOption } from '../../options'
 import { parseEnv } from '../../utils/env'
 import { printDashboardSandboxInspectUrl } from 'src/utils/urls'
 
@@ -50,6 +51,7 @@ export function createCommand(
       parseEnv,
       {} as Record<string, string>
     )
+    .addOption(deprecatedConfigOption)
     .alias(alias)
     .action(
       async (
@@ -63,6 +65,7 @@ export function createCommand(
           user?: string
           cwd?: string
           env?: Record<string, string>
+          config?: string
         }
       ) => {
         if (deprecated) {
@@ -71,6 +74,8 @@ export function createCommand(
           )
         }
         try {
+          warnIgnoredConfigOption(opts)
+
           const apiKey = ensureAPIKey()
 
           if (

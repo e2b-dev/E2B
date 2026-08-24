@@ -8,10 +8,12 @@ import {
   SandboxTemplateRef,
 } from 'src/utils/format'
 import {
+  deprecatedConfigOption,
   deprecatedTeamOption,
   projectIdFromOptions,
   projectOption,
   selectMultipleOption,
+  warnIgnoredConfigOption,
 } from 'src/options'
 import { listSandboxTemplates } from './list'
 import { getPromptTemplates } from 'src/utils/templatePrompt'
@@ -47,9 +49,12 @@ async function templateAction(
     select?: boolean
     project?: string
     team?: string
+    config?: string
   }
 ) {
   try {
+    warnIgnoredConfigOption(opts)
+
     let projectId = projectIdFromOptions(opts)
 
     const templates: SandboxTemplateRef[] = []
@@ -162,6 +167,7 @@ export const publishCommand = new commander.Command('publish')
   .addOption(selectMultipleOption)
   .addOption(projectOption)
   .addOption(deprecatedTeamOption)
+  .addOption(deprecatedConfigOption)
   .alias('pb')
   .option('-y, --yes', 'skip manual publish confirmation')
   .action(templateAction.bind(null, true))
@@ -177,6 +183,7 @@ export const unPublishCommand = new commander.Command('unpublish')
   .addOption(selectMultipleOption)
   .addOption(projectOption)
   .addOption(deprecatedTeamOption)
+  .addOption(deprecatedConfigOption)
   .alias('upb')
   .option('-y, --yes', 'skip manual unpublish confirmation')
   .action(templateAction.bind(null, false))

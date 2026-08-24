@@ -9,9 +9,11 @@ import {
 } from 'src/utils/format'
 import {
   selectMultipleOption,
+  deprecatedConfigOption,
   deprecatedTeamOption,
   projectIdFromOptions,
   projectOption,
+  warnIgnoredConfigOption,
 } from 'src/options'
 import { listSandboxTemplates } from './list'
 import { getPromptTemplates } from 'src/utils/templatePrompt'
@@ -43,6 +45,7 @@ export const deleteCommand = new commander.Command('delete')
   .addOption(selectMultipleOption)
   .addOption(projectOption)
   .addOption(deprecatedTeamOption)
+  .addOption(deprecatedConfigOption)
   .alias('dl')
   .option('-y, --yes', 'skip manual delete confirmation')
   .action(
@@ -53,9 +56,12 @@ export const deleteCommand = new commander.Command('delete')
         select?: boolean
         project?: string
         team?: string
+        config?: string
       }
     ) => {
       try {
+        warnIgnoredConfigOption(opts)
+
         let projectId = projectIdFromOptions(opts)
 
         const templates: SandboxTemplateRef[] = []
