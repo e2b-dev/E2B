@@ -87,9 +87,9 @@ export function createCommand(
             ...(opts.timeout !== undefined ? { timeoutMs: opts.timeout } : {}),
           }
           const sandbox = await e2b.Sandbox.create(templateID, sandboxOpts)
-          printDashboardSandboxInspectUrl(sandbox.sandboxId)
 
           if (!opts.detach) {
+            printDashboardSandboxInspectUrl(sandbox.sandboxId)
             await connectSandbox({
               sandbox,
               template: { templateID },
@@ -104,9 +104,7 @@ export function createCommand(
               },
             })
           } else {
-            console.log(
-              `Sandbox created with ID ${sandbox.sandboxId} using template ${templateID}`
-            )
+            console.log(sandbox.sandboxId)
           }
           process.exit(0)
         } catch (err: any) {
