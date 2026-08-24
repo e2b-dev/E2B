@@ -97,7 +97,6 @@ export interface paths {
          *     multipart upload receive the same metadata. If the same
          *     `X-Metadata-<key>` header is sent more than once, only the first
          *     value is used.
-         *
          */
         post: {
             parameters: {
@@ -328,10 +327,12 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                /** @example {
+                /**
+                 * @example {
                  *       "message": "path '/home/user/missing.txt' does not exist",
                  *       "code": 404
-                 *     } */
+                 *     }
+                 */
                 "application/json": components["schemas"]["Error"];
             };
         };
@@ -341,10 +342,12 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                /** @example {
+                /**
+                 * @example {
                  *       "message": "error opening file '/home/user/file.txt': permission denied",
                  *       "code": 500
-                 *     } */
+                 *     }
+                 */
                 "application/json": components["schemas"]["Error"];
             };
         };
@@ -354,10 +357,12 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                /** @example {
+                /**
+                 * @example {
                  *       "message": "path '/home/user/docs' is a directory",
                  *       "code": 400
-                 *     } */
+                 *     }
+                 */
                 "application/json": components["schemas"]["Error"];
             };
         };
@@ -367,10 +372,12 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                /** @example {
+                /**
+                 * @example {
                  *       "message": "error looking up user 'nonexistent': user: unknown user nonexistent",
                  *       "code": 401
-                 *     } */
+                 *     }
+                 */
                 "application/json": components["schemas"]["Error"];
             };
         };
@@ -380,10 +387,12 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                /** @example {
+                /**
+                 * @example {
                  *       "message": "no acceptable encoding found, supported: [identity, gzip]",
                  *       "code": 406
-                 *     } */
+                 *     }
+                 */
                 "application/json": components["schemas"]["Error"];
             };
         };
@@ -393,10 +402,12 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                /** @example {
+                /**
+                 * @example {
                  *       "message": "not enough disk space available",
                  *       "code": 507
-                 *     } */
+                 *     }
+                 */
                 "application/json": components["schemas"]["Error"];
             };
         };
@@ -406,13 +417,15 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                /** @example [
+                /**
+                 * @example [
                  *       {
                  *         "path": "/home/user/hello.txt",
                  *         "name": "hello.txt",
                  *         "type": "file"
                  *       }
-                 *     ] */
+                 *     ]
+                 */
                 "application/json": components["schemas"]["EntryInfo"][];
             };
         };

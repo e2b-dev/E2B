@@ -2160,10 +2160,11 @@ export interface components {
             /** @description Number of sandboxes successfully killed */
             killedCount: number;
         };
-        /** @description Cached live sandbox index count keyed by team ID. Counts may briefly
+        /**
+         * @description Cached live sandbox index count keyed by team ID. Counts may briefly
          *     include sandboxes transitioning out of running; teams without indexed
          *     sandboxes are omitted.
-         *      */
+         */
         AdminTeamRunningSandboxCounts: {
             [key: string]: number;
         };
@@ -2463,8 +2464,7 @@ export interface components {
         };
         NewSecret: {
             metadata?: components["schemas"]["SecretMetadata"];
-            /** @description Name of the secret, unique within the project. Names are lower-cased before storage and returned in that canonical form; the sec_ prefix is reserved for secret identifiers.
-             *      */
+            /** @description Name of the secret, unique within the project. Names are lower-cased before storage and returned in that canonical form; the sec_ prefix is reserved for secret identifiers. */
             name: string;
             /** @description Runtime marker stored as the secret's first version. The runtime resolves it to a value at sandbox egress. */
             value: string;
@@ -2611,7 +2611,6 @@ export interface components {
          * @description Status of the node.
          *     - draining: the node is bound to be shut down. It will not accept new sandboxes and will stop once all existing sandboxes are done.
          *     - standby: the node is not actively used, but it can return to ready and continue serving traffic.
-         *
          * @enum {string}
          */
         NodeStatus: "ready" | "draining" | "connecting" | "unhealthy" | "standby";
@@ -2863,8 +2862,7 @@ export interface components {
             egressProxy?: components["schemas"]["SandboxEgressProxyConfig"];
             /** @description Specify host mask which will be used for all sandbox requests */
             maskRequestHost?: string;
-            /** @description Per-domain transform rules applied to matching egress HTTP/HTTPS requests. Keys are domains (e.g. "api.example.com", "example.com"). A domain listed here is not automatically allowed - use allowOut to permit the traffic.
-             *      */
+            /** @description Per-domain transform rules applied to matching egress HTTP/HTTPS requests. Keys are domains (e.g. "api.example.com", "example.com"). A domain listed here is not automatically allowed - use allowOut to permit the traffic. */
             rules?: {
                 [key: string]: components["schemas"]["SandboxNetworkRule"][];
             };
@@ -2875,8 +2873,7 @@ export interface components {
         };
         /** @description Transformations applied to matching egress requests before forwarding. */
         SandboxNetworkTransform: {
-            /** @description HTTP headers to inject or override in matching requests. An existing header with the same name is replaced. Values are plain strings; secret resolution happens client-side before sending to the API.
-             *      */
+            /** @description HTTP headers to inject or override in matching requests. An existing header with the same name is replaced. Values are plain strings; secret resolution happens client-side before sending to the API. */
             headers?: {
                 [key: string]: string;
             };
@@ -2956,8 +2953,7 @@ export interface components {
              */
             updatedAt: string;
         };
-        /** @description Customer metadata of the secret. Always present, empty when unset. At most 32 entries; keys are limited to 128 bytes, values to 1024 bytes, and a secret's metadata to 8192 bytes in total.
-         *      */
+        /** @description Customer metadata of the secret. Always present, empty when unset. At most 32 entries; keys are limited to 128 bytes, values to 1024 bytes, and a secret's metadata to 8192 bytes in total. */
         SecretMetadata: {
             [key: string]: string;
         };
@@ -3361,11 +3357,12 @@ export interface components {
             volumeID: string;
         };
         VolumeAndToken: {
-            /** @description Domain to use as the destination for volume content requests,
+            /**
+             * @description Domain to use as the destination for volume content requests,
              *     replacing the default `api.<E2B_DOMAIN>`. Only returned when the
              *     team is connected to a custom (BYOC) cluster; absent otherwise, in
              *     which case the default domain is used.
-             *      */
+             */
             domain?: string;
             /** @description Name of the volume */
             name: string;
@@ -3500,8 +3497,7 @@ export interface components {
     headers: {
         /** @description Cursor to fetch the next page of results, if more exist */
         XNextToken: string;
-        /** @description Number of running sandboxes matching the filters, before pagination is applied. Only present when running sandboxes were requested.
-         *      */
+        /** @description Number of running sandboxes matching the filters, before pagination is applied. Only present when running sandboxes were requested. */
         XTotalRunning: number;
     };
     pathItems: never;
