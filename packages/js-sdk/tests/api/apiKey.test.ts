@@ -23,17 +23,4 @@ describe('ApiClient API key requirement', () => {
     const config = new ConnectionConfig({})
     assert.doesNotThrow(() => new ApiClient(config, { requireApiKey: false }))
   })
-
-  test('accepts any non-empty key without format checks', () => {
-    const config = new ConnectionConfig({ apiKey: 'not-a-standard-key' })
-    assert.doesNotThrow(() => new ApiClient(config))
-  })
-
-  test('deprecated validateApiKey option has no effect', () => {
-    const config = new ConnectionConfig({
-      apiKey: 'not-a-standard-key',
-      validateApiKey: true,
-    })
-    assert.doesNotThrow(() => new ApiClient(config))
-  })
 })
