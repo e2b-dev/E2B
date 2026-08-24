@@ -1,7 +1,7 @@
 import { Template } from '../../../src'
-import { buildTemplateTest } from '../../setup'
+import { e2eBuildTemplateTest } from '../../setup'
 
-buildTemplateTest('make symlink', async ({ buildTemplate }) => {
+e2eBuildTemplateTest('make symlink', async ({ buildTemplate }) => {
   const template = Template()
     .fromImage('ubuntu:22.04')
     .skipCache()
@@ -11,7 +11,7 @@ buildTemplateTest('make symlink', async ({ buildTemplate }) => {
   await buildTemplate(template)
 })
 
-buildTemplateTest('make symlink (force)', async ({ buildTemplate }) => {
+e2eBuildTemplateTest('make symlink (force)', async ({ buildTemplate }) => {
   const template = Template()
     .fromImage('ubuntu:22.04')
     .makeSymlink('.bashrc', '.bashrc.local')
