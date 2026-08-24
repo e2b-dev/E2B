@@ -23,10 +23,9 @@ export interface ConnectionOpts {
   apiKey?: string
   /**
    * Whether to validate the format of the E2B API key on the client side.
-   * Disable this when your deployment issues API keys that don't match the
-   * default `e2b_` format.
    *
-   * @default E2B_VALIDATE_API_KEY // environment variable or `true`
+   * @deprecated The API key format is no longer validated on the client side;
+   * this option has no effect.
    */
   validateApiKey?: boolean
   /**
@@ -397,7 +396,11 @@ export class ConnectionConfig {
   readonly requestTimeoutMs: number
 
   readonly apiKey?: string
-  readonly validateApiKey: boolean
+  /**
+   * @deprecated The API key format is no longer validated on the client side;
+   * this option has no effect.
+   */
+  readonly validateApiKey?: boolean
 
   readonly headers?: Record<string, string>
 
@@ -405,8 +408,7 @@ export class ConnectionConfig {
 
   constructor(opts?: ConnectionOpts) {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
-    this.validateApiKey =
-      opts?.validateApiKey ?? ConnectionConfig.validateApiKey
+    this.validateApiKey = opts?.validateApiKey
     this.debug = opts?.debug ?? ConnectionConfig.debug
     this.domain = opts?.domain || ConnectionConfig.domain
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
@@ -478,12 +480,6 @@ export class ConnectionConfig {
 
   private static get apiKey() {
     return getEnvVar('E2B_API_KEY')
-  }
-
-  private static get validateApiKey() {
-    return (
-      (getEnvVar('E2B_VALIDATE_API_KEY') || 'true').toLowerCase() !== 'false'
-    )
   }
 
   getSignal(requestTimeoutMs?: number, signal?: AbortSignal) {
