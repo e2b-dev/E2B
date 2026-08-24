@@ -57,10 +57,6 @@ export async function loadConfig(configPath: string) {
   return (await configSchema.validate(migratedConfig)) as E2BConfig
 }
 
-export async function deleteConfig(configPath: string) {
-  await fsPromise.unlink(configPath)
-}
-
 export function getConfigPath(root: string, configPath?: string) {
   if (configPath && path.isAbsolute(configPath)) return configPath
 
