@@ -1,7 +1,7 @@
 import { assert, expect, describe } from 'vitest'
 
 import { CommandExitError, Sandbox } from '../../src'
-import { sandboxTest, isDebug, template } from '../setup.js'
+import { hostedSandboxTest, sandboxTest, template } from '../setup.js'
 import { httpbinTemplate } from '../template.js'
 
 describe('allow only 1.1.1.1', () => {
@@ -14,7 +14,7 @@ describe('allow only 1.1.1.1', () => {
     },
   })
 
-  sandboxTest.skipIf(isDebug)(
+  hostedSandboxTest(
     'allow specific IP with deny all traffic',
     async ({ sandbox }) => {
       // Test that allowed IP works
@@ -43,24 +43,21 @@ describe('deny specific IP address', () => {
     },
   })
 
-  sandboxTest.skipIf(isDebug)(
-    'deny specific IP address',
-    async ({ sandbox }) => {
-      // Test that denied IP fails
-      await expect(
-        sandbox.commands.run(
-          'curl --connect-timeout 3 --max-time 5 -Is https://8.8.8.8'
-        )
-      ).rejects.toBeInstanceOf(CommandExitError)
-
-      // Test that other IPs work
-      const result = await sandbox.commands.run(
-        "curl -s -o /dev/null -w '%{http_code}' https://1.1.1.1"
+  hostedSandboxTest('deny specific IP address', async ({ sandbox }) => {
+    // Test that denied IP fails
+    await expect(
+      sandbox.commands.run(
+        'curl --connect-timeout 3 --max-time 5 -Is https://8.8.8.8'
       )
-      assert.equal(result.exitCode, 0)
-      assert.equal(result.stdout.trim(), '301')
-    }
-  )
+    ).rejects.toBeInstanceOf(CommandExitError)
+
+    // Test that other IPs work
+    const result = await sandbox.commands.run(
+      "curl -s -o /dev/null -w '%{http_code}' https://1.1.1.1"
+    )
+    assert.equal(result.exitCode, 0)
+    assert.equal(result.stdout.trim(), '301')
+  })
 })
 
 describe('deny all traffic using allTraffic selector', () => {
@@ -72,7 +69,7 @@ describe('deny all traffic using allTraffic selector', () => {
     },
   })
 
-  sandboxTest.skipIf(isDebug)(
+  hostedSandboxTest(
     'deny all traffic using allTraffic selector',
     async ({ sandbox }) => {
       // Test that all traffic is denied
@@ -101,24 +98,21 @@ describe('allow takes precedence over deny', () => {
     },
   })
 
-  sandboxTest.skipIf(isDebug)(
-    'allow takes precedence over deny',
-    async ({ sandbox }) => {
-      // Test that 1.1.1.1 works (explicitly allowed)
-      const result1 = await sandbox.commands.run(
-        "curl -s -o /dev/null -w '%{http_code}' https://1.1.1.1"
-      )
-      assert.equal(result1.exitCode, 0)
-      assert.equal(result1.stdout.trim(), '301')
+  hostedSandboxTest('allow takes precedence over deny', async ({ sandbox }) => {
+    // Test that 1.1.1.1 works (explicitly allowed)
+    const result1 = await sandbox.commands.run(
+      "curl -s -o /dev/null -w '%{http_code}' https://1.1.1.1"
+    )
+    assert.equal(result1.exitCode, 0)
+    assert.equal(result1.stdout.trim(), '301')
 
-      // Test that 8.8.8.8 also works (explicitly allowed, takes precedence over denyOut)
-      const result2 = await sandbox.commands.run(
-        "curl -s -o /dev/null -w '%{http_code}' https://8.8.8.8"
-      )
-      assert.equal(result2.exitCode, 0)
-      assert.equal(result2.stdout.trim(), '302')
-    }
-  )
+    // Test that 8.8.8.8 also works (explicitly allowed, takes precedence over denyOut)
+    const result2 = await sandbox.commands.run(
+      "curl -s -o /dev/null -w '%{http_code}' https://8.8.8.8"
+    )
+    assert.equal(result2.exitCode, 0)
+    assert.equal(result2.stdout.trim(), '302')
+  })
 })
 
 describe('allowPublicTraffic=false', () => {
@@ -130,7 +124,7 @@ describe('allowPublicTraffic=false', () => {
     },
   })
 
-  sandboxTest.skipIf(isDebug)(
+  hostedSandboxTest(
     'sandbox requires traffic access token',
     async ({ sandbox }) => {
       // Verify the sandbox was created successfully and has a traffic access token
@@ -172,26 +166,23 @@ describe('allowPublicTraffic=true', () => {
     },
   })
 
-  sandboxTest.skipIf(isDebug)(
-    'sandbox works without token',
-    async ({ sandbox }) => {
-      // Start a simple HTTP server in the sandbox
-      const port = 8080
-      sandbox.commands.run(`python3 -m http.server ${port}`, {
-        background: true,
-      })
+  hostedSandboxTest('sandbox works without token', async ({ sandbox }) => {
+    // Start a simple HTTP server in the sandbox
+    const port = 8080
+    sandbox.commands.run(`python3 -m http.server ${port}`, {
+      background: true,
+    })
 
-      // Wait for server to start
-      await new Promise((resolve) => setTimeout(resolve, 3000))
+    // Wait for server to start
+    await new Promise((resolve) => setTimeout(resolve, 3000))
 
-      // Get the public URL for the sandbox
-      const sandboxUrl = `https://${sandbox.getHost(port)}`
+    // Get the public URL for the sandbox
+    const sandboxUrl = `https://${sandbox.getHost(port)}`
 
-      // Request without traffic access token should succeed (public access enabled)
-      const response = await fetch(sandboxUrl)
-      assert.equal(response.status, 200)
-    }
-  )
+    // Request without traffic access token should succeed (public access enabled)
+    const response = await fetch(sandboxUrl)
+    assert.equal(response.status, 200)
+  })
 })
 
 describe('firewall transform injects headers', () => {
@@ -200,7 +191,7 @@ describe('firewall transform injects headers', () => {
   // Port the httpbin template's start command listens on.
   const httpbinPort = 8080
 
-  sandboxTest.skipIf(isDebug)(
+  hostedSandboxTest(
     'injected header is reflected by the httpbin sidecar',
     async ({ sandboxTestId }) => {
       // The transform is applied by the egress proxy on the way out of the
@@ -257,7 +248,7 @@ describe('firewall transform injects headers', () => {
 })
 
 describe('updateNetwork applies new egress rules', () => {
-  sandboxTest.skipIf(isDebug)(
+  hostedSandboxTest(
     'denies a previously reachable IP after update',
     async ({ sandbox }) => {
       // Baseline: 8.8.8.8 is reachable.
@@ -294,7 +285,7 @@ describe('updateNetwork clears existing rules when fields are omitted', () => {
     },
   })
 
-  sandboxTest.skipIf(isDebug)(
+  hostedSandboxTest(
     'omitting fields replaces all egress rules',
     async ({ sandbox }) => {
       // Baseline from create-time config: 8.8.8.8 denied.
@@ -329,7 +320,7 @@ describe('maskRequestHost option', () => {
     },
   })
 
-  sandboxTest.skipIf(isDebug)(
+  hostedSandboxTest(
     'verify maskRequestHost modifies Host header correctly',
     async ({ sandbox }) => {
       const port = 8080

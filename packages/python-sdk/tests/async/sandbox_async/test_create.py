@@ -39,6 +39,7 @@ async def test_metadata(async_sandbox_factory):
         assert False, "Sandbox not found"
 
 
+@pytest.mark.e2e
 @pytest.mark.skip_debug()
 async def test_mcp_gateway_start_failure_kills_created_sandbox(template):
     metadata = {"mcp_gateway_cleanup_test_id": str(uuid4())}

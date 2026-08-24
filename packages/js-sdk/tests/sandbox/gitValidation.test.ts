@@ -1,8 +1,8 @@
 import { test, expect } from 'vitest'
 
-import { Git } from '../../../src/sandbox/git'
-import type { Commands } from '../../../src/sandbox/commands'
-import { InvalidArgumentError } from '../../../src/errors'
+import { Git } from '../../src/sandbox/git'
+import type { Commands } from '../../src/sandbox/commands'
+import { InvalidArgumentError } from '../../src/errors'
 
 // Stub command runner that fails if a git command is actually executed —
 // validation must throw before reaching it.

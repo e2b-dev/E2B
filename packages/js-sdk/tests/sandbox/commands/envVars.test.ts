@@ -1,6 +1,6 @@
 import { assert, describe } from 'vitest'
 
-import { sandboxTest, isDebug } from '../../setup.js'
+import { hostedSandboxTest, sandboxTest } from '../../setup.js'
 
 describe('sandbox global env vars', () => {
   sandboxTest.override({
@@ -9,15 +9,12 @@ describe('sandbox global env vars', () => {
     },
   })
 
-  sandboxTest.skipIf(isDebug)(
-    'sandbox global env vars',
-    async ({ sandbox }) => {
-      const cmd = await sandbox.commands.run('echo $FOO')
+  hostedSandboxTest('sandbox global env vars', async ({ sandbox }) => {
+    const cmd = await sandbox.commands.run('echo $FOO')
 
-      assert.equal(cmd.exitCode, 0)
-      assert.equal(cmd.stdout.trim(), 'bar')
-    }
-  )
+    assert.equal(cmd.exitCode, 0)
+    assert.equal(cmd.stdout.trim(), 'bar')
+  })
 })
 
 sandboxTest('bash command scoped env vars', async ({ sandbox }) => {

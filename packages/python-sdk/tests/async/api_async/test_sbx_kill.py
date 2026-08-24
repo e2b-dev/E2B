@@ -16,6 +16,7 @@ async def test_kill_existing_sandbox(async_sandbox: AsyncSandbox, sandbox_test_i
     assert async_sandbox.sandbox_id not in [s.sandbox_id for s in sandboxes]
 
 
+@pytest.mark.e2e
 @pytest.mark.skip_debug()
 async def test_kill_non_existing_sandbox():
     assert not await AsyncSandbox.kill("nonexistingsandbox")
