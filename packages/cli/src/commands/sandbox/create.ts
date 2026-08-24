@@ -1,12 +1,9 @@
 import * as e2b from 'e2b'
 import * as commander from 'commander'
-import * as fs from 'fs'
-import * as path from 'path'
 
 import { ensureAPIKey } from 'src/api'
 import { spawnConnectedTerminal, TerminalOpts } from 'src/terminal'
-import { asBold, asFormattedSandboxTemplate, asLocal } from 'src/utils/format'
-import { configName } from '../../config'
+import { asBold, asFormattedSandboxTemplate } from 'src/utils/format'
 import { deprecatedConfigOption, warnIgnoredConfigOption } from '../../options'
 import { parseEnv } from '../../utils/env'
 import { printDashboardSandboxInspectUrl } from 'src/utils/urls'
@@ -77,21 +74,6 @@ export function createCommand(
           warnIgnoredConfigOption(opts)
 
           const apiKey = ensureAPIKey()
-
-          if (
-            !template &&
-            fs.existsSync(path.join(process.cwd(), configName))
-          ) {
-            console.log(
-              `Found ${asLocal(
-                configName
-              )}, but it is no longer read. Pass the template as ${asBold(
-                '[template]'
-              )}, or convert the config with ${asBold(
-                'e2b template migrate'
-              )}. Using ${asBold(DEFAULT_TEMPLATE)}.`
-            )
-          }
 
           const templateID = template ?? DEFAULT_TEMPLATE
 
