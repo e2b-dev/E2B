@@ -40,6 +40,36 @@ def test_api_key() -> str:
     return "e2b_" + "0" * 40
 
 
+# Fixtures that provision live infrastructure: a sandbox on real compute or a
+# server-side template build. Any test requesting one belongs to the e2e tier,
+# which `pytest.ini` excludes by default (`-m "not e2e"`); run it with
+# `pytest -m e2e` and credentials. Tests that reach the control plane without
+# these fixtures carry an explicit `@pytest.mark.e2e`, and tests that mock the
+# fixture's API calls opt back out with `@pytest.mark.mocked`.
+E2E_FIXTURES = frozenset(
+    {
+        "sandbox",
+        "sandbox_factory",
+        "async_sandbox",
+        "async_sandbox_factory",
+        "build",
+        "async_build",
+    }
+)
+
+
+def pytest_collection_modifyitems(items):
+    for item in items:
+        if not isinstance(item, pytest.Function):
+            continue
+        # `pytest.mark.mocked` opts out: the test replaces the API calls the
+        # fixture would make, so nothing is provisioned.
+        if item.get_closest_marker("mocked"):
+            continue
+        if not E2E_FIXTURES.isdisjoint(item.fixturenames):
+            item.add_marker(pytest.mark.e2e)
+
+
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     outcome = yield
