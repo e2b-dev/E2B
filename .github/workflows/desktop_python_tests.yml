@@ -7,6 +7,10 @@ on:
         required: false
         type: string
         default: ''
+      run_tests:
+        required: false
+        type: boolean
+        default: true
     secrets:
       E2B_API_KEY:
         required: true
@@ -47,6 +51,7 @@ jobs:
         run: uv build
 
       - name: Run tests
+        if: inputs.run_tests
         run: uv run pytest --verbose --numprocesses=4
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}

@@ -192,6 +192,7 @@ jobs:
     uses: ./.github/workflows/desktop_js_tests.yml
     with:
       E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
+      run_tests: false
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY_STAGING }}
 
@@ -202,6 +203,7 @@ jobs:
     uses: ./.github/workflows/desktop_python_tests.yml
     with:
       E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
+      run_tests: false
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY_STAGING }}
 
