@@ -16,6 +16,13 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       release: ${{ steps.version.outputs.release }}
+      js-sdk: ${{ steps.js.outputs.release }}
+      python-sdk: ${{ steps.python.outputs.release }}
+      cli: ${{ steps.cli.outputs.release }}
+      code_interpreter_js: ${{ steps.code_interpreter_js.outputs.release }}
+      code_interpreter_python: ${{ steps.code_interpreter_python.outputs.release }}
+      desktop_js: ${{ steps.desktop_js.outputs.release }}
+      desktop_python: ${{ steps.desktop_python.outputs.release }}
       itinerary: ${{ steps.itinerary.outputs.itinerary }}
     steps:
       - name: Check the ref
@@ -68,6 +75,55 @@ jobs:
           IS_RELEASE=$(./.github/scripts/is_release.sh)
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
+      - name: Check JavaScript SDK Release
+        id: js
+        if: steps.version.outputs.release == 'true'
+        run: |
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "e2b")
+          echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Check Python SDK Release
+        id: python
+        if: steps.version.outputs.release == 'true'
+        run: |
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/python-sdk")
+          echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Check CLI Release
+        id: cli
+        if: steps.version.outputs.release == 'true'
+        run: |
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/cli")
+          echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Check Code Interpreter JavaScript SDK Release
+        id: code_interpreter_js
+        if: steps.version.outputs.release == 'true'
+        run: |
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/code-interpreter")
+          echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Check Code Interpreter Python SDK Release
+        id: code_interpreter_python
+        if: steps.version.outputs.release == 'true'
+        run: |
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/code-interpreter-python")
+          echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Check Desktop JavaScript SDK Release
+        id: desktop_js
+        if: steps.version.outputs.release == 'true'
+        run: |
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/desktop")
+          echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Check Desktop Python SDK Release
+        id: desktop_python
+        if: steps.version.outputs.release == 'true'
+        run: |
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/desktop-python")
+          echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
+
       - name: Build release itinerary
         id: itinerary
         if: steps.version.outputs.release == 'true'
@@ -84,10 +140,67 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
+  python-tests:
+    name: Python SDK Tests
+    needs: [preflight]
+    if: needs.preflight.outputs.python-sdk == 'true'
+    uses: ./.github/workflows/python_sdk_tests.yml
+    secrets: inherit
+
+  js-tests:
+    name: JS SDK Tests
+    needs: [preflight]
+    if: needs.preflight.outputs.js-sdk == 'true'
+    uses: ./.github/workflows/js_sdk_tests.yml
+    secrets: inherit
+
+  cli-tests:
+    name: CLI Tests
+    needs: [preflight]
+    if: needs.preflight.outputs.cli == 'true'
+    uses: ./.github/workflows/cli_tests.yml
+    secrets: inherit
+
+  code-interpreter-js-tests:
+    name: Code Interpreter JS SDK Tests
+    needs: [preflight]
+    if: needs.preflight.outputs.code_interpreter_js == 'true'
+    uses: ./.github/workflows/code_interpreter_js_tests.yml
+    secrets: inherit
+
+  code-interpreter-python-tests:
+    name: Code Interpreter Python SDK Tests
+    needs: [preflight]
+    if: needs.preflight.outputs.code_interpreter_python == 'true'
+    uses: ./.github/workflows/code_interpreter_python_tests.yml
+    secrets: inherit
+
+  desktop-js-tests:
+    name: Desktop JS SDK Tests
+    needs: [preflight]
+    if: needs.preflight.outputs.desktop_js == 'true'
+    uses: ./.github/workflows/desktop_js_tests.yml
+    secrets: inherit
+
+  desktop-python-tests:
+    name: Desktop Python SDK Tests
+    needs: [preflight]
+    if: needs.preflight.outputs.desktop_python == 'true'
+    uses: ./.github/workflows/desktop_python_tests.yml
+    secrets: inherit
+
   publish:
     name: Publish
-    needs: [preflight]
-    if: needs.preflight.outputs.release == 'true'
+    needs:
+      - preflight
+      - python-tests
+      - js-tests
+      - cli-tests
+      - code-interpreter-js-tests
+      - code-interpreter-python-tests
+      - desktop-js-tests
+      - desktop-python-tests
+    if: (!cancelled()) && !contains(needs.*.result, 'failure') && needs.preflight.outputs.release == 'true'
     uses: ./.github/workflows/publish_packages.yml
     secrets: inherit
 
@@ -115,6 +228,13 @@ jobs:
     # `failure()` looks past this job's direct dependencies.
     needs:
       - preflight
+      - python-tests
+      - js-tests
+      - cli-tests
+      - code-interpreter-js-tests
+      - code-interpreter-python-tests
+      - desktop-js-tests
+      - desktop-python-tests
       - publish
     if: failure()
     name: Release Failed - Slack Notification

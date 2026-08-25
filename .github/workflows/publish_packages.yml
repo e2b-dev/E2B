@@ -7,16 +7,14 @@ on:
         required: true
       PYPI_TOKEN:
         required: true
-      VERSION_BUMPER_SECRET:
-        required: true
 
 permissions:
   contents: write
   id-token: write
 
 jobs:
-  publish:
-    name: Validate and publish changesets
+  test:
+    name: Build and test SDK
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1.12.0
@@ -68,41 +66,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Validate packages in changesets
-        run: |
-          pnpm changeset status --output=.changeset-status.json
-          mapfile -t PACKAGES < <(jq -r '.releases[].name' .changeset-status.json)
-          rm -f .changeset-status.json
-
-          if [ "${#PACKAGES[@]}" -eq 0 ]; then
-            echo "::error::Changesets did not resolve to any package releases."
-            exit 1
-          fi
-
-          if printf '%s\n' "${PACKAGES[@]}" | grep -Eq '^(e2b|@e2b/cli|@e2b/code-interpreter|@e2b/desktop)$'; then
-            pnpm --dir packages/js-sdk build
-          fi
-
-          for PACKAGE in "${PACKAGES[@]}"; do
-            echo "::group::Validate ${PACKAGE}"
-            pnpm --filter "$PACKAGE" --if-present run lint
-            pnpm --filter "$PACKAGE" --if-present run typecheck
-            PACKAGE_DIR=$(pnpm --filter "$PACKAGE" exec pwd)
-            if [ -f "${PACKAGE_DIR}/pyproject.toml" ]; then
-              SAFE_PACKAGE=${PACKAGE//\//-}
-              (
-                cd "$PACKAGE_DIR"
-                uv build --out-dir "${RUNNER_TEMP}/package-builds/${SAFE_PACKAGE}"
-              )
-            else
-              pnpm --filter "$PACKAGE" --if-present run build
-            fi
-            pnpm --filter "$PACKAGE" --if-present run test
-            echo "::endgroup::"
-          done
-        env:
-          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-
       - name: Create new versions
         run: pnpm run version
         env:
@@ -137,7 +100,7 @@ jobs:
           createGithubReleases: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: '' # See https://github.com/changesets/changesets/issues/1152#issuecomment-3190884868
+          NPM_TOKEN: "" # See https://github.com/changesets/changesets/issues/1152#issuecomment-3190884868
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
       - name: Push new versions
