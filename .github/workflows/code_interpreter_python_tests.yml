@@ -7,6 +7,10 @@ on:
         required: false
         type: string
         default: ''
+      run_recovery_tests:
+        required: false
+        type: boolean
+        default: true
     secrets:
       E2B_API_KEY:
         required: true
@@ -47,7 +51,16 @@ jobs:
         run: uv build
 
       - name: Run tests
-        run: uv run pytest --verbose --numprocesses=4
+        run: |
+          if [[ "${{ inputs.run_recovery_tests }}" == "true" ]]; then
+            uv run pytest --verbose --numprocesses=4
+          else
+            uv run pytest --verbose --numprocesses=4 \
+              --ignore=tests/async/test_async_interrupt.py \
+              --ignore=tests/async/test_async_systemd.py \
+              --ignore=tests/sync/test_interrupt.py \
+              --ignore=tests/sync/test_systemd.py
+          fi
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}

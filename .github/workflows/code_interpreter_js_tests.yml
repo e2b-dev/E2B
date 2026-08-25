@@ -7,6 +7,10 @@ on:
         required: false
         type: string
         default: ''
+      run_recovery_tests:
+        required: false
+        type: boolean
+        default: true
     secrets:
       E2B_API_KEY:
         required: true
@@ -61,7 +65,12 @@ jobs:
         run: pnpm build
 
       - name: Run Node tests
-        run: pnpm test
+        run: |
+          if [[ "${{ inputs.run_recovery_tests }}" == "true" ]]; then
+            pnpm test
+          else
+            pnpm test --exclude tests/interrupt.test.ts --exclude tests/systemd.test.ts
+          fi
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
