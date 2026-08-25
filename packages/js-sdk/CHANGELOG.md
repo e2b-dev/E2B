@@ -1,5 +1,53 @@
 # e2b
 
+## 2.46.0
+
+### Minor Changes
+
+- 9d1c90d: Remove client-side API key format validation. The SDK no longer checks that the API key matches the `e2b_` hex format — only that a key is present. The `validateApiKey`/`validate_api_key` option is deprecated and has no effect, and the `E2B_VALIDATE_API_KEY` environment variable is no longer read. The server remains the source of truth for key validity.
+
+### Patch Changes
+
+- 67c06e0: Point the two Code Interpreter README links at `code-interpreting/analyze-data-with-ai` instead of the `code-interpreting` section index. The index has no landing page and 307s to that article, dropping the query string on the way, so the UTM parameters were lost before the reader arrived. Linking at the resolved path keeps them.
+- 8943d6f: Update runtime dependencies: `tar` 7.5.22 and `@bufbuild/protobuf` 2.14.0 in the JS SDK, `statuses` 2.0.2, `async-listen` 3.1.0 and `yup` 1.7.1 in the CLI. No behavior change.
+- 182b498: Point the README documentation links at `docs.e2b.dev` instead of `e2b.dev/docs`. The docs site moved to its own subdomain and has no `/docs` path prefix there, so `e2b.dev/docs` serves a 308 to `docs.e2b.dev/` and `e2b.dev/docs/code-interpreting` maps to `docs.e2b.dev/code-interpreting`. The UTM parameters are unchanged and survived the redirect, so this removes a redirect hop rather than fixing broken attribution.
+- b802997: Fix two `network.egressProxy` / `network["egress_proxy"]` cases an untyped caller reaches.
+
+  The JS SDK had no shape guard: `buildEgressProxyBody` rebuilds the body from the known fields, so an `address` that was missing or not a string vanished and the caller got an API error about a config they never wrote (`{"egressProxy":{}}`). It now raises `InvalidArgumentError` naming the option, the way the Python SDK already did:
+
+  ```ts
+  // InvalidArgumentError: network egressProxy must be an object with a string
+  // 'address' (e.g. 'proxy.example.com:1080').
+  await Sandbox.create({
+    network: { egressProxy: 'proxy.example.com:1080' as never },
+  })
+  ```
+
+  A `null` / `None` username or password is now treated as absent instead of being serialized as a JSON null the API rejects — reading a credential out of an unset environment variable is how a caller lands there, and it means the proxy takes no credentials:
+
+  ```ts
+  await Sandbox.create({
+    network: {
+      egressProxy: {
+        address: 'proxy.example.com:1080',
+        // Unset in the environment; the proxy takes no credentials.
+        username: process.env.PROXY_USER,
+      },
+    },
+  })
+  ```
+
+  ```python
+  Sandbox.create(
+      network={
+          "egress_proxy": {
+              "address": "proxy.example.com:1080",
+              "username": os.environ.get("PROXY_USER"),
+          },
+      },
+  )
+  ```
+
 ## 2.45.0
 
 ### Minor Changes

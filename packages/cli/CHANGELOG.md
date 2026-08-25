@@ -1,5 +1,24 @@
 # @e2b/cli
 
+## 2.18.0
+
+### Minor Changes
+
+- 3b599b8: Stop reading `e2b.toml` in `sandbox create`, `template delete` and `template publish`/`unpublish`, and remove their `--config` and `--path` options. Templates must now be passed as an argument or picked interactively with `-s`. `template migrate` is unchanged and remains the only command that reads `e2b.toml`.
+
+### Patch Changes
+
+- 587c15f: Pass flags following the command in `e2b sandbox exec` to the remote command instead of parsing them as CLI options
+- 8943d6f: Update runtime dependencies: `tar` 7.5.22 and `@bufbuild/protobuf` 2.14.0 in the JS SDK, `statuses` 2.0.2, `async-listen` 3.1.0 and `yup` 1.7.1 in the CLI. No behavior change.
+- 3202fad: `e2b sandbox create --detach` now prints only the sandbox ID to stdout; the dashboard inspect link and other informational output go to stderr so the ID is easily parseable (e.g. `SBX=$(e2b sandbox create -d)`).
+- 182b498: Point the README documentation links at `docs.e2b.dev` instead of `e2b.dev/docs`. The docs site moved to its own subdomain and has no `/docs` path prefix there, so `e2b.dev/docs` serves a 308 to `docs.e2b.dev/` and `e2b.dev/docs/code-interpreting` maps to `docs.e2b.dev/code-interpreting`. The UTM parameters are unchanged and survived the redirect, so this removes a redirect hop rather than fixing broken attribution.
+- Updated dependencies [67c06e0]
+- Updated dependencies [8943d6f]
+- Updated dependencies [182b498]
+- Updated dependencies [b802997]
+- Updated dependencies [9d1c90d]
+  - e2b@2.46.0
+
 ## 2.17.1
 
 ### Patch Changes
