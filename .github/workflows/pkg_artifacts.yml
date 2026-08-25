@@ -176,15 +176,15 @@ jobs:
           JS_TGZ=$(ls packages/js-sdk/*.tgz | xargs -n1 basename)
           CLI_TGZ=$(ls packages/cli/*.tgz | xargs -n1 basename)
           CODE_INTERPRETER_JS_VERSION=$(node -p "require('./packages/code-interpreter-js/package.json').version")
-          CODE_INTERPRETER_JS_TGZ=$(ls packages/code-interpreter-js/*.tgz | xargs -n1 basename)
+          CODE_INTERPRETER_JS_TGZ=$(basename packages/code-interpreter-js/*.tgz)
           DESKTOP_JS_VERSION=$(node -p "require('./packages/desktop-js/package.json').version")
-          DESKTOP_JS_TGZ=$(ls packages/desktop-js/*.tgz | xargs -n1 basename)
+          DESKTOP_JS_TGZ=$(basename packages/desktop-js/*.tgz)
           PY_VERSION=$(grep '^version' packages/python-sdk/pyproject.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
           PY_WHL=$(ls packages/python-sdk/dist/*.whl | xargs -n1 basename)
           CODE_INTERPRETER_PY_VERSION=$(grep '^version' packages/code-interpreter-python/pyproject.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
-          CODE_INTERPRETER_PY_WHL=$(ls packages/code-interpreter-python/dist/*.whl | xargs -n1 basename)
+          CODE_INTERPRETER_PY_WHL=$(basename packages/code-interpreter-python/dist/*.whl)
           DESKTOP_PY_VERSION=$(grep '^version' packages/desktop-python/pyproject.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
-          DESKTOP_PY_WHL=$(ls packages/desktop-python/dist/*.whl | xargs -n1 basename)
+          DESKTOP_PY_WHL=$(basename packages/desktop-python/dist/*.whl)
 
           BODY="<!-- e2b-pkg-artifacts -->"$'\n'
           BODY+="### Package Artifacts"$'\n\n'
