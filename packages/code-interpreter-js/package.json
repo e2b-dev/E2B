@@ -29,19 +29,17 @@
     "dev": "tsdown --watch",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "example": "tsx example.mts",
     "test:bun": "bun test tests/runtimes/bun --env-file=.env",
     "test:deno": "deno test tests/runtimes/deno/ --import-map tests/runtimes/deno/import_map.json --allow-net --allow-read --allow-env --unstable-sloppy-imports --trace-leaks",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint --config ../../.oxlintrc.json src tests",
-    "format": "prettier --write src/ tests/ example.mts"
+    "format": "prettier --write src/ tests/"
   },
   "devDependencies": {
     "@typescript/native": "npm:typescript@^7.0.2",
     "@types/node": "^20.19.19",
     "dotenv": "^16.4.5",
     "tsdown": "^0.22.14",
-    "tsx": "^4.19.2",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "vitest": "^4.1.10"
   },

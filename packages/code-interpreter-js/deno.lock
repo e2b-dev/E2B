@@ -45,7 +45,6 @@
         "npm:@typescript/typescript6@^6.0.2",
         "npm:dotenv@^16.4.5",
         "npm:tsdown@~0.22.14",
-        "npm:tsx@^4.19.2",
         "npm:typescript@^7.0.2",
         "npm:vitest@^4.1.10"
       ]
