@@ -26,7 +26,6 @@
     "prepublishOnly": "pnpm build",
     "build": "tsc --noEmit && tsdown",
     "dev": "tsdown --watch",
-    "example": "tsx example.mts",
     "test": "vitest run",
     "generate": "npm-run-all generate:* && pnpm run format",
     "generate:api": "redocly bundle js-sdk --config ../../redocly.yaml -o ../../spec/openapi_generated.js-sdk.yml && openapi-typescript ../../spec/openapi_generated.js-sdk.yml -x api_key --array-length --alphabetize --default-non-nullable false --output src/api/schema.gen.ts",
@@ -42,7 +41,7 @@
     "test:deno": "deno run -A npm:vitest run --project unit --project connectionConfig --project template",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint --config ../../.oxlintrc.json src tests",
-    "format": "prettier --write src/ tests/ example.mts"
+    "format": "prettier --write src/ tests/"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.18.7",
