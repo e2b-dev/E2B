@@ -125,14 +125,12 @@ def parse_git_status(output: str) -> GitStatus:
         ahead_part = None if ahead_start == -1 else branch_info[ahead_start + 2 : -1]
         normalized_branch = _normalize_branch_name(branch_part)
         raw_branch = branch_part
-        is_detached = raw_branch.startswith("HEAD (detached at ") or (
-            "detached" in raw_branch
-        )
+        is_detached = raw_branch.startswith("HEAD (detached at ")
 
         if is_detached or normalized_branch.startswith("HEAD"):
             detached = True
         elif "..." in normalized_branch:
-            branch, upstream_branch = normalized_branch.split("...")
+            branch, upstream_branch = normalized_branch.split("...", 1)
             current_branch = branch or None
             upstream = upstream_branch or None
         else:
