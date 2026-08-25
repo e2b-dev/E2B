@@ -56,6 +56,14 @@ jobs:
         working-directory: packages/cli
         run: pnpm run build
 
+      - name: Build Code Interpreter JS SDK
+        working-directory: packages/code-interpreter-js
+        run: pnpm run build
+
+      - name: Build Desktop JS SDK
+        working-directory: packages/desktop-js
+        run: pnpm run build
+
       # Before the SDK is renamed below: `pnpm pack` resolves the CLI's `workspace:^`
       # range to whatever version the workspace SDK has now, and a prerelease that
       # was never published would leave `e2b` unresolvable.
@@ -70,6 +78,30 @@ jobs:
         with:
           name: e2b-cli
           path: packages/cli/*.tgz
+
+      - name: Pack Code Interpreter JS SDK
+        working-directory: packages/code-interpreter-js
+        run: |
+          pnpm version prerelease --preid=${{ env.BRANCH_ID }} --no-git-tag-version
+          pnpm pack
+
+      - name: Upload Code Interpreter JS SDK artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: e2b-code-interpreter-js
+          path: packages/code-interpreter-js/*.tgz
+
+      - name: Pack Desktop JS SDK
+        working-directory: packages/desktop-js
+        run: |
+          pnpm version prerelease --preid=${{ env.BRANCH_ID }} --no-git-tag-version
+          pnpm pack
+
+      - name: Upload Desktop JS SDK artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: e2b-desktop-js
+          path: packages/desktop-js/*.tgz
 
       # Independent of the CLI steps above: a CLI failure should still leave
       # reviewers a usable SDK tarball, as it did before the CLI moved ahead of it.
@@ -107,6 +139,32 @@ jobs:
           name: e2b-python-sdk
           path: packages/python-sdk/dist/*
 
+      - name: Build Code Interpreter Python SDK
+        working-directory: packages/code-interpreter-python
+        run: |
+          BASE_VERSION=$(uv version --short)
+          uv version "${BASE_VERSION}+${BRANCH_ID}"
+          uv build
+
+      - name: Upload Code Interpreter Python SDK artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: e2b-code-interpreter-python
+          path: packages/code-interpreter-python/dist/*
+
+      - name: Build Desktop Python SDK
+        working-directory: packages/desktop-python
+        run: |
+          BASE_VERSION=$(uv version --short)
+          uv version "${BASE_VERSION}+${BRANCH_ID}"
+          uv build
+
+      - name: Upload Desktop Python SDK artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: e2b-desktop-python
+          path: packages/desktop-python/dist/*
+
       - name: Comment on PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -117,8 +175,16 @@ jobs:
           CLI_VERSION=$(node -p "require('./packages/cli/package.json').version")
           JS_TGZ=$(ls packages/js-sdk/*.tgz | xargs -n1 basename)
           CLI_TGZ=$(ls packages/cli/*.tgz | xargs -n1 basename)
+          CODE_INTERPRETER_JS_VERSION=$(node -p "require('./packages/code-interpreter-js/package.json').version")
+          CODE_INTERPRETER_JS_TGZ=$(ls packages/code-interpreter-js/*.tgz | xargs -n1 basename)
+          DESKTOP_JS_VERSION=$(node -p "require('./packages/desktop-js/package.json').version")
+          DESKTOP_JS_TGZ=$(ls packages/desktop-js/*.tgz | xargs -n1 basename)
           PY_VERSION=$(grep '^version' packages/python-sdk/pyproject.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
           PY_WHL=$(ls packages/python-sdk/dist/*.whl | xargs -n1 basename)
+          CODE_INTERPRETER_PY_VERSION=$(grep '^version' packages/code-interpreter-python/pyproject.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
+          CODE_INTERPRETER_PY_WHL=$(ls packages/code-interpreter-python/dist/*.whl | xargs -n1 basename)
+          DESKTOP_PY_VERSION=$(grep '^version' packages/desktop-python/pyproject.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
+          DESKTOP_PY_WHL=$(ls packages/desktop-python/dist/*.whl | xargs -n1 basename)
 
           BODY="<!-- e2b-pkg-artifacts -->"$'\n'
           BODY+="### Package Artifacts"$'\n\n'
@@ -131,9 +197,25 @@ jobs:
           BODY+='```sh'$'\n'
           BODY+="npm install ./${CLI_TGZ}"$'\n'
           BODY+='```'$'\n\n'
+          BODY+="**Code Interpreter JS SDK** (\`@e2b/code-interpreter@${CODE_INTERPRETER_JS_VERSION}\`):"$'\n'
+          BODY+='```sh'$'\n'
+          BODY+="npm install ./${CODE_INTERPRETER_JS_TGZ}"$'\n'
+          BODY+='```'$'\n\n'
+          BODY+="**Desktop JS SDK** (\`@e2b/desktop@${DESKTOP_JS_VERSION}\`):"$'\n'
+          BODY+='```sh'$'\n'
+          BODY+="npm install ./${DESKTOP_JS_TGZ}"$'\n'
+          BODY+='```'$'\n\n'
           BODY+="**Python SDK** (\`e2b==${PY_VERSION}\`):"$'\n'
           BODY+='```sh'$'\n'
           BODY+="pip install ./${PY_WHL}"$'\n'
+          BODY+='```'$'\n\n'
+          BODY+="**Code Interpreter Python SDK** (\`e2b-code-interpreter==${CODE_INTERPRETER_PY_VERSION}\`):"$'\n'
+          BODY+='```sh'$'\n'
+          BODY+="pip install ./${CODE_INTERPRETER_PY_WHL}"$'\n'
+          BODY+='```'$'\n\n'
+          BODY+="**Desktop Python SDK** (\`e2b-desktop==${DESKTOP_PY_VERSION}\`):"$'\n'
+          BODY+='```sh'$'\n'
+          BODY+="pip install ./${DESKTOP_PY_WHL}"$'\n'
           BODY+='```'$'\n'
 
           COMMENT_ID=$(gh api "repos/${{ github.repository }}/issues/${PR_NUMBER}/comments" \

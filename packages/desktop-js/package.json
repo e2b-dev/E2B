@@ -1,0 +1,68 @@
+{
+  "name": "@e2b/desktop",
+  "version": "2.3.2",
+  "packageManager": "pnpm@10.34.5",
+  "license": "MIT",
+  "description": "E2B Desktop Sandbox - isolated cloud environment with a desktop-like interface powered by E2B. Ready for AI Computer Use",
+  "homepage": "https://e2b.dev/?utm_source=npm&utm_medium=referral&utm_campaign=package_homepage&utm_content=e2b-desktop",
+  "author": {
+    "name": "FoundryLabs, Inc.",
+    "email": "hello@e2b.dev",
+    "url": "https://e2b.dev"
+  },
+  "keywords": [
+    "e2b",
+    "ai-agents",
+    "agents",
+    "ai",
+    "computer-use",
+    "sandbox",
+    "code",
+    "runtime",
+    "vm"
+  ],
+  "bugs": "https://github.com/e2b-dev/e2b/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/e2b-dev/e2b",
+    "directory": "packages/desktop-js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "package.json"
+  ],
+  "engines": {
+    "node": ">=20.18.1 <21 || >=22"
+  },
+  "browserslist": [
+    "defaults"
+  ],
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "sideEffects": false,
+  "scripts": {
+    "prepublishOnly": "pnpm build",
+    "build": "tsc --noEmit && tsdown",
+    "dev": "tsdown --watch",
+    "test": "vitest run --disable-console-intercept",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint --config ../../.oxlintrc.json src tests",
+    "format": "prettier --write src/ tests/"
+  },
+  "devDependencies": {
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "@types/node": "^20.19.19",
+    "dotenv": "^16.4.5",
+    "tsdown": "^0.22.14",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "vitest": "^4.1.10"
+  },
+  "dependencies": {
+    "e2b": "workspace:^"
+  }
+}

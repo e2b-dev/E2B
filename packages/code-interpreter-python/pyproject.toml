@@ -1,0 +1,47 @@
+[project]
+name = "e2b-code-interpreter"
+version = "2.9.1"
+description = "E2B Code Interpreter - Stateful code execution"
+authors = [{ name = "e2b", email = "hello@e2b.dev" }]
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "httpx>=0.20.0,<1.0.0",
+    "attrs>=21.3.0",
+    "e2b>=2.39.1,<3.0.0",
+]
+
+[project.urls]
+Homepage = "https://e2b.dev/?utm_source=pypi&utm_medium=referral&utm_campaign=package_homepage&utm_content=e2b-code-interpreter"
+Repository = "https://github.com/e2b-dev/e2b/tree/main/packages/code-interpreter-python"
+"Bug Tracker" = "https://github.com/e2b-dev/e2b/issues"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3,<10",
+    "python-dotenv>=1.0.0,<2",
+    "pytest-dotenv>=0.5.2,<0.6",
+    "pytest-asyncio>=1.3.0,<2",
+    "pytest-xdist>=3.6.1,<4",
+    "matplotlib>=3.8.0,<4",
+    "ruff>=0.11.12,<0.12",
+    "ty>=0.0.15,<0.0.16",
+]
+
+[build-system]
+requires = ["uv_build>=0.10.0,<0.11.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = ["e2b_code_interpreter"]
+module-root = ""
+
+[tool.uv.sources]
+e2b = { workspace = true }
+
+[tool.uv.workspace]
+members = ["../python-sdk"]
+
+[tool.ruff.lint]
+ignore = ["F401", "F403"]
