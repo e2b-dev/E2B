@@ -36,12 +36,12 @@
     "format": "prettier --write src/ tests/"
   },
   "devDependencies": {
-    "@typescript/native": "npm:typescript@^7.0.2",
-    "@types/node": "^20.19.19",
+    "@typescript/native": "catalog:",
+    "@types/node": "catalog:",
     "dotenv": "^16.4.5",
-    "tsdown": "^0.22.14",
-    "typescript": "npm:@typescript/typescript6@^6.0.2",
-    "vitest": "^4.1.10"
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "files": [
     "dist",

@@ -45,6 +45,8 @@ jobs:
             js:
               - *shared
               - '.github/workflows/js_sdk_tests.yml'
+              - 'tsconfig.sdk.json'
+              - 'tsdown.sdk.config.mts'
               - 'packages/js-sdk/**/!(*.md)'
             python:
               - *shared
@@ -58,6 +60,9 @@ jobs:
             code_interpreter_js:
               - *shared
               - '.github/workflows/code_interpreter_js_tests.yml'
+              - 'tsconfig.sdk.json'
+              - 'tsdown.sdk.config.mts'
+              - 'vitest.sdk.config.mts'
               - 'packages/code-interpreter-js/**/!(*.md)'
               - 'packages/js-sdk/**/!(*.md)'
             code_interpreter_python:
@@ -68,6 +73,9 @@ jobs:
             desktop_js:
               - *shared
               - '.github/workflows/desktop_js_tests.yml'
+              - 'tsconfig.sdk.json'
+              - 'tsdown.sdk.config.mts'
+              - 'vitest.sdk.config.mts'
               - 'packages/desktop-js/**/!(*.md)'
               - 'packages/js-sdk/**/!(*.md)'
             desktop_python:
