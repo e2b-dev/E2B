@@ -163,6 +163,7 @@ export class Result {
     this.latex = data['latex']
     this.json = data['json']
     this.javascript = data['javascript']
+    this.isMainResult = isMainResult
     this.raw = data
 
     this.data = data['data']
