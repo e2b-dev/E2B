@@ -4,7 +4,7 @@ E2B Desktop Sandbox is a secure virtual desktop ready for Computer Use. Powered 
 
 Each sandbox is isolated from the others and can be customized with any dependencies you want.
 
-![Desktop Sandbox](https://raw.githubusercontent.com/e2b-dev/E2B/refs/heads/main/readme-assets/screenshot.png)
+![Desktop Sandbox](https://raw.githubusercontent.com/e2b-dev/E2B/refs/heads/main/packages/desktop-python/screenshot.png)
 
 Source: [packages/desktop-python](https://github.com/e2b-dev/E2B/tree/main/packages/desktop-python)
 
