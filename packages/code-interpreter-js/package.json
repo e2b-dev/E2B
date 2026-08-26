@@ -1,0 +1,73 @@
+{
+  "name": "@e2b/code-interpreter",
+  "version": "2.7.1",
+  "packageManager": "pnpm@10.34.5",
+  "description": "E2B Code Interpreter - Stateful code execution",
+  "homepage": "https://e2b.dev/?utm_source=npm&utm_medium=referral&utm_campaign=package_homepage&utm_content=e2b-code-interpreter",
+  "license": "MIT",
+  "author": {
+    "name": "FoundryLabs, Inc.",
+    "email": "hello@e2b.dev",
+    "url": "https://e2b.dev"
+  },
+  "bugs": "https://github.com/e2b-dev/e2b/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/e2b-dev/e2b",
+    "directory": "packages/code-interpreter-js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "prepublishOnly": "pnpm build",
+    "build": "tsc --noEmit && tsdown",
+    "dev": "tsdown --watch",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:bun": "bun test tests/runtimes/bun --env-file=.env",
+    "test:deno": "deno test tests/runtimes/deno/ --import-map tests/runtimes/deno/import_map.json --allow-net --allow-read --allow-env --unstable-sloppy-imports --trace-leaks",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint --config ../../.oxlintrc.json src tests",
+    "format": "prettier --write src/ tests/"
+  },
+  "devDependencies": {
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "@types/node": "^20.19.19",
+    "dotenv": "^16.4.5",
+    "tsdown": "^0.22.14",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "vitest": "^4.1.10"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "package.json"
+  ],
+  "keywords": [
+    "e2b",
+    "ai-agents",
+    "agents",
+    "ai",
+    "code-interpreter",
+    "stateful-sandbox",
+    "stateful-serverless",
+    "sandbox",
+    "code",
+    "runtime",
+    "vm"
+  ],
+  "engines": {
+    "node": ">=20.18.1 <21 || >=22"
+  },
+  "browserslist": [
+    "defaults"
+  ],
+  "dependencies": {
+    "e2b": "workspace:^"
+  }
+}

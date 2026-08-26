@@ -128,13 +128,67 @@ importers:
         version: 5.43.6(@types/node@20.19.43)(@typescript/typescript6@6.0.2)
       tsdown:
         specifier: ^0.22.14
-        version: 0.22.14(@typescript/typescript6@6.0.2)
+        version: 0.22.14(@typescript/typescript6@6.0.2)(tsx@4.23.12)
       typescript:
         specifier: npm:@typescript/typescript6@^6.0.2
         version: '@typescript/typescript6@6.0.2'
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@types/node@20.19.43)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0))
+        version: 4.1.10(@types/node@20.19.43)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12))
+
+  packages/code-interpreter-js:
+    dependencies:
+      e2b:
+        specifier: workspace:^
+        version: link:../js-sdk
+    devDependencies:
+      '@types/node':
+        specifier: ^20.19.19
+        version: 20.19.43
+      '@typescript/native':
+        specifier: npm:typescript@^7.0.2
+        version: typescript@7.0.2
+      dotenv:
+        specifier: ^16.4.5
+        version: 16.4.5
+      tsdown:
+        specifier: ^0.22.14
+        version: 0.22.14(@typescript/typescript6@6.0.2)(tsx@4.23.12)
+      typescript:
+        specifier: npm:@typescript/typescript6@^6.0.2
+        version: '@typescript/typescript6@6.0.2'
+      vitest:
+        specifier: ^4.1.10
+        version: 4.1.10(@types/node@20.19.43)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12))
+
+  packages/code-interpreter-python: {}
+
+  packages/desktop-js:
+    dependencies:
+      e2b:
+        specifier: workspace:^
+        version: link:../js-sdk
+    devDependencies:
+      '@types/node':
+        specifier: ^20.19.19
+        version: 20.19.43
+      '@typescript/native':
+        specifier: npm:typescript@^7.0.2
+        version: typescript@7.0.2
+      dotenv:
+        specifier: ^16.4.5
+        version: 16.4.5
+      tsdown:
+        specifier: ^0.22.14
+        version: 0.22.14(@typescript/typescript6@6.0.2)(tsx@4.23.12)
+      typescript:
+        specifier: npm:@typescript/typescript6@^6.0.2
+        version: '@typescript/typescript6@6.0.2'
+      vitest:
+        specifier: ^4.1.10
+        version: 4.1.10(@types/node@20.19.43)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12))
+
+  packages/desktop-python: {}
 
   packages/js-sdk:
     dependencies:
@@ -198,13 +252,13 @@ importers:
         version: typescript@7.0.2
       '@vitejs/plugin-react':
         specifier: ^4.3.4
-        version: 4.3.4(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0))
+        version: 4.3.4(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12))
       '@vitest/browser':
         specifier: ^4.1.10
-        version: 4.1.10(bufferutil@4.0.8)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0))(vitest@4.1.10)
+        version: 4.1.10(bufferutil@4.0.8)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12))(vitest@4.1.10)
       '@vitest/browser-playwright':
         specifier: ^4.1.10
-        version: 4.1.10(bufferutil@4.0.8)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(playwright@1.62.1)(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0))(vitest@4.1.10)
+        version: 4.1.10(bufferutil@4.0.8)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(playwright@1.62.1)(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12))(vitest@4.1.10)
       dotenv:
         specifier: ^16.4.5
         version: 16.4.5
@@ -237,13 +291,13 @@ importers:
         version: 19.2.8(react@19.2.8)
       tsdown:
         specifier: ^0.22.14
-        version: 0.22.14(@typescript/typescript6@6.0.2)
+        version: 0.22.14(@typescript/typescript6@6.0.2)(tsx@4.23.12)
       typescript:
         specifier: npm:@typescript/typescript6@^6.0.2
         version: '@typescript/typescript6@6.0.2'
       vitest:
         specifier: ^4.1.10
-        version: 4.1.10(@types/node@20.19.43)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0))
+        version: 4.1.10(@types/node@20.19.43)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12))
       vitest-browser-react:
         specifier: ^2.2.0
         version: 2.2.0(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.10)
@@ -4021,6 +4075,11 @@ packages:
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
 
+  tsx@4.23.12:
+    resolution: {integrity: sha512-FDf4L4sYzKtzWYhU/Xm0AQFdTjdIxNo9ElTf2mxXM6k8YMHXzYUe4yODVaXP4V9uMFbVg8c0qyBccK2OOxb45Q==}
+    engines: {node: '>=18.0.0'}
+    hasBin: true
+
   type-fest@2.19.0:
     resolution: {integrity: sha512-RAH822pAdBgcNMAfWnCBU3CFZcfZ/i1eZjwFU/dsLKumyuuP3niueg2UAukXYF0E2AAoc82ZSSf9J0WQBinzHA==}
     engines: {node: '>=12.20'}
@@ -4724,7 +4783,7 @@ snapshots:
       cjs-module-lexer: 1.2.3
       esbuild: 0.28.1
       miniflare: 4.20260721.0(@types/node@20.19.43)(bufferutil@4.0.8)(utf-8-validate@6.0.3)
-      vitest: 4.1.10(@types/node@20.19.43)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0))
+      vitest: 4.1.10(@types/node@20.19.43)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12))
       wrangler: 4.113.0(@types/node@20.19.43)(bufferutil@4.0.8)(utf-8-validate@6.0.3)
       zod: 3.25.76
     transitivePeerDependencies:
@@ -5828,40 +5887,40 @@ snapshots:
     dependencies:
       '@typescript/old': typescript@6.0.3
 
-  '@vitejs/plugin-react@4.3.4(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0))':
+  '@vitejs/plugin-react@4.3.4(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12))':
     dependencies:
       '@babel/core': 7.29.7
       '@babel/plugin-transform-react-jsx-self': 7.25.9(@babel/core@7.29.7)
       '@babel/plugin-transform-react-jsx-source': 7.25.9(@babel/core@7.29.7)
       '@types/babel__core': 7.20.5
       react-refresh: 0.14.2
-      vite: 6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)
+      vite: 6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12)
     transitivePeerDependencies:
       - supports-color
 
-  '@vitest/browser-playwright@4.1.10(bufferutil@4.0.8)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(playwright@1.62.1)(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0))(vitest@4.1.10)':
+  '@vitest/browser-playwright@4.1.10(bufferutil@4.0.8)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(playwright@1.62.1)(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12))(vitest@4.1.10)':
     dependencies:
-      '@vitest/browser': 4.1.10(bufferutil@4.0.8)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0))(vitest@4.1.10)
-      '@vitest/mocker': 4.1.10(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0))
+      '@vitest/browser': 4.1.10(bufferutil@4.0.8)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12))(vitest@4.1.10)
+      '@vitest/mocker': 4.1.10(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12))
       playwright: 1.62.1
       tinyrainbow: 3.1.0
-      vitest: 4.1.10(@types/node@20.19.43)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0))
+      vitest: 4.1.10(@types/node@20.19.43)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12))
     transitivePeerDependencies:
       - bufferutil
       - msw
       - utf-8-validate
       - vite
 
-  '@vitest/browser@4.1.10(bufferutil@4.0.8)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0))(vitest@4.1.10)':
+  '@vitest/browser@4.1.10(bufferutil@4.0.8)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12))(vitest@4.1.10)':
     dependencies:
       '@blazediff/core': 1.9.1
-      '@vitest/mocker': 4.1.10(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0))
+      '@vitest/mocker': 4.1.10(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12))
       '@vitest/utils': 4.1.10
       magic-string: 0.30.21
       pngjs: 7.0.0
       sirv: 3.0.2
       tinyrainbow: 3.1.0
-      vitest: 4.1.10(@types/node@20.19.43)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0))
+      vitest: 4.1.10(@types/node@20.19.43)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12))
       ws: 8.21.0(bufferutil@4.0.8)(utf-8-validate@6.0.3)
     transitivePeerDependencies:
       - bufferutil
@@ -5881,9 +5940,9 @@ snapshots:
       obug: 2.1.1
       std-env: 4.1.0
       tinyrainbow: 3.1.0
-      vitest: 4.1.10(@types/node@20.19.43)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0))
+      vitest: 4.1.10(@types/node@20.19.43)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12))
     optionalDependencies:
-      '@vitest/browser': 4.1.10(bufferutil@4.0.8)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0))(vitest@4.1.10)
+      '@vitest/browser': 4.1.10(bufferutil@4.0.8)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12))(vitest@4.1.10)
 
   '@vitest/expect@4.1.10':
     dependencies:
@@ -5894,14 +5953,14 @@ snapshots:
       chai: 6.2.2
       tinyrainbow: 3.1.0
 
-  '@vitest/mocker@4.1.10(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0))':
+  '@vitest/mocker@4.1.10(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12))':
     dependencies:
       '@vitest/spy': 4.1.10
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
       msw: 2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2)
-      vite: 6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)
+      vite: 6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12)
 
   '@vitest/pretty-format@4.1.10':
     dependencies:
@@ -7886,7 +7945,7 @@ snapshots:
 
   tree-kill@1.2.2: {}
 
-  tsdown@0.22.14(@typescript/typescript6@6.0.2):
+  tsdown@0.22.14(@typescript/typescript6@6.0.2)(tsx@4.23.12):
     dependencies:
       ansis: 4.3.1
       cac: 7.0.0
@@ -7904,6 +7963,7 @@ snapshots:
       unconfig-core: 7.5.0
       verkit: 0.3.2
     optionalDependencies:
+      tsx: 4.23.12
       typescript: '@typescript/typescript6@6.0.2'
     transitivePeerDependencies:
       - '@typescript/native-preview'
@@ -7912,6 +7972,13 @@ snapshots:
       - vue-tsc
 
   tslib@2.8.1: {}
+
+  tsx@4.23.12:
+    dependencies:
+      esbuild: 0.28.1
+    optionalDependencies:
+      fsevents: 2.3.3
+    optional: true
 
   type-fest@2.19.0: {}
 
@@ -8031,7 +8098,7 @@ snapshots:
 
   verkit@0.3.2: {}
 
-  vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0):
+  vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12):
     dependencies:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.5)
@@ -8044,20 +8111,21 @@ snapshots:
       fsevents: 2.3.3
       jiti: 2.4.2
       terser: 5.46.0
+      tsx: 4.23.12
 
   vitest-browser-react@2.2.0(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.10):
     dependencies:
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
-      vitest: 4.1.10(@types/node@20.19.43)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0))
+      vitest: 4.1.10(@types/node@20.19.43)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12))
     optionalDependencies:
       '@types/react': 19.2.18
       '@types/react-dom': 19.2.4(@types/react@19.2.18)
 
-  vitest@4.1.10(@types/node@20.19.43)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)):
+  vitest@4.1.10(@types/node@20.19.43)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-v8@4.1.10)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12)):
     dependencies:
       '@vitest/expect': 4.1.10
-      '@vitest/mocker': 4.1.10(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0))
+      '@vitest/mocker': 4.1.10(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12))
       '@vitest/pretty-format': 4.1.10
       '@vitest/runner': 4.1.10
       '@vitest/snapshot': 4.1.10
@@ -8074,11 +8142,11 @@ snapshots:
       tinyexec: 1.2.4
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.0
-      vite: 6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)
+      vite: 6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 20.19.43
-      '@vitest/browser-playwright': 4.1.10(bufferutil@4.0.8)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(playwright@1.62.1)(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0))(vitest@4.1.10)
+      '@vitest/browser-playwright': 4.1.10(bufferutil@4.0.8)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(playwright@1.62.1)(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12))(vitest@4.1.10)
       '@vitest/coverage-v8': 4.1.10(@vitest/browser@4.1.10)(vitest@4.1.10)
     transitivePeerDependencies:
       - msw

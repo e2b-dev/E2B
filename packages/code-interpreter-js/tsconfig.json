@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "outDir": "dist",
+    "target": "es2022",
+    "module": "esnext",
+    "lib": ["dom", "es2022"],
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "types": ["node"]
+  },
+  "include": ["src"],
+  "exclude": ["dist", "node_modules", "tsdown.config.ts"]
+}
