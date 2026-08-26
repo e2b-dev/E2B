@@ -32,10 +32,6 @@ jobs:
     name: Code Interpreter JS SDK - ${{ matrix.runtime }}
     strategy:
       fail-fast: false
-      # The legs run the same sandbox-heavy suite, so running them
-      # concurrently would triple this workflow's peak sandbox usage and push
-      # the shared account into API rate limits that fail unrelated SDK jobs.
-      max-parallel: 1
       # With node-only (set by staging callers) the matrix collapses to the
       # Node leg: the Bun/Deno legs re-run the suite the Node leg already
       # covers and add sandbox load without extra backend signal, so the other
