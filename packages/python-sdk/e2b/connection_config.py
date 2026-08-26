@@ -141,17 +141,21 @@ class ClientFactory:
 
         :meta private:
         """
+        bound = merge_api_params(cls._bound_api_params, api_params)
+
+        # The header dicts are copied too, so mutating the ones the caller
+        # passed cannot change the params bound here.
+        headers = bound.get("headers")
+        if headers is not None:
+            bound["headers"] = dict(headers)
+
+        api_headers = bound.get("api_headers")
+        if api_headers is not None:
+            bound["api_headers"] = dict(api_headers)
+
         return cast(
             Type[Self],
-            type(
-                cls.__name__,
-                (cls,),
-                {
-                    "_bound_api_params": merge_api_params(
-                        cls._bound_api_params, api_params
-                    )
-                },
-            ),
+            type(cls.__name__, (cls,), {"_bound_api_params": bound}),
         )
 
     @classmethod

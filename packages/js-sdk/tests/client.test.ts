@@ -23,6 +23,7 @@ const DOMAIN_ENV = 'env.test'
 interface RecordedRequest {
   url: string
   apiKey?: string
+  headers: Headers
 }
 
 const requests: RecordedRequest[] = []
@@ -31,6 +32,7 @@ function record(request: Request) {
   requests.push({
     url: request.url,
     apiKey: request.headers.get('X-API-KEY') ?? undefined,
+    headers: request.headers,
   })
 }
 
@@ -205,6 +207,16 @@ test('mutating the options object does not change the bound config', async () =>
   await client.Sandbox.create()
 
   assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/sandboxes`)
+})
+
+test('mutating the headers object does not change the bound config', async () => {
+  const apiHeaders = { 'X-Test': 'a' }
+  const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A, apiHeaders })
+  apiHeaders['X-Test'] = 'b'
+
+  await client.Sandbox.create()
+
+  assert.equal(lastRequest().headers.get('X-Test'), 'a')
 })
 
 test('per-call options explicitly set to undefined keep the client config', async () => {

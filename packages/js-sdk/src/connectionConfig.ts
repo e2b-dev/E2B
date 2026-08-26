@@ -583,6 +583,15 @@ export class ClientFactory {
       ConnectionConfig.mergeOpts(cls.boundOpts, { ...(opts ?? {}) }) ?? {}
     delete (boundOpts as ConnectionOpts).signal
 
+    // The header objects are copied too, so mutating the ones the caller
+    // passed cannot change the options bound here.
+    if (boundOpts.headers) {
+      boundOpts.headers = { ...boundOpts.headers }
+    }
+    if (boundOpts.apiHeaders) {
+      boundOpts.apiHeaders = { ...boundOpts.apiHeaders }
+    }
+
     return class extends cls {
       protected static override readonly boundOpts = boundOpts
     } as unknown as T

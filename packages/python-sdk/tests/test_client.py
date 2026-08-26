@@ -321,6 +321,16 @@ def test_client_params_are_copied(api_server):
     assert sandbox.connection_config.api_key == API_KEY_A
 
 
+def test_client_header_params_are_copied(api_server):
+    api_headers = {"X-Test": "a"}
+    client = E2B(api_key=API_KEY_A, api_url=api_server, api_headers=api_headers)
+    api_headers["X-Test"] = "b"
+
+    client.Sandbox.create()
+
+    assert requests()[-1][2]["x-test"] == "a"
+
+
 def test_binding_a_bound_class_again_keeps_the_earlier_params(api_server):
     client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
 
