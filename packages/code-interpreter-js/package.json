@@ -31,13 +31,15 @@
     "test:coverage": "vitest run --coverage",
     "test:bun": "bunx --bun vitest run",
     "test:deno": "deno run -A ./node_modules/vitest/vitest.mjs run",
+    "test:cf": "vitest run --config tests/runtimes/cloudflare/vitest.config.mts",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint --config ../../.oxlintrc.json src tests",
     "format": "prettier --write src/ tests/"
   },
   "devDependencies": {
-    "@typescript/native": "catalog:",
+    "@cloudflare/vitest-pool-workers": "^0.18.7",
     "@types/node": "catalog:",
+    "@typescript/native": "catalog:",
     "dotenv": "^16.4.5",
     "tsdown": "catalog:",
     "typescript": "catalog:",

@@ -22,19 +22,20 @@ export function formatExecutionTimeoutError(error: unknown) {
 
 const CONNECTION_CLOSED_CODES = ['ECONNRESET', 'EPIPE', 'UND_ERR_SOCKET']
 
-// Deno surfaces a mid-stream disconnect as a plain `TypeError` from hyper,
+// Deno (hyper) and workerd surface a mid-stream disconnect as a plain error
 // with no `code` and no `cause` — the message is the only signal.
 const CONNECTION_CLOSED_MESSAGES = [
   'error reading a body from connection',
   'connection closed before message completed',
   'connection reset by peer',
+  'network connection lost',
 ]
 
 /**
  * Checks if the error means the connection was closed/reset while the request
  * was in flight. The shape of this error is runtime-specific — Bun sets a
  * `code` directly, Node's fetch (undici) wraps the socket error in the `cause`
- * of a generic `TypeError`, and Deno only sets a message.
+ * of a generic `TypeError`, and Deno and workerd only set a message.
  */
 export function isConnectionClosedError(error: unknown): boolean {
   if (!(error instanceof Error)) {

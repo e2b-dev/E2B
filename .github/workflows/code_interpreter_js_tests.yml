@@ -12,7 +12,7 @@ on:
         type: boolean
         default: true
       node-only:
-        description: 'Run only the Node leg (skip Bun and Deno)'
+        description: 'Run only the Node leg (skip Bun, Deno and Cloudflare)'
         required: false
         type: boolean
         default: false
@@ -33,14 +33,14 @@ jobs:
     strategy:
       fail-fast: false
       # With node-only (set by staging callers) the matrix collapses to the
-      # Node leg: the Bun/Deno legs re-run the suite the Node leg already
-      # covers and add sandbox load without extra backend signal, so the other
+      # Node leg: the other legs re-run the suite the Node leg already covers
+      # and add sandbox load without extra backend signal, so the other
       # runtimes are exercised against production only.
       matrix:
         runtime: >-
           ${{ inputs.node-only
             && fromJSON('["node"]')
-            || fromJSON('["node", "bun", "deno"]') }}
+            || fromJSON('["node", "bun", "deno", "cloudflare"]') }}
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
@@ -96,6 +96,7 @@ jobs:
         run: |
           case "${{ matrix.runtime }}" in
             node) script=test ;;
+            cloudflare) script=test:cf ;;
             *) script=test:${{ matrix.runtime }} ;;
           esac
           if [[ "${{ inputs.run_recovery_tests }}" == "true" ]]; then
