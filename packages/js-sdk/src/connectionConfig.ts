@@ -556,6 +556,39 @@ export class ClientFactory {
   protected static readonly boundOpts?: Omit<ConnectionOpts, 'signal'>
 
   /**
+   * Create a copy of this class with the connection options bound to it as the
+   * defaults for every call made through it, instead of the environment
+   * variables. Per-call options still take precedence, and options already
+   * bound to the class are kept unless they are passed again.
+   *
+   * This is how an {@link E2B} client builds the resources it exposes — the
+   * clients of the packages built on top of the SDK use it too, so it is not
+   * `protected`.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  static withOpts<T>(this: T, opts?: Omit<ConnectionOpts, 'signal'>): T {
+    // `this` is the class the method is called on, typed loosely so any
+    // resource class — whatever its constructor looks like — keeps its own
+    // type through the call.
+    const cls = this as unknown as typeof ClientFactory
+
+    // Options are copied so later mutations of the caller's object cannot
+    // change the bound configuration. `signal` is dropped rather than only
+    // typed away, since it cancels a single request and a caller passing a
+    // wider-typed object (or plain JS) would otherwise bind it to every call.
+    const boundOpts =
+      ConnectionConfig.mergeOpts(cls.boundOpts, { ...(opts ?? {}) }) ?? {}
+    delete (boundOpts as ConnectionOpts).signal
+
+    return class extends cls {
+      protected static override readonly boundOpts = boundOpts
+    } as unknown as T
+  }
+
+  /**
    * Merge the connection options bound to this class with the per-call options,
    * with the per-call options taking precedence.
    *

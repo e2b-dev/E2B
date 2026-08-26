@@ -7,7 +7,7 @@ import {
 } from '../connectionConfig'
 import { BuildError, InvalidArgumentError } from '../errors'
 import { runtime, shellQuote } from '../utils'
-import { callableTemplate } from './callable'
+import { CallableTemplate, callableTemplate } from './callable'
 import {
   assignTags,
   checkAliasExists,
@@ -86,6 +86,23 @@ export class TemplateBase
       (runtime === 'browser' ? '.' : (getCallerDirectory() ?? '.'))
     this.fileIgnorePatterns =
       options?.fileIgnorePatterns ?? this.fileIgnorePatterns
+  }
+
+  /**
+   * Same as {@link ClientFactory.withOpts}, except the bound class is kept
+   * callable as a factory, so both `client.Template()` and the statics
+   * (`client.Template.build(...)`, …) use the bound options.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  static override withOpts<T>(
+    this: T,
+    opts?: Omit<ConnectionOpts, 'signal'>
+  ): CallableTemplate<T & typeof TemplateBase> {
+    const bound = ClientFactory.withOpts.call(this, opts)
+    return callableTemplate(bound as unknown as T & typeof TemplateBase)
   }
 
   /**

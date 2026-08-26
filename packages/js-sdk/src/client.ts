@@ -1,8 +1,7 @@
 import { ConnectionOpts } from './connectionConfig'
 import { Sandbox } from './sandbox'
 import { Secret } from './secret'
-import { Template, TemplateBase } from './template'
-import { callableTemplate } from './template/callable'
+import { Template } from './template'
 import { Volume } from './volume'
 
 /**
@@ -68,29 +67,9 @@ export class E2B {
    *   through this client's resource classes.
    */
   constructor(opts?: E2BClientOpts) {
-    // Options are copied so later mutations of the caller's object cannot
-    // change the bound configuration. `signal` is dropped rather than only
-    // typed away, since it cancels a single request and a caller passing a
-    // wider-typed object (or plain JS) would otherwise bind it to every call.
-    const boundOpts: E2BClientOpts = { ...(opts ?? {}) }
-    delete (boundOpts as ConnectionOpts).signal
-
-    this.Sandbox = class extends Sandbox {
-      protected static override readonly boundOpts = boundOpts
-    }
-
-    this.Volume = class extends Volume {
-      protected static override readonly boundOpts = boundOpts
-    }
-
-    this.Secret = class extends Secret {
-      protected static override readonly boundOpts = boundOpts
-    }
-
-    this.Template = callableTemplate(
-      class extends TemplateBase {
-        protected static override readonly boundOpts = boundOpts
-      }
-    )
+    this.Sandbox = Sandbox.withOpts(opts)
+    this.Volume = Volume.withOpts(opts)
+    this.Secret = Secret.withOpts(opts)
+    this.Template = Template.withOpts(opts)
   }
 }

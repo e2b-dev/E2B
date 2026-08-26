@@ -392,3 +392,18 @@ test('the default export is still Sandbox', async () => {
   assert.equal(lastRequest().url, `https://api.${DOMAIN_ENV}/sandboxes`)
   assert.equal(lastRequest().apiKey, TEST_API_KEY)
 })
+
+test('binding a bound class again keeps the earlier options', async () => {
+  const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
+
+  const Rebound = client.Sandbox.withOpts({ domain: DOMAIN_B })
+  await Rebound.create()
+
+  assert.equal(lastRequest().url, `https://api.${DOMAIN_B}/sandboxes`)
+  assert.equal(lastRequest().apiKey, API_KEY_A)
+
+  // The class it was bound from is unchanged.
+  await client.Sandbox.create()
+  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/sandboxes`)
+  assert.equal(lastRequest().apiKey, API_KEY_A)
+})

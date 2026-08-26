@@ -319,3 +319,16 @@ def test_client_params_are_copied(api_server):
 
     assert api_keys() == [API_KEY_A]
     assert sandbox.connection_config.api_key == API_KEY_A
+
+
+def test_binding_a_bound_class_again_keeps_the_earlier_params(api_server):
+    client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
+
+    rebound = client.Sandbox._with_params(domain=DOMAIN_B)
+    sandbox = rebound.create()
+
+    assert api_keys() == [API_KEY_A]
+    assert sandbox.connection_config.api_key == API_KEY_A
+    assert sandbox.connection_config.domain == DOMAIN_B
+    # The class it was bound from is unchanged.
+    assert client.Sandbox._bound_api_params["domain"] == DOMAIN_A
