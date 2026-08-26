@@ -1,0 +1,66 @@
+name: Test ID Packages
+
+# `@e2b/id` is a pure codec with no network and no API key, so unlike the SDK
+# suites this one needs no secrets and no staging leg.
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ID - Build and test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Parse .tool-versions
+        uses: wistia/parse-tool-versions@v2.1.1
+        with:
+          filename: '.tool-versions'
+          uppercase: 'true'
+          prefix: 'tool_version_'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: '${{ env.TOOL_VERSION_PNPM }}'
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '${{ env.TOOL_VERSION_NODEJS }}'
+          cache: pnpm
+
+      - name: Configure pnpm
+        run: |
+          pnpm config set auto-install-peers true
+          pnpm config set exclude-links-from-lockfile true
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The interop suite drives python3 to prove the format really is
+      # "b32encode, lowercase, strip padding, rotate", so an interpreter has to
+      # be on PATH even though the package itself has no Python component.
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '${{ env.TOOL_VERSION_PYTHON }}'
+
+      - name: Test build (JS)
+        working-directory: packages/js-id
+        run: pnpm build
+
+      - name: Run tests (JS)
+        working-directory: packages/js-id
+        run: pnpm test
