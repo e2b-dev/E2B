@@ -1,7 +1,9 @@
 name: Test ID Packages
 
-# `@e2b/id` is a pure codec with no network and no API key, so unlike the SDK
-# suites this one needs no secrets and no staging leg.
+# `@e2b/id` and `e2b_id` are pure codecs with no network and no API key, so
+# unlike the SDK suites this one needs no secrets and no staging leg. Both run in
+# one job because their point is that they agree: the two suites pin the same
+# golden vectors and the same corpus digest.
 on:
   workflow_call:
 
@@ -49,18 +51,31 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # The interop suite drives python3 to prove the format really is
-      # "b32encode, lowercase, strip padding, rotate", so an interpreter has to
-      # be on PATH even though the package itself has no Python component.
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      # Also gives js-id's interop suite the interpreter it drives to prove the
+      # format really is "b32encode, lowercase, strip padding, rotate".
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
+          version: '${{ env.TOOL_VERSION_UV }}'
           python-version: '${{ env.TOOL_VERSION_PYTHON }}'
+          enable-cache: true
+
+      - name: Install Python dependencies
+        working-directory: packages/python-id
+        run: uv sync --locked
 
       - name: Test build (JS)
         working-directory: packages/js-id
         run: pnpm build
 
+      - name: Test build (Python)
+        working-directory: packages/python-id
+        run: uv build
+
       - name: Run tests (JS)
         working-directory: packages/js-id
         run: pnpm test
+
+      - name: Run tests (Python)
+        working-directory: packages/python-id
+        run: uv run pytest --verbose
