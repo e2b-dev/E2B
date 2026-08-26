@@ -30,7 +30,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:bun": "bunx --bun vitest run",
-    "test:deno": "deno run -A npm:vitest run",
+    "test:deno": "deno run -A ./node_modules/vitest/vitest.mjs run",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint --config ../../.oxlintrc.json src tests",
     "format": "prettier --write src/ tests/"
