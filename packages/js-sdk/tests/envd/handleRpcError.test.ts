@@ -70,6 +70,7 @@ describe('handleRpcErrorWithHealthCheck', () => {
     Bun: 'The socket connection was closed unexpectedly',
     Deno: 'error reading a body from connection',
     'Cloudflare Workers': 'Network connection lost.',
+    Browser: 'network error',
   }
 
   test('returns a TimeoutError when the health check says the sandbox is not running', async () => {
