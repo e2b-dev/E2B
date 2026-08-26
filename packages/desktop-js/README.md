@@ -59,6 +59,30 @@ console.log('Stream URL:', desktop.stream.getUrl({ authKey }))
 // await desktop.kill()
 ```
 
+### 4. Bind the configuration to a client
+
+The top-level `Sandbox` export reads its configuration from the environment variables. To use an explicit configuration — e.g. several API keys or domains in one process — create an `E2B` client and use the resources it exposes:
+
+```javascript
+import { E2B } from '@e2b/desktop'
+
+const client = new E2B({ apiKey: 'e2b_***', domain: 'e2b.dev' })
+
+const desktop = await client.Sandbox.create()
+await desktop.stream.start()
+
+// The core resources are bound to the client's configuration as well.
+const volume = await client.Volume.create('my-volume')
+const exists = await client.Template.exists('my-template')
+await client.Secret.create('openai-api-key', 'sk-***')
+
+// The classes can be destructured and used like the top-level ones.
+const { Sandbox } = client
+const paginator = Sandbox.list()
+```
+
+Per-call options still take precedence over the client's options, and clients are isolated from each other and from the env-configured top-level exports.
+
 ## Features
 
 ### Streaming desktop's screen
