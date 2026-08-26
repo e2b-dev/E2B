@@ -11,6 +11,11 @@ on:
         required: false
         type: boolean
         default: true
+      node-only:
+        description: 'Run only the Node leg (skip Bun and Deno)'
+        required: false
+        type: boolean
+        default: false
     secrets:
       E2B_API_KEY:
         required: true
@@ -24,7 +29,18 @@ jobs:
       run:
         working-directory: ./packages/code-interpreter-js
         shell: bash
-    name: Code Interpreter JS SDK - Build and test
+    name: Code Interpreter JS SDK - ${{ matrix.runtime }}
+    strategy:
+      fail-fast: false
+      # With node-only (set by staging callers) the matrix collapses to the
+      # Node leg: the Bun/Deno legs re-run the suite the Node leg already
+      # covers and add sandbox load without extra backend signal, so the other
+      # runtimes are exercised against production only.
+      matrix:
+        runtime: >-
+          ${{ inputs.node-only
+            && fromJSON('["node"]')
+            || fromJSON('["node", "bun", "deno"]') }}
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
@@ -64,35 +80,29 @@ jobs:
       - name: Test build
         run: pnpm build
 
-      - name: Run Node tests
-        run: |
-          if [[ "${{ inputs.run_recovery_tests }}" == "true" ]]; then
-            pnpm test
-          else
-            pnpm test --exclude tests/interrupt.test.ts --exclude tests/systemd.test.ts
-          fi
-        env:
-          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
-
       - name: Install Bun
+        if: matrix.runtime == 'bun'
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-        with:
-          bun-version: '${{ env.TOOL_VERSION_BUN }}'
-
-      - name: Run Bun tests
-        run: pnpm test:bun
-        env:
-          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
 
       - name: Install Deno
+        if: matrix.runtime == 'deno'
         uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
         with:
           deno-version: 'v${{ env.TOOL_VERSION_DENO }}'
 
-      - name: Run Deno tests
-        run: pnpm test:deno
+      # The recovery suites (interrupt, systemd) exercise sandbox recovery
+      # paths that staging cannot serve, so callers can opt out of them.
+      - name: Run test suite under ${{ matrix.runtime }}
+        run: |
+          case "${{ matrix.runtime }}" in
+            node) script=test ;;
+            *) script=test:${{ matrix.runtime }} ;;
+          esac
+          if [[ "${{ inputs.run_recovery_tests }}" == "true" ]]; then
+            pnpm "$script"
+          else
+            pnpm "$script" --exclude tests/interrupt.test.ts --exclude tests/systemd.test.ts
+          fi
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}

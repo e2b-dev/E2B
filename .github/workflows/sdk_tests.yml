@@ -181,6 +181,9 @@ jobs:
     with:
       E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
       run_recovery_tests: false
+      # Staging only checks backend compatibility, so the Node leg suffices;
+      # Bun/Deno runtime coverage runs against production above.
+      node-only: true
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY_STAGING }}
 
