@@ -156,8 +156,10 @@ export const TEST_API_KEY = `e2b_${'0'.repeat(40)}`
  * browser only exposes a cross-origin response to JS when the server opts in,
  * so there the fetch fails as an opaque `TypeError: Failed to fetch` no matter
  * what the server answered. Opting in is what a real browser app's own server
- * does too, and it's only ever the user's server that has to — everything the
- * sandbox proxy answers itself already carries CORS headers (infra#3389).
+ * does too, and it's only ever the user's server that has to — the responses
+ * the sandbox proxy synthesizes carry their own CORS headers (belt#2068; the
+ * traffic-token paths are still awaiting the orchestrator rollout, which is why
+ * `sandbox requires traffic access token` is red on the browser leg).
  *
  * `Access-Control-Allow-Headers` and `do_OPTIONS` cover requests that carry a
  * custom header, which the browser preflights before sending.
