@@ -51,16 +51,16 @@
     "@types/handlebars": "^4.1.0",
     "@types/inquirer": "^9.0.10",
     "@types/json2md": "^1.5.4",
-    "@types/node": "^20.19.19",
+    "@types/node": "catalog:",
     "@types/npmcli__package-json": "^4.0.4",
     "@types/statuses": "^2.0.6",
-    "@typescript/native": "npm:typescript@^7.0.2",
-    "@vitest/coverage-v8": "^4.1.10",
+    "@typescript/native": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
     "json2md": "^2.0.3",
     "knip": "^5.43.6",
-    "tsdown": "^0.22.14",
-    "typescript": "npm:@typescript/typescript6@^6.0.2",
-    "vitest": "^4.1.10"
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "files": [
     "dist",

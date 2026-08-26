@@ -1,5 +1,5 @@
 import { defineConfig } from 'tsdown'
 
-import { sdkTsdownConfig } from '../../tsdown.sdk.config.mts'
+import { createSdkTsdownConfig } from '../../tsdown.sdk.config.mts'
 
-export default defineConfig(sdkTsdownConfig)
+export default defineConfig(createSdkTsdownConfig())
