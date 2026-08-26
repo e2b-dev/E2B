@@ -1,4 +1,4 @@
-import { randomInt } from 'node:crypto'
+import { randomInt } from 'crypto'
 
 export function generateRandomString(length: number = 16): string {
   const characters =
