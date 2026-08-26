@@ -50,11 +50,15 @@
     "build": "tsc --noEmit && tsdown",
     "dev": "tsdown --watch",
     "test": "vitest run --disable-console-intercept",
+    "test:bun": "bun test tests/runtimes/bun --env-file=.env",
+    "test:cf": "vitest run --config tests/runtimes/cloudflare/vitest.config.mts",
+    "test:deno": "deno test tests/runtimes/deno/ --import-map tests/runtimes/deno/import_map.json --allow-net --allow-read --allow-env --unstable-sloppy-imports --trace-leaks",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint --config ../../.oxlintrc.json src tests",
     "format": "prettier --write src/ tests/"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.18.7",
     "@typescript/native": "catalog:",
     "@types/node": "catalog:",
     "dotenv": "^16.4.5",

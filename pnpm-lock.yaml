@@ -208,6 +208,9 @@ importers:
         specifier: workspace:^
         version: link:../js-sdk
     devDependencies:
+      '@cloudflare/vitest-pool-workers':
+        specifier: ^0.18.7
+        version: 0.18.7(@types/node@20.19.43)(@vitest/runner@4.1.10)(@vitest/snapshot@4.1.10)(bufferutil@4.0.8)(utf-8-validate@6.0.3)(vitest@4.1.10)
       '@types/node':
         specifier: 'catalog:'
         version: 20.19.43

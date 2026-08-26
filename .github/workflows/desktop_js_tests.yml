@@ -64,9 +64,41 @@ jobs:
       - name: Test build
         run: pnpm build
 
-      - name: Run tests
+      - name: Run Node tests
         if: inputs.run_tests
         run: pnpm test
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
+
+      - name: Install Bun
+        if: inputs.run_tests
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+
+      - name: Run Bun tests
+        if: inputs.run_tests
+        run: pnpm test:bun
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
+
+      - name: Install Deno
+        if: inputs.run_tests
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: 'v${{ env.TOOL_VERSION_DENO }}'
+
+      - name: Run Deno tests
+        if: inputs.run_tests
+        run: pnpm test:deno
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
+
+      # Runs the same suite as the Node leg inside workerd (vitest-pool-workers).
+      - name: Run test suite under Cloudflare workerd
+        if: inputs.run_tests
+        run: pnpm test:cf
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
