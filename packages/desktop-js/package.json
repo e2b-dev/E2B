@@ -52,7 +52,7 @@
     "test": "vitest run --disable-console-intercept",
     "test:bun": "bunx --bun vitest run",
     "test:cf": "vitest run --config tests/runtimes/cloudflare/vitest.config.mts",
-    "test:deno": "deno run -A npm:vitest run",
+    "test:deno": "deno run -A ./node_modules/vitest/vitest.mjs run",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint --config ../../.oxlintrc.json src tests",
     "format": "prettier --write src/ tests/"
