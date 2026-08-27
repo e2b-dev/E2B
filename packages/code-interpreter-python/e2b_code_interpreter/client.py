@@ -1,13 +1,16 @@
+from e2b import (
+    AsyncSecret,
+    AsyncTemplate,
+    AsyncVolume,
+    Secret,
+    Template,
+    Volume,
+)
+from e2b.connection_config import ApiParams
 from typing_extensions import Unpack
 
-from e2b.connection_config import ApiParams
-from e2b.sandbox_async.main import AsyncSandbox
-from e2b.sandbox_sync.main import Sandbox
-from e2b.secret import AsyncSecret, Secret
-from e2b.template_async.main import AsyncTemplate
-from e2b.template_sync.main import Template
-from e2b.volume.volume_async import AsyncVolume
-from e2b.volume.volume_sync import Volume
+from e2b_code_interpreter.code_interpreter_async import AsyncSandbox
+from e2b_code_interpreter.code_interpreter_sync import Sandbox
 
 
 class E2BClientParams(ApiParams, total=False):
@@ -31,13 +34,12 @@ class E2B:
 
     Example:
     ```python
-    from e2b import E2B
+    from e2b_code_interpreter import E2B
 
     client = E2B(api_key="e2b_...", domain="e2b.dev")
 
     sandbox = client.Sandbox.create()
-    volumes = client.Volume.list()
-    exists = client.Template.exists("my-template")
+    execution = sandbox.run_code("x = 1; x += 1; x")
     ```
     """
 
@@ -49,10 +51,10 @@ class E2B:
             through this client's resource classes.
         """
         self.Sandbox = Sandbox._with_params(**opts)
-        """`Sandbox` class bound to this client's connection configuration."""
+        """Code Interpreter `Sandbox` class bound to this client's connection configuration."""
 
         self.AsyncSandbox = AsyncSandbox._with_params(**opts)
-        """`AsyncSandbox` class bound to this client's connection configuration."""
+        """Code Interpreter `AsyncSandbox` class bound to this client's connection configuration."""
 
         self.Volume = Volume._with_params(**opts)
         """`Volume` class bound to this client's connection configuration."""

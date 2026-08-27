@@ -5,18 +5,9 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Dict, List, Tuple
 
 import pytest
+from e2b import AsyncSecret, AsyncTemplate, AsyncVolume, Secret, Template, Volume
 
-from e2b import (
-    E2B,
-    AsyncSandbox,
-    AsyncSecret,
-    AsyncTemplate,
-    AsyncVolume,
-    Sandbox,
-    Secret,
-    Template,
-    Volume,
-)
+from e2b_code_interpreter import E2B, AsyncSandbox, Sandbox
 
 API_KEY_A = "e2b_" + "a" * 40
 API_KEY_B = "e2b_" + "b" * 40
@@ -27,7 +18,7 @@ DOMAIN_B = "client-b.example.com"
 ENV_DOMAIN = "env.example.com"
 
 SANDBOX_RESPONSE = {
-    "templateID": "base",
+    "templateID": "code-interpreter-v1",
     "sandboxID": "sbx-test",
     "clientID": "client-test",
     "envdVersion": "0.2.0",
@@ -78,21 +69,13 @@ class _Handler(BaseHTTPRequestHandler):
             self._record_and_respond(404, {"code": 404, "message": "not found"})
 
     def do_GET(self):
-        if self.path.startswith("/v2/sandboxes"):
-            self._record_and_respond(200, [])
-        elif self.path.startswith("/volumes"):
-            self._record_and_respond(200, [])
-        elif self.path.startswith("/templates/aliases/"):
+        if self.path.startswith("/templates/aliases/"):
             self._record_and_respond(
                 200,
                 {"aliases": [], "templateID": "tmpl-test", "public": False},
             )
-        elif self.path.startswith("/templates/"):
-            self._record_and_respond(200, [])
         elif self.path == "/secrets":
             self._record_and_respond(200, [SECRET_RESPONSE])
-        elif self.path.startswith("/secrets/"):
-            self._record_and_respond(200, SECRET_RESPONSE)
         else:
             self._record_and_respond(404, {"code": 404, "message": "not found"})
 
@@ -102,6 +85,7 @@ def api_server(monkeypatch):
     """Local API server, with the env config pointed away from any client's."""
     monkeypatch.setenv("E2B_API_KEY", ENV_API_KEY)
     monkeypatch.setenv("E2B_DOMAIN", ENV_DOMAIN)
+    monkeypatch.delenv("E2B_DEBUG", raising=False)
 
     _Handler.requests = []
     server = ThreadingHTTPServer(("127.0.0.1", 0), _Handler)
@@ -115,12 +99,8 @@ def api_server(monkeypatch):
         thread.join()
 
 
-def requests() -> List[Tuple[str, str, Dict[str, str]]]:
-    return _Handler.requests
-
-
 def api_keys() -> List[str]:
-    return [headers.get("x-api-key", "") for _, _, headers in requests()]
+    return [headers.get("x-api-key", "") for _, _, headers in _Handler.requests]
 
 
 def test_client_sandbox_uses_client_config(api_server):
@@ -129,20 +109,24 @@ def test_client_sandbox_uses_client_config(api_server):
     sandbox = client.Sandbox.create()
 
     assert api_keys() == [API_KEY_A]
-    assert sandbox.connection_config.domain == DOMAIN_A
     assert sandbox.connection_config.api_key == API_KEY_A
+    assert sandbox.connection_config.domain == DOMAIN_A
 
 
-def test_client_sandbox_is_a_subclass(api_server):
+def test_client_sandbox_keeps_the_code_interpreter_api(api_server):
     client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
 
     assert issubclass(client.Sandbox, Sandbox)
     assert client.Sandbox is not Sandbox
-    assert isinstance(client.Sandbox.create(), client.Sandbox)
     # Class-level defaults are inherited.
     assert client.Sandbox.default_template == Sandbox.default_template
-    assert client.Sandbox.default_mcp_template == Sandbox.default_mcp_template
-    assert client.Sandbox.default_sandbox_timeout == Sandbox.default_sandbox_timeout
+
+    sandbox = client.Sandbox.create()
+
+    assert isinstance(sandbox, client.Sandbox)
+    assert isinstance(sandbox, Sandbox)
+    assert callable(sandbox.run_code)
+    assert callable(sandbox.create_code_context)
 
 
 def test_per_call_params_override_the_client(api_server):
@@ -154,6 +138,16 @@ def test_per_call_params_override_the_client(api_server):
     assert sandbox.connection_config.domain == DOMAIN_B
 
 
+def test_per_call_params_set_to_none_keep_the_client_config(api_server):
+    client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
+
+    sandbox = client.Sandbox.create(api_key=None, domain=None)
+
+    assert api_keys() == [API_KEY_A]
+    assert sandbox.connection_config.api_key == API_KEY_A
+    assert sandbox.connection_config.domain == DOMAIN_A
+
+
 def test_client_class_can_be_rebound(api_server):
     client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
 
@@ -162,17 +156,6 @@ def test_client_class_can_be_rebound(api_server):
 
     assert api_keys() == [API_KEY_A]
     assert sandbox.connection_config.api_key == API_KEY_A
-
-
-def test_per_call_params_set_to_none_keep_the_client_config(api_server):
-    client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
-
-    sandbox = client.Sandbox.create(api_key=None, domain=None)
-    assert sandbox.connection_config.api_key == API_KEY_A
-    assert sandbox.connection_config.domain == DOMAIN_A
-
-    client.Sandbox.list().next_items(api_key=None)
-    assert api_keys() == [API_KEY_A, API_KEY_A]
 
 
 def test_two_clients_stay_isolated(api_server):
@@ -187,129 +170,6 @@ def test_two_clients_stay_isolated(api_server):
     assert sandbox_b.connection_config.domain == DOMAIN_B
 
 
-def test_async_client_sandbox_uses_client_config(api_server):
-    client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
-
-    async def run():
-        return await client.AsyncSandbox.create()
-
-    sandbox = asyncio.run(run())
-
-    assert issubclass(client.AsyncSandbox, AsyncSandbox)
-    assert isinstance(sandbox, client.AsyncSandbox)
-    assert api_keys() == [API_KEY_A]
-    assert sandbox.connection_config.api_key == API_KEY_A
-    assert sandbox.connection_config.domain == DOMAIN_A
-
-
-def test_client_volume_uses_client_config(api_server):
-    client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
-
-    volume = client.Volume.create("vol")
-    client.Volume.list()
-
-    assert issubclass(client.Volume, Volume)
-    assert isinstance(volume, client.Volume)
-    assert api_keys() == [API_KEY_A, API_KEY_A]
-
-
-def test_async_client_volume_uses_client_config(api_server):
-    client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
-
-    async def run():
-        volume = await client.AsyncVolume.create("vol")
-        await client.AsyncVolume.list()
-        return volume
-
-    volume = asyncio.run(run())
-
-    assert issubclass(client.AsyncVolume, AsyncVolume)
-    assert isinstance(volume, client.AsyncVolume)
-    assert api_keys() == [API_KEY_A, API_KEY_A]
-
-
-def test_client_template_uses_client_config(api_server):
-    client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
-
-    assert issubclass(client.Template, Template)
-    assert client.Template.exists("tmpl") is True
-    client.Template.get_tags("tmpl-test")
-
-    assert api_keys() == [API_KEY_A, API_KEY_A]
-    # Per-call params still win.
-    client.Template.get_tags("tmpl-test", api_key=API_KEY_B)
-    assert api_keys()[-1] == API_KEY_B
-
-
-def test_client_template_builder_is_usable(api_server):
-    client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
-
-    template = client.Template().from_python_image("3")
-
-    assert client.Template.to_dockerfile(template) == Template.to_dockerfile(
-        Template().from_python_image("3")
-    )
-
-
-def test_async_client_template_uses_client_config(api_server):
-    client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
-
-    async def run():
-        return await client.AsyncTemplate.exists("tmpl")
-
-    assert issubclass(client.AsyncTemplate, AsyncTemplate)
-    assert asyncio.run(run()) is True
-    assert api_keys() == [API_KEY_A]
-
-
-def test_client_secret_uses_client_config(api_server):
-    client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
-
-    assert issubclass(client.Secret, Secret)
-
-    client.Secret.create("secret", "value")
-    client.Secret.get_info("secret")
-    client.Secret.list().next_items()
-
-    assert api_keys() == [API_KEY_A, API_KEY_A, API_KEY_A]
-    # Per-call params still win, and `None` does not erase the client's.
-    client.Secret.get_info("secret", api_key=API_KEY_B)
-    assert api_keys()[-1] == API_KEY_B
-    client.Secret.get_info("secret", api_key=None)
-    assert api_keys()[-1] == API_KEY_A
-
-
-def test_client_async_secret_uses_client_config(api_server):
-    client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
-
-    async def run():
-        return await client.AsyncSecret.exists("secret")
-
-    assert issubclass(client.AsyncSecret, AsyncSecret)
-    assert asyncio.run(run()) is True
-    assert api_keys() == [API_KEY_A]
-
-
-def test_top_level_classes_keep_using_the_env_config(api_server):
-    sandbox = Sandbox.create(api_url=api_server)
-
-    assert api_keys() == [ENV_API_KEY]
-    assert sandbox.connection_config.api_key == ENV_API_KEY
-    assert sandbox.connection_config.domain == ENV_DOMAIN
-    # Creating clients does not bind anything onto the top-level classes.
-    assert Sandbox._bound_api_params == {}
-    assert AsyncSandbox._bound_api_params == {}
-    assert Volume._bound_api_params == {}
-    assert AsyncVolume._bound_api_params == {}
-    assert Template._bound_api_params == {}
-    assert AsyncTemplate._bound_api_params == {}
-    assert Secret._bound_api_params == {}
-    assert AsyncSecret._bound_api_params == {}
-
-    assert Template.exists("tmpl", api_url=api_server) is True
-    assert api_keys()[-1] == ENV_API_KEY
-
-
 def test_client_params_are_copied(api_server):
     opts = {"api_key": API_KEY_A, "domain": DOMAIN_A, "api_url": api_server}
     client = E2B(**opts)
@@ -321,24 +181,56 @@ def test_client_params_are_copied(api_server):
     assert sandbox.connection_config.api_key == API_KEY_A
 
 
-def test_client_header_params_are_copied(api_server):
-    api_headers = {"X-Test": "a"}
-    client = E2B(api_key=API_KEY_A, api_url=api_server, api_headers=api_headers)
-    api_headers["X-Test"] = "b"
-
-    client.Sandbox.create()
-
-    assert requests()[-1][2]["x-test"] == "a"
-
-
-def test_binding_a_bound_class_again_keeps_the_earlier_params(api_server):
+def test_async_client_sandbox_uses_client_config(api_server):
     client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
 
-    rebound = client.Sandbox._with_params(domain=DOMAIN_B)
-    sandbox = rebound.create()
+    async def run():
+        return await client.AsyncSandbox.create()
 
+    sandbox = asyncio.run(run())
+
+    assert issubclass(client.AsyncSandbox, AsyncSandbox)
+    assert isinstance(sandbox, client.AsyncSandbox)
+    assert callable(sandbox.run_code)
     assert api_keys() == [API_KEY_A]
     assert sandbox.connection_config.api_key == API_KEY_A
-    assert sandbox.connection_config.domain == DOMAIN_B
-    # The class it was bound from is unchanged.
-    assert client.Sandbox._bound_api_params["domain"] == DOMAIN_A
+    assert sandbox.connection_config.domain == DOMAIN_A
+
+
+def test_core_resources_are_bound_to_the_client(api_server):
+    client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
+
+    volume = client.Volume.create("vol")
+    assert isinstance(volume, Volume)
+    assert client.Template.exists("tmpl") is True
+    client.Secret.create("secret", "value")
+
+    assert api_keys() == [API_KEY_A, API_KEY_A, API_KEY_A]
+
+    async def run():
+        await client.AsyncVolume.create("vol")
+        assert await client.AsyncTemplate.exists("tmpl") is True
+        await client.AsyncSecret.create("secret", "value")
+
+    asyncio.run(run())
+
+    assert issubclass(client.AsyncVolume, AsyncVolume)
+    assert issubclass(client.AsyncTemplate, AsyncTemplate)
+    assert issubclass(client.AsyncSecret, AsyncSecret)
+    assert issubclass(client.Template, Template)
+    assert issubclass(client.Secret, Secret)
+    assert api_keys() == [API_KEY_A] * 6
+
+
+def test_top_level_classes_keep_using_the_env_config(api_server):
+    client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
+    client.Sandbox.create()
+
+    sandbox = Sandbox.create(api_url=api_server)
+
+    assert api_keys()[-1] == ENV_API_KEY
+    assert sandbox.connection_config.api_key == ENV_API_KEY
+    assert sandbox.connection_config.domain == ENV_DOMAIN
+    # Creating clients does not bind anything onto the top-level classes.
+    assert Sandbox._bound_api_params == {}
+    assert AsyncSandbox._bound_api_params == {}

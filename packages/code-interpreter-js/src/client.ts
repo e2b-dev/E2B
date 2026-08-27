@@ -1,8 +1,6 @@
-import { ConnectionOpts } from './connectionConfig'
+import { ConnectionOpts, Secret, Template, Volume } from 'e2b'
+
 import { Sandbox } from './sandbox'
-import { Secret } from './secret'
-import { Template } from './template'
-import { Volume } from './volume'
 
 /**
  * Connection options bound to an {@link E2B} client.
@@ -27,18 +25,18 @@ export type E2BClientOpts = Omit<ConnectionOpts, 'signal'>
  *
  * @example
  * ```ts
- * import { E2B } from 'e2b'
+ * import { E2B } from '@e2b/code-interpreter'
  *
  * const client = new E2B({ apiKey: 'e2b_...', domain: 'e2b.dev' })
  *
  * const sandbox = await client.Sandbox.create()
- * const volumes = await client.Volume.list()
- * await client.Template.build(client.Template().fromPythonImage('3'), 'my-env')
+ * const execution = await sandbox.runCode('x = 1; x += 1; x')
  * ```
  */
 export class E2B {
   /**
-   * `Sandbox` class bound to this client's connection configuration.
+   * Code Interpreter `Sandbox` class bound to this client's connection
+   * configuration.
    */
   readonly Sandbox: typeof Sandbox
 
@@ -69,7 +67,7 @@ export class E2B {
   constructor(opts?: E2BClientOpts) {
     this.Sandbox = Sandbox.withOpts(opts)
     this.Volume = Volume.withOpts(opts)
-    this.Secret = Secret.withOpts(opts)
     this.Template = Template.withOpts(opts)
+    this.Secret = Secret.withOpts(opts)
   }
 }
