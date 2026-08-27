@@ -16,8 +16,8 @@ from e2b import (
     Secret,
     Template,
     Volume,
-    bind_client_params,
 )
+from e2b.connection_config import bind_client_params
 
 API_KEY_A = "e2b_" + "a" * 40
 API_KEY_B = "e2b_" + "b" * 40
@@ -320,6 +320,19 @@ def test_client_params_are_copied(api_server):
 
     assert api_keys() == [API_KEY_A]
     assert sandbox.connection_config.api_key == API_KEY_A
+
+
+def test_with_params_returns_a_new_client_with_merged_params(api_server):
+    client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
+    overridden = client.with_params(domain=DOMAIN_B)
+
+    sandbox = overridden.Sandbox.create()
+
+    assert api_keys() == [API_KEY_A]
+    assert sandbox.connection_config.api_key == API_KEY_A
+    assert sandbox.connection_config.domain == DOMAIN_B
+    # The original client keeps its own params.
+    assert client.Sandbox._bound_api_params["domain"] == DOMAIN_A
 
 
 def test_bind_client_params_merges_with_already_bound_params():

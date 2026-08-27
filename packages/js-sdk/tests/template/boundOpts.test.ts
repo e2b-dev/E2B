@@ -3,7 +3,8 @@ import { afterAll, afterEach, beforeAll, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
-import { bindClientOpts, BuildOptions, Template, TemplateBase } from '../../src'
+import { BuildOptions, Template, TemplateBase } from '../../src'
+import { bindClientOpts } from '../../src/connectionConfig'
 import { apiUrl, TEST_API_KEY } from '../setup'
 
 const BOUND_API_KEY = `e2b_${'1'.repeat(40)}`

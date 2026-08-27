@@ -154,8 +154,8 @@ def bind_client_params(
     dict, so later top-level mutations of the caller's dicts cannot change the
     bound configuration.
 
-    Intended for building multi-clients (like :class:`e2b.E2B`) in this and
-    downstream SDKs, not for end users.
+    Internal helper for building multi-clients (like :class:`e2b.E2B`);
+    not part of the public API.
 
     :meta private:
     """

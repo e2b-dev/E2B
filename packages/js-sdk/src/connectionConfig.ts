@@ -586,8 +586,8 @@ export class ClientFactory {
  * Options already bound to `cls` are kept and merged with `opts`, with
  * `opts` taking precedence.
  *
- * Intended for building multi-clients (like {@link E2B}) in this and
- * downstream SDKs, not for end users.
+ * Internal helper for building multi-clients (like {@link E2B});
+ * not part of the public API.
  *
  * @internal
  * @hidden
