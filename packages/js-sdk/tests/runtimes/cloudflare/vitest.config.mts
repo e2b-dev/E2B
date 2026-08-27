@@ -1,6 +1,9 @@
 import { defineConfig } from 'vitest/config'
 
-import { createCloudflareVitestConfig } from '../../../../../vitest.cloudflare.config.mts'
+import {
+  createCloudflareVitestConfig,
+  isConnectRpcRejection,
+} from '../../../../../vitest.cloudflare.config.mts'
 
 // Error names thrown by src/errors.ts (plus CommandExitError) — the shapes
 // this suite's rejection tests expect. Kept as a literal list so an unknown
@@ -40,6 +43,7 @@ export default defineConfig(
     isExpectedRejection: (error, message) =>
       // SDK public errors — what `expect(p).rejects` asserts on.
       SDK_ERROR_NAMES.has(String(error.name)) ||
+      isConnectRpcRejection(error, message) ||
       // Stub rejection from tests/sandbox/git/validation.test.ts.
       message === 'commands.run should not be called',
   })

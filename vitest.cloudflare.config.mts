@@ -6,6 +6,18 @@ type UnhandledError = Parameters<
   NonNullable<NonNullable<ViteUserConfig['test']>['onUnhandledError']>
 >[0]
 
+/**
+ * The connect-rpc failures the SDK wraps — they surface on the intermediate
+ * promises of the async-function chain too, so suites that assert on them with
+ * `expect(p).rejects` need them dropped.
+ */
+export function isConnectRpcRejection(
+  error: UnhandledError,
+  message: string
+): boolean {
+  return error.name === 'ConnectError' || message.startsWith('ConnectError:')
+}
+
 export interface CloudflareVitestConfigOptions {
   /** Globs excluded on top of `tests/runtimes/**`. */
   exclude?: string[]
@@ -62,10 +74,7 @@ export function createCloudflareVitestConfig({
         if (error.type !== 'Unhandled Rejection') return
         const message = String(error.message ?? '')
         const expectedRejection =
-          // The transport errors the SDK wraps: connect-rpc failures and
-          // aborted requests surface on intermediate promises too.
-          error.name === 'ConnectError' ||
-          message.startsWith('ConnectError:') ||
+          // Aborted requests surface on intermediate promises too.
           error.name === 'AbortError' ||
           // workerd's teardown error for in-flight streams when a test kills
           // the sandbox mid-request.
