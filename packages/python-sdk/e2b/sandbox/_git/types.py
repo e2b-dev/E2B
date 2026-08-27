@@ -4,13 +4,22 @@ from typing import List, Optional
 from typing_extensions import Literal
 
 GitResetMode = Literal["soft", "mixed", "hard", "merge", "keep"]
-"""Mode for a git reset operation."""
+"""Mode for a git reset operation.
+
+.. deprecated::
+    The sandbox git module is deprecated and will be removed in the next major
+    version. Run git commands with ``sandbox.commands.run()`` instead.
+"""
 
 
 @dataclass
 class GitFileStatus:
     """
     Parsed git status entry for a file.
+
+    .. deprecated::
+        The sandbox git module is deprecated and will be removed in the next major
+        version. Run git commands with ``sandbox.commands.run()`` instead.
 
     :param name: Path relative to the repository root
     :param status: Normalized status string (e.g. "modified", "added")
@@ -32,6 +41,10 @@ class GitFileStatus:
 class GitStatus:
     """
     Parsed git repository status.
+
+    .. deprecated::
+        The sandbox git module is deprecated and will be removed in the next major
+        version. Run git commands with ``sandbox.commands.run()`` instead.
 
     :param current_branch: Current branch name, if available
     :param upstream: Upstream branch name, if available
@@ -123,6 +136,10 @@ class GitStatus:
 class GitBranches:
     """
     Parsed git branch list.
+
+    .. deprecated::
+        The sandbox git module is deprecated and will be removed in the next major
+        version. Run git commands with ``sandbox.commands.run()`` instead.
 
     :param branches: List of branch names
     :param current_branch: Current branch name, if available

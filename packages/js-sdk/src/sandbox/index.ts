@@ -58,7 +58,6 @@ export interface SandboxUrlOpts {
  * - Access Linux OS
  * - Create, list, and delete files and directories
  * - Run commands
- * - Run git operations
  * - Run isolated code
  * - Access the internet
  *
@@ -92,6 +91,9 @@ export class Sandbox extends SandboxApi {
   readonly pty: Pty
   /**
    * Module for running git operations in the sandbox
+   *
+   * @deprecated The sandbox git module is deprecated and will be removed in the next
+   * major version. Run git commands with `sandbox.commands.run()` instead.
    */
   readonly git: Git
 

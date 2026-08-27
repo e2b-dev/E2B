@@ -4,6 +4,9 @@ import { CommandExitError } from '../commands/commandHandle'
 
 /**
  * Parsed git status entry for a file.
+ *
+ * @deprecated The sandbox git module is deprecated and will be removed in the next
+ * major version. Run git commands with `sandbox.commands.run()` instead.
  */
 export interface GitFileStatus {
   /**
@@ -34,6 +37,9 @@ export interface GitFileStatus {
 
 /**
  * Supported normalized git status labels.
+ *
+ * @deprecated The sandbox git module is deprecated and will be removed in the next
+ * major version. Run git commands with `sandbox.commands.run()` instead.
  */
 export type GitStatusLabel =
   | 'conflict'
@@ -48,11 +54,17 @@ export type GitStatusLabel =
 
 /**
  * Scope for git config operations.
+ *
+ * @deprecated The sandbox git module is deprecated and will be removed in the next
+ * major version. Run git commands with `sandbox.commands.run()` instead.
  */
 export type GitConfigScope = 'global' | 'local' | 'system'
 
 /**
  * Parsed git repository status.
+ *
+ * @deprecated The sandbox git module is deprecated and will be removed in the next
+ * major version. Run git commands with `sandbox.commands.run()` instead.
  */
 export interface GitStatus {
   /**
@@ -123,6 +135,9 @@ export interface GitStatus {
 
 /**
  * Parsed git branch list.
+ *
+ * @deprecated The sandbox git module is deprecated and will be removed in the next
+ * major version. Run git commands with `sandbox.commands.run()` instead.
  */
 export interface GitBranches {
   /**

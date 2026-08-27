@@ -32,6 +32,9 @@ const DEFAULT_GIT_ENV: Record<string, string> = {
 
 /**
  * Options for git operations in the sandbox.
+ *
+ * @deprecated The sandbox git module is deprecated and will be removed in the next
+ * major version. Run git commands with `sandbox.commands.run()` instead.
  */
 export interface GitRequestOpts
   extends Partial<
@@ -43,6 +46,9 @@ export interface GitRequestOpts
 
 /**
  * Options for cloning a repository.
+ *
+ * @deprecated The sandbox git module is deprecated and will be removed in the next
+ * major version. Run git commands with `sandbox.commands.run()` instead.
  */
 export interface GitCloneOpts extends GitRequestOpts {
   /**
@@ -75,6 +81,9 @@ export interface GitCloneOpts extends GitRequestOpts {
 
 /**
  * Options for initializing a repository.
+ *
+ * @deprecated The sandbox git module is deprecated and will be removed in the next
+ * major version. Run git commands with `sandbox.commands.run()` instead.
  */
 export interface GitInitOpts extends GitRequestOpts {
   /**
@@ -89,6 +98,9 @@ export interface GitInitOpts extends GitRequestOpts {
 
 /**
  * Options for adding a git remote.
+ *
+ * @deprecated The sandbox git module is deprecated and will be removed in the next
+ * major version. Run git commands with `sandbox.commands.run()` instead.
  */
 export interface GitRemoteAddOpts extends GitRequestOpts {
   /**
@@ -103,6 +115,9 @@ export interface GitRemoteAddOpts extends GitRequestOpts {
 
 /**
  * Options for creating a commit.
+ *
+ * @deprecated The sandbox git module is deprecated and will be removed in the next
+ * major version. Run git commands with `sandbox.commands.run()` instead.
  */
 export interface GitCommitOpts extends GitRequestOpts {
   /**
@@ -121,6 +136,9 @@ export interface GitCommitOpts extends GitRequestOpts {
 
 /**
  * Options for staging files.
+ *
+ * @deprecated The sandbox git module is deprecated and will be removed in the next
+ * major version. Run git commands with `sandbox.commands.run()` instead.
  */
 export interface GitAddOpts extends GitRequestOpts {
   /**
@@ -135,11 +153,17 @@ export interface GitAddOpts extends GitRequestOpts {
 
 /**
  * Supported reset modes.
+ *
+ * @deprecated The sandbox git module is deprecated and will be removed in the next
+ * major version. Run git commands with `sandbox.commands.run()` instead.
  */
 export type GitResetMode = 'soft' | 'mixed' | 'hard' | 'merge' | 'keep'
 
 /**
  * Options for resetting a repository.
+ *
+ * @deprecated The sandbox git module is deprecated and will be removed in the next
+ * major version. Run git commands with `sandbox.commands.run()` instead.
  */
 export interface GitResetOpts extends GitRequestOpts {
   /**
@@ -158,6 +182,9 @@ export interface GitResetOpts extends GitRequestOpts {
 
 /**
  * Options for restoring files or unstaging changes.
+ *
+ * @deprecated The sandbox git module is deprecated and will be removed in the next
+ * major version. Run git commands with `sandbox.commands.run()` instead.
  */
 export interface GitRestoreOpts extends GitRequestOpts {
   /**
@@ -179,6 +206,9 @@ export interface GitRestoreOpts extends GitRequestOpts {
 }
 /**
  * Options for deleting a branch.
+ *
+ * @deprecated The sandbox git module is deprecated and will be removed in the next
+ * major version. Run git commands with `sandbox.commands.run()` instead.
  */
 export interface GitDeleteBranchOpts extends GitRequestOpts {
   /**
@@ -189,6 +219,9 @@ export interface GitDeleteBranchOpts extends GitRequestOpts {
 
 /**
  * Options for pushing commits.
+ *
+ * @deprecated The sandbox git module is deprecated and will be removed in the next
+ * major version. Run git commands with `sandbox.commands.run()` instead.
  */
 export interface GitPushOpts extends GitRequestOpts {
   /**
@@ -215,6 +248,9 @@ export interface GitPushOpts extends GitRequestOpts {
 
 /**
  * Options for pulling commits.
+ *
+ * @deprecated The sandbox git module is deprecated and will be removed in the next
+ * major version. Run git commands with `sandbox.commands.run()` instead.
  */
 export interface GitPullOpts extends GitRequestOpts {
   /**
@@ -240,6 +276,9 @@ export interface GitPullOpts extends GitRequestOpts {
  */
 /**
  * Options for git config operations.
+ *
+ * @deprecated The sandbox git module is deprecated and will be removed in the next
+ * major version. Run git commands with `sandbox.commands.run()` instead.
  */
 export interface GitConfigOpts extends GitRequestOpts {
   /**
@@ -256,6 +295,9 @@ export interface GitConfigOpts extends GitRequestOpts {
 
 /**
  * Options for dangerously authenticating git globally via the credential helper.
+ *
+ * @deprecated The sandbox git module is deprecated and will be removed in the next
+ * major version. Run git commands with `sandbox.commands.run()` instead.
  */
 export interface GitDangerouslyAuthenticateOpts extends GitRequestOpts {
   /**
@@ -282,6 +324,9 @@ export interface GitDangerouslyAuthenticateOpts extends GitRequestOpts {
 
 /**
  * Module for running git operations in the sandbox.
+ *
+ * @deprecated The sandbox git module is deprecated and will be removed in the next
+ * major version. Run git commands with `sandbox.commands.run()` instead.
  */
 export class Git {
   constructor(private readonly commands: Commands) {}
