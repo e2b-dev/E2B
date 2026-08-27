@@ -1,6 +1,6 @@
 {
   "name": "@e2b/code-interpreter",
-  "version": "2.7.1",
+  "version": "2.7.2",
   "packageManager": "pnpm@10.34.5",
   "description": "E2B Code Interpreter - Stateful code execution",
   "homepage": "https://e2b.dev/?utm_source=npm&utm_medium=referral&utm_campaign=package_homepage&utm_content=e2b-code-interpreter",

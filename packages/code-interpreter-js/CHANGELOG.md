@@ -1,5 +1,15 @@
 # @e2b/code-interpreter
 
+## 2.7.2
+
+### Patch Changes
+
+- 84cabc2: Detect a mid-request sandbox kill on Deno, where the disconnect surfaces as a bare `TypeError` message instead of a socket error code, so `runCode` throws the descriptive `TimeoutError` there too
+- 84cabc2: Detect a mid-request sandbox kill on Cloudflare Workers, where workerd reports the disconnect as `Network connection lost.` instead of a socket error code, so `runCode` throws the descriptive `TimeoutError` there too
+- e1532e9: Move the Code Interpreter and Desktop JavaScript and Python SDKs into the E2B monorepo.
+- Updated dependencies [d4a7f41]
+  - e2b@2.46.1
+
 ## 2.7.1
 
 ### Patch Changes

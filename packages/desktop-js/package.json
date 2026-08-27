@@ -1,6 +1,6 @@
 {
   "name": "@e2b/desktop",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "packageManager": "pnpm@10.34.5",
   "license": "MIT",
   "description": "E2B Desktop Sandbox - isolated cloud environment with a desktop-like interface powered by E2B. Ready for AI Computer Use",

@@ -1,5 +1,11 @@
 # @e2b/code-interpreter-python
 
+## 2.9.2
+
+### Patch Changes
+
+- e1532e9: Move the Code Interpreter and Desktop JavaScript and Python SDKs into the E2B monorepo.
+
 ## 2.9.1
 
 ### Patch Changes
