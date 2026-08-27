@@ -556,6 +556,28 @@ export class ClientFactory {
   protected static readonly boundOpts?: Omit<ConnectionOpts, 'signal'>
 
   /**
+   * Return a subclass of this class with `opts` bound to it, used as the
+   * defaults for every call instead of the environment variables.
+   * Per-call options still take precedence over the bound options.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  static withOpts<T>(this: T, opts?: Omit<ConnectionOpts, 'signal'>): T {
+    // Options are copied so later mutations of the caller's object cannot
+    // change the bound configuration. `signal` is dropped rather than only
+    // typed away, since it cancels a single request and a caller passing a
+    // wider-typed object (or plain JS) would otherwise bind it to every call.
+    const boundOpts: Omit<ConnectionOpts, 'signal'> = { ...(opts ?? {}) }
+    delete (boundOpts as ConnectionOpts).signal
+
+    return class extends (this as unknown as typeof ClientFactory) {
+      protected static override readonly boundOpts = boundOpts
+    } as unknown as T
+  }
+
+  /**
    * Merge the connection options bound to this class with the per-call options,
    * with the per-call options taking precedence.
    *

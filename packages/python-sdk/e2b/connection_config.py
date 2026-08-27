@@ -1,7 +1,7 @@
 import logging
 import os
 
-from typing import cast, Mapping, Optional, Dict, TypedDict, Union
+from typing import cast, Mapping, Optional, Dict, Type, TypedDict, TypeVar, Union
 
 import httpx
 from typing_extensions import Unpack
@@ -109,6 +109,9 @@ def merge_api_params(
     return cast(ApiParams, merged)
 
 
+_ClientT = TypeVar("_ClientT", bound="ClientFactory")
+
+
 class ClientFactory:
     """
     Base class for the resource classes (`Sandbox`, `Volume`, `Template`,
@@ -127,6 +130,25 @@ class ClientFactory:
 
     :meta private:
     """
+
+    @classmethod
+    def _with_params(
+        cls: Type[_ClientT], **params: Unpack[ApiParams]
+    ) -> Type[_ClientT]:
+        """
+        Return a subclass of this class with ``params`` bound to it, used as
+        the defaults for every call instead of the environment variables.
+        Per-call params still take precedence over the bound params.
+
+        The keyword arguments form a fresh dict, so later mutations of the
+        caller's dicts cannot change the bound configuration.
+
+        :meta private:
+        """
+        return cast(
+            Type[_ClientT],
+            type(cls.__name__, (cls,), {"_bound_api_params": params}),
+        )
 
     @classmethod
     def _resolve_api_params(cls, **opts: Unpack[ApiParams]) -> ApiParams:
