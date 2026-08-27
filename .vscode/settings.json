@@ -62,13 +62,13 @@
   "python.autoComplete.extraPaths": [
     "./**",
     "./packages/python-sdk/**",
-    "./packages/python-sdk/.venv/bin/python",
+    "./.venv/bin/python",
   ],
-  "python.defaultInterpreterPath": "./packages/python-sdk/.venv/bin/python",
+  "python.defaultInterpreterPath": "./.venv/bin/python",
   "python.analysis.extraPaths": [
     "./**",
     "./packages/python-sdk/**",
-    "./packages/python-sdk/.venv/bin/python"
+    "./.venv/bin/python"
   ],
   // Disable Pylint and use just Pylance
   "python.linting.enabled": false,
@@ -76,7 +76,7 @@
   "cursorpyright.analysis.extraPaths": [
     "./**",
     "./packages/python-sdk/**",
-    "./packages/python-sdk/.venv/bin/python"
+    "./.venv/bin/python"
   ],
   "cursorpyright.analysis.typeCheckingMode": "basic",
   // "python.analysis.pylanceLspClientEnabled": true,

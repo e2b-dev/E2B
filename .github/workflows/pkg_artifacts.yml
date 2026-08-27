@@ -126,12 +126,16 @@ jobs:
           python-version: '${{ env.TOOL_VERSION_PYTHON }}'
           enable-cache: true
 
+      # `--out-dir dist` on every Python build below: inside a uv workspace
+      # `uv build` defaults to the workspace root's `dist/`, which would collect
+      # all three SDKs in one directory and leave the per-package paths these
+      # uploads (and `uv publish`) expect empty.
       - name: Build Python SDK
         working-directory: packages/python-sdk
         run: |
           BASE_VERSION=$(uv version --short)
           uv version "${BASE_VERSION}+${BRANCH_ID}"
-          uv build
+          uv build --out-dir dist
 
       - name: Upload Python SDK artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -144,7 +148,7 @@ jobs:
         run: |
           BASE_VERSION=$(uv version --short)
           uv version "${BASE_VERSION}+${BRANCH_ID}"
-          uv build
+          uv build --out-dir dist
 
       - name: Upload Code Interpreter Python SDK artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -157,7 +161,7 @@ jobs:
         run: |
           BASE_VERSION=$(uv version --short)
           uv version "${BASE_VERSION}+${BRANCH_ID}"
-          uv build
+          uv build --out-dir dist
 
       - name: Upload Desktop Python SDK artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

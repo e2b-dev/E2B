@@ -26,10 +26,10 @@ generate-envd:
 
 generate: generate-api generate-envd generate-mcp generate-volume-api
 
-# Install the code-generation toolchain into the uv env. After this, run the
-# generators locally with e.g. `uv run make generate-api`.
+# Install the code-generation toolchain into the workspace env. After this, run
+# the generators locally with e.g. `uv run --all-packages make generate-api`.
 init:
-	uv sync --group codegen
+	uv sync --all-packages --group codegen
 
 typecheck:
 	ty check
@@ -55,4 +55,4 @@ generate-mcp:
 
 .PHONY: test
 test:
-	uv run pytest --verbose --numprocesses=4
+	uv run --all-packages pytest --verbose --numprocesses=4

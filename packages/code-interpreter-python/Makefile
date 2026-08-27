@@ -10,4 +10,4 @@ format:
 
 .PHONY: test
 test:
-	uv run pytest --verbose --numprocesses=4
+	uv run --all-packages pytest --verbose --numprocesses=4

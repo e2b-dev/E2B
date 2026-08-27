@@ -29,6 +29,8 @@ jobs:
               - '.prettierignore'
               - '.editorconfig'
               - 'pnpm-lock.yaml'
+              - 'uv.lock'
+              - 'pyproject.toml'
               - 'pnpm-workspace.yaml'
               - 'package.json'
               - '.tool-versions'
@@ -77,9 +79,8 @@ jobs:
           enable-cache: true
 
       - name: Install Python dependencies
-        working-directory: packages/python-sdk
         run: |
-          uv sync --locked
+          uv sync --locked --all-packages
 
       - name: Run linting
         run: |

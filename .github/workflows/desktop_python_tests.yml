@@ -45,14 +45,14 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --locked --package e2b-desktop
+        run: uv sync --locked --all-packages
 
       - name: Test build
-        run: uv build
+        run: uv build --out-dir dist
 
       - name: Run tests
         if: inputs.run_tests
-        run: uv run pytest --verbose --numprocesses=4
+        run: uv run --all-packages pytest --verbose --numprocesses=4
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}

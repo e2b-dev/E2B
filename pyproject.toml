@@ -1,0 +1,13 @@
+# Virtual root of the uv workspace: it declares no package of its own, it only
+# ties the Python SDKs together so they resolve against a single `uv.lock`.
+[tool.uv.workspace]
+members = [
+    "packages/python-sdk",
+    "packages/code-interpreter-python",
+    "packages/desktop-python",
+]
+
+# Inherited by every member, so the SDKs depending on `e2b` build against the
+# checkout rather than the published release.
+[tool.uv.sources]
+e2b = { workspace = true }

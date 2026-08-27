@@ -48,8 +48,12 @@ jobs:
               - 'tsconfig.sdk.json'
               - 'tsdown.sdk.config.mts'
               - 'packages/js-sdk/**/!(*.md)'
+            python-shared: &python-shared
+              - 'pyproject.toml'
+              - 'uv.lock'
             python:
               - *shared
+              - *python-shared
               - '.github/workflows/python_sdk_tests.yml'
               - 'packages/python-sdk/**/!(*.md)'
             cli:
@@ -67,6 +71,7 @@ jobs:
               - 'packages/js-sdk/**/!(*.md)'
             code_interpreter_python:
               - *shared
+              - *python-shared
               - '.github/workflows/code_interpreter_python_tests.yml'
               - 'packages/code-interpreter-python/**/!(*.md)'
               - 'packages/python-sdk/**/!(*.md)'
@@ -80,6 +85,7 @@ jobs:
               - 'packages/js-sdk/**/!(*.md)'
             desktop_python:
               - *shared
+              - *python-shared
               - '.github/workflows/desktop_python_tests.yml'
               - 'packages/desktop-python/**/!(*.md)'
               - 'packages/python-sdk/**/!(*.md)'

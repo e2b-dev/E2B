@@ -45,17 +45,17 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --locked --package e2b-code-interpreter
+        run: uv sync --locked --all-packages
 
       - name: Test build
-        run: uv build
+        run: uv build --out-dir dist
 
       - name: Run tests
         run: |
           if [[ "${{ inputs.run_recovery_tests }}" == "true" ]]; then
-            uv run pytest --verbose --numprocesses=4
+            uv run --all-packages pytest --verbose --numprocesses=4
           else
-            uv run pytest --verbose --numprocesses=4 \
+            uv run --all-packages pytest --verbose --numprocesses=4 \
               --ignore=tests/async/test_async_interrupt.py \
               --ignore=tests/async/test_async_systemd.py \
               --ignore=tests/sync/test_interrupt.py \

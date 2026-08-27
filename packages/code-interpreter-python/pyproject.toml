@@ -37,11 +37,5 @@ build-backend = "uv_build"
 module-name = ["e2b_code_interpreter"]
 module-root = ""
 
-[tool.uv.sources]
-e2b = { workspace = true }
-
-[tool.uv.workspace]
-members = ["../python-sdk"]
-
 [tool.ruff.lint]
 ignore = ["F401", "F403"]
