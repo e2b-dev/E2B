@@ -141,9 +141,9 @@ class ClientFactory:
         Per-call params still take precedence over the bound params.
 
         Params already bound to this class are kept and merged with
-        ``params``, with ``params`` taking precedence. The params are copied
-        into a fresh dict, so later mutations of the caller's dicts cannot
-        change the bound configuration.
+        ``params``, with ``params`` taking precedence. The params are
+        shallow-copied into a fresh dict, so later top-level mutations of the
+        caller's dicts cannot change the bound configuration.
         """
         bound = cast(ApiParams, {**cls._bound_api_params, **params})
         return cast(

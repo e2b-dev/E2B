@@ -99,6 +99,14 @@ export interface ConnectionOpts {
 export type ConnectionConfigOpts = ConnectionOpts
 
 /**
+ * Connection options bound to an {@link E2B} client.
+ *
+ * Same as {@link ConnectionOpts} without `signal`, which cancels a single
+ * request and therefore can only be passed per call.
+ */
+export type E2BClientOpts = Omit<ConnectionOpts, 'signal'>
+
+/**
  * Build an `AbortSignal` that combines an optional request-timeout signal
  * (via `AbortSignal.timeout`) with an optional user-provided signal.
  *
@@ -553,7 +561,7 @@ export class ClientFactory {
    * @hidden
    * @hide
    */
-  protected static readonly boundOpts?: Omit<ConnectionOpts, 'signal'>
+  protected static readonly boundOpts?: E2BClientOpts
 
   /**
    * Return a subclass of this class with `opts` bound to it, used as the
@@ -569,15 +577,16 @@ export class ClientFactory {
   // subclass expression cannot be typed as `T` without the cast.
   static bindClientOpts<T extends { prototype: ClientFactory }>(
     this: T,
-    opts?: Omit<ConnectionOpts, 'signal'>
+    opts?: E2BClientOpts
   ): T {
     const base = this as unknown as typeof ClientFactory
 
-    // Options are copied so later mutations of the caller's object cannot
-    // change the bound configuration. `signal` is dropped rather than only
-    // typed away, since it cancels a single request and a caller passing a
-    // wider-typed object (or plain JS) would otherwise bind it to every call.
-    const boundOpts: Omit<ConnectionOpts, 'signal'> = {
+    // Options are shallow-copied so later top-level mutations of the caller's
+    // object cannot change the bound configuration. `signal` is dropped rather
+    // than only typed away, since it cancels a single request and a caller
+    // passing a wider-typed object (or plain JS) would otherwise bind it to
+    // every call.
+    const boundOpts: E2BClientOpts = {
       ...(base.boundOpts ?? {}),
       ...(opts ?? {}),
     }

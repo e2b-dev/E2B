@@ -1,17 +1,11 @@
-import { ConnectionOpts } from './connectionConfig'
+import { E2BClientOpts } from './connectionConfig'
 import { Sandbox } from './sandbox'
 import { Secret } from './secret'
 import { Template, TemplateBase } from './template'
 import { callableTemplate } from './template/callable'
 import { Volume } from './volume'
 
-/**
- * Connection options bound to an {@link E2B} client.
- *
- * Same as {@link ConnectionOpts} without `signal`, which cancels a single
- * request and therefore can only be passed per call.
- */
-export type E2BClientOpts = Omit<ConnectionOpts, 'signal'>
+export type { E2BClientOpts } from './connectionConfig'
 
 /**
  * E2B client with an explicitly bound connection configuration.
