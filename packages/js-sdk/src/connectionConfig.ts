@@ -564,7 +564,14 @@ export class ClientFactory {
    * @hidden
    * @hide
    */
-  static withOpts<T>(this: T, opts?: Omit<ConnectionOpts, 'signal'>): T {
+  // The static sides of the subclasses are not assignable to
+  // `typeof ClientFactory` (their constructors differ), and TS has no
+  // polymorphic `this` for statics, so the constraint is structural and the
+  // subclass expression cannot be typed as `T` without the cast.
+  static withOpts<T extends { prototype: ClientFactory }>(
+    this: T,
+    opts?: Omit<ConnectionOpts, 'signal'>
+  ): T {
     // Options are copied so later mutations of the caller's object cannot
     // change the bound configuration. `signal` is dropped rather than only
     // typed away, since it cancels a single request and a caller passing a
