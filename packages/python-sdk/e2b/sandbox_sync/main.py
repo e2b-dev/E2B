@@ -94,9 +94,7 @@ class Sandbox(SandboxApi):
         """
         Module for running git operations in the sandbox.
 
-        .. deprecated::
-            The sandbox git module is deprecated and will be removed in the next major
-            version. Run git commands with ``sandbox.commands.run()`` instead.
+        :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
         """
         return self._git
 

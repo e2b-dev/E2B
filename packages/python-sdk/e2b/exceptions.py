@@ -89,9 +89,7 @@ class GitAuthException(AuthenticationException):
     """
     Raised when git authentication fails.
 
-    .. deprecated::
-        The sandbox git module is deprecated and will be removed in the next major
-        version. Run git commands with ``sandbox.commands.run()`` instead.
+    :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
     """
 
     pass
@@ -101,9 +99,7 @@ class GitUpstreamException(SandboxException):
     """
     Raised when git upstream tracking is missing.
 
-    .. deprecated::
-        The sandbox git module is deprecated and will be removed in the next major
-        version. Run git commands with ``sandbox.commands.run()`` instead.
+    :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
     """
 
     pass
