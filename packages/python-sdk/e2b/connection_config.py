@@ -132,7 +132,7 @@ class ClientFactory:
     """
 
     @classmethod
-    def _with_params(
+    def bind_client_params(
         cls: Type[_ClientT], **params: Unpack[ApiParams]
     ) -> Type[_ClientT]:
         """
@@ -140,14 +140,15 @@ class ClientFactory:
         the defaults for every call instead of the environment variables.
         Per-call params still take precedence over the bound params.
 
-        The keyword arguments form a fresh dict, so later mutations of the
-        caller's dicts cannot change the bound configuration.
-
-        :meta private:
+        Params already bound to this class are kept and merged with
+        ``params``, with ``params`` taking precedence. The params are copied
+        into a fresh dict, so later mutations of the caller's dicts cannot
+        change the bound configuration.
         """
+        bound = cast(ApiParams, {**cls._bound_api_params, **params})
         return cast(
             Type[_ClientT],
-            type(cls.__name__, (cls,), {"_bound_api_params": params}),
+            type(cls.__name__, (cls,), {"_bound_api_params": bound}),
         )
 
     @classmethod

@@ -48,26 +48,26 @@ class E2B:
         :param opts: API params used as the defaults for every call made
             through this client's resource classes.
         """
-        self.Sandbox = Sandbox._with_params(**opts)
+        self.Sandbox = Sandbox.bind_client_params(**opts)
         """`Sandbox` class bound to this client's connection configuration."""
 
-        self.AsyncSandbox = AsyncSandbox._with_params(**opts)
+        self.AsyncSandbox = AsyncSandbox.bind_client_params(**opts)
         """`AsyncSandbox` class bound to this client's connection configuration."""
 
-        self.Volume = Volume._with_params(**opts)
+        self.Volume = Volume.bind_client_params(**opts)
         """`Volume` class bound to this client's connection configuration."""
 
-        self.AsyncVolume = AsyncVolume._with_params(**opts)
+        self.AsyncVolume = AsyncVolume.bind_client_params(**opts)
         """`AsyncVolume` class bound to this client's connection configuration."""
 
-        self.Template = Template._with_params(**opts)
+        self.Template = Template.bind_client_params(**opts)
         """`Template` class bound to this client's connection configuration."""
 
-        self.AsyncTemplate = AsyncTemplate._with_params(**opts)
+        self.AsyncTemplate = AsyncTemplate.bind_client_params(**opts)
         """`AsyncTemplate` class bound to this client's connection configuration."""
 
-        self.Secret = Secret._with_params(**opts)
+        self.Secret = Secret.bind_client_params(**opts)
         """`Secret` class bound to this client's connection configuration."""
 
-        self.AsyncSecret = AsyncSecret._with_params(**opts)
+        self.AsyncSecret = AsyncSecret.bind_client_params(**opts)
         """`AsyncSecret` class bound to this client's connection configuration."""

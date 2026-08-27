@@ -163,3 +163,27 @@ test('build options carry the bound options into the build', async () => {
     requestTimeoutMs: 42,
   })
 })
+
+test('bindClientOpts merges with already-bound options', () => {
+  class ProbeTemplate extends TemplateBase {
+    static probeBuildOpts(options?: BuildOptions) {
+      return this.resolveOpts(options)
+    }
+  }
+
+  const bound = ProbeTemplate.bindClientOpts({
+    apiKey: BOUND_API_KEY,
+    requestTimeoutMs: 1234,
+  })
+  const rebound = bound.bindClientOpts({ requestTimeoutMs: 42 })
+
+  expect(rebound.probeBuildOpts()).toEqual({
+    apiKey: BOUND_API_KEY,
+    requestTimeoutMs: 42,
+  })
+  // The original class keeps its own bound options.
+  expect(bound.probeBuildOpts()).toEqual({
+    apiKey: BOUND_API_KEY,
+    requestTimeoutMs: 1234,
+  })
+})

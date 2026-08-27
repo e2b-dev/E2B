@@ -31,6 +31,7 @@ from .api import (
 )
 from .connection_config import (
     ApiParams,
+    ClientFactory,
     ConnectionConfig,
     ProxyTypes,
     Username,
@@ -171,6 +172,7 @@ __all__ = [
     "VolumeConnectionConfig",
     "ProxyTypes",
     "ApiParams",
+    "ClientFactory",
     "VolumeApiParams",
     "Username",
     # Exceptions

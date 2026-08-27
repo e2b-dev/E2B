@@ -1,7 +1,7 @@
 export { ApiClient } from './api'
 export type { components, paths } from './api'
 
-export { ConnectionConfig } from './connectionConfig'
+export { ClientFactory, ConnectionConfig } from './connectionConfig'
 export type {
   ConnectionConfigOpts,
   ConnectionOpts,

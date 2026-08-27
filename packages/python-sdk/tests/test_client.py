@@ -319,3 +319,12 @@ def test_client_params_are_copied(api_server):
 
     assert api_keys() == [API_KEY_A]
     assert sandbox.connection_config.api_key == API_KEY_A
+
+
+def test_bind_client_params_merges_with_already_bound_params():
+    bound = Sandbox.bind_client_params(api_key=API_KEY_A, domain=DOMAIN_A)
+    rebound = bound.bind_client_params(domain=DOMAIN_B)
+
+    assert rebound._bound_api_params == {"api_key": API_KEY_A, "domain": DOMAIN_B}
+    # The original class keeps its own bound params.
+    assert bound._bound_api_params == {"api_key": API_KEY_A, "domain": DOMAIN_A}

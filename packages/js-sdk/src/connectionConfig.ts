@@ -560,26 +560,30 @@ export class ClientFactory {
    * defaults for every call instead of the environment variables.
    * Per-call options still take precedence over the bound options.
    *
-   * @internal
-   * @hidden
-   * @hide
+   * Options already bound to this class are kept and merged with `opts`,
+   * with `opts` taking precedence.
    */
   // The static sides of the subclasses are not assignable to
   // `typeof ClientFactory` (their constructors differ), and TS has no
   // polymorphic `this` for statics, so the constraint is structural and the
   // subclass expression cannot be typed as `T` without the cast.
-  static withOpts<T extends { prototype: ClientFactory }>(
+  static bindClientOpts<T extends { prototype: ClientFactory }>(
     this: T,
     opts?: Omit<ConnectionOpts, 'signal'>
   ): T {
+    const base = this as unknown as typeof ClientFactory
+
     // Options are copied so later mutations of the caller's object cannot
     // change the bound configuration. `signal` is dropped rather than only
     // typed away, since it cancels a single request and a caller passing a
     // wider-typed object (or plain JS) would otherwise bind it to every call.
-    const boundOpts: Omit<ConnectionOpts, 'signal'> = { ...(opts ?? {}) }
+    const boundOpts: Omit<ConnectionOpts, 'signal'> = {
+      ...(base.boundOpts ?? {}),
+      ...(opts ?? {}),
+    }
     delete (boundOpts as ConnectionOpts).signal
 
-    return class extends (this as unknown as typeof ClientFactory) {
+    return class extends base {
       protected static override readonly boundOpts = boundOpts
     } as unknown as T
   }

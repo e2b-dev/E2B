@@ -68,9 +68,9 @@ export class E2B {
    *   through this client's resource classes.
    */
   constructor(opts?: E2BClientOpts) {
-    this.Sandbox = Sandbox.withOpts(opts)
-    this.Volume = Volume.withOpts(opts)
-    this.Secret = Secret.withOpts(opts)
-    this.Template = callableTemplate(TemplateBase.withOpts(opts))
+    this.Sandbox = Sandbox.bindClientOpts(opts)
+    this.Volume = Volume.bindClientOpts(opts)
+    this.Secret = Secret.bindClientOpts(opts)
+    this.Template = callableTemplate(TemplateBase.bindClientOpts(opts))
   }
 }
