@@ -94,6 +94,8 @@ class AsyncSandbox(SandboxApi):
     def git(self) -> Git:
         """
         Module for running git operations in the sandbox.
+
+        :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
         """
         return self._git
 
