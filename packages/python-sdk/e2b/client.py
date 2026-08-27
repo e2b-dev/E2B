@@ -48,8 +48,6 @@ class E2B:
         :param opts: API params used as the defaults for every call made
             through this client's resource classes.
         """
-        self._params: E2BClientParams = dict(opts)
-
         self.Sandbox = Sandbox.with_params(**opts)
         """`Sandbox` class bound to this client's connection configuration."""
 
@@ -73,21 +71,3 @@ class E2B:
 
         self.AsyncSecret = AsyncSecret.with_params(**opts)
         """`AsyncSecret` class bound to this client's connection configuration."""
-
-    def with_params(self, **params: Unpack[E2BClientParams]) -> "E2B":
-        """
-        Create a new client that inherits this client's params and overrides
-        them with ``params``, with ``params`` taking precedence.
-        This client is not modified.
-
-        :param params: API params to override.
-
-        :return: A new :class:`E2B` client with the merged params.
-
-        Example:
-        ```python
-        client = E2B(api_key="e2b_...", request_timeout=30)
-        fast_client = client.with_params(request_timeout=5)
-        ```
-        """
-        return E2B(**{**self._params, **params})

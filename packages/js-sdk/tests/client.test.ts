@@ -197,22 +197,6 @@ test('two clients with different configs stay isolated', async () => {
   )
 })
 
-test('withOptions returns a new client with merged options', async () => {
-  const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
-  const overridden = client.withOptions({ domain: DOMAIN_B })
-
-  await overridden.Sandbox.create()
-  await client.Sandbox.create()
-
-  assert.deepEqual(
-    requests.map((r) => [r.url, r.apiKey]),
-    [
-      [`https://api.${DOMAIN_B}/sandboxes`, API_KEY_A],
-      [`https://api.${DOMAIN_A}/sandboxes`, API_KEY_A],
-    ]
-  )
-})
-
 test('Sandbox.withOptions returns a bound class with merged options', async () => {
   const BoundSandbox = Sandbox.withOptions({
     apiKey: API_KEY_A,

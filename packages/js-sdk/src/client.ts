@@ -54,8 +54,6 @@ export class E2B {
    */
   readonly Secret: typeof Secret
 
-  private readonly opts?: E2BClientOpts
-
   /**
    * Create a new client with the connection options bound to it.
    *
@@ -63,29 +61,9 @@ export class E2B {
    *   through this client's resource classes.
    */
   constructor(opts?: E2BClientOpts) {
-    this.opts = { ...opts }
     this.Sandbox = Sandbox.withOptions(opts)
     this.Volume = Volume.withOptions(opts)
     this.Secret = Secret.withOptions(opts)
     this.Template = Template.withOptions(opts)
-  }
-
-  /**
-   * Create a new client that inherits this client's connection options and
-   * overrides them with `opts`, with `opts` taking precedence.
-   * This client is not modified.
-   *
-   * @param opts connection options to override.
-   *
-   * @returns a new `E2B` client with the merged options.
-   *
-   * @example
-   * ```ts
-   * const client = new E2B({ apiKey: 'e2b_...', requestTimeoutMs: 1234 })
-   * const fastClient = client.withOptions({ requestTimeoutMs: 42 })
-   * ```
-   */
-  withOptions(opts?: E2BClientOpts): E2B {
-    return new E2B({ ...this.opts, ...opts })
   }
 }
