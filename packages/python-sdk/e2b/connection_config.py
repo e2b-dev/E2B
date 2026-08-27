@@ -1,10 +1,10 @@
 import logging
 import os
 
-from typing import cast, Mapping, Optional, Dict, Type, TypedDict, Union
+from typing import cast, Mapping, Optional, Dict, TypedDict, Union
 
 import httpx
-from typing_extensions import Self, Unpack
+from typing_extensions import Unpack
 
 from e2b.api.metadata import package_version
 from e2b.sandbox_domains import is_supported_sandbox_domain
@@ -113,50 +113,20 @@ class ClientFactory:
     """
     Base class for the resource classes (`Sandbox`, `Volume`, `Template`,
     `Secret`) whose classmethods build a :class:`ConnectionConfig` from per-call
-    params. :meth:`_with_params` binds params to a copy of the class — that is
-    what an :class:`e2b.E2B` client exposes — and every classmethod resolves
-    them through :meth:`_resolve_api_params`.
+    params. An :class:`e2b.E2B` client exposes subclasses of these with its own
+    params bound, and every classmethod resolves them through
+    :meth:`_resolve_api_params`.
 
     :meta private:
     """
 
     _bound_api_params: ApiParams = {}
-    """API params bound to this class by :meth:`_with_params`.
+    """API params bound to this class by an :class:`e2b.E2B` client.
 
     Empty on the base classes, so the env-configured default path is unchanged.
 
     :meta private:
     """
-
-    @classmethod
-    def _with_params(cls, **api_params: Unpack[ApiParams]) -> Type[Self]:
-        """
-        Create a copy of this class with the API params bound to it as the
-        defaults for every call made through it, instead of the environment
-        variables. Per-call params still take precedence, and params already
-        bound to the class are kept unless they are passed again.
-
-        This is how an :class:`e2b.E2B` client builds the resources it exposes;
-        the clients of the packages built on top of the SDK use it too.
-
-        :meta private:
-        """
-        bound = merge_api_params(cls._bound_api_params, api_params)
-
-        # The header dicts are copied too, so mutating the ones the caller
-        # passed cannot change the params bound here.
-        headers = bound.get("headers")
-        if headers is not None:
-            bound["headers"] = dict(headers)
-
-        api_headers = bound.get("api_headers")
-        if api_headers is not None:
-            bound["api_headers"] = dict(api_headers)
-
-        return cast(
-            Type[Self],
-            type(cls.__name__, (cls,), {"_bound_api_params": bound}),
-        )
 
     @classmethod
     def _resolve_api_params(cls, **opts: Unpack[ApiParams]) -> ApiParams:

@@ -1,4 +1,4 @@
-import { ConnectionOpts, Secret, Template, Volume } from 'e2b'
+import { ConnectionOpts, E2B as CoreE2B, Secret, Template, Volume } from 'e2b'
 
 import { Sandbox } from './sandbox'
 
@@ -65,9 +65,29 @@ export class E2B {
    *   through this client's resource classes.
    */
   constructor(opts?: E2BClientOpts) {
-    this.Sandbox = Sandbox.withOpts(opts)
-    this.Volume = Volume.withOpts(opts)
-    this.Template = Template.withOpts(opts)
-    this.Secret = Secret.withOpts(opts)
+    // Options are copied so later mutations of the caller's object cannot
+    // change the bound configuration. `signal` is dropped rather than only
+    // typed away, since it cancels a single request and a caller passing a
+    // wider-typed object (or plain JS) would otherwise bind it to every call.
+    const boundOpts: E2BClientOpts = { ...(opts ?? {}) }
+    delete (boundOpts as ConnectionOpts).signal
+
+    if (boundOpts.headers) {
+      boundOpts.headers = { ...boundOpts.headers }
+    }
+    if (boundOpts.apiHeaders) {
+      boundOpts.apiHeaders = { ...boundOpts.apiHeaders }
+    }
+
+    this.Sandbox = class extends Sandbox {
+      protected static override readonly boundOpts = boundOpts
+    }
+
+    // The resources that are not specific to the Code Interpreter are bound by
+    // the core client.
+    const core = new CoreE2B(boundOpts)
+    this.Volume = core.Volume
+    this.Template = core.Template
+    this.Secret = core.Secret
   }
 }

@@ -20,6 +20,7 @@ const DOMAIN_ENV = 'env.test'
 interface RecordedRequest {
   path: string
   apiKey?: string
+  headers: Record<string, string | string[] | undefined>
   body: unknown
 }
 
@@ -40,6 +41,7 @@ async function handler(req: IncomingMessage, res: ServerResponse) {
   requests.push({
     path: req.url ?? '',
     apiKey: (req.headers['x-api-key'] as string | undefined) ?? undefined,
+    headers: { ...req.headers },
     body: raw ? JSON.parse(raw) : undefined,
   })
 
@@ -191,6 +193,21 @@ test('mutating the options object does not change the bound config', async () =>
   await client.Sandbox.create()
 
   assert.deepEqual(apiKeys(), [API_KEY_A])
+})
+
+test('mutating the header map does not change the bound config', async () => {
+  const headers = { 'X-Test': 'bound' }
+  const client = new E2B({
+    apiKey: API_KEY_A,
+    domain: DOMAIN_A,
+    apiUrl,
+    headers,
+  })
+  headers['X-Test'] = 'mutated'
+
+  await client.Sandbox.create()
+
+  assert.equal(lastRequest().headers['x-test'], 'bound')
 })
 
 test('client.Sandbox can be rebound to a variable', async () => {

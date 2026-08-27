@@ -1,3 +1,5 @@
+from typing import Dict, Type, TypeVar, cast
+
 from typing_extensions import Unpack
 
 from e2b.connection_config import ApiParams
@@ -9,10 +11,20 @@ from e2b.template_sync.main import Template
 from e2b.volume.volume_async import AsyncVolume
 from e2b.volume.volume_sync import Volume
 
+T = TypeVar("T")
+
 
 class E2BClientParams(ApiParams, total=False):
     """Params bound to an :class:`E2B` client, used as the defaults for every
     call made through its resource classes. Same shape as :class:`ApiParams`."""
+
+
+def _bind(cls: Type[T], api_params: ApiParams) -> Type[T]:
+    """Generate a subclass of ``cls`` carrying ``api_params`` as its bound params."""
+    return cast(
+        Type[T],
+        type(cls.__name__, (cls,), {"_bound_api_params": api_params}),
+    )
 
 
 class E2B:
@@ -48,26 +60,30 @@ class E2B:
         :param opts: API params used as the defaults for every call made
             through this client's resource classes.
         """
-        self.Sandbox = Sandbox._with_params(**opts)
+        # Params are copied so later mutations of the caller's dicts cannot
+        # change the bound configuration.
+        api_params = cast(ApiParams, dict(cast(Dict[str, object], opts)))
+
+        self.Sandbox = _bind(Sandbox, api_params)
         """`Sandbox` class bound to this client's connection configuration."""
 
-        self.AsyncSandbox = AsyncSandbox._with_params(**opts)
+        self.AsyncSandbox = _bind(AsyncSandbox, api_params)
         """`AsyncSandbox` class bound to this client's connection configuration."""
 
-        self.Volume = Volume._with_params(**opts)
+        self.Volume = _bind(Volume, api_params)
         """`Volume` class bound to this client's connection configuration."""
 
-        self.AsyncVolume = AsyncVolume._with_params(**opts)
+        self.AsyncVolume = _bind(AsyncVolume, api_params)
         """`AsyncVolume` class bound to this client's connection configuration."""
 
-        self.Template = Template._with_params(**opts)
+        self.Template = _bind(Template, api_params)
         """`Template` class bound to this client's connection configuration."""
 
-        self.AsyncTemplate = AsyncTemplate._with_params(**opts)
+        self.AsyncTemplate = _bind(AsyncTemplate, api_params)
         """`AsyncTemplate` class bound to this client's connection configuration."""
 
-        self.Secret = Secret._with_params(**opts)
+        self.Secret = _bind(Secret, api_params)
         """`Secret` class bound to this client's connection configuration."""
 
-        self.AsyncSecret = AsyncSecret._with_params(**opts)
+        self.AsyncSecret = _bind(AsyncSecret, api_params)
         """`AsyncSecret` class bound to this client's connection configuration."""

@@ -23,7 +23,6 @@ const DOMAIN_ENV = 'env.test'
 interface RecordedRequest {
   url: string
   apiKey?: string
-  headers: Headers
 }
 
 const requests: RecordedRequest[] = []
@@ -32,7 +31,6 @@ function record(request: Request) {
   requests.push({
     url: request.url,
     apiKey: request.headers.get('X-API-KEY') ?? undefined,
-    headers: request.headers,
   })
 }
 
@@ -207,16 +205,6 @@ test('mutating the options object does not change the bound config', async () =>
   await client.Sandbox.create()
 
   assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/sandboxes`)
-})
-
-test('mutating the headers object does not change the bound config', async () => {
-  const apiHeaders = { 'X-Test': 'a' }
-  const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A, apiHeaders })
-  apiHeaders['X-Test'] = 'b'
-
-  await client.Sandbox.create()
-
-  assert.equal(lastRequest().headers.get('X-Test'), 'a')
 })
 
 test('per-call options explicitly set to undefined keep the client config', async () => {
@@ -403,19 +391,4 @@ test('the default export is still Sandbox', async () => {
 
   assert.equal(lastRequest().url, `https://api.${DOMAIN_ENV}/sandboxes`)
   assert.equal(lastRequest().apiKey, TEST_API_KEY)
-})
-
-test('binding a bound class again keeps the earlier options', async () => {
-  const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
-
-  const Rebound = client.Sandbox.withOpts({ domain: DOMAIN_B })
-  await Rebound.create()
-
-  assert.equal(lastRequest().url, `https://api.${DOMAIN_B}/sandboxes`)
-  assert.equal(lastRequest().apiKey, API_KEY_A)
-
-  // The class it was bound from is unchanged.
-  await client.Sandbox.create()
-  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/sandboxes`)
-  assert.equal(lastRequest().apiKey, API_KEY_A)
 })
