@@ -1,5 +1,0 @@
-{
-  "imports": {
-    "e2b": "../../../../js-sdk/dist/index.mjs"
-  }
-}
