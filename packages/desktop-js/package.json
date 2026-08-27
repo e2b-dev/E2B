@@ -50,11 +50,15 @@
     "build": "tsc --noEmit && tsdown",
     "dev": "tsdown --watch",
     "test": "vitest run --disable-console-intercept",
+    "test:bun": "bunx --bun vitest run",
+    "test:cf": "vitest run --config tests/runtimes/cloudflare/vitest.config.mts",
+    "test:deno": "deno run -A ./node_modules/vitest/vitest.mjs run",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint --config ../../.oxlintrc.json src tests",
     "format": "prettier --write src/ tests/"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.18.7",
     "@typescript/native": "catalog:",
     "@types/node": "catalog:",
     "dotenv": "^16.4.5",

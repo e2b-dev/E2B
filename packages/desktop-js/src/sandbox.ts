@@ -266,7 +266,10 @@ export class Sandbox extends SandboxBase {
 
     // @ts-expect-error
     const file = await this.files.read(path, { format })
-    this.files.remove(path)
+    // Cleanup of the temporary file is best-effort: it must not block the
+    // returned file (which may be an unconsumed stream) and must not reject
+    // if the sandbox is already gone.
+    void this.files.remove(path).catch(() => {})
     return file
   }
 
