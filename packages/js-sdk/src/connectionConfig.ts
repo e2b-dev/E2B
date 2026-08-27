@@ -564,40 +564,6 @@ export class ClientFactory {
   protected static readonly boundOpts?: E2BClientOpts
 
   /**
-   * Return a subclass of this class with `opts` bound to it, used as the
-   * defaults for every call instead of the environment variables.
-   * Per-call options still take precedence over the bound options.
-   *
-   * Options already bound to this class are kept and merged with `opts`,
-   * with `opts` taking precedence.
-   */
-  // The static sides of the subclasses are not assignable to
-  // `typeof ClientFactory` (their constructors differ), and TS has no
-  // polymorphic `this` for statics, so the constraint is structural and the
-  // subclass expression cannot be typed as `T` without the cast.
-  static bindClientOpts<T extends { prototype: ClientFactory }>(
-    this: T,
-    opts?: E2BClientOpts
-  ): T {
-    const base = this as unknown as typeof ClientFactory
-
-    // Options are shallow-copied so later top-level mutations of the caller's
-    // object cannot change the bound configuration. `signal` is dropped rather
-    // than only typed away, since it cancels a single request and a caller
-    // passing a wider-typed object (or plain JS) would otherwise bind it to
-    // every call.
-    const boundOpts: E2BClientOpts = {
-      ...(base.boundOpts ?? {}),
-      ...(opts ?? {}),
-    }
-    delete (boundOpts as ConnectionOpts).signal
-
-    return class extends base {
-      protected static override readonly boundOpts = boundOpts
-    } as unknown as T
-  }
-
-  /**
    * Merge the connection options bound to this class with the per-call options,
    * with the per-call options taking precedence.
    *
@@ -610,6 +576,49 @@ export class ClientFactory {
   ): T | undefined {
     return ConnectionConfig.mergeOpts(this.boundOpts, opts)
   }
+}
+
+/**
+ * Return a subclass of `cls` with `opts` bound to it, used as the defaults
+ * for every call instead of the environment variables.
+ * Per-call options still take precedence over the bound options.
+ *
+ * Options already bound to `cls` are kept and merged with `opts`, with
+ * `opts` taking precedence.
+ *
+ * Intended for building multi-clients (like {@link E2B}) in this and
+ * downstream SDKs, not for end users.
+ *
+ * @internal
+ * @hidden
+ * @hide
+ */
+// The static sides of the subclasses are not assignable to
+// `typeof ClientFactory` (their constructors differ), and TS has no way to
+// type "subclass of `cls`", so the constraint is structural and the subclass
+// expression cannot be typed as `T` without the cast.
+export function bindClientOpts<T extends { prototype: ClientFactory }>(
+  cls: T,
+  opts?: E2BClientOpts
+): T {
+  const base = cls as unknown as typeof ClientFactory & {
+    readonly boundOpts?: E2BClientOpts
+  }
+
+  // Options are shallow-copied so later top-level mutations of the caller's
+  // object cannot change the bound configuration. `signal` is dropped rather
+  // than only typed away, since it cancels a single request and a caller
+  // passing a wider-typed object (or plain JS) would otherwise bind it to
+  // every call.
+  const boundOpts: E2BClientOpts = {
+    ...(base.boundOpts ?? {}),
+    ...(opts ?? {}),
+  }
+  delete (boundOpts as ConnectionOpts).signal
+
+  return class extends base {
+    static override readonly boundOpts = boundOpts
+  } as unknown as T
 }
 
 /**

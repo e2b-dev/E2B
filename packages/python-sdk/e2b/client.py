@@ -1,6 +1,6 @@
 from typing_extensions import Unpack
 
-from e2b.connection_config import ApiParams
+from e2b.connection_config import ApiParams, bind_client_params
 from e2b.sandbox_async.main import AsyncSandbox
 from e2b.sandbox_sync.main import Sandbox
 from e2b.secret import AsyncSecret, Secret
@@ -48,26 +48,26 @@ class E2B:
         :param opts: API params used as the defaults for every call made
             through this client's resource classes.
         """
-        self.Sandbox = Sandbox.bind_client_params(**opts)
+        self.Sandbox = bind_client_params(Sandbox, **opts)
         """`Sandbox` class bound to this client's connection configuration."""
 
-        self.AsyncSandbox = AsyncSandbox.bind_client_params(**opts)
+        self.AsyncSandbox = bind_client_params(AsyncSandbox, **opts)
         """`AsyncSandbox` class bound to this client's connection configuration."""
 
-        self.Volume = Volume.bind_client_params(**opts)
+        self.Volume = bind_client_params(Volume, **opts)
         """`Volume` class bound to this client's connection configuration."""
 
-        self.AsyncVolume = AsyncVolume.bind_client_params(**opts)
+        self.AsyncVolume = bind_client_params(AsyncVolume, **opts)
         """`AsyncVolume` class bound to this client's connection configuration."""
 
-        self.Template = Template.bind_client_params(**opts)
+        self.Template = bind_client_params(Template, **opts)
         """`Template` class bound to this client's connection configuration."""
 
-        self.AsyncTemplate = AsyncTemplate.bind_client_params(**opts)
+        self.AsyncTemplate = bind_client_params(AsyncTemplate, **opts)
         """`AsyncTemplate` class bound to this client's connection configuration."""
 
-        self.Secret = Secret.bind_client_params(**opts)
+        self.Secret = bind_client_params(Secret, **opts)
         """`Secret` class bound to this client's connection configuration."""
 
-        self.AsyncSecret = AsyncSecret.bind_client_params(**opts)
+        self.AsyncSecret = bind_client_params(AsyncSecret, **opts)
         """`AsyncSecret` class bound to this client's connection configuration."""

@@ -3,7 +3,7 @@ import { afterAll, afterEach, beforeAll, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
-import { BuildOptions, Template, TemplateBase } from '../../src'
+import { bindClientOpts, BuildOptions, Template, TemplateBase } from '../../src'
 import { apiUrl, TEST_API_KEY } from '../setup'
 
 const BOUND_API_KEY = `e2b_${'1'.repeat(40)}`
@@ -171,11 +171,11 @@ test('bindClientOpts merges with already-bound options', () => {
     }
   }
 
-  const bound = ProbeTemplate.bindClientOpts({
+  const bound = bindClientOpts(ProbeTemplate, {
     apiKey: BOUND_API_KEY,
     requestTimeoutMs: 1234,
   })
-  const rebound = bound.bindClientOpts({ requestTimeoutMs: 42 })
+  const rebound = bindClientOpts(bound, { requestTimeoutMs: 42 })
 
   expect(rebound.probeBuildOpts()).toEqual({
     apiKey: BOUND_API_KEY,

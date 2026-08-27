@@ -16,6 +16,7 @@ from e2b import (
     Secret,
     Template,
     Volume,
+    bind_client_params,
 )
 
 API_KEY_A = "e2b_" + "a" * 40
@@ -322,8 +323,8 @@ def test_client_params_are_copied(api_server):
 
 
 def test_bind_client_params_merges_with_already_bound_params():
-    bound = Sandbox.bind_client_params(api_key=API_KEY_A, domain=DOMAIN_A)
-    rebound = bound.bind_client_params(domain=DOMAIN_B)
+    bound = bind_client_params(Sandbox, api_key=API_KEY_A, domain=DOMAIN_A)
+    rebound = bind_client_params(bound, domain=DOMAIN_B)
 
     assert rebound._bound_api_params == {"api_key": API_KEY_A, "domain": DOMAIN_B}
     # The original class keeps its own bound params.

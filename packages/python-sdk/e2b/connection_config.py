@@ -132,26 +132,6 @@ class ClientFactory:
     """
 
     @classmethod
-    def bind_client_params(
-        cls: Type[_ClientT], **params: Unpack[ApiParams]
-    ) -> Type[_ClientT]:
-        """
-        Return a subclass of this class with ``params`` bound to it, used as
-        the defaults for every call instead of the environment variables.
-        Per-call params still take precedence over the bound params.
-
-        Params already bound to this class are kept and merged with
-        ``params``, with ``params`` taking precedence. The params are
-        shallow-copied into a fresh dict, so later top-level mutations of the
-        caller's dicts cannot change the bound configuration.
-        """
-        bound = cast(ApiParams, {**cls._bound_api_params, **params})
-        return cast(
-            Type[_ClientT],
-            type(cls.__name__, (cls,), {"_bound_api_params": bound}),
-        )
-
-    @classmethod
     def _resolve_api_params(cls, **opts: Unpack[ApiParams]) -> ApiParams:
         """
         Merge the API params bound to this class with the per-call params.
@@ -159,6 +139,31 @@ class ClientFactory:
         :meta private:
         """
         return merge_api_params(cls._bound_api_params, opts)
+
+
+def bind_client_params(
+    cls: Type[_ClientT], **params: Unpack[ApiParams]
+) -> Type[_ClientT]:
+    """
+    Return a subclass of ``cls`` with ``params`` bound to it, used as the
+    defaults for every call instead of the environment variables.
+    Per-call params still take precedence over the bound params.
+
+    Params already bound to ``cls`` are kept and merged with ``params``, with
+    ``params`` taking precedence. The params are shallow-copied into a fresh
+    dict, so later top-level mutations of the caller's dicts cannot change the
+    bound configuration.
+
+    Intended for building multi-clients (like :class:`e2b.E2B`) in this and
+    downstream SDKs, not for end users.
+
+    :meta private:
+    """
+    bound = cast(ApiParams, {**cls._bound_api_params, **params})
+    return cast(
+        Type[_ClientT],
+        type(cls.__name__, (cls,), {"_bound_api_params": bound}),
+    )
 
 
 class ConnectionConfig:
