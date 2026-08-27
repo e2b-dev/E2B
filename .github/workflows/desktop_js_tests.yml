@@ -24,7 +24,16 @@ jobs:
       run:
         working-directory: ./packages/desktop-js
         shell: bash
-    name: Desktop JS SDK - Build and test
+    name: Desktop JS SDK - ${{ inputs.run_tests && matrix.runtime || 'build' }}
+    strategy:
+      fail-fast: false
+      # Callers that only build (staging) collapse the matrix to a single job;
+      # the runtime legs are exercised against production.
+      matrix:
+        runtime: >-
+          ${{ inputs.run_tests
+            && fromJSON('["node", "bun", "deno", "cloudflare"]')
+            || fromJSON('["node"]') }}
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
@@ -64,41 +73,27 @@ jobs:
       - name: Test build
         run: pnpm build
 
-      - name: Run Node tests
-        if: inputs.run_tests
-        run: pnpm test
-        env:
-          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
-
       - name: Install Bun
-        if: inputs.run_tests
+        if: inputs.run_tests && matrix.runtime == 'bun'
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
 
-      - name: Run Bun tests
-        if: inputs.run_tests
-        run: pnpm test:bun
-        env:
-          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
-
       - name: Install Deno
-        if: inputs.run_tests
+        if: inputs.run_tests && matrix.runtime == 'deno'
         uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
         with:
           deno-version: 'v${{ env.TOOL_VERSION_DENO }}'
 
-      - name: Run Deno tests
+      # Every leg runs the same suite; the cloudflare one inside workerd
+      # (vitest-pool-workers).
+      - name: Run test suite under ${{ matrix.runtime }}
         if: inputs.run_tests
-        run: pnpm test:deno
-        env:
-          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
-
-      # Runs the same suite as the Node leg inside workerd (vitest-pool-workers).
-      - name: Run test suite under Cloudflare workerd
-        if: inputs.run_tests
-        run: pnpm test:cf
+        run: |
+          case "${{ matrix.runtime }}" in
+            node) script=test ;;
+            cloudflare) script=test:cf ;;
+            *) script=test:${{ matrix.runtime }} ;;
+          esac
+          pnpm "$script"
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
