@@ -43,8 +43,6 @@ export default defineConfig(
     isExpectedRejection: (error, message) =>
       // SDK public errors — what `expect(p).rejects` asserts on.
       SDK_ERROR_NAMES.has(String(error.name)) ||
-      isConnectRpcRejection(error, message) ||
-      // Stub rejection from tests/sandbox/git/validation.test.ts.
-      message === 'commands.run should not be called',
+      isConnectRpcRejection(error, message),
   })
 )
