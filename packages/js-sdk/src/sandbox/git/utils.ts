@@ -5,7 +5,7 @@ import { CommandExitError } from '../commands/commandHandle'
 /**
  * Parsed git status entry for a file.
  *
- * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
+ * @deprecated Run git with `sandbox.commands.run('git clone https://github.com/e2b-dev/E2B.git repo')` instead. The git module will be removed in the next major version.
  */
 export interface GitFileStatus {
   /**
@@ -37,7 +37,7 @@ export interface GitFileStatus {
 /**
  * Supported normalized git status labels.
  *
- * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
+ * @deprecated Run git with `sandbox.commands.run('git clone https://github.com/e2b-dev/E2B.git repo')` instead. The git module will be removed in the next major version.
  */
 export type GitStatusLabel =
   | 'conflict'
@@ -53,14 +53,14 @@ export type GitStatusLabel =
 /**
  * Scope for git config operations.
  *
- * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
+ * @deprecated Run git with `sandbox.commands.run('git clone https://github.com/e2b-dev/E2B.git repo')` instead. The git module will be removed in the next major version.
  */
 export type GitConfigScope = 'global' | 'local' | 'system'
 
 /**
  * Parsed git repository status.
  *
- * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
+ * @deprecated Run git with `sandbox.commands.run('git clone https://github.com/e2b-dev/E2B.git repo')` instead. The git module will be removed in the next major version.
  */
 export interface GitStatus {
   /**
@@ -132,7 +132,7 @@ export interface GitStatus {
 /**
  * Parsed git branch list.
  *
- * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
+ * @deprecated Run git with `sandbox.commands.run('git clone https://github.com/e2b-dev/E2B.git repo')` instead. The git module will be removed in the next major version.
  */
 export interface GitBranches {
   /**

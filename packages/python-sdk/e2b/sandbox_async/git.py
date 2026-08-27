@@ -50,7 +50,15 @@ class Git:
     """
     Async module for running git operations in the sandbox.
 
-    :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
+    :deprecated: Run git with ``sandbox.commands.run("git clone https://github.com/e2b-dev/E2B.git repo")`` instead. The git module will be removed in the next major version.
+
+    Example::
+
+        # Deprecated
+        await sandbox.git.clone("https://github.com/e2b-dev/E2B.git", path="repo")
+
+        # Use instead
+        await sandbox.commands.run("git clone https://github.com/e2b-dev/E2B.git repo")
     """
 
     def __init__(self, commands: Commands) -> None:

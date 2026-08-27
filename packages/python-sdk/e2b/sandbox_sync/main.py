@@ -94,7 +94,15 @@ class Sandbox(SandboxApi):
         """
         Module for running git operations in the sandbox.
 
-        :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
+        :deprecated: Run git with ``sandbox.commands.run("git clone https://github.com/e2b-dev/E2B.git repo")`` instead. The git module will be removed in the next major version.
+
+        Example::
+
+            # Deprecated
+            sandbox.git.clone("https://github.com/e2b-dev/E2B.git", path="repo")
+
+            # Use instead
+            sandbox.commands.run("git clone https://github.com/e2b-dev/E2B.git repo")
         """
         return self._git
 

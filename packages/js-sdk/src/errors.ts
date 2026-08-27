@@ -103,7 +103,7 @@ export class AuthenticationError extends Error {
 /**
  * Thrown when git authentication fails.
  *
- * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
+ * @deprecated Run git with `sandbox.commands.run('git clone https://github.com/e2b-dev/E2B.git repo')` instead. The git module will be removed in the next major version.
  */
 export class GitAuthError extends AuthenticationError {
   constructor(message: string) {
@@ -115,7 +115,7 @@ export class GitAuthError extends AuthenticationError {
 /**
  * Thrown when git upstream tracking is missing.
  *
- * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
+ * @deprecated Run git with `sandbox.commands.run('git clone https://github.com/e2b-dev/E2B.git repo')` instead. The git module will be removed in the next major version.
  */
 export class GitUpstreamError extends SandboxError {
   constructor(message: string) {

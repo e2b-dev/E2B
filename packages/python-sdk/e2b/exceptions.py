@@ -89,7 +89,7 @@ class GitAuthException(AuthenticationException):
     """
     Raised when git authentication fails.
 
-    :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
+    :deprecated: Run git with ``sandbox.commands.run("git clone https://github.com/e2b-dev/E2B.git repo")`` instead. The git module will be removed in the next major version.
     """
 
     pass
@@ -99,7 +99,7 @@ class GitUpstreamException(SandboxException):
     """
     Raised when git upstream tracking is missing.
 
-    :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
+    :deprecated: Run git with ``sandbox.commands.run("git clone https://github.com/e2b-dev/E2B.git repo")`` instead. The git module will be removed in the next major version.
     """
 
     pass

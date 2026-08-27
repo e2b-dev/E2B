@@ -6,7 +6,7 @@ from typing_extensions import Literal
 GitResetMode = Literal["soft", "mixed", "hard", "merge", "keep"]
 """Mode for a git reset operation.
 
-:deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
+:deprecated: Run git with ``sandbox.commands.run("git clone https://github.com/e2b-dev/E2B.git repo")`` instead. The git module will be removed in the next major version.
 """
 
 
@@ -15,7 +15,7 @@ class GitFileStatus:
     """
     Parsed git status entry for a file.
 
-    :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
+    :deprecated: Run git with ``sandbox.commands.run("git clone https://github.com/e2b-dev/E2B.git repo")`` instead. The git module will be removed in the next major version.
 
     :param name: Path relative to the repository root
     :param status: Normalized status string (e.g. "modified", "added")
@@ -38,7 +38,7 @@ class GitStatus:
     """
     Parsed git repository status.
 
-    :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
+    :deprecated: Run git with ``sandbox.commands.run("git clone https://github.com/e2b-dev/E2B.git repo")`` instead. The git module will be removed in the next major version.
 
     :param current_branch: Current branch name, if available
     :param upstream: Upstream branch name, if available
@@ -131,7 +131,7 @@ class GitBranches:
     """
     Parsed git branch list.
 
-    :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
+    :deprecated: Run git with ``sandbox.commands.run("git clone https://github.com/e2b-dev/E2B.git repo")`` instead. The git module will be removed in the next major version.
 
     :param branches: List of branch names
     :param current_branch: Current branch name, if available
