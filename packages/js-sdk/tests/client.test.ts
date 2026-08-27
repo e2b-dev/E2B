@@ -213,6 +213,43 @@ test('withOptions returns a new client with merged options', async () => {
   )
 })
 
+test('Sandbox.withOptions returns a bound class with merged options', async () => {
+  const BoundSandbox = Sandbox.withOptions({
+    apiKey: API_KEY_A,
+    domain: DOMAIN_A,
+  })
+  const ReboundSandbox = BoundSandbox.withOptions({ domain: DOMAIN_B })
+
+  await ReboundSandbox.create()
+  await BoundSandbox.create()
+  await Sandbox.create()
+
+  assert.deepEqual(
+    requests.map((r) => [r.url, r.apiKey]),
+    [
+      [`https://api.${DOMAIN_B}/sandboxes`, API_KEY_A],
+      [`https://api.${DOMAIN_A}/sandboxes`, API_KEY_A],
+      [`https://api.${DOMAIN_ENV}/sandboxes`, TEST_API_KEY],
+    ]
+  )
+})
+
+test('Template.withOptions returns a callable template with the options bound', async () => {
+  const BoundTemplate = Template.withOptions({
+    apiKey: API_KEY_A,
+    domain: DOMAIN_A,
+  })
+
+  expect(BoundTemplate().fromPythonImage('3')).toBeDefined()
+  await BoundTemplate.exists('tmpl')
+
+  assert.equal(
+    lastRequest().url,
+    `https://api.${DOMAIN_A}/templates/aliases/tmpl`
+  )
+  assert.equal(lastRequest().apiKey, API_KEY_A)
+})
+
 test('mutating the options object does not change the bound config', async () => {
   const opts = { apiKey: API_KEY_A, domain: DOMAIN_A }
   const client = new E2B(opts)

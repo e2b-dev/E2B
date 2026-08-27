@@ -335,6 +335,22 @@ def test_with_params_returns_a_new_client_with_merged_params(api_server):
     assert client.Sandbox._bound_api_params["domain"] == DOMAIN_A
 
 
+def test_resource_with_params_returns_a_bound_class_with_merged_params(api_server):
+    BoundSandbox = Sandbox.with_params(
+        api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server
+    )
+    ReboundSandbox = BoundSandbox.with_params(domain=DOMAIN_B)
+
+    sandbox = ReboundSandbox.create()
+
+    assert api_keys() == [API_KEY_A]
+    assert sandbox.connection_config.api_key == API_KEY_A
+    assert sandbox.connection_config.domain == DOMAIN_B
+    # The original classes keep their own bound params.
+    assert BoundSandbox._bound_api_params["domain"] == DOMAIN_A
+    assert Sandbox._bound_api_params == {}
+
+
 def test_bind_client_params_merges_with_already_bound_params():
     bound = bind_client_params(Sandbox, api_key=API_KEY_A, domain=DOMAIN_A)
     rebound = bind_client_params(bound, domain=DOMAIN_B)

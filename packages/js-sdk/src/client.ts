@@ -1,8 +1,7 @@
-import { bindClientOpts, E2BClientOpts } from './connectionConfig'
+import { E2BClientOpts } from './connectionConfig'
 import { Sandbox } from './sandbox'
 import { Secret } from './secret'
-import { Template, TemplateBase } from './template'
-import { callableTemplate } from './template/callable'
+import { Template } from './template'
 import { Volume } from './volume'
 
 export type { E2BClientOpts } from './connectionConfig'
@@ -65,10 +64,10 @@ export class E2B {
    */
   constructor(opts?: E2BClientOpts) {
     this.opts = { ...opts }
-    this.Sandbox = bindClientOpts(Sandbox, opts)
-    this.Volume = bindClientOpts(Volume, opts)
-    this.Secret = bindClientOpts(Secret, opts)
-    this.Template = callableTemplate(bindClientOpts(TemplateBase, opts))
+    this.Sandbox = Sandbox.withOptions(opts)
+    this.Volume = Volume.withOptions(opts)
+    this.Secret = Secret.withOptions(opts)
+    this.Template = Template.withOptions(opts)
   }
 
   /**

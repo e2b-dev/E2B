@@ -1,9 +1,11 @@
 import type { PathLike } from 'node:fs'
 import { ApiClient } from '../api'
 import {
+  bindClientOpts,
   ClientFactory,
   ConnectionConfig,
   ConnectionOpts,
+  E2BClientOpts,
 } from '../connectionConfig'
 import { BuildError, InvalidArgumentError } from '../errors'
 import { runtime, shellQuote } from '../utils'
@@ -63,6 +65,34 @@ export class TemplateBase
   extends ClientFactory
   implements TemplateFromImage, TemplateBuilder, TemplateFinal
 {
+  /**
+   * Create a copy of this template with the connection options bound to it,
+   * used as the defaults for every call instead of the environment variables.
+   * Per-call options still take precedence over the bound options.
+   * This template is not modified.
+   *
+   * Options already bound to this template are kept and merged with `opts`,
+   * with `opts` taking precedence.
+   *
+   * @param opts connection options to bind.
+   *
+   * @returns a callable template with the merged options bound.
+   *
+   * @example
+   * ```ts
+   * const MyTemplate = Template.withOptions({ apiKey: 'e2b_...' })
+   * await MyTemplate.build(MyTemplate().fromPythonImage('3'), 'my-env')
+   * ```
+   */
+  static override withOptions<T extends { prototype: ClientFactory }>(
+    this: T,
+    opts?: E2BClientOpts
+  ): T {
+    return callableTemplate(
+      bindClientOpts(this as unknown as typeof TemplateBase, opts)
+    ) as unknown as T
+  }
+
   private defaultBaseImage: string = 'e2bdev/base'
   private baseImage: string | undefined = this.defaultBaseImage
   private baseTemplate: string | undefined = undefined

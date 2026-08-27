@@ -576,6 +576,32 @@ export class ClientFactory {
   ): T | undefined {
     return ConnectionConfig.mergeOpts(this.boundOpts, opts)
   }
+
+  /**
+   * Create a copy of this class with the connection options bound to it, used
+   * as the defaults for every call instead of the environment variables.
+   * Per-call options still take precedence over the bound options.
+   * This class is not modified.
+   *
+   * Options already bound to this class are kept and merged with `opts`, with
+   * `opts` taking precedence.
+   *
+   * @param opts connection options to bind.
+   *
+   * @returns a subclass of this class with the merged options bound.
+   *
+   * @example
+   * ```ts
+   * const MySandbox = Sandbox.withOptions({ apiKey: 'e2b_...' })
+   * const sandbox = await MySandbox.create()
+   * ```
+   */
+  static withOptions<T extends { prototype: ClientFactory }>(
+    this: T,
+    opts?: E2BClientOpts
+  ): T {
+    return bindClientOpts(this, opts)
+  }
 }
 
 /**

@@ -1,6 +1,6 @@
 from typing_extensions import Unpack
 
-from e2b.connection_config import ApiParams, bind_client_params
+from e2b.connection_config import ApiParams
 from e2b.sandbox_async.main import AsyncSandbox
 from e2b.sandbox_sync.main import Sandbox
 from e2b.secret import AsyncSecret, Secret
@@ -50,28 +50,28 @@ class E2B:
         """
         self._params: E2BClientParams = dict(opts)
 
-        self.Sandbox = bind_client_params(Sandbox, **opts)
+        self.Sandbox = Sandbox.with_params(**opts)
         """`Sandbox` class bound to this client's connection configuration."""
 
-        self.AsyncSandbox = bind_client_params(AsyncSandbox, **opts)
+        self.AsyncSandbox = AsyncSandbox.with_params(**opts)
         """`AsyncSandbox` class bound to this client's connection configuration."""
 
-        self.Volume = bind_client_params(Volume, **opts)
+        self.Volume = Volume.with_params(**opts)
         """`Volume` class bound to this client's connection configuration."""
 
-        self.AsyncVolume = bind_client_params(AsyncVolume, **opts)
+        self.AsyncVolume = AsyncVolume.with_params(**opts)
         """`AsyncVolume` class bound to this client's connection configuration."""
 
-        self.Template = bind_client_params(Template, **opts)
+        self.Template = Template.with_params(**opts)
         """`Template` class bound to this client's connection configuration."""
 
-        self.AsyncTemplate = bind_client_params(AsyncTemplate, **opts)
+        self.AsyncTemplate = AsyncTemplate.with_params(**opts)
         """`AsyncTemplate` class bound to this client's connection configuration."""
 
-        self.Secret = bind_client_params(Secret, **opts)
+        self.Secret = Secret.with_params(**opts)
         """`Secret` class bound to this client's connection configuration."""
 
-        self.AsyncSecret = bind_client_params(AsyncSecret, **opts)
+        self.AsyncSecret = AsyncSecret.with_params(**opts)
         """`AsyncSecret` class bound to this client's connection configuration."""
 
     def with_params(self, **params: Unpack[E2BClientParams]) -> "E2B":

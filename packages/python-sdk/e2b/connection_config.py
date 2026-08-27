@@ -140,6 +140,29 @@ class ClientFactory:
         """
         return merge_api_params(cls._bound_api_params, opts)
 
+    @classmethod
+    def with_params(cls: Type[_ClientT], **params: Unpack[ApiParams]) -> Type[_ClientT]:
+        """
+        Create a copy of this class with ``params`` bound to it, used as the
+        defaults for every call instead of the environment variables.
+        Per-call params still take precedence over the bound params.
+        This class is not modified.
+
+        Params already bound to this class are kept and merged with ``params``,
+        with ``params`` taking precedence.
+
+        :param params: API params to bind.
+
+        :return: A subclass of this class with the merged params bound.
+
+        Example:
+        ```python
+        MySandbox = Sandbox.with_params(api_key="e2b_...")
+        sandbox = MySandbox.create()
+        ```
+        """
+        return bind_client_params(cls, **params)
+
 
 def bind_client_params(
     cls: Type[_ClientT], **params: Unpack[ApiParams]
