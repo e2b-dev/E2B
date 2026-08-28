@@ -20,6 +20,7 @@ from e2b.api.client.types import UNSET
 from e2b.api.client_async import get_api_client
 from e2b.connection_config import ApiParams, ConnectionConfig, merge_api_params
 from e2b.exceptions import SecretException, SecretNotFoundException
+from e2b.trace_id import extract_trace_id
 from e2b.secret.base import SecretBase, SecretPaginatorBase
 from e2b.secret.types import SecretInfo
 
@@ -161,7 +162,10 @@ class AsyncSecret(SecretBase):
         )
 
         if res.status_code == 404:
-            raise SecretNotFoundException(f"Secret {secret} not found")
+            raise SecretNotFoundException(
+                f"Secret {secret} not found",
+                trace_id=extract_trace_id(res.headers),
+            )
 
         if res.status_code >= 300:
             raise handle_api_exception(res, SecretException)
@@ -192,7 +196,10 @@ class AsyncSecret(SecretBase):
         )
 
         if res.status_code == 404:
-            raise SecretNotFoundException(f"Secret {secret} not found")
+            raise SecretNotFoundException(
+                f"Secret {secret} not found",
+                trace_id=extract_trace_id(res.headers),
+            )
 
         if res.status_code >= 300:
             raise handle_api_exception(res, SecretException)

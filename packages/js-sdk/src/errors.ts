@@ -1,7 +1,35 @@
+/**
+ * Optional context attached to an SDK error.
+ */
+export interface ErrorOpts {
+  /**
+   * Trace ID of the failed request, appended to the message.
+   */
+  traceId?: string
+}
+
+/**
+ * Context for errors that can point somewhere other than where they were
+ * constructed.
+ */
+export interface ErrorOptsWithStackTrace extends ErrorOpts {
+  /**
+   * Stack trace to use instead of the one captured where the error is
+   * constructed, so the error points at the user's call site or at where the
+   * failure happened server-side.
+   */
+  stackTrace?: string
+}
+
+function formatMessage(message?: string, traceId?: string) {
+  return message && traceId ? `${message} (trace ID: ${traceId})` : message
+}
+
 // This is the message for the sandbox timeout error when the response code is 502/Unavailable
-export function formatSandboxTimeoutError(message: string) {
+export function formatSandboxTimeoutError(message: string, opts?: ErrorOpts) {
   return new TimeoutError(
-    `${message}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeoutMs' when starting the sandbox or calling '.setTimeout' on the sandbox with the desired timeout.`
+    `${message}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeoutMs' when starting the sandbox or calling '.setTimeout' on the sandbox with the desired timeout.`,
+    opts
   )
 }
 
@@ -11,9 +39,15 @@ export function formatSandboxTimeoutError(message: string) {
  * Thrown when general sandbox errors occur.
  */
 export class SandboxError extends Error {
-  constructor(message?: string) {
-    super(message)
+  /**
+   * Trace ID of the failed request, when the response carried one.
+   */
+  readonly traceId?: string
+
+  constructor(message?: string, opts?: ErrorOpts) {
+    super(formatMessage(message, opts?.traceId))
     this.name = 'SandboxError'
+    this.traceId = opts?.traceId
   }
 }
 
@@ -29,8 +63,8 @@ export class SandboxError extends Error {
  * The [unknown] error type is sometimes caused by the sandbox timeout when the request is not processed correctly.
  */
 export class TimeoutError extends SandboxError {
-  constructor(message: string) {
-    super(message)
+  constructor(message: string, opts?: ErrorOpts) {
+    super(message, opts)
     this.name = 'TimeoutError'
   }
 }
@@ -39,11 +73,11 @@ export class TimeoutError extends SandboxError {
  * Thrown when an invalid argument is provided.
  */
 export class InvalidArgumentError extends SandboxError {
-  constructor(message: string, stackTrace?: string) {
-    super(message)
+  constructor(message: string, opts?: ErrorOptsWithStackTrace) {
+    super(message, opts)
     this.name = 'InvalidArgumentError'
-    if (stackTrace) {
-      this.stack = stackTrace
+    if (opts?.stackTrace) {
+      this.stack = opts.stackTrace
     }
   }
 }
@@ -52,8 +86,8 @@ export class InvalidArgumentError extends SandboxError {
  * Thrown when there is not enough disk space.
  */
 export class NotEnoughSpaceError extends SandboxError {
-  constructor(message: string) {
-    super(message)
+  constructor(message: string, opts?: ErrorOpts) {
+    super(message, opts)
     this.name = 'NotEnoughSpaceError'
   }
 }
@@ -64,8 +98,8 @@ export class NotEnoughSpaceError extends SandboxError {
  * @deprecated Use {@link FileNotFoundError} or {@link SandboxNotFoundError} instead. This class will be removed in the next major version.
  */
 export class NotFoundError extends SandboxError {
-  constructor(message: string) {
-    super(message)
+  constructor(message: string, opts?: ErrorOpts) {
+    super(message, opts)
     this.name = 'NotFoundError'
   }
 }
@@ -74,8 +108,8 @@ export class NotFoundError extends SandboxError {
  * Thrown when a file or directory is not found inside a sandbox.
  */
 export class FileNotFoundError extends NotFoundError {
-  constructor(message: string) {
-    super(message)
+  constructor(message: string, opts?: ErrorOpts) {
+    super(message, opts)
     this.name = 'FileNotFoundError'
   }
 }
@@ -84,8 +118,8 @@ export class FileNotFoundError extends NotFoundError {
  * Thrown when a sandbox is not found (e.g. it doesn't exist or is no longer running).
  */
 export class SandboxNotFoundError extends NotFoundError {
-  constructor(message: string) {
-    super(message)
+  constructor(message: string, opts?: ErrorOpts) {
+    super(message, opts)
     this.name = 'SandboxNotFoundError'
   }
 }
@@ -94,9 +128,15 @@ export class SandboxNotFoundError extends NotFoundError {
  * Thrown when authentication fails.
  */
 export class AuthenticationError extends Error {
-  constructor(message: string) {
-    super(message)
+  /**
+   * Trace ID of the failed request, when the response carried one.
+   */
+  readonly traceId?: string
+
+  constructor(message: string, opts?: ErrorOpts) {
+    super(formatMessage(message, opts?.traceId))
     this.name = 'AuthenticationError'
+    this.traceId = opts?.traceId
   }
 }
 
@@ -106,8 +146,8 @@ export class AuthenticationError extends Error {
  * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
  */
 export class GitAuthError extends AuthenticationError {
-  constructor(message: string) {
-    super(message)
+  constructor(message: string, opts?: ErrorOpts) {
+    super(message, opts)
     this.name = 'GitAuthError'
   }
 }
@@ -118,8 +158,8 @@ export class GitAuthError extends AuthenticationError {
  * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
  */
 export class GitUpstreamError extends SandboxError {
-  constructor(message: string) {
-    super(message)
+  constructor(message: string, opts?: ErrorOpts) {
+    super(message, opts)
     this.name = 'GitUpstreamError'
   }
 }
@@ -128,11 +168,11 @@ export class GitUpstreamError extends SandboxError {
  * Thrown when the template uses old envd version. It isn't compatible with the new SDK.
  */
 export class TemplateError extends SandboxError {
-  constructor(message: string, stackTrace?: string) {
-    super(message)
+  constructor(message: string, opts?: ErrorOptsWithStackTrace) {
+    super(message, opts)
     this.name = 'TemplateError'
-    if (stackTrace) {
-      this.stack = stackTrace
+    if (opts?.stackTrace) {
+      this.stack = opts.stackTrace
     }
   }
 }
@@ -141,8 +181,8 @@ export class TemplateError extends SandboxError {
  * Thrown when the API rate limit is exceeded.
  */
 export class RateLimitError extends SandboxError {
-  constructor(message: string) {
-    super(message)
+  constructor(message: string, opts?: ErrorOpts) {
+    super(message, opts)
     this.name = 'RateLimitError'
   }
 }
@@ -151,11 +191,17 @@ export class RateLimitError extends SandboxError {
  * Thrown when the build fails.
  */
 export class BuildError extends Error {
-  constructor(message: string, stackTrace?: string) {
-    super(message)
+  /**
+   * Trace ID of the failed request, when the response carried one.
+   */
+  readonly traceId?: string
+
+  constructor(message: string, opts?: ErrorOptsWithStackTrace) {
+    super(formatMessage(message, opts?.traceId))
     this.name = 'BuildError'
-    if (stackTrace) {
-      this.stack = stackTrace
+    this.traceId = opts?.traceId
+    if (opts?.stackTrace) {
+      this.stack = opts.stackTrace
     }
   }
 }
@@ -164,8 +210,8 @@ export class BuildError extends Error {
  * Thrown when the file upload fails.
  */
 export class FileUploadError extends BuildError {
-  constructor(message: string, stackTrace?: string) {
-    super(message, stackTrace)
+  constructor(message: string, opts?: ErrorOptsWithStackTrace) {
+    super(message, opts)
     this.name = 'FileUploadError'
   }
 }
@@ -176,9 +222,15 @@ export class FileUploadError extends BuildError {
  * Thrown when general volume errors occur.
  */
 export class VolumeError extends Error {
-  constructor(message: string) {
-    super(message)
+  /**
+   * Trace ID of the failed request, when the response carried one.
+   */
+  readonly traceId?: string
+
+  constructor(message: string, opts?: ErrorOpts) {
+    super(formatMessage(message, opts?.traceId))
     this.name = 'VolumeError'
+    this.traceId = opts?.traceId
   }
 }
 
@@ -186,8 +238,8 @@ export class VolumeError extends Error {
  * Thrown when a volume is not found.
  */
 export class VolumeNotFoundError extends VolumeError {
-  constructor(message: string) {
-    super(message)
+  constructor(message: string, opts?: ErrorOpts) {
+    super(message, opts)
     this.name = 'VolumeNotFoundError'
   }
 }
@@ -196,8 +248,8 @@ export class VolumeNotFoundError extends VolumeError {
  * Thrown when a file or directory is not found inside a volume.
  */
 export class VolumePathNotFoundError extends VolumeError {
-  constructor(message: string) {
-    super(message)
+  constructor(message: string, opts?: ErrorOpts) {
+    super(message, opts)
     this.name = 'VolumePathNotFoundError'
   }
 }
@@ -208,9 +260,15 @@ export class VolumePathNotFoundError extends VolumeError {
  * Thrown when general secret errors occur.
  */
 export class SecretError extends Error {
-  constructor(message: string) {
-    super(message)
+  /**
+   * Trace ID of the failed request, when the response carried one.
+   */
+  readonly traceId?: string
+
+  constructor(message: string, opts?: ErrorOpts) {
+    super(formatMessage(message, opts?.traceId))
     this.name = 'SecretError'
+    this.traceId = opts?.traceId
   }
 }
 
@@ -218,8 +276,8 @@ export class SecretError extends Error {
  * Thrown when a secret is not found.
  */
 export class SecretNotFoundError extends SecretError {
-  constructor(message: string) {
-    super(message)
+  constructor(message: string, opts?: ErrorOpts) {
+    super(message, opts)
     this.name = 'SecretNotFoundError'
   }
 }

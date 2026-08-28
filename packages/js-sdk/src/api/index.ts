@@ -5,7 +5,9 @@ import { defaultHeaders } from './metadata'
 import { createApiFetch } from './http2'
 import { ConnectionConfig } from '../connectionConfig'
 import { AuthenticationError, RateLimitError, SandboxError } from '../errors'
+import type { ErrorOptsWithStackTrace } from '../errors'
 import { createApiLogger } from '../logs'
+import { extractTraceId } from '../traceId'
 
 /**
  * Map an API error code and message to the matching error class — the same
@@ -17,32 +19,39 @@ export function apiErrorFromCode(
   content: unknown,
   errorClass: new (
     message: string,
-    stackTrace?: string
+    opts?: ErrorOptsWithStackTrace
   ) => Error = SandboxError,
-  stackTrace?: string
+  opts?: ErrorOptsWithStackTrace
 ): Error {
+  // An expired key or a rate limit is a property of the request, not of the
+  // builder step that happened to make it, so these two keep the frame where
+  // they were constructed even when the caller supplied one.
   if (code === 401) {
     const message = 'Unauthorized, please check your credentials.'
     return new AuthenticationError(
-      content ? `${message} - ${content}` : message
+      content ? `${message} - ${content}` : message,
+      { traceId: opts?.traceId }
     )
   }
 
   if (code === 429) {
     const message = 'Rate limit exceeded, please try again later'
-    return new RateLimitError(content ? `${message} - ${content}` : message)
+    return new RateLimitError(content ? `${message} - ${content}` : message, {
+      traceId: opts?.traceId,
+    })
   }
 
-  return new errorClass(`${code}: ${content}`, stackTrace)
+  return new errorClass(`${code}: ${content}`, opts)
 }
 
 export function handleApiError(
   response: FetchResponse<any, any, any>,
   errorClass: new (
     message: string,
-    stackTrace?: string
+    opts?: ErrorOptsWithStackTrace
   ) => Error = SandboxError,
-  stackTrace?: string
+  // `traceId` is read off the response, so only `stackTrace` is caller-supplied
+  opts?: Pick<ErrorOptsWithStackTrace, 'stackTrace'>
 ): Error | undefined {
   // openapi-fetch leaves `error` undefined for non-2xx responses with
   // Content-Length: 0, so check the status instead
@@ -50,13 +59,15 @@ export function handleApiError(
     return
   }
 
+  const traceId = extractTraceId(response.response.headers)
+
   const status = response.response.status
   if (status === 401 || status === 429) {
     return apiErrorFromCode(
       status,
       response.error?.message ?? response.error,
       errorClass,
-      stackTrace
+      { ...opts, traceId }
     )
   }
 
@@ -64,7 +75,7 @@ export function handleApiError(
     status,
     response.error?.message || response.error || response.response.statusText,
     errorClass,
-    stackTrace
+    { ...opts, traceId }
   )
 }
 

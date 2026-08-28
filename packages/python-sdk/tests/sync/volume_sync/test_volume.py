@@ -135,6 +135,26 @@ def test_get_info_nonexistent_volume():
     assert isinstance(exc_info.value, NotFoundException)
 
 
+def test_get_info_nonexistent_volume_carries_trace_id(monkeypatch):
+    """The 404 is raised before handle_api_exception sees the response, so the
+    trace ID has to be read at the raise site."""
+
+    def mock_get_volume(volume_id, *, client):
+        return Response(
+            status_code=HTTPStatus(404),
+            content=b"",
+            headers={"X-Trace-ID": "abc123"},
+            parsed=None,
+        )
+
+    monkeypatch.setattr(get_volume_mod, "sync_detailed", mock_get_volume)
+
+    with pytest.raises(VolumeNotFoundException) as exc_info:
+        Volume.get_info("non-existent-id")
+    assert exc_info.value.trace_id == "abc123"
+    assert "(trace ID: abc123)" in str(exc_info.value)
+
+
 def test_create_volume_keeps_proxy_for_content_calls():
     vol = Volume.create("proxy-volume", proxy="http://user:pass@127.0.0.1:8080")
 

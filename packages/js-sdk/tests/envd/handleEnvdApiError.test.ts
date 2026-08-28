@@ -12,7 +12,8 @@ import {
 
 function createMockResponse(
   status: number,
-  error?: { message?: string } | string
+  error?: { message?: string } | string,
+  headers?: Record<string, string>
 ): {
   error?: { message?: string } | string
   response: Response
@@ -26,6 +27,7 @@ function createMockResponse(
       // openapi-fetch consumes the body whenever it produces an error value
       bodyUsed: error !== undefined,
       text: async () => (typeof error === 'string' ? error : ''),
+      ...(headers && { headers: new Headers(headers) }),
     } as unknown as Response,
   }
 }
@@ -100,6 +102,45 @@ describe('handleEnvdApiError', () => {
     const err = await handleEnvdApiError(res)
     assert.instanceOf(err, SandboxError)
     assert.include(err?.message, '500')
+  })
+
+  test('appends the trace ID from X-Trace-ID to mapped errors', async () => {
+    const res = createMockResponse(
+      404,
+      { message: 'Not found' },
+      { 'X-Trace-ID': 'abc123' }
+    )
+    const err = await handleEnvdApiError(res)
+    assert.instanceOf(err, NotFoundError)
+    assert.include(err?.message, '(trace ID: abc123)')
+  })
+
+  test('appends the trace ID at the end of explanatory messages', async () => {
+    const res = createMockResponse(
+      502,
+      { message: 'Bad gateway' },
+      { 'X-Trace-ID': 'abc123' }
+    )
+    const err = await handleEnvdApiError(res)
+    assert.instanceOf(err, TimeoutError)
+    assert.isTrue(err?.message.endsWith('(trace ID: abc123)'))
+  })
+
+  test('appends the trace ID to unmapped errors', async () => {
+    const res = createMockResponse(
+      500,
+      { message: 'Internal error' },
+      { 'X-Cloud-Trace-Context': '105445aa7843bc8bf206b12000100000/1;o=1' }
+    )
+    const err = await handleEnvdApiError(res)
+    assert.instanceOf(err, SandboxError)
+    assert.include(err?.message, '(trace ID: 105445aa7843bc8bf206b12000100000)')
+  })
+
+  test('leaves the message unchanged without trace headers', async () => {
+    const res = createMockResponse(500, { message: 'Internal error' })
+    const err = await handleEnvdApiError(res)
+    assert.notInclude(err?.message, 'trace ID')
   })
 })
 

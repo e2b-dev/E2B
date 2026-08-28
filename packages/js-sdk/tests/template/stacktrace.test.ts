@@ -4,7 +4,12 @@ import { assert, afterAll, afterEach, beforeAll } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
-import { Template, waitForTimeout } from '../../src'
+import {
+  AuthenticationError,
+  RateLimitError,
+  Template,
+  waitForTimeout,
+} from '../../src'
 import { apiUrl, buildTemplateTest } from '../setup'
 import { randomUUID } from 'node:crypto'
 
@@ -139,6 +144,60 @@ async function expectToThrowAndCheckTrace(
     assert.include(callerMethod, expectedMethod)
   }
 }
+
+// `getFileUploadLink` is the one caller that hands `handleApiError` a stack
+// trace, and 401/429 are the two statuses it can hit that swap in a different
+// error class. A bad key or a rate limit belongs to the request rather than to
+// the builder step that made it, so those two do not take the builder's frame.
+async function buildAndCatch(buildTemplate: any, name: string) {
+  try {
+    await buildTemplate(
+      Template().fromBaseImage().copy('stacktrace.test.ts', '.'),
+      { name }
+    )
+    assert.fail('Expected Template.build to throw an error')
+  } catch (error) {
+    return error
+  }
+}
+
+buildTemplateTest(
+  'does not trace a 401 from the file upload link to the builder call',
+  async ({ buildTemplate }) => {
+    server.use(
+      http.get(apiUrl('/templates/:templateID/files/:hash'), () =>
+        HttpResponse.json({ message: 'Expired key' }, { status: 401 })
+      )
+    )
+
+    const error = await buildAndCatch(buildTemplate, 'fileUploadLink401')
+
+    assert.instanceOf(error, AuthenticationError)
+    assert.notEqual(
+      getStackTraceCallerMethod(__fileContent, (error as Error).stack),
+      'copy'
+    )
+  }
+)
+
+buildTemplateTest(
+  'does not trace a 429 from the file upload link to the builder call',
+  async ({ buildTemplate }) => {
+    server.use(
+      http.get(apiUrl('/templates/:templateID/files/:hash'), () =>
+        HttpResponse.json({ message: 'Slow down' }, { status: 429 })
+      )
+    )
+
+    const error = await buildAndCatch(buildTemplate, 'fileUploadLink429')
+
+    assert.instanceOf(error, RateLimitError)
+    assert.notEqual(
+      getStackTraceCallerMethod(__fileContent, (error as Error).stack),
+      'copy'
+    )
+  }
+)
 
 buildTemplateTest('traces on fromImage', async ({ buildTemplate }) => {
   const template = Template().fromImage('e2b.dev/this-image-does-not-exist')

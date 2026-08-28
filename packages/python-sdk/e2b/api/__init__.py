@@ -3,7 +3,7 @@ import logging
 import os
 from dataclasses import dataclass
 from types import TracebackType
-from typing import NamedTuple, Optional, Protocol, Tuple, Union
+from typing import Mapping, NamedTuple, Optional, Protocol, Tuple, Union
 from urllib.parse import quote
 
 import httpx
@@ -16,10 +16,12 @@ from e2b.api.metadata import default_headers
 from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.exceptions import (
     AuthenticationException,
+    ExceptionFactory,
     InvalidArgumentException,
     RateLimitException,
     SandboxException,
 )
+from e2b.trace_id import extract_trace_id
 
 
 def encode_path_param(value: str) -> str:
@@ -142,32 +144,38 @@ class SandboxCreateResponse:
 def api_exception_from_code(
     status_code: int,
     message: Optional[str] = None,
-    default_exception_class: type[Exception] = SandboxException,
+    default_exception_class: ExceptionFactory = SandboxException,
     stack_trace: Optional[TracebackType] = None,
+    *,
+    trace_id: Optional[str] = None,
 ) -> Exception:
     """Map an API error code and message to the matching exception class — the
     same mapping :func:`handle_api_exception` applies to HTTP responses, usable
-    for error objects embedded in response bodies (e.g. per-fork results)."""
+    for error objects embedded in response bodies (e.g. per-fork results).
+
+    An expired key or a rate limit is a property of the request, not of the
+    builder step that happened to make it, so 401 and 429 keep their own
+    traceback even when ``stack_trace`` is supplied."""
     if status_code == 401:
         text = f"{status_code}: Unauthorized, please check your credentials."
         if message:
             text += f" - {message}"
-        return AuthenticationException(text)
+        return AuthenticationException(text, trace_id=trace_id)
 
     if status_code == 429:
         text = f"{status_code}: Rate limit exceeded, please try again later."
         if message:
             text += f" - {message}"
-        return RateLimitException(text)
+        return RateLimitException(text, trace_id=trace_id)
 
-    return default_exception_class(f"{status_code}: {message}").with_traceback(
-        stack_trace
-    )
+    return default_exception_class(
+        f"{status_code}: {message}", trace_id=trace_id
+    ).with_traceback(stack_trace)
 
 
 def handle_api_exception(
     e: "SupportsApiErrorResponse",
-    default_exception_class: type[Exception] = SandboxException,
+    default_exception_class: ExceptionFactory = SandboxException,
     stack_trace: Optional[TracebackType] = None,
 ):
     try:
@@ -175,14 +183,20 @@ def handle_api_exception(
     except json.JSONDecodeError:
         body = {}
 
+    trace_id = extract_trace_id(e.headers)
+
     message = body["message"] if "message" in body else None
     if message is None and e.status_code not in (401, 429):
-        return default_exception_class(f"{e.status_code}: {e.content}").with_traceback(
-            stack_trace
-        )
+        return default_exception_class(
+            f"{e.status_code}: {e.content}", trace_id=trace_id
+        ).with_traceback(stack_trace)
 
     return api_exception_from_code(
-        e.status_code, message, default_exception_class, stack_trace
+        e.status_code,
+        message,
+        default_exception_class,
+        stack_trace,
+        trace_id=trace_id,
     )
 
 
@@ -192,6 +206,9 @@ class SupportsApiErrorResponse(Protocol):
 
     @property
     def content(self) -> Union[str, bytes]: ...
+
+    @property
+    def headers(self) -> Optional[Mapping[str, str]]: ...
 
 
 class ApiClient(AuthenticatedClient):

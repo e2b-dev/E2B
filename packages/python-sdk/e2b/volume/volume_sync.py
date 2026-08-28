@@ -31,6 +31,7 @@ from e2b.exceptions import (
     VolumeNotFoundException,
     VolumePathNotFoundException,
 )
+from e2b.trace_id import extract_trace_id
 from e2b.volume.client.api.volumes import (
     get_volumecontent_volume_id_path as get_path,
     get_volumecontent_volume_id_dir as get_dir,
@@ -192,7 +193,10 @@ class Volume(ClientFactory):
         )
 
         if res.status_code == 404:
-            raise VolumeNotFoundException(f"Volume {volume_id} not found")
+            raise VolumeNotFoundException(
+                f"Volume {volume_id} not found",
+                trace_id=extract_trace_id(res.headers),
+            )
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
@@ -286,7 +290,10 @@ class Volume(ClientFactory):
         )
 
         if res.status_code == 404:
-            raise VolumePathNotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(
+                f"Path {path} not found",
+                trace_id=extract_trace_id(res.headers),
+            )
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
@@ -338,7 +345,10 @@ class Volume(ClientFactory):
         )
 
         if res.status_code == 404:
-            raise VolumePathNotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(
+                f"Path {path} not found",
+                trace_id=extract_trace_id(res.headers),
+            )
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
@@ -390,7 +400,10 @@ class Volume(ClientFactory):
         )
 
         if res.status_code == 404:
-            raise VolumePathNotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(
+                f"Path {path} not found",
+                trace_id=extract_trace_id(res.headers),
+            )
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
@@ -442,7 +455,10 @@ class Volume(ClientFactory):
         )
 
         if res.status_code == 404:
-            raise VolumePathNotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(
+                f"Path {path} not found",
+                trace_id=extract_trace_id(res.headers),
+            )
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
@@ -532,7 +548,10 @@ class Volume(ClientFactory):
                     timeout=stream_timeout,
                 ) as response:
                     if response.status_code == 404:
-                        raise VolumePathNotFoundException(f"Path {path} not found")
+                        raise VolumePathNotFoundException(
+                            f"Path {path} not found",
+                            trace_id=extract_trace_id(response.headers),
+                        )
 
                     if response.status_code >= 300:
                         api_response = Response(
@@ -555,7 +574,10 @@ class Volume(ClientFactory):
         )
 
         if response.status_code == 404:
-            raise VolumePathNotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(
+                f"Path {path} not found",
+                trace_id=extract_trace_id(response.headers),
+            )
 
         if response.status_code >= 300:
             api_response = Response(
@@ -631,7 +653,10 @@ class Volume(ClientFactory):
         )
 
         if res.status_code == 404:
-            raise VolumePathNotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(
+                f"Path {path} not found",
+                trace_id=extract_trace_id(res.headers),
+            )
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
@@ -665,7 +690,10 @@ class Volume(ClientFactory):
         )
 
         if res.status_code == 404:
-            raise VolumePathNotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(
+                f"Path {path} not found",
+                trace_id=extract_trace_id(res.headers),
+            )
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)

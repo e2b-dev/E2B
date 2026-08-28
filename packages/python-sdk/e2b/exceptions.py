@@ -1,6 +1,28 @@
-def format_sandbox_timeout_exception(message: str):
+from typing import Optional, Protocol
+
+
+class ExceptionFactory(Protocol):
+    """Builds an exception from an error message and an optional trace ID.
+
+    Exception classes satisfy this, so they can be used directly as factories
+    in the HTTP status code maps.
+    """
+
+    def __call__(
+        self, message: str, *, trace_id: Optional[str] = None
+    ) -> Exception: ...
+
+
+def _format_message_with_trace_id(message: str, trace_id: Optional[str] = None) -> str:
+    if trace_id and message:
+        return f"{message} (trace ID: {trace_id})"
+    return message
+
+
+def format_sandbox_timeout_exception(message: str, *, trace_id: Optional[str] = None):
     return TimeoutException(
-        f"{message}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeout' when starting the sandbox or calling '.set_timeout' on the sandbox with the desired timeout."
+        f"{message}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeout' when starting the sandbox or calling '.set_timeout' on the sandbox with the desired timeout.",
+        trace_id=trace_id,
     )
 
 
@@ -15,9 +37,18 @@ class SandboxException(Exception):
     Base class for all sandbox errors.
 
     Raised when a general sandbox exception occurs.
+
+    :ivar trace_id: Trace ID of the failed request, when the response carried
+        one.
     """
 
-    pass
+    # Class-level default so subclasses that bypass this ``__init__`` — the
+    # ``@dataclass`` CommandExitException generates its own — still expose it
+    trace_id: Optional[str] = None
+
+    def __init__(self, message: str = "", *, trace_id: Optional[str] = None):
+        super().__init__(_format_message_with_trace_id(message, trace_id))
+        self.trace_id = trace_id
 
 
 class TimeoutException(SandboxException):
@@ -80,9 +111,16 @@ class SandboxNotFoundException(NotFoundException):
 class AuthenticationException(Exception):
     """
     Raised when authentication fails.
+
+    :ivar trace_id: Trace ID of the failed request, when the response carried
+        one.
     """
 
-    pass
+    trace_id: Optional[str] = None
+
+    def __init__(self, message: str = "", *, trace_id: Optional[str] = None):
+        super().__init__(_format_message_with_trace_id(message, trace_id))
+        self.trace_id = trace_id
 
 
 class GitAuthException(AuthenticationException):
@@ -120,7 +158,16 @@ class RateLimitException(SandboxException):
 class BuildException(Exception):
     """
     Raised when the build fails.
+
+    :ivar trace_id: Trace ID of the failed request, when the response carried
+        one.
     """
+
+    trace_id: Optional[str] = None
+
+    def __init__(self, message: str = "", *, trace_id: Optional[str] = None):
+        super().__init__(_format_message_with_trace_id(message, trace_id))
+        self.trace_id = trace_id
 
 
 class FileUploadException(BuildException):
@@ -134,7 +181,16 @@ class VolumeException(Exception):
     Base class for all volume errors.
 
     Raised when general volume errors occur.
+
+    :ivar trace_id: Trace ID of the failed request, when the response carried
+        one.
     """
+
+    trace_id: Optional[str] = None
+
+    def __init__(self, message: str = "", *, trace_id: Optional[str] = None):
+        super().__init__(_format_message_with_trace_id(message, trace_id))
+        self.trace_id = trace_id
 
 
 class VolumeNotFoundException(NotFoundException):
@@ -154,7 +210,16 @@ class SecretException(Exception):
     Base class for all secret errors.
 
     Raised when general secret errors occur.
+
+    :ivar trace_id: Trace ID of the failed request, when the response carried
+        one.
     """
+
+    trace_id: Optional[str] = None
+
+    def __init__(self, message: str = "", *, trace_id: Optional[str] = None):
+        super().__init__(_format_message_with_trace_id(message, trace_id))
+        self.trace_id = trace_id
 
 
 class SecretNotFoundException(SecretException):

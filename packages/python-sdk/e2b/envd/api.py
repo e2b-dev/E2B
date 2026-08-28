@@ -1,10 +1,11 @@
 import httpx
 import json
 
-from typing import Callable, Optional
+from typing import Mapping, Optional
 
 from e2b.envd.rpc import format_terminated_exception
 from e2b.exceptions import (
+    ExceptionFactory,
     SandboxException,
     NotFoundException,
     AuthenticationException,
@@ -13,17 +14,19 @@ from e2b.exceptions import (
     RateLimitException,
     format_sandbox_timeout_exception,
 )
+from e2b.trace_id import extract_trace_id
 
 
 ENVD_API_FILES_ROUTE = "/files"
 ENVD_API_HEALTH_ROUTE = "/health"
 
-_DEFAULT_API_ERROR_MAP: dict[int, Callable[[str], Exception]] = {
+
+_DEFAULT_API_ERROR_MAP: dict[int, ExceptionFactory] = {
     400: InvalidArgumentException,
     401: AuthenticationException,
     404: NotFoundException,
-    429: lambda message: RateLimitException(
-        f"{message}: The requests are being rate limited."
+    429: lambda message, *, trace_id=None: RateLimitException(
+        f"{message}: The requests are being rate limited.", trace_id=trace_id
     ),
     502: format_sandbox_timeout_exception,
     507: NotEnoughSpaceException,
@@ -120,7 +123,7 @@ def get_message(e: httpx.Response) -> str:
 
 def handle_envd_api_exception(
     res: httpx.Response,
-    error_map: Optional[dict[int, Callable[[str], Exception]]] = None,
+    error_map: Optional[Mapping[int, ExceptionFactory]] = None,
 ):
     """Handle errors from envd API responses by mapping HTTP status codes to specific exception types.
 
@@ -133,12 +136,17 @@ def handle_envd_api_exception(
 
     res.read()
 
-    return format_envd_api_exception(res.status_code, get_message(res), error_map)
+    return format_envd_api_exception(
+        res.status_code,
+        get_message(res),
+        error_map,
+        trace_id=extract_trace_id(res.headers),
+    )
 
 
 async def ahandle_envd_api_exception(
     res: httpx.Response,
-    error_map: Optional[dict[int, Callable[[str], Exception]]] = None,
+    error_map: Optional[Mapping[int, ExceptionFactory]] = None,
 ):
     """Async version of :func:`handle_envd_api_exception`."""
     if res.is_success:
@@ -146,25 +154,33 @@ async def ahandle_envd_api_exception(
 
     await res.aread()
 
-    return format_envd_api_exception(res.status_code, get_message(res), error_map)
+    return format_envd_api_exception(
+        res.status_code,
+        get_message(res),
+        error_map,
+        trace_id=extract_trace_id(res.headers),
+    )
 
 
 def format_envd_api_exception(
     status_code: int,
     message: str,
-    error_map: Optional[dict[int, Callable[[str], Exception]]] = None,
+    error_map: Optional[Mapping[int, ExceptionFactory]] = None,
+    *,
+    trace_id: Optional[str] = None,
 ):
     """Map an HTTP status code and message to the appropriate exception.
 
     :param status_code: The HTTP status code.
     :param message: The error message from the response body.
     :param error_map: Optional map of HTTP status codes to exception factories that override the defaults.
+    :param trace_id: Optional trace ID of the failed request.
     :return: The corresponding exception.
     """
     if error_map and status_code in error_map:
-        return error_map[status_code](message)
+        return error_map[status_code](message, trace_id=trace_id)
 
     if status_code in _DEFAULT_API_ERROR_MAP:
-        return _DEFAULT_API_ERROR_MAP[status_code](message)
+        return _DEFAULT_API_ERROR_MAP[status_code](message, trace_id=trace_id)
 
-    return SandboxException(f"{status_code}: {message}")
+    return SandboxException(f"{status_code}: {message}", trace_id=trace_id)
