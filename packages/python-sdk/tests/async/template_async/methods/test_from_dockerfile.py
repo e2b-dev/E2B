@@ -43,6 +43,20 @@ ENTRYPOINT ["sleep", "20"]"""
 
 
 @pytest.mark.skip_debug()
+async def test_from_dockerfile_strips_stage_alias_case_insensitively():
+    # AS is case-insensitive in Dockerfiles, so the canonical uppercase form
+    # (and mixed case) must also have its stage alias stripped from the base
+    # image. Previously only a lowercase " as " was stripped.
+    for dockerfile in [
+        "FROM node:24 AS builder",
+        "FROM node:24 as builder",
+        "FROM node:24 As Build",
+    ]:
+        template = AsyncTemplate().from_dockerfile(dockerfile)
+        assert template._template._base_image == "node:24"
+
+
+@pytest.mark.skip_debug()
 async def test_from_dockerfile_with_default_user_and_workdir():
     dockerfile = "FROM node:24"
 
