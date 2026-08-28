@@ -1,7 +1,7 @@
 from typing import Dict, Type, TypeVar, cast
 
+from e2b import ApiParams
 from e2b import E2B as CoreE2B
-from e2b.connection_config import ApiParams
 from typing_extensions import Unpack
 
 from e2b_desktop.main import Sandbox
