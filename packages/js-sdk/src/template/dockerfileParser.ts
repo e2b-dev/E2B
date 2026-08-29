@@ -231,66 +231,35 @@ function handleEnvInstruction(
   const argumentsData = instruction.getArguments()
   const keyword = instruction.getKeyword()
 
-  if (argumentsData && argumentsData.length >= 1) {
-    const envVars: Record<string, string> = {}
+  if (!argumentsData || argumentsData.length === 0) {
+    return
+  }
 
-    if (argumentsData.length === 2) {
-      // ENV key value format OR multiple key=value pairs (from line continuation)
-      const firstArg = argumentsData[0].getValue()
-      const secondArg = argumentsData[1].getValue()
+  // dockerfile-ast splits arguments on whitespace, including inside quotes, so
+  // rejoin them to recover the raw value and parse it like the Python SDK: in
+  // the `key=value` form a value runs across whitespace until the next `key=`
+  // token, and surrounding quotes are stripped. Parsing each token in isolation
+  // mangled `ENV NAME="John Doe"` and `ENV KEY=a b` into a broken key.
+  const value = argumentsData.map((arg) => arg.getValue()).join(' ')
+  const envVars: Record<string, string> = {}
 
-      // Check if both arguments contain '=' (multiple key=value pairs)
-      if (firstArg.includes('=') && secondArg.includes('=')) {
-        // Both are key=value pairs (line continuation)
-        for (const arg of argumentsData) {
-          const envString = arg.getValue()
-          const equalIndex = envString.indexOf('=')
-          if (equalIndex > 0) {
-            const key = envString.substring(0, equalIndex)
-            const value = envString.substring(equalIndex + 1)
-            envVars[key] = value
-          }
-        }
-      } else {
-        // Traditional ENV key value format
-        envVars[firstArg] = secondArg
-      }
-    } else if (argumentsData.length === 1) {
-      // ENV/ARG key=value format (single argument) or ARG key (without default)
-      const envString = argumentsData[0].getValue()
-
-      // Check if it's a simple key=value or just a key (for ARG without default)
-      const equalIndex = envString.indexOf('=')
-      if (equalIndex > 0) {
-        const key = envString.substring(0, equalIndex)
-        const value = envString.substring(equalIndex + 1)
-        envVars[key] = value
-      } else if (keyword === 'ARG' && envString.trim()) {
-        // ARG without default value - set as empty ENV
-        const key = envString.trim()
-        envVars[key] = ''
-      }
-    } else {
-      // Multiple arguments (from line continuation with backslashes)
-      for (const arg of argumentsData) {
-        const envString = arg.getValue()
-        const equalIndex = envString.indexOf('=')
-        if (equalIndex > 0) {
-          const key = envString.substring(0, equalIndex)
-          const value = envString.substring(equalIndex + 1)
-          envVars[key] = value
-        } else if (keyword === 'ARG') {
-          // ARG without default value
-          const key = envString
-          envVars[key] = ''
-        }
-      }
+  if (value.includes('=')) {
+    const pairRegex = /(\w+)=([^\s]*(?:\s+(?!\w+=)[^\s]*)*)/g
+    let match: RegExpExecArray | null
+    while ((match = pairRegex.exec(value)) !== null) {
+      envVars[match[1]] = match[2].replace(/^["']+|["']+$/g, '')
     }
-
-    // Call setEnvs once with all environment variables from this instruction
-    if (Object.keys(envVars).length > 0) {
-      templateBuilder.setEnvs(envVars)
+  } else {
+    const spaceForm = value.match(/^(\S+)\s+([\s\S]+)$/)
+    if (spaceForm) {
+      envVars[spaceForm[1]] = spaceForm[2].replace(/^["']+|["']+$/g, '')
+    } else if (keyword === 'ARG' && value.trim()) {
+      envVars[value.trim()] = ''
     }
+  }
+
+  if (Object.keys(envVars).length > 0) {
+    templateBuilder.setEnvs(envVars)
   }
 }
 
