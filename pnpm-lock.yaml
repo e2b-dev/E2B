@@ -81,7 +81,7 @@ importers:
         specifier: ^1.80.0
         version: 1.80.0
       prettier:
-        specifier: ^3.6.2
+        specifier: ^3.9.6
         version: 3.9.6
       tsdown:
         specifier: 'catalog:'
