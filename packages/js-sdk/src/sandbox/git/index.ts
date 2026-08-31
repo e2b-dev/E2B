@@ -35,13 +35,12 @@ const DEFAULT_GIT_ENV: Record<string, string> = {
  *
  * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
  */
-export interface GitRequestOpts
-  extends Partial<
-    Pick<
-      CommandStartOpts,
-      'envs' | 'user' | 'cwd' | 'timeoutMs' | 'requestTimeoutMs'
-    >
-  > {}
+export interface GitRequestOpts extends Partial<
+  Pick<
+    CommandStartOpts,
+    'envs' | 'user' | 'cwd' | 'timeoutMs' | 'requestTimeoutMs'
+  >
+> {}
 
 /**
  * Options for cloning a repository.

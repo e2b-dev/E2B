@@ -39,13 +39,7 @@ export type Context = {
  * Supported language for code execution.
  */
 export type RunCodeLanguage =
-  | 'python'
-  | 'javascript'
-  | 'typescript'
-  | 'r'
-  | 'java'
-  | 'bash'
-  | (string & {})
+  'python' | 'javascript' | 'typescript' | 'r' | 'java' | 'bash' | (string & {})
 /* eslint-enable @typescript-eslint/ban-types */
 
 /**
