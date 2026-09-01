@@ -329,7 +329,9 @@ export class Volume extends ClientFactory {
    * Create a directory.
    *
    * @param path path to the directory to create.
-   * @param opts directory creation and connection options.
+   * @param opts directory metadata (`uid`, `gid`, `mode`), `force` to create missing parent directories, and connection options such as `requestTimeoutMs` (60 seconds by default), `headers` and `proxy`.
+   *
+   * @returns stat of the created directory: `name`, `path`, `type`, `size`, `uid`, `gid`, `mode` and the access, modification and creation times.
    */
   async makeDir(
     path: string,
@@ -662,9 +664,9 @@ export class Volume extends ClientFactory {
    *
    * @param path path to the file.
    * @param data data to write to the file. Data can be a string, `ArrayBuffer`, `Blob`, or `ReadableStream`. Outside the browser, `ReadableStream` data is streamed to the API instead of being buffered in memory.
-   * @param opts file creation and connection options.
+   * @param opts file metadata (`uid`, `gid`, `mode`), `force` to overwrite an existing file, and connection options such as `requestTimeoutMs`, which defaults to 1 hour for file writes rather than the usual 60 seconds, `headers` and `proxy`.
    *
-   * @returns information about the written file
+   * @returns stat of the written file: `name`, `path`, `type`, `size`, `uid`, `gid`, `mode` and the access, modification and creation times.
    */
   async writeFile(
     path: string,
