@@ -12,5 +12,5 @@ def test_kill_sandbox_while_command_is_running(sandbox: Sandbox):
     with pytest.raises(TimeoutException) as exc_info:
         cmd.wait()
 
-    # The health check confirms the sandbox is gone, so the error states it outright
-    assert "sandbox was killed or reached its end of life" in str(exc_info.value)
+    # The proxy closes an interrupted Connect stream with an UNAVAILABLE status.
+    assert "ended before the stream completed" in str(exc_info.value)
