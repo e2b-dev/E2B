@@ -13,6 +13,7 @@ from pyqwest import HTTPVersion, Request, SyncRequest
 from pyqwest.httpx import AsyncPyqwestTransport, PyqwestTransport
 from transport_caches import reset_transport_caches
 
+import e2b.api as api
 import e2b.api.client_async as api_client_async
 import e2b.api.client_sync as api_client_sync
 from e2b.api import (
@@ -49,6 +50,20 @@ def sandbox_config(test_api_key: str, sandbox_id: str) -> ConnectionConfig:
             "E2b-Sandbox-Port": "49983",
         },
     )
+
+
+@pytest.mark.parametrize("pool_shards", [1, 4, 8])
+def test_envd_pool_shard_respects_configured_count(
+    test_api_key, monkeypatch, pool_shards
+):
+    monkeypatch.setattr(api, "envd_pool_shards", pool_shards)
+
+    assigned = {
+        envd_pool_shard(sandbox_config(test_api_key, f"sbx-{index}"))
+        for index in range(100)
+    }
+
+    assert assigned == set(range(pool_shards))
 
 
 def test_sync_api_client_proxy_uses_explicit_transport(test_api_key):
@@ -116,8 +131,8 @@ def test_sync_transports_keyed_by_http_version(test_api_key):
 
         assert http1 is not negotiated
         assert envd_http1 is not envd_negotiated
-        # The envd HTTP API draws from the same pool as the control plane, per
-        # version — `get_envd_transport` is `get_transport` under another name.
+        # A config without sandbox headers resolves envd to shard zero, so it
+        # shares the generic transport for each HTTP version.
         assert envd_negotiated is negotiated
         assert envd_http1 is http1
         # Each version still has one pool per proxy, and repeat calls with the
@@ -137,7 +152,10 @@ def test_sync_transports_keyed_by_http_version(test_api_key):
         reset_transport_caches()
 
 
-def test_sync_envd_transports_are_consistently_sharded_by_sandbox(test_api_key):
+def test_sync_envd_transports_are_consistently_sharded_by_sandbox(
+    test_api_key, monkeypatch
+):
+    monkeypatch.setattr(api, "envd_pool_shards", 4)
     reset_transport_caches()
     first = sandbox_config(test_api_key, "sbx-0")
     same_shard = sandbox_config(test_api_key, "sbx-2")
@@ -247,10 +265,7 @@ def test_sync_api_client_request_timeout_zero_disables_timeout(test_api_key):
         reset_transport_caches()
 
 
-def test_sync_envd_and_api_share_one_transport(test_api_key):
-    # The envd HTTP API draws from the same pool as the control-plane REST API
-    # — reqwest pools per host, so one pool serves both. Only the streaming
-    # variant, which carries the idle read timeout, is a pool of its own.
+def test_sync_generic_transport_separates_streaming_read_timeout(test_api_key):
     reset_transport_caches()
     config = ConnectionConfig(api_key=test_api_key)
 
@@ -359,8 +374,8 @@ async def test_async_transports_keyed_by_http_version(test_api_key):
 
         assert http1 is not negotiated
         assert envd_http1 is not envd_negotiated
-        # The envd HTTP API draws from the same pool as the control plane, per
-        # version — `get_envd_transport` is `get_transport` under another name.
+        # A config without sandbox headers resolves envd to shard zero, so it
+        # shares the generic transport for each HTTP version.
         assert envd_negotiated is negotiated
         assert envd_http1 is http1
         assert get_async_transport(config, http2=False) is http1
@@ -376,8 +391,9 @@ async def test_async_transports_keyed_by_http_version(test_api_key):
 
 @pytest.mark.asyncio
 async def test_async_envd_transports_are_consistently_sharded_by_sandbox(
-    test_api_key,
+    test_api_key, monkeypatch
 ):
+    monkeypatch.setattr(api, "envd_pool_shards", 4)
     reset_transport_caches()
     first = sandbox_config(test_api_key, "sbx-0")
     same_shard = sandbox_config(test_api_key, "sbx-2")
@@ -471,7 +487,7 @@ async def test_async_api_client_is_shared_across_loops(test_api_key):
 
 
 @pytest.mark.asyncio
-async def test_async_envd_and_api_share_one_transport(test_api_key):
+async def test_async_generic_transport_separates_streaming_read_timeout(test_api_key):
     reset_transport_caches()
     config = ConnectionConfig(api_key=test_api_key)
 

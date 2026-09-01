@@ -7,6 +7,7 @@ import pytest
 from envd_frame_server import stream_capacity_server
 from pyqwest import HTTPVersion
 
+import e2b.api as api
 import e2b.api.client_async as api_client_async
 import e2b.api.client_sync as api_client_sync
 from e2b.connection_config import ConnectionConfig
@@ -36,6 +37,7 @@ def sandbox_config(sandbox_id: str) -> ConnectionConfig:
 
 def test_sync_envd_spreads_sandboxes_across_http2_connections(monkeypatch):
     """113 sync sandboxes fit when each HTTP/2 connection allows 100 streams."""
+    monkeypatch.setattr(api, "envd_pool_shards", 4)
     reset_transport_caches()
     build_transport = api_client_sync.SyncHTTPTransport
 
@@ -77,6 +79,7 @@ def test_sync_envd_spreads_sandboxes_across_http2_connections(monkeypatch):
 @pytest.mark.asyncio
 async def test_async_envd_spreads_sandboxes_across_http2_connections(monkeypatch):
     """113 sandboxes fit when each HTTP/2 connection allows 100 streams."""
+    monkeypatch.setattr(api, "envd_pool_shards", 4)
     reset_transport_caches()
     build_transport = api_client_async.HTTPTransport
 

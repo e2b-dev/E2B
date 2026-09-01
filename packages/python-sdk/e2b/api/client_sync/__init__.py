@@ -58,13 +58,9 @@ distinct combination is necessarily its own pool."""
 
 _transport_lock = threading.Lock()
 # One pyqwest transport — one reqwest connection pool — per key; a `None` proxy
-# is the direct pool. Every HTTP stack in the SDK draws from these: the
-# control-plane REST API, the envd HTTP API, the envd RPC clients
-# (`e2b.envd.client_sync`) and the volume content API (`e2b.volume.client_sync`).
-# reqwest pools per host internally, so a single pool serves the API host and
-# every per-sandbox host without interference — and because envd RPC and the
-# envd HTTP API share it, a sandbox needs one HTTP/2 connection instead of one
-# per stack.
+# is the direct pool. Generic API and volume traffic use shard zero. Envd RPC
+# and non-streaming HTTP traffic for one sandbox use the same sandbox shard, so
+# they share one HTTP/2 connection instead of opening one per stack.
 #
 # pyqwest transports are thread-safe, so unlike the httpx transports they
 # replaced, the caches are process-global rather than per-thread.
@@ -156,11 +152,11 @@ def get_transport(
     for_streaming: bool = False,
     pool_shard: int = 0,
 ) -> PyqwestTransport:
-    """The shared httpx transport for the control-plane REST API and the envd
-    HTTP API (file transfers, health checks) — one pool serves both, keyed by
-    the connection's proxy. For TLS connections ALPN negotiates the HTTP
-    version (HTTP/2 against the E2B API), like the http2-enabled httpx
-    transport this replaced.
+    """The shared httpx transport factory for the control-plane REST API and
+    envd HTTP API (file transfers, health checks). Generic callers use shard
+    zero; :func:`get_envd_transport` supplies a sandbox-specific shard. For TLS
+    connections ALPN negotiates the HTTP version (HTTP/2 against the E2B API),
+    like the http2-enabled httpx transport this replaced.
 
     ``http2=False`` returns a separate transport (its own pool) pinned to
     HTTP/1.1. That matters for a server that reacts to a client going away:
@@ -190,9 +186,11 @@ def get_envd_transport(
 ) -> PyqwestTransport:
     """The envd HTTP API's transport, sharded by sandbox ID.
 
-    Envd RPC and HTTP traffic for one sandbox resolve the same shard, retaining
-    their shared connection while spreading different sandboxes over a bounded
-    number of connections to the stable sandbox host.
+    Envd RPC and non-streaming HTTP traffic for one sandbox resolve the same
+    shard, retaining their shared connection while spreading different
+    sandboxes over a bounded number of connections to the stable sandbox host.
+    Streaming HTTP traffic uses the same shard number with a separate
+    read-timeout-keyed pool.
 
     Kept as a separate factory because generic API transports stay on shard
     zero while envd transports use the sandbox's shard.

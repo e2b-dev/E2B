@@ -340,10 +340,10 @@ class StreamCapacityServer(threading.Thread):
         self.streams: List[tuple[int, int]] = []
         self.errors: List[str] = []
         self._lock = threading.Lock()
-        self._stop = threading.Event()
+        self._stop_event = threading.Event()
 
     def run(self):
-        while not self._stop.is_set():
+        while not self._stop_event.is_set():
             try:
                 sock, _ = self.listener.accept()
             except socket.timeout:
@@ -369,7 +369,7 @@ class StreamCapacityServer(threading.Thread):
         )
         sock.sendall(conn.data_to_send())
         try:
-            while not self._stop.is_set():
+            while not self._stop_event.is_set():
                 try:
                     data = sock.recv(65535)
                 except socket.timeout:
@@ -407,9 +407,11 @@ class StreamCapacityServer(threading.Thread):
             sock.close()
 
     def close(self):
-        self._stop.set()
+        self._stop_event.set()
         self.listener.close()
-        for sock in self.connections:
+        with self._lock:
+            connections = list(self.connections)
+        for sock in connections:
             with contextlib.suppress(OSError):
                 sock.close()
 
@@ -427,6 +429,8 @@ def stream_capacity_server(
         yield server
     finally:
         server.close()
+        server.join(timeout=1)
+        assert not server.is_alive()
 
 
 def assert_stdout_event(event: ConnectResponse):
