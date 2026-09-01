@@ -1,0 +1,65 @@
+"""Long-lived envd streams must not all contend for one HTTP/2 connection."""
+
+import asyncio
+
+import pytest
+from envd_frame_server import stream_capacity_server
+from pyqwest import HTTPVersion
+
+import e2b.api.client_async as api_client_async
+from e2b.connection_config import ConnectionConfig
+from e2b.envd.client_async import as_stream, create_rpc_client, first_event
+from e2b.envd.process.process_connect import ProcessClient
+from e2b.envd.process.process_pb import ConnectRequest
+from transport_caches import reset_transport_caches
+
+
+def sandbox_config(sandbox_id: str) -> ConnectionConfig:
+    return ConnectionConfig(
+        api_key="e2b_" + "0" * 40,
+        extra_sandbox_headers={
+            "E2b-Sandbox-Id": sandbox_id,
+            "E2b-Sandbox-Port": "49983",
+        },
+    )
+
+
+@pytest.mark.asyncio
+async def test_async_envd_spreads_sandboxes_across_http2_connections(monkeypatch):
+    """113 sandboxes fit when each HTTP/2 connection allows 100 streams."""
+    reset_transport_caches()
+    build_transport = api_client_async.HTTPTransport
+
+    def build_http2_transport(**kwargs):
+        # Production negotiates HTTP/2 over TLS. The frame server is plaintext,
+        # so force prior knowledge while retaining the production factory/cache.
+        kwargs["http_version"] = HTTPVersion.HTTP2
+        return build_transport(**kwargs)
+
+    monkeypatch.setattr(api_client_async, "HTTPTransport", build_http2_transport)
+
+    streams = []
+    try:
+        with stream_capacity_server(max_concurrent_streams=100) as server:
+            for index in range(113):
+                client = create_rpc_client(
+                    ProcessClient,
+                    f"http://127.0.0.1:{server.port}",
+                    sandbox_config(f"sbx-{index}"),
+                )
+                streams.append(as_stream(client.connect(ConnectRequest())))
+
+            events = await asyncio.gather(
+                *(first_event(stream, 0.5) for stream in streams),
+                return_exceptions=True,
+            )
+
+            assert not [event for event in events if isinstance(event, BaseException)]
+            assert len(server.connections) == 4
+            assert len(server.streams) == 113
+            server.assert_no_errors()
+    finally:
+        await asyncio.gather(
+            *(stream.aclose() for stream in streams), return_exceptions=True
+        )
+        reset_transport_caches()

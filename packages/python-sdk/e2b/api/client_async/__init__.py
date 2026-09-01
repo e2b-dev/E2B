@@ -11,6 +11,7 @@ from e2b.api import (
     AsyncApiClient,
     ProxyConfig,
     connection_retries,
+    envd_pool_shard,
     make_async_logging_event_hooks,
     pool_idle_timeout,
     pool_max_idle_per_host,
@@ -48,11 +49,12 @@ class ConnectionRetryTransport(RetryTransport):
         return isinstance(response, ConnectionError)
 
 
-_TransportKey = Tuple[Optional[ProxyConfig], Optional[float], bool]
-"""Cache key of the shared transports: proxy, idle read bound, HTTP version.
+_TransportKey = Tuple[Optional[ProxyConfig], Optional[float], bool, int]
+"""Cache key: proxy, idle read bound, HTTP version, connection-pool shard.
 
-All three are fixed when a pyqwest transport is constructed, so each distinct
-combination is necessarily its own pool."""
+The first three are fixed when a pyqwest transport is constructed. The shard
+allows bounded parallel HTTP/2 connections to the stable envd host. Each
+distinct combination is necessarily its own pool."""
 
 _transport_lock = threading.Lock()
 # One pyqwest transport — one reqwest connection pool — per key; a `None` proxy
@@ -76,6 +78,7 @@ def get_pyqwest_transport(
     proxy: Optional[ProxyConfig],
     read_timeout: Optional[float] = None,
     http2: bool = True,
+    pool_shard: int = 0,
 ) -> ConnectionRetryTransport:
     """The shared pyqwest transport (= one connection pool) with the SDK's
     tuning — system CA certs (without which TLS through an intercepting proxy
@@ -99,7 +102,7 @@ def get_pyqwest_transport(
     ``pyqwest`` loggers at ``DEBUG`` (off unless enabled) — the transport-level
     diagnostics httpcore used to provide. The SDK's own ``logger`` option is
     separate and sits above this, on the httpx client."""
-    key = (proxy, read_timeout, http2)
+    key = (proxy, read_timeout, http2, pool_shard)
     with _transport_lock:
         transport = _transports.get(key)
         if transport is None:
@@ -129,15 +132,16 @@ def get_httpx_transport(
     proxy: Optional[ProxyConfig],
     read_timeout: Optional[float] = None,
     http2: bool = True,
+    pool_shard: int = 0,
 ) -> AsyncPyqwestTransport:
     """The httpx adapter over the shared pool of
     :func:`get_pyqwest_transport`, for the generated httpx clients (control
     plane, envd HTTP API, volume content). The adapter holds no state of its
     own and does not close the pool, so closing an httpx client leaves the
     pool intact for the other clients on it."""
-    key = (proxy, read_timeout, http2)
+    key = (proxy, read_timeout, http2, pool_shard)
     # Resolve the pool before taking the lock: it takes the same one.
-    pool = get_pyqwest_transport(proxy, read_timeout, http2)
+    pool = get_pyqwest_transport(proxy, read_timeout, http2, pool_shard)
     with _transport_lock:
         transport = _httpx_transports.get(key)
         if transport is None:
@@ -147,7 +151,11 @@ def get_httpx_transport(
 
 
 def get_transport(
-    config: ConnectionConfig, http2: bool = True, *, for_streaming: bool = False
+    config: ConnectionConfig,
+    http2: bool = True,
+    *,
+    for_streaming: bool = False,
+    pool_shard: int = 0,
 ) -> AsyncPyqwestTransport:
     """The shared httpx transport for the control-plane REST API and the envd
     HTTP API (file transfers, health checks) — one pool serves both, keyed by
@@ -174,25 +182,28 @@ def get_transport(
         proxy_to_config(config.proxy),
         READ_TIMEOUT if for_streaming else None,
         http2,
+        pool_shard,
     )
 
 
 def get_envd_transport(
     config: ConnectionConfig, http2: bool = True, *, for_streaming: bool = False
 ) -> AsyncPyqwestTransport:
-    """The envd HTTP API's transport, which is :func:`get_transport` — the two
-    now share one pool per key, since reqwest pools per host and envd RPC and
-    the envd HTTP API hit the same sandbox host anyway.
+    """The envd HTTP API's transport, sharded by sandbox ID.
 
-    Kept only as a backward-compatible alias of :func:`get_transport` for any
-    external importer of the older public name; nothing inside the SDK calls it
-    (``e2b-code-interpreter`` imports :func:`get_transport` directly). Prefer
-    :func:`get_transport`.
+    Envd RPC and HTTP traffic for one sandbox resolve the same shard, retaining
+    their shared connection while spreading different sandboxes over a bounded
+    number of connections to the stable sandbox host.
 
-    :deprecated: Use :func:`get_transport` instead; will be removed in the next
-        major version.
+    Kept as a separate factory because generic API transports stay on shard
+    zero while envd transports use the sandbox's shard.
     """
-    return get_transport(config, http2, for_streaming=for_streaming)
+    return get_transport(
+        config,
+        http2,
+        for_streaming=for_streaming,
+        pool_shard=envd_pool_shard(config),
+    )
 
 
 def get_envd_api(
@@ -204,7 +215,7 @@ def get_envd_api(
     is shared and loop-independent."""
     return httpx.AsyncClient(
         base_url=base_url,
-        transport=get_transport(config, for_streaming=for_streaming),
+        transport=get_envd_transport(config, for_streaming=for_streaming),
         headers=config.sandbox_headers,
         event_hooks=make_async_logging_event_hooks(config.logger),
     )

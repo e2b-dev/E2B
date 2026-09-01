@@ -15,7 +15,12 @@ from transport_caches import reset_transport_caches
 
 import e2b.api.client_async as api_client_async
 import e2b.api.client_sync as api_client_sync
-from e2b.api import pool_idle_timeout, pool_max_idle_per_host, proxy_to_config
+from e2b.api import (
+    envd_pool_shard,
+    pool_idle_timeout,
+    pool_max_idle_per_host,
+    proxy_to_config,
+)
 from e2b.api.client_async import get_api_client as get_async_api_client
 from e2b.api.client_async import get_envd_api as get_async_envd_api
 from e2b.api.client_async import get_envd_transport as get_async_envd_transport
@@ -34,6 +39,16 @@ from e2b.connection_config import READ_TIMEOUT, ConnectionConfig
 def run_in_worker_thread(fn):
     with ThreadPoolExecutor(max_workers=1) as executor:
         return executor.submit(fn).result()
+
+
+def sandbox_config(test_api_key: str, sandbox_id: str) -> ConnectionConfig:
+    return ConnectionConfig(
+        api_key=test_api_key,
+        extra_sandbox_headers={
+            "E2b-Sandbox-Id": sandbox_id,
+            "E2b-Sandbox-Port": "49983",
+        },
+    )
 
 
 def test_sync_api_client_proxy_uses_explicit_transport(test_api_key):
@@ -118,6 +133,26 @@ def test_sync_transports_keyed_by_http_version(test_api_key):
             get_sync_envd_transport(config, http2=False, for_streaming=True)
             is not envd_http1
         )
+    finally:
+        reset_transport_caches()
+
+
+def test_sync_envd_transports_are_consistently_sharded_by_sandbox(test_api_key):
+    reset_transport_caches()
+    first = sandbox_config(test_api_key, "sbx-0")
+    same_shard = sandbox_config(test_api_key, "sbx-2")
+    different_shard = sandbox_config(test_api_key, "sbx-1")
+
+    try:
+        assert envd_pool_shard(first) == envd_pool_shard(same_shard)
+        assert envd_pool_shard(first) != envd_pool_shard(different_shard)
+        assert get_sync_envd_transport(first) is get_sync_envd_transport(same_shard)
+        assert get_sync_envd_transport(first) is not get_sync_envd_transport(
+            different_shard
+        )
+        # Generic API traffic remains on shard zero rather than multiplying
+        # control-plane connections for every envd shard.
+        assert get_sync_envd_transport(first) is not get_sync_transport(first)
     finally:
         reset_transport_caches()
 
@@ -335,6 +370,25 @@ async def test_async_transports_keyed_by_http_version(test_api_key):
             get_async_envd_transport(config, http2=False, for_streaming=True)
             is not envd_http1
         )
+    finally:
+        reset_transport_caches()
+
+
+@pytest.mark.asyncio
+async def test_async_envd_transports_are_consistently_sharded_by_sandbox(
+    test_api_key,
+):
+    reset_transport_caches()
+    first = sandbox_config(test_api_key, "sbx-0")
+    same_shard = sandbox_config(test_api_key, "sbx-2")
+    different_shard = sandbox_config(test_api_key, "sbx-1")
+
+    try:
+        assert get_async_envd_transport(first) is get_async_envd_transport(same_shard)
+        assert get_async_envd_transport(first) is not get_async_envd_transport(
+            different_shard
+        )
+        assert get_async_envd_transport(first) is not get_async_transport(first)
     finally:
         reset_transport_caches()
 

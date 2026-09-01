@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import zlib
 from dataclasses import dataclass
 from types import TracebackType
 from typing import NamedTuple, Optional, Protocol, Tuple, Union
@@ -83,6 +84,26 @@ connection_retries = int(os.getenv("E2B_CONNECTION_RETRIES") or "3")
 # is no longer read.
 pool_idle_timeout = float(os.getenv("E2B_KEEPALIVE_EXPIRY") or "300")
 pool_max_idle_per_host = int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20")
+envd_pool_shards = max(1, int(os.getenv("E2B_ENVD_POOL_SHARDS") or "4"))
+
+
+def envd_pool_shard(config: ConnectionConfig) -> int:
+    """Return the stable connection-pool shard for a sandbox's envd traffic.
+
+    Production envd requests share one origin, whose HTTP/2 connection has a
+    finite concurrent-stream limit. Long-running commands hold those streams,
+    so one process-wide connection becomes a bottleneck even though the edge
+    and account can run more sandboxes. A small bounded set of pools provides
+    additional connections without returning to one connection per sandbox.
+
+    The sandbox ID is carried on every envd request and CRC32 is stable across
+    processes, unlike Python's randomized ``hash``. Configs without a sandbox
+    ID (including control-plane clients) stay on shard zero.
+    """
+    sandbox_id = config.sandbox_headers.get("E2b-Sandbox-Id")
+    if not sandbox_id:
+        return 0
+    return zlib.crc32(sandbox_id.encode()) % envd_pool_shards
 
 
 class ProxyConfig(NamedTuple):
