@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" role="img" aria-labelledby="title description">
+  <title id="title">Envd HTTP/2 pool sharding benchmark</title>
+  <desc id="description">Two line charts compare one, four, and eight Python SDK envd connection pools at 50, 100, 200, and 400 concurrent long-lived streams. One pool stops at 100 streams, four pools reach 398 at 400, and eight pools reach all 400 before the 750 millisecond deadline.</desc>
+  <style>
+    :root { color-scheme: light dark; }
+    .background { fill: #ffffff; }
+    .frame { fill: none; stroke: #d0d7de; stroke-width: 1; }
+    .grid { stroke: #d8dee4; stroke-width: 1; }
+    .axis { fill: #57606a; font: 13px ui-sans-serif, system-ui, sans-serif; }
+    .heading { fill: #1f2328; font: 700 24px ui-sans-serif, system-ui, sans-serif; }
+    .subtitle { fill: #57606a; font: 14px ui-sans-serif, system-ui, sans-serif; }
+    .panel-title { fill: #1f2328; font: 650 16px ui-sans-serif, system-ui, sans-serif; }
+    .legend { fill: #1f2328; font: 14px ui-sans-serif, system-ui, sans-serif; }
+    .note { fill: #57606a; font: 12px ui-sans-serif, system-ui, sans-serif; }
+    .one { fill: none; stroke: #0969da; stroke-width: 3; }
+    .four { fill: none; stroke: #bf6a02; stroke-width: 3; }
+    .eight { fill: none; stroke: #1a7f37; stroke-width: 3; }
+    .one-dot { fill: #0969da; }
+    .four-dot { fill: #bf6a02; }
+    .eight-dot { fill: #1a7f37; }
+    .deadline { stroke: #8c959f; stroke-width: 1.5; stroke-dasharray: 6 5; }
+    .value { fill: #1f2328; font: 650 13px ui-sans-serif, system-ui, sans-serif; }
+    @media (prefers-color-scheme: dark) {
+      .background { fill: #0d1117; }
+      .frame, .grid { stroke: #30363d; }
+      .heading, .panel-title, .legend, .value { fill: #e6edf3; }
+      .subtitle, .axis, .note { fill: #8b949e; }
+      .one { stroke: #58a6ff; }
+      .four { stroke: #d29922; }
+      .eight { stroke: #3fb950; }
+      .one-dot { fill: #58a6ff; }
+      .four-dot { fill: #d29922; }
+      .eight-dot { fill: #3fb950; }
+      .deadline { stroke: #6e7681; }
+    }
+  </style>
+
+  <rect class="background" width="1200" height="560" />
+  <text class="heading" x="52" y="46">Envd HTTP/2 pool sharding</text>
+  <text class="subtitle" x="52" y="72">Python SDK · local peer advertising 100 concurrent streams per connection · three-run median</text>
+
+  <g transform="translate(755 39)">
+    <line class="one" x1="0" y1="0" x2="28" y2="0" />
+    <text class="legend" x="38" y="5">1 pool</text>
+    <line class="four" x1="112" y1="0" x2="140" y2="0" />
+    <text class="legend" x="150" y="5">4 pools (default)</text>
+    <line class="eight" x1="300" y1="0" x2="328" y2="0" />
+    <text class="legend" x="338" y="5">8 pools</text>
+  </g>
+
+  <text class="panel-title" x="68" y="112">Streams opened before the 750 ms deadline</text>
+  <rect class="frame" x="76" y="132" width="486" height="300" />
+  <line class="grid" x1="76" y1="357" x2="562" y2="357" />
+  <line class="grid" x1="76" y1="282" x2="562" y2="282" />
+  <line class="grid" x1="76" y1="207" x2="562" y2="207" />
+  <line class="grid" x1="76" y1="132" x2="562" y2="132" />
+  <text class="axis" x="64" y="436" text-anchor="end">0</text>
+  <text class="axis" x="64" y="361" text-anchor="end">100</text>
+  <text class="axis" x="64" y="286" text-anchor="end">200</text>
+  <text class="axis" x="64" y="211" text-anchor="end">300</text>
+  <text class="axis" x="64" y="136" text-anchor="end">400</text>
+  <text class="axis" x="84" y="454" text-anchor="middle">50</text>
+  <text class="axis" x="152" y="454" text-anchor="middle">100</text>
+  <text class="axis" x="291" y="454" text-anchor="middle">200</text>
+  <text class="axis" x="554" y="454" text-anchor="middle">400</text>
+  <text class="axis" x="319" y="482" text-anchor="middle">Concurrent long-lived streams requested</text>
+  <text class="axis" transform="translate(22 282) rotate(-90)" text-anchor="middle">Streams opened</text>
+
+  <polyline class="one" points="84,394.5 152,357 291,357 554,357" />
+  <polyline class="four" points="84,394.5 152,357 291,282 554,133.5" />
+  <polyline class="eight" points="84,394.5 152,357 291,282 554,132" />
+  <g>
+    <circle class="one-dot" cx="84" cy="394.5" r="4" /><circle class="one-dot" cx="152" cy="357" r="4" /><circle class="one-dot" cx="291" cy="357" r="4" /><circle class="one-dot" cx="554" cy="357" r="4" />
+    <circle class="four-dot" cx="84" cy="394.5" r="4" /><circle class="four-dot" cx="152" cy="357" r="4" /><circle class="four-dot" cx="291" cy="282" r="4" /><circle class="four-dot" cx="554" cy="133.5" r="4" />
+    <circle class="eight-dot" cx="84" cy="394.5" r="4" /><circle class="eight-dot" cx="152" cy="357" r="4" /><circle class="eight-dot" cx="291" cy="282" r="4" /><circle class="eight-dot" cx="554" cy="132" r="4" />
+  </g>
+  <text class="value" x="538" y="119" text-anchor="end">398 / 400</text>
+  <text class="value" x="538" y="348" text-anchor="end">100 / 400</text>
+
+  <text class="panel-title" x="638" y="112">Full batch completion time</text>
+  <rect class="frame" x="646" y="132" width="486" height="300" />
+  <line class="grid" x1="646" y1="357" x2="1132" y2="357" />
+  <line class="grid" x1="646" y1="282" x2="1132" y2="282" />
+  <line class="grid" x1="646" y1="207" x2="1132" y2="207" />
+  <line class="grid" x1="646" y1="132" x2="1132" y2="132" />
+  <line class="deadline" x1="646" y1="151" x2="1132" y2="151" />
+  <text class="note" x="1124" y="144" text-anchor="end">750 ms deadline</text>
+  <text class="axis" x="634" y="436" text-anchor="end">0</text>
+  <text class="axis" x="634" y="361" text-anchor="end">200</text>
+  <text class="axis" x="634" y="286" text-anchor="end">400</text>
+  <text class="axis" x="634" y="211" text-anchor="end">600</text>
+  <text class="axis" x="634" y="136" text-anchor="end">800</text>
+  <text class="axis" x="654" y="454" text-anchor="middle">50</text>
+  <text class="axis" x="722" y="454" text-anchor="middle">100</text>
+  <text class="axis" x="861" y="454" text-anchor="middle">200</text>
+  <text class="axis" x="1124" y="454" text-anchor="middle">400</text>
+  <text class="axis" x="889" y="482" text-anchor="middle">Concurrent long-lived streams requested</text>
+  <text class="axis" transform="translate(592 282) rotate(-90)" text-anchor="middle">Completion time (ms)</text>
+
+  <polyline class="one" points="654,427.1 722,422.1 861,145.8 1124,140.2" />
+  <polyline class="four" points="654,425.4 722,419.6 861,413.9 1124,143.9" />
+  <polyline class="eight" points="654,425 722,420.4 861,409.9 1124,396" />
+  <g>
+    <circle class="one-dot" cx="654" cy="427.1" r="4" /><circle class="one-dot" cx="722" cy="422.1" r="4" /><circle class="one-dot" cx="861" cy="145.8" r="4" /><circle class="one-dot" cx="1124" cy="140.2" r="4" />
+    <circle class="four-dot" cx="654" cy="425.4" r="4" /><circle class="four-dot" cx="722" cy="419.6" r="4" /><circle class="four-dot" cx="861" cy="413.9" r="4" /><circle class="four-dot" cx="1124" cy="143.9" r="4" />
+    <circle class="eight-dot" cx="654" cy="425" r="4" /><circle class="eight-dot" cx="722" cy="420.4" r="4" /><circle class="eight-dot" cx="861" cy="409.9" r="4" /><circle class="eight-dot" cx="1124" cy="396" r="4" />
+  </g>
+  <text class="value" x="1112" y="387" text-anchor="end">96 ms</text>
+
+  <text class="note" x="52" y="530">Sync and async produced the same capacity. Completion time is the median of their three-run medians; open response streams remain held for the test.</text>
+</svg>
