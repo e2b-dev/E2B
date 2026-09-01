@@ -1,15 +1,25 @@
 """Long-lived envd streams must not all contend for one HTTP/2 connection."""
 
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 from envd_frame_server import stream_capacity_server
 from pyqwest import HTTPVersion
 
 import e2b.api.client_async as api_client_async
+import e2b.api.client_sync as api_client_sync
 from e2b.connection_config import ConnectionConfig
-from e2b.envd.client_async import as_stream, create_rpc_client, first_event
-from e2b.envd.process.process_connect import ProcessClient
+from e2b.envd.client_async import (
+    as_stream as as_async_stream,
+    create_rpc_client as create_async_rpc_client,
+    first_event,
+)
+from e2b.envd.client_sync import (
+    as_stream as as_sync_stream,
+    create_rpc_client as create_sync_rpc_client,
+)
+from e2b.envd.process.process_connect import ProcessClient, ProcessClientSync
 from e2b.envd.process.process_pb import ConnectRequest
 from transport_caches import reset_transport_caches
 
@@ -22,6 +32,46 @@ def sandbox_config(sandbox_id: str) -> ConnectionConfig:
             "E2b-Sandbox-Port": "49983",
         },
     )
+
+
+def test_sync_envd_spreads_sandboxes_across_http2_connections(monkeypatch):
+    """113 sync sandboxes fit when each HTTP/2 connection allows 100 streams."""
+    reset_transport_caches()
+    build_transport = api_client_sync.SyncHTTPTransport
+
+    def build_http2_transport(**kwargs):
+        # Production negotiates HTTP/2 over TLS. The frame server is plaintext,
+        # so force prior knowledge while retaining the production factory/cache.
+        kwargs["http_version"] = HTTPVersion.HTTP2
+        return build_transport(**kwargs)
+
+    monkeypatch.setattr(api_client_sync, "SyncHTTPTransport", build_http2_transport)
+
+    streams = []
+    try:
+        with stream_capacity_server(max_concurrent_streams=100) as server:
+            for index in range(113):
+                client = create_sync_rpc_client(
+                    ProcessClientSync,
+                    f"http://127.0.0.1:{server.port}",
+                    sandbox_config(f"sbx-{index}"),
+                )
+                streams.append(
+                    as_sync_stream(client.connect(ConnectRequest(), timeout_ms=500))
+                )
+
+            with ThreadPoolExecutor(max_workers=len(streams)) as executor:
+                futures = [executor.submit(next, stream) for stream in streams]
+                events = [future.result(timeout=2) for future in futures]
+
+            assert len(events) == 113
+            assert len(server.connections) == 4
+            assert len(server.streams) == 113
+            server.assert_no_errors()
+    finally:
+        for stream in streams:
+            stream.close()
+        reset_transport_caches()
 
 
 @pytest.mark.asyncio
@@ -42,12 +92,12 @@ async def test_async_envd_spreads_sandboxes_across_http2_connections(monkeypatch
     try:
         with stream_capacity_server(max_concurrent_streams=100) as server:
             for index in range(113):
-                client = create_rpc_client(
+                client = create_async_rpc_client(
                     ProcessClient,
                     f"http://127.0.0.1:{server.port}",
                     sandbox_config(f"sbx-{index}"),
                 )
-                streams.append(as_stream(client.connect(ConnectRequest())))
+                streams.append(as_async_stream(client.connect(ConnectRequest())))
 
             events = await asyncio.gather(
                 *(first_event(stream, 0.5) for stream in streams),
