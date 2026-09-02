@@ -67,7 +67,7 @@ class Sandbox(BaseSandbox):
 
     def _jupyter_request_url(self, path: str) -> str:
         url = f"{self._jupyter_url}{path}"
-        source = self.connection_config.request_source
+        source = getattr(self.connection_config, "request_source", None)
         if not source:
             return url
         separator = "&" if "?" in url else "?"

@@ -36,11 +36,11 @@ class _CapturingClient:
         raise _Stop
 
 
-def _sandbox(cls, captured: dict):
+def _sandbox(cls, captured: dict, connection_config=None):
     class _Fake(cls):
         @property
         def connection_config(self):
-            return ConnectionConfig(
+            return connection_config or ConnectionConfig(
                 api_key="x", domain="e2b.app", request_timeout=REQUEST_TIMEOUT
             )
 
@@ -148,3 +148,27 @@ async def test_async_execute_tags_ci_traffic_in_request_url(monkeypatch):
         "POST",
         "http://127.0.0.1:9/execute?source=ci",
     )
+
+
+class _LegacyConnectionConfig:
+    request_timeout = REQUEST_TIMEOUT
+
+
+def test_execute_supports_legacy_e2b_connection_config():
+    captured: dict = {}
+
+    with pytest.raises(_Stop):
+        _sandbox(Sandbox, captured, _LegacyConnectionConfig()).run_code("1 + 1")
+
+    assert captured["args"][:2] == ("POST", "http://127.0.0.1:9/execute")
+
+
+async def test_async_execute_supports_legacy_e2b_connection_config():
+    captured: dict = {}
+
+    with pytest.raises(_Stop):
+        await _sandbox(AsyncSandbox, captured, _LegacyConnectionConfig()).run_code(
+            "1 + 1"
+        )
+
+    assert captured["args"][:2] == ("POST", "http://127.0.0.1:9/execute")
