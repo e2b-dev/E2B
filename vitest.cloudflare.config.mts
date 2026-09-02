@@ -53,6 +53,10 @@ export function createCloudflareVitestConfig({
             E2B_API_KEY:
               process.env.E2B_API_KEY ?? env.parsed?.E2B_API_KEY ?? '',
             E2B_DOMAIN: process.env.E2B_DOMAIN ?? env.parsed?.E2B_DOMAIN ?? '',
+            E2B_USER_AGENT_SOURCE:
+              process.env.E2B_USER_AGENT_SOURCE ??
+              env.parsed?.E2B_USER_AGENT_SOURCE ??
+              '',
           },
         },
       }),

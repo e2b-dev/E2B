@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 
 from typing import cast, Mapping, Optional, Dict, TypedDict, Union
 
@@ -184,11 +185,21 @@ class ConnectionConfig:
         return os.getenv("E2B_SANDBOX_URL")
 
     @staticmethod
-    def _build_user_agent() -> str:
+    def _get_request_source() -> Optional[str]:
+        source = os.getenv("E2B_USER_AGENT_SOURCE")
+        if source and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,31}", source):
+            return source
+        return None
+
+    @staticmethod
+    def _build_user_agent(request_source: Optional[str] = None) -> str:
         user_agent_parts = [f"e2b-python-sdk/{package_version}"]
 
         if ConnectionConfig._integration:
             user_agent_parts.append(ConnectionConfig._integration)
+
+        if request_source:
+            user_agent_parts.append(f"source/{request_source}")
 
         return " ".join(user_agent_parts)
 
@@ -209,7 +220,7 @@ class ConnectionConfig:
             headers["User-Agent"] = user_agent_override
             return False
 
-        headers["User-Agent"] = self._build_user_agent()
+        headers["User-Agent"] = self._build_user_agent(self.request_source)
         return True
 
     def __init__(
@@ -232,6 +243,7 @@ class ConnectionConfig:
         self.debug = debug if debug is not None else ConnectionConfig._debug()
         self.api_key = api_key or ConnectionConfig._api_key()
         self.validate_api_key = validate_api_key
+        self.request_source = ConnectionConfig._get_request_source()
         self.headers = {**(headers or {}), **(api_headers or {})}
         self._user_agent_is_sdk_built = self._apply_user_agent(
             self.headers,

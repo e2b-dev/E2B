@@ -31,6 +31,7 @@ class _CapturingClient:
         self._captured = captured
 
     def stream(self, *args, **kwargs):
+        self._captured["args"] = args
         self._captured.update(kwargs)
         raise _Stop
 
@@ -121,3 +122,29 @@ async def test_async_zero_timeout_disables_the_deadline():
 
     tmo = _captured_timeout(captured)
     assert (tmo.read, tmo.write, tmo.pool, tmo.connect) == (None, None, None, None)
+
+
+def test_execute_tags_ci_traffic_in_request_url(monkeypatch):
+    monkeypatch.setenv("E2B_USER_AGENT_SOURCE", "ci")
+    captured: dict = {}
+
+    with pytest.raises(_Stop):
+        _sandbox(Sandbox, captured).run_code("1 + 1")
+
+    assert captured["args"][:2] == (
+        "POST",
+        "http://127.0.0.1:9/execute?source=ci",
+    )
+
+
+async def test_async_execute_tags_ci_traffic_in_request_url(monkeypatch):
+    monkeypatch.setenv("E2B_USER_AGENT_SOURCE", "ci")
+    captured: dict = {}
+
+    with pytest.raises(_Stop):
+        await _sandbox(AsyncSandbox, captured).run_code("1 + 1")
+
+    assert captured["args"][:2] == (
+        "POST",
+        "http://127.0.0.1:9/execute?source=ci",
+    )

@@ -19,6 +19,9 @@ on:
 permissions:
   contents: read
 
+env:
+  E2B_USER_AGENT_SOURCE: ci
+
 jobs:
   test:
     defaults:

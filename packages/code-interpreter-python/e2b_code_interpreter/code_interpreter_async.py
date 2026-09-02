@@ -68,6 +68,14 @@ class AsyncSandbox(BaseAsyncSandbox):
             return sandbox_url
         return f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(JUPYTER_PORT)}"
 
+    def _jupyter_request_url(self, path: str) -> str:
+        url = f"{self._jupyter_url}{path}"
+        source = self.connection_config.request_source
+        if not source:
+            return url
+        separator = "&" if "?" in url else "?"
+        return f"{url}{separator}source={source}"
+
     @property
     def _client(self) -> AsyncClient:
         # TODO: Remove later
@@ -211,7 +219,7 @@ class AsyncSandbox(BaseAsyncSandbox):
 
             async with self._client.stream(
                 "POST",
-                f"{self._jupyter_url}/execute",
+                self._jupyter_request_url("/execute"),
                 json={
                     "code": code,
                     "context_id": context_id,
@@ -294,7 +302,7 @@ class AsyncSandbox(BaseAsyncSandbox):
                 headers["E2B-Traffic-Access-Token"] = self.traffic_access_token
 
             response = await self._client.post(
-                f"{self._jupyter_url}/contexts",
+                self._jupyter_request_url("/contexts"),
                 headers=headers,
                 json=data,
                 timeout=request_timeout or self.connection_config.request_timeout,
@@ -335,7 +343,7 @@ class AsyncSandbox(BaseAsyncSandbox):
                 headers["E2B-Traffic-Access-Token"] = self.traffic_access_token
 
             response = await self._client.delete(
-                f"{self._jupyter_url}/contexts/{context_id}",
+                self._jupyter_request_url(f"/contexts/{context_id}"),
                 headers=headers,
                 timeout=self.connection_config.request_timeout,
             )
@@ -365,7 +373,7 @@ class AsyncSandbox(BaseAsyncSandbox):
                 headers["E2B-Traffic-Access-Token"] = self.traffic_access_token
 
             response = await self._client.get(
-                f"{self._jupyter_url}/contexts",
+                self._jupyter_request_url("/contexts"),
                 headers=headers,
                 timeout=self.connection_config.request_timeout,
             )
@@ -404,7 +412,7 @@ class AsyncSandbox(BaseAsyncSandbox):
                 headers["E2B-Traffic-Access-Token"] = self.traffic_access_token
 
             response = await self._client.post(
-                f"{self._jupyter_url}/contexts/{context_id}/restart",
+                self._jupyter_request_url(f"/contexts/{context_id}/restart"),
                 headers=headers,
                 timeout=self.connection_config.request_timeout,
             )
