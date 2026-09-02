@@ -9,14 +9,17 @@ def test_js_kernel(sandbox: Sandbox):
 
 
 @pytest.mark.skip_debug()
-def test_r_kernel(sandbox: Sandbox):
+def test_r_kernel(sandbox: Sandbox, wait_for_kernel):
+    wait_for_kernel(sandbox, "r")
     execution = sandbox.run_code('print("Hello, World!")', language="r")
     assert execution.logs.stdout == ['[1] "Hello, World!"\n']
 
 
 @pytest.mark.skip_debug()
-def test_java_kernel(sandbox: Sandbox):
-    execution = sandbox.run_code('System.out.println("Hello, World!")', language="java")
+def test_java_kernel(java_sandbox: Sandbox):
+    execution = java_sandbox.run_code(
+        'System.out.println("Hello, World!")', language="java"
+    )
     assert execution.logs.stdout[0] == "Hello, World!"
 
 

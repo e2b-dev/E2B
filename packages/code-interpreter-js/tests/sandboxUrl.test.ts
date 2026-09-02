@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, expect, test } from 'vitest'
+import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 
 import { Sandbox } from '../src'
 
@@ -17,13 +17,14 @@ function createSandbox(opts: object = {}) {
 const savedEnv: Record<string, string | undefined> = {}
 
 beforeEach(() => {
-  for (const key of ['E2B_SANDBOX_URL', 'E2B_DEBUG']) {
+  for (const key of ['E2B_SANDBOX_URL', 'E2B_DEBUG', 'E2B_USER_AGENT_SOURCE']) {
     savedEnv[key] = process.env[key]
     delete process.env[key]
   }
 })
 
 afterEach(() => {
+  vi.unstubAllGlobals()
   for (const [key, value] of Object.entries(savedEnv)) {
     if (value === undefined) {
       delete process.env[key]
@@ -47,4 +48,18 @@ test('jupyterUrl honors the E2B_SANDBOX_URL environment variable', () => {
   process.env.E2B_SANDBOX_URL = 'https://env.example.com'
   const sandbox = createSandbox()
   expect(sandbox.jupyterUrl).toBe('https://env.example.com')
+})
+
+test('runCode tags CI traffic in the request URL', async () => {
+  process.env.E2B_USER_AGENT_SOURCE = 'ci'
+  const sandbox = createSandbox({ domain: 'example.dev' })
+  const fetchMock = vi.fn().mockResolvedValue(new Response(''))
+  vi.stubGlobal('fetch', fetchMock)
+
+  await (sandbox as unknown as Sandbox).runCode('1 + 1')
+
+  expect(fetchMock).toHaveBeenCalledWith(
+    'https://49999-test-sandbox-id.example.dev/execute?source=ci',
+    expect.any(Object)
+  )
 })

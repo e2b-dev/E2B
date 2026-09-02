@@ -273,23 +273,30 @@ class Sandbox(SandboxBase):
             **opts,
         )
 
-        sbx._display = display
-        width, height = resolution or (1024, 768)
-        xvfb_handle = sbx.commands.run(
-            f"Xvfb {display} -ac -screen 0 {width}x{height}x24"
-            f" -retro -dpi {dpi or 96} -nolisten tcp -nolisten unix",
-            background=True,
-            timeout=0,
-        )
-        xvfb_handle.disconnect()
+        try:
+            sbx._display = display
+            width, height = resolution or (1024, 768)
+            xvfb_handle = sbx.commands.run(
+                f"Xvfb {display} -ac -screen 0 {width}x{height}x24"
+                f" -retro -dpi {dpi or 96} -nolisten tcp -nolisten unix",
+                background=True,
+                timeout=0,
+            )
+            xvfb_handle.disconnect()
 
-        if not sbx._wait_and_verify(
-            f"xdpyinfo -display {display}", lambda r: r.exit_code == 0
-        ):
-            raise TimeoutException("Could not start Xvfb")
+            if not sbx._wait_and_verify(
+                f"xdpyinfo -display {display}", lambda r: r.exit_code == 0
+            ):
+                raise TimeoutException("Could not start Xvfb")
 
-        sbx.__vnc_server = _VNCServer(sbx)
-        sbx._start_xfce4()
+            sbx.__vnc_server = _VNCServer(sbx)
+            sbx._start_xfce4()
+        except Exception:
+            try:
+                sbx.kill()
+            except Exception:
+                pass
+            raise
 
         return sbx
 
@@ -306,7 +313,7 @@ class Sandbox(SandboxBase):
                 if on_result(self.commands.run(cmd)):
                     return True
             except CommandExitException:
-                continue
+                pass
 
             time.sleep(interval)
             elapsed += interval
@@ -325,6 +332,13 @@ class Sandbox(SandboxBase):
             xfce4_handle = self.commands.run("startxfce4", background=True, timeout=0)
             self._last_xfce4_pid = xfce4_handle.pid
             xfce4_handle.disconnect()
+
+        if not self._wait_and_verify(
+            "pgrep -x xfce4-session >/dev/null && pgrep -x xfwm4 >/dev/null && pgrep -x xfdesktop >/dev/null",
+            lambda r: r.exit_code == 0,
+            60,
+        ):
+            raise TimeoutException("Could not start XFCE")
 
     @property
     def stream(self) -> _VNCServer:
