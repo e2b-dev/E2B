@@ -77,6 +77,10 @@ class AsyncSandbox(BaseAsyncSandbox):
         return f"{url}{separator}source={source}"
 
     @property
+    def _include_diagnostics(self) -> bool:
+        return getattr(self.connection_config, "request_source", None) == "ci"
+
+    @property
     def _client(self) -> AsyncClient:
         # TODO: Remove later
         # Use a dedicated HTTP/1.1 transport for Jupyter requests.
@@ -244,7 +248,7 @@ class AsyncSandbox(BaseAsyncSandbox):
                     else httpx.Timeout(None)
                 ),
             ) as response:
-                err = await aextract_exception(response)
+                err = await aextract_exception(response, self._include_diagnostics)
                 if err:
                     raise err
 
@@ -308,7 +312,7 @@ class AsyncSandbox(BaseAsyncSandbox):
                 timeout=request_timeout or self.connection_config.request_timeout,
             )
 
-            err = await aextract_exception(response)
+            err = await aextract_exception(response, self._include_diagnostics)
             if err:
                 raise err
 
@@ -348,7 +352,7 @@ class AsyncSandbox(BaseAsyncSandbox):
                 timeout=self.connection_config.request_timeout,
             )
 
-            err = await aextract_exception(response)
+            err = await aextract_exception(response, self._include_diagnostics)
             if err:
                 raise err
         except httpx.TimeoutException:
@@ -378,7 +382,7 @@ class AsyncSandbox(BaseAsyncSandbox):
                 timeout=self.connection_config.request_timeout,
             )
 
-            err = await aextract_exception(response)
+            err = await aextract_exception(response, self._include_diagnostics)
             if err:
                 raise err
 
@@ -417,7 +421,7 @@ class AsyncSandbox(BaseAsyncSandbox):
                 timeout=self.connection_config.request_timeout,
             )
 
-            err = await aextract_exception(response)
+            err = await aextract_exception(response, self._include_diagnostics)
             if err:
                 raise err
         except httpx.TimeoutException:

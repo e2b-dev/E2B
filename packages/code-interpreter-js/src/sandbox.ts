@@ -154,6 +154,10 @@ export class Sandbox extends BaseSandbox {
     return `${url}${url.includes('?') ? '&' : '?'}source=${encodeURIComponent(source)}`
   }
 
+  private get includeDiagnostics(): boolean {
+    return this.connectionConfig.requestSource === 'ci'
+  }
+
   /**
    * Run the code for the specified language.
    *
@@ -250,7 +254,7 @@ export class Sandbox extends BaseSandbox {
         keepalive: true,
       })
 
-      const error = await extractError(res)
+      const error = await extractError(res, this.includeDiagnostics)
       if (error) {
         throw error
       }
@@ -326,7 +330,7 @@ export class Sandbox extends BaseSandbox {
         signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
       })
 
-      const error = await extractError(res)
+      const error = await extractError(res, this.includeDiagnostics)
       if (error) {
         throw error
       }
@@ -366,7 +370,7 @@ export class Sandbox extends BaseSandbox {
         ),
       })
 
-      const error = await extractError(res)
+      const error = await extractError(res, this.includeDiagnostics)
       if (error) {
         throw error
       }
@@ -401,7 +405,7 @@ export class Sandbox extends BaseSandbox {
         ),
       })
 
-      const error = await extractError(res)
+      const error = await extractError(res, this.includeDiagnostics)
       if (error) {
         throw error
       }
@@ -444,7 +448,7 @@ export class Sandbox extends BaseSandbox {
         }
       )
 
-      const error = await extractError(res)
+      const error = await extractError(res, this.includeDiagnostics)
       if (error) {
         throw error
       }

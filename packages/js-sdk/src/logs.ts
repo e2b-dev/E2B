@@ -58,7 +58,10 @@ export function createRpcLogger(logger: Logger): Interceptor {
   }
 }
 
-export function createApiLogger(logger: Logger): Middleware {
+export function createApiLogger(
+  logger: Logger,
+  includeDiagnostics = false
+): Middleware {
   return {
     async onRequest({ request }) {
       logger.info?.(`Request ${request.method} ${request.url}`)
@@ -66,7 +69,9 @@ export function createApiLogger(logger: Logger): Middleware {
     },
     async onResponse({ response }) {
       if (response.status >= 400) {
-        const traceId = response.headers.get('X-E2B-Trace-ID')
+        const traceId = includeDiagnostics
+          ? response.headers.get('X-E2B-Trace-ID')
+          : null
         logger.error?.(
           'Response:',
           response.status,

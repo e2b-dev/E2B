@@ -166,7 +166,8 @@ def test_logging_event_hooks_without_logger_are_empty():
     assert make_async_logging_event_hooks(None) == {}
 
 
-def test_sync_logging_event_hooks_emit_records(caplog):
+def test_sync_logging_event_hooks_emit_records(caplog, monkeypatch):
+    monkeypatch.delenv("E2B_USER_AGENT_SOURCE", raising=False)
     log = logging.getLogger("test.hooks.sync")
     hooks = make_logging_event_hooks(log)
 
@@ -187,7 +188,7 @@ def test_sync_logging_event_hooks_emit_records(caplog):
     levels = [(r.levelno, r.getMessage()) for r in caplog.records]
     assert (logging.INFO, "Request GET https://example.com/foo") in levels
     assert (logging.INFO, "Response 200") in levels
-    assert (logging.ERROR, "Response 500 trace_id=trace-123") in levels
+    assert (logging.ERROR, "Response 500") in levels
 
 
 def test_make_async_logging_event_hooks_shape():
@@ -197,9 +198,10 @@ def test_make_async_logging_event_hooks_shape():
     assert len(hooks["response"]) == 1
 
 
-def test_async_logging_event_hooks_log_trace_id_for_failure(caplog):
+def test_async_logging_event_hooks_log_trace_id_for_ci_failure(caplog, monkeypatch):
+    monkeypatch.setenv("E2B_USER_AGENT_SOURCE", "ci")
     log = logging.getLogger("test.hooks.async")
-    hooks = make_async_logging_event_hooks(log)
+    hooks = make_async_logging_event_hooks(log, include_diagnostics=True)
     response = SimpleNamespace(
         status_code=500,
         headers={"X-E2B-Trace-ID": "trace-123"},
@@ -213,7 +215,29 @@ def test_async_logging_event_hooks_log_trace_id_for_failure(caplog):
     ]
 
 
-def test_api_exception_includes_trace_id():
+def test_api_client_diagnostics_follow_captured_request_source(caplog, monkeypatch):
+    api_key = "e2b_" + "0" * 40
+    monkeypatch.setenv("E2B_USER_AGENT_SOURCE", "ci")
+    ci_client = ApiClient(ConnectionConfig(api_key=api_key))
+    monkeypatch.delenv("E2B_USER_AGENT_SOURCE")
+    normal_client = ApiClient(ConnectionConfig(api_key=api_key))
+    monkeypatch.setenv("E2B_USER_AGENT_SOURCE", "ci")
+
+    response = SimpleNamespace(
+        status_code=500,
+        headers={"X-E2B-Trace-ID": "trace-123"},
+    )
+    with caplog.at_level(logging.ERROR, logger="e2b.ci"):
+        ci_client._logging_event_hooks()["response"][0](response)
+
+    assert (logging.ERROR, "Response 500 trace_id=trace-123") in [
+        (record.levelno, record.getMessage()) for record in caplog.records
+    ]
+    assert normal_client._logging_event_hooks() == {}
+
+
+def test_ci_api_exception_keeps_public_message(monkeypatch):
+    monkeypatch.setenv("E2B_USER_AGENT_SOURCE", "ci")
     response = SimpleNamespace(
         status_code=500,
         content=b'{"message":"Internal error"}',
@@ -222,4 +246,17 @@ def test_api_exception_includes_trace_id():
 
     error = handle_api_exception(response)
 
-    assert "trace_id=trace-123" in str(error)
+    assert str(error) == "500: Internal error"
+
+
+def test_api_exception_does_not_include_trace_id_outside_ci(monkeypatch):
+    monkeypatch.delenv("E2B_USER_AGENT_SOURCE", raising=False)
+    response = SimpleNamespace(
+        status_code=500,
+        content=b'{"message":"Internal error"}',
+        headers={"X-E2B-Trace-ID": "trace-123"},
+    )
+
+    error = handle_api_exception(response)
+
+    assert str(error) == "500: Internal error"

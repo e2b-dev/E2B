@@ -1,10 +1,20 @@
-import { assert, test, describe } from 'vitest'
+import { afterEach, assert, test, describe } from 'vitest'
 import { handleApiError } from '../../src/api'
 import {
   AuthenticationError,
   RateLimitError,
   SandboxError,
 } from '../../src/errors'
+
+const originalRequestSource = process.env.E2B_USER_AGENT_SOURCE
+
+afterEach(() => {
+  if (originalRequestSource === undefined) {
+    delete process.env.E2B_USER_AGENT_SOURCE
+  } else {
+    process.env.E2B_USER_AGENT_SOURCE = originalRequestSource
+  }
+})
 
 function createMockResponse(
   status: number,
@@ -128,7 +138,8 @@ describe('handleApiError', () => {
     })
   })
 
-  test('includes the E2B trace ID in failed response errors', () => {
+  test('does not change failed response errors in CI', () => {
+    process.env.E2B_USER_AGENT_SOURCE = 'ci'
     const res = createMockResponse(
       500,
       { message: 'Internal error' },
@@ -138,7 +149,21 @@ describe('handleApiError', () => {
 
     const err = handleApiError(res as any)
 
-    assert.include(err?.message, 'trace_id=trace-123')
+    assert.equal(err?.message, '500: Internal error')
+  })
+
+  test('does not change failed response errors outside CI', () => {
+    delete process.env.E2B_USER_AGENT_SOURCE
+    const res = createMockResponse(
+      500,
+      { message: 'Internal error' },
+      undefined,
+      new Headers({ 'X-E2B-Trace-ID': 'trace-123' })
+    )
+
+    const err = handleApiError(res as any)
+
+    assert.equal(err?.message, '500: Internal error')
   })
 
   describe('success responses', () => {

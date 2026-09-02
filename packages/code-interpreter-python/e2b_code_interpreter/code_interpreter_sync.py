@@ -74,6 +74,10 @@ class Sandbox(BaseSandbox):
         return f"{url}{separator}source={source}"
 
     @property
+    def _include_diagnostics(self) -> bool:
+        return getattr(self.connection_config, "request_source", None) == "ci"
+
+    @property
     def _client(self) -> Client:
         # TODO: Remove later
         # Use a dedicated HTTP/1.1 transport for Jupyter requests.
@@ -239,7 +243,7 @@ class Sandbox(BaseSandbox):
                     else httpx.Timeout(None)
                 ),
             ) as response:
-                err = extract_exception(response)
+                err = extract_exception(response, self._include_diagnostics)
                 if err:
                     raise err
 
@@ -303,7 +307,7 @@ class Sandbox(BaseSandbox):
                 timeout=request_timeout or self.connection_config.request_timeout,
             )
 
-            err = extract_exception(response)
+            err = extract_exception(response, self._include_diagnostics)
             if err:
                 raise err
 
@@ -343,7 +347,7 @@ class Sandbox(BaseSandbox):
                 timeout=self.connection_config.request_timeout,
             )
 
-            err = extract_exception(response)
+            err = extract_exception(response, self._include_diagnostics)
             if err:
                 raise err
         except httpx.TimeoutException:
@@ -373,7 +377,7 @@ class Sandbox(BaseSandbox):
                 timeout=self.connection_config.request_timeout,
             )
 
-            err = extract_exception(response)
+            err = extract_exception(response, self._include_diagnostics)
             if err:
                 raise err
 
@@ -413,7 +417,7 @@ class Sandbox(BaseSandbox):
                 timeout=self.connection_config.request_timeout,
             )
 
-            err = extract_exception(response)
+            err = extract_exception(response, self._include_diagnostics)
             if err:
                 raise err
         except httpx.TimeoutException:
