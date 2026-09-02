@@ -31,6 +31,9 @@ jobs:
     name: JS SDK - ${{ matrix.runtime }} (${{ matrix.os }})
     strategy:
       fail-fast: false
+      # Each runtime repeats the live sandbox suite. Keep this control run
+      # serial until the production matrix is stable under measured load.
+      max-parallel: 1
       # With node-only (set by staging callers) the matrix collapses to the
       # Node legs: the Bun/Deno/Cloudflare legs re-run suites the Node legs
       # already cover and add sandbox/build load without extra backend
@@ -41,6 +44,8 @@ jobs:
             && fromJSON('[{"runtime": "node", "os": "ubuntu-22.04"}, {"runtime": "node", "os": "windows-latest"}]')
             || fromJSON('[{"runtime": "node", "os": "ubuntu-22.04"}, {"runtime": "node", "os": "windows-latest"}, {"runtime": "bun", "os": "ubuntu-22.04"}, {"runtime": "deno", "os": "ubuntu-22.04"}, {"runtime": "cloudflare", "os": "ubuntu-22.04"}, {"runtime": "cloudflare-deploy", "os": "ubuntu-22.04"}]') }}
     runs-on: ${{ matrix.os }}
+    env:
+      E2B_TEST_MAX_WORKERS: 1
     # The cloudflare-deploy leg is advisory: it deploys to a brand-new
     # Cloudflare preview account on every run, so it inherits that account's
     # propagation and read-after-write races (the fresh workers.dev subdomain

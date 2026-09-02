@@ -3,6 +3,8 @@ import { assert } from 'vitest'
 import { sandboxTest, isDebug } from '../setup.js'
 import { Sandbox } from '../../src'
 
+const SNAPSHOT_CREATE_REQUEST_TIMEOUT_MS = 120_000
+
 sandboxTest.skipIf(isDebug)(
   'create a snapshot from sandbox',
   async ({ sandbox }) => {
@@ -35,6 +37,7 @@ sandboxTest.skipIf(isDebug)(
       // Create a new sandbox from the snapshot
       const newSandbox = await Sandbox.create(snapshot.snapshotId, {
         metadata: { sandboxTestId: `${sandboxTestId}-from-snapshot` },
+        requestTimeoutMs: SNAPSHOT_CREATE_REQUEST_TIMEOUT_MS,
       })
 
       try {
@@ -48,7 +51,7 @@ sandboxTest.skipIf(isDebug)(
       await Sandbox.deleteSnapshot(snapshot.snapshotId)
     }
   },
-  90_000
+  180_000
 )
 
 sandboxTest.skipIf(isDebug)(
@@ -60,46 +63,48 @@ sandboxTest.skipIf(isDebug)(
 
     const snapshot = await sandbox.createSnapshot()
 
+    let sandbox1: Sandbox | undefined
+    let sandbox2: Sandbox | undefined
     try {
       // Create two sandboxes from the same snapshot
-      const sandbox1 = await Sandbox.create(snapshot.snapshotId, {
+      sandbox1 = await Sandbox.create(snapshot.snapshotId, {
         metadata: { sandboxTestId: `${sandboxTestId}-branch-1` },
+        requestTimeoutMs: SNAPSHOT_CREATE_REQUEST_TIMEOUT_MS,
       })
-      const sandbox2 = await Sandbox.create(snapshot.snapshotId, {
+      sandbox2 = await Sandbox.create(snapshot.snapshotId, {
         metadata: { sandboxTestId: `${sandboxTestId}-branch-2` },
+        requestTimeoutMs: SNAPSHOT_CREATE_REQUEST_TIMEOUT_MS,
       })
 
-      try {
-        // Both should have the same initial content
-        const content1 = await sandbox1.files.read('/home/user/shared.txt')
-        const content2 = await sandbox2.files.read('/home/user/shared.txt')
+      // Both should have the same initial content
+      const content1 = await sandbox1.files.read('/home/user/shared.txt')
+      const content2 = await sandbox2.files.read('/home/user/shared.txt')
 
-        assert.equal(content1, testContent)
-        assert.equal(content2, testContent)
+      assert.equal(content1, testContent)
+      assert.equal(content2, testContent)
 
-        // Modify one sandbox - should not affect the other
-        await sandbox1.files.write(
-          '/home/user/shared.txt',
-          'modified in sandbox1'
-        )
+      // Modify one sandbox - should not affect the other
+      await sandbox1.files.write(
+        '/home/user/shared.txt',
+        'modified in sandbox1'
+      )
 
-        const modifiedContent = await sandbox1.files.read(
-          '/home/user/shared.txt'
-        )
-        const unchangedContent = await sandbox2.files.read(
-          '/home/user/shared.txt'
-        )
+      const modifiedContent = await sandbox1.files.read('/home/user/shared.txt')
+      const unchangedContent = await sandbox2.files.read(
+        '/home/user/shared.txt'
+      )
 
-        assert.equal(modifiedContent, 'modified in sandbox1')
-        assert.equal(unchangedContent, testContent)
-      } finally {
-        await sandbox1.kill()
-        await sandbox2.kill()
-      }
+      assert.equal(modifiedContent, 'modified in sandbox1')
+      assert.equal(unchangedContent, testContent)
     } finally {
+      await Promise.all([
+        sandbox1?.kill().catch(() => {}),
+        sandbox2?.kill().catch(() => {}),
+      ])
       await Sandbox.deleteSnapshot(snapshot.snapshotId)
     }
-  }
+  },
+  300_000
 )
 
 sandboxTest.skipIf(isDebug)('list snapshots', async ({ sandbox }) => {
@@ -218,6 +223,7 @@ sandboxTest.skipIf(isDebug)(
     try {
       const newSandbox = await Sandbox.create(snapshot.snapshotId, {
         metadata: { sandboxTestId: `${sandboxTestId}-fs-test` },
+        requestTimeoutMs: SNAPSHOT_CREATE_REQUEST_TIMEOUT_MS,
       })
 
       try {
@@ -237,5 +243,6 @@ sandboxTest.skipIf(isDebug)(
     } finally {
       await Sandbox.deleteSnapshot(snapshot.snapshotId)
     }
-  }
+  },
+  180_000
 )
