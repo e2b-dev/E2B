@@ -223,7 +223,20 @@ sandboxTest.skipIf(isDebug)(
     // connect() cold-boots (reboots) it. connect() returns the same handle, and
     // its credentials stay valid across the resume (the backend re-binds the
     // same envd access token on the cold boot).
-    const resumedSandbox = await sandbox.connect({ requestTimeoutMs: 120_000 })
+    let resumedSandbox
+    try {
+      resumedSandbox = await sandbox.connect({ requestTimeoutMs: 120_000 })
+    } catch (error) {
+      // Placement can transiently time out while the cold boot is scheduled.
+      // Retry only the backend response that explicitly asks the caller to do so.
+      if (
+        !(error instanceof Error) ||
+        !error.message.includes('Failed to place sandbox: placement timed out')
+      ) {
+        throw error
+      }
+      resumedSandbox = await sandbox.connect({ requestTimeoutMs: 120_000 })
+    }
     assert.equal(resumedSandbox.sandboxId, sandbox.sandboxId)
     assert.isTrue(await resumedSandbox.isRunning())
 
@@ -237,5 +250,5 @@ sandboxTest.skipIf(isDebug)(
     ).stdout.trim()
     assert.notEqual(bootAfter, bootBefore)
   },
-  150_000
+  270_000
 )
