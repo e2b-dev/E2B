@@ -198,7 +198,12 @@ export class Sandbox extends SandboxBase {
       template,
       sandboxOptsWithDisplay
     )) as InstanceType<S>
-    await sbx._start(display, sandboxOptsWithDisplay)
+    try {
+      await sbx._start(display, sandboxOptsWithDisplay)
+    } catch (error) {
+      await sbx.kill().catch(() => {})
+      throw error
+    }
 
     return sbx
   }
@@ -225,10 +230,9 @@ export class Sandbox extends SandboxBase {
           return true
         }
       } catch (e) {
-        if (e instanceof CommandExitError) {
-          continue
+        if (!(e instanceof CommandExitError)) {
+          throw e
         }
-        throw e
       }
 
       await new Promise((resolve) => setTimeout(resolve, interval * 1000))
@@ -569,6 +573,15 @@ export class Sandbox extends SandboxBase {
       })
       this.lastXfce4Pid = result.pid
       await result.disconnect()
+    }
+
+    const hasStarted = await this.waitAndVerify(
+      'pgrep -x xfce4-session >/dev/null && pgrep -x xfwm4 >/dev/null && pgrep -x xfdesktop >/dev/null',
+      (r: CommandResult) => r.exitCode === 0,
+      60
+    )
+    if (!hasStarted) {
+      throw new TimeoutError('Could not start XFCE')
     }
   }
 

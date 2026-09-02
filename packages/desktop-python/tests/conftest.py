@@ -4,7 +4,7 @@ import logging
 from e2b_desktop import Sandbox
 
 # Set up timeout and logger
-timeout = 60
+timeout = 180
 logger = logging.getLogger(__name__)
 
 

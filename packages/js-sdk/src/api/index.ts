@@ -106,8 +106,13 @@ class ApiClient {
       },
     })
 
-    if (config.logger) {
-      this.api.use(createApiLogger(config.logger))
+    if (config.logger || config.requestSource === 'ci') {
+      this.api.use(
+        createApiLogger(
+          config.logger ?? { error: (...args) => console.error(...args) },
+          config.requestSource === 'ci'
+        )
+      )
     }
   }
 }

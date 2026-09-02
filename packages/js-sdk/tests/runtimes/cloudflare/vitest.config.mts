@@ -33,6 +33,9 @@ const SDK_ERROR_NAMES = new Set([
 // Cloudflare infrastructure.
 export default defineConfig(
   createCloudflareVitestConfig({
+    maxWorkers: process.env.E2B_TEST_MAX_WORKERS
+      ? Number(process.env.E2B_TEST_MAX_WORKERS)
+      : undefined,
     exclude: [
       'tests/template/**',
       // Inspects the host-built dist/index.mjs via node:fs, which workerd's
