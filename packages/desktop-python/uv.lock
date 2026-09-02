@@ -352,7 +352,7 @@ wheels = [
 
 [[package]]
 name = "e2b"
-version = "2.46.1"
+version = "2.46.2"
 source = { editable = "../python-sdk" }
 dependencies = [
     { name = "attrs" },
@@ -425,7 +425,7 @@ dev = [
 
 [[package]]
 name = "e2b-desktop"
-version = "2.4.5"
+version = "2.4.6"
 source = { editable = "." }
 dependencies = [
     { name = "e2b" },
