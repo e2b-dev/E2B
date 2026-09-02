@@ -65,7 +65,6 @@ export function createApiLogger(
   return {
     async onRequest({ request }) {
       logger.info?.(`Request ${request.method} ${request.url}`)
-      return request
     },
     async onResponse({ response }) {
       if (response.status >= 400) {
@@ -81,8 +80,6 @@ export function createApiLogger(
       } else {
         logger.info?.('Response:', response.status, response.statusText)
       }
-
-      return response
     },
   }
 }

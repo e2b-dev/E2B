@@ -48,6 +48,19 @@ describe('createRpcLogger', () => {
 })
 
 describe('createApiLogger', () => {
+  test('observes requests without replacing them', async () => {
+    const logs: any[][] = []
+    const middleware = createApiLogger({
+      info: (...args) => logs.push(args),
+    })
+    const request = new Request('https://api.e2b.app/sandboxes')
+
+    const result = await middleware.onRequest?.({ request } as any)
+
+    assert.isUndefined(result)
+    assert.deepEqual(logs, [['Request GET https://api.e2b.app/sandboxes']])
+  })
+
   test('logs the E2B trace ID for CI failed responses', async () => {
     const logs: any[][] = []
     const middleware = createApiLogger(
@@ -62,8 +75,9 @@ describe('createApiLogger', () => {
       headers: { 'X-E2B-Trace-ID': 'trace-123' },
     })
 
-    await middleware.onResponse?.({ response } as any)
+    const result = await middleware.onResponse?.({ response } as any)
 
+    assert.isUndefined(result)
     assert.deepEqual(logs, [
       ['Response:', 500, 'Internal Server Error', 'trace_id=trace-123'],
     ])
@@ -83,8 +97,9 @@ describe('createApiLogger', () => {
       headers: { 'X-E2B-Trace-ID': 'trace-123' },
     })
 
-    await middleware.onResponse?.({ response } as any)
+    const result = await middleware.onResponse?.({ response } as any)
 
+    assert.isUndefined(result)
     assert.deepEqual(logs, [['Response:', 500, 'Internal Server Error']])
   })
 })

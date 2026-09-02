@@ -74,9 +74,10 @@ def test_api_client_uses_config_logger():
         client.get_httpx_client().close()
 
 
-def test_api_client_without_logger_emits_no_hooks():
+def test_api_client_without_logger_outside_ci_emits_no_hooks(monkeypatch):
     # With no logger supplied, nothing should be logged (matching the JS SDK,
     # which only attaches its logging middleware when a logger is given).
+    monkeypatch.delenv("E2B_USER_AGENT_SOURCE", raising=False)
     config = ConnectionConfig(api_key="e2b_" + "0" * 40)
     client = ApiClient(config)
     try:
