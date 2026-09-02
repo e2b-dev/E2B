@@ -338,6 +338,7 @@ class StreamCapacityServer(threading.Thread):
         self.port = self.listener.getsockname()[1]
         self.connections: List[socket.socket] = []
         self.streams: List[tuple[int, int]] = []
+        self.active_streams: set[tuple[int, int]] = set()
         self.errors: List[str] = []
         self._lock = threading.Lock()
         self._stop_event = threading.Event()
@@ -381,7 +382,9 @@ class StreamCapacityServer(threading.Thread):
                 for event in conn.receive_data(data):
                     if isinstance(event, h2.events.StreamEnded):
                         with self._lock:
-                            self.streams.append((id(sock), event.stream_id))
+                            stream = (id(sock), event.stream_id)
+                            self.streams.append(stream)
+                            self.active_streams.add(stream)
                         conn.send_headers(
                             event.stream_id,
                             [
@@ -392,6 +395,9 @@ class StreamCapacityServer(threading.Thread):
                         # Deliberately leave the response open: a running envd
                         # command holds its HTTP/2 stream for its whole lifetime.
                         conn.send_data(event.stream_id, event_envelope())
+                    elif isinstance(event, h2.events.StreamReset):
+                        with self._lock:
+                            self.active_streams.discard((id(sock), event.stream_id))
                     elif isinstance(event, h2.events.DataReceived):
                         conn.acknowledge_received_data(
                             event.flow_controlled_length, event.stream_id

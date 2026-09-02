@@ -63,7 +63,7 @@ def test_sync_envd_spreads_repeated_waves_across_reused_connections(monkeypatch)
                         sandbox_config(f"sbx-wave-{wave}-{index}"),
                     )
                     wave_streams.append(
-                        as_sync_stream(client.connect(ConnectRequest(), timeout_ms=500))
+                        as_sync_stream(client.connect(ConnectRequest()))
                     )
                 streams.extend(wave_streams)
 
@@ -81,6 +81,7 @@ def test_sync_envd_spreads_repeated_waves_across_reused_connections(monkeypatch)
                     connection_ids = set(wave_counts)
                 assert set(wave_counts) == connection_ids
                 assert max(wave_counts.values()) - min(wave_counts.values()) <= 2
+                assert len(server.active_streams) == (wave + 1) * 80
 
             assert len(server.connections) == 4
             assert len(server.streams) == 240
@@ -142,6 +143,7 @@ async def test_async_envd_spreads_repeated_waves_across_reused_connections(
                     connection_ids = set(wave_counts)
                 assert set(wave_counts) == connection_ids
                 assert max(wave_counts.values()) - min(wave_counts.values()) <= 2
+                assert len(server.active_streams) == (wave + 1) * 80
 
             assert len(server.connections) == 4
             assert len(server.streams) == 240
