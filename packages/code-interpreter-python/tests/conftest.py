@@ -13,6 +13,7 @@ from e2b_code_interpreter import (
 
 
 DEFAULT_TEST_SANDBOX_TIMEOUT = 180
+KERNEL_READINESS_ATTEMPTS = 4
 
 
 @pytest.fixture(scope="session")
@@ -75,26 +76,32 @@ async def async_sandbox(async_sandbox_factory):
 
 
 def _wait_for_kernel(sandbox: Sandbox, language: str) -> None:
-    try:
-        sandbox.run_code("1", language=language)
-    except SandboxException as error:
-        # A newly running sandbox can briefly return this response while Foxtrot
-        # initializes a lazy language context. Retry only that known readiness
-        # failure; the test's actual execution still runs exactly once.
-        if not re.fullmatch(r"500:(?: \(trace_id=[^)]+\))?", str(error).strip()):
-            raise
-
-        sandbox.run_code("1", language=language)
+    for attempt in range(KERNEL_READINESS_ATTEMPTS):
+        try:
+            sandbox.run_code("1", language=language)
+            return
+        except SandboxException as error:
+            # A newly running sandbox can briefly return this response while
+            # Foxtrot initializes a lazy language context. Retry only that known
+            # readiness failure; the test's actual execution still runs once.
+            is_readiness_error = re.fullmatch(
+                r"500:(?: \(trace_id=[^)]+\))?", str(error).strip()
+            )
+            if not is_readiness_error or attempt == KERNEL_READINESS_ATTEMPTS - 1:
+                raise
 
 
 async def _wait_for_kernel_async(sandbox: AsyncSandbox, language: str) -> None:
-    try:
-        await sandbox.run_code("1", language=language)
-    except SandboxException as error:
-        if not re.fullmatch(r"500:(?: \(trace_id=[^)]+\))?", str(error).strip()):
-            raise
-
-        await sandbox.run_code("1", language=language)
+    for attempt in range(KERNEL_READINESS_ATTEMPTS):
+        try:
+            await sandbox.run_code("1", language=language)
+            return
+        except SandboxException as error:
+            is_readiness_error = re.fullmatch(
+                r"500:(?: \(trace_id=[^)]+\))?", str(error).strip()
+            )
+            if not is_readiness_error or attempt == KERNEL_READINESS_ATTEMPTS - 1:
+                raise
 
 
 @pytest.fixture()

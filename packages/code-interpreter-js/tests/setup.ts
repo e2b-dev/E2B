@@ -9,6 +9,7 @@ interface SandboxFixture {
 }
 
 const template = process.env.E2B_TESTS_TEMPLATE || 'code-interpreter-v1'
+const KERNEL_READINESS_ATTEMPTS = 4
 
 export const sandboxTest = base.extend<SandboxFixture>({
   template,
@@ -68,20 +69,24 @@ export async function wait(ms: number) {
 }
 
 export async function waitForKernel(sandbox: Sandbox, language: 'java' | 'r') {
-  try {
-    await sandbox.runCode('1', { language })
-  } catch (error) {
-    // A newly running sandbox can briefly return this response while Foxtrot
-    // initializes a lazy language context. Retry only that known readiness
-    // failure; the test's actual execution still runs exactly once.
-    if (
-      !(error instanceof SandboxError) ||
-      !/^500 Internal Server Error(?: \(trace_id=[^)]+\))?$/.test(error.message)
-    ) {
-      throw error
-    }
+  for (let attempt = 1; attempt <= KERNEL_READINESS_ATTEMPTS; attempt++) {
+    try {
+      await sandbox.runCode('1', { language })
+      return
+    } catch (error) {
+      // A newly running sandbox can briefly return this response while
+      // Foxtrot initializes a lazy language context. Retry only that known
+      // readiness failure; the test's actual execution still runs once.
+      const isReadinessError =
+        error instanceof SandboxError &&
+        /^500 Internal Server Error(?: \(trace_id=[^)]+\))?$/.test(
+          error.message
+        )
 
-    await sandbox.runCode('1', { language })
+      if (!isReadinessError || attempt === KERNEL_READINESS_ATTEMPTS) {
+        throw error
+      }
+    }
   }
 }
 

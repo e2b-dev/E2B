@@ -12,32 +12,36 @@ function mockSandbox(runCode: ReturnType<typeof vi.fn>) {
 }
 
 test.each(['java', 'r'] as const)(
-  'retries one %s readiness 500',
+  'waits through repeated %s readiness 500s',
   async (language) => {
     const runCode = vi
       .fn()
+      .mockRejectedValueOnce(javaNotReadyError())
+      .mockRejectedValueOnce(javaNotReadyError())
       .mockRejectedValueOnce(javaNotReadyError())
       .mockResolvedValueOnce(undefined)
 
     await waitForKernel(mockSandbox(runCode), language)
 
-    expect(runCode).toHaveBeenCalledTimes(2)
+    expect(runCode).toHaveBeenCalledTimes(4)
     expect(runCode).toHaveBeenNthCalledWith(1, '1', { language })
-    expect(runCode).toHaveBeenNthCalledWith(2, '1', { language })
+    expect(runCode).toHaveBeenNthCalledWith(4, '1', { language })
   }
 )
 
 test('propagates a persistent Java readiness 500', async () => {
-  const secondError = javaNotReadyError()
+  const finalError = javaNotReadyError()
   const runCode = vi
     .fn()
     .mockRejectedValueOnce(javaNotReadyError())
-    .mockRejectedValueOnce(secondError)
+    .mockRejectedValueOnce(javaNotReadyError())
+    .mockRejectedValueOnce(javaNotReadyError())
+    .mockRejectedValueOnce(finalError)
 
   await expect(waitForKernel(mockSandbox(runCode), 'java')).rejects.toBe(
-    secondError
+    finalError
   )
-  expect(runCode).toHaveBeenCalledTimes(2)
+  expect(runCode).toHaveBeenCalledTimes(4)
 })
 
 test('does not retry an unrelated Java error', async () => {
