@@ -287,10 +287,6 @@ async def test_mask_request_host(async_sandbox_factory):
         timeout=60,
     )
 
-    import asyncio
-
-    import httpx
-
     port = 8080
     output_file = "/tmp/headers.txt"
 
@@ -319,12 +315,8 @@ http.server.HTTPServer(('', {port}), H).handle_request()
     # Make a request from OUTSIDE the sandbox through the proxy
     # The Host header should be modified according to mask_request_host
     async with httpx.AsyncClient() as client:
-        try:
-            await client.get(sandbox_url, timeout=5.0)
-        except Exception:
-            pass
-
-    await asyncio.sleep(1)
+        response = await wait_for_status(client, sandbox_url, 200)
+        assert response.status_code == 200
 
     # Read the captured headers from inside the sandbox
     result = await async_sandbox.commands.run(f"cat {output_file}")

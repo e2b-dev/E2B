@@ -1,5 +1,5 @@
 import pytest
-from e2b import Sandbox
+from e2b import Sandbox, SandboxException
 
 pytestmark = pytest.mark.timeout(120)
 
@@ -144,6 +144,7 @@ def test_delete_snapshot(sandbox: Sandbox):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(180)
 def test_snapshot_preserves_filesystem(sandbox: Sandbox):
     app_dir = "/home/user/app"
     config_path = f"{app_dir}/config.json"
@@ -158,7 +159,14 @@ def test_snapshot_preserves_filesystem(sandbox: Sandbox):
     snapshot = sandbox.create_snapshot()
 
     try:
-        new_sandbox = Sandbox.create(snapshot.snapshot_id)
+        try:
+            new_sandbox = Sandbox.create(snapshot.snapshot_id)
+        except SandboxException as error:
+            # Placement can transiently time out while the snapshot is restored.
+            # Retry only the backend response that explicitly asks the caller to do so.
+            if "Failed to place sandbox: placement timed out" not in str(error):
+                raise
+            new_sandbox = Sandbox.create(snapshot.snapshot_id)
 
         try:
             dir_exists = new_sandbox.files.exists(app_dir)

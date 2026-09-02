@@ -280,10 +280,6 @@ def test_mask_request_host(sandbox_factory):
         timeout=60,
     )
 
-    import time
-
-    import httpx
-
     port = 8080
     output_file = "/tmp/headers.txt"
 
@@ -312,12 +308,8 @@ http.server.HTTPServer(('', {port}), H).handle_request()
     # Make a request from OUTSIDE the sandbox through the proxy
     # The Host header should be modified according to mask_request_host
     with httpx.Client() as client:
-        try:
-            client.get(sandbox_url, timeout=5.0)
-        except Exception:
-            pass
-
-    time.sleep(1)
+        response = wait_for_status(client, sandbox_url, 200)
+        assert response.status_code == 200
 
     # Read the captured headers from inside the sandbox
     result = sandbox.commands.run(f"cat {output_file}")
