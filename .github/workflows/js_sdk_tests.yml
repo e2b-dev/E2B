@@ -31,9 +31,9 @@ jobs:
     name: JS SDK - ${{ matrix.runtime }} (${{ matrix.os }})
     strategy:
       fail-fast: false
-      # Each runtime repeats the live sandbox suite. Keep this control run
-      # serial until the production matrix is stable under measured load.
-      max-parallel: 1
+      # Each runtime keeps one live-test worker, so all six runtime/OS jobs can
+      # run together without restoring Vitest's default worker multiplication.
+      max-parallel: 6
       # With node-only (set by staging callers) the matrix collapses to the
       # Node legs: the Bun/Deno/Cloudflare legs re-run suites the Node legs
       # already cover and add sandbox/build load without extra backend

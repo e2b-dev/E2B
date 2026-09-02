@@ -35,9 +35,9 @@ jobs:
     name: Code Interpreter JS SDK - ${{ matrix.runtime }}
     strategy:
       fail-fast: false
-      # Each leg runs the full live sandbox suite. Serializing the runtime
-      # matrix preserves runtime coverage without multiplying backend load.
-      max-parallel: 1
+      # Each runtime keeps one live-test worker. This matrix has four legs, so
+      # it naturally stays below the shared six-job cap.
+      max-parallel: 6
       # With node-only (set by staging callers) the matrix collapses to the
       # Node leg: the other legs re-run the suite the Node leg already covers
       # and add sandbox load without extra backend signal, so the other
@@ -115,6 +115,6 @@ jobs:
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
-          # Keep the control run to one live-sandbox worker per runtime. Once
-          # this is stable, raise it independently from matrix max-parallel.
+          # Keep one live-sandbox worker per runtime; matrix parallelism is
+          # bounded separately above.
           E2B_TEST_MAX_WORKERS: 1
