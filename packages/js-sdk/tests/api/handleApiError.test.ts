@@ -9,14 +9,25 @@ import {
 function createMockResponse(
   status: number,
   error: unknown,
-  data?: unknown
+  data?: unknown,
+  headers: Headers = new Headers()
 ): {
-  response: { status: number; ok: boolean }
+  response: {
+    status: number
+    statusText: string
+    ok: boolean
+    headers: Headers
+  }
   error: unknown
   data: unknown
 } {
   return {
-    response: { status, ok: status >= 200 && status < 300 },
+    response: {
+      status,
+      statusText: '',
+      ok: status >= 200 && status < 300,
+      headers,
+    },
     error,
     data,
   }
@@ -115,6 +126,19 @@ describe('handleApiError', () => {
       assert.instanceOf(err, RateLimitError)
       assert.include(err?.message, 'Rate limit')
     })
+  })
+
+  test('includes the E2B trace ID in failed response errors', () => {
+    const res = createMockResponse(
+      500,
+      { message: 'Internal error' },
+      undefined,
+      new Headers({ 'X-E2B-Trace-ID': 'trace-123' })
+    )
+
+    const err = handleApiError(res as any)
+
+    assert.include(err?.message, 'trace_id=trace-123')
   })
 
   describe('success responses', () => {

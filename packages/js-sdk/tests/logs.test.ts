@@ -1,5 +1,5 @@
 import { assert, describe, test } from 'vitest'
-import { createRpcLogger } from '../src/logs'
+import { createApiLogger, createRpcLogger } from '../src/logs'
 
 const req = { url: 'http://localhost:49983/process.Process/Start' } as any
 
@@ -34,6 +34,26 @@ describe('createRpcLogger', () => {
     assert.deepEqual(logs[0], [
       'Response stream:',
       { offset: '9007199254740993' },
+    ])
+  })
+})
+
+describe('createApiLogger', () => {
+  test('logs the E2B trace ID for failed responses', async () => {
+    const logs: any[][] = []
+    const middleware = createApiLogger({
+      error: (...args) => logs.push(args),
+    })
+    const response = new Response(null, {
+      status: 500,
+      statusText: 'Internal Server Error',
+      headers: { 'X-E2B-Trace-ID': 'trace-123' },
+    })
+
+    await middleware.onResponse?.({ response } as any)
+
+    assert.deepEqual(logs, [
+      ['Response:', 500, 'Internal Server Error', 'trace_id=trace-123'],
     ])
   })
 })

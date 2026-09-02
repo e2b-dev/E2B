@@ -19,21 +19,26 @@ export function apiErrorFromCode(
     message: string,
     stackTrace?: string
   ) => Error = SandboxError,
-  stackTrace?: string
+  stackTrace?: string,
+  traceId?: string
 ): Error {
+  const traceSuffix = traceId ? ` (trace_id=${traceId})` : ''
+
   if (code === 401) {
     const message = 'Unauthorized, please check your credentials.'
     return new AuthenticationError(
-      content ? `${message} - ${content}` : message
+      `${content ? `${message} - ${content}` : message}${traceSuffix}`
     )
   }
 
   if (code === 429) {
     const message = 'Rate limit exceeded, please try again later'
-    return new RateLimitError(content ? `${message} - ${content}` : message)
+    return new RateLimitError(
+      `${content ? `${message} - ${content}` : message}${traceSuffix}`
+    )
   }
 
-  return new errorClass(`${code}: ${content}`, stackTrace)
+  return new errorClass(`${code}: ${content}${traceSuffix}`, stackTrace)
 }
 
 export function handleApiError(
@@ -51,12 +56,14 @@ export function handleApiError(
   }
 
   const status = response.response.status
+  const traceId = response.response.headers.get('X-E2B-Trace-ID') ?? undefined
   if (status === 401 || status === 429) {
     return apiErrorFromCode(
       status,
       response.error?.message ?? response.error,
       errorClass,
-      stackTrace
+      stackTrace,
+      traceId
     )
   }
 
@@ -64,7 +71,8 @@ export function handleApiError(
     status,
     response.error?.message || response.error || response.response.statusText,
     errorClass,
-    stackTrace
+    stackTrace,
+    traceId
   )
 }
 

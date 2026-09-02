@@ -49,7 +49,9 @@ def make_logging_event_hooks(log: Optional[logging.Logger]) -> dict:
 
     def on_response(response: Response) -> None:
         if response.status_code >= 400:
-            log.error(f"Response {response.status_code}")
+            trace_id = response.headers.get("X-E2B-Trace-ID")
+            trace_suffix = f" trace_id={trace_id}" if trace_id else ""
+            log.error(f"Response {response.status_code}{trace_suffix}")
         else:
             log.info(f"Response {response.status_code}")
 
@@ -66,7 +68,9 @@ def make_async_logging_event_hooks(log: Optional[logging.Logger]) -> dict:
 
     async def on_response(response: Response) -> None:
         if response.status_code >= 400:
-            log.error(f"Response {response.status_code}")
+            trace_id = response.headers.get("X-E2B-Trace-ID")
+            trace_suffix = f" trace_id={trace_id}" if trace_id else ""
+            log.error(f"Response {response.status_code}{trace_suffix}")
         else:
             log.info(f"Response {response.status_code}")
 
@@ -144,25 +148,30 @@ def api_exception_from_code(
     message: Optional[str] = None,
     default_exception_class: type[Exception] = SandboxException,
     stack_trace: Optional[TracebackType] = None,
+    trace_id: Optional[str] = None,
 ) -> Exception:
     """Map an API error code and message to the matching exception class — the
     same mapping :func:`handle_api_exception` applies to HTTP responses, usable
     for error objects embedded in response bodies (e.g. per-fork results)."""
+    trace_suffix = f" (trace_id={trace_id})" if trace_id else ""
+
     if status_code == 401:
         text = f"{status_code}: Unauthorized, please check your credentials."
         if message:
             text += f" - {message}"
+        text += trace_suffix
         return AuthenticationException(text)
 
     if status_code == 429:
         text = f"{status_code}: Rate limit exceeded, please try again later."
         if message:
             text += f" - {message}"
+        text += trace_suffix
         return RateLimitException(text)
 
-    return default_exception_class(f"{status_code}: {message}").with_traceback(
-        stack_trace
-    )
+    return default_exception_class(
+        f"{status_code}: {message}{trace_suffix}"
+    ).with_traceback(stack_trace)
 
 
 def handle_api_exception(
@@ -170,6 +179,10 @@ def handle_api_exception(
     default_exception_class: type[Exception] = SandboxException,
     stack_trace: Optional[TracebackType] = None,
 ):
+    headers = getattr(e, "headers", {})
+    trace_id = headers.get("X-E2B-Trace-ID")
+    trace_suffix = f" (trace_id={trace_id})" if trace_id else ""
+
     try:
         body = json.loads(e.content) if e.content else {}
     except json.JSONDecodeError:
@@ -177,12 +190,16 @@ def handle_api_exception(
 
     message = body["message"] if "message" in body else None
     if message is None and e.status_code not in (401, 429):
-        return default_exception_class(f"{e.status_code}: {e.content}").with_traceback(
-            stack_trace
-        )
+        return default_exception_class(
+            f"{e.status_code}: {e.content}{trace_suffix}"
+        ).with_traceback(stack_trace)
 
     return api_exception_from_code(
-        e.status_code, message, default_exception_class, stack_trace
+        e.status_code,
+        message,
+        default_exception_class,
+        stack_trace,
+        trace_id,
     )
 
 

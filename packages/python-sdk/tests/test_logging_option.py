@@ -1,11 +1,13 @@
 import inspect
 import logging
+import asyncio
 from types import SimpleNamespace
 
 from e2b import AsyncSandbox, ConnectionConfig, Sandbox
 from e2b.envd.interceptors import LoggingInterceptor, build_interceptors
 from e2b.api import (
     ApiClient,
+    handle_api_exception,
     make_async_logging_event_hooks,
     make_logging_event_hooks,
 )
@@ -173,18 +175,19 @@ def test_sync_logging_event_hooks_emit_records(caplog):
         url = "https://example.com/foo"
 
     class _Resp:
-        def __init__(self, status_code):
+        def __init__(self, status_code, headers=None):
             self.status_code = status_code
+            self.headers = headers or {}
 
     with caplog.at_level(logging.DEBUG, logger="test.hooks.sync"):
         hooks["request"][0](_Req())
         hooks["response"][0](_Resp(200))
-        hooks["response"][0](_Resp(500))
+        hooks["response"][0](_Resp(500, {"X-E2B-Trace-ID": "trace-123"}))
 
     levels = [(r.levelno, r.getMessage()) for r in caplog.records]
     assert (logging.INFO, "Request GET https://example.com/foo") in levels
     assert (logging.INFO, "Response 200") in levels
-    assert (logging.ERROR, "Response 500") in levels
+    assert (logging.ERROR, "Response 500 trace_id=trace-123") in levels
 
 
 def test_make_async_logging_event_hooks_shape():
@@ -192,3 +195,31 @@ def test_make_async_logging_event_hooks_shape():
     assert set(hooks) == {"request", "response"}
     assert len(hooks["request"]) == 1
     assert len(hooks["response"]) == 1
+
+
+def test_async_logging_event_hooks_log_trace_id_for_failure(caplog):
+    log = logging.getLogger("test.hooks.async")
+    hooks = make_async_logging_event_hooks(log)
+    response = SimpleNamespace(
+        status_code=500,
+        headers={"X-E2B-Trace-ID": "trace-123"},
+    )
+
+    with caplog.at_level(logging.ERROR, logger="test.hooks.async"):
+        asyncio.run(hooks["response"][0](response))
+
+    assert (logging.ERROR, "Response 500 trace_id=trace-123") in [
+        (record.levelno, record.getMessage()) for record in caplog.records
+    ]
+
+
+def test_api_exception_includes_trace_id():
+    response = SimpleNamespace(
+        status_code=500,
+        content=b'{"message":"Internal error"}',
+        headers={"X-E2B-Trace-ID": "trace-123"},
+    )
+
+    error = handle_api_exception(response)
+
+    assert "trace_id=trace-123" in str(error)
