@@ -100,3 +100,4 @@ jobs:
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
+          E2B_TEST_MAX_WORKERS: 1
