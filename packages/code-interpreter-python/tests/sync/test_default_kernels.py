@@ -9,7 +9,8 @@ def test_js_kernel(sandbox: Sandbox):
 
 
 @pytest.mark.skip_debug()
-def test_r_kernel(sandbox: Sandbox):
+def test_r_kernel(sandbox: Sandbox, wait_for_kernel):
+    wait_for_kernel(sandbox, "r")
     execution = sandbox.run_code('print("Hello, World!")', language="r")
     assert execution.logs.stdout == ['[1] "Hello, World!"\n']
 

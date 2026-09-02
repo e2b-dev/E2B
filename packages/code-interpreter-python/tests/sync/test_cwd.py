@@ -22,7 +22,8 @@ def test_cwd_typescript(sandbox: Sandbox):
 
 
 @pytest.mark.skip_debug()
-def test_cwd_r(sandbox: Sandbox):
+def test_cwd_r(sandbox: Sandbox, wait_for_kernel):
+    wait_for_kernel(sandbox, "r")
     result = sandbox.run_code("getwd()", language="r")
     assert result.results[0].text.strip() == '[1] "/home/user"'
 

@@ -1,6 +1,6 @@
 import { expect } from 'vitest'
 
-import { isDebug, sandboxTest, waitForJavaKernel } from '../setup'
+import { isDebug, sandboxTest, waitForKernel } from '../setup'
 import { Sandbox } from '../../src'
 
 // Java Env Vars
@@ -12,7 +12,7 @@ sandboxTest.skipIf(isDebug)(
     })
 
     try {
-      await waitForJavaKernel(sandbox)
+      await waitForKernel(sandbox, 'java')
 
       const result = await sandbox.runCode(
         'System.getProperty("TEST_ENV_VAR")',
@@ -29,7 +29,7 @@ sandboxTest.skipIf(isDebug)(
 )
 
 sandboxTest('env vars per execution (java)', async ({ sandbox }) => {
-  await waitForJavaKernel(sandbox)
+  await waitForKernel(sandbox, 'java')
 
   const result = await sandbox.runCode('System.getProperty("FOO")', {
     envs: { FOO: 'bar' },
@@ -53,7 +53,7 @@ sandboxTest.skipIf(isDebug)('env vars overwrite', async ({ template }) => {
   })
 
   try {
-    await waitForJavaKernel(sandbox)
+    await waitForKernel(sandbox, 'java')
 
     const result = await sandbox.runCode('System.getProperty("TEST_ENV_VAR")', {
       language: 'java',

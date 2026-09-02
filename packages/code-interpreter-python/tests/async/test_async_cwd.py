@@ -22,7 +22,8 @@ async def test_cwd_typescript(async_sandbox: AsyncSandbox):
 
 
 @pytest.mark.skip_debug()
-async def test_cwd_r(async_sandbox: AsyncSandbox):
+async def test_cwd_r(async_sandbox: AsyncSandbox, wait_for_kernel_async):
+    await wait_for_kernel_async(async_sandbox, "r")
     result = await async_sandbox.run_code("getwd()", language="r")
     assert result.results[0].text.strip() == '[1] "/home/user"'
 

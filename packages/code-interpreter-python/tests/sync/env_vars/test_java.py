@@ -3,10 +3,10 @@ from e2b_code_interpreter import Sandbox
 
 
 @pytest.mark.skip_debug()
-def test_env_vars_on_sandbox(template, wait_for_java_kernel):
+def test_env_vars_on_sandbox(template, wait_for_kernel):
     sandbox = Sandbox.create(template=template, envs={"TEST_ENV_VAR": "supertest"})
     try:
-        wait_for_java_kernel(sandbox)
+        wait_for_kernel(sandbox, "java")
 
         result = sandbox.run_code('System.getProperty("TEST_ENV_VAR")', language="java")
         assert result.text is not None
@@ -34,10 +34,10 @@ def test_env_vars_per_execution(java_sandbox: Sandbox):
 
 
 @pytest.mark.skip_debug()
-def test_env_vars_overwrite(template, wait_for_java_kernel):
+def test_env_vars_overwrite(template, wait_for_kernel):
     sandbox = Sandbox.create(template=template, envs={"TEST_ENV_VAR": "supertest"})
     try:
-        wait_for_java_kernel(sandbox)
+        wait_for_kernel(sandbox, "java")
 
         result = sandbox.run_code(
             'System.getProperty("TEST_ENV_VAR")',

@@ -1,5 +1,6 @@
 import asyncio
 import os
+import re
 import uuid
 
 import pytest
@@ -73,48 +74,48 @@ async def async_sandbox(async_sandbox_factory):
     return await async_sandbox_factory()
 
 
-def _wait_for_java_kernel(sandbox: Sandbox) -> None:
+def _wait_for_kernel(sandbox: Sandbox, language: str) -> None:
     try:
-        sandbox.run_code("1", language="java")
+        sandbox.run_code("1", language=language)
     except SandboxException as error:
         # A newly running sandbox can briefly return this response while Foxtrot
-        # initializes Java. Retry only that known readiness failure; the test's
-        # actual Java execution still runs exactly once.
-        if str(error).strip() != "500:":
+        # initializes a lazy language context. Retry only that known readiness
+        # failure; the test's actual execution still runs exactly once.
+        if not re.fullmatch(r"500:(?: \(trace_id=[^)]+\))?", str(error).strip()):
             raise
 
-        sandbox.run_code("1", language="java")
+        sandbox.run_code("1", language=language)
 
 
-async def _wait_for_java_kernel_async(sandbox: AsyncSandbox) -> None:
+async def _wait_for_kernel_async(sandbox: AsyncSandbox, language: str) -> None:
     try:
-        await sandbox.run_code("1", language="java")
+        await sandbox.run_code("1", language=language)
     except SandboxException as error:
-        if str(error).strip() != "500:":
+        if not re.fullmatch(r"500:(?: \(trace_id=[^)]+\))?", str(error).strip()):
             raise
 
-        await sandbox.run_code("1", language="java")
+        await sandbox.run_code("1", language=language)
 
 
 @pytest.fixture()
-def wait_for_java_kernel():
-    return _wait_for_java_kernel
+def wait_for_kernel():
+    return _wait_for_kernel
 
 
 @pytest.fixture()
-def wait_for_java_kernel_async():
-    return _wait_for_java_kernel_async
+def wait_for_kernel_async():
+    return _wait_for_kernel_async
 
 
 @pytest.fixture()
 def java_sandbox(sandbox: Sandbox):
-    _wait_for_java_kernel(sandbox)
+    _wait_for_kernel(sandbox, "java")
     return sandbox
 
 
 @pytest.fixture()
 async def async_java_sandbox(async_sandbox: AsyncSandbox):
-    await _wait_for_java_kernel_async(async_sandbox)
+    await _wait_for_kernel_async(async_sandbox, "java")
     return async_sandbox
 
 

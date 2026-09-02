@@ -420,14 +420,19 @@ def format_exception(res: Response):
     if res.is_success:
         return None
 
+    body = res.text.strip()
+    trace_id = res.headers.get("X-E2B-Trace-ID")
+    trace_suffix = f" (trace_id={trace_id})" if trace_id else ""
+
     if res.status_code == 404:
-        return NotFoundException(res.text)
+        return NotFoundException(f"{body}{trace_suffix}")
     elif res.status_code == 502:
         return TimeoutException(
-            f"{res.text}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeout' when starting the sandbox or calling '.set_timeout' on the sandbox with the desired timeout."
+            f"{body}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeout' when starting the sandbox or calling '.set_timeout' on the sandbox with the desired timeout.{trace_suffix}"
         )
     else:
-        return SandboxException(f"{res.status_code}: {res.text}")
+        body_suffix = f" {body}" if body else ""
+        return SandboxException(f"{res.status_code}:{body_suffix}{trace_suffix}")
 
 
 def parse_output(

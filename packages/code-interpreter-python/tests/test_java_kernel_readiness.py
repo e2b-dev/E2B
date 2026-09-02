@@ -3,21 +3,26 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 
 from e2b import SandboxException
-from tests.conftest import _wait_for_java_kernel, _wait_for_java_kernel_async
+from tests.conftest import _wait_for_kernel, _wait_for_kernel_async
 
 
 def java_not_ready_error() -> SandboxException:
     return SandboxException("500:")
 
 
-def test_retries_one_java_readiness_500():
+def traced_not_ready_error() -> SandboxException:
+    return SandboxException("500: (trace_id=trace-123)")
+
+
+@pytest.mark.parametrize("language", ["java", "r"])
+def test_retries_one_kernel_readiness_500(language):
     run_code = Mock(side_effect=[java_not_ready_error(), None])
     sandbox = Mock(run_code=run_code)
 
-    _wait_for_java_kernel(sandbox)
+    _wait_for_kernel(sandbox, language)
 
     assert run_code.call_count == 2
-    run_code.assert_called_with("1", language="java")
+    run_code.assert_called_with("1", language=language)
 
 
 def test_propagates_a_persistent_java_readiness_500():
@@ -26,7 +31,7 @@ def test_propagates_a_persistent_java_readiness_500():
     sandbox = Mock(run_code=run_code)
 
     with pytest.raises(SandboxException) as raised:
-        _wait_for_java_kernel(sandbox)
+        _wait_for_kernel(sandbox, "java")
 
     assert raised.value is second_error
     assert run_code.call_count == 2
@@ -38,20 +43,21 @@ def test_does_not_retry_an_unrelated_java_error():
     sandbox = Mock(run_code=run_code)
 
     with pytest.raises(SandboxException) as raised:
-        _wait_for_java_kernel(sandbox)
+        _wait_for_kernel(sandbox, "java")
 
     assert raised.value is error
     run_code.assert_called_once_with("1", language="java")
 
 
-async def test_async_retries_one_java_readiness_500():
+@pytest.mark.parametrize("language", ["java", "r"])
+async def test_async_retries_one_kernel_readiness_500(language):
     run_code = AsyncMock(side_effect=[java_not_ready_error(), None])
     sandbox = Mock(run_code=run_code)
 
-    await _wait_for_java_kernel_async(sandbox)
+    await _wait_for_kernel_async(sandbox, language)
 
     assert run_code.await_count == 2
-    run_code.assert_awaited_with("1", language="java")
+    run_code.assert_awaited_with("1", language=language)
 
 
 async def test_async_propagates_a_persistent_java_readiness_500():
@@ -60,7 +66,7 @@ async def test_async_propagates_a_persistent_java_readiness_500():
     sandbox = Mock(run_code=run_code)
 
     with pytest.raises(SandboxException) as raised:
-        await _wait_for_java_kernel_async(sandbox)
+        await _wait_for_kernel_async(sandbox, "java")
 
     assert raised.value is second_error
     assert run_code.await_count == 2
@@ -72,7 +78,16 @@ async def test_async_does_not_retry_an_unrelated_java_error():
     sandbox = Mock(run_code=run_code)
 
     with pytest.raises(SandboxException) as raised:
-        await _wait_for_java_kernel_async(sandbox)
+        await _wait_for_kernel_async(sandbox, "java")
 
     assert raised.value is error
     run_code.assert_awaited_once_with("1", language="java")
+
+
+def test_retries_an_empty_readiness_500_with_trace_id():
+    run_code = Mock(side_effect=[traced_not_ready_error(), None])
+    sandbox = Mock(run_code=run_code)
+
+    _wait_for_kernel(sandbox, "r")
+
+    assert run_code.call_count == 2

@@ -3,12 +3,12 @@ from e2b_code_interpreter.code_interpreter_async import AsyncSandbox
 
 
 @pytest.mark.skip_debug()
-async def test_env_vars_on_sandbox(template, wait_for_java_kernel_async):
+async def test_env_vars_on_sandbox(template, wait_for_kernel_async):
     sandbox = await AsyncSandbox.create(
         template=template, envs={"TEST_ENV_VAR": "supertest"}
     )
     try:
-        await wait_for_java_kernel_async(sandbox)
+        await wait_for_kernel_async(sandbox, "java")
 
         result = await sandbox.run_code(
             'System.getProperty("TEST_ENV_VAR")', language="java"
@@ -35,12 +35,12 @@ async def test_env_vars_per_execution(async_java_sandbox: AsyncSandbox):
 
 
 @pytest.mark.skip_debug()
-async def test_env_vars_overwrite(template, wait_for_java_kernel_async):
+async def test_env_vars_overwrite(template, wait_for_kernel_async):
     sandbox = await AsyncSandbox.create(
         template=template, envs={"TEST_ENV_VAR": "supertest"}
     )
     try:
-        await wait_for_java_kernel_async(sandbox)
+        await wait_for_kernel_async(sandbox, "java")
 
         result = await sandbox.run_code(
             'System.getProperty("TEST_ENV_VAR")',

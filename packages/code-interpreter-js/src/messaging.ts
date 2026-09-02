@@ -6,15 +6,21 @@ export async function extractError(res: Response) {
     return
   }
 
+  const body = (await res.text()).trim()
+  const traceId = res.headers.get('X-E2B-Trace-ID')
+  const traceSuffix = traceId ? ` (trace_id=${traceId})` : ''
+
   switch (res.status) {
     case 502:
       return new TimeoutError(
-        `${await res.text()}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeoutMs' when starting the sandbox or calling '.setTimeout' on the sandbox with the desired timeout.`
+        `${body}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeoutMs' when starting the sandbox or calling '.setTimeout' on the sandbox with the desired timeout.${traceSuffix}`
       )
     case 404:
-      return new NotFoundError(await res.text())
+      return new NotFoundError(`${body}${traceSuffix}`)
     default:
-      return new SandboxError(`${res.status} ${res.statusText}`)
+      return new SandboxError(
+        `${res.status} ${res.statusText}${body ? `: ${body}` : ''}${traceSuffix}`
+      )
   }
 }
 

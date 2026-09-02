@@ -5,4 +5,4 @@
 '@e2b/code-interpreter-python': patch
 ---
 
-Include API trace IDs in failed response exceptions and logs, and add safe CI traffic-source markers to control-plane, sandbox, and Code Interpreter requests.
+Include trace IDs and response details in failed API and Code Interpreter requests, and add safe CI traffic-source markers to control-plane, sandbox, and Code Interpreter requests.
