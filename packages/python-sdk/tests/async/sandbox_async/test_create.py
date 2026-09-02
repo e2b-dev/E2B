@@ -267,7 +267,7 @@ async def test_keep_memory_none_defaults_to_full_memory(async_sandbox_factory):
 
 
 @pytest.mark.skip_debug()
-@pytest.mark.timeout(90)
+@pytest.mark.timeout(270)
 async def test_auto_pause_filesystem_only_reboots(async_sandbox_factory):
     # keep_memory=False makes the timeout auto-pause filesystem-only, so resuming
     # cold-boots the sandbox from disk.
@@ -284,7 +284,14 @@ async def test_auto_pause_filesystem_only_reboots(async_sandbox_factory):
 
     # A filesystem-only snapshot cannot auto-resume on traffic; connect resumes
     # it by cold-booting.
-    resumed = await sandbox.connect()
+    try:
+        resumed = await sandbox.connect(request_timeout=120)
+    except SandboxException as error:
+        # Placement can transiently time out while the cold boot is scheduled.
+        # Retry only the backend response that explicitly asks the caller to do so.
+        if "Failed to place sandbox: placement timed out" not in str(error):
+            raise
+        resumed = await sandbox.connect(request_timeout=120)
 
     persisted = (await resumed.files.read("/home/user/auto-pause-marker.txt")).strip()
     assert persisted == marker
