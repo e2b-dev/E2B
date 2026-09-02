@@ -16,7 +16,20 @@ export async function createBaseDir(sandbox: any) {
 }
 
 export async function cleanupBaseDir(sandbox: any, baseDir: string) {
-  await sandbox.commands.run(`rm -rf "${baseDir}"`)
+  const command = `rm -rf "${baseDir}"`
+
+  try {
+    await sandbox.commands.run(command)
+  } catch (error) {
+    if (
+      !(error instanceof Error) ||
+      !error.message.includes('Network connection lost')
+    ) {
+      throw error
+    }
+
+    await sandbox.commands.run(command)
+  }
 }
 
 export async function createRepo(sandbox: any, baseDir: string) {
