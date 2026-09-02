@@ -1,7 +1,7 @@
 {
   "name": "@e2b/python-sdk",
   "private": true,
-  "version": "2.46.2",
+  "version": "2.46.3",
   "scripts": {
     "test": "uv run pytest -n 4 --verbose -x",
     "postVersion": "uv version $(pnpm pkg get version --workspaces=false | tr -d \\\")",
