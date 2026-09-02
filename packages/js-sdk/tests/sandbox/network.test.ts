@@ -348,7 +348,7 @@ describe('maskRequestHost option', () => {
       const outputFile = '/tmp/headers.txt'
 
       // Start a Python HTTP server that captures request headers and writes them to a file
-      sandbox.commands.run(
+      await sandbox.commands.run(
         `python3 -c "
 import http.server
 class H(http.server.BaseHTTPRequestHandler):
@@ -364,28 +364,21 @@ http.server.HTTPServer(('', ${port}), H).handle_request()
         { background: true }
       )
 
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-
       // Get the public URL for the sandbox
       const sandboxUrl = `https://${sandbox.getHost(port)}`
 
       // Make a request from OUTSIDE the sandbox through the proxy
       // The Host header should be modified according to maskRequestHost
-      try {
-        await fetch(sandboxUrl, { signal: AbortSignal.timeout(5000) })
-      } catch (error) {
-        // Request may timeout, but headers are captured by the server
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      await waitForStatus(sandboxUrl, 200)
 
       // Read the captured headers from inside the sandbox
-      const result = await sandbox.commands.run(`cat ${outputFile}`)
+      const headers = await sandbox.files.read(outputFile)
 
       // Verify the Host header was modified according to maskRequestHost
-      assert.include(result.stdout, 'Host:')
-      assert.include(result.stdout, 'custom-host.example.com')
-      assert.include(result.stdout, `${port}`)
-    }
+      assert.include(headers, 'Host:')
+      assert.include(headers, 'custom-host.example.com')
+      assert.include(headers, `${port}`)
+    },
+    60_000
   )
 })

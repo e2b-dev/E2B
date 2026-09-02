@@ -47,11 +47,21 @@ export async function startGitDaemon(sandbox: any, baseDir: string) {
       `--enable=receive-pack --informative-errors --listen=127.0.0.1 --port=${port}`,
     { background: true }
   )
-  await sandbox.commands.run('sleep 1')
+  const remoteUrl = `git://127.0.0.1:${port}/remote.git`
+
+  try {
+    await sandbox.commands.run(
+      `for i in $(seq 1 50); do git ls-remote "${remoteUrl}" >/dev/null 2>&1 && exit 0; sleep 0.1; done; exit 1`
+    )
+  } catch (error) {
+    await handle.kill().catch(() => {})
+    throw error
+  }
+
   return {
     handle,
     remotePath,
-    remoteUrl: `git://127.0.0.1:${port}/remote.git`,
+    remoteUrl,
     port,
   }
 }

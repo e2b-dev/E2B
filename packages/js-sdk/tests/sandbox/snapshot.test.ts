@@ -203,5 +203,6 @@ sandboxTest.skipIf(isDebug)(
       await resumedSandbox.commands.run('cat /proc/sys/kernel/random/boot_id')
     ).stdout.trim()
     assert.notEqual(bootAfter, bootBefore)
-  }
+  },
+  90_000
 )

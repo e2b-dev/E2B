@@ -47,7 +47,8 @@ sandboxTest.skipIf(isDebug)(
     } finally {
       await Sandbox.deleteSnapshot(snapshot.snapshotId)
     }
-  }
+  },
+  90_000
 )
 
 sandboxTest.skipIf(isDebug)(
