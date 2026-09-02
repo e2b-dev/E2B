@@ -27,6 +27,9 @@ jobs:
     name: Desktop JS SDK - ${{ inputs.run_tests && matrix.runtime || 'build' }}
     strategy:
       fail-fast: false
+      # Each leg runs the full live sandbox suite. Serializing the runtime
+      # matrix preserves runtime coverage without multiplying backend load.
+      max-parallel: 1
       # Callers that only build (staging) collapse the matrix to a single job;
       # the runtime legs are exercised against production.
       matrix:

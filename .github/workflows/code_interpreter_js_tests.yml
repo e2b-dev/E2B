@@ -32,6 +32,9 @@ jobs:
     name: Code Interpreter JS SDK - ${{ matrix.runtime }}
     strategy:
       fail-fast: false
+      # Each leg runs the full live sandbox suite. Serializing the runtime
+      # matrix preserves runtime coverage without multiplying backend load.
+      max-parallel: 1
       # With node-only (set by staging callers) the matrix collapses to the
       # Node leg: the other legs re-run the suite the Node leg already covers
       # and add sandbox load without extra backend signal, so the other

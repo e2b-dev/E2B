@@ -8,7 +8,9 @@ export function createSdkVitestConfig(
       include: ['tests/**/*.test.ts'],
       exclude: ['tests/runtimes/**'],
       globals: false,
-      testTimeout: 30_000,
+      // Live sandbox creation and language startup share this budget with the
+      // assertion body; slower kernels regularly need more than 30 seconds.
+      testTimeout: 60_000,
       environment: 'node',
       bail: 0,
       server: {},
