@@ -2,10 +2,6 @@ name: Publish Packages
 
 on:
   workflow_call:
-    inputs:
-      publish_existing:
-        type: boolean
-        default: false
     secrets:
       E2B_API_KEY:
         required: true
@@ -73,14 +69,12 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Create new versions
-        if: ${{ !inputs.publish_existing }}
         run: pnpm run version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Commit new versions
         id: commit
-        if: ${{ !inputs.publish_existing }}
         # Commit before publishing, because `changeset publish` tags whatever HEAD
         # it publishes from — tagging afterwards is what left every tag on the
         # commit before its own version bump (SDK-298).
@@ -110,8 +104,8 @@ jobs:
 
       - name: Push new versions
         # A failed publish may have uploaded some Python packages before tagging.
-        # Preserve the versions after any attempt so a retry cannot reuse them for
-        # different contents. Recovery runs already have their versions committed.
+        # Preserve the versions after any attempt so a later release cannot reuse
+        # them for different contents.
         if: always() && steps.commit.outcome == 'success' && steps.release.outcome != 'skipped'
         run: |
           if ! git push; then
