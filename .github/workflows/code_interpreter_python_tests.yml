@@ -18,11 +18,9 @@ on:
     secrets:
       E2B_API_KEY:
         required: true
-      GRAFANA_LOKI_URL:
+      OTEL_EXPORTER_OTLP_ENDPOINT:
         required: false
-      GRAFANA_LOKI_USER:
-        required: false
-      GRAFANA_CLOUD_API_KEY:
+      OTEL_EXPORTER_OTLP_HEADERS:
         required: false
 
 permissions:
@@ -87,6 +85,5 @@ jobs:
           runtime: python
           os: ${{ runner.os }}
           test-step-outcome: ${{ job.status }}
-          grafana-loki-url: ${{ secrets.GRAFANA_LOKI_URL }}
-          grafana-loki-user: ${{ secrets.GRAFANA_LOKI_USER }}
-          grafana-cloud-api-key: ${{ secrets.GRAFANA_CLOUD_API_KEY }}
+          otlp-endpoint: ${{ secrets.OTEL_EXPORTER_OTLP_ENDPOINT }}
+          otlp-headers: ${{ secrets.OTEL_EXPORTER_OTLP_HEADERS }}

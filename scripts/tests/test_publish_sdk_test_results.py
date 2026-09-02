@@ -32,19 +32,19 @@ class ParseJunitTests(unittest.TestCase):
             results = publish_sdk_test_results.parse_junit(path)
 
         self.assertEqual(
-            [result["status"] for result in results],
+            [result["test.status"] for result in results],
             ["passed", "failed", "error", "skipped"],
         )
-        self.assertEqual(results[0]["test"], "creates a sandbox")
-        self.assertEqual(results[0]["class"], "sandbox")
-        self.assertEqual(results[0]["duration_seconds"], 0.25)
+        self.assertEqual(results[0]["test.name"], "creates a sandbox")
+        self.assertEqual(results[0]["test.class"], "sandbox")
+        self.assertEqual(results[0]["test.duration_seconds"], 0.25)
         serialized = json.dumps(results)
         self.assertNotIn("secret response body", serialized)
         self.assertNotIn("secret stack trace", serialized)
 
 
 class BuildPayloadTests(unittest.TestCase):
-    def test_keeps_test_names_in_log_body_instead_of_loki_labels(self) -> None:
+    def test_builds_otlp_log_records_for_individual_tests(self) -> None:
         metadata = publish_sdk_test_results.Metadata(
             repository="e2b-dev/E2B",
             environment="production",
@@ -57,30 +57,33 @@ class BuildPayloadTests(unittest.TestCase):
             run_url="https://github.com/e2b-dev/E2B/actions/runs/123",
         )
 
-        payload = publish_sdk_test_results.build_loki_payload(
+        payload = publish_sdk_test_results.build_otlp_payload(
             metadata=metadata,
             results=[
                 {
-                    "test": "creates a sandbox",
-                    "class": "sandbox",
-                    "status": "failed",
-                    "duration_seconds": 0.25,
+                    "test.name": "creates a sandbox",
+                    "test.class": "sandbox",
+                    "test.status": "failed",
+                    "test.duration_seconds": 0.25,
                 }
             ],
             test_step_outcome="failure",
             timestamp_ns=1_000,
         )
 
-        self.assertEqual(len(payload["streams"]), 1)
-        stream = payload["streams"][0]
-        self.assertEqual(stream["stream"]["suite"], "js-sdk")
-        self.assertNotIn("test", stream["stream"])
-        timestamp, line = stream["values"][0]
-        self.assertEqual(timestamp, "1000")
-        event = json.loads(line)
-        self.assertEqual(event["test"], "creates a sandbox")
-        self.assertEqual(event["status"], "failed")
-        self.assertEqual(event["github_run_id"], "123")
+        resource_logs = payload["resourceLogs"][0]
+        resource = self._attributes(resource_logs["resource"]["attributes"])
+        self.assertEqual(resource["service.name"], "e2b-sdk-smoke-tests")
+        self.assertEqual(resource["test.suite"], "js-sdk")
+
+        record = resource_logs["scopeLogs"][0]["logRecords"][0]
+        attributes = self._attributes(record["attributes"])
+        self.assertEqual(record["timeUnixNano"], "1000")
+        self.assertEqual(record["severityText"], "ERROR")
+        self.assertEqual(record["body"]["stringValue"], "sdk_test_result")
+        self.assertEqual(attributes["test.name"], "creates a sandbox")
+        self.assertEqual(attributes["test.status"], "failed")
+        self.assertEqual(attributes["github.run.id"], "123")
 
     def test_emits_suite_event_when_test_report_is_missing(self) -> None:
         metadata = publish_sdk_test_results.Metadata(
@@ -95,39 +98,48 @@ class BuildPayloadTests(unittest.TestCase):
             run_url="https://github.com/e2b-dev/E2B/actions/runs/456",
         )
 
-        payload = publish_sdk_test_results.build_loki_payload(
+        payload = publish_sdk_test_results.build_otlp_payload(
             metadata=metadata,
             results=[],
             test_step_outcome="skipped",
             timestamp_ns=2_000,
         )
 
-        event = json.loads(payload["streams"][0]["values"][0][1])
-        self.assertEqual(event["event"], "sdk_test_suite")
-        self.assertEqual(event["status"], "not_run")
-        self.assertEqual(event["test_count"], 0)
+        record = payload["resourceLogs"][0]["scopeLogs"][0]["logRecords"][0]
+        attributes = self._attributes(record["attributes"])
+        self.assertEqual(record["body"]["stringValue"], "sdk_test_suite")
+        self.assertEqual(attributes["test.status"], "not_run")
+        self.assertEqual(attributes["test.count"], "0")
+
+    @staticmethod
+    def _attributes(attributes: list[dict[str, object]]) -> dict[str, object]:
+        parsed = {}
+        for attribute in attributes:
+            value = attribute["value"]
+            parsed[attribute["key"]] = next(iter(value.values()))
+        return parsed
 
 
 class PublishTests(unittest.TestCase):
     @mock.patch("scripts.publish_sdk_test_results.request.urlopen")
-    def test_posts_loki_json_with_basic_auth(self, urlopen: mock.Mock) -> None:
+    def test_posts_otlp_json_with_standard_encoded_headers(
+        self, urlopen: mock.Mock
+    ) -> None:
         response = mock.MagicMock()
-        response.__enter__.return_value.status = 204
+        response.__enter__.return_value.status = 200
         urlopen.return_value = response
 
         publish_sdk_test_results.publish(
-            endpoint="https://logs.example.com/loki/api/v1/push",
-            username="12345",
-            api_key="token",
-            payload={"streams": []},
+            endpoint="https://otlp.example.com/otlp",
+            encoded_headers="Authorization=Basic%20abc123,X-Scope-OrgID=42",
+            payload={"resourceLogs": []},
         )
 
         sent_request = urlopen.call_args.args[0]
-        self.assertEqual(
-            sent_request.full_url, "https://logs.example.com/loki/api/v1/push"
-        )
+        self.assertEqual(sent_request.full_url, "https://otlp.example.com/otlp/v1/logs")
         self.assertEqual(sent_request.headers["Content-type"], "application/json")
-        self.assertTrue(sent_request.headers["Authorization"].startswith("Basic "))
+        self.assertEqual(sent_request.headers["Authorization"], "Basic abc123")
+        self.assertEqual(sent_request.headers["X-scope-orgid"], "42")
 
 
 if __name__ == "__main__":

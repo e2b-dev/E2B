@@ -1,5 +1,5 @@
 name: Publish SDK test results
-description: Publish JUnit test results to Grafana Cloud Logs
+description: Publish JUnit test results as OpenTelemetry logs
 
 inputs:
   results:
@@ -20,14 +20,11 @@ inputs:
   test-step-outcome:
     description: GitHub outcome of the test step
     required: true
-  grafana-loki-url:
-    description: Full Grafana Loki push URL
+  otlp-endpoint:
+    description: OTLP HTTP base endpoint
     required: true
-  grafana-loki-user:
-    description: Grafana Cloud Logs user ID
-    required: true
-  grafana-cloud-api-key:
-    description: Grafana Cloud access policy token with logs write access
+  otlp-headers:
+    description: Comma-separated, URL-encoded OTLP headers
     required: true
 
 runs:
@@ -36,9 +33,8 @@ runs:
     - name: Publish results
       shell: bash
       env:
-        GRAFANA_LOKI_URL: ${{ inputs.grafana-loki-url }}
-        GRAFANA_LOKI_USER: ${{ inputs.grafana-loki-user }}
-        GRAFANA_CLOUD_API_KEY: ${{ inputs.grafana-cloud-api-key }}
+        OTEL_EXPORTER_OTLP_ENDPOINT: ${{ inputs.otlp-endpoint }}
+        OTEL_EXPORTER_OTLP_HEADERS: ${{ inputs.otlp-headers }}
         RESULTS_PATH: ${{ inputs.results }}
         TEST_ENVIRONMENT: ${{ inputs.environment }}
         TEST_SUITE: ${{ inputs.suite }}

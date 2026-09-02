@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-import base64
 import json
 import os
 import time
@@ -9,7 +8,7 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
-from urllib import request
+from urllib import parse, request
 
 
 @dataclass(frozen=True)
@@ -52,35 +51,53 @@ def parse_junit(path: Path) -> list[dict[str, Any]]:
                 break
 
         result: dict[str, Any] = {
-            "test": testcase.attrib.get("name", "unknown"),
-            "class": testcase.attrib.get("classname", ""),
-            "status": status,
-            "duration_seconds": _duration(testcase.attrib.get("time")),
+            "test.name": testcase.attrib.get("name", "unknown"),
+            "test.class": testcase.attrib.get("classname", ""),
+            "test.status": status,
+            "test.duration_seconds": _duration(testcase.attrib.get("time")),
         }
         if testcase.attrib.get("file"):
-            result["file"] = testcase.attrib["file"]
+            result["code.file.path"] = testcase.attrib["file"]
         results.append(result)
 
     return results
 
 
-def _labels(metadata: Metadata) -> dict[str, str]:
+def _otel_value(value: Any) -> dict[str, Any]:
+    if isinstance(value, bool):
+        return {"boolValue": value}
+    if isinstance(value, int):
+        return {"intValue": str(value)}
+    if isinstance(value, float):
+        return {"doubleValue": value}
+    return {"stringValue": str(value)}
+
+
+def _otel_attributes(values: dict[str, Any]) -> list[dict[str, Any]]:
+    return [
+        {"key": key, "value": _otel_value(value)}
+        for key, value in values.items()
+        if value != ""
+    ]
+
+
+def _resource_attributes(metadata: Metadata) -> dict[str, Any]:
     return {
-        "service_name": "e2b-sdk-tests",
-        "repository": metadata.repository,
-        "environment": metadata.environment,
-        "suite": metadata.suite,
-        "runtime": metadata.runtime,
-        "os": metadata.operating_system,
+        "service.name": "e2b-sdk-smoke-tests",
+        "deployment.environment.name": metadata.environment,
+        "test.suite": metadata.suite,
+        "test.runtime": metadata.runtime,
+        "os.type": metadata.operating_system,
+        "vcs.repository.name": metadata.repository,
+        "vcs.repository.ref.revision": metadata.commit_sha,
     }
 
 
-def _common_event(metadata: Metadata) -> dict[str, Any]:
+def _common_record_attributes(metadata: Metadata) -> dict[str, Any]:
     return {
-        "github_run_id": metadata.run_id,
-        "github_run_attempt": metadata.run_attempt,
-        "commit_sha": metadata.commit_sha,
-        "run_url": metadata.run_url,
+        "github.run.id": metadata.run_id,
+        "github.run.attempt": metadata.run_attempt,
+        "github.run.url": metadata.run_url,
     }
 
 
@@ -94,61 +111,94 @@ def _missing_report_status(test_step_outcome: str) -> str:
     return "missing_results"
 
 
-def build_loki_payload(
+def build_otlp_payload(
     metadata: Metadata,
     results: Iterable[dict[str, Any]],
     test_step_outcome: str,
     timestamp_ns: int | None = None,
 ) -> dict[str, Any]:
     parsed_results = list(results)
-    common = _common_event(metadata)
+    common = _common_record_attributes(metadata)
 
     if parsed_results:
         events = [
-            {
-                "event": "sdk_test_result",
-                **common,
-                **result,
-            }
+            {"event.name": "sdk_test_result", **common, **result}
             for result in parsed_results
         ]
     else:
         events = [
             {
-                "event": "sdk_test_suite",
+                "event.name": "sdk_test_suite",
                 **common,
-                "status": _missing_report_status(test_step_outcome),
-                "test_count": 0,
+                "test.status": _missing_report_status(test_step_outcome),
+                "test.count": 0,
             }
         ]
 
     first_timestamp = timestamp_ns if timestamp_ns is not None else time.time_ns()
-    values = [
-        [str(first_timestamp + index), json.dumps(event, separators=(",", ":"))]
-        for index, event in enumerate(events)
-    ]
-    return {"streams": [{"stream": _labels(metadata), "values": values}]}
+    records = []
+    for index, event in enumerate(events):
+        failed = event["test.status"] in {
+            "failed",
+            "error",
+            "failed_before_results",
+        }
+        records.append(
+            {
+                "timeUnixNano": str(first_timestamp + index),
+                "observedTimeUnixNano": str(first_timestamp + index),
+                "severityNumber": 17 if failed else 9,
+                "severityText": "ERROR" if failed else "INFO",
+                "body": {"stringValue": str(event["event.name"])},
+                "attributes": _otel_attributes(event),
+            }
+        )
+
+    return {
+        "resourceLogs": [
+            {
+                "resource": {
+                    "attributes": _otel_attributes(_resource_attributes(metadata))
+                },
+                "scopeLogs": [
+                    {
+                        "scope": {
+                            "name": "github.com/e2b-dev/E2B/scripts/sdk-test-results"
+                        },
+                        "logRecords": records,
+                    }
+                ],
+            }
+        ]
+    }
 
 
-def publish(
-    endpoint: str,
-    username: str,
-    api_key: str,
-    payload: dict[str, Any],
-) -> None:
-    credentials = base64.b64encode(f"{username}:{api_key}".encode()).decode()
+def _logs_endpoint(endpoint: str) -> str:
+    return f"{endpoint.rstrip('/')}/v1/logs"
+
+
+def _headers(encoded_headers: str) -> dict[str, str]:
+    headers = {"Content-Type": "application/json"}
+    for item in encoded_headers.split(","):
+        if not item:
+            continue
+        key, separator, value = item.partition("=")
+        if not separator or not key:
+            raise ValueError("OTEL_EXPORTER_OTLP_HEADERS must contain key=value pairs")
+        headers[parse.unquote(key.strip())] = parse.unquote(value.strip())
+    return headers
+
+
+def publish(endpoint: str, encoded_headers: str, payload: dict[str, Any]) -> None:
     outgoing = request.Request(
-        endpoint,
+        _logs_endpoint(endpoint),
         data=json.dumps(payload).encode(),
-        headers={
-            "Authorization": f"Basic {credentials}",
-            "Content-Type": "application/json",
-        },
+        headers=_headers(encoded_headers),
         method="POST",
     )
     with request.urlopen(outgoing, timeout=30) as response:
         if response.status < 200 or response.status >= 300:
-            raise RuntimeError(f"Grafana Loki returned HTTP {response.status}")
+            raise RuntimeError(f"OTLP endpoint returned HTTP {response.status}")
 
 
 def _required_environment(name: str) -> str:
@@ -186,18 +236,18 @@ def main() -> int:
         commit_sha=_required_environment("GITHUB_SHA"),
         run_url=f"{server_url}/{repository}/actions/runs/{run_id}",
     )
-    payload = build_loki_payload(
+    payload = build_otlp_payload(
         metadata=metadata,
         results=results,
         test_step_outcome=args.test_step_outcome,
     )
     publish(
-        endpoint=_required_environment("GRAFANA_LOKI_URL"),
-        username=_required_environment("GRAFANA_LOKI_USER"),
-        api_key=_required_environment("GRAFANA_CLOUD_API_KEY"),
+        endpoint=_required_environment("OTEL_EXPORTER_OTLP_ENDPOINT"),
+        encoded_headers=_required_environment("OTEL_EXPORTER_OTLP_HEADERS"),
         payload=payload,
     )
-    print(f"Published {len(payload['streams'][0]['values'])} SDK test result events")
+    records = payload["resourceLogs"][0]["scopeLogs"][0]["logRecords"]
+    print(f"Published {len(records)} SDK test result events over OTLP")
     return 0
 
 
