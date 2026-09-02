@@ -1,7 +1,12 @@
 name: Release
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      publish_existing:
+        description: 'Retry publishing committed versions without a new version bump (requires no pending changesets)'
+        type: boolean
+        default: false
 
 # Shared literal group so production and candidate releases on the same ref serialize.
 concurrency: release-${{ github.ref }}
@@ -14,6 +19,8 @@ jobs:
   preflight:
     name: Release preflight
     runs-on: ubuntu-latest
+    env:
+      PUBLISH_EXISTING: ${{ inputs.publish_existing }}
     outputs:
       release: ${{ steps.version.outputs.release }}
       js-sdk: ${{ steps.js.outputs.release }}
@@ -131,6 +138,10 @@ jobs:
         # that blocks a release; the messages fall back to a placeholder.
         continue-on-error: true
         run: |
+          if [ "$PUBLISH_EXISTING" = "true" ]; then
+            echo 'itinerary=Retrying committed versions; registries skip existing artifacts.' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           pnpm changeset status --output=.cs-status.json
           ITINERARY=$(node ./.github/scripts/build_release_itinerary.cjs .cs-status.json)
           rm -f .cs-status.json
@@ -202,6 +213,8 @@ jobs:
       - desktop-python-tests
     if: (!cancelled()) && !contains(needs.*.result, 'failure') && needs.preflight.outputs.release == 'true'
     uses: ./.github/workflows/publish_packages.yml
+    with:
+      publish_existing: ${{ inputs.publish_existing }}
     secrets: inherit
 
   report-start:
