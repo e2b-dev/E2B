@@ -53,9 +53,9 @@ jobs:
       - name: Run tests
         run: |
           if [[ "${{ inputs.run_recovery_tests }}" == "true" ]]; then
-            uv run pytest --verbose --numprocesses=4
+            uv run pytest --verbose --numprocesses=1
           else
-            uv run pytest --verbose --numprocesses=4 \
+            uv run pytest --verbose --numprocesses=1 \
               --ignore=tests/async/test_async_interrupt.py \
               --ignore=tests/async/test_async_systemd.py \
               --ignore=tests/sync/test_interrupt.py \

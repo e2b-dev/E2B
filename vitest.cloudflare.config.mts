@@ -22,6 +22,7 @@ export interface CloudflareVitestConfigOptions {
   /** Globs excluded on top of `tests/runtimes/**`. */
   exclude?: string[]
   testTimeout?: number
+  maxWorkers?: number
   /** Additional rejection shapes to drop, on top of the shared ones. */
   isExpectedRejection?: (error: UnhandledError, message: string) => boolean
 }
@@ -34,6 +35,7 @@ export interface CloudflareVitestConfigOptions {
 export function createCloudflareVitestConfig({
   exclude = [],
   testTimeout = 30_000,
+  maxWorkers,
   isExpectedRejection,
 }: CloudflareVitestConfigOptions = {}): ViteUserConfig {
   const env = config()
@@ -61,6 +63,7 @@ export function createCloudflareVitestConfig({
       exclude: ['tests/runtimes/**', ...exclude],
       globals: false,
       testTimeout,
+      maxWorkers,
       bail: 0,
       // workerd reports a rejection as unhandled unless a handler is attached
       // within the same microtask drain, and vitest never processes the
