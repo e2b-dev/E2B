@@ -1,5 +1,11 @@
 # @e2b/python-sdk
 
+## 2.46.4
+
+### Patch Changes
+
+- 6146cd0: Improve reliability for high-concurrency sandbox workloads by spreading envd traffic across four HTTP/2 connection pools. Set `E2B_ENVD_POOL_SHARDS` before importing the SDK to adjust the pool count.
+
 ## 2.46.3
 
 ### Patch Changes
