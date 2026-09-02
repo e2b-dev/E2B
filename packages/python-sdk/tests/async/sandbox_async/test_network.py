@@ -1,5 +1,6 @@
 import asyncio
 import json
+from unittest.mock import AsyncMock
 
 import httpx
 import pytest
@@ -17,15 +18,31 @@ async def wait_for_status(
 ) -> httpx.Response:
     deadline = asyncio.get_running_loop().time() + timeout
     response: httpx.Response | None = None
+    last_transport_error: httpx.TransportError | None = None
 
     while asyncio.get_running_loop().time() < deadline:
-        response = await client.get(url, headers=headers, follow_redirects=True)
-        if response.status_code == status_code:
-            return response
+        try:
+            response = await client.get(url, headers=headers, follow_redirects=True)
+        except httpx.TransportError as error:
+            last_transport_error = error
+        else:
+            if response.status_code == status_code:
+                return response
         await asyncio.sleep(1)
 
-    assert response is not None
-    return response
+    if response is not None:
+        return response
+    assert last_transport_error is not None
+    raise last_transport_error
+
+
+async def test_wait_for_status_retries_transport_errors():
+    response = httpx.Response(200)
+    client = AsyncMock()
+    client.get.side_effect = [httpx.ConnectError("not ready"), response]
+
+    assert await wait_for_status(client, "https://sandbox.test", 200) is response
+    assert client.get.await_count == 2
 
 
 @pytest.mark.skip_debug()
@@ -302,7 +319,7 @@ class H(http.server.BaseHTTPRequestHandler):
         self.send_response(200)
         self.end_headers()
     def log_message(self, *a): pass
-http.server.HTTPServer(('', {port}), H).handle_request()
+http.server.HTTPServer(('', {port}), H).serve_forever()
 " """,
         background=True,
     )
