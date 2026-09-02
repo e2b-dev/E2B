@@ -1,6 +1,7 @@
 """Long-lived envd streams must not all contend for one HTTP/2 connection."""
 
 import asyncio
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
@@ -35,8 +36,8 @@ def sandbox_config(sandbox_id: str) -> ConnectionConfig:
     )
 
 
-def test_sync_envd_spreads_sandboxes_across_http2_connections(monkeypatch):
-    """113 sync sandboxes fit when each HTTP/2 connection allows 100 streams."""
+def test_sync_envd_spreads_repeated_waves_across_reused_connections(monkeypatch):
+    """Fresh sync sandboxes keep filling the same four pools evenly."""
     monkeypatch.setattr(api, "envd_pool_shards", 4)
     reset_transport_caches()
     build_transport = api_client_sync.SyncHTTPTransport
@@ -52,23 +53,37 @@ def test_sync_envd_spreads_sandboxes_across_http2_connections(monkeypatch):
     streams = []
     try:
         with stream_capacity_server(max_concurrent_streams=100) as server:
-            for index in range(113):
-                client = create_sync_rpc_client(
-                    ProcessClientSync,
-                    f"http://127.0.0.1:{server.port}",
-                    sandbox_config(f"sbx-{index}"),
-                )
-                streams.append(
-                    as_sync_stream(client.connect(ConnectRequest(), timeout_ms=500))
-                )
+            connection_ids = None
+            for wave in range(3):
+                wave_streams = []
+                for index in range(80):
+                    client = create_sync_rpc_client(
+                        ProcessClientSync,
+                        f"http://127.0.0.1:{server.port}",
+                        sandbox_config(f"sbx-wave-{wave}-{index}"),
+                    )
+                    wave_streams.append(
+                        as_sync_stream(client.connect(ConnectRequest(), timeout_ms=500))
+                    )
+                streams.extend(wave_streams)
 
-            with ThreadPoolExecutor(max_workers=len(streams)) as executor:
-                futures = [executor.submit(next, stream) for stream in streams]
-                events = [future.result(timeout=2) for future in futures]
+                stream_count = len(server.streams)
+                with ThreadPoolExecutor(max_workers=len(wave_streams)) as executor:
+                    futures = [executor.submit(next, stream) for stream in wave_streams]
+                    events = [future.result(timeout=2) for future in futures]
 
-            assert len(events) == 113
+                assert len(events) == 80
+                wave_counts = Counter(
+                    connection_id for connection_id, _ in server.streams[stream_count:]
+                )
+                assert len(wave_counts) == 4
+                if connection_ids is None:
+                    connection_ids = set(wave_counts)
+                assert set(wave_counts) == connection_ids
+                assert max(wave_counts.values()) - min(wave_counts.values()) <= 2
+
             assert len(server.connections) == 4
-            assert len(server.streams) == 113
+            assert len(server.streams) == 240
             server.assert_no_errors()
     finally:
         for stream in streams:
@@ -77,8 +92,10 @@ def test_sync_envd_spreads_sandboxes_across_http2_connections(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_async_envd_spreads_sandboxes_across_http2_connections(monkeypatch):
-    """113 sandboxes fit when each HTTP/2 connection allows 100 streams."""
+async def test_async_envd_spreads_repeated_waves_across_reused_connections(
+    monkeypatch,
+):
+    """Fresh async sandboxes keep filling the same four pools evenly."""
     monkeypatch.setattr(api, "envd_pool_shards", 4)
     reset_transport_caches()
     build_transport = api_client_async.HTTPTransport
@@ -94,22 +111,40 @@ async def test_async_envd_spreads_sandboxes_across_http2_connections(monkeypatch
     streams = []
     try:
         with stream_capacity_server(max_concurrent_streams=100) as server:
-            for index in range(113):
-                client = create_async_rpc_client(
-                    ProcessClient,
-                    f"http://127.0.0.1:{server.port}",
-                    sandbox_config(f"sbx-{index}"),
+            connection_ids = None
+            for wave in range(3):
+                wave_streams = []
+                for index in range(80):
+                    client = create_async_rpc_client(
+                        ProcessClient,
+                        f"http://127.0.0.1:{server.port}",
+                        sandbox_config(f"sbx-wave-{wave}-{index}"),
+                    )
+                    wave_streams.append(
+                        as_async_stream(client.connect(ConnectRequest()))
+                    )
+                streams.extend(wave_streams)
+
+                stream_count = len(server.streams)
+                events = await asyncio.gather(
+                    *(first_event(stream, 0.5) for stream in wave_streams),
+                    return_exceptions=True,
                 )
-                streams.append(as_async_stream(client.connect(ConnectRequest())))
 
-            events = await asyncio.gather(
-                *(first_event(stream, 0.5) for stream in streams),
-                return_exceptions=True,
-            )
+                assert not [
+                    event for event in events if isinstance(event, BaseException)
+                ]
+                wave_counts = Counter(
+                    connection_id for connection_id, _ in server.streams[stream_count:]
+                )
+                assert len(wave_counts) == 4
+                if connection_ids is None:
+                    connection_ids = set(wave_counts)
+                assert set(wave_counts) == connection_ids
+                assert max(wave_counts.values()) - min(wave_counts.values()) <= 2
 
-            assert not [event for event in events if isinstance(event, BaseException)]
             assert len(server.connections) == 4
-            assert len(server.streams) == 113
+            assert len(server.streams) == 240
             server.assert_no_errors()
     finally:
         await asyncio.gather(
