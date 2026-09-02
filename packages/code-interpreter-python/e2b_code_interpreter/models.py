@@ -431,7 +431,10 @@ def format_exception(res: Response, include_diagnostics: bool = False):
             f"{body}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeout' when starting the sandbox or calling '.set_timeout' on the sandbox with the desired timeout.{trace_suffix}"
         )
     else:
-        return SandboxException(f"{res.status_code}: {body}{trace_suffix}")
+        body_separator = "" if trace_suffix and not body else " "
+        return SandboxException(
+            f"{res.status_code}:{body_separator}{body}{trace_suffix}"
+        )
 
 
 def parse_output(

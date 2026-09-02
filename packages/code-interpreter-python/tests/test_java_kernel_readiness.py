@@ -1,8 +1,10 @@
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+from httpx import Response
 
 from e2b import SandboxException
+from e2b_code_interpreter.models import format_exception
 from tests.conftest import _wait_for_kernel, _wait_for_kernel_async
 
 
@@ -11,7 +13,14 @@ def java_not_ready_error() -> SandboxException:
 
 
 def traced_not_ready_error() -> SandboxException:
-    return SandboxException("500: (trace_id=trace-123)")
+    return format_exception(
+        Response(
+            500,
+            text="",
+            headers={"X-E2B-Trace-ID": "trace-123"},
+        ),
+        include_diagnostics=True,
+    )
 
 
 @pytest.mark.parametrize("language", ["java", "r"])
