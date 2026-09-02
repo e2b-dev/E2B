@@ -1,5 +1,5 @@
 import { test as base } from 'vitest'
-import { Sandbox, SandboxOpts } from '../src'
+import { Sandbox, SandboxError, SandboxOpts } from '../src'
 
 interface SandboxFixture {
   sandbox: Sandbox
@@ -65,6 +65,24 @@ function generateRandomString(length: number = 8): string {
 
 export async function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+export async function waitForJavaKernel(sandbox: Sandbox) {
+  try {
+    await sandbox.runCode('1', { language: 'java' })
+  } catch (error) {
+    // A newly running sandbox can briefly return this response while Foxtrot
+    // initializes Java. Retry only that known readiness failure; the test's
+    // actual Java execution still runs exactly once.
+    if (
+      !(error instanceof SandboxError) ||
+      error.message !== '500 Internal Server Error'
+    ) {
+      throw error
+    }
+
+    await sandbox.runCode('1', { language: 'java' })
+  }
 }
 
 export { template }

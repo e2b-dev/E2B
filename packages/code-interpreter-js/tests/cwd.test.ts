@@ -1,6 +1,6 @@
 import { expect } from 'vitest'
 
-import { isDebug, sandboxTest } from './setup'
+import { isDebug, sandboxTest, waitForJavaKernel } from './setup'
 
 // Skip these tests in debug mode — the pwd and user in the testing docker container
 // are not the same as in the actual sandbox.
@@ -35,6 +35,8 @@ sandboxTest.skipIf(isDebug)('cwd r', async ({ sandbox }) => {
 })
 
 sandboxTest.skipIf(isDebug)('cwd java', async ({ sandbox }) => {
+  await waitForJavaKernel(sandbox)
+
   const result = await sandbox.runCode('System.getProperty("user.dir")', {
     language: 'java',
   })

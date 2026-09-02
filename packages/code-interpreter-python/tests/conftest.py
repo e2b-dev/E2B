@@ -1,13 +1,14 @@
 import asyncio
 import os
+import uuid
 
 import pytest
 
+from e2b import SandboxException
 from e2b_code_interpreter import (
     AsyncSandbox,
     Sandbox,
 )
-import uuid
 
 
 DEFAULT_TEST_SANDBOX_TIMEOUT = 180
@@ -70,6 +71,51 @@ async def async_sandbox_factory(template, sandbox_test_id):
 @pytest.fixture
 async def async_sandbox(async_sandbox_factory):
     return await async_sandbox_factory()
+
+
+def _wait_for_java_kernel(sandbox: Sandbox) -> None:
+    try:
+        sandbox.run_code("1", language="java")
+    except SandboxException as error:
+        # A newly running sandbox can briefly return this response while Foxtrot
+        # initializes Java. Retry only that known readiness failure; the test's
+        # actual Java execution still runs exactly once.
+        if str(error).strip() != "500:":
+            raise
+
+        sandbox.run_code("1", language="java")
+
+
+async def _wait_for_java_kernel_async(sandbox: AsyncSandbox) -> None:
+    try:
+        await sandbox.run_code("1", language="java")
+    except SandboxException as error:
+        if str(error).strip() != "500:":
+            raise
+
+        await sandbox.run_code("1", language="java")
+
+
+@pytest.fixture()
+def wait_for_java_kernel():
+    return _wait_for_java_kernel
+
+
+@pytest.fixture()
+def wait_for_java_kernel_async():
+    return _wait_for_java_kernel_async
+
+
+@pytest.fixture()
+def java_sandbox(sandbox: Sandbox):
+    _wait_for_java_kernel(sandbox)
+    return sandbox
+
+
+@pytest.fixture()
+async def async_java_sandbox(async_sandbox: AsyncSandbox):
+    await _wait_for_java_kernel_async(async_sandbox)
+    return async_sandbox
 
 
 @pytest.fixture

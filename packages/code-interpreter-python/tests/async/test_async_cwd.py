@@ -28,8 +28,8 @@ async def test_cwd_r(async_sandbox: AsyncSandbox):
 
 
 @pytest.mark.skip_debug()
-async def test_cwd_java(async_sandbox: AsyncSandbox):
-    result = await async_sandbox.run_code(
+async def test_cwd_java(async_java_sandbox: AsyncSandbox):
+    result = await async_java_sandbox.run_code(
         'System.getProperty("user.dir")', language="java"
     )
     assert result.results[0].text.strip() == "/home/user"
