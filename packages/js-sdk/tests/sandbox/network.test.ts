@@ -1,8 +1,27 @@
-import { assert, expect, describe } from 'vitest'
+import { assert, expect, describe, vi } from 'vitest'
 
 import { CommandExitError, Sandbox } from '../../src'
 import { sandboxTest, isDebug, template } from '../setup.js'
 import { httpbinTemplate } from '../template.js'
+
+async function waitForStatus(
+  url: string,
+  status: number,
+  init?: RequestInit
+): Promise<void> {
+  await vi.waitFor(
+    async () => {
+      const response = await fetch(url, {
+        ...init,
+        signal: AbortSignal.timeout(5_000),
+      })
+      const actualStatus = response.status
+      await response.body?.cancel()
+      assert.equal(actualStatus, status)
+    },
+    { timeout: 20_000, interval: 500 }
+  )
+}
 
 describe('allow only 1.1.1.1', () => {
   sandboxTest.override({
@@ -142,24 +161,20 @@ describe('allowPublicTraffic=false', () => {
         background: true,
       })
 
-      // Wait for server to start
-      await new Promise((resolve) => setTimeout(resolve, 3000))
-
       // Get the public URL for the sandbox
       const sandboxUrl = `https://${sandbox.getHost(port)}`
 
       // Test 1: Request without traffic access token should fail with 403
-      const response1 = await fetch(sandboxUrl)
-      assert.equal(response1.status, 403)
+      await waitForStatus(sandboxUrl, 403)
 
       // Test 2: Request with valid traffic access token should succeed
-      const response2 = await fetch(sandboxUrl, {
+      await waitForStatus(sandboxUrl, 200, {
         headers: {
           'e2b-traffic-access-token': sandbox.trafficAccessToken,
         },
       })
-      assert.equal(response2.status, 200)
-    }
+    },
+    60_000
   )
 })
 
@@ -181,16 +196,13 @@ describe('allowPublicTraffic=true', () => {
         background: true,
       })
 
-      // Wait for server to start
-      await new Promise((resolve) => setTimeout(resolve, 3000))
-
       // Get the public URL for the sandbox
       const sandboxUrl = `https://${sandbox.getHost(port)}`
 
       // Request without traffic access token should succeed (public access enabled)
-      const response = await fetch(sandboxUrl)
-      assert.equal(response.status, 200)
-    }
+      await waitForStatus(sandboxUrl, 200)
+    },
+    60_000
   )
 })
 

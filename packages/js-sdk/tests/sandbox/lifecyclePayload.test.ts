@@ -1,7 +1,33 @@
-import { assert, expect, test } from 'vitest'
+import { assert, expect, test, vi } from 'vitest'
 
 import { InvalidArgumentError, Sandbox } from '../../src'
-import { isDebug, template, wait } from '../setup.js'
+import { isDebug, template } from '../setup.js'
+
+async function waitForState(
+  sandbox: Sandbox,
+  state: 'paused' | 'running'
+): Promise<void> {
+  await vi.waitFor(
+    async () => {
+      assert.equal((await sandbox.getInfo()).state, state)
+    },
+    { timeout: 30_000, interval: 500 }
+  )
+}
+
+async function waitForStatus(url: string, status: number): Promise<void> {
+  await vi.waitFor(
+    async () => {
+      const response = await fetch(url, {
+        signal: AbortSignal.timeout(5_000),
+      })
+      const actualStatus = response.status
+      await response.body?.cancel()
+      assert.equal(actualStatus, status)
+    },
+    { timeout: 30_000, interval: 500 }
+  )
+}
 
 test.skipIf(isDebug)(
   'filesystem-only auto-pause cannot be combined with auto-resume',
@@ -50,20 +76,18 @@ test.skipIf(isDebug)(
     })
 
     try {
-      await wait(5_000)
-
-      assert.equal((await sandbox.getInfo()).state, 'paused')
+      await waitForState(sandbox, 'paused')
       assert.isFalse(await sandbox.isRunning())
 
       await sandbox.connect()
 
-      assert.equal((await sandbox.getInfo()).state, 'running')
+      await waitForState(sandbox, 'running')
       assert.isTrue(await sandbox.isRunning())
     } finally {
       await sandbox.kill().catch(() => {})
     }
   },
-  60_000
+  90_000
 )
 
 test.skipIf(isDebug)(
@@ -87,9 +111,7 @@ test.skipIf(isDebug)(
         await sandbox.commands.run('cat /proc/sys/kernel/random/boot_id')
       ).stdout.trim()
 
-      await wait(5_000)
-
-      assert.equal((await sandbox.getInfo()).state, 'paused')
+      await waitForState(sandbox, 'paused')
 
       // A filesystem-only snapshot cannot auto-resume on traffic; connect
       // resumes it by cold-booting.
@@ -108,7 +130,7 @@ test.skipIf(isDebug)(
       await sandbox.kill().catch(() => {})
     }
   },
-  60_000
+  90_000
 )
 
 test.skipIf(isDebug)(
@@ -127,17 +149,16 @@ test.skipIf(isDebug)(
         background: true,
       })
 
-      await wait(5_000)
+      await waitForState(sandbox, 'paused')
 
       const url = `https://${sandbox.getHost(8000)}`
-      const res = await fetch(url, { signal: AbortSignal.timeout(15_000) })
+      await waitForStatus(url, 200)
 
-      assert.equal(res.status, 200)
-      assert.equal((await sandbox.getInfo()).state, 'running')
+      await waitForState(sandbox, 'running')
       assert.isTrue(await sandbox.isRunning())
     } finally {
       await sandbox.kill().catch(() => {})
     }
   },
-  60_000
+  90_000
 )
