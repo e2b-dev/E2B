@@ -10,6 +10,9 @@ from e2b_code_interpreter import (
 import uuid
 
 
+DEFAULT_TEST_SANDBOX_TIMEOUT = 180
+
+
 @pytest.fixture(scope="session")
 def sandbox_test_id():
     return f"test_{uuid.uuid4()}"
@@ -24,7 +27,7 @@ def template():
 def sandbox_factory(request, template, sandbox_test_id):
     def factory(*, template_name: str = template, **kwargs):
         kwargs.setdefault("secure", False)
-        kwargs.setdefault("timeout", 60)
+        kwargs.setdefault("timeout", DEFAULT_TEST_SANDBOX_TIMEOUT)
 
         metadata = kwargs.setdefault("metadata", dict())
         metadata.setdefault("sandbox_test_id", sandbox_test_id)
@@ -48,7 +51,7 @@ async def async_sandbox_factory(template, sandbox_test_id):
     sandboxes: list[AsyncSandbox] = []
 
     async def factory(*, template_name: str = template, **kwargs):
-        kwargs.setdefault("timeout", 60)
+        kwargs.setdefault("timeout", DEFAULT_TEST_SANDBOX_TIMEOUT)
 
         metadata = kwargs.setdefault("metadata", dict())
         metadata.setdefault("sandbox_test_id", sandbox_test_id)
