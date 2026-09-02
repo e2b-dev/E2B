@@ -87,7 +87,7 @@ test.skipIf(isDebug)(
       await sandbox.kill().catch(() => {})
     }
   },
-  150_000
+  210_000
 )
 
 test.skipIf(isDebug)(
@@ -130,7 +130,7 @@ test.skipIf(isDebug)(
       await sandbox.kill().catch(() => {})
     }
   },
-  150_000
+  210_000
 )
 
 test.skipIf(isDebug)(

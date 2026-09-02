@@ -1,6 +1,8 @@
 import pytest
 from e2b import AsyncSandbox
 
+pytestmark = pytest.mark.timeout(120)
+
 
 @pytest.mark.skip_debug()
 async def test_create_snapshot(async_sandbox: AsyncSandbox):

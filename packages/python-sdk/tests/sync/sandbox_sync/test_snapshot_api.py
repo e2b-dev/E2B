@@ -1,6 +1,8 @@
 import pytest
 from e2b import Sandbox
 
+pytestmark = pytest.mark.timeout(120)
+
 
 @pytest.mark.skip_debug()
 def test_create_snapshot(sandbox: Sandbox):

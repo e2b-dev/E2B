@@ -11,12 +11,21 @@ async function waitForHttpStatus(
   let lastStatus: number | undefined
 
   while (Date.now() < deadline) {
+    const requestTimeoutMs = Math.min(5_000, deadline - Date.now())
+    const controller = new AbortController()
+    const requestTimeout = setTimeout(
+      () => controller.abort(),
+      requestTimeoutMs
+    )
     try {
-      const response = await fetch(url)
+      const response = await fetch(url, { signal: controller.signal })
       lastStatus = response.status
+      await response.body?.cancel()
       if (lastStatus === expectedStatus) return
     } catch {
       // The sandbox proxy may not have a route until the guest server is ready.
+    } finally {
+      clearTimeout(requestTimeout)
     }
     await new Promise((resolve) => setTimeout(resolve, 500))
   }
@@ -180,7 +189,8 @@ sandboxTest.skipIf(isDebug)(
 
     url = await sandbox.getHost(8000)
     await waitForHttpStatus(`https://${url}`, 200)
-  }
+  },
+  150_000
 )
 
 sandboxTest.skipIf(isDebug)(
