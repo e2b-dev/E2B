@@ -7,9 +7,19 @@ on:
         required: false
         type: string
         default: ''
+      publish-results:
+        required: false
+        type: boolean
+        default: false
     secrets:
       E2B_API_KEY:
         required: true
+      GRAFANA_LOKI_URL:
+        required: false
+      GRAFANA_LOKI_USER:
+        required: false
+      GRAFANA_CLOUD_API_KEY:
+        required: false
 
 permissions:
   contents: read
@@ -51,7 +61,22 @@ jobs:
         run: uv build
 
       - name: Run tests
-        run: uv run pytest --verbose --numprocesses=4
+        id: tests
+        run: uv run pytest --verbose --numprocesses=4 --junitxml="$RUNNER_TEMP/sdk-test-results.xml"
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
+
+      - name: Publish test results to Grafana
+        if: ${{ always() && inputs.publish-results }}
+        uses: ./.github/actions/publish-sdk-test-results
+        with:
+          results: ${{ runner.temp }}/sdk-test-results.xml
+          environment: ${{ inputs.E2B_DOMAIN == '' && 'production' || 'staging' }}
+          suite: python-sdk
+          runtime: python
+          os: ${{ runner.os }}
+          test-step-outcome: ${{ steps.tests.outcome }}
+          grafana-loki-url: ${{ secrets.GRAFANA_LOKI_URL }}
+          grafana-loki-user: ${{ secrets.GRAFANA_LOKI_USER }}
+          grafana-cloud-api-key: ${{ secrets.GRAFANA_CLOUD_API_KEY }}

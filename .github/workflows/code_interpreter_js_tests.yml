@@ -16,9 +16,19 @@ on:
         required: false
         type: boolean
         default: false
+      publish-results:
+        required: false
+        type: boolean
+        default: false
     secrets:
       E2B_API_KEY:
         required: true
+      GRAFANA_LOKI_URL:
+        required: false
+      GRAFANA_LOKI_USER:
+        required: false
+      GRAFANA_CLOUD_API_KEY:
+        required: false
 
 permissions:
   contents: read
@@ -95,15 +105,30 @@ jobs:
       - name: Run test suite under ${{ matrix.runtime }}
         run: |
           case "${{ matrix.runtime }}" in
-            node) script=test ;;
-            cloudflare) script=test:cf ;;
-            *) script=test:${{ matrix.runtime }} ;;
+            node) script='test' ;;
+            cloudflare) script='test:cf' ;;
+            *) script='test:${{ matrix.runtime }}' ;;
           esac
+          reporter_args=(--reporter=default --reporter=junit --outputFile.junit="$RUNNER_TEMP/sdk-test-results.xml")
           if [[ "${{ inputs.run_recovery_tests }}" == "true" ]]; then
-            pnpm "$script"
+            pnpm "$script" "${reporter_args[@]}"
           else
-            pnpm "$script" --exclude tests/interrupt.test.ts --exclude tests/systemd.test.ts
+            pnpm "$script" "${reporter_args[@]}" --exclude tests/interrupt.test.ts --exclude tests/systemd.test.ts
           fi
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
+
+      - name: Publish test results to Grafana
+        if: ${{ always() && inputs.publish-results }}
+        uses: ./.github/actions/publish-sdk-test-results
+        with:
+          results: ${{ runner.temp }}/sdk-test-results.xml
+          environment: ${{ inputs.E2B_DOMAIN == '' && 'production' || 'staging' }}
+          suite: code-interpreter-js
+          runtime: ${{ matrix.runtime }}
+          os: ${{ runner.os }}
+          test-step-outcome: ${{ job.status }}
+          grafana-loki-url: ${{ secrets.GRAFANA_LOKI_URL }}
+          grafana-loki-user: ${{ secrets.GRAFANA_LOKI_USER }}
+          grafana-cloud-api-key: ${{ secrets.GRAFANA_CLOUD_API_KEY }}

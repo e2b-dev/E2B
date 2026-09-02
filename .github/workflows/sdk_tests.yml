@@ -4,6 +4,8 @@ on:
   pull_request:
     branches:
       - main
+  schedule:
+    - cron: '17 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -87,58 +89,93 @@ jobs:
   js-tests:
     name: Production / JS SDK Tests
     needs: changes
-    if: ${{ needs.changes.outputs.js == 'true' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ needs.changes.outputs.js == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' }}
     uses: ./.github/workflows/js_sdk_tests.yml
+    with:
+      publish-results: ${{ github.event_name == 'schedule' }}
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+      GRAFANA_LOKI_URL: ${{ github.event_name == 'schedule' && secrets.GRAFANA_LOKI_URL || '' }}
+      GRAFANA_LOKI_USER: ${{ github.event_name == 'schedule' && secrets.GRAFANA_LOKI_USER || '' }}
+      GRAFANA_CLOUD_API_KEY: ${{ github.event_name == 'schedule' && secrets.GRAFANA_CLOUD_API_KEY || '' }}
 
   python-tests:
     name: Production / Python SDK Tests
     needs: changes
-    if: ${{ needs.changes.outputs.python == 'true' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ needs.changes.outputs.python == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' }}
     uses: ./.github/workflows/python_sdk_tests.yml
+    with:
+      publish-results: ${{ github.event_name == 'schedule' }}
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+      GRAFANA_LOKI_URL: ${{ github.event_name == 'schedule' && secrets.GRAFANA_LOKI_URL || '' }}
+      GRAFANA_LOKI_USER: ${{ github.event_name == 'schedule' && secrets.GRAFANA_LOKI_USER || '' }}
+      GRAFANA_CLOUD_API_KEY: ${{ github.event_name == 'schedule' && secrets.GRAFANA_CLOUD_API_KEY || '' }}
 
   cli-tests:
     name: Production / CLI Tests
     needs: changes
-    if: ${{ needs.changes.outputs.cli == 'true' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ needs.changes.outputs.cli == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' }}
     uses: ./.github/workflows/cli_tests.yml
+    with:
+      publish-results: ${{ github.event_name == 'schedule' }}
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+      GRAFANA_LOKI_URL: ${{ github.event_name == 'schedule' && secrets.GRAFANA_LOKI_URL || '' }}
+      GRAFANA_LOKI_USER: ${{ github.event_name == 'schedule' && secrets.GRAFANA_LOKI_USER || '' }}
+      GRAFANA_CLOUD_API_KEY: ${{ github.event_name == 'schedule' && secrets.GRAFANA_CLOUD_API_KEY || '' }}
 
   code-interpreter-js-tests:
     name: Production / Code Interpreter JS SDK Tests
     needs: changes
-    if: ${{ needs.changes.outputs.code_interpreter_js == 'true' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ needs.changes.outputs.code_interpreter_js == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' }}
     uses: ./.github/workflows/code_interpreter_js_tests.yml
+    with:
+      publish-results: ${{ github.event_name == 'schedule' }}
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+      GRAFANA_LOKI_URL: ${{ github.event_name == 'schedule' && secrets.GRAFANA_LOKI_URL || '' }}
+      GRAFANA_LOKI_USER: ${{ github.event_name == 'schedule' && secrets.GRAFANA_LOKI_USER || '' }}
+      GRAFANA_CLOUD_API_KEY: ${{ github.event_name == 'schedule' && secrets.GRAFANA_CLOUD_API_KEY || '' }}
 
   code-interpreter-python-tests:
     name: Production / Code Interpreter Python SDK Tests
     needs: changes
-    if: ${{ needs.changes.outputs.code_interpreter_python == 'true' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ needs.changes.outputs.code_interpreter_python == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' }}
     uses: ./.github/workflows/code_interpreter_python_tests.yml
+    with:
+      publish-results: ${{ github.event_name == 'schedule' }}
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+      GRAFANA_LOKI_URL: ${{ github.event_name == 'schedule' && secrets.GRAFANA_LOKI_URL || '' }}
+      GRAFANA_LOKI_USER: ${{ github.event_name == 'schedule' && secrets.GRAFANA_LOKI_USER || '' }}
+      GRAFANA_CLOUD_API_KEY: ${{ github.event_name == 'schedule' && secrets.GRAFANA_CLOUD_API_KEY || '' }}
 
   desktop-js-tests:
     name: Production / Desktop JS SDK Tests
     needs: changes
-    if: ${{ needs.changes.outputs.desktop_js == 'true' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ needs.changes.outputs.desktop_js == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' }}
     uses: ./.github/workflows/desktop_js_tests.yml
+    with:
+      publish-results: ${{ github.event_name == 'schedule' }}
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+      GRAFANA_LOKI_URL: ${{ github.event_name == 'schedule' && secrets.GRAFANA_LOKI_URL || '' }}
+      GRAFANA_LOKI_USER: ${{ github.event_name == 'schedule' && secrets.GRAFANA_LOKI_USER || '' }}
+      GRAFANA_CLOUD_API_KEY: ${{ github.event_name == 'schedule' && secrets.GRAFANA_CLOUD_API_KEY || '' }}
 
   desktop-python-tests:
     name: Production / Desktop Python SDK Tests
     needs: changes
-    if: ${{ needs.changes.outputs.desktop_python == 'true' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ needs.changes.outputs.desktop_python == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' }}
     uses: ./.github/workflows/desktop_python_tests.yml
+    with:
+      publish-results: ${{ github.event_name == 'schedule' }}
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+      GRAFANA_LOKI_URL: ${{ github.event_name == 'schedule' && secrets.GRAFANA_LOKI_URL || '' }}
+      GRAFANA_LOKI_USER: ${{ github.event_name == 'schedule' && secrets.GRAFANA_LOKI_USER || '' }}
+      GRAFANA_CLOUD_API_KEY: ${{ github.event_name == 'schedule' && secrets.GRAFANA_CLOUD_API_KEY || '' }}
 
   js-tests-staging:
     name: Staging / JS SDK Tests

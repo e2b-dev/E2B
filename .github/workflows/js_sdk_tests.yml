@@ -12,9 +12,19 @@ on:
         required: false
         type: boolean
         default: false
+      publish-results:
+        required: false
+        type: boolean
+        default: false
     secrets:
       E2B_API_KEY:
         required: true
+      GRAFANA_LOKI_URL:
+        required: false
+      GRAFANA_LOKI_USER:
+        required: false
+      GRAFANA_CLOUD_API_KEY:
+        required: false
 
 permissions:
   contents: read
@@ -107,7 +117,7 @@ jobs:
 
       - name: Run Node tests
         if: matrix.runtime == 'node'
-        run: pnpm test
+        run: pnpm test --reporter=default --reporter=junit --outputFile.junit="$RUNNER_TEMP/sdk-test-results.xml"
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
@@ -118,7 +128,7 @@ jobs:
 
       - name: Run test suite under Bun
         if: matrix.runtime == 'bun'
-        run: pnpm test:bun
+        run: pnpm test:bun --reporter=default --reporter=junit --outputFile.junit="$RUNNER_TEMP/sdk-test-results.xml"
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
@@ -131,7 +141,7 @@ jobs:
 
       - name: Run test suite under Deno
         if: matrix.runtime == 'deno'
-        run: pnpm test:deno
+        run: pnpm test:deno --reporter=default --reporter=junit --outputFile.junit="$RUNNER_TEMP/sdk-test-results.xml"
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
@@ -139,7 +149,7 @@ jobs:
       # Full unit + connectionConfig suite inside workerd (vitest-pool-workers).
       - name: Run test suite under Cloudflare workerd
         if: matrix.runtime == 'cloudflare'
-        run: pnpm test:cf
+        run: pnpm test:cf --reporter=default --reporter=junit --outputFile.junit="$RUNNER_TEMP/sdk-test-results.xml"
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
@@ -149,7 +159,21 @@ jobs:
       # needed) and deletes the worker in teardown.
       - name: Run Cloudflare Workers deploy tests
         if: matrix.runtime == 'cloudflare-deploy'
-        run: pnpm test:cf:deploy
+        run: pnpm test:cf:deploy --reporter=default --reporter=junit --outputFile.junit="$RUNNER_TEMP/sdk-test-results.xml"
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
+
+      - name: Publish test results to Grafana
+        if: ${{ always() && inputs.publish-results }}
+        uses: ./.github/actions/publish-sdk-test-results
+        with:
+          results: ${{ runner.temp }}/sdk-test-results.xml
+          environment: ${{ inputs.E2B_DOMAIN == '' && 'production' || 'staging' }}
+          suite: js-sdk
+          runtime: ${{ matrix.runtime }}
+          os: ${{ runner.os }}
+          test-step-outcome: ${{ job.status }}
+          grafana-loki-url: ${{ secrets.GRAFANA_LOKI_URL }}
+          grafana-loki-user: ${{ secrets.GRAFANA_LOKI_USER }}
+          grafana-cloud-api-key: ${{ secrets.GRAFANA_CLOUD_API_KEY }}

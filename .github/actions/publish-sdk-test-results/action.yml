@@ -1,0 +1,60 @@
+name: Publish SDK test results
+description: Publish JUnit test results to Grafana Cloud Logs
+
+inputs:
+  results:
+    description: Path to the JUnit XML report
+    required: true
+  environment:
+    description: E2B environment exercised by the tests
+    required: true
+  suite:
+    description: SDK test suite name
+    required: true
+  runtime:
+    description: SDK runtime used by the test job
+    required: true
+  os:
+    description: Runner operating system
+    required: true
+  test-step-outcome:
+    description: GitHub outcome of the test step
+    required: true
+  grafana-loki-url:
+    description: Full Grafana Loki push URL
+    required: true
+  grafana-loki-user:
+    description: Grafana Cloud Logs user ID
+    required: true
+  grafana-cloud-api-key:
+    description: Grafana Cloud access policy token with logs write access
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Publish results
+      shell: bash
+      env:
+        GRAFANA_LOKI_URL: ${{ inputs.grafana-loki-url }}
+        GRAFANA_LOKI_USER: ${{ inputs.grafana-loki-user }}
+        GRAFANA_CLOUD_API_KEY: ${{ inputs.grafana-cloud-api-key }}
+        RESULTS_PATH: ${{ inputs.results }}
+        TEST_ENVIRONMENT: ${{ inputs.environment }}
+        TEST_SUITE: ${{ inputs.suite }}
+        TEST_RUNTIME: ${{ inputs.runtime }}
+        TEST_OS: ${{ inputs.os }}
+        TEST_STEP_OUTCOME: ${{ inputs.test-step-outcome }}
+      run: |
+        if command -v python3 >/dev/null 2>&1; then
+          python_command=python3
+        else
+          python_command=python
+        fi
+        "$python_command" "$GITHUB_ACTION_PATH/../../../scripts/publish_sdk_test_results.py" \
+          --results "$RESULTS_PATH" \
+          --environment "$TEST_ENVIRONMENT" \
+          --suite "$TEST_SUITE" \
+          --runtime "$TEST_RUNTIME" \
+          --os "$TEST_OS" \
+          --test-step-outcome "$TEST_STEP_OUTCOME"
