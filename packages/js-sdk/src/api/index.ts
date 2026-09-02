@@ -19,7 +19,8 @@ export function apiErrorFromCode(
     message: string,
     stackTrace?: string
   ) => Error = SandboxError,
-  stackTrace?: string
+  stackTrace?: string,
+  retryAfterHeader?: string | null
 ): Error {
   if (code === 401) {
     const message = 'Unauthorized, please check your credentials.'
@@ -30,7 +31,9 @@ export function apiErrorFromCode(
 
   if (code === 429) {
     const message = 'Rate limit exceeded, please try again later'
-    return new RateLimitError(content ? `${message} - ${content}` : message)
+    return new RateLimitError(content ? `${message} - ${content}` : message, {
+      retryAfterHeader,
+    })
   }
 
   return new errorClass(`${code}: ${content}`, stackTrace)
@@ -51,12 +54,14 @@ export function handleApiError(
   }
 
   const status = response.response.status
+  const retryAfterHeader = response.response.headers?.get('Retry-After') ?? null
   if (status === 401 || status === 429) {
     return apiErrorFromCode(
       status,
       response.error?.message ?? response.error,
       errorClass,
-      stackTrace
+      stackTrace,
+      retryAfterHeader
     )
   }
 
@@ -64,7 +69,8 @@ export function handleApiError(
     status,
     response.error?.message || response.error || response.response.statusText,
     errorClass,
-    stackTrace
+    stackTrace,
+    retryAfterHeader
   )
 }
 

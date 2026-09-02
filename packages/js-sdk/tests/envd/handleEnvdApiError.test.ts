@@ -12,7 +12,8 @@ import {
 
 function createMockResponse(
   status: number,
-  error?: { message?: string } | string
+  error?: { message?: string } | string,
+  headers: Headers = new Headers()
 ): {
   error?: { message?: string } | string
   response: Response
@@ -26,6 +27,7 @@ function createMockResponse(
       // openapi-fetch consumes the body whenever it produces an error value
       bodyUsed: error !== undefined,
       text: async () => (typeof error === 'string' ? error : ''),
+      headers,
     } as unknown as Response,
   }
 }
@@ -81,6 +83,28 @@ describe('handleEnvdApiError', () => {
     const err = await handleEnvdApiError(res)
     assert.instanceOf(err, RateLimitError)
     assert.include(err?.message, 'rate limited')
+  })
+
+  test('preserves Retry-After on 429', async () => {
+    const res = createMockResponse(
+      429,
+      { message: 'Too many requests' },
+      new Headers({ 'Retry-After': '45' })
+    )
+    const err = await handleEnvdApiError(res)
+    assert.instanceOf(err, RateLimitError)
+    assert.equal((err as RateLimitError).retryAfter, 45)
+    assert.equal((err as RateLimitError).retryAfterHeader, '45')
+    assert.include(err?.message, 'Retry after 45 seconds')
+  })
+
+  test('429 without Retry-After has no wait', async () => {
+    const res = createMockResponse(429, { message: 'Too many requests' })
+    const err = await handleEnvdApiError(res)
+    assert.instanceOf(err, RateLimitError)
+    assert.isUndefined((err as RateLimitError).retryAfter)
+    assert.isUndefined((err as RateLimitError).retryAfterHeader)
+    assert.notInclude(err?.message, 'Retry after')
   })
 
   test('returns TimeoutError for 502', async () => {

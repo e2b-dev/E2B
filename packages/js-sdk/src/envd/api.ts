@@ -25,8 +25,6 @@ const DEFAULT_ERROR_MAP: Record<number, (message: string) => Error> = {
   400: (message) => new InvalidArgumentError(message),
   401: (message) => new AuthenticationError(message),
   404: (message) => new NotFoundError(message),
-  429: (message) =>
-    new RateLimitError(`${message}: The requests are being rate limited.`),
   502: formatSandboxTimeoutError,
   507: (message) => new NotEnoughSpaceError(message),
 }
@@ -129,6 +127,14 @@ export async function handleEnvdApiError(
   // Check if a custom error mapping is provided for this error code
   if (errorMap && res.response.status in errorMap) {
     return errorMap[res.response.status]?.(message)
+  }
+
+  if (res.response.status === 429) {
+    const retryAfterHeader = res.response.headers?.get('Retry-After') ?? null
+    return new RateLimitError(
+      `${message}: The requests are being rate limited.`,
+      { retryAfterHeader }
+    )
   }
 
   // Check if there is a default error mapping for this error code

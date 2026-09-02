@@ -136,6 +136,29 @@ describe('handleApiError', () => {
       assert.instanceOf(err, RateLimitError)
       assert.include(err?.message, 'Rate limit')
     })
+
+    test('preserves Retry-After on 429', () => {
+      const res = createMockResponse(
+        429,
+        { message: 'Too many requests' },
+        undefined,
+        new Headers({ 'Retry-After': '60' })
+      )
+      const err = handleApiError(res as any)
+      assert.instanceOf(err, RateLimitError)
+      assert.equal((err as RateLimitError).retryAfter, 60)
+      assert.equal((err as RateLimitError).retryAfterHeader, '60')
+      assert.include(err?.message, 'Retry after 60 seconds')
+    })
+
+    test('429 without Retry-After has no wait', () => {
+      const res = createMockResponse(429, { message: 'Too many requests' })
+      const err = handleApiError(res as any)
+      assert.instanceOf(err, RateLimitError)
+      assert.isUndefined((err as RateLimitError).retryAfter)
+      assert.isUndefined((err as RateLimitError).retryAfterHeader)
+      assert.notInclude(err?.message, 'Retry after')
+    })
   })
 
   test('does not change failed response errors in CI', () => {
