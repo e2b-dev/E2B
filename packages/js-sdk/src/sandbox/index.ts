@@ -751,46 +751,7 @@ export class Sandbox extends SandboxApi {
    * @returns URL for uploading file.
    */
   async uploadUrl(path?: string, opts?: SandboxUrlOpts) {
-    opts = opts ?? {}
-
-    const useSignature = !!this.envdAccessToken
-
-    if (!useSignature && opts.useSignatureExpiration != undefined) {
-      throw new InvalidArgumentError(
-        'Signature expiration can be used only when sandbox is created as secured.'
-      )
-    }
-
-    let username = opts.user
-    if (
-      username == undefined &&
-      compareVersions(this.envdApi.version, ENVD_DEFAULT_USER) < 0
-    ) {
-      username = defaultUsername
-    }
-
-    const filePath = path ?? ''
-    const fileUrl = this.fileUrl(filePath, username)
-
-    if (useSignature) {
-      const url = new URL(fileUrl)
-      const sig = await getSignature({
-        path: filePath,
-        operation: 'write',
-        user: username,
-        expirationInSeconds: opts.useSignatureExpiration,
-        envdAccessToken: this.envdAccessToken,
-      })
-
-      url.searchParams.set('signature', sig.signature)
-      if (sig.expiration) {
-        url.searchParams.set('signature_expiration', sig.expiration.toString())
-      }
-
-      return url.toString()
-    }
-
-    return fileUrl
+    return await this.fileOperationUrl(path ?? '', 'write', opts)
   }
 
   /**
@@ -803,45 +764,7 @@ export class Sandbox extends SandboxApi {
    * @returns URL for downloading file.
    */
   async downloadUrl(path: string, opts?: SandboxUrlOpts) {
-    opts = opts ?? {}
-
-    const useSignature = !!this.envdAccessToken
-
-    if (!useSignature && opts.useSignatureExpiration != undefined) {
-      throw new InvalidArgumentError(
-        'Signature expiration can be used only when sandbox is created as secured.'
-      )
-    }
-
-    let username = opts.user
-    if (
-      username == undefined &&
-      compareVersions(this.envdApi.version, ENVD_DEFAULT_USER) < 0
-    ) {
-      username = defaultUsername
-    }
-
-    const fileUrl = this.fileUrl(path, username)
-
-    if (useSignature) {
-      const url = new URL(fileUrl)
-      const sig = await getSignature({
-        path,
-        operation: 'read',
-        user: username,
-        expirationInSeconds: opts.useSignatureExpiration,
-        envdAccessToken: this.envdAccessToken,
-      })
-
-      url.searchParams.set('signature', sig.signature)
-      if (sig.expiration) {
-        url.searchParams.set('signature_expiration', sig.expiration.toString())
-      }
-
-      return url.toString()
-    }
-
-    return fileUrl
+    return await this.fileOperationUrl(path, 'read', opts)
   }
 
   /**
@@ -895,6 +818,54 @@ export class Sandbox extends SandboxApi {
       this.connectionConfig,
       opts
     ) as ConnectionOpts & T
+  }
+
+  /**
+   * Build the `/files` URL for a read or write operation, signing it when the
+   * sandbox is secured.
+   */
+  private async fileOperationUrl(
+    path: string,
+    operation: 'read' | 'write',
+    opts?: SandboxUrlOpts
+  ): Promise<string> {
+    const useSignature = !!this.envdAccessToken
+
+    if (!useSignature && opts?.useSignatureExpiration != undefined) {
+      throw new InvalidArgumentError(
+        'Signature expiration can be used only when sandbox is created as secured.'
+      )
+    }
+
+    let username = opts?.user
+    if (
+      username == undefined &&
+      compareVersions(this.envdApi.version, ENVD_DEFAULT_USER) < 0
+    ) {
+      username = defaultUsername
+    }
+
+    const fileUrl = this.fileUrl(path, username)
+
+    if (!useSignature) {
+      return fileUrl
+    }
+
+    const url = new URL(fileUrl)
+    const sig = await getSignature({
+      path,
+      operation,
+      user: username,
+      expirationInSeconds: opts?.useSignatureExpiration,
+      envdAccessToken: this.envdAccessToken,
+    })
+
+    url.searchParams.set('signature', sig.signature)
+    if (sig.expiration) {
+      url.searchParams.set('signature_expiration', sig.expiration.toString())
+    }
+
+    return url.toString()
   }
 
   private fileUrl(path: string | undefined, username: string | undefined) {

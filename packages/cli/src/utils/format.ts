@@ -79,10 +79,6 @@ export function asLocalRelative(absolutePathInLocal?: string) {
   return asLocal('./' + cwdRelative(absolutePathInLocal))
 }
 
-export function asBuildLogs(content: string) {
-  return chalk.default.blueBright(content)
-}
-
 export function withUnderline(content: string) {
   return chalk.default.underline(content)
 }
