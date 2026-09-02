@@ -74,13 +74,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Commit new versions
+        id: commit
         # Commit before publishing, because `changeset publish` tags whatever HEAD
         # it publishes from — tagging afterwards is what left every tag on the
-        # commit before its own version bump (SDK-298). Nothing in the tree
-        # references the artifacts about to be uploaded, so the commit is already
-        # complete. It stays local until something is actually published, so a
-        # publish that uploads nothing leaves the branch untouched and the
-        # changesets intact for a re-run.
+        # commit before its own version bump (SDK-298).
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -106,18 +103,11 @@ jobs:
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
       - name: Push new versions
-        # Gate on the tags rather than on whether the publish step succeeded: they
-        # are what has to end up reachable. `changeset publish` tags at HEAD and the
-        # step above pushes them to origin, so if any exist — even from a publish
-        # that then failed partway — the commit they point at has to land, or they
-        # hang off no branch, which is the SDK-298 breakage this change prevents.
-        if: always()
+        # A failed publish may have uploaded some Python packages before tagging.
+        # Preserve the versions after any attempt so a later release cannot reuse
+        # them for different contents.
+        if: always() && steps.commit.outcome == 'success' && steps.release.outcome != 'skipped'
         run: |
-          if [ -z "$(git tag --points-at HEAD)" ]; then
-            echo "Nothing was published; the version bump stays local and the changesets are intact for a re-dispatch."
-            exit 0
-          fi
-
           if ! git push; then
             # A PR merged mid-release. Merge rather than rebase: the tags already
             # point at this commit and rewriting it would strand them off the branch.

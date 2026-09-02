@@ -3,7 +3,8 @@
   "private": true,
   "scripts": {
     "version": "pnpm changeset version && pnpm run -r postVersion",
-    "publish": "pnpm changeset publish && pnpm run -r postPublish",
+    "publish": "pnpm --dir packages/js-sdk build && pnpm run -r postPublish && pnpm changeset publish",
+    "test:release": "node --test .github/scripts/release.test.cjs",
     "test": "pnpm --dir packages/js-sdk build && pnpm --recursive --if-present run test",
     "rm-node-modules": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +",
     "pnpm-install-hack": "cd packages/js-sdk && sed -i '' 's/\"version\": \".*\"/\"version\": \"9.9.9\"/g' package.json && cd ../.. && pnpm i && git checkout -- packages/js-sdk/package.json",
