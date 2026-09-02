@@ -68,6 +68,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Select publisher
+        id: publisher
+        run: |
+          pnpm changeset status --output="$RUNNER_TEMP/release-plan.json"
+          COMMAND=$(node .github/scripts/publish_command.cjs "$RUNNER_TEMP/release-plan.json")
+          echo "command=$COMMAND" >> "$GITHUB_OUTPUT"
+
       - name: Create new versions
         run: pnpm run version
         env:
@@ -95,7 +102,7 @@ jobs:
         id: release
         uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
         with:
-          publish: pnpm run publish
+          publish: ${{ steps.publisher.outputs.command }}
           createGithubReleases: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
