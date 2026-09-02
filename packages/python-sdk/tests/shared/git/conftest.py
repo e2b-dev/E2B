@@ -8,7 +8,9 @@ BASE_DIR = "/tmp/test-git"
 
 @pytest.fixture
 def git_sandbox(sandbox_factory):
-    return sandbox_factory(timeout=10)
+    # Git suites can cross the old 10-second lifetime while the live backend is
+    # busy, which kills the sandbox in the middle of an otherwise healthy RPC.
+    return sandbox_factory(timeout=60)
 
 
 @pytest.fixture

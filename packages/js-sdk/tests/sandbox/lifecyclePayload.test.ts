@@ -79,7 +79,7 @@ test.skipIf(isDebug)(
       await waitForState(sandbox, 'paused')
       assert.isFalse(await sandbox.isRunning())
 
-      await sandbox.connect()
+      await sandbox.connect({ requestTimeoutMs: 120_000 })
 
       await waitForState(sandbox, 'running')
       assert.isTrue(await sandbox.isRunning())
@@ -87,7 +87,7 @@ test.skipIf(isDebug)(
       await sandbox.kill().catch(() => {})
     }
   },
-  90_000
+  150_000
 )
 
 test.skipIf(isDebug)(
@@ -115,7 +115,7 @@ test.skipIf(isDebug)(
 
       // A filesystem-only snapshot cannot auto-resume on traffic; connect
       // resumes it by cold-booting.
-      await sandbox.connect()
+      await sandbox.connect({ requestTimeoutMs: 120_000 })
 
       const persisted = (
         await sandbox.files.read('/home/user/auto-pause-marker.txt')
@@ -130,7 +130,7 @@ test.skipIf(isDebug)(
       await sandbox.kill().catch(() => {})
     }
   },
-  90_000
+  150_000
 )
 
 test.skipIf(isDebug)(

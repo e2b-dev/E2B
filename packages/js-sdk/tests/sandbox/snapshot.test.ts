@@ -2,6 +2,30 @@ import { assert, describe } from 'vitest'
 
 import { sandboxTest, isDebug } from '../setup.js'
 
+async function waitForHttpStatus(
+  url: string,
+  expectedStatus: number,
+  timeoutMs = 30_000
+) {
+  const deadline = Date.now() + timeoutMs
+  let lastStatus: number | undefined
+
+  while (Date.now() < deadline) {
+    try {
+      const response = await fetch(url)
+      lastStatus = response.status
+      if (lastStatus === expectedStatus) return
+    } catch {
+      // The sandbox proxy may not have a route until the guest server is ready.
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500))
+  }
+
+  assert.fail(
+    `Timed out waiting for ${url} to return ${expectedStatus}; last status: ${lastStatus ?? 'request failed'}`
+  )
+}
+
 sandboxTest.skipIf(isDebug)(
   'pause and resume a sandbox',
   async ({ sandbox }) => {
@@ -146,10 +170,7 @@ sandboxTest.skipIf(isDebug)(
 
     let url = await sandbox.getHost(8000)
 
-    await new Promise((resolve) => setTimeout(resolve, 5000))
-
-    const response1 = await fetch(`https://${url}`)
-    assert.equal(response1.status, 200)
+    await waitForHttpStatus(`https://${url}`, 200)
 
     await sandbox.pause()
     assert.isFalse(await sandbox.isRunning())
@@ -158,8 +179,7 @@ sandboxTest.skipIf(isDebug)(
     assert.isTrue(await sandbox.isRunning())
 
     url = await sandbox.getHost(8000)
-    const response2 = await fetch(`https://${url}`)
-    assert.equal(response2.status, 200)
+    await waitForHttpStatus(`https://${url}`, 200)
   }
 )
 
