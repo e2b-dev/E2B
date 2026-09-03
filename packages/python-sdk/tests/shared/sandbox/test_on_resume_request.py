@@ -1,0 +1,103 @@
+from types import SimpleNamespace
+from typing import Any, Dict, Optional, cast
+from unittest.mock import AsyncMock, Mock
+
+import pytest
+
+from e2b import AsyncSandbox, Sandbox
+from e2b.api.client.api.sandboxes import post_sandboxes_sandbox_id_connect
+from e2b.api.client.models import Sandbox as SandboxModel
+
+SANDBOX_ID = "sbx-test"
+
+
+def _connected_sandbox():
+    return SimpleNamespace(
+        status_code=200,
+        parsed=SandboxModel(
+            client_id="client-id",
+            envd_version="0.2.4",
+            sandbox_id=SANDBOX_ID,
+            template_id="template-id",
+        ),
+    )
+
+
+def _sync_request_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, Any]:
+    request = Mock(return_value=_connected_sandbox())
+    monkeypatch.setattr(post_sandboxes_sandbox_id_connect, "sync_detailed", request)
+
+    Sandbox.connect(SANDBOX_ID, api_key=api_key, **kwargs)
+
+    return request.call_args.kwargs["body"].to_dict()
+
+
+async def _async_request_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, Any]:
+    request = AsyncMock(return_value=_connected_sandbox())
+    monkeypatch.setattr(post_sandboxes_sandbox_id_connect, "asyncio_detailed", request)
+
+    await AsyncSandbox.connect(SANDBOX_ID, api_key=api_key, **kwargs)
+
+    return request.call_args.kwargs["body"].to_dict()
+
+
+# `None` expects memory to be absent from the payload: "restore" is the API's
+# own default, so it travels as an omitted field rather than memory: True.
+MEMORY_CASES = [
+    pytest.param({}, None, id="default"),
+    pytest.param({"on_resume": "restore"}, None, id="explicit-restore"),
+    pytest.param({"on_resume": "reboot"}, False, id="reboot"),
+    # Untyped callers can pass anything; only the "reboot" literal opts into a
+    # cold boot, so an unrecognized value must fall back to a memory restore.
+    pytest.param(cast(Any, {"on_resume": "Reboot"}), None, id="unrecognized-value"),
+]
+
+
+@pytest.mark.parametrize("kwargs, memory", MEMORY_CASES)
+def test_connect_sends_memory_only_for_reboot(
+    monkeypatch, test_api_key, kwargs, memory: Optional[bool]
+):
+    body = _sync_request_body(monkeypatch, test_api_key, **kwargs)
+
+    if memory is None:
+        assert "memory" not in body
+    else:
+        assert body["memory"] is memory
+
+
+@pytest.mark.parametrize("kwargs, memory", MEMORY_CASES)
+async def test_async_connect_sends_memory_only_for_reboot(
+    monkeypatch, test_api_key, kwargs, memory: Optional[bool]
+):
+    body = await _async_request_body(monkeypatch, test_api_key, **kwargs)
+
+    if memory is None:
+        assert "memory" not in body
+    else:
+        assert body["memory"] is memory
+
+
+def test_instance_connect_carries_on_resume(monkeypatch, test_api_key):
+    request = Mock(return_value=_connected_sandbox())
+    monkeypatch.setattr(post_sandboxes_sandbox_id_connect, "sync_detailed", request)
+
+    sandbox = Sandbox.connect(SANDBOX_ID, api_key=test_api_key)
+
+    sandbox.connect(on_resume="reboot")
+    assert request.call_args.kwargs["body"].to_dict()["memory"] is False
+
+    sandbox.connect()
+    assert "memory" not in request.call_args.kwargs["body"].to_dict()
+
+
+async def test_async_instance_connect_carries_on_resume(monkeypatch, test_api_key):
+    request = AsyncMock(return_value=_connected_sandbox())
+    monkeypatch.setattr(post_sandboxes_sandbox_id_connect, "asyncio_detailed", request)
+
+    sandbox = await AsyncSandbox.connect(SANDBOX_ID, api_key=test_api_key)
+
+    await sandbox.connect(on_resume="reboot")
+    assert request.call_args.kwargs["body"].to_dict()["memory"] is False
+
+    await sandbox.connect()
+    assert "memory" not in request.call_args.kwargs["body"].to_dict()

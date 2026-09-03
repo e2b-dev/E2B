@@ -29,6 +29,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxMetrics,
     SandboxNetworkOpts,
     SandboxNetworkUpdate,
+    SandboxOnResume,
     SnapshotInfo,
 )
 from e2b.sandbox.utils import class_method_variant
@@ -266,6 +267,7 @@ class AsyncSandbox(SandboxApi):
     async def connect(
         self,
         timeout: Optional[int] = None,
+        on_resume: SandboxOnResume = "restore",
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -276,6 +278,15 @@ class AsyncSandbox(SandboxApi):
 
         :param timeout: Timeout for the sandbox in **seconds**
             For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
+        :param on_resume: How to bring a paused sandbox back. `"restore"` (the default)
+            restores the memory snapshot, so processes and open connections survive the
+            pause. `"reboot"` cold-boots from disk state alone and leaves the memory
+            snapshot untouched — never modified, never deleted — so the same snapshot can
+            still be restored later. Disk state carries crash-recovery semantics: writes
+            not flushed before the pause may be lost. A no-op for a snapshot that holds no
+            memory, and ignored for a sandbox that is already running. Deployments that
+            have not enabled filesystem-only resume reject `"reboot"` with an error rather
+            than quietly restoring the memory.
         :return: A running sandbox instance
 
         @example
@@ -294,6 +305,7 @@ class AsyncSandbox(SandboxApi):
     async def connect(
         sandbox_id: str,
         timeout: Optional[int] = None,
+        on_resume: SandboxOnResume = "restore",
         logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> "AsyncSandbox":
@@ -306,6 +318,15 @@ class AsyncSandbox(SandboxApi):
         :param sandbox_id: Sandbox ID
         :param timeout: Timeout for the sandbox in **seconds**
             For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
+        :param on_resume: How to bring a paused sandbox back. `"restore"` (the default)
+            restores the memory snapshot, so processes and open connections survive the
+            pause. `"reboot"` cold-boots from disk state alone and leaves the memory
+            snapshot untouched — never modified, never deleted — so the same snapshot can
+            still be restored later. Disk state carries crash-recovery semantics: writes
+            not flushed before the pause may be lost. A no-op for a snapshot that holds no
+            memory, and ignored for a sandbox that is already running. Deployments that
+            have not enabled filesystem-only resume reject `"reboot"` with an error rather
+            than quietly restoring the memory.
         :param logger: Logger used for request and response logging for this sandbox. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
         :return: A running sandbox instance
 
@@ -324,6 +345,7 @@ class AsyncSandbox(SandboxApi):
     async def connect(
         self,
         timeout: Optional[int] = None,
+        on_resume: SandboxOnResume = "restore",
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -334,6 +356,15 @@ class AsyncSandbox(SandboxApi):
 
         :param timeout: Timeout for the sandbox in **seconds**
             For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
+        :param on_resume: How to bring a paused sandbox back. `"restore"` (the default)
+            restores the memory snapshot, so processes and open connections survive the
+            pause. `"reboot"` cold-boots from disk state alone and leaves the memory
+            snapshot untouched — never modified, never deleted — so the same snapshot can
+            still be restored later. Disk state carries crash-recovery semantics: writes
+            not flushed before the pause may be lost. A no-op for a snapshot that holds no
+            memory, and ignored for a sandbox that is already running. Deployments that
+            have not enabled filesystem-only resume reject `"reboot"` with an error rather
+            than quietly restoring the memory.
         :return: A running sandbox instance
 
         @example
@@ -352,6 +383,7 @@ class AsyncSandbox(SandboxApi):
         await SandboxApi._cls_connect(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
+            on_resume=on_resume,
             **self.connection_config.get_api_params(**opts),
         )
 
@@ -1009,6 +1041,7 @@ class AsyncSandbox(SandboxApi):
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
+        on_resume: SandboxOnResume = "restore",
         logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
@@ -1023,6 +1056,7 @@ class AsyncSandbox(SandboxApi):
             sandbox = await SandboxApi._cls_connect(
                 sandbox_id=sandbox_id,
                 timeout=timeout,
+                on_resume=on_resume,
                 logger=logger,
                 **params,
             )

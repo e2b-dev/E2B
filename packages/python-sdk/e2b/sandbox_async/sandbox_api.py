@@ -56,6 +56,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxMetrics,
     SandboxNetworkOpts,
     SandboxNetworkUpdate,
+    SandboxOnResume,
     SandboxQuery,
     SnapshotInfo,
     build_iam_config,
@@ -525,6 +526,7 @@ class SandboxApi(SandboxBase):
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
+        on_resume: SandboxOnResume = "restore",
         logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
@@ -537,7 +539,10 @@ class SandboxApi(SandboxBase):
         res = await post_sandboxes_sandbox_id_connect.asyncio_detailed(
             sandbox_id,
             client=api_client,
-            body=ConnectSandbox(timeout=timeout),
+            body=ConnectSandbox(
+                timeout=timeout,
+                memory=False if on_resume == "reboot" else UNSET,
+            ),
         )
 
         if res.status_code == 404:
