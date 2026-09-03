@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Literal, Optional
 
-from e2b.exceptions import SandboxException
+from e2b.exceptions import InvalidArgumentException, SandboxException
 
 Stdout = str
 """
@@ -21,6 +21,13 @@ CommandKillScope = Literal["process", "group"]
 Scope for command termination. ``process`` signals only the managed process;
 ``group`` also signals descendants that remain in its process group.
 """
+
+
+def validate_command_kill_scope(scope: object) -> None:
+    if scope not in ("process", "group"):
+        raise InvalidArgumentException(
+            "Command kill scope must be one of: process, group."
+        )
 
 
 @dataclass

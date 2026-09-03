@@ -8,7 +8,7 @@ from packaging.version import Version
 from protobuf import Oneof
 
 from e2b.envd.process import process_pb
-from e2b.exceptions import SandboxException
+from e2b.exceptions import InvalidArgumentException, SandboxException
 from e2b.sandbox_async.commands.command_handle import AsyncCommandHandle
 from e2b.sandbox_async.commands.command import Commands as AsyncCommands
 from e2b.sandbox_async.commands.pty import Pty as AsyncPty
@@ -151,6 +151,74 @@ async def test_async_pty_kill_sends_group_scope():
 
     assert await pty.kill(43, scope="group")
     assert requests[0].descendants is True
+
+
+def test_sync_commands_kill_rejects_invalid_scope_before_rpc():
+    requests = []
+    commands = object.__new__(SyncCommands)
+    commands._rpc = SimpleNamespace(
+        send_signal=lambda request, **_kwargs: requests.append(request)
+    )
+    commands._connection_config = SimpleNamespace(
+        get_request_timeout=lambda request_timeout: request_timeout
+    )
+    commands._envd_version = Version("0.7.1")
+
+    with pytest.raises(InvalidArgumentException, match="scope must be one of"):
+        commands.kill(42, scope=cast(Any, "groups"))
+    assert requests == []
+
+
+async def test_async_commands_kill_rejects_invalid_scope_before_rpc():
+    requests = []
+
+    async def send_signal(request, **_kwargs):
+        requests.append(request)
+
+    commands = object.__new__(AsyncCommands)
+    commands._rpc = SimpleNamespace(send_signal=send_signal)
+    commands._connection_config = SimpleNamespace(
+        get_request_timeout=lambda request_timeout: request_timeout
+    )
+    commands._envd_version = Version("0.7.1")
+
+    with pytest.raises(InvalidArgumentException, match="scope must be one of"):
+        await commands.kill(42, scope=cast(Any, "groups"))
+    assert requests == []
+
+
+def test_sync_pty_kill_rejects_invalid_scope_before_rpc():
+    requests = []
+    pty = object.__new__(SyncPty)
+    pty._rpc = SimpleNamespace(
+        send_signal=lambda request, **_kwargs: requests.append(request)
+    )
+    pty._connection_config = SimpleNamespace(
+        get_request_timeout=lambda request_timeout: request_timeout
+    )
+    pty._envd_version = Version("0.7.1")
+
+    with pytest.raises(InvalidArgumentException, match="scope must be one of"):
+        pty.kill(43, scope=cast(Any, "groups"))
+    assert requests == []
+
+
+async def test_async_pty_kill_rejects_invalid_scope_before_rpc():
+    requests = []
+
+    async def send_signal(request, **_kwargs):
+        requests.append(request)
+
+    pty = object.__new__(AsyncPty)
+    pty._rpc = SimpleNamespace(send_signal=send_signal)
+    pty._connection_config = SimpleNamespace(
+        get_request_timeout=lambda request_timeout: request_timeout
+    )
+    pty._envd_version = Version("0.7.1")
+
+    with pytest.raises(InvalidArgumentException, match="scope must be one of"):
+        await pty.kill(43, scope=cast(Any, "groups"))
+    assert requests == []
 
 
 def test_sync_commands_kill_rejects_descendant_scope_for_old_envd():

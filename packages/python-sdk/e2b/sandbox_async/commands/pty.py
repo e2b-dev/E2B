@@ -23,7 +23,11 @@ from e2b.envd.utils import (
     timeout_to_ms,
 )
 from e2b.envd.client_async import as_stream, create_rpc_client, first_event
-from e2b.sandbox.commands.command_handle import CommandKillScope, PtySize
+from e2b.sandbox.commands.command_handle import (
+    CommandKillScope,
+    PtySize,
+    validate_command_kill_scope,
+)
 from e2b.sandbox_async.commands.command_handle import (
     AsyncCommandHandle,
     OutputHandler,
@@ -72,6 +76,7 @@ class Pty:
 
         :return: `true` if the PTY was killed, `false` if the PTY was not found
         """
+        validate_command_kill_scope(scope)
         if scope == "group" and self._envd_version < ENVD_COMMANDS_DESCENDANTS:
             raise SandboxException(
                 f"Sandbox envd version {self._envd_version} doesn't support group-scoped command termination. "

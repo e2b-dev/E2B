@@ -28,7 +28,11 @@ from e2b.envd.versions import (
 )
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.main import ProcessInfo
-from e2b.sandbox.commands.command_handle import CommandKillScope, CommandResult
+from e2b.sandbox.commands.command_handle import (
+    CommandKillScope,
+    CommandResult,
+    validate_command_kill_scope,
+)
 from e2b.sandbox_sync.commands.command_handle import CommandHandle
 
 
@@ -108,6 +112,7 @@ class Commands:
 
         :return: `True` if the command was killed, `False` if the command was not found
         """
+        validate_command_kill_scope(scope)
         if scope == "group" and self._envd_version < ENVD_COMMANDS_DESCENDANTS:
             raise SandboxException(
                 f"Sandbox envd version {self._envd_version} doesn't support group-scoped command termination. "

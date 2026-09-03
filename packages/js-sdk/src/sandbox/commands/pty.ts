@@ -21,6 +21,7 @@ import {
 } from '../../connectionConfig'
 import { CommandHandle } from './commandHandle'
 import type { CommandKillOpts } from '.'
+import { validateCommandKillScope } from './kill'
 import { ENVD_COMMANDS_DESCENDANTS } from '../../envd/versions'
 import { SandboxError } from '../../errors'
 import {
@@ -315,6 +316,7 @@ export class Pty {
    * @returns `true` if the PTY was killed, `false` if the PTY was not found.
    */
   async kill(pid: number, opts?: CommandKillOpts): Promise<boolean> {
+    validateCommandKillScope(opts?.scope)
     if (
       opts?.scope === 'group' &&
       compareVersions(this.envdVersion, ENVD_COMMANDS_DESCENDANTS) < 0

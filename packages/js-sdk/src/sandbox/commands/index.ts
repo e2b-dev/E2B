@@ -36,21 +36,16 @@ import {
 } from '../../envd/versions'
 import { SandboxError } from '../../errors'
 import { CommandHandle, CommandResult } from './commandHandle'
+import { validateCommandKillScope } from './kill'
+import type { CommandKillScope } from './kill'
 export { Pty } from './pty'
+export type { CommandKillScope } from './kill'
 
 /**
  * Options for sending a command request.
  */
 export interface CommandRequestOpts
   extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>> {}
-
-/**
- * Scope for command termination.
- *
- * `process` signals only the managed command process. `group` also signals
- * descendants that remain in the command's process group.
- */
-export type CommandKillScope = 'process' | 'group'
 
 /**
  * Options for killing a command.
@@ -303,6 +298,7 @@ export class Commands {
    * @returns `true` if the command was killed, `false` if the command was not found.
    */
   async kill(pid: number, opts?: CommandKillOpts): Promise<boolean> {
+    validateCommandKillScope(opts?.scope)
     if (
       opts?.scope === 'group' &&
       compareVersions(this.envdVersion, ENVD_COMMANDS_DESCENDANTS) < 0
