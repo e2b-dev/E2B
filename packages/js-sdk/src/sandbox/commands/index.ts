@@ -45,15 +45,23 @@ export interface CommandRequestOpts
   extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>> {}
 
 /**
+ * Scope for command termination.
+ *
+ * `process` signals only the managed command process. `group` also signals
+ * descendants that remain in the command's process group.
+ */
+export type CommandKillScope = 'process' | 'group'
+
+/**
  * Options for killing a command.
  */
 export interface CommandKillOpts extends CommandRequestOpts {
   /**
-   * If true, also kills descendants that remain in the command's process group.
+   * Selects whether to kill only the managed process or its process group.
    *
-   * @default false
+   * @default 'process'
    */
-  descendants?: boolean
+  scope?: CommandKillScope
 }
 
 /**
@@ -296,11 +304,11 @@ export class Commands {
    */
   async kill(pid: number, opts?: CommandKillOpts): Promise<boolean> {
     if (
-      opts?.descendants &&
+      opts?.scope === 'group' &&
       compareVersions(this.envdVersion, ENVD_COMMANDS_DESCENDANTS) < 0
     ) {
       throw new SandboxError(
-        `Sandbox envd version ${this.envdVersion} doesn't support killing command descendants. Please rebuild your template to pick up the latest sandbox version.`
+        `Sandbox envd version ${this.envdVersion} doesn't support group-scoped command termination. Please rebuild your template to pick up the latest sandbox version.`
       )
     }
 
@@ -314,7 +322,7 @@ export class Commands {
             },
           },
           signal: Signal.SIGKILL,
-          descendants: opts?.descendants ?? false,
+          descendants: opts?.scope === 'group',
         },
         {
           signal: this.connectionConfig.getSignal(

@@ -11,8 +11,10 @@ from e2b.envd.process import process_pb
 from e2b.exceptions import SandboxException
 from e2b.sandbox_async.commands.command_handle import AsyncCommandHandle
 from e2b.sandbox_async.commands.command import Commands as AsyncCommands
+from e2b.sandbox_async.commands.pty import Pty as AsyncPty
 from e2b.sandbox_sync.commands.command_handle import CommandHandle
 from e2b.sandbox_sync.commands.command import Commands as SyncCommands
+from e2b.sandbox_sync.commands.pty import Pty as SyncPty
 
 EMOJI = "😀"
 EMOJI_BYTES = EMOJI.encode("utf-8")  # 4 bytes
@@ -51,27 +53,30 @@ def _end_event(exit_code: int = 0) -> process_pb.StartResponse:
     )
 
 
-async def _kill(_descendants: bool = False) -> bool:
+async def _kill(_scope="process", _request_timeout=None) -> bool:
     return True
 
 
-def test_sync_kill_forwards_descendant_scope():
-    scopes = []
+def test_sync_kill_forwards_scope_and_timeout():
+    options = []
     handle = CommandHandle(
         pid=1,
-        handle_kill=lambda descendants: scopes.append(descendants) or True,
+        handle_kill=lambda scope, request_timeout: options.append(
+            (scope, request_timeout)
+        )
+        or True,
         events=iter(()),
     )
 
-    assert handle.kill(descendants=True)
-    assert scopes == [True]
+    assert handle.kill(scope="group", request_timeout=3.0)
+    assert options == [("group", 3.0)]
 
 
-async def test_async_kill_forwards_descendant_scope():
-    scopes = []
+async def test_async_kill_forwards_scope_and_timeout():
+    options = []
 
-    async def kill(descendants: bool) -> bool:
-        scopes.append(descendants)
+    async def kill(scope, request_timeout) -> bool:
+        options.append((scope, request_timeout))
         return True
 
     async def events():
@@ -80,8 +85,8 @@ async def test_async_kill_forwards_descendant_scope():
 
     handle = AsyncCommandHandle(pid=1, handle_kill=kill, events=events())
 
-    assert await handle.kill(descendants=True)
-    assert scopes == [True]
+    assert await handle.kill(scope="group", request_timeout=3.0)
+    assert options == [("group", 3.0)]
 
 
 def test_sync_commands_kill_sends_descendant_scope():
@@ -95,7 +100,7 @@ def test_sync_commands_kill_sends_descendant_scope():
     )
     commands._envd_version = Version("0.7.1")
 
-    assert commands.kill(42, descendants=True)
+    assert commands.kill(42, scope="group")
     assert requests[0].descendants is True
 
 
@@ -112,7 +117,39 @@ async def test_async_commands_kill_sends_descendant_scope():
     )
     commands._envd_version = Version("0.7.1")
 
-    assert await commands.kill(42, descendants=True)
+    assert await commands.kill(42, scope="group")
+    assert requests[0].descendants is True
+
+
+def test_sync_pty_kill_sends_group_scope():
+    requests = []
+    pty = object.__new__(SyncPty)
+    pty._rpc = SimpleNamespace(
+        send_signal=lambda request, **_kwargs: requests.append(request)
+    )
+    pty._connection_config = SimpleNamespace(
+        get_request_timeout=lambda request_timeout: request_timeout
+    )
+    pty._envd_version = Version("0.7.1")
+
+    assert pty.kill(43, scope="group")
+    assert requests[0].descendants is True
+
+
+async def test_async_pty_kill_sends_group_scope():
+    requests = []
+
+    async def send_signal(request, **_kwargs):
+        requests.append(request)
+
+    pty = object.__new__(AsyncPty)
+    pty._rpc = SimpleNamespace(send_signal=send_signal)
+    pty._connection_config = SimpleNamespace(
+        get_request_timeout=lambda request_timeout: request_timeout
+    )
+    pty._envd_version = Version("0.7.1")
+
+    assert await pty.kill(43, scope="group")
     assert requests[0].descendants is True
 
 
@@ -121,9 +158,9 @@ def test_sync_commands_kill_rejects_descendant_scope_for_old_envd():
     commands._envd_version = Version("0.7.0")
 
     with pytest.raises(
-        SandboxException, match="doesn't support killing command descendants"
+        SandboxException, match="doesn't support group-scoped command termination"
     ):
-        commands.kill(42, descendants=True)
+        commands.kill(42, scope="group")
 
 
 async def test_async_commands_kill_rejects_descendant_scope_for_old_envd():
@@ -131,9 +168,9 @@ async def test_async_commands_kill_rejects_descendant_scope_for_old_envd():
     commands._envd_version = Version("0.7.0")
 
     with pytest.raises(
-        SandboxException, match="doesn't support killing command descendants"
+        SandboxException, match="doesn't support group-scoped command termination"
     ):
-        await commands.kill(42, descendants=True)
+        await commands.kill(42, scope="group")
 
 
 class _AsyncControllableEvents:
@@ -214,7 +251,7 @@ def test_sync_has_no_background_subscription():
         yield _end_event()
 
     handle = CommandHandle(
-        pid=1, handle_kill=lambda _descendants=False: True, events=events()
+        pid=1, handle_kill=lambda _scope="process", _timeout=None: True, events=events()
     )
 
     # Nothing is consumed until the caller iterates.
@@ -234,7 +271,7 @@ def test_sync_records_result_before_yielding_flushed_chunk():
         yield _end_event(0)
 
     handle = CommandHandle(
-        pid=1, handle_kill=lambda _descendants=False: True, events=events()
+        pid=1, handle_kill=lambda _scope="process", _timeout=None: True, events=events()
     )
     iterator = iter(handle)
     assert next(iterator) == ("a", None, None)
@@ -258,7 +295,7 @@ def test_sync_decodes_multibyte_chars_split_across_chunks():
 
     chunks = []
     handle = CommandHandle(
-        pid=1, handle_kill=lambda _descendants=False: True, events=events()
+        pid=1, handle_kill=lambda _scope="process", _timeout=None: True, events=events()
     )
     result = handle.wait(on_stdout=chunks.append)
 
@@ -275,7 +312,7 @@ def test_sync_replaces_incomplete_trailing_utf8():
         yield _end_event()
 
     handle = CommandHandle(
-        pid=1, handle_kill=lambda _descendants=False: True, events=events()
+        pid=1, handle_kill=lambda _scope="process", _timeout=None: True, events=events()
     )
     result = handle.wait()
 
@@ -323,7 +360,7 @@ def test_sync_flushes_incomplete_trailing_utf8_without_end_event():
 
     chunks = []
     handle = CommandHandle(
-        pid=1, handle_kill=lambda _descendants=False: True, events=events()
+        pid=1, handle_kill=lambda _scope="process", _timeout=None: True, events=events()
     )
     for stdout, _, _ in handle:
         if stdout is not None:
@@ -355,7 +392,7 @@ def test_sync_flushes_incomplete_trailing_utf8_on_stream_error():
 
     chunks = []
     handle = CommandHandle(
-        pid=1, handle_kill=lambda _descendants=False: True, events=events()
+        pid=1, handle_kill=lambda _scope="process", _timeout=None: True, events=events()
     )
 
     # The stream raises before an end event, but the buffered bytes must still

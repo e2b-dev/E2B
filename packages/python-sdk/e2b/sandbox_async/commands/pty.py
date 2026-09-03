@@ -23,7 +23,7 @@ from e2b.envd.utils import (
     timeout_to_ms,
 )
 from e2b.envd.client_async import as_stream, create_rpc_client, first_event
-from e2b.sandbox.commands.command_handle import PtySize
+from e2b.sandbox.commands.command_handle import CommandKillScope, PtySize
 from e2b.sandbox_async.commands.command_handle import (
     AsyncCommandHandle,
     OutputHandler,
@@ -60,20 +60,21 @@ class Pty:
         self,
         pid: int,
         request_timeout: Optional[float] = None,
-        descendants: bool = False,
+        *,
+        scope: CommandKillScope = "process",
     ) -> bool:
         """
         Kill PTY.
 
         :param pid: Process ID of the PTY
         :param request_timeout: Timeout for the request in **seconds**
-        :param descendants: If `True`, also kill descendants that remain in the PTY's process group
+        :param scope: Whether to kill only the managed PTY process or its process group
 
         :return: `true` if the PTY was killed, `false` if the PTY was not found
         """
-        if descendants and self._envd_version < ENVD_COMMANDS_DESCENDANTS:
+        if scope == "group" and self._envd_version < ENVD_COMMANDS_DESCENDANTS:
             raise SandboxException(
-                f"Sandbox envd version {self._envd_version} doesn't support killing command descendants. "
+                f"Sandbox envd version {self._envd_version} doesn't support group-scoped command termination. "
                 "Please rebuild your template to pick up the latest sandbox version."
             )
 
@@ -82,7 +83,7 @@ class Pty:
                 process_pb.SendSignalRequest(
                     process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
                     signal=process_pb.Signal.SIGKILL,
-                    descendants=descendants,
+                    descendants=scope == "group",
                 ),
                 timeout_ms=timeout_to_ms(
                     self._connection_config.get_request_timeout(request_timeout)
@@ -179,8 +180,8 @@ class Pty:
             pid = extract_start_pid(start_event, "start process")
             return AsyncCommandHandle(
                 pid=pid,
-                handle_kill=lambda descendants=False: self.kill(
-                    pid, descendants=descendants
+                handle_kill=lambda scope="process", request_timeout=None: self.kill(
+                    pid, request_timeout, scope=scope
                 ),
                 events=events,
                 on_pty=on_data,
@@ -230,8 +231,8 @@ class Pty:
             pid = extract_start_pid(start_event, "connect to process")
             return AsyncCommandHandle(
                 pid=pid,
-                handle_kill=lambda descendants=False: self.kill(
-                    pid, descendants=descendants
+                handle_kill=lambda scope="process", request_timeout=None: self.kill(
+                    pid, request_timeout, scope=scope
                 ),
                 events=events,
                 on_pty=on_data,

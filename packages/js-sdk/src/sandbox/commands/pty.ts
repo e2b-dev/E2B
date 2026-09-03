@@ -316,11 +316,11 @@ export class Pty {
    */
   async kill(pid: number, opts?: CommandKillOpts): Promise<boolean> {
     if (
-      opts?.descendants &&
+      opts?.scope === 'group' &&
       compareVersions(this.envdVersion, ENVD_COMMANDS_DESCENDANTS) < 0
     ) {
       throw new SandboxError(
-        `Sandbox envd version ${this.envdVersion} doesn't support killing command descendants. Please rebuild your template to pick up the latest sandbox version.`
+        `Sandbox envd version ${this.envdVersion} doesn't support group-scoped command termination. Please rebuild your template to pick up the latest sandbox version.`
       )
     }
 
@@ -334,7 +334,7 @@ export class Pty {
             },
           },
           signal: Signal.SIGKILL,
-          descendants: opts?.descendants ?? false,
+          descendants: opts?.scope === 'group',
         },
         {
           signal: this.connectionConfig.getSignal(

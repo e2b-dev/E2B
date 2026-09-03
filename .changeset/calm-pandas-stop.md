@@ -3,4 +3,4 @@
 '@e2b/python-sdk': patch
 ---
 
-Add an opt-in `descendants` option for killing a command and its process group while preserving leader-only termination by default.
+Add an opt-in `scope` option for killing a command's process group while preserving process-only termination by default.

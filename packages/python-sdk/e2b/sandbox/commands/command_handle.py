@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Literal, Optional
 
 from e2b.exceptions import SandboxException
 
@@ -14,6 +14,12 @@ Command stderr output.
 PtyOutput = bytes
 """
 Pty output.
+"""
+
+CommandKillScope = Literal["process", "group"]
+"""
+Scope for command termination. ``process`` signals only the managed process;
+``group`` also signals descendants that remain in its process group.
 """
 
 

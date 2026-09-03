@@ -9,6 +9,7 @@ from e2b.envd.process import process_pb
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.command_handle import (
     CommandExitException,
+    CommandKillScope,
     CommandResult,
     Stderr,
     Stdout,
@@ -33,7 +34,7 @@ class CommandHandle:
     def __init__(
         self,
         pid: int,
-        handle_kill: Callable[[bool], bool],
+        handle_kill: Callable[[CommandKillScope, Optional[float]], bool],
         events: Generator[
             Union[process_pb.StartResponse, process_pb.ConnectResponse], Any, None
         ],
@@ -205,16 +206,22 @@ class CommandHandle:
 
         return self._result
 
-    def kill(self, descendants: bool = False) -> bool:
+    def kill(
+        self,
+        *,
+        scope: CommandKillScope = "process",
+        request_timeout: Optional[float] = None,
+    ) -> bool:
         """
         Kills the command.
 
         It uses `SIGKILL` signal to kill the command.
 
-        :param descendants: If `True`, also kill descendants that remain in the command's process group
+        :param scope: Whether to kill only the managed process or its process group
+        :param request_timeout: Timeout for the request in **seconds**
         :return: Whether the command was killed successfully
         """
-        return self._handle_kill(descendants)
+        return self._handle_kill(scope, request_timeout)
 
     def send_stdin(
         self,

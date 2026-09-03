@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { CommandHandle } from '../../../src/sandbox/commands/commandHandle'
-import { Commands } from '../../../src/sandbox/commands'
+import { Commands, Pty } from '../../../src/sandbox/commands'
 
 type EventKind = 'stdout' | 'stderr' | 'pty'
 
@@ -141,7 +141,7 @@ describe('CommandHandle', () => {
       envdVersion: '0.7.1',
     })
 
-    await expect(commands.kill(42, { descendants: true })).resolves.toBe(true)
+    await expect(commands.kill(42, { scope: 'group' })).resolves.toBe(true)
     expect(sendSignal).toHaveBeenCalledWith(
       expect.objectContaining({ descendants: true }),
       expect.anything()
@@ -157,10 +157,26 @@ describe('CommandHandle', () => {
       envdVersion: '0.7.0',
     })
 
-    await expect(commands.kill(42, { descendants: true })).rejects.toThrow(
-      "doesn't support killing command descendants"
+    await expect(commands.kill(42, { scope: 'group' })).rejects.toThrow(
+      "doesn't support group-scoped command termination"
     )
     expect(sendSignal).not.toHaveBeenCalled()
+  })
+
+  it('sends group scope through the PTY RPC', async () => {
+    const sendSignal = vi.fn(async () => ({}))
+    const pty = Object.create(Pty.prototype) as Pty
+    Object.assign(pty, {
+      rpc: { sendSignal },
+      connectionConfig: { getSignal: () => undefined },
+      envdVersion: '0.7.1',
+    })
+
+    await expect(pty.kill(43, { scope: 'group' })).resolves.toBe(true)
+    expect(sendSignal).toHaveBeenCalledWith(
+      expect.objectContaining({ descendants: true }),
+      expect.anything()
+    )
   })
 
   it('forwards descendant scope when killing', async () => {
@@ -172,8 +188,13 @@ describe('CommandHandle', () => {
       createEvents('stdout')
     )
 
-    await expect(handle.kill({ descendants: true })).resolves.toBe(true)
-    expect(handleKill).toHaveBeenCalledWith({ descendants: true })
+    await expect(
+      handle.kill({ scope: 'group', requestTimeoutMs: 500 })
+    ).resolves.toBe(true)
+    expect(handleKill).toHaveBeenCalledWith({
+      scope: 'group',
+      requestTimeoutMs: 500,
+    })
   })
 
   it.each<EventKind>(['stdout', 'stderr', 'pty'])(

@@ -28,7 +28,7 @@ from e2b.envd.versions import (
 )
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.main import ProcessInfo
-from e2b.sandbox.commands.command_handle import CommandResult
+from e2b.sandbox.commands.command_handle import CommandKillScope, CommandResult
 from e2b.sandbox_sync.commands.command_handle import CommandHandle
 
 
@@ -95,7 +95,8 @@ class Commands:
         self,
         pid: int,
         request_timeout: Optional[float] = None,
-        descendants: bool = False,
+        *,
+        scope: CommandKillScope = "process",
     ) -> bool:
         """
         Kill a running command specified by its process ID.
@@ -103,13 +104,13 @@ class Commands:
 
         :param pid: Process ID of the command. You can get the list of processes using `sandbox.commands.list()`
         :param request_timeout: Timeout for the request in **seconds**
-        :param descendants: If `True`, also kill descendants that remain in the command's process group
+        :param scope: Whether to kill only the managed process or its process group
 
         :return: `True` if the command was killed, `False` if the command was not found
         """
-        if descendants and self._envd_version < ENVD_COMMANDS_DESCENDANTS:
+        if scope == "group" and self._envd_version < ENVD_COMMANDS_DESCENDANTS:
             raise SandboxException(
-                f"Sandbox envd version {self._envd_version} doesn't support killing command descendants. "
+                f"Sandbox envd version {self._envd_version} doesn't support group-scoped command termination. "
                 "Please rebuild your template to pick up the latest sandbox version."
             )
 
@@ -118,7 +119,7 @@ class Commands:
                 process_pb.SendSignalRequest(
                     process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
                     signal=process_pb.Signal.SIGKILL,
-                    descendants=descendants,
+                    descendants=scope == "group",
                 ),
                 timeout_ms=timeout_to_ms(
                     self._connection_config.get_request_timeout(request_timeout)
@@ -334,8 +335,8 @@ class Commands:
             pid = extract_start_pid(start_event, "start process")
             return CommandHandle(
                 pid=pid,
-                handle_kill=lambda descendants=False: self.kill(
-                    pid, descendants=descendants
+                handle_kill=lambda scope="process", request_timeout=None: self.kill(
+                    pid, request_timeout, scope=scope
                 ),
                 events=events,
                 handle_send_stdin=lambda data, request_timeout=None: self.send_stdin(
@@ -387,8 +388,8 @@ class Commands:
             pid = extract_start_pid(start_event, "connect to process")
             return CommandHandle(
                 pid=pid,
-                handle_kill=lambda descendants=False: self.kill(
-                    pid, descendants=descendants
+                handle_kill=lambda scope="process", request_timeout=None: self.kill(
+                    pid, request_timeout, scope=scope
                 ),
                 events=events,
                 handle_send_stdin=lambda data, request_timeout=None: self.send_stdin(
