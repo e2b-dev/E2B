@@ -10,7 +10,6 @@ from .aws_registry_type import AWSRegistryType
 from .build_log_entry import BuildLogEntry
 from .build_status_reason import BuildStatusReason
 from .connect_sandbox import ConnectSandbox
-from .created_access_token import CreatedAccessToken
 from .created_team_api_key import CreatedTeamAPIKey
 from .delete_template_tags_request import DeleteTemplateTagsRequest
 from .disk_metrics import DiskMetrics
@@ -27,7 +26,6 @@ from .logs_source import LogsSource
 from .machine_info import MachineInfo
 from .max_team_metric import MaxTeamMetric
 from .mcp_type_0 import McpType0
-from .new_access_token import NewAccessToken
 from .new_sandbox import NewSandbox
 from .new_secret import NewSecret
 from .new_team_api_key import NewTeamAPIKey
@@ -39,6 +37,10 @@ from .node_status import NodeStatus
 from .node_status_change import NodeStatusChange
 from .order_direction import OrderDirection
 from .resumed_sandbox import ResumedSandbox
+from .rig import Rig
+from .rig_capacity_change import RigCapacityChange
+from .rig_error import RigError
+from .rig_instance import RigInstance
 from .sandbox import Sandbox
 from .sandbox_auto_resume_config import SandboxAutoResumeConfig
 from .sandbox_detail import SandboxDetail
@@ -112,7 +114,6 @@ __all__ = (
     "BuildLogEntry",
     "BuildStatusReason",
     "ConnectSandbox",
-    "CreatedAccessToken",
     "CreatedTeamAPIKey",
     "DeleteTemplateTagsRequest",
     "DiskMetrics",
@@ -129,7 +130,6 @@ __all__ = (
     "MachineInfo",
     "MaxTeamMetric",
     "McpType0",
-    "NewAccessToken",
     "NewSandbox",
     "NewSecret",
     "NewTeamAPIKey",
@@ -141,6 +141,10 @@ __all__ = (
     "NodeStatusChange",
     "OrderDirection",
     "ResumedSandbox",
+    "Rig",
+    "RigCapacityChange",
+    "RigError",
+    "RigInstance",
     "Sandbox",
     "SandboxAutoResumeConfig",
     "SandboxDetail",

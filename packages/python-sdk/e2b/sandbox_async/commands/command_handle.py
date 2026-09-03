@@ -81,7 +81,7 @@ class AsyncCommandHandle:
     def __init__(
         self,
         pid: int,
-        handle_kill: Callable[[], Coroutine[Any, Any, bool]],
+        handle_kill: Callable[[bool], Coroutine[Any, Any, bool]],
         events: AsyncGenerator[
             Union[process_pb.StartResponse, process_pb.ConnectResponse], Any
         ],
@@ -262,15 +262,16 @@ class AsyncCommandHandle:
 
         return self._result
 
-    async def kill(self) -> bool:
+    async def kill(self, descendants: bool = False) -> bool:
         """
         Kills the command.
 
         It uses `SIGKILL` signal to kill the command
 
+        :param descendants: If `True`, also kill descendants that remain in the command's process group
         :return: `True` if the command was killed successfully, `False` if the command was not found
         """
-        result = await self._handle_kill()
+        result = await self._handle_kill(descendants)
         return result
 
     async def send_stdin(

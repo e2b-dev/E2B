@@ -5,6 +5,7 @@ import {
   Client,
   Transport,
 } from '@connectrpc/connect'
+import { compareVersions } from 'compare-versions'
 
 import {
   Signal,
@@ -19,6 +20,9 @@ import {
   setupRequestController,
 } from '../../connectionConfig'
 import { CommandHandle } from './commandHandle'
+import type { CommandKillOpts } from '.'
+import { ENVD_COMMANDS_DESCENDANTS } from '../../envd/versions'
+import { SandboxError } from '../../errors'
 import {
   authenticationHeader,
   handleRpcErrorWithHealthCheck,
@@ -148,7 +152,7 @@ export class Pty {
       return new CommandHandle(
         pid,
         cleanup,
-        () => this.kill(pid),
+        (killOpts) => this.kill(pid, killOpts),
         events,
         undefined,
         undefined,
@@ -205,7 +209,7 @@ export class Pty {
       return new CommandHandle(
         pid,
         cleanup,
-        () => this.kill(pid),
+        (killOpts) => this.kill(pid, killOpts),
         events,
         undefined,
         undefined,
@@ -306,14 +310,20 @@ export class Pty {
    * It uses `SIGKILL` signal to kill the PTY.
    *
    * @param pid process ID of the PTY.
-   * @param opts connection options.
+   * @param opts kill and connection options.
    *
    * @returns `true` if the PTY was killed, `false` if the PTY was not found.
    */
-  async kill(
-    pid: number,
-    opts?: Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>
-  ): Promise<boolean> {
+  async kill(pid: number, opts?: CommandKillOpts): Promise<boolean> {
+    if (
+      opts?.descendants &&
+      compareVersions(this.envdVersion, ENVD_COMMANDS_DESCENDANTS) < 0
+    ) {
+      throw new SandboxError(
+        `Sandbox envd version ${this.envdVersion} doesn't support killing command descendants. Please rebuild your template to pick up the latest sandbox version.`
+      )
+    }
+
     try {
       await this.rpc.sendSignal(
         {
@@ -324,6 +334,7 @@ export class Pty {
             },
           },
           signal: Signal.SIGKILL,
+          descendants: opts?.descendants ?? false,
         },
         {
           signal: this.connectionConfig.getSignal(

@@ -29,7 +29,11 @@ import {
   handleRpcErrorWithHealthCheck,
   SandboxHealthCheck,
 } from '../../envd/rpc'
-import { ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE } from '../../envd/versions'
+import {
+  ENVD_COMMANDS_DESCENDANTS,
+  ENVD_COMMANDS_STDIN,
+  ENVD_ENVD_CLOSE,
+} from '../../envd/versions'
 import { SandboxError } from '../../errors'
 import { CommandHandle, CommandResult } from './commandHandle'
 export { Pty } from './pty'
@@ -39,6 +43,18 @@ export { Pty } from './pty'
  */
 export interface CommandRequestOpts
   extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>> {}
+
+/**
+ * Options for killing a command.
+ */
+export interface CommandKillOpts extends CommandRequestOpts {
+  /**
+   * If true, also kills descendants that remain in the command's process group.
+   *
+   * @default false
+   */
+  descendants?: boolean
+}
 
 /**
  * Options for starting a new command.
@@ -274,11 +290,20 @@ export class Commands {
    * It uses `SIGKILL` signal to kill the command.
    *
    * @param pid process ID of the command. You can get the list of running commands using {@link Commands.list}.
-   * @param opts connection options.
+   * @param opts kill and connection options.
    *
    * @returns `true` if the command was killed, `false` if the command was not found.
    */
-  async kill(pid: number, opts?: CommandRequestOpts): Promise<boolean> {
+  async kill(pid: number, opts?: CommandKillOpts): Promise<boolean> {
+    if (
+      opts?.descendants &&
+      compareVersions(this.envdVersion, ENVD_COMMANDS_DESCENDANTS) < 0
+    ) {
+      throw new SandboxError(
+        `Sandbox envd version ${this.envdVersion} doesn't support killing command descendants. Please rebuild your template to pick up the latest sandbox version.`
+      )
+    }
+
     try {
       await this.rpc.sendSignal(
         {
@@ -289,6 +314,7 @@ export class Commands {
             },
           },
           signal: Signal.SIGKILL,
+          descendants: opts?.descendants ?? false,
         },
         {
           signal: this.connectionConfig.getSignal(
@@ -356,7 +382,7 @@ export class Commands {
       return new CommandHandle(
         pid,
         cleanup,
-        () => this.kill(pid),
+        (killOpts) => this.kill(pid, killOpts),
         events,
         opts?.onStdout,
         opts?.onStderr,
@@ -471,7 +497,7 @@ export class Commands {
       return new CommandHandle(
         pid,
         cleanup,
-        () => this.kill(pid),
+        (killOpts) => this.kill(pid, killOpts),
         events,
         opts?.onStdout,
         opts?.onStderr,

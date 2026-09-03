@@ -4,7 +4,7 @@ import {
 } from '../../envd/rpc'
 import { SandboxError } from '../../errors'
 import { ConnectResponse, StartResponse } from '../../envd/process/process_pb'
-import type { CommandRequestOpts } from '.'
+import type { CommandKillOpts, CommandRequestOpts } from '.'
 
 declare const __brand: unique symbol
 type Brand<B> = { [__brand]: B }
@@ -109,7 +109,7 @@ export class CommandHandle
   constructor(
     readonly pid: number,
     private readonly handleDisconnect: () => void,
-    private readonly handleKill: () => Promise<boolean>,
+    private readonly handleKill: (opts?: CommandKillOpts) => Promise<boolean>,
     private readonly events: AsyncIterable<ConnectResponse | StartResponse>,
     private readonly onStdout?: (stdout: string) => void | Promise<void>,
     private readonly onStderr?: (stderr: string) => void | Promise<void>,
@@ -201,10 +201,11 @@ export class CommandHandle
    * Kill the command.
    * It uses `SIGKILL` signal to kill the command.
    *
+   * @param opts kill and connection options.
    * @returns `true` if the command was killed successfully, `false` if the command was not found.
    */
-  async kill() {
-    return await this.handleKill()
+  async kill(opts?: CommandKillOpts) {
+    return await this.handleKill(opts)
   }
 
   /**

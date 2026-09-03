@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { CommandHandle } from '../../../src/sandbox/commands/commandHandle'
+import { Commands } from '../../../src/sandbox/commands'
 
 type EventKind = 'stdout' | 'stderr' | 'pty'
 
@@ -131,6 +132,50 @@ function createControllableEvents() {
 }
 
 describe('CommandHandle', () => {
+  it('sends descendant scope through the Commands RPC', async () => {
+    const sendSignal = vi.fn(async () => ({}))
+    const commands = Object.create(Commands.prototype) as Commands
+    Object.assign(commands, {
+      rpc: { sendSignal },
+      connectionConfig: { getSignal: () => undefined },
+      envdVersion: '0.7.1',
+    })
+
+    await expect(commands.kill(42, { descendants: true })).resolves.toBe(true)
+    expect(sendSignal).toHaveBeenCalledWith(
+      expect.objectContaining({ descendants: true }),
+      expect.anything()
+    )
+  })
+
+  it('rejects descendant scope when envd is too old', async () => {
+    const sendSignal = vi.fn(async () => ({}))
+    const commands = Object.create(Commands.prototype) as Commands
+    Object.assign(commands, {
+      rpc: { sendSignal },
+      connectionConfig: { getSignal: () => undefined },
+      envdVersion: '0.7.0',
+    })
+
+    await expect(commands.kill(42, { descendants: true })).rejects.toThrow(
+      "doesn't support killing command descendants"
+    )
+    expect(sendSignal).not.toHaveBeenCalled()
+  })
+
+  it('forwards descendant scope when killing', async () => {
+    const handleKill = vi.fn(async () => true)
+    const handle = new CommandHandle(
+      1,
+      () => {},
+      handleKill,
+      createEvents('stdout')
+    )
+
+    await expect(handle.kill({ descendants: true })).resolves.toBe(true)
+    expect(handleKill).toHaveBeenCalledWith({ descendants: true })
+  })
+
   it.each<EventKind>(['stdout', 'stderr', 'pty'])(
     'wait awaits async %s callbacks',
     async (kind) => {

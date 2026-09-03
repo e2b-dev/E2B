@@ -149,6 +149,10 @@ message SendSignalRequest {
     ProcessSelector process = 1;
 
     Signal signal = 2;
+
+    // Signal the command's process group instead of only its leader.
+    // This includes descendants that remain in the command's process group.
+    bool descendants = 3;
 }
 
 message SendSignalResponse {}

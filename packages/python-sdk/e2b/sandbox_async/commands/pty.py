@@ -16,6 +16,7 @@ from e2b.connection_config import (
 )
 from e2b.envd.api import acheck_sandbox_health
 from e2b.envd.rpc import ahandle_rpc_exception_with_health
+from e2b.envd.versions import ENVD_COMMANDS_DESCENDANTS
 from e2b.envd.utils import (
     authentication_header,
     extract_start_pid,
@@ -28,6 +29,7 @@ from e2b.sandbox_async.commands.command_handle import (
     OutputHandler,
     PtyOutput,
 )
+from e2b.exceptions import SandboxException
 
 
 class Pty:
@@ -58,20 +60,29 @@ class Pty:
         self,
         pid: int,
         request_timeout: Optional[float] = None,
+        descendants: bool = False,
     ) -> bool:
         """
         Kill PTY.
 
         :param pid: Process ID of the PTY
         :param request_timeout: Timeout for the request in **seconds**
+        :param descendants: If `True`, also kill descendants that remain in the PTY's process group
 
         :return: `true` if the PTY was killed, `false` if the PTY was not found
         """
+        if descendants and self._envd_version < ENVD_COMMANDS_DESCENDANTS:
+            raise SandboxException(
+                f"Sandbox envd version {self._envd_version} doesn't support killing command descendants. "
+                "Please rebuild your template to pick up the latest sandbox version."
+            )
+
         try:
             await self._rpc.send_signal(
                 process_pb.SendSignalRequest(
                     process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
                     signal=process_pb.Signal.SIGKILL,
+                    descendants=descendants,
                 ),
                 timeout_ms=timeout_to_ms(
                     self._connection_config.get_request_timeout(request_timeout)
@@ -168,7 +179,9 @@ class Pty:
             pid = extract_start_pid(start_event, "start process")
             return AsyncCommandHandle(
                 pid=pid,
-                handle_kill=lambda: self.kill(pid),
+                handle_kill=lambda descendants=False: self.kill(
+                    pid, descendants=descendants
+                ),
                 events=events,
                 on_pty=on_data,
                 check_health=self._check_health,
@@ -217,7 +230,9 @@ class Pty:
             pid = extract_start_pid(start_event, "connect to process")
             return AsyncCommandHandle(
                 pid=pid,
-                handle_kill=lambda: self.kill(pid),
+                handle_kill=lambda descendants=False: self.kill(
+                    pid, descendants=descendants
+                ),
                 events=events,
                 on_pty=on_data,
                 check_health=self._check_health,

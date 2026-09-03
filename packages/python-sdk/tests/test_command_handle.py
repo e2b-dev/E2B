@@ -1,13 +1,18 @@
 import asyncio
+from types import SimpleNamespace
 from typing import Any, cast
 
 import pytest
+from packaging.version import Version
 
 from protobuf import Oneof
 
 from e2b.envd.process import process_pb
+from e2b.exceptions import SandboxException
 from e2b.sandbox_async.commands.command_handle import AsyncCommandHandle
+from e2b.sandbox_async.commands.command import Commands as AsyncCommands
 from e2b.sandbox_sync.commands.command_handle import CommandHandle
+from e2b.sandbox_sync.commands.command import Commands as SyncCommands
 
 EMOJI = "😀"
 EMOJI_BYTES = EMOJI.encode("utf-8")  # 4 bytes
@@ -46,8 +51,89 @@ def _end_event(exit_code: int = 0) -> process_pb.StartResponse:
     )
 
 
-async def _kill() -> bool:
+async def _kill(_descendants: bool = False) -> bool:
     return True
+
+
+def test_sync_kill_forwards_descendant_scope():
+    scopes = []
+    handle = CommandHandle(
+        pid=1,
+        handle_kill=lambda descendants: scopes.append(descendants) or True,
+        events=iter(()),
+    )
+
+    assert handle.kill(descendants=True)
+    assert scopes == [True]
+
+
+async def test_async_kill_forwards_descendant_scope():
+    scopes = []
+
+    async def kill(descendants: bool) -> bool:
+        scopes.append(descendants)
+        return True
+
+    async def events():
+        if False:
+            yield None
+
+    handle = AsyncCommandHandle(pid=1, handle_kill=kill, events=events())
+
+    assert await handle.kill(descendants=True)
+    assert scopes == [True]
+
+
+def test_sync_commands_kill_sends_descendant_scope():
+    requests = []
+    commands = object.__new__(SyncCommands)
+    commands._rpc = SimpleNamespace(
+        send_signal=lambda request, **_kwargs: requests.append(request)
+    )
+    commands._connection_config = SimpleNamespace(
+        get_request_timeout=lambda request_timeout: request_timeout
+    )
+    commands._envd_version = Version("0.7.1")
+
+    assert commands.kill(42, descendants=True)
+    assert requests[0].descendants is True
+
+
+async def test_async_commands_kill_sends_descendant_scope():
+    requests = []
+
+    async def send_signal(request, **_kwargs):
+        requests.append(request)
+
+    commands = object.__new__(AsyncCommands)
+    commands._rpc = SimpleNamespace(send_signal=send_signal)
+    commands._connection_config = SimpleNamespace(
+        get_request_timeout=lambda request_timeout: request_timeout
+    )
+    commands._envd_version = Version("0.7.1")
+
+    assert await commands.kill(42, descendants=True)
+    assert requests[0].descendants is True
+
+
+def test_sync_commands_kill_rejects_descendant_scope_for_old_envd():
+    commands = object.__new__(SyncCommands)
+    commands._envd_version = Version("0.7.0")
+
+    with pytest.raises(
+        SandboxException, match="doesn't support killing command descendants"
+    ):
+        commands.kill(42, descendants=True)
+
+
+async def test_async_commands_kill_rejects_descendant_scope_for_old_envd():
+    commands = object.__new__(AsyncCommands)
+    commands._envd_version = Version("0.7.0")
+
+    with pytest.raises(
+        SandboxException, match="doesn't support killing command descendants"
+    ):
+        await commands.kill(42, descendants=True)
 
 
 class _AsyncControllableEvents:
@@ -127,7 +213,9 @@ def test_sync_has_no_background_subscription():
         yield _stdout_event(b"a")
         yield _end_event()
 
-    handle = CommandHandle(pid=1, handle_kill=lambda: True, events=events())
+    handle = CommandHandle(
+        pid=1, handle_kill=lambda _descendants=False: True, events=events()
+    )
 
     # Nothing is consumed until the caller iterates.
     assert consumed == []
@@ -145,7 +233,9 @@ def test_sync_records_result_before_yielding_flushed_chunk():
         yield _stdout_event(b"a" + EMOJI_BYTES[:2])
         yield _end_event(0)
 
-    handle = CommandHandle(pid=1, handle_kill=lambda: True, events=events())
+    handle = CommandHandle(
+        pid=1, handle_kill=lambda _descendants=False: True, events=events()
+    )
     iterator = iter(handle)
     assert next(iterator) == ("a", None, None)
     # The end event flushes a trailing replacement character; pull just that
@@ -167,7 +257,9 @@ def test_sync_decodes_multibyte_chars_split_across_chunks():
         yield _end_event()
 
     chunks = []
-    handle = CommandHandle(pid=1, handle_kill=lambda: True, events=events())
+    handle = CommandHandle(
+        pid=1, handle_kill=lambda _descendants=False: True, events=events()
+    )
     result = handle.wait(on_stdout=chunks.append)
 
     assert result.stdout == f"a{EMOJI}b"
@@ -182,7 +274,9 @@ def test_sync_replaces_incomplete_trailing_utf8():
         yield _stdout_event(b"a" + EMOJI_BYTES[:2])
         yield _end_event()
 
-    handle = CommandHandle(pid=1, handle_kill=lambda: True, events=events())
+    handle = CommandHandle(
+        pid=1, handle_kill=lambda _descendants=False: True, events=events()
+    )
     result = handle.wait()
 
     assert result.stdout == "a�"
@@ -228,7 +322,9 @@ def test_sync_flushes_incomplete_trailing_utf8_without_end_event():
         yield _stdout_event(b"a" + EMOJI_BYTES[:2])
 
     chunks = []
-    handle = CommandHandle(pid=1, handle_kill=lambda: True, events=events())
+    handle = CommandHandle(
+        pid=1, handle_kill=lambda _descendants=False: True, events=events()
+    )
     for stdout, _, _ in handle:
         if stdout is not None:
             chunks.append(stdout)
@@ -258,7 +354,9 @@ def test_sync_flushes_incomplete_trailing_utf8_on_stream_error():
         raise RuntimeError("stream died")
 
     chunks = []
-    handle = CommandHandle(pid=1, handle_kill=lambda: True, events=events())
+    handle = CommandHandle(
+        pid=1, handle_kill=lambda _descendants=False: True, events=events()
+    )
 
     # The stream raises before an end event, but the buffered bytes must still
     # be flushed as a replacement character before the error is surfaced.
