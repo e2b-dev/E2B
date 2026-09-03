@@ -285,9 +285,10 @@ class AsyncSandbox(SandboxApi):
             snapshot untouched — never modified, never deleted — so the same snapshot can
             still be restored later. Disk state carries crash-recovery semantics: writes
             not flushed before the pause may be lost. A no-op for a snapshot that holds no
-            memory, and ignored for a sandbox that is already running. Deployments that
-            have not enabled filesystem-only resume reject `"reboot"` with an error rather
-            than quietly restoring the memory.
+            memory, and ignored for a sandbox that is already running. Where
+            filesystem-only resume is not enabled, a `"reboot"` that would actually drop
+            memory is rejected with an error rather than quietly restoring it; the no-op
+            cases above are unaffected.
         :return: A running sandbox instance
 
         @example
@@ -327,9 +328,10 @@ class AsyncSandbox(SandboxApi):
             snapshot untouched — never modified, never deleted — so the same snapshot can
             still be restored later. Disk state carries crash-recovery semantics: writes
             not flushed before the pause may be lost. A no-op for a snapshot that holds no
-            memory, and ignored for a sandbox that is already running. Deployments that
-            have not enabled filesystem-only resume reject `"reboot"` with an error rather
-            than quietly restoring the memory.
+            memory, and ignored for a sandbox that is already running. Where
+            filesystem-only resume is not enabled, a `"reboot"` that would actually drop
+            memory is rejected with an error rather than quietly restoring it; the no-op
+            cases above are unaffected.
         :return: A running sandbox instance
 
         @example
@@ -365,9 +367,10 @@ class AsyncSandbox(SandboxApi):
             snapshot untouched — never modified, never deleted — so the same snapshot can
             still be restored later. Disk state carries crash-recovery semantics: writes
             not flushed before the pause may be lost. A no-op for a snapshot that holds no
-            memory, and ignored for a sandbox that is already running. Deployments that
-            have not enabled filesystem-only resume reject `"reboot"` with an error rather
-            than quietly restoring the memory.
+            memory, and ignored for a sandbox that is already running. Where
+            filesystem-only resume is not enabled, a `"reboot"` that would actually drop
+            memory is rejected with an error rather than quietly restoring it; the no-op
+            cases above are unaffected.
         :return: A running sandbox instance
 
         @example

@@ -698,8 +698,9 @@ export type SandboxConnectOpts = ConnectionOpts & {
    * snapshot that holds no memory, and ignored for a sandbox that is already
    * running.
    *
-   * Deployments that have not enabled filesystem-only resume reject
-   * `'reboot'` with an error rather than quietly restoring the memory.
+   * Where filesystem-only resume is not enabled, a `'reboot'` that would
+   * actually drop memory is rejected with an error rather than quietly
+   * restoring it; the no-op cases above are unaffected.
    *
    * @default 'restore'
    */
