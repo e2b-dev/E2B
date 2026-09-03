@@ -1,3 +1,4 @@
+import inspect
 from types import SimpleNamespace
 from typing import Any, Dict, Optional, cast
 from unittest.mock import AsyncMock, Mock
@@ -101,3 +102,20 @@ async def test_async_instance_connect_carries_on_resume(monkeypatch, test_api_ke
 
     await sandbox.connect()
     assert "memory" not in request.call_args.kwargs["body"].to_dict()
+
+
+@pytest.mark.parametrize("sandbox", [Sandbox, AsyncSandbox], ids=["sync", "async"])
+def test_on_resume_is_keyword_only(sandbox):
+    # An optional parameter must not extend connect()'s positional chain, or
+    # `connect(sandbox_id, 300, "reboot")` becomes a valid call.
+    signature = inspect.signature(sandbox.connect)
+
+    assert signature.parameters["on_resume"].kind is inspect.Parameter.KEYWORD_ONLY
+    assert signature.parameters["timeout"].kind is not inspect.Parameter.KEYWORD_ONLY
+
+    with pytest.raises(TypeError):
+        signature.bind("sbx-test", 300, "reboot")
+
+    assert signature.bind("sbx-test", on_resume="reboot").arguments["on_resume"] == (
+        "reboot"
+    )

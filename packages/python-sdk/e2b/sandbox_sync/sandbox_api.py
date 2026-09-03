@@ -341,8 +341,9 @@ class SandboxApi(SandboxBase):
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
-        on_resume: SandboxOnResume = "restore",
         logger: Optional[logging.Logger] = None,
+        *,
+        on_resume: SandboxOnResume = "restore",
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
         timeout = timeout or SandboxBase.default_sandbox_timeout

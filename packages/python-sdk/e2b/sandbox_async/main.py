@@ -267,6 +267,7 @@ class AsyncSandbox(SandboxApi):
     async def connect(
         self,
         timeout: Optional[int] = None,
+        *,
         on_resume: SandboxOnResume = "restore",
         **opts: Unpack[ApiParams],
     ) -> Self:
@@ -305,8 +306,9 @@ class AsyncSandbox(SandboxApi):
     async def connect(
         sandbox_id: str,
         timeout: Optional[int] = None,
-        on_resume: SandboxOnResume = "restore",
         logger: Optional[logging.Logger] = None,
+        *,
+        on_resume: SandboxOnResume = "restore",
         **opts: Unpack[ApiParams],
     ) -> "AsyncSandbox":
         """
@@ -318,6 +320,7 @@ class AsyncSandbox(SandboxApi):
         :param sandbox_id: Sandbox ID
         :param timeout: Timeout for the sandbox in **seconds**
             For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
+        :param logger: Logger used for request and response logging for this sandbox. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
         :param on_resume: How to bring a paused sandbox back. `"restore"` (the default)
             restores the memory snapshot, so processes and open connections survive the
             pause. `"reboot"` cold-boots from disk state alone and leaves the memory
@@ -327,7 +330,6 @@ class AsyncSandbox(SandboxApi):
             memory, and ignored for a sandbox that is already running. Deployments that
             have not enabled filesystem-only resume reject `"reboot"` with an error rather
             than quietly restoring the memory.
-        :param logger: Logger used for request and response logging for this sandbox. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
         :return: A running sandbox instance
 
         @example
@@ -345,6 +347,7 @@ class AsyncSandbox(SandboxApi):
     async def connect(
         self,
         timeout: Optional[int] = None,
+        *,
         on_resume: SandboxOnResume = "restore",
         **opts: Unpack[ApiParams],
     ) -> Self:
@@ -1041,8 +1044,9 @@ class AsyncSandbox(SandboxApi):
         cls,
         sandbox_id: str,
         timeout: Optional[int] = None,
-        on_resume: SandboxOnResume = "restore",
         logger: Optional[logging.Logger] = None,
+        *,
+        on_resume: SandboxOnResume = "restore",
         **opts: Unpack[ApiParams],
     ) -> Self:
         params = cls._resolve_api_params(**opts)
