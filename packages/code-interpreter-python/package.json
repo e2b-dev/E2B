@@ -1,7 +1,7 @@
 {
   "name": "@e2b/code-interpreter-python",
   "private": true,
-  "version": "2.9.2",
+  "version": "2.9.3",
   "scripts": {
     "test": "uv run pytest -n 4 --verbose -x",
     "postVersion": "uv version $(pnpm pkg get version --workspaces=false | tr -d \\\")",

@@ -1,5 +1,17 @@
 # @e2b/desktop-python
 
+## 2.4.6
+
+### Patch Changes
+
+- ba1587f: Wait for the XFCE session to be fully ready before returning a new Desktop sandbox, and clean up the sandbox if desktop startup fails.
+
+## 2.4.5
+
+### Patch Changes
+
+- de01606: Bump past 2.4.4, which was already published to PyPI from the pre-migration e2b-dev/desktop repository with different file contents, causing `uv publish --check-url` to fail during release.
+
 ## 2.4.4
 
 ### Patch Changes

@@ -66,6 +66,16 @@ paginator = Sandbox.list()
 
 Per-call params still take precedence over the client's params, and clients are isolated from each other and from the env-configured top-level exports.
 
+### High-concurrency sandbox streams
+
+The Python SDK spreads sandbox `commands` and `files` traffic across four HTTP/2 connection pools by default. This prevents long-running streams in one process from all contending for a single connection's concurrent-stream limit.
+
+If one process needs more capacity, set `E2B_ENVD_POOL_SHARDS` before importing `e2b`. Each additional shard can open another connection to the sandbox host, so increase it only as needed:
+
+```sh
+E2B_ENVD_POOL_SHARDS=8 python eval.py
+```
+
 ### 5. Code execution with Code Interpreter
 
 If you need [`run_code()`](https://docs.e2b.dev/code-interpreting/analyze-data-with-ai?utm_source=pypi&utm_medium=referral&utm_campaign=readme&utm_content=e2b), install the [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter):

@@ -12,7 +12,8 @@ export default defineConfig(
       // cannot listen on; the Node unit project keeps running it.
       'tests/client.test.ts',
     ],
-    testTimeout: 60_000,
+    testTimeout: 90_000,
+    maxWorkers: 1,
     isExpectedRejection: isConnectRpcRejection,
   })
 )

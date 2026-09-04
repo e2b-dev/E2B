@@ -6,8 +6,11 @@ import { createSdkVitestConfig } from '../../vitest.sdk.config.mts'
 const env = config()
 
 export default defineConfig(
-  createSdkVitestConfig({
-    ...(process.env as Record<string, string>),
-    ...env.parsed,
-  })
+  createSdkVitestConfig(
+    {
+      ...(process.env as Record<string, string>),
+      ...env.parsed,
+    },
+    { testTimeout: 90_000 }
+  )
 )

@@ -12,9 +12,10 @@ sandboxTest.skipIf(isDebug)(
 
     const err = await cmd.wait().catch((e) => e)
     expect(err).toBeInstanceOf(TimeoutError)
-    // The health check confirms the sandbox is gone, so the error states it outright
-    expect(err.message).toContain(
-      'sandbox was killed or reached its end of life'
+    // The proxy emits Unavailable at a frame boundary; a partial frame remains a
+    // transport failure and is disambiguated by the SDK's sandbox health check.
+    expect(err.message).toMatch(
+      /ended before the stream completed|sandbox was killed or reached its end of life/
     )
   }
 )

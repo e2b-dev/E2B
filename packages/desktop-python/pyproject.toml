@@ -1,6 +1,6 @@
 [project]
 name = "e2b-desktop"
-version = "2.4.4"
+version = "2.4.6"
 description = "E2B Desktop Sandbox - Desktop sandbox in cloud powered by E2B"
 authors = [{ name = "e2b", email = "hello@e2b.dev" }]
 license = "MIT"

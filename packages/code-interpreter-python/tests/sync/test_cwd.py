@@ -22,14 +22,15 @@ def test_cwd_typescript(sandbox: Sandbox):
 
 
 @pytest.mark.skip_debug()
-def test_cwd_r(sandbox: Sandbox):
+def test_cwd_r(sandbox: Sandbox, wait_for_kernel):
+    wait_for_kernel(sandbox, "r")
     result = sandbox.run_code("getwd()", language="r")
     assert result.results[0].text.strip() == '[1] "/home/user"'
 
 
 @pytest.mark.skip_debug()
-def test_cwd_java(sandbox: Sandbox):
-    result = sandbox.run_code('System.getProperty("user.dir")', language="java")
+def test_cwd_java(java_sandbox: Sandbox):
+    result = java_sandbox.run_code('System.getProperty("user.dir")', language="java")
     assert result.results[0].text.strip() == "/home/user"
 
 

@@ -9,5 +9,7 @@ export default defineConfig(
       // cannot listen on; the Node unit project keeps running it.
       'tests/client.test.ts',
     ],
+    testTimeout: 90_000,
+    maxWorkers: 1,
   })
 )

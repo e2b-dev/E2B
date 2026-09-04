@@ -3,11 +3,12 @@ from e2b_code_interpreter.code_interpreter_async import AsyncSandbox
 
 
 @pytest.mark.skip_debug()
-async def test_env_vars_on_sandbox(template):
+async def test_env_vars_on_sandbox(template, wait_for_kernel_async):
     sandbox = await AsyncSandbox.create(
         template=template, envs={"TEST_ENV_VAR": "supertest"}
     )
     try:
+        await wait_for_kernel_async(sandbox, "r")
         result = await sandbox.run_code('Sys.getenv("TEST_ENV_VAR")', language="r")
         assert result.results[0].text is not None
         assert result.results[0].text.strip() == '[1] "supertest"'
@@ -15,7 +16,10 @@ async def test_env_vars_on_sandbox(template):
         await sandbox.kill()
 
 
-async def test_env_vars_per_execution(async_sandbox: AsyncSandbox):
+async def test_env_vars_per_execution(
+    async_sandbox: AsyncSandbox, wait_for_kernel_async
+):
+    await wait_for_kernel_async(async_sandbox, "r")
     result = await async_sandbox.run_code(
         'Sys.getenv("FOO")', envs={"FOO": "bar"}, language="r"
     )
@@ -31,11 +35,12 @@ async def test_env_vars_per_execution(async_sandbox: AsyncSandbox):
 
 
 @pytest.mark.skip_debug()
-async def test_env_vars_overwrite(template):
+async def test_env_vars_overwrite(template, wait_for_kernel_async):
     sandbox = await AsyncSandbox.create(
         template=template, envs={"TEST_ENV_VAR": "supertest"}
     )
     try:
+        await wait_for_kernel_async(sandbox, "r")
         result = await sandbox.run_code(
             'Sys.getenv("TEST_ENV_VAR")',
             language="r",
