@@ -4,27 +4,28 @@ from typing import Any, TypeVar
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-T = TypeVar("T", bound="NewAccessToken")
+T = TypeVar("T", bound="RigCapacityChange")
 
 
 @_attrs_define
-class NewAccessToken:
-    """
+class RigCapacityChange:
+    """Desired capacity to set on the rig's scaling group
+
     Attributes:
-        name (str): Name of the access token
+        desired (int): Absolute desired number of instances in the rig
     """
 
-    name: str
+    desired: int
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        name = self.name
+        desired = self.desired
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "name": name,
+                "desired": desired,
             }
         )
 
@@ -33,14 +34,14 @@ class NewAccessToken:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        name = d.pop("name")
+        desired = d.pop("desired")
 
-        new_access_token = cls(
-            name=name,
+        rig_capacity_change = cls(
+            desired=desired,
         )
 
-        new_access_token.additional_properties = d
-        return new_access_token
+        rig_capacity_change.additional_properties = d
+        return rig_capacity_change
 
     @property
     def additional_keys(self) -> list[str]:

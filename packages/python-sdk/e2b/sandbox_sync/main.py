@@ -28,6 +28,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxMetrics,
     SandboxNetworkOpts,
     SandboxNetworkUpdate,
+    SandboxOnResume,
     SnapshotInfo,
 )
 from e2b.sandbox.utils import class_method_variant
@@ -260,6 +261,8 @@ class Sandbox(SandboxApi):
     def connect(
         self,
         timeout: Optional[int] = None,
+        *,
+        on_resume: SandboxOnResume = "restore",
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -270,6 +273,10 @@ class Sandbox(SandboxApi):
 
         :param timeout: Timeout for the sandbox in **seconds**
             For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
+        :param on_resume: `"restore"` (the default) restores the memory snapshot; `"reboot"`
+            cold-boots from disk state, so writes not flushed before the pause may be lost.
+            Rejected where filesystem-only resume is not enabled; a no-op for a snapshot
+            without memory or a sandbox that is already running.
         :return: A running sandbox instance
 
         @example
@@ -290,6 +297,8 @@ class Sandbox(SandboxApi):
         sandbox_id: str,
         timeout: Optional[int] = None,
         logger: Optional[logging.Logger] = None,
+        *,
+        on_resume: SandboxOnResume = "restore",
         **opts: Unpack[ApiParams],
     ) -> "Sandbox":
         """
@@ -302,6 +311,10 @@ class Sandbox(SandboxApi):
         :param timeout: Timeout for the sandbox in **seconds**.
             For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
         :param logger: Logger used for request and response logging for this sandbox. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
+        :param on_resume: `"restore"` (the default) restores the memory snapshot; `"reboot"`
+            cold-boots from disk state, so writes not flushed before the pause may be lost.
+            Rejected where filesystem-only resume is not enabled; a no-op for a snapshot
+            without memory or a sandbox that is already running.
         :return: A running sandbox instance
 
         @example
@@ -319,6 +332,8 @@ class Sandbox(SandboxApi):
     def connect(
         self,
         timeout: Optional[int] = None,
+        *,
+        on_resume: SandboxOnResume = "restore",
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -329,6 +344,10 @@ class Sandbox(SandboxApi):
 
         :param timeout: Timeout for the sandbox in **seconds**.
             For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
+        :param on_resume: `"restore"` (the default) restores the memory snapshot; `"reboot"`
+            cold-boots from disk state, so writes not flushed before the pause may be lost.
+            Rejected where filesystem-only resume is not enabled; a no-op for a snapshot
+            without memory or a sandbox that is already running.
         :return: A running sandbox instance
 
         @example
@@ -347,6 +366,7 @@ class Sandbox(SandboxApi):
         SandboxApi._cls_connect(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
+            on_resume=on_resume,
             **self.connection_config.get_api_params(**opts),
         )
 
@@ -1006,6 +1026,8 @@ class Sandbox(SandboxApi):
         sandbox_id: str,
         timeout: Optional[int] = None,
         logger: Optional[logging.Logger] = None,
+        *,
+        on_resume: SandboxOnResume = "restore",
         **opts: Unpack[ApiParams],
     ) -> Self:
         params = cls._resolve_api_params(**opts)
@@ -1019,6 +1041,7 @@ class Sandbox(SandboxApi):
             sandbox = SandboxApi._cls_connect(
                 sandbox_id=sandbox_id,
                 timeout=timeout,
+                on_resume=on_resume,
                 logger=logger,
                 **params,
             )

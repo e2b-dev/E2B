@@ -524,7 +524,7 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody: {
+            requestBody?: {
                 content: {
                     "application/json": components["schemas"]["ResumedSandbox"];
                 };
@@ -2220,6 +2220,8 @@ export interface components {
             step?: string;
         };
         ConnectSandbox: {
+            /** @description Defaults to true. When false and the sandbox is paused, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. */
+            memory?: boolean;
             /**
              * Format: int32
              * @description Timeout in seconds from the current time after which the sandbox should expire
@@ -2231,23 +2233,6 @@ export interface components {
          * @description CPU cores for the sandbox
          */
         CPUCount: number;
-        CreatedAccessToken: {
-            /**
-             * Format: date-time
-             * @description Timestamp of access token creation
-             */
-            createdAt: string;
-            /**
-             * Format: uuid
-             * @description Identifier of the access token
-             */
-            id: string;
-            mask: components["schemas"]["IdentifierMaskingDetails"];
-            /** @description Name of the access token */
-            name: string;
-            /** @description The fully created access token */
-            token: string;
-        };
         CreatedTeamAPIKey: {
             /**
              * Format: date-time
@@ -2427,10 +2412,6 @@ export interface components {
          * @description Memory for the sandbox in MiB
          */
         MemoryMB: number;
-        NewAccessToken: {
-            /** @description Name of the access token */
-            name: string;
-        };
         NewSandbox: {
             /** @description Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut to 0.0.0.0/0 in the network config. */
             allow_internet_access?: boolean;
@@ -2634,12 +2615,81 @@ export interface components {
              * @description Automatically pauses the sandbox after the timeout
              */
             autoPause?: boolean;
+            /** @description Defaults to true. When false, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. */
+            memory?: boolean;
             /**
              * Format: int32
              * @description Time to live for the sandbox in seconds.
              * @default 15
              */
             timeout?: number;
+        };
+        /** @description An orchestrator node pool backed by one cloud scaling group */
+        Rig: {
+            /**
+             * Format: int32
+             * @description Number of instances currently attached to the rig
+             */
+            capacityCurrent: number;
+            /**
+             * Format: int32
+             * @description Desired number of instances in the rig
+             */
+            capacityDesired: number;
+            /**
+             * Format: int32
+             * @description Maximum capacity enforced on the rig's scaling group. Omitted when nothing enforces bounds (GCP MIG without an active autoscaler).
+             */
+            capacityMax?: number;
+            /**
+             * Format: int32
+             * @description Minimum capacity enforced on the rig's scaling group. Omitted when nothing enforces bounds (GCP MIG without an active autoscaler).
+             */
+            capacityMin?: number;
+            /** @description Rig identifier (e.g. "default") */
+            id: string;
+            /** @description Cloud provider backing the rig ("aws" or "gcp") */
+            provider: string;
+            /** @description Canonical cloud resource ID of the scaling group backing the rig (ARN on AWS, self-link on GCP) */
+            resourceID: string;
+        };
+        /** @description Desired capacity to set on the rig's scaling group */
+        RigCapacityChange: {
+            /**
+             * Format: int32
+             * @description Absolute desired number of instances in the rig
+             */
+            desired: number;
+        };
+        /** @description Scaling error on the rig's scaling group, e.g. a failed instance creation due to resource exhaustion */
+        RigError: {
+            /** @description Action being performed when the error occurred (e.g. CREATING) */
+            action?: string;
+            /** @description Provider-specific error code (e.g. ZONE_RESOURCE_POOL_EXHAUSTED, Failed) */
+            code: string;
+            /** @description Instance the error relates to, if any */
+            instance?: string;
+            /** @description Human-readable error message */
+            message: string;
+            /**
+             * Format: date-time
+             * @description When the error occurred
+             */
+            timestamp: string;
+        };
+        /** @description An instance attached to a rig's scaling group */
+        RigInstance: {
+            /**
+             * Format: date-time
+             * @description When the provider created the instance. Omitted while the instance is transitioning.
+             */
+            createdAt?: string;
+            /** @description Provider instance ID (EC2 instance ID on AWS, instance name on GCP), also the node ID the orchestrator reports */
+            id: string;
+            /** @description The instance is on its way out of the group and can never become healthy again */
+            terminating: boolean;
+            /** @description The provider is creating, deleting, recreating or otherwise mutating the instance */
+            transitioning: boolean;
         };
         Sandbox: {
             /** @description Alias of the template */
@@ -2860,9 +2910,11 @@ export interface components {
             /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
             denyOut?: string[];
             egressProxy?: components["schemas"]["SandboxEgressProxyConfig"];
+            /** @description Sandbox ports that serve HTTPS rather than plaintext HTTP. Affects how the proxy reaches the service inside the sandbox; the public URL is HTTPS either way. Certificates are not verified, so self-signed ones work. The envd port (49983) cannot be listed. */
+            httpsPorts?: number[];
             /** @description Specify host mask which will be used for all sandbox requests */
             maskRequestHost?: string;
-            /** @description Per-domain transform rules applied to matching egress HTTP/HTTPS requests. Keys are domains (e.g. "api.example.com", "example.com"). A domain listed here is not automatically allowed - use allowOut to permit the traffic. */
+            /** @description Per-domain transform rules applied to matching outbound HTTPS requests. Keys may be exact DNS names (for example, "api.example.com") or a leading wildcard (for example, "*.example.com"), and are normalized to lowercase on write. Wildcards match subdomains at any depth but not the apex domain; a bare "*" is invalid. Exact rules take precedence, followed by the longest matching wildcard suffix, and matching rule sets are not merged. Broad wildcards such as "*.com" are allowed and may expose transformed credentials to every matching destination the sandbox contacts. Rules do not grant network access; configure allowOut separately to permit the destination. */
             rules?: {
                 [key: string]: components["schemas"]["SandboxNetworkRule"][];
             };
@@ -2887,7 +2939,7 @@ export interface components {
             /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
             denyOut?: string[];
             egressProxy?: components["schemas"]["SandboxEgressProxyConfig"];
-            /** @description Per-domain transform rules. Replaces all existing rules when provided. */
+            /** @description Per-domain transform rules applied to matching outbound HTTPS requests. Replaces all existing rules when provided. Keys may be exact DNS names or a single leading wildcard (for example, "*.example.com"), and are normalized to lowercase on write. Wildcards match subdomains at any depth but not the apex domain; a bare "*" is invalid. Exact rules take precedence, followed by the longest matching wildcard suffix, and matching rule sets are not merged. Broad wildcards such as "*.com" are allowed and may expose transformed credentials to every matching destination the sandbox contacts. Rules do not grant network access; configure allowOut separately to permit the destination. */
             rules?: {
                 [key: string]: components["schemas"]["SandboxNetworkRule"][];
             };
@@ -3421,15 +3473,6 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
-        /** @description Gone */
-        410: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
         /** @description Too many requests */
         429: {
             headers: {
@@ -3441,6 +3484,15 @@ export interface components {
         };
         /** @description Server error */
         500: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Not implemented by this deployment */
+        501: {
             headers: {
                 [name: string]: unknown;
             };
@@ -3477,14 +3529,17 @@ export interface components {
         };
     };
     parameters: {
-        accessTokenID: string;
         apiKeyID: string;
         buildID: string;
+        /** @description Identifier of the cluster */
+        clusterID: string;
         nodeID: string;
         /** @description Maximum number of items to return per page */
         paginationLimit: number;
         /** @description Cursor to start the list from */
         paginationNextToken: string;
+        /** @description Rig identifier (e.g. "default") */
+        rigID: string;
         sandboxID: string;
         secretID: string;
         snapshotID: string;
