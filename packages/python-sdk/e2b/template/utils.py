@@ -406,7 +406,7 @@ def pad_octal(mode: int) -> str:
     return f"{mode:04o}"
 
 
-def get_build_step_index(step: str, stack_traces_length: int) -> int:
+def get_build_step_index(step: str, stack_traces_length: int) -> Optional[int]:
     """
     Get the array index for a build step based on its name.
 
@@ -414,11 +414,12 @@ def get_build_step_index(step: str, stack_traces_length: int) -> int:
     - BASE_STEP_NAME: Returns 0 (first step)
     - FINALIZE_STEP_NAME: Returns the last index
     - Numeric strings: Converted to number
+    - Anything else: None (no matching local stack trace)
 
     :param step: Build step name or number as string
     :param stack_traces_length: Total number of stack traces (used for FINALIZE_STEP_NAME)
 
-    :return: Index for the build step
+    :return: Index for the build step, or None if the step has no usable index
     """
     if step == BASE_STEP_NAME:
         return 0
@@ -426,7 +427,10 @@ def get_build_step_index(step: str, stack_traces_length: int) -> int:
     if step == FINALIZE_STEP_NAME:
         return stack_traces_length - 1
 
-    return int(step)
+    try:
+        return int(step)
+    except ValueError:
+        return None
 
 
 def read_gcp_service_account_json(
