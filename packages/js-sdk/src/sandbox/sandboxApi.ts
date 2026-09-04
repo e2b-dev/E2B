@@ -691,12 +691,13 @@ export type SandboxConnectOpts = ConnectionOpts & {
   /**
    * How to bring a paused sandbox back.
    *
-   * With `'reboot'` the sandbox cold-boots from its disk state and the memory
-   * snapshot is left untouched — never modified, never deleted — so the same
-   * snapshot can still be restored later. Disk state carries crash-recovery
-   * semantics: writes not flushed before the pause may be lost. A no-op for a
-   * snapshot that holds no memory, and ignored for a sandbox that is already
-   * running.
+   * With `'reboot'` the sandbox cold-boots from its disk state. The reboot
+   * neither modifies nor deletes the memory snapshot, so one that fails to
+   * start leaves the sandbox paused and the resume retryable; after a
+   * successful reboot, pause the sandbox again to keep a snapshot. Disk state
+   * carries crash-recovery semantics: writes not flushed before the pause may
+   * be lost. A no-op for a snapshot that holds no memory, and ignored for a
+   * sandbox that is already running.
    *
    * Where filesystem-only resume is not enabled, a `'reboot'` that would
    * actually drop memory is rejected with an error rather than quietly

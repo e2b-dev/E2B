@@ -281,11 +281,12 @@ class AsyncSandbox(SandboxApi):
             For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
         :param on_resume: How to bring a paused sandbox back. `"restore"` (the default)
             restores the memory snapshot, so processes and open connections survive the
-            pause. `"reboot"` cold-boots from disk state alone and leaves the memory
-            snapshot untouched — never modified, never deleted — so the same snapshot can
-            still be restored later. Disk state carries crash-recovery semantics: writes
-            not flushed before the pause may be lost. A no-op for a snapshot that holds no
-            memory, and ignored for a sandbox that is already running. Where
+            pause. `"reboot"` cold-boots from disk state alone. The reboot neither
+            modifies nor deletes the memory snapshot, so one that fails to start leaves the
+            sandbox paused and the resume retryable; after a successful reboot, pause the
+            sandbox again to keep a snapshot. Disk state carries crash-recovery semantics:
+            writes not flushed before the pause may be lost. A no-op for a snapshot that
+            holds no memory, and ignored for a sandbox that is already running. Where
             filesystem-only resume is not enabled, a `"reboot"` that would actually drop
             memory is rejected with an error rather than quietly restoring it; the no-op
             cases above are unaffected.
@@ -324,11 +325,12 @@ class AsyncSandbox(SandboxApi):
         :param logger: Logger used for request and response logging for this sandbox. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
         :param on_resume: How to bring a paused sandbox back. `"restore"` (the default)
             restores the memory snapshot, so processes and open connections survive the
-            pause. `"reboot"` cold-boots from disk state alone and leaves the memory
-            snapshot untouched — never modified, never deleted — so the same snapshot can
-            still be restored later. Disk state carries crash-recovery semantics: writes
-            not flushed before the pause may be lost. A no-op for a snapshot that holds no
-            memory, and ignored for a sandbox that is already running. Where
+            pause. `"reboot"` cold-boots from disk state alone. The reboot neither
+            modifies nor deletes the memory snapshot, so one that fails to start leaves the
+            sandbox paused and the resume retryable; after a successful reboot, pause the
+            sandbox again to keep a snapshot. Disk state carries crash-recovery semantics:
+            writes not flushed before the pause may be lost. A no-op for a snapshot that
+            holds no memory, and ignored for a sandbox that is already running. Where
             filesystem-only resume is not enabled, a `"reboot"` that would actually drop
             memory is rejected with an error rather than quietly restoring it; the no-op
             cases above are unaffected.
@@ -363,11 +365,12 @@ class AsyncSandbox(SandboxApi):
             For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
         :param on_resume: How to bring a paused sandbox back. `"restore"` (the default)
             restores the memory snapshot, so processes and open connections survive the
-            pause. `"reboot"` cold-boots from disk state alone and leaves the memory
-            snapshot untouched — never modified, never deleted — so the same snapshot can
-            still be restored later. Disk state carries crash-recovery semantics: writes
-            not flushed before the pause may be lost. A no-op for a snapshot that holds no
-            memory, and ignored for a sandbox that is already running. Where
+            pause. `"reboot"` cold-boots from disk state alone. The reboot neither
+            modifies nor deletes the memory snapshot, so one that fails to start leaves the
+            sandbox paused and the resume retryable; after a successful reboot, pause the
+            sandbox again to keep a snapshot. Disk state carries crash-recovery semantics:
+            writes not flushed before the pause may be lost. A no-op for a snapshot that
+            holds no memory, and ignored for a sandbox that is already running. Where
             filesystem-only resume is not enabled, a `"reboot"` that would actually drop
             memory is rejected with an error rather than quietly restoring it; the no-op
             cases above are unaffected.

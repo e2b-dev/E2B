@@ -8,6 +8,8 @@ import pytest
 from e2b import AsyncSandbox, Sandbox
 from e2b.api.client.api.sandboxes import post_sandboxes_sandbox_id_connect
 from e2b.api.client.models import Sandbox as SandboxModel
+from e2b.sandbox_async.sandbox_api import SandboxApi as AsyncSandboxApi
+from e2b.sandbox_sync.sandbox_api import SandboxApi as SyncSandboxApi
 
 SANDBOX_ID = "sbx-test"
 
@@ -104,18 +106,41 @@ async def test_async_instance_connect_carries_on_resume(monkeypatch, test_api_ke
     assert "memory" not in request.call_args.kwargs["body"].to_dict()
 
 
+# `class_method_variant` wraps the instance method with `functools.wraps`, so
+# `inspect.signature(Sandbox.connect)` resolves to `(self, timeout, *, on_resume)`
+# and never sees the static-by-id chain. Each form is asserted directly.
+KEYWORD_ONLY_FORMS = [
+    pytest.param(Sandbox, "_cls_connect_sandbox", id="sync-by-id"),
+    pytest.param(AsyncSandbox, "_cls_connect_sandbox", id="async-by-id"),
+    pytest.param(SyncSandboxApi, "_cls_connect", id="sync-api"),
+    pytest.param(AsyncSandboxApi, "_cls_connect", id="async-api"),
+]
+
+
+@pytest.mark.parametrize("owner, attr", KEYWORD_ONLY_FORMS)
+def test_on_resume_is_keyword_only(owner, attr):
+    # An optional parameter must not extend the positional chain, or
+    # `connect(sandbox_id, 300, logger, "reboot")` becomes a valid call.
+    signature = inspect.signature(getattr(owner, attr))
+
+    assert signature.parameters["on_resume"].kind is inspect.Parameter.KEYWORD_ONLY
+    for pre_existing in ("timeout", "logger"):
+        assert (
+            signature.parameters[pre_existing].kind
+            is not inspect.Parameter.KEYWORD_ONLY
+        )
+
+    with pytest.raises(TypeError):
+        signature.bind(SANDBOX_ID, 300, None, "reboot")
+
+    assert signature.bind(SANDBOX_ID, on_resume="reboot").arguments["on_resume"] == (
+        "reboot"
+    )
+
+
 @pytest.mark.parametrize("sandbox", [Sandbox, AsyncSandbox], ids=["sync", "async"])
-def test_on_resume_is_keyword_only(sandbox):
-    # An optional parameter must not extend connect()'s positional chain, or
-    # `connect(sandbox_id, 300, "reboot")` becomes a valid call.
+def test_on_resume_is_keyword_only_on_the_instance_form(sandbox):
     signature = inspect.signature(sandbox.connect)
 
     assert signature.parameters["on_resume"].kind is inspect.Parameter.KEYWORD_ONLY
     assert signature.parameters["timeout"].kind is not inspect.Parameter.KEYWORD_ONLY
-
-    with pytest.raises(TypeError):
-        signature.bind("sbx-test", 300, "reboot")
-
-    assert signature.bind("sbx-test", on_resume="reboot").arguments["on_resume"] == (
-        "reboot"
-    )
