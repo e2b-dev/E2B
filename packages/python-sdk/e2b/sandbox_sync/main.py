@@ -274,17 +274,16 @@ class Sandbox(SandboxApi):
         :param timeout: Timeout for the sandbox in **seconds**
             For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
         :param on_resume: How to bring a paused sandbox back. `"restore"` (the default)
-            restores the memory snapshot, so processes and open connections survive the
-            pause. `"reboot"` cold-boots from its disk state. A reboot that starts and
-            then fails to boot leaves the sandbox paused with its memory snapshot neither
-            modified nor deleted, so the resume stays retryable; after a successful reboot,
-            pause the sandbox again to keep a snapshot. Disk state carries crash-recovery
-            semantics: writes not flushed before the pause may be lost. A no-op for a
-            snapshot that holds no memory. Rebooting reaches only a paused sandbox: one
-            already running is returned unchanged and one still starting is refused, so
-            pause it first. Where filesystem-only resume is not enabled, a `"reboot"` that
-            would actually drop memory is rejected with an error rather than quietly
-            restoring it.
+            restores the memory snapshot. `"reboot"` cold-boots from its disk state, which
+            carries crash-recovery semantics: writes not flushed before the pause may be
+            lost. A no-op for a snapshot that holds no memory. Only a paused sandbox is
+            rebooted: for one already running the option is ignored, so pause it first;
+            where it would drop memory it is refused while a start is in flight, so let
+            that start finish. A reboot that starts and then fails to boot leaves the
+            sandbox paused with its snapshot intact and the resume retryable; after a
+            successful reboot, pause again to keep a snapshot. Where filesystem-only resume
+            is not enabled, a `"reboot"` that would actually drop memory is rejected rather
+            than quietly restoring it.
         :return: A running sandbox instance
 
         @example
@@ -320,17 +319,16 @@ class Sandbox(SandboxApi):
             For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
         :param logger: Logger used for request and response logging for this sandbox. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
         :param on_resume: How to bring a paused sandbox back. `"restore"` (the default)
-            restores the memory snapshot, so processes and open connections survive the
-            pause. `"reboot"` cold-boots from its disk state. A reboot that starts and
-            then fails to boot leaves the sandbox paused with its memory snapshot neither
-            modified nor deleted, so the resume stays retryable; after a successful reboot,
-            pause the sandbox again to keep a snapshot. Disk state carries crash-recovery
-            semantics: writes not flushed before the pause may be lost. A no-op for a
-            snapshot that holds no memory. Rebooting reaches only a paused sandbox: one
-            already running is returned unchanged and one still starting is refused, so
-            pause it first. Where filesystem-only resume is not enabled, a `"reboot"` that
-            would actually drop memory is rejected with an error rather than quietly
-            restoring it.
+            restores the memory snapshot. `"reboot"` cold-boots from its disk state, which
+            carries crash-recovery semantics: writes not flushed before the pause may be
+            lost. A no-op for a snapshot that holds no memory. Only a paused sandbox is
+            rebooted: for one already running the option is ignored, so pause it first;
+            where it would drop memory it is refused while a start is in flight, so let
+            that start finish. A reboot that starts and then fails to boot leaves the
+            sandbox paused with its snapshot intact and the resume retryable; after a
+            successful reboot, pause again to keep a snapshot. Where filesystem-only resume
+            is not enabled, a `"reboot"` that would actually drop memory is rejected rather
+            than quietly restoring it.
         :return: A running sandbox instance
 
         @example
@@ -361,17 +359,16 @@ class Sandbox(SandboxApi):
         :param timeout: Timeout for the sandbox in **seconds**.
             For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
         :param on_resume: How to bring a paused sandbox back. `"restore"` (the default)
-            restores the memory snapshot, so processes and open connections survive the
-            pause. `"reboot"` cold-boots from its disk state. A reboot that starts and
-            then fails to boot leaves the sandbox paused with its memory snapshot neither
-            modified nor deleted, so the resume stays retryable; after a successful reboot,
-            pause the sandbox again to keep a snapshot. Disk state carries crash-recovery
-            semantics: writes not flushed before the pause may be lost. A no-op for a
-            snapshot that holds no memory. Rebooting reaches only a paused sandbox: one
-            already running is returned unchanged and one still starting is refused, so
-            pause it first. Where filesystem-only resume is not enabled, a `"reboot"` that
-            would actually drop memory is rejected with an error rather than quietly
-            restoring it.
+            restores the memory snapshot. `"reboot"` cold-boots from its disk state, which
+            carries crash-recovery semantics: writes not flushed before the pause may be
+            lost. A no-op for a snapshot that holds no memory. Only a paused sandbox is
+            rebooted: for one already running the option is ignored, so pause it first;
+            where it would drop memory it is refused while a start is in flight, so let
+            that start finish. A reboot that starts and then fails to boot leaves the
+            sandbox paused with its snapshot intact and the resume retryable; after a
+            successful reboot, pause again to keep a snapshot. Where filesystem-only resume
+            is not enabled, a `"reboot"` that would actually drop memory is rejected rather
+            than quietly restoring it.
         :return: A running sandbox instance
 
         @example
