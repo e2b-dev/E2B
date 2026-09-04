@@ -20,6 +20,7 @@ from e2b.envd.process import process_pb
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.command_handle import (
     CommandExitException,
+    CommandKillScope,
     CommandResult,
     Stderr,
     Stdout,
@@ -81,7 +82,9 @@ class AsyncCommandHandle:
     def __init__(
         self,
         pid: int,
-        handle_kill: Callable[[], Coroutine[Any, Any, bool]],
+        handle_kill: Callable[
+            [CommandKillScope, Optional[float]], Coroutine[Any, Any, bool]
+        ],
         events: AsyncGenerator[
             Union[process_pb.StartResponse, process_pb.ConnectResponse], Any
         ],
@@ -262,15 +265,22 @@ class AsyncCommandHandle:
 
         return self._result
 
-    async def kill(self) -> bool:
+    async def kill(
+        self,
+        *,
+        scope: CommandKillScope = "process",
+        request_timeout: Optional[float] = None,
+    ) -> bool:
         """
         Kills the command.
 
         It uses `SIGKILL` signal to kill the command
 
+        :param scope: Whether to kill only the managed process or its process group
+        :param request_timeout: Timeout for the request in **seconds**
         :return: `True` if the command was killed successfully, `False` if the command was not found
         """
-        result = await self._handle_kill()
+        result = await self._handle_kill(scope, request_timeout)
         return result
 
     async def send_stdin(

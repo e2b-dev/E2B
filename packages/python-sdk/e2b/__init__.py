@@ -59,6 +59,7 @@ from .exceptions import (
 )
 from .sandbox.commands.command_handle import (
     CommandExitException,
+    CommandKillScope,
     CommandResult,
     PtyOutput,
     PtySize,
@@ -205,6 +206,7 @@ __all__ = [
     "GitFileStatus",
     "GitResetMode",
     # Command handle
+    "CommandKillScope",
     "CommandResult",
     "Stderr",
     "Stdout",

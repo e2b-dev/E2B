@@ -13,8 +13,12 @@ T = TypeVar("T", bound="SandboxNetworkConfigRules")
 
 @_attrs_define
 class SandboxNetworkConfigRules:
-    """Per-domain transform rules applied to matching egress HTTP/HTTPS requests. Keys are domains (e.g. "api.example.com",
-    "example.com"). A domain listed here is not automatically allowed - use allowOut to permit the traffic.
+    """Per-domain transform rules applied to matching outbound HTTPS requests. Keys may be exact DNS names (for example,
+    "api.example.com") or a leading wildcard (for example, "*.example.com"), and are normalized to lowercase on write.
+    Wildcards match subdomains at any depth but not the apex domain; a bare "*" is invalid. Exact rules take precedence,
+    followed by the longest matching wildcard suffix, and matching rule sets are not merged. Broad wildcards such as
+    "*.com" are allowed and may expose transformed credentials to every matching destination the sandbox contacts. Rules
+    do not grant network access; configure allowOut separately to permit the destination.
 
     """
 

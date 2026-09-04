@@ -31,9 +31,16 @@ class SandboxNetworkConfig:
             TCP is tunneled through the proxy after allow/deny filtering; the sandbox is unaware. Domain-matched flows use
             remote DNS (ATYP=domain).
         mask_request_host (Union[Unset, str]): Specify host mask which will be used for all sandbox requests
-        rules (Union[Unset, SandboxNetworkConfigRules]): Per-domain transform rules applied to matching egress
-            HTTP/HTTPS requests. Keys are domains (e.g. "api.example.com", "example.com"). A domain listed here is not
-            automatically allowed - use allowOut to permit the traffic.
+        https_ports (Union[Unset, list[int]]): Sandbox ports that serve HTTPS rather than plaintext HTTP. Affects how
+            the proxy reaches the service inside the sandbox; the public URL is HTTPS either way. Certificates are not
+            verified, so self-signed ones work. The envd port (49983) cannot be listed.
+        rules (Union[Unset, SandboxNetworkConfigRules]): Per-domain transform rules applied to matching outbound HTTPS
+            requests. Keys may be exact DNS names (for example, "api.example.com") or a leading wildcard (for example,
+            "*.example.com"), and are normalized to lowercase on write. Wildcards match subdomains at any depth but not the
+            apex domain; a bare "*" is invalid. Exact rules take precedence, followed by the longest matching wildcard
+            suffix, and matching rule sets are not merged. Broad wildcards such as "*.com" are allowed and may expose
+            transformed credentials to every matching destination the sandbox contacts. Rules do not grant network access;
+            configure allowOut separately to permit the destination.
     """
 
     allow_public_traffic: Union[Unset, bool] = True
@@ -41,6 +48,7 @@ class SandboxNetworkConfig:
     deny_out: Union[Unset, list[str]] = UNSET
     egress_proxy: Union["SandboxEgressProxyConfigType0", None, Unset] = UNSET
     mask_request_host: Union[Unset, str] = UNSET
+    https_ports: Union[Unset, list[int]] = UNSET
     rules: Union[Unset, "SandboxNetworkConfigRules"] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -69,6 +77,10 @@ class SandboxNetworkConfig:
 
         mask_request_host = self.mask_request_host
 
+        https_ports: Union[Unset, list[int]] = UNSET
+        if not isinstance(self.https_ports, Unset):
+            https_ports = self.https_ports
+
         rules: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.rules, Unset):
             rules = self.rules.to_dict()
@@ -86,6 +98,8 @@ class SandboxNetworkConfig:
             field_dict["egressProxy"] = egress_proxy
         if mask_request_host is not UNSET:
             field_dict["maskRequestHost"] = mask_request_host
+        if https_ports is not UNSET:
+            field_dict["httpsPorts"] = https_ports
         if rules is not UNSET:
             field_dict["rules"] = rules
 
@@ -128,6 +142,8 @@ class SandboxNetworkConfig:
 
         mask_request_host = d.pop("maskRequestHost", UNSET)
 
+        https_ports = cast(list[int], d.pop("httpsPorts", UNSET))
+
         _rules = d.pop("rules", UNSET)
         rules: Union[Unset, SandboxNetworkConfigRules]
         if isinstance(_rules, Unset):
@@ -141,6 +157,7 @@ class SandboxNetworkConfig:
             deny_out=deny_out,
             egress_proxy=egress_proxy,
             mask_request_host=mask_request_host,
+            https_ports=https_ports,
             rules=rules,
         )
 

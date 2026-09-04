@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { CommandHandle } from '../../../src/sandbox/commands/commandHandle'
+import { Commands, Pty } from '../../../src/sandbox/commands'
+import { InvalidArgumentError } from '../../../src/errors'
 
 type EventKind = 'stdout' | 'stderr' | 'pty'
 
@@ -131,6 +133,101 @@ function createControllableEvents() {
 }
 
 describe('CommandHandle', () => {
+  it('sends descendant scope through the Commands RPC', async () => {
+    const sendSignal = vi.fn(async () => ({}))
+    const commands = Object.create(Commands.prototype) as Commands
+    Object.assign(commands, {
+      rpc: { sendSignal },
+      connectionConfig: { getSignal: () => undefined },
+      envdVersion: '0.7.1',
+    })
+
+    await expect(commands.kill(42, { scope: 'group' })).resolves.toBe(true)
+    expect(sendSignal).toHaveBeenCalledWith(
+      expect.objectContaining({ descendants: true }),
+      expect.anything()
+    )
+  })
+
+  it('rejects descendant scope when envd is too old', async () => {
+    const sendSignal = vi.fn(async () => ({}))
+    const commands = Object.create(Commands.prototype) as Commands
+    Object.assign(commands, {
+      rpc: { sendSignal },
+      connectionConfig: { getSignal: () => undefined },
+      envdVersion: '0.7.0',
+    })
+
+    await expect(commands.kill(42, { scope: 'group' })).rejects.toThrow(
+      "doesn't support group-scoped command termination"
+    )
+    expect(sendSignal).not.toHaveBeenCalled()
+  })
+
+  it('sends group scope through the PTY RPC', async () => {
+    const sendSignal = vi.fn(async () => ({}))
+    const pty = Object.create(Pty.prototype) as Pty
+    Object.assign(pty, {
+      rpc: { sendSignal },
+      connectionConfig: { getSignal: () => undefined },
+      envdVersion: '0.7.1',
+    })
+
+    await expect(pty.kill(43, { scope: 'group' })).resolves.toBe(true)
+    expect(sendSignal).toHaveBeenCalledWith(
+      expect.objectContaining({ descendants: true }),
+      expect.anything()
+    )
+  })
+
+  it('rejects an invalid command kill scope before sending the RPC', async () => {
+    const sendSignal = vi.fn(async () => ({}))
+    const commands = Object.create(Commands.prototype) as Commands
+    Object.assign(commands, {
+      rpc: { sendSignal },
+      connectionConfig: { getSignal: () => undefined },
+      envdVersion: '0.7.1',
+    })
+
+    await expect(commands.kill(42, { scope: 'groups' as any })).rejects.toThrow(
+      InvalidArgumentError
+    )
+    expect(sendSignal).not.toHaveBeenCalled()
+  })
+
+  it('rejects an invalid PTY kill scope before sending the RPC', async () => {
+    const sendSignal = vi.fn(async () => ({}))
+    const pty = Object.create(Pty.prototype) as Pty
+    Object.assign(pty, {
+      rpc: { sendSignal },
+      connectionConfig: { getSignal: () => undefined },
+      envdVersion: '0.7.1',
+    })
+
+    await expect(pty.kill(43, { scope: 'groups' as any })).rejects.toThrow(
+      InvalidArgumentError
+    )
+    expect(sendSignal).not.toHaveBeenCalled()
+  })
+
+  it('forwards descendant scope when killing', async () => {
+    const handleKill = vi.fn(async () => true)
+    const handle = new CommandHandle(
+      1,
+      () => {},
+      handleKill,
+      createEvents('stdout')
+    )
+
+    await expect(
+      handle.kill({ scope: 'group', requestTimeoutMs: 500 })
+    ).resolves.toBe(true)
+    expect(handleKill).toHaveBeenCalledWith({
+      scope: 'group',
+      requestTimeoutMs: 500,
+    })
+  })
+
   it.each<EventKind>(['stdout', 'stderr', 'pty'])(
     'wait awaits async %s callbacks',
     async (kind) => {

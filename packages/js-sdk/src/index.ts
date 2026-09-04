@@ -109,6 +109,8 @@ export { ALL_TRAFFIC } from './sandbox/network'
 
 export type {
   ProcessInfo,
+  CommandKillScope,
+  CommandKillOpts,
   CommandRequestOpts,
   CommandConnectOpts,
   CommandStartOpts,

@@ -29,10 +29,17 @@ import {
   handleRpcErrorWithHealthCheck,
   SandboxHealthCheck,
 } from '../../envd/rpc'
-import { ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE } from '../../envd/versions'
+import {
+  ENVD_COMMANDS_DESCENDANTS,
+  ENVD_COMMANDS_STDIN,
+  ENVD_ENVD_CLOSE,
+} from '../../envd/versions'
 import { SandboxError } from '../../errors'
 import { CommandHandle, CommandResult } from './commandHandle'
+import { validateCommandKillScope } from './kill'
+import type { CommandKillScope } from './kill'
 export { Pty } from './pty'
+export type { CommandKillScope } from './kill'
 
 /**
  * Options for sending a command request.
@@ -40,6 +47,18 @@ export { Pty } from './pty'
 export interface CommandRequestOpts extends Partial<
   Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>
 > {}
+
+/**
+ * Options for killing a command.
+ */
+export interface CommandKillOpts extends CommandRequestOpts {
+  /**
+   * Selects whether to kill only the managed process or its process group.
+   *
+   * @default 'process'
+   */
+  scope?: CommandKillScope
+}
 
 /**
  * Options for starting a new command.
@@ -275,11 +294,21 @@ export class Commands {
    * It uses `SIGKILL` signal to kill the command.
    *
    * @param pid process ID of the command. You can get the list of running commands using {@link Commands.list}.
-   * @param opts connection options.
+   * @param opts kill and connection options.
    *
    * @returns `true` if the command was killed, `false` if the command was not found.
    */
-  async kill(pid: number, opts?: CommandRequestOpts): Promise<boolean> {
+  async kill(pid: number, opts?: CommandKillOpts): Promise<boolean> {
+    validateCommandKillScope(opts?.scope)
+    if (
+      opts?.scope === 'group' &&
+      compareVersions(this.envdVersion, ENVD_COMMANDS_DESCENDANTS) < 0
+    ) {
+      throw new SandboxError(
+        `Sandbox envd version ${this.envdVersion} doesn't support group-scoped command termination. Please rebuild your template to pick up the latest sandbox version.`
+      )
+    }
+
     try {
       await this.rpc.sendSignal(
         {
@@ -290,6 +319,7 @@ export class Commands {
             },
           },
           signal: Signal.SIGKILL,
+          descendants: opts?.scope === 'group',
         },
         {
           signal: this.connectionConfig.getSignal(
@@ -357,7 +387,7 @@ export class Commands {
       return new CommandHandle(
         pid,
         cleanup,
-        () => this.kill(pid),
+        (killOpts) => this.kill(pid, killOpts),
         events,
         opts?.onStdout,
         opts?.onStderr,
@@ -472,7 +502,7 @@ export class Commands {
       return new CommandHandle(
         pid,
         cleanup,
-        () => this.kill(pid),
+        (killOpts) => this.kill(pid, killOpts),
         events,
         opts?.onStdout,
         opts?.onStderr,

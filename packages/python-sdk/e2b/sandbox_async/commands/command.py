@@ -21,10 +21,18 @@ from e2b.envd.utils import (
     timeout_to_ms,
 )
 from e2b.envd.client_async import as_stream, create_rpc_client, first_event
-from e2b.envd.versions import ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE
+from e2b.envd.versions import (
+    ENVD_COMMANDS_DESCENDANTS,
+    ENVD_COMMANDS_STDIN,
+    ENVD_ENVD_CLOSE,
+)
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.main import ProcessInfo
-from e2b.sandbox.commands.command_handle import CommandResult
+from e2b.sandbox.commands.command_handle import (
+    CommandKillScope,
+    CommandResult,
+    validate_command_kill_scope,
+)
 from e2b.sandbox_async.commands.command_handle import AsyncCommandHandle, Stderr, Stdout
 from e2b.sandbox_async.utils import OutputHandler
 
@@ -92,6 +100,8 @@ class Commands:
         self,
         pid: int,
         request_timeout: Optional[float] = None,
+        *,
+        scope: CommandKillScope = "process",
     ) -> bool:
         """
         Kill a running command specified by its process ID.
@@ -99,14 +109,23 @@ class Commands:
 
         :param pid: Process ID of the command. You can get the list of processes using `sandbox.commands.list()`
         :param request_timeout: Timeout for the request in **seconds**
+        :param scope: Whether to kill only the managed process or its process group
 
         :return: `True` if the command was killed, `False` if the command was not found
         """
+        validate_command_kill_scope(scope)
+        if scope == "group" and self._envd_version < ENVD_COMMANDS_DESCENDANTS:
+            raise SandboxException(
+                f"Sandbox envd version {self._envd_version} doesn't support group-scoped command termination. "
+                "Please rebuild your template to pick up the latest sandbox version."
+            )
+
         try:
             await self._rpc.send_signal(
                 process_pb.SendSignalRequest(
                     process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
                     signal=process_pb.Signal.SIGKILL,
+                    descendants=scope == "group",
                 ),
                 timeout_ms=timeout_to_ms(
                     self._connection_config.get_request_timeout(request_timeout)
@@ -323,7 +342,9 @@ class Commands:
             pid = extract_start_pid(start_event, "start process")
             return AsyncCommandHandle(
                 pid=pid,
-                handle_kill=lambda: self.kill(pid),
+                handle_kill=lambda scope="process", request_timeout=None: self.kill(
+                    pid, request_timeout, scope=scope
+                ),
                 events=events,
                 on_stdout=on_stdout,
                 on_stderr=on_stderr,
@@ -382,7 +403,9 @@ class Commands:
             pid = extract_start_pid(start_event, "connect to process")
             return AsyncCommandHandle(
                 pid=pid,
-                handle_kill=lambda: self.kill(pid),
+                handle_kill=lambda scope="process", request_timeout=None: self.kill(
+                    pid, request_timeout, scope=scope
+                ),
                 events=events,
                 on_stdout=on_stdout,
                 on_stderr=on_stderr,
