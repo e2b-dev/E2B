@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import zlib
 from dataclasses import dataclass
 from types import TracebackType
 from typing import NamedTuple, Optional, Protocol, Tuple, Union
@@ -34,40 +35,58 @@ def encode_path_param(value: str) -> str:
     return quote(value, safe="")
 
 
-def make_logging_event_hooks(log: Optional[logging.Logger]) -> dict:
+def make_logging_event_hooks(
+    log: Optional[logging.Logger], include_diagnostics: bool = False
+) -> dict:
     """Build synchronous httpx ``event_hooks`` that log requests and responses
     to the given ``logging.Logger``. Requests log at ``INFO``, successful
     responses at ``INFO`` and responses with status >= 400 at ``ERROR``.
 
-    Returns no hooks when ``log`` is ``None`` so that nothing is logged unless a
-    logger was explicitly supplied."""
-    if log is None:
+    Returns no hooks when ``log`` is ``None`` unless CI diagnostics are enabled;
+    that mode logs failed responses only."""
+    if log is None and not include_diagnostics:
         return {}
 
+    response_log = log or logging.getLogger("e2b.ci")
+
     def on_request(request) -> None:
-        log.info(f"Request {request.method} {request.url}")
+        if log is not None:
+            log.info(f"Request {request.method} {request.url}")
 
     def on_response(response: Response) -> None:
         if response.status_code >= 400:
-            log.error(f"Response {response.status_code}")
-        else:
+            trace_id = (
+                response.headers.get("X-E2B-Trace-ID") if include_diagnostics else None
+            )
+            trace_suffix = f" trace_id={trace_id}" if trace_id else ""
+            response_log.error(f"Response {response.status_code}{trace_suffix}")
+        elif log is not None:
             log.info(f"Response {response.status_code}")
 
     return {"request": [on_request], "response": [on_response]}
 
 
-def make_async_logging_event_hooks(log: Optional[logging.Logger]) -> dict:
+def make_async_logging_event_hooks(
+    log: Optional[logging.Logger], include_diagnostics: bool = False
+) -> dict:
     """Asynchronous counterpart of :func:`make_logging_event_hooks`."""
-    if log is None:
+    if log is None and not include_diagnostics:
         return {}
 
+    response_log = log or logging.getLogger("e2b.ci")
+
     async def on_request(request) -> None:
-        log.info(f"Request {request.method} {request.url}")
+        if log is not None:
+            log.info(f"Request {request.method} {request.url}")
 
     async def on_response(response: Response) -> None:
         if response.status_code >= 400:
-            log.error(f"Response {response.status_code}")
-        else:
+            trace_id = (
+                response.headers.get("X-E2B-Trace-ID") if include_diagnostics else None
+            )
+            trace_suffix = f" trace_id={trace_id}" if trace_id else ""
+            response_log.error(f"Response {response.status_code}{trace_suffix}")
+        elif log is not None:
             log.info(f"Response {response.status_code}")
 
     return {"request": [on_request], "response": [on_response]}
@@ -83,6 +102,26 @@ connection_retries = int(os.getenv("E2B_CONNECTION_RETRIES") or "3")
 # is no longer read.
 pool_idle_timeout = float(os.getenv("E2B_KEEPALIVE_EXPIRY") or "300")
 pool_max_idle_per_host = int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20")
+envd_pool_shards = max(1, int(os.getenv("E2B_ENVD_POOL_SHARDS") or "4"))
+
+
+def envd_pool_shard(config: ConnectionConfig) -> int:
+    """Return the stable connection-pool shard for a sandbox's envd traffic.
+
+    Production envd requests share one origin, whose HTTP/2 connection has a
+    finite concurrent-stream limit. Long-running commands hold those streams,
+    so one process-wide connection becomes a bottleneck even though the edge
+    and account can run more sandboxes. A small bounded set of pools provides
+    additional connections without returning to one connection per sandbox.
+
+    The sandbox ID is carried on every envd request and CRC32 is stable across
+    processes, unlike Python's randomized ``hash``. Configs without a sandbox
+    ID (including control-plane clients) stay on shard zero.
+    """
+    sandbox_id = config.sandbox_headers.get("E2b-Sandbox-Id")
+    if not sandbox_id:
+        return 0
+    return zlib.crc32(sandbox_id.encode()) % envd_pool_shards
 
 
 class ProxyConfig(NamedTuple):
@@ -182,7 +221,10 @@ def handle_api_exception(
         )
 
     return api_exception_from_code(
-        e.status_code, message, default_exception_class, stack_trace
+        e.status_code,
+        message,
+        default_exception_class,
+        stack_trace,
     )
 
 
@@ -225,6 +267,7 @@ class ApiClient(AuthenticatedClient):
         prefix = ""
 
         self._logger = config.logger
+        self._include_diagnostics = config.request_source == "ci"
 
         headers = {
             **default_headers,
@@ -265,10 +308,14 @@ class ApiClient(AuthenticatedClient):
         )
 
     def _logging_event_hooks(self) -> dict:
-        return make_logging_event_hooks(self._logger)
+        return make_logging_event_hooks(
+            self._logger, include_diagnostics=self._include_diagnostics
+        )
 
 
 # We need to override the logging hooks for the async usage
 class AsyncApiClient(ApiClient):
     def _logging_event_hooks(self) -> dict:
-        return make_async_logging_event_hooks(self._logger)
+        return make_async_logging_event_hooks(
+            self._logger, include_diagnostics=self._include_diagnostics
+        )

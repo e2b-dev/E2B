@@ -22,6 +22,7 @@ import h2.config
 import h2.connection
 import h2.errors
 import h2.events
+import h2.settings
 from protobuf import Oneof
 from pyqwest import (
     Client,
@@ -319,6 +320,123 @@ def shared_pool_server(fault: str) -> Iterator[SharedPoolServer]:
         yield server
     finally:
         server.listener.close()
+
+
+class StreamCapacityServer(threading.Thread):
+    """HTTP/2 server that leaves response streams open at a small peer limit.
+
+    Production ``sandbox.e2b.app`` currently advertises 100 concurrent streams.
+    Tests reproduce that setting and prove how the SDK behaves once long-lived
+    envd command streams fill one connection without opening hundreds of them.
+    """
+
+    def __init__(self, max_concurrent_streams: int):
+        super().__init__(daemon=True)
+        self.max_concurrent_streams = max_concurrent_streams
+        self.listener = socket.create_server(("127.0.0.1", 0))
+        self.listener.settimeout(0.1)
+        self.port = self.listener.getsockname()[1]
+        self.connections: List[socket.socket] = []
+        self.streams: List[tuple[int, int]] = []
+        self.active_streams: set[tuple[int, int]] = set()
+        self.errors: List[str] = []
+        self._lock = threading.Lock()
+        self._stop_event = threading.Event()
+
+    def run(self):
+        while not self._stop_event.is_set():
+            try:
+                sock, _ = self.listener.accept()
+            except socket.timeout:
+                continue
+            except OSError:
+                return
+            with self._lock:
+                self.connections.append(sock)
+            threading.Thread(target=self._serve, args=(sock,), daemon=True).start()
+
+    def _serve(self, sock: socket.socket):
+        sock.settimeout(0.1)
+        conn = h2.connection.H2Connection(
+            config=h2.config.H2Configuration(client_side=False)
+        )
+        conn.initiate_connection()
+        conn.update_settings(
+            {
+                h2.settings.SettingCodes.MAX_CONCURRENT_STREAMS: (
+                    self.max_concurrent_streams
+                )
+            }
+        )
+        sock.sendall(conn.data_to_send())
+        try:
+            while not self._stop_event.is_set():
+                try:
+                    data = sock.recv(65535)
+                except socket.timeout:
+                    continue
+                except OSError:
+                    return
+                if not data:
+                    return
+                for event in conn.receive_data(data):
+                    if isinstance(event, h2.events.StreamEnded):
+                        with self._lock:
+                            stream = (id(sock), event.stream_id)
+                            self.streams.append(stream)
+                            self.active_streams.add(stream)
+                        conn.send_headers(
+                            event.stream_id,
+                            [
+                                (":status", "200"),
+                                ("content-type", "application/connect+json"),
+                            ],
+                        )
+                        # Deliberately leave the response open: a running envd
+                        # command holds its HTTP/2 stream for its whole lifetime.
+                        conn.send_data(event.stream_id, event_envelope())
+                    elif isinstance(event, h2.events.StreamReset):
+                        with self._lock:
+                            self.active_streams.discard((id(sock), event.stream_id))
+                    elif isinstance(event, h2.events.DataReceived):
+                        conn.acknowledge_received_data(
+                            event.flow_controlled_length, event.stream_id
+                        )
+                    elif isinstance(event, h2.events.ConnectionTerminated):
+                        return
+                out = conn.data_to_send()
+                if out:
+                    sock.sendall(out)
+        except Exception as e:  # noqa: BLE001 — surfaced via assert_no_errors
+            self.errors.append(repr(e))
+        finally:
+            sock.close()
+
+    def close(self):
+        self._stop_event.set()
+        self.listener.close()
+        with self._lock:
+            connections = list(self.connections)
+        for sock in connections:
+            with contextlib.suppress(OSError):
+                sock.close()
+
+    def assert_no_errors(self):
+        assert not self.errors, self.errors
+
+
+@contextlib.contextmanager
+def stream_capacity_server(
+    max_concurrent_streams: int,
+) -> Iterator[StreamCapacityServer]:
+    server = StreamCapacityServer(max_concurrent_streams)
+    server.start()
+    try:
+        yield server
+    finally:
+        server.close()
+        server.join(timeout=1)
+        assert not server.is_alive()
 
 
 def assert_stdout_event(event: ConnectResponse):

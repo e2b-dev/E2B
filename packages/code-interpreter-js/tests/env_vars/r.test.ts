@@ -1,6 +1,6 @@
 import { expect } from 'vitest'
 
-import { isDebug, sandboxTest } from '../setup'
+import { isDebug, sandboxTest, waitForKernel } from '../setup'
 import { Sandbox } from '../../src'
 
 // R Env Vars
@@ -10,6 +10,8 @@ sandboxTest.skipIf(isDebug)('env vars on sandbox (R)', async ({ template }) => {
   })
 
   try {
+    await waitForKernel(sandbox, 'r')
+
     const result = await sandbox.runCode('Sys.getenv("TEST_ENV_VAR")', {
       language: 'r',
     })
@@ -21,6 +23,8 @@ sandboxTest.skipIf(isDebug)('env vars on sandbox (R)', async ({ template }) => {
 })
 
 sandboxTest('env vars per execution (R)', async ({ sandbox }) => {
+  await waitForKernel(sandbox, 'r')
+
   const result = await sandbox.runCode('Sys.getenv("FOO")', {
     envs: { FOO: 'bar' },
     language: 'r',
@@ -43,6 +47,8 @@ sandboxTest.skipIf(isDebug)('env vars overwrite', async ({ template }) => {
   })
 
   try {
+    await waitForKernel(sandbox, 'r')
+
     const result = await sandbox.runCode('Sys.getenv("TEST_ENV_VAR")', {
       language: 'r',
       envs: { TEST_ENV_VAR: 'overwrite' },
