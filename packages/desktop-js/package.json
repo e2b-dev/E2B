@@ -1,0 +1,72 @@
+{
+  "name": "@e2b/desktop",
+  "version": "2.3.4",
+  "packageManager": "pnpm@10.34.5",
+  "license": "MIT",
+  "description": "E2B Desktop Sandbox - isolated cloud environment with a desktop-like interface powered by E2B. Ready for AI Computer Use",
+  "homepage": "https://e2b.dev/?utm_source=npm&utm_medium=referral&utm_campaign=package_homepage&utm_content=e2b-desktop",
+  "author": {
+    "name": "FoundryLabs, Inc.",
+    "email": "hello@e2b.dev",
+    "url": "https://e2b.dev"
+  },
+  "keywords": [
+    "e2b",
+    "ai-agents",
+    "agents",
+    "ai",
+    "computer-use",
+    "sandbox",
+    "code",
+    "runtime",
+    "vm"
+  ],
+  "bugs": "https://github.com/e2b-dev/e2b/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/e2b-dev/e2b",
+    "directory": "packages/desktop-js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "package.json"
+  ],
+  "engines": {
+    "node": ">=20.18.1 <21 || >=22"
+  },
+  "browserslist": [
+    "defaults"
+  ],
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "sideEffects": false,
+  "scripts": {
+    "prepublishOnly": "pnpm build",
+    "build": "tsc --noEmit && tsdown",
+    "dev": "tsdown --watch",
+    "test": "vitest run --disable-console-intercept",
+    "test:bun": "bunx --bun vitest run",
+    "test:cf": "vitest run --config tests/runtimes/cloudflare/vitest.config.mts",
+    "test:deno": "deno run -A ./node_modules/vitest/vitest.mjs run",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint --config ../../.oxlintrc.json src tests",
+    "format": "prettier --write src/ tests/"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.18.7",
+    "@typescript/native": "catalog:",
+    "@types/node": "catalog:",
+    "dotenv": "^16.4.5",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "dependencies": {
+    "e2b": "workspace:^"
+  }
+}

@@ -1,0 +1,48 @@
+[project]
+name = "e2b-desktop"
+version = "2.4.6"
+description = "E2B Desktop Sandbox - Desktop sandbox in cloud powered by E2B"
+authors = [{ name = "e2b", email = "hello@e2b.dev" }]
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "e2b>=2.38.0,<3.0.0",
+    "requests>=2.32.3,<3",
+    "pillow>=12.0.0,<13",
+]
+
+[project.urls]
+Homepage = "https://e2b.dev/?utm_source=pypi&utm_medium=referral&utm_campaign=package_homepage&utm_content=e2b-desktop"
+Repository = "https://github.com/e2b-dev/e2b/tree/main/packages/desktop-python"
+"Bug Tracker" = "https://github.com/e2b-dev/e2b/issues"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3,<10",
+    "python-dotenv>=1.0.0,<2",
+    "pytest-dotenv>=0.5.2,<0.6",
+    "pytest-xdist>=3.6.1,<4",
+    "ruff>=0.11.12,<0.12",
+    "ty>=0.0.15,<0.0.16",
+]
+
+[build-system]
+requires = ["uv_build>=0.10.0,<0.11.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = ["e2b_desktop"]
+module-root = ""
+
+[tool.uv.sources]
+e2b = { workspace = true }
+
+[tool.uv.workspace]
+members = ["../python-sdk"]
+
+[tool.ruff.lint]
+ignore = ["F401", "F403"]
+
+[tool.ty.rules]
+invalid-method-override = "ignore"

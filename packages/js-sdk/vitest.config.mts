@@ -2,8 +2,12 @@ import { defineConfig } from 'vitest/config'
 import { config } from 'dotenv'
 
 const env = config()
+const maxWorkers = process.env.E2B_TEST_MAX_WORKERS
+  ? Number(process.env.E2B_TEST_MAX_WORKERS)
+  : undefined
 export default defineConfig({
   test: {
+    maxWorkers,
     projects: [
       {
         test: {
@@ -22,6 +26,7 @@ export default defineConfig({
           isolate: true,
           globals: false,
           testTimeout: 30_000,
+          maxWorkers,
           environment: 'node',
           bail: 0,
           setupFiles: ['tests/globalFetchFallback.setup.ts'],
@@ -41,6 +46,7 @@ export default defineConfig({
           include: ['tests/template/**/*.test.ts'],
           globals: false,
           testTimeout: 180_000,
+          maxWorkers,
           environment: 'node',
           setupFiles: ['tests/globalFetchFallback.setup.ts'],
         },

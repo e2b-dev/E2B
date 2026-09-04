@@ -116,12 +116,28 @@ def test_set_integration_appends_to_user_agent():
         config = ConnectionConfig()
 
         assert config.headers["User-Agent"].startswith("e2b-python-sdk/")
-        assert config.headers["User-Agent"].endswith(" testing/version")
+        assert "testing/version" in config.headers["User-Agent"].split()
     finally:
         ConnectionConfig.set_integration(None)
 
     config = ConnectionConfig()
     assert "testing" not in config.headers["User-Agent"]
+
+
+def test_user_agent_includes_configured_traffic_source(monkeypatch):
+    monkeypatch.setenv("E2B_USER_AGENT_SOURCE", "ci")
+
+    config = ConnectionConfig()
+
+    assert config.headers["User-Agent"].endswith(" source/ci")
+
+
+def test_user_agent_ignores_unsafe_traffic_source(monkeypatch):
+    monkeypatch.setenv("E2B_USER_AGENT_SOURCE", "ci bad\nheader")
+
+    config = ConnectionConfig()
+
+    assert "source/" not in config.headers["User-Agent"]
 
 
 def test_custom_user_agent_is_preserved_without_integration():
@@ -144,10 +160,11 @@ def test_integration_survives_api_param_rebuilds(monkeypatch):
     config = ConnectionConfig()
     rebuilt_config = ConnectionConfig(**config.get_api_params())
 
-    assert rebuilt_config.headers["User-Agent"].endswith(" testing/version")
-    assert rebuilt_config.get_api_params(api_headers={"X-Test": "1"})["headers"][
-        "User-Agent"
-    ].endswith(" testing/version")
+    assert "testing/version" in rebuilt_config.headers["User-Agent"].split()
+    rebuilt_user_agent = rebuilt_config.get_api_params(api_headers={"X-Test": "1"})[
+        "headers"
+    ]["User-Agent"]
+    assert "testing/version" in rebuilt_user_agent.split()
 
 
 def test_cleared_integration_does_not_leak_into_api_param_rebuilds():

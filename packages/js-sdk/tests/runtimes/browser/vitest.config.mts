@@ -57,6 +57,10 @@ export default defineConfig({
     ],
     globals: false,
     testTimeout: 30_000,
+    // Same one-live-worker cap CI sets for every other runtime leg.
+    maxWorkers: process.env.E2B_TEST_MAX_WORKERS
+      ? Number(process.env.E2B_TEST_MAX_WORKERS)
+      : undefined,
     // A real browser has no `process`; the setup file shims `process.env` onto
     // `import.meta.env`, where vitest puts `env` below, so the shared suites
     // can read their config the way they do on every other runtime.
