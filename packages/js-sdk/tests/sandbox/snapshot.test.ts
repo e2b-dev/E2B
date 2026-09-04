@@ -1,6 +1,6 @@
 import { assert, describe } from 'vitest'
 
-import { sandboxTest, isDebug } from '../setup.js'
+import { sandboxTest, isDebug, corsHttpServerCmd } from '../setup.js'
 
 async function waitForHttpStatus(
   url: string,
@@ -173,7 +173,7 @@ sandboxTest.skipIf(isDebug)(
 sandboxTest.skipIf(isDebug)(
   'pause and resume a sandbox with http server',
   async ({ sandbox }) => {
-    await sandbox.commands.run('python3 -m http.server 8000', {
+    await sandbox.commands.run(corsHttpServerCmd(8000), {
       background: true,
     })
 

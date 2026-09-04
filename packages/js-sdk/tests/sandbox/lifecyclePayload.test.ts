@@ -1,7 +1,7 @@
 import { assert, expect, test, vi } from 'vitest'
 
 import { InvalidArgumentError, Sandbox } from '../../src'
-import { isDebug, sandboxTest, template } from '../setup.js'
+import { corsHttpServerCmd, isDebug, sandboxTest, template } from '../setup.js'
 
 async function waitForState(
   sandbox: Sandbox,
@@ -170,7 +170,7 @@ sandboxTest.skipIf(isDebug)(
     })
 
     try {
-      await sandbox.commands.run('python3 -m http.server 8000', {
+      await sandbox.commands.run(corsHttpServerCmd(8000), {
         background: true,
       })
 

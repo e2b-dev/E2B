@@ -1,6 +1,7 @@
 import { assert, describe, test } from 'vitest'
 
 import { getSignature, InvalidArgumentError, Sandbox } from '../../src'
+import { runtime } from '../../src/utils'
 import { TEST_API_KEY } from '../setup'
 
 function createSandbox(envdAccessToken?: string) {
@@ -19,7 +20,14 @@ describe('sandbox file URLs', () => {
   test('file URLs use direct sandbox host when envd API uses stable host', async () => {
     const sandbox = createSandbox()
 
-    assert.equal(sandbox['envdApiUrl'], 'https://sandbox.e2b.app')
+    // The stable host is deliberately not used in a browser (CORS), which
+    // reaches envd on the direct host — file URLs use the direct host either way.
+    assert.equal(
+      sandbox['envdApiUrl'],
+      runtime === 'browser'
+        ? 'https://49983-sandbox-id.e2b.app'
+        : 'https://sandbox.e2b.app'
+    )
     assert.equal(sandbox['envdDirectUrl'], 'https://49983-sandbox-id.e2b.app')
     assert.equal(
       await sandbox.downloadUrl('/tmp/a.txt'),
