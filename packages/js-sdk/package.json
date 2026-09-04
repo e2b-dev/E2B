@@ -64,7 +64,7 @@
     "tsdown": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
-    "wrangler": "^4.123.0"
+    "wrangler": "^4.127.0"
   },
   "files": [
     "dist",

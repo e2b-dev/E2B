@@ -90,9 +90,8 @@ test('uses a ProxyAgent dispatcher when a proxy is configured', async () => {
 })
 
 test('caches envd fetchers per proxy', async () => {
-  const { createEnvdFetch, createEnvdRpcFetch } = await import(
-    '../../src/envd/http2'
-  )
+  const { createEnvdFetch, createEnvdRpcFetch } =
+    await import('../../src/envd/http2')
 
   const noProxy = createEnvdFetch()
   const proxyA = createEnvdFetch('http://127.0.0.1:8080')
@@ -200,9 +199,8 @@ test('inflight limit env vars return 0 when explicitly disabled', async () => {
   process.env.E2B_ENVD_INFLIGHT_REQUESTS = '0'
   process.env.E2B_ENVD_RPC_INFLIGHT_REQUESTS = '0'
 
-  const { getEnvdInflightLimit, getEnvdRpcInflightLimit } = await import(
-    '../../src/envd/http2'
-  )
+  const { getEnvdInflightLimit, getEnvdRpcInflightLimit } =
+    await import('../../src/envd/http2')
 
   expect(getEnvdInflightLimit()).toBe(0)
   expect(getEnvdRpcInflightLimit()).toBe(0)
