@@ -108,7 +108,7 @@ async def test_async_instance_connect_carries_on_resume(monkeypatch, test_api_ke
 
 # `class_method_variant` wraps the instance method with `functools.wraps`, so
 # `inspect.signature(Sandbox.connect)` resolves to `(self, timeout, *, on_resume)`
-# and never sees the static-by-id chain. Each form is asserted directly.
+# and never sees the static-by-id chain.
 KEYWORD_ONLY_FORMS = [
     pytest.param(Sandbox, "_cls_connect_sandbox", id="sync-by-id"),
     pytest.param(AsyncSandbox, "_cls_connect_sandbox", id="async-by-id"),
