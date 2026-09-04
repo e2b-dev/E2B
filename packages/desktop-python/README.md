@@ -59,6 +59,30 @@ print('Stream URL:', desktop.stream.get_url(auth_key=auth_key))
 # desktop.kill()
 ```
 
+### 4. Bind the configuration to a client
+
+The top-level `Sandbox` export reads its configuration from the environment variables. To use an explicit configuration — e.g. several API keys or domains in one process — create an `E2B` client and use the resource classes it exposes:
+
+```python
+from e2b_desktop import E2B
+
+client = E2B(api_key="e2b_***", domain="e2b.dev")
+
+desktop = client.Sandbox.create()
+desktop.stream.start()
+
+# The core resources are bound to the client's configuration as well.
+volume = client.Volume.create("my-volume")
+exists = client.Template.exists("my-template")
+secret = client.Secret.create("openai-api-key", "sk-***")
+
+# The classes can be assigned and used like the top-level ones.
+Sandbox = client.Sandbox
+paginator = Sandbox.list()
+```
+
+Per-call params still take precedence over the client's params, and clients are isolated from each other and from the env-configured top-level exports.
+
 ## Features
 
 ### Streaming desktop's screen
