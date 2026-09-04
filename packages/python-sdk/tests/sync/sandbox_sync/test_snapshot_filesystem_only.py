@@ -1,5 +1,7 @@
 import pytest
-from e2b import Sandbox
+from e2b import Sandbox, SandboxException
+
+pytestmark = pytest.mark.timeout(270)
 
 
 @pytest.mark.skip_debug()
@@ -9,11 +11,18 @@ def test_pause_filesystem_only(sandbox: Sandbox):
     boot_before = sandbox.files.read("/proc/sys/kernel/random/boot_id").strip()
 
     # Filesystem-only pause: only the rootfs is persisted, no memory snapshot.
-    assert sandbox.pause(keep_memory=False)
+    assert sandbox.pause(keep_memory=False, request_timeout=120)
     assert not sandbox.is_running()
 
     # Resuming a filesystem-only snapshot cold-boots (reboots) from the rootfs.
-    resumed = sandbox.connect()
+    try:
+        resumed = sandbox.connect(request_timeout=120)
+    except SandboxException as error:
+        # Placement can transiently time out while the cold boot is scheduled.
+        # Retry only the backend response that explicitly asks the caller to do so.
+        if "Failed to place sandbox: placement timed out" not in str(error):
+            raise
+        resumed = sandbox.connect(request_timeout=120)
     assert resumed.is_running()
     assert resumed.sandbox_id == sandbox.sandbox_id
 

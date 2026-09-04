@@ -18,6 +18,9 @@ on:
 permissions:
   contents: read
 
+env:
+  E2B_USER_AGENT_SOURCE: ci
+
 jobs:
   test:
     defaults:
@@ -27,6 +30,9 @@ jobs:
     name: Desktop JS SDK - ${{ inputs.run_tests && matrix.runtime || 'build' }}
     strategy:
       fail-fast: false
+      # Each runtime keeps one live-test worker. This matrix has four legs, so
+      # it naturally stays below the shared six-job cap.
+      max-parallel: 6
       # Callers that only build (staging) collapse the matrix to a single job;
       # the runtime legs are exercised against production.
       matrix:
@@ -76,6 +82,8 @@ jobs:
       - name: Install Bun
         if: inputs.run_tests && matrix.runtime == 'bun'
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: '${{ env.TOOL_VERSION_BUN }}'
 
       - name: Install Deno
         if: inputs.run_tests && matrix.runtime == 'deno'
@@ -97,3 +105,4 @@ jobs:
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
+          E2B_TEST_MAX_WORKERS: 1

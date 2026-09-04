@@ -15,7 +15,7 @@ from connectrpc.code import Code
 from connectrpc.errors import ConnectError
 from pyqwest import Client, Request, Response, Transport
 
-from e2b.api import proxy_to_config
+from e2b.api import envd_pool_shard, proxy_to_config
 from e2b.api.client_async import get_pyqwest_transport
 from e2b.connection_config import ConnectionConfig
 from e2b.envd.client_shared import (
@@ -80,7 +80,12 @@ def create_rpc_client(
     outside the retries so it converts the settled response once.
     """
     http_client = Client(
-        PlainHTTPErrorTransport(get_pyqwest_transport(proxy_to_config(config.proxy)))
+        PlainHTTPErrorTransport(
+            get_pyqwest_transport(
+                proxy_to_config(config.proxy),
+                pool_shard=envd_pool_shard(config),
+            )
+        )
     )
     return client_cls(
         base_url,
