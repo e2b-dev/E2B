@@ -2148,26 +2148,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        AdminBuildCancelResult: {
-            /** @description Number of builds successfully cancelled */
-            cancelledCount: number;
-            /** @description Number of builds that failed to cancel */
-            failedCount: number;
-        };
-        AdminSandboxKillResult: {
-            /** @description Number of sandboxes that failed to kill */
-            failedCount: number;
-            /** @description Number of sandboxes successfully killed */
-            killedCount: number;
-        };
-        /**
-         * @description Cached live sandbox index count keyed by team ID. Counts may briefly
-         *     include sandboxes transitioning out of running; teams without indexed
-         *     sandboxes are omitted.
-         */
-        AdminTeamRunningSandboxCounts: {
-            [key: string]: number;
-        };
         AssignedTemplateTags: {
             /**
              * Format: uuid
@@ -2231,69 +2211,11 @@ export interface components {
          * @description CPU cores for the sandbox
          */
         CPUCount: number;
-        CreatedAccessToken: {
-            /**
-             * Format: date-time
-             * @description Timestamp of access token creation
-             */
-            createdAt: string;
-            /**
-             * Format: uuid
-             * @description Identifier of the access token
-             */
-            id: string;
-            mask: components["schemas"]["IdentifierMaskingDetails"];
-            /** @description Name of the access token */
-            name: string;
-            /** @description The fully created access token */
-            token: string;
-        };
-        CreatedTeamAPIKey: {
-            /**
-             * Format: date-time
-             * @description Timestamp of API key creation
-             */
-            createdAt: string;
-            createdBy?: components["schemas"]["TeamUser"] | null;
-            /**
-             * Format: uuid
-             * @description Identifier of the API key
-             */
-            id: string;
-            /** @description Raw value of the API key */
-            key: string;
-            /**
-             * Format: date-time
-             * @description Last time this API key was used
-             */
-            lastUsed?: string | null;
-            mask: components["schemas"]["IdentifierMaskingDetails"];
-            /** @description Name of the API key */
-            name: string;
-        };
         DeleteTemplateTagsRequest: {
             /** @description Name of the template */
             name: string;
             /** @description Tags to delete */
             tags: string[];
-        };
-        DiskMetrics: {
-            /** @description Device name */
-            device: string;
-            /** @description Filesystem type (e.g., ext4, xfs) */
-            filesystemType: string;
-            /** @description Mount point of the disk */
-            mountPoint: string;
-            /**
-             * Format: uint64
-             * @description Total space in bytes
-             */
-            totalBytes: number;
-            /**
-             * Format: uint64
-             * @description Used space in bytes
-             */
-            usedBytes: number;
         };
         /**
          * Format: int32
@@ -2336,16 +2258,6 @@ export interface components {
             type: "registry";
             /** @description Username to use for the registry */
             username: string;
-        };
-        IdentifierMaskingDetails: {
-            /** @description Prefix used in masked version of the token or key */
-            maskedValuePrefix: string;
-            /** @description Suffix used in masked version of the token or key */
-            maskedValueSuffix: string;
-            /** @description Prefix that identifies the token or key type */
-            prefix: string;
-            /** @description Length of the token or key */
-            valueLength: number;
         };
         ListedSandbox: {
             /** @description Alias of the template */
@@ -2392,16 +2304,6 @@ export interface components {
          * @enum {string}
          */
         LogsSource: "temporary" | "persistent";
-        MachineInfo: {
-            /** @description CPU architecture of the node */
-            cpuArchitecture: string;
-            /** @description CPU family of the node */
-            cpuFamily: string;
-            /** @description CPU model of the node */
-            cpuModel: string;
-            /** @description CPU model name of the node */
-            cpuModelName: string;
-        };
         /** @description Team metric with timestamp */
         MaxTeamMetric: {
             /**
@@ -2427,10 +2329,6 @@ export interface components {
          * @description Memory for the sandbox in MiB
          */
         MemoryMB: number;
-        NewAccessToken: {
-            /** @description Name of the access token */
-            name: string;
-        };
         NewSandbox: {
             /** @description Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut to 0.0.0.0/0 in the network config. */
             allow_internet_access?: boolean;
@@ -2469,158 +2367,9 @@ export interface components {
             /** @description Runtime marker stored as the secret's first version. The runtime resolves it to a value at sandbox egress. */
             value: string;
         };
-        NewTeamAPIKey: {
-            /** @description Name of the API key */
-            name: string;
-        };
         NewVolume: {
             /** @description Name of the volume */
             name: string;
-        };
-        Node: {
-            /** @description Identifier of the cluster */
-            clusterID: string;
-            /** @description Commit of the orchestrator */
-            commit: string;
-            /**
-             * Format: uint64
-             * @description Number of sandbox create fails
-             */
-            createFails: number;
-            /**
-             * Format: uint64
-             * @description Number of sandbox create successes
-             */
-            createSuccesses: number;
-            /** @description Identifier of the node */
-            id: string;
-            machineInfo: components["schemas"]["MachineInfo"];
-            metrics: components["schemas"]["NodeMetrics"];
-            /**
-             * Format: uint32
-             * @description Number of sandboxes running on the node
-             */
-            sandboxCount: number;
-            /**
-             * Format: int
-             * @description Number of starting Sandboxes
-             */
-            sandboxStartingCount: number;
-            /** @description Service instance identifier of the node */
-            serviceInstanceID: string;
-            status: components["schemas"]["NodeStatus"];
-            /**
-             * Format: date-time
-             * @description Time when the node status was last changed
-             */
-            statusChangedAt: string;
-            /** @description Version of the orchestrator */
-            version: string;
-        };
-        NodeDetail: {
-            /** @description Identifier of the cluster */
-            clusterID: string;
-            /** @description Commit of the orchestrator */
-            commit: string;
-            /**
-             * Format: uint64
-             * @description Number of sandbox create fails
-             */
-            createFails: number;
-            /**
-             * Format: uint64
-             * @description Number of sandbox create successes
-             */
-            createSuccesses: number;
-            /** @description Identifier of the node */
-            id: string;
-            machineInfo: components["schemas"]["MachineInfo"];
-            metrics: components["schemas"]["NodeMetrics"];
-            /**
-             * Format: uint32
-             * @description Number of sandboxes running on the node
-             */
-            sandboxCount: number;
-            /** @description Service instance identifier of the node */
-            serviceInstanceID: string;
-            status: components["schemas"]["NodeStatus"];
-            /**
-             * Format: date-time
-             * @description Time when the node status was last changed
-             */
-            statusChangedAt: string;
-            /** @description Version of the orchestrator */
-            version: string;
-        };
-        /** @description Node metrics */
-        NodeMetrics: {
-            /**
-             * Format: uint32
-             * @description Number of allocated CPU cores
-             */
-            allocatedCPU: number;
-            /**
-             * Format: uint64
-             * @description Amount of allocated memory in bytes
-             */
-            allocatedMemoryBytes: number;
-            /**
-             * Format: uint32
-             * @description Total number of CPU cores on the node
-             */
-            cpuCount: number;
-            /**
-             * Format: uint32
-             * @description Node CPU usage percentage
-             */
-            cpuPercent: number;
-            /** @description Detailed metrics for each disk/mount point */
-            disks: components["schemas"]["DiskMetrics"][];
-            /**
-             * Format: uint64
-             * @description Size of a single hugepage in bytes
-             */
-            hugePageSizeBytes: number;
-            /**
-             * Format: uint64
-             * @description Number of reserved hugepages (committed but not yet faulted)
-             */
-            hugePagesReserved: number;
-            /**
-             * Format: uint64
-             * @description Total number of preallocated hugepages on the node
-             */
-            hugePagesTotal: number;
-            /**
-             * Format: uint64
-             * @description Number of hugepages in use (total - free)
-             */
-            hugePagesUsed: number;
-            /**
-             * Format: uint64
-             * @description Total node memory in bytes
-             */
-            memoryTotalBytes: number;
-            /**
-             * Format: uint64
-             * @description Node memory used in bytes
-             */
-            memoryUsedBytes: number;
-        };
-        /**
-         * @description Status of the node.
-         *     - draining: the node is bound to be shut down. It will not accept new sandboxes and will stop once all existing sandboxes are done.
-         *     - standby: the node is not actively used, but it can return to ready and continue serving traffic.
-         * @enum {string}
-         */
-        NodeStatus: "ready" | "draining" | "connecting" | "unhealthy" | "standby";
-        NodeStatusChange: {
-            /**
-             * Format: uuid
-             * @description Identifier of the cluster
-             */
-            clusterID?: string;
-            status: components["schemas"]["NodeStatus"];
         };
         /**
          * @description Sort direction
@@ -2978,27 +2727,6 @@ export interface components {
             /** @description Identifier of the team */
             teamID: string;
         };
-        TeamAPIKey: {
-            /**
-             * Format: date-time
-             * @description Timestamp of API key creation
-             */
-            createdAt: string;
-            createdBy?: components["schemas"]["TeamUser"] | null;
-            /**
-             * Format: uuid
-             * @description Identifier of the API key
-             */
-            id: string;
-            /**
-             * Format: date-time
-             * @description Last time this API key was used
-             */
-            lastUsed?: string | null;
-            mask: components["schemas"]["IdentifierMaskingDetails"];
-            /** @description Name of the API key */
-            name: string;
-        };
         /** @description Team metric with timestamp */
         TeamMetric: {
             /**
@@ -3346,10 +3074,6 @@ export interface components {
              */
             updatedAt: string;
         };
-        UpdateTeamAPIKey: {
-            /** @description New name for the API key */
-            name: string;
-        };
         Volume: {
             /** @description Name of the volume */
             name: string;
@@ -3370,9 +3094,6 @@ export interface components {
             token: string;
             /** @description ID of the volume */
             volumeID: string;
-        };
-        VolumeToken: {
-            token: string;
         };
     };
     responses: {
@@ -3414,15 +3135,6 @@ export interface components {
         };
         /** @description Conflict */
         409: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description Gone */
-        410: {
             headers: {
                 [name: string]: unknown;
             };
@@ -3477,18 +3189,13 @@ export interface components {
         };
     };
     parameters: {
-        accessTokenID: string;
-        apiKeyID: string;
         buildID: string;
-        nodeID: string;
         /** @description Maximum number of items to return per page */
         paginationLimit: number;
         /** @description Cursor to start the list from */
         paginationNextToken: string;
         sandboxID: string;
         secretID: string;
-        snapshotID: string;
-        tag: string;
         teamID: string;
         templateID: string;
         volumeID: string;
