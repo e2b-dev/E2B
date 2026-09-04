@@ -1,5 +1,6 @@
 import { ApiClient, apiErrorFromCode, components, handleApiError } from '../api'
 import {
+  ClientFactory,
   ConnectionConfig,
   ConnectionOpts,
   DEFAULT_SANDBOX_TIMEOUT_MS,
@@ -70,7 +71,9 @@ export type SandboxNetworkTransformContext = {
      * Reading a name that is not registered throws
      * {@link InvalidArgumentError} — the proxy never turns an unregistered name
      * into a token, so a typo would surface as a confusing auth failure at the
-     * destination.
+     * destination. The four names the runtime reads off any object it
+     * serializes, awaits or coerces (`toJSON`, `then`, `toString`, `valueOf`)
+     * throw on use rather than on the read.
      */
     tokens: Record<string, string>
   }
@@ -114,8 +117,7 @@ export type SandboxNetworkRule = {
  * also appear in {@link SandboxNetworkOpts.allowOut}.
  */
 export type SandboxNetworkRules =
-  | Record<string, SandboxNetworkRule[]>
-  | Map<string, SandboxNetworkRule[]>
+  Record<string, SandboxNetworkRule[]> | Map<string, SandboxNetworkRule[]>
 
 /**
  * Per-domain rule as returned by the sandbox info endpoint. Mirrors
@@ -143,8 +145,7 @@ export type SandboxNetworkSelectorContext = {
  * the same.
  */
 export type SandboxNetworkSelector =
-  | string[]
-  | ((ctx: SandboxNetworkSelectorContext) => string[])
+  string[] | ((ctx: SandboxNetworkSelectorContext) => string[])
 
 /**
  * SOCKS5 proxy the sandbox's outbound TCP is tunneled through — "bring your
@@ -485,20 +486,19 @@ export type SandboxInfoLifecycle = {
 /**
  * Options for request to the Sandbox API.
  */
-export interface SandboxApiOpts
-  extends Partial<
-    Pick<
-      ConnectionOpts,
-      | 'apiKey'
-      | 'validateApiKey'
-      | 'headers'
-      | 'apiHeaders'
-      | 'debug'
-      | 'domain'
-      | 'requestTimeoutMs'
-      | 'signal'
-    >
-  > {}
+export interface SandboxApiOpts extends Partial<
+  Pick<
+    ConnectionOpts,
+    | 'apiKey'
+    | 'validateApiKey'
+    | 'headers'
+    | 'apiHeaders'
+    | 'debug'
+    | 'domain'
+    | 'requestTimeoutMs'
+    | 'signal'
+  >
+> {}
 
 /**
  * Options for pausing a sandbox.
@@ -681,6 +681,11 @@ export type SandboxConnectOpts = ConnectionOpts & {
  */
 export type SandboxState = 'running' | 'paused'
 
+/**
+ * Sort order for listing sandboxes by start time.
+ */
+export type SandboxListOrder = 'asc' | 'desc'
+
 export interface SandboxListOpts extends Omit<SandboxApiOpts, 'signal'> {
   /**
    * Filter the list of sandboxes, e.g. by metadata `metadata:{"key": "value"}`, if there are multiple filters they are combined with AND.
@@ -693,7 +698,23 @@ export interface SandboxListOpts extends Omit<SandboxApiOpts, 'signal'> {
      * @default ['running', 'paused']
      */
     state?: Array<SandboxState>
+    /**
+     * Filter the list of sandboxes to those started at or after this time.
+     */
+    startedAfter?: Date
+    /**
+     * Filter the list of sandboxes by a template ID or name.
+     */
+    template?: string
   }
+
+  /**
+   * Sort order of the list of sandboxes by start time, applied across the
+   * whole result set before pagination (not within a page).
+   *
+   * @default 'desc'
+   */
+  order?: SandboxListOrder
 
   /**
    * Number of sandboxes to return per page.
@@ -997,20 +1018,29 @@ function resolveRulesForBody(
 /**
  * Rebuild the proxy config from the known fields so stray properties on the
  * caller's object never reach the wire and a later mutation of it cannot alter
- * the in-flight request. Validation is the server's — it is the only side that
- * can tell whether the address resolves, and to where.
+ * the in-flight request. Address reachability is the server's — it is the only
+ * side that can tell whether the address resolves, and to where. The required
+ * `address` is checked here so an untyped caller that omits it is told which
+ * option is wrong instead of getting an API error about a body it never wrote.
  */
 function buildEgressProxyBody(
   egressProxy: SandboxEgressProxyOpts
 ): components['schemas']['SandboxEgressProxyConfig'] {
+  // Re-check at runtime for callers that bypass the type; Python's
+  // `_build_egress_proxy` checks the same way.
+  if (!isPlainObject(egressProxy) || typeof egressProxy.address !== 'string') {
+    throw new InvalidArgumentError(
+      `network egressProxy must be an object with a string 'address' (e.g. 'proxy.example.com:1080').`
+    )
+  }
+
+  // `!= null` also skips a `null` credential, which is what reading one out of
+  // an unset environment variable yields and what "this proxy takes no
+  // credentials" means; the API only accepts a string.
   return {
     address: egressProxy.address,
-    ...(egressProxy.username !== undefined
-      ? { username: egressProxy.username }
-      : {}),
-    ...(egressProxy.password !== undefined
-      ? { password: egressProxy.password }
-      : {}),
+    ...(egressProxy.username != null ? { username: egressProxy.username } : {}),
+    ...(egressProxy.password != null ? { password: egressProxy.password } : {}),
   }
 }
 
@@ -1147,8 +1177,10 @@ function buildNetworkUpdateBody(
       : {}),
   }
 }
-export class SandboxApi {
-  protected constructor() {}
+export class SandboxApi extends ClientFactory {
+  protected constructor() {
+    super()
+  }
 
   /**
    * Kill the sandbox specified by sandbox ID.
@@ -1162,7 +1194,8 @@ export class SandboxApi {
     sandboxId: string,
     opts?: SandboxApiOpts
   ): Promise<boolean> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
 
     if (config.debug) {
       // Skip killing the sandbox in debug mode
@@ -1177,7 +1210,7 @@ export class SandboxApi {
           sandboxID: sandboxId,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -1204,7 +1237,8 @@ export class SandboxApi {
     sandboxId: string,
     opts?: SandboxApiOpts
   ): Promise<SandboxInfo> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.GET('/sandboxes/{sandboxID}', {
@@ -1213,7 +1247,7 @@ export class SandboxApi {
           sandboxID: sandboxId,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -1289,7 +1323,8 @@ export class SandboxApi {
     sandboxId: string,
     opts?: SandboxMetricsOpts
   ): Promise<SandboxMetrics[]> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
 
     if (config.debug) {
       // Skip getting the metrics in debug mode
@@ -1299,10 +1334,12 @@ export class SandboxApi {
     const client = new ApiClient(config)
 
     // JS timestamp is in milliseconds, convert to unix (seconds)
-    const start = opts?.start
-      ? Math.round(opts.start.getTime() / 1000)
+    const start = apiOpts?.start
+      ? Math.round(apiOpts.start.getTime() / 1000)
       : undefined
-    const end = opts?.end ? Math.round(opts.end.getTime() / 1000) : undefined
+    const end = apiOpts?.end
+      ? Math.round(apiOpts.end.getTime() / 1000)
+      : undefined
     const res = await client.api.GET('/sandboxes/{sandboxID}/metrics', {
       params: {
         path: {
@@ -1313,7 +1350,7 @@ export class SandboxApi {
           end,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -1356,7 +1393,8 @@ export class SandboxApi {
     timeoutMs: number,
     opts?: SandboxApiOpts
   ): Promise<void> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.POST('/sandboxes/{sandboxID}/timeout', {
@@ -1368,7 +1406,7 @@ export class SandboxApi {
       body: {
         timeout: timeoutToSeconds(timeoutMs),
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -1396,7 +1434,8 @@ export class SandboxApi {
     network: SandboxNetworkUpdate,
     opts?: SandboxApiOpts
   ): Promise<void> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.PUT('/sandboxes/{sandboxID}/network', {
@@ -1406,7 +1445,7 @@ export class SandboxApi {
         },
       },
       body: buildNetworkUpdateBody(network),
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -1431,7 +1470,8 @@ export class SandboxApi {
     sandboxId: string,
     opts?: SandboxPauseOpts
   ): Promise<boolean> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.POST('/sandboxes/{sandboxID}/pause', {
@@ -1441,9 +1481,9 @@ export class SandboxApi {
         },
       },
       body: {
-        memory: opts?.keepMemory ?? true,
+        memory: apiOpts?.keepMemory ?? true,
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -1489,7 +1529,8 @@ export class SandboxApi {
     sandboxId: string,
     opts?: CreateSnapshotOpts
   ): Promise<SnapshotInfo> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.POST('/sandboxes/{sandboxID}/snapshots', {
@@ -1498,8 +1539,8 @@ export class SandboxApi {
           sandboxID: sandboxId,
         },
       },
-      body: opts?.name ? { name: opts.name } : {},
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      body: apiOpts?.name ? { name: apiOpts.name } : {},
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -1525,7 +1566,7 @@ export class SandboxApi {
    * @returns paginator for listing snapshots.
    */
   static listSnapshots(opts?: SnapshotListOpts): SnapshotPaginator {
-    return new SnapshotPaginator(opts)
+    return new SnapshotPaginator(this.resolveOpts(opts))
   }
 
   /**
@@ -1540,7 +1581,8 @@ export class SandboxApi {
     snapshotId: string,
     opts?: SandboxApiOpts
   ): Promise<boolean> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.DELETE('/templates/{templateID}', {
@@ -1549,7 +1591,7 @@ export class SandboxApi {
           templateID: snapshotId,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -1569,7 +1611,8 @@ export class SandboxApi {
     timeoutMs: number,
     opts?: SandboxOpts
   ) {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
     // onTimeout accepts a bare action (`'pause'` / `'kill'`) or the object form
     // `{ action, keepMemory }`. The discriminated union type forbids `keepMemory`
@@ -1642,7 +1685,7 @@ export class SandboxApi {
 
     const res = await client.api.POST('/sandboxes', {
       body,
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     const err = handleApiError(res)
@@ -1651,7 +1694,7 @@ export class SandboxApi {
     }
 
     if (compareVersions(res.data!.envdVersion, '0.1.0') < 0) {
-      await this.kill(res.data!.sandboxID, opts)
+      await this.kill(res.data!.sandboxID, apiOpts)
       throw new TemplateError(
         'You need to update the template to use the new SDK.'
       )
@@ -1676,7 +1719,8 @@ export class SandboxApi {
       throw new InvalidArgumentError('count must be at least 1')
     }
 
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.POST('/sandboxes/{sandboxID}/fork', {
@@ -1689,7 +1733,7 @@ export class SandboxApi {
         timeout: timeoutToSeconds(timeoutMs),
         count,
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     // check the status, not the parsed error body — openapi-fetch leaves
@@ -1738,9 +1782,10 @@ export class SandboxApi {
     sandboxId: string,
     opts?: SandboxConnectOpts
   ) {
-    const timeoutMs = opts?.timeoutMs ?? DEFAULT_SANDBOX_TIMEOUT_MS
+    const apiOpts = this.resolveOpts(opts)
+    const timeoutMs = apiOpts?.timeoutMs ?? DEFAULT_SANDBOX_TIMEOUT_MS
 
-    const config = new ConnectionConfig(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.POST('/sandboxes/{sandboxID}/connect', {
@@ -1752,7 +1797,7 @@ export class SandboxApi {
       body: {
         timeout: timeoutToSeconds(timeoutMs),
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.error?.code === 404) {
@@ -1788,11 +1833,13 @@ export class SandboxApi {
  */
 export class SandboxPaginator extends Paginator<SandboxInfo, SandboxApiOpts> {
   private query: SandboxListOpts['query']
+  private order: SandboxListOrder | undefined
 
   constructor(opts?: SandboxListOpts) {
     super(opts, opts?.limit, opts?.nextToken)
 
     this.query = opts?.query
+    this.order = opts?.order
   }
 
   async nextItems(opts?: SandboxApiOpts): Promise<SandboxInfo[]> {
@@ -1812,7 +1859,8 @@ export class SandboxPaginator extends Paginator<SandboxInfo, SandboxApiOpts> {
       metadata = new URLSearchParams(encodedPairs).toString()
     }
 
-    const config = new ConnectionConfig({ ...this.opts, ...opts })
+    const apiOpts = ConnectionConfig.mergeOpts(this.opts, opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.GET('/v2/sandboxes', {
@@ -1820,11 +1868,14 @@ export class SandboxPaginator extends Paginator<SandboxInfo, SandboxApiOpts> {
         query: {
           metadata,
           state: this.query?.state,
+          startedAfter: this.query?.startedAfter?.toISOString(),
+          template: this.query?.template || undefined,
+          order: this.order,
           limit: this.limit,
           nextToken: this.nextToken,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     const err = handleApiError(res)
@@ -1880,7 +1931,8 @@ export class SnapshotPaginator extends Paginator<SnapshotInfo, SandboxApiOpts> {
       throw new Error('No more items to fetch')
     }
 
-    const config = new ConnectionConfig({ ...this.opts, ...opts })
+    const apiOpts = ConnectionConfig.mergeOpts(this.opts, opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.GET('/snapshots', {
@@ -1892,7 +1944,7 @@ export class SnapshotPaginator extends Paginator<SnapshotInfo, SandboxApiOpts> {
           nextToken: this.nextToken,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     const err = handleApiError(res)

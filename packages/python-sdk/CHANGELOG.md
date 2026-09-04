@@ -1,5 +1,242 @@
 # @e2b/python-sdk
 
+## 2.46.4
+
+### Patch Changes
+
+- 6146cd0: Improve reliability for high-concurrency sandbox workloads by spreading envd traffic across four HTTP/2 connection pools. Set `E2B_ENVD_POOL_SHARDS` before importing the SDK to adjust the pool count.
+
+## 2.46.3
+
+### Patch Changes
+
+- c275393: Improve reliability for high-concurrency sandbox workloads by spreading envd traffic across four HTTP/2 connection pools. Set `E2B_ENVD_POOL_SHARDS` before importing the SDK to adjust the pool count.
+
+## 2.46.2
+
+### Patch Changes
+
+- 7dd5321: Spread envd traffic across four HTTP/2 connection pools by default so high-concurrency, long-running streams do not all contend for one connection's stream limit. Set `E2B_ENVD_POOL_SHARDS` before importing the SDK to tune the pool count.
+
+## 2.46.1
+
+### Patch Changes
+
+- d4a7f41: Deprecate the sandbox git module (`sandbox.git`) and its public types and errors. Run git through the commands module instead, e.g. `sandbox.commands.run('git clone <url> repo')`. The module keeps working and will be removed in the next major version.
+
+## 2.46.0
+
+### Minor Changes
+
+- 9d1c90d: Remove client-side API key format validation. The SDK no longer checks that the API key matches the `e2b_` hex format — only that a key is present. The `validateApiKey`/`validate_api_key` option is deprecated and has no effect, and the `E2B_VALIDATE_API_KEY` environment variable is no longer read. The server remains the source of truth for key validity.
+
+### Patch Changes
+
+- 67c06e0: Point the two Code Interpreter README links at `code-interpreting/analyze-data-with-ai` instead of the `code-interpreting` section index. The index has no landing page and 307s to that article, dropping the query string on the way, so the UTM parameters were lost before the reader arrived. Linking at the resolved path keeps them.
+- 182b498: Point the README documentation links at `docs.e2b.dev` instead of `e2b.dev/docs`. The docs site moved to its own subdomain and has no `/docs` path prefix there, so `e2b.dev/docs` serves a 308 to `docs.e2b.dev/` and `e2b.dev/docs/code-interpreting` maps to `docs.e2b.dev/code-interpreting`. The UTM parameters are unchanged and survived the redirect, so this removes a redirect hop rather than fixing broken attribution.
+- b802997: Fix two `network.egressProxy` / `network["egress_proxy"]` cases an untyped caller reaches.
+
+  The JS SDK had no shape guard: `buildEgressProxyBody` rebuilds the body from the known fields, so an `address` that was missing or not a string vanished and the caller got an API error about a config they never wrote (`{"egressProxy":{}}`). It now raises `InvalidArgumentError` naming the option, the way the Python SDK already did:
+
+  ```ts
+  // InvalidArgumentError: network egressProxy must be an object with a string
+  // 'address' (e.g. 'proxy.example.com:1080').
+  await Sandbox.create({
+    network: { egressProxy: 'proxy.example.com:1080' as never },
+  })
+  ```
+
+  A `null` / `None` username or password is now treated as absent instead of being serialized as a JSON null the API rejects — reading a credential out of an unset environment variable is how a caller lands there, and it means the proxy takes no credentials:
+
+  ```ts
+  await Sandbox.create({
+    network: {
+      egressProxy: {
+        address: 'proxy.example.com:1080',
+        // Unset in the environment; the proxy takes no credentials.
+        username: process.env.PROXY_USER,
+      },
+    },
+  })
+  ```
+
+  ```python
+  Sandbox.create(
+      network={
+          "egress_proxy": {
+              "address": "proxy.example.com:1080",
+              "username": os.environ.get("PROXY_USER"),
+          },
+      },
+  )
+  ```
+
+## 2.45.1
+
+### Patch Changes
+
+- b17b726: Stop the shared retrying transports from mirroring streamed request bodies in
+  memory. pyqwest's retry middleware keeps a non-`bytes` body replayable by
+  copying it as it is sent, so a streamed `files.write` of a file-like object or
+  `volume.write_file` grew a full in-RAM mirror and peak memory scaled with file
+  size. The transports now declare pyqwest's `RetryMode.UNBUFFERED`: a streamed
+  body is replayed only while nothing has been read from it, which is all the
+  SDK's connect-only retry policy needs — a `ConnectionError` is raised only
+  before the request was written. Connect retries are unchanged, and `bytes`
+  bodies (unary RPC payloads, in-memory writes) were already replayable without
+  a copy.
+
+## 2.45.0
+
+### Minor Changes
+
+- 8787dfe: Add sorting and new filters to `Sandbox.list`. The `order` option (`'asc'` / `'desc'`, default `'desc'`) sorts sandboxes by start time across the whole paginated dataset, and the query now supports `startedAfter` / `started_after` (inclusive lower bound on start time) and `template` (exact template ID or alias) filters, all applied server-side before pagination. The CLI `e2b sandbox list` command exposes these via `--order`, `--started-after`, and `--template`.
+
+## 2.44.0
+
+### Minor Changes
+
+- 5759f17: Add an `E2B` client that binds a connection config once and exposes the resource surfaces off it, so a single process can talk to several API keys, domains or deployments. The classes it exposes are per-client subclasses of the real `Sandbox`/`Volume`/`Template`/`Secret` classes, so they behave exactly like the top-level ones — per-call options still win over the client's options, which win over the environment variables. The named top-level exports are unchanged and keep reading the environment.
+
+  Nothing existing changes: `Template` is now the `TemplateBase` class made callable as a factory, so `Template(...)`, the statics and `instanceof` keep working, and the default export is still `Sandbox`.
+
+  ```ts
+  import { E2B } from 'e2b'
+
+  const { Sandbox, Volume, Template, Secret } = new E2B({
+    apiKey: 'e2b_***',
+    domain: 'e2b.dev',
+  })
+
+  const sandbox = await Sandbox.create()
+  const volume = await Volume.create('my-volume')
+  const exists = await Template.exists('my-template')
+  await Template.build(Template().fromPythonImage('3'), 'my-env')
+  await Secret.create('openai-api-key', 'sk-***')
+  ```
+
+  ```python
+  from e2b import E2B
+
+  client = E2B(api_key="e2b_***", domain="e2b.dev")
+  Sandbox, Volume, Template = client.Sandbox, client.Volume, client.Template
+  Secret = client.Secret
+
+  sandbox = Sandbox.create()
+  volume = Volume.create("my-volume")
+  exists = Template.exists("my-template")
+  secret = Secret.create("openai-api-key", "sk-***")
+
+  # Async variants are exposed too.
+  AsyncSandbox = client.AsyncSandbox
+  async_sandbox = await AsyncSandbox.create()
+  ```
+
+## 2.43.0
+
+### Minor Changes
+
+- f89f8c3: Add Secrets Management to the SDK. The `Secret` class (and `AsyncSecret` in Python) now manages E2B secrets: `create` and `update` store secret values (write-only — no read surface returns them), `getInfo` / `get_info` and the paginated `list` read metadata, `exists` and `destroy` are idempotent existence and lifecycle helpers, and `fill` formats the `${e2b.secrets.name}` placeholder that the runtime resolves to the secret's current value.
+
+### Patch Changes
+
+- 2be6c12: Internal refactor: the template API operations resolve their connection config through a class-level hook, so a `TemplateBase` subclass can carry bound connection options. No behavior change — `Template` / `AsyncTemplate` keep reading config from per-call options and environment variables. In the Python SDK the terminal template operations (`build`, `build_in_background`, `get_build_status`, `exists`, `alias_exists`, `assign_tags`, `remove_tags`, `get_tags`) became `classmethod`s, with signatures unchanged for callers.
+- 05aa03c: Add typed not-found errors for volumes: `VolumeNotFoundError` / `VolumeNotFoundException` (thrown when a volume is not found) and `VolumePathNotFoundError` / `VolumePathNotFoundException` (thrown when a path inside a volume is not found). All subclass the existing `NotFoundError` / `NotFoundException`, so existing catches keep working.
+
+## 2.42.0
+
+### Minor Changes
+
+- 7af41e9: Refresh the MCP server types from the current MCP gateway catalog: 49 servers are new (`n8n`, `neo4j`, `okta`, `temporal`, `proxmox`, `zscaler`, the AWS Labs family, ...), 61 titles and 10 descriptions were rewritten, and 4 servers changed their options (`awsDiagram`, `context7`, `neo4jCypher`, `onlyofficeDocspace`).
+
+  Six servers the catalog no longer publishes are gone from `McpServer`: `postgres`, `root`, `tembo`, `flexprice`, `triplewhale`, `cdataConnectcloud`. `awsDiagram` and `context7` now require an option (`outputDir` and `apiKey`), so `awsDiagram: {}` and `context7: {}` stop type-checking, and `onlyofficeDocspace` is down to `baseUrl` and `docspaceApiKey`. The removals also narrow `McpServerName`, so `Template().addMcpServer('postgres')` stops compiling. The config is still passed to the gateway as written, so a dropped server can be kept by casting past the type — whether it starts is up to the gateway.
+
+  ```ts
+  import { Sandbox } from 'e2b'
+
+  const sandbox = await Sandbox.create({
+    mcp: {
+      n8n: {
+        apiKey: process.env.N8N_API_KEY!,
+        apiUrl: 'https://n8n.example.com/api/v1',
+      },
+    },
+  })
+  ```
+
+### Patch Changes
+
+- 15bd48b: Omit `autoPause` from the create-sandbox request when no timeout lifecycle is configured, and omit `autoPauseMemory` unless `keepMemory` / `keep_memory` was chosen. Sending the SDK's local defaults for those fields was indistinguishable from an explicit choice, so the API could not tell "no preference" from a client choice and own its defaults. Explicit values are still always sent:
+
+  ```ts
+  import { Sandbox } from 'e2b'
+
+  // No timeout lifecycle: autoPause is omitted, the API applies its default.
+  await Sandbox.create()
+
+  // Explicit action: autoPause: false / autoPause: true, as before.
+  await Sandbox.create({ lifecycle: { onTimeout: 'kill' } })
+  await Sandbox.create({ lifecycle: { onTimeout: 'pause' } })
+
+  // Snapshot kind is only sent when keepMemory is set.
+  await Sandbox.create({
+    lifecycle: { onTimeout: { action: 'pause', keepMemory: false } },
+  })
+  ```
+
+  ```python
+  from e2b import Sandbox
+
+  # No timeout lifecycle: auto_pause is omitted, the API applies its default.
+  Sandbox.create()
+
+  # Explicit action: autoPause: false / autoPause: true, as before.
+  Sandbox.create(lifecycle={"on_timeout": "kill"})
+  Sandbox.create(lifecycle={"on_timeout": "pause"})
+
+  # Snapshot kind is only sent when keep_memory is set.
+  Sandbox.create(
+      lifecycle={"on_timeout": {"action": "pause", "keep_memory": False}}
+  )
+  ```
+
+- 5367693: Omit `autoResume` from the `POST /sandboxes` request when `lifecycle.autoResume` / `lifecycle["auto_resume"]` is not configured, instead of sending the SDK's local default as `{ "autoResume": { "enabled": false } }`. The API can now tell an unset preference from an explicit opt-out and own the default itself. Explicit values are unchanged on the wire.
+
+  ```ts
+  import { Sandbox } from 'e2b'
+
+  // autoResume is left out of the request entirely — the API's default applies
+  await Sandbox.create({ lifecycle: { onTimeout: 'pause' } })
+
+  // an explicit choice is still sent as before
+  await Sandbox.create({ lifecycle: { onTimeout: 'pause', autoResume: true } })
+  ```
+
+  ```python
+  from e2b import Sandbox
+
+  # auto_resume is left out of the request entirely — the API's default applies
+  Sandbox.create(lifecycle={"on_timeout": "pause"})
+
+  # an explicit choice is still sent as before
+  Sandbox.create(lifecycle={"on_timeout": "pause", "auto_resume": True})
+  ```
+
+- 666241d: Run every persistent HTTP stack in the SDK on one shared pyqwest connection pool
+  instead of four: the control-plane REST API, the envd HTTP API, the envd RPC
+  clients, and the volume content API now all draw from
+  `e2b.api.client_sync`/`client_async`, keyed on the three knobs that are fixed
+  when a pyqwest transport is built — proxy, idle read bound, and HTTP version.
+  reqwest pools per host internally, so one pool serves the API host and every
+  per-sandbox host without interference — and since envd RPC and the envd HTTP API
+  hit the same host, an active sandbox now needs a single HTTP/2 connection instead
+  of one per stack. Streamed downloads keep a pool of their own, the only one
+  carrying the idle `read_timeout`: reqwest's read timer runs during body send and
+  TTFB, so on a shared pool it would cut off long uploads. No signature changes —
+  `get_transport` and `get_envd_transport` keep the `http2` parameter restored in
+  2.39.1, and the two are now the same pool per key rather than two.
+- 2daced6: Tag the package homepage and README links with UTM parameters (`utm_source=npm`/`pypi`) so registry traffic to e2b.dev is attributed correctly. No functional change.
+
 ## 2.41.0
 
 ### Minor Changes
@@ -92,7 +329,7 @@
 
   ```python
   info = sandbox.get_info()
-  print(info.network["egress_proxy"])
+  print((info.network or {}).get("egress_proxy"))
   # {'address': 'proxy.example.com:1080', 'username': 'proxy-user'}
   ```
 

@@ -23,10 +23,9 @@ export interface ConnectionOpts {
   apiKey?: string
   /**
    * Whether to validate the format of the E2B API key on the client side.
-   * Disable this when your deployment issues API keys that don't match the
-   * default `e2b_` format.
    *
-   * @default E2B_VALIDATE_API_KEY // environment variable or `true`
+   * @deprecated The API key format is no longer validated on the client side;
+   * this option has no effect.
    */
   validateApiKey?: boolean
   /**
@@ -341,11 +340,22 @@ export class ConnectionConfig {
 
   private static readonly sdkUserAgentPrefix = 'e2b-js-sdk/'
 
-  private static buildUserAgent() {
+  private static getRequestSource() {
+    const source = getEnvVar('E2B_USER_AGENT_SOURCE')
+    return source && /^[A-Za-z0-9][A-Za-z0-9._-]{0,31}$/.test(source)
+      ? source
+      : undefined
+  }
+
+  private static buildUserAgent(requestSource?: string) {
     const userAgentParts = [`${ConnectionConfig.sdkUserAgentPrefix}${version}`]
 
     if (ConnectionConfig.integration) {
       userAgentParts.push(ConnectionConfig.integration)
+    }
+
+    if (requestSource) {
+      userAgentParts.push(`source/${requestSource}`)
     }
 
     return userAgentParts.join(' ')
@@ -359,7 +369,10 @@ export class ConnectionConfig {
    * rebuilt via `new ConnectionConfig({ ...config })`) is recognized by its
    * prefix and rebuilt, so it stays in sync with the current integration.
    */
-  private static applyUserAgent(headers: Record<string, string>) {
+  private static applyUserAgent(
+    headers: Record<string, string>,
+    requestSource?: string
+  ) {
     const userAgent = headers['User-Agent']
 
     if (
@@ -369,7 +382,7 @@ export class ConnectionConfig {
       return
     }
 
-    headers['User-Agent'] = ConnectionConfig.buildUserAgent()
+    headers['User-Agent'] = ConnectionConfig.buildUserAgent(requestSource)
   }
 
   /**
@@ -397,22 +410,35 @@ export class ConnectionConfig {
   readonly requestTimeoutMs: number
 
   readonly apiKey?: string
-  readonly validateApiKey: boolean
+  /**
+   * @deprecated The API key format is no longer validated on the client side;
+   * this option has no effect.
+   */
+  readonly validateApiKey?: boolean
 
   readonly headers?: Record<string, string>
+
+  /**
+   * Validated traffic source used for request correlation.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  readonly requestSource?: string
 
   readonly proxy?: string
 
   constructor(opts?: ConnectionOpts) {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
-    this.validateApiKey =
-      opts?.validateApiKey ?? ConnectionConfig.validateApiKey
+    this.validateApiKey = opts?.validateApiKey
     this.debug = opts?.debug ?? ConnectionConfig.debug
     this.domain = opts?.domain || ConnectionConfig.domain
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.logger = opts?.logger
+    this.requestSource = ConnectionConfig.getRequestSource()
     this.headers = { ...(opts?.headers ?? {}), ...(opts?.apiHeaders ?? {}) }
-    ConnectionConfig.applyUserAgent(this.headers)
+    ConnectionConfig.applyUserAgent(this.headers, this.requestSource)
     this.proxy = opts?.proxy
 
     this.apiUrl =
@@ -421,6 +447,43 @@ export class ConnectionConfig {
       (this.debug ? 'http://localhost:3000' : `https://api.${this.domain}`)
 
     this.sandboxUrl = opts?.sandboxUrl || ConnectionConfig.sandboxUrl
+  }
+
+  /**
+   * Merge connection options bound to a class (e.g. by an `E2B` client) with
+   * the per-call options. Per-call options win, then the bound options, then
+   * the environment variables resolved by the `ConnectionConfig` constructor.
+   *
+   * Explicitly `undefined` per-call values are dropped so they fall back to the
+   * bound options instead of clearing them.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  static mergeOpts<T extends ConnectionOpts>(
+    boundOpts: ConnectionOpts | undefined,
+    opts?: T
+  ): T | undefined {
+    if (!boundOpts) {
+      return opts
+    }
+
+    const merged: Record<string, unknown> = { ...boundOpts }
+    for (const [key, value] of Object.entries(opts ?? {})) {
+      if (value !== undefined) {
+        // `defineProperty` so a `__proto__` key (e.g. from parsed JSON) becomes
+        // a plain own property instead of changing the prototype.
+        Object.defineProperty(merged, key, {
+          value,
+          enumerable: true,
+          writable: true,
+          configurable: true,
+        })
+      }
+    }
+
+    return merged as T
   }
 
   private static get domain() {
@@ -441,12 +504,6 @@ export class ConnectionConfig {
 
   private static get apiKey() {
     return getEnvVar('E2B_API_KEY')
-  }
-
-  private static get validateApiKey() {
-    return (
-      (getEnvVar('E2B_VALIDATE_API_KEY') || 'true').toLowerCase() !== 'false'
-    )
   }
 
   getSignal(requestTimeoutMs?: number, signal?: AbortSignal) {
@@ -496,6 +553,44 @@ export class ConnectionConfig {
     }
 
     return `${port}-${sandboxId}.${sandboxDomain ?? this.domain}`
+  }
+}
+
+/**
+ * Base class for the resource classes (`Sandbox`, `Volume`, `Template`,
+ * `Secret`) whose static methods build a `ConnectionConfig` from per-call
+ * options. An {@link E2B} client exposes subclasses of these with its own
+ * options bound, and every static method resolves them through
+ * {@link ClientFactory.resolveOpts}.
+ *
+ * @internal
+ * @hidden
+ * @hide
+ */
+export class ClientFactory {
+  /**
+   * Connection options bound to this class by an {@link E2B} client.
+   *
+   * Empty on the base classes, so the env-configured default path is unchanged.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  protected static readonly boundOpts?: Omit<ConnectionOpts, 'signal'>
+
+  /**
+   * Merge the connection options bound to this class with the per-call options,
+   * with the per-call options taking precedence.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  protected static resolveOpts<T extends ConnectionOpts>(
+    opts?: T
+  ): T | undefined {
+    return ConnectionConfig.mergeOpts(this.boundOpts, opts)
   }
 }
 

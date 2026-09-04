@@ -11,12 +11,9 @@ export function formatSandboxTimeoutError(message: string) {
  * Thrown when general sandbox errors occur.
  */
 export class SandboxError extends Error {
-  constructor(message?: string, stackTrace?: string) {
+  constructor(message?: string) {
     super(message)
     this.name = 'SandboxError'
-    if (stackTrace) {
-      this.stack = stackTrace
-    }
   }
 }
 
@@ -32,8 +29,8 @@ export class SandboxError extends Error {
  * The [unknown] error type is sometimes caused by the sandbox timeout when the request is not processed correctly.
  */
 export class TimeoutError extends SandboxError {
-  constructor(message: string, stackTrace?: string) {
-    super(message, stackTrace)
+  constructor(message: string) {
+    super(message)
     this.name = 'TimeoutError'
   }
 }
@@ -43,8 +40,11 @@ export class TimeoutError extends SandboxError {
  */
 export class InvalidArgumentError extends SandboxError {
   constructor(message: string, stackTrace?: string) {
-    super(message, stackTrace)
+    super(message)
     this.name = 'InvalidArgumentError'
+    if (stackTrace) {
+      this.stack = stackTrace
+    }
   }
 }
 
@@ -52,8 +52,8 @@ export class InvalidArgumentError extends SandboxError {
  * Thrown when there is not enough disk space.
  */
 export class NotEnoughSpaceError extends SandboxError {
-  constructor(message: string, stackTrace?: string) {
-    super(message, stackTrace)
+  constructor(message: string) {
+    super(message)
     this.name = 'NotEnoughSpaceError'
   }
 }
@@ -64,8 +64,8 @@ export class NotEnoughSpaceError extends SandboxError {
  * @deprecated Use {@link FileNotFoundError} or {@link SandboxNotFoundError} instead. This class will be removed in the next major version.
  */
 export class NotFoundError extends SandboxError {
-  constructor(message: string, stackTrace?: string) {
-    super(message, stackTrace)
+  constructor(message: string) {
+    super(message)
     this.name = 'NotFoundError'
   }
 }
@@ -74,8 +74,8 @@ export class NotFoundError extends SandboxError {
  * Thrown when a file or directory is not found inside a sandbox.
  */
 export class FileNotFoundError extends NotFoundError {
-  constructor(message: string, stackTrace?: string) {
-    super(message, stackTrace)
+  constructor(message: string) {
+    super(message)
     this.name = 'FileNotFoundError'
   }
 }
@@ -84,8 +84,8 @@ export class FileNotFoundError extends NotFoundError {
  * Thrown when a sandbox is not found (e.g. it doesn't exist or is no longer running).
  */
 export class SandboxNotFoundError extends NotFoundError {
-  constructor(message: string, stackTrace?: string) {
-    super(message, stackTrace)
+  constructor(message: string) {
+    super(message)
     this.name = 'SandboxNotFoundError'
   }
 }
@@ -102,6 +102,8 @@ export class AuthenticationError extends Error {
 
 /**
  * Thrown when git authentication fails.
+ *
+ * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
  */
 export class GitAuthError extends AuthenticationError {
   constructor(message: string) {
@@ -112,10 +114,12 @@ export class GitAuthError extends AuthenticationError {
 
 /**
  * Thrown when git upstream tracking is missing.
+ *
+ * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
  */
 export class GitUpstreamError extends SandboxError {
-  constructor(message: string, stackTrace?: string) {
-    super(message, stackTrace)
+  constructor(message: string) {
+    super(message)
     this.name = 'GitUpstreamError'
   }
 }
@@ -125,8 +129,11 @@ export class GitUpstreamError extends SandboxError {
  */
 export class TemplateError extends SandboxError {
   constructor(message: string, stackTrace?: string) {
-    super(message, stackTrace)
+    super(message)
     this.name = 'TemplateError'
+    if (stackTrace) {
+      this.stack = stackTrace
+    }
   }
 }
 
@@ -172,5 +179,47 @@ export class VolumeError extends Error {
   constructor(message: string) {
     super(message)
     this.name = 'VolumeError'
+  }
+}
+
+/**
+ * Thrown when a volume is not found.
+ */
+export class VolumeNotFoundError extends VolumeError {
+  constructor(message: string) {
+    super(message)
+    this.name = 'VolumeNotFoundError'
+  }
+}
+
+/**
+ * Thrown when a file or directory is not found inside a volume.
+ */
+export class VolumePathNotFoundError extends VolumeError {
+  constructor(message: string) {
+    super(message)
+    this.name = 'VolumePathNotFoundError'
+  }
+}
+
+/**
+ * Base class for all secret errors.
+ *
+ * Thrown when general secret errors occur.
+ */
+export class SecretError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'SecretError'
+  }
+}
+
+/**
+ * Thrown when a secret is not found.
+ */
+export class SecretNotFoundError extends SecretError {
+  constructor(message: string) {
+    super(message)
+    this.name = 'SecretNotFoundError'
   }
 }

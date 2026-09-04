@@ -8,7 +8,7 @@
 
 # E2B CLI
 
-This CLI tool allows you to build manager your running E2B sandbox and sandbox templates. Learn more in [our documentation](https://e2b.dev/docs).
+This CLI tool allows you to build manager your running E2B sandbox and sandbox templates. Learn more in [our documentation](https://docs.e2b.dev/?utm_source=npm&utm_medium=referral&utm_campaign=readme&utm_content=e2b-cli).
 
 ### 1. Install the CLI
 
@@ -33,9 +33,9 @@ e2b auth login
 > [!NOTE]
 > To authenticate without the ability to open the browser (e.g. in CI/CD),
 > provide `E2B_API_KEY` as an environment variable. You can find your API key
-> in the [API Keys](https://e2b.dev/dashboard?tab=keys) tab in the E2B dashboard.
+> in the [API Keys](https://e2b.dev/dashboard?tab=keys&utm_source=npm&utm_medium=referral&utm_campaign=readme&utm_content=e2b-cli) tab in the E2B dashboard.
 > Then use the CLI like this: `E2B_API_KEY=e2b_... e2b template create`.
 
 ### 3. Check out docs
 
-Visit our [CLI documentation](https://e2b.dev/docs) to learn more.
+Visit our [CLI documentation](https://docs.e2b.dev/?utm_source=npm&utm_medium=referral&utm_campaign=readme&utm_content=e2b-cli) to learn more.

@@ -52,6 +52,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxIamOpts,
     SandboxInfo,
     SandboxLifecycle,
+    SandboxListOrder,
     SandboxMetrics,
     SandboxNetworkOpts,
     SandboxNetworkUpdate,
@@ -65,11 +66,13 @@ from e2b.sandbox_async.paginator import AsyncSandboxPaginator
 
 
 class SandboxApi(SandboxBase):
-    @staticmethod
+    @classmethod
     def list(
+        cls,
         query: Optional[SandboxQuery] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
+        order: Optional[SandboxListOrder] = None,
         **opts: Unpack[ApiParams],
     ) -> AsyncSandboxPaginator:
         """
@@ -78,9 +81,10 @@ class SandboxApi(SandboxBase):
         By default (no `query.state` set), returns sandboxes in both `running`
         and `paused` states. To filter by state, pass `query=SandboxQuery(state=[...])`.
 
-        :param query: Filter the list of sandboxes by metadata or state, e.g. `SandboxQuery(metadata={"key": "value"})` or `SandboxQuery(state=[SandboxState.RUNNING])`
+        :param query: Filter the list of sandboxes by metadata, state, start time, or template, e.g. `SandboxQuery(metadata={"key": "value"})` or `SandboxQuery(state=[SandboxState.RUNNING])`
         :param limit: Maximum number of sandboxes to return per page
         :param next_token: Token for pagination
+        :param order: Sort order of the list of sandboxes by start time, applied across the whole result set before pagination (not within a page), defaults to `"desc"` (newest first)
 
         :return: An `AsyncSandboxPaginator` that yields pages of sandboxes (running and paused by default). Iterate pages via `await paginator.next_items()` while `paginator.has_next` is True.
         """
@@ -88,7 +92,8 @@ class SandboxApi(SandboxBase):
             query=query,
             limit=limit,
             next_token=next_token,
-            **opts,
+            order=order,
+            **cls._resolve_api_params(**opts),
         )
 
     @classmethod
@@ -103,7 +108,7 @@ class SandboxApi(SandboxBase):
 
         :return: Sandbox info
         """
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
         api_client = get_api_client(config)
         res = await get_sandboxes_sandbox_id.asyncio_detailed(
@@ -131,7 +136,7 @@ class SandboxApi(SandboxBase):
         sandbox_id: str,
         **opts: Unpack[ApiParams],
     ) -> bool:
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
         if config.debug:
             # Skip killing the sandbox in debug mode
@@ -158,7 +163,7 @@ class SandboxApi(SandboxBase):
         timeout: int,
         **opts: Unpack[ApiParams],
     ) -> None:
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
         if config.debug:
             # Skip setting the timeout in debug mode
@@ -184,7 +189,7 @@ class SandboxApi(SandboxBase):
         network: SandboxNetworkUpdate,
         **opts: Unpack[ApiParams],
     ) -> None:
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
         api_client = get_api_client(config)
         res = await put_sandboxes_sandbox_id_network.asyncio_detailed(
@@ -216,7 +221,8 @@ class SandboxApi(SandboxBase):
         logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
-        config = ConnectionConfig(logger=logger, **opts)
+        params = cls._resolve_api_params(**opts)
+        config = ConnectionConfig(logger=logger, **params)
 
         lifecycle_body = build_lifecycle_config(lifecycle)
 
@@ -256,7 +262,7 @@ class SandboxApi(SandboxBase):
             raise SandboxException(f"{res.parsed.message}: Request failed")
 
         if Version(res.parsed.envd_version) < Version("0.1.0"):
-            await SandboxApi._cls_kill(res.parsed.sandbox_id)
+            await SandboxApi._cls_kill(res.parsed.sandbox_id, **params)
             raise TemplateException(
                 "You need to update the template to use the new SDK."
             )
@@ -298,7 +304,7 @@ class SandboxApi(SandboxBase):
 
         :return: List of sandbox metrics containing CPU, memory and disk usage information
         """
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
         if config.debug:
             # Skip getting the metrics in debug mode
@@ -347,7 +353,7 @@ class SandboxApi(SandboxBase):
         name: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotInfo:
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
         api_client = get_api_client(config)
         res = await post_sandboxes_sandbox_id_snapshots.asyncio_detailed(
@@ -379,7 +385,7 @@ class SandboxApi(SandboxBase):
         snapshot_id: str,
         **opts: Unpack[ApiParams],
     ) -> bool:
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
         api_client = get_api_client(config)
         res = await delete_templates_template_id.asyncio_detailed(
@@ -402,7 +408,7 @@ class SandboxApi(SandboxBase):
         keep_memory: bool = True,
         **opts: Unpack[ApiParams],
     ) -> bool:
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
         api_client = get_api_client(config)
         res = await post_sandboxes_sandbox_id_pause.asyncio_detailed(
@@ -444,7 +450,7 @@ class SandboxApi(SandboxBase):
         if count < 1:
             raise InvalidArgumentException("count must be at least 1")
 
-        config = ConnectionConfig(logger=logger, **opts)
+        config = ConnectionConfig(logger=logger, **cls._resolve_api_params(**opts))
 
         api_client = get_api_client(config)
         res = await post_sandboxes_sandbox_id_fork.asyncio_detailed(
@@ -525,7 +531,7 @@ class SandboxApi(SandboxBase):
         timeout = timeout or SandboxBase.default_sandbox_timeout
 
         # Sandbox is not running, resume it
-        config = ConnectionConfig(logger=logger, **opts)
+        config = ConnectionConfig(logger=logger, **cls._resolve_api_params(**opts))
 
         api_client = get_api_client(config)
         res = await post_sandboxes_sandbox_id_connect.asyncio_detailed(

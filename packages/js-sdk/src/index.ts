@@ -23,6 +23,10 @@ export {
   BuildError,
   FileUploadError,
   VolumeError,
+  VolumeNotFoundError,
+  VolumePathNotFoundError,
+  SecretError,
+  SecretNotFoundError,
 } from './errors'
 export type { Logger } from './logs'
 
@@ -61,6 +65,7 @@ export type {
   SandboxPauseOpts,
   SandboxState,
   SandboxListOpts,
+  SandboxListOrder,
   SandboxPaginator,
   SandboxIamOpts,
   SandboxIamToken,
@@ -89,7 +94,16 @@ export type {
 
 export type { McpServer } from './sandbox/mcp'
 
-export { Secret } from './secret'
+export { Secret, SecretPaginator } from './secret'
+export type {
+  SecretInfo,
+  SecretCreateOpts,
+  SecretUpdateOpts,
+  SecretGetInfoOpts,
+  SecretExistsOpts,
+  SecretDestroyOpts,
+  SecretListOpts,
+} from './secret'
 
 export { ALL_TRAFFIC } from './sandbox/network'
 
@@ -142,6 +156,8 @@ export type {
 
 export { Sandbox }
 import { Sandbox } from './sandbox'
+
+export { E2B, type E2BClientOpts } from './client'
 
 export default Sandbox
 

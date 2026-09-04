@@ -4,7 +4,7 @@ from http import HTTPStatus
 
 import httpx
 
-from typing_extensions import Unpack
+from typing_extensions import Self, Unpack
 
 from e2b.api import handle_api_exception
 from e2b.api.client.api.volumes import (
@@ -19,8 +19,18 @@ from e2b.api.client.models import (
 )
 from e2b.api.client.types import Response
 from e2b.api.client_sync import get_api_client as get_core_api_client
-from e2b.connection_config import ApiParams, ConnectionConfig, ProxyTypes
-from e2b.exceptions import NotFoundException, VolumeException
+from e2b.connection_config import (
+    ApiParams,
+    ClientFactory,
+    ConnectionConfig,
+    ProxyTypes,
+)
+from e2b.exceptions import (
+    NotFoundException,
+    VolumeException,
+    VolumeNotFoundException,
+    VolumePathNotFoundException,
+)
 from e2b.volume.client.api.volumes import (
     get_volumecontent_volume_id_path as get_path,
     get_volumecontent_volume_id_dir as get_dir,
@@ -56,7 +66,7 @@ from e2b.volume.utils import (
 )
 
 
-class Volume:
+class Volume(ClientFactory):
     """E2B Volume for persistent storage that can be mounted to sandboxes."""
 
     def __init__(
@@ -102,7 +112,7 @@ class Volume:
         )
 
     @classmethod
-    def create(cls, name: str, **opts: Unpack[ApiParams]) -> "Volume":
+    def create(cls, name: str, **opts: Unpack[ApiParams]) -> Self:
         """
         Create a new volume.
 
@@ -110,7 +120,7 @@ class Volume:
 
         :return: A Volume instance for the new volume
         """
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
         api_client = get_core_api_client(config)
         res = post_volumes.sync_detailed(
@@ -143,7 +153,7 @@ class Volume:
         return vol
 
     @classmethod
-    def connect(cls, volume_id: str, **opts: Unpack[ApiParams]) -> "Volume":
+    def connect(cls, volume_id: str, **opts: Unpack[ApiParams]) -> Self:
         """
         Connect to an existing volume by ID.
 
@@ -152,7 +162,7 @@ class Volume:
         :return: A Volume instance for the existing volume
         """
         info = cls.get_info(volume_id, **opts)
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
         return cls(
             volume_id=volume_id,
             name=info.name,
@@ -162,8 +172,10 @@ class Volume:
             proxy=config.proxy,
         )
 
-    @staticmethod
-    def _class_get_info(volume_id: str, **opts: Unpack[ApiParams]) -> VolumeAndToken:
+    @classmethod
+    def _class_get_info(
+        cls, volume_id: str, **opts: Unpack[ApiParams]
+    ) -> VolumeAndToken:
         """
         Get information about a volume.
 
@@ -171,7 +183,7 @@ class Volume:
 
         :return: Volume info
         """
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
         api_client = get_core_api_client(config)
         res = get_volumes_volume_id.sync_detailed(
@@ -180,7 +192,7 @@ class Volume:
         )
 
         if res.status_code == 404:
-            raise NotFoundException(f"Volume {volume_id} not found")
+            raise VolumeNotFoundException(f"Volume {volume_id} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
@@ -203,14 +215,14 @@ class Volume:
             domain=domain,
         )
 
-    @staticmethod
-    def _class_list(**opts: Unpack[ApiParams]) -> List[VolumeInfo]:
+    @classmethod
+    def _class_list(cls, **opts: Unpack[ApiParams]) -> List[VolumeInfo]:
         """
         List all volumes.
 
         :return: List of volumes
         """
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
         api_client = get_core_api_client(config)
         res = get_volumes.sync_detailed(
@@ -228,14 +240,14 @@ class Volume:
 
         return [VolumeInfo(volume_id=v.volume_id, name=v.name) for v in res.parsed]
 
-    @staticmethod
-    def destroy(volume_id: str, **opts: Unpack[ApiParams]) -> bool:
+    @classmethod
+    def destroy(cls, volume_id: str, **opts: Unpack[ApiParams]) -> bool:
         """
         Destroy a volume.
 
         :param volume_id: Volume ID
         """
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
         api_client = get_core_api_client(config)
         res = delete_volumes_volume_id.sync_detailed(
@@ -274,7 +286,7 @@ class Volume:
         )
 
         if res.status_code == 404:
-            raise NotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(f"Path {path} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
@@ -326,7 +338,7 @@ class Volume:
         )
 
         if res.status_code == 404:
-            raise NotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(f"Path {path} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
@@ -378,7 +390,7 @@ class Volume:
         )
 
         if res.status_code == 404:
-            raise NotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(f"Path {path} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
@@ -391,8 +403,8 @@ class Volume:
 
         return convert_volume_entry_stat(cast(VolumeEntryStatApi, res.parsed))
 
-    get_info = DualMethod(_class_get_info.__func__, _instance_get_info)
-    list = DualMethod(_class_list.__func__, _instance_list)
+    get_info = DualMethod(_class_get_info, _instance_get_info)
+    list = DualMethod(_class_list, _instance_list)
 
     def update_metadata(
         self,
@@ -430,7 +442,7 @@ class Volume:
         )
 
         if res.status_code == 404:
-            raise NotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(f"Path {path} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
@@ -520,7 +532,7 @@ class Volume:
                     timeout=stream_timeout,
                 ) as response:
                     if response.status_code == 404:
-                        raise NotFoundException(f"Path {path} not found")
+                        raise VolumePathNotFoundException(f"Path {path} not found")
 
                     if response.status_code >= 300:
                         api_response = Response(
@@ -543,7 +555,7 @@ class Volume:
         )
 
         if response.status_code == 404:
-            raise NotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(f"Path {path} not found")
 
         if response.status_code >= 300:
             api_response = Response(
@@ -619,7 +631,7 @@ class Volume:
         )
 
         if res.status_code == 404:
-            raise NotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(f"Path {path} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
@@ -653,7 +665,7 @@ class Volume:
         )
 
         if res.status_code == 404:
-            raise NotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(f"Path {path} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)

@@ -1,5 +1,7 @@
 import pytest
-from e2b import AsyncSandbox
+from e2b import AsyncSandbox, SandboxException
+
+pytestmark = pytest.mark.timeout(270)
 
 
 @pytest.mark.skip_debug()
@@ -11,11 +13,18 @@ async def test_pause_filesystem_only(async_sandbox: AsyncSandbox):
     ).strip()
 
     # Filesystem-only pause: only the rootfs is persisted, no memory snapshot.
-    assert await async_sandbox.pause(keep_memory=False)
+    assert await async_sandbox.pause(keep_memory=False, request_timeout=120)
     assert not await async_sandbox.is_running()
 
     # Resuming a filesystem-only snapshot cold-boots (reboots) from the rootfs.
-    resumed = await async_sandbox.connect()
+    try:
+        resumed = await async_sandbox.connect(request_timeout=120)
+    except SandboxException as error:
+        # Placement can transiently time out while the cold boot is scheduled.
+        # Retry only the backend response that explicitly asks the caller to do so.
+        if "Failed to place sandbox: placement timed out" not in str(error):
+            raise
+        resumed = await async_sandbox.connect(request_timeout=120)
     assert await resumed.is_running()
     assert resumed.sandbox_id == async_sandbox.sandbox_id
 

@@ -52,6 +52,10 @@ from .exceptions import (
     TemplateException,
     TimeoutException,
     VolumeException,
+    VolumeNotFoundException,
+    VolumePathNotFoundException,
+    SecretException,
+    SecretNotFoundException,
 )
 from .sandbox.commands.command_handle import (
     CommandExitException,
@@ -96,6 +100,7 @@ from .sandbox.sandbox_api import (
     SandboxNetworkTransformContext,
     SandboxNetworkTransformResolver,
     SandboxNetworkUpdate,
+    SandboxListOrder,
     SandboxQuery,
     SandboxState,
     SnapshotInfo,
@@ -105,7 +110,13 @@ from .sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from .sandbox_async.main import AsyncSandbox
 from .sandbox_async.paginator import AsyncSandboxPaginator, AsyncSnapshotPaginator
 from .sandbox_async.utils import OutputHandler
-from .secret import Secret
+from .secret import (
+    AsyncSecret,
+    AsyncSecretPaginator,
+    Secret,
+    SecretInfo,
+    SecretPaginator,
+)
 from .sandbox_sync.commands.command_handle import CommandHandle
 from .sandbox_sync.filesystem.watch_handle import WatchHandle
 from .sandbox_sync.main import Sandbox
@@ -140,6 +151,7 @@ from .template_sync.main import Template
 
 from .volume.volume_sync import Volume
 from .volume.volume_async import AsyncVolume
+from .client import E2B, E2BClientParams
 from .volume.types import (
     VolumeInfo,
     VolumeAndToken,
@@ -148,6 +160,9 @@ from .volume.types import (
 )
 
 __all__ = [
+    # Client
+    "E2B",
+    "E2BClientParams",
     # API
     "ApiClient",
     "client",
@@ -174,11 +189,14 @@ __all__ = [
     "FileUploadException",
     "RateLimitException",
     "VolumeException",
+    "VolumeNotFoundException",
+    "VolumePathNotFoundException",
     # Sandbox API
     "SandboxInfo",
     "SandboxInfoLifecycle",
     "SandboxMetrics",
     "ProcessInfo",
+    "SandboxListOrder",
     "SandboxQuery",
     "SandboxState",
     "SandboxMetrics",
@@ -221,6 +239,12 @@ __all__ = [
     "SandboxIamToken",
     "SandboxIamTokenType",
     "Secret",
+    "AsyncSecret",
+    "SecretInfo",
+    "SecretPaginator",
+    "AsyncSecretPaginator",
+    "SecretException",
+    "SecretNotFoundException",
     # Snapshot
     "SnapshotInfo",
     "SnapshotPaginator",

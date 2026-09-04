@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Union, Literal
 from pathlib import Path
 
 
+from e2b.connection_config import ClientFactory
 from e2b.exceptions import BuildException, InvalidArgumentException
 from e2b.template.consts import RESOLVE_SYMLINKS
 from e2b.template.dockerfile_parser import parse_dockerfile
@@ -749,7 +750,7 @@ class TemplateFinal:
         self._template = template
 
 
-class TemplateBase:
+class TemplateBase(ClientFactory):
     """
     Base class for building E2B sandbox templates.
     """

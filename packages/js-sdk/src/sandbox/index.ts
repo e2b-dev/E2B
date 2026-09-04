@@ -58,7 +58,6 @@ export interface SandboxUrlOpts {
  * - Access Linux OS
  * - Create, list, and delete files and directories
  * - Run commands
- * - Run git operations
  * - Run isolated code
  * - Access the internet
  *
@@ -92,6 +91,8 @@ export class Sandbox extends SandboxApi {
   readonly pty: Pty
   /**
    * Module for running git operations in the sandbox
+   *
+   * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
    */
   readonly git: Git
 
@@ -236,14 +237,16 @@ export class Sandbox extends SandboxApi {
    * `opts.query.state = [...]`.
    *
    * @param opts connection options, plus optional `query` to filter by
-   *   metadata / state and `limit` / `nextToken` for pagination.
+   *   metadata / state / start time / template, `order` to sort by start
+   *   time across the whole result set (not within a page), and `limit` /
+   *   `nextToken` for pagination.
    *
    * @returns a {@link SandboxPaginator} that yields pages of sandboxes
    *   (running and paused by default). Iterate pages via
    *   `await paginator.nextItems()` while `paginator.hasNext` is `true`.
    */
   static list(opts?: SandboxListOpts): SandboxPaginator {
-    return new SandboxPaginator(opts)
+    return new SandboxPaginator(this.resolveOpts(opts))
   }
 
   /**
@@ -303,7 +306,8 @@ export class Sandbox extends SandboxApi {
             sandboxOpts: templateOrOpts,
           }
 
-    const config = new ConnectionConfig(sandboxOpts)
+    const apiOpts = this.resolveOpts(sandboxOpts)
+    const config = new ConnectionConfig(apiOpts)
     if (config.debug) {
       return new this({
         sandboxId: 'debug_sandbox_id',
@@ -312,10 +316,10 @@ export class Sandbox extends SandboxApi {
       }) as InstanceType<S>
     }
 
-    const sandboxInfo = await SandboxApi.createSandbox(
+    const sandboxInfo = await this.createSandbox(
       template,
-      sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
-      sandboxOpts
+      apiOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
+      apiOpts
     )
 
     const sandbox = new this({ ...sandboxInfo, ...config }) as InstanceType<S>
@@ -369,7 +373,8 @@ export class Sandbox extends SandboxApi {
     sandboxId: string,
     opts?: SandboxConnectOpts
   ): Promise<InstanceType<S>> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     if (config.debug) {
       return new this({
         sandboxId,
@@ -378,7 +383,7 @@ export class Sandbox extends SandboxApi {
       }) as InstanceType<S>
     }
 
-    const sandbox = await SandboxApi.connectSandbox(sandboxId, opts)
+    const sandbox = await this.connectSandbox(sandboxId, apiOpts)
 
     return new this({
       sandboxId,
@@ -424,13 +429,14 @@ export class Sandbox extends SandboxApi {
     sandboxId: string,
     opts?: SandboxForkOpts
   ): Promise<Array<InstanceType<S> | Error>> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
 
-    const results = await SandboxApi.forkSandbox(
+    const results = await this.forkSandbox(
       sandboxId,
-      opts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
-      opts?.count ?? 1,
-      opts
+      apiOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
+      apiOpts?.count ?? 1,
+      apiOpts
     )
 
     return results.map((result) =>
@@ -885,10 +891,10 @@ export class Sandbox extends SandboxApi {
   private resolveApiOpts<T extends ConnectionOpts>(
     opts?: T
   ): ConnectionOpts & T {
-    return {
-      ...this.connectionConfig,
-      ...(opts ?? {}),
-    } as ConnectionOpts & T
+    return ConnectionConfig.mergeOpts(
+      this.connectionConfig,
+      opts
+    ) as ConnectionOpts & T
   }
 
   private fileUrl(path: string | undefined, username: string | undefined) {

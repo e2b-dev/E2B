@@ -1,8 +1,9 @@
-import { cloudflareTest } from '@cloudflare/vitest-pool-workers'
-import { config } from 'dotenv'
 import { defineConfig } from 'vitest/config'
 
-const env = config()
+import {
+  createCloudflareVitestConfig,
+  isConnectRpcRejection,
+} from '../../../../../vitest.cloudflare.config.mts'
 
 // Error names thrown by src/errors.ts (plus CommandExitError) — the shapes
 // this suite's rejection tests expect. Kept as a literal list so an unknown
@@ -27,66 +28,28 @@ const SDK_ERROR_NAMES = new Set([
 ])
 
 // Runs the unit + connectionConfig projects (same coverage as test:bun /
-// test:deno) inside Cloudflare's workerd via vitest-pool-workers, against src.
-// The real-deploy suite (tests/runtimes/cloudflare-deploy) keeps covering the
-// built bundle on actual Cloudflare infrastructure.
-export default defineConfig({
-  plugins: [
-    cloudflareTest({
-      miniflare: {
-        compatibilityDate: '2026-03-01',
-        // nodejs_compat is a hard requirement for the SDK on Workers. It also
-        // mirrors the bindings below into process.env (default since compat
-        // date 2025-04-01), which is how tests and the SDK read E2B_*.
-        compatibilityFlags: ['nodejs_compat'],
-        bindings: {
-          E2B_API_KEY: process.env.E2B_API_KEY ?? env.parsed?.E2B_API_KEY ?? '',
-          E2B_DOMAIN: process.env.E2B_DOMAIN ?? env.parsed?.E2B_DOMAIN ?? '',
-        },
-      },
-    }),
-  ],
-  test: {
-    name: 'cloudflare',
-    include: ['tests/**/*.test.ts'],
+// test:deno) inside workerd, against src. The real-deploy suite
+// (tests/runtimes/cloudflare-deploy) keeps covering the built bundle on actual
+// Cloudflare infrastructure.
+export default defineConfig(
+  createCloudflareVitestConfig({
+    maxWorkers: process.env.E2B_TEST_MAX_WORKERS
+      ? Number(process.env.E2B_TEST_MAX_WORKERS)
+      : undefined,
     exclude: [
-      'tests/runtimes/**',
       'tests/template/**',
       // Inspects the host-built dist/index.mjs via node:fs, which workerd's
       // virtual filesystem can never see (and throws in CI when the file is
       // "missing"); the Node unit project keeps running it.
       'tests/bundle/**',
     ],
-    globals: false,
-    testTimeout: 30_000,
-    bail: 0,
-    // workerd reports a rejection as unhandled unless a handler is attached
-    // within the same microtask drain, and vitest never processes the
-    // rejectionhandled retraction, so rejections the tests DO handle (the
-    // `await expect(p).rejects` pattern, including inline ones — workerd also
-    // flags intermediate promises of the async-function chain) false-positive
-    // ~60 times per run. Instead of dangerouslyIgnoreUnhandledErrors, drop
-    // only the rejection shapes these tests deliberately provoke; uncaught
-    // exceptions and any unknown rejection shape still fail the run.
-    onUnhandledError(error) {
-      const message = String(error.message ?? '')
-      const expectedRejection =
-        error.type === 'Unhandled Rejection' &&
-        // SDK public errors — what `expect(p).rejects` asserts on.
-        (SDK_ERROR_NAMES.has(error.name) ||
-          // The transport errors the SDK wraps: connect-rpc failures and
-          // aborted requests surface on intermediate promises too.
-          error.name === 'ConnectError' ||
-          message.startsWith('ConnectError:') ||
-          error.name === 'AbortError' ||
-          // workerd's teardown error for in-flight streams when a test kills
-          // the sandbox mid-request.
-          message === 'Network connection lost.' ||
-          // Stub rejection from tests/sandbox/git/validation.test.ts.
-          message === 'commands.run should not be called' ||
-          // Stub body-stream error from tests/api/inflight.test.ts.
-          message === 'body boom')
-      if (expectedRejection) return false
-    },
-  },
-})
+    isExpectedRejection: (error, message) =>
+      // SDK public errors — what `expect(p).rejects` asserts on.
+      SDK_ERROR_NAMES.has(String(error.name)) ||
+      isConnectRpcRejection(error, message) ||
+      // Stub rejection from tests/sandbox/git/validation.test.ts.
+      message === 'commands.run should not be called' ||
+      // Stub body-stream error from tests/api/inflight.test.ts.
+      message === 'body boom',
+  })
+)

@@ -1,0 +1,61 @@
+name: Test Desktop Python SDK
+
+on:
+  workflow_call:
+    inputs:
+      E2B_DOMAIN:
+        required: false
+        type: string
+        default: ''
+      run_tests:
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      E2B_API_KEY:
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  E2B_USER_AGENT_SOURCE: ci
+
+jobs:
+  test:
+    defaults:
+      run:
+        working-directory: ./packages/desktop-python
+        shell: bash
+    name: Desktop Python SDK - Build and test
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Parse .tool-versions
+        uses: wistia/parse-tool-versions@32f568a4ffd4bfa7720ebf93f171597d1ebc979a # v2.1.1
+        with:
+          filename: '.tool-versions'
+          uppercase: 'true'
+          prefix: 'tool_version_'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+        with:
+          version: '${{ env.TOOL_VERSION_UV }}'
+          python-version: '${{ env.TOOL_VERSION_PYTHON }}'
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --locked --package e2b-desktop
+
+      - name: Test build
+        run: uv build
+
+      - name: Run tests
+        if: inputs.run_tests
+        run: uv run pytest --verbose --numprocesses=4
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}

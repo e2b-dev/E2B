@@ -88,6 +88,8 @@ class AuthenticationException(Exception):
 class GitAuthException(AuthenticationException):
     """
     Raised when git authentication fails.
+
+    :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
     """
 
     pass
@@ -96,6 +98,8 @@ class GitAuthException(AuthenticationException):
 class GitUpstreamException(SandboxException):
     """
     Raised when git upstream tracking is missing.
+
+    :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
     """
 
     pass
@@ -130,4 +134,30 @@ class VolumeException(Exception):
     Base class for all volume errors.
 
     Raised when general volume errors occur.
+    """
+
+
+class VolumeNotFoundException(NotFoundException):
+    """
+    Raised when a volume is not found.
+    """
+
+
+class VolumePathNotFoundException(NotFoundException):
+    """
+    Raised when a file or directory is not found inside a volume.
+    """
+
+
+class SecretException(Exception):
+    """
+    Base class for all secret errors.
+
+    Raised when general secret errors occur.
+    """
+
+
+class SecretNotFoundException(SecretException):
+    """
+    Raised when a secret is not found.
     """

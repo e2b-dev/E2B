@@ -14,7 +14,7 @@ beforeEach(() => {
     E2B_DOMAIN: process.env.E2B_DOMAIN,
     E2B_SANDBOX_URL: process.env.E2B_SANDBOX_URL,
     E2B_DEBUG: process.env.E2B_DEBUG,
-    E2B_VALIDATE_API_KEY: process.env.E2B_VALIDATE_API_KEY,
+    E2B_USER_AGENT_SOURCE: process.env.E2B_USER_AGENT_SOURCE,
   }
 })
 
@@ -151,27 +151,6 @@ test('sandbox_url stays localhost in debug mode', () => {
   )
 })
 
-test('validateApiKey defaults to true', () => {
-  delete process.env.E2B_VALIDATE_API_KEY
-
-  const config = new ConnectionConfig()
-  assert.equal(config.validateApiKey, true)
-})
-
-test('validateApiKey disabled via env var', () => {
-  process.env.E2B_VALIDATE_API_KEY = 'false'
-
-  const config = new ConnectionConfig()
-  assert.equal(config.validateApiKey, false)
-})
-
-test('validateApiKey in args has priority over env var', () => {
-  process.env.E2B_VALIDATE_API_KEY = 'true'
-
-  const config = new ConnectionConfig({ validateApiKey: false })
-  assert.equal(config.validateApiKey, false)
-})
-
 test('debug false in args overrides E2B_DEBUG env var', () => {
   process.env.E2B_DEBUG = 'true'
 
@@ -191,10 +170,23 @@ test('setIntegration appends the integration to the user agent', () => {
   const config = new ConnectionConfig()
 
   assert.equal(config.headers?.['User-Agent']?.startsWith('e2b-js-sdk/'), true)
-  assert.equal(
-    config.headers?.['User-Agent']?.endsWith(' testing/version'),
-    true
-  )
+  assert.include(config.headers?.['User-Agent']?.split(' '), 'testing/version')
+})
+
+test('user agent includes the configured traffic source', () => {
+  process.env.E2B_USER_AGENT_SOURCE = 'ci'
+
+  const config = new ConnectionConfig()
+
+  assert.equal(config.headers?.['User-Agent']?.endsWith(' source/ci'), true)
+})
+
+test('user agent ignores an unsafe traffic source', () => {
+  process.env.E2B_USER_AGENT_SOURCE = 'ci bad\nheader'
+
+  const config = new ConnectionConfig()
+
+  assert.equal(config.headers?.['User-Agent']?.includes('source/'), false)
 })
 
 test('integration survives config rebuilds', () => {
@@ -202,9 +194,9 @@ test('integration survives config rebuilds', () => {
   const config = new ConnectionConfig()
   const rebuiltConfig = new ConnectionConfig({ ...config })
 
-  assert.equal(
-    rebuiltConfig.headers?.['User-Agent']?.endsWith(' testing/version'),
-    true
+  assert.include(
+    rebuiltConfig.headers?.['User-Agent']?.split(' '),
+    'testing/version'
   )
 })
 
@@ -214,10 +206,7 @@ test('setIntegration does not retro-tag configs built earlier', () => {
   const after = new ConnectionConfig()
 
   assert.equal(before.headers?.['User-Agent']?.includes('testing'), false)
-  assert.equal(
-    after.headers?.['User-Agent']?.endsWith(' testing/version'),
-    true
-  )
+  assert.include(after.headers?.['User-Agent']?.split(' '), 'testing/version')
 })
 
 test('clearing the integration restores the plain user agent', () => {

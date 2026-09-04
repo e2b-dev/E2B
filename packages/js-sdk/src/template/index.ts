@@ -1,8 +1,13 @@
 import type { PathLike } from 'node:fs'
 import { ApiClient } from '../api'
-import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
+import {
+  ClientFactory,
+  ConnectionConfig,
+  ConnectionOpts,
+} from '../connectionConfig'
 import { BuildError, InvalidArgumentError } from '../errors'
 import { runtime, shellQuote } from '../utils'
+import { callableTemplate } from './callable'
 import {
   assignTags,
   checkAliasExists,
@@ -50,9 +55,12 @@ import {
 } from './utils'
 
 /**
- * Base class for building E2B sandbox templates.
+ * Builder for E2B sandbox templates, and the entrypoint for the template API.
+ *
+ * Exposed as {@link Template}, which can be called as a factory.
  */
 export class TemplateBase
+  extends ClientFactory
   implements TemplateFromImage, TemplateBuilder, TemplateFinal
 {
   private defaultBaseImage: string = 'e2bdev/base'
@@ -72,6 +80,7 @@ export class TemplateBase
   private stackTraces: (string | undefined)[] = []
 
   constructor(options?: TemplateOptions) {
+    super()
     this.fileContextPath =
       options?.fileContextPath ??
       (runtime === 'browser' ? '.' : (getCallerDirectory() ?? '.'))
@@ -158,32 +167,34 @@ export class TemplateBase
       options
     )
 
+    const buildOpts = this.resolveOpts(buildOptions) ?? {}
+
     try {
-      buildOptions.onBuildLogs?.(new LogEntryStart(new Date(), 'Build started'))
+      buildOpts.onBuildLogs?.(new LogEntryStart(new Date(), 'Build started'))
       const baseTemplate = template as TemplateBase
 
-      const config = new ConnectionConfig(buildOptions)
+      const config = new ConnectionConfig(buildOpts)
       const client = new ApiClient(config)
 
-      const data = await baseTemplate.build(client, config, name, buildOptions)
+      const data = await baseTemplate.build(client, config, name, buildOpts)
 
-      buildOptions.onBuildLogs?.(
+      buildOpts.onBuildLogs?.(
         new LogEntry(new Date(), 'info', 'Waiting for logs...')
       )
 
       await waitForBuildFinish(client, {
         templateID: data.templateId,
         buildID: data.buildId,
-        onBuildLogs: buildOptions.onBuildLogs,
+        onBuildLogs: buildOpts.onBuildLogs,
         logsRefreshFrequency: baseTemplate.logsRefreshFrequency,
         stackTraces: baseTemplate.stackTraces,
-        signal: buildOptions.signal,
+        signal: buildOpts.signal,
         requestTimeoutMs: config.requestTimeoutMs,
       })
 
       return data
     } finally {
-      buildOptions.onBuildLogs?.(new LogEntryEnd(new Date(), 'Build finished'))
+      buildOpts.onBuildLogs?.(new LogEntryEnd(new Date(), 'Build finished'))
     }
   }
 
@@ -240,10 +251,11 @@ export class TemplateBase
       options
     )
 
-    const config = new ConnectionConfig(buildOptions)
+    const buildOpts = this.resolveOpts(buildOptions) ?? {}
+    const config = new ConnectionConfig(buildOpts)
     const client = new ApiClient(config)
 
-    return (template as TemplateBase).build(client, config, name, buildOptions)
+    return (template as TemplateBase).build(client, config, name, buildOpts)
   }
 
   /**
@@ -261,7 +273,7 @@ export class TemplateBase
     data: Pick<BuildInfo, 'templateId' | 'buildId'>,
     options?: GetBuildStatusOptions
   ): Promise<TemplateBuildStatusResponse> {
-    const config = new ConnectionConfig(options)
+    const config = new ConnectionConfig(this.resolveOpts(options))
     const client = new ApiClient(config)
 
     return await getBuildStatus(
@@ -294,7 +306,7 @@ export class TemplateBase
     name: string,
     options?: ConnectionOpts
   ): Promise<boolean> {
-    return TemplateBase.aliasExists(name, options)
+    return this.aliasExists(name, options)
   }
 
   /**
@@ -317,7 +329,7 @@ export class TemplateBase
     alias: string,
     options?: ConnectionOpts
   ): Promise<boolean> {
-    const config = new ConnectionConfig(options)
+    const config = new ConnectionConfig(this.resolveOpts(options))
     const client = new ApiClient(config)
 
     return checkAliasExists(
@@ -349,7 +361,7 @@ export class TemplateBase
     tags: string | string[],
     options?: ConnectionOpts
   ): Promise<TemplateTagInfo> {
-    const config = new ConnectionConfig(options)
+    const config = new ConnectionConfig(this.resolveOpts(options))
     const client = new ApiClient(config)
     const normalizedTags = Array.isArray(tags) ? tags : [tags]
     return assignTags(
@@ -380,7 +392,7 @@ export class TemplateBase
     tags: string | string[],
     options?: ConnectionOpts
   ): Promise<void> {
-    const config = new ConnectionConfig(options)
+    const config = new ConnectionConfig(this.resolveOpts(options))
     const client = new ApiClient(config)
     const normalizedTags = Array.isArray(tags) ? tags : [tags]
     return removeTags(
@@ -409,7 +421,7 @@ export class TemplateBase
     templateId: string,
     options?: ConnectionOpts
   ): Promise<TemplateTag[]> {
-    const config = new ConnectionConfig(options)
+    const config = new ConnectionConfig(this.resolveOpts(options))
     const client = new ApiClient(config)
     return getTemplateTags(
       client,
@@ -1254,10 +1266,16 @@ export class TemplateBase
 }
 
 /**
- * Create a new E2B template builder instance.
+ * Builder and API entrypoint for E2B sandbox templates.
  *
- * @param options Optional configuration for the template builder
- * @returns A new template builder instance
+ * `Template` is the {@link TemplateBase} class, wrapped so it can also be
+ * called as a factory returning a builder. The statics (`Template.build`,
+ * `Template.exists`, …) resolve their connection options off the class they are
+ * called on — so a subclass can bind its own defaults.
+ *
+ * @param options Optional builder options, e.g. the file context path used to
+ *   resolve relative paths passed to `copy`
+ * @returns A template builder
  *
  * @example
  * ```ts
@@ -1271,20 +1289,7 @@ export class TemplateBase
  * await Template.build(template, 'my-python-app:v1.0')
  * ```
  */
-export function Template(options?: TemplateOptions): TemplateFromImage {
-  return new TemplateBase(options)
-}
-
-Template.build = TemplateBase.build
-Template.buildInBackground = TemplateBase.buildInBackground
-Template.getBuildStatus = TemplateBase.getBuildStatus
-Template.exists = TemplateBase.exists
-Template.aliasExists = TemplateBase.aliasExists
-Template.assignTags = TemplateBase.assignTags
-Template.removeTags = TemplateBase.removeTags
-Template.getTags = TemplateBase.getTags
-Template.toJSON = TemplateBase.toJSON
-Template.toDockerfile = TemplateBase.toDockerfile
+export const Template = callableTemplate(TemplateBase)
 
 export type {
   BuildInfo,

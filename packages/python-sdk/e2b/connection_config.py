@@ -1,7 +1,8 @@
 import logging
 import os
+import re
 
-from typing import cast, Optional, Dict, TypedDict, Union
+from typing import cast, Mapping, Optional, Dict, TypedDict, Union
 
 import httpx
 from typing_extensions import Unpack
@@ -57,10 +58,8 @@ class ApiParams(TypedDict, total=False):
     """E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable."""
 
     validate_api_key: Optional[bool]
-    """Whether to validate the format of the E2B API key on the client side.
-    Disable this when your deployment issues API keys that don't match the
-    default `e2b_` format. Defaults to `E2B_VALIDATE_API_KEY` environment
-    variable or `True`."""
+    """Deprecated: the API key format is no longer validated on the client side;
+    this option has no effect."""
 
     domain: Optional[str]
     """E2B domain to use for authentication, defaults to `E2B_DOMAIN` environment variable."""
@@ -88,6 +87,56 @@ class ApiParamsWithLogger(ApiParams, total=False):
     """
 
     logger: Optional[logging.Logger]
+
+
+def merge_api_params(
+    bound_params: Optional[ApiParams], params: Mapping[str, object]
+) -> ApiParams:
+    """
+    Merge the API params bound to a class (e.g. by an :class:`e2b.E2B` client)
+    with the per-call params. Per-call params win, then the bound params, then
+    the environment variables resolved by :class:`ConnectionConfig`.
+
+    Per-call params explicitly set to ``None`` are dropped so they fall back to
+    the bound params instead of clearing them.
+
+    :meta private:
+    """
+    if not bound_params:
+        return cast(ApiParams, params)
+
+    merged = cast(Dict[str, object], dict(bound_params))
+    merged.update({k: v for k, v in params.items() if v is not None})
+    return cast(ApiParams, merged)
+
+
+class ClientFactory:
+    """
+    Base class for the resource classes (`Sandbox`, `Volume`, `Template`,
+    `Secret`) whose classmethods build a :class:`ConnectionConfig` from per-call
+    params. An :class:`e2b.E2B` client exposes subclasses of these with its own
+    params bound, and every classmethod resolves them through
+    :meth:`_resolve_api_params`.
+
+    :meta private:
+    """
+
+    _bound_api_params: ApiParams = {}
+    """API params bound to this class by an :class:`e2b.E2B` client.
+
+    Empty on the base classes, so the env-configured default path is unchanged.
+
+    :meta private:
+    """
+
+    @classmethod
+    def _resolve_api_params(cls, **opts: Unpack[ApiParams]) -> ApiParams:
+        """
+        Merge the API params bound to this class with the per-call params.
+
+        :meta private:
+        """
+        return merge_api_params(cls._bound_api_params, opts)
 
 
 class ConnectionConfig:
@@ -128,10 +177,6 @@ class ConnectionConfig:
         return os.getenv("E2B_API_KEY")
 
     @staticmethod
-    def _validate_api_key():
-        return os.getenv("E2B_VALIDATE_API_KEY", "true").lower() != "false"
-
-    @staticmethod
     def _api_url():
         return os.getenv("E2B_API_URL")
 
@@ -140,11 +185,21 @@ class ConnectionConfig:
         return os.getenv("E2B_SANDBOX_URL")
 
     @staticmethod
-    def _build_user_agent() -> str:
+    def _get_request_source() -> Optional[str]:
+        source = os.getenv("E2B_USER_AGENT_SOURCE")
+        if source and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,31}", source):
+            return source
+        return None
+
+    @staticmethod
+    def _build_user_agent(request_source: Optional[str] = None) -> str:
         user_agent_parts = [f"e2b-python-sdk/{package_version}"]
 
         if ConnectionConfig._integration:
             user_agent_parts.append(ConnectionConfig._integration)
+
+        if request_source:
+            user_agent_parts.append(f"source/{request_source}")
 
         return " ".join(user_agent_parts)
 
@@ -165,7 +220,7 @@ class ConnectionConfig:
             headers["User-Agent"] = user_agent_override
             return False
 
-        headers["User-Agent"] = self._build_user_agent()
+        headers["User-Agent"] = self._build_user_agent(self.request_source)
         return True
 
     def __init__(
@@ -187,11 +242,8 @@ class ConnectionConfig:
         self.domain = domain or ConnectionConfig._domain()
         self.debug = debug if debug is not None else ConnectionConfig._debug()
         self.api_key = api_key or ConnectionConfig._api_key()
-        self.validate_api_key = (
-            validate_api_key
-            if validate_api_key is not None
-            else ConnectionConfig._validate_api_key()
-        )
+        self.validate_api_key = validate_api_key
+        self.request_source = ConnectionConfig._get_request_source()
         self.headers = {**(headers or {}), **(api_headers or {})}
         self._user_agent_is_sdk_built = self._apply_user_agent(
             self.headers,
