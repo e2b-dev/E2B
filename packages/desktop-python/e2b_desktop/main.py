@@ -366,7 +366,7 @@ class Sandbox(SandboxBase):
         """
         Take a screenshot and return it in the specified format.
 
-        :param format: The format of the screenshot. Can be 'bytes', 'blob', or 'stream'.
+        :param format: The format of the screenshot. Can be 'bytes' or 'stream'.
         :returns: The screenshot in the specified format.
         """
         screenshot_path = f"/tmp/screenshot-{uuid4()}.png"
@@ -394,11 +394,11 @@ class Sandbox(SandboxBase):
         self.commands.run("xdotool click --repeat 2 1")
 
     def right_click(self, x: Optional[int] = None, y: Optional[int] = None):
-        if (x is None) != (y is None):
-            raise ValueError("Both x and y must be provided together")
         """
         Right click on the mouse position.
         """
+        if (x is None) != (y is None):
+            raise ValueError("Both x and y must be provided together")
         if x and y:
             self.move_mouse(x, y)
         self.commands.run("xdotool click 3")
@@ -519,7 +519,7 @@ class Sandbox(SandboxBase):
         """
         Drag the mouse from the given position to the given position.
 
-        :param from: The starting position.
+        :param fr: The starting position.
         :param to: The ending position.
         """
         self.move_mouse(fr[0], fr[1])
