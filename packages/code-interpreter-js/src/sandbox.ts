@@ -255,7 +255,7 @@ export class Sandbox extends BaseSandbox {
 
       if (!res.body) {
         throw new Error(
-          `Not response body: ${res.statusText} ${await res?.text()}`
+          `No response body: ${res.statusText} ${await res?.text()}`
         )
       }
 
