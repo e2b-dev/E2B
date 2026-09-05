@@ -37,8 +37,8 @@ class Template(TemplateBase):
         template: TemplateClass,
         name: str,
         tags: Optional[List[str]] = None,
-        cpu_count: int = 2,
-        memory_mb: int = 1024,
+        cpu_count: Optional[int] = None,
+        memory_mb: Optional[int] = None,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
         request_timeout: Optional[float] = None,
@@ -50,8 +50,8 @@ class Template(TemplateBase):
         :param template: The template to build
         :param name: Name for the template
         :param tags: Optional tags for the template
-        :param cpu_count: Number of CPUs allocated to the sandbox
-        :param memory_mb: Amount of memory in MB allocated to the sandbox
+        :param cpu_count: Number of CPUs allocated to the sandbox.
+        :param memory_mb: Amount of memory in MB allocated to the sandbox.
         :param skip_cache: If True, forces a complete rebuild ignoring cache
         :param on_build_logs: Callback function to receive build logs during the build process
         """
@@ -196,8 +196,8 @@ class Template(TemplateBase):
         *,
         alias: Optional[str] = None,
         tags: Optional[List[str]] = None,
-        cpu_count: int = 2,
-        memory_mb: int = 1024,
+        cpu_count: Optional[int] = None,
+        memory_mb: Optional[int] = None,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
         **opts: Unpack[ApiParams],
@@ -209,8 +209,8 @@ class Template(TemplateBase):
         :param name: Template name in 'name' or 'name:tag' format
         :param alias: (Deprecated) Alias name for the template. Use name instead.
         :param tags: Optional additional tags to assign to the template
-        :param cpu_count: Number of CPUs allocated to the sandbox
-        :param memory_mb: Amount of memory in MB allocated to the sandbox
+        :param cpu_count: Number of CPUs allocated to the sandbox.
+        :param memory_mb: Amount of memory in MB allocated to the sandbox.
         :param skip_cache: If True, forces a complete rebuild ignoring cache
         :param on_build_logs: Callback function to receive build logs during the build process
 
@@ -300,8 +300,8 @@ class Template(TemplateBase):
         *,
         alias: Optional[str] = None,
         tags: Optional[List[str]] = None,
-        cpu_count: int = 2,
-        memory_mb: int = 1024,
+        cpu_count: Optional[int] = None,
+        memory_mb: Optional[int] = None,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
         **opts: Unpack[ApiParams],
@@ -313,8 +313,8 @@ class Template(TemplateBase):
         :param name: Template name in 'name' or 'name:tag' format
         :param alias: (Deprecated) Alias name for the template. Use name instead.
         :param tags: Optional additional tags to assign to the template
-        :param cpu_count: Number of CPUs allocated to the sandbox
-        :param memory_mb: Amount of memory in MB allocated to the sandbox
+        :param cpu_count: Number of CPUs allocated to the sandbox.
+        :param memory_mb: Amount of memory in MB allocated to the sandbox.
         :param skip_cache: If True, forces a complete rebuild ignoring cache
         :return: BuildInfo containing the template ID and build ID
 

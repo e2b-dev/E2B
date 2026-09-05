@@ -1,7 +1,7 @@
 import pytest
 
 from e2b import AsyncSandbox
-from e2b.exceptions import InvalidArgumentException, SandboxNotFoundException
+from e2b.exceptions import SandboxNotFoundException
 
 
 @pytest.mark.skip_debug()
@@ -79,8 +79,3 @@ async def test_fork_killed_sandbox(async_sandbox_factory):
 
     with pytest.raises(SandboxNotFoundException):
         await sandbox.fork()
-
-
-async def test_fork_invalid_count():
-    with pytest.raises(InvalidArgumentException):
-        await AsyncSandbox.fork("sbx-test", count=0)

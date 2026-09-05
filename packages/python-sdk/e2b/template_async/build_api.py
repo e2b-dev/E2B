@@ -49,16 +49,16 @@ async def request_build(
     client: AuthenticatedClient,
     name: str,
     tags: Optional[List[str]],
-    cpu_count: int,
-    memory_mb: int,
+    cpu_count: Optional[int],
+    memory_mb: Optional[int],
 ):
     res = await post_v3_templates.asyncio_detailed(
         client=client,
         body=TemplateBuildRequestV3(
             name=name,
             tags=tags if tags else UNSET,
-            cpu_count=cpu_count,
-            memory_mb=memory_mb,
+            cpu_count=cpu_count if cpu_count is not None else UNSET,
+            memory_mb=memory_mb if memory_mb is not None else UNSET,
         ),
     )
 

@@ -18,6 +18,7 @@ from typing import (
 from typing_extensions import NotRequired, Unpack
 
 from e2b.api.client.models import (
+    ConnectSandbox,
     ListedSandbox,
     SandboxDetail,
     SandboxState,
@@ -71,6 +72,21 @@ from e2b.sandbox.iam import (
 )
 from e2b.sandbox.network import ALL_TRAFFIC
 from e2b.paginator import PaginatorBase
+
+
+class ConnectSandboxBody(ConnectSandbox):
+    """Connect request body that omits `timeout` when not provided so the
+    API default applies. The generated model still requires `timeout`;
+    remove this once the spec makes it optional."""
+
+    def __init__(self, timeout: Optional[int] = None):
+        super().__init__(timeout=cast(int, timeout))
+
+    def to_dict(self) -> Dict[str, Any]:
+        result = super().to_dict()
+        if result["timeout"] is None:
+            del result["timeout"]
+        return result
 
 
 class GitHubMcpServerConfig(TypedDict):

@@ -3,7 +3,6 @@ import {
   ClientFactory,
   ConnectionConfig,
   ConnectionOpts,
-  DEFAULT_SANDBOX_TIMEOUT_MS,
 } from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
 import { ALL_TRAFFIC } from './network'
@@ -510,8 +509,6 @@ export interface SandboxPauseOpts extends SandboxApiOpts {
    * When `false`, the in-memory state is dropped and only the filesystem is
    * persisted (a filesystem-only snapshot); resuming such a sandbox cold-boots
    * (reboots) it from disk, losing running processes and open connections.
-   *
-   * @default true
    */
   keepMemory?: boolean
 }
@@ -526,16 +523,12 @@ export interface SandboxForkOpts extends ConnectionOpts {
    * All forks boot from the same snapshot — the snapshot is captured once
    * regardless of count. Each fork succeeds or fails independently; the
    * outcome of each is reported in its entry of the returned array.
-   *
-   * @default 1
    */
   count?: number
 
   /**
    * Timeout for the forked sandboxes in **milliseconds**.
    * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
-   *
-   * @default 300_000 // 5 minutes
    */
   timeoutMs?: number
 }
@@ -587,22 +580,16 @@ export interface SandboxOpts extends ConnectionOpts {
   /**
    * Timeout for the sandbox in **milliseconds**.
    * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
-   *
-   * @default 300_000 // 5 minutes
    */
   timeoutMs?: number
 
   /**
    * Secure all traffic coming to the sandbox controller with auth token
-   *
-   * @default true
    */
   secure?: boolean
 
   /**
    * Allow sandbox to access the internet. If set to `False`, it works the same as setting network `denyOut` to `[0.0.0.0/0]`.
-   *
-   * @default true
    */
   allowInternetAccess?: boolean
 
@@ -670,8 +657,6 @@ export type SandboxConnectOpts = ConnectionOpts & {
    * Timeout for the sandbox in **milliseconds**.
    * For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
    * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
-   *
-   * @default 300_000 // 5 minutes
    */
   timeoutMs?: number
 }
@@ -711,8 +696,6 @@ export interface SandboxListOpts extends Omit<SandboxApiOpts, 'signal'> {
   /**
    * Sort order of the list of sandboxes by start time, applied across the
    * whole result set before pagination (not within a page).
-   *
-   * @default 'desc'
    */
   order?: SandboxListOrder
 
@@ -1481,7 +1464,7 @@ export class SandboxApi extends ClientFactory {
         },
       },
       body: {
-        memory: apiOpts?.keepMemory ?? true,
+        memory: apiOpts?.keepMemory,
       },
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
@@ -1608,7 +1591,7 @@ export class SandboxApi extends ClientFactory {
 
   protected static async createSandbox(
     template: string,
-    timeoutMs: number,
+    timeoutMs?: number,
     opts?: SandboxOpts
   ) {
     const apiOpts = this.resolveOpts(opts)
@@ -1662,9 +1645,10 @@ export class SandboxApi extends ClientFactory {
       metadata: opts?.metadata,
       mcp: opts?.mcp as Record<string, unknown> | undefined,
       envVars: opts?.envs,
-      timeout: timeoutToSeconds(timeoutMs),
-      secure: opts?.secure ?? true,
-      allow_internet_access: opts?.allowInternetAccess ?? true,
+      timeout:
+        timeoutMs === undefined ? undefined : timeoutToSeconds(timeoutMs),
+      secure: opts?.secure,
+      allow_internet_access: opts?.allowInternetAccess,
       network: buildNetworkBody(opts?.network, iam),
       iam,
       autoPause: onTimeoutConfigured ? action === 'pause' : undefined,
@@ -1711,14 +1695,10 @@ export class SandboxApi extends ClientFactory {
 
   protected static async forkSandbox(
     sandboxId: string,
-    timeoutMs: number,
-    count: number,
+    timeoutMs?: number,
+    count?: number,
     opts?: SandboxApiOpts
   ): Promise<SandboxForkResponse[]> {
-    if (count < 1) {
-      throw new InvalidArgumentError('count must be at least 1')
-    }
-
     const apiOpts = this.resolveOpts(opts)
     const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
@@ -1730,7 +1710,8 @@ export class SandboxApi extends ClientFactory {
         },
       },
       body: {
-        timeout: timeoutToSeconds(timeoutMs),
+        timeout:
+          timeoutMs === undefined ? undefined : timeoutToSeconds(timeoutMs),
         count,
       },
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
@@ -1783,7 +1764,7 @@ export class SandboxApi extends ClientFactory {
     opts?: SandboxConnectOpts
   ) {
     const apiOpts = this.resolveOpts(opts)
-    const timeoutMs = apiOpts?.timeoutMs ?? DEFAULT_SANDBOX_TIMEOUT_MS
+    const timeoutMs = apiOpts?.timeoutMs
 
     const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
@@ -1794,9 +1775,11 @@ export class SandboxApi extends ClientFactory {
           sandboxID: sandboxId,
         },
       },
+      // TODO: drop the cast once the API spec makes `timeout` optional
       body: {
-        timeout: timeoutToSeconds(timeoutMs),
-      },
+        timeout:
+          timeoutMs === undefined ? undefined : timeoutToSeconds(timeoutMs),
+      } as components['schemas']['ConnectSandbox'],
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
