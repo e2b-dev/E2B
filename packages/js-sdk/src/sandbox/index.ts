@@ -746,7 +746,7 @@ export class Sandbox extends SandboxApi {
    *
    * @param path path to the file in the sandbox.
    *
-   * @param opts download url options.
+   * @param opts upload url options.
    *
    * @returns URL for uploading file.
    */
