@@ -1,0 +1,14 @@
+{
+  "name": "@e2b/ai-github-developer-ts",
+  "version": "0.1.0",
+  "description": "Full TypeScript implementation of the AI GitHub Developer using E2B Sandboxes",
+  "main": "index.ts",
+  "scripts": {
+    "start": "ts-node index.ts"
+  },
+  "dependencies": {
+    "@e2b/code-interpreter": "latest",
+    "@octokit/rest": "^20.0.0",
+    "dotenv": "^16.0.0"
+  }
+}
