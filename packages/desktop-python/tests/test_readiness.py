@@ -67,9 +67,27 @@ def test_retains_allocation_and_both_failures_when_startup_cleanup_fails(monkeyp
 
     assert isinstance(caught.value, SandboxException)
     assert caught.value.sandbox_id == sandbox.sandbox_id
+    assert sandbox.sandbox_id in str(caught.value)
+    assert f"Sandbox.kill('{sandbox.sandbox_id}')" in str(caught.value)
+    assert str(startup_error) not in str(caught.value)
+    assert str(cleanup_error) not in str(caught.value)
     assert caught.value.__cause__ is startup_error
+    assert caught.value.__suppress_context__ is True
     assert caught.value.cleanup_error is cleanup_error
     sandbox.kill.assert_called_once_with()
+
+
+def test_constructed_startup_exception_retains_its_explicit_cause():
+    startup_error = TimeoutException("Synthetic startup failure")
+    cleanup_error = RuntimeError("Synthetic cleanup failure")
+
+    error = DesktopStartupException(
+        "synthetic-owned-sandbox", startup_error, cleanup_error
+    )
+
+    assert error.__cause__ is startup_error
+    assert error.__suppress_context__ is True
+    assert error.cleanup_error is cleanup_error
 
 
 def test_returns_successfully_started_sandbox_without_cleanup(monkeypatch):

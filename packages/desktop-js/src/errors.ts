@@ -8,11 +8,21 @@ import { SandboxError } from 'e2b'
  */
 export class DesktopStartupError extends SandboxError {
   readonly sandboxId: string
+  /** Original startup rejection. JavaScript can reject non-Error values. */
   readonly cause: unknown
+  /** Original kill rejection, which can also be a non-Error value. */
   readonly cleanupError: unknown
 
+  /**
+   * @param sandboxId ID of the allocated sandbox whose cleanup failed.
+   * @param startupError Original startup rejection, including non-Error values.
+   * @param cleanupError Original cleanup rejection, including non-Error values.
+   */
   constructor(sandboxId: string, startupError: unknown, cleanupError: unknown) {
-    super('Desktop startup failed and sandbox cleanup could not be confirmed.')
+    super(
+      `Desktop startup failed and cleanup of sandbox ${sandboxId} could not be confirmed. ` +
+        `The sandbox may still be running - reclaim it with \`Sandbox.kill('${sandboxId}')\`.`
+    )
     this.name = 'DesktopStartupError'
     this.sandboxId = sandboxId
     this.cause = startupError

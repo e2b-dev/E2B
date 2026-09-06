@@ -146,6 +146,9 @@ export class Sandbox extends SandboxBase {
    *
    * @returns sandbox instance for the new sandbox.
    *
+   * @throws {@link DesktopStartupError} When desktop startup and cleanup of the
+   * allocated sandbox both fail. Use `sandboxId` for targeted cleanup.
+   *
    * @example
    * ```ts
    * const sandbox = await Sandbox.create()
@@ -163,6 +166,9 @@ export class Sandbox extends SandboxBase {
    * @param opts connection options.
    *
    * @returns sandbox instance for the new sandbox.
+   *
+   * @throws {@link DesktopStartupError} When desktop startup and cleanup of the
+   * allocated sandbox both fail. Use `sandboxId` for targeted cleanup.
    *
    * @example
    * ```ts
