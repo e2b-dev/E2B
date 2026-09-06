@@ -5,6 +5,8 @@ from shlex import quote as quote_string
 from typing import Callable, Dict, Iterator, Literal, Optional, overload, Tuple, Union
 from uuid import uuid4
 
+from .exceptions import DesktopStartupException
+
 from e2b import (
     Sandbox as SandboxBase,
     CommandHandle,
@@ -291,11 +293,13 @@ class Sandbox(SandboxBase):
 
             sbx.__vnc_server = _VNCServer(sbx)
             sbx._start_xfce4()
-        except Exception:
+        except Exception as error:
             try:
                 sbx.kill()
-            except Exception:
-                pass
+            except Exception as cleanup_error:
+                raise DesktopStartupException(
+                    sbx.sandbox_id, error, cleanup_error
+                ) from error
             raise
 
         return sbx

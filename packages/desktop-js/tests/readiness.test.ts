@@ -1,7 +1,12 @@
 import { afterEach, expect, test, vi } from 'vitest'
 import { CommandExitError, Sandbox as BaseSandbox } from 'e2b'
 
-import { Sandbox, TimeoutError } from '../src'
+import {
+  DesktopStartupError,
+  Sandbox,
+  SandboxError,
+  TimeoutError,
+} from '../src'
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -50,19 +55,78 @@ test('fails startup when the XFCE desktop session never becomes ready', async ()
   )
 })
 
-test('kills a sandbox whose desktop session fails to initialize', async () => {
-  const startupError = new TimeoutError('Could not start XFCE')
+test.each([true, false])(
+  'preserves the startup error when cleanup returns %s',
+  async (killed) => {
+    const startupError = new TimeoutError('Could not start XFCE')
+    const sandbox = {
+      _start: vi.fn().mockRejectedValue(startupError),
+      kill: vi.fn().mockResolvedValue(killed),
+    }
+    vi.spyOn(BaseSandbox, 'create').mockResolvedValue(
+      sandbox as unknown as BaseSandbox
+    )
+
+    await expect(Sandbox.create()).rejects.toBe(startupError)
+
+    expect(sandbox.kill).toHaveBeenCalledOnce()
+  }
+)
+
+test.each([
+  {
+    startupError: new TimeoutError('Could not start XFCE'),
+    cleanupError: new Error('Synthetic cleanup transport failure'),
+  },
+  {
+    startupError: Object.freeze(new TimeoutError('Could not start Xvfb')),
+    cleanupError: Object.freeze(new Error('Synthetic cleanup timeout')),
+  },
+  { startupError: 'Synthetic startup rejection', cleanupError: null },
+])(
+  'retains allocation and both failures without modifying the startup error',
+  async ({ startupError, cleanupError }) => {
+    const sandbox = {
+      sandboxId: 'synthetic-owned-sandbox',
+      _start: vi.fn().mockRejectedValue(startupError),
+      kill: vi.fn().mockRejectedValue(cleanupError),
+    }
+    vi.spyOn(BaseSandbox, 'create').mockResolvedValue(
+      sandbox as unknown as BaseSandbox
+    )
+
+    const error = await Sandbox.create().catch((error) => error)
+
+    expect(error).toBeInstanceOf(DesktopStartupError)
+    expect(error).toBeInstanceOf(SandboxError)
+    expect(error.name).toBe('DesktopStartupError')
+    expect(error.sandboxId).toBe(sandbox.sandboxId)
+    expect(error.cause).toBe(startupError)
+    expect(error.cleanupError).toBe(cleanupError)
+    expect(sandbox.kill).toHaveBeenCalledOnce()
+  }
+)
+
+test('returns a successfully started sandbox without attempting cleanup', async () => {
   const sandbox = {
-    _start: vi.fn().mockRejectedValue(startupError),
-    kill: vi.fn().mockResolvedValue(undefined),
+    _start: vi.fn().mockResolvedValue(undefined),
+    kill: vi.fn(),
   }
   vi.spyOn(BaseSandbox, 'create').mockResolvedValue(
     sandbox as unknown as BaseSandbox
   )
 
-  await expect(Sandbox.create()).rejects.toBe(startupError)
+  await expect(Sandbox.create()).resolves.toBe(sandbox)
 
-  expect(sandbox.kill).toHaveBeenCalledOnce()
+  expect(sandbox._start).toHaveBeenCalledOnce()
+  expect(sandbox.kill).not.toHaveBeenCalled()
+})
+
+test('preserves allocation failures before a desktop exists', async () => {
+  const allocationError = new Error('Synthetic allocation failure')
+  vi.spyOn(BaseSandbox, 'create').mockRejectedValue(allocationError)
+
+  await expect(Sandbox.create()).rejects.toBe(allocationError)
 })
 
 test('waits between readiness probes that exit unsuccessfully', async () => {

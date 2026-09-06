@@ -8,6 +8,7 @@ import {
 } from 'e2b'
 
 import { generateRandomString } from './utils'
+import { DesktopStartupError } from './errors'
 
 interface CursorPosition {
   x: number
@@ -201,7 +202,11 @@ export class Sandbox extends SandboxBase {
     try {
       await sbx._start(display, sandboxOptsWithDisplay)
     } catch (error) {
-      await sbx.kill().catch(() => {})
+      try {
+        await sbx.kill()
+      } catch (cleanupError) {
+        throw new DesktopStartupError(sbx.sandboxId, error, cleanupError)
+      }
       throw error
     }
 
