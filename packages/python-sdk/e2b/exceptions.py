@@ -22,6 +22,10 @@ class SandboxException(Exception):
     :param status_code: HTTP status of the API response that produced this error, when there was one.
     """
 
+    # Class-level default so subclasses that bypass this initializer (dataclass
+    # exceptions such as CommandExitException) still expose the attribute.
+    status_code: Optional[int] = None
+
     def __init__(self, *args, status_code: Optional[int] = None):
         super().__init__(*args)
         self.status_code = status_code

@@ -60,6 +60,15 @@ def test_503_through_another_hierarchy_keeps_that_hierarchy():
     assert err.status_code == 503
 
 
+def test_exceptions_that_bypass_the_initializer_still_expose_the_status():
+    from e2b.sandbox.commands.command_handle import CommandExitException
+
+    err = CommandExitException(stdout="", stderr="boom", exit_code=1, error="boom")
+
+    assert isinstance(err, SandboxException)
+    assert err.status_code is None
+
+
 def test_rate_limit_carries_429():
     err = api_exception_from_code(429, "slow down")
 
