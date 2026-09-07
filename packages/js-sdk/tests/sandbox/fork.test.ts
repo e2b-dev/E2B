@@ -4,42 +4,50 @@ import { sandboxTest, isDebug, TEST_API_KEY } from '../setup.js'
 import { Sandbox } from '../../src'
 import { InvalidArgumentError, SandboxNotFoundError } from '../../src/errors'
 
-sandboxTest.skipIf(isDebug)('fork a sandbox', async ({ sandbox }) => {
-  await sandbox.files.write('/home/user/state.txt', 'state before fork')
+sandboxTest.skipIf(isDebug)(
+  'fork a sandbox',
+  async ({ sandbox }) => {
+    await sandbox.files.write('/home/user/state.txt', 'state before fork')
 
-  const forks = await sandbox.fork()
-  assert.equal(forks.length, 1)
+    const forks = await sandbox.fork({ requestTimeoutMs: 60_000 })
+    assert.equal(forks.length, 1)
 
-  const fork = forks[0]
-  assert.instanceOf(fork, Sandbox)
-  if (!(fork instanceof Sandbox)) {
-    return
-  }
+    const fork = forks[0]
+    assert.instanceOf(fork, Sandbox)
+    if (!(fork instanceof Sandbox)) {
+      return
+    }
 
-  try {
-    assert.notEqual(fork.sandboxId, sandbox.sandboxId)
+    try {
+      assert.notEqual(fork.sandboxId, sandbox.sandboxId)
 
-    // The original sandbox keeps running
-    assert.isTrue(await sandbox.isRunning())
-    assert.isTrue(await fork.isRunning())
+      // The original sandbox keeps running
+      assert.isTrue(await sandbox.isRunning())
+      assert.isTrue(await fork.isRunning())
 
-    // The fork inherits the filesystem state
-    const content = await fork.files.read('/home/user/state.txt')
-    assert.equal(content, 'state before fork')
+      // The fork inherits the filesystem state
+      const content = await fork.files.read('/home/user/state.txt')
+      assert.equal(content, 'state before fork')
 
-    // The fork is independent of the original
-    await fork.files.write('/home/user/state.txt', 'modified in fork')
-    const originalContent = await sandbox.files.read('/home/user/state.txt')
-    assert.equal(originalContent, 'state before fork')
-  } finally {
-    await fork.kill()
-  }
-})
+      // The fork is independent of the original
+      await fork.files.write('/home/user/state.txt', 'modified in fork')
+      const originalContent = await sandbox.files.read('/home/user/state.txt')
+      assert.equal(originalContent, 'state before fork')
+    } finally {
+      await fork.kill()
+    }
+  },
+  90_000
+)
 
 sandboxTest.skipIf(isDebug)(
   'fork a sandbox multiple times',
   async ({ sandbox }) => {
-    const forks = await sandbox.fork({ count: 2, timeoutMs: 60_000 })
+    const forks = await sandbox.fork({
+      count: 2,
+      timeoutMs: 60_000,
+      requestTimeoutMs: 60_000,
+    })
     assert.equal(forks.length, 2)
 
     const forkedSandboxes = forks.filter(
@@ -59,13 +67,16 @@ sandboxTest.skipIf(isDebug)(
     } finally {
       await Promise.all(forkedSandboxes.map((s) => s.kill()))
     }
-  }
+  },
+  90_000
 )
 
 sandboxTest.skipIf(isDebug)(
   'fork a sandbox by ID with the static method',
   async ({ sandbox }) => {
-    const forks = await Sandbox.fork(sandbox.sandboxId)
+    const forks = await Sandbox.fork(sandbox.sandboxId, {
+      requestTimeoutMs: 60_000,
+    })
     assert.equal(forks.length, 1)
 
     const fork = forks[0]
@@ -77,7 +88,8 @@ sandboxTest.skipIf(isDebug)(
         await fork.kill()
       }
     }
-  }
+  },
+  90_000
 )
 
 test.skipIf(isDebug)('fork a killed sandbox fails', async () => {

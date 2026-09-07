@@ -1,4 +1,4 @@
-import { assert, test, describe } from 'vitest'
+import { afterEach, assert, test, describe } from 'vitest'
 import { handleApiError } from '../../src/api'
 import {
   AuthenticationError,
@@ -6,17 +6,38 @@ import {
   SandboxError,
 } from '../../src/errors'
 
+const originalRequestSource = process.env.E2B_USER_AGENT_SOURCE
+
+afterEach(() => {
+  if (originalRequestSource === undefined) {
+    delete process.env.E2B_USER_AGENT_SOURCE
+  } else {
+    process.env.E2B_USER_AGENT_SOURCE = originalRequestSource
+  }
+})
+
 function createMockResponse(
   status: number,
   error: unknown,
-  data?: unknown
+  data?: unknown,
+  headers: Headers = new Headers()
 ): {
-  response: { status: number; ok: boolean }
+  response: {
+    status: number
+    statusText: string
+    ok: boolean
+    headers: Headers
+  }
   error: unknown
   data: unknown
 } {
   return {
-    response: { status, ok: status >= 200 && status < 300 },
+    response: {
+      status,
+      statusText: '',
+      ok: status >= 200 && status < 300,
+      headers,
+    },
     error,
     data,
   }
@@ -115,6 +136,34 @@ describe('handleApiError', () => {
       assert.instanceOf(err, RateLimitError)
       assert.include(err?.message, 'Rate limit')
     })
+  })
+
+  test('does not change failed response errors in CI', () => {
+    process.env.E2B_USER_AGENT_SOURCE = 'ci'
+    const res = createMockResponse(
+      500,
+      { message: 'Internal error' },
+      undefined,
+      new Headers({ 'X-E2B-Trace-ID': 'trace-123' })
+    )
+
+    const err = handleApiError(res as any)
+
+    assert.equal(err?.message, '500: Internal error')
+  })
+
+  test('does not change failed response errors outside CI', () => {
+    delete process.env.E2B_USER_AGENT_SOURCE
+    const res = createMockResponse(
+      500,
+      { message: 'Internal error' },
+      undefined,
+      new Headers({ 'X-E2B-Trace-ID': 'trace-123' })
+    )
+
+    const err = handleApiError(res as any)
+
+    assert.equal(err?.message, '500: Internal error')
   })
 
   describe('success responses', () => {

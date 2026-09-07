@@ -570,6 +570,17 @@ class SandboxInfoLifecycle(TypedDict):
     """
 
 
+SandboxOnResume = Literal["restore", "reboot"]
+"""
+How a paused sandbox comes back.
+
+``"restore"`` restores the memory snapshot, so processes and open connections
+survive the pause. ``"reboot"`` ignores any memory in the snapshot and
+cold-boots from disk state alone — the rescue path for a snapshot whose memory
+image wedges the guest.
+"""
+
+
 def _resolve_network_selector(
     selector: Optional[SandboxNetworkSelector],
     rules: Mapping[str, List[SandboxNetworkRule]],

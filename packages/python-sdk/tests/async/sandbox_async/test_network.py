@@ -1,5 +1,6 @@
 import asyncio
 import json
+from unittest.mock import AsyncMock
 
 import httpx
 import pytest
@@ -17,15 +18,31 @@ async def wait_for_status(
 ) -> httpx.Response:
     deadline = asyncio.get_running_loop().time() + timeout
     response: httpx.Response | None = None
+    last_transport_error: httpx.TransportError | None = None
 
     while asyncio.get_running_loop().time() < deadline:
-        response = await client.get(url, headers=headers, follow_redirects=True)
-        if response.status_code == status_code:
-            return response
+        try:
+            response = await client.get(url, headers=headers, follow_redirects=True)
+        except httpx.TransportError as error:
+            last_transport_error = error
+        else:
+            if response.status_code == status_code:
+                return response
         await asyncio.sleep(1)
 
-    assert response is not None
-    return response
+    if response is not None:
+        return response
+    assert last_transport_error is not None
+    raise last_transport_error
+
+
+async def test_wait_for_status_retries_transport_errors():
+    response = httpx.Response(200)
+    client = AsyncMock()
+    client.get.side_effect = [httpx.ConnectError("not ready"), response]
+
+    assert await wait_for_status(client, "https://sandbox.test", 200) is response
+    assert client.get.await_count == 2
 
 
 @pytest.mark.skip_debug()
@@ -287,10 +304,6 @@ async def test_mask_request_host(async_sandbox_factory):
         timeout=60,
     )
 
-    import asyncio
-
-    import httpx
-
     port = 8080
     output_file = "/tmp/headers.txt"
 
@@ -306,7 +319,7 @@ class H(http.server.BaseHTTPRequestHandler):
         self.send_response(200)
         self.end_headers()
     def log_message(self, *a): pass
-http.server.HTTPServer(('', {port}), H).handle_request()
+http.server.HTTPServer(('', {port}), H).serve_forever()
 " """,
         background=True,
     )
@@ -319,12 +332,8 @@ http.server.HTTPServer(('', {port}), H).handle_request()
     # Make a request from OUTSIDE the sandbox through the proxy
     # The Host header should be modified according to mask_request_host
     async with httpx.AsyncClient() as client:
-        try:
-            await client.get(sandbox_url, timeout=5.0)
-        except Exception:
-            pass
-
-    await asyncio.sleep(1)
+        response = await wait_for_status(client, sandbox_url, 200)
+        assert response.status_code == 200
 
     # Read the captured headers from inside the sandbox
     result = await async_sandbox.commands.run(f"cat {output_file}")

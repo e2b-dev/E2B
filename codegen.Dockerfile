@@ -42,6 +42,6 @@ RUN npm install -g \
     pnpm@${PNPM_VERSION} \
     @connectrpc/protoc-gen-connect-es@1.6.1 \
     @bufbuild/protoc-gen-es@2.6.2 \
-    @redocly/cli@2.39.0
+    @redocly/cli@2.46.1
 
 CMD ["make", "generate"]

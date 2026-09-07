@@ -7,22 +7,6 @@ import { ConnectionConfig } from '../connectionConfig'
 import { AuthenticationError, RateLimitError, SandboxError } from '../errors'
 import { createApiLogger } from '../logs'
 
-const API_KEY_PATTERN = /^e2b_[0-9a-f]+$/
-const API_KEY_EXAMPLE = `e2b_${'0'.repeat(40)}`
-
-/**
- * Validates that an E2B API key has the expected `e2b_` prefix followed by
- * hex characters. Throws `AuthenticationError` otherwise.
- */
-export function validateApiKey(apiKey: string): void {
-  if (!API_KEY_PATTERN.test(apiKey)) {
-    throw new AuthenticationError(
-      `Invalid API key format: expected "e2b_" followed by hex characters (e.g. "${API_KEY_EXAMPLE}"). ` +
-        'Visit the API Keys tab at https://e2b.dev/dashboard?tab=keys to get your API key.'
-    )
-  }
-}
-
 /**
  * Map an API error code and message to the matching error class — the same
  * mapping {@link handleApiError} applies to HTTP responses, usable for error
@@ -104,10 +88,6 @@ class ApiClient {
       )
     }
 
-    if (config.apiKey && config.validateApiKey) {
-      validateApiKey(config.apiKey)
-    }
-
     this.api = createClient<paths>({
       baseUrl: config.apiUrl,
       fetch: createApiFetch(config.proxy),
@@ -126,8 +106,13 @@ class ApiClient {
       },
     })
 
-    if (config.logger) {
-      this.api.use(createApiLogger(config.logger))
+    if (config.logger || config.requestSource === 'ci') {
+      this.api.use(
+        createApiLogger(
+          config.logger ?? { error: (...args) => console.error(...args) },
+          config.requestSource === 'ci'
+        )
+      )
     }
   }
 }

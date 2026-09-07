@@ -524,7 +524,7 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody: {
+            requestBody?: {
                 content: {
                     "application/json": components["schemas"]["ResumedSandbox"];
                 };
@@ -2148,25 +2148,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        AdminBuildCancelResult: {
-            /** @description Number of builds successfully cancelled */
-            cancelledCount: number;
-            /** @description Number of builds that failed to cancel */
-            failedCount: number;
-        };
-        AdminSandboxKillResult: {
-            /** @description Number of sandboxes that failed to kill */
-            failedCount: number;
-            /** @description Number of sandboxes successfully killed */
-            killedCount: number;
-        };
-        /** @description Cached live sandbox index count keyed by team ID. Counts may briefly
-         *     include sandboxes transitioning out of running; teams without indexed
-         *     sandboxes are omitted.
-         *      */
-        AdminTeamRunningSandboxCounts: {
-            [key: string]: number;
-        };
         AssignedTemplateTags: {
             /**
              * Format: uuid
@@ -2219,6 +2200,8 @@ export interface components {
             step?: string;
         };
         ConnectSandbox: {
+            /** @description Defaults to true. When false and the sandbox is paused, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. */
+            memory?: boolean;
             /**
              * Format: int32
              * @description Timeout in seconds from the current time after which the sandbox should expire
@@ -2230,69 +2213,11 @@ export interface components {
          * @description CPU cores for the sandbox
          */
         CPUCount: number;
-        CreatedAccessToken: {
-            /**
-             * Format: date-time
-             * @description Timestamp of access token creation
-             */
-            createdAt: string;
-            /**
-             * Format: uuid
-             * @description Identifier of the access token
-             */
-            id: string;
-            mask: components["schemas"]["IdentifierMaskingDetails"];
-            /** @description Name of the access token */
-            name: string;
-            /** @description The fully created access token */
-            token: string;
-        };
-        CreatedTeamAPIKey: {
-            /**
-             * Format: date-time
-             * @description Timestamp of API key creation
-             */
-            createdAt: string;
-            createdBy?: components["schemas"]["TeamUser"] | null;
-            /**
-             * Format: uuid
-             * @description Identifier of the API key
-             */
-            id: string;
-            /** @description Raw value of the API key */
-            key: string;
-            /**
-             * Format: date-time
-             * @description Last time this API key was used
-             */
-            lastUsed?: string | null;
-            mask: components["schemas"]["IdentifierMaskingDetails"];
-            /** @description Name of the API key */
-            name: string;
-        };
         DeleteTemplateTagsRequest: {
             /** @description Name of the template */
             name: string;
             /** @description Tags to delete */
             tags: string[];
-        };
-        DiskMetrics: {
-            /** @description Device name */
-            device: string;
-            /** @description Filesystem type (e.g., ext4, xfs) */
-            filesystemType: string;
-            /** @description Mount point of the disk */
-            mountPoint: string;
-            /**
-             * Format: uint64
-             * @description Total space in bytes
-             */
-            totalBytes: number;
-            /**
-             * Format: uint64
-             * @description Used space in bytes
-             */
-            usedBytes: number;
         };
         /**
          * Format: int32
@@ -2335,16 +2260,6 @@ export interface components {
             type: "registry";
             /** @description Username to use for the registry */
             username: string;
-        };
-        IdentifierMaskingDetails: {
-            /** @description Prefix used in masked version of the token or key */
-            maskedValuePrefix: string;
-            /** @description Suffix used in masked version of the token or key */
-            maskedValueSuffix: string;
-            /** @description Prefix that identifies the token or key type */
-            prefix: string;
-            /** @description Length of the token or key */
-            valueLength: number;
         };
         ListedSandbox: {
             /** @description Alias of the template */
@@ -2391,16 +2306,6 @@ export interface components {
          * @enum {string}
          */
         LogsSource: "temporary" | "persistent";
-        MachineInfo: {
-            /** @description CPU architecture of the node */
-            cpuArchitecture: string;
-            /** @description CPU family of the node */
-            cpuFamily: string;
-            /** @description CPU model of the node */
-            cpuModel: string;
-            /** @description CPU model name of the node */
-            cpuModelName: string;
-        };
         /** @description Team metric with timestamp */
         MaxTeamMetric: {
             /**
@@ -2426,10 +2331,6 @@ export interface components {
          * @description Memory for the sandbox in MiB
          */
         MemoryMB: number;
-        NewAccessToken: {
-            /** @description Name of the access token */
-            name: string;
-        };
         NewSandbox: {
             /** @description Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut to 0.0.0.0/0 in the network config. */
             allow_internet_access?: boolean;
@@ -2463,165 +2364,14 @@ export interface components {
         };
         NewSecret: {
             metadata?: components["schemas"]["SecretMetadata"];
-            /** @description Name of the secret, unique within the project. Names are lower-cased before storage and returned in that canonical form; the sec_ prefix is reserved for secret identifiers.
-             *      */
+            /** @description Name of the secret, unique within the project. Names are lower-cased before storage and returned in that canonical form; the sec_ prefix is reserved for secret identifiers. */
             name: string;
             /** @description Runtime marker stored as the secret's first version. The runtime resolves it to a value at sandbox egress. */
             value: string;
         };
-        NewTeamAPIKey: {
-            /** @description Name of the API key */
-            name: string;
-        };
         NewVolume: {
             /** @description Name of the volume */
             name: string;
-        };
-        Node: {
-            /** @description Identifier of the cluster */
-            clusterID: string;
-            /** @description Commit of the orchestrator */
-            commit: string;
-            /**
-             * Format: uint64
-             * @description Number of sandbox create fails
-             */
-            createFails: number;
-            /**
-             * Format: uint64
-             * @description Number of sandbox create successes
-             */
-            createSuccesses: number;
-            /** @description Identifier of the node */
-            id: string;
-            machineInfo: components["schemas"]["MachineInfo"];
-            metrics: components["schemas"]["NodeMetrics"];
-            /**
-             * Format: uint32
-             * @description Number of sandboxes running on the node
-             */
-            sandboxCount: number;
-            /**
-             * Format: int
-             * @description Number of starting Sandboxes
-             */
-            sandboxStartingCount: number;
-            /** @description Service instance identifier of the node */
-            serviceInstanceID: string;
-            status: components["schemas"]["NodeStatus"];
-            /**
-             * Format: date-time
-             * @description Time when the node status was last changed
-             */
-            statusChangedAt: string;
-            /** @description Version of the orchestrator */
-            version: string;
-        };
-        NodeDetail: {
-            /** @description Identifier of the cluster */
-            clusterID: string;
-            /** @description Commit of the orchestrator */
-            commit: string;
-            /**
-             * Format: uint64
-             * @description Number of sandbox create fails
-             */
-            createFails: number;
-            /**
-             * Format: uint64
-             * @description Number of sandbox create successes
-             */
-            createSuccesses: number;
-            /** @description Identifier of the node */
-            id: string;
-            machineInfo: components["schemas"]["MachineInfo"];
-            metrics: components["schemas"]["NodeMetrics"];
-            /**
-             * Format: uint32
-             * @description Number of sandboxes running on the node
-             */
-            sandboxCount: number;
-            /** @description Service instance identifier of the node */
-            serviceInstanceID: string;
-            status: components["schemas"]["NodeStatus"];
-            /**
-             * Format: date-time
-             * @description Time when the node status was last changed
-             */
-            statusChangedAt: string;
-            /** @description Version of the orchestrator */
-            version: string;
-        };
-        /** @description Node metrics */
-        NodeMetrics: {
-            /**
-             * Format: uint32
-             * @description Number of allocated CPU cores
-             */
-            allocatedCPU: number;
-            /**
-             * Format: uint64
-             * @description Amount of allocated memory in bytes
-             */
-            allocatedMemoryBytes: number;
-            /**
-             * Format: uint32
-             * @description Total number of CPU cores on the node
-             */
-            cpuCount: number;
-            /**
-             * Format: uint32
-             * @description Node CPU usage percentage
-             */
-            cpuPercent: number;
-            /** @description Detailed metrics for each disk/mount point */
-            disks: components["schemas"]["DiskMetrics"][];
-            /**
-             * Format: uint64
-             * @description Size of a single hugepage in bytes
-             */
-            hugePageSizeBytes: number;
-            /**
-             * Format: uint64
-             * @description Number of reserved hugepages (committed but not yet faulted)
-             */
-            hugePagesReserved: number;
-            /**
-             * Format: uint64
-             * @description Total number of preallocated hugepages on the node
-             */
-            hugePagesTotal: number;
-            /**
-             * Format: uint64
-             * @description Number of hugepages in use (total - free)
-             */
-            hugePagesUsed: number;
-            /**
-             * Format: uint64
-             * @description Total node memory in bytes
-             */
-            memoryTotalBytes: number;
-            /**
-             * Format: uint64
-             * @description Node memory used in bytes
-             */
-            memoryUsedBytes: number;
-        };
-        /**
-         * @description Status of the node.
-         *     - draining: the node is bound to be shut down. It will not accept new sandboxes and will stop once all existing sandboxes are done.
-         *     - standby: the node is not actively used, but it can return to ready and continue serving traffic.
-         *
-         * @enum {string}
-         */
-        NodeStatus: "ready" | "draining" | "connecting" | "unhealthy" | "standby";
-        NodeStatusChange: {
-            /**
-             * Format: uuid
-             * @description Identifier of the cluster
-             */
-            clusterID?: string;
-            status: components["schemas"]["NodeStatus"];
         };
         /**
          * @description Sort direction
@@ -2635,6 +2385,8 @@ export interface components {
              * @description Automatically pauses the sandbox after the timeout
              */
             autoPause?: boolean;
+            /** @description Defaults to true. When false, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. */
+            memory?: boolean;
             /**
              * Format: int32
              * @description Time to live for the sandbox in seconds.
@@ -2861,10 +2613,11 @@ export interface components {
             /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
             denyOut?: string[];
             egressProxy?: components["schemas"]["SandboxEgressProxyConfig"];
+            /** @description Sandbox ports that serve HTTPS rather than plaintext HTTP. Affects how the proxy reaches the service inside the sandbox; the public URL is HTTPS either way. Certificates are not verified, so self-signed ones work. The envd port (49983) cannot be listed. */
+            httpsPorts?: number[];
             /** @description Specify host mask which will be used for all sandbox requests */
             maskRequestHost?: string;
-            /** @description Per-domain transform rules applied to matching egress HTTP/HTTPS requests. Keys are domains (e.g. "api.example.com", "example.com"). A domain listed here is not automatically allowed - use allowOut to permit the traffic.
-             *      */
+            /** @description Per-domain transform rules applied to matching outbound HTTPS requests. Keys may be exact DNS names (for example, "api.example.com") or a leading wildcard (for example, "*.example.com"), and are normalized to lowercase on write. Wildcards match subdomains at any depth but not the apex domain; a bare "*" is invalid. Exact rules take precedence, followed by the longest matching wildcard suffix, and matching rule sets are not merged. Broad wildcards such as "*.com" are allowed and may expose transformed credentials to every matching destination the sandbox contacts. Rules do not grant network access; configure allowOut separately to permit the destination. */
             rules?: {
                 [key: string]: components["schemas"]["SandboxNetworkRule"][];
             };
@@ -2875,8 +2628,7 @@ export interface components {
         };
         /** @description Transformations applied to matching egress requests before forwarding. */
         SandboxNetworkTransform: {
-            /** @description HTTP headers to inject or override in matching requests. An existing header with the same name is replaced. Values are plain strings; secret resolution happens client-side before sending to the API.
-             *      */
+            /** @description HTTP headers to inject or override in matching requests. An existing header with the same name is replaced. Values are plain strings; secret resolution happens client-side before sending to the API. */
             headers?: {
                 [key: string]: string;
             };
@@ -2890,7 +2642,7 @@ export interface components {
             /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
             denyOut?: string[];
             egressProxy?: components["schemas"]["SandboxEgressProxyConfig"];
-            /** @description Per-domain transform rules. Replaces all existing rules when provided. */
+            /** @description Per-domain transform rules applied to matching outbound HTTPS requests. Replaces all existing rules when provided. Keys may be exact DNS names or a single leading wildcard (for example, "*.example.com"), and are normalized to lowercase on write. Wildcards match subdomains at any depth but not the apex domain; a bare "*" is invalid. Exact rules take precedence, followed by the longest matching wildcard suffix, and matching rule sets are not merged. Broad wildcards such as "*.com" are allowed and may expose transformed credentials to every matching destination the sandbox contacts. Rules do not grant network access; configure allowOut separately to permit the destination. */
             rules?: {
                 [key: string]: components["schemas"]["SandboxNetworkRule"][];
             };
@@ -2956,8 +2708,7 @@ export interface components {
              */
             updatedAt: string;
         };
-        /** @description Customer metadata of the secret. Always present, empty when unset. At most 32 entries; keys are limited to 128 bytes, values to 1024 bytes, and a secret's metadata to 8192 bytes in total.
-         *      */
+        /** @description Customer metadata of the secret. Always present, empty when unset. At most 32 entries; keys are limited to 128 bytes, values to 1024 bytes, and a secret's metadata to 8192 bytes in total. */
         SecretMetadata: {
             [key: string]: string;
         };
@@ -2981,27 +2732,6 @@ export interface components {
             name: string;
             /** @description Identifier of the team */
             teamID: string;
-        };
-        TeamAPIKey: {
-            /**
-             * Format: date-time
-             * @description Timestamp of API key creation
-             */
-            createdAt: string;
-            createdBy?: components["schemas"]["TeamUser"] | null;
-            /**
-             * Format: uuid
-             * @description Identifier of the API key
-             */
-            id: string;
-            /**
-             * Format: date-time
-             * @description Last time this API key was used
-             */
-            lastUsed?: string | null;
-            mask: components["schemas"]["IdentifierMaskingDetails"];
-            /** @description Name of the API key */
-            name: string;
         };
         /** @description Team metric with timestamp */
         TeamMetric: {
@@ -3350,10 +3080,6 @@ export interface components {
              */
             updatedAt: string;
         };
-        UpdateTeamAPIKey: {
-            /** @description New name for the API key */
-            name: string;
-        };
         Volume: {
             /** @description Name of the volume */
             name: string;
@@ -3361,11 +3087,12 @@ export interface components {
             volumeID: string;
         };
         VolumeAndToken: {
-            /** @description Domain to use as the destination for volume content requests,
+            /**
+             * @description Domain to use as the destination for volume content requests,
              *     replacing the default `api.<E2B_DOMAIN>`. Only returned when the
              *     team is connected to a custom (BYOC) cluster; absent otherwise, in
              *     which case the default domain is used.
-             *      */
+             */
             domain?: string;
             /** @description Name of the volume */
             name: string;
@@ -3373,9 +3100,6 @@ export interface components {
             token: string;
             /** @description ID of the volume */
             volumeID: string;
-        };
-        VolumeToken: {
-            token: string;
         };
     };
     responses: {
@@ -3417,15 +3141,6 @@ export interface components {
         };
         /** @description Conflict */
         409: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["Error"];
-            };
-        };
-        /** @description Gone */
-        410: {
             headers: {
                 [name: string]: unknown;
             };
@@ -3480,18 +3195,13 @@ export interface components {
         };
     };
     parameters: {
-        accessTokenID: string;
-        apiKeyID: string;
         buildID: string;
-        nodeID: string;
         /** @description Maximum number of items to return per page */
         paginationLimit: number;
         /** @description Cursor to start the list from */
         paginationNextToken: string;
         sandboxID: string;
         secretID: string;
-        snapshotID: string;
-        tag: string;
         teamID: string;
         templateID: string;
         volumeID: string;
@@ -3500,8 +3210,7 @@ export interface components {
     headers: {
         /** @description Cursor to fetch the next page of results, if more exist */
         XNextToken: string;
-        /** @description Number of running sandboxes matching the filters, before pagination is applied. Only present when running sandboxes were requested.
-         *      */
+        /** @description Number of running sandboxes matching the filters, before pagination is applied. Only present when running sandboxes were requested. */
         XTotalRunning: number;
     };
     pathItems: never;

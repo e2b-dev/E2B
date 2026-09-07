@@ -20,6 +20,10 @@ jobs:
       js: ${{ steps.filter.outputs.js }}
       python: ${{ steps.filter.outputs.python }}
       cli: ${{ steps.filter.outputs.cli }}
+      code_interpreter_js: ${{ steps.filter.outputs.code_interpreter_js }}
+      code_interpreter_python: ${{ steps.filter.outputs.code_interpreter_python }}
+      desktop_js: ${{ steps.filter.outputs.desktop_js }}
+      desktop_python: ${{ steps.filter.outputs.desktop_python }}
     steps:
       - name: Filter changed paths
         # On workflow_dispatch there is no PR diff and paths-filter would fall
@@ -41,6 +45,8 @@ jobs:
             js:
               - *shared
               - '.github/workflows/js_sdk_tests.yml'
+              - 'tsconfig.sdk.json'
+              - 'tsdown.sdk.config.mts'
               - 'packages/js-sdk/**/!(*.md)'
             python:
               - *shared
@@ -51,6 +57,32 @@ jobs:
               - '.github/workflows/cli_tests.yml'
               - 'packages/cli/**/!(*.md)'
               - 'packages/js-sdk/**/!(*.md)'
+            code_interpreter_js:
+              - *shared
+              - '.github/workflows/code_interpreter_js_tests.yml'
+              - 'tsconfig.sdk.json'
+              - 'tsdown.sdk.config.mts'
+              - 'vitest.sdk.config.mts'
+              - 'packages/code-interpreter-js/**/!(*.md)'
+              - 'packages/js-sdk/**/!(*.md)'
+            code_interpreter_python:
+              - *shared
+              - '.github/workflows/code_interpreter_python_tests.yml'
+              - 'packages/code-interpreter-python/**/!(*.md)'
+              - 'packages/python-sdk/**/!(*.md)'
+            desktop_js:
+              - *shared
+              - '.github/workflows/desktop_js_tests.yml'
+              - 'tsconfig.sdk.json'
+              - 'tsdown.sdk.config.mts'
+              - 'vitest.sdk.config.mts'
+              - 'packages/desktop-js/**/!(*.md)'
+              - 'packages/js-sdk/**/!(*.md)'
+            desktop_python:
+              - *shared
+              - '.github/workflows/desktop_python_tests.yml'
+              - 'packages/desktop-python/**/!(*.md)'
+              - 'packages/python-sdk/**/!(*.md)'
 
   js-tests:
     name: Production / JS SDK Tests
@@ -73,6 +105,38 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.cli == 'true' || github.event_name == 'workflow_dispatch' }}
     uses: ./.github/workflows/cli_tests.yml
+    secrets:
+      E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+
+  code-interpreter-js-tests:
+    name: Production / Code Interpreter JS SDK Tests
+    needs: changes
+    if: ${{ needs.changes.outputs.code_interpreter_js == 'true' || github.event_name == 'workflow_dispatch' }}
+    uses: ./.github/workflows/code_interpreter_js_tests.yml
+    secrets:
+      E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+
+  code-interpreter-python-tests:
+    name: Production / Code Interpreter Python SDK Tests
+    needs: changes
+    if: ${{ needs.changes.outputs.code_interpreter_python == 'true' || github.event_name == 'workflow_dispatch' }}
+    uses: ./.github/workflows/code_interpreter_python_tests.yml
+    secrets:
+      E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+
+  desktop-js-tests:
+    name: Production / Desktop JS SDK Tests
+    needs: changes
+    if: ${{ needs.changes.outputs.desktop_js == 'true' || github.event_name == 'workflow_dispatch' }}
+    uses: ./.github/workflows/desktop_js_tests.yml
+    secrets:
+      E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+
+  desktop-python-tests:
+    name: Production / Desktop Python SDK Tests
+    needs: changes
+    if: ${{ needs.changes.outputs.desktop_python == 'true' || github.event_name == 'workflow_dispatch' }}
+    uses: ./.github/workflows/desktop_python_tests.yml
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
@@ -108,7 +172,54 @@ jobs:
       E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY_STAGING }}
-      
+
+  code-interpreter-js-tests-staging:
+    name: Staging / Code Interpreter JS SDK Tests
+    needs: changes
+    if: ${{ needs.changes.outputs.code_interpreter_js == 'true' || github.event_name == 'workflow_dispatch' }}
+    uses: ./.github/workflows/code_interpreter_js_tests.yml
+    with:
+      E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
+      run_recovery_tests: false
+      # Staging only checks backend compatibility, so the Node leg suffices;
+      # Bun/Deno runtime coverage runs against production above.
+      node-only: true
+    secrets:
+      E2B_API_KEY: ${{ secrets.E2B_API_KEY_STAGING }}
+
+  code-interpreter-python-tests-staging:
+    name: Staging / Code Interpreter Python SDK Tests
+    needs: changes
+    if: ${{ needs.changes.outputs.code_interpreter_python == 'true' || github.event_name == 'workflow_dispatch' }}
+    uses: ./.github/workflows/code_interpreter_python_tests.yml
+    with:
+      E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
+      run_recovery_tests: false
+    secrets:
+      E2B_API_KEY: ${{ secrets.E2B_API_KEY_STAGING }}
+
+  desktop-js-tests-staging:
+    name: Staging / Desktop JS SDK Tests
+    needs: changes
+    if: ${{ needs.changes.outputs.desktop_js == 'true' || github.event_name == 'workflow_dispatch' }}
+    uses: ./.github/workflows/desktop_js_tests.yml
+    with:
+      E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
+      run_tests: false
+    secrets:
+      E2B_API_KEY: ${{ secrets.E2B_API_KEY_STAGING }}
+
+  desktop-python-tests-staging:
+    name: Staging / Desktop Python SDK Tests
+    needs: changes
+    if: ${{ needs.changes.outputs.desktop_python == 'true' || github.event_name == 'workflow_dispatch' }}
+    uses: ./.github/workflows/desktop_python_tests.yml
+    with:
+      E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
+      run_tests: false
+    secrets:
+      E2B_API_KEY: ${{ secrets.E2B_API_KEY_STAGING }}
+
   status:
     name: SDK Tests Status
     # `changes` is included so a failure in change-detection (which would skip the
@@ -118,6 +229,10 @@ jobs:
       - js-tests
       - python-tests
       - cli-tests
+      - code-interpreter-js-tests
+      - code-interpreter-python-tests
+      - desktop-js-tests
+      - desktop-python-tests
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:

@@ -1,5 +1,83 @@
 # @e2b/python-sdk
 
+## 2.47.0
+
+### Minor Changes
+
+- 1980d6b: Add `onResume` / `on_resume` to `Sandbox.connect()`: `'reboot'` resumes a paused sandbox from its disk state alone, leaving the memory snapshot untouched, for the case where restoring that memory wedges the guest. `'restore'` stays the default. Where filesystem-only resume is not enabled, a `'reboot'` that would actually drop memory is rejected with an error rather than silently restoring it.
+- 043d050: Removed generated types for endpoints the SDKs never exposed. The JS `components['schemas']` namespace and the Python `e2b.api.client.models` package no longer include the admin, cluster/rig, node, team-API-key and access-token schemas (`Node`, `NodeDetail`, `NodeMetrics`, `NodeStatus`, `NodeStatusChange`, `MachineInfo`, `DiskMetrics`, `Rig*`, `Admin*`, `TeamAPIKey`, `NewTeamAPIKey`, `CreatedTeamAPIKey`, `UpdateTeamAPIKey`, `IdentifierMaskingDetails`, `VolumeToken`; Python additionally `Team`, `TeamMetric`, `MaxTeamMetric`, `CreatedAccessToken`, `NewAccessToken`). No SDK method ever accepted or returned them, so code that uses the SDK through its methods is unaffected; code that imported these type names directly must drop the import.
+
+## 2.46.4
+
+### Patch Changes
+
+- 6146cd0: Improve reliability for high-concurrency sandbox workloads by spreading envd traffic across four HTTP/2 connection pools. Set `E2B_ENVD_POOL_SHARDS` before importing the SDK to adjust the pool count.
+
+## 2.46.3
+
+### Patch Changes
+
+- c275393: Improve reliability for high-concurrency sandbox workloads by spreading envd traffic across four HTTP/2 connection pools. Set `E2B_ENVD_POOL_SHARDS` before importing the SDK to adjust the pool count.
+
+## 2.46.2
+
+### Patch Changes
+
+- 7dd5321: Spread envd traffic across four HTTP/2 connection pools by default so high-concurrency, long-running streams do not all contend for one connection's stream limit. Set `E2B_ENVD_POOL_SHARDS` before importing the SDK to tune the pool count.
+
+## 2.46.1
+
+### Patch Changes
+
+- d4a7f41: Deprecate the sandbox git module (`sandbox.git`) and its public types and errors. Run git through the commands module instead, e.g. `sandbox.commands.run('git clone <url> repo')`. The module keeps working and will be removed in the next major version.
+
+## 2.46.0
+
+### Minor Changes
+
+- 9d1c90d: Remove client-side API key format validation. The SDK no longer checks that the API key matches the `e2b_` hex format — only that a key is present. The `validateApiKey`/`validate_api_key` option is deprecated and has no effect, and the `E2B_VALIDATE_API_KEY` environment variable is no longer read. The server remains the source of truth for key validity.
+
+### Patch Changes
+
+- 67c06e0: Point the two Code Interpreter README links at `code-interpreting/analyze-data-with-ai` instead of the `code-interpreting` section index. The index has no landing page and 307s to that article, dropping the query string on the way, so the UTM parameters were lost before the reader arrived. Linking at the resolved path keeps them.
+- 182b498: Point the README documentation links at `docs.e2b.dev` instead of `e2b.dev/docs`. The docs site moved to its own subdomain and has no `/docs` path prefix there, so `e2b.dev/docs` serves a 308 to `docs.e2b.dev/` and `e2b.dev/docs/code-interpreting` maps to `docs.e2b.dev/code-interpreting`. The UTM parameters are unchanged and survived the redirect, so this removes a redirect hop rather than fixing broken attribution.
+- b802997: Fix two `network.egressProxy` / `network["egress_proxy"]` cases an untyped caller reaches.
+
+  The JS SDK had no shape guard: `buildEgressProxyBody` rebuilds the body from the known fields, so an `address` that was missing or not a string vanished and the caller got an API error about a config they never wrote (`{"egressProxy":{}}`). It now raises `InvalidArgumentError` naming the option, the way the Python SDK already did:
+
+  ```ts
+  // InvalidArgumentError: network egressProxy must be an object with a string
+  // 'address' (e.g. 'proxy.example.com:1080').
+  await Sandbox.create({
+    network: { egressProxy: 'proxy.example.com:1080' as never },
+  })
+  ```
+
+  A `null` / `None` username or password is now treated as absent instead of being serialized as a JSON null the API rejects — reading a credential out of an unset environment variable is how a caller lands there, and it means the proxy takes no credentials:
+
+  ```ts
+  await Sandbox.create({
+    network: {
+      egressProxy: {
+        address: 'proxy.example.com:1080',
+        // Unset in the environment; the proxy takes no credentials.
+        username: process.env.PROXY_USER,
+      },
+    },
+  })
+  ```
+
+  ```python
+  Sandbox.create(
+      network={
+          "egress_proxy": {
+              "address": "proxy.example.com:1080",
+              "username": os.environ.get("PROXY_USER"),
+          },
+      },
+  )
+  ```
+
 ## 2.45.1
 
 ### Patch Changes

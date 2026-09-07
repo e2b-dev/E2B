@@ -1,5 +1,6 @@
 import json
 import time
+from unittest.mock import Mock
 
 import httpx
 
@@ -18,15 +19,31 @@ def wait_for_status(
 ) -> httpx.Response:
     deadline = time.monotonic() + timeout
     response: httpx.Response | None = None
+    last_transport_error: httpx.TransportError | None = None
 
     while time.monotonic() < deadline:
-        response = client.get(url, headers=headers, follow_redirects=True)
-        if response.status_code == status_code:
-            return response
+        try:
+            response = client.get(url, headers=headers, follow_redirects=True)
+        except httpx.TransportError as error:
+            last_transport_error = error
+        else:
+            if response.status_code == status_code:
+                return response
         time.sleep(1)
 
-    assert response is not None
-    return response
+    if response is not None:
+        return response
+    assert last_transport_error is not None
+    raise last_transport_error
+
+
+def test_wait_for_status_retries_transport_errors():
+    response = httpx.Response(200)
+    client = Mock()
+    client.get.side_effect = [httpx.ConnectError("not ready"), response]
+
+    assert wait_for_status(client, "https://sandbox.test", 200) is response
+    assert client.get.call_count == 2
 
 
 @pytest.mark.skip_debug()
@@ -280,10 +297,6 @@ def test_mask_request_host(sandbox_factory):
         timeout=60,
     )
 
-    import time
-
-    import httpx
-
     port = 8080
     output_file = "/tmp/headers.txt"
 
@@ -299,7 +312,7 @@ class H(http.server.BaseHTTPRequestHandler):
         self.send_response(200)
         self.end_headers()
     def log_message(self, *a): pass
-http.server.HTTPServer(('', {port}), H).handle_request()
+http.server.HTTPServer(('', {port}), H).serve_forever()
 " """,
         background=True,
     )
@@ -312,12 +325,8 @@ http.server.HTTPServer(('', {port}), H).handle_request()
     # Make a request from OUTSIDE the sandbox through the proxy
     # The Host header should be modified according to mask_request_host
     with httpx.Client() as client:
-        try:
-            client.get(sandbox_url, timeout=5.0)
-        except Exception:
-            pass
-
-    time.sleep(1)
+        response = wait_for_status(client, sandbox_url, 200)
+        assert response.status_code == 200
 
     # Read the captured headers from inside the sandbox
     result = sandbox.commands.run(f"cat {output_file}")

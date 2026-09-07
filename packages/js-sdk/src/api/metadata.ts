@@ -33,7 +33,7 @@ export function getEnvVar(name: string) {
  * the env var is unset. Throws on non-integer input rather than silently
  * falling back so misconfiguration is surfaced loudly.
  */
-export function parseIntEnv(name: string, defaultValue: number): number {
+function parseIntEnv(name: string, defaultValue: number): number {
   const raw = getEnvVar(name)
   if (!raw) return defaultValue
 

@@ -15,6 +15,7 @@ import { snapshotCommand } from './snapshot'
 export const sandboxCommand = new commander.Command('sandbox')
   .description('work with sandboxes')
   .alias('sbx')
+  .enablePositionalOptions()
   .addCommand(connectCommand)
   .addCommand(infoCommand)
   .addCommand(listCommand)

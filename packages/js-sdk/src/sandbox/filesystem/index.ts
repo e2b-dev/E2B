@@ -256,8 +256,9 @@ export function mapEntryInfo(entry: FsEntryInfo): EntryInfo {
 /**
  * Options for the sandbox filesystem operations.
  */
-export interface FilesystemRequestOpts
-  extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>> {
+export interface FilesystemRequestOpts extends Partial<
+  Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>
+> {
   /**
    * User to use for the operation in the sandbox.
    * This affects the resolution of relative paths and ownership of the created filesystem objects.
@@ -597,11 +598,7 @@ export class Filesystem {
   async write(
     pathOrFiles: string | WriteEntry[],
     dataOrOpts?:
-      | string
-      | ArrayBuffer
-      | Blob
-      | ReadableStream
-      | FilesystemWriteOpts,
+      string | ArrayBuffer | Blob | ReadableStream | FilesystemWriteOpts,
     opts?: FilesystemWriteOpts
   ): Promise<WriteInfo | WriteInfo[]> {
     if (typeof pathOrFiles !== 'string' && !Array.isArray(pathOrFiles)) {
@@ -622,10 +619,7 @@ export class Filesystem {
             writeFiles: [
               {
                 data: dataOrOpts as
-                  | string
-                  | ArrayBuffer
-                  | Blob
-                  | ReadableStream,
+                  string | ArrayBuffer | Blob | ReadableStream,
               },
             ],
           }

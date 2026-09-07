@@ -25,12 +25,36 @@ export const pathOption = new commander.Option(
   )} directory`
 )
 
+// Only `template migrate` reads e2b.toml; no other command accepts this option.
 export const configOption = new commander.Option(
   '--config <e2b-toml>',
   `specify path to the E2B config toml. By default E2B tries to find ${asBold(
     './e2b.toml'
   )} in root directory. We recommend using the new build system (https://e2b.dev/docs/template/defining-template) that does not use config files.`
 )
+
+// Accepted but ignored by commands that used to read e2b.toml, so existing
+// scripts keep working instead of failing with an opaque unknown option error.
+export const deprecatedConfigOption = new commander.Option(
+  '--config <e2b-toml>',
+  `[deprecated] ${asBold('e2b.toml')} is no longer read here`
+).hideHelp()
+
+/**
+ * Warn when the ignored --config flag is passed to a command that no longer
+ * reads e2b.toml.
+ */
+export function warnIgnoredConfigOption(opts: { config?: string }) {
+  if (!opts.config) return
+
+  console.error(
+    `The ${asBold('--config')} flag is no longer read here. Pass the template as ${asBold(
+      '[template]'
+    )} or select it with ${asBold('-s')}. ${asBold(
+      'e2b template migrate --config'
+    )} still reads ${asLocal('e2b.toml')}.`
+  )
+}
 
 export const selectMultipleOption = new commander.Option(
   '-s, --select',

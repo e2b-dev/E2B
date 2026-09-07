@@ -1,8 +1,27 @@
-import { assert, expect, describe } from 'vitest'
+import { assert, expect, describe, vi } from 'vitest'
 
 import { CommandExitError, Sandbox } from '../../src'
 import { sandboxTest, isDebug, template } from '../setup.js'
 import { httpbinTemplate } from '../template.js'
+
+async function waitForStatus(
+  url: string,
+  status: number,
+  init?: RequestInit
+): Promise<void> {
+  await vi.waitFor(
+    async () => {
+      const response = await fetch(url, {
+        ...init,
+        signal: AbortSignal.timeout(5_000),
+      })
+      const actualStatus = response.status
+      await response.body?.cancel()
+      assert.equal(actualStatus, status)
+    },
+    { timeout: 20_000, interval: 500 }
+  )
+}
 
 describe('allow only 1.1.1.1', () => {
   sandboxTest.override({
@@ -142,24 +161,20 @@ describe('allowPublicTraffic=false', () => {
         background: true,
       })
 
-      // Wait for server to start
-      await new Promise((resolve) => setTimeout(resolve, 3000))
-
       // Get the public URL for the sandbox
       const sandboxUrl = `https://${sandbox.getHost(port)}`
 
       // Test 1: Request without traffic access token should fail with 403
-      const response1 = await fetch(sandboxUrl)
-      assert.equal(response1.status, 403)
+      await waitForStatus(sandboxUrl, 403)
 
       // Test 2: Request with valid traffic access token should succeed
-      const response2 = await fetch(sandboxUrl, {
+      await waitForStatus(sandboxUrl, 200, {
         headers: {
           'e2b-traffic-access-token': sandbox.trafficAccessToken,
         },
       })
-      assert.equal(response2.status, 200)
-    }
+    },
+    60_000
   )
 })
 
@@ -181,16 +196,13 @@ describe('allowPublicTraffic=true', () => {
         background: true,
       })
 
-      // Wait for server to start
-      await new Promise((resolve) => setTimeout(resolve, 3000))
-
       // Get the public URL for the sandbox
       const sandboxUrl = `https://${sandbox.getHost(port)}`
 
       // Request without traffic access token should succeed (public access enabled)
-      const response = await fetch(sandboxUrl)
-      assert.equal(response.status, 200)
-    }
+      await waitForStatus(sandboxUrl, 200)
+    },
+    60_000
   )
 })
 
@@ -336,7 +348,7 @@ describe('maskRequestHost option', () => {
       const outputFile = '/tmp/headers.txt'
 
       // Start a Python HTTP server that captures request headers and writes them to a file
-      sandbox.commands.run(
+      await sandbox.commands.run(
         `python3 -c "
 import http.server
 class H(http.server.BaseHTTPRequestHandler):
@@ -352,28 +364,21 @@ http.server.HTTPServer(('', ${port}), H).handle_request()
         { background: true }
       )
 
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-
       // Get the public URL for the sandbox
       const sandboxUrl = `https://${sandbox.getHost(port)}`
 
       // Make a request from OUTSIDE the sandbox through the proxy
       // The Host header should be modified according to maskRequestHost
-      try {
-        await fetch(sandboxUrl, { signal: AbortSignal.timeout(5000) })
-      } catch (error) {
-        // Request may timeout, but headers are captured by the server
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      await waitForStatus(sandboxUrl, 200)
 
       // Read the captured headers from inside the sandbox
-      const result = await sandbox.commands.run(`cat ${outputFile}`)
+      const headers = await sandbox.files.read(outputFile)
 
       // Verify the Host header was modified according to maskRequestHost
-      assert.include(result.stdout, 'Host:')
-      assert.include(result.stdout, 'custom-host.example.com')
-      assert.include(result.stdout, `${port}`)
-    }
+      assert.include(headers, 'Host:')
+      assert.include(headers, 'custom-host.example.com')
+      assert.include(headers, `${port}`)
+    },
+    60_000
   )
 })

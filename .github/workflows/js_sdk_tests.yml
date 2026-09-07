@@ -19,6 +19,9 @@ on:
 permissions:
   contents: read
 
+env:
+  E2B_USER_AGENT_SOURCE: ci
+
 jobs:
   test:
     defaults:
@@ -28,6 +31,9 @@ jobs:
     name: JS SDK - ${{ matrix.runtime }} (${{ matrix.os }})
     strategy:
       fail-fast: false
+      # Each runtime keeps one live-test worker, so all six runtime/OS jobs can
+      # run together without restoring Vitest's default worker multiplication.
+      max-parallel: 6
       # With node-only (set by staging callers) the matrix collapses to the
       # Node legs: the Bun/Deno/Cloudflare legs re-run suites the Node legs
       # already cover and add sandbox/build load without extra backend
@@ -38,6 +44,8 @@ jobs:
             && fromJSON('[{"runtime": "node", "os": "ubuntu-22.04"}, {"runtime": "node", "os": "windows-latest"}]')
             || fromJSON('[{"runtime": "node", "os": "ubuntu-22.04"}, {"runtime": "node", "os": "windows-latest"}, {"runtime": "bun", "os": "ubuntu-22.04"}, {"runtime": "deno", "os": "ubuntu-22.04"}, {"runtime": "cloudflare", "os": "ubuntu-22.04"}, {"runtime": "cloudflare-deploy", "os": "ubuntu-22.04"}]') }}
     runs-on: ${{ matrix.os }}
+    env:
+      E2B_TEST_MAX_WORKERS: 1
     # The cloudflare-deploy leg is advisory: it deploys to a brand-new
     # Cloudflare preview account on every run, so it inherits that account's
     # propagation and read-after-write races (the fresh workers.dev subdomain
@@ -115,6 +123,8 @@ jobs:
       - name: Install Bun
         if: matrix.runtime == 'bun'
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: '${{ env.TOOL_VERSION_BUN }}'
 
       - name: Run test suite under Bun
         if: matrix.runtime == 'bun'

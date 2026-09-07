@@ -5,10 +5,11 @@ from e2b.exceptions import InvalidArgumentException, SandboxNotFoundException
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(90)
 async def test_fork(async_sandbox: AsyncSandbox):
     await async_sandbox.files.write("/home/user/state.txt", "state before fork")
 
-    forks = await async_sandbox.fork()
+    forks = await async_sandbox.fork(request_timeout=60)
     assert len(forks) == 1
 
     fork = forks[0]
@@ -35,8 +36,9 @@ async def test_fork(async_sandbox: AsyncSandbox):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(90)
 async def test_fork_multiple(async_sandbox: AsyncSandbox):
-    forks = await async_sandbox.fork(count=2, timeout=60)
+    forks = await async_sandbox.fork(count=2, timeout=60, request_timeout=60)
     assert len(forks) == 2
 
     forked_sandboxes = [fork for fork in forks if isinstance(fork, AsyncSandbox)]
@@ -56,8 +58,9 @@ async def test_fork_multiple(async_sandbox: AsyncSandbox):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(90)
 async def test_fork_by_id(async_sandbox: AsyncSandbox):
-    forks = await AsyncSandbox.fork(async_sandbox.sandbox_id)
+    forks = await AsyncSandbox.fork(async_sandbox.sandbox_id, request_timeout=60)
     assert len(forks) == 1
 
     fork = forks[0]
