@@ -1,6 +1,6 @@
 from typing import Dict, Type, TypeVar, cast
 
-from e2b import ApiParams
+from e2b import ApiParams, E2BClientParams
 from e2b import E2B as CoreE2B
 from typing_extensions import Unpack
 
@@ -8,10 +8,7 @@ from e2b_desktop.main import Sandbox
 
 T = TypeVar("T")
 
-
-class E2BClientParams(ApiParams, total=False):
-    """Params bound to an :class:`E2B` client, used as the defaults for every
-    call made through its resource classes. Same shape as :class:`ApiParams`."""
+__all__ = ["E2B", "E2BClientParams"]
 
 
 def _bind(cls: Type[T], api_params: ApiParams) -> Type[T]:
