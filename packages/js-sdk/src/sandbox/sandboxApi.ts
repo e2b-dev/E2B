@@ -663,6 +663,16 @@ export interface SandboxOpts extends ConnectionOpts {
 }
 
 /**
+ * How a paused sandbox comes back.
+ *
+ * `'restore'` restores the memory snapshot, so processes and open connections
+ * survive the pause. `'reboot'` ignores any memory in the snapshot and
+ * cold-boots from disk state alone — the rescue path for a snapshot whose
+ * memory image wedges the guest.
+ */
+export type SandboxOnResume = 'restore' | 'reboot'
+
+/**
  * Options for connecting to a Sandbox.
  */
 export type SandboxConnectOpts = ConnectionOpts & {
@@ -674,6 +684,17 @@ export type SandboxConnectOpts = ConnectionOpts & {
    * @default 300_000 // 5 minutes
    */
   timeoutMs?: number
+
+  /**
+   * How to bring a paused sandbox back: `'restore'` (the default) restores the
+   * memory snapshot; `'reboot'` cold-boots from disk state, so writes not
+   * flushed before the pause may be lost. Rejected where filesystem-only resume
+   * is not enabled; a no-op for a snapshot without memory or a sandbox that is
+   * already running.
+   *
+   * @default 'restore'
+   */
+  onResume?: SandboxOnResume
 }
 
 /**
@@ -1796,6 +1817,7 @@ export class SandboxApi extends ClientFactory {
       },
       body: {
         timeout: timeoutToSeconds(timeoutMs),
+        memory: apiOpts?.onResume === 'reboot' ? false : undefined,
       },
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
