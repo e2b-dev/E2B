@@ -282,7 +282,8 @@ class AsyncSandbox(SandboxApi):
         :param on_resume: `"restore"` (the default) restores the memory snapshot; `"reboot"`
             cold-boots from disk state, so writes not flushed before the pause may be lost.
             Rejected where filesystem-only resume is not enabled; a no-op for a snapshot
-            without memory or a sandbox that is already running.
+            without memory or a sandbox that is already running. A value outside the two
+            literals raises `InvalidArgumentException`.
         :return: A running sandbox instance
 
         @example
@@ -319,7 +320,8 @@ class AsyncSandbox(SandboxApi):
         :param on_resume: `"restore"` (the default) restores the memory snapshot; `"reboot"`
             cold-boots from disk state, so writes not flushed before the pause may be lost.
             Rejected where filesystem-only resume is not enabled; a no-op for a snapshot
-            without memory or a sandbox that is already running.
+            without memory or a sandbox that is already running. A value outside the two
+            literals raises `InvalidArgumentException`.
         :return: A running sandbox instance
 
         @example
@@ -352,7 +354,8 @@ class AsyncSandbox(SandboxApi):
         :param on_resume: `"restore"` (the default) restores the memory snapshot; `"reboot"`
             cold-boots from disk state, so writes not flushed before the pause may be lost.
             Rejected where filesystem-only resume is not enabled; a no-op for a snapshot
-            without memory or a sandbox that is already running.
+            without memory or a sandbox that is already running. A value outside the two
+            literals raises `InvalidArgumentException`.
         :return: A running sandbox instance
 
         @example

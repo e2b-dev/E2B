@@ -539,7 +539,8 @@ class SandboxLifecycle(TypedDict):
     What should happen to the sandbox when timeout is reached. `"kill"` terminates
     the sandbox; `"pause"` pauses it for later resume. Accepts either the bare
     action or an object `{"action": "pause", "keep_memory": ...}` /
-    `{"action": "kill"}` to also control the pause snapshot kind. Omitted from the
+    `{"action": "kill"}` to also control the pause snapshot kind. A value outside
+    the two actions raises `InvalidArgumentException`. Omitted from the
     create request when unset, leaving the API's default (currently `"kill"`) in
     effect.
     """
@@ -568,6 +569,27 @@ class SandboxInfoLifecycle(TypedDict):
     """
     Whether activity should cause the sandbox to resume when paused.
     """
+
+
+def resolve_connect_memory(
+    on_resume: Optional["SandboxOnResume"],
+) -> Union[Unset, bool]:
+    """Resolve ``on_resume`` into ``ConnectSandbox.memory``.
+
+    ``"restore"`` is the API's own default, so it travels as an omitted field.
+    """
+    # A nullish value is not a choice of restore, matching how every other
+    # nullish option is treated. Any other value outside the union never reaches
+    # the API — it is resolved here into the boolean memory field — so it cannot
+    # be rejected server-side, and resolving it to restore would silently skip
+    # the reboot the caller asked for.
+    if on_resume is None:
+        return UNSET
+    if on_resume not in ("restore", "reboot"):
+        raise InvalidArgumentException(
+            f"on_resume must be one of: restore, reboot (got {on_resume!r})."
+        )
+    return False if on_resume == "reboot" else UNSET
 
 
 SandboxOnResume = Literal["restore", "reboot"]
@@ -824,16 +846,14 @@ def build_lifecycle_config(
     unset unless the caller chose ``keep_memory``.
     """
     # on_timeout accepts a bare action or {"action", "keep_memory"}; normalize.
-    # Only the object form carries keep_memory; anything else (a bare action
-    # string, or an unexpected value from an untyped caller) passes through as
-    # the action, so a non-"pause" value resolves to kill instead of crashing.
+    # Only the object form carries keep_memory.
     on_timeout_raw = lifecycle.get("on_timeout") if lifecycle else None
     # A missing on_timeout — or an explicit None from an untyped caller — is not
     # a choice of kill. It only resolves to kill semantics locally, for the
     # validation below and for keep_memory.
     on_timeout_configured = on_timeout_raw is not None
     if isinstance(on_timeout_raw, dict):
-        on_timeout = on_timeout_raw.get("action", "kill")
+        on_timeout = on_timeout_raw.get("action")
         keep_memory_provided = "keep_memory" in on_timeout_raw
         keep_memory = on_timeout_raw.get("keep_memory")
     else:
@@ -842,6 +862,14 @@ def build_lifecycle_config(
         on_timeout = on_timeout_raw if on_timeout_configured else "kill"
         keep_memory = None
         keep_memory_provided = False
+
+    if on_timeout_configured and on_timeout not in ("pause", "kill"):
+        raise InvalidArgumentException(
+            f"on_timeout must be one of: pause, kill (got {on_timeout!r})."
+        )
+    # The action never reaches the API — it is resolved here into the boolean
+    # auto_pause — so an unrecognized value cannot be rejected server-side, and
+    # resolving it to kill would delete the sandbox a caller asked to preserve.
 
     # keep_memory only governs a pause action. The discriminated union type
     # forbids it on action="kill"; re-check at runtime for callers that

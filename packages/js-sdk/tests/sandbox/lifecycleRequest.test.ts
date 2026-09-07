@@ -154,3 +154,31 @@ test('an explicit null autoResume from an untyped caller is omitted', async () =
 
   expect(lastCreateBody).not.toHaveProperty('autoResume')
 })
+
+// onTimeout is resolved into the boolean autoPause before the request is built,
+// so the API never sees the action and cannot reject a typo. Resolving it to
+// kill would delete a sandbox the caller asked to preserve.
+const unrecognizedOnTimeout = [
+  'Pause',
+  'PAUSE',
+  'pause\n',
+  'paused',
+  true,
+  { action: 'Pause' },
+  {},
+]
+
+test.for(unrecognizedOnTimeout)(
+  'an unrecognized onTimeout %o is rejected',
+  async (onTimeout) => {
+    await expect(
+      Sandbox.create('base', {
+        apiKey: TEST_API_KEY,
+        // @ts-expect-error deliberately outside the union
+        lifecycle: { onTimeout },
+      })
+    ).rejects.toThrowError(InvalidArgumentError)
+
+    expect(lastCreateBody).toBeUndefined()
+  }
+)

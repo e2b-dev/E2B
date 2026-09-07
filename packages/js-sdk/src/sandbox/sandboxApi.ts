@@ -693,6 +693,7 @@ export type SandboxConnectOpts = ConnectionOpts & {
    * already running.
    *
    * @default 'restore'
+   * @throws {@link InvalidArgumentError} if the value is outside the two literals.
    */
   onResume?: SandboxOnResume
 }
@@ -1645,6 +1646,14 @@ export class SandboxApi extends ClientFactory {
     const onTimeoutConfigured = requestedOnTimeout != null
     const onTimeout = requestedOnTimeout ?? 'kill'
     const action = typeof onTimeout === 'string' ? onTimeout : onTimeout.action
+    if (onTimeoutConfigured && action !== 'pause' && action !== 'kill') {
+      throw new InvalidArgumentError(
+        `onTimeout must be one of: 'pause', 'kill' (got ${JSON.stringify(action)}).`
+      )
+    }
+    // The action never reaches the API — it is resolved here into the boolean
+    // autoPause — so an unrecognized value cannot be rejected server-side, and
+    // resolving it to kill would delete the sandbox a caller asked to preserve.
     const hasKeepMemory =
       typeof onTimeout !== 'string' && 'keepMemory' in onTimeout
     const keepMemory =
@@ -1809,6 +1818,21 @@ export class SandboxApi extends ClientFactory {
     const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
+    // A nullish value is not a choice of restore, matching every other nullish
+    // option. Any other value outside the union never reaches the API — it is
+    // resolved here into the boolean memory field — so it cannot be rejected
+    // server-side, and resolving it to restore would silently skip the reboot.
+    const onResume = apiOpts?.onResume ?? undefined
+    if (
+      onResume !== undefined &&
+      onResume !== 'restore' &&
+      onResume !== 'reboot'
+    ) {
+      throw new InvalidArgumentError(
+        `onResume must be one of: 'restore', 'reboot' (got ${JSON.stringify(onResume)}).`
+      )
+    }
+
     const res = await client.api.POST('/sandboxes/{sandboxID}/connect', {
       params: {
         path: {
@@ -1817,7 +1841,7 @@ export class SandboxApi extends ClientFactory {
       },
       body: {
         timeout: timeoutToSeconds(timeoutMs),
-        memory: apiOpts?.onResume === 'reboot' ? false : undefined,
+        memory: onResume === 'reboot' ? false : undefined,
       },
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
