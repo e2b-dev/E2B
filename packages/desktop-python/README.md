@@ -78,6 +78,16 @@ print(url)
 desktop.stream.stop()
 ```
 
+### Streaming a spectator-visible cursor
+
+By default, the cursor is sent separately as a VNC cursor shape. To make the
+sandbox cursor visible to view-only spectators, composite it into framebuffer
+updates:
+
+```python
+desktop.stream.start(cursor="composite")
+```
+
 ### Streaming with password protection
 
 ```python

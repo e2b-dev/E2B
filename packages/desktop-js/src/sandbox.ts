@@ -606,11 +606,19 @@ export class Sandbox extends SandboxBase {
   }
 }
 
+type CursorMode = 'shape' | 'composite'
+
 interface VNCServerOptions {
   vncPort?: number
   port?: number
   requireAuth?: boolean
   windowId?: string
+  /**
+   * How the cursor is sent to VNC clients. Use `composite` to draw the
+   * sandbox cursor into framebuffer updates so view-only spectators can see it.
+   * @default 'shape'
+   */
+  cursor?: CursorMode
 }
 
 interface UrlOptions {
@@ -697,7 +705,7 @@ class VNCServer {
     this.password = this.novncAuthEnabled ? generateRandomString() : undefined
     this.url = new URL(`https://${this.desktop.getHost(this.port)}/vnc.html`)
 
-    const vncCommand = await this.getVNCCommand(opts.windowId)
+    const vncCommand = await this.getVNCCommand(opts.windowId, opts.cursor)
     await this.desktop.commands.run(vncCommand)
 
     this.novncHandle = await this.desktop.commands.run(this.novncCommand, {
@@ -726,7 +734,10 @@ class VNCServer {
   /**
    * Set the VNC command to start the VNC server.
    */
-  private async getVNCCommand(windowId?: string): Promise<string> {
+  private async getVNCCommand(
+    windowId?: string,
+    cursor: CursorMode = 'shape'
+  ): Promise<string> {
     let pwdFlag = '-nopw'
     if (this.novncAuthEnabled) {
       // Create .vnc directory if it doesn't exist
@@ -739,7 +750,9 @@ class VNCServer {
 
     return (
       `x11vnc -bg -display ${this.desktop.display} -forever -wait 50 -shared ` +
-      `-rfbport ${this.vncPort} ${pwdFlag} 2>/tmp/x11vnc_stderr.log` +
+      `-rfbport ${this.vncPort} ${pwdFlag}` +
+      (cursor === 'composite' ? ' -nocursorshape' : '') +
+      ` 2>/tmp/x11vnc_stderr.log` +
       (windowId ? ` -id ${windowId}` : '')
     )
   }

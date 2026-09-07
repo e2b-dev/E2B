@@ -152,6 +152,7 @@ class _VNCServer:
         port: Optional[int] = None,
         require_auth: bool = False,
         window_id: Optional[str] = None,
+        cursor: Literal["shape", "composite"] = "shape",
     ) -> None:
         # If stream is already running, throw an error
         if self._check_vnc_running():
@@ -175,13 +176,13 @@ class _VNCServer:
             )
             pwd_flag = "-usepw"
 
-        window_id_flag = ""
-        if window_id:
-            window_id_flag = f"-id {window_id}"
+        window_id_flag = f" -id {window_id}" if window_id else ""
+        cursor_flag = " -nocursorshape" if cursor == "composite" else ""
 
         vnc_command = (
             f"x11vnc -bg -display {self.__desktop._display} -forever -wait 50 -shared "
-            f"-rfbport {self._vnc_port} {pwd_flag} 2>/tmp/x11vnc_stderr.log {window_id_flag}"
+            f"-rfbport {self._vnc_port} {pwd_flag}{cursor_flag} "
+            f"2>/tmp/x11vnc_stderr.log{window_id_flag}"
         )
 
         novnc_command = (
