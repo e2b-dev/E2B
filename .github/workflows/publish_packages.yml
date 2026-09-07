@@ -2,11 +2,15 @@ name: Publish Packages
 
 on:
   workflow_call:
+    inputs:
+      group:
+        description: Release group to version and publish (see .github/scripts/release.cjs)
+        required: true
+        type: string
     secrets:
-      E2B_API_KEY:
-        required: true
       PYPI_TOKEN:
-        required: true
+        description: PyPI token for the group's Python package; omit for groups without one
+        required: false
       VERSION_BUMPER_SECRET:
         required: true
 
@@ -15,8 +19,8 @@ permissions:
   id-token: write
 
 jobs:
-  test:
-    name: Build and test SDK
+  publish:
+    name: Version and publish
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1.12.0
@@ -68,23 +72,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Select publisher
-        id: publisher
-        run: |
-          pnpm changeset status --output="$RUNNER_TEMP/release-plan.json"
-          COMMAND=$(node .github/scripts/publish_command.cjs "$RUNNER_TEMP/release-plan.json")
-          echo "command=$COMMAND" >> "$GITHUB_OUTPUT"
-
       - name: Create new versions
-        run: pnpm run version
+        id: version
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GROUP: ${{ inputs.group }}
+        run: node .github/scripts/release.cjs version "$GROUP"
 
       - name: Commit new versions
         id: commit
-        # Commit before publishing, because `changeset publish` tags whatever HEAD
-        # it publishes from — tagging afterwards is what left every tag on the
-        # commit before its own version bump (SDK-298).
+        # Commit before publishing so the tags point at the commit that carries
+        # the version bump (SDK-298). When no changeset names the group, the
+        # versions are already committed and only their publish is outstanding.
+        if: steps.version.outputs.versioned == 'true'
+        env:
+          GROUP: ${{ inputs.group }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -96,31 +97,26 @@ jobs:
             echo "::error::'changeset version' produced no changes, so there is no version bump to publish or tag."
             exit 1
           fi
-          git commit -m "[skip ci] Release new versions"
-
-      - name: Release new versions
-        id: release
-        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
-        with:
-          publish: ${{ steps.publisher.outputs.command }}
-          createGithubReleases: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: '' # See https://github.com/changesets/changesets/issues/1152#issuecomment-3190884868
-          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+          git commit -m "[skip ci] Release ${GROUP}"
 
       - name: Push new versions
-        # A failed publish may have uploaded some Python packages before tagging.
-        # Preserve the versions after any attempt so a later release cannot reuse
-        # them for different contents.
-        if: always() && steps.commit.outcome == 'success' && steps.release.outcome != 'skipped'
+        # Push before publishing: the tags created below point at this commit,
+        # and a version must stay reserved even if the publish then fails so a
+        # later release cannot reuse it for different contents.
+        if: steps.commit.outcome == 'success'
         run: |
           if ! git push; then
-            # A PR merged mid-release. Merge rather than rebase: the tags already
-            # point at this commit and rewriting it would strand them off the branch.
+            # A PR merged mid-release. Merge rather than rebase: the tags are
+            # created on this commit and rewriting it would strand them off the branch.
             git fetch origin "${GITHUB_REF_NAME}"
             git merge --no-edit FETCH_HEAD
             git push
           fi
+
+      - name: Publish new versions
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GROUP: ${{ inputs.group }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: '' # See https://github.com/changesets/changesets/issues/1152#issuecomment-3190884868
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+        run: node .github/scripts/release.cjs publish "$GROUP"

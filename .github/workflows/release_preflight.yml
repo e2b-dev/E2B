@@ -1,0 +1,82 @@
+name: Release Preflight
+
+on:
+  workflow_call:
+    inputs:
+      group:
+        description: Release group (see .github/scripts/release.cjs)
+        required: true
+        type: string
+    outputs:
+      release:
+        description: Whether the group has anything to release
+        value: ${{ jobs.preflight.outputs.release }}
+      packages:
+        description: JSON array of the group packages being released
+        value: ${{ jobs.preflight.outputs.packages }}
+      itinerary:
+        description: Slack-formatted list of the packages being released
+        value: ${{ jobs.preflight.outputs.itinerary }}
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    name: Plan
+    runs-on: ubuntu-latest
+    outputs:
+      release: ${{ steps.plan.outputs.release }}
+      packages: ${{ steps.plan.outputs.packages }}
+      itinerary: ${{ steps.plan.outputs.itinerary }}
+    steps:
+      - name: Check the ref
+        # `workflow_dispatch` offers every branch in the picker, and a feature
+        # branch carrying changesets would otherwise publish real packages and
+        # push the version bump to that branch. Candidates cut from a branch go
+        # through release-candidate.yml.
+        if: github.ref != 'refs/heads/main'
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          echo "::error::Releases must run on main; this run is on ${REF}."
+          exit 1
+
+      - name: Checkout Repo
+        uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3.7.0
+
+      - name: Parse .tool-versions
+        uses: wistia/parse-tool-versions@32f568a4ffd4bfa7720ebf93f171597d1ebc979a # v2.1.1
+        with:
+          filename: '.tool-versions'
+          uppercase: 'true'
+          prefix: 'tool_version_'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+        with:
+          version: '${{ env.TOOL_VERSION_PNPM }}'
+
+      - name: Setup Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: '${{ env.TOOL_VERSION_NODEJS }}'
+          registry-url: 'https://registry.npmjs.org'
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Configure pnpm
+        run: |
+          pnpm config set auto-install-peers true
+          pnpm config set exclude-links-from-lockfile true
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Plan the release
+        id: plan
+        env:
+          GROUP: ${{ inputs.group }}
+        run: |
+          pnpm changeset status --output="$RUNNER_TEMP/changeset-status.json"
+          node .github/scripts/release.cjs plan "$GROUP" "$RUNNER_TEMP/changeset-status.json"
