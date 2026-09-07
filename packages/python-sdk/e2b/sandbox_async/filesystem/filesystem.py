@@ -53,6 +53,7 @@ from e2b.sandbox.filesystem.filesystem import (
     metadata_to_headers,
     to_upload_body_async,
     validate_metadata,
+    validate_read_format,
 )
 from e2b.sandbox.filesystem.watch_handle import FilesystemEvent
 from e2b.sandbox_async.filesystem.watch_handle import AsyncWatchHandle
@@ -197,6 +198,7 @@ class Filesystem:
         gzip: bool = False,
         stream_idle_timeout: Optional[float] = None,
     ):
+        validate_read_format(format)
         username = user
         if username is None and self._envd_version < ENVD_DEFAULT_USER:
             username = default_username

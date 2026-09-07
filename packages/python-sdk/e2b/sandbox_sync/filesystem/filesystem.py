@@ -50,6 +50,7 @@ from e2b.sandbox.filesystem.filesystem import (
     metadata_to_headers,
     to_upload_body,
     validate_metadata,
+    validate_read_format,
 )
 from e2b.sandbox_sync.filesystem.watch_handle import WatchHandle
 
@@ -190,6 +191,7 @@ class Filesystem:
         gzip: bool = False,
         stream_idle_timeout: Optional[float] = None,
     ):
+        validate_read_format(format)
         username = user
         if username is None and self._envd_version < ENVD_DEFAULT_USER:
             username = default_username

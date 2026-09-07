@@ -15,6 +15,7 @@ import {
 } from '../connectionConfig'
 import { isArrayBufferLike, isBlobLike } from '../is'
 import {
+  InvalidArgumentError,
   VolumeError,
   VolumeNotFoundError,
   VolumePathNotFoundError,
@@ -29,6 +30,16 @@ import type {
   VolumeReadOpts,
   VolumeWriteOpts,
 } from './types'
+
+const READ_FORMATS = ['text', 'bytes', 'blob', 'stream']
+
+function assertReadFormat(format: string): void {
+  if (!READ_FORMATS.includes(format)) {
+    throw new InvalidArgumentError(
+      `format must be one of ${READ_FORMATS.join(', ')}.`
+    )
+  }
+}
 
 /**
  * Convert API VolumeEntryStat to SDK VolumeEntryStat.
@@ -557,6 +568,7 @@ export class Volume extends ClientFactory {
     }
   ): Promise<unknown> {
     const format = opts?.format ?? 'text'
+    assertReadFormat(format)
     const config = new VolumeConnectionConfig(this, {
       ...opts,
       requestTimeoutMs: opts?.requestTimeoutMs ?? FILE_TIMEOUT_MS,

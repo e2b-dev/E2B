@@ -32,6 +32,7 @@ from e2b.exceptions import (
     VolumeNotFoundException,
     VolumePathNotFoundException,
 )
+from e2b.sandbox.filesystem.filesystem import validate_read_format
 from e2b.volume.client.api.volumes import (
     get_volumecontent_volume_id_path as get_path,
     get_volumecontent_volume_id_dir as get_dir,
@@ -503,6 +504,7 @@ class AsyncVolume(ClientFactory):
 
         :return: File content as string, bytes, or async iterator of bytes
         """
+        validate_read_format(format)
         config = self._get_volume_config(**opts)
         api_client = get_volume_api_client(config)
 

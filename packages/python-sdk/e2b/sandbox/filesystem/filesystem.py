@@ -345,6 +345,16 @@ METADATA_HEADER_PREFIX = "X-Metadata-"
 _METADATA_KEY_REGEX = re.compile(r"\A[A-Za-z0-9!#$%&'*+\-.^_`|~]+\Z")
 _METADATA_VALUE_REGEX = re.compile(r"\A[\x20-\x7e]*\Z")
 
+_READ_FORMATS = ("text", "bytes", "stream")
+
+
+def validate_read_format(format: str) -> None:
+    """Reject a read format that is not one of the documented literals."""
+    if format not in _READ_FORMATS:
+        raise InvalidArgumentException(
+            f"format must be one of {', '.join(_READ_FORMATS)}."
+        )
+
 
 def validate_metadata(metadata: Optional[Dict[str, str]]) -> None:
     """Validate metadata keys/values before they are sent as upload headers."""

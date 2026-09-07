@@ -203,6 +203,16 @@ const METADATA_HEADER_PREFIX = 'X-Metadata-'
 const METADATA_KEY_REGEX = /^[A-Za-z0-9!#$%&'*+\-.^_`|~]+$/
 const METADATA_VALUE_REGEX = /^[\x20-\x7e]*$/
 
+const READ_FORMATS = ['text', 'bytes', 'blob', 'stream']
+
+function assertReadFormat(format: string): void {
+  if (!READ_FORMATS.includes(format)) {
+    throw new InvalidArgumentError(
+      `format must be one of ${READ_FORMATS.join(', ')}.`
+    )
+  }
+}
+
 function validateMetadata(metadata: Record<string, string> | undefined): void {
   if (!metadata) return
   for (const [key, value] of Object.entries(metadata)) {
@@ -457,6 +467,7 @@ export class Filesystem {
     }
   ): Promise<unknown> {
     const format = opts?.format ?? 'text'
+    assertReadFormat(format)
 
     let user = opts?.user
     if (
