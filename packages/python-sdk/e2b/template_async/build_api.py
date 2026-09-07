@@ -299,7 +299,7 @@ async def wait_for_build_finish(
                 step_index = get_build_step_index(
                     build_status.reason.step, len(stack_traces)
                 )
-                if step_index < len(stack_traces):
+                if step_index is not None and 0 <= step_index < len(stack_traces):
                     traceback = stack_traces[step_index]
 
             raise BuildException(
