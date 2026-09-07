@@ -1,5 +1,17 @@
 # e2b
 
+## 2.47.0
+
+### Minor Changes
+
+- 1980d6b: Add `onResume` / `on_resume` to `Sandbox.connect()`: `'reboot'` resumes a paused sandbox from its disk state alone, leaving the memory snapshot untouched, for the case where restoring that memory wedges the guest. `'restore'` stays the default. Where filesystem-only resume is not enabled, a `'reboot'` that would actually drop memory is rejected with an error rather than silently restoring it.
+- 043d050: Removed generated types for endpoints the SDKs never exposed. The JS `components['schemas']` namespace and the Python `e2b.api.client.models` package no longer include the admin, cluster/rig, node, team-API-key and access-token schemas (`Node`, `NodeDetail`, `NodeMetrics`, `NodeStatus`, `NodeStatusChange`, `MachineInfo`, `DiskMetrics`, `Rig*`, `Admin*`, `TeamAPIKey`, `NewTeamAPIKey`, `CreatedTeamAPIKey`, `UpdateTeamAPIKey`, `IdentifierMaskingDetails`, `VolumeToken`; Python additionally `Team`, `TeamMetric`, `MaxTeamMetric`, `CreatedAccessToken`, `NewAccessToken`). No SDK method ever accepted or returned them, so code that uses the SDK through its methods is unaffected; code that imported these type names directly must drop the import.
+
+### Patch Changes
+
+- cd921aa: Bump `@bufbuild/protobuf` to ^2.14.1 and the optional `undici8` dependency to undici@8.10.1
+- 3289fdc: Remove unused CLI formatting helpers and de-duplicate internal constants
+
 ## 2.46.1
 
 ### Patch Changes
