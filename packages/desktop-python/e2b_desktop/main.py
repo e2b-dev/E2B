@@ -152,7 +152,7 @@ class _VNCServer:
         port: Optional[int] = None,
         require_auth: bool = False,
         window_id: Optional[str] = None,
-        cursor: Literal["shape", "composite"] = "shape",
+        cursor: CursorMode = "shape",
     ) -> None:
         # If stream is already running, throw an error
         if self._check_vnc_running():
