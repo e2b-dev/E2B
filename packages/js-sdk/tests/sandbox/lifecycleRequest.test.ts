@@ -182,3 +182,22 @@ test.for(unrecognizedOnTimeout)(
     expect(lastCreateBody).toBeUndefined()
   }
 )
+
+test.for([
+  ['Pause', 'onTimeout'],
+  [{ action: 'Pause' }, 'onTimeout.action'],
+  [{}, 'onTimeout.action'],
+] as const)(
+  'the error for %o names the field the caller wrote',
+  async ([onTimeout, expectedField]) => {
+    await expect(
+      Sandbox.create('base', {
+        apiKey: TEST_API_KEY,
+        // @ts-expect-error deliberately outside the union
+        lifecycle: { onTimeout },
+      })
+    ).rejects.toThrowError(
+      new RegExp(`^${expectedField.replace('.', '\\.')} must be one of`)
+    )
+  }
+)

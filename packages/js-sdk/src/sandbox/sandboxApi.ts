@@ -456,6 +456,8 @@ export type SandboxLifecycle = {
    * `'kill'`, or `{ action, keepMemory }` to also control the pause snapshot kind.
    * Omitted from the create request when unset, leaving the API's default
    * (currently `kill`) in effect.
+   *
+   * @throws {@link InvalidArgumentError} if the action is outside the two literals.
    */
   onTimeout: SandboxOnTimeout
 
@@ -1647,8 +1649,12 @@ export class SandboxApi extends ClientFactory {
     const onTimeout = requestedOnTimeout ?? 'kill'
     const action = typeof onTimeout === 'string' ? onTimeout : onTimeout.action
     if (onTimeoutConfigured && action !== 'pause' && action !== 'kill') {
+      // Name the field the caller wrote: the object form's bad value is on
+      // `.action`, not on `onTimeout` itself.
+      const field =
+        typeof onTimeout === 'string' ? 'onTimeout' : 'onTimeout.action'
       throw new InvalidArgumentError(
-        `onTimeout must be one of: 'pause', 'kill' (got ${JSON.stringify(action)}).`
+        `${field} must be one of: 'pause', 'kill' (got ${JSON.stringify(action)}).`
       )
     }
     // The action never reaches the API — it is resolved here into the boolean

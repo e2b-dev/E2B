@@ -237,3 +237,25 @@ async def test_async_create_rejects_an_unrecognized_on_timeout(
         )
 
     request.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "on_timeout,expected_field",
+    [
+        ("Pause", "on_timeout"),
+        ({"action": "Pause"}, 'on_timeout["action"]'),
+        ({}, 'on_timeout["action"]'),
+    ],
+)
+def test_the_error_names_the_field_the_caller_wrote(
+    monkeypatch, test_api_key, on_timeout, expected_field
+):
+    request = Mock(return_value=_created_sandbox())
+    monkeypatch.setattr(post_sandboxes, "sync_detailed", request)
+
+    with pytest.raises(InvalidArgumentException) as excinfo:
+        Sandbox.create(
+            api_key=test_api_key, lifecycle=cast(Any, {"on_timeout": on_timeout})
+        )
+
+    assert str(excinfo.value).startswith(f"{expected_field} must be one of")

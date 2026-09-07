@@ -864,8 +864,13 @@ def build_lifecycle_config(
         keep_memory_provided = False
 
     if on_timeout_configured and on_timeout not in ("pause", "kill"):
+        # Name the field the caller wrote: the object form's bad value is on
+        # "action", not on on_timeout itself.
+        field = (
+            'on_timeout["action"]' if isinstance(on_timeout_raw, dict) else "on_timeout"
+        )
         raise InvalidArgumentException(
-            f"on_timeout must be one of: pause, kill (got {on_timeout!r})."
+            f"{field} must be one of: pause, kill (got {on_timeout!r})."
         )
     # The action never reaches the API — it is resolved here into the boolean
     # auto_pause — so an unrecognized value cannot be rejected server-side, and
