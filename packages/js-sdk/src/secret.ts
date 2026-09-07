@@ -163,6 +163,8 @@ export class Secret extends ClientFactory {
    *
    * @returns the secret's ID, name, current version (`1` for a new secret),
    * metadata, and creation and update times.
+   *
+   * @throws {InvalidArgumentError} if `name` is empty or contains `{`, `}` or control characters.
    */
   static async create(
     name: string,

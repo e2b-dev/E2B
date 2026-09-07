@@ -107,6 +107,9 @@ class AsyncSecret(SecretBase):
 
         :return: The secret's ID, name, current version (`1` for a new
             secret), metadata, and creation and update times.
+
+        :raises InvalidArgumentException: If ``name`` is empty or contains
+            ``{``, ``}`` or control characters.
         """
         _validate_secret_name(name)
         config = ConnectionConfig(**cls._resolve_api_params(**opts))
