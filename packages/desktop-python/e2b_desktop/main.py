@@ -176,7 +176,7 @@ class _VNCServer:
             )
             pwd_flag = "-usepw"
 
-        window_id_flag = f" -id {window_id}" if window_id else ""
+        window_id_flag = f" -id {quote_string(window_id)}" if window_id else ""
         cursor_flag = " -nocursorshape" if cursor == "composite" else ""
 
         vnc_command = (
