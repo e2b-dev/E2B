@@ -68,7 +68,7 @@ Per-call params still take precedence over the client's params, and clients are 
 
 ### High-concurrency sandbox streams
 
-The Python SDK spreads sandbox `commands` and `files` traffic across four HTTP/2 connection pools by default. This prevents long-running streams in one process from all contending for a single connection's concurrent-stream limit.
+The Python SDK spreads sandbox `commands` and `files` traffic across four HTTP/2 connection pools by default, keyed by sandbox ID. This prevents long-running streams in one process from all contending for a single connection's concurrent-stream limit.
 
 If one process needs more capacity, set `E2B_ENVD_POOL_SHARDS` before importing `e2b`. Each additional shard can open another connection to the sandbox host, so increase it only as needed:
 
