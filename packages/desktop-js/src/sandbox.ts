@@ -448,16 +448,13 @@ export class Sandbox extends SandboxBase {
 
   /**
    * Drag the mouse from the given position to the given position.
-   * @param from - The starting position.
-   * @param to - The ending position.
+   * @param from - The starting position as `[x, y]`.
+   * @param to - The ending position as `[x, y]`.
    */
-  async drag(
-    [x1, y1]: [number, number],
-    [x2, y2]: [number, number]
-  ): Promise<void> {
-    await this.moveMouse(x1, y1)
+  async drag(from: [number, number], to: [number, number]): Promise<void> {
+    await this.moveMouse(...from)
     await this.mousePress()
-    await this.moveMouse(x2, y2)
+    await this.moveMouse(...to)
     await this.mouseRelease()
   }
 
