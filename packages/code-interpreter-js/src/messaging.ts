@@ -184,7 +184,7 @@ export class Result {
     this.data = data['data']
     this.chart = data['chart']
       ? (deserializeChart(data['chart']) as ChartTypes)
-      : data['chart']
+      : undefined
 
     this.extra = {}
 

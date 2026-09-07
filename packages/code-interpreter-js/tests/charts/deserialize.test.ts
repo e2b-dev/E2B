@@ -37,3 +37,9 @@ test('Result tags nested unknown SuperChart members', () => {
   expect(result.chart?.type).toBe(ChartType.SUPERCHART)
   expect(result.chart?.elements[1].type).toBe(ChartType.UNKNOWN)
 })
+
+test('Result leaves chart undefined when the payload chart is null', () => {
+  const result = new Result({ chart: null } as never, true)
+
+  expect(result.chart).toBeUndefined()
+})
