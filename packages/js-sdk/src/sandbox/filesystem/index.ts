@@ -53,7 +53,7 @@ import {
   TemplateError,
 } from '../../errors'
 import { isReadableStreamLike } from '../../is'
-import { runtime, toBlob, toUploadBody } from '../../utils'
+import { runtime, toBlob, toUploadBody, assertReadFormat } from '../../utils'
 
 const FILESYSTEM_HTTP_ERROR_MAP: Record<number, (message: string) => Error> = {
   404: (message: string) => new FileNotFoundError(message),
@@ -202,16 +202,6 @@ const METADATA_HEADER_PREFIX = 'X-Metadata-'
 // printable US-ASCII.
 const METADATA_KEY_REGEX = /^[A-Za-z0-9!#$%&'*+\-.^_`|~]+$/
 const METADATA_VALUE_REGEX = /^[\x20-\x7e]*$/
-
-const READ_FORMATS = ['text', 'bytes', 'blob', 'stream']
-
-function assertReadFormat(format: string): void {
-  if (!READ_FORMATS.includes(format)) {
-    throw new InvalidArgumentError(
-      `format must be one of ${READ_FORMATS.join(', ')}.`
-    )
-  }
-}
 
 function validateMetadata(metadata: Record<string, string> | undefined): void {
   if (!metadata) return
