@@ -20,7 +20,7 @@ from e2b.api.client.types import UNSET
 from e2b.api.client_async import get_api_client
 from e2b.connection_config import ApiParams, ConnectionConfig, merge_api_params
 from e2b.exceptions import SecretException, SecretNotFoundException
-from e2b.secret.base import SecretBase, SecretPaginatorBase
+from e2b.secret.base import SecretBase, SecretPaginatorBase, _validate_secret_name
 from e2b.secret.types import SecretInfo
 
 
@@ -108,6 +108,7 @@ class AsyncSecret(SecretBase):
         :return: The secret's ID, name, current version (`1` for a new
             secret), metadata, and creation and update times.
         """
+        _validate_secret_name(name)
         config = ConnectionConfig(**cls._resolve_api_params(**opts))
         api_client = get_api_client(config)
         res = await post_secrets.asyncio_detailed(

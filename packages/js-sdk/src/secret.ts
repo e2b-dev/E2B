@@ -169,6 +169,8 @@ export class Secret extends ClientFactory {
     value: string,
     opts?: SecretCreateOpts
   ): Promise<SecretInfo> {
+    validateSecretName(name)
+
     const apiOpts = this.resolveOpts(opts)
     const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)

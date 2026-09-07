@@ -202,3 +202,17 @@ def test_fill():
 def test_fill_invalid_name_raises(name):
     with pytest.raises(InvalidArgumentException):
         Secret.fill(name)
+
+
+@pytest.mark.parametrize("name", ["", "{name", "name}", "name\n", "name\x00"])
+def test_create_invalid_name_raises(name):
+    with pytest.raises(InvalidArgumentException):
+        Secret.create(name, "v")
+    assert _secrets == {}
+
+
+def test_create_invalid_name_without_api_key(monkeypatch):
+    monkeypatch.delenv("E2B_API_KEY", raising=False)
+    with pytest.raises(InvalidArgumentException):
+        Secret.create("", "v")
+    assert _secrets == {}
