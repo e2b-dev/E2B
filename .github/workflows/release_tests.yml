@@ -3,6 +3,7 @@ name: Release tooling tests
 on:
   pull_request:
     paths:
+      - '.changeset/**'
       - '.github/scripts/**'
       - '.github/workflows/release*.yml'
       - '.github/workflows/publish_packages.yml'
@@ -31,3 +32,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm run test:release
+      # Each release pipeline versions only its own group, so a changeset that
+      # names packages from two groups could never be consumed cleanly.
+      - name: Check changesets stay within one release group
+        run: pnpm run release check

@@ -1,0 +1,82 @@
+name: Release E2B SDK
+
+# Releases `e2b` (npm) and `e2b` (PyPI) from the changesets that name them.
+# Sibling pipelines: release_cli.yml, release_code_interpreter.yml, release_desktop.yml.
+
+on:
+  workflow_dispatch: {}
+
+# Shared literal group so every production and candidate release on the same
+# ref serializes: each pipeline pushes a version bump to main.
+concurrency: release-${{ github.ref }}
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  preflight:
+    name: Preflight
+    uses: ./.github/workflows/release_preflight.yml
+    with:
+      group: e2b
+
+  js-tests:
+    name: JS SDK Tests
+    needs: [preflight]
+    if: contains(needs.preflight.outputs.packages, '"e2b"')
+    uses: ./.github/workflows/js_sdk_tests.yml
+    secrets: inherit
+
+  python-tests:
+    name: Python SDK Tests
+    needs: [preflight]
+    if: contains(needs.preflight.outputs.packages, '"@e2b/python-sdk"')
+    uses: ./.github/workflows/python_sdk_tests.yml
+    secrets: inherit
+
+  publish:
+    name: Publish
+    needs: [preflight, js-tests, python-tests]
+    if: (!cancelled()) && !contains(needs.*.result, 'failure') && needs.preflight.outputs.release == 'true'
+    uses: ./.github/workflows/publish_packages.yml
+    with:
+      group: e2b
+    secrets:
+      PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+      VERSION_BUMPER_SECRET: ${{ secrets.VERSION_BUMPER_SECRET }}
+
+  report-start:
+    name: Release Started
+    needs: [preflight]
+    if: needs.preflight.outputs.release == 'true'
+    uses: ./.github/workflows/release_notify.yml
+    with:
+      release: E2B SDK
+      status: started
+      itinerary: ${{ needs.preflight.outputs.itinerary }}
+    secrets:
+      SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+
+  report-failure:
+    name: Release Failed
+    needs: [preflight, js-tests, python-tests, publish]
+    if: failure()
+    uses: ./.github/workflows/release_notify.yml
+    with:
+      release: E2B SDK
+      status: failed
+    secrets:
+      SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+
+  report-success:
+    name: Release Succeeded
+    needs: [preflight, publish]
+    if: (!cancelled()) && needs.publish.result == 'success'
+    uses: ./.github/workflows/release_notify.yml
+    with:
+      release: E2B SDK
+      status: succeeded
+      itinerary: ${{ needs.preflight.outputs.itinerary }}
+    secrets:
+      SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}

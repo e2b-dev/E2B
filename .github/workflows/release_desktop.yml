@@ -1,0 +1,83 @@
+name: Release Desktop SDK
+
+# Releases `@e2b/desktop` (npm) and `e2b-desktop` (PyPI) from the changesets
+# that name them.
+# Sibling pipelines: release_e2b.yml, release_cli.yml, release_code_interpreter.yml.
+
+on:
+  workflow_dispatch: {}
+
+# Shared literal group so every production and candidate release on the same
+# ref serializes: each pipeline pushes a version bump to main.
+concurrency: release-${{ github.ref }}
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  preflight:
+    name: Preflight
+    uses: ./.github/workflows/release_preflight.yml
+    with:
+      group: desktop
+
+  js-tests:
+    name: Desktop JS SDK Tests
+    needs: [preflight]
+    if: contains(needs.preflight.outputs.packages, '"@e2b/desktop"')
+    uses: ./.github/workflows/desktop_js_tests.yml
+    secrets: inherit
+
+  python-tests:
+    name: Desktop Python SDK Tests
+    needs: [preflight]
+    if: contains(needs.preflight.outputs.packages, '"@e2b/desktop-python"')
+    uses: ./.github/workflows/desktop_python_tests.yml
+    secrets: inherit
+
+  publish:
+    name: Publish
+    needs: [preflight, js-tests, python-tests]
+    if: (!cancelled()) && !contains(needs.*.result, 'failure') && needs.preflight.outputs.release == 'true'
+    uses: ./.github/workflows/publish_packages.yml
+    with:
+      group: desktop
+    secrets:
+      PYPI_TOKEN: ${{ secrets.DESKTOP_PYPI_TOKEN }}
+      VERSION_BUMPER_SECRET: ${{ secrets.VERSION_BUMPER_SECRET }}
+
+  report-start:
+    name: Release Started
+    needs: [preflight]
+    if: needs.preflight.outputs.release == 'true'
+    uses: ./.github/workflows/release_notify.yml
+    with:
+      release: Desktop SDK
+      status: started
+      itinerary: ${{ needs.preflight.outputs.itinerary }}
+    secrets:
+      SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+
+  report-failure:
+    name: Release Failed
+    needs: [preflight, js-tests, python-tests, publish]
+    if: failure()
+    uses: ./.github/workflows/release_notify.yml
+    with:
+      release: Desktop SDK
+      status: failed
+    secrets:
+      SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+
+  report-success:
+    name: Release Succeeded
+    needs: [preflight, publish]
+    if: (!cancelled()) && needs.publish.result == 'success'
+    uses: ./.github/workflows/release_notify.yml
+    with:
+      release: Desktop SDK
+      status: succeeded
+      itinerary: ${{ needs.preflight.outputs.itinerary }}
+    secrets:
+      SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
