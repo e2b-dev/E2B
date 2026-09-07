@@ -117,8 +117,7 @@ export type SandboxNetworkRule = {
  * also appear in {@link SandboxNetworkOpts.allowOut}.
  */
 export type SandboxNetworkRules =
-  | Record<string, SandboxNetworkRule[]>
-  | Map<string, SandboxNetworkRule[]>
+  Record<string, SandboxNetworkRule[]> | Map<string, SandboxNetworkRule[]>
 
 /**
  * Per-domain rule as returned by the sandbox info endpoint. Mirrors
@@ -146,8 +145,7 @@ export type SandboxNetworkSelectorContext = {
  * the same.
  */
 export type SandboxNetworkSelector =
-  | string[]
-  | ((ctx: SandboxNetworkSelectorContext) => string[])
+  string[] | ((ctx: SandboxNetworkSelectorContext) => string[])
 
 /**
  * SOCKS5 proxy the sandbox's outbound TCP is tunneled through — "bring your
@@ -488,20 +486,19 @@ export type SandboxInfoLifecycle = {
 /**
  * Options for request to the Sandbox API.
  */
-export interface SandboxApiOpts
-  extends Partial<
-    Pick<
-      ConnectionOpts,
-      | 'apiKey'
-      | 'validateApiKey'
-      | 'headers'
-      | 'apiHeaders'
-      | 'debug'
-      | 'domain'
-      | 'requestTimeoutMs'
-      | 'signal'
-    >
-  > {}
+export interface SandboxApiOpts extends Partial<
+  Pick<
+    ConnectionOpts,
+    | 'apiKey'
+    | 'validateApiKey'
+    | 'headers'
+    | 'apiHeaders'
+    | 'debug'
+    | 'domain'
+    | 'requestTimeoutMs'
+    | 'signal'
+  >
+> {}
 
 /**
  * Options for pausing a sandbox.
