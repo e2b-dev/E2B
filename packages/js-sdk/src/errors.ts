@@ -11,6 +11,11 @@ export function formatSandboxTimeoutError(message: string) {
  * Thrown when general sandbox errors occur.
  */
 export class SandboxError extends Error {
+  /**
+   * HTTP status of the API response that produced this error, when there was one.
+   */
+  statusCode?: number
+
   constructor(message?: string) {
     super(message)
     this.name = 'SandboxError'
@@ -144,6 +149,23 @@ export class RateLimitError extends SandboxError {
   constructor(message: string) {
     super(message)
     this.name = 'RateLimitError'
+    this.statusCode = 429
+  }
+}
+
+/**
+ * Thrown when the API refused the operation because the service or the node
+ * running the sandbox is temporarily busy (HTTP 503).
+ *
+ * The sandbox itself is unchanged: for example a refused pause leaves it
+ * running with its state intact, so the same call can be retried after a
+ * short wait, or the sandbox can simply be used further.
+ */
+export class SandboxBusyError extends SandboxError {
+  constructor(message: string) {
+    super(message)
+    this.name = 'SandboxBusyError'
+    this.statusCode = 503
   }
 }
 

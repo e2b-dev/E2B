@@ -20,6 +20,7 @@ export {
   TemplateError,
   TimeoutError,
   RateLimitError,
+  SandboxBusyError,
   BuildError,
   FileUploadError,
   VolumeError,

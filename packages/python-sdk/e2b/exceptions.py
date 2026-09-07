@@ -1,3 +1,6 @@
+from typing import Optional
+
+
 def format_sandbox_timeout_exception(message: str):
     return TimeoutException(
         f"{message}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeout' when starting the sandbox or calling '.set_timeout' on the sandbox with the desired timeout."
@@ -17,7 +20,10 @@ class SandboxException(Exception):
     Raised when a general sandbox exception occurs.
     """
 
-    pass
+    def __init__(self, *args, status_code: Optional[int] = None):
+        super().__init__(*args)
+        # HTTP status of the API response that produced this error, when there was one.
+        self.status_code = status_code
 
 
 class TimeoutException(SandboxException):
@@ -115,6 +121,23 @@ class RateLimitException(SandboxException):
     """
     Raised when the API rate limit is exceeded.
     """
+
+    def __init__(self, *args):
+        super().__init__(*args, status_code=429)
+
+
+class SandboxBusyException(SandboxException):
+    """
+    Raised when the API refused the operation because the service or the node
+    running the sandbox is temporarily busy (HTTP 503).
+
+    The sandbox itself is unchanged: for example a refused pause leaves it
+    running with its state intact, so the same call can be retried after a
+    short wait, or the sandbox can simply be used further.
+    """
+
+    def __init__(self, *args):
+        super().__init__(*args, status_code=503)
 
 
 class BuildException(Exception):

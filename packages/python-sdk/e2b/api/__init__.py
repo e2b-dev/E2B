@@ -19,6 +19,7 @@ from e2b.exceptions import (
     AuthenticationException,
     InvalidArgumentException,
     RateLimitException,
+    SandboxBusyException,
     SandboxException,
 )
 
@@ -199,6 +200,12 @@ def api_exception_from_code(
             text += f" - {message}"
         return RateLimitException(text)
 
+    if status_code == 503:
+        text = f"{status_code}: Service temporarily unavailable, please retry."
+        if message:
+            text += f" - {message}"
+        return SandboxBusyException(text)
+
     return default_exception_class(f"{status_code}: {message}").with_traceback(
         stack_trace
     )
@@ -215,7 +222,7 @@ def handle_api_exception(
         body = {}
 
     message = body["message"] if "message" in body else None
-    if message is None and e.status_code not in (401, 429):
+    if message is None and e.status_code not in (401, 429, 503):
         return default_exception_class(f"{e.status_code}: {e.content}").with_traceback(
             stack_trace
         )
