@@ -44,8 +44,35 @@ with Sandbox.create() as sandbox:
     print(execution.text)  # outputs 2
 ```
 
-### 4. Check docs
+### 4. Bind the configuration to a client
+
+The top-level `Sandbox` and `AsyncSandbox` exports read their configuration from the environment variables. To use an explicit configuration — e.g. several API keys or domains in one process — create an `E2B` client and use the resource classes it exposes:
+
+```py
+from e2b_code_interpreter import E2B
+
+client = E2B(api_key="e2b_***", domain="e2b.dev")
+
+with client.Sandbox.create() as sandbox:
+    execution = sandbox.run_code("x = 1; x += 1; x")
+
+# The async variant is exposed as well.
+async_sandbox = await client.AsyncSandbox.create()
+
+# The core resources are bound to the client's configuration as well.
+volume = client.Volume.create("my-volume")
+exists = client.Template.exists("my-template")
+secret = client.Secret.create("openai-api-key", "sk-***")
+
+# The classes can be assigned and used like the top-level ones.
+Sandbox = client.Sandbox
+paginator = Sandbox.list()
+```
+
+Per-call params still take precedence over the client's params, and clients are isolated from each other and from the env-configured top-level exports.
+
+### 5. Check docs
 Visit [E2B documentation](https://docs.e2b.dev/?utm_source=pypi&utm_medium=referral&utm_campaign=readme&utm_content=code-interpreter).
 
-### 5. E2B cookbook
+### 6. E2B cookbook
 Visit our [Cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main) to get inspired by examples with different LLMs and AI frameworks.
