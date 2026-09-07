@@ -209,6 +209,13 @@ async function version(cwd, groupName) {
         run('pnpm', ['--filter', name, 'run', 'postVersion'], { cwd })
       }
     }
+    // The Python packages pin the workspace `e2b` in their uv.lock, so a bump
+    // of one Python package has to be re-locked in every other one.
+    for (const { dir } of workspacePackages(cwd).values()) {
+      if (fs.existsSync(path.join(dir, 'uv.lock'))) {
+        run('uv', ['lock'], { cwd: dir })
+      }
+    }
   } finally {
     for (const [to, from] of moved) fs.renameSync(to, from)
     fs.rmSync(parking, { recursive: true, force: true })

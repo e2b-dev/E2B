@@ -101,6 +101,9 @@ exit 0
 cp "$7" "$RELEASE_NOTES/$(echo "$3" | tr / _)"
 exit 0
 `,
+  uv: `${stubPrelude('uv')}
+exit 0
+`,
 }
 
 function fixture(t, { changesets = {}, changelogs = {} } = {}) {
@@ -128,6 +131,7 @@ function fixture(t, { changesets = {}, changelogs = {} } = {}) {
     )
     if (changelogs[dir])
       fs.writeFileSync(path.join(pkgDir, 'CHANGELOG.md'), changelogs[dir])
+    if (packageJson.private) fs.writeFileSync(path.join(pkgDir, 'uv.lock'), '')
   }
 
   const bin = path.join(root, 'bin')
@@ -286,13 +290,16 @@ test('plan fails on a changeset that spans release groups', (t) => {
   assert.equal(result.stdout, '')
 })
 
-test('version consumes only the group changesets and syncs only the group Python versions', (t) => {
+test('version consumes only the group changesets, syncs only the group Python versions and re-locks every uv.lock', (t) => {
   const repo = fixture(t, { changesets: pending })
   const result = repo.run(['version', 'e2b'])
   assert.equal(result.status, 0, result.stderr)
   assert.deepEqual(result.commands, [
     'pnpm changeset version',
     'pnpm --filter @e2b/python-sdk run postVersion',
+    'uv lock @ packages/code-interpreter-python',
+    'uv lock @ packages/desktop-python',
+    'uv lock @ packages/python-sdk',
   ])
   assert.equal(result.stdout, 'versioned=true\n')
   assert.deepEqual(repo.changesetFiles(), ['cli-fix.md', 'desktop-fix.md'])
