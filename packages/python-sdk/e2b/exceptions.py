@@ -18,11 +18,12 @@ class SandboxException(Exception):
     Base class for all sandbox errors.
 
     Raised when a general sandbox exception occurs.
+
+    :param status_code: HTTP status of the API response that produced this error, when there was one.
     """
 
     def __init__(self, *args, status_code: Optional[int] = None):
         super().__init__(*args)
-        # HTTP status of the API response that produced this error, when there was one.
         self.status_code = status_code
 
 

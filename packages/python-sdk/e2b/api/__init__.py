@@ -200,15 +200,22 @@ def api_exception_from_code(
             text += f" - {message}"
         return RateLimitException(text)
 
-    if status_code == 503:
+    # Only the sandbox domain gets the dedicated class: a 503 raised through
+    # another hierarchy (BuildException, TemplateException, ...) keeps that
+    # hierarchy and carries the status instead.
+    if status_code == 503 and default_exception_class is SandboxException:
         text = f"{status_code}: Service temporarily unavailable, please retry."
         if message:
             text += f" - {message}"
         return SandboxBusyException(text)
 
-    return default_exception_class(f"{status_code}: {message}").with_traceback(
+    err = default_exception_class(f"{status_code}: {message}").with_traceback(
         stack_trace
     )
+    if isinstance(err, SandboxException):
+        err.status_code = status_code
+
+    return err
 
 
 def handle_api_exception(
@@ -223,9 +230,13 @@ def handle_api_exception(
 
     message = body["message"] if "message" in body else None
     if message is None and e.status_code not in (401, 429, 503):
-        return default_exception_class(f"{e.status_code}: {e.content}").with_traceback(
+        err = default_exception_class(f"{e.status_code}: {e.content}").with_traceback(
             stack_trace
         )
+        if isinstance(err, SandboxException):
+            err.status_code = e.status_code
+
+        return err
 
     return api_exception_from_code(
         e.status_code,

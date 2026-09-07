@@ -30,13 +30,34 @@ def test_503_without_a_body_is_still_a_busy_exception():
     assert err.status_code == 503
 
 
-def test_generic_failure_stays_a_sandbox_exception_without_a_status():
+def test_generic_failure_stays_a_sandbox_exception_and_carries_its_status():
     err = handle_api_exception(response(500, b'{"message":"Internal error"}'))
 
     assert isinstance(err, SandboxException)
     assert not isinstance(err, SandboxBusyException)
-    assert err.status_code is None
+    assert err.status_code == 500
     assert str(err) == "500: Internal error"
+
+
+def test_generic_failure_without_a_body_carries_its_status():
+    err = handle_api_exception(response(502, b"bad gateway"))
+
+    assert isinstance(err, SandboxException)
+    assert err.status_code == 502
+
+
+def test_503_through_another_hierarchy_keeps_that_hierarchy():
+    class BuildLikeException(SandboxException):
+        pass
+
+    err = handle_api_exception(
+        response(503, b'{"message":"no capacity"}'),
+        default_exception_class=BuildLikeException,
+    )
+
+    assert isinstance(err, BuildLikeException)
+    assert not isinstance(err, SandboxBusyException)
+    assert err.status_code == 503
 
 
 def test_rate_limit_carries_429():

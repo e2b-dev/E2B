@@ -97,6 +97,20 @@ describe('handleApiError', () => {
       assert.equal(err.statusCode, 500)
     })
 
+    test('a 503 raised through another error hierarchy keeps that hierarchy', () => {
+      class BuildLikeError extends SandboxError {
+        constructor(message: string) {
+          super(message)
+          this.name = 'BuildLikeError'
+        }
+      }
+      const res = createMockResponse(503, { message: 'no capacity' })
+      const err = handleApiError(res as any, BuildLikeError) as SandboxError
+      assert.instanceOf(err, BuildLikeError)
+      assert.notInstanceOf(err, SandboxBusyError)
+      assert.equal(err.statusCode, 503)
+    })
+
     test('RateLimitError carries 429', () => {
       const res = createMockResponse(429, { message: 'slow down' })
       const err = handleApiError(res as any) as SandboxError
