@@ -396,6 +396,11 @@ class Sandbox(SandboxBase):
     def right_click(self, x: Optional[int] = None, y: Optional[int] = None):
         """
         Right click on the mouse position.
+
+        :param x: X coordinate to move the mouse to before clicking. Must be given together with ``y``.
+        :param y: Y coordinate to move the mouse to before clicking. Must be given together with ``x``.
+
+        :raises ValueError: If only one of ``x`` and ``y`` is provided.
         """
         if (x is None) != (y is None):
             raise ValueError("Both x and y must be provided together")
