@@ -19,7 +19,7 @@ import {
   VolumeNotFoundError,
   VolumePathNotFoundError,
 } from '../errors'
-import { toUploadBody, assertReadFormat } from '../utils'
+import { toUploadBody, assertReadFormat, type ReadFormat } from '../utils'
 import { VolumeFileType } from './types'
 import type {
   VolumeAndToken,
@@ -553,10 +553,10 @@ export class Volume extends ClientFactory {
   async readFile(
     path: string,
     opts?: VolumeReadOpts & {
-      format?: 'text' | 'stream' | 'bytes' | 'blob'
+      format?: ReadFormat
     }
   ): Promise<unknown> {
-    const format = opts?.format ?? 'text'
+    const format = opts?.format === undefined ? 'text' : opts.format
     assertReadFormat(format)
     const config = new VolumeConnectionConfig(this, {
       ...opts,

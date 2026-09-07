@@ -32,7 +32,7 @@ from e2b.exceptions import (
     VolumeNotFoundException,
     VolumePathNotFoundException,
 )
-from e2b.sandbox.filesystem.filesystem import validate_read_format
+from e2b.sandbox.filesystem.filesystem import ReadFormat, validate_read_format
 from e2b.volume.client.api.volumes import (
     get_volumecontent_volume_id_path as get_path,
     get_volumecontent_volume_id_dir as get_dir,
@@ -482,7 +482,7 @@ class AsyncVolume(ClientFactory):
     async def read_file(
         self,
         path: str,
-        format: Literal["text", "bytes", "stream"] = "text",
+        format: ReadFormat = "text",
         stream_idle_timeout: Optional[float] = None,
         **opts: Unpack[VolumeApiParams],
     ) -> Union[str, bytes, AsyncIterator[bytes]]:

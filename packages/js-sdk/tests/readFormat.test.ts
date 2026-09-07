@@ -30,12 +30,32 @@ test('files.read throws InvalidArgumentError on an unrecognized format', async (
   expect(get).not.toHaveBeenCalled()
 })
 
+test('files.read throws InvalidArgumentError on an explicit null format', async () => {
+  const { fs, get } = stubFilesystem()
+  await expect(fs.read('/tmp/x', { format: null as never })).rejects.toThrow(
+    InvalidArgumentError
+  )
+  expect(get).not.toHaveBeenCalled()
+})
+
 test('volume.readFile throws InvalidArgumentError on an unrecognized format', async () => {
   const vol = new Volume('vol-id', 'name', 'tok')
   const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(() => {
     throw new Error('GET should not be called')
   })
   await expect(vol.readFile('/x', { format: 'Text' as never })).rejects.toThrow(
+    InvalidArgumentError
+  )
+  expect(fetchSpy).not.toHaveBeenCalled()
+  fetchSpy.mockRestore()
+})
+
+test('volume.readFile throws InvalidArgumentError on an explicit null format', async () => {
+  const vol = new Volume('vol-id', 'name', 'tok')
+  const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(() => {
+    throw new Error('GET should not be called')
+  })
+  await expect(vol.readFile('/x', { format: null as never })).rejects.toThrow(
     InvalidArgumentError
   )
   expect(fetchSpy).not.toHaveBeenCalled()

@@ -243,10 +243,12 @@ export async function toUploadBody(
   return { body: await toBlob(data), streamed: false }
 }
 
-const READ_FORMATS = ['text', 'bytes', 'blob', 'stream']
+export const READ_FORMATS = ['text', 'bytes', 'blob', 'stream'] as const
 
-export function assertReadFormat(format: string): void {
-  if (!READ_FORMATS.includes(format)) {
+export type ReadFormat = (typeof READ_FORMATS)[number]
+
+export function assertReadFormat(format: string): asserts format is ReadFormat {
+  if (!(READ_FORMATS as readonly string[]).includes(format)) {
     throw new InvalidArgumentError(
       `format must be one of ${READ_FORMATS.join(', ')}.`
     )

@@ -38,6 +38,8 @@ def test_sync_filesystem_read_rejects_unrecognized_format():
     fs = _sync_fs()
     with pytest.raises(InvalidArgumentException, match="format must be one of"):
         fs.read("/tmp/x", cast(Any, "Text"))
+    with pytest.raises(InvalidArgumentException, match="format must be one of"):
+        fs.read("/tmp/x", cast(Any, None))
 
 
 async def test_async_filesystem_read_rejects_unrecognized_format():

@@ -44,6 +44,7 @@ from e2b.exceptions import (
 from e2b.sandbox.filesystem.filesystem import (
     AsyncFileStreamReader,
     EntryInfo,
+    ReadFormat,
     WriteEntry,
     WriteInfo,
     _to_httpx_file,
@@ -192,7 +193,7 @@ class Filesystem:
     async def read(
         self,
         path: str,
-        format: Literal["text", "bytes", "stream"] = "text",
+        format: ReadFormat = "text",
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         gzip: bool = False,
