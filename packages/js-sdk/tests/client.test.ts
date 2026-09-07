@@ -105,6 +105,8 @@ const envOverrides = {
   E2B_API_URL: undefined,
   E2B_SANDBOX_URL: undefined,
   E2B_DEBUG: undefined,
+  E2B_PROJECT_ID: undefined,
+  E2B_REGION: undefined,
 }
 
 beforeAll(() => {
@@ -146,6 +148,30 @@ test('client.Sandbox.create uses the client config instead of env vars', async (
   assert.equal(lastRequest().apiKey, API_KEY_A)
   // The bound config is also carried by the created sandbox instance.
   assert.equal(sandbox.sandboxDomain, DOMAIN_A)
+})
+
+test('client projectId and region scope requests to the project endpoint', async () => {
+  const client = new E2B({
+    apiKey: API_KEY_A,
+    domain: DOMAIN_A,
+    projectId: 'prj-123',
+    region: 'us-east-1',
+  })
+
+  const sandbox = await client.Sandbox.create()
+
+  assert.equal(
+    lastRequest().url,
+    `https://api.prj-123.prj.us-east-1.${DOMAIN_A}/sandboxes`
+  )
+  assert.equal(sandbox.sandboxDomain, `prj-123.prj.us-east-1.${DOMAIN_A}`)
+
+  await client.Sandbox.create({ projectId: 'prj-456', region: 'eu-west-1' })
+
+  assert.equal(
+    lastRequest().url,
+    `https://api.prj-456.prj.eu-west-1.${DOMAIN_A}/sandboxes`
+  )
 })
 
 test('client.Sandbox instances are subclass instances of Sandbox', async () => {

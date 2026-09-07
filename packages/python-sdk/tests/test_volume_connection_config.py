@@ -50,6 +50,18 @@ def test_volume_api_url_custom_domain_in_args():
     assert config.api_url == "https://api.custom.com"
 
 
+def test_volume_api_url_uses_project_endpoint_from_env(monkeypatch):
+    monkeypatch.delenv("E2B_VOLUME_API_URL", raising=False)
+    monkeypatch.delenv("E2B_DEBUG", raising=False)
+    monkeypatch.setenv("E2B_DOMAIN", "e2b.app")
+    monkeypatch.setenv("E2B_PROJECT_ID", "prj-123")
+    monkeypatch.setenv("E2B_REGION", "us-east-1")
+
+    config = VolumeConnectionConfig()
+    assert config.domain == "prj-123.prj.us-east-1.e2b.app"
+    assert config.api_url == "https://api.prj-123.prj.us-east-1.e2b.app"
+
+
 def test_volume_token_does_not_fall_back_to_access_token_env(monkeypatch):
     monkeypatch.setenv("E2B_ACCESS_TOKEN", "env-access-token")
 

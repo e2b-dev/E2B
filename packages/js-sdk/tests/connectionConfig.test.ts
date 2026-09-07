@@ -12,6 +12,8 @@ beforeEach(() => {
   originalEnv = {
     E2B_API_URL: process.env.E2B_API_URL,
     E2B_DOMAIN: process.env.E2B_DOMAIN,
+    E2B_PROJECT_ID: process.env.E2B_PROJECT_ID,
+    E2B_REGION: process.env.E2B_REGION,
     E2B_SANDBOX_URL: process.env.E2B_SANDBOX_URL,
     E2B_DEBUG: process.env.E2B_DEBUG,
     E2B_USER_AGENT_SOURCE: process.env.E2B_USER_AGENT_SOURCE,
@@ -36,6 +38,8 @@ test('api_url defaults correctly', () => {
   // Ensure no env vars interfere
   delete process.env.E2B_API_URL
   delete process.env.E2B_DOMAIN
+  delete process.env.E2B_PROJECT_ID
+  delete process.env.E2B_REGION
   delete process.env.E2B_DEBUG
 
   const config = new ConnectionConfig()
@@ -59,6 +63,149 @@ test('api_url has correct priority', () => {
 
   const config = new ConnectionConfig({ apiUrl: 'http://localhost:8080' })
   assert.equal(config.apiUrl, 'http://localhost:8080')
+})
+
+test('project and region default to unset', () => {
+  delete process.env.E2B_PROJECT_ID
+  delete process.env.E2B_REGION
+
+  const config = new ConnectionConfig({ domain: 'e2b.app' })
+  assert.equal(config.projectId, undefined)
+  assert.equal(config.region, undefined)
+  assert.equal(config.resolvedDomain, 'e2b.app')
+})
+
+test('project and region in args scope the api url to the project endpoint', () => {
+  delete process.env.E2B_API_URL
+  delete process.env.E2B_DEBUG
+
+  const config = new ConnectionConfig({
+    domain: 'e2b.app',
+    projectId: 'prj-123',
+    region: 'us-east-1',
+  })
+
+  assert.equal(config.domain, 'e2b.app')
+  assert.equal(config.resolvedDomain, 'prj-123.prj.us-east-1.e2b.app')
+  assert.equal(config.apiUrl, 'https://api.prj-123.prj.us-east-1.e2b.app')
+})
+
+test('project and region in env vars scope the api url to the project endpoint', () => {
+  delete process.env.E2B_API_URL
+  delete process.env.E2B_DEBUG
+  process.env.E2B_DOMAIN = 'e2b.dev'
+  process.env.E2B_PROJECT_ID = 'prj-env'
+  process.env.E2B_REGION = 'eu-west-1'
+
+  const config = new ConnectionConfig()
+
+  assert.equal(config.projectId, 'prj-env')
+  assert.equal(config.region, 'eu-west-1')
+  assert.equal(config.apiUrl, 'https://api.prj-env.prj.eu-west-1.e2b.dev')
+})
+
+test('project and region in args have priority over env vars', () => {
+  delete process.env.E2B_API_URL
+  process.env.E2B_PROJECT_ID = 'prj-env'
+  process.env.E2B_REGION = 'eu-west-1'
+
+  const config = new ConnectionConfig({
+    domain: 'e2b.app',
+    projectId: 'prj-arg',
+    region: 'us-east-1',
+  })
+
+  assert.equal(config.resolvedDomain, 'prj-arg.prj.us-east-1.e2b.app')
+})
+
+test('empty project and region env vars mean unset', () => {
+  process.env.E2B_PROJECT_ID = ''
+  process.env.E2B_REGION = ''
+
+  const config = new ConnectionConfig({ domain: 'e2b.app' })
+  assert.equal(config.projectId, undefined)
+  assert.equal(config.region, undefined)
+  assert.equal(config.resolvedDomain, 'e2b.app')
+})
+
+test('project without region leaves the domain unscoped', () => {
+  delete process.env.E2B_API_URL
+  delete process.env.E2B_DEBUG
+  delete process.env.E2B_REGION
+
+  const config = new ConnectionConfig({
+    domain: 'e2b.app',
+    projectId: 'prj-123',
+  })
+
+  assert.equal(config.projectId, 'prj-123')
+  assert.equal(config.resolvedDomain, 'e2b.app')
+  assert.equal(config.apiUrl, 'https://api.e2b.app')
+})
+
+test('explicit api_url wins over project and region', () => {
+  const config = new ConnectionConfig({
+    apiUrl: 'http://localhost:8080',
+    projectId: 'prj-123',
+    region: 'us-east-1',
+  })
+
+  assert.equal(config.apiUrl, 'http://localhost:8080')
+})
+
+test('project and region survive config rebuilds', () => {
+  delete process.env.E2B_API_URL
+  delete process.env.E2B_DEBUG
+
+  const config = new ConnectionConfig({
+    domain: 'e2b.app',
+    projectId: 'prj-123',
+    region: 'us-east-1',
+  })
+  const rebuilt = new ConnectionConfig({ ...config })
+
+  assert.equal(rebuilt.projectId, 'prj-123')
+  assert.equal(rebuilt.region, 'us-east-1')
+  assert.equal(rebuilt.apiUrl, 'https://api.prj-123.prj.us-east-1.e2b.app')
+})
+
+test('sandbox host falls back to the project endpoint without a sandbox domain', () => {
+  delete process.env.E2B_SANDBOX_URL
+  delete process.env.E2B_DEBUG
+
+  const config = new ConnectionConfig({
+    domain: 'e2b.app',
+    projectId: 'prj-123',
+    region: 'us-east-1',
+  })
+
+  assert.equal(
+    config.getHost('sbx-test', 3000),
+    '3000-sbx-test.prj-123.prj.us-east-1.e2b.app'
+  )
+  assert.equal(
+    config.getSandboxUrl('sbx-test', { envdPort: 49983 }),
+    'https://49983-sbx-test.prj-123.prj.us-east-1.e2b.app'
+  )
+})
+
+test('sandbox domain returned by the API wins over the project endpoint', () => {
+  delete process.env.E2B_SANDBOX_URL
+  delete process.env.E2B_DEBUG
+
+  const config = new ConnectionConfig({
+    domain: 'e2b.app',
+    projectId: 'prj-123',
+    region: 'us-east-1',
+  })
+
+  assert.equal(
+    config.getSandboxUrl('sbx-test', {
+      sandboxDomain: 'e2b.app',
+      envdPort: 49983,
+    }),
+    'https://sandbox.e2b.app'
+  )
 })
 
 test('sandbox_url defaults to stable sandbox host in production', () => {

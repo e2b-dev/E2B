@@ -11,6 +11,27 @@ export const KEEPALIVE_PING_INTERVAL_SEC = 50 // 50 seconds
 
 export const KEEPALIVE_PING_HEADER = 'Keepalive-Ping-Interval'
 
+export const DEFAULT_DOMAIN = 'e2b.app'
+
+/**
+ * Compose the domain requests are sent to. With both a project ID and a
+ * region the project's regional endpoint `<projectId>.prj.<region>.<domain>`
+ * is used; otherwise the plain `domain`.
+ *
+ * @internal
+ */
+export function resolveDomain(
+  domain: string,
+  projectId?: string,
+  region?: string
+): string {
+  if (projectId && region) {
+    return `${projectId}.prj.${region}.${domain}`
+  }
+
+  return domain
+}
+
 /**
  * Connection options for requests to the API.
  */
@@ -34,6 +55,22 @@ export interface ConnectionOpts {
    * @default E2B_DOMAIN // environment variable or `e2b.app`
    */
   domain?: string
+  /**
+   * E2B project ID. Together with `region` it scopes requests to the project's
+   * regional endpoint `${projectId}.prj.${region}.${domain}`; without a
+   * `region` it has no effect on the endpoint.
+   *
+   * @default E2B_PROJECT_ID // environment variable
+   */
+  projectId?: string
+  /**
+   * Region of the E2B project. Together with `projectId` it scopes requests to
+   * the project's regional endpoint `${projectId}.prj.${region}.${domain}`;
+   * without a `projectId` it has no effect on the endpoint.
+   *
+   * @default E2B_REGION // environment variable
+   */
+  region?: string
   /**
    * API Url to use for the API.
    * @internal
@@ -402,7 +439,14 @@ export class ConnectionConfig {
   }
 
   readonly debug: boolean
+  /**
+   * Domain as configured, without the project and region scoping.
+   * Use {@link ConnectionConfig.resolvedDomain} for the domain requests are
+   * actually sent to.
+   */
   readonly domain: string
+  readonly projectId?: string
+  readonly region?: string
   readonly apiUrl: string
   readonly sandboxUrl?: string
   readonly logger?: Logger
@@ -434,6 +478,8 @@ export class ConnectionConfig {
     this.validateApiKey = opts?.validateApiKey
     this.debug = opts?.debug ?? ConnectionConfig.debug
     this.domain = opts?.domain || ConnectionConfig.domain
+    this.projectId = opts?.projectId || ConnectionConfig.projectId
+    this.region = opts?.region || ConnectionConfig.region
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.logger = opts?.logger
     this.requestSource = ConnectionConfig.getRequestSource()
@@ -444,9 +490,20 @@ export class ConnectionConfig {
     this.apiUrl =
       opts?.apiUrl ||
       ConnectionConfig.apiUrl ||
-      (this.debug ? 'http://localhost:3000' : `https://api.${this.domain}`)
+      (this.debug
+        ? 'http://localhost:3000'
+        : `https://api.${this.resolvedDomain}`)
 
     this.sandboxUrl = opts?.sandboxUrl || ConnectionConfig.sandboxUrl
+  }
+
+  /**
+   * Domain requests are sent to: the project's regional endpoint
+   * `${projectId}.prj.${region}.${domain}` when both `projectId` and `region`
+   * are set, otherwise {@link ConnectionConfig.domain}.
+   */
+  get resolvedDomain(): string {
+    return resolveDomain(this.domain, this.projectId, this.region)
   }
 
   /**
@@ -487,7 +544,15 @@ export class ConnectionConfig {
   }
 
   private static get domain() {
-    return getEnvVar('E2B_DOMAIN') || 'e2b.app'
+    return getEnvVar('E2B_DOMAIN') || DEFAULT_DOMAIN
+  }
+
+  private static get projectId() {
+    return getEnvVar('E2B_PROJECT_ID') || undefined
+  }
+
+  private static get region() {
+    return getEnvVar('E2B_REGION') || undefined
   }
 
   private static get apiUrl() {
@@ -512,7 +577,7 @@ export class ConnectionConfig {
 
   getSandboxUrl(
     sandboxId: string,
-    opts: { sandboxDomain: string; envdPort: number }
+    opts: { sandboxDomain?: string; envdPort: number }
   ) {
     if (this.sandboxUrl) {
       return this.sandboxUrl
@@ -522,7 +587,7 @@ export class ConnectionConfig {
       return `http://${this.getHost(sandboxId, opts.envdPort, opts.sandboxDomain)}`
     }
 
-    const sandboxDomain = opts.sandboxDomain ?? this.domain
+    const sandboxDomain = opts.sandboxDomain ?? this.resolvedDomain
     // The stable sandbox host is only guaranteed for E2B prod; the various other hosted domains may not serve sandbox.<domain> yet and will follow up once those are updated.
     // Issue with cors from browser so holding off on using in browser as well.
     if (runtime !== 'browser' && supportedDomains.includes(sandboxDomain)) {
@@ -534,7 +599,7 @@ export class ConnectionConfig {
 
   getSandboxDirectUrl(
     sandboxId: string,
-    opts: { sandboxDomain: string; envdPort: number }
+    opts: { sandboxDomain?: string; envdPort: number }
   ) {
     if (this.sandboxUrl) {
       return this.sandboxUrl
@@ -547,12 +612,12 @@ export class ConnectionConfig {
     return `https://${this.getHost(sandboxId, opts.envdPort, opts.sandboxDomain)}`
   }
 
-  getHost(sandboxId: string, port: number, sandboxDomain: string) {
+  getHost(sandboxId: string, port: number, sandboxDomain?: string) {
     if (this.debug) {
       return `localhost:${port}`
     }
 
-    return `${port}-${sandboxId}.${sandboxDomain ?? this.domain}`
+    return `${port}-${sandboxId}.${sandboxDomain ?? this.resolvedDomain}`
   }
 }
 

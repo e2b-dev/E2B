@@ -43,7 +43,7 @@ class SandboxBase(ClientFactory):
     ):
         self.__connection_config = connection_config
         self.__sandbox_id = sandbox_id
-        self.__sandbox_domain = sandbox_domain or self.connection_config.domain
+        self.__sandbox_domain = sandbox_domain or self.connection_config.resolved_domain
         self.__envd_version = envd_version
         self.__envd_access_token = envd_access_token
         self.__traffic_access_token = traffic_access_token
