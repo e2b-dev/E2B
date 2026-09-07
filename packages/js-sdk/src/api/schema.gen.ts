@@ -1731,6 +1731,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v2/templates/{templateID}/refresh-envd": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rebuild a template with the current envd
+         * @description Derives a new build of the template FROM the template's own latest ready
+         *     build, forcing the host's current envd binary to replace the one baked in
+         *     by the original build. Specs (cpu, memory) and the alias are inherited
+         *     from the source build. Returns the new build to poll via the existing
+         *     build status/logs endpoints.
+         *
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    templateID: components["parameters"]["templateID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The refresh build was requested successfully */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TemplateRefreshEnvdResponse"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v3/templates": {
         parameters: {
             query?: never;
@@ -2984,6 +3035,16 @@ export interface components {
              * @description Time when the template was last updated
              */
             updatedAt: string;
+        };
+        TemplateRefreshEnvdResponse: {
+            /** @description Aliases of the template (inherited from the source) */
+            aliases?: string[];
+            /** @description Identifier of the new build; poll its status/logs endpoints */
+            buildID: string;
+            /** @description envd version the source build was baked with */
+            fromEnvdVersion: string;
+            /** @description Identifier of the template being refreshed */
+            templateID: string;
         };
         TemplateRequestResponseV3: {
             /**

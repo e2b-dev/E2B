@@ -1063,6 +1063,26 @@ components:
         buildStatus:
           $ref: "#/components/schemas/TemplateBuildStatus"
 
+    TemplateRefreshEnvdResponse:
+      required:
+        - templateID
+        - buildID
+        - fromEnvdVersion
+      properties:
+        templateID:
+          type: string
+          description: Identifier of the template being refreshed
+        buildID:
+          type: string
+          description: Identifier of the new build; poll its status/logs endpoints
+        fromEnvdVersion:
+          type: string
+          description: envd version the source build was baked with
+        aliases:
+          type: array
+          description: Aliases of the template (inherited from the source)
+          items:
+            type: string
     TemplateRequestResponseV3:
       required:
         - templateID
@@ -3237,6 +3257,42 @@ paths:
           description: The build has started
         "401":
           $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /v2/templates/{templateID}/refresh-envd:
+    post:
+      summary: Rebuild a template with the current envd
+      description: |
+        Derives a new build of the template FROM the template's own latest ready
+        build, forcing the host's current envd binary to replace the one baked in
+        by the original build. Specs (cpu, memory) and the alias are inherited
+        from the source build. Returns the new build to poll via the existing
+        build status/logs endpoints.
+      tags: [templates]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/templateID"
+      responses:
+        "202":
+          description: The refresh build was requested successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemplateRefreshEnvdResponse"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "404":
+          $ref: "#/components/responses/404"
         "500":
           $ref: "#/components/responses/500"
 
