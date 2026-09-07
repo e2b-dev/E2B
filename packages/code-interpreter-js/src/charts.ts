@@ -127,11 +127,13 @@ export function deserializeChart(data: any): Chart {
     case ChartType.BOX_AND_WHISKER:
       return { ...data } as BoxAndWhiskerChart
     case ChartType.SUPERCHART: {
-      const charts: Chart[] = data.data.map((g: any) => deserializeChart(g))
-      delete data.data
+      const nested = data.elements ?? data.data ?? []
+      const charts: Chart[] = nested.map((g: any) => deserializeChart(g))
+      const rest = { ...data }
+      delete rest.data
       return {
-        ...data,
-        data: charts,
+        ...rest,
+        elements: charts,
       } as SuperChart
     }
     default:
