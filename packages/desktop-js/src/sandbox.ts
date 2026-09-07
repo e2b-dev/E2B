@@ -606,7 +606,7 @@ export class Sandbox extends SandboxBase {
   }
 }
 
-type CursorMode = 'shape' | 'composite'
+export type CursorMode = 'shape' | 'composite'
 
 interface VNCServerOptions {
   vncPort?: number
