@@ -5,8 +5,6 @@ on:
     secrets:
       E2B_API_KEY:
         required: true
-      PYPI_TOKEN:
-        required: true
       VERSION_BUMPER_SECRET:
         required: true
 
@@ -107,7 +105,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: '' # See https://github.com/changesets/changesets/issues/1152#issuecomment-3190884868
-          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
       - name: Push new versions
         # A failed publish may have uploaded some Python packages before tagging.
