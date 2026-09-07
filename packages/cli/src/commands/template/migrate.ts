@@ -13,6 +13,7 @@ import { validateTemplateName } from '../../utils/templateName'
 import {
   generateAndWriteTemplateFiles,
   Language,
+  languageChoices,
   languageDisplay,
 } from './generators'
 
@@ -211,24 +212,7 @@ export const migrateCommand = new commander.Command('migrate')
           // Prompt for language selection
           language = await select({
             message: 'Select target language for Template SDK:',
-            choices: [
-              {
-                name: languageDisplay[Language.TypeScript],
-                value: Language.TypeScript,
-                description:
-                  'Generate .ts files for JavaScript/TypeScript projects',
-              },
-              {
-                name: languageDisplay[Language.PythonSync],
-                value: Language.PythonSync,
-                description: 'Generate synchronous Python template files',
-              },
-              {
-                name: languageDisplay[Language.PythonAsync],
-                value: Language.PythonAsync,
-                description: 'Generate asynchronous Python template files',
-              },
-            ],
+            choices: languageChoices,
             default: Language.TypeScript,
           })
         }

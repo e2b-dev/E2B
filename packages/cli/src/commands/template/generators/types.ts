@@ -10,6 +10,27 @@ export const languageDisplay = {
   [Language.PythonAsync]: 'Python (async)',
 }
 
+/**
+ * Choices for the interactive target language prompt.
+ */
+export const languageChoices = [
+  {
+    name: languageDisplay[Language.TypeScript],
+    value: Language.TypeScript,
+    description: 'Generate .ts files for JavaScript/TypeScript projects',
+  },
+  {
+    name: languageDisplay[Language.PythonSync],
+    value: Language.PythonSync,
+    description: 'Generate synchronous Python template files',
+  },
+  {
+    name: languageDisplay[Language.PythonAsync],
+    value: Language.PythonAsync,
+    description: 'Generate asynchronous Python template files',
+  },
+]
+
 export interface TemplateJSON {
   fromImage?: string
   fromTemplate?: string

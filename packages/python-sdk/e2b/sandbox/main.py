@@ -1,5 +1,5 @@
 import urllib.parse
-from typing import Optional, TypedDict
+from typing import Literal, Optional, TypedDict
 
 from packaging.version import Version
 
@@ -128,6 +128,41 @@ class SandboxBase(ClientFactory):
 
         return url
 
+    def _file_operation_url(
+        self,
+        path: str,
+        operation: Literal["read", "write"],
+        user: Optional[str] = None,
+        use_signature_expiration: Optional[int] = None,
+    ) -> str:
+        """
+        Build the files URL for a read or write operation, signing it when the
+        sandbox is secured.
+        """
+        use_signature = self._envd_access_token is not None
+        if not use_signature and use_signature_expiration is not None:
+            raise InvalidArgumentException(
+                "Signature expiration can be used only when sandbox is created as secured."
+            )
+
+        username = user
+        if username is None and self._envd_version < ENVD_DEFAULT_USER:
+            username = default_username
+
+        if not use_signature:
+            return self._file_url(path, username)
+
+        signature = get_signature(
+            path,
+            operation,
+            username,
+            self._envd_access_token,
+            use_signature_expiration,
+        )
+        return self._file_url(
+            path, username, signature["signature"], signature["expiration"]
+        )
+
     def download_url(
         self,
         path: str,
@@ -143,30 +178,7 @@ class SandboxBase(ClientFactory):
 
         :return: URL for downloading file
         """
-
-        use_signature = self._envd_access_token is not None
-        if not use_signature and use_signature_expiration is not None:
-            raise InvalidArgumentException(
-                "Signature expiration can be used only when sandbox is created as secured."
-            )
-
-        username = user
-        if username is None and self._envd_version < ENVD_DEFAULT_USER:
-            username = default_username
-
-        if use_signature:
-            signature = get_signature(
-                path,
-                "read",
-                username,
-                self._envd_access_token,
-                use_signature_expiration,
-            )
-            return self._file_url(
-                path, username, signature["signature"], signature["expiration"]
-            )
-        else:
-            return self._file_url(path, username)
+        return self._file_operation_url(path, "read", user, use_signature_expiration)
 
     def upload_url(
         self,
@@ -185,30 +197,7 @@ class SandboxBase(ClientFactory):
 
         :return: URL for uploading file
         """
-
-        use_signature = self._envd_access_token is not None
-        if not use_signature and use_signature_expiration is not None:
-            raise InvalidArgumentException(
-                "Signature expiration can be used only when sandbox is created as secured."
-            )
-
-        username = user
-        if username is None and self._envd_version < ENVD_DEFAULT_USER:
-            username = default_username
-
-        if use_signature:
-            signature = get_signature(
-                path,
-                "write",
-                username,
-                self._envd_access_token,
-                use_signature_expiration,
-            )
-            return self._file_url(
-                path, username, signature["signature"], signature["expiration"]
-            )
-        else:
-            return self._file_url(path, username)
+        return self._file_operation_url(path, "write", user, use_signature_expiration)
 
     def get_host(self, port: int) -> str:
         """
