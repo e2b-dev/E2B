@@ -1634,7 +1634,6 @@ export class SandboxApi extends ClientFactory {
   ) {
     const apiOpts = this.resolveOpts(opts)
     const config = new ConnectionConfig(apiOpts)
-    const client = new ApiClient(config)
     // onTimeout accepts a bare action (`'pause'` / `'kill'`) or the object form
     // `{ action, keepMemory }`. The discriminated union type forbids `keepMemory`
     // on `action: 'kill'`; re-check at runtime for untyped callers.
@@ -1704,6 +1703,7 @@ export class SandboxApi extends ClientFactory {
       )
     }
 
+    const client = new ApiClient(config)
     const res = await client.api.POST('/sandboxes', {
       body,
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),

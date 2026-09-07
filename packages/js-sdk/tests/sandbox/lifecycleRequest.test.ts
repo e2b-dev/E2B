@@ -127,6 +127,39 @@ test('Sandbox.create rejects autoResume without a timeout action', async () => {
   expect(lastCreateBody).toBeUndefined()
 })
 
+async function expectInvalidLifecycleWithoutApiKey(
+  lifecycle: NonNullable<Parameters<typeof Sandbox.create>[1]>['lifecycle']
+) {
+  const previous = process.env.E2B_API_KEY
+  delete process.env.E2B_API_KEY
+  try {
+    await expect(Sandbox.create('base', { lifecycle })).rejects.toThrowError(
+      InvalidArgumentError
+    )
+  } finally {
+    if (previous === undefined) {
+      delete process.env.E2B_API_KEY
+    } else {
+      process.env.E2B_API_KEY = previous
+    }
+  }
+  expect(lastCreateBody).toBeUndefined()
+}
+
+test('filesystem-only auto-pause with auto-resume is InvalidArgumentError without an API key', async () => {
+  await expectInvalidLifecycleWithoutApiKey({
+    onTimeout: { action: 'pause', keepMemory: false },
+    autoResume: true,
+  })
+})
+
+test('keepMemory on kill is InvalidArgumentError without an API key', async () => {
+  await expectInvalidLifecycleWithoutApiKey({
+    // @ts-expect-error keepMemory is not allowed with action: 'kill'
+    onTimeout: { action: 'kill', keepMemory: false },
+  })
+})
+
 test('an explicit autoResume: false is sent', async () => {
   await Sandbox.create('base', {
     apiKey: TEST_API_KEY,
