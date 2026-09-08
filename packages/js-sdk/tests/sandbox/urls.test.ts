@@ -21,6 +21,8 @@ describe('sandbox file URLs', () => {
 
     assert.equal(sandbox['envdApiUrl'], 'https://sandbox.e2b.app')
     assert.equal(sandbox['envdDirectUrl'], 'https://49983-sandbox-id.e2b.app')
+    assert.equal(sandbox.getHost(50051), '50051-sandbox-id.e2b.app')
+    assert.equal(sandbox.getGrpcTarget(50051), '50051-sandbox-id.e2b.app:443')
     assert.equal(
       await sandbox.downloadUrl('/tmp/a.txt'),
       'https://49983-sandbox-id.e2b.app/files?path=%2Ftmp%2Fa.txt'
@@ -29,6 +31,20 @@ describe('sandbox file URLs', () => {
       await sandbox.uploadUrl('/tmp/a.txt'),
       'https://49983-sandbox-id.e2b.app/files?path=%2Ftmp%2Fa.txt'
     )
+  })
+
+  test('getGrpcTarget is localhost:port in debug mode', () => {
+    const sandbox = new Sandbox({
+      sandboxId: 'sandbox-id',
+      sandboxDomain: 'e2b.app',
+      envdVersion: '0.4.0',
+      apiKey: TEST_API_KEY,
+      domain: 'e2b.app',
+      debug: true,
+    })
+
+    assert.equal(sandbox.getHost(50051), 'localhost:50051')
+    assert.equal(sandbox.getGrpcTarget(50051), 'localhost:50051')
   })
 
   test('throws when signature expiration is used on unsecured sandbox', async () => {

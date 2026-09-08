@@ -213,7 +213,13 @@ class SandboxBase(ClientFactory):
     def get_host(self, port: int) -> str:
         """
         Get the host address to connect to the sandbox.
-        You can then use this address to connect to the sandbox port from outside the sandbox via HTTP or WebSocket.
+        You can then use this address to connect to the sandbox port from outside
+        the sandbox via HTTP, WebSocket, or gRPC.
+
+        HTTP and WebSocket clients should use ``https://{host}`` (or ``http://``
+        in debug mode). gRPC clients should dial :meth:`get_grpc_target` instead:
+        the public hostname is served on TLS port 443, not as a raw TCP mapping
+        of *port*.
 
         :param port: Port to connect to
 
@@ -222,6 +228,25 @@ class SandboxBase(ClientFactory):
         return self.connection_config.get_host(
             self.sandbox_id, self.sandbox_domain, port
         )
+
+    def get_grpc_target(self, port: int) -> str:
+        """
+        Address a gRPC client should dial to reach a server listening on *port*
+        inside the sandbox.
+
+        The public sandbox URL is HTTPS on port 443 with Host-based routing, not
+        a raw ``host:port`` TCP mapping. Use a TLS channel against this target
+        (plaintext only in debug mode, where it is ``localhost:{port}``).
+
+        :param port: Port the gRPC server listens on inside the sandbox
+        :return: ``host:port`` suitable for ``grpc.secure_channel`` /
+            ``grpc.insecure_channel``
+        """
+        host = self.get_host(port)
+        if self.connection_config.debug:
+            return host
+
+        return f"{host}:443"
 
     def get_mcp_url(self) -> str:
         """

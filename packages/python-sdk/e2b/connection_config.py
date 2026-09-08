@@ -308,7 +308,10 @@ class ConnectionConfig:
     def get_host(self, sandbox_id: str, sandbox_domain: str, port: int) -> str:
         """
         Get the host address to connect to the sandbox.
-        You can then use this address to connect to the sandbox port from outside the sandbox via HTTP or WebSocket.
+        You can then use this address to connect to the sandbox port from outside the sandbox via HTTP, WebSocket, or gRPC.
+
+        HTTP and WebSocket clients should use ``https://{host}``. gRPC clients
+        should dial ``{host}:443`` with TLS (see ``Sandbox.get_grpc_target``).
 
         :param port: Port to connect to
         :param sandbox_domain: Domain to connect to

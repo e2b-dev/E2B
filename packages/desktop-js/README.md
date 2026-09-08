@@ -263,6 +263,23 @@ const desktop = await Sandbox.create()
 await desktop.wait(1000) // Wait for 1 second
 ```
 
+### Connecting to a gRPC server from your computer
+
+A gRPC server inside the sandbox is reachable on `localhost` there. From your
+machine, dial the public HTTPS host on port 443 — not a raw `host:50051`
+socket. `getHost` is the hostname; `getGrpcTarget` is the address a gRPC
+client should use:
+
+```javascript
+import { Sandbox } from '@e2b/desktop'
+
+const desktop = await Sandbox.create()
+await desktop.commands.run('python grpc_server.py', { background: true })
+
+const target = desktop.getGrpcTarget(50051)
+// Dial target with TLS credentials (port 443). In debug mode this is localhost:{port}.
+```
+
 ## Under the hood
 
 The desktop-like environment is based on Linux and [Xfce](https://www.xfce.org/) at the moment. We chose Xfce because it's a fast and lightweight environment that's also popular and actively supported. However, this Sandbox template is fully customizable and you can create your own desktop environment.

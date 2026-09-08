@@ -513,7 +513,11 @@ export class Sandbox extends SandboxApi {
 
   /**
    * Get the host address for the specified sandbox port.
-   * You can then use this address to connect to the sandbox port from outside the sandbox via HTTP or WebSocket.
+   * You can then use this address to connect to the sandbox port from outside the sandbox via HTTP, WebSocket, or gRPC.
+   *
+   * HTTP and WebSocket clients should use `https://${host}` (or `http://` in debug mode).
+   * gRPC clients should dial {@link Sandbox.getGrpcTarget} instead: the public hostname
+   * is served on TLS port 443, not as a raw TCP mapping of `port`.
    *
    * @param port number of the port in the sandbox.
    *
@@ -534,6 +538,34 @@ export class Sandbox extends SandboxApi {
       port,
       this.sandboxDomain
     )
+  }
+
+  /**
+   * Address a gRPC client should dial to reach a server listening on `port` inside the sandbox.
+   *
+   * The public sandbox URL is HTTPS on port 443 with Host-based routing, not a raw
+   * `host:port` TCP mapping. Use a TLS channel against this target (plaintext only
+   * in debug mode, where it is `localhost:{port}`).
+   *
+   * @param port number of the port the gRPC server listens on in the sandbox.
+   *
+   * @returns `host:port` suitable for a gRPC client target.
+   *
+   * @example
+   * ```ts
+   * const sandbox = await Sandbox.create()
+   * await sandbox.commands.run('python grpc_server.py', { background: true })
+   * const target = sandbox.getGrpcTarget(50051)
+   * // grpc.credentials.createSsl() against target
+   * ```
+   */
+  getGrpcTarget(port: number) {
+    const host = this.getHost(port)
+    if (this.connectionConfig.debug) {
+      return host
+    }
+
+    return `${host}:443`
   }
 
   /**

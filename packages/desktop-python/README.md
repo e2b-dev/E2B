@@ -256,6 +256,27 @@ desktop = Sandbox.create()
 desktop.wait(1000) # Wait for 1 second
 ```
 
+### Connecting to a gRPC server from your computer
+
+A gRPC server inside the sandbox is reachable on `localhost` there. From your
+machine, dial the public HTTPS host on port 443 — not a raw `host:50051`
+socket. `get_host` is the hostname; `get_grpc_target` is the address a gRPC
+client should use:
+
+```python
+from e2b_desktop import Sandbox
+import grpc
+
+desktop = Sandbox.create()
+desktop.commands.run("python grpc_server.py", background=True)
+
+target = desktop.get_grpc_target(50051)
+channel = grpc.secure_channel(target, grpc.ssl_channel_credentials())
+```
+
+In debug mode the target is `localhost:{port}` and you should use an insecure
+channel.
+
 ## Under the hood
 
 The desktop-like environment is based on Linux and [Xfce](https://www.xfce.org/) at the moment. We chose Xfce because it's a fast and lightweight environment that's also popular and actively supported. However, this Sandbox template is fully customizable and you can create your own desktop environment.
