@@ -42,6 +42,12 @@ test('api_url defaults correctly', () => {
   assert.equal(config.apiUrl, 'https://api.e2b.app')
 })
 
+test('retries default to zero and accept a non-negative integer', () => {
+  assert.equal(new ConnectionConfig().retries, 0)
+  assert.equal(new ConnectionConfig({ retries: 2 }).retries, 2)
+  assert.throws(() => new ConnectionConfig({ retries: -1 }))
+})
+
 test('api_url in args', () => {
   const config = new ConnectionConfig({ apiUrl: 'http://localhost:8080' })
   assert.equal(config.apiUrl, 'http://localhost:8080')

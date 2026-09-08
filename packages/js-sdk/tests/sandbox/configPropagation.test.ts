@@ -10,6 +10,7 @@ const baseConfig = {
   apiKey: TEST_API_KEY,
   domain: 'base.e2b.dev',
   requestTimeoutMs: 1111,
+  retries: 2,
   debug: false,
   apiHeaders: { 'X-Test': 'base' },
 }
@@ -49,6 +50,7 @@ describe('Sandbox API config propagation', () => {
     assert.equal(opts?.apiKey, baseConfig.apiKey)
     assert.equal(opts?.domain, baseConfig.domain)
     assert.equal(opts?.requestTimeoutMs, baseConfig.requestTimeoutMs)
+    assert.equal(opts?.retries, baseConfig.retries)
     assert.equal(opts?.debug, baseConfig.debug)
     assert.equal(opts?.headers?.['X-Test'], baseConfig.apiHeaders['X-Test'])
   })

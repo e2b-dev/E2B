@@ -1,3 +1,5 @@
+import pytest
+
 from e2b.volume.connection_config import VolumeConnectionConfig
 
 
@@ -89,3 +91,23 @@ def test_volume_request_timeout_in_args():
 def test_volume_request_timeout_zero_disables_timeout():
     config = VolumeConnectionConfig(request_timeout=0)
     assert config.request_timeout is None
+
+
+def test_volume_retries_default_to_zero():
+    assert VolumeConnectionConfig().retries == 0
+
+
+def test_volume_retries_in_args():
+    assert VolumeConnectionConfig(retries=2).retries == 2
+
+
+def test_volume_retries_are_inherited_and_overridden():
+    config = VolumeConnectionConfig(retries=2)
+    assert config.get_api_params()["retries"] == 2
+    assert config.get_api_params(retries=1)["retries"] == 1
+
+
+@pytest.mark.parametrize("retries", [-1, 1.5, True])
+def test_volume_retries_reject_invalid_values(retries):
+    with pytest.raises(ValueError, match="non-negative integer"):
+        VolumeConnectionConfig(retries=retries)

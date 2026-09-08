@@ -1,8 +1,9 @@
 import createClient from 'openapi-fetch'
 
 import type { components, paths } from './schema.gen'
-import { ConnectionConfig } from '../connectionConfig'
+import { ConnectionConfig, REQUEST_TIMEOUT_MS } from '../connectionConfig'
 import { createApiLogger } from '../logs'
+import { resolveRetries, withRateLimitRetry } from '../retry'
 import {
   SandboxError,
   InvalidArgumentError,
@@ -193,23 +194,31 @@ export async function handleWatchDirStartEvent(
 class EnvdApiClient {
   readonly api: ReturnType<typeof createClient<paths>>
   readonly version: string
+  readonly fetch: typeof fetch
+
+  private readonly retries: number
+  private readonly requestTimeoutMs: number
 
   constructor(
-    config: Pick<ConnectionConfig, 'apiUrl' | 'logger'> & {
-      /**
-       * Sandbox-scoped envd access token, sent as the `X-Access-Token` header.
-       */
-      envdAccessToken?: string
-      fetch?: (request: Request) => ReturnType<typeof fetch>
-      headers?: Record<string, string>
-    },
+    config: Pick<ConnectionConfig, 'apiUrl' | 'logger'> &
+      Partial<Pick<ConnectionConfig, 'requestTimeoutMs' | 'retries'>> & {
+        /**
+         * Sandbox-scoped envd access token, sent as the `X-Access-Token` header.
+         */
+        envdAccessToken?: string
+        fetch?: typeof fetch
+        headers?: Record<string, string>
+      },
     metadata: {
       version: string
     }
   ) {
+    this.fetch = config.fetch ?? fetch
+    this.retries = config.retries ?? 0
+    this.requestTimeoutMs = config.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.api = createClient({
       baseUrl: config.apiUrl,
-      fetch: config?.fetch,
+      fetch: this.getFetch(),
       headers: {
         ...config?.headers,
         ...(config.envdAccessToken && {
@@ -224,6 +233,14 @@ class EnvdApiClient {
     if (config.logger) {
       this.api.use(createApiLogger(config.logger))
     }
+  }
+
+  getFetch(retries?: number, requestTimeoutMs?: number): typeof fetch {
+    return withRateLimitRetry(
+      this.fetch,
+      resolveRetries(retries ?? this.retries),
+      requestTimeoutMs ?? this.requestTimeoutMs
+    )
   }
 }
 

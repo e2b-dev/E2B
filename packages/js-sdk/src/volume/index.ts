@@ -83,6 +83,11 @@ export class Volume extends ClientFactory {
   readonly proxy?: string
 
   /**
+   * Number of retries after a 429 response with `Retry-After`.
+   */
+  readonly retries?: number
+
+  /**
    * Create a local Volume instance with no API call.
    *
    * @param volumeId volume ID.
@@ -91,6 +96,7 @@ export class Volume extends ClientFactory {
    * @param domain domain for the volume API.
    * @param debug whether to use debug mode.
    * @param proxy proxy URL for the volume content API.
+   * @param retries number of retries after rate limiting.
    */
   constructor(
     volumeId: string,
@@ -98,7 +104,8 @@ export class Volume extends ClientFactory {
     token: string,
     domain?: string,
     debug?: boolean,
-    proxy?: string
+    proxy?: string,
+    retries?: number
   ) {
     super()
     this.volumeId = volumeId
@@ -107,6 +114,7 @@ export class Volume extends ClientFactory {
     this.domain = domain
     this.debug = debug
     this.proxy = proxy
+    this.retries = retries
   }
 
   /**
@@ -148,7 +156,8 @@ export class Volume extends ClientFactory {
       res.data.token,
       res.data.domain || config.domain,
       config.debug,
-      config.proxy
+      config.proxy,
+      config.retries
     ) as InstanceType<V>
   }
 
@@ -174,7 +183,8 @@ export class Volume extends ClientFactory {
       token,
       domain ?? config.domain,
       config.debug,
-      config.proxy
+      config.proxy,
+      config.retries
     ) as InstanceType<V>
   }
 
@@ -708,6 +718,7 @@ export class Volume extends ClientFactory {
         'Content-Type': 'application/octet-stream',
       },
       signal,
+      ...(streamed && { fetch: client.fetch }),
       // Streaming request bodies require half-duplex mode.
       ...(streamed && { duplex: 'half' as const }),
     })

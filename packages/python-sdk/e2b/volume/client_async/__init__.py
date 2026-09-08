@@ -1,6 +1,6 @@
 import httpx
-from pyqwest.httpx import AsyncPyqwestTransport
 
+from e2b._retry import AsyncRateLimitTransport
 from e2b.api import (
     make_async_logging_event_hooks,
     proxy_to_config,
@@ -26,7 +26,7 @@ def get_streaming_api_client(
 
 
 def _api_client(
-    config: VolumeConnectionConfig, transport: AsyncPyqwestTransport, **kwargs
+    config: VolumeConnectionConfig, transport: httpx.AsyncBaseTransport, **kwargs
 ) -> AsyncVolumeApiClient:
     if config.access_token is None:
         raise AuthenticationException(
@@ -61,7 +61,7 @@ def _api_client(
     )
 
 
-def get_transport(config: VolumeConnectionConfig) -> AsyncPyqwestTransport:
+def get_transport(config: VolumeConnectionConfig) -> httpx.AsyncBaseTransport:
     """The shared pyqwest-backed httpx transport for volume content API calls —
     the same pool the control-plane REST API and the envd HTTP API draw from
     (see :func:`e2b.api.client_async.get_pyqwest_transport`); reqwest pools per
@@ -73,12 +73,13 @@ def get_transport(config: VolumeConnectionConfig) -> AsyncPyqwestTransport:
     their whole-request deadlines instead). Streamed downloads, which do need
     an idle bound, use :func:`get_streaming_transport`.
     """
-    return get_httpx_transport(proxy_to_config(config.proxy))
+    transport = get_httpx_transport(proxy_to_config(config.proxy))
+    return AsyncRateLimitTransport(transport, config.retries)
 
 
 def get_streaming_transport(
     config: VolumeConnectionConfig,
-) -> AsyncPyqwestTransport:
+) -> httpx.AsyncBaseTransport:
     """The transport for streamed downloads, carrying ``READ_TIMEOUT`` as the
     idle bound on every read: it resets after each successful read, so it caps
     how long a streamed download may stall without limiting total transfer
@@ -87,4 +88,5 @@ def get_streaming_transport(
     their own, shared with the sandbox filesystem's streaming transport
     whenever the two bounds agree.
     """
-    return get_httpx_transport(proxy_to_config(config.proxy), READ_TIMEOUT)
+    transport = get_httpx_transport(proxy_to_config(config.proxy), READ_TIMEOUT)
+    return AsyncRateLimitTransport(transport, config.retries)

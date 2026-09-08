@@ -7,6 +7,7 @@ from typing import cast, Mapping, Optional, Dict, TypedDict, Union
 import httpx
 from typing_extensions import Unpack
 
+from e2b._retry import resolve_max_retries
 from e2b.api.metadata import package_version
 from e2b.sandbox_domains import is_supported_sandbox_domain
 
@@ -47,6 +48,11 @@ class ApiParams(TypedDict, total=False):
 
     request_timeout: Optional[float]
     """Timeout for the request in **seconds**, defaults to 60 seconds."""
+
+    retries: Optional[int]
+    """Number of HTTP retries after a 429 with ``Retry-After``.
+    A retry is skipped when its wait would exhaust the request timeout.
+    Defaults to no retries."""
 
     headers: Optional[Dict[str, str]]
     """Additional headers to send with the request. Deprecated, use api_headers instead."""
@@ -237,6 +243,7 @@ class ConnectionConfig:
         extra_sandbox_headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
         logger: Optional[logging.Logger] = None,
+        retries: Optional[int] = None,
     ):
         self.logger = logger
         self.domain = domain or ConnectionConfig._domain()
@@ -252,6 +259,7 @@ class ConnectionConfig:
         self.__extra_sandbox_headers = extra_sandbox_headers or {}
 
         self.proxy = proxy
+        self.retries = resolve_max_retries(retries)
 
         self.request_timeout = ConnectionConfig._get_request_timeout(
             REQUEST_TIMEOUT,
@@ -345,6 +353,7 @@ class ConnectionConfig:
         debug = opts.get("debug")
         proxy = opts.get("proxy")
         sandbox_url = opts.get("sandbox_url")
+        retries = opts.get("retries")
 
         req_headers = self.headers.copy()
         if headers is not None:
@@ -384,6 +393,7 @@ class ConnectionConfig:
                     else cast(Optional[str], self._sandbox_url)
                 ),
                 logger=self.logger,
+                retries=retries if retries is not None else self.retries,
             )
         )
 

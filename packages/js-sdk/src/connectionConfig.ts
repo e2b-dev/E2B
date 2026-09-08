@@ -1,6 +1,7 @@
 import { Logger } from './logs'
 import { getEnvVar, version } from './api/metadata'
 import { runtime } from './utils'
+import { resolveRetries } from './retry'
 
 // Remove once all deployments support sandbox subdomains
 const supportedDomains = ['e2b.app', 'e2b.dev', 'e2b.pro', 'e2b-staging.dev']
@@ -58,6 +59,12 @@ export interface ConnectionOpts {
    * @default 60_000 // 60 seconds
    */
   requestTimeoutMs?: number
+  /**
+   * Number of retries after a 429 response with `Retry-After`.
+   *
+   * @default 0
+   */
+  retries?: number
   /**
    * Logger to use for logging messages. It can accept any object that implements `Logger` interface—for example, {@link console}.
    */
@@ -408,6 +415,7 @@ export class ConnectionConfig {
   readonly logger?: Logger
 
   readonly requestTimeoutMs: number
+  readonly retries: number
 
   readonly apiKey?: string
   /**
@@ -435,6 +443,7 @@ export class ConnectionConfig {
     this.debug = opts?.debug ?? ConnectionConfig.debug
     this.domain = opts?.domain || ConnectionConfig.domain
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
+    this.retries = resolveRetries(opts?.retries)
     this.logger = opts?.logger
     this.requestSource = ConnectionConfig.getRequestSource()
     this.headers = { ...(opts?.headers ?? {}), ...(opts?.apiHeaders ?? {}) }

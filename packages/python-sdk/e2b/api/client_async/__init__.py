@@ -7,6 +7,7 @@ from pyqwest import HTTPTransport, HTTPVersion, Request, Response
 from pyqwest.httpx import AsyncPyqwestTransport
 from pyqwest.middleware.retry import RetryMode, RetryTransport
 
+from e2b._retry import AsyncRateLimitTransport
 from e2b.api import (
     AsyncApiClient,
     ProxyConfig,
@@ -152,12 +153,17 @@ def get_transport(
     *,
     for_streaming: bool = False,
     pool_shard: int = 0,
-) -> AsyncPyqwestTransport:
-    """The shared httpx transport factory for the control-plane REST API and
+) -> httpx.AsyncBaseTransport:
+    """The httpx transport factory for the control-plane REST API and
     envd HTTP API (file transfers, health checks). Generic callers use shard
     zero; :func:`get_envd_transport` supplies a sandbox-specific shard. For TLS
     connections ALPN negotiates the HTTP version (HTTP/2 against the E2B API),
     like the http2-enabled httpx transport this replaced.
+
+    The pyqwest adapter and its connection pool are shared. Rate-limit policy
+    is applied in a per-call wrapper so clients with different retry settings
+    can still reuse the same pool; the wrapper delegates directly when retries
+    are disabled.
 
     ``http2=False`` returns a separate transport (its own pool) pinned to
     HTTP/1.1. That matters for a server that reacts to a client going away:
@@ -174,17 +180,18 @@ def get_transport(
     downloads take it, and they get their own pool
     (see :func:`get_pyqwest_transport`).
     """
-    return get_httpx_transport(
+    transport = get_httpx_transport(
         proxy_to_config(config.proxy),
         READ_TIMEOUT if for_streaming else None,
         http2,
         pool_shard,
     )
+    return AsyncRateLimitTransport(transport, config.retries)
 
 
 def get_envd_transport(
     config: ConnectionConfig, http2: bool = True, *, for_streaming: bool = False
-) -> AsyncPyqwestTransport:
+) -> httpx.AsyncBaseTransport:
     """The envd HTTP API's transport, sharded by sandbox ID.
 
     Envd RPC and non-streaming HTTP traffic for one sandbox resolve the same

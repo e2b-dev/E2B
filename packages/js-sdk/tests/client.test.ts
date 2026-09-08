@@ -167,6 +167,31 @@ test('per-call options take precedence over the client config', async () => {
   assert.equal(lastRequest().apiKey, API_KEY_B)
 })
 
+test('client retries rate-limited control-plane requests', async () => {
+  let attempts = 0
+  server.use(
+    http.get(/\/v2\/sandboxes/, () => {
+      attempts++
+      if (attempts === 1) {
+        return new HttpResponse(null, {
+          status: 429,
+          headers: { 'Retry-After': '0' },
+        })
+      }
+      return HttpResponse.json([])
+    })
+  )
+  const client = new E2B({
+    apiKey: API_KEY_A,
+    domain: DOMAIN_A,
+    retries: 1,
+  })
+
+  await client.Sandbox.list().nextItems()
+
+  assert.equal(attempts, 2)
+})
+
 test('client.Sandbox can be rebound to a variable', async () => {
   const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
   const S = client.Sandbox
