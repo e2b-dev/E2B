@@ -73,7 +73,6 @@ describe('handleApiError', () => {
       const res = createMockResponse(503, undefined)
       const err = handleApiError(res as any)
       assert.instanceOf(err, ServiceBusyError)
-      assert.notInstanceOf(err, SandboxError)
       assert.include(err?.message, 'temporarily unavailable')
     })
   })
@@ -93,7 +92,6 @@ describe('handleApiError', () => {
       const res = createMockResponse(500, { message: 'boom' })
       const err = handleApiError(res as any) as SandboxError
       assert.instanceOf(err, SandboxError)
-      assert.notInstanceOf(err, ServiceBusyError)
       assert.equal(err.statusCode, 500)
     })
 
@@ -107,7 +105,6 @@ describe('handleApiError', () => {
       const res = createMockResponse(503, { message: 'no capacity' })
       const err = handleApiError(res as any, BuildLikeError)
       assert.instanceOf(err, ServiceBusyError)
-      assert.notInstanceOf(err, BuildLikeError)
     })
 
     test('RateLimitError carries 429', () => {

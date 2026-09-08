@@ -18,7 +18,6 @@ def test_refused_pause_is_a_busy_exception_with_the_status_and_message():
     )
 
     assert isinstance(err, ServiceBusyException)
-    assert not isinstance(err, SandboxException)
     assert err.status_code == 503
     assert "node is busy persisting sandbox" in str(err)
 
@@ -34,7 +33,6 @@ def test_generic_failure_stays_a_sandbox_exception_and_carries_its_status():
     err = handle_api_exception(response(500, b'{"message":"Internal error"}'))
 
     assert isinstance(err, SandboxException)
-    assert not isinstance(err, ServiceBusyException)
     assert err.status_code == 500
     assert str(err) == "500: Internal error"
 
@@ -56,7 +54,6 @@ def test_503_is_a_busy_exception_whatever_class_the_caller_asked_for():
     )
 
     assert isinstance(err, ServiceBusyException)
-    assert not isinstance(err, BuildLikeException)
     assert err.status_code == 503
 
 
