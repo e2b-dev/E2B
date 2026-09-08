@@ -24,6 +24,16 @@ export enum ScaleType {
   FUNCTION = 'function',
   FUNCTIONLOG = 'functionlog',
   ASINH = 'asinh',
+  UNKNOWN = 'unknown',
+}
+
+const SCALE_TYPES = new Set<string>(Object.values(ScaleType))
+
+function parseScaleType(value: unknown): ScaleType {
+  if (typeof value === 'string' && SCALE_TYPES.has(value)) {
+    return value as ScaleType
+  }
+  return ScaleType.UNKNOWN
 }
 
 /**
@@ -117,9 +127,17 @@ export type ChartTypes =
 export function deserializeChart(data: any): Chart {
   switch (data.type) {
     case ChartType.LINE:
-      return { ...data } as LineChart
+      return {
+        ...data,
+        x_scale: parseScaleType(data.x_scale),
+        y_scale: parseScaleType(data.y_scale),
+      } as LineChart
     case ChartType.SCATTER:
-      return { ...data } as ScatterChart
+      return {
+        ...data,
+        x_scale: parseScaleType(data.x_scale),
+        y_scale: parseScaleType(data.y_scale),
+      } as ScatterChart
     case ChartType.BAR:
       return { ...data } as BarChart
     case ChartType.PIE:
