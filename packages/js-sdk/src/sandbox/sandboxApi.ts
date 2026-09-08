@@ -456,6 +456,8 @@ export type SandboxLifecycle = {
    * `'kill'`, or `{ action, keepMemory }` to also control the pause snapshot kind.
    * Omitted from the create request when unset, leaving the API's default
    * (currently `kill`) in effect.
+   *
+   * @throws {@link InvalidArgumentError} if the action is outside the two literals.
    */
   onTimeout: SandboxOnTimeout
 
@@ -693,6 +695,7 @@ export type SandboxConnectOpts = ConnectionOpts & {
    * already running.
    *
    * @default 'restore'
+   * @throws {@link InvalidArgumentError} if the value is outside the two literals.
    */
   onResume?: SandboxOnResume
 }
@@ -1645,6 +1648,19 @@ export class SandboxApi extends ClientFactory {
     const onTimeoutConfigured = requestedOnTimeout != null
     const onTimeout = requestedOnTimeout ?? 'kill'
     const action = typeof onTimeout === 'string' ? onTimeout : onTimeout.action
+    const allowedActions = ['pause', 'kill']
+    if (onTimeoutConfigured && !allowedActions.includes(action)) {
+      // Name the field the caller wrote: the object form's bad value is on
+      // `.action`, not on `onTimeout` itself.
+      const field =
+        typeof onTimeout === 'string' ? 'onTimeout' : 'onTimeout.action'
+      throw new InvalidArgumentError(
+        `${field} must be one of: ${allowedActions.join(', ')} (got ${JSON.stringify(action)}).`
+      )
+    }
+    // The action never reaches the API — it is resolved here into the boolean
+    // autoPause — so an unrecognized value cannot be rejected server-side, and
+    // resolving it to kill would delete the sandbox a caller asked to preserve.
     const hasKeepMemory =
       typeof onTimeout !== 'string' && 'keepMemory' in onTimeout
     const keepMemory =
@@ -1809,6 +1825,18 @@ export class SandboxApi extends ClientFactory {
     const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
+    // A nullish value is not a choice of restore, matching every other nullish
+    // option. Any other value outside the union never reaches the API — it is
+    // resolved here into the boolean memory field — so it cannot be rejected
+    // server-side, and resolving it to restore would silently skip the reboot.
+    const onResume = apiOpts?.onResume ?? undefined
+    const allowedOnResume = ['restore', 'reboot']
+    if (onResume !== undefined && !allowedOnResume.includes(onResume)) {
+      throw new InvalidArgumentError(
+        `onResume must be one of: ${allowedOnResume.join(', ')} (got ${JSON.stringify(onResume)}).`
+      )
+    }
+
     const res = await client.api.POST('/sandboxes/{sandboxID}/connect', {
       params: {
         path: {
@@ -1817,7 +1845,7 @@ export class SandboxApi extends ClientFactory {
       },
       body: {
         timeout: timeoutToSeconds(timeoutMs),
-        memory: apiOpts?.onResume === 'reboot' ? false : undefined,
+        memory: onResume === 'reboot' ? false : undefined,
       },
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
