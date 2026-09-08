@@ -23,6 +23,12 @@ export function parsePositiveInt(label: string): (value: string) => number {
  */
 export function parseNonNegativeInt(label: string): (value: string) => number {
   return (value) => {
+    if (value.trim() === '') {
+      throw new commander.InvalidArgumentError(
+        `${label} must be a non-negative integer. You provided ${asLocal(value)}.`
+      )
+    }
+
     const parsed = Number(value)
     if (!Number.isInteger(parsed) || parsed < 0) {
       throw new commander.InvalidArgumentError(
