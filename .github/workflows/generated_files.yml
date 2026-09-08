@@ -38,7 +38,14 @@ jobs:
               - '.github/workflows/generated_files.yml'
 
   check-generated:
-    name: Generated files
+    # Not the required check itself (see `status` below): a job skipped via
+    # job-level `if` reports as a *successful* check run, so if this carried
+    # the "Generated files" name directly, a failure in `changes`
+    # (dorny/paths-filter erroring instead of resolving to `false`) would
+    # skip this job and the branch protection required check would show
+    # green without the codegen freshness check ever having run. `status`
+    # exists to close exactly that gap.
+    name: Run generated files check
     needs: changes
     if: ${{ needs.changes.outputs.generated == 'true' }}
     runs-on: ubuntu-latest
@@ -138,3 +145,28 @@ jobs:
           else
             echo "✅ No changes detected."
           fi
+
+  status:
+    name: Generated files
+    # `changes` is included so a failure in change-detection (which would skip
+    # `check-generated`, reporting it as a successful no-op per GitHub Actions
+    # semantics) surfaces as a failed required check instead of a false green.
+    # Mirrors the `status` job in sdk_tests.yml.
+    needs:
+      - changes
+      - check-generated
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report aggregate result
+        run: |
+          echo "Job results: ${{ join(needs.*.result, ', ') }}"
+          if ${{ contains(needs.*.result, 'failure') }}; then
+            echo "::error::Change detection or the generated files check failed."
+            exit 1
+          fi
+          if ${{ contains(needs.*.result, 'cancelled') }}; then
+            echo "::error::Change detection or the generated files check was cancelled; freshness was not verified — re-run before merging."
+            exit 1
+          fi
+          echo "Generated files check passed or was skipped because no relevant files changed."
