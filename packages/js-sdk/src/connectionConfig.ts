@@ -7,6 +7,7 @@ import { resolveRetries } from './retry'
 const supportedDomains = ['e2b.app', 'e2b.dev', 'e2b.pro', 'e2b-staging.dev']
 
 export const REQUEST_TIMEOUT_MS = 60_000 // 60 seconds
+export const DEFAULT_RETRIES = 3
 export const DEFAULT_SANDBOX_TIMEOUT_MS = 300_000 // 300 seconds
 export const KEEPALIVE_PING_INTERVAL_SEC = 50 // 50 seconds
 
@@ -443,7 +444,7 @@ export class ConnectionConfig {
     this.debug = opts?.debug ?? ConnectionConfig.debug
     this.domain = opts?.domain || ConnectionConfig.domain
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
-    this.retries = resolveRetries(opts?.retries)
+    this.retries = resolveRetries(opts?.retries ?? DEFAULT_RETRIES)
     this.logger = opts?.logger
     this.requestSource = ConnectionConfig.getRequestSource()
     this.headers = { ...(opts?.headers ?? {}), ...(opts?.apiHeaders ?? {}) }

@@ -1,6 +1,7 @@
 import pytest
 
 from e2b import ConnectionConfig
+from e2b.connection_config import DEFAULT_RETRIES
 
 
 def test_api_url_defaults_correctly(monkeypatch):
@@ -237,7 +238,7 @@ def test_get_api_params_includes_sandbox_url():
 def test_retries_default_to_three_and_propagate():
     config = ConnectionConfig(retries=5)
 
-    assert ConnectionConfig().retries == 3
+    assert ConnectionConfig().retries == DEFAULT_RETRIES
     assert config.retries == 5
     assert config.get_api_params()["retries"] == 5
     assert config.get_api_params(retries=0)["retries"] == 0

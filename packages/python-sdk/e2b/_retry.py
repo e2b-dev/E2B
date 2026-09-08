@@ -7,9 +7,7 @@ import httpx
 MAX_RETRY_AFTER_SECONDS = 2_147_483_647
 
 
-def resolve_max_retries(retries: Optional[int]) -> int:
-    if retries is None:
-        return 3
+def resolve_max_retries(retries: int) -> int:
     if isinstance(retries, bool) or not isinstance(retries, int) or retries < 0:
         raise ValueError(
             f"Invalid retries={retries!r}: expected a non-negative integer."

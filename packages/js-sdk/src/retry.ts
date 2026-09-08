@@ -1,7 +1,6 @@
 const MAX_RETRY_AFTER_SECONDS = 2_147_483
 
-export function resolveRetries(retries?: number): number {
-  if (retries === undefined) return 3
+export function resolveRetries(retries: number): number {
   if (!Number.isInteger(retries) || retries < 0) {
     throw new Error(
       `Invalid retries=${retries}: expected a non-negative integer.`

@@ -1,6 +1,7 @@
 import { assert, test, beforeEach, afterEach } from 'vitest'
 import {
   ConnectionConfig,
+  DEFAULT_RETRIES,
   setupRequestController,
   wrapStreamWithConnectionCleanup,
 } from '../src/connectionConfig'
@@ -43,7 +44,7 @@ test('api_url defaults correctly', () => {
 })
 
 test('retries default to three and accept a non-negative integer', () => {
-  assert.equal(new ConnectionConfig().retries, 3)
+  assert.equal(new ConnectionConfig().retries, DEFAULT_RETRIES)
   assert.equal(new ConnectionConfig({ retries: 2 }).retries, 2)
   assert.throws(() => new ConnectionConfig({ retries: -1 }))
 })

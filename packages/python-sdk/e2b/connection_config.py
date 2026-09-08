@@ -22,6 +22,7 @@ narrows it to what the pyqwest REST transports take.
 """
 
 REQUEST_TIMEOUT: float = 60.0  # 60 seconds
+DEFAULT_RETRIES = 3
 
 # Idle bound for every read on the streaming envd file-transfer transport:
 # the transfer is aborted when no bytes at all arrive for this long. It
@@ -259,7 +260,9 @@ class ConnectionConfig:
         self.__extra_sandbox_headers = extra_sandbox_headers or {}
 
         self.proxy = proxy
-        self.retries = resolve_max_retries(retries)
+        self.retries = resolve_max_retries(
+            retries if retries is not None else DEFAULT_RETRIES
+        )
 
         self.request_timeout = ConnectionConfig._get_request_timeout(
             REQUEST_TIMEOUT,

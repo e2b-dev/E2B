@@ -8,8 +8,9 @@ import {
 import { EnvdApiClient } from '../src/envd/api'
 
 describe('resolveRetries', () => {
-  test('defaults to three', () => {
-    expect(resolveRetries()).toBe(3)
+  test('accepts non-negative integers', () => {
+    expect(resolveRetries(0)).toBe(0)
+    expect(resolveRetries(3)).toBe(3)
   })
 
   test.each([-1, 1.5, Number.NaN])('rejects %s', (retries) => {
