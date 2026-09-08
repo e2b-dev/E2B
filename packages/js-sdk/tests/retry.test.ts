@@ -5,10 +5,11 @@ import {
   resolveRetries,
   withRateLimitRetry,
 } from '../src/retry'
+import { EnvdApiClient } from '../src/envd/api'
 
 describe('resolveRetries', () => {
-  test('defaults to zero', () => {
-    expect(resolveRetries()).toBe(0)
+  test('defaults to three', () => {
+    expect(resolveRetries()).toBe(3)
   })
 
   test.each([-1, 1.5, Number.NaN])('rejects %s', (retries) => {
@@ -151,4 +152,27 @@ test('disabled retries pass a streaming request through unchanged', async () => 
 
   expect(fetchImpl).toHaveBeenCalledWith('https://api.e2b.test/resource', init)
   expect(body.locked).toBe(false)
+})
+
+test('envd clients do not retry rate-limited requests', async () => {
+  const fetchImpl = vi.fn(
+    async () =>
+      new Response(null, {
+        status: 429,
+        headers: { 'Retry-After': '0' },
+      })
+  ) as typeof fetch
+  const client = new EnvdApiClient(
+    {
+      apiUrl: 'https://envd.e2b.test',
+      logger: undefined,
+      fetch: fetchImpl,
+    },
+    { version: '0.0.0' }
+  )
+
+  const response = await client.api.GET('/health')
+
+  expect(response.response.status).toBe(429)
+  expect(fetchImpl).toHaveBeenCalledOnce()
 })

@@ -1,6 +1,6 @@
 import httpx
+from pyqwest.httpx import PyqwestTransport
 
-from e2b._retry import RateLimitTransport
 from e2b.api import (
     make_logging_event_hooks,
     proxy_to_config,
@@ -26,7 +26,7 @@ def get_streaming_api_client(
 
 
 def _api_client(
-    config: VolumeConnectionConfig, transport: httpx.BaseTransport, **kwargs
+    config: VolumeConnectionConfig, transport: PyqwestTransport, **kwargs
 ) -> VolumeApiClient:
     if config.access_token is None:
         raise AuthenticationException(
@@ -61,7 +61,7 @@ def _api_client(
     )
 
 
-def get_transport(config: VolumeConnectionConfig) -> httpx.BaseTransport:
+def get_transport(config: VolumeConnectionConfig) -> PyqwestTransport:
     """The shared pyqwest-backed httpx transport for volume content API calls —
     the same pool the control-plane REST API and the envd HTTP API draw from
     (see :func:`e2b.api.client_sync.get_pyqwest_transport`); reqwest pools per
@@ -73,11 +73,10 @@ def get_transport(config: VolumeConnectionConfig) -> httpx.BaseTransport:
     their whole-request deadlines instead). Streamed downloads, which do need
     an idle bound, use :func:`get_streaming_transport`.
     """
-    transport = get_httpx_transport(proxy_to_config(config.proxy))
-    return RateLimitTransport(transport, config.retries)
+    return get_httpx_transport(proxy_to_config(config.proxy))
 
 
-def get_streaming_transport(config: VolumeConnectionConfig) -> httpx.BaseTransport:
+def get_streaming_transport(config: VolumeConnectionConfig) -> PyqwestTransport:
     """The transport for streamed downloads, carrying ``READ_TIMEOUT`` as the
     idle bound on every read: it resets after each successful read, so it caps
     how long a streamed download may stall without limiting total transfer
@@ -86,5 +85,4 @@ def get_streaming_transport(config: VolumeConnectionConfig) -> httpx.BaseTranspo
     their own, shared with the sandbox filesystem's streaming transport
     whenever the two bounds agree.
     """
-    transport = get_httpx_transport(proxy_to_config(config.proxy), READ_TIMEOUT)
-    return RateLimitTransport(transport, config.retries)
+    return get_httpx_transport(proxy_to_config(config.proxy), READ_TIMEOUT)

@@ -496,6 +496,7 @@ export interface SandboxApiOpts extends Partial<
     | 'debug'
     | 'domain'
     | 'requestTimeoutMs'
+    | 'retries'
     | 'signal'
   >
 > {}

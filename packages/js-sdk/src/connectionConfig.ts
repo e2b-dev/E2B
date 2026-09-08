@@ -60,9 +60,9 @@ export interface ConnectionOpts {
    */
   requestTimeoutMs?: number
   /**
-   * Number of retries after a 429 response with `Retry-After`.
+   * Number of control-plane API retries after a 429 response with `Retry-After`.
    *
-   * @default 0
+   * @default 3
    */
   retries?: number
   /**

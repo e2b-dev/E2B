@@ -5,7 +5,6 @@ from connectrpc.code import Code
 from connectrpc.errors import ConnectError
 from packaging.version import Version
 
-from e2b._retry import REPLAYABLE_BODY_EXTENSION
 from e2b.api.client_sync import get_envd_api
 from e2b.connection_config import (
     KEEPALIVE_PING_HEADER,
@@ -413,7 +412,6 @@ class Filesystem:
             if len(httpx_files) == 0:
                 return []
 
-            body_is_streamed = multipart_body_is_streamed(files)
             try:
                 r = self._envd_api.post(
                     ENVD_API_FILES_ROUTE,
@@ -424,8 +422,9 @@ class Filesystem:
                     # forwards binary `IOBase` entries in chunks, while text
                     # file-like data was buffered by `_to_httpx_file` (httpx
                     # rejects text-mode objects in multipart).
-                    timeout=(None if body_is_streamed else upload_timeout),
-                    extensions={REPLAYABLE_BODY_EXTENSION: not body_is_streamed},
+                    timeout=(
+                        None if multipart_body_is_streamed(files) else upload_timeout
+                    ),
                 )
             except httpx.RemoteProtocolError as e:
                 raise handle_envd_api_transport_exception_with_health(e, self._envd_api)

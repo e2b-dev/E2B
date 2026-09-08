@@ -22,45 +22,7 @@ beforeEach(() => server.resetHandlers(...createMockVolumeApi()))
 describe('Volume File Operations', () => {
   describe('writeFile and readFile', () => {
     volumeTest(
-      'retries a buffered upload after rate limiting',
-      async ({ volume }) => {
-        let attempts = 0
-        server.use(
-          http.put(apiUrl('/volumecontent/:volumeID/file'), () => {
-            attempts++
-            if (attempts === 1) {
-              return new HttpResponse(null, {
-                status: 429,
-                headers: { 'Retry-After': '0' },
-              })
-            }
-            const timestamp = new Date().toISOString()
-            return HttpResponse.json({
-              name: 'retry.txt',
-              type: VolumeFileType.FILE,
-              path: '/retry.txt',
-              size: 5,
-              mode: 0o644,
-              uid: 0,
-              gid: 0,
-              atime: timestamp,
-              mtime: timestamp,
-              ctime: timestamp,
-            })
-          })
-        )
-
-        const stat = await volume.writeFile('/retry.txt', 'retry', {
-          retries: 1,
-        })
-
-        expect(stat.path).toBe('/retry.txt')
-        expect(attempts).toBe(2)
-      }
-    )
-
-    volumeTest(
-      'does not retry a streamed upload after rate limiting',
+      'does not retry a buffered upload after rate limiting',
       async ({ volume }) => {
         let attempts = 0
         server.use(
@@ -75,10 +37,9 @@ describe('Volume File Operations', () => {
             )
           })
         )
-        const stream = new Blob(['streamed']).stream()
 
         await expect(
-          volume.writeFile('/stream.txt', stream, { retries: 1 })
+          volume.writeFile('/retry.txt', 'retry')
         ).rejects.toBeInstanceOf(RateLimitError)
         expect(attempts).toBe(1)
       }

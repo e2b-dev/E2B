@@ -210,8 +210,6 @@ export class Sandbox extends SandboxApi {
           ...sandboxHeaders,
         },
         fetch: (request) => envdFetch(request),
-        retries: this.connectionConfig.retries,
-        requestTimeoutMs: this.connectionConfig.requestTimeoutMs,
       },
       {
         version: opts.envdVersion,
@@ -553,18 +551,15 @@ export class Sandbox extends SandboxApi {
    * ```
    */
   async isRunning(
-    opts?: Pick<ConnectionOpts, 'requestTimeoutMs' | 'retries' | 'signal'>
+    opts?: Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>
   ): Promise<boolean> {
-    const requestTimeoutMs =
-      opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
     const signal = this.connectionConfig.getSignal(
-      requestTimeoutMs,
+      opts?.requestTimeoutMs,
       opts?.signal
     )
 
     const res = await this.envdApi.api.GET('/health', {
       signal,
-      fetch: this.envdApi.getFetch(opts?.retries, requestTimeoutMs),
     })
 
     if (res.response.status == 502) {

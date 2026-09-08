@@ -78,7 +78,6 @@ class AsyncVolume(ClientFactory):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         proxy: Optional[ProxyTypes] = None,
-        retries: Optional[int] = None,
     ):
         self._volume_id = volume_id
         self._name = name
@@ -86,7 +85,6 @@ class AsyncVolume(ClientFactory):
         self._domain = domain
         self._debug = debug
         self._proxy = proxy
-        self._retries = retries
 
     @property
     def volume_id(self) -> str:
@@ -112,11 +110,6 @@ class AsyncVolume(ClientFactory):
             headers=opts.get("headers"),
             logger=opts.get("logger"),
             proxy=opts.get("proxy") if opts.get("proxy") is not None else self._proxy,
-            retries=(
-                opts.get("retries")
-                if opts.get("retries") is not None
-                else self._retries
-            ),
         )
 
     @classmethod
@@ -157,7 +150,6 @@ class AsyncVolume(ClientFactory):
             domain=domain or config.domain,
             debug=config.debug,
             proxy=config.proxy,
-            retries=config.retries,
         )
         return vol
 
@@ -179,7 +171,6 @@ class AsyncVolume(ClientFactory):
             domain=info.domain or config.domain,
             debug=config.debug,
             proxy=config.proxy,
-            retries=config.retries,
         )
 
     @classmethod

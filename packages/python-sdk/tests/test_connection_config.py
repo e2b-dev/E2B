@@ -234,10 +234,10 @@ def test_get_api_params_includes_sandbox_url():
     assert overridden["sandbox_url"] == "https://sandbox.override.com"
 
 
-def test_retries_default_to_zero_and_propagate():
+def test_retries_default_to_three_and_propagate():
     config = ConnectionConfig(retries=5)
 
-    assert ConnectionConfig().retries == 0
+    assert ConnectionConfig().retries == 3
     assert config.retries == 5
     assert config.get_api_params()["retries"] == 5
     assert config.get_api_params(retries=0)["retries"] == 0

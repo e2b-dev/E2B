@@ -70,12 +70,14 @@ describe('Sandbox API config propagation', () => {
     await sandbox.pause({
       domain: 'override.e2b.dev',
       requestTimeoutMs: 9999,
+      retries: 0,
     })
 
     const opts = pauseSpy.mock.calls[0][1]
     assert.equal(opts?.apiKey, baseConfig.apiKey)
     assert.equal(opts?.domain, 'override.e2b.dev')
     assert.equal(opts?.requestTimeoutMs, 9999)
+    assert.equal(opts?.retries, 0)
     assert.equal(opts?.debug, baseConfig.debug)
   })
 

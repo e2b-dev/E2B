@@ -50,9 +50,9 @@ class ApiParams(TypedDict, total=False):
     """Timeout for the request in **seconds**, defaults to 60 seconds."""
 
     retries: Optional[int]
-    """Number of HTTP retries after a 429 with ``Retry-After``.
+    """Number of control-plane HTTP retries after a 429 with ``Retry-After``.
     A retry is skipped when its wait would exhaust the request timeout.
-    Defaults to no retries."""
+    Defaults to 3 retries."""
 
     headers: Optional[Dict[str, str]]
     """Additional headers to send with the request. Deprecated, use api_headers instead."""

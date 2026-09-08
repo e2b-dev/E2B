@@ -257,7 +257,7 @@ export function mapEntryInfo(entry: FsEntryInfo): EntryInfo {
  * Options for the sandbox filesystem operations.
  */
 export interface FilesystemRequestOpts extends Partial<
-  Pick<ConnectionOpts, 'requestTimeoutMs' | 'retries' | 'signal'>
+  Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>
 > {
   /**
    * User to use for the operation in the sandbox.
@@ -494,7 +494,6 @@ export class Filesystem {
             parseAs: 'stream',
             signal: controller.signal,
             headers,
-            fetch: this.envdApi.getFetch(opts?.retries, requestTimeoutMs),
           })
           .catch(async (err) => {
             // Map a dropped connection during the handshake (e.g. killed
@@ -531,8 +530,6 @@ export class Filesystem {
       }
     }
 
-    const requestTimeoutMs =
-      opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
     const res = await this.envdApi.api
       .GET('/files', {
         params: {
@@ -542,9 +539,11 @@ export class Filesystem {
           },
         },
         parseAs: format === 'bytes' ? 'arrayBuffer' : format,
-        signal: this.connectionConfig.getSignal(requestTimeoutMs, opts?.signal),
+        signal: this.connectionConfig.getSignal(
+          opts?.requestTimeoutMs,
+          opts?.signal
+        ),
         headers,
-        fetch: this.envdApi.getFetch(opts?.retries, requestTimeoutMs),
       })
       .catch(async (err) => {
         throw await handleEnvdApiFetchError(err, this.checkHealth)
@@ -696,9 +695,6 @@ export class Filesystem {
                 writeOpts?.requestTimeoutMs,
                 writeOpts?.signal
               )
-          const requestTimeoutMs =
-            writeOpts?.requestTimeoutMs ??
-            this.connectionConfig.requestTimeoutMs
 
           const res = await this.envdApi.api
             .POST('/files', {
@@ -711,9 +707,6 @@ export class Filesystem {
               bodySerializer: () => body,
               headers,
               signal,
-              fetch: streamed
-                ? this.envdApi.fetch
-                : this.envdApi.getFetch(writeOpts?.retries, requestTimeoutMs),
               body: {},
               // Streaming request bodies require half-duplex mode.
               ...(streamed && {
@@ -757,8 +750,6 @@ export class Filesystem {
         )
       }
 
-      const requestTimeoutMs =
-        writeOpts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
       const res = await this.envdApi.api
         .POST('/files', {
           params: {
@@ -770,10 +761,9 @@ export class Filesystem {
           bodySerializer: () => formData,
           headers: extraHeaders,
           signal: this.connectionConfig.getSignal(
-            requestTimeoutMs,
+            writeOpts?.requestTimeoutMs,
             writeOpts?.signal
           ),
-          fetch: this.envdApi.getFetch(writeOpts?.retries, requestTimeoutMs),
           body: {},
         })
         .catch(async (err) => {

@@ -1,12 +1,7 @@
 import httpx
 import pytest
 
-from e2b._retry import (
-    REPLAYABLE_BODY_EXTENSION,
-    AsyncRateLimitTransport,
-    RateLimitTransport,
-    parse_retry_after,
-)
+from e2b._retry import AsyncRateLimitTransport, RateLimitTransport, parse_retry_after
 
 
 class FakeTransport(httpx.BaseTransport):
@@ -81,23 +76,6 @@ def test_retries_rate_limit_after_server_delay_and_replays_body():
     assert sleeps == [2]
     assert [item.content for item in inner.requests] == [b"payload", b"payload"]
     assert inner.responses[0].is_closed
-
-
-def test_retries_buffered_multipart_body():
-    inner = FakeTransport([429, 200])
-    request = httpx.Request(
-        "POST",
-        "https://api.test",
-        files={"file": ("test.txt", b"payload")},
-        extensions={REPLAYABLE_BODY_EXTENSION: True},
-    )
-
-    response = RateLimitTransport(
-        inner, retries=1, sleep=lambda _: None
-    ).handle_request(request)
-
-    assert response.status_code == 200
-    assert inner.requests[0].content == inner.requests[1].content
 
 
 def test_exhaustion_returns_final_rate_limit_response():
@@ -293,27 +271,6 @@ async def test_async_retries_rate_limit_and_replays_body():
     assert sleeps == [2]
     assert [item.content for item in inner.requests] == [b"payload", b"payload"]
     assert inner.responses[0].is_closed
-
-
-@pytest.mark.asyncio
-async def test_async_retries_buffered_multipart_body():
-    inner = FakeAsyncTransport([429, 200])
-    request = httpx.Request(
-        "POST",
-        "https://api.test",
-        files={"file": ("test.txt", b"payload")},
-        extensions={REPLAYABLE_BODY_EXTENSION: True},
-    )
-
-    async def sleep(_):
-        pass
-
-    response = await AsyncRateLimitTransport(
-        inner, retries=1, sleep=sleep
-    ).handle_async_request(request)
-
-    assert response.status_code == 200
-    assert inner.requests[0].content == inner.requests[1].content
 
 
 @pytest.mark.asyncio

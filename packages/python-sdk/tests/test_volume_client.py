@@ -10,7 +10,6 @@ from pyqwest.httpx import AsyncPyqwestTransport, PyqwestTransport
 
 from transport_caches import reset_transport_caches
 
-from e2b._retry import AsyncRateLimitTransport, RateLimitTransport
 import e2b.api.client_async as api_client_async
 import e2b.api.client_sync as api_client_sync
 import e2b.volume.client_async as client_async
@@ -79,64 +78,46 @@ def test_async_client_uses_config_request_timeout():
     asyncio.run(run())
 
 
-def test_volume_instances_propagate_and_override_retries():
-    volume = Volume("v1", "test", token="vol-token", retries=2)
-    async_volume = AsyncVolume("v1", "test", token="vol-token", retries=2)
-
-    assert volume._get_volume_config().retries == 2
-    assert volume._get_volume_config(retries=1).retries == 1
-    assert async_volume._get_volume_config().retries == 2
-    assert async_volume._get_volume_config(retries=1).retries == 1
-
-
-def test_sync_volume_transport_retries_rate_limit(monkeypatch):
+def test_sync_volume_transport_does_not_retry_rate_limits(monkeypatch):
     attempts = 0
 
     def handler(request: httpx.Request) -> httpx.Response:
         nonlocal attempts
         attempts += 1
-        return httpx.Response(
-            429 if attempts == 1 else 200,
-            headers={"Retry-After": "0"},
-        )
+        return httpx.Response(429, headers={"Retry-After": "0"})
 
     monkeypatch.setattr(
         client_sync,
         "get_httpx_transport",
         lambda *_args, **_kwargs: httpx.MockTransport(handler),
     )
-    transport = get_sync_transport(VolumeConnectionConfig(token="vol-token", retries=1))
+    transport = get_sync_transport(VolumeConnectionConfig(token="vol-token"))
 
     with httpx.Client(transport=transport) as client:
-        assert client.get("https://volume.e2b.test/file").status_code == 200
-    assert attempts == 2
+        assert client.get("https://volume.e2b.test/file").status_code == 429
+    assert attempts == 1
 
 
 @pytest.mark.asyncio
-async def test_async_volume_transport_retries_rate_limit(monkeypatch):
+async def test_async_volume_transport_does_not_retry_rate_limits(monkeypatch):
     attempts = 0
 
     async def handler(request: httpx.Request) -> httpx.Response:
         nonlocal attempts
         attempts += 1
-        return httpx.Response(
-            429 if attempts == 1 else 200,
-            headers={"Retry-After": "0"},
-        )
+        return httpx.Response(429, headers={"Retry-After": "0"})
 
     monkeypatch.setattr(
         client_async,
         "get_httpx_transport",
         lambda *_args, **_kwargs: httpx.MockTransport(handler),
     )
-    transport = get_async_transport(
-        VolumeConnectionConfig(token="vol-token", retries=1)
-    )
+    transport = get_async_transport(VolumeConnectionConfig(token="vol-token"))
 
     async with httpx.AsyncClient(transport=transport) as client:
         response = await client.get("https://volume.e2b.test/file")
-    assert response.status_code == 200
-    assert attempts == 2
+    assert response.status_code == 429
+    assert attempts == 1
 
 
 def test_sync_transport_is_cached_per_proxy():
@@ -149,12 +130,9 @@ def test_sync_transport_is_cached_per_proxy():
         transport_b = get_sync_transport(config)
         transport_c = get_sync_transport(proxied)
 
-        assert isinstance(transport_a, RateLimitTransport)
-        assert isinstance(transport_b, RateLimitTransport)
-        assert isinstance(transport_c, RateLimitTransport)
-        assert isinstance(transport_a.transport, PyqwestTransport)
-        assert transport_a.transport is transport_b.transport
-        assert transport_a.transport is not transport_c.transport
+        assert isinstance(transport_a, PyqwestTransport)
+        assert transport_a is transport_b
+        assert transport_a is not transport_c
     finally:
         reset_volume_transports()
 
@@ -170,32 +148,13 @@ def test_volume_transports_are_the_shared_sdk_pools(test_api_key):
     api_config = ConnectionConfig(api_key=test_api_key)
 
     try:
-        api_transport = api_client_sync.get_transport(api_config)
-        streaming_api_transport = api_client_sync.get_transport(
+        assert get_sync_transport(config) is api_client_sync.get_transport(api_config)
+        assert get_sync_streaming_transport(config) is api_client_sync.get_transport(
             api_config, for_streaming=True
         )
-        assert isinstance(api_transport, RateLimitTransport)
-        assert isinstance(streaming_api_transport, RateLimitTransport)
-        volume_transport = get_sync_transport(config)
-        streaming_volume_transport = get_sync_streaming_transport(config)
-        assert isinstance(volume_transport, RateLimitTransport)
-        assert isinstance(streaming_volume_transport, RateLimitTransport)
-        assert volume_transport.transport is api_transport.transport
-        assert streaming_volume_transport.transport is streaming_api_transport.transport
-        async_api_transport = api_client_async.get_transport(api_config)
-        streaming_async_api_transport = api_client_async.get_transport(
+        assert get_async_transport(config) is api_client_async.get_transport(api_config)
+        assert get_async_streaming_transport(config) is api_client_async.get_transport(
             api_config, for_streaming=True
-        )
-        assert isinstance(async_api_transport, AsyncRateLimitTransport)
-        assert isinstance(streaming_async_api_transport, AsyncRateLimitTransport)
-        volume_async_transport = get_async_transport(config)
-        streaming_volume_async_transport = get_async_streaming_transport(config)
-        assert isinstance(volume_async_transport, AsyncRateLimitTransport)
-        assert isinstance(streaming_volume_async_transport, AsyncRateLimitTransport)
-        assert volume_async_transport.transport is async_api_transport.transport
-        assert (
-            streaming_volume_async_transport.transport
-            is streaming_async_api_transport.transport
         )
     finally:
         reset_volume_transports()
@@ -219,9 +178,7 @@ def test_sync_transport_is_shared_across_threads():
         thread.start()
         thread.join()
 
-        assert isinstance(main_transport, RateLimitTransport)
-        assert isinstance(result["transport"], RateLimitTransport)
-        assert result["transport"].transport is main_transport.transport
+        assert result["transport"] is main_transport
     finally:
         reset_volume_transports()
 
@@ -241,16 +198,12 @@ def test_async_transport_is_shared_across_loops():
         transport_b1, _ = asyncio.run(get_transports())
         proxied_transport = get_async_transport(proxied)
 
-        assert isinstance(transport_a1, AsyncRateLimitTransport)
-        assert isinstance(transport_a2, AsyncRateLimitTransport)
-        assert isinstance(transport_b1, AsyncRateLimitTransport)
-        assert isinstance(transport_a1.transport, AsyncPyqwestTransport)
-        assert transport_a1.transport is transport_a2.transport
-        assert transport_a1.transport is transport_b1.transport
+        assert isinstance(transport_a1, AsyncPyqwestTransport)
+        assert transport_a1 is transport_a2
+        assert transport_a1 is transport_b1
 
         # Different proxy still gets its own transport.
-        assert isinstance(proxied_transport, AsyncRateLimitTransport)
-        assert proxied_transport.transport is not transport_a1.transport
+        assert proxied_transport is not transport_a1
     finally:
         reset_volume_transports()
 
@@ -423,21 +376,13 @@ def test_stream_transport_is_separate_from_regular_transport():
     try:
         regular = get_sync_transport(config)
         streaming = get_sync_streaming_transport(config)
-        assert isinstance(regular, RateLimitTransport)
-        assert isinstance(streaming, RateLimitTransport)
-        assert regular.transport is not streaming.transport
-        next_regular = get_sync_transport(config)
-        next_streaming = get_sync_streaming_transport(config)
-        assert isinstance(next_regular, RateLimitTransport)
-        assert isinstance(next_streaming, RateLimitTransport)
-        assert next_regular.transport is regular.transport
-        assert next_streaming.transport is streaming.transport
+        assert regular is not streaming
+        assert get_sync_transport(config) is regular
+        assert get_sync_streaming_transport(config) is streaming
 
         async_regular = get_async_transport(config)
         async_streaming = get_async_streaming_transport(config)
-        assert isinstance(async_regular, AsyncRateLimitTransport)
-        assert isinstance(async_streaming, AsyncRateLimitTransport)
-        assert async_regular.transport is not async_streaming.transport
+        assert async_regular is not async_streaming
     finally:
         reset_volume_transports()
 

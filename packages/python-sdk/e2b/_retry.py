@@ -5,12 +5,11 @@ from typing import Awaitable, Callable, Optional
 import httpx
 
 MAX_RETRY_AFTER_SECONDS = 2_147_483_647
-REPLAYABLE_BODY_EXTENSION = "e2b_replayable_body"
 
 
 def resolve_max_retries(retries: Optional[int]) -> int:
     if retries is None:
-        return 0
+        return 3
     if isinstance(retries, bool) or not isinstance(retries, int) or retries < 0:
         raise ValueError(
             f"Invalid retries={retries!r}: expected a non-negative integer."
@@ -91,11 +90,7 @@ class RateLimitTransport(httpx.BaseTransport):
     def handle_request(self, request: httpx.Request) -> httpx.Response:
         # Iterators, files, and other streaming bodies may be consumed by the
         # first attempt and cannot be safely replayed without buffering them.
-        replayable = (
-            isinstance(request.stream, httpx.ByteStream)
-            or request.extensions.get(REPLAYABLE_BODY_EXTENSION) is True
-        )
-        if self.retries == 0 or not replayable:
+        if self.retries == 0 or not isinstance(request.stream, httpx.ByteStream):
             return self.transport.handle_request(request)
 
         request.read()
@@ -150,11 +145,7 @@ class AsyncRateLimitTransport(httpx.AsyncBaseTransport):
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         # Iterators, files, and other streaming bodies may be consumed by the
         # first attempt and cannot be safely replayed without buffering them.
-        replayable = (
-            isinstance(request.stream, httpx.ByteStream)
-            or request.extensions.get(REPLAYABLE_BODY_EXTENSION) is True
-        )
-        if self.retries == 0 or not replayable:
+        if self.retries == 0 or not isinstance(request.stream, httpx.ByteStream):
             return await self.transport.handle_async_request(request)
 
         await request.aread()

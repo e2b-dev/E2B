@@ -5,7 +5,6 @@ from typing import Dict, Optional, TypedDict
 
 from typing_extensions import Unpack
 
-from e2b._retry import resolve_max_retries
 from e2b.api.metadata import package_version
 from e2b.connection_config import ProxyTypes
 
@@ -41,10 +40,6 @@ class VolumeApiParams(TypedDict, total=False):
 
     request_timeout: Optional[float]
     """Timeout for the request in **seconds**, defaults to 60 seconds."""
-
-    retries: Optional[int]
-    """Number of HTTP retries after a 429 with ``Retry-After``.
-    Defaults to no retries."""
 
     headers: Optional[Dict[str, str]]
     """Additional headers to send with the request."""
@@ -103,7 +98,6 @@ class VolumeConnectionConfig:
         headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
         logger: Optional[logging.Logger] = None,
-        retries: Optional[int] = None,
     ):
         self.logger = logger
         self.domain = domain or self._domain()
@@ -117,7 +111,6 @@ class VolumeConnectionConfig:
         self.access_token = token
         self.token = self.access_token
         self.proxy = proxy
-        self.retries = resolve_max_retries(retries)
 
         self.headers = dict(headers) if headers else {}
         self.headers["User-Agent"] = f"e2b-python-sdk/{package_version}"
@@ -144,7 +137,6 @@ class VolumeConnectionConfig:
         api_url = opts.get("api_url")
         proxy = opts.get("proxy")
         logger = opts.get("logger")
-        retries = opts.get("retries")
 
         req_headers = self.headers.copy()
         if headers is not None:
@@ -160,6 +152,5 @@ class VolumeConnectionConfig:
                 headers=req_headers,
                 proxy=proxy if proxy is not None else self.proxy,
                 logger=logger if logger is not None else self.logger,
-                retries=retries if retries is not None else self.retries,
             )
         )

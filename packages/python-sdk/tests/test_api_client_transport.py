@@ -16,6 +16,7 @@ from transport_caches import reset_transport_caches
 import e2b.api as api
 import e2b.api.client_async as api_client_async
 import e2b.api.client_sync as api_client_sync
+from e2b._retry import AsyncRateLimitTransport, RateLimitTransport
 from e2b.api import (
     envd_pool_shard,
     pool_idle_timeout,
@@ -35,19 +36,6 @@ from e2b.api.client_sync import get_envd_transport as get_sync_envd_transport
 from e2b.api.client_sync import get_pyqwest_transport as get_sync_pyqwest_transport
 from e2b.api.client_sync import get_transport as get_sync_transport
 from e2b.connection_config import READ_TIMEOUT, ConnectionConfig
-from e2b._retry import AsyncRateLimitTransport, RateLimitTransport
-
-
-def unwrap_rate_limit_transport(transport: httpx.BaseTransport) -> httpx.BaseTransport:
-    assert isinstance(transport, RateLimitTransport)
-    return transport.transport
-
-
-def unwrap_async_rate_limit_transport(
-    transport: httpx.AsyncBaseTransport,
-) -> httpx.AsyncBaseTransport:
-    assert isinstance(transport, AsyncRateLimitTransport)
-    return transport.transport
 
 
 def run_in_worker_thread(fn):
@@ -91,12 +79,9 @@ def test_sync_api_client_proxy_uses_explicit_transport(test_api_key):
 
     try:
         assert "proxy" not in api_client._httpx_args
-        assert unwrap_rate_limit_transport(
-            httpx_client._transport
-        ) is unwrap_rate_limit_transport(get_sync_transport(config))
-        assert isinstance(
-            unwrap_rate_limit_transport(httpx_client._transport), PyqwestTransport
-        )
+        assert isinstance(httpx_client._transport, RateLimitTransport)
+        assert httpx_client._transport.transport is get_sync_transport(config)
+        assert isinstance(httpx_client._transport.transport, PyqwestTransport)
         assert httpx_client._mounts == {}
     finally:
         httpx_client.close()
@@ -111,19 +96,18 @@ def test_sync_retry_policy_wraps_but_does_not_split_cached_transport(test_api_ke
     )
     default_httpx = default_client.get_httpx_client()
     retrying_httpx = retrying_client.get_httpx_client()
-    retrying_transport = get_sync_transport(
+    raw_transport = get_sync_transport(
         ConnectionConfig(api_key=test_api_key, retries=1)
     )
 
     try:
         assert isinstance(default_httpx._transport, RateLimitTransport)
-        assert default_httpx._transport.retries == 0
+        assert default_httpx._transport.retries == 3
         assert isinstance(retrying_httpx._transport, RateLimitTransport)
         assert retrying_httpx._transport.retries == 2
         assert retrying_httpx._transport.transport is default_httpx._transport.transport
-        assert isinstance(retrying_transport, RateLimitTransport)
-        assert retrying_transport.retries == 1
-        assert retrying_transport.transport is default_httpx._transport.transport
+        assert isinstance(raw_transport, PyqwestTransport)
+        assert raw_transport is default_httpx._transport.transport
     finally:
         retrying_httpx.close()
         default_httpx.close()
@@ -143,28 +127,16 @@ def test_sync_get_transport_keyed_by_proxy(test_api_key):
     )
 
     try:
-        proxied_transport = unwrap_rate_limit_transport(
-            get_sync_transport(proxied_config)
-        )
-        direct_transport = unwrap_rate_limit_transport(
-            get_sync_transport(direct_config)
-        )
-        other_proxy_transport = unwrap_rate_limit_transport(
-            get_sync_transport(other_proxy_config)
-        )
+        proxied_transport = get_sync_transport(proxied_config)
+        direct_transport = get_sync_transport(direct_config)
+        other_proxy_transport = get_sync_transport(other_proxy_config)
 
         assert proxied_transport is not direct_transport
         assert proxied_transport is not other_proxy_transport
         assert direct_transport is not other_proxy_transport
         # The same proxy still reuses the cached instance.
-        assert (
-            unwrap_rate_limit_transport(get_sync_transport(proxied_config))
-            is proxied_transport
-        )
-        assert (
-            unwrap_rate_limit_transport(get_sync_transport(direct_config))
-            is direct_transport
-        )
+        assert get_sync_transport(proxied_config) is proxied_transport
+        assert get_sync_transport(direct_config) is direct_transport
     finally:
         reset_transport_caches()
 
@@ -180,12 +152,10 @@ def test_sync_transports_keyed_by_http_version(test_api_key):
     )
 
     try:
-        negotiated = unwrap_rate_limit_transport(get_sync_transport(config))
-        http1 = unwrap_rate_limit_transport(get_sync_transport(config, http2=False))
-        envd_negotiated = unwrap_rate_limit_transport(get_sync_envd_transport(config))
-        envd_http1 = unwrap_rate_limit_transport(
-            get_sync_envd_transport(config, http2=False)
-        )
+        negotiated = get_sync_transport(config)
+        http1 = get_sync_transport(config, http2=False)
+        envd_negotiated = get_sync_envd_transport(config)
+        envd_http1 = get_sync_envd_transport(config, http2=False)
 
         assert http1 is not negotiated
         assert envd_http1 is not envd_negotiated
@@ -195,25 +165,15 @@ def test_sync_transports_keyed_by_http_version(test_api_key):
         assert envd_http1 is http1
         # Each version still has one pool per proxy, and repeat calls with the
         # same arguments reuse it.
-        assert unwrap_rate_limit_transport(
-            get_sync_transport(proxied_config, http2=False)
-        ) not in (
+        assert get_sync_transport(proxied_config, http2=False) not in (
             http1,
             negotiated,
         )
+        assert get_sync_transport(config, http2=False) is http1
+        assert get_sync_transport(config) is negotiated
+        assert get_sync_envd_transport(config, http2=False) is envd_http1
         assert (
-            unwrap_rate_limit_transport(get_sync_transport(config, http2=False))
-            is http1
-        )
-        assert unwrap_rate_limit_transport(get_sync_transport(config)) is negotiated
-        assert (
-            unwrap_rate_limit_transport(get_sync_envd_transport(config, http2=False))
-            is envd_http1
-        )
-        assert (
-            unwrap_rate_limit_transport(
-                get_sync_envd_transport(config, http2=False, for_streaming=True)
-            )
+            get_sync_envd_transport(config, http2=False, for_streaming=True)
             is not envd_http1
         )
     finally:
@@ -232,17 +192,13 @@ def test_sync_envd_transports_are_consistently_sharded_by_sandbox(
     try:
         assert envd_pool_shard(first) == envd_pool_shard(same_shard)
         assert envd_pool_shard(first) != envd_pool_shard(different_shard)
-        assert unwrap_rate_limit_transport(
-            get_sync_envd_transport(first)
-        ) is unwrap_rate_limit_transport(get_sync_envd_transport(same_shard))
-        assert unwrap_rate_limit_transport(
-            get_sync_envd_transport(first)
-        ) is not unwrap_rate_limit_transport(get_sync_envd_transport(different_shard))
+        assert get_sync_envd_transport(first) is get_sync_envd_transport(same_shard)
+        assert get_sync_envd_transport(first) is not get_sync_envd_transport(
+            different_shard
+        )
         # Generic API traffic remains on shard zero rather than multiplying
         # control-plane connections for every envd shard.
-        assert unwrap_rate_limit_transport(
-            get_sync_envd_transport(first)
-        ) is not unwrap_rate_limit_transport(get_sync_transport(first))
+        assert get_sync_envd_transport(first) is not get_sync_transport(first)
     finally:
         reset_transport_caches()
 
@@ -345,19 +301,10 @@ def test_sync_generic_transport_separates_streaming_read_timeout(test_api_key):
         api_transport = get_sync_transport(config)
         streaming_transport = get_sync_transport(config, for_streaming=True)
 
-        assert isinstance(api_transport, RateLimitTransport)
-        assert isinstance(api_transport.transport, PyqwestTransport)
-        assert unwrap_rate_limit_transport(
-            api_transport
-        ) is unwrap_rate_limit_transport(
-            get_sync_transport(config, for_streaming=False)
-        )
-        assert unwrap_rate_limit_transport(
-            streaming_transport
-        ) is not unwrap_rate_limit_transport(api_transport)
-        assert unwrap_rate_limit_transport(
-            get_sync_transport(config, for_streaming=True)
-        ) is unwrap_rate_limit_transport(streaming_transport)
+        assert isinstance(api_transport, PyqwestTransport)
+        assert api_transport is get_sync_transport(config, for_streaming=False)
+        assert streaming_transport is not api_transport
+        assert get_sync_transport(config, for_streaming=True) is streaming_transport
     finally:
         reset_transport_caches()
 
@@ -371,12 +318,8 @@ def test_sync_envd_api_client_wiring(test_api_key):
 
     try:
         assert client.base_url == "https://sandbox.e2b.app"
-        assert unwrap_rate_limit_transport(
-            client._transport
-        ) is unwrap_rate_limit_transport(get_sync_transport(config))
-        assert unwrap_rate_limit_transport(
-            streaming._transport
-        ) is unwrap_rate_limit_transport(get_sync_transport(config, for_streaming=True))
+        assert client._transport is get_sync_transport(config)
+        assert streaming._transport is get_sync_transport(config, for_streaming=True)
         for header, value in config.sandbox_headers.items():
             assert client.headers[header] == value
     finally:
@@ -417,13 +360,9 @@ async def test_async_api_client_proxy_uses_explicit_transport(test_api_key):
 
     try:
         assert "proxy" not in api_client._httpx_args
-        assert unwrap_async_rate_limit_transport(
-            httpx_client._transport
-        ) is unwrap_async_rate_limit_transport(get_async_transport(config))
-        assert isinstance(
-            unwrap_async_rate_limit_transport(httpx_client._transport),
-            AsyncPyqwestTransport,
-        )
+        assert isinstance(httpx_client._transport, AsyncRateLimitTransport)
+        assert httpx_client._transport.transport is get_async_transport(config)
+        assert isinstance(httpx_client._transport.transport, AsyncPyqwestTransport)
         assert httpx_client._mounts == {}
     finally:
         await httpx_client.aclose()
@@ -440,23 +379,13 @@ async def test_async_get_transport_keyed_by_proxy(test_api_key):
     direct_config = ConnectionConfig(api_key=test_api_key)
 
     try:
-        proxied_transport = unwrap_async_rate_limit_transport(
-            get_async_transport(proxied_config)
-        )
-        direct_transport = unwrap_async_rate_limit_transport(
-            get_async_transport(direct_config)
-        )
+        proxied_transport = get_async_transport(proxied_config)
+        direct_transport = get_async_transport(direct_config)
 
         assert proxied_transport is not direct_transport
         # The same proxy still reuses the cached instance.
-        assert (
-            unwrap_async_rate_limit_transport(get_async_transport(proxied_config))
-            is proxied_transport
-        )
-        assert (
-            unwrap_async_rate_limit_transport(get_async_transport(direct_config))
-            is direct_transport
-        )
+        assert get_async_transport(proxied_config) is proxied_transport
+        assert get_async_transport(direct_config) is direct_transport
     finally:
         reset_transport_caches()
 
@@ -467,16 +396,10 @@ async def test_async_transports_keyed_by_http_version(test_api_key):
     config = ConnectionConfig(api_key=test_api_key)
 
     try:
-        negotiated = unwrap_async_rate_limit_transport(get_async_transport(config))
-        http1 = unwrap_async_rate_limit_transport(
-            get_async_transport(config, http2=False)
-        )
-        envd_negotiated = unwrap_async_rate_limit_transport(
-            get_async_envd_transport(config)
-        )
-        envd_http1 = unwrap_async_rate_limit_transport(
-            get_async_envd_transport(config, http2=False)
-        )
+        negotiated = get_async_transport(config)
+        http1 = get_async_transport(config, http2=False)
+        envd_negotiated = get_async_envd_transport(config)
+        envd_http1 = get_async_envd_transport(config, http2=False)
 
         assert http1 is not negotiated
         assert envd_http1 is not envd_negotiated
@@ -484,23 +407,11 @@ async def test_async_transports_keyed_by_http_version(test_api_key):
         # shares the generic transport for each HTTP version.
         assert envd_negotiated is negotiated
         assert envd_http1 is http1
+        assert get_async_transport(config, http2=False) is http1
+        assert get_async_transport(config) is negotiated
+        assert get_async_envd_transport(config, http2=False) is envd_http1
         assert (
-            unwrap_async_rate_limit_transport(get_async_transport(config, http2=False))
-            is http1
-        )
-        assert (
-            unwrap_async_rate_limit_transport(get_async_transport(config)) is negotiated
-        )
-        assert (
-            unwrap_async_rate_limit_transport(
-                get_async_envd_transport(config, http2=False)
-            )
-            is envd_http1
-        )
-        assert (
-            unwrap_async_rate_limit_transport(
-                get_async_envd_transport(config, http2=False, for_streaming=True)
-            )
+            get_async_envd_transport(config, http2=False, for_streaming=True)
             is not envd_http1
         )
     finally:
@@ -518,17 +429,11 @@ async def test_async_envd_transports_are_consistently_sharded_by_sandbox(
     different_shard = sandbox_config(test_api_key, "sbx-1")
 
     try:
-        assert unwrap_async_rate_limit_transport(
-            get_async_envd_transport(first)
-        ) is unwrap_async_rate_limit_transport(get_async_envd_transport(same_shard))
-        assert unwrap_async_rate_limit_transport(
-            get_async_envd_transport(first)
-        ) is not unwrap_async_rate_limit_transport(
-            get_async_envd_transport(different_shard)
+        assert get_async_envd_transport(first) is get_async_envd_transport(same_shard)
+        assert get_async_envd_transport(first) is not get_async_envd_transport(
+            different_shard
         )
-        assert unwrap_async_rate_limit_transport(
-            get_async_envd_transport(first)
-        ) is not unwrap_async_rate_limit_transport(get_async_transport(first))
+        assert get_async_envd_transport(first) is not get_async_transport(first)
     finally:
         reset_transport_caches()
 
@@ -619,19 +524,10 @@ async def test_async_generic_transport_separates_streaming_read_timeout(test_api
         api_transport = get_async_transport(config)
         streaming_transport = get_async_transport(config, for_streaming=True)
 
-        assert isinstance(api_transport, AsyncRateLimitTransport)
-        assert isinstance(api_transport.transport, AsyncPyqwestTransport)
-        assert unwrap_async_rate_limit_transport(
-            api_transport
-        ) is unwrap_async_rate_limit_transport(
-            get_async_transport(config, for_streaming=False)
-        )
-        assert unwrap_async_rate_limit_transport(
-            streaming_transport
-        ) is not unwrap_async_rate_limit_transport(api_transport)
-        assert unwrap_async_rate_limit_transport(
-            get_async_transport(config, for_streaming=True)
-        ) is unwrap_async_rate_limit_transport(streaming_transport)
+        assert isinstance(api_transport, AsyncPyqwestTransport)
+        assert api_transport is get_async_transport(config, for_streaming=False)
+        assert streaming_transport is not api_transport
+        assert get_async_transport(config, for_streaming=True) is streaming_transport
     finally:
         reset_transport_caches()
 
@@ -645,9 +541,7 @@ async def test_async_envd_api_client_wiring(test_api_key):
 
     try:
         assert client.base_url == "https://sandbox.e2b.app"
-        assert unwrap_async_rate_limit_transport(
-            client._transport
-        ) is unwrap_async_rate_limit_transport(get_async_transport(config))
+        assert client._transport is get_async_transport(config)
         for header, value in config.sandbox_headers.items():
             assert client.headers[header] == value
     finally:
@@ -808,7 +702,8 @@ def test_sync_api_client_round_trips_through_pyqwest(test_api_key, echo_server):
 
 
 @pytest.mark.parametrize(
-    ("retries", "expected_status", "expected_requests"), [(0, 429, 1), (1, 200, 2)]
+    ("retries", "expected_status", "expected_requests"),
+    [(None, 200, 2), (0, 429, 1), (1, 200, 2)],
 )
 def test_sync_api_client_retries_rate_limits(
     test_api_key, echo_server, retries, expected_status, expected_requests
@@ -828,11 +723,25 @@ def test_sync_api_client_retries_rate_limits(
         reset_transport_caches()
 
 
+def test_sync_envd_api_does_not_retry_rate_limits(test_api_key, echo_server):
+    reset_transport_caches()
+    config = ConnectionConfig(api_key=test_api_key, retries=3)
+    envd_api = get_sync_envd_api(config, echo_server)
+
+    try:
+        response = envd_api.get("/rate-limit")
+        assert response.status_code == 429
+        assert _EchoHandler.rate_limit_requests == 1
+    finally:
+        envd_api.close()
+        reset_transport_caches()
+
+
 def test_sync_api_client_replays_buffered_body_after_rate_limit(
     test_api_key, echo_server
 ):
     reset_transport_caches()
-    config = ConnectionConfig(api_key=test_api_key, api_url=echo_server, retries=1)
+    config = ConnectionConfig(api_key=test_api_key, api_url=echo_server)
     httpx_client = get_sync_api_client(config).get_httpx_client()
 
     try:
@@ -903,6 +812,38 @@ async def test_async_api_client_round_trips_through_pyqwest(test_api_key, echo_s
         assert echoed["headers"]["package_version"]
     finally:
         await httpx_client.aclose()
+        reset_transport_caches()
+
+
+@pytest.mark.asyncio
+async def test_async_api_client_retries_rate_limits_by_default(
+    test_api_key, echo_server
+):
+    reset_transport_caches()
+    config = ConnectionConfig(api_key=test_api_key, api_url=echo_server)
+    httpx_client = get_async_api_client(config).get_async_httpx_client()
+
+    try:
+        response = await httpx_client.request("GET", "/rate-limit")
+        assert response.status_code == 200
+        assert _EchoHandler.rate_limit_requests == 2
+    finally:
+        await httpx_client.aclose()
+        reset_transport_caches()
+
+
+@pytest.mark.asyncio
+async def test_async_envd_api_does_not_retry_rate_limits(test_api_key, echo_server):
+    reset_transport_caches()
+    config = ConnectionConfig(api_key=test_api_key, retries=3)
+    envd_api = get_async_envd_api(config, echo_server)
+
+    try:
+        response = await envd_api.get("/rate-limit")
+        assert response.status_code == 429
+        assert _EchoHandler.rate_limit_requests == 1
+    finally:
+        await envd_api.aclose()
         reset_transport_caches()
 
 
@@ -1092,15 +1033,15 @@ def test_sync_closing_one_client_leaves_the_shared_pool_open(test_api_key, echo_
     # must leave the others — and the pool the envd RPC stack talks to
     # directly — working.
     reset_transport_caches()
-    config = ConnectionConfig(api_key=test_api_key, api_url=echo_server, retries=1)
+    config = ConnectionConfig(api_key=test_api_key, api_url=echo_server)
     api_httpx = get_sync_api_client(config).get_httpx_client()
     envd_api = get_sync_envd_api(config, echo_server)
     pool = get_sync_pyqwest_transport(proxy_to_config(config.proxy))
 
     try:
         assert isinstance(api_httpx._transport, RateLimitTransport)
-        assert isinstance(envd_api._transport, RateLimitTransport)
-        assert api_httpx._transport.transport is envd_api._transport.transport
+        assert isinstance(envd_api._transport, PyqwestTransport)
+        assert api_httpx._transport.transport is envd_api._transport
         assert api_httpx.request("GET", "/sandboxes").status_code == 200
 
         api_httpx.close()
@@ -1121,15 +1062,15 @@ async def test_async_closing_one_client_leaves_the_shared_pool_open(
     test_api_key, echo_server
 ):
     reset_transport_caches()
-    config = ConnectionConfig(api_key=test_api_key, api_url=echo_server, retries=1)
+    config = ConnectionConfig(api_key=test_api_key, api_url=echo_server)
     api_httpx = get_async_api_client(config).get_async_httpx_client()
     envd_api = get_async_envd_api(config, echo_server)
     pool = get_async_pyqwest_transport(proxy_to_config(config.proxy))
 
     try:
         assert isinstance(api_httpx._transport, AsyncRateLimitTransport)
-        assert isinstance(envd_api._transport, AsyncRateLimitTransport)
-        assert api_httpx._transport.transport is envd_api._transport.transport
+        assert isinstance(envd_api._transport, AsyncPyqwestTransport)
+        assert api_httpx._transport.transport is envd_api._transport
         assert (await api_httpx.request("GET", "/sandboxes")).status_code == 200
 
         await api_httpx.aclose()

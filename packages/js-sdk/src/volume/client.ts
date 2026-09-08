@@ -5,7 +5,6 @@ import { defaultHeaders, getEnvVar } from '../api/metadata'
 import { createApiFetch } from '../api/http2'
 import { buildRequestSignal } from '../connectionConfig'
 import { createApiLogger, Logger } from '../logs'
-import { resolveRetries, withRateLimitRetry } from '../retry'
 import type { Volume } from './index'
 
 const REQUEST_TIMEOUT_MS = 60_000 // 60 seconds
@@ -43,12 +42,6 @@ export interface VolumeApiOpts {
    */
   requestTimeoutMs?: number
   /**
-   * Number of retries after a 429 response with `Retry-After`.
-   *
-   * @default 0
-   */
-  retries?: number
-  /**
    * Logger to use for logging messages. It can accept any object that implements `Logger` interface—for example, {@link console}.
    */
   logger?: Logger
@@ -81,7 +74,6 @@ export class VolumeConnectionConfig {
   readonly headers?: Record<string, string>
   readonly logger?: Logger
   readonly requestTimeoutMs: number
-  readonly retries: number
   readonly signal?: AbortSignal
   readonly proxy?: string
 
@@ -96,7 +88,6 @@ export class VolumeConnectionConfig {
     this.headers = opts?.headers
     this.logger = opts?.logger
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
-    this.retries = resolveRetries(opts?.retries ?? volume.retries)
     this.signal = opts?.signal
     this.proxy = opts?.proxy || volume.proxy
   }
@@ -126,17 +117,11 @@ export class VolumeConnectionConfig {
  */
 class VolumeApiClient {
   readonly api: ReturnType<typeof createClient<paths>>
-  readonly fetch: typeof fetch
 
   constructor(config: VolumeConnectionConfig) {
-    this.fetch = createApiFetch(config.proxy)
     this.api = createClient<paths>({
       baseUrl: config.apiUrl,
-      fetch: withRateLimitRetry(
-        this.fetch,
-        config.retries,
-        config.requestTimeoutMs
-      ),
+      fetch: createApiFetch(config.proxy),
       headers: {
         ...defaultHeaders,
         ...(config.token && { Authorization: `Bearer ${config.token}` }),

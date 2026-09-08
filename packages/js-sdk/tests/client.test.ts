@@ -184,7 +184,6 @@ test('client retries rate-limited control-plane requests', async () => {
   const client = new E2B({
     apiKey: API_KEY_A,
     domain: DOMAIN_A,
-    retries: 1,
   })
 
   await client.Sandbox.list().nextItems()
