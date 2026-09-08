@@ -127,31 +127,23 @@ export type ChartTypes =
 export function deserializeChart(data: any): Chart {
   switch (data.type) {
     case ChartType.LINE:
-      return {
-        ...data,
-        x_scale: parseScaleType(data.x_scale),
-        y_scale: parseScaleType(data.y_scale),
-      } as LineChart
     case ChartType.SCATTER:
       return {
         ...data,
         x_scale: parseScaleType(data.x_scale),
         y_scale: parseScaleType(data.y_scale),
-      } as ScatterChart
+      } as LineChart | ScatterChart
     case ChartType.BAR:
       return { ...data } as BarChart
     case ChartType.PIE:
       return { ...data } as PieChart
     case ChartType.BOX_AND_WHISKER:
       return { ...data } as BoxAndWhiskerChart
-    case ChartType.SUPERCHART: {
-      const charts: Chart[] = data.data.map((g: any) => deserializeChart(g))
-      delete data.data
+    case ChartType.SUPERCHART:
       return {
         ...data,
-        data: charts,
+        elements: (data.elements ?? []).map((g: any) => deserializeChart(g)),
       } as SuperChart
-    }
     default:
       return { ...data, type: ChartType.UNKNOWN } as Chart
   }

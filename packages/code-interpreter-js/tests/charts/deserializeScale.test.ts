@@ -57,3 +57,26 @@ test('Result maps unrecognized scales through deserializeChart', () => {
   expect(result.chart?.x_scale).toBe(ScaleType.UNKNOWN)
   expect(result.chart?.y_scale).toBe(ScaleType.LOG)
 })
+
+test('Result maps unrecognized scales on SuperChart children', () => {
+  const result = new Result(
+    {
+      chart: {
+        type: ChartType.SUPERCHART,
+        title: 't',
+        elements: [
+          {
+            ...pointChart,
+            x_scale: 'not-a-scale',
+          },
+        ],
+      },
+    },
+    true
+  )
+
+  expect(result.chart?.type).toBe(ChartType.SUPERCHART)
+  expect(result.chart?.elements[0]).toMatchObject({
+    x_scale: ScaleType.UNKNOWN,
+  })
+})
