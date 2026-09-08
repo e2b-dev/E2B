@@ -40,7 +40,6 @@ class Template(TemplateBase):
         cpu_count: int = 2,
         memory_mb: int = 1024,
         min_free_disk_mb: Optional[int] = None,
-        free_disk_space_mb: Optional[int] = None,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
         request_timeout: Optional[float] = None,
@@ -55,17 +54,9 @@ class Template(TemplateBase):
         :param cpu_count: Number of CPUs allocated to the sandbox
         :param memory_mb: Amount of memory in MB allocated to the sandbox
         :param min_free_disk_mb: Requested minimum free space after the build steps, in MiB. Growth is best effort and the filesystem is never shrunk. Omit to use the team default or set to 0 to request no growth.
-        :param free_disk_space_mb: (Deprecated) Use min_free_disk_mb instead. If both are set, they must be equal.
         :param skip_cache: If True, forces a complete rebuild ignoring cache
         :param on_build_logs: Callback function to receive build logs during the build process
         """
-        if free_disk_space_mb is not None:
-            if min_free_disk_mb is not None and min_free_disk_mb != free_disk_space_mb:
-                raise ValueError(
-                    "min_free_disk_mb and deprecated free_disk_space_mb must be equal when both are provided"
-                )
-            min_free_disk_mb = free_disk_space_mb
-
         if skip_cache:
             template._template._force = True
 
@@ -211,7 +202,6 @@ class Template(TemplateBase):
         cpu_count: int = 2,
         memory_mb: int = 1024,
         min_free_disk_mb: Optional[int] = None,
-        free_disk_space_mb: Optional[int] = None,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
         **opts: Unpack[ApiParams],
@@ -226,7 +216,6 @@ class Template(TemplateBase):
         :param cpu_count: Number of CPUs allocated to the sandbox
         :param memory_mb: Amount of memory in MB allocated to the sandbox
         :param min_free_disk_mb: Requested minimum free space after the build steps, in MiB. Growth is best effort and the filesystem is never shrunk. Omit to use the team default or set to 0 to request no growth.
-        :param free_disk_space_mb: (Deprecated) Use min_free_disk_mb instead. If both are set, they must be equal.
         :param skip_cache: If True, forces a complete rebuild ignoring cache
         :param on_build_logs: Callback function to receive build logs during the build process
 
@@ -274,7 +263,6 @@ class Template(TemplateBase):
                 cpu_count=cpu_count,
                 memory_mb=memory_mb,
                 min_free_disk_mb=min_free_disk_mb,
-                free_disk_space_mb=free_disk_space_mb,
                 skip_cache=skip_cache,
                 on_build_logs=on_build_logs,
                 # Only honor an explicitly set request_timeout for uploads;
@@ -321,7 +309,6 @@ class Template(TemplateBase):
         cpu_count: int = 2,
         memory_mb: int = 1024,
         min_free_disk_mb: Optional[int] = None,
-        free_disk_space_mb: Optional[int] = None,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
         **opts: Unpack[ApiParams],
@@ -336,7 +323,6 @@ class Template(TemplateBase):
         :param cpu_count: Number of CPUs allocated to the sandbox
         :param memory_mb: Amount of memory in MB allocated to the sandbox
         :param min_free_disk_mb: Requested minimum free space after the build steps, in MiB. Growth is best effort and the filesystem is never shrunk. Omit to use the team default or set to 0 to request no growth.
-        :param free_disk_space_mb: (Deprecated) Use min_free_disk_mb instead. If both are set, they must be equal.
         :param skip_cache: If True, forces a complete rebuild ignoring cache
         :return: BuildInfo containing the template ID and build ID
 
@@ -374,7 +360,6 @@ class Template(TemplateBase):
             cpu_count=cpu_count,
             memory_mb=memory_mb,
             min_free_disk_mb=min_free_disk_mb,
-            free_disk_space_mb=free_disk_space_mb,
             skip_cache=skip_cache,
             on_build_logs=on_build_logs,
             # Only honor an explicitly set request_timeout for uploads;

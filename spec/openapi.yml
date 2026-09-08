@@ -397,16 +397,6 @@ components:
         filesystems. Growth is best effort, so filesystem metadata can leave the
         available space slightly below the requested minimum.
 
-    FreeDiskSpaceMB:
-      type: integer
-      format: int32
-      minimum: 0
-      deprecated: true
-      description: >-
-        Deprecated and ignored. Use minFreeDiskMb instead.
-        If minFreeDiskMb is omitted, the team's default applies even when
-        freeDiskSpaceMB is provided.
-
     EnvdVersion:
       type: string
       description: Version of the envd running in the sandbox
@@ -1540,8 +1530,6 @@ components:
           $ref: "#/components/schemas/MemoryMB"
         minFreeDiskMb:
           $ref: "#/components/schemas/MinFreeDiskMb"
-        freeDiskSpaceMB:
-          $ref: "#/components/schemas/FreeDiskSpaceMB"
 
     TemplateBuildRequestV2:
       required:

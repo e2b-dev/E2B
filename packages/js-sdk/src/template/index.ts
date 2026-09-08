@@ -1079,7 +1079,6 @@ export class TemplateBase
         cpuCount: options.cpuCount ?? 2,
         memoryMB: options.memoryMB ?? 1024,
         minFreeDiskMb: options.minFreeDiskMb,
-        freeDiskSpaceMB: options.freeDiskSpaceMB,
       },
       config.getSignal(undefined, options.signal)
     )

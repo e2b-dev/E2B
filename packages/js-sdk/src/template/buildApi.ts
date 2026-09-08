@@ -22,7 +22,6 @@ type RequestBuildInput = {
   cpuCount: number
   memoryMB: number
   minFreeDiskMb?: number
-  freeDiskSpaceMB?: number
 }
 
 type GetFileUploadLinkInput = {
@@ -52,33 +51,16 @@ export type TriggerBuildTemplate = components['schemas']['TemplateBuildStartV2']
 
 export async function requestBuild(
   client: ApiClient,
-  {
-    name,
-    tags,
-    cpuCount,
-    memoryMB,
-    minFreeDiskMb,
-    freeDiskSpaceMB,
-  }: RequestBuildInput,
+  { name, tags, cpuCount, memoryMB, minFreeDiskMb }: RequestBuildInput,
   signal?: AbortSignal
 ) {
-  if (
-    minFreeDiskMb !== undefined &&
-    freeDiskSpaceMB !== undefined &&
-    minFreeDiskMb !== freeDiskSpaceMB
-  ) {
-    throw new BuildError(
-      'minFreeDiskMb and deprecated freeDiskSpaceMB must be equal when both are provided'
-    )
-  }
-
   const requestBuildRes = await client.api.POST('/v3/templates', {
     body: {
       name,
       tags,
       cpuCount,
       memoryMB,
-      minFreeDiskMb: minFreeDiskMb ?? freeDiskSpaceMB,
+      minFreeDiskMb,
     },
     signal,
   })

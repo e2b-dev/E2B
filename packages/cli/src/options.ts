@@ -114,30 +114,3 @@ export const minFreeDiskMbOption = new commander.Option(
   '--min-free-disk-mb <min-free-disk-mb>',
   'requested minimum free space after build steps, in MiB. Omit for the team default or use 0 for no minimum growth. Growth is best effort and never shrinks the filesystem.'
 ).argParser(parseNonNegativeInt('Minimum free disk in MiB'))
-
-export const deprecatedFreeDiskSpaceMbOption = new commander.Option(
-  '--free-disk-space-mb <free-disk-space-mb>',
-  '[deprecated] use --min-free-disk-mb instead'
-)
-  .argParser(parseNonNegativeInt('Minimum free disk in MiB'))
-  .hideHelp()
-
-export function minFreeDiskMbFromOptions(opts: {
-  minFreeDiskMb?: number
-  freeDiskSpaceMb?: number
-}): number | undefined {
-  if (opts.freeDiskSpaceMb !== undefined) {
-    if (
-      opts.minFreeDiskMb !== undefined &&
-      opts.minFreeDiskMb !== opts.freeDiskSpaceMb
-    ) {
-      throw new commander.InvalidArgumentError(
-        '--min-free-disk-mb and deprecated --free-disk-space-mb must be equal when both are provided'
-      )
-    }
-    console.error(
-      'The --free-disk-space-mb flag is deprecated, use --min-free-disk-mb instead.'
-    )
-  }
-  return opts.minFreeDiskMb ?? opts.freeDiskSpaceMb
-}

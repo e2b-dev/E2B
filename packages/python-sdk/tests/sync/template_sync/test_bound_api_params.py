@@ -159,12 +159,9 @@ def test_bound_request_timeout_reaches_the_build(configs, monkeypatch):
         ({}, None),
         ({"min_free_disk_mb": 0}, 0),
         ({"min_free_disk_mb": 20480}, 20480),
-        ({"free_disk_space_mb": 0}, 0),
-        ({"free_disk_space_mb": 20480}, 20480),
-        ({"min_free_disk_mb": 0, "free_disk_space_mb": 0}, 0),
     ],
 )
-def test_minimum_free_disk_aliases(configs, monkeypatch, method, options, expected):
+def test_minimum_free_disk_option(configs, monkeypatch, method, options, expected):
     bodies = []
 
     def request(*, client, body):
@@ -190,20 +187,3 @@ def test_minimum_free_disk_aliases(configs, monkeypatch, method, options, expect
         assert bodies[0].min_free_disk_mb is UNSET
     else:
         assert bodies[0].min_free_disk_mb == expected
-
-
-@pytest.mark.parametrize(
-    "options",
-    [
-        {"min_free_disk_mb": 0, "free_disk_space_mb": 1024},
-        {"min_free_disk_mb": 1024, "free_disk_space_mb": 0},
-    ],
-)
-def test_conflicting_disk_aliases_fail_before_request(configs, monkeypatch, options):
-    request = Mock()
-    monkeypatch.setattr(template_sync_main, "request_build", request)
-    with pytest.raises(ValueError, match="must be equal"):
-        Template.build_in_background(
-            Template().from_base_image(), "conflict", **options
-        )
-    request.assert_not_called()

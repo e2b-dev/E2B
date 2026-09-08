@@ -49,10 +49,6 @@ export type BasicBuildOptions = {
    */
   minFreeDiskMb?: number
   /**
-   * @deprecated Use `minFreeDiskMb` instead. If both are set, they must be equal.
-   */
-  freeDiskSpaceMB?: number
-  /**
    * If true, skips cache and forces a complete rebuild.
    * @default false
    */

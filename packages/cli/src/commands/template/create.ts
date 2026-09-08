@@ -6,13 +6,7 @@ import {
   defaultDockerfileName,
   fallbackDockerfileName,
 } from 'src/docker/constants'
-import {
-  minFreeDiskMbOption,
-  deprecatedFreeDiskSpaceMbOption,
-  minFreeDiskMbFromOptions,
-  parsePositiveInt,
-  pathOption,
-} from 'src/options'
+import { minFreeDiskMbOption, parsePositiveInt, pathOption } from 'src/options'
 import { validateTemplateName } from 'src/utils/templateName'
 import { getRoot } from 'src/utils/filesystem'
 import {
@@ -60,7 +54,6 @@ export const createCommand = new commander.Command('create')
     parsePositiveInt('Memory in megabytes')
   )
   .addOption(minFreeDiskMbOption)
-  .addOption(deprecatedFreeDiskSpaceMbOption)
   .option('--no-cache', 'skip cache when building the template.')
   .alias('ct')
   .action(
@@ -74,7 +67,6 @@ export const createCommand = new commander.Command('create')
         cpuCount?: number
         memoryMb?: number
         minFreeDiskMb?: number
-        freeDiskSpaceMb?: number
         noCache?: boolean
       }
     ) => {
@@ -111,7 +103,7 @@ export const createCommand = new commander.Command('create')
         const readyCmd = opts.readyCmd
         const cpuCount = opts.cpuCount
         const memoryMB = opts.memoryMb
-        const minFreeDiskMb = minFreeDiskMbFromOptions(opts)
+        const minFreeDiskMb = opts.minFreeDiskMb
 
         // Get Dockerfile content
         const { dockerfileContent, dockerfileRelativePath } = getDockerfile(

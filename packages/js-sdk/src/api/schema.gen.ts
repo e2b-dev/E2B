@@ -2241,12 +2241,6 @@ export interface components {
             /** @description Error */
             message: string;
         };
-        /**
-         * Format: int32
-         * @deprecated
-         * @description Deprecated and ignored. Use minFreeDiskMb instead. If minFreeDiskMb is omitted, the team's default applies even when freeDiskSpaceMB is provided.
-         */
-        FreeDiskSpaceMB: number;
         FromImageRegistry: components["schemas"]["AWSRegistry"] | components["schemas"]["GCPRegistry"] | components["schemas"]["GeneralRegistry"];
         GCPRegistry: {
             /** @description Service Account JSON for GCP authentication */
@@ -2924,7 +2918,6 @@ export interface components {
              */
             alias?: string;
             cpuCount?: components["schemas"]["CPUCount"];
-            freeDiskSpaceMB?: components["schemas"]["FreeDiskSpaceMB"];
             memoryMB?: components["schemas"]["MemoryMB"];
             minFreeDiskMb?: components["schemas"]["MinFreeDiskMb"];
             /** @description Name of the template. Can include a tag with colon separator (e.g. "my-template" or "my-template:v1"). If tag is included, it will be treated as if the tag was provided in the tags array. */
