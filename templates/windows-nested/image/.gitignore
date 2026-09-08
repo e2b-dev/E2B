@@ -1,0 +1,7 @@
+*.qcow2
+*.fd
+*.img
+*.raw
+*.rom
+*.vars
+dockur-storage/
