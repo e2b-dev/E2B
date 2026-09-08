@@ -7,7 +7,7 @@ from typing import cast, Mapping, Optional, Dict, TypedDict, Union
 import httpx
 from typing_extensions import Unpack
 
-from e2b._retry import resolve_max_retries
+from e2b.retry import resolve_max_retries
 from e2b.api.metadata import package_version
 from e2b.sandbox_domains import is_supported_sandbox_domain
 

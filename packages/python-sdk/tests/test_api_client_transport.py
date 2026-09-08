@@ -16,7 +16,7 @@ from transport_caches import reset_transport_caches
 import e2b.api as api
 import e2b.api.client_async as api_client_async
 import e2b.api.client_sync as api_client_sync
-from e2b._retry import AsyncRateLimitTransport, RateLimitTransport
+from e2b.retry import AsyncRateLimitTransport, RateLimitTransport
 from e2b.api import (
     envd_pool_shard,
     pool_idle_timeout,

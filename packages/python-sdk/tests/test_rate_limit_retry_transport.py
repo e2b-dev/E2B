@@ -1,7 +1,7 @@
 import httpx
 import pytest
 
-from e2b._retry import AsyncRateLimitTransport, RateLimitTransport, parse_retry_after
+from e2b.retry import AsyncRateLimitTransport, RateLimitTransport, parse_retry_after
 
 
 class FakeTransport(httpx.BaseTransport):

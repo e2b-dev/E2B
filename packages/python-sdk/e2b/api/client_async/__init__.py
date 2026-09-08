@@ -7,7 +7,7 @@ from pyqwest import HTTPTransport, HTTPVersion, Request, Response
 from pyqwest.httpx import AsyncPyqwestTransport
 from pyqwest.middleware.retry import RetryMode, RetryTransport
 
-from e2b._retry import AsyncRateLimitTransport
+from e2b.retry import AsyncRateLimitTransport
 from e2b.api import (
     AsyncApiClient,
     ProxyConfig,
