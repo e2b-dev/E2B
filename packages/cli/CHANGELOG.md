@@ -1,5 +1,16 @@
 # @e2b/cli
 
+## 2.18.1
+
+### Patch Changes
+
+- 3289fdc: Remove unused CLI formatting helpers and de-duplicate internal constants
+- Updated dependencies [cd921aa]
+- Updated dependencies [1980d6b]
+- Updated dependencies [043d050]
+- Updated dependencies [3289fdc]
+  - e2b@2.47.0
+
 ## 2.18.0
 
 ### Minor Changes
