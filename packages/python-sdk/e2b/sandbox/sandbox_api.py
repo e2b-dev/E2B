@@ -767,7 +767,7 @@ def build_network_config(
         body["allow_public_traffic"] = network["allow_public_traffic"]
     if "mask_request_host" in network:
         body["mask_request_host"] = network["mask_request_host"]
-    if "https_ports" in network:
+    if network.get("https_ports") is not None:
         body["https_ports"] = list(network["https_ports"])
 
     return body

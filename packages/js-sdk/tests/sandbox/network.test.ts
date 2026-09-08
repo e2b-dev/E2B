@@ -376,9 +376,13 @@ server.serve_forever()
       let response: Response | undefined
       const deadline = Date.now() + 15_000
       while (Date.now() < deadline) {
-        response = await fetch(sandboxUrl)
-        if (response.status === 200) {
-          break
+        try {
+          response = await fetch(sandboxUrl)
+          if (response.status === 200) {
+            break
+          }
+        } catch {
+          // proxy may not have a route until the guest server is ready
         }
         await new Promise((resolve) => setTimeout(resolve, 1000))
       }
