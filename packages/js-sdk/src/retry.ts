@@ -1,6 +1,7 @@
 import { InvalidArgumentError } from './errors'
 
 const MAX_RETRY_AFTER_SECONDS = 2_147_483
+const MAX_RETRY_WAIT_WITHOUT_TIMEOUT_MS = 60_000
 
 export function resolveRetries(retries: number): number {
   if (!Number.isInteger(retries) || retries < 0) {
@@ -60,9 +61,8 @@ export function withRateLimitRetry(
     if (retries === 0) return fetchImpl(input, init)
 
     const request = new Request(input as RequestInfo, init)
-    const deadline = requestTimeoutMs
-      ? monotonic() + requestTimeoutMs
-      : undefined
+    const deadline =
+      monotonic() + (requestTimeoutMs || MAX_RETRY_WAIT_WITHOUT_TIMEOUT_MS)
 
     for (let attempt = 0; ; attempt++) {
       const response = await fetchImpl(request.clone())
@@ -73,7 +73,7 @@ export function withRateLimitRetry(
         response.status !== 429 ||
         delayMs === undefined ||
         attempt === retries ||
-        (deadline !== undefined && monotonic() + delayMs >= deadline)
+        monotonic() + delayMs >= deadline
       ) {
         return response
       }

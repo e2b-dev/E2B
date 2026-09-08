@@ -103,6 +103,27 @@ test('propagates 429 when Retry-After exceeds the request timeout', async () => 
   expect(sleep).not.toHaveBeenCalled()
 })
 
+test('bounds retry waits when the request timeout is disabled', async () => {
+  const fetchImpl = vi.fn(
+    async () =>
+      new Response(null, {
+        status: 429,
+        headers: { 'Retry-After': '60' },
+      })
+  ) as typeof fetch
+  const sleep = vi.fn(async () => {})
+  const fetchWithRetry = withRateLimitRetry(fetchImpl, 3, 0, {
+    monotonic: () => 0,
+    sleep,
+  })
+
+  const response = await fetchWithRetry('https://api.e2b.test/resource')
+
+  expect(response.status).toBe(429)
+  expect(fetchImpl).toHaveBeenCalledOnce()
+  expect(sleep).not.toHaveBeenCalled()
+})
+
 test('propagates 429 without Retry-After as is', async () => {
   const rateLimited = new Response('rate limited', { status: 429 })
   const fetchImpl = vi.fn(async () => rateLimited) as typeof fetch

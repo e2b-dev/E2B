@@ -64,6 +64,7 @@ export interface ConnectionOpts {
    * Number of control-plane API retries after a 429 response with a valid,
    * non-negative integer delta-seconds `Retry-After` header. HTTP-date and
    * malformed values are not retried.
+   * Retry waits use a 60-second total limit when request timeouts are disabled.
    *
    * @default 3
    */

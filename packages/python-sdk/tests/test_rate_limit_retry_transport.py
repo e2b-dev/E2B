@@ -132,6 +132,26 @@ def test_retry_after_exceeding_timeout_is_propagated_as_is():
     assert sleeps == []
 
 
+def test_retry_wait_is_bounded_when_request_timeout_is_disabled():
+    inner = FakeTransport([429], retry_after="60")
+    sleeps = []
+    request = httpx.Request(
+        "GET",
+        "https://api.test",
+        extensions={
+            "timeout": {"connect": None, "read": None, "write": None, "pool": None}
+        },
+    )
+
+    response = RateLimitTransport(
+        inner, retries=3, sleep=sleeps.append, monotonic=lambda: 0.0
+    ).handle_request(request)
+
+    assert response is inner.responses[0]
+    assert len(inner.requests) == 1
+    assert sleeps == []
+
+
 def test_does_not_retry_other_status_codes():
     inner = FakeTransport([503], retry_after="0")
 
@@ -374,6 +394,36 @@ async def test_async_retry_after_exceeding_timeout_is_propagated_as_is():
             "GET",
             "https://api.test",
             extensions={"timeout": {"connect": 3.0, "read": 3.0}},
+        )
+    )
+
+    assert response is inner.responses[0]
+    assert len(inner.requests) == 1
+    assert sleeps == []
+
+
+@pytest.mark.asyncio
+async def test_async_retry_wait_is_bounded_when_request_timeout_is_disabled():
+    inner = FakeAsyncTransport([429], retry_after="60")
+    sleeps = []
+
+    async def sleep(delay):
+        sleeps.append(delay)
+
+    response = await AsyncRateLimitTransport(
+        inner, retries=3, sleep=sleep, monotonic=lambda: 0.0
+    ).handle_async_request(
+        httpx.Request(
+            "GET",
+            "https://api.test",
+            extensions={
+                "timeout": {
+                    "connect": None,
+                    "read": None,
+                    "write": None,
+                    "pool": None,
+                }
+            },
         )
     )
 

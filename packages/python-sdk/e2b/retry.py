@@ -7,6 +7,7 @@ import httpx
 from e2b.exceptions import InvalidArgumentException
 
 MAX_RETRY_AFTER_SECONDS = 2_147_483_647
+MAX_RETRY_WAIT_WITHOUT_TIMEOUT_SECONDS = 60.0
 
 
 def resolve_max_retries(retries: int) -> int:
@@ -49,17 +50,17 @@ def _copy_request(
     )
 
 
-def _request_deadline(
-    request: httpx.Request, monotonic: Callable[[], float]
-) -> Optional[float]:
+def _request_deadline(request: httpx.Request, monotonic: Callable[[], float]) -> float:
     timeout = request.extensions.get("timeout")
     if not isinstance(timeout, dict):
-        return None
+        return monotonic() + MAX_RETRY_WAIT_WITHOUT_TIMEOUT_SECONDS
 
     values = [value for value in timeout.values() if value is not None]
     # A monotonic clock cannot jump when the system wall clock is adjusted,
     # keeping elapsed timeout calculations stable across retries.
-    return monotonic() + min(values) if values else None
+    return monotonic() + (
+        min(values) if values else MAX_RETRY_WAIT_WITHOUT_TIMEOUT_SECONDS
+    )
 
 
 class RateLimitTransport(httpx.BaseTransport):
@@ -87,7 +88,7 @@ class RateLimitTransport(httpx.BaseTransport):
         deadline = _request_deadline(request, self._monotonic)
         for attempt in range(self.retries + 1):
             remaining_timeout = None
-            if attempt > 0 and deadline is not None:
+            if attempt > 0:
                 remaining_timeout = deadline - self._monotonic()
                 if remaining_timeout <= 0:
                     raise httpx.TimeoutException(
@@ -103,9 +104,7 @@ class RateLimitTransport(httpx.BaseTransport):
                 response.status_code != 429
                 or retry_after is None
                 or attempt == self.retries
-                or (
-                    deadline is not None and self._monotonic() + retry_after >= deadline
-                )
+                or (self._monotonic() + retry_after >= deadline)
             ):
                 return response
 
@@ -144,7 +143,7 @@ class AsyncRateLimitTransport(httpx.AsyncBaseTransport):
         deadline = _request_deadline(request, self._monotonic)
         for attempt in range(self.retries + 1):
             remaining_timeout = None
-            if attempt > 0 and deadline is not None:
+            if attempt > 0:
                 remaining_timeout = deadline - self._monotonic()
                 if remaining_timeout <= 0:
                     raise httpx.TimeoutException(
@@ -160,9 +159,7 @@ class AsyncRateLimitTransport(httpx.AsyncBaseTransport):
                 response.status_code != 429
                 or retry_after is None
                 or attempt == self.retries
-                or (
-                    deadline is not None and self._monotonic() + retry_after >= deadline
-                )
+                or (self._monotonic() + retry_after >= deadline)
             ):
                 return response
 

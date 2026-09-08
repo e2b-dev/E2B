@@ -55,6 +55,7 @@ class ApiParams(TypedDict, total=False):
     non-negative integer delta-seconds ``Retry-After`` header. HTTP-date and
     malformed values are not retried.
     A retry is skipped when its wait would exhaust the request timeout.
+    Retry waits use a 60-second total limit when request timeouts are disabled.
     Defaults to 3 retries."""
 
     headers: Optional[Dict[str, str]]
