@@ -154,17 +154,18 @@ export class RateLimitError extends SandboxError {
 }
 
 /**
- * Thrown when the API refused the operation because the service or the node
- * running the sandbox is temporarily busy (HTTP 503).
+ * Thrown when the API refused the operation because the service is
+ * temporarily busy (HTTP 503): no capacity to place a sandbox right now, or
+ * the node running the sandbox declined a request it cannot serve yet.
  *
- * The sandbox itself is unchanged: for example a refused pause leaves it
- * running with its state intact, so the same call can be retried after a
- * short wait, or the sandbox can simply be used further.
+ * Nothing was changed by the refused call: for example a refused pause
+ * leaves the sandbox running with its state intact, so the same call can be
+ * retried after a short wait.
  */
-export class SandboxBusyError extends SandboxError {
+export class ServiceBusyError extends SandboxError {
   constructor(message: string) {
     super(message)
-    this.name = 'SandboxBusyError'
+    this.name = 'ServiceBusyError'
     this.statusCode = 503
   }
 }

@@ -7,7 +7,7 @@ import { ConnectionConfig } from '../connectionConfig'
 import {
   AuthenticationError,
   RateLimitError,
-  SandboxBusyError,
+  ServiceBusyError,
   SandboxError,
 } from '../errors'
 import { createApiLogger } from '../logs'
@@ -43,7 +43,7 @@ export function apiErrorFromCode(
   // and carries the status instead.
   if (code === 503 && errorClass === SandboxError) {
     const message = 'Service temporarily unavailable, please retry'
-    return new SandboxBusyError(content ? `${message} - ${content}` : message)
+    return new ServiceBusyError(content ? `${message} - ${content}` : message)
   }
 
   const err = new errorClass(`${code}: ${content}`, stackTrace)

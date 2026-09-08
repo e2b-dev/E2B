@@ -47,7 +47,7 @@ from .exceptions import (
     NotEnoughSpaceException,
     NotFoundException,
     RateLimitException,
-    SandboxBusyException,
+    ServiceBusyException,
     SandboxException,
     SandboxNotFoundException,
     TemplateException,
@@ -177,7 +177,7 @@ __all__ = [
     "Username",
     # Exceptions
     "SandboxException",
-    "SandboxBusyException",
+    "ServiceBusyException",
     "TimeoutException",
     "NotFoundException",
     "FileNotFoundException",

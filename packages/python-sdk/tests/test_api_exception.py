@@ -3,7 +3,7 @@ from types import SimpleNamespace
 from e2b.api import api_exception_from_code, handle_api_exception
 from e2b.exceptions import (
     RateLimitException,
-    SandboxBusyException,
+    ServiceBusyException,
     SandboxException,
 )
 
@@ -17,7 +17,7 @@ def test_refused_pause_is_a_busy_exception_with_the_status_and_message():
         response(503, b'{"message":"node is busy persisting sandbox, please retry"}')
     )
 
-    assert isinstance(err, SandboxBusyException)
+    assert isinstance(err, ServiceBusyException)
     assert isinstance(err, SandboxException)
     assert err.status_code == 503
     assert "node is busy persisting sandbox" in str(err)
@@ -26,7 +26,7 @@ def test_refused_pause_is_a_busy_exception_with_the_status_and_message():
 def test_503_without_a_body_is_still_a_busy_exception():
     err = handle_api_exception(response(503))
 
-    assert isinstance(err, SandboxBusyException)
+    assert isinstance(err, ServiceBusyException)
     assert err.status_code == 503
 
 
@@ -34,7 +34,7 @@ def test_generic_failure_stays_a_sandbox_exception_and_carries_its_status():
     err = handle_api_exception(response(500, b'{"message":"Internal error"}'))
 
     assert isinstance(err, SandboxException)
-    assert not isinstance(err, SandboxBusyException)
+    assert not isinstance(err, ServiceBusyException)
     assert err.status_code == 500
     assert str(err) == "500: Internal error"
 
@@ -56,7 +56,7 @@ def test_503_through_another_hierarchy_keeps_that_hierarchy():
     )
 
     assert isinstance(err, BuildLikeException)
-    assert not isinstance(err, SandboxBusyException)
+    assert not isinstance(err, ServiceBusyException)
     assert err.status_code == 503
 
 

@@ -19,7 +19,7 @@ from e2b.exceptions import (
     AuthenticationException,
     InvalidArgumentException,
     RateLimitException,
-    SandboxBusyException,
+    ServiceBusyException,
     SandboxException,
 )
 
@@ -207,7 +207,7 @@ def api_exception_from_code(
         text = f"{status_code}: Service temporarily unavailable, please retry."
         if message:
             text += f" - {message}"
-        return SandboxBusyException(text)
+        return ServiceBusyException(text)
 
     err = default_exception_class(f"{status_code}: {message}").with_traceback(
         stack_trace

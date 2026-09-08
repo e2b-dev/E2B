@@ -3,7 +3,7 @@ import { handleApiError } from '../../src/api'
 import {
   AuthenticationError,
   RateLimitError,
-  SandboxBusyError,
+  ServiceBusyError,
   SandboxError,
 } from '../../src/errors'
 
@@ -69,22 +69,22 @@ describe('handleApiError', () => {
       assert.include(err?.message, 'Unauthorized')
     })
 
-    test('returns SandboxBusyError for 503 with undefined error', () => {
+    test('returns ServiceBusyError for 503 with undefined error', () => {
       const res = createMockResponse(503, undefined)
       const err = handleApiError(res as any)
-      assert.instanceOf(err, SandboxBusyError)
+      assert.instanceOf(err, ServiceBusyError)
       assert.instanceOf(err, SandboxError)
       assert.include(err?.message, 'temporarily unavailable')
     })
   })
 
   describe('status code on the error', () => {
-    test('a refused pause is a SandboxBusyError carrying 503 and the API message', () => {
+    test('a refused pause is a ServiceBusyError carrying 503 and the API message', () => {
       const res = createMockResponse(503, {
         message: 'node is busy persisting sandbox, please retry',
       })
       const err = handleApiError(res as any) as SandboxError
-      assert.instanceOf(err, SandboxBusyError)
+      assert.instanceOf(err, ServiceBusyError)
       assert.equal(err.statusCode, 503)
       assert.include(err.message, 'node is busy persisting sandbox')
     })
@@ -93,7 +93,7 @@ describe('handleApiError', () => {
       const res = createMockResponse(500, { message: 'boom' })
       const err = handleApiError(res as any) as SandboxError
       assert.instanceOf(err, SandboxError)
-      assert.notInstanceOf(err, SandboxBusyError)
+      assert.notInstanceOf(err, ServiceBusyError)
       assert.equal(err.statusCode, 500)
     })
 
@@ -107,7 +107,7 @@ describe('handleApiError', () => {
       const res = createMockResponse(503, { message: 'no capacity' })
       const err = handleApiError(res as any, BuildLikeError) as SandboxError
       assert.instanceOf(err, BuildLikeError)
-      assert.notInstanceOf(err, SandboxBusyError)
+      assert.notInstanceOf(err, ServiceBusyError)
       assert.equal(err.statusCode, 503)
     })
 
