@@ -585,9 +585,10 @@ def resolve_connect_memory(
     # the reboot the caller asked for.
     if on_resume is None:
         return UNSET
-    if on_resume not in ("restore", "reboot"):
+    allowed = ("restore", "reboot")
+    if on_resume not in allowed:
         raise InvalidArgumentException(
-            f"on_resume must be one of: restore, reboot (got {on_resume!r})."
+            f"on_resume must be one of: {', '.join(allowed)} (got {on_resume!r})."
         )
     return False if on_resume == "reboot" else UNSET
 
@@ -863,14 +864,15 @@ def build_lifecycle_config(
         keep_memory = None
         keep_memory_provided = False
 
-    if on_timeout_configured and on_timeout not in ("pause", "kill"):
+    allowed_actions = ("pause", "kill")
+    if on_timeout_configured and on_timeout not in allowed_actions:
         # Name the field the caller wrote: the object form's bad value is on
         # "action", not on on_timeout itself.
         field = (
             'on_timeout["action"]' if isinstance(on_timeout_raw, dict) else "on_timeout"
         )
         raise InvalidArgumentException(
-            f"{field} must be one of: pause, kill (got {on_timeout!r})."
+            f"{field} must be one of: {', '.join(allowed_actions)} (got {on_timeout!r})."
         )
     # The action never reaches the API — it is resolved here into the boolean
     # auto_pause — so an unrecognized value cannot be rejected server-side, and

@@ -1648,13 +1648,14 @@ export class SandboxApi extends ClientFactory {
     const onTimeoutConfigured = requestedOnTimeout != null
     const onTimeout = requestedOnTimeout ?? 'kill'
     const action = typeof onTimeout === 'string' ? onTimeout : onTimeout.action
-    if (onTimeoutConfigured && action !== 'pause' && action !== 'kill') {
+    const allowedActions = ['pause', 'kill']
+    if (onTimeoutConfigured && !allowedActions.includes(action)) {
       // Name the field the caller wrote: the object form's bad value is on
       // `.action`, not on `onTimeout` itself.
       const field =
         typeof onTimeout === 'string' ? 'onTimeout' : 'onTimeout.action'
       throw new InvalidArgumentError(
-        `${field} must be one of: 'pause', 'kill' (got ${JSON.stringify(action)}).`
+        `${field} must be one of: ${allowedActions.join(', ')} (got ${JSON.stringify(action)}).`
       )
     }
     // The action never reaches the API — it is resolved here into the boolean
@@ -1829,13 +1830,10 @@ export class SandboxApi extends ClientFactory {
     // resolved here into the boolean memory field — so it cannot be rejected
     // server-side, and resolving it to restore would silently skip the reboot.
     const onResume = apiOpts?.onResume ?? undefined
-    if (
-      onResume !== undefined &&
-      onResume !== 'restore' &&
-      onResume !== 'reboot'
-    ) {
+    const allowedOnResume = ['restore', 'reboot']
+    if (onResume !== undefined && !allowedOnResume.includes(onResume)) {
       throw new InvalidArgumentError(
-        `onResume must be one of: 'restore', 'reboot' (got ${JSON.stringify(onResume)}).`
+        `onResume must be one of: ${allowedOnResume.join(', ')} (got ${JSON.stringify(onResume)}).`
       )
     }
 
