@@ -38,16 +38,6 @@ def _copy_request(
             key: remaining_timeout if value is None else min(value, remaining_timeout)
             for key, value in timeout.items()
         }
-        operation_phases = [
-            key for key in ("read", "write") if adjusted_timeout.get(key) is not None
-        ]
-        operation_timeout = sum(
-            max(adjusted_timeout[key], 0.0) for key in operation_phases
-        )
-        if operation_timeout > remaining_timeout:
-            scale = remaining_timeout / operation_timeout
-            for key in operation_phases:
-                adjusted_timeout[key] = max(adjusted_timeout[key], 0.0) * scale
         extensions["timeout"] = adjusted_timeout
 
     return httpx.Request(

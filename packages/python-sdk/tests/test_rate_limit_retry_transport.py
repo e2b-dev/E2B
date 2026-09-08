@@ -217,7 +217,7 @@ def test_retry_uses_only_the_remaining_request_timeout():
     }
 
 
-def test_retry_timeout_phases_fit_within_remaining_budget():
+def test_retry_preserves_remaining_budget_for_each_timeout_phase():
     clock = FakeClock()
 
     class AdvancingTransport(FakeTransport):
@@ -240,8 +240,12 @@ def test_retry_timeout_phases_fit_within_remaining_budget():
         inner, retries=1, sleep=clock.sleep, monotonic=clock.monotonic
     ).handle_request(request)
 
-    timeout = inner.requests[1].extensions["timeout"]
-    assert timeout["read"] + timeout["write"] == pytest.approx(1.0)
+    assert inner.requests[1].extensions["timeout"] == {
+        "connect": 1.0,
+        "read": 1.0,
+        "write": 1.0,
+        "pool": 1.0,
+    }
 
 
 def test_zero_retries_passes_the_original_request_through():
@@ -412,7 +416,7 @@ async def test_async_retry_uses_only_the_remaining_request_timeout():
 
 
 @pytest.mark.asyncio
-async def test_async_retry_timeout_phases_fit_within_remaining_budget():
+async def test_async_retry_preserves_remaining_budget_for_each_timeout_phase():
     clock = FakeClock()
 
     class AdvancingTransport(FakeAsyncTransport):
@@ -444,8 +448,12 @@ async def test_async_retry_timeout_phases_fit_within_remaining_budget():
         )
     )
 
-    timeout = inner.requests[1].extensions["timeout"]
-    assert timeout["read"] + timeout["write"] == pytest.approx(1.0)
+    assert inner.requests[1].extensions["timeout"] == {
+        "connect": 1.0,
+        "read": 1.0,
+        "write": 1.0,
+        "pool": 1.0,
+    }
 
 
 @pytest.mark.asyncio
