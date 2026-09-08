@@ -15,6 +15,7 @@ import {
 } from '../connectionConfig'
 import { isArrayBufferLike, isBlobLike } from '../is'
 import {
+  InvalidArgumentError,
   VolumeError,
   VolumeNotFoundError,
   VolumePathNotFoundError,
@@ -29,6 +30,17 @@ import type {
   VolumeReadOpts,
   VolumeWriteOpts,
 } from './types'
+
+// OpenAPI NewVolume.name pattern.
+const VOLUME_NAME_PATTERN = /^[a-zA-Z0-9_-]+$/
+
+function validateVolumeName(name: string): void {
+  if (typeof name !== 'string' || !VOLUME_NAME_PATTERN.test(name)) {
+    throw new InvalidArgumentError(
+      `volume name ${JSON.stringify(name)} is invalid: must contain only letters, numbers, dashes and underscores.`
+    )
+  }
+}
 
 /**
  * Convert API VolumeEntryStat to SDK VolumeEntryStat.
@@ -122,6 +134,7 @@ export class Volume extends ClientFactory {
     name: string,
     opts?: ConnectionOpts
   ): Promise<InstanceType<V>> {
+    validateVolumeName(name)
     const apiOpts = this.resolveOpts(opts)
     const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)

@@ -5,7 +5,11 @@ import pytest
 
 from e2b import Volume
 from e2b.connection_config import ConnectionConfig
-from e2b.exceptions import NotFoundException, VolumeNotFoundException
+from e2b.exceptions import (
+    InvalidArgumentException,
+    NotFoundException,
+    VolumeNotFoundException,
+)
 from e2b.api.client.models.volume_and_token import VolumeAndToken
 from e2b.api.client.types import Response
 import e2b.api.client.api.volumes.post_volumes as post_volumes_mod
@@ -224,3 +228,17 @@ def test_volume_full_lifecycle():
     # List again
     volumes = Volume.list()
     assert len(volumes) == 0
+
+
+@pytest.mark.parametrize("name", ["", "vol name", "vol.name", "vol/a", "{x}"])
+def test_create_invalid_name_raises(name):
+    with pytest.raises(InvalidArgumentException):
+        Volume.create(name)
+    assert _volumes == {}
+
+
+def test_create_invalid_name_without_api_key(monkeypatch):
+    monkeypatch.delenv("E2B_API_KEY", raising=False)
+    with pytest.raises(InvalidArgumentException):
+        Volume.create("")
+    assert _volumes == {}

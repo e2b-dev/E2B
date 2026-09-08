@@ -63,6 +63,7 @@ from e2b.io_utils import iter_io_chunks
 from e2b.volume.utils import (
     DualMethod,
     convert_volume_entry_stat,
+    validate_volume_name,
 )
 
 
@@ -120,6 +121,7 @@ class Volume(ClientFactory):
 
         :return: A Volume instance for the new volume
         """
+        validate_volume_name(name)
         config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
         api_client = get_core_api_client(config)

@@ -1,9 +1,22 @@
 import datetime
+import re
 from typing import Optional
 
+from e2b.exceptions import InvalidArgumentException
 from e2b.volume.client.models import VolumeEntryStat as VolumeEntryStatApi
 from e2b.volume.client.types import UNSET
 from e2b.volume.types import VolumeEntryStat
+
+# OpenAPI NewVolume.name pattern.
+VOLUME_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
+
+
+def validate_volume_name(name: str) -> None:
+    if not isinstance(name, str) or not VOLUME_NAME_PATTERN.fullmatch(name):
+        raise InvalidArgumentException(
+            f"volume name {name!r} is invalid: must contain only letters, "
+            "numbers, dashes and underscores."
+        )
 
 
 def _ensure_utc(dt: datetime.datetime) -> datetime.datetime:
