@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest'
 
 import { ChartType, deserializeChart, ScaleType } from '../../src/charts'
+import { Result } from '../../src/messaging'
 
 const pointChart = {
   type: ChartType.LINE,
@@ -40,4 +41,19 @@ test('deserializeChart maps unrecognized scatter scales', () => {
 
   expect(chart.x_scale).toBe(ScaleType.LINEAR)
   expect(chart.y_scale).toBe(ScaleType.UNKNOWN)
+})
+
+test('Result maps unrecognized scales through deserializeChart', () => {
+  const result = new Result(
+    {
+      chart: {
+        ...pointChart,
+        x_scale: 'not-a-scale',
+      },
+    },
+    true
+  )
+
+  expect(result.chart?.x_scale).toBe(ScaleType.UNKNOWN)
+  expect(result.chart?.y_scale).toBe(ScaleType.LOG)
 })
