@@ -5,12 +5,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { E2BConfig, getConfigPath, loadConfig } from '../../config'
 import { defaultDockerfileName } from '../../docker/constants'
-import {
-  configOption,
-  parseNonNegativeInt,
-  parsePositiveInt,
-  pathOption,
-} from '../../options'
+import { configOption, parsePositiveInt, pathOption } from '../../options'
 import { getRoot } from '../../utils/filesystem'
 import { asLocal, asLocalRelative, asPrimary } from '../../utils/format'
 import { getDockerfile } from './dockerfile'
@@ -85,8 +80,7 @@ async function migrateToLanguage(
     language,
     parsedTemplate,
     config.cpu_count,
-    config.memory_mb,
-    config.free_disk_space_mb
+    config.memory_mb
   )
 }
 
@@ -133,11 +127,6 @@ export const migrateCommand = new commander.Command('migrate')
     parsePositiveInt('Memory in megabytes')
   )
   .option(
-    '--free-disk-space-mb <free-disk-space-mb>',
-    'override the free-space growth target after the build steps, in MiB. Set to 0 to request no growth.',
-    parseNonNegativeInt('Free disk space in MiB')
-  )
-  .option(
     '-l, --language <language>',
     `specify target language: ${Object.values(Language).join(', ')}`,
     (value) => {
@@ -163,7 +152,6 @@ export const migrateCommand = new commander.Command('migrate')
       readyCmd?: string
       cpuCount?: number
       memoryMb?: number
-      freeDiskSpaceMb?: number
     }) => {
       let success = false
       try {
@@ -212,9 +200,6 @@ export const migrateCommand = new commander.Command('migrate')
         }
         if (opts.memoryMb !== undefined) {
           config.memory_mb = opts.memoryMb
-        }
-        if (opts.freeDiskSpaceMb !== undefined) {
-          config.free_disk_space_mb = opts.freeDiskSpaceMb
         }
 
         // Determine target language

@@ -6,7 +6,6 @@ import pytest
 import e2b.template_sync.main as template_sync_main
 import e2b.template_sync.build_api as template_sync_build_api
 from e2b import Template, TemplateTagInfo
-from e2b.api.client.client import AuthenticatedClient
 from e2b.api.client.types import UNSET
 from e2b.connection_config import ApiParams
 from e2b.template.types import BuildInfo
@@ -119,7 +118,7 @@ def test_build_resolves_build_impl_and_config_off_cls(configs, monkeypatch):
 
     assert (
         BoundTemplate.build_in_background(
-            Template().from_base_image(), "my-template", free_disk_space_mb=0
+            Template().from_base_image(), "my-template", min_free_disk_mb=0
         )
         is build_info
     )
@@ -127,31 +126,7 @@ def test_build_resolves_build_impl_and_config_off_cls(configs, monkeypatch):
     mock_build.assert_called_once()
     assert configs[0].api_key == BOUND_API_KEY
     assert configs[0].domain == BOUND_DOMAIN
-    assert mock_build.call_args.kwargs["free_disk_space_mb"] == 0
-
-
-def test_request_build_preserves_zero_and_omission(monkeypatch):
-    bodies = []
-    client: AuthenticatedClient = Mock(spec=AuthenticatedClient)
-
-    def request(*, client, body):
-        bodies.append(body)
-        return SimpleNamespace(
-            status_code=202,
-            parsed=SimpleNamespace(
-                template_id="template-id", build_id="build-id", tags=[]
-            ),
-        )
-
-    monkeypatch.setattr(
-        template_sync_build_api.post_v3_templates, "sync_detailed", request
-    )
-
-    template_sync_build_api.request_build(client, "team-default", None, 2, 1024, None)
-    template_sync_build_api.request_build(client, "no-growth", None, 2, 1024, 0)
-
-    assert bodies[0].free_disk_space_mb is UNSET
-    assert bodies[1].free_disk_space_mb == 0
+    assert mock_build.call_args.kwargs["min_free_disk_mb"] == 0
 
 
 def test_bound_request_timeout_reaches_the_build(configs, monkeypatch):
@@ -175,3 +150,60 @@ def test_bound_request_timeout_reaches_the_build(configs, monkeypatch):
     TimeoutTemplate.build_in_background(Template().from_base_image(), "my-template")
 
     assert mock_build.call_args.kwargs["request_timeout"] == 12.5
+
+
+@pytest.mark.parametrize("method", ["build", "build_in_background"])
+@pytest.mark.parametrize(
+    "options, expected",
+    [
+        ({}, None),
+        ({"min_free_disk_mb": 0}, 0),
+        ({"min_free_disk_mb": 20480}, 20480),
+        ({"free_disk_space_mb": 0}, 0),
+        ({"free_disk_space_mb": 20480}, 20480),
+        ({"min_free_disk_mb": 0, "free_disk_space_mb": 0}, 0),
+    ],
+)
+def test_minimum_free_disk_aliases(configs, monkeypatch, method, options, expected):
+    bodies = []
+
+    def request(*, client, body):
+        bodies.append(body)
+        return SimpleNamespace(
+            status_code=202,
+            parsed=SimpleNamespace(
+                template_id="template-id", build_id="build-id", tags=[]
+            ),
+        )
+
+    monkeypatch.setattr(
+        template_sync_build_api.post_v3_templates, "sync_detailed", request
+    )
+    monkeypatch.setattr(template_sync_main, "trigger_build", Mock())
+    monkeypatch.setattr(template_sync_main, "wait_for_build_finish", Mock())
+    getattr(Template, method)(Template().from_template("parent"), "minimum", **options)
+    expected_body = {"name": "minimum", "cpuCount": 2, "memoryMB": 1024}
+    if expected is not None:
+        expected_body["minFreeDiskMb"] = expected
+    assert [body.to_dict() for body in bodies] == [expected_body]
+    if expected is None:
+        assert bodies[0].min_free_disk_mb is UNSET
+    else:
+        assert bodies[0].min_free_disk_mb == expected
+
+
+@pytest.mark.parametrize(
+    "options",
+    [
+        {"min_free_disk_mb": 0, "free_disk_space_mb": 1024},
+        {"min_free_disk_mb": 1024, "free_disk_space_mb": 0},
+    ],
+)
+def test_conflicting_disk_aliases_fail_before_request(configs, monkeypatch, options):
+    request = Mock()
+    monkeypatch.setattr(template_sync_main, "request_build", request)
+    with pytest.raises(ValueError, match="must be equal"):
+        Template.build_in_background(
+            Template().from_base_image(), "conflict", **options
+        )
+    request.assert_not_called()

@@ -13,9 +13,6 @@ async def main():
 {{#if memoryMB}}
         memory_mb={{memoryMB}},
 {{/if}}
-{{#if freeDiskSpaceMB includeZero=true}}
-        free_disk_space_mb={{freeDiskSpaceMB}},
-{{/if}}
         on_build_logs=default_build_logger(),
     )
 

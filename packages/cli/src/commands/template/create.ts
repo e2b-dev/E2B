@@ -6,7 +6,13 @@ import {
   defaultDockerfileName,
   fallbackDockerfileName,
 } from 'src/docker/constants'
-import { parseNonNegativeInt, parsePositiveInt, pathOption } from 'src/options'
+import {
+  minFreeDiskMbOption,
+  deprecatedFreeDiskSpaceMbOption,
+  minFreeDiskMbFromOptions,
+  parsePositiveInt,
+  pathOption,
+} from 'src/options'
 import { validateTemplateName } from 'src/utils/templateName'
 import { getRoot } from 'src/utils/filesystem'
 import {
@@ -53,11 +59,8 @@ export const createCommand = new commander.Command('create')
     'specify the amount of memory in megabytes that will be used to run the sandbox. Must be an even number. The default value is 1024.',
     parsePositiveInt('Memory in megabytes')
   )
-  .option(
-    '--free-disk-space-mb <free-disk-space-mb>',
-    'specify the free-space growth target after the build steps, in MiB. Set to 0 to request no growth.',
-    parseNonNegativeInt('Free disk space in MiB')
-  )
+  .addOption(minFreeDiskMbOption)
+  .addOption(deprecatedFreeDiskSpaceMbOption)
   .option('--no-cache', 'skip cache when building the template.')
   .alias('ct')
   .action(
@@ -70,6 +73,7 @@ export const createCommand = new commander.Command('create')
         readyCmd?: string
         cpuCount?: number
         memoryMb?: number
+        minFreeDiskMb?: number
         freeDiskSpaceMb?: number
         noCache?: boolean
       }
@@ -107,7 +111,7 @@ export const createCommand = new commander.Command('create')
         const readyCmd = opts.readyCmd
         const cpuCount = opts.cpuCount
         const memoryMB = opts.memoryMb
-        const freeDiskSpaceMB = opts.freeDiskSpaceMb
+        const minFreeDiskMb = minFreeDiskMbFromOptions(opts)
 
         // Get Dockerfile content
         const { dockerfileContent, dockerfileRelativePath } = getDockerfile(
@@ -149,7 +153,7 @@ export const createCommand = new commander.Command('create')
             alias: templateName,
             cpuCount: cpuCount,
             memoryMB: memoryMB,
-            freeDiskSpaceMB: freeDiskSpaceMB,
+            minFreeDiskMb,
             skipCache: opts.noCache,
             apiKey: apiKey,
             domain: domain,

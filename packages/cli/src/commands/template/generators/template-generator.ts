@@ -14,8 +14,7 @@ export async function generateAndWriteTemplateFiles(
   language: Language,
   template: TemplateClass,
   cpuCount?: number,
-  memoryMB?: number,
-  freeDiskSpaceMB?: number
+  memoryMB?: number
 ): Promise<GeneratedFiles> {
   switch (language) {
     case Language.TypeScript: {
@@ -24,15 +23,13 @@ export async function generateAndWriteTemplateFiles(
           template,
           `${name}-dev`,
           cpuCount,
-          memoryMB,
-          freeDiskSpaceMB
+          memoryMB
         )
       const { buildContent: buildProdContent } = await generateTypeScriptCode(
         template,
         name,
         cpuCount,
-        memoryMB,
-        freeDiskSpaceMB
+        memoryMB
       )
 
       const templateFile = 'template.ts'
@@ -63,7 +60,6 @@ export async function generateAndWriteTemplateFiles(
           `${name}-dev`,
           cpuCount,
           memoryMB,
-          freeDiskSpaceMB,
           isAsync
         )
       const { buildContent: buildProdContent } = await generatePythonCode(
@@ -71,7 +67,6 @@ export async function generateAndWriteTemplateFiles(
         name,
         cpuCount,
         memoryMB,
-        freeDiskSpaceMB,
         isAsync
       )
 

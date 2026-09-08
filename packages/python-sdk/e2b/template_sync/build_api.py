@@ -49,7 +49,7 @@ def request_build(
     tags: Optional[List[str]],
     cpu_count: int,
     memory_mb: int,
-    free_disk_space_mb: Optional[int],
+    min_free_disk_mb: Optional[int],
 ):
     res = post_v3_templates.sync_detailed(
         client=client,
@@ -58,8 +58,8 @@ def request_build(
             tags=tags if tags else UNSET,
             cpu_count=cpu_count,
             memory_mb=memory_mb,
-            free_disk_space_mb=(
-                free_disk_space_mb if free_disk_space_mb is not None else UNSET
+            min_free_disk_mb=(
+                min_free_disk_mb if min_free_disk_mb is not None else UNSET
             ),
         ),
     )

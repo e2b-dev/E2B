@@ -9,9 +9,6 @@ async function main() {
     {{#if memoryMB}}
     memoryMB: {{memoryMB}},
     {{/if}}
-    {{#if freeDiskSpaceMB includeZero=true}}
-    freeDiskSpaceMB: {{freeDiskSpaceMB}},
-    {{/if}}
     onBuildLogs: defaultBuildLogger(),
   });
 }

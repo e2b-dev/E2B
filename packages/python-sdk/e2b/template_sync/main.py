@@ -39,6 +39,7 @@ class Template(TemplateBase):
         tags: Optional[List[str]] = None,
         cpu_count: int = 2,
         memory_mb: int = 1024,
+        min_free_disk_mb: Optional[int] = None,
         free_disk_space_mb: Optional[int] = None,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
@@ -53,10 +54,18 @@ class Template(TemplateBase):
         :param tags: Optional tags for the template
         :param cpu_count: Number of CPUs allocated to the sandbox
         :param memory_mb: Amount of memory in MB allocated to the sandbox
-        :param free_disk_space_mb: Free-space growth target after the build steps, in MiB. Growth is best effort and the filesystem is never shrunk. Omit to use the team default or set to 0 to request no growth.
+        :param min_free_disk_mb: Requested minimum free space after the build steps, in MiB. Growth is best effort and the filesystem is never shrunk. Omit to use the team default or set to 0 to request no growth.
+        :param free_disk_space_mb: (Deprecated) Use min_free_disk_mb instead. If both are set, they must be equal.
         :param skip_cache: If True, forces a complete rebuild ignoring cache
         :param on_build_logs: Callback function to receive build logs during the build process
         """
+        if free_disk_space_mb is not None:
+            if min_free_disk_mb is not None and min_free_disk_mb != free_disk_space_mb:
+                raise ValueError(
+                    "min_free_disk_mb and deprecated free_disk_space_mb must be equal when both are provided"
+                )
+            min_free_disk_mb = free_disk_space_mb
+
         if skip_cache:
             template._template._force = True
 
@@ -76,7 +85,7 @@ class Template(TemplateBase):
             name=name,
             cpu_count=cpu_count,
             memory_mb=memory_mb,
-            free_disk_space_mb=free_disk_space_mb,
+            min_free_disk_mb=min_free_disk_mb,
             tags=tags,
         )
 
@@ -201,6 +210,7 @@ class Template(TemplateBase):
         tags: Optional[List[str]] = None,
         cpu_count: int = 2,
         memory_mb: int = 1024,
+        min_free_disk_mb: Optional[int] = None,
         free_disk_space_mb: Optional[int] = None,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
@@ -215,7 +225,8 @@ class Template(TemplateBase):
         :param tags: Optional additional tags to assign to the template
         :param cpu_count: Number of CPUs allocated to the sandbox
         :param memory_mb: Amount of memory in MB allocated to the sandbox
-        :param free_disk_space_mb: Free-space growth target after the build steps, in MiB. Growth is best effort and the filesystem is never shrunk. Omit to use the team default or set to 0 to request no growth.
+        :param min_free_disk_mb: Requested minimum free space after the build steps, in MiB. Growth is best effort and the filesystem is never shrunk. Omit to use the team default or set to 0 to request no growth.
+        :param free_disk_space_mb: (Deprecated) Use min_free_disk_mb instead. If both are set, they must be equal.
         :param skip_cache: If True, forces a complete rebuild ignoring cache
         :param on_build_logs: Callback function to receive build logs during the build process
 
@@ -262,6 +273,7 @@ class Template(TemplateBase):
                 tags=tags,
                 cpu_count=cpu_count,
                 memory_mb=memory_mb,
+                min_free_disk_mb=min_free_disk_mb,
                 free_disk_space_mb=free_disk_space_mb,
                 skip_cache=skip_cache,
                 on_build_logs=on_build_logs,
@@ -308,6 +320,7 @@ class Template(TemplateBase):
         tags: Optional[List[str]] = None,
         cpu_count: int = 2,
         memory_mb: int = 1024,
+        min_free_disk_mb: Optional[int] = None,
         free_disk_space_mb: Optional[int] = None,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
@@ -322,7 +335,8 @@ class Template(TemplateBase):
         :param tags: Optional additional tags to assign to the template
         :param cpu_count: Number of CPUs allocated to the sandbox
         :param memory_mb: Amount of memory in MB allocated to the sandbox
-        :param free_disk_space_mb: Free-space growth target after the build steps, in MiB. Omit to use the team default or set to 0 to request no growth. The filesystem is never shrunk.
+        :param min_free_disk_mb: Requested minimum free space after the build steps, in MiB. Growth is best effort and the filesystem is never shrunk. Omit to use the team default or set to 0 to request no growth.
+        :param free_disk_space_mb: (Deprecated) Use min_free_disk_mb instead. If both are set, they must be equal.
         :param skip_cache: If True, forces a complete rebuild ignoring cache
         :return: BuildInfo containing the template ID and build ID
 
@@ -359,6 +373,7 @@ class Template(TemplateBase):
             tags=tags,
             cpu_count=cpu_count,
             memory_mb=memory_mb,
+            min_free_disk_mb=min_free_disk_mb,
             free_disk_space_mb=free_disk_space_mb,
             skip_cache=skip_cache,
             on_build_logs=on_build_logs,

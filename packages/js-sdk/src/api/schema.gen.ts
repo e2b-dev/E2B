@@ -2243,9 +2243,8 @@ export interface components {
         };
         /**
          * Format: int32
-         * @description Free-space growth target for the template's filesystem, in MiB, evaluated after your build steps have run. A filesystem holding less free space than this is grown toward the target on a best-effort basis and may end up short of it. The filesystem is never shrunk, so free space it already holds is kept even when that exceeds the target.
-         *
-         *     Omit the field to use your team's default free-space growth target. Send 0 to request no growth. The value must not exceed your team's maximum free-disk target.
+         * @deprecated
+         * @description Deprecated: use minFreeDiskMb instead. Requested minimum free space after the template's build steps, in MiB. Omit to use the team's default. Set to 0 to request no minimum free-disk growth. The filesystem is never shrunk, including inherited or already-larger filesystems. Growth is best effort, so filesystem metadata can leave the available space slightly below the requested minimum. If both minFreeDiskMb and freeDiskSpaceMB are provided, they must be equal.
          */
         FreeDiskSpaceMB: number;
         FromImageRegistry: components["schemas"]["AWSRegistry"] | components["schemas"]["GCPRegistry"] | components["schemas"]["GeneralRegistry"];
@@ -2339,6 +2338,11 @@ export interface components {
          * @description Memory for the sandbox in MiB
          */
         MemoryMB: number;
+        /**
+         * Format: int32
+         * @description Requested minimum free space after the template's build steps, in MiB. Omit to use the team's default. Set to 0 to request no minimum free-disk growth. The filesystem is never shrunk, including inherited or already-larger filesystems. Growth is best effort, so filesystem metadata can leave the available space slightly below the requested minimum. If both minFreeDiskMb and freeDiskSpaceMB are provided, they must be equal.
+         */
+        MinFreeDiskMb: number;
         NewSandbox: {
             /** @description Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut to 0.0.0.0/0 in the network config. */
             allow_internet_access?: boolean;
@@ -2922,6 +2926,7 @@ export interface components {
             cpuCount?: components["schemas"]["CPUCount"];
             freeDiskSpaceMB?: components["schemas"]["FreeDiskSpaceMB"];
             memoryMB?: components["schemas"]["MemoryMB"];
+            minFreeDiskMb?: components["schemas"]["MinFreeDiskMb"];
             /** @description Name of the template. Can include a tag with colon separator (e.g. "my-template" or "my-template:v1"). If tag is included, it will be treated as if the tag was provided in the tags array. */
             name?: string;
             /** @description Tags to assign to the template build */

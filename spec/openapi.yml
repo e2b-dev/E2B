@@ -386,21 +386,31 @@ components:
       minimum: 0
       description: Disk size for the sandbox in MiB
 
-    FreeDiskSpaceMB:
+    MinFreeDiskMb:
       type: integer
       format: int32
       minimum: 0
       description: >-
-        Free-space growth target for the template's filesystem, in MiB,
-        evaluated after your build steps have run. A filesystem holding less
-        free space than this is grown toward the target on a best-effort basis
-        and may end up short of it. The filesystem is never shrunk, so free
-        space it already holds is kept even when that exceeds the target.
+        Requested minimum free space after the template's build steps, in MiB.
+        Omit to use the team's default. Set to 0 to request no minimum free-disk
+        growth. The filesystem is never shrunk, including inherited or already-larger
+        filesystems. Growth is best effort, so filesystem metadata can leave the
+        available space slightly below the requested minimum.
+        If both minFreeDiskMb and freeDiskSpaceMB are provided, they must be equal.
 
-
-        Omit the field to use your team's default free-space growth target.
-        Send 0 to request no growth. The value must not exceed your team's
-        maximum free-disk target.
+    FreeDiskSpaceMB:
+      type: integer
+      format: int32
+      minimum: 0
+      deprecated: true
+      description: >-
+        Deprecated: use minFreeDiskMb instead.
+        Requested minimum free space after the template's build steps, in MiB.
+        Omit to use the team's default. Set to 0 to request no minimum free-disk
+        growth. The filesystem is never shrunk, including inherited or already-larger
+        filesystems. Growth is best effort, so filesystem metadata can leave the
+        available space slightly below the requested minimum.
+        If both minFreeDiskMb and freeDiskSpaceMB are provided, they must be equal.
 
     EnvdVersion:
       type: string
@@ -1533,6 +1543,8 @@ components:
           $ref: "#/components/schemas/CPUCount"
         memoryMB:
           $ref: "#/components/schemas/MemoryMB"
+        minFreeDiskMb:
+          $ref: "#/components/schemas/MinFreeDiskMb"
         freeDiskSpaceMB:
           $ref: "#/components/schemas/FreeDiskSpaceMB"
 
@@ -1777,7 +1789,6 @@ components:
       type: string
       description: |
         Status of the node.
-        - draining: the node is bound to be shut down. It will not accept new sandboxes and will stop once all existing sandboxes are done.
         - standby: the node is not actively used, but it can return to ready and continue serving traffic.
       enum:
         - ready
@@ -1785,12 +1796,14 @@ components:
         - connecting
         - unhealthy
         - standby
+        - shutting_down
       x-enum-varnames:
         - NodeStatusReady
         - NodeStatusDraining
         - NodeStatusConnecting
         - NodeStatusUnhealthy
         - NodeStatusStandby
+        - NodeStatusShuttingDown
 
     NodeStatusChange:
       required:

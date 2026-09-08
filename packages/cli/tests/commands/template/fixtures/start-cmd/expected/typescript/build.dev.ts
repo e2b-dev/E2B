@@ -5,7 +5,6 @@ async function main() {
   await Template.build(template, 'start-cmd-dev', {
     cpuCount: 2,
     memoryMB: 1024,
-    freeDiskSpaceMB: 0,
     onBuildLogs: defaultBuildLogger(),
   });
 }

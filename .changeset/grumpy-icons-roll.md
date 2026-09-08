@@ -4,4 +4,4 @@
 '@e2b/cli': minor
 ---
 
-Expose configurable template free-space growth targets in the JavaScript and Python SDKs, CLI template builds, and e2b.toml migrations.
+Expose a configurable minimum free-disk target with `minFreeDiskMb` in JavaScript, `min_free_disk_mb` in Python, and `--min-free-disk-mb` in `template create`. Omission uses the team default, while explicit zero requests no minimum growth. Growth is best effort and never shrinks an existing filesystem. The previous free-disk option names are supported as deprecated aliases.

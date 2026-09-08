@@ -20,13 +20,16 @@ class TemplateBuildRequestV3:
         team_id (Union[Unset, str]): Identifier of the team
         cpu_count (Union[Unset, int]): CPU cores for the sandbox
         memory_mb (Union[Unset, int]): Memory for the sandbox in MiB
-        free_disk_space_mb (Union[Unset, int]): Free-space growth target for the template's filesystem, in MiB,
-            evaluated after your build steps have run. A filesystem holding less free space than this is grown toward the
-            target on a best-effort basis and may end up short of it. The filesystem is never shrunk, so free space it
-            already holds is kept even when that exceeds the target.
-
-            Omit the field to use your team's default free-space growth target. Send 0 to request no growth. The value must
-            not exceed your team's maximum free-disk target.
+        min_free_disk_mb (Union[Unset, int]): Requested minimum free space after the template's build steps, in MiB.
+            Omit to use the team's default. Set to 0 to request no minimum free-disk growth. The filesystem is never shrunk,
+            including inherited or already-larger filesystems. Growth is best effort, so filesystem metadata can leave the
+            available space slightly below the requested minimum. If both minFreeDiskMb and freeDiskSpaceMB are provided,
+            they must be equal.
+        free_disk_space_mb (Union[Unset, int]): Deprecated: use minFreeDiskMb instead. Requested minimum free space
+            after the template's build steps, in MiB. Omit to use the team's default. Set to 0 to request no minimum free-
+            disk growth. The filesystem is never shrunk, including inherited or already-larger filesystems. Growth is best
+            effort, so filesystem metadata can leave the available space slightly below the requested minimum. If both
+            minFreeDiskMb and freeDiskSpaceMB are provided, they must be equal.
     """
 
     name: Union[Unset, str] = UNSET
@@ -35,6 +38,7 @@ class TemplateBuildRequestV3:
     team_id: Union[Unset, str] = UNSET
     cpu_count: Union[Unset, int] = UNSET
     memory_mb: Union[Unset, int] = UNSET
+    min_free_disk_mb: Union[Unset, int] = UNSET
     free_disk_space_mb: Union[Unset, int] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -53,6 +57,8 @@ class TemplateBuildRequestV3:
 
         memory_mb = self.memory_mb
 
+        min_free_disk_mb = self.min_free_disk_mb
+
         free_disk_space_mb = self.free_disk_space_mb
 
         field_dict: dict[str, Any] = {}
@@ -70,6 +76,8 @@ class TemplateBuildRequestV3:
             field_dict["cpuCount"] = cpu_count
         if memory_mb is not UNSET:
             field_dict["memoryMB"] = memory_mb
+        if min_free_disk_mb is not UNSET:
+            field_dict["minFreeDiskMb"] = min_free_disk_mb
         if free_disk_space_mb is not UNSET:
             field_dict["freeDiskSpaceMB"] = free_disk_space_mb
 
@@ -90,6 +98,8 @@ class TemplateBuildRequestV3:
 
         memory_mb = d.pop("memoryMB", UNSET)
 
+        min_free_disk_mb = d.pop("minFreeDiskMb", UNSET)
+
         free_disk_space_mb = d.pop("freeDiskSpaceMB", UNSET)
 
         template_build_request_v3 = cls(
@@ -99,6 +109,7 @@ class TemplateBuildRequestV3:
             team_id=team_id,
             cpu_count=cpu_count,
             memory_mb=memory_mb,
+            min_free_disk_mb=min_free_disk_mb,
             free_disk_space_mb=free_disk_space_mb,
         )
 

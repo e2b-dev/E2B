@@ -167,26 +167,48 @@ test('build options carry the bound options into the build', async () => {
   })
 })
 
-test('build forwards zero free disk space and preserves omission', async () => {
-  await Template.buildInBackground(Template().fromBaseImage(), 'no-growth', {
-    apiKey: TEST_API_KEY,
-    freeDiskSpaceMB: 0,
-  })
-  await Template.buildInBackground(Template().fromBaseImage(), 'team-default', {
-    apiKey: TEST_API_KEY,
-  })
+test.each([
+  [{}, undefined],
+  [{ minFreeDiskMb: 0 }, 0],
+  [{ minFreeDiskMb: 20480 }, 20480],
+  [{ freeDiskSpaceMB: 0 }, 0],
+  [{ freeDiskSpaceMB: 20480 }, 20480],
+  [{ minFreeDiskMb: 0, freeDiskSpaceMB: 0 }, 0],
+])(
+  'build normalizes minimum free disk options %j',
+  async (options, expected) => {
+    await Template.buildInBackground(
+      Template().fromTemplate('parent'),
+      'minimum',
+      {
+        apiKey: TEST_API_KEY,
+        ...options,
+      }
+    )
 
-  expect(buildRequestBodies).toEqual([
-    {
-      name: 'no-growth',
-      cpuCount: 2,
-      memoryMB: 1024,
-      freeDiskSpaceMB: 0,
-    },
-    {
-      name: 'team-default',
-      cpuCount: 2,
-      memoryMB: 1024,
-    },
-  ])
-})
+    expect(buildRequestBodies).toEqual([
+      {
+        name: 'minimum',
+        cpuCount: 2,
+        memoryMB: 1024,
+        ...(expected === undefined ? {} : { minFreeDiskMb: expected }),
+      },
+    ])
+  }
+)
+
+test.each([
+  { minFreeDiskMb: 0, freeDiskSpaceMB: 1024 },
+  { minFreeDiskMb: 1024, freeDiskSpaceMB: 0 },
+])(
+  'build rejects conflicting disk aliases %j before sending',
+  async (options) => {
+    await expect(
+      Template.buildInBackground(Template().fromBaseImage(), 'conflict', {
+        apiKey: TEST_API_KEY,
+        ...options,
+      })
+    ).rejects.toThrow('must be equal')
+    expect(buildRequestBodies).toEqual([])
+  }
+)
