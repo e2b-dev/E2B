@@ -396,7 +396,6 @@ components:
         growth. The filesystem is never shrunk, including inherited or already-larger
         filesystems. Growth is best effort, so filesystem metadata can leave the
         available space slightly below the requested minimum.
-        If both minFreeDiskMb and freeDiskSpaceMB are provided, they must be equal.
 
     FreeDiskSpaceMB:
       type: integer
@@ -404,13 +403,9 @@ components:
       minimum: 0
       deprecated: true
       description: >-
-        Deprecated: use minFreeDiskMb instead.
-        Requested minimum free space after the template's build steps, in MiB.
-        Omit to use the team's default. Set to 0 to request no minimum free-disk
-        growth. The filesystem is never shrunk, including inherited or already-larger
-        filesystems. Growth is best effort, so filesystem metadata can leave the
-        available space slightly below the requested minimum.
-        If both minFreeDiskMb and freeDiskSpaceMB are provided, they must be equal.
+        Deprecated and ignored. Use minFreeDiskMb instead.
+        If minFreeDiskMb is omitted, the team's default applies even when
+        freeDiskSpaceMB is provided.
 
     EnvdVersion:
       type: string

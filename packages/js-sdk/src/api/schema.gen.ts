@@ -2244,7 +2244,7 @@ export interface components {
         /**
          * Format: int32
          * @deprecated
-         * @description Deprecated: use minFreeDiskMb instead. Requested minimum free space after the template's build steps, in MiB. Omit to use the team's default. Set to 0 to request no minimum free-disk growth. The filesystem is never shrunk, including inherited or already-larger filesystems. Growth is best effort, so filesystem metadata can leave the available space slightly below the requested minimum. If both minFreeDiskMb and freeDiskSpaceMB are provided, they must be equal.
+         * @description Deprecated and ignored. Use minFreeDiskMb instead. If minFreeDiskMb is omitted, the team's default applies even when freeDiskSpaceMB is provided.
          */
         FreeDiskSpaceMB: number;
         FromImageRegistry: components["schemas"]["AWSRegistry"] | components["schemas"]["GCPRegistry"] | components["schemas"]["GeneralRegistry"];
@@ -2340,7 +2340,7 @@ export interface components {
         MemoryMB: number;
         /**
          * Format: int32
-         * @description Requested minimum free space after the template's build steps, in MiB. Omit to use the team's default. Set to 0 to request no minimum free-disk growth. The filesystem is never shrunk, including inherited or already-larger filesystems. Growth is best effort, so filesystem metadata can leave the available space slightly below the requested minimum. If both minFreeDiskMb and freeDiskSpaceMB are provided, they must be equal.
+         * @description Requested minimum free space after the template's build steps, in MiB. Omit to use the team's default. Set to 0 to request no minimum free-disk growth. The filesystem is never shrunk, including inherited or already-larger filesystems. Growth is best effort, so filesystem metadata can leave the available space slightly below the requested minimum.
          */
         MinFreeDiskMb: number;
         NewSandbox: {

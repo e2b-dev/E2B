@@ -23,13 +23,9 @@ class TemplateBuildRequestV3:
         min_free_disk_mb (Union[Unset, int]): Requested minimum free space after the template's build steps, in MiB.
             Omit to use the team's default. Set to 0 to request no minimum free-disk growth. The filesystem is never shrunk,
             including inherited or already-larger filesystems. Growth is best effort, so filesystem metadata can leave the
-            available space slightly below the requested minimum. If both minFreeDiskMb and freeDiskSpaceMB are provided,
-            they must be equal.
-        free_disk_space_mb (Union[Unset, int]): Deprecated: use minFreeDiskMb instead. Requested minimum free space
-            after the template's build steps, in MiB. Omit to use the team's default. Set to 0 to request no minimum free-
-            disk growth. The filesystem is never shrunk, including inherited or already-larger filesystems. Growth is best
-            effort, so filesystem metadata can leave the available space slightly below the requested minimum. If both
-            minFreeDiskMb and freeDiskSpaceMB are provided, they must be equal.
+            available space slightly below the requested minimum.
+        free_disk_space_mb (Union[Unset, int]): Deprecated and ignored. Use minFreeDiskMb instead. If minFreeDiskMb is
+            omitted, the team's default applies even when freeDiskSpaceMB is provided.
     """
 
     name: Union[Unset, str] = UNSET
