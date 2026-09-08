@@ -161,12 +161,20 @@ export class RateLimitError extends SandboxError {
  * Nothing was changed by the refused call: for example a refused pause
  * leaves the sandbox running with its state intact, so the same call can be
  * retried after a short wait.
+ *
+ * Like {@link AuthenticationError} and unlike the other API errors, this is
+ * not a {@link SandboxError}: it is raised for every 503 whatever the
+ * operation, so catch it explicitly.
  */
-export class ServiceBusyError extends SandboxError {
+export class ServiceBusyError extends Error {
+  /**
+   * HTTP status of the API response: always 503.
+   */
+  readonly statusCode = 503
+
   constructor(message: string) {
     super(message)
     this.name = 'ServiceBusyError'
-    this.statusCode = 503
   }
 }
 

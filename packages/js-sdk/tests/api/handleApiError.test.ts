@@ -73,7 +73,7 @@ describe('handleApiError', () => {
       const res = createMockResponse(503, undefined)
       const err = handleApiError(res as any)
       assert.instanceOf(err, ServiceBusyError)
-      assert.instanceOf(err, SandboxError)
+      assert.notInstanceOf(err, SandboxError)
       assert.include(err?.message, 'temporarily unavailable')
     })
   })
@@ -83,7 +83,7 @@ describe('handleApiError', () => {
       const res = createMockResponse(503, {
         message: 'node is busy persisting sandbox, please retry',
       })
-      const err = handleApiError(res as any) as SandboxError
+      const err = handleApiError(res as any) as ServiceBusyError
       assert.instanceOf(err, ServiceBusyError)
       assert.equal(err.statusCode, 503)
       assert.include(err.message, 'node is busy persisting sandbox')
@@ -97,7 +97,7 @@ describe('handleApiError', () => {
       assert.equal(err.statusCode, 500)
     })
 
-    test('a 503 raised through another error hierarchy keeps that hierarchy', () => {
+    test('a 503 is a ServiceBusyError whatever error class the caller asked for', () => {
       class BuildLikeError extends SandboxError {
         constructor(message: string) {
           super(message)
@@ -105,10 +105,9 @@ describe('handleApiError', () => {
         }
       }
       const res = createMockResponse(503, { message: 'no capacity' })
-      const err = handleApiError(res as any, BuildLikeError) as SandboxError
-      assert.instanceOf(err, BuildLikeError)
-      assert.notInstanceOf(err, ServiceBusyError)
-      assert.equal(err.statusCode, 503)
+      const err = handleApiError(res as any, BuildLikeError)
+      assert.instanceOf(err, ServiceBusyError)
+      assert.notInstanceOf(err, BuildLikeError)
     })
 
     test('RateLimitError carries 429', () => {

@@ -38,10 +38,7 @@ export function apiErrorFromCode(
     return new RateLimitError(content ? `${message} - ${content}` : message)
   }
 
-  // Only the sandbox domain gets the dedicated class: a 503 raised through
-  // another hierarchy (BuildError, TemplateError, ...) keeps that hierarchy
-  // and carries the status instead.
-  if (code === 503 && errorClass === SandboxError) {
+  if (code === 503) {
     const message = 'Service temporarily unavailable, please retry'
     return new ServiceBusyError(content ? `${message} - ${content}` : message)
   }

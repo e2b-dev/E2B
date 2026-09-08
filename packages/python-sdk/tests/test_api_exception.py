@@ -18,7 +18,7 @@ def test_refused_pause_is_a_busy_exception_with_the_status_and_message():
     )
 
     assert isinstance(err, ServiceBusyException)
-    assert isinstance(err, SandboxException)
+    assert not isinstance(err, SandboxException)
     assert err.status_code == 503
     assert "node is busy persisting sandbox" in str(err)
 
@@ -46,7 +46,7 @@ def test_generic_failure_without_a_body_carries_its_status():
     assert err.status_code == 502
 
 
-def test_503_through_another_hierarchy_keeps_that_hierarchy():
+def test_503_is_a_busy_exception_whatever_class_the_caller_asked_for():
     class BuildLikeException(SandboxException):
         pass
 
@@ -55,8 +55,8 @@ def test_503_through_another_hierarchy_keeps_that_hierarchy():
         default_exception_class=BuildLikeException,
     )
 
-    assert isinstance(err, BuildLikeException)
-    assert not isinstance(err, ServiceBusyException)
+    assert isinstance(err, ServiceBusyException)
+    assert not isinstance(err, BuildLikeException)
     assert err.status_code == 503
 
 

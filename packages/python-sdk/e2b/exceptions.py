@@ -131,7 +131,7 @@ class RateLimitException(SandboxException):
         super().__init__(*args, status_code=429)
 
 
-class ServiceBusyException(SandboxException):
+class ServiceBusyException(Exception):
     """
     Raised when the API refused the operation because the service is
     temporarily busy (HTTP 503): no capacity to place a sandbox right now, or
@@ -140,10 +140,15 @@ class ServiceBusyException(SandboxException):
     Nothing was changed by the refused call: for example a refused pause
     leaves the sandbox running with its state intact, so the same call can be
     retried after a short wait.
+
+    Like `AuthenticationException` and unlike the other API errors, this is not
+    a `SandboxException`: it is raised for every 503 whatever the operation, so
+    catch it explicitly.
+
+    :param status_code: HTTP status of the API response: always 503.
     """
 
-    def __init__(self, *args):
-        super().__init__(*args, status_code=503)
+    status_code = 503
 
 
 class BuildException(Exception):
