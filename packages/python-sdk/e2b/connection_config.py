@@ -51,7 +51,9 @@ class ApiParams(TypedDict, total=False):
     """Timeout for the request in **seconds**, defaults to 60 seconds."""
 
     retries: Optional[int]
-    """Number of control-plane HTTP retries after a 429 with ``Retry-After``.
+    """Number of control-plane HTTP retries after a 429 with a valid,
+    non-negative integer delta-seconds ``Retry-After`` header. HTTP-date and
+    malformed values are not retried.
     A retry is skipped when its wait would exhaust the request timeout.
     Defaults to 3 retries."""
 

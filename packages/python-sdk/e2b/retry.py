@@ -4,12 +4,14 @@ from typing import Awaitable, Callable, Optional
 
 import httpx
 
+from e2b.exceptions import InvalidArgumentException
+
 MAX_RETRY_AFTER_SECONDS = 2_147_483_647
 
 
 def resolve_max_retries(retries: int) -> int:
     if isinstance(retries, bool) or not isinstance(retries, int) or retries < 0:
-        raise ValueError(
+        raise InvalidArgumentException(
             f"Invalid retries={retries!r}: expected a non-negative integer."
         )
     return retries
@@ -99,7 +101,9 @@ class RateLimitTransport(httpx.BaseTransport):
                 remaining_timeout = deadline - self._monotonic()
                 if remaining_timeout <= 0:
                     raise httpx.TimeoutException(
-                        "Request timeout exhausted while retrying", request=request
+                        "Request timed out while waiting to retry a rate-limited "
+                        "request. Increase `request_timeout` or lower `retries`.",
+                        request=request,
                     )
             response = self.transport.handle_request(
                 _copy_request(request, remaining_timeout)
@@ -154,7 +158,9 @@ class AsyncRateLimitTransport(httpx.AsyncBaseTransport):
                 remaining_timeout = deadline - self._monotonic()
                 if remaining_timeout <= 0:
                     raise httpx.TimeoutException(
-                        "Request timeout exhausted while retrying", request=request
+                        "Request timed out while waiting to retry a rate-limited "
+                        "request. Increase `request_timeout` or lower `retries`.",
+                        request=request,
                     )
             response = await self.transport.handle_async_request(
                 _copy_request(request, remaining_timeout)

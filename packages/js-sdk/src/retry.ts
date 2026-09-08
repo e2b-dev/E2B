@@ -1,8 +1,10 @@
+import { InvalidArgumentError } from './errors'
+
 const MAX_RETRY_AFTER_SECONDS = 2_147_483
 
 export function resolveRetries(retries: number): number {
   if (!Number.isInteger(retries) || retries < 0) {
-    throw new Error(
+    throw new InvalidArgumentError(
       `Invalid retries=${retries}: expected a non-negative integer.`
     )
   }

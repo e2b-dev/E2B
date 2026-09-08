@@ -166,6 +166,29 @@ def test_does_not_retry_when_cumulative_wait_reaches_request_timeout():
     assert len(inner.requests) == 2
 
 
+def test_timeout_after_retry_wait_names_configuration_options():
+    inner = FakeTransport([429])
+    clock = FakeClock()
+
+    def sleep(delay):
+        clock.sleeps.append(delay)
+        clock.now = 4.0
+
+    request = httpx.Request(
+        "GET",
+        "https://api.test",
+        extensions={"timeout": {"read": 3.0}},
+    )
+
+    with pytest.raises(httpx.TimeoutException, match=r"request_timeout.*retries"):
+        RateLimitTransport(
+            inner,
+            retries=1,
+            sleep=sleep,
+            monotonic=clock.monotonic,
+        ).handle_request(request)
+
+
 def test_retry_uses_only_the_remaining_request_timeout():
     clock = FakeClock()
 
@@ -294,6 +317,30 @@ async def test_async_does_not_retry_when_wait_reaches_request_timeout():
     assert response.status_code == 429
     assert sleeps == []
     assert len(inner.requests) == 1
+
+
+@pytest.mark.asyncio
+async def test_async_timeout_after_retry_wait_names_configuration_options():
+    inner = FakeAsyncTransport([429])
+    clock = FakeClock()
+
+    async def sleep(delay):
+        clock.sleeps.append(delay)
+        clock.now = 4.0
+
+    request = httpx.Request(
+        "GET",
+        "https://api.test",
+        extensions={"timeout": {"read": 3.0}},
+    )
+
+    with pytest.raises(httpx.TimeoutException, match=r"request_timeout.*retries"):
+        await AsyncRateLimitTransport(
+            inner,
+            retries=1,
+            sleep=sleep,
+            monotonic=clock.monotonic,
+        ).handle_async_request(request)
 
 
 @pytest.mark.asyncio

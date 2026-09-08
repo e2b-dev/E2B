@@ -6,6 +6,7 @@ import {
   withRateLimitRetry,
 } from '../src/retry'
 import { EnvdApiClient } from '../src/envd/api'
+import { InvalidArgumentError } from '../src/errors'
 
 describe('resolveRetries', () => {
   test('accepts non-negative integers', () => {
@@ -14,6 +15,7 @@ describe('resolveRetries', () => {
   })
 
   test.each([-1, 1.5, Number.NaN])('rejects %s', (retries) => {
+    expect(() => resolveRetries(retries)).toThrow(InvalidArgumentError)
     expect(() => resolveRetries(retries)).toThrow(
       'expected a non-negative integer'
     )

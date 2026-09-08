@@ -2,6 +2,7 @@ import pytest
 
 from e2b import ConnectionConfig
 from e2b.connection_config import DEFAULT_RETRIES
+from e2b.exceptions import InvalidArgumentException
 
 
 def test_api_url_defaults_correctly(monkeypatch):
@@ -246,5 +247,5 @@ def test_retries_default_to_three_and_propagate():
 
 @pytest.mark.parametrize("retries", [-1, 1.5, True])
 def test_retries_reject_invalid_values(retries):
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidArgumentException):
         ConnectionConfig(retries=retries)
