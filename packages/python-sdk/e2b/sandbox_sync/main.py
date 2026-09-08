@@ -1154,7 +1154,9 @@ class Sandbox(SandboxApi):
         else:
             response = SandboxApi._create_sandbox(
                 template=template or cls.default_template,
-                timeout=timeout or cls.default_sandbox_timeout,
+                timeout=(
+                    timeout if timeout is not None else cls.default_sandbox_timeout
+                ),
                 metadata=metadata,
                 env_vars=envs,
                 secure=secure,

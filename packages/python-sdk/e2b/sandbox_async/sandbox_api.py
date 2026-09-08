@@ -531,7 +531,9 @@ class SandboxApi(SandboxBase):
         on_resume: SandboxOnResume = "restore",
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
-        timeout = timeout or SandboxBase.default_sandbox_timeout
+        timeout = (
+            timeout if timeout is not None else SandboxBase.default_sandbox_timeout
+        )
 
         # Sandbox is not running, resume it
         config = ConnectionConfig(logger=logger, **cls._resolve_api_params(**opts))
