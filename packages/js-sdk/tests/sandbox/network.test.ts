@@ -1,7 +1,7 @@
 import { assert, expect, describe, vi } from 'vitest'
 
 import { CommandExitError, Sandbox } from '../../src'
-import { sandboxTest, isDebug, template } from '../setup.js'
+import { sandboxTest, isDebug, template, waitForHttpStatus } from '../setup.js'
 import { httpbinTemplate } from '../template.js'
 
 async function waitForStatus(
@@ -373,22 +373,8 @@ server.serve_forever()
 
       // Poll the public URL until the server responds
       const sandboxUrl = `https://${sandbox.getHost(port)}`
-      let response: Response | undefined
-      const deadline = Date.now() + 15_000
-      while (Date.now() < deadline) {
-        try {
-          response = await fetch(sandboxUrl)
-          if (response.status === 200) {
-            break
-          }
-        } catch {
-          // proxy may not have a route until the guest server is ready
-        }
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-      }
-
-      assert.equal(response?.status, 200)
-      assert.equal(await response?.text(), 'https backend')
+      const body = await waitForHttpStatus(sandboxUrl, 200)
+      assert.equal(body, 'https backend')
 
       // The port is reported back in the sandbox info
       const info = await sandbox.getInfo()
