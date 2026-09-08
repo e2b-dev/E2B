@@ -104,7 +104,6 @@ jobs:
           createGithubReleases: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: '' # See https://github.com/changesets/changesets/issues/1152#issuecomment-3190884868
 
       - name: Push new versions
         # A failed publish may have uploaded some Python packages before tagging.
