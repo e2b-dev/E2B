@@ -18,6 +18,21 @@ export function parsePositiveInt(label: string): (value: string) => number {
   }
 }
 
+/**
+ * Parse a CLI option as a non-negative integer.
+ */
+export function parseNonNegativeInt(label: string): (value: string) => number {
+  return (value) => {
+    const parsed = Number(value)
+    if (!Number.isInteger(parsed) || parsed < 0) {
+      throw new commander.InvalidArgumentError(
+        `${label} must be a non-negative integer. You provided ${asLocal(value)}.`
+      )
+    }
+    return parsed
+  }
+}
+
 export const pathOption = new commander.Option(
   '-p, --path <path>',
   `change root directory where command is executed to ${asBold(

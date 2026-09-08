@@ -110,7 +110,8 @@ export async function generateTypeScriptCode(
   template: TemplateClass,
   name: string,
   cpuCount?: number,
-  memoryMB?: number
+  memoryMB?: number,
+  freeDiskSpaceMB?: number
 ): Promise<{ templateContent: string; buildContent: string }> {
   const hb = new Handlebars()
   const transformedData = await transformTemplateData(template)
@@ -141,6 +142,7 @@ export async function generateTypeScriptCode(
     name,
     cpuCount,
     memoryMB,
+    freeDiskSpaceMB,
   })
 
   return {
@@ -157,6 +159,7 @@ export async function generatePythonCode(
   name: string,
   cpuCount?: number,
   memoryMB?: number,
+  freeDiskSpaceMB?: number,
   isAsync: boolean = false
 ): Promise<{ templateContent: string; buildContent: string }> {
   const hb = new Handlebars()
@@ -187,6 +190,7 @@ export async function generatePythonCode(
     name,
     cpuCount,
     memoryMB,
+    freeDiskSpaceMB,
   })
 
   return {

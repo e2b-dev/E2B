@@ -386,6 +386,22 @@ components:
       minimum: 0
       description: Disk size for the sandbox in MiB
 
+    FreeDiskSpaceMB:
+      type: integer
+      format: int32
+      minimum: 0
+      description: >-
+        Free-space growth target for the template's filesystem, in MiB,
+        evaluated after your build steps have run. A filesystem holding less
+        free space than this is grown toward the target on a best-effort basis
+        and may end up short of it. The filesystem is never shrunk, so free
+        space it already holds is kept even when that exceeds the target.
+
+
+        Omit the field to use your team's default free-space growth target.
+        Send 0 to request no growth. The value must not exceed your team's
+        maximum free-disk target.
+
     EnvdVersion:
       type: string
       description: Version of the envd running in the sandbox
@@ -1517,6 +1533,8 @@ components:
           $ref: "#/components/schemas/CPUCount"
         memoryMB:
           $ref: "#/components/schemas/MemoryMB"
+        freeDiskSpaceMB:
+          $ref: "#/components/schemas/FreeDiskSpaceMB"
 
     TemplateBuildRequestV2:
       required:
@@ -2867,6 +2885,8 @@ paths:
           $ref: "#/components/responses/401"
         "500":
           $ref: "#/components/responses/500"
+        "503":
+          $ref: "#/components/responses/503"
 
   /sandboxes/{sandboxID}/resume:
     post:

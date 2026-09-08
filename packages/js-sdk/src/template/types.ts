@@ -43,6 +43,12 @@ export type BasicBuildOptions = {
    */
   memoryMB?: number
   /**
+   * Free-space growth target for the template filesystem after the build steps
+   * have run, in MiB. Growth is best effort and the filesystem is never shrunk.
+   * Omit to use the team default or set to 0 to request no growth.
+   */
+  freeDiskSpaceMB?: number
+  /**
    * If true, skips cache and forces a complete rebuild.
    * @default false
    */

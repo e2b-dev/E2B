@@ -1,9 +1,13 @@
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
+from types import SimpleNamespace
 
 import pytest
 
 import e2b.template_async.main as template_async_main
+import e2b.template_async.build_api as template_async_build_api
 from e2b import AsyncTemplate, Template, TemplateTagInfo
+from e2b.api.client.client import AuthenticatedClient
+from e2b.api.client.types import UNSET
 from e2b.connection_config import ApiParams
 from e2b.template.types import BuildInfo
 
@@ -133,7 +137,7 @@ async def test_build_resolves_build_impl_and_config_off_cls(configs, monkeypatch
 
     assert (
         await BoundAsyncTemplate.build_in_background(
-            Template().from_base_image(), "my-template"
+            Template().from_base_image(), "my-template", free_disk_space_mb=0
         )
         is build_info
     )
@@ -141,6 +145,34 @@ async def test_build_resolves_build_impl_and_config_off_cls(configs, monkeypatch
     mock_build.assert_awaited_once()
     assert configs[0].api_key == BOUND_API_KEY
     assert configs[0].domain == BOUND_DOMAIN
+    assert mock_build.call_args.kwargs["free_disk_space_mb"] == 0
+
+
+@pytest.mark.asyncio
+async def test_request_build_preserves_zero_and_omission(monkeypatch):
+    bodies = []
+    client: AuthenticatedClient = Mock(spec=AuthenticatedClient)
+
+    async def request(*, client, body):
+        bodies.append(body)
+        return SimpleNamespace(
+            status_code=202,
+            parsed=SimpleNamespace(
+                template_id="template-id", build_id="build-id", tags=[]
+            ),
+        )
+
+    monkeypatch.setattr(
+        template_async_build_api.post_v3_templates, "asyncio_detailed", request
+    )
+
+    await template_async_build_api.request_build(
+        client, "team-default", None, 2, 1024, None
+    )
+    await template_async_build_api.request_build(client, "no-growth", None, 2, 1024, 0)
+
+    assert bodies[0].free_disk_space_mb is UNSET
+    assert bodies[1].free_disk_space_mb == 0
 
 
 @pytest.mark.asyncio

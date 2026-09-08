@@ -9,6 +9,7 @@ async def main():
         "start-cmd",
         cpu_count=2,
         memory_mb=1024,
+        free_disk_space_mb=0,
         on_build_logs=default_build_logger(),
     )
 

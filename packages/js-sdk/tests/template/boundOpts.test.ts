@@ -18,6 +18,7 @@ class BoundTemplate extends TemplateBase {
 }
 
 const requests: { url: string; apiKey: string | null }[] = []
+const buildRequestBodies: unknown[] = []
 
 function recordRequest(request: Request) {
   requests.push({
@@ -60,6 +61,7 @@ const handlers = [apiUrl, boundApiUrl].flatMap((url) => [
   }),
   http.post(url('/v3/templates'), async ({ request }) => {
     recordRequest(request)
+    buildRequestBodies.push(await request.clone().json())
     return HttpResponse.json({
       templateID: 'template-id',
       buildID: '00000000-0000-0000-0000-000000000000',
@@ -81,6 +83,7 @@ beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 afterAll(() => server.close())
 afterEach(() => {
   requests.length = 0
+  buildRequestBodies.length = 0
   server.resetHandlers()
 })
 
@@ -162,4 +165,28 @@ test('build options carry the bound options into the build', async () => {
     apiKey: BOUND_API_KEY,
     requestTimeoutMs: 42,
   })
+})
+
+test('build forwards zero free disk space and preserves omission', async () => {
+  await Template.buildInBackground(Template().fromBaseImage(), 'no-growth', {
+    apiKey: TEST_API_KEY,
+    freeDiskSpaceMB: 0,
+  })
+  await Template.buildInBackground(Template().fromBaseImage(), 'team-default', {
+    apiKey: TEST_API_KEY,
+  })
+
+  expect(buildRequestBodies).toEqual([
+    {
+      name: 'no-growth',
+      cpuCount: 2,
+      memoryMB: 1024,
+      freeDiskSpaceMB: 0,
+    },
+    {
+      name: 'team-default',
+      cpuCount: 2,
+      memoryMB: 1024,
+    },
+  ])
 })

@@ -192,11 +192,12 @@ describe('Template Migration', () => {
       const config = `template_id = "config-name"
 dockerfile = "e2b.Dockerfile"
 cpu_count = 2
-memory_mb = 512`
+memory_mb = 512
+free_disk_space_mb = 4096`
       await fs.writeFile(path.join(testDir, 'e2b.toml'), config)
 
       execSync(
-        `node ${cliPath} template migrate --language typescript --name "  Overridden-Name  " --cmd "node server.js" --ready-cmd "curl localhost:3000" --cpu-count 4 --memory-mb 2048`,
+          `node ${cliPath} template migrate --language typescript --name "  Overridden-Name  " --cmd "node server.js" --ready-cmd "curl localhost:3000" --cpu-count 4 --memory-mb 2048 --free-disk-space-mb 0`,
         {
           cwd: testDir,
         }
@@ -218,6 +219,7 @@ memory_mb = 512`
       expect(buildProdFile).not.toContain("'config-name'")
       expect(buildProdFile).toContain('cpuCount: 4')
       expect(buildProdFile).toContain('memoryMB: 2048')
+      expect(buildProdFile).toContain('freeDiskSpaceMB: 0')
     })
 
     test('should reject an invalid --name', async () => {

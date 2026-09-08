@@ -20,6 +20,13 @@ class TemplateBuildRequestV3:
         team_id (Union[Unset, str]): Identifier of the team
         cpu_count (Union[Unset, int]): CPU cores for the sandbox
         memory_mb (Union[Unset, int]): Memory for the sandbox in MiB
+        free_disk_space_mb (Union[Unset, int]): Free-space growth target for the template's filesystem, in MiB,
+            evaluated after your build steps have run. A filesystem holding less free space than this is grown toward the
+            target on a best-effort basis and may end up short of it. The filesystem is never shrunk, so free space it
+            already holds is kept even when that exceeds the target.
+
+            Omit the field to use your team's default free-space growth target. Send 0 to request no growth. The value must
+            not exceed your team's maximum free-disk target.
     """
 
     name: Union[Unset, str] = UNSET
@@ -28,6 +35,7 @@ class TemplateBuildRequestV3:
     team_id: Union[Unset, str] = UNSET
     cpu_count: Union[Unset, int] = UNSET
     memory_mb: Union[Unset, int] = UNSET
+    free_disk_space_mb: Union[Unset, int] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -45,6 +53,8 @@ class TemplateBuildRequestV3:
 
         memory_mb = self.memory_mb
 
+        free_disk_space_mb = self.free_disk_space_mb
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
@@ -60,6 +70,8 @@ class TemplateBuildRequestV3:
             field_dict["cpuCount"] = cpu_count
         if memory_mb is not UNSET:
             field_dict["memoryMB"] = memory_mb
+        if free_disk_space_mb is not UNSET:
+            field_dict["freeDiskSpaceMB"] = free_disk_space_mb
 
         return field_dict
 
@@ -78,6 +90,8 @@ class TemplateBuildRequestV3:
 
         memory_mb = d.pop("memoryMB", UNSET)
 
+        free_disk_space_mb = d.pop("freeDiskSpaceMB", UNSET)
+
         template_build_request_v3 = cls(
             name=name,
             tags=tags,
@@ -85,6 +99,7 @@ class TemplateBuildRequestV3:
             team_id=team_id,
             cpu_count=cpu_count,
             memory_mb=memory_mb,
+            free_disk_space_mb=free_disk_space_mb,
         )
 
         template_build_request_v3.additional_properties = d

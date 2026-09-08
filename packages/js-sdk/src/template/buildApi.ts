@@ -21,6 +21,7 @@ type RequestBuildInput = {
   tags?: string[]
   cpuCount: number
   memoryMB: number
+  freeDiskSpaceMB?: number
 }
 
 type GetFileUploadLinkInput = {
@@ -50,7 +51,7 @@ export type TriggerBuildTemplate = components['schemas']['TemplateBuildStartV2']
 
 export async function requestBuild(
   client: ApiClient,
-  { name, tags, cpuCount, memoryMB }: RequestBuildInput,
+  { name, tags, cpuCount, memoryMB, freeDiskSpaceMB }: RequestBuildInput,
   signal?: AbortSignal
 ) {
   const requestBuildRes = await client.api.POST('/v3/templates', {
@@ -59,6 +60,7 @@ export async function requestBuild(
       tags,
       cpuCount,
       memoryMB,
+      freeDiskSpaceMB,
     },
     signal,
   })
