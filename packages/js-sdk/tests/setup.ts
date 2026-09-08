@@ -166,6 +166,7 @@ export async function wait(ms: number) {
 export async function waitForHttpStatus(
   url: string,
   expectedStatus: number,
+  init?: RequestInit,
   timeoutMs = 30_000
 ): Promise<string> {
   const deadline = Date.now() + timeoutMs
@@ -179,7 +180,10 @@ export async function waitForHttpStatus(
       requestTimeoutMs
     )
     try {
-      const response = await fetch(url, { signal: controller.signal })
+      const response = await fetch(url, {
+        ...init,
+        signal: controller.signal,
+      })
       lastStatus = response.status
       if (lastStatus === expectedStatus) {
         return await response.text()

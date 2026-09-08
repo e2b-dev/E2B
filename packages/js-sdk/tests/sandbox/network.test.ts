@@ -1,27 +1,8 @@
-import { assert, expect, describe, vi } from 'vitest'
+import { assert, expect, describe } from 'vitest'
 
 import { CommandExitError, Sandbox } from '../../src'
 import { sandboxTest, isDebug, template, waitForHttpStatus } from '../setup.js'
 import { httpbinTemplate } from '../template.js'
-
-async function waitForStatus(
-  url: string,
-  status: number,
-  init?: RequestInit
-): Promise<void> {
-  await vi.waitFor(
-    async () => {
-      const response = await fetch(url, {
-        ...init,
-        signal: AbortSignal.timeout(5_000),
-      })
-      const actualStatus = response.status
-      await response.body?.cancel()
-      assert.equal(actualStatus, status)
-    },
-    { timeout: 20_000, interval: 500 }
-  )
-}
 
 describe('allow only 1.1.1.1', () => {
   sandboxTest.override({
@@ -165,10 +146,10 @@ describe('allowPublicTraffic=false', () => {
       const sandboxUrl = `https://${sandbox.getHost(port)}`
 
       // Test 1: Request without traffic access token should fail with 403
-      await waitForStatus(sandboxUrl, 403)
+      await waitForHttpStatus(sandboxUrl, 403)
 
       // Test 2: Request with valid traffic access token should succeed
-      await waitForStatus(sandboxUrl, 200, {
+      await waitForHttpStatus(sandboxUrl, 200, {
         headers: {
           'e2b-traffic-access-token': sandbox.trafficAccessToken,
         },
@@ -200,7 +181,7 @@ describe('allowPublicTraffic=true', () => {
       const sandboxUrl = `https://${sandbox.getHost(port)}`
 
       // Request without traffic access token should succeed (public access enabled)
-      await waitForStatus(sandboxUrl, 200)
+      await waitForHttpStatus(sandboxUrl, 200)
     },
     60_000
   )
@@ -420,7 +401,7 @@ http.server.HTTPServer(('', ${port}), H).handle_request()
 
       // Make a request from OUTSIDE the sandbox through the proxy
       // The Host header should be modified according to maskRequestHost
-      await waitForStatus(sandboxUrl, 200)
+      await waitForHttpStatus(sandboxUrl, 200)
 
       // Read the captured headers from inside the sandbox
       const headers = await sandbox.files.read(outputFile)
