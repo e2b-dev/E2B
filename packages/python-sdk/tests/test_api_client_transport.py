@@ -16,7 +16,7 @@ from transport_caches import reset_transport_caches
 import e2b.api as api
 import e2b.api.client_async as api_client_async
 import e2b.api.client_sync as api_client_sync
-from e2b.retry import AsyncRateLimitTransport, RateLimitTransport
+from e2b.retry import AsyncRetryableTransport, RetryableTransport
 from e2b.api import (
     envd_pool_shard,
     pool_idle_timeout,
@@ -79,8 +79,8 @@ def test_sync_api_client_proxy_uses_explicit_transport(test_api_key):
 
     try:
         assert "proxy" not in api_client._httpx_args
-        assert isinstance(httpx_client._transport, RateLimitTransport)
-        assert httpx_client._transport.transport is get_sync_transport(config)
+        assert isinstance(httpx_client._transport, RetryableTransport)
+        assert httpx_client._transport.transport is get_sync_transport(config).transport
         assert isinstance(httpx_client._transport.transport, PyqwestTransport)
         assert httpx_client._mounts == {}
     finally:
@@ -96,18 +96,18 @@ def test_sync_retry_policy_wraps_but_does_not_split_cached_transport(test_api_ke
     )
     default_httpx = default_client.get_httpx_client()
     retrying_httpx = retrying_client.get_httpx_client()
-    raw_transport = get_sync_transport(
+    other_retry_policy = get_sync_transport(
         ConnectionConfig(api_key=test_api_key, retries=1)
     )
 
     try:
-        assert isinstance(default_httpx._transport, RateLimitTransport)
+        assert isinstance(default_httpx._transport, RetryableTransport)
         assert default_httpx._transport.retries == 3
-        assert isinstance(retrying_httpx._transport, RateLimitTransport)
+        assert isinstance(retrying_httpx._transport, RetryableTransport)
         assert retrying_httpx._transport.retries == 2
         assert retrying_httpx._transport.transport is default_httpx._transport.transport
-        assert isinstance(raw_transport, PyqwestTransport)
-        assert raw_transport is default_httpx._transport.transport
+        assert other_retry_policy.retries == 1
+        assert other_retry_policy.transport is default_httpx._transport.transport
     finally:
         retrying_httpx.close()
         default_httpx.close()
@@ -131,12 +131,14 @@ def test_sync_get_transport_keyed_by_proxy(test_api_key):
         direct_transport = get_sync_transport(direct_config)
         other_proxy_transport = get_sync_transport(other_proxy_config)
 
-        assert proxied_transport is not direct_transport
-        assert proxied_transport is not other_proxy_transport
-        assert direct_transport is not other_proxy_transport
+        assert proxied_transport.transport is not direct_transport.transport
+        assert proxied_transport.transport is not other_proxy_transport.transport
+        assert direct_transport.transport is not other_proxy_transport.transport
         # The same proxy still reuses the cached instance.
-        assert get_sync_transport(proxied_config) is proxied_transport
-        assert get_sync_transport(direct_config) is direct_transport
+        assert (
+            get_sync_transport(proxied_config).transport is proxied_transport.transport
+        )
+        assert get_sync_transport(direct_config).transport is direct_transport.transport
     finally:
         reset_transport_caches()
 
@@ -157,24 +159,29 @@ def test_sync_transports_keyed_by_http_version(test_api_key):
         envd_negotiated = get_sync_envd_transport(config)
         envd_http1 = get_sync_envd_transport(config, http2=False)
 
-        assert http1 is not negotiated
-        assert envd_http1 is not envd_negotiated
+        assert http1.transport is not negotiated.transport
+        assert envd_http1.transport is not envd_negotiated.transport
         # A config without sandbox headers resolves envd to shard zero, so it
-        # shares the generic transport for each HTTP version.
-        assert envd_negotiated is negotiated
-        assert envd_http1 is http1
+        # shares the generic transport's pool for each HTTP version while using
+        # its own wrapper with response retries disabled.
+        assert envd_negotiated.retries == 0
+        assert envd_negotiated.transport is negotiated.transport
+        assert envd_http1.transport is http1.transport
         # Each version still has one pool per proxy, and repeat calls with the
         # same arguments reuse it.
-        assert get_sync_transport(proxied_config, http2=False) not in (
-            http1,
-            negotiated,
+        assert get_sync_transport(proxied_config, http2=False).transport not in (
+            http1.transport,
+            negotiated.transport,
         )
-        assert get_sync_transport(config, http2=False) is http1
-        assert get_sync_transport(config) is negotiated
-        assert get_sync_envd_transport(config, http2=False) is envd_http1
+        assert get_sync_transport(config, http2=False).transport is http1.transport
+        assert get_sync_transport(config).transport is negotiated.transport
         assert (
-            get_sync_envd_transport(config, http2=False, for_streaming=True)
-            is not envd_http1
+            get_sync_envd_transport(config, http2=False).transport
+            is envd_http1.transport
+        )
+        assert (
+            get_sync_envd_transport(config, http2=False, for_streaming=True).transport
+            is not envd_http1.transport
         )
     finally:
         reset_transport_caches()
@@ -192,13 +199,20 @@ def test_sync_envd_transports_are_consistently_sharded_by_sandbox(
     try:
         assert envd_pool_shard(first) == envd_pool_shard(same_shard)
         assert envd_pool_shard(first) != envd_pool_shard(different_shard)
-        assert get_sync_envd_transport(first) is get_sync_envd_transport(same_shard)
-        assert get_sync_envd_transport(first) is not get_sync_envd_transport(
-            different_shard
+        assert (
+            get_sync_envd_transport(first).transport
+            is get_sync_envd_transport(same_shard).transport
+        )
+        assert (
+            get_sync_envd_transport(first).transport
+            is not get_sync_envd_transport(different_shard).transport
         )
         # Generic API traffic remains on shard zero rather than multiplying
         # control-plane connections for every envd shard.
-        assert get_sync_envd_transport(first) is not get_sync_transport(first)
+        assert (
+            get_sync_envd_transport(first).transport
+            is not get_sync_transport(first).transport
+        )
     finally:
         reset_transport_caches()
 
@@ -301,10 +315,17 @@ def test_sync_generic_transport_separates_streaming_read_timeout(test_api_key):
         api_transport = get_sync_transport(config)
         streaming_transport = get_sync_transport(config, for_streaming=True)
 
-        assert isinstance(api_transport, PyqwestTransport)
-        assert api_transport is get_sync_transport(config, for_streaming=False)
-        assert streaming_transport is not api_transport
-        assert get_sync_transport(config, for_streaming=True) is streaming_transport
+        assert isinstance(api_transport, RetryableTransport)
+        assert isinstance(api_transport.transport, PyqwestTransport)
+        assert (
+            api_transport.transport
+            is get_sync_transport(config, for_streaming=False).transport
+        )
+        assert streaming_transport.transport is not api_transport.transport
+        assert (
+            get_sync_transport(config, for_streaming=True).transport
+            is streaming_transport.transport
+        )
     finally:
         reset_transport_caches()
 
@@ -318,8 +339,17 @@ def test_sync_envd_api_client_wiring(test_api_key):
 
     try:
         assert client.base_url == "https://sandbox.e2b.app"
-        assert client._transport is get_sync_transport(config)
-        assert streaming._transport is get_sync_transport(config, for_streaming=True)
+        assert isinstance(client._transport, RetryableTransport)
+        assert isinstance(streaming._transport, RetryableTransport)
+        assert (
+            client._transport.transport
+            is get_sync_transport(config, retries=0).transport
+        )
+        assert client._transport.retries == 0
+        assert (
+            streaming._transport.transport
+            is get_sync_transport(config, for_streaming=True, retries=0).transport
+        )
         for header, value in config.sandbox_headers.items():
             assert client.headers[header] == value
     finally:
@@ -360,8 +390,10 @@ async def test_async_api_client_proxy_uses_explicit_transport(test_api_key):
 
     try:
         assert "proxy" not in api_client._httpx_args
-        assert isinstance(httpx_client._transport, AsyncRateLimitTransport)
-        assert httpx_client._transport.transport is get_async_transport(config)
+        assert isinstance(httpx_client._transport, AsyncRetryableTransport)
+        assert (
+            httpx_client._transport.transport is get_async_transport(config).transport
+        )
         assert isinstance(httpx_client._transport.transport, AsyncPyqwestTransport)
         assert httpx_client._mounts == {}
     finally:
@@ -382,10 +414,14 @@ async def test_async_get_transport_keyed_by_proxy(test_api_key):
         proxied_transport = get_async_transport(proxied_config)
         direct_transport = get_async_transport(direct_config)
 
-        assert proxied_transport is not direct_transport
+        assert proxied_transport.transport is not direct_transport.transport
         # The same proxy still reuses the cached instance.
-        assert get_async_transport(proxied_config) is proxied_transport
-        assert get_async_transport(direct_config) is direct_transport
+        assert (
+            get_async_transport(proxied_config).transport is proxied_transport.transport
+        )
+        assert (
+            get_async_transport(direct_config).transport is direct_transport.transport
+        )
     finally:
         reset_transport_caches()
 
@@ -401,18 +437,23 @@ async def test_async_transports_keyed_by_http_version(test_api_key):
         envd_negotiated = get_async_envd_transport(config)
         envd_http1 = get_async_envd_transport(config, http2=False)
 
-        assert http1 is not negotiated
-        assert envd_http1 is not envd_negotiated
+        assert http1.transport is not negotiated.transport
+        assert envd_http1.transport is not envd_negotiated.transport
         # A config without sandbox headers resolves envd to shard zero, so it
-        # shares the generic transport for each HTTP version.
-        assert envd_negotiated is negotiated
-        assert envd_http1 is http1
-        assert get_async_transport(config, http2=False) is http1
-        assert get_async_transport(config) is negotiated
-        assert get_async_envd_transport(config, http2=False) is envd_http1
+        # shares the generic transport's pool for each HTTP version while using
+        # its own wrapper with response retries disabled.
+        assert envd_negotiated.retries == 0
+        assert envd_negotiated.transport is negotiated.transport
+        assert envd_http1.transport is http1.transport
+        assert get_async_transport(config, http2=False).transport is http1.transport
+        assert get_async_transport(config).transport is negotiated.transport
         assert (
-            get_async_envd_transport(config, http2=False, for_streaming=True)
-            is not envd_http1
+            get_async_envd_transport(config, http2=False).transport
+            is envd_http1.transport
+        )
+        assert (
+            get_async_envd_transport(config, http2=False, for_streaming=True).transport
+            is not envd_http1.transport
         )
     finally:
         reset_transport_caches()
@@ -429,11 +470,18 @@ async def test_async_envd_transports_are_consistently_sharded_by_sandbox(
     different_shard = sandbox_config(test_api_key, "sbx-1")
 
     try:
-        assert get_async_envd_transport(first) is get_async_envd_transport(same_shard)
-        assert get_async_envd_transport(first) is not get_async_envd_transport(
-            different_shard
+        assert (
+            get_async_envd_transport(first).transport
+            is get_async_envd_transport(same_shard).transport
         )
-        assert get_async_envd_transport(first) is not get_async_transport(first)
+        assert (
+            get_async_envd_transport(first).transport
+            is not get_async_envd_transport(different_shard).transport
+        )
+        assert (
+            get_async_envd_transport(first).transport
+            is not get_async_transport(first).transport
+        )
     finally:
         reset_transport_caches()
 
@@ -524,10 +572,17 @@ async def test_async_generic_transport_separates_streaming_read_timeout(test_api
         api_transport = get_async_transport(config)
         streaming_transport = get_async_transport(config, for_streaming=True)
 
-        assert isinstance(api_transport, AsyncPyqwestTransport)
-        assert api_transport is get_async_transport(config, for_streaming=False)
-        assert streaming_transport is not api_transport
-        assert get_async_transport(config, for_streaming=True) is streaming_transport
+        assert isinstance(api_transport, AsyncRetryableTransport)
+        assert isinstance(api_transport.transport, AsyncPyqwestTransport)
+        assert (
+            api_transport.transport
+            is get_async_transport(config, for_streaming=False).transport
+        )
+        assert streaming_transport.transport is not api_transport.transport
+        assert (
+            get_async_transport(config, for_streaming=True).transport
+            is streaming_transport.transport
+        )
     finally:
         reset_transport_caches()
 
@@ -541,7 +596,12 @@ async def test_async_envd_api_client_wiring(test_api_key):
 
     try:
         assert client.base_url == "https://sandbox.e2b.app"
-        assert client._transport is get_async_transport(config)
+        assert isinstance(client._transport, AsyncRetryableTransport)
+        assert (
+            client._transport.transport
+            is get_async_transport(config, retries=0).transport
+        )
+        assert client._transport.retries == 0
         for header, value in config.sandbox_headers.items():
             assert client.headers[header] == value
     finally:
@@ -688,7 +748,7 @@ def test_sync_api_client_round_trips_through_pyqwest(test_api_key, echo_server):
     httpx_client = api_client.get_httpx_client()
 
     try:
-        assert isinstance(httpx_client._transport, RateLimitTransport)
+        assert isinstance(httpx_client._transport, RetryableTransport)
         assert isinstance(httpx_client._transport.transport, PyqwestTransport)
         response = httpx_client.request("GET", "/sandboxes")
         assert response.status_code == 200
@@ -802,7 +862,7 @@ async def test_async_api_client_round_trips_through_pyqwest(test_api_key, echo_s
     httpx_client = api_client.get_async_httpx_client()
 
     try:
-        assert isinstance(httpx_client._transport, AsyncRateLimitTransport)
+        assert isinstance(httpx_client._transport, AsyncRetryableTransport)
         assert isinstance(httpx_client._transport.transport, AsyncPyqwestTransport)
         response = await httpx_client.request("GET", "/sandboxes")
         assert response.status_code == 200
@@ -1039,9 +1099,10 @@ def test_sync_closing_one_client_leaves_the_shared_pool_open(test_api_key, echo_
     pool = get_sync_pyqwest_transport(proxy_to_config(config.proxy))
 
     try:
-        assert isinstance(api_httpx._transport, RateLimitTransport)
-        assert isinstance(envd_api._transport, PyqwestTransport)
-        assert api_httpx._transport.transport is envd_api._transport
+        assert isinstance(api_httpx._transport, RetryableTransport)
+        assert isinstance(envd_api._transport, RetryableTransport)
+        assert envd_api._transport.retries == 0
+        assert api_httpx._transport.transport is envd_api._transport.transport
         assert api_httpx.request("GET", "/sandboxes").status_code == 200
 
         api_httpx.close()
@@ -1068,9 +1129,10 @@ async def test_async_closing_one_client_leaves_the_shared_pool_open(
     pool = get_async_pyqwest_transport(proxy_to_config(config.proxy))
 
     try:
-        assert isinstance(api_httpx._transport, AsyncRateLimitTransport)
-        assert isinstance(envd_api._transport, AsyncPyqwestTransport)
-        assert api_httpx._transport.transport is envd_api._transport
+        assert isinstance(api_httpx._transport, AsyncRetryableTransport)
+        assert isinstance(envd_api._transport, AsyncRetryableTransport)
+        assert envd_api._transport.retries == 0
+        assert api_httpx._transport.transport is envd_api._transport.transport
         assert (await api_httpx.request("GET", "/sandboxes")).status_code == 200
 
         await api_httpx.aclose()

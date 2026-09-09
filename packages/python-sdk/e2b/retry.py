@@ -63,7 +63,7 @@ def _request_deadline(request: httpx.Request, monotonic: Callable[[], float]) ->
     )
 
 
-class RateLimitTransport(httpx.BaseTransport):
+class RetryableTransport(httpx.BaseTransport):
     """Retry replayable requests after a 429 carrying ``Retry-After``."""
 
     def __init__(
@@ -118,8 +118,8 @@ class RateLimitTransport(httpx.BaseTransport):
         pass
 
 
-class AsyncRateLimitTransport(httpx.AsyncBaseTransport):
-    """Async counterpart of :class:`RateLimitTransport`."""
+class AsyncRetryableTransport(httpx.AsyncBaseTransport):
+    """Async counterpart of :class:`RetryableTransport`."""
 
     def __init__(
         self,

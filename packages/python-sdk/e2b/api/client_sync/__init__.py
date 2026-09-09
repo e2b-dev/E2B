@@ -7,7 +7,7 @@ from pyqwest import HTTPVersion, SyncHTTPTransport, SyncRequest, SyncResponse
 from pyqwest.httpx import PyqwestTransport
 from pyqwest.middleware.retry import RetryMode, SyncRetryTransport
 
-from e2b.retry import RateLimitTransport
+from e2b.retry import RetryableTransport, resolve_max_retries
 from e2b.api import (
     ApiClient,
     ProxyConfig,
@@ -24,7 +24,7 @@ from e2b.connection_config import READ_TIMEOUT, ConnectionConfig
 def get_api_client(config: ConnectionConfig, **kwargs) -> ApiClient:
     return ApiClient(
         config,
-        transport=RateLimitTransport(get_transport(config), config.retries),
+        transport=get_transport(config),
         **kwargs,
     )
 
@@ -156,7 +156,8 @@ def get_transport(
     *,
     for_streaming: bool = False,
     pool_shard: int = 0,
-) -> PyqwestTransport:
+    retries: Optional[int] = None,
+) -> RetryableTransport:
     """The shared httpx transport factory for the control-plane REST API and
     envd HTTP API (file transfers, health checks). Generic callers use shard
     zero; :func:`get_envd_transport` supplies a sandbox-specific shard. For TLS
@@ -170,6 +171,11 @@ def get_transport(
     one-connection-per-request closes the connection and the server observes
     the disconnect.
 
+    The shared pool is wrapped with the configured control-plane rate-limit
+    retry policy. Internal callers that must not retry HTTP responses pass
+    ``retries=0``; connection-establishment retries remain active in the pool
+    below this wrapper.
+
     ``for_streaming`` selects the pool carrying ``READ_TIMEOUT``, the idle
     bound on every read: it resets after each successful read, so it caps how
     long a streamed download may stall without limiting total transfer time.
@@ -178,17 +184,16 @@ def get_transport(
     downloads take it, and they get their own pool
     (see :func:`get_pyqwest_transport`).
     """
-    return get_httpx_transport(
-        proxy_to_config(config.proxy),
-        READ_TIMEOUT if for_streaming else None,
-        http2,
-        pool_shard,
-    )
+    proxy = proxy_to_config(config.proxy)
+    read_timeout = READ_TIMEOUT if for_streaming else None
+    max_retries = config.retries if retries is None else resolve_max_retries(retries)
+    transport = get_httpx_transport(proxy, read_timeout, http2, pool_shard)
+    return RetryableTransport(transport, max_retries)
 
 
 def get_envd_transport(
     config: ConnectionConfig, http2: bool = True, *, for_streaming: bool = False
-) -> PyqwestTransport:
+) -> RetryableTransport:
     """The envd HTTP API's transport, sharded by sandbox ID.
 
     Envd RPC and non-streaming HTTP traffic for one sandbox resolve the same
@@ -198,13 +203,15 @@ def get_envd_transport(
     read-timeout-keyed pool.
 
     Kept as a separate factory because generic API transports stay on shard
-    zero while envd transports use the sandbox's shard.
+    zero while envd transports use the sandbox's shard. HTTP response retries
+    are disabled for envd; the underlying pool still retries failed connects.
     """
     return get_transport(
         config,
         http2,
         for_streaming=for_streaming,
         pool_shard=envd_pool_shard(config),
+        retries=0,
     )
 
 

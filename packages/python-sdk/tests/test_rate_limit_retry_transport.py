@@ -1,7 +1,7 @@
 import httpx
 import pytest
 
-from e2b.retry import AsyncRateLimitTransport, RateLimitTransport, parse_retry_after
+from e2b.retry import AsyncRetryableTransport, RetryableTransport, parse_retry_after
 
 
 class FakeTransport(httpx.BaseTransport):
@@ -68,7 +68,7 @@ def test_retries_rate_limit_after_server_delay_and_replays_body():
     sleeps = []
     request = httpx.Request("POST", "https://api.test", content=b"payload")
 
-    response = RateLimitTransport(inner, retries=3, sleep=sleeps.append).handle_request(
+    response = RetryableTransport(inner, retries=3, sleep=sleeps.append).handle_request(
         request
     )
 
@@ -81,7 +81,7 @@ def test_retries_rate_limit_after_server_delay_and_replays_body():
 def test_exhaustion_returns_final_rate_limit_response():
     inner = FakeTransport([429, 429, 429])
 
-    response = RateLimitTransport(
+    response = RetryableTransport(
         inner, retries=2, sleep=lambda _: None
     ).handle_request(httpx.Request("GET", "https://api.test"))
 
@@ -95,7 +95,7 @@ def test_exhaustion_returns_final_rate_limit_response():
 def test_does_not_retry_without_delta_seconds(retry_after):
     inner = FakeTransport([429], retry_after=retry_after)
 
-    response = RateLimitTransport(inner, retries=3).handle_request(
+    response = RetryableTransport(inner, retries=3).handle_request(
         httpx.Request("GET", "https://api.test")
     )
 
@@ -106,7 +106,7 @@ def test_does_not_retry_without_delta_seconds(retry_after):
 def test_429_without_retry_after_is_propagated_as_is():
     inner = FakeTransport([429], retry_after=None)
 
-    response = RateLimitTransport(inner, retries=3).handle_request(
+    response = RetryableTransport(inner, retries=3).handle_request(
         httpx.Request("GET", "https://api.test")
     )
 
@@ -123,7 +123,7 @@ def test_retry_after_exceeding_timeout_is_propagated_as_is():
         extensions={"timeout": {"connect": 3.0, "read": 3.0}},
     )
 
-    response = RateLimitTransport(
+    response = RetryableTransport(
         inner, retries=3, sleep=sleeps.append, monotonic=lambda: 0.0
     ).handle_request(request)
 
@@ -143,7 +143,7 @@ def test_retry_wait_is_bounded_when_request_timeout_is_disabled():
         },
     )
 
-    response = RateLimitTransport(
+    response = RetryableTransport(
         inner, retries=3, sleep=sleeps.append, monotonic=lambda: 0.0
     ).handle_request(request)
 
@@ -155,7 +155,7 @@ def test_retry_wait_is_bounded_when_request_timeout_is_disabled():
 def test_does_not_retry_other_status_codes():
     inner = FakeTransport([503], retry_after="0")
 
-    response = RateLimitTransport(inner, retries=3).handle_request(
+    response = RetryableTransport(inner, retries=3).handle_request(
         httpx.Request("GET", "https://api.test")
     )
 
@@ -174,7 +174,7 @@ def test_does_not_retry_when_cumulative_wait_reaches_request_timeout():
         },
     )
 
-    response = RateLimitTransport(
+    response = RetryableTransport(
         inner,
         retries=3,
         sleep=clock.sleep,
@@ -201,7 +201,7 @@ def test_timeout_after_retry_wait_names_configuration_options():
     )
 
     with pytest.raises(httpx.TimeoutException, match=r"request_timeout.*retries"):
-        RateLimitTransport(
+        RetryableTransport(
             inner,
             retries=1,
             sleep=sleep,
@@ -226,7 +226,7 @@ def test_retry_uses_only_the_remaining_request_timeout():
         extensions={"timeout": {"connect": 3.0, "read": 3.0}},
     )
 
-    response = RateLimitTransport(
+    response = RetryableTransport(
         inner, retries=1, sleep=clock.sleep, monotonic=clock.monotonic
     ).handle_request(request)
 
@@ -256,7 +256,7 @@ def test_retry_preserves_remaining_budget_for_each_timeout_phase():
         },
     )
 
-    RateLimitTransport(
+    RetryableTransport(
         inner, retries=1, sleep=clock.sleep, monotonic=clock.monotonic
     ).handle_request(request)
 
@@ -272,7 +272,7 @@ def test_zero_retries_passes_the_original_request_through():
     inner = FakeTransport([429], retry_after="0")
     request = httpx.Request("GET", "https://api.test")
 
-    response = RateLimitTransport(inner, retries=0).handle_request(request)
+    response = RetryableTransport(inner, retries=0).handle_request(request)
 
     assert response.status_code == 429
     assert inner.requests == [request]
@@ -286,7 +286,7 @@ def test_does_not_buffer_or_retry_streamed_body():
     inner = FakeTransport([429])
     request = httpx.Request("POST", "https://api.test", content=Stream())
 
-    response = RateLimitTransport(inner, retries=3).handle_request(request)
+    response = RetryableTransport(inner, retries=3).handle_request(request)
 
     assert response.status_code == 429
     assert inner.requests == [request]
@@ -295,7 +295,7 @@ def test_does_not_buffer_or_retry_streamed_body():
 def test_close_leaves_cached_transport_open():
     inner = FakeTransport([])
 
-    RateLimitTransport(inner, retries=1).close()
+    RetryableTransport(inner, retries=1).close()
 
     assert not inner.closed
 
@@ -308,7 +308,7 @@ async def test_async_retries_rate_limit_and_replays_body():
     async def sleep(delay):
         sleeps.append(delay)
 
-    response = await AsyncRateLimitTransport(
+    response = await AsyncRetryableTransport(
         inner, retries=3, sleep=sleep
     ).handle_async_request(
         httpx.Request("POST", "https://api.test", content=b"payload")
@@ -328,7 +328,7 @@ async def test_async_does_not_retry_when_wait_reaches_request_timeout():
     async def sleep(delay):
         sleeps.append(delay)
 
-    response = await AsyncRateLimitTransport(
+    response = await AsyncRetryableTransport(
         inner, retries=3, sleep=sleep, monotonic=lambda: 0.0
     ).handle_async_request(
         httpx.Request(
@@ -359,7 +359,7 @@ async def test_async_timeout_after_retry_wait_names_configuration_options():
     )
 
     with pytest.raises(httpx.TimeoutException, match=r"request_timeout.*retries"):
-        await AsyncRateLimitTransport(
+        await AsyncRetryableTransport(
             inner,
             retries=1,
             sleep=sleep,
@@ -371,7 +371,7 @@ async def test_async_timeout_after_retry_wait_names_configuration_options():
 async def test_async_429_without_retry_after_is_propagated_as_is():
     inner = FakeAsyncTransport([429], retry_after=None)
 
-    response = await AsyncRateLimitTransport(inner, retries=3).handle_async_request(
+    response = await AsyncRetryableTransport(inner, retries=3).handle_async_request(
         httpx.Request("GET", "https://api.test")
     )
 
@@ -387,7 +387,7 @@ async def test_async_retry_after_exceeding_timeout_is_propagated_as_is():
     async def sleep(delay):
         sleeps.append(delay)
 
-    response = await AsyncRateLimitTransport(
+    response = await AsyncRetryableTransport(
         inner, retries=3, sleep=sleep, monotonic=lambda: 0.0
     ).handle_async_request(
         httpx.Request(
@@ -410,7 +410,7 @@ async def test_async_retry_wait_is_bounded_when_request_timeout_is_disabled():
     async def sleep(delay):
         sleeps.append(delay)
 
-    response = await AsyncRateLimitTransport(
+    response = await AsyncRetryableTransport(
         inner, retries=3, sleep=sleep, monotonic=lambda: 0.0
     ).handle_async_request(
         httpx.Request(
@@ -448,7 +448,7 @@ async def test_async_retry_uses_only_the_remaining_request_timeout():
     async def sleep(delay):
         clock.sleep(delay)
 
-    response = await AsyncRateLimitTransport(
+    response = await AsyncRetryableTransport(
         inner, retries=1, sleep=sleep, monotonic=clock.monotonic
     ).handle_async_request(
         httpx.Request(
@@ -481,7 +481,7 @@ async def test_async_retry_preserves_remaining_budget_for_each_timeout_phase():
     async def sleep(delay):
         clock.sleep(delay)
 
-    await AsyncRateLimitTransport(
+    await AsyncRetryableTransport(
         inner, retries=1, sleep=sleep, monotonic=clock.monotonic
     ).handle_async_request(
         httpx.Request(
@@ -515,7 +515,7 @@ async def test_async_does_not_retry_streamed_body():
     inner = FakeAsyncTransport([429])
     request = httpx.Request("POST", "https://api.test", content=Stream())
 
-    response = await AsyncRateLimitTransport(inner, retries=3).handle_async_request(
+    response = await AsyncRetryableTransport(inner, retries=3).handle_async_request(
         request
     )
 
@@ -527,7 +527,7 @@ async def test_async_does_not_retry_streamed_body():
 async def test_async_close_leaves_cached_transport_open():
     inner = FakeAsyncTransport([])
 
-    await AsyncRateLimitTransport(inner, retries=1).aclose()
+    await AsyncRetryableTransport(inner, retries=1).aclose()
 
     assert not inner.closed
 
