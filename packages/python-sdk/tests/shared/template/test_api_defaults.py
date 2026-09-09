@@ -26,7 +26,9 @@ def _sync_build_body(monkeypatch, **kwargs) -> Dict[str, Any]:
     request = Mock(return_value=_build_response())
     monkeypatch.setattr(post_v3_templates, "sync_detailed", request)
 
-    sync_request_build(Mock(), name="test-template", tags=None, **kwargs)
+    sync_request_build(
+        Mock(), name="test-template", tags=None, min_free_disk_mb=None, **kwargs
+    )
 
     return request.call_args.kwargs["body"].to_dict()
 
@@ -35,7 +37,9 @@ async def _async_build_body(monkeypatch, **kwargs) -> Dict[str, Any]:
     request = AsyncMock(return_value=_build_response())
     monkeypatch.setattr(post_v3_templates, "asyncio_detailed", request)
 
-    await async_request_build(Mock(), name="test-template", tags=None, **kwargs)
+    await async_request_build(
+        Mock(), name="test-template", tags=None, min_free_disk_mb=None, **kwargs
+    )
 
     return request.call_args.kwargs["body"].to_dict()
 
