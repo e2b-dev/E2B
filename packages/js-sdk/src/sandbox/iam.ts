@@ -72,7 +72,7 @@ export function validateIamTokenName(name: string): void {
  * spelling is fixed by the backend: a placeholder can only select a persisted
  * named token, never an inline audience or claim.
  */
-export function iamTokenPlaceholder(name: string): string {
+function iamTokenPlaceholder(name: string): string {
   validateIamTokenName(name)
 
   return `\${e2b.identity.tokens.${name}}`
