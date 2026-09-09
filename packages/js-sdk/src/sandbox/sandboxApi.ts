@@ -315,6 +315,21 @@ export type SandboxNetworkOpts = {
    * @default ${PORT}-sandboxid.e2b.app
    */
   maskRequestHost?: string
+
+  /**
+   * Ports whose public URLs should connect to the sandbox using HTTPS.
+   *
+   * Use this when the service listening on the port serves HTTPS (TLS)
+   * itself. This is not TLS passthrough — traffic is still terminated at the
+   * E2B proxy and re-encrypted on the hop to the sandbox. The backend
+   * certificate is not verified, so self-signed certificates work.
+   *
+   * @example
+   * ```ts
+   * await Sandbox.create({ network: { httpsPorts: [3000] } })
+   * ```
+   */
+  httpsPorts?: number[]
 }
 
 /**
@@ -334,6 +349,7 @@ export type SandboxNetworkInfo = {
   egressProxy?: SandboxEgressProxyInfo
   allowPublicTraffic?: boolean
   maskRequestHost?: string
+  httpsPorts?: number[]
 }
 
 /**
@@ -456,6 +472,8 @@ export type SandboxLifecycle = {
    * `'kill'`, or `{ action, keepMemory }` to also control the pause snapshot kind.
    * Omitted from the create request when unset, leaving the API's default
    * (currently `kill`) in effect.
+   *
+   * @throws {@link InvalidArgumentError} if the action is outside the two literals.
    */
   onTimeout: SandboxOnTimeout
 
@@ -664,6 +682,16 @@ export interface SandboxOpts extends ConnectionOpts {
 }
 
 /**
+ * How a paused sandbox comes back.
+ *
+ * `'restore'` restores the memory snapshot, so processes and open connections
+ * survive the pause. `'reboot'` ignores any memory in the snapshot and
+ * cold-boots from disk state alone — the rescue path for a snapshot whose
+ * memory image wedges the guest.
+ */
+export type SandboxOnResume = 'restore' | 'reboot'
+
+/**
  * Options for connecting to a Sandbox.
  */
 export type SandboxConnectOpts = ConnectionOpts & {
@@ -675,6 +703,18 @@ export type SandboxConnectOpts = ConnectionOpts & {
    * @default 300_000 // 5 minutes
    */
   timeoutMs?: number
+
+  /**
+   * How to bring a paused sandbox back: `'restore'` (the default) restores the
+   * memory snapshot; `'reboot'` cold-boots from disk state, so writes not
+   * flushed before the pause may be lost. Rejected where filesystem-only resume
+   * is not enabled; a no-op for a snapshot without memory or a sandbox that is
+   * already running.
+   *
+   * @default 'restore'
+   * @throws {@link InvalidArgumentError} if the value is outside the two literals.
+   */
+  onResume?: SandboxOnResume
 }
 
 /**
@@ -1122,6 +1162,9 @@ function buildNetworkBody(
     ...(network.maskRequestHost !== undefined
       ? { maskRequestHost: network.maskRequestHost }
       : {}),
+    ...(network.httpsPorts !== undefined
+      ? { httpsPorts: network.httpsPorts }
+      : {}),
   }
 }
 
@@ -1284,6 +1327,7 @@ export class SandboxApi extends ClientFactory {
             egressProxy: fromApiEgressProxy(res.data.network.egressProxy),
             allowPublicTraffic: res.data.network.allowPublicTraffic,
             maskRequestHost: res.data.network.maskRequestHost,
+            httpsPorts: res.data.network.httpsPorts,
           }
         : undefined,
       lifecycle: res.data.lifecycle
@@ -1625,6 +1669,19 @@ export class SandboxApi extends ClientFactory {
     const onTimeoutConfigured = requestedOnTimeout != null
     const onTimeout = requestedOnTimeout ?? 'kill'
     const action = typeof onTimeout === 'string' ? onTimeout : onTimeout.action
+    const allowedActions = ['pause', 'kill']
+    if (onTimeoutConfigured && !allowedActions.includes(action)) {
+      // Name the field the caller wrote: the object form's bad value is on
+      // `.action`, not on `onTimeout` itself.
+      const field =
+        typeof onTimeout === 'string' ? 'onTimeout' : 'onTimeout.action'
+      throw new InvalidArgumentError(
+        `${field} must be one of: ${allowedActions.join(', ')} (got ${JSON.stringify(action)}).`
+      )
+    }
+    // The action never reaches the API — it is resolved here into the boolean
+    // autoPause — so an unrecognized value cannot be rejected server-side, and
+    // resolving it to kill would delete the sandbox a caller asked to preserve.
     const hasKeepMemory =
       typeof onTimeout !== 'string' && 'keepMemory' in onTimeout
     const keepMemory =
@@ -1789,6 +1846,18 @@ export class SandboxApi extends ClientFactory {
     const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
+    // A nullish value is not a choice of restore, matching every other nullish
+    // option. Any other value outside the union never reaches the API — it is
+    // resolved here into the boolean memory field — so it cannot be rejected
+    // server-side, and resolving it to restore would silently skip the reboot.
+    const onResume = apiOpts?.onResume ?? undefined
+    const allowedOnResume = ['restore', 'reboot']
+    if (onResume !== undefined && !allowedOnResume.includes(onResume)) {
+      throw new InvalidArgumentError(
+        `onResume must be one of: ${allowedOnResume.join(', ')} (got ${JSON.stringify(onResume)}).`
+      )
+    }
+
     const res = await client.api.POST('/sandboxes/{sandboxID}/connect', {
       params: {
         path: {
@@ -1797,6 +1866,7 @@ export class SandboxApi extends ClientFactory {
       },
       body: {
         timeout: timeoutToSeconds(timeoutMs),
+        memory: onResume === 'reboot' ? false : undefined,
       },
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })

@@ -1,6 +1,6 @@
 {
   "name": "e2b",
-  "version": "2.46.1",
+  "version": "2.49.0",
   "description": "E2B SDK that give agents cloud environments",
   "homepage": "https://e2b.dev/?utm_source=npm&utm_medium=referral&utm_campaign=package_homepage&utm_content=e2b",
   "license": "MIT",
@@ -91,7 +91,7 @@
     "typescript"
   ],
   "dependencies": {
-    "@bufbuild/protobuf": "^2.14.0",
+    "@bufbuild/protobuf": "^2.14.1",
     "@connectrpc/connect": "^2.1.2",
     "@connectrpc/connect-web": "^2.1.2",
     "chalk": "^5.3.0",
@@ -104,7 +104,7 @@
     "undici": "^7.29.0"
   },
   "optionalDependencies": {
-    "undici8": "npm:undici@8.10.0"
+    "undici8": "npm:undici@8.10.1"
   },
   "engines": {
     "node": ">=20.18.1 <21 || >=22"
