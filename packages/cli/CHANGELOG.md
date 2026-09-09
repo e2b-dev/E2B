@@ -1,5 +1,15 @@
 # @e2b/cli
 
+## 2.18.2
+
+### Patch Changes
+
+- b8b4323: Skip the update check when the `NO_UPDATE_NOTIFIER` environment variable is set, so system package managers (for example Nix) can install the CLI without it suggesting updates they cannot apply. Help output now always names the program `e2b` instead of echoing the entrypoint file name.
+- Updated dependencies [08efa36]
+- Updated dependencies [6b759bf]
+- Updated dependencies [58c81f1]
+  - e2b@2.48.0
+
 ## 2.18.1
 
 ### Patch Changes
