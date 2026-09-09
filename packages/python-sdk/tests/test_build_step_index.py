@@ -19,3 +19,10 @@ def test_non_numeric_step_returns_none():
     # None means "no matching local stack trace", not an error.
     assert get_build_step_index("optimize", 5) is None
     assert get_build_step_index("RUN apt-get update", 5) is None
+
+
+def test_out_of_range_step_returns_none():
+    assert get_build_step_index("7", 5) is None
+    assert get_build_step_index("-1", 5) is None
+    assert get_build_step_index(BASE_STEP_NAME, 0) is None
+    assert get_build_step_index(FINALIZE_STEP_NAME, 0) is None

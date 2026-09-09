@@ -417,20 +417,22 @@ def get_build_step_index(step: str, stack_traces_length: int) -> Optional[int]:
     - Anything else: None (no matching local stack trace)
 
     :param step: Build step name or number as string
-    :param stack_traces_length: Total number of stack traces (used for FINALIZE_STEP_NAME)
+    :param stack_traces_length: Total number of stack traces
 
-    :return: Index for the build step, or None if the step has no usable index
+    :return: Index into the stack traces for the build step, or None when the step has no matching local stack trace (unknown step name, or an index outside the stack traces)
     """
     if step == BASE_STEP_NAME:
-        return 0
+        return 0 if stack_traces_length > 0 else None
 
     if step == FINALIZE_STEP_NAME:
-        return stack_traces_length - 1
+        return stack_traces_length - 1 if stack_traces_length > 0 else None
 
     try:
-        return int(step)
+        index = int(step)
     except ValueError:
         return None
+
+    return index if 0 <= index < stack_traces_length else None
 
 
 def read_gcp_service_account_json(
