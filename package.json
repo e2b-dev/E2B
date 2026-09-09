@@ -2,7 +2,7 @@
   "name": "e2b",
   "private": true,
   "scripts": {
-    "version": "pnpm changeset version && pnpm run -r postVersion",
+    "version": "pnpm changeset version && pnpm run -r postVersion && pnpm run -r lock",
     "publish": "pnpm --dir packages/js-sdk build && pnpm run -r postPublish && pnpm changeset publish",
     "publish:python-sdk": "sh .github/scripts/publish_python_sdk.sh",
     "test": "pnpm --dir packages/js-sdk build && pnpm --recursive --if-present run test",

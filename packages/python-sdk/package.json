@@ -4,7 +4,8 @@
   "version": "2.49.0",
   "scripts": {
     "test": "uv run pytest -n 4 --verbose -x",
-    "postVersion": "uv version $(pnpm pkg get version --workspaces=false | tr -d \\\")",
+    "postVersion": "uv version --frozen $(pnpm pkg get version --workspaces=false | tr -d \\\")",
+    "lock": "uv lock",
     "postPublish": "uv build && uv publish --trusted-publishing always --check-url https://pypi.org/simple/",
     "typecheck": "uv run make typecheck",
     "lint": "uv run make lint",
