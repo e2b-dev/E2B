@@ -1,27 +1,14 @@
-import { assert, expect, describe, vi } from 'vitest'
+import { assert, expect, describe } from 'vitest'
 
 import { CommandExitError, Sandbox } from '../../src'
-import { sandboxTest, isDebug, template, corsHttpServerCmd } from '../setup.js'
+import {
+  sandboxTest,
+  isDebug,
+  template,
+  corsHttpServerCmd,
+  waitForHttpStatus,
+} from '../setup.js'
 import { httpbinTemplate } from '../template.js'
-
-async function waitForStatus(
-  url: string,
-  status: number,
-  init?: RequestInit
-): Promise<void> {
-  await vi.waitFor(
-    async () => {
-      const response = await fetch(url, {
-        ...init,
-        signal: AbortSignal.timeout(5_000),
-      })
-      const actualStatus = response.status
-      await response.body?.cancel()
-      assert.equal(actualStatus, status)
-    },
-    { timeout: 20_000, interval: 500 }
-  )
-}
 
 describe('allow only 1.1.1.1', () => {
   sandboxTest.override({
@@ -165,10 +152,10 @@ describe('allowPublicTraffic=false', () => {
       const sandboxUrl = `https://${sandbox.getHost(port)}`
 
       // Test 1: Request without traffic access token should fail with 403
-      await waitForStatus(sandboxUrl, 403)
+      await waitForHttpStatus(sandboxUrl, 403)
 
       // Test 2: Request with valid traffic access token should succeed
-      await waitForStatus(sandboxUrl, 200, {
+      await waitForHttpStatus(sandboxUrl, 200, {
         headers: {
           'e2b-traffic-access-token': sandbox.trafficAccessToken,
         },
@@ -200,7 +187,7 @@ describe('allowPublicTraffic=true', () => {
       const sandboxUrl = `https://${sandbox.getHost(port)}`
 
       // Request without traffic access token should succeed (public access enabled)
-      await waitForStatus(sandboxUrl, 200)
+      await waitForHttpStatus(sandboxUrl, 200)
     },
     60_000
   )
@@ -332,6 +319,60 @@ describe('updateNetwork clears existing rules when fields are omitted', () => {
   )
 })
 
+describe('httpsPorts option', () => {
+  const port = 8443
+
+  sandboxTest.scoped({
+    sandboxOpts: {
+      network: {
+        httpsPorts: [port],
+      },
+    },
+  })
+
+  sandboxTest.skipIf(isDebug)(
+    'public URL proxies to an HTTPS backend in the sandbox',
+    async ({ sandbox }) => {
+      // Generate a self-signed certificate inside the sandbox
+      const keygen = await sandbox.commands.run(
+        'openssl req -x509 -newkey rsa:2048 -keyout /tmp/https-backend-key.pem -out /tmp/https-backend-cert.pem -days 1 -nodes -subj "/CN=localhost"'
+      )
+      assert.equal(keygen.exitCode, 0)
+
+      // Start an HTTPS server on the configured port
+      sandbox.commands.run(
+        `python3 -c "
+import http.server, ssl
+class H(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        # Opt into cross-origin reads so the browser leg can read the body
+        # (see corsHttpServerCmd in tests/setup.ts).
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        self.wfile.write(b'https backend')
+    def log_message(self, *a): pass
+server = http.server.ThreadingHTTPServer(('0.0.0.0', ${port}), H)
+context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+context.load_cert_chain('/tmp/https-backend-cert.pem', '/tmp/https-backend-key.pem')
+server.socket = context.wrap_socket(server.socket, server_side=True)
+server.serve_forever()
+"`,
+        { background: true }
+      )
+
+      // Poll the public URL until the server responds
+      const sandboxUrl = `https://${sandbox.getHost(port)}`
+      const body = await waitForHttpStatus(sandboxUrl, 200)
+      assert.equal(body, 'https backend')
+
+      // The port is reported back in the sandbox info
+      const info = await sandbox.getInfo()
+      assert.deepEqual(info.network?.httpsPorts, [port])
+    }
+  )
+})
+
 describe('maskRequestHost option', () => {
   sandboxTest.override({
     sandboxOpts: {
@@ -372,7 +413,7 @@ http.server.HTTPServer(('', ${port}), H).handle_request()
 
       // Make a request from OUTSIDE the sandbox through the proxy
       // The Host header should be modified according to maskRequestHost
-      await waitForStatus(sandboxUrl, 200)
+      await waitForHttpStatus(sandboxUrl, 200)
 
       // Read the captured headers from inside the sandbox
       const headers = await sandbox.files.read(outputFile)

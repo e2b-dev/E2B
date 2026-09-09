@@ -4,7 +4,12 @@ import type { components, paths } from './schema.gen'
 import { defaultHeaders } from './metadata'
 import { createApiFetch } from './http2'
 import { ConnectionConfig } from '../connectionConfig'
-import { AuthenticationError, RateLimitError, SandboxError } from '../errors'
+import {
+  AuthenticationError,
+  RateLimitError,
+  ServiceBusyError,
+  SandboxError,
+} from '../errors'
 import { createApiLogger } from '../logs'
 
 /**
@@ -33,7 +38,17 @@ export function apiErrorFromCode(
     return new RateLimitError(content ? `${message} - ${content}` : message)
   }
 
-  return new errorClass(`${code}: ${content}`, stackTrace)
+  if (code === 503) {
+    const message = 'Service temporarily unavailable, please retry'
+    return new ServiceBusyError(content ? `${message} - ${content}` : message)
+  }
+
+  const err = new errorClass(`${code}: ${content}`, stackTrace)
+  if (err instanceof SandboxError) {
+    err.statusCode = code
+  }
+
+  return err
 }
 
 export function handleApiError(
@@ -51,7 +66,7 @@ export function handleApiError(
   }
 
   const status = response.response.status
-  if (status === 401 || status === 429) {
+  if (status === 401 || status === 429 || status === 503) {
     return apiErrorFromCode(
       status,
       response.error?.message ?? response.error,

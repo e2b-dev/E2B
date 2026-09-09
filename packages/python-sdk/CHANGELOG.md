@@ -1,5 +1,23 @@
 # @e2b/python-sdk
 
+## 2.48.0
+
+### Minor Changes
+
+- 08efa36: Add `httpsPorts` (JS) / `https_ports` (Python) to the sandbox network config. Ports listed there have their public URLs proxied to the sandbox over HTTPS — use it when the service listening on the port serves TLS itself. This is not TLS passthrough: traffic is still terminated at the E2B proxy and re-encrypted on the hop to the sandbox, and the backend certificate is not verified, so self-signed certificates work. The configured ports are also returned in the sandbox info network config.
+- 6b759bf: Add `ServiceBusyError` (JavaScript) / `ServiceBusyException` (Python) for HTTP 503 responses: the API refused the operation because the service or the node running the sandbox is temporarily busy, the sandbox is unchanged, and the call can be retried. A refused `pause()` is the first case. The base `SandboxError` / `SandboxException` also carries the HTTP status as `statusCode` / `status_code` when the error came from an API response, so callers can branch on the status without parsing the message. Like `AuthenticationError` / `AuthenticationException`, the new class does not subclass the sandbox base error: it is raised for every 503 whatever the operation, so catch it explicitly.
+
+### Patch Changes
+
+- 58c81f1: `onTimeout` / `on_timeout` and `onResume` / `on_resume` now raise `InvalidArgumentError` / `InvalidArgumentException` for a value outside their two literals, instead of silently resolving it to the other one. Both are resolved into a boolean before the request is built, so the value never reaches the API and a typo cannot be rejected server-side: `on_timeout="Pause"` previously resolved to `kill` and deleted the sandbox and its snapshot at timeout, and `on_resume="Reboot"` previously restored the memory the caller asked to skip. A nullish value still means "not configured" and leaves the choice to the API.
+
+## 2.47.0
+
+### Minor Changes
+
+- 1980d6b: Add `onResume` / `on_resume` to `Sandbox.connect()`: `'reboot'` resumes a paused sandbox from its disk state alone, leaving the memory snapshot untouched, for the case where restoring that memory wedges the guest. `'restore'` stays the default. Where filesystem-only resume is not enabled, a `'reboot'` that would actually drop memory is rejected with an error rather than silently restoring it.
+- 043d050: Removed generated types for endpoints the SDKs never exposed. The JS `components['schemas']` namespace and the Python `e2b.api.client.models` package no longer include the admin, cluster/rig, node, team-API-key and access-token schemas (`Node`, `NodeDetail`, `NodeMetrics`, `NodeStatus`, `NodeStatusChange`, `MachineInfo`, `DiskMetrics`, `Rig*`, `Admin*`, `TeamAPIKey`, `NewTeamAPIKey`, `CreatedTeamAPIKey`, `UpdateTeamAPIKey`, `IdentifierMaskingDetails`, `VolumeToken`; Python additionally `Team`, `TeamMetric`, `MaxTeamMetric`, `CreatedAccessToken`, `NewAccessToken`). No SDK method ever accepted or returned them, so code that uses the SDK through its methods is unaffected; code that imported these type names directly must drop the import.
+
 ## 2.46.4
 
 ### Patch Changes

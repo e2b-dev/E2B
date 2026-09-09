@@ -51,6 +51,7 @@ export default defineConfig({
       'tests/sandbox/iam.test.ts',
       'tests/sandbox/lifecycleRequest.test.ts',
       'tests/sandbox/networkTransform.test.ts',
+      'tests/sandbox/onResumeRequest.test.ts',
       'tests/secret/secret.test.ts',
       'tests/volume/file.test.ts',
       'tests/volume/volume.test.ts',

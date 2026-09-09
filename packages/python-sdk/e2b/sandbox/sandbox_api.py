@@ -384,6 +384,18 @@ class SandboxNetworkOpts(TypedDict):
     - Custom subdomain: `"${PORT}-myapp.example.com"`
     """
 
+    https_ports: NotRequired[List[int]]
+    """
+    Ports whose public URLs should connect to the sandbox using HTTPS.
+
+    Use this when the service listening on the port serves HTTPS (TLS) itself.
+    This is not TLS passthrough — traffic is still terminated at the E2B proxy
+    and re-encrypted on the hop to the sandbox. The backend certificate is not
+    verified, so self-signed certificates work.
+
+    Example: ``Sandbox.create(network={"https_ports": [3000]})``
+    """
+
 
 class SandboxNetworkUpdate(TypedDict, total=False):
     """
@@ -478,6 +490,7 @@ class SandboxNetworkInfo(TypedDict, total=False):
     """
     allow_public_traffic: bool
     mask_request_host: str
+    https_ports: List[int]
 
 
 class SandboxOnTimeoutPause(TypedDict):
@@ -539,7 +552,8 @@ class SandboxLifecycle(TypedDict):
     What should happen to the sandbox when timeout is reached. `"kill"` terminates
     the sandbox; `"pause"` pauses it for later resume. Accepts either the bare
     action or an object `{"action": "pause", "keep_memory": ...}` /
-    `{"action": "kill"}` to also control the pause snapshot kind. Omitted from the
+    `{"action": "kill"}` to also control the pause snapshot kind. A value outside
+    the two actions raises `InvalidArgumentException`. Omitted from the
     create request when unset, leaving the API's default (currently `"kill"`) in
     effect.
     """
@@ -568,6 +582,39 @@ class SandboxInfoLifecycle(TypedDict):
     """
     Whether activity should cause the sandbox to resume when paused.
     """
+
+
+def resolve_connect_memory(
+    on_resume: Optional["SandboxOnResume"],
+) -> Union[Unset, bool]:
+    """Resolve ``on_resume`` into ``ConnectSandbox.memory``.
+
+    ``"restore"`` is the API's own default, so it travels as an omitted field.
+    """
+    # A nullish value is not a choice of restore, matching how every other
+    # nullish option is treated. Any other value outside the union never reaches
+    # the API — it is resolved here into the boolean memory field — so it cannot
+    # be rejected server-side, and resolving it to restore would silently skip
+    # the reboot the caller asked for.
+    if on_resume is None:
+        return UNSET
+    allowed = ("restore", "reboot")
+    if on_resume not in allowed:
+        raise InvalidArgumentException(
+            f"on_resume must be one of: {', '.join(allowed)} (got {on_resume!r})."
+        )
+    return False if on_resume == "reboot" else UNSET
+
+
+SandboxOnResume = Literal["restore", "reboot"]
+"""
+How a paused sandbox comes back.
+
+``"restore"`` restores the memory snapshot, so processes and open connections
+survive the pause. ``"reboot"`` ignores any memory in the snapshot and
+cold-boots from disk state alone — the rescue path for a snapshot whose memory
+image wedges the guest.
+"""
 
 
 def _resolve_network_selector(
@@ -743,6 +790,8 @@ def build_network_config(
         body["allow_public_traffic"] = network["allow_public_traffic"]
     if "mask_request_host" in network:
         body["mask_request_host"] = network["mask_request_host"]
+    if network.get("https_ports") is not None:
+        body["https_ports"] = list(network["https_ports"])
 
     return body
 
@@ -813,16 +862,14 @@ def build_lifecycle_config(
     unset unless the caller chose ``keep_memory``.
     """
     # on_timeout accepts a bare action or {"action", "keep_memory"}; normalize.
-    # Only the object form carries keep_memory; anything else (a bare action
-    # string, or an unexpected value from an untyped caller) passes through as
-    # the action, so a non-"pause" value resolves to kill instead of crashing.
+    # Only the object form carries keep_memory.
     on_timeout_raw = lifecycle.get("on_timeout") if lifecycle else None
     # A missing on_timeout — or an explicit None from an untyped caller — is not
     # a choice of kill. It only resolves to kill semantics locally, for the
     # validation below and for keep_memory.
     on_timeout_configured = on_timeout_raw is not None
     if isinstance(on_timeout_raw, dict):
-        on_timeout = on_timeout_raw.get("action", "kill")
+        on_timeout = on_timeout_raw.get("action")
         keep_memory_provided = "keep_memory" in on_timeout_raw
         keep_memory = on_timeout_raw.get("keep_memory")
     else:
@@ -831,6 +878,20 @@ def build_lifecycle_config(
         on_timeout = on_timeout_raw if on_timeout_configured else "kill"
         keep_memory = None
         keep_memory_provided = False
+
+    allowed_actions = ("pause", "kill")
+    if on_timeout_configured and on_timeout not in allowed_actions:
+        # Name the field the caller wrote: the object form's bad value is on
+        # "action", not on on_timeout itself.
+        field = (
+            'on_timeout["action"]' if isinstance(on_timeout_raw, dict) else "on_timeout"
+        )
+        raise InvalidArgumentException(
+            f"{field} must be one of: {', '.join(allowed_actions)} (got {on_timeout!r})."
+        )
+    # The action never reaches the API — it is resolved here into the boolean
+    # auto_pause — so an unrecognized value cannot be rejected server-side, and
+    # resolving it to kill would delete the sandbox a caller asked to preserve.
 
     # keep_memory only governs a pause action. The discriminated union type
     # forbids it on action="kill"; re-check at runtime for callers that
@@ -938,6 +999,8 @@ def from_client_network_config(
         result["allow_public_traffic"] = network.allow_public_traffic
     if not isinstance(network.mask_request_host, Unset):
         result["mask_request_host"] = network.mask_request_host
+    if not isinstance(network.https_ports, Unset):
+        result["https_ports"] = list(network.https_ports)
 
     return result
 

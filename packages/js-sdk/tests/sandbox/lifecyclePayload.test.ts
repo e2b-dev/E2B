@@ -1,7 +1,13 @@
 import { assert, expect, test, vi } from 'vitest'
 
 import { InvalidArgumentError, Sandbox } from '../../src'
-import { corsHttpServerCmd, isDebug, sandboxTest, template } from '../setup.js'
+import {
+  corsHttpServerCmd,
+  isDebug,
+  sandboxTest,
+  template,
+  waitForHttpStatus,
+} from '../setup.js'
 
 async function waitForState(
   sandbox: Sandbox,
@@ -13,20 +19,6 @@ async function waitForState(
         (await sandbox.getInfo({ requestTimeoutMs: 5_000 })).state,
         state
       )
-    },
-    { timeout: 30_000, interval: 500 }
-  )
-}
-
-async function waitForStatus(url: string, status: number): Promise<void> {
-  await vi.waitFor(
-    async () => {
-      const response = await fetch(url, {
-        signal: AbortSignal.timeout(5_000),
-      })
-      const actualStatus = response.status
-      await response.body?.cancel()
-      assert.equal(actualStatus, status)
     },
     { timeout: 30_000, interval: 500 }
   )
@@ -179,7 +171,7 @@ sandboxTest.skipIf(isDebug)(
       const url = withRequestSource(`https://${sandbox.getHost(8000)}`)
       await triggerAutoResume(url)
       await waitForState(sandbox, 'running')
-      await waitForStatus(url, 200)
+      await waitForHttpStatus(url, 200)
       assert.isTrue(await sandbox.isRunning())
     } catch (error) {
       let state = 'unknown'

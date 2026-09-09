@@ -1,6 +1,11 @@
 import { assert } from 'vitest'
 
-import { isDebug, sandboxTest, wait, corsHttpServerCmd } from '../setup.js'
+import {
+  isDebug,
+  sandboxTest,
+  waitForHttpStatus,
+  corsHttpServerCmd,
+} from '../setup.js'
 import { catchCmdExitErrorInBackground } from '../cmdHelper.js'
 sandboxTest(
   'ping server in running sandbox',
@@ -12,21 +17,8 @@ sandboxTest(
     const disable = catchCmdExitErrorInBackground(cmd)
 
     try {
-      await wait(1000)
-
       const host = sandbox.getHost(8000)
-
-      let res = await fetch(`${isDebug ? 'http' : 'https'}://${host}`)
-
-      for (let i = 0; i < 20; i++) {
-        if (res.status === 200) {
-          break
-        }
-
-        res = await fetch(`${isDebug ? 'http' : 'https'}://${host}`)
-        await wait(500)
-      }
-      assert.equal(res.status, 200)
+      await waitForHttpStatus(`${isDebug ? 'http' : 'https'}://${host}`, 200)
       disable()
     } finally {
       try {

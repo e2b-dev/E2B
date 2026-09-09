@@ -193,6 +193,50 @@ export async function wait(ms: number) {
 }
 
 /**
+ * Poll `url` until it returns `expectedStatus`, tolerating connection errors —
+ * the sandbox proxy may not have a route until the guest server is ready.
+ * Returns the body text of the matching response.
+ */
+export async function waitForHttpStatus(
+  url: string,
+  expectedStatus: number,
+  init?: RequestInit,
+  timeoutMs = 30_000
+): Promise<string> {
+  const deadline = Date.now() + timeoutMs
+  let lastStatus: number | undefined
+
+  while (Date.now() < deadline) {
+    const requestTimeoutMs = Math.min(5_000, deadline - Date.now())
+    const controller = new AbortController()
+    const requestTimeout = setTimeout(
+      () => controller.abort(),
+      requestTimeoutMs
+    )
+    try {
+      const response = await fetch(url, {
+        ...init,
+        signal: controller.signal,
+      })
+      lastStatus = response.status
+      if (lastStatus === expectedStatus) {
+        return await response.text()
+      }
+      await response.body?.cancel()
+    } catch {
+      // The sandbox proxy may not have a route until the guest server is ready.
+    } finally {
+      clearTimeout(requestTimeout)
+    }
+    await wait(500)
+  }
+
+  throw new Error(
+    `Timed out waiting for ${url} to return ${expectedStatus}; last status: ${lastStatus ?? 'request failed'}`
+  )
+}
+
+/**
  * Returns the API URL for the given path, using E2B_DOMAIN env var.
  * Supports msw path parameters like :templateID
  */

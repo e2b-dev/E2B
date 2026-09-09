@@ -1,39 +1,11 @@
 import { assert, describe } from 'vitest'
 
-import { sandboxTest, isDebug, corsHttpServerCmd } from '../setup.js'
-
-async function waitForHttpStatus(
-  url: string,
-  expectedStatus: number,
-  timeoutMs = 30_000
-) {
-  const deadline = Date.now() + timeoutMs
-  let lastStatus: number | undefined
-
-  while (Date.now() < deadline) {
-    const requestTimeoutMs = Math.min(5_000, deadline - Date.now())
-    const controller = new AbortController()
-    const requestTimeout = setTimeout(
-      () => controller.abort(),
-      requestTimeoutMs
-    )
-    try {
-      const response = await fetch(url, { signal: controller.signal })
-      lastStatus = response.status
-      await response.body?.cancel()
-      if (lastStatus === expectedStatus) return
-    } catch {
-      // The sandbox proxy may not have a route until the guest server is ready.
-    } finally {
-      clearTimeout(requestTimeout)
-    }
-    await new Promise((resolve) => setTimeout(resolve, 500))
-  }
-
-  assert.fail(
-    `Timed out waiting for ${url} to return ${expectedStatus}; last status: ${lastStatus ?? 'request failed'}`
-  )
-}
+import {
+  sandboxTest,
+  isDebug,
+  corsHttpServerCmd,
+  waitForHttpStatus,
+} from '../setup.js'
 
 sandboxTest.skipIf(isDebug)(
   'pause and resume a sandbox',

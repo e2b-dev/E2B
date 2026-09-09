@@ -54,10 +54,6 @@ export function asFormattedError(text: string | undefined, err?: any) {
   )
 }
 
-export function asDim(content?: string) {
-  return chalk.default.dim(content)
-}
-
 export function asBold(content: string) {
   return chalk.default.bold(content)
 }
@@ -77,10 +73,6 @@ export function asLocal(pathInLocal?: string) {
 export function asLocalRelative(absolutePathInLocal?: string) {
   if (!absolutePathInLocal) return ''
   return asLocal('./' + cwdRelative(absolutePathInLocal))
-}
-
-export function asBuildLogs(content: string) {
-  return chalk.default.blueBright(content)
 }
 
 export function withUnderline(content: string) {
