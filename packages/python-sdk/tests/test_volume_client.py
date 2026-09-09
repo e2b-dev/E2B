@@ -148,21 +148,13 @@ def test_volume_transports_are_the_shared_sdk_pools(test_api_key):
     api_config = ConnectionConfig(api_key=test_api_key)
 
     try:
-        assert (
-            get_sync_transport(config)
-            is api_client_sync.get_transport(api_config).transport
+        assert get_sync_transport(config) is api_client_sync.get_transport(api_config)
+        assert get_sync_streaming_transport(config) is api_client_sync.get_transport(
+            api_config, for_streaming=True
         )
-        assert (
-            get_sync_streaming_transport(config)
-            is api_client_sync.get_transport(api_config, for_streaming=True).transport
-        )
-        assert (
-            get_async_transport(config)
-            is api_client_async.get_transport(api_config).transport
-        )
-        assert (
-            get_async_streaming_transport(config)
-            is api_client_async.get_transport(api_config, for_streaming=True).transport
+        assert get_async_transport(config) is api_client_async.get_transport(api_config)
+        assert get_async_streaming_transport(config) is api_client_async.get_transport(
+            api_config, for_streaming=True
         )
     finally:
         reset_volume_transports()
