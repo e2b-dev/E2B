@@ -16,6 +16,10 @@ jobs:
   test:
     name: Build and test SDK
     runs-on: ubuntu-22.04
+    # Declared here rather than on the `publish` job in release.yml: a job that
+    # `uses:` a reusable workflow cannot carry `environment`. The environment's
+    # deployment branch policy only allows main.
+    environment: deployment
     steps:
       - uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1.12.0
         id: app-token
