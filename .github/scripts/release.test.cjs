@@ -72,6 +72,22 @@ test('an npm failure remains a failed release after Python succeeds', (t) => {
   assert.deepEqual(result.commands, [build, python, npm])
 })
 
+const changesetVersion = 'changeset version'
+const bump = 'run -r postVersion'
+const lock = 'run -r lock'
+
+test('re-locks every Python package only after all versions are bumped', (t) => {
+  const result = publish(t, '', scripts.version)
+  assert.equal(result.status, 0, result.stderr)
+  assert.deepEqual(result.commands, [changesetVersion, bump, lock])
+})
+
+test('a version bump failure leaves the lockfiles untouched', (t) => {
+  const result = publish(t, bump, scripts.version)
+  assert.notEqual(result.status, 0)
+  assert.deepEqual(result.commands, [changesetVersion, bump])
+})
+
 function publishCommand(t, releases) {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'e2b-release-plan-'))
   t.after(() => fs.rmSync(cwd, { recursive: true, force: true }))
