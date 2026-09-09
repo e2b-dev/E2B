@@ -6,7 +6,7 @@ import {
   defaultDockerfileName,
   fallbackDockerfileName,
 } from 'src/docker/constants'
-import { parsePositiveInt, pathOption } from 'src/options'
+import { minFreeDiskMbOption, parsePositiveInt, pathOption } from 'src/options'
 import { validateTemplateName } from 'src/utils/templateName'
 import { getRoot } from 'src/utils/filesystem'
 import {
@@ -53,6 +53,7 @@ export const createCommand = new commander.Command('create')
     'specify the amount of memory in megabytes that will be used to run the sandbox. Must be an even number. The default value is 1024.',
     parsePositiveInt('Memory in megabytes')
   )
+  .addOption(minFreeDiskMbOption)
   .option('--no-cache', 'skip cache when building the template.')
   .alias('ct')
   .action(
@@ -65,6 +66,7 @@ export const createCommand = new commander.Command('create')
         readyCmd?: string
         cpuCount?: number
         memoryMb?: number
+        minFreeDiskMb?: number
         noCache?: boolean
       }
     ) => {
@@ -101,6 +103,7 @@ export const createCommand = new commander.Command('create')
         const readyCmd = opts.readyCmd
         const cpuCount = opts.cpuCount
         const memoryMB = opts.memoryMb
+        const minFreeDiskMb = opts.minFreeDiskMb
 
         // Get Dockerfile content
         const { dockerfileContent, dockerfileRelativePath } = getDockerfile(
@@ -142,6 +145,7 @@ export const createCommand = new commander.Command('create')
             alias: templateName,
             cpuCount: cpuCount,
             memoryMB: memoryMB,
+            minFreeDiskMb,
             skipCache: opts.noCache,
             apiKey: apiKey,
             domain: domain,

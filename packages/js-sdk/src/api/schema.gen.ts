@@ -448,6 +448,7 @@ export interface paths {
                 404: components["responses"]["404"];
                 409: components["responses"]["409"];
                 500: components["responses"]["500"];
+                503: components["responses"]["503"];
             };
         };
         delete?: never;
@@ -2331,6 +2332,11 @@ export interface components {
          * @description Memory for the sandbox in MiB
          */
         MemoryMB: number;
+        /**
+         * Format: int32
+         * @description Requested minimum free space after the template's build steps, in MiB. Omit to use the team's default. Set to 0 to request no minimum free-disk growth. The filesystem is never shrunk, including inherited or already-larger filesystems. Growth is best effort, so filesystem metadata can leave the available space slightly below the requested minimum.
+         */
+        MinFreeDiskMb: number;
         NewSandbox: {
             /** @description Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut to 0.0.0.0/0 in the network config. */
             allow_internet_access?: boolean;
@@ -2913,6 +2919,7 @@ export interface components {
             alias?: string;
             cpuCount?: components["schemas"]["CPUCount"];
             memoryMB?: components["schemas"]["MemoryMB"];
+            minFreeDiskMb?: components["schemas"]["MinFreeDiskMb"];
             /** @description Name of the template. Can include a tag with colon separator (e.g. "my-template" or "my-template:v1"). If tag is included, it will be treated as if the tag was provided in the tags array. */
             name?: string;
             /** @description Tags to assign to the template build */
