@@ -17,21 +17,20 @@ import e2b.api as api
 import e2b.api.client_async as api_client_async
 import e2b.api.client_sync as api_client_sync
 from e2b.api import (
-    envd_pool_shard,
+    envd_shard,
     pool_idle_timeout,
     pool_max_idle_per_host,
+    pool_shard_index,
     proxy_to_config,
 )
 from e2b.api.client_async import get_api_client as get_async_api_client
 from e2b.api.client_async import get_envd_api as get_async_envd_api
-from e2b.api.client_async import get_envd_transport as get_async_envd_transport
 from e2b.api.client_async import (
     get_pyqwest_transport as get_async_pyqwest_transport,
 )
 from e2b.api.client_async import get_transport as get_async_transport
 from e2b.api.client_sync import get_api_client as get_sync_api_client
 from e2b.api.client_sync import get_envd_api as get_sync_envd_api
-from e2b.api.client_sync import get_envd_transport as get_sync_envd_transport
 from e2b.api.client_sync import get_pyqwest_transport as get_sync_pyqwest_transport
 from e2b.api.client_sync import get_transport as get_sync_transport
 from e2b.connection_config import READ_TIMEOUT, ConnectionConfig
@@ -52,18 +51,31 @@ def sandbox_config(test_api_key: str, sandbox_id: str) -> ConnectionConfig:
     )
 
 
+def get_sync_envd_transport(config, http2=True, *, for_streaming=False):
+    return get_sync_transport(
+        config, http2, for_streaming=for_streaming, shard=envd_shard(config)
+    )
+
+
+def get_async_envd_transport(config, http2=True, *, for_streaming=False):
+    return get_async_transport(
+        config, http2, for_streaming=for_streaming, shard=envd_shard(config)
+    )
+
+
 @pytest.mark.parametrize("pool_shards", [1, 4, 8])
-def test_envd_pool_shard_respects_configured_count(
-    test_api_key, monkeypatch, pool_shards
-):
+def test_pool_shard_index_respects_configured_count(monkeypatch, pool_shards):
     monkeypatch.setattr(api, "envd_pool_shards", pool_shards)
 
-    assigned = {
-        envd_pool_shard(sandbox_config(test_api_key, f"sbx-{index}"))
-        for index in range(100)
-    }
+    assigned = {pool_shard_index(f"sbx-{index}") for index in range(100)}
 
     assert assigned == set(range(pool_shards))
+    assert pool_shard_index(None) == 0
+
+
+def test_envd_shard_is_the_sandbox_id(test_api_key):
+    assert envd_shard(sandbox_config(test_api_key, "sbx-0")) == "sbx-0"
+    assert envd_shard(ConnectionConfig(api_key=test_api_key)) is None
 
 
 def test_sync_api_client_proxy_uses_explicit_transport(test_api_key):
@@ -131,8 +143,8 @@ def test_sync_transports_keyed_by_http_version(test_api_key):
 
         assert http1 is not negotiated
         assert envd_http1 is not envd_negotiated
-        # A config without sandbox headers resolves envd to shard zero, so it
-        # shares the generic transport for each HTTP version.
+        # A config without a sandbox ID resolves envd to the default shard, so
+        # it shares the generic transport for each HTTP version.
         assert envd_negotiated is negotiated
         assert envd_http1 is http1
         # Each version still has one pool per proxy, and repeat calls with the
@@ -162,15 +174,20 @@ def test_sync_envd_transports_are_consistently_sharded_by_sandbox(
     different_shard = sandbox_config(test_api_key, "sbx-1")
 
     try:
-        assert envd_pool_shard(first) == envd_pool_shard(same_shard)
-        assert envd_pool_shard(first) != envd_pool_shard(different_shard)
+        assert pool_shard_index("sbx-0") == pool_shard_index("sbx-2")
+        assert pool_shard_index("sbx-0") != pool_shard_index("sbx-1")
         assert get_sync_envd_transport(first) is get_sync_envd_transport(same_shard)
         assert get_sync_envd_transport(first) is not get_sync_envd_transport(
             different_shard
         )
-        # Generic API traffic remains on shard zero rather than multiplying
-        # control-plane connections for every envd shard.
+        # Generic API traffic remains on the default shard rather than
+        # multiplying control-plane connections for every envd shard.
         assert get_sync_envd_transport(first) is not get_sync_transport(first)
+        # The RPC pool for the same sandbox is the one under the httpx adapter.
+        assert (
+            get_sync_pyqwest_transport(None, shard="sbx-0")
+            is get_sync_envd_transport(first)._transport
+        )
     finally:
         reset_transport_caches()
 
@@ -195,8 +212,8 @@ def test_sync_transports_pass_http_version_to_pyqwest(test_api_key, monkeypatch)
         get_sync_transport(config)
         get_sync_transport(config, http2=False)
         # A third pool: same version as the call above, different idle bound.
-        # (`get_envd_transport(config, http2=False)` would be a cache hit and
-        # build nothing, since it shares the control plane's pool.)
+        # (`get_sync_envd_transport(config, http2=False)` would be a cache hit
+        # and build nothing, since it shares the control plane's pool.)
         get_sync_envd_transport(config, http2=False, for_streaming=True)
 
         assert captured == [None, HTTPVersion.HTTP1, HTTPVersion.HTTP1]
@@ -374,8 +391,8 @@ async def test_async_transports_keyed_by_http_version(test_api_key):
 
         assert http1 is not negotiated
         assert envd_http1 is not envd_negotiated
-        # A config without sandbox headers resolves envd to shard zero, so it
-        # shares the generic transport for each HTTP version.
+        # A config without a sandbox ID resolves envd to the default shard, so
+        # it shares the generic transport for each HTTP version.
         assert envd_negotiated is negotiated
         assert envd_http1 is http1
         assert get_async_transport(config, http2=False) is http1
@@ -405,6 +422,10 @@ async def test_async_envd_transports_are_consistently_sharded_by_sandbox(
             different_shard
         )
         assert get_async_envd_transport(first) is not get_async_transport(first)
+        assert (
+            get_async_pyqwest_transport(None, shard="sbx-0")
+            is get_async_envd_transport(first)._transport
+        )
     finally:
         reset_transport_caches()
 
