@@ -1,4 +1,5 @@
 import { runtime } from '../utils'
+import { withRetry } from '../retry'
 import { parseInflightLimitEnv, parsePositiveIntEnv } from './metadata'
 import {
   buildDispatchedFetch,
@@ -15,7 +16,15 @@ const DEFAULT_API_INFLIGHT_LIMIT = 1000
 // single dispatcher while each distinct proxy URL gets its own.
 const apiFetchers = new Map<string, typeof fetch>()
 
-export function createApiFetch(proxy?: string): typeof fetch {
+export function createApiFetch(
+  proxy: string | undefined,
+  retries: number,
+  requestTimeoutMs: number
+): typeof fetch {
+  return withRetry(getApiFetch(proxy), retries, requestTimeoutMs)
+}
+
+export function getApiFetch(proxy?: string): typeof fetch {
   const key = proxy ?? ''
 
   const cached = apiFetchers.get(key)

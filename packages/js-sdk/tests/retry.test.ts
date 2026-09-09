@@ -1,10 +1,6 @@
 import { describe, expect, test, vi } from 'vitest'
 
-import {
-  parseRetryAfter,
-  resolveRetries,
-  withRateLimitRetry,
-} from '../src/retry'
+import { parseRetryAfter, resolveRetries, withRetry } from '../src/retry'
 import { EnvdApiClient } from '../src/envd/api'
 import { InvalidArgumentError } from '../src/errors'
 
@@ -49,7 +45,7 @@ test('retries a buffered request and cancels the intermediate response', async (
     return bodies.length === 1 ? rateLimited : new Response('ok')
   }) as typeof fetch
   const sleep = vi.fn(async () => {})
-  const fetchWithRetry = withRateLimitRetry(fetchImpl, 1, 10_000, {
+  const fetchWithRetry = withRetry(fetchImpl, 1, 10_000, {
     monotonic: () => 0,
     sleep,
   })
@@ -72,7 +68,7 @@ test('returns the final 429 after exhausting retries', async () => {
       headers: { 'Retry-After': '0' },
     })
   }) as typeof fetch
-  const fetchWithRetry = withRateLimitRetry(fetchImpl, 2, 10_000, {
+  const fetchWithRetry = withRetry(fetchImpl, 2, 10_000, {
     monotonic: () => 0,
     sleep: async () => {},
   })
@@ -91,7 +87,7 @@ test('propagates 429 when Retry-After exceeds the request timeout', async () => 
     })
   }) as typeof fetch
   const sleep = vi.fn(async () => {})
-  const fetchWithRetry = withRateLimitRetry(fetchImpl, 1, 1_000, {
+  const fetchWithRetry = withRetry(fetchImpl, 1, 1_000, {
     monotonic: () => 0,
     sleep,
   })
@@ -112,7 +108,7 @@ test('bounds retry waits when the request timeout is disabled', async () => {
       })
   ) as typeof fetch
   const sleep = vi.fn(async () => {})
-  const fetchWithRetry = withRateLimitRetry(fetchImpl, 3, 0, {
+  const fetchWithRetry = withRetry(fetchImpl, 3, 0, {
     monotonic: () => 0,
     sleep,
   })
@@ -128,7 +124,7 @@ test('propagates 429 without Retry-After as is', async () => {
   const rateLimited = new Response('rate limited', { status: 429 })
   const fetchImpl = vi.fn(async () => rateLimited) as typeof fetch
   const sleep = vi.fn(async () => {})
-  const fetchWithRetry = withRateLimitRetry(fetchImpl, 2, 10_000, {
+  const fetchWithRetry = withRetry(fetchImpl, 2, 10_000, {
     monotonic: () => 0,
     sleep,
   })
@@ -147,7 +143,7 @@ test('aborting during Retry-After sleep rejects promptly', async () => {
     headers: { 'Retry-After': '1' },
   })
   const fetchImpl = vi.fn(async () => rateLimited) as typeof fetch
-  const fetchWithRetry = withRateLimitRetry(fetchImpl, 1, 10_000)
+  const fetchWithRetry = withRetry(fetchImpl, 1, 10_000)
   const controller = new AbortController()
   const reason = new Error('cancelled')
 
@@ -164,7 +160,7 @@ test('aborting during Retry-After sleep rejects promptly', async () => {
 
 test('disabled retries pass a streaming request through unchanged', async () => {
   const fetchImpl = vi.fn(async () => new Response('ok')) as typeof fetch
-  const fetchWithRetry = withRateLimitRetry(fetchImpl, 0, 10_000)
+  const fetchWithRetry = withRetry(fetchImpl, 0, 10_000)
   const body = new ReadableStream()
   const init = {
     method: 'POST',

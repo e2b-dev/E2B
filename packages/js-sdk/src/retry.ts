@@ -48,7 +48,7 @@ function wait(delayMs: number, signal: AbortSignal): Promise<void> {
 }
 
 /** Retry replayable requests after a 429 carrying `Retry-After`. */
-export function withRateLimitRetry(
+export function withRetry(
   fetchImpl: typeof fetch,
   retries: number,
   requestTimeoutMs: number,

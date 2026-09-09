@@ -120,7 +120,7 @@ class VolumeApiClient {
   constructor(config: VolumeConnectionConfig) {
     this.api = createClient<paths>({
       baseUrl: config.apiUrl,
-      fetch: createApiFetch(config.proxy),
+      fetch: createApiFetch(config.proxy, 0, config.requestTimeoutMs),
       headers: {
         ...defaultHeaders,
         ...(config.token && { Authorization: `Bearer ${config.token}` }),
