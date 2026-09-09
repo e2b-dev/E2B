@@ -18,6 +18,27 @@ export function parsePositiveInt(label: string): (value: string) => number {
   }
 }
 
+/**
+ * Parse a CLI option as a non-negative integer.
+ */
+export function parseNonNegativeInt(label: string): (value: string) => number {
+  return (value) => {
+    if (value.trim() === '') {
+      throw new commander.InvalidArgumentError(
+        `${label} must be a non-negative integer. You provided ${asLocal(value)}.`
+      )
+    }
+
+    const parsed = Number(value)
+    if (!Number.isInteger(parsed) || parsed < 0) {
+      throw new commander.InvalidArgumentError(
+        `${label} must be a non-negative integer. You provided ${asLocal(value)}.`
+      )
+    }
+    return parsed
+  }
+}
+
 export const pathOption = new commander.Option(
   '-p, --path <path>',
   `change root directory where command is executed to ${asBold(
@@ -88,3 +109,8 @@ export function projectIdFromOptions(opts: {
   }
   return opts.project ?? opts.team
 }
+
+export const minFreeDiskMbOption = new commander.Option(
+  '--min-free-disk-mb <min-free-disk-mb>',
+  'requested minimum free space after build steps, in MiB. Omit for the team default or use 0 for no minimum growth. Growth is best effort and never shrinks the filesystem.'
+).argParser(parseNonNegativeInt('Minimum free disk in MiB'))
