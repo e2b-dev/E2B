@@ -24,6 +24,8 @@ class TemplateBuildRequestV3:
             Omit to use the team's default. Set to 0 to request no minimum free-disk growth. The filesystem is never shrunk,
             including inherited or already-larger filesystems. Growth is best effort, so filesystem metadata can leave the
             available space slightly below the requested minimum.
+        free_disk_space_mb (Union[Unset, int]): Deprecated and ignored. Use minFreeDiskMb instead. If minFreeDiskMb is
+            omitted, the team's default applies even when freeDiskSpaceMB is provided.
     """
 
     name: Union[Unset, str] = UNSET
@@ -33,6 +35,7 @@ class TemplateBuildRequestV3:
     cpu_count: Union[Unset, int] = UNSET
     memory_mb: Union[Unset, int] = UNSET
     min_free_disk_mb: Union[Unset, int] = UNSET
+    free_disk_space_mb: Union[Unset, int] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -52,6 +55,8 @@ class TemplateBuildRequestV3:
 
         min_free_disk_mb = self.min_free_disk_mb
 
+        free_disk_space_mb = self.free_disk_space_mb
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
@@ -69,6 +74,8 @@ class TemplateBuildRequestV3:
             field_dict["memoryMB"] = memory_mb
         if min_free_disk_mb is not UNSET:
             field_dict["minFreeDiskMb"] = min_free_disk_mb
+        if free_disk_space_mb is not UNSET:
+            field_dict["freeDiskSpaceMB"] = free_disk_space_mb
 
         return field_dict
 
@@ -89,6 +96,8 @@ class TemplateBuildRequestV3:
 
         min_free_disk_mb = d.pop("minFreeDiskMb", UNSET)
 
+        free_disk_space_mb = d.pop("freeDiskSpaceMB", UNSET)
+
         template_build_request_v3 = cls(
             name=name,
             tags=tags,
@@ -97,6 +106,7 @@ class TemplateBuildRequestV3:
             cpu_count=cpu_count,
             memory_mb=memory_mb,
             min_free_disk_mb=min_free_disk_mb,
+            free_disk_space_mb=free_disk_space_mb,
         )
 
         template_build_request_v3.additional_properties = d
