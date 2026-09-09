@@ -3,4 +3,5 @@
   "main": "worker.mjs",
   "compatibility_date": "2026-03-01",
   "compatibility_flags": ["nodejs_compat"],
+  "vars": { "E2B_USER_AGENT_SOURCE": "ci" },
 }

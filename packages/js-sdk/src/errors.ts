@@ -11,6 +11,11 @@ export function formatSandboxTimeoutError(message: string) {
  * Thrown when general sandbox errors occur.
  */
 export class SandboxError extends Error {
+  /**
+   * HTTP status of the API response that produced this error, when there was one.
+   */
+  statusCode?: number
+
   constructor(message?: string) {
     super(message)
     this.name = 'SandboxError'
@@ -102,6 +107,8 @@ export class AuthenticationError extends Error {
 
 /**
  * Thrown when git authentication fails.
+ *
+ * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
  */
 export class GitAuthError extends AuthenticationError {
   constructor(message: string) {
@@ -112,6 +119,8 @@ export class GitAuthError extends AuthenticationError {
 
 /**
  * Thrown when git upstream tracking is missing.
+ *
+ * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
  */
 export class GitUpstreamError extends SandboxError {
   constructor(message: string) {
@@ -140,6 +149,32 @@ export class RateLimitError extends SandboxError {
   constructor(message: string) {
     super(message)
     this.name = 'RateLimitError'
+    this.statusCode = 429
+  }
+}
+
+/**
+ * Thrown when the API refused the operation because the service is
+ * temporarily busy (HTTP 503): no capacity to place a sandbox right now, or
+ * the node running the sandbox declined a request it cannot serve yet.
+ *
+ * Nothing was changed by the refused call: for example a refused pause
+ * leaves the sandbox running with its state intact, so the same call can be
+ * retried after a short wait.
+ *
+ * Like {@link AuthenticationError} and unlike the other API errors, this is
+ * not a {@link SandboxError}: it is raised for every 503 whatever the
+ * operation, so catch it explicitly.
+ */
+export class ServiceBusyError extends Error {
+  /**
+   * HTTP status of the API response: always 503.
+   */
+  readonly statusCode = 503
+
+  constructor(message: string) {
+    super(message)
+    this.name = 'ServiceBusyError'
   }
 }
 

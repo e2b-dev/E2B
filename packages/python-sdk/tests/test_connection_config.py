@@ -28,27 +28,6 @@ def test_api_url_has_correct_priority(monkeypatch):
     assert config.api_url == "http://localhost:8080"
 
 
-def test_validate_api_key_defaults_to_true(monkeypatch):
-    monkeypatch.delenv("E2B_VALIDATE_API_KEY", raising=False)
-
-    config = ConnectionConfig()
-    assert config.validate_api_key is True
-
-
-def test_validate_api_key_disabled_via_env_var(monkeypatch):
-    monkeypatch.setenv("E2B_VALIDATE_API_KEY", "false")
-
-    config = ConnectionConfig()
-    assert config.validate_api_key is False
-
-
-def test_validate_api_key_arg_has_priority_over_env_var(monkeypatch):
-    monkeypatch.setenv("E2B_VALIDATE_API_KEY", "true")
-
-    config = ConnectionConfig(validate_api_key=False)
-    assert config.validate_api_key is False
-
-
 def test_sandbox_url_uses_stable_host_for_supported_domain():
     config = ConnectionConfig(domain="e2b.app")
 
@@ -137,12 +116,28 @@ def test_set_integration_appends_to_user_agent():
         config = ConnectionConfig()
 
         assert config.headers["User-Agent"].startswith("e2b-python-sdk/")
-        assert config.headers["User-Agent"].endswith(" testing/version")
+        assert "testing/version" in config.headers["User-Agent"].split()
     finally:
         ConnectionConfig.set_integration(None)
 
     config = ConnectionConfig()
     assert "testing" not in config.headers["User-Agent"]
+
+
+def test_user_agent_includes_configured_traffic_source(monkeypatch):
+    monkeypatch.setenv("E2B_USER_AGENT_SOURCE", "ci")
+
+    config = ConnectionConfig()
+
+    assert config.headers["User-Agent"].endswith(" source/ci")
+
+
+def test_user_agent_ignores_unsafe_traffic_source(monkeypatch):
+    monkeypatch.setenv("E2B_USER_AGENT_SOURCE", "ci bad\nheader")
+
+    config = ConnectionConfig()
+
+    assert "source/" not in config.headers["User-Agent"]
 
 
 def test_custom_user_agent_is_preserved_without_integration():
@@ -165,10 +160,11 @@ def test_integration_survives_api_param_rebuilds(monkeypatch):
     config = ConnectionConfig()
     rebuilt_config = ConnectionConfig(**config.get_api_params())
 
-    assert rebuilt_config.headers["User-Agent"].endswith(" testing/version")
-    assert rebuilt_config.get_api_params(api_headers={"X-Test": "1"})["headers"][
-        "User-Agent"
-    ].endswith(" testing/version")
+    assert "testing/version" in rebuilt_config.headers["User-Agent"].split()
+    rebuilt_user_agent = rebuilt_config.get_api_params(api_headers={"X-Test": "1"})[
+        "headers"
+    ]["User-Agent"]
+    assert "testing/version" in rebuilt_user_agent.split()
 
 
 def test_cleared_integration_does_not_leak_into_api_param_rebuilds():

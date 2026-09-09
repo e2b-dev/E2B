@@ -47,6 +47,7 @@ from .exceptions import (
     NotEnoughSpaceException,
     NotFoundException,
     RateLimitException,
+    ServiceBusyException,
     SandboxException,
     SandboxNotFoundException,
     TemplateException,
@@ -100,6 +101,7 @@ from .sandbox.sandbox_api import (
     SandboxNetworkTransformContext,
     SandboxNetworkTransformResolver,
     SandboxNetworkUpdate,
+    SandboxOnResume,
     SandboxListOrder,
     SandboxQuery,
     SandboxState,
@@ -175,6 +177,7 @@ __all__ = [
     "Username",
     # Exceptions
     "SandboxException",
+    "ServiceBusyException",
     "TimeoutException",
     "NotFoundException",
     "FileNotFoundException",
@@ -233,6 +236,7 @@ __all__ = [
     "SandboxNetworkUpdate",
     "SandboxLifecycle",
     "SandboxOnTimeout",
+    "SandboxOnResume",
     "ALL_TRAFFIC",
     # IAM
     "SandboxIamOpts",

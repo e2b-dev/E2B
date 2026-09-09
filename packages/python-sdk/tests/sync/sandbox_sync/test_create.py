@@ -1,4 +1,4 @@
-from time import sleep
+from time import monotonic, sleep
 from typing import Any, cast
 from uuid import uuid4
 
@@ -13,6 +13,36 @@ from e2b.api.client.models import (
 from e2b.api.client.types import UNSET
 from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox.sandbox_api import SandboxQuery, build_iam_config
+
+
+def wait_for_state(sandbox: Sandbox, state: SandboxState, timeout: float = 30) -> None:
+    deadline = monotonic() + timeout
+    current_state: SandboxState | None = None
+
+    while monotonic() < deadline:
+        current_state = sandbox.get_info().state
+        if current_state == state:
+            return
+        sleep(0.2)
+
+    pytest.fail(f"sandbox did not reach {state}; last state was {current_state}")
+
+
+def wait_for_http_status(url: str, status: int, timeout: float = 30) -> None:
+    deadline = monotonic() + timeout
+    current_status: int | None = None
+
+    with httpx.Client(timeout=5.0) as client:
+        while monotonic() < deadline:
+            try:
+                current_status = client.get(url).status_code
+            except httpx.HTTPError:
+                pass
+            if current_status == status:
+                return
+            sleep(0.5)
+
+    pytest.fail(f"endpoint did not return {status}; last status was {current_status}")
 
 
 @pytest.mark.skip_debug()
@@ -231,6 +261,7 @@ def test_keep_memory_none_defaults_to_full_memory(sandbox_factory):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(270)
 def test_auto_pause_filesystem_only_reboots(sandbox_factory):
     # keep_memory=False makes the timeout auto-pause filesystem-only, so resuming
     # cold-boots the sandbox from disk.
@@ -243,13 +274,18 @@ def test_auto_pause_filesystem_only_reboots(sandbox_factory):
     sandbox.files.write("/home/user/auto-pause-marker.txt", marker)
     boot_before = sandbox.files.read("/proc/sys/kernel/random/boot_id").strip()
 
-    sleep(5)
-
-    assert sandbox.get_info().state == SandboxState.PAUSED
+    wait_for_state(sandbox, SandboxState.PAUSED)
 
     # A filesystem-only snapshot cannot auto-resume on traffic; connect resumes
     # it by cold-booting.
-    resumed = sandbox.connect()
+    try:
+        resumed = sandbox.connect(request_timeout=120)
+    except SandboxException as error:
+        # Placement can transiently time out while the cold boot is scheduled.
+        # Retry only the backend response that explicitly asks the caller to do so.
+        if "Failed to place sandbox: placement timed out" not in str(error):
+            raise
+        resumed = sandbox.connect(request_timeout=120)
 
     persisted = resumed.files.read("/home/user/auto-pause-marker.txt").strip()
     assert persisted == marker
@@ -259,24 +295,24 @@ def test_auto_pause_filesystem_only_reboots(sandbox_factory):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(90)
 def test_auto_pause_without_auto_resume_requires_connect(sandbox_factory):
     sandbox = sandbox_factory(
         timeout=3,
         lifecycle={"on_timeout": "pause", "auto_resume": False},
     )
 
-    sleep(5)
-
-    assert sandbox.get_info().state == SandboxState.PAUSED
+    wait_for_state(sandbox, SandboxState.PAUSED)
     assert not sandbox.is_running()
 
     sandbox.connect()
 
-    assert sandbox.get_info().state == SandboxState.RUNNING
+    wait_for_state(sandbox, SandboxState.RUNNING)
     assert sandbox.is_running()
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(90)
 def test_auto_resume_wakes_on_http_request(sandbox_factory):
     sandbox = sandbox_factory(
         timeout=3,
@@ -285,13 +321,12 @@ def test_auto_resume_wakes_on_http_request(sandbox_factory):
 
     cmd = sandbox.commands.run("python3 -m http.server 8000", background=True)
     try:
-        sleep(5)
+        wait_for_state(sandbox, SandboxState.PAUSED)
 
         url = f"https://{sandbox.get_host(8000)}"
-        res = httpx.get(url, timeout=15.0)
+        wait_for_http_status(url, 200)
 
-        assert res.status_code == 200
-        assert sandbox.get_info().state == SandboxState.RUNNING
+        wait_for_state(sandbox, SandboxState.RUNNING)
         assert sandbox.is_running()
     finally:
         try:

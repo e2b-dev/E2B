@@ -1,4 +1,5 @@
 import * as fs from 'fs'
+import * as commander from 'commander'
 
 const SHELL_SAFE_RE = /^[A-Za-z0-9_@%+=:,./-]+$/
 
@@ -14,11 +15,18 @@ export const shellQuote = (arg: string): string => {
 }
 
 export const buildCommand = (commandParts: string[]): string => {
-  if (commandParts.length === 1) {
-    return commandParts[0]
+  // `--` only separates e2b options from the command, it is not part of it.
+  const parts = commandParts[0] === '--' ? commandParts.slice(1) : commandParts
+
+  if (parts.length === 0) {
+    throw new commander.InvalidArgumentError('missing command to execute')
   }
 
-  return commandParts.map(shellQuote).join(' ')
+  if (parts.length === 1) {
+    return parts[0]
+  }
+
+  return parts.map(shellQuote).join(' ')
 }
 
 type StatLike = {

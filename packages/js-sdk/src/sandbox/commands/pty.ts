@@ -30,8 +30,10 @@ import {
   handleProcessStartEvent,
 } from '../../envd/api'
 
-export interface PtyCreateOpts
-  extends Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'> {
+export interface PtyCreateOpts extends Pick<
+  ConnectionOpts,
+  'requestTimeoutMs' | 'signal'
+> {
   /**
    * Number of columns for the PTY.
    */

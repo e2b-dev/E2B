@@ -1,5 +1,6 @@
 import json
 import time
+from unittest.mock import Mock
 
 import httpx
 
@@ -18,15 +19,31 @@ def wait_for_status(
 ) -> httpx.Response:
     deadline = time.monotonic() + timeout
     response: httpx.Response | None = None
+    last_transport_error: httpx.TransportError | None = None
 
     while time.monotonic() < deadline:
-        response = client.get(url, headers=headers, follow_redirects=True)
-        if response.status_code == status_code:
-            return response
+        try:
+            response = client.get(url, headers=headers, follow_redirects=True)
+        except httpx.TransportError as error:
+            last_transport_error = error
+        else:
+            if response.status_code == status_code:
+                return response
         time.sleep(1)
 
-    assert response is not None
-    return response
+    if response is not None:
+        return response
+    assert last_transport_error is not None
+    raise last_transport_error
+
+
+def test_wait_for_status_retries_transport_errors():
+    response = httpx.Response(200)
+    client = Mock()
+    client.get.side_effect = [httpx.ConnectError("not ready"), response]
+
+    assert wait_for_status(client, "https://sandbox.test", 200) is response
+    assert client.get.call_count == 2
 
 
 @pytest.mark.skip_debug()
@@ -273,16 +290,58 @@ def test_update_network_clears_existing_rules(sandbox_factory):
 
 
 @pytest.mark.skip_debug()
+def test_https_ports(sandbox_factory):
+    """Test that a port listed in https_ports proxies to an HTTPS backend."""
+    port = 8443
+    sandbox = sandbox_factory(network=SandboxNetworkOpts(https_ports=[port]))
+
+    # Generate a self-signed certificate inside the sandbox
+    keygen = sandbox.commands.run(
+        "openssl req -x509 -newkey rsa:2048 "
+        "-keyout /tmp/https-backend-key.pem -out /tmp/https-backend-cert.pem "
+        '-days 1 -nodes -subj "/CN=localhost"'
+    )
+    assert keygen.exit_code == 0
+
+    # Start an HTTPS server on the configured port
+    sandbox.commands.run(
+        f"""python3 -c "
+import http.server, ssl
+class H(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b'https backend')
+    def log_message(self, *a): pass
+server = http.server.ThreadingHTTPServer(('0.0.0.0', {port}), H)
+context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+context.load_cert_chain('/tmp/https-backend-cert.pem', '/tmp/https-backend-key.pem')
+server.socket = context.wrap_socket(server.socket, server_side=True)
+server.serve_forever()
+" """,
+        background=True,
+    )
+
+    sandbox_url = f"https://{sandbox.get_host(port)}"
+
+    with httpx.Client() as client:
+        response = wait_for_status(client, sandbox_url, 200)
+        assert response.status_code == 200
+        assert response.text == "https backend"
+
+    # The port is reported back in the sandbox info
+    info = sandbox.get_info()
+    assert info.network is not None
+    assert info.network.get("https_ports") == [port]
+
+
+@pytest.mark.skip_debug()
 def test_mask_request_host(sandbox_factory):
     """Test that mask_request_host modifies the Host header correctly."""
     sandbox = sandbox_factory(
         network=SandboxNetworkOpts(mask_request_host="custom-host.example.com:${PORT}"),
         timeout=60,
     )
-
-    import time
-
-    import httpx
 
     port = 8080
     output_file = "/tmp/headers.txt"
@@ -299,7 +358,7 @@ class H(http.server.BaseHTTPRequestHandler):
         self.send_response(200)
         self.end_headers()
     def log_message(self, *a): pass
-http.server.HTTPServer(('', {port}), H).handle_request()
+http.server.HTTPServer(('', {port}), H).serve_forever()
 " """,
         background=True,
     )
@@ -312,12 +371,8 @@ http.server.HTTPServer(('', {port}), H).handle_request()
     # Make a request from OUTSIDE the sandbox through the proxy
     # The Host header should be modified according to mask_request_host
     with httpx.Client() as client:
-        try:
-            client.get(sandbox_url, timeout=5.0)
-        except Exception:
-            pass
-
-    time.sleep(1)
+        response = wait_for_status(client, sandbox_url, 200)
+        assert response.status_code == 200
 
     # Read the captured headers from inside the sandbox
     result = sandbox.commands.run(f"cat {output_file}")

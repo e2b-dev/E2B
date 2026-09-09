@@ -1,9 +1,9 @@
-import * as tablePrinter from 'console-table-printer'
 import * as commander from 'commander'
 import { NotFoundError, Sandbox, SnapshotInfo } from 'e2b'
 
 import { ensureAPIKey } from 'src/api'
 import { asBold } from 'src/utils/format'
+import { renderTable } from 'src/utils/table'
 
 const DEFAULT_LIMIT = 1000
 const PAGE_LIMIT = 100
@@ -91,7 +91,7 @@ const listSnapshotsCommand = new commander.Command('list')
           paginator.hasNext || (limit ? allSnapshots.length > limit : false)
 
         if (format === 'pretty') {
-          renderTable(snapshots)
+          renderSnapshotTable(snapshots)
           if (hasMore) {
             console.log(
               `Showing first ${limit} snapshots. Use --limit to change.`
@@ -155,50 +155,19 @@ export const snapshotCommand = new commander.Command('snapshot')
   .addCommand(listSnapshotsCommand)
   .addCommand(deleteSnapshotCommand)
 
-function renderTable(snapshots: SnapshotInfo[]) {
+function renderSnapshotTable(snapshots: SnapshotInfo[]) {
   if (!snapshots?.length) {
     console.log('No snapshots found')
     return
   }
 
-  const table = new tablePrinter.Table({
-    title: 'Snapshots',
-    columns: [
-      { name: 'snapshotId', alignment: 'left', title: 'Snapshot ID' },
-      { name: 'names', alignment: 'left', title: 'Names' },
-    ],
-    rows: snapshots.map((snapshot) => ({
-      ...snapshot,
-      names: snapshot.names.map(stripControlChars).join(', '),
-    })),
-    style: {
-      headerTop: {
-        left: '',
-        right: '',
-        mid: '',
-        other: '',
-      },
-      headerBottom: {
-        left: '',
-        right: '',
-        mid: '',
-        other: '',
-      },
-      tableBottom: {
-        left: '',
-        right: '',
-        mid: '',
-        other: '',
-      },
-      vertical: '',
+  renderTable(snapshots, [
+    { header: 'Snapshot ID', value: (snapshot) => snapshot.snapshotId },
+    {
+      header: 'Names',
+      value: (snapshot) => snapshot.names.map(stripControlChars).join(', '),
     },
-    colorMap: {
-      orange: '\x1b[38;5;216m',
-    },
-  })
-  table.printTable()
-
-  process.stdout.write('\n')
+  ])
 }
 
 function stripControlChars(value: string) {

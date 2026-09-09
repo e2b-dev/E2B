@@ -116,8 +116,7 @@ export type SandboxNetworkRule = {
  * also appear in {@link SandboxNetworkOpts.allowOut}.
  */
 export type SandboxNetworkRules =
-  | Record<string, SandboxNetworkRule[]>
-  | Map<string, SandboxNetworkRule[]>
+  Record<string, SandboxNetworkRule[]> | Map<string, SandboxNetworkRule[]>
 
 /**
  * Per-domain rule as returned by the sandbox info endpoint. Mirrors
@@ -145,8 +144,7 @@ export type SandboxNetworkSelectorContext = {
  * the same.
  */
 export type SandboxNetworkSelector =
-  | string[]
-  | ((ctx: SandboxNetworkSelectorContext) => string[])
+  string[] | ((ctx: SandboxNetworkSelectorContext) => string[])
 
 /**
  * SOCKS5 proxy the sandbox's outbound TCP is tunneled through — "bring your
@@ -316,6 +314,21 @@ export type SandboxNetworkOpts = {
    * @default ${PORT}-sandboxid.e2b.app
    */
   maskRequestHost?: string
+
+  /**
+   * Ports whose public URLs should connect to the sandbox using HTTPS.
+   *
+   * Use this when the service listening on the port serves HTTPS (TLS)
+   * itself. This is not TLS passthrough — traffic is still terminated at the
+   * E2B proxy and re-encrypted on the hop to the sandbox. The backend
+   * certificate is not verified, so self-signed certificates work.
+   *
+   * @example
+   * ```ts
+   * await Sandbox.create({ network: { httpsPorts: [3000] } })
+   * ```
+   */
+  httpsPorts?: number[]
 }
 
 /**
@@ -335,6 +348,7 @@ export type SandboxNetworkInfo = {
   egressProxy?: SandboxEgressProxyInfo
   allowPublicTraffic?: boolean
   maskRequestHost?: string
+  httpsPorts?: number[]
 }
 
 /**
@@ -457,6 +471,8 @@ export type SandboxLifecycle = {
    * `'kill'`, or `{ action, keepMemory }` to also control the pause snapshot kind.
    * Omitted from the create request when unset, leaving the API's default
    * (currently `kill`) in effect.
+   *
+   * @throws {@link InvalidArgumentError} if the action is outside the two literals.
    */
   onTimeout: SandboxOnTimeout
 
@@ -487,20 +503,19 @@ export type SandboxInfoLifecycle = {
 /**
  * Options for request to the Sandbox API.
  */
-export interface SandboxApiOpts
-  extends Partial<
-    Pick<
-      ConnectionOpts,
-      | 'apiKey'
-      | 'validateApiKey'
-      | 'headers'
-      | 'apiHeaders'
-      | 'debug'
-      | 'domain'
-      | 'requestTimeoutMs'
-      | 'signal'
-    >
-  > {}
+export interface SandboxApiOpts extends Partial<
+  Pick<
+    ConnectionOpts,
+    | 'apiKey'
+    | 'validateApiKey'
+    | 'headers'
+    | 'apiHeaders'
+    | 'debug'
+    | 'domain'
+    | 'requestTimeoutMs'
+    | 'signal'
+  >
+> {}
 
 /**
  * Options for pausing a sandbox.
@@ -653,6 +668,16 @@ export interface SandboxOpts extends ConnectionOpts {
 }
 
 /**
+ * How a paused sandbox comes back.
+ *
+ * `'restore'` restores the memory snapshot, so processes and open connections
+ * survive the pause. `'reboot'` ignores any memory in the snapshot and
+ * cold-boots from disk state alone — the rescue path for a snapshot whose
+ * memory image wedges the guest.
+ */
+export type SandboxOnResume = 'restore' | 'reboot'
+
+/**
  * Options for connecting to a Sandbox.
  */
 export type SandboxConnectOpts = ConnectionOpts & {
@@ -662,6 +687,18 @@ export type SandboxConnectOpts = ConnectionOpts & {
    * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
    */
   timeoutMs?: number
+
+  /**
+   * How to bring a paused sandbox back: `'restore'` (the default) restores the
+   * memory snapshot; `'reboot'` cold-boots from disk state, so writes not
+   * flushed before the pause may be lost. Rejected where filesystem-only resume
+   * is not enabled; a no-op for a snapshot without memory or a sandbox that is
+   * already running.
+   *
+   * @default 'restore'
+   * @throws {@link InvalidArgumentError} if the value is outside the two literals.
+   */
+  onResume?: SandboxOnResume
 }
 
 /**
@@ -1004,20 +1041,29 @@ function resolveRulesForBody(
 /**
  * Rebuild the proxy config from the known fields so stray properties on the
  * caller's object never reach the wire and a later mutation of it cannot alter
- * the in-flight request. Validation is the server's — it is the only side that
- * can tell whether the address resolves, and to where.
+ * the in-flight request. Address reachability is the server's — it is the only
+ * side that can tell whether the address resolves, and to where. The required
+ * `address` is checked here so an untyped caller that omits it is told which
+ * option is wrong instead of getting an API error about a body it never wrote.
  */
 function buildEgressProxyBody(
   egressProxy: SandboxEgressProxyOpts
 ): components['schemas']['SandboxEgressProxyConfig'] {
+  // Re-check at runtime for callers that bypass the type; Python's
+  // `_build_egress_proxy` checks the same way.
+  if (!isPlainObject(egressProxy) || typeof egressProxy.address !== 'string') {
+    throw new InvalidArgumentError(
+      `network egressProxy must be an object with a string 'address' (e.g. 'proxy.example.com:1080').`
+    )
+  }
+
+  // `!= null` also skips a `null` credential, which is what reading one out of
+  // an unset environment variable yields and what "this proxy takes no
+  // credentials" means; the API only accepts a string.
   return {
     address: egressProxy.address,
-    ...(egressProxy.username !== undefined
-      ? { username: egressProxy.username }
-      : {}),
-    ...(egressProxy.password !== undefined
-      ? { password: egressProxy.password }
-      : {}),
+    ...(egressProxy.username != null ? { username: egressProxy.username } : {}),
+    ...(egressProxy.password != null ? { password: egressProxy.password } : {}),
   }
 }
 
@@ -1097,6 +1143,9 @@ function buildNetworkBody(
       : {}),
     ...(network.maskRequestHost !== undefined
       ? { maskRequestHost: network.maskRequestHost }
+      : {}),
+    ...(network.httpsPorts !== undefined
+      ? { httpsPorts: network.httpsPorts }
       : {}),
   }
 }
@@ -1260,6 +1309,7 @@ export class SandboxApi extends ClientFactory {
             egressProxy: fromApiEgressProxy(res.data.network.egressProxy),
             allowPublicTraffic: res.data.network.allowPublicTraffic,
             maskRequestHost: res.data.network.maskRequestHost,
+            httpsPorts: res.data.network.httpsPorts,
           }
         : undefined,
       lifecycle: res.data.lifecycle
@@ -1601,6 +1651,19 @@ export class SandboxApi extends ClientFactory {
     const onTimeoutConfigured = requestedOnTimeout != null
     const onTimeout = requestedOnTimeout ?? 'kill'
     const action = typeof onTimeout === 'string' ? onTimeout : onTimeout.action
+    const allowedActions = ['pause', 'kill']
+    if (onTimeoutConfigured && !allowedActions.includes(action)) {
+      // Name the field the caller wrote: the object form's bad value is on
+      // `.action`, not on `onTimeout` itself.
+      const field =
+        typeof onTimeout === 'string' ? 'onTimeout' : 'onTimeout.action'
+      throw new InvalidArgumentError(
+        `${field} must be one of: ${allowedActions.join(', ')} (got ${JSON.stringify(action)}).`
+      )
+    }
+    // The action never reaches the API — it is resolved here into the boolean
+    // autoPause — so an unrecognized value cannot be rejected server-side, and
+    // resolving it to kill would delete the sandbox a caller asked to preserve.
     const hasKeepMemory =
       typeof onTimeout !== 'string' && 'keepMemory' in onTimeout
     const keepMemory =
@@ -1763,6 +1826,18 @@ export class SandboxApi extends ClientFactory {
     const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
+    // A nullish value is not a choice of restore, matching every other nullish
+    // option. Any other value outside the union never reaches the API — it is
+    // resolved here into the boolean memory field — so it cannot be rejected
+    // server-side, and resolving it to restore would silently skip the reboot.
+    const onResume = apiOpts?.onResume ?? undefined
+    const allowedOnResume = ['restore', 'reboot']
+    if (onResume !== undefined && !allowedOnResume.includes(onResume)) {
+      throw new InvalidArgumentError(
+        `onResume must be one of: ${allowedOnResume.join(', ')} (got ${JSON.stringify(onResume)}).`
+      )
+    }
+
     const res = await client.api.POST('/sandboxes/{sandboxID}/connect', {
       params: {
         path: {
@@ -1773,6 +1848,7 @@ export class SandboxApi extends ClientFactory {
       body: {
         timeout:
           timeoutMs === undefined ? undefined : timeoutToSeconds(timeoutMs),
+        memory: onResume === 'reboot' ? false : undefined,
       } as components['schemas']['ConnectSandbox'],
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })

@@ -129,6 +129,45 @@ test('Sandbox.create strips unknown egress proxy properties', async () => {
   })
 })
 
+test.for([
+  ['an empty object', {}],
+  ['a non-string address', { address: 1080 }],
+  ['a bare address string', 'proxy.example.com:1080'],
+])(
+  'Sandbox.create rejects %s as the egress proxy',
+  async ([, egressProxy]: [string, unknown]) => {
+    // Callers that bypass the type used to have the address silently dropped
+    // from the rebuilt body and got an API error about a config they never
+    // wrote; Python raises here too.
+    await expect(
+      Sandbox.create('base', {
+        apiKey: TEST_API_KEY,
+        network: { egressProxy: egressProxy as never },
+      })
+    ).rejects.toThrow(/egressProxy/)
+  }
+)
+
+test('Sandbox.create omits null credentials', async () => {
+  // Reading a credential out of an unset environment variable is how a caller
+  // lands here, and it means the proxy takes no credentials — the API only
+  // accepts a string.
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    network: {
+      egressProxy: {
+        address: 'proxy.example.com:1080',
+        username: null,
+        password: null,
+      } as never,
+    },
+  })
+
+  expect(lastCreateBody?.network.egressProxy).toEqual({
+    address: 'proxy.example.com:1080',
+  })
+})
+
 test('a later mutation of the caller object does not reach the wire', async () => {
   const egressProxy = { address: 'proxy.example.com:1080', username: 'before' }
 

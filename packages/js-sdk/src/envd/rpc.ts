@@ -58,7 +58,7 @@ export function isConnectionTerminatedMessage(
  * dropped mid-request — an HTTP/2 stream reset surfaced by connect as `Code.Unknown`
  * with one of the runtime-specific connection-dropped messages.
  */
-export function isConnectionTerminatedError(err: unknown): boolean {
+function isConnectionTerminatedError(err: unknown): boolean {
   return (
     err instanceof ConnectError &&
     err.code === Code.Unknown &&

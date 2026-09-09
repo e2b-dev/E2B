@@ -1,0 +1,108 @@
+name: Test Desktop JS SDK
+
+on:
+  workflow_call:
+    inputs:
+      E2B_DOMAIN:
+        required: false
+        type: string
+        default: ''
+      run_tests:
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      E2B_API_KEY:
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  E2B_USER_AGENT_SOURCE: ci
+
+jobs:
+  test:
+    defaults:
+      run:
+        working-directory: ./packages/desktop-js
+        shell: bash
+    name: Desktop JS SDK - ${{ inputs.run_tests && matrix.runtime || 'build' }}
+    strategy:
+      fail-fast: false
+      # Each runtime keeps one live-test worker. This matrix has four legs, so
+      # it naturally stays below the shared six-job cap.
+      max-parallel: 6
+      # Callers that only build (staging) collapse the matrix to a single job;
+      # the runtime legs are exercised against production.
+      matrix:
+        runtime: >-
+          ${{ inputs.run_tests
+            && fromJSON('["node", "bun", "deno", "cloudflare"]')
+            || fromJSON('["node"]') }}
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Parse .tool-versions
+        uses: wistia/parse-tool-versions@32f568a4ffd4bfa7720ebf93f171597d1ebc979a # v2.1.1
+        with:
+          filename: '.tool-versions'
+          uppercase: 'true'
+          prefix: 'tool_version_'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+        with:
+          version: '${{ env.TOOL_VERSION_PNPM }}'
+
+      - name: Setup Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: '${{ env.TOOL_VERSION_NODEJS }}'
+          registry-url: 'https://registry.npmjs.org'
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Configure pnpm
+        run: |
+          pnpm config set auto-install-peers true
+          pnpm config set exclude-links-from-lockfile true
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build base JS SDK
+        run: pnpm --dir ../js-sdk build
+
+      - name: Test build
+        run: pnpm build
+
+      - name: Install Bun
+        if: inputs.run_tests && matrix.runtime == 'bun'
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: '${{ env.TOOL_VERSION_BUN }}'
+
+      - name: Install Deno
+        if: inputs.run_tests && matrix.runtime == 'deno'
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: 'v${{ env.TOOL_VERSION_DENO }}'
+
+      # Every leg runs the same suite; the cloudflare one inside workerd
+      # (vitest-pool-workers).
+      - name: Run test suite under ${{ matrix.runtime }}
+        if: inputs.run_tests
+        run: |
+          case "${{ matrix.runtime }}" in
+            node) script=test ;;
+            cloudflare) script=test:cf ;;
+            *) script=test:${{ matrix.runtime }} ;;
+          esac
+          pnpm "$script"
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
+          E2B_TEST_MAX_WORKERS: 1

@@ -1,6 +1,6 @@
 import { assert, describe } from 'vitest'
 
-import { sandboxTest, isDebug } from '../setup.js'
+import { sandboxTest, isDebug, waitForHttpStatus } from '../setup.js'
 
 sandboxTest.skipIf(isDebug)(
   'pause and resume a sandbox',
@@ -146,21 +146,18 @@ sandboxTest.skipIf(isDebug)(
 
     let url = await sandbox.getHost(8000)
 
-    await new Promise((resolve) => setTimeout(resolve, 5000))
+    await waitForHttpStatus(`https://${url}`, 200)
 
-    const response1 = await fetch(`https://${url}`)
-    assert.equal(response1.status, 200)
-
-    await sandbox.pause()
+    await sandbox.pause({ requestTimeoutMs: 120_000 })
     assert.isFalse(await sandbox.isRunning())
 
-    await sandbox.connect()
+    await sandbox.connect({ requestTimeoutMs: 120_000 })
     assert.isTrue(await sandbox.isRunning())
 
     url = await sandbox.getHost(8000)
-    const response2 = await fetch(`https://${url}`)
-    assert.equal(response2.status, 200)
-  }
+    await waitForHttpStatus(`https://${url}`, 200)
+  },
+  150_000
 )
 
 sandboxTest.skipIf(isDebug)(
@@ -183,14 +180,30 @@ sandboxTest.skipIf(isDebug)(
     ).stdout.trim()
 
     // Filesystem-only snapshot: no memory is captured, so resuming cold-boots.
-    await sandbox.pause({ keepMemory: false })
+    await sandbox.pause({
+      keepMemory: false,
+      requestTimeoutMs: 120_000,
+    })
     assert.isFalse(await sandbox.isRunning())
 
     // Resume the paused sandbox; a filesystem-only pause keeps no memory, so
     // connect() cold-boots (reboots) it. connect() returns the same handle, and
     // its credentials stay valid across the resume (the backend re-binds the
     // same envd access token on the cold boot).
-    const resumedSandbox = await sandbox.connect()
+    let resumedSandbox
+    try {
+      resumedSandbox = await sandbox.connect({ requestTimeoutMs: 120_000 })
+    } catch (error) {
+      // Placement can transiently time out while the cold boot is scheduled.
+      // Retry only the backend response that explicitly asks the caller to do so.
+      if (
+        !(error instanceof Error) ||
+        !error.message.includes('Failed to place sandbox: placement timed out')
+      ) {
+        throw error
+      }
+      resumedSandbox = await sandbox.connect({ requestTimeoutMs: 120_000 })
+    }
     assert.equal(resumedSandbox.sandboxId, sandbox.sandboxId)
     assert.isTrue(await resumedSandbox.isRunning())
 
@@ -203,5 +216,6 @@ sandboxTest.skipIf(isDebug)(
       await resumedSandbox.commands.run('cat /proc/sys/kernel/random/boot_id')
     ).stdout.trim()
     assert.notEqual(bootAfter, bootBefore)
-  }
+  },
+  270_000
 )

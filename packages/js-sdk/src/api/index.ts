@@ -4,24 +4,13 @@ import type { components, paths } from './schema.gen'
 import { defaultHeaders } from './metadata'
 import { createApiFetch } from './http2'
 import { ConnectionConfig } from '../connectionConfig'
-import { AuthenticationError, RateLimitError, SandboxError } from '../errors'
+import {
+  AuthenticationError,
+  RateLimitError,
+  ServiceBusyError,
+  SandboxError,
+} from '../errors'
 import { createApiLogger } from '../logs'
-
-const API_KEY_PATTERN = /^e2b_[0-9a-f]+$/
-const API_KEY_EXAMPLE = `e2b_${'0'.repeat(40)}`
-
-/**
- * Validates that an E2B API key has the expected `e2b_` prefix followed by
- * hex characters. Throws `AuthenticationError` otherwise.
- */
-export function validateApiKey(apiKey: string): void {
-  if (!API_KEY_PATTERN.test(apiKey)) {
-    throw new AuthenticationError(
-      `Invalid API key format: expected "e2b_" followed by hex characters (e.g. "${API_KEY_EXAMPLE}"). ` +
-        'Visit the API Keys tab at https://e2b.dev/dashboard?tab=keys to get your API key.'
-    )
-  }
-}
 
 /**
  * Map an API error code and message to the matching error class — the same
@@ -49,7 +38,17 @@ export function apiErrorFromCode(
     return new RateLimitError(content ? `${message} - ${content}` : message)
   }
 
-  return new errorClass(`${code}: ${content}`, stackTrace)
+  if (code === 503) {
+    const message = 'Service temporarily unavailable, please retry'
+    return new ServiceBusyError(content ? `${message} - ${content}` : message)
+  }
+
+  const err = new errorClass(`${code}: ${content}`, stackTrace)
+  if (err instanceof SandboxError) {
+    err.statusCode = code
+  }
+
+  return err
 }
 
 export function handleApiError(
@@ -67,7 +66,7 @@ export function handleApiError(
   }
 
   const status = response.response.status
-  if (status === 401 || status === 429) {
+  if (status === 401 || status === 429 || status === 503) {
     return apiErrorFromCode(
       status,
       response.error?.message ?? response.error,
@@ -104,10 +103,6 @@ class ApiClient {
       )
     }
 
-    if (config.apiKey && config.validateApiKey) {
-      validateApiKey(config.apiKey)
-    }
-
     this.api = createClient<paths>({
       baseUrl: config.apiUrl,
       fetch: createApiFetch(config.proxy),
@@ -126,8 +121,13 @@ class ApiClient {
       },
     })
 
-    if (config.logger) {
-      this.api.use(createApiLogger(config.logger))
+    if (config.logger || config.requestSource === 'ci') {
+      this.api.use(
+        createApiLogger(
+          config.logger ?? { error: (...args) => console.error(...args) },
+          config.requestSource === 'ci'
+        )
+      )
     }
   }
 }

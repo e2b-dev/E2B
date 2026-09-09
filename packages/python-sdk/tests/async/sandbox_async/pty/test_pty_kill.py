@@ -1,6 +1,4 @@
-import pytest
-
-from e2b import AsyncSandbox, CommandExitException
+from e2b import AsyncSandbox
 from e2b.sandbox.commands.command_handle import PtySize
 
 
@@ -9,9 +7,11 @@ async def test_kill_pty(async_sandbox: AsyncSandbox):
 
     assert await async_sandbox.pty.kill(terminal.pid)
 
-    # The PTY process should no longer be running.
-    with pytest.raises(CommandExitException):
-        await async_sandbox.commands.run(f"kill -0 {terminal.pid}")
+    # PTY teardown is asynchronous, so wait for the process to disappear.
+    await async_sandbox.commands.run(
+        f"for i in $(seq 1 50); do kill -0 {terminal.pid} 2>/dev/null || exit 0; "
+        "sleep 0.1; done; exit 1"
+    )
 
 
 async def test_kill_non_existing_pty(async_sandbox: AsyncSandbox):

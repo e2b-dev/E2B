@@ -28,22 +28,20 @@ export function asFormattedTeam(
   return `${name} (${id})${isSelected}`
 }
 
-export function asFormattedSandboxTemplate(
-  template: Pick<e2b.components['schemas']['Template'], 'templateID'> & {
-    aliases?: e2b.components['schemas']['Template']['aliases']
-  },
-  configLocalPath?: string
-) {
+export type SandboxTemplateRef = Pick<
+  e2b.components['schemas']['Template'],
+  'templateID'
+> & {
+  aliases?: e2b.components['schemas']['Template']['aliases']
+}
+
+export function asFormattedSandboxTemplate(template: SandboxTemplateRef) {
   const aliases = listAliases(template.aliases)
 
   const name = aliases ? asBold(aliases) : ''
-  const configPath = configLocalPath
-    ? asDim(' <-> ') + asLocalRelative(configLocalPath)
-    : ''
-
   const id = `${template.templateID} `
 
-  return `${id}${name}${configPath}`.trim()
+  return `${id}${name}`.trim()
 }
 
 export function asRed(text: string) {
@@ -54,10 +52,6 @@ export function asFormattedError(text: string | undefined, err?: any) {
   return chalk.default.redBright(
     `${text ? `${text} \n` : ''}${err ? err.stack : ''}\n`
   )
-}
-
-export function asDim(content?: string) {
-  return chalk.default.dim(content)
 }
 
 export function asBold(content: string) {
@@ -79,10 +73,6 @@ export function asLocal(pathInLocal?: string) {
 export function asLocalRelative(absolutePathInLocal?: string) {
   if (!absolutePathInLocal) return ''
   return asLocal('./' + cwdRelative(absolutePathInLocal))
-}
-
-export function asBuildLogs(content: string) {
-  return chalk.default.blueBright(content)
 }
 
 export function withUnderline(content: string) {

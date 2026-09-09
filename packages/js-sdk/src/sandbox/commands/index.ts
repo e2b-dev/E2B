@@ -37,8 +37,9 @@ export { Pty } from './pty'
 /**
  * Options for sending a command request.
  */
-export interface CommandRequestOpts
-  extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>> {}
+export interface CommandRequestOpts extends Partial<
+  Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>
+> {}
 
 /**
  * Options for starting a new command.

@@ -85,6 +85,26 @@ def test_create_rejects_a_malformed_egress_proxy(egress_proxy):
         build_network_config(cast(Any, {"egress_proxy": egress_proxy}))
 
 
+def test_create_omits_none_credentials():
+    # Reading a credential out of an unset environment variable is how a caller
+    # lands here, and it means the proxy takes no credentials — the API only
+    # accepts a string.
+    network = cast(
+        Any,
+        {
+            "egress_proxy": {
+                "address": "proxy.example.com:1080",
+                "username": None,
+                "password": None,
+            },
+        },
+    )
+
+    body = build_network_config(network)
+    assert body is not None
+    assert body["egress_proxy"].to_dict() == {"address": "proxy.example.com:1080"}
+
+
 def test_create_strips_unknown_egress_proxy_keys():
     # An untyped caller can copy an extra key out of a config file; the API
     # rejects unknown properties.
