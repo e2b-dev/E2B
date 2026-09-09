@@ -1655,9 +1655,6 @@ export class SandboxApi extends ClientFactory {
     timeoutMs: number,
     opts?: SandboxOpts
   ) {
-    const apiOpts = this.resolveOpts(opts)
-    const config = new ConnectionConfig(apiOpts)
-    const client = new ApiClient(config)
     // onTimeout accepts a bare action (`'pause'` / `'kill'`) or the object form
     // `{ action, keepMemory }`. The discriminated union type forbids `keepMemory`
     // on `action: 'kill'`; re-check at runtime for untyped callers.
@@ -1740,6 +1737,9 @@ export class SandboxApi extends ClientFactory {
       )
     }
 
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
+    const client = new ApiClient(config)
     const res = await client.api.POST('/sandboxes', {
       body,
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
@@ -1842,9 +1842,6 @@ export class SandboxApi extends ClientFactory {
     const apiOpts = this.resolveOpts(opts)
     const timeoutMs = apiOpts?.timeoutMs ?? DEFAULT_SANDBOX_TIMEOUT_MS
 
-    const config = new ConnectionConfig(apiOpts)
-    const client = new ApiClient(config)
-
     // A nullish value is not a choice of restore, matching every other nullish
     // option. Any other value outside the union never reaches the API — it is
     // resolved here into the boolean memory field — so it cannot be rejected
@@ -1856,6 +1853,9 @@ export class SandboxApi extends ClientFactory {
         `onResume must be one of: ${allowedOnResume.join(', ')} (got ${JSON.stringify(onResume)}).`
       )
     }
+
+    const config = new ConnectionConfig(apiOpts)
+    const client = new ApiClient(config)
 
     const res = await client.api.POST('/sandboxes/{sandboxID}/connect', {
       params: {
