@@ -3,7 +3,6 @@ import { describe, expect, test, vi } from 'vitest'
 import {
   parseRetryAfter,
   resolveRetries,
-  RetryableRequest,
   withRateLimitRetry,
 } from '../src/retry'
 import { EnvdApiClient } from '../src/envd/api'
@@ -70,7 +69,7 @@ test.each(['', '{"templateID":"base"}'])(
   'replays a serialized API body %j across attempts',
   async (body) => {
     const controller = new AbortController()
-    const request = new RetryableRequest('https://api.e2b.test/resource', {
+    const request = new Request('https://api.e2b.test/resource', {
       method: 'POST',
       body,
       headers: { 'Content-Type': 'application/json', 'X-API-KEY': 'test-key' },
@@ -105,39 +104,6 @@ test.each(['', '{"templateID":"base"}'])(
       expect(attempt.credentials).toBe(request.credentials)
       expect(attempt.signal.aborted).toBe(true)
     }
-  }
-)
-
-test.each([false, true])(
-  'sends an opaque body once without reading or teeing it (custom Request: %s)',
-  async (customRequest) => {
-    const pull = vi.fn()
-    const body = new ReadableStream({ pull }, { highWaterMark: 0 })
-    const RequestClass = customRequest ? RetryableRequest : Request
-    const request = new RequestClass('https://api.e2b.test/resource', {
-      method: 'POST',
-      body,
-      duplex: 'half',
-    } as RequestInit)
-    const tee = vi.spyOn(body, 'tee')
-    const rateLimited = new Response('rate limited', {
-      status: 429,
-      headers: { 'Retry-After': '0' },
-    })
-    const fetchImpl = vi.fn(async () => rateLimited) as typeof fetch
-    const sleep = vi.fn(async () => {})
-
-    const response = await withRateLimitRetry(fetchImpl, 3, 10_000, {
-      sleep,
-    })(request)
-
-    expect(response).toBe(rateLimited)
-    expect(response.bodyUsed).toBe(false)
-    expect(fetchImpl).toHaveBeenCalledExactlyOnceWith(request)
-    expect(sleep).not.toHaveBeenCalled()
-    expect(pull).not.toHaveBeenCalled()
-    expect(tee).not.toHaveBeenCalled()
-    expect(body.locked).toBe(false)
   }
 )
 

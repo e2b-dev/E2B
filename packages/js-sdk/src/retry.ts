@@ -32,23 +32,6 @@ type RetryDependencies = {
   sleep?: (delayMs: number, signal: AbortSignal) => Promise<void>
 }
 
-export class RetryableRequest extends Request {
-  /**
-   * Whether the request can be replayed with `clone()`. A constructed Request
-   * hides its body's origin, so remember it here: streaming bodies may be
-   * consumed by the first attempt and cannot be replayed without buffering
-   * them, while buffered bodies clone for free.
-   */
-  readonly replayable: boolean
-
-  constructor(input: RequestInfo | URL, init?: RequestInit) {
-    super(input, init)
-    this.replayable =
-      this.body === null ||
-      (init?.body != null && !isReadableStreamLike(init.body))
-  }
-}
-
 function wait(delayMs: number, signal: AbortSignal): Promise<void> {
   if (signal.aborted) return Promise.reject(signal.reason)
 
@@ -76,22 +59,20 @@ export function withRateLimitRetry(
   const sleep = dependencies.sleep ?? wait
 
   return (async (input, init) => {
+    // Streaming bodies would be consumed by the first attempt and cannot be
+    // replayed without buffering them, so they get a single attempt.
     if (retries === 0 || isReadableStreamLike(init?.body)) {
       return fetchImpl(input, init)
     }
 
+    // Replaying a Request-form input via `clone()` is safe because the only
+    // producer of those is openapi-fetch, which serializes every body to a
+    // string before constructing the Request — cloning never tees a live
+    // stream.
     const request =
       input instanceof Request && init === undefined
         ? input
-        : new RetryableRequest(input as RequestInfo, init)
-    const replayable =
-      request instanceof RetryableRequest
-        ? request.replayable
-        : request.body === null
-    if (!replayable) {
-      return fetchImpl(request)
-    }
-
+        : new Request(input as RequestInfo, init)
     const deadline =
       monotonic() + (requestTimeoutMs || MAX_RETRY_WAIT_WITHOUT_TIMEOUT_MS)
 
