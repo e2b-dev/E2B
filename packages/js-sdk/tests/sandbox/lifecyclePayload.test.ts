@@ -150,7 +150,7 @@ sandboxTest.skipIf(isDebug)(
       // server answers, since a request that races the pause finalizing or
       // times out at the gateway while the sandbox resumes may not wake it.
       const url = withRequestSource(`https://${sandbox.getHost(8000)}`)
-      await waitForHttpStatus(url, 200, undefined, 60_000)
+      await waitForHttpStatus(url, 200, { timeoutMs: 60_000 })
       await waitForState(sandbox, 'running')
       assert.isTrue(await sandbox.isRunning())
     } catch (error) {
