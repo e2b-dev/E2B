@@ -711,6 +711,12 @@ export type SandboxConnectOpts = ConnectionOpts & {
    * is not enabled; a no-op for a snapshot without memory or a sandbox that is
    * already running.
    *
+   * Needs a control plane that knows this option: E2B Cloud, or a self-hosted
+   * or BYOC deployment built from `e2b-dev/infra` at or after the commit that
+   * added the `memory` field to connect/resume (2026-08-20). An older control
+   * plane drops the field and restores memory while answering as if the
+   * request had succeeded.
+   *
    * @default 'restore'
    * @throws {@link InvalidArgumentError} if the value is outside the two literals.
    */
