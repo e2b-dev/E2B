@@ -31,6 +31,20 @@ type RetryDependencies = {
   sleep?: (delayMs: number, signal: AbortSignal) => Promise<void>
 }
 
+// openapi-fetch converts serialized JSON into a Request body stream before
+// calling fetch. Keep the immutable string so retries need neither a stream
+// tee (which buffers an unread branch) nor an eager read of the whole body.
+const requestBodies = new WeakMap<Request, string>()
+
+export class RetryableRequest extends Request {
+  constructor(input: RequestInfo | URL, init?: RequestInit) {
+    super(input, init)
+    if (typeof init?.body === 'string') {
+      requestBodies.set(this, init.body)
+    }
+  }
+}
+
 function wait(delayMs: number, signal: AbortSignal): Promise<void> {
   if (signal.aborted) return Promise.reject(signal.reason)
 
@@ -48,7 +62,7 @@ function wait(delayMs: number, signal: AbortSignal): Promise<void> {
 }
 
 /** Retry replayable requests after a 429 carrying `Retry-After`. */
-export function withRetry(
+export function withRateLimitRetry(
   fetchImpl: typeof fetch,
   retries: number,
   requestTimeoutMs: number,
@@ -60,12 +74,29 @@ export function withRetry(
   return (async (input, init) => {
     if (retries === 0) return fetchImpl(input, init)
 
-    const request = new Request(input as RequestInfo, init)
+    if (init?.body != null && typeof init.body !== 'string') {
+      return fetchImpl(input, init)
+    }
+
+    const request =
+      input instanceof Request && init === undefined
+        ? input
+        : new RetryableRequest(input as RequestInfo, init)
+    const body = requestBodies.get(request)
+    // A Request hides its original body type. Unknown bodies (including
+    // streams) are sent once
+    if (request.body !== null && body === undefined) {
+      return fetchImpl(request)
+    }
     const deadline =
       monotonic() + (requestTimeoutMs || MAX_RETRY_WAIT_WITHOUT_TIMEOUT_MS)
 
     for (let attempt = 0; ; attempt++) {
-      const response = await fetchImpl(request.clone())
+      const response = await fetchImpl(
+        attempt === 0
+          ? request
+          : new Request(request, { method: request.method, body })
+      )
       const retryAfter = parseRetryAfter(response.headers.get('Retry-After'))
       const delayMs = retryAfter === undefined ? undefined : retryAfter * 1000
 

@@ -1,6 +1,11 @@
 import { describe, expect, test, vi } from 'vitest'
 
-import { parseRetryAfter, resolveRetries, withRetry } from '../src/retry'
+import {
+  parseRetryAfter,
+  resolveRetries,
+  RetryableRequest,
+  withRateLimitRetry,
+} from '../src/retry'
 import { EnvdApiClient } from '../src/envd/api'
 import { InvalidArgumentError } from '../src/errors'
 
@@ -45,7 +50,7 @@ test('retries a buffered request and cancels the intermediate response', async (
     return bodies.length === 1 ? rateLimited : new Response('ok')
   }) as typeof fetch
   const sleep = vi.fn(async () => {})
-  const fetchWithRetry = withRetry(fetchImpl, 1, 10_000, {
+  const fetchWithRetry = withRateLimitRetry(fetchImpl, 1, 10_000, {
     monotonic: () => 0,
     sleep,
   })
@@ -61,6 +66,84 @@ test('retries a buffered request and cancels the intermediate response', async (
   expect(rateLimited.bodyUsed).toBe(true)
 })
 
+test.each(['', '{"templateID":"base"}'])(
+  'replays a serialized API body %j without cloning the stream',
+  async (body) => {
+    const controller = new AbortController()
+    const request = new RetryableRequest('https://api.e2b.test/resource', {
+      method: 'POST',
+      body,
+      headers: { 'Content-Type': 'application/json', 'X-API-KEY': 'test-key' },
+      signal: controller.signal,
+      redirect: 'manual',
+      credentials: 'include',
+    })
+    const tee = vi.spyOn(ReadableStream.prototype, 'tee')
+    const attempts: Request[] = []
+    const bodies: string[] = []
+    const fetchImpl = vi.fn(async (input: RequestInfo | URL) => {
+      const attempt = input as Request
+      attempts.push(attempt)
+      bodies.push(await attempt.text())
+      return new Response(null, {
+        status: attempts.length < 3 ? 429 : 200,
+        headers: { 'Retry-After': '0' },
+      })
+    }) as typeof fetch
+    try {
+      const response = await withRateLimitRetry(fetchImpl, 2, 10_000)(request)
+      expect(response.status).toBe(200)
+      expect(bodies).toEqual([body, body, body])
+      expect(new Set(attempts).size).toBe(3)
+      expect(tee).not.toHaveBeenCalled()
+      controller.abort()
+      for (const attempt of attempts) {
+        expect(attempt.url).toBe(request.url)
+        expect(attempt.method).toBe('POST')
+        expect([...attempt.headers]).toEqual([...request.headers])
+        expect(attempt.redirect).toBe('manual')
+        expect(attempt.credentials).toBe('include')
+        expect(attempt.signal.aborted).toBe(true)
+      }
+    } finally {
+      tee.mockRestore()
+    }
+  }
+)
+
+test.each([false, true])(
+  'sends an opaque body once without reading or teeing it (custom Request: %s)',
+  async (customRequest) => {
+    const pull = vi.fn()
+    const body = new ReadableStream({ pull }, { highWaterMark: 0 })
+    const RequestClass = customRequest ? RetryableRequest : Request
+    const request = new RequestClass('https://api.e2b.test/resource', {
+      method: 'POST',
+      body,
+      duplex: 'half',
+    } as RequestInit)
+    const tee = vi.spyOn(body, 'tee')
+    const rateLimited = new Response('rate limited', {
+      status: 429,
+      headers: { 'Retry-After': '0' },
+    })
+    const fetchImpl = vi.fn(async () => rateLimited) as typeof fetch
+    const sleep = vi.fn(async () => {})
+
+    const response = await withRateLimitRetry(fetchImpl, 3, 10_000, {
+      sleep,
+    })(request)
+
+    expect(response).toBe(rateLimited)
+    expect(response.bodyUsed).toBe(false)
+    expect(fetchImpl).toHaveBeenCalledExactlyOnceWith(request)
+    expect(sleep).not.toHaveBeenCalled()
+    expect(pull).not.toHaveBeenCalled()
+    expect(tee).not.toHaveBeenCalled()
+    expect(body.locked).toBe(false)
+  }
+)
+
 test('returns the final 429 after exhausting retries', async () => {
   const fetchImpl = vi.fn(async () => {
     return new Response(null, {
@@ -68,7 +151,7 @@ test('returns the final 429 after exhausting retries', async () => {
       headers: { 'Retry-After': '0' },
     })
   }) as typeof fetch
-  const fetchWithRetry = withRetry(fetchImpl, 2, 10_000, {
+  const fetchWithRetry = withRateLimitRetry(fetchImpl, 2, 10_000, {
     monotonic: () => 0,
     sleep: async () => {},
   })
@@ -87,7 +170,7 @@ test('propagates 429 when Retry-After exceeds the request timeout', async () => 
     })
   }) as typeof fetch
   const sleep = vi.fn(async () => {})
-  const fetchWithRetry = withRetry(fetchImpl, 1, 1_000, {
+  const fetchWithRetry = withRateLimitRetry(fetchImpl, 1, 1_000, {
     monotonic: () => 0,
     sleep,
   })
@@ -108,7 +191,7 @@ test('bounds retry waits when the request timeout is disabled', async () => {
       })
   ) as typeof fetch
   const sleep = vi.fn(async () => {})
-  const fetchWithRetry = withRetry(fetchImpl, 3, 0, {
+  const fetchWithRetry = withRateLimitRetry(fetchImpl, 3, 0, {
     monotonic: () => 0,
     sleep,
   })
@@ -124,7 +207,7 @@ test('propagates 429 without Retry-After as is', async () => {
   const rateLimited = new Response('rate limited', { status: 429 })
   const fetchImpl = vi.fn(async () => rateLimited) as typeof fetch
   const sleep = vi.fn(async () => {})
-  const fetchWithRetry = withRetry(fetchImpl, 2, 10_000, {
+  const fetchWithRetry = withRateLimitRetry(fetchImpl, 2, 10_000, {
     monotonic: () => 0,
     sleep,
   })
@@ -143,7 +226,7 @@ test('aborting during Retry-After sleep rejects promptly', async () => {
     headers: { 'Retry-After': '1' },
   })
   const fetchImpl = vi.fn(async () => rateLimited) as typeof fetch
-  const fetchWithRetry = withRetry(fetchImpl, 1, 10_000)
+  const fetchWithRetry = withRateLimitRetry(fetchImpl, 1, 10_000)
   const controller = new AbortController()
   const reason = new Error('cancelled')
 
@@ -158,21 +241,27 @@ test('aborting during Retry-After sleep rejects promptly', async () => {
   expect(fetchImpl).toHaveBeenCalledOnce()
 })
 
-test('disabled retries pass a streaming request through unchanged', async () => {
-  const fetchImpl = vi.fn(async () => new Response('ok')) as typeof fetch
-  const fetchWithRetry = withRetry(fetchImpl, 0, 10_000)
-  const body = new ReadableStream()
-  const init = {
-    method: 'POST',
-    body,
-    duplex: 'half' as const,
+test.each([0, 3])(
+  'retries=%s passes a streaming request through unchanged',
+  async (retries) => {
+    const fetchImpl = vi.fn(async () => new Response('ok')) as typeof fetch
+    const fetchWithRetry = withRateLimitRetry(fetchImpl, retries, 10_000)
+    const body = new ReadableStream()
+    const init = {
+      method: 'POST',
+      body,
+      duplex: 'half' as const,
+    }
+
+    await fetchWithRetry('https://api.e2b.test/resource', init)
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      'https://api.e2b.test/resource',
+      init
+    )
+    expect(body.locked).toBe(false)
   }
-
-  await fetchWithRetry('https://api.e2b.test/resource', init)
-
-  expect(fetchImpl).toHaveBeenCalledWith('https://api.e2b.test/resource', init)
-  expect(body.locked).toBe(false)
-})
+)
 
 test('envd clients do not retry rate-limited requests', async () => {
   const fetchImpl = vi.fn(

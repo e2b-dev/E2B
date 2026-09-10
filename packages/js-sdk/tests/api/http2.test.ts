@@ -147,24 +147,16 @@ test('late-binds the global fetch fallback when undici cannot be loaded', async 
 })
 
 test('caches API fetchers per proxy', async () => {
-  const { getApiFetch } = await import('../../src/api/http2')
-
-  const noProxy = getApiFetch()
-  const proxyA = getApiFetch('http://127.0.0.1:8080')
-  const proxyB = getApiFetch('http://127.0.0.1:9090')
-
-  expect(getApiFetch()).toBe(noProxy)
-  expect(getApiFetch('http://127.0.0.1:8080')).toBe(proxyA)
-  expect(proxyA).not.toBe(noProxy)
-  expect(proxyA).not.toBe(proxyB)
-})
-
-test('creates a new retry wrapper for each API client', async () => {
   const { createApiFetch } = await import('../../src/api/http2')
 
-  expect(createApiFetch(undefined, 3, 60_000)).not.toBe(
-    createApiFetch(undefined, 3, 60_000)
-  )
+  const noProxy = createApiFetch()
+  const proxyA = createApiFetch('http://127.0.0.1:8080')
+  const proxyB = createApiFetch('http://127.0.0.1:9090')
+
+  expect(createApiFetch()).toBe(noProxy)
+  expect(createApiFetch('http://127.0.0.1:8080')).toBe(proxyA)
+  expect(proxyA).not.toBe(noProxy)
+  expect(proxyA).not.toBe(proxyB)
 })
 
 test('getApiConnectionLimit throws on a malformed env value', async () => {

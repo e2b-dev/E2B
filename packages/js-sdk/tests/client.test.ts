@@ -191,6 +191,29 @@ test('client retries rate-limited control-plane requests', async () => {
   assert.equal(attempts, 2)
 })
 
+test('client replays serialized control-plane JSON after a rate limit', async () => {
+  const bodies: unknown[] = []
+  server.use(
+    http.post(/\/sandboxes$/, async ({ request }) => {
+      bodies.push(await request.json())
+      if (bodies.length === 1) {
+        return new HttpResponse(null, {
+          status: 429,
+          headers: { 'Retry-After': '0' },
+        })
+      }
+      return HttpResponse.json(sandboxResponse)
+    })
+  )
+  const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
+
+  await client.Sandbox.create()
+
+  expect(bodies).toHaveLength(2)
+  expect(bodies[0]).toMatchObject({ templateID: 'base' })
+  expect(bodies[1]).toEqual(bodies[0])
+})
+
 test('client.Sandbox can be rebound to a variable', async () => {
   const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
   const S = client.Sandbox
