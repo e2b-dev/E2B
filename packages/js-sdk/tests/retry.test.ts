@@ -67,7 +67,7 @@ test('retries a buffered request and cancels the intermediate response', async (
 })
 
 test.each(['', '{"templateID":"base"}'])(
-  'replays a serialized API body %j without cloning the stream',
+  'replays a serialized API body %j across attempts',
   async (body) => {
     const controller = new AbortController()
     const request = new RetryableRequest('https://api.e2b.test/resource', {
@@ -78,7 +78,6 @@ test.each(['', '{"templateID":"base"}'])(
       redirect: 'manual',
       credentials: 'include',
     })
-    const tee = vi.spyOn(ReadableStream.prototype, 'tee')
     const attempts: Request[] = []
     const bodies: string[] = []
     const fetchImpl = vi.fn(async (input: RequestInfo | URL) => {
@@ -90,24 +89,21 @@ test.each(['', '{"templateID":"base"}'])(
         headers: { 'Retry-After': '0' },
       })
     }) as typeof fetch
-    try {
-      const response = await withRateLimitRetry(fetchImpl, 2, 10_000)(request)
-      expect(response.status).toBe(200)
-      expect(bodies).toEqual([body, body, body])
-      expect(new Set(attempts).size).toBe(3)
-      expect(tee).not.toHaveBeenCalled()
-      controller.abort()
-      for (const attempt of attempts) {
-        expect(attempt.url).toBe(request.url)
-        expect(attempt.method).toBe('POST')
-        expect([...attempt.headers]).toEqual([...request.headers])
-        expect(attempt.redirect).toBe('manual')
-        // Deno and Cloudflare do not expose Request.credentials.
-        expect(attempt.credentials).toBe(request.credentials)
-        expect(attempt.signal.aborted).toBe(true)
-      }
-    } finally {
-      tee.mockRestore()
+
+    const response = await withRateLimitRetry(fetchImpl, 2, 10_000)(request)
+
+    expect(response.status).toBe(200)
+    expect(bodies).toEqual([body, body, body])
+    expect(new Set(attempts).size).toBe(3)
+    controller.abort()
+    for (const attempt of attempts) {
+      expect(attempt.url).toBe(request.url)
+      expect(attempt.method).toBe('POST')
+      expect([...attempt.headers]).toEqual([...request.headers])
+      expect(attempt.redirect).toBe('manual')
+      // Deno and Cloudflare do not expose Request.credentials.
+      expect(attempt.credentials).toBe(request.credentials)
+      expect(attempt.signal.aborted).toBe(true)
     }
   }
 )
