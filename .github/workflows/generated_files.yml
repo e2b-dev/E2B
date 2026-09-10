@@ -106,7 +106,7 @@ jobs:
       # is scoped to this repository only, so mint a short-lived token from
       # the Autofixer GitHub App instead, scoped to every repo the fetches
       # touch. Fork PRs have no access to the App secret, so they skip the
-      # mint, run the public infra fetches with the default token, and fall
+      # mint, run the public runtime fetches with the default token, and fall
       # back to the tracked volume-content spec (make fetch-specs warns
       # instead of failing).
       - name: Generate token for spec repos
@@ -117,7 +117,7 @@ jobs:
           app-id: ${{ vars.AUTOFIXER_APP_ID }}
           private-key: ${{ secrets.AUTOFIXER_APP_SECRET }}
           owner: e2b-dev
-          repositories: belt,infra
+          repositories: belt,runtime
           permission-contents: read
 
       - name: Run codegen
