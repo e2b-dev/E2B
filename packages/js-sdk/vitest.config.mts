@@ -9,6 +9,11 @@ const maxWorkers = process.env.E2B_TEST_MAX_WORKERS
 export default defineConfig({
   test: {
     maxWorkers,
+    // The default reporter only shows console output (e.g. sandbox IDs) for
+    // failed tests; the verbose reporter shows it for every test.
+    reporters: process.env.GITHUB_ACTIONS
+      ? ['verbose', 'github-actions']
+      : ['default'],
     projects: [
       {
         test: {

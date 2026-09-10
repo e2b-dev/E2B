@@ -84,9 +84,7 @@ export const sandboxTest = base.extend<SandboxFixture>({
         metadata: { sandboxTestId },
         ...sandboxOpts,
       })
-      onTestFailed(() => {
-        console.error(`\n[TEST FAILED] Sandbox ID: ${sandbox.sandboxId}`)
-      })
+      console.log(`sandbox_id=${sandbox.sandboxId}`)
       try {
         await use(sandbox)
       } finally {

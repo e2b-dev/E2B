@@ -40,12 +40,43 @@ def test_api_key() -> str:
     return "e2b_" + "0" * 40
 
 
-@pytest.hookimpl(tryfirst=True, hookwrapper=True)
-def pytest_runtest_makereport(item, call):
-    outcome = yield
-    rep = outcome.get_result()
-    if rep.when == "call":
-        item._test_failed = rep.failed
+SANDBOX_ID_PROPERTY = "sandbox_id"
+
+
+def _record_sandbox_id(request, sandbox_id: str):
+    """Attach the sandbox ID to the test report so it is printed for every test.
+
+    `user_properties` travel with the report to the xdist controller, unlike
+    captured stdout, which is only shown for failures.
+    """
+    request.node.user_properties.append((SANDBOX_ID_PROPERTY, sandbox_id))
+
+
+class SandboxIdReporter:
+    def __init__(self, terminal_reporter):
+        self.terminal_reporter = terminal_reporter
+
+    @pytest.hookimpl(trylast=True)
+    def pytest_runtest_logreport(self, report):
+        if report.when != "call":
+            return
+        sandbox_ids = [v for k, v in report.user_properties if k == SANDBOX_ID_PROPERTY]
+        if not sandbox_ids:
+            return
+        line = f"sandbox_id={' '.join(sandbox_ids)}"
+        if self.terminal_reporter.verbosity > 0:
+            self.terminal_reporter.write_line(f"  {line}")
+        else:
+            self.terminal_reporter.write_line(f"{report.nodeid} {line}")
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_configure(config):
+    # xdist workers have no terminal reporter; they forward reports to the
+    # controller, which prints the IDs.
+    terminal_reporter = config.pluginmanager.get_plugin("terminalreporter")
+    if terminal_reporter is not None:
+        config.pluginmanager.register(SandboxIdReporter(terminal_reporter))
 
 
 @pytest.fixture()
@@ -74,13 +105,8 @@ def sandbox_factory(request, template, sandbox_test_id):
         metadata.setdefault("sandbox_test_id", sandbox_test_id)
 
         sandbox = Sandbox.create(template_name, **kwargs)
-
-        def finalizer():
-            if getattr(request.node, "_test_failed", False):
-                print(f"\n[TEST FAILED] Sandbox ID: {sandbox.sandbox_id}")
-            sandbox.kill()
-
-        request.addfinalizer(finalizer)
+        _record_sandbox_id(request, sandbox.sandbox_id)
+        request.addfinalizer(sandbox.kill)
 
         return sandbox
 
@@ -101,14 +127,11 @@ async def async_sandbox_factory(request, template, sandbox_test_id):
         metadata.setdefault("sandbox_test_id", sandbox_test_id)
 
         sandbox = await AsyncSandbox.create(template_name, **kwargs)
+        _record_sandbox_id(request, sandbox.sandbox_id)
         sandboxes.append(sandbox)
         return sandbox
 
     yield factory
-
-    if getattr(request.node, "_test_failed", False):
-        for sandbox in sandboxes:
-            print(f"\n[TEST FAILED] Sandbox ID: {sandbox.sandbox_id}")
 
     results = await asyncio.gather(
         *(sandbox.kill() for sandbox in sandboxes), return_exceptions=True
