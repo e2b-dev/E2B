@@ -286,7 +286,7 @@ export type SandboxNetworkOpts = {
    * connection is dialed. Omit it to send the sandbox's traffic out directly.
    *
    * Available on E2B Cloud and in BYOC deployments; a sandbox that names a
-   * proxy on a deployment built from the open source `e2b-dev/infra`
+   * proxy on a deployment built from the open source `e2b-dev/runtime`
    * repository is rejected as unsupported.
    *
    * @example
@@ -712,7 +712,7 @@ export type SandboxConnectOpts = ConnectionOpts & {
    * already running.
    *
    * Needs a control plane that knows this option: E2B Cloud, or a self-hosted
-   * or BYOC deployment built from `e2b-dev/infra` at or after the commit that
+   * or BYOC deployment built from `e2b-dev/runtime` at or after the commit that
    * added the `memory` field to connect/resume (2026-08-20). An older control
    * plane drops the field and restores memory while answering as if the
    * request had succeeded.

@@ -355,7 +355,7 @@ class SandboxNetworkOpts(TypedDict):
     connection is dialed. Omit it to send the sandbox's traffic out directly.
 
     Available on E2B Cloud and in BYOC deployments; a sandbox that names a
-    proxy on a deployment built from the open source ``e2b-dev/infra``
+    proxy on a deployment built from the open source ``e2b-dev/runtime``
     repository is rejected as unsupported.
 
     Deny everything except a host, and tunnel what is left::
