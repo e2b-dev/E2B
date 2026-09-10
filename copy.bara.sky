@@ -1,7 +1,7 @@
 # Copybara config that imports API specs from their source-of-truth
 # repositories into spec/. The imported files are tracked here but must not
-# be edited by hand — `make codegen` re-fetches the infra ones at the commit
-# pinned in spec/infra-ref before generating the clients, and the
+# be edited by hand — `make codegen` re-fetches the runtime ones at the commit
+# pinned in spec/runtime-ref before generating the clients, and the
 # generated-files CI check fails if the tracked copies don't match the pin.
 # See spec/README.md.
 #
@@ -11,7 +11,7 @@
 # exactly those paths (so files deleted upstream are deleted here too) and
 # leaves the repo-owned files in spec/ untouched.
 
-INFRA_REPO = "https://github.com/e2b-dev/infra.git"
+RUNTIME_REPO = "https://github.com/e2b-dev/runtime.git"
 BELT_REPO = "https://github.com/e2b-dev/belt.git"
 
 AUTHORING = authoring.pass_thru("E2B <hello@e2b.dev>")
@@ -20,7 +20,7 @@ AUTHORING = authoring.pass_thru("E2B <hello@e2b.dev>")
 core.workflow(
     name = "api-spec",
     origin = git.github_origin(
-        url = INFRA_REPO,
+        url = RUNTIME_REPO,
     ),
     destination = folder.destination(),
     origin_files = glob(["spec/openapi.yml"]),
@@ -36,7 +36,7 @@ core.workflow(
 core.workflow(
     name = "envd-spec",
     origin = git.github_origin(
-        url = INFRA_REPO,
+        url = RUNTIME_REPO,
     ),
     destination = folder.destination(),
     origin_files = glob(

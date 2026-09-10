@@ -16,6 +16,7 @@ from transport_caches import reset_transport_caches
 import e2b.api as api
 import e2b.api.client_async as api_client_async
 import e2b.api.client_sync as api_client_sync
+from e2b.retry import AsyncRetryableTransport, RetryableTransport
 from e2b.api import (
     envd_pool_shard,
     pool_idle_timeout,
@@ -78,11 +79,38 @@ def test_sync_api_client_proxy_uses_explicit_transport(test_api_key):
 
     try:
         assert "proxy" not in api_client._httpx_args
-        assert httpx_client._transport is get_sync_transport(config)
-        assert isinstance(httpx_client._transport, PyqwestTransport)
+        assert isinstance(httpx_client._transport, RetryableTransport)
+        assert httpx_client._transport.transport is get_sync_transport(config)
+        assert isinstance(httpx_client._transport.transport, PyqwestTransport)
         assert httpx_client._mounts == {}
     finally:
         httpx_client.close()
+        reset_transport_caches()
+
+
+def test_sync_retry_policy_wraps_but_does_not_split_cached_transport(test_api_key):
+    reset_transport_caches()
+    default_client = get_sync_api_client(ConnectionConfig(api_key=test_api_key))
+    retrying_client = get_sync_api_client(
+        ConnectionConfig(api_key=test_api_key, retries=2)
+    )
+    default_httpx = default_client.get_httpx_client()
+    retrying_httpx = retrying_client.get_httpx_client()
+    raw_transport = get_sync_transport(
+        ConnectionConfig(api_key=test_api_key, retries=1)
+    )
+
+    try:
+        assert isinstance(default_httpx._transport, RetryableTransport)
+        assert default_httpx._transport.retries == 3
+        assert isinstance(retrying_httpx._transport, RetryableTransport)
+        assert retrying_httpx._transport.retries == 2
+        assert retrying_httpx._transport.transport is default_httpx._transport.transport
+        assert isinstance(raw_transport, PyqwestTransport)
+        assert raw_transport is default_httpx._transport.transport
+    finally:
+        retrying_httpx.close()
+        default_httpx.close()
         reset_transport_caches()
 
 
@@ -332,8 +360,9 @@ async def test_async_api_client_proxy_uses_explicit_transport(test_api_key):
 
     try:
         assert "proxy" not in api_client._httpx_args
-        assert httpx_client._transport is get_async_transport(config)
-        assert isinstance(httpx_client._transport, AsyncPyqwestTransport)
+        assert isinstance(httpx_client._transport, AsyncRetryableTransport)
+        assert httpx_client._transport.transport is get_async_transport(config)
+        assert isinstance(httpx_client._transport.transport, AsyncPyqwestTransport)
         assert httpx_client._mounts == {}
     finally:
         await httpx_client.aclose()
@@ -526,6 +555,9 @@ class _EchoHandler(BaseHTTPRequestHandler):
     ``/stall`` answers the head and then never sends the body, and one starting
     with ``/redirect`` answers 302 pointing at ``/sandboxes``."""
 
+    rate_limit_requests = 0
+    rate_limit_bodies = []
+
     def do_GET(self):
         if self.path.startswith("/slow"):
             time.sleep(5)
@@ -535,6 +567,14 @@ class _EchoHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", "0")
             self.end_headers()
             return
+        if self.path.startswith("/rate-limit"):
+            type(self).rate_limit_requests += 1
+            if type(self).rate_limit_requests == 1:
+                self.send_response(429)
+                self.send_header("Retry-After", "0")
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
         headers = {k.lower(): v for k, v in self.headers.items()}
         body = json.dumps({"path": self.path, "headers": headers}).encode()
         self.send_response(200)
@@ -550,6 +590,14 @@ class _EchoHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         length = int(self.headers.get("Content-Length", 0))
         received = self.rfile.read(length) if length else b""
+        if self.path.startswith("/rate-limit"):
+            type(self).rate_limit_bodies.append(received)
+            if len(type(self).rate_limit_bodies) == 1:
+                self.send_response(429)
+                self.send_header("Retry-After", "0")
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
         body = json.dumps({"received": len(received)}).encode()
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
@@ -571,6 +619,8 @@ class _EchoServer(ThreadingHTTPServer):
 
 @pytest.fixture
 def echo_server():
+    _EchoHandler.rate_limit_requests = 0
+    _EchoHandler.rate_limit_bodies = []
     server = _EchoServer(("127.0.0.1", 0), _EchoHandler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
@@ -638,13 +688,66 @@ def test_sync_api_client_round_trips_through_pyqwest(test_api_key, echo_server):
     httpx_client = api_client.get_httpx_client()
 
     try:
-        assert isinstance(httpx_client._transport, PyqwestTransport)
+        assert isinstance(httpx_client._transport, RetryableTransport)
+        assert isinstance(httpx_client._transport.transport, PyqwestTransport)
         response = httpx_client.request("GET", "/sandboxes")
         assert response.status_code == 200
         echoed = response.json()
         assert echoed["path"] == "/sandboxes"
         assert echoed["headers"]["x-api-key"] == test_api_key
         assert echoed["headers"]["package_version"]
+    finally:
+        httpx_client.close()
+        reset_transport_caches()
+
+
+@pytest.mark.parametrize(
+    ("retries", "expected_status", "expected_requests"),
+    [(None, 200, 2), (0, 429, 1), (1, 200, 2)],
+)
+def test_sync_api_client_retries_rate_limits(
+    test_api_key, echo_server, retries, expected_status, expected_requests
+):
+    reset_transport_caches()
+    config = ConnectionConfig(
+        api_key=test_api_key, api_url=echo_server, retries=retries
+    )
+    httpx_client = get_sync_api_client(config).get_httpx_client()
+
+    try:
+        response = httpx_client.request("GET", "/rate-limit")
+        assert response.status_code == expected_status
+        assert _EchoHandler.rate_limit_requests == expected_requests
+    finally:
+        httpx_client.close()
+        reset_transport_caches()
+
+
+def test_sync_envd_api_does_not_retry_rate_limits(test_api_key, echo_server):
+    reset_transport_caches()
+    config = ConnectionConfig(api_key=test_api_key, retries=3)
+    envd_api = get_sync_envd_api(config, echo_server)
+
+    try:
+        response = envd_api.get("/rate-limit")
+        assert response.status_code == 429
+        assert _EchoHandler.rate_limit_requests == 1
+    finally:
+        envd_api.close()
+        reset_transport_caches()
+
+
+def test_sync_api_client_replays_buffered_body_after_rate_limit(
+    test_api_key, echo_server
+):
+    reset_transport_caches()
+    config = ConnectionConfig(api_key=test_api_key, api_url=echo_server)
+    httpx_client = get_sync_api_client(config).get_httpx_client()
+
+    try:
+        response = httpx_client.request("POST", "/rate-limit", content=b"payload")
+        assert response.status_code == 200
+        assert _EchoHandler.rate_limit_bodies == [b"payload", b"payload"]
     finally:
         httpx_client.close()
         reset_transport_caches()
@@ -699,7 +802,8 @@ async def test_async_api_client_round_trips_through_pyqwest(test_api_key, echo_s
     httpx_client = api_client.get_async_httpx_client()
 
     try:
-        assert isinstance(httpx_client._transport, AsyncPyqwestTransport)
+        assert isinstance(httpx_client._transport, AsyncRetryableTransport)
+        assert isinstance(httpx_client._transport.transport, AsyncPyqwestTransport)
         response = await httpx_client.request("GET", "/sandboxes")
         assert response.status_code == 200
         echoed = response.json()
@@ -708,6 +812,38 @@ async def test_async_api_client_round_trips_through_pyqwest(test_api_key, echo_s
         assert echoed["headers"]["package_version"]
     finally:
         await httpx_client.aclose()
+        reset_transport_caches()
+
+
+@pytest.mark.asyncio
+async def test_async_api_client_retries_rate_limits_by_default(
+    test_api_key, echo_server
+):
+    reset_transport_caches()
+    config = ConnectionConfig(api_key=test_api_key, api_url=echo_server)
+    httpx_client = get_async_api_client(config).get_async_httpx_client()
+
+    try:
+        response = await httpx_client.request("GET", "/rate-limit")
+        assert response.status_code == 200
+        assert _EchoHandler.rate_limit_requests == 2
+    finally:
+        await httpx_client.aclose()
+        reset_transport_caches()
+
+
+@pytest.mark.asyncio
+async def test_async_envd_api_does_not_retry_rate_limits(test_api_key, echo_server):
+    reset_transport_caches()
+    config = ConnectionConfig(api_key=test_api_key, retries=3)
+    envd_api = get_async_envd_api(config, echo_server)
+
+    try:
+        response = await envd_api.get("/rate-limit")
+        assert response.status_code == 429
+        assert _EchoHandler.rate_limit_requests == 1
+    finally:
+        await envd_api.aclose()
         reset_transport_caches()
 
 
@@ -903,7 +1039,9 @@ def test_sync_closing_one_client_leaves_the_shared_pool_open(test_api_key, echo_
     pool = get_sync_pyqwest_transport(proxy_to_config(config.proxy))
 
     try:
-        assert api_httpx._transport is envd_api._transport
+        assert isinstance(api_httpx._transport, RetryableTransport)
+        assert isinstance(envd_api._transport, PyqwestTransport)
+        assert api_httpx._transport.transport is envd_api._transport
         assert api_httpx.request("GET", "/sandboxes").status_code == 200
 
         api_httpx.close()
@@ -930,7 +1068,9 @@ async def test_async_closing_one_client_leaves_the_shared_pool_open(
     pool = get_async_pyqwest_transport(proxy_to_config(config.proxy))
 
     try:
-        assert api_httpx._transport is envd_api._transport
+        assert isinstance(api_httpx._transport, AsyncRetryableTransport)
+        assert isinstance(envd_api._transport, AsyncPyqwestTransport)
+        assert api_httpx._transport.transport is envd_api._transport
         assert (await api_httpx.request("GET", "/sandboxes")).status_code == 200
 
         await api_httpx.aclose()
