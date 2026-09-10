@@ -56,7 +56,9 @@ class ApiParams(TypedDict, total=False):
     malformed values are not retried.
     A retry is skipped when its wait would exhaust the request timeout.
     Retry waits use a 60-second total limit when request timeouts are disabled.
-    Defaults to 3 retries."""
+    Set to ``0`` to disable retries. Defaults to 3 retries.
+
+    :raises InvalidArgumentException: if the value is negative or not an integer."""
 
     headers: Optional[Dict[str, str]]
     """Additional headers to send with the request. Deprecated, use api_headers instead."""
@@ -247,6 +249,7 @@ class ConnectionConfig:
         extra_sandbox_headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
         logger: Optional[logging.Logger] = None,
+        *,
         retries: Optional[int] = None,
     ):
         self.logger = logger
