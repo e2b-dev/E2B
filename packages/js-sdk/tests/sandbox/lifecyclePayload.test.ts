@@ -18,22 +18,6 @@ async function waitForState(
   )
 }
 
-async function triggerAutoResume(url: string): Promise<void> {
-  try {
-    const response = await fetch(url, {
-      signal: AbortSignal.timeout(5_000),
-    })
-    await response.body?.cancel()
-  } catch (error) {
-    // The request itself is the wake signal. A gateway timeout while the
-    // sandbox resumes is an allowed transitional response; other failures
-    // should remain visible.
-    if (!(error instanceof Error) || error.name !== 'TimeoutError') {
-      throw error
-    }
-  }
-}
-
 function withRequestSource(url: string): string {
   const source = process.env.E2B_USER_AGENT_SOURCE
   return source ? `${url}?source=${encodeURIComponent(source)}` : url
@@ -162,10 +146,12 @@ sandboxTest.skipIf(isDebug)(
 
       await waitForState(sandbox, 'paused')
 
+      // Each request is a wake signal; keep sending them until the guest
+      // server answers, since a request that races the pause finalizing or
+      // times out at the gateway while the sandbox resumes may not wake it.
       const url = withRequestSource(`https://${sandbox.getHost(8000)}`)
-      await triggerAutoResume(url)
+      await waitForHttpStatus(url, 200, undefined, 60_000)
       await waitForState(sandbox, 'running')
-      await waitForHttpStatus(url, 200)
       assert.isTrue(await sandbox.isRunning())
     } catch (error) {
       let state = 'unknown'
