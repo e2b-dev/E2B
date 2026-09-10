@@ -1,7 +1,13 @@
 import { assert, expect, describe } from 'vitest'
 
 import { CommandExitError, Sandbox } from '../../src'
-import { sandboxTest, isDebug, template, waitForHttpStatus } from '../setup.js'
+import {
+  sandboxTest,
+  isDebug,
+  template,
+  corsHttpServerCmd,
+  waitForHttpStatus,
+} from '../setup.js'
 import { httpbinTemplate } from '../template.js'
 
 describe('allow only 1.1.1.1', () => {
@@ -138,7 +144,7 @@ describe('allowPublicTraffic=false', () => {
 
       // Start a simple HTTP server in the sandbox
       const port = 8080
-      sandbox.commands.run(`python3 -m http.server ${port}`, {
+      sandbox.commands.run(corsHttpServerCmd(port), {
         background: true,
       })
 
@@ -173,7 +179,7 @@ describe('allowPublicTraffic=true', () => {
     async ({ sandbox }) => {
       // Start a simple HTTP server in the sandbox
       const port = 8080
-      sandbox.commands.run(`python3 -m http.server ${port}`, {
+      sandbox.commands.run(corsHttpServerCmd(port), {
         background: true,
       })
 
@@ -340,6 +346,9 @@ import http.server, ssl
 class H(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
+        # Opt into cross-origin reads so the browser leg can read the body
+        # (see corsHttpServerCmd in tests/setup.ts).
+        self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
         self.wfile.write(b'https backend')
     def log_message(self, *a): pass
@@ -389,6 +398,9 @@ class H(http.server.BaseHTTPRequestHandler):
             for k, v in self.headers.items():
                 f.write(k + ': ' + v + chr(10))
         self.send_response(200)
+        # Opt into cross-origin reads so the browser leg can see the status
+        # (see corsHttpServerCmd in tests/setup.ts).
+        self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
     def log_message(self, *a): pass
 http.server.HTTPServer(('', ${port}), H).handle_request()

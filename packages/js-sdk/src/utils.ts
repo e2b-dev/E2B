@@ -168,9 +168,22 @@ export async function toBlob(
   if (isBlobLike(data)) {
     return new Blob([await data.arrayBuffer()], { type: data.type })
   }
-  // ReadableStream - must consume to get Blob
+  // ReadableStream - must consume to get Blob. Drained through the reader
+  // rather than `new Response(stream)`: the platform only accepts a body it
+  // recognizes, and what counts differs per runtime (undici takes any async
+  // iterable, a browser takes only its own stream class and stringifies the
+  // rest to "[object ReadableStream]"). The reader is the portable part.
   if (isReadableStreamLike(data)) {
-    return new Response(toDispatchableStream(data)).blob()
+    const reader = data.getReader()
+    const chunks: BlobPart[] = []
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) {
+        break
+      }
+      chunks.push(value)
+    }
+    return new Blob(chunks)
   }
   // String or ArrayBuffer - create Blob. A cross-realm ArrayBuffer needs no
   // special handling: buffer sources are recognized by V8, not by brand.

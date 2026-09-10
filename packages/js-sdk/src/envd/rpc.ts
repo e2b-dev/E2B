@@ -29,12 +29,14 @@ export type SandboxHealthCheck = () => Promise<boolean | undefined>
  *   - Bun:                 `The socket connection was closed unexpectedly`
  *   - Deno:                `error reading a body from connection`
  *   - Cloudflare Workers:  `Network connection lost`
+ *   - Browser:             `network error`
  */
 const CONNECTION_TERMINATED_MESSAGES = [
   'terminated',
   'The socket connection was closed unexpectedly',
   'error reading a body from connection',
   'Network connection lost',
+  'network error',
 ]
 
 /**

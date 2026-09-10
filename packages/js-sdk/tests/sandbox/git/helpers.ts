@@ -1,5 +1,3 @@
-import { randomUUID } from 'node:crypto'
-
 export const AUTHOR_NAME = 'Sandbox Bot'
 export const AUTHOR_EMAIL = 'sandbox@example.com'
 export const USERNAME = 'git'
@@ -10,7 +8,7 @@ export const PROTOCOL = 'https'
 const BASE_DIR = '/tmp/test-git'
 
 export async function createBaseDir(sandbox: any) {
-  const baseDir = `${BASE_DIR}/${randomUUID()}`
+  const baseDir = `${BASE_DIR}/${crypto.randomUUID()}`
   await sandbox.commands.run(`rm -rf "${baseDir}" && mkdir -p "${baseDir}"`)
   return baseDir
 }
