@@ -32,27 +32,24 @@ gitTest('git restore --staged unstages changes', async ({ sandbox }) => {
   }
 })
 
-gitTest(
-  'git restore discards working tree changes',
-  async ({ sandbox }) => {
-    const baseDir = await createBaseDir(sandbox)
+gitTest('git restore discards working tree changes', async ({ sandbox }) => {
+  const baseDir = await createBaseDir(sandbox)
 
-    try {
-      const repoPath = await createRepoWithCommit(sandbox, baseDir)
-      await sandbox.files.write(`${repoPath}/README.md`, 'changed\n')
+  try {
+    const repoPath = await createRepoWithCommit(sandbox, baseDir)
+    await sandbox.files.write(`${repoPath}/README.md`, 'changed\n')
 
-      const status = await sandbox.git.status(repoPath)
-      expect(status.isClean).toBe(false)
+    const status = await sandbox.git.status(repoPath)
+    expect(status.isClean).toBe(false)
 
-      await sandbox.git.restore(repoPath, { paths: ['README.md'] })
+    await sandbox.git.restore(repoPath, { paths: ['README.md'] })
 
-      const statusAfter = await sandbox.git.status(repoPath)
-      expect(statusAfter.isClean).toBe(true)
+    const statusAfter = await sandbox.git.status(repoPath)
+    expect(statusAfter.isClean).toBe(true)
 
-      const contents = await sandbox.files.read(`${repoPath}/README.md`)
-      expect(contents).toBe('hello\n')
-    } finally {
-      await cleanupBaseDir(sandbox, baseDir)
-    }
+    const contents = await sandbox.files.read(`${repoPath}/README.md`)
+    expect(contents).toBe('hello\n')
+  } finally {
+    await cleanupBaseDir(sandbox, baseDir)
   }
-)
+})
