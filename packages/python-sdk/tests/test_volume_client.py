@@ -78,6 +78,48 @@ def test_async_client_uses_config_request_timeout():
     asyncio.run(run())
 
 
+def test_sync_volume_transport_does_not_retry_rate_limits(monkeypatch):
+    attempts = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal attempts
+        attempts += 1
+        return httpx.Response(429, headers={"Retry-After": "0"})
+
+    monkeypatch.setattr(
+        client_sync,
+        "get_httpx_transport",
+        lambda *_args, **_kwargs: httpx.MockTransport(handler),
+    )
+    transport = get_sync_transport(VolumeConnectionConfig(token="vol-token"))
+
+    with httpx.Client(transport=transport) as client:
+        assert client.get("https://volume.e2b.test/file").status_code == 429
+    assert attempts == 1
+
+
+@pytest.mark.asyncio
+async def test_async_volume_transport_does_not_retry_rate_limits(monkeypatch):
+    attempts = 0
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal attempts
+        attempts += 1
+        return httpx.Response(429, headers={"Retry-After": "0"})
+
+    monkeypatch.setattr(
+        client_async,
+        "get_httpx_transport",
+        lambda *_args, **_kwargs: httpx.MockTransport(handler),
+    )
+    transport = get_async_transport(VolumeConnectionConfig(token="vol-token"))
+
+    async with httpx.AsyncClient(transport=transport) as client:
+        response = await client.get("https://volume.e2b.test/file")
+    assert response.status_code == 429
+    assert attempts == 1
+
+
 def test_sync_transport_is_cached_per_proxy():
     reset_volume_transports()
     config = VolumeConnectionConfig(token="vol-token")

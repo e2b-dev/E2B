@@ -7,6 +7,7 @@ from typing import cast, Mapping, Optional, Dict, TypedDict, Union
 import httpx
 from typing_extensions import Unpack
 
+from e2b.retry import resolve_max_retries
 from e2b.api.metadata import package_version
 from e2b.sandbox_domains import is_supported_sandbox_domain
 
@@ -21,6 +22,7 @@ narrows it to what the pyqwest REST transports take.
 """
 
 REQUEST_TIMEOUT: float = 60.0  # 60 seconds
+DEFAULT_RETRIES = 3
 
 # Idle bound for every read on the streaming envd file-transfer transport:
 # the transfer is aborted when no bytes at all arrive for this long. It
@@ -47,6 +49,14 @@ class ApiParams(TypedDict, total=False):
 
     request_timeout: Optional[float]
     """Timeout for the request in **seconds**, defaults to 60 seconds."""
+
+    retries: Optional[int]
+    """Number of control-plane HTTP retries after a 429 with a valid,
+    non-negative integer delta-seconds ``Retry-After`` header. HTTP-date and
+    malformed values are not retried.
+    A retry is skipped when its wait would exhaust the request timeout.
+    Retry waits use a 60-second total limit when request timeouts are disabled.
+    Defaults to 3 retries."""
 
     headers: Optional[Dict[str, str]]
     """Additional headers to send with the request. Deprecated, use api_headers instead."""
@@ -237,6 +247,7 @@ class ConnectionConfig:
         extra_sandbox_headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
         logger: Optional[logging.Logger] = None,
+        retries: Optional[int] = None,
     ):
         self.logger = logger
         self.domain = domain or ConnectionConfig._domain()
@@ -252,6 +263,9 @@ class ConnectionConfig:
         self.__extra_sandbox_headers = extra_sandbox_headers or {}
 
         self.proxy = proxy
+        self.retries = resolve_max_retries(
+            retries if retries is not None else DEFAULT_RETRIES
+        )
 
         self.request_timeout = ConnectionConfig._get_request_timeout(
             REQUEST_TIMEOUT,
@@ -345,6 +359,7 @@ class ConnectionConfig:
         debug = opts.get("debug")
         proxy = opts.get("proxy")
         sandbox_url = opts.get("sandbox_url")
+        retries = opts.get("retries")
 
         req_headers = self.headers.copy()
         if headers is not None:
@@ -384,6 +399,7 @@ class ConnectionConfig:
                     else cast(Optional[str], self._sandbox_url)
                 ),
                 logger=self.logger,
+                retries=retries if retries is not None else self.retries,
             )
         )
 
