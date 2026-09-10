@@ -1,13 +1,13 @@
 import { expect } from 'vitest'
 
-import { sandboxTest } from '../../setup.js'
+import { gitTest } from '../../setup.js'
 import {
   cleanupBaseDir,
   createBaseDir,
   createRepoWithCommit,
 } from './helpers.js'
 
-sandboxTest('git restore --staged unstages changes', async ({ sandbox }) => {
+gitTest('git restore --staged unstages changes', async ({ sandbox }) => {
   const baseDir = await createBaseDir(sandbox)
 
   try {
@@ -32,7 +32,7 @@ sandboxTest('git restore --staged unstages changes', async ({ sandbox }) => {
   }
 })
 
-sandboxTest(
+gitTest(
   'git restore discards working tree changes',
   async ({ sandbox }) => {
     const baseDir = await createBaseDir(sandbox)

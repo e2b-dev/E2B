@@ -1,9 +1,9 @@
 import { expect } from 'vitest'
 
-import { sandboxTest } from '../../setup.js'
+import { gitTest } from '../../setup.js'
 import { cleanupBaseDir, createBaseDir } from './helpers.js'
 
-sandboxTest('git init', async ({ sandbox }) => {
+gitTest('git init', async ({ sandbox }) => {
   const baseDir = await createBaseDir(sandbox)
 
   try {

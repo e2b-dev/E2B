@@ -1,13 +1,13 @@
 import { expect } from 'vitest'
 
-import { sandboxTest } from '../../setup.js'
+import { gitTest } from '../../setup.js'
 import {
   cleanupBaseDir,
   createBaseDir,
   createRepoWithCommit,
 } from './helpers.js'
 
-sandboxTest('git branches lists current and feature', async ({ sandbox }) => {
+gitTest('git branches lists current and feature', async ({ sandbox }) => {
   const baseDir = await createBaseDir(sandbox)
 
   try {
@@ -23,7 +23,7 @@ sandboxTest('git branches lists current and feature', async ({ sandbox }) => {
   }
 })
 
-sandboxTest('git checkoutBranch switches branch', async ({ sandbox }) => {
+gitTest('git checkoutBranch switches branch', async ({ sandbox }) => {
   const baseDir = await createBaseDir(sandbox)
 
   try {
@@ -43,7 +43,7 @@ sandboxTest('git checkoutBranch switches branch', async ({ sandbox }) => {
   }
 })
 
-sandboxTest(
+gitTest(
   'git createBranch creates and checks out branch',
   async ({ sandbox }) => {
     const baseDir = await createBaseDir(sandbox)
@@ -61,7 +61,7 @@ sandboxTest(
   }
 )
 
-sandboxTest('git deleteBranch removes branch', async ({ sandbox }) => {
+gitTest('git deleteBranch removes branch', async ({ sandbox }) => {
   const baseDir = await createBaseDir(sandbox)
 
   try {
