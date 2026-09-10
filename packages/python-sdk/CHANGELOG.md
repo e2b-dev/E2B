@@ -1,5 +1,12 @@
 # @e2b/python-sdk
 
+## 2.49.1
+
+### Patch Changes
+
+- 5e418dc: Document that `onResume` / `on_resume` needs a control plane that knows the option: an older self-hosted or BYOC control plane drops the `memory` field and restores memory while reporting success, instead of rejecting the request.
+- 9136603: Retry control-plane HTTP requests up to three times after `429` responses using the server's delta-seconds `Retry-After` delay. Retries can be configured or disabled with `retries`, and stop when waiting would exhaust the request timeout. Envd requests, including filesystem operations, and volume-content requests are not retried.
+
 ## 2.49.0
 
 ### Minor Changes
