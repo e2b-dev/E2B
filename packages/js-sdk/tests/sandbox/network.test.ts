@@ -150,8 +150,10 @@ describe('allowPublicTraffic=false', () => {
 
       // Test 2: Request with valid traffic access token should succeed
       await waitForHttpStatus(sandboxUrl, 200, {
-        headers: {
-          'e2b-traffic-access-token': sandbox.trafficAccessToken,
+        init: {
+          headers: {
+            'e2b-traffic-access-token': sandbox.trafficAccessToken,
+          },
         },
       })
     },
