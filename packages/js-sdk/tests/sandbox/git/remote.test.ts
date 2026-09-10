@@ -1,6 +1,6 @@
 import { expect } from 'vitest'
 
-import { sandboxTest } from '../../setup.js'
+import { gitTest } from '../../setup.js'
 import {
   cleanupBaseDir,
   createBaseDir,
@@ -8,7 +8,7 @@ import {
   startGitDaemon,
 } from './helpers.js'
 
-sandboxTest(
+gitTest(
   'git remoteGet returns undefined for missing remote',
   async ({ sandbox }) => {
     const baseDir = await createBaseDir(sandbox)
@@ -23,7 +23,7 @@ sandboxTest(
   }
 )
 
-sandboxTest('git remoteAdd adds remote', async ({ sandbox }) => {
+gitTest('git remoteAdd adds remote', async ({ sandbox }) => {
   const baseDir = await createBaseDir(sandbox)
 
   try {
@@ -42,7 +42,7 @@ sandboxTest('git remoteAdd adds remote', async ({ sandbox }) => {
   }
 })
 
-sandboxTest('git remoteAdd overwrites existing remote', async ({ sandbox }) => {
+gitTest('git remoteAdd overwrites existing remote', async ({ sandbox }) => {
   const baseDir = await createBaseDir(sandbox)
 
   try {

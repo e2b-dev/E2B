@@ -1,9 +1,17 @@
+import os
 import random
 from uuid import uuid4
 
 import pytest
 
 BASE_DIR = "/tmp/test-git"
+
+
+@pytest.fixture(autouse=True)
+def skip_unless_git_tests_enabled():
+    """The sandbox `git` API is deprecated; its tests only run when opted in."""
+    if os.getenv("ENABLE_GIT_TESTS") is None:
+        pytest.skip("skipped because ENABLE_GIT_TESTS is not set")
 
 
 @pytest.fixture

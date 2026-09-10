@@ -1,13 +1,13 @@
 import { expect } from 'vitest'
 
-import { sandboxTest } from '../../setup.js'
+import { gitTest } from '../../setup.js'
 import {
   cleanupBaseDir,
   createBaseDir,
   createRepoWithCommit,
 } from './helpers.js'
 
-sandboxTest(
+gitTest(
   'git reset --hard discards changes',
   async ({ sandbox }) => {
     const baseDir = await createBaseDir(sandbox)

@@ -1,9 +1,9 @@
 import { expect } from 'vitest'
 
-import { sandboxTest } from '../../setup.js'
+import { gitTest } from '../../setup.js'
 import { HOST, PASSWORD, PROTOCOL, USERNAME } from './helpers.js'
 
-sandboxTest('git dangerouslyAuthenticate sets helper', async ({ sandbox }) => {
+gitTest('git dangerouslyAuthenticate sets helper', async ({ sandbox }) => {
   await sandbox.git.dangerouslyAuthenticate({
     username: USERNAME,
     password: PASSWORD,
