@@ -102,7 +102,8 @@ test.each(['', '{"templateID":"base"}'])(
         expect(attempt.method).toBe('POST')
         expect([...attempt.headers]).toEqual([...request.headers])
         expect(attempt.redirect).toBe('manual')
-        expect(attempt.credentials).toBe('include')
+        // Deno and Cloudflare do not expose Request.credentials.
+        expect(attempt.credentials).toBe(request.credentials)
         expect(attempt.signal.aborted).toBe(true)
       }
     } finally {
