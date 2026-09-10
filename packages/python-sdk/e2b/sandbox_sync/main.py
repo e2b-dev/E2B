@@ -278,6 +278,10 @@ class Sandbox(SandboxApi):
             Rejected where filesystem-only resume is not enabled; a no-op for a snapshot
             without memory or a sandbox that is already running. A value outside the two
             literals raises `InvalidArgumentException`.
+            Needs a control plane that knows this option: E2B Cloud, or a self-hosted or BYOC
+            deployment built from `e2b-dev/runtime` at or after the commit that added the `memory`
+            field to connect/resume (2026-08-20). An older control plane drops the field and
+            restores memory while answering as if the request had succeeded.
         :return: A running sandbox instance
 
         @example
@@ -317,6 +321,10 @@ class Sandbox(SandboxApi):
             Rejected where filesystem-only resume is not enabled; a no-op for a snapshot
             without memory or a sandbox that is already running. A value outside the two
             literals raises `InvalidArgumentException`.
+            Needs a control plane that knows this option: E2B Cloud, or a self-hosted or BYOC
+            deployment built from `e2b-dev/runtime` at or after the commit that added the `memory`
+            field to connect/resume (2026-08-20). An older control plane drops the field and
+            restores memory while answering as if the request had succeeded.
         :return: A running sandbox instance
 
         @example
@@ -351,6 +359,10 @@ class Sandbox(SandboxApi):
             Rejected where filesystem-only resume is not enabled; a no-op for a snapshot
             without memory or a sandbox that is already running. A value outside the two
             literals raises `InvalidArgumentException`.
+            Needs a control plane that knows this option: E2B Cloud, or a self-hosted or BYOC
+            deployment built from `e2b-dev/runtime` at or after the commit that added the `memory`
+            field to connect/resume (2026-08-20). An older control plane drops the field and
+            restores memory while answering as if the request had succeeded.
         :return: A running sandbox instance
 
         @example

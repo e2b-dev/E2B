@@ -7,6 +7,7 @@ from pyqwest import HTTPVersion, SyncHTTPTransport, SyncRequest, SyncResponse
 from pyqwest.httpx import PyqwestTransport
 from pyqwest.middleware.retry import RetryMode, SyncRetryTransport
 
+from e2b.retry import RetryableTransport
 from e2b.api import (
     ApiClient,
     ProxyConfig,
@@ -21,7 +22,11 @@ from e2b.connection_config import READ_TIMEOUT, ConnectionConfig
 
 
 def get_api_client(config: ConnectionConfig, **kwargs) -> ApiClient:
-    return ApiClient(config, transport=get_transport(config), **kwargs)
+    return ApiClient(
+        config,
+        transport=RetryableTransport(get_transport(config), config.retries),
+        **kwargs,
+    )
 
 
 class ConnectionRetryTransport(SyncRetryTransport):

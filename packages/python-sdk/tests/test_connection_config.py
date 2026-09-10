@@ -1,4 +1,8 @@
+import pytest
+
 from e2b import ConnectionConfig
+from e2b.connection_config import DEFAULT_RETRIES
+from e2b.exceptions import InvalidArgumentException
 
 
 def test_api_url_defaults_correctly(monkeypatch):
@@ -230,3 +234,18 @@ def test_get_api_params_includes_sandbox_url():
     # Per-call override takes priority.
     overridden = config.get_api_params(sandbox_url="https://sandbox.override.com")
     assert overridden["sandbox_url"] == "https://sandbox.override.com"
+
+
+def test_retries_default_to_three_and_propagate():
+    config = ConnectionConfig(retries=5)
+
+    assert ConnectionConfig().retries == DEFAULT_RETRIES
+    assert config.retries == 5
+    assert config.get_api_params()["retries"] == 5
+    assert config.get_api_params(retries=0)["retries"] == 0
+
+
+@pytest.mark.parametrize("retries", [-1, 1.5, True])
+def test_retries_reject_invalid_values(retries):
+    with pytest.raises(InvalidArgumentException):
+        ConnectionConfig(retries=retries)
