@@ -171,8 +171,7 @@ export async function wait(ms: number) {
 export async function waitForHttpStatus(
   url: string,
   expectedStatus: number,
-  init?: RequestInit,
-  timeoutMs = 30_000
+  { init, timeoutMs = 30_000 }: { init?: RequestInit; timeoutMs?: number } = {}
 ): Promise<string> {
   const deadline = Date.now() + timeoutMs
   let lastStatus: number | undefined
