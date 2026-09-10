@@ -72,7 +72,7 @@ export function withRateLimitRetry(
     const request =
       input instanceof Request && init === undefined
         ? input
-        : new Request(input as RequestInfo, init)
+        : new Request(input, init)
     const deadline =
       monotonic() + (requestTimeoutMs || MAX_RETRY_WAIT_WITHOUT_TIMEOUT_MS)
 
