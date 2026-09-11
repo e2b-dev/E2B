@@ -196,3 +196,24 @@ COPY --chown=anotheruser config.json /config/`
   assert.equal(copyInstruction2.args[1], '/config/')
   assert.equal(copyInstruction2.args[2], 'anotheruser') // user from --chown (without group)
 })
+
+buildTemplateTest('fromDockerfile parses quoted and spaced ENV values', async () => {
+  const dockerfile = `FROM node:24
+ENV NAME="John Doe"
+ENV GREETING=hello world
+ENV A=1 B=2`
+
+  const template = Template().fromDockerfile(dockerfile)
+
+  const envInstructions = (
+    // @ts-expect-error - instructions is not a property of TemplateBuilder
+    template.instructions as { type: InstructionType; args: string[] }[]
+  ).filter((i) => i.type === InstructionType.ENV)
+
+  // A quoted value with a space stays a single value (was split into a broken key).
+  assert.deepEqual(envInstructions[0].args, ['NAME', 'John Doe'])
+  // An unquoted value runs to the next `key=` token.
+  assert.deepEqual(envInstructions[1].args, ['GREETING', 'hello world'])
+  // Multiple key=value pairs on one line stay separated.
+  assert.deepEqual(envInstructions[2].args, ['A', '1', 'B', '2'])
+})
