@@ -1,11 +1,11 @@
 import { afterAll, beforeAll, beforeEach, describe, expect } from 'vitest'
-import { setupServer } from 'msw/node'
 
 import { VolumeError, VolumeFileType, VolumePathNotFoundError } from '../../src'
 import { volumeTest } from '../setup'
+import { setupMockApi } from '../mockApi'
 import { createMockVolumeApi } from './mockVolumeContent'
 
-const server = setupServer()
+const server = setupMockApi()
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 afterAll(() => server.close())

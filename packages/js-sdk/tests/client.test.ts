@@ -1,6 +1,5 @@
 import { afterAll, afterEach, assert, beforeAll, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
-import { setupServer } from 'msw/node'
 
 import DefaultExport, {
   type ConnectionOpts,
@@ -11,7 +10,9 @@ import DefaultExport, {
   TemplateBase,
   Volume,
 } from '../src'
+import { runtime } from '../src/utils'
 import { TEST_API_KEY } from './setup'
+import { setupMockApi } from './mockApi'
 
 const API_KEY_A = `e2b_${'a'.repeat(40)}`
 const API_KEY_B = `e2b_${'b'.repeat(40)}`
@@ -51,7 +52,7 @@ const secretResponse = {
   updatedAt: new Date().toISOString(),
 }
 
-const server = setupServer(
+const server = setupMockApi(
   http.post(/\/sandboxes$/, async ({ request }) => {
     record(request)
     return HttpResponse.json(sandboxResponse)
@@ -107,7 +108,7 @@ const envOverrides = {
   E2B_DEBUG: undefined,
 }
 
-beforeAll(() => {
+beforeAll(async () => {
   for (const [key, value] of Object.entries(envOverrides)) {
     envBackup[key] = process.env[key]
     if (value === undefined) {
@@ -117,11 +118,11 @@ beforeAll(() => {
     }
   }
 
-  server.listen({ onUnhandledRequest: 'error' })
+  await server.listen({ onUnhandledRequest: 'error' })
 })
 
-afterAll(() => {
-  server.close()
+afterAll(async () => {
+  await server.close()
 
   for (const [key, value] of Object.entries(envBackup)) {
     if (value === undefined) {
@@ -299,18 +300,23 @@ test('client.Template statics use the client config', async () => {
   assert.equal(lastRequest().apiKey, API_KEY_B)
 })
 
-test('client.Template builds template instances', async () => {
-  const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
-  const template = client.Template().fromPythonImage('3')
+// The template builder is Node-only (node:path/node:fs); tests/template/** is
+// excluded from the browser suite for the same reason.
+test.skipIf(runtime === 'browser')(
+  'client.Template builds template instances',
+  async () => {
+    const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
+    const template = client.Template().fromPythonImage('3')
 
-  assert.instanceOf(template, TemplateBase)
-  assert.instanceOf(template, client.Template)
-  assert.instanceOf(new client.Template(), client.Template)
-  assert.equal(
-    await client.Template.toDockerfile(template),
-    await Template.toDockerfile(Template().fromPythonImage('3'))
-  )
-})
+    assert.instanceOf(template, TemplateBase)
+    assert.instanceOf(template, client.Template)
+    assert.instanceOf(new client.Template(), client.Template)
+    assert.equal(
+      await client.Template.toDockerfile(template),
+      await Template.toDockerfile(Template().fromPythonImage('3'))
+    )
+  }
+)
 
 test('client.Template can be rebound to a variable', async () => {
   const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
