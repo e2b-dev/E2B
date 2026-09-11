@@ -42,12 +42,20 @@ describe('sandbox info sidecars', () => {
     vi.restoreAllMocks()
   })
 
-  test('formats a table with entry, version, role, class, state, name, address and ports', () => {
+  test('formats a table with entry, version, role, class, state, name, address, ports and last error', () => {
     expect(formatSidecarTable(sidecars)).toEqual([
-      'ENTRY        VERSION   ROLE      CLASS       STATE     NAME                           ADDRESS        PORTS',
+      'ENTRY        VERSION   ROLE      CLASS       STATE     NAME                           ADDRESS        PORTS   LAST ERROR',
       'redis        7.4.1     service   ephemeral   running   redis.sidecar.e2b.local        169.254.0.25   6379',
-      'iron-proxy   0.4.1     proxy     ephemeral   failed    iron-proxy.sidecar.e2b.local',
+      'iron-proxy   0.4.1     proxy     ephemeral   failed    iron-proxy.sidecar.e2b.local                          readiness probe timed out',
     ])
+  })
+
+  test('truncates a long last error to 60 characters with an ellipsis', () => {
+    const lastError = 'x'.repeat(70)
+    const [, row] = formatSidecarTable([{ ...sidecars[1], lastError }])
+
+    expect(row.endsWith(`${'x'.repeat(59)}…`)).toBe(true)
+    expect(row).not.toContain('x'.repeat(60))
   })
 
   test('prints the sidecar table indented under its label', () => {

@@ -125,7 +125,20 @@ export function formatSidecarTable(sidecars: SidecarInfo[]): string[] {
     { header: 'Name', value: (sidecar) => sidecar.name },
     { header: 'Address', value: (sidecar) => sidecar.address },
     { header: 'Ports', value: (sidecar) => sidecar.ports?.join(',') },
+    {
+      header: 'Last error',
+      value: (sidecar) => truncate(sidecar.lastError, LAST_ERROR_WIDTH),
+    },
   ])
+}
+
+const LAST_ERROR_WIDTH = 60
+
+function truncate(value: string | undefined, width: number) {
+  if (value === undefined || value.length <= width) {
+    return value
+  }
+  return `${value.slice(0, width - 1)}…`
 }
 
 function formatValue(value: unknown): string {
