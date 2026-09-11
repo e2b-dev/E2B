@@ -5,7 +5,18 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from io import IOBase, TextIOBase
-from typing import IO, AsyncIterator, Dict, Iterator, List, Optional, Union, TypedDict
+from typing import (
+    IO,
+    AsyncIterator,
+    Dict,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Union,
+    TypedDict,
+    get_args,
+)
 
 import httpx
 
@@ -344,6 +355,17 @@ METADATA_HEADER_PREFIX = "X-Metadata-"
 # printable US-ASCII.
 _METADATA_KEY_REGEX = re.compile(r"\A[A-Za-z0-9!#$%&'*+\-.^_`|~]+\Z")
 _METADATA_VALUE_REGEX = re.compile(r"\A[\x20-\x7e]*\Z")
+
+ReadFormat = Literal["text", "bytes", "stream"]
+_READ_FORMATS = get_args(ReadFormat)
+
+
+def validate_read_format(format: str) -> None:
+    """Reject a read format that is not one of the documented literals."""
+    if format not in _READ_FORMATS:
+        raise InvalidArgumentException(
+            f"format must be one of {', '.join(_READ_FORMATS)}."
+        )
 
 
 def validate_metadata(metadata: Optional[Dict[str, str]]) -> None:

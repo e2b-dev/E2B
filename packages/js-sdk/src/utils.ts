@@ -1,6 +1,7 @@
 import platform from 'platform'
 
 import { isBlobLike, isReadableStreamLike } from './is'
+import { InvalidArgumentError } from './errors'
 
 declare let window: any
 
@@ -240,4 +241,16 @@ export async function toUploadBody(
   }
 
   return { body: await toBlob(data), streamed: false }
+}
+
+export const READ_FORMATS = ['text', 'bytes', 'blob', 'stream'] as const
+
+export type ReadFormat = (typeof READ_FORMATS)[number]
+
+export function assertReadFormat(format: string): asserts format is ReadFormat {
+  if (!(READ_FORMATS as readonly string[]).includes(format)) {
+    throw new InvalidArgumentError(
+      `format must be one of ${READ_FORMATS.join(', ')}.`
+    )
+  }
 }

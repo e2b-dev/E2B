@@ -53,7 +53,13 @@ import {
   TemplateError,
 } from '../../errors'
 import { isReadableStreamLike } from '../../is'
-import { runtime, toBlob, toUploadBody } from '../../utils'
+import {
+  runtime,
+  toBlob,
+  toUploadBody,
+  assertReadFormat,
+  type ReadFormat,
+} from '../../utils'
 
 const FILESYSTEM_HTTP_ERROR_MAP: Record<number, (message: string) => Error> = {
   404: (message: string) => new FileNotFoundError(message),
@@ -453,10 +459,11 @@ export class Filesystem {
   async read(
     path: string,
     opts?: FilesystemReadOpts & {
-      format?: 'text' | 'bytes' | 'blob' | 'stream'
+      format?: ReadFormat
     }
   ): Promise<unknown> {
-    const format = opts?.format ?? 'text'
+    const format = opts?.format === undefined ? 'text' : opts.format
+    assertReadFormat(format)
 
     let user = opts?.user
     if (
