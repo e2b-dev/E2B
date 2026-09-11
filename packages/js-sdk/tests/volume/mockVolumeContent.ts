@@ -1,5 +1,4 @@
 import { http, HttpResponse } from 'msw'
-import { randomUUID } from 'node:crypto'
 
 import { VolumeFileType } from '../../src'
 import { apiUrl } from '../setup'
@@ -152,8 +151,8 @@ export function createMockVolumeApi() {
     // Control-plane volume CRUD used by the `volumeTest` fixture.
     http.post(apiUrl('/volumes'), async ({ request }) => {
       const { name } = (await request.clone().json()) as { name: string }
-      const volumeID = randomUUID()
-      const token = `vol-token-${randomUUID()}`
+      const volumeID = crypto.randomUUID()
+      const token = `vol-token-${crypto.randomUUID()}`
       volumes.set(volumeID, { volumeID, name, token })
       return HttpResponse.json({ volumeID, name, token }, { status: 201 })
     }),

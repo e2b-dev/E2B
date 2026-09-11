@@ -1,16 +1,16 @@
 import { afterAll, afterEach, beforeAll, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
-import { setupServer } from 'msw/node'
 
 import { InvalidArgumentError, Sandbox, Secret } from '../../src'
 import { TEST_API_KEY, apiUrl } from '../setup'
+import { setupMockApi } from '../mockApi'
 
 const sandboxId = 'test-sandbox-id'
 
 let lastCreateBody: Record<string, any> | undefined
 let lastUpdateBody: Record<string, any> | undefined
 
-const server = setupServer(
+const server = setupMockApi(
   http.post(apiUrl('/sandboxes'), async ({ request }) => {
     lastCreateBody = (await request.json()) as Record<string, any>
     return HttpResponse.json({

@@ -1,6 +1,11 @@
+import { createReadStream } from 'node:fs'
+import { createRequire } from 'node:module'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import { playwright } from '@vitest/browser-playwright'
 import { config } from 'dotenv'
-import { defineConfig } from 'vitest/config'
+import { defineConfig, type Plugin } from 'vitest/config'
 
 // Real env vars win over `.env`, matching dotenv's own precedence.
 const env = { ...config().parsed, ...process.env }
@@ -12,6 +17,40 @@ const testEnv = Object.fromEntries(
   Object.entries(env).filter(([name]) => name.startsWith('E2B_'))
 ) as Record<string, string>
 
+const testsDir = fileURLToPath(new URL('../..', import.meta.url))
+const nodeMockApi = join(testsDir, 'mockApi.ts')
+const browserMockApi = fileURLToPath(new URL('./mockApi.ts', import.meta.url))
+const workerScript = join(
+  dirname(createRequire(import.meta.url).resolve('msw/package.json')),
+  'lib/mockServiceWorker.js'
+)
+
+// The suites that mock the API import `setupMockApi` from tests/mockApi.ts,
+// which wraps `msw/node` — an entry that pulls in node:http and can't be
+// served to a browser. Redirect that one module to the Service Worker-backed
+// implementation, and serve msw's worker script at the URL `worker.start()`
+// registers by default, straight from the installed package rather than a
+// checked-in copy that would drift from the library version.
+const browserMockApiPlugin: Plugin = {
+  name: 'e2b:browser-mock-api',
+  // Before Vite's own resolver, which would otherwise settle the import first.
+  enforce: 'pre',
+  async resolveId(source, importer, options) {
+    if (!importer || !/\bmockApi(\.ts)?$/.test(source)) return
+    const resolved = await this.resolve(source, importer, {
+      ...options,
+      skipSelf: true,
+    })
+    return resolved?.id === nodeMockApi ? browserMockApi : undefined
+  },
+  configureServer(server) {
+    server.middlewares.use('/mockServiceWorker.js', (_req, res) => {
+      res.setHeader('Content-Type', 'text/javascript')
+      createReadStream(workerScript).pipe(res)
+    })
+  },
+}
+
 // Runs the unit + connectionConfig projects (same coverage as test:bun /
 // test:deno / test:cf) inside a real Chromium via Playwright, against src.
 // Nothing is skipped for being a browser: the suites that can't run here are
@@ -20,6 +59,7 @@ const testEnv = Object.fromEntries(
 // (`corsHttpServerCmd` in tests/setup.ts), the way a browser app's own server
 // would be configured.
 export default defineConfig({
+  plugins: [browserMockApiPlugin],
   test: {
     name: 'browser',
     include: [
@@ -40,21 +80,6 @@ export default defineConfig({
       // The browser never takes that path — `createRuntimeFetch` late-binds
       // the global fetch outside Node — so there is nothing to cover here.
       'tests/undici.test.ts',
-      // These mock the API with msw's `setupServer`, whose `msw/node` entry
-      // pulls in node:http and can't be served to the browser. Porting them
-      // means `setupWorker` plus a service worker served from a public dir.
-      // Any new suite that imports `msw/node` belongs here — `grep -rl msw/node
-      // tests/` lists the full set (tests/template/** is already excluded).
-      'tests/client.test.ts',
-      'tests/sandbox/abortSignal.test.ts',
-      'tests/sandbox/egressProxy.test.ts',
-      'tests/sandbox/iam.test.ts',
-      'tests/sandbox/lifecycleRequest.test.ts',
-      'tests/sandbox/networkTransform.test.ts',
-      'tests/sandbox/onResumeRequest.test.ts',
-      'tests/secret/secret.test.ts',
-      'tests/volume/file.test.ts',
-      'tests/volume/volume.test.ts',
     ],
     globals: false,
     testTimeout: 30_000,
