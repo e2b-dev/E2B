@@ -1,4 +1,5 @@
 import inspect
+import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import (
@@ -61,9 +62,21 @@ from e2b.api.client.models import (
 from e2b.api.client.models import (
     SandboxNetworkUpdateConfigRules,
 )
+from e2b.api.client.models import (
+    SidecarAttachment as ClientSidecarAttachment,
+)
+from e2b.api.client.models import (
+    SidecarAttachmentConfig as ClientSidecarAttachmentConfig,
+)
+from e2b.api.client.models import (
+    SidecarAttachmentSecrets as ClientSidecarAttachmentSecrets,
+)
+from e2b.api.client.models import (
+    SidecarInfo as ClientSidecarInfo,
+)
 from e2b.api.client.types import UNSET, Unset
 from e2b.connection_config import ApiParams
-from e2b.exceptions import InvalidArgumentException
+from e2b.exceptions import InvalidArgumentException, SandboxException
 from e2b.sandbox.mcp import McpServer as BaseMcpServer
 from e2b.sandbox.iam import (
     IamTokenPlaceholders,
@@ -493,6 +506,97 @@ class SandboxNetworkInfo(TypedDict, total=False):
     https_ports: List[int]
 
 
+class SidecarAttachment(TypedDict):
+    """
+    Sidecar microVM to attach to a sandbox at creation, declared from the E2B
+    sidecar catalog.
+
+    A sidecar runs next to the sandbox inside its private network. The catalog
+    carries two roles: a ``proxy`` sidecar (``"iron-proxy"``) that the
+    sandbox's egress is steered through and that swaps a placeholder token for
+    the real secret value on the way out, so the secret never enters the
+    sandbox; and a ``service`` sidecar (``"redis"``) the sandbox talks to
+    directly. Code in the sandbox reaches a sidecar by the name
+    ``{entry}.sidecar.e2b.local``, never by IP.
+
+    Sidecars are ephemeral: torn down at pause and relaunched at resume with
+    freshly injected configuration and secrets. Attaching one requires the
+    team's ``sandbox-sidecars`` feature::
+
+        sandbox = Sandbox.create(
+            sidecars=[
+                {"entry": "redis"},
+                {
+                    "entry": "iron-proxy",
+                    # Slot names and config keys are defined by the catalog entry.
+                    "secrets": {"upstream": "${e2b.secrets.openai-key}"},
+                },
+            ],
+        )
+    """
+
+    entry: str
+    """Catalog entry name, e.g. ``"iron-proxy"`` or ``"redis"``."""
+
+    version: NotRequired[str]
+    """Catalog entry version. Defaults to the entry's current version."""
+
+    config: NotRequired[Dict[str, Any]]
+    """
+    Entry-specific configuration, validated against the entry's schema by the
+    API. String values may reference a secret as ``"${e2b.secrets.<name>}"``;
+    the platform resolves the reference when it injects the configuration, so
+    the value never passes through the SDK.
+    """
+
+    secrets: NotRequired[Dict[str, str]]
+    """
+    Secret slots the entry declares, keyed by slot name. Each value is a secret
+    reference (``"${e2b.secrets.<name>}"``), never the secret itself. Every
+    slot the entry declares has to be filled.
+    """
+
+
+SidecarRole = Literal["proxy", "service"]
+"""
+Role of a sidecar: ``"proxy"`` steers the sandbox's egress through it,
+``"service"`` is reached by the sandbox directly.
+"""
+
+SidecarClass = Literal["ephemeral", "stateful"]
+"""Lifecycle class of a sidecar. Only ``"ephemeral"`` sidecars can be attached in this version."""
+
+SidecarState = Literal["starting", "running", "failed", "stopped"]
+"""
+State of a sidecar. ``"failed"`` is reached after one automatic restart
+attempt; the sandbox itself keeps running.
+"""
+
+
+@dataclass
+class SidecarInfo:
+    """A sidecar attached to a sandbox, as returned by sandbox info and list."""
+
+    entry: str
+    """Catalog entry name."""
+    version: str
+    """Catalog entry version."""
+    role: SidecarRole
+    """Role of the sidecar."""
+    class_: SidecarClass
+    """Lifecycle class of the sidecar (the wire field ``class``)."""
+    state: SidecarState
+    """Current state of the sidecar."""
+    name: str
+    """Name the sandbox reaches the sidecar at (``{entry}.sidecar.e2b.local``)."""
+    address: Optional[str] = None
+    """Address of the sidecar inside the sandbox network."""
+    ports: List[int] = field(default_factory=list)
+    """Ports the sidecar listens on."""
+    last_error: Optional[str] = None
+    """Last error of the sidecar, set when ``state`` is ``"failed"``."""
+
+
 class SandboxOnTimeoutPause(TypedDict):
     """
     Object form of `on_timeout` that auto-pauses the sandbox when the timeout is
@@ -796,6 +900,101 @@ def build_network_config(
     return body
 
 
+def build_sidecars_body(
+    sidecars: Optional[List[SidecarAttachment]],
+) -> Optional[List[ClientSidecarAttachment]]:
+    """Resolve the ``sidecars`` option into the API client body.
+
+    Rebuilt from the known keys so stray keys in the caller's dicts never
+    reach the wire. Catalog membership, the count and the proxy limit are the
+    API's to check; only the shape an untyped caller can get wrong is checked
+    here, so the error names the option instead of surfacing as a ``KeyError``.
+    """
+    if sidecars is None:
+        return None
+
+    if isinstance(sidecars, (str, bytes, Mapping)) or not isinstance(
+        sidecars, Iterable
+    ):
+        raise InvalidArgumentException(
+            "sidecars must be a list of dicts with a string 'entry' "
+            "(e.g. [{'entry': 'redis'}])."
+        )
+
+    body: List[ClientSidecarAttachment] = []
+    for i, sidecar in enumerate(sidecars):
+        if not isinstance(sidecar, Mapping) or not isinstance(
+            sidecar.get("entry"), str
+        ):
+            raise InvalidArgumentException(
+                f"sidecars[{i}] must be a dict with a string 'entry' naming a "
+                "catalog entry (e.g. 'redis')."
+            )
+
+        attachment = ClientSidecarAttachment(entry=sidecar["entry"])
+        if sidecar.get("version") is not None:
+            attachment.version = sidecar["version"]
+        if sidecar.get("config") is not None:
+            config = ClientSidecarAttachmentConfig()
+            config.additional_properties = dict(sidecar["config"])
+            attachment.config = config
+        if sidecar.get("secrets") is not None:
+            secrets = ClientSidecarAttachmentSecrets()
+            secrets.additional_properties = dict(sidecar["secrets"])
+            attachment.secrets = secrets
+        body.append(attachment)
+
+    return body
+
+
+def from_client_sidecars(
+    sidecars: Union[Unset, List[ClientSidecarInfo]],
+) -> List[SidecarInfo]:
+    if isinstance(sidecars, Unset):
+        return []
+
+    return [
+        SidecarInfo(
+            entry=sidecar.entry,
+            version=sidecar.version,
+            role=cast(SidecarRole, sidecar.role.value),
+            class_=cast(SidecarClass, sidecar.class_.value),
+            state=cast(SidecarState, sidecar.state.value),
+            name=sidecar.name,
+            address=sidecar.address if isinstance(sidecar.address, str) else None,
+            ports=list(sidecar.ports) if not isinstance(sidecar.ports, Unset) else [],
+            last_error=(
+                sidecar.last_error if isinstance(sidecar.last_error, str) else None
+            ),
+        )
+        for sidecar in sidecars
+    ]
+
+
+def sidecar_api_exception(res: Any) -> Optional[Exception]:
+    """Map a ``SIDECAR_*`` rejection, or ``None`` for any other response.
+
+    Sidecar validation failures are 400 with a ``SIDECAR_*`` semantic code; a
+    sidecar that did not start is ``SIDECAR_FAILED`` naming the entry. The code
+    stays in the message so callers can tell them apart.
+    """
+    try:
+        body = json.loads(res.content) if res.content else {}
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(body, dict):
+        return None
+
+    code = body.get("error_code")
+    if not isinstance(code, str) or not code.startswith("SIDECAR_"):
+        return None
+
+    message = f"{code}: {body.get('message', res.status_code)}"
+    if res.status_code == 400:
+        return InvalidArgumentException(message, status_code=400)
+    return SandboxException(message, status_code=res.status_code)
+
+
 def build_iam_config(
     iam: Optional[SandboxIamOpts],
 ) -> Optional[ClientSandboxIam]:
@@ -1053,6 +1252,8 @@ class SandboxInfo:
     """Sandbox lifecycle configuration."""
     volume_mounts: List[Dict[str, str]] = field(default_factory=list)
     """Volume mounts for the sandbox."""
+    sidecars: List[SidecarInfo] = field(default_factory=list)
+    """Sidecars attached to the sandbox, empty when there are none."""
 
     @classmethod
     def _from_sandbox_data(
@@ -1083,6 +1284,7 @@ class SandboxInfo:
             ]
             if not isinstance(sandbox.volume_mounts, Unset)
             else [],
+            sidecars=from_client_sidecars(sandbox.sidecars),
             allow_internet_access=allow_internet_access,
             network=network,
             lifecycle=lifecycle,

@@ -56,12 +56,15 @@ from e2b.sandbox.sandbox_api import (
     SandboxNetworkOpts,
     SandboxNetworkUpdate,
     SandboxOnResume,
+    SidecarAttachment,
     resolve_connect_memory,
     SandboxQuery,
     SnapshotInfo,
     build_iam_config,
     build_lifecycle_config,
     build_network_config,
+    build_sidecars_body,
+    sidecar_api_exception,
 )
 from e2b.sandbox_sync.paginator import SandboxPaginator, get_api_client
 
@@ -203,7 +206,7 @@ class SandboxApi(SandboxBase):
             raise SandboxNotFoundException(f"Sandbox {sandbox_id} not found")
 
         if res.status_code >= 300:
-            raise handle_api_exception(res)
+            raise sidecar_api_exception(res) or handle_api_exception(res)
 
     @classmethod
     def _create_sandbox(
@@ -219,6 +222,7 @@ class SandboxApi(SandboxBase):
         iam: Optional[SandboxIamOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
         volume_mounts: Optional[List[SandboxVolumeMountAPI]] = None,
+        sidecars: Optional[List[SidecarAttachment]] = None,
         logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
@@ -231,6 +235,7 @@ class SandboxApi(SandboxBase):
         # against the workload tokens this request registers.
         iam_body = build_iam_config(iam)
         network_body = build_network_config(network, iam_body)
+        sidecars_body = build_sidecars_body(sidecars)
         body = NewSandbox(
             template_id=template,
             auto_pause=lifecycle_body.auto_pause,
@@ -245,6 +250,7 @@ class SandboxApi(SandboxBase):
             network=SandboxNetworkConfig(**network_body) if network_body else UNSET,
             iam=iam_body or UNSET,
             volume_mounts=volume_mounts if volume_mounts else UNSET,
+            sidecars=sidecars_body if sidecars_body is not None else UNSET,
         )
 
         api_client = get_api_client(config)
@@ -254,7 +260,7 @@ class SandboxApi(SandboxBase):
         )
 
         if res.status_code >= 300:
-            raise handle_api_exception(res)
+            raise sidecar_api_exception(res) or handle_api_exception(res)
 
         if res.parsed is None:
             raise Exception("Body of the request is None")
