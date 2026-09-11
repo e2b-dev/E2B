@@ -27,6 +27,16 @@ export interface Column<T> {
  * ```
  */
 export function renderTable<T>(items: T[], columns: Column<T>[]) {
+  for (const line of formatTable(items, columns)) {
+    console.log(line)
+  }
+}
+
+/**
+ * Formats `items` as the lines {@link renderTable} prints, for callers that
+ * embed the table in other output.
+ */
+export function formatTable<T>(items: T[], columns: Column<T>[]): string[] {
   const headers = columns.map((column) => column.header.toUpperCase())
   const rows = items.map((item) =>
     columns.map((column) => column.value(item) ?? '')
@@ -36,16 +46,14 @@ export function renderTable<T>(items: T[], columns: Column<T>[]) {
     rows.reduce((max, row) => Math.max(max, wcswidth(row[i])), wcswidth(header))
   )
 
-  for (const line of [headers, ...rows]) {
-    console.log(
-      line
-        .map((cell, i) =>
-          i === line.length - 1
-            ? cell
-            : cell + ' '.repeat(widths[i] + COLUMN_PADDING - wcswidth(cell))
-        )
-        .join('')
-        .trimEnd()
-    )
-  }
+  return [headers, ...rows].map((line) =>
+    line
+      .map((cell, i) =>
+        i === line.length - 1
+          ? cell
+          : cell + ' '.repeat(widths[i] + COLUMN_PADDING - wcswidth(cell))
+      )
+      .join('')
+      .trimEnd()
+  )
 }

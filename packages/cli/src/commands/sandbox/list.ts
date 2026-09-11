@@ -1,5 +1,11 @@
 import * as commander from 'commander'
-import { components, Sandbox, SandboxInfo, SandboxListOrder } from 'e2b'
+import {
+  components,
+  Sandbox,
+  SandboxInfo,
+  SandboxListOrder,
+  SidecarInfo,
+} from 'e2b'
 
 import { ensureAPIKey } from 'src/api'
 import { renderTable } from 'src/utils/table'
@@ -113,7 +119,14 @@ export function buildTableRows(
     endAt: new Date(sandbox.endAt).toLocaleString(),
     state: sandbox.state.charAt(0).toUpperCase() + sandbox.state.slice(1), // capitalize
     metadata: JSON.stringify(sandbox.metadata),
+    sidecars: formatSidecars(sandbox.sidecars),
   }))
+}
+
+export function formatSidecars(sidecars: SidecarInfo[] | undefined) {
+  return (sidecars ?? [])
+    .map((sidecar) => `${sidecar.entry}:${sidecar.state}`)
+    .join(',')
 }
 
 function renderSandboxTable(
@@ -135,6 +148,7 @@ function renderSandboxTable(
     { header: 'vCPUs', value: (row) => String(row.cpuCount) },
     { header: 'RAM MiB', value: (row) => String(row.memoryMB) },
     { header: 'Envd version', value: (row) => row.envdVersion },
+    { header: 'Sidecars', value: (row) => row.sidecars },
     { header: 'Metadata', value: (row) => row.metadata },
   ])
 }
