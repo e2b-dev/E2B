@@ -1,6 +1,6 @@
 import time
 from types import TracebackType
-from typing import Callable, Optional, List, Union
+from typing import Callable, Dict, Optional, List, Union
 
 import httpx
 from pyqwest import SyncHTTPTransport
@@ -113,6 +113,7 @@ def upload_file(
     resolve_symlinks: bool,
     gzip: bool,
     stack_trace: Optional[TracebackType],
+    headers: Optional[Dict[str, str]] = None,
     request_timeout: Optional[float] = None,
 ):
     # Uploading a large build-context archive can take far longer than the 60s
@@ -152,7 +153,9 @@ def upload_file(
                 # Content-Length from the file size—S3 presigned URLs reject
                 # chunked transfer encoding, and reqwest keeps the
                 # Content-Length framing for the streamed body.
-                response = client.put(url, content=tar_file)
+                # Headers the API asked for, applied as given (Azure's Put
+                # Blob requires x-ms-blob-type, which its SAS cannot carry).
+                response = client.put(url, content=tar_file, headers=headers)
             response.raise_for_status()
         finally:
             # Closing the spooled temp file is best-effort: a failure here

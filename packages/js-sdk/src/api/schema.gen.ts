@@ -1162,6 +1162,7 @@ export interface paths {
                 };
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
+                409: components["responses"]["409"];
                 500: components["responses"]["500"];
             };
         };
@@ -1243,6 +1244,7 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["401"];
+                409: components["responses"]["409"];
                 500: components["responses"]["500"];
             };
         };
@@ -1854,6 +1856,7 @@ export interface paths {
                 };
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
+                409: components["responses"]["409"];
                 500: components["responses"]["500"];
             };
         };
@@ -1995,6 +1998,7 @@ export interface paths {
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 403: components["responses"]["403"];
+                409: components["responses"]["409"];
                 500: components["responses"]["500"];
             };
         };
@@ -2856,6 +2860,10 @@ export interface components {
             updatedAt: string;
         };
         TemplateBuildFileUpload: {
+            /** @description Request headers that must be sent with the upload request */
+            headers?: {
+                [key: string]: string;
+            };
             /** @description Whether the file is already present in the cache */
             present: boolean;
             /** @description Url where the file should be uploaded to */

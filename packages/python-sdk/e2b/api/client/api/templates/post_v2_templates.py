@@ -45,6 +45,10 @@ def _parse_response(
         response_401 = Error.from_dict(response.json())
 
         return response_401
+    if response.status_code == 409:
+        response_409 = Error.from_dict(response.json())
+
+        return response_409
     if response.status_code == 500:
         response_500 = Error.from_dict(response.json())
 
