@@ -248,6 +248,33 @@ describe('Volume BYOC domain', () => {
     expect(new VolumeConnectionConfig(vol).domain).toBe(defaultDomain)
   })
 
+  it('falls back to the project endpoint when create returns no domain', async () => {
+    const projectDomain = `prj-123.prj.us-east-1.${defaultDomain}`
+    let requestUrl: string | undefined
+
+    server.use(
+      http.post(`https://api.${projectDomain}/volumes`, async ({ request }) => {
+        requestUrl = request.url
+        const { name } = (await request.clone().json()) as { name: string }
+        return HttpResponse.json(
+          { volumeID: randomUUID(), name, token: 'vol-token' },
+          { status: 201 }
+        )
+      })
+    )
+
+    const vol = await Volume.create('project-volume', {
+      projectId: 'prj-123',
+      region: 'us-east-1',
+    })
+
+    expect(requestUrl).toBe(`https://api.${projectDomain}/volumes`)
+    expect(vol.domain).toBe(projectDomain)
+    expect(new VolumeConnectionConfig(vol).apiUrl).toBe(
+      `https://api.${projectDomain}`
+    )
+  })
+
   it('propagates the domain through getInfo and connect', async () => {
     const created = await Volume.create('connect-volume')
 

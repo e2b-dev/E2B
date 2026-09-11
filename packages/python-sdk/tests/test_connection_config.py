@@ -32,6 +32,131 @@ def test_api_url_has_correct_priority(monkeypatch):
     assert config.api_url == "http://localhost:8080"
 
 
+def test_project_and_region_default_to_unset(monkeypatch):
+    monkeypatch.delenv("E2B_PROJECT_ID", raising=False)
+    monkeypatch.delenv("E2B_REGION", raising=False)
+
+    config = ConnectionConfig(domain="e2b.app")
+    assert config.project_id is None
+    assert config.region is None
+    assert config.resolved_domain == "e2b.app"
+
+
+def test_project_and_region_in_args_scope_api_url(monkeypatch):
+    monkeypatch.delenv("E2B_API_URL", raising=False)
+    monkeypatch.delenv("E2B_DEBUG", raising=False)
+
+    config = ConnectionConfig(
+        domain="e2b.app", project_id="prj-123", region="us-east-1"
+    )
+
+    assert config.domain == "e2b.app"
+    assert config.resolved_domain == "prj-123.prj.us-east-1.e2b.app"
+    assert config.api_url == "https://api.prj-123.prj.us-east-1.e2b.app"
+
+
+def test_project_and_region_in_env_vars_scope_api_url(monkeypatch):
+    monkeypatch.delenv("E2B_API_URL", raising=False)
+    monkeypatch.delenv("E2B_DEBUG", raising=False)
+    monkeypatch.setenv("E2B_DOMAIN", "e2b.dev")
+    monkeypatch.setenv("E2B_PROJECT_ID", "prj-env")
+    monkeypatch.setenv("E2B_REGION", "eu-west-1")
+
+    config = ConnectionConfig()
+
+    assert config.project_id == "prj-env"
+    assert config.region == "eu-west-1"
+    assert config.api_url == "https://api.prj-env.prj.eu-west-1.e2b.dev"
+
+
+def test_project_and_region_in_args_have_priority_over_env_vars(monkeypatch):
+    monkeypatch.delenv("E2B_API_URL", raising=False)
+    monkeypatch.setenv("E2B_PROJECT_ID", "prj-env")
+    monkeypatch.setenv("E2B_REGION", "eu-west-1")
+
+    config = ConnectionConfig(
+        domain="e2b.app", project_id="prj-arg", region="us-east-1"
+    )
+
+    assert config.resolved_domain == "prj-arg.prj.us-east-1.e2b.app"
+
+
+def test_empty_project_and_region_env_vars_mean_unset(monkeypatch):
+    monkeypatch.setenv("E2B_PROJECT_ID", "")
+    monkeypatch.setenv("E2B_REGION", "")
+
+    config = ConnectionConfig(domain="e2b.app")
+    assert config.project_id is None
+    assert config.region is None
+    assert config.resolved_domain == "e2b.app"
+
+
+def test_project_without_region_leaves_domain_unscoped(monkeypatch):
+    monkeypatch.delenv("E2B_API_URL", raising=False)
+    monkeypatch.delenv("E2B_DEBUG", raising=False)
+    monkeypatch.delenv("E2B_REGION", raising=False)
+
+    config = ConnectionConfig(domain="e2b.app", project_id="prj-123")
+
+    assert config.project_id == "prj-123"
+    assert config.resolved_domain == "e2b.app"
+    assert config.api_url == "https://api.e2b.app"
+
+
+def test_explicit_api_url_wins_over_project_and_region():
+    config = ConnectionConfig(
+        api_url="http://localhost:8080", project_id="prj-123", region="us-east-1"
+    )
+
+    assert config.api_url == "http://localhost:8080"
+
+
+def test_project_and_region_survive_api_param_rebuilds(monkeypatch):
+    monkeypatch.delenv("E2B_API_URL", raising=False)
+    monkeypatch.delenv("E2B_DEBUG", raising=False)
+
+    config = ConnectionConfig(
+        domain="e2b.app", project_id="prj-123", region="us-east-1"
+    )
+    rebuilt = ConnectionConfig(**config.get_api_params())
+
+    assert rebuilt.project_id == "prj-123"
+    assert rebuilt.region == "us-east-1"
+    assert rebuilt.api_url == "https://api.prj-123.prj.us-east-1.e2b.app"
+
+    # Per-call override takes priority.
+    overridden = config.get_api_params(project_id="prj-other", region="eu-west-1")
+    assert overridden["project_id"] == "prj-other"
+    assert overridden["region"] == "eu-west-1"
+
+
+def test_sandbox_host_falls_back_to_project_endpoint_without_sandbox_domain(
+    monkeypatch,
+):
+    monkeypatch.delenv("E2B_SANDBOX_URL", raising=False)
+    monkeypatch.delenv("E2B_DEBUG", raising=False)
+
+    config = ConnectionConfig(
+        domain="e2b.app", project_id="prj-123", region="us-east-1"
+    )
+
+    assert (
+        config.get_sandbox_url("sbx-test", "")
+        == "https://49983-sbx-test.prj-123.prj.us-east-1.e2b.app"
+    )
+
+
+def test_sandbox_domain_from_api_wins_over_project_endpoint(monkeypatch):
+    monkeypatch.delenv("E2B_SANDBOX_URL", raising=False)
+    monkeypatch.delenv("E2B_DEBUG", raising=False)
+
+    config = ConnectionConfig(
+        domain="e2b.app", project_id="prj-123", region="us-east-1"
+    )
+
+    assert config.get_sandbox_url("sbx-test", "e2b.app") == "https://sandbox.e2b.app"
+
+
 def test_sandbox_url_uses_stable_host_for_supported_domain():
     config = ConnectionConfig(domain="e2b.app")
 

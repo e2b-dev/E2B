@@ -3,7 +3,12 @@ import createClient from 'openapi-fetch'
 import type { components, paths } from './schema.gen'
 import { defaultHeaders, getEnvVar } from '../api/metadata'
 import { createApiFetch } from '../api/http2'
-import { buildRequestSignal, REQUEST_TIMEOUT_MS } from '../connectionConfig'
+import {
+  buildRequestSignal,
+  DEFAULT_DOMAIN,
+  REQUEST_TIMEOUT_MS,
+  resolveDomain,
+} from '../connectionConfig'
 import { createApiLogger, Logger } from '../logs'
 import type { Volume } from './index'
 
@@ -19,7 +24,8 @@ export interface VolumeApiOpts {
   /**
    * Domain to use for the volume API.
    *
-   * @default E2B_DOMAIN // environment variable or `e2b.app`
+   * @default E2B_DOMAIN // environment variable or `e2b.app`, scoped to the
+   * project's regional endpoint when `E2B_PROJECT_ID` and `E2B_REGION` are set
    */
   domain?: string
   /**
@@ -92,7 +98,11 @@ export class VolumeConnectionConfig {
   }
 
   private static get domain() {
-    return getEnvVar('E2B_DOMAIN') || 'e2b.app'
+    return resolveDomain(
+      getEnvVar('E2B_DOMAIN') || DEFAULT_DOMAIN,
+      getEnvVar('E2B_PROJECT_ID'),
+      getEnvVar('E2B_REGION')
+    )
   }
 
   private static get debug() {

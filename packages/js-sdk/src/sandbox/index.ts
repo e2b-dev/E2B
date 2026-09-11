@@ -143,7 +143,8 @@ export class Sandbox extends SandboxApi {
     this.connectionConfig = new ConnectionConfig(opts)
 
     this.sandboxId = opts.sandboxId
-    this.sandboxDomain = opts.sandboxDomain ?? this.connectionConfig.domain
+    this.sandboxDomain =
+      opts.sandboxDomain ?? this.connectionConfig.resolvedDomain
 
     this.envdAccessToken = opts.envdAccessToken
     this.trafficAccessToken = opts.trafficAccessToken

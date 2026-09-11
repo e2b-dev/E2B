@@ -39,6 +39,26 @@ READ_TIMEOUT: float = 60.0  # 60 seconds
 KEEPALIVE_PING_INTERVAL_SEC = 50  # 50 seconds
 KEEPALIVE_PING_HEADER = "Keepalive-Ping-Interval"
 
+DEFAULT_DOMAIN = "e2b.app"
+
+
+def resolve_domain(
+    domain: str,
+    project_id: Optional[str] = None,
+    region: Optional[str] = None,
+) -> str:
+    """
+    Compose the domain requests are sent to. With both a project ID and a
+    region the project's regional endpoint ``<project_id>.prj.<region>.<domain>``
+    is used; otherwise the plain ``domain``.
+
+    :meta private:
+    """
+    if project_id and region:
+        return f"{project_id}.prj.{region}.{domain}"
+
+    return domain
+
 
 class ApiParams(TypedDict, total=False):
     """
@@ -75,6 +95,16 @@ class ApiParams(TypedDict, total=False):
 
     domain: Optional[str]
     """E2B domain to use for authentication, defaults to `E2B_DOMAIN` environment variable."""
+
+    project_id: Optional[str]
+    """E2B project ID, defaults to `E2B_PROJECT_ID` environment variable.
+    Together with ``region`` it scopes requests to the project's regional endpoint
+    ``<project_id>.prj.<region>.<domain>``; without a ``region`` it has no effect on the endpoint."""
+
+    region: Optional[str]
+    """Region of the E2B project, defaults to `E2B_REGION` environment variable.
+    Together with ``project_id`` it scopes requests to the project's regional endpoint
+    ``<project_id>.prj.<region>.<domain>``; without a ``project_id`` it has no effect on the endpoint."""
 
     api_url: Optional[str]
     """URL to use for the API, defaults to `https://api.<domain>`. For internal use only."""
@@ -178,7 +208,15 @@ class ConnectionConfig:
 
     @staticmethod
     def _domain():
-        return os.getenv("E2B_DOMAIN") or "e2b.app"
+        return os.getenv("E2B_DOMAIN") or DEFAULT_DOMAIN
+
+    @staticmethod
+    def _project_id():
+        return os.getenv("E2B_PROJECT_ID") or None
+
+    @staticmethod
+    def _region():
+        return os.getenv("E2B_REGION") or None
 
     @staticmethod
     def _debug():
@@ -238,6 +276,8 @@ class ConnectionConfig:
     def __init__(
         self,
         domain: Optional[str] = None,
+        project_id: Optional[str] = None,
+        region: Optional[str] = None,
         debug: Optional[bool] = None,
         api_key: Optional[str] = None,
         validate_api_key: Optional[bool] = None,
@@ -254,6 +294,8 @@ class ConnectionConfig:
     ):
         self.logger = logger
         self.domain = domain or ConnectionConfig._domain()
+        self.project_id = project_id or ConnectionConfig._project_id()
+        self.region = region or ConnectionConfig._region()
         self.debug = debug if debug is not None else ConnectionConfig._debug()
         self.api_key = api_key or ConnectionConfig._api_key()
         self.validate_api_key = validate_api_key
@@ -278,12 +320,25 @@ class ConnectionConfig:
         self.api_url = (
             api_url
             or ConnectionConfig._api_url()
-            or ("http://localhost:3000" if self.debug else f"https://api.{self.domain}")
+            or (
+                "http://localhost:3000"
+                if self.debug
+                else f"https://api.{self.resolved_domain}"
+            )
         )
 
         self._sandbox_url: Optional[str] = (
             sandbox_url or ConnectionConfig._sandbox_url()
         )
+
+    @property
+    def resolved_domain(self) -> str:
+        """
+        Domain requests are sent to: the project's regional endpoint
+        ``<project_id>.prj.<region>.<domain>`` when both ``project_id`` and
+        ``region`` are set, otherwise :attr:`domain`.
+        """
+        return resolve_domain(self.domain, self.project_id, self.region)
 
     @staticmethod
     def _get_request_timeout(
@@ -307,7 +362,7 @@ class ConnectionConfig:
         if self.debug:
             return f"http://{self.get_host(sandbox_id, sandbox_domain, self.envd_port)}"
 
-        sandbox_domain = sandbox_domain or self.domain
+        sandbox_domain = sandbox_domain or self.resolved_domain
         if is_supported_sandbox_domain(sandbox_domain):
             return f"https://sandbox.{sandbox_domain}"
 
@@ -359,6 +414,8 @@ class ConnectionConfig:
         validate_api_key = opts.get("validate_api_key")
         api_url = opts.get("api_url")
         domain = opts.get("domain")
+        project_id = opts.get("project_id")
+        region = opts.get("region")
         debug = opts.get("debug")
         proxy = opts.get("proxy")
         sandbox_url = opts.get("sandbox_url")
@@ -392,6 +449,8 @@ class ConnectionConfig:
                 ),
                 api_url=api_url if api_url is not None else self.api_url,
                 domain=domain if domain is not None else self.domain,
+                project_id=project_id if project_id is not None else self.project_id,
+                region=region if region is not None else self.region,
                 debug=debug if debug is not None else self.debug,
                 request_timeout=self.get_request_timeout(request_timeout),
                 headers=req_headers,

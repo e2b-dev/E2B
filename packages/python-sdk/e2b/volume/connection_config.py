@@ -6,7 +6,7 @@ from typing import Dict, Optional, TypedDict
 from typing_extensions import Unpack
 
 from e2b.api.metadata import package_version
-from e2b.connection_config import ProxyTypes
+from e2b.connection_config import DEFAULT_DOMAIN, ProxyTypes, resolve_domain
 
 REQUEST_TIMEOUT: float = 60.0  # 60 seconds
 
@@ -33,7 +33,8 @@ class VolumeApiParams(TypedDict, total=False):
     """
 
     domain: Optional[str]
-    """Domain to use for the volume API, defaults to `E2B_DOMAIN` or `e2b.app`."""
+    """Domain to use for the volume API, defaults to `E2B_DOMAIN` or `e2b.app`,
+    scoped to the project's regional endpoint when `E2B_PROJECT_ID` and `E2B_REGION` are set."""
 
     debug: Optional[bool]
     """Whether to use debug mode, defaults to `E2B_DEBUG` environment variable."""
@@ -66,7 +67,11 @@ class VolumeConnectionConfig:
 
     @staticmethod
     def _domain():
-        return os.getenv("E2B_DOMAIN") or "e2b.app"
+        return resolve_domain(
+            os.getenv("E2B_DOMAIN") or DEFAULT_DOMAIN,
+            os.getenv("E2B_PROJECT_ID"),
+            os.getenv("E2B_REGION"),
+        )
 
     @staticmethod
     def _debug():

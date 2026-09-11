@@ -147,7 +147,7 @@ class AsyncVolume(ClientFactory):
             volume_id=res.parsed.volume_id,
             name=res.parsed.name,
             token=res.parsed.token,
-            domain=domain or config.domain,
+            domain=domain or config.resolved_domain,
             debug=config.debug,
             proxy=config.proxy,
         )
@@ -168,7 +168,7 @@ class AsyncVolume(ClientFactory):
             volume_id=volume_id,
             name=info.name,
             token=info.token,
-            domain=info.domain or config.domain,
+            domain=info.domain or config.resolved_domain,
             debug=config.debug,
             proxy=config.proxy,
         )

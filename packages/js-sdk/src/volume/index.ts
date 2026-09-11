@@ -146,7 +146,7 @@ export class Volume extends ClientFactory {
       res.data.volumeID,
       res.data.name,
       res.data.token,
-      res.data.domain || config.domain,
+      res.data.domain || config.resolvedDomain,
       config.debug,
       config.proxy
     ) as InstanceType<V>
@@ -172,7 +172,7 @@ export class Volume extends ClientFactory {
       volumeId,
       name,
       token,
-      domain ?? config.domain,
+      domain ?? config.resolvedDomain,
       config.debug,
       config.proxy
     ) as InstanceType<V>

@@ -133,6 +133,49 @@ def test_client_sandbox_uses_client_config(api_server):
     assert sandbox.connection_config.api_key == API_KEY_A
 
 
+def test_client_project_and_region_scope_the_domain(api_server):
+    client = E2B(
+        api_key=API_KEY_A,
+        domain=DOMAIN_A,
+        project_id="prj-123",
+        region="us-east-1",
+        api_url=api_server,
+    )
+
+    sandbox = client.Sandbox.create()
+
+    assert sandbox.connection_config.project_id == "prj-123"
+    assert sandbox.connection_config.region == "us-east-1"
+    assert sandbox.connection_config.resolved_domain == (
+        f"prj-123.prj.us-east-1.{DOMAIN_A}"
+    )
+    assert sandbox.sandbox_domain == f"prj-123.prj.us-east-1.{DOMAIN_A}"
+
+    overridden = client.Sandbox.create(project_id="prj-456", region="eu-west-1")
+    assert overridden.connection_config.resolved_domain == (
+        f"prj-456.prj.eu-west-1.{DOMAIN_A}"
+    )
+
+
+def test_async_client_project_and_region_scope_the_domain(api_server):
+    client = E2B(
+        api_key=API_KEY_A,
+        domain=DOMAIN_A,
+        project_id="prj-123",
+        region="us-east-1",
+        api_url=api_server,
+    )
+
+    async def run():
+        return await client.AsyncSandbox.create()
+
+    sandbox = asyncio.run(run())
+
+    assert sandbox.connection_config.project_id == "prj-123"
+    assert sandbox.connection_config.region == "us-east-1"
+    assert sandbox.sandbox_domain == f"prj-123.prj.us-east-1.{DOMAIN_A}"
+
+
 def test_client_sandbox_is_a_subclass(api_server):
     client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
 
