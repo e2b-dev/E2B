@@ -73,5 +73,45 @@ describe('uploadFile transfer encoding', () => {
     // Content-Type (e.g. inferred from the archive's file extension) makes
     // the storage backend reject the upload with 403 Forbidden.
     expect(capturedHeaders['content-type']).toBeUndefined()
+
+    // S3 and GCS presigned PUTs sign the header set, so the upload must add
+    // nothing the API did not ask for.
+    expect(capturedHeaders['x-ms-blob-type']).toBeUndefined()
+  })
+
+  test('sends the headers the API returned with the upload link', async () => {
+    await uploadFile(
+      {
+        fileName: '*.txt',
+        fileContextPath: testDir,
+        url: baseUrl,
+        headers: { 'x-ms-blob-type': 'BlockBlob' },
+        ignorePatterns: [],
+        resolveSymlinks: false,
+        gzip: true,
+      },
+      undefined
+    )
+
+    // Azure's Put Blob rejects the request without it, and its SAS cannot
+    // carry a required request header, so the API hands it back instead.
+    expect(capturedHeaders['x-ms-blob-type']).toBe('BlockBlob')
+  })
+
+  test('keeps its own Content-Length when the API returns one', async () => {
+    await uploadFile(
+      {
+        fileName: '*.txt',
+        fileContextPath: testDir,
+        url: baseUrl,
+        headers: { 'Content-Length': '1' },
+        ignorePatterns: [],
+        resolveSymlinks: false,
+        gzip: true,
+      },
+      undefined
+    )
+
+    expect(Number(capturedHeaders['content-length'])).toBe(capturedBodyLength)
   })
 })

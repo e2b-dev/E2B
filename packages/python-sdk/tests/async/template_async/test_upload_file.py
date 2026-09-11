@@ -240,3 +240,61 @@ async def test_upload_file_ignores_post_upload_close_failure(tmp_path):
         thread.join(timeout=5)
 
     assert state["headers"] is not None
+
+
+async def test_upload_file_sends_the_headers_the_api_returned(tmp_path):
+    # Azure's Put Blob rejects the request without x-ms-blob-type, and its SAS
+    # cannot carry a required request header, so the API hands it back with the
+    # upload link for the client to apply.
+    (tmp_path / "hello.txt").write_text("hello world")
+
+    server, thread, state = _make_server()
+    host, port = server.server_address
+
+    try:
+        client = AuthenticatedClient(base_url="http://test", token="test")
+        await upload_file(
+            api_client=client,
+            file_name="*.txt",
+            context_path=str(tmp_path),
+            url=f"http://{host}:{port}/upload",
+            ignore_patterns=[],
+            resolve_symlinks=False,
+            gzip=True,
+            stack_trace=None,
+            headers={"x-ms-blob-type": "BlockBlob"},
+        )
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+    assert state["headers"]["x-ms-blob-type"] == "BlockBlob"
+
+
+async def test_upload_file_adds_no_headers_when_the_api_returns_none(tmp_path):
+    # S3 and GCS presigned PUTs sign the header set, so the upload must add
+    # nothing the API did not ask for.
+    (tmp_path / "hello.txt").write_text("hello world")
+
+    server, thread, state = _make_server()
+    host, port = server.server_address
+
+    try:
+        client = AuthenticatedClient(base_url="http://test", token="test")
+        await upload_file(
+            api_client=client,
+            file_name="*.txt",
+            context_path=str(tmp_path),
+            url=f"http://{host}:{port}/upload",
+            ignore_patterns=[],
+            resolve_symlinks=False,
+            gzip=True,
+            stack_trace=None,
+        )
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+    assert "x-ms-blob-type" not in state["headers"]

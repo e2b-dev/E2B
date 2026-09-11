@@ -137,6 +137,7 @@ class AsyncTemplate(TemplateBase):
                     resolve_symlinks,
                     gzip,
                     stack_trace,
+                    headers=file_info.headers.to_dict() if file_info.headers else None,
                     request_timeout=request_timeout,
                 )
                 if on_build_logs:

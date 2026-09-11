@@ -1651,6 +1651,11 @@ components:
         url:
           description: Url where the file should be uploaded to
           type: string
+        headers:
+          description: Request headers that must be sent with the upload request
+          type: object
+          additionalProperties:
+            type: string
 
     LogLevel:
       type: string
@@ -1948,6 +1953,15 @@ components:
           type: integer
           format: uint32
           description: Number of sandboxes running on the node
+        maxSandboxes:
+          type: integer
+          format: int64
+          description: Node-scoped configured sandbox admission limit. Nonpositive values reject creation. Omitted when unknown or not an orchestrator.
+        outstandingWork:
+          type: integer
+          format: uint64
+          minimum: 0
+          description: Observed work holds on the node. Omitted when unknown; zero does not authorize deletion.
         metrics:
           $ref: "#/components/schemas/NodeMetrics"
         createSuccesses:
@@ -2005,6 +2019,15 @@ components:
           type: integer
           format: uint32
           description: Number of sandboxes running on the node
+        maxSandboxes:
+          type: integer
+          format: int64
+          description: Node-scoped configured sandbox admission limit. Nonpositive values reject creation. Omitted when unknown or not an orchestrator.
+        outstandingWork:
+          type: integer
+          format: uint64
+          minimum: 0
+          description: Observed work holds on the node. Omitted when unknown; zero does not authorize deletion.
         metrics:
           $ref: "#/components/schemas/NodeMetrics"
         createSuccesses:
@@ -3233,6 +3256,8 @@ paths:
           $ref: "#/components/responses/401"
         "403":
           $ref: "#/components/responses/403"
+        "409":
+          $ref: "#/components/responses/409"
         "500":
           $ref: "#/components/responses/500"
 
@@ -3309,6 +3334,8 @@ paths:
           $ref: "#/components/responses/400"
         "401":
           $ref: "#/components/responses/401"
+        "409":
+          $ref: "#/components/responses/409"
         "500":
           $ref: "#/components/responses/500"
 
@@ -3410,6 +3437,8 @@ paths:
           $ref: "#/components/responses/400"
         "401":
           $ref: "#/components/responses/401"
+        "409":
+          $ref: "#/components/responses/409"
         "500":
           $ref: "#/components/responses/500"
 
@@ -3470,6 +3499,8 @@ paths:
                 $ref: "#/components/schemas/TemplateLegacy"
         "401":
           $ref: "#/components/responses/401"
+        "409":
+          $ref: "#/components/responses/409"
         "500":
           $ref: "#/components/responses/500"
     delete:

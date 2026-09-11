@@ -113,6 +113,7 @@ export async function uploadFile(
     fileName: string
     fileContextPath: string
     url: string
+    headers?: Record<string, string>
     ignorePatterns: string[]
     resolveSymlinks: boolean
     gzip: boolean
@@ -128,6 +129,7 @@ export async function uploadFile(
   const {
     fileName,
     url,
+    headers,
     fileContextPath,
     ignorePatterns,
     resolveSymlinks,
@@ -154,7 +156,7 @@ export async function uploadFile(
       abortOpts?.signal
     )
 
-    const res = await putFileStream(url, tar.path, tar.size, signal)
+    const res = await putFileStream(url, tar.path, tar.size, signal, headers)
 
     if (!res.ok) {
       throw new FileUploadError(
@@ -176,7 +178,8 @@ async function putFileStream(
   url: string,
   filePath: string,
   size: number,
-  signal: AbortSignal | undefined
+  signal: AbortSignal | undefined,
+  headers?: Record<string, string>
 ): Promise<{ ok: boolean; statusText: string }> {
   // Prefer undici's fetch: it honors the explicit Content-Length on stream
   // bodies on every runtime, while Deno's native fetch ignores the header and
@@ -192,7 +195,10 @@ async function putFileStream(
     body: stream.Readable.toWeb(
       fs.createReadStream(filePath)
     ) as ReadableStream,
+    // Headers the API asked for, applied as given (Azure's Put Blob requires
+    // x-ms-blob-type, which its SAS cannot carry). Content-Length stays ours.
     headers: {
+      ...headers,
       'Content-Length': size.toString(),
     },
     // Streaming request bodies require half-duplex mode.

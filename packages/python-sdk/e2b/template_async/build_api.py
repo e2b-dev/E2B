@@ -1,7 +1,7 @@
 import asyncio
 import os
 from types import TracebackType
-from typing import Callable, Optional, List, Union
+from typing import Callable, Dict, Optional, List, Union
 
 import httpx
 from pyqwest import HTTPTransport
@@ -115,6 +115,7 @@ async def upload_file(
     resolve_symlinks: bool,
     gzip: bool,
     stack_trace: Optional[TracebackType],
+    headers: Optional[Dict[str, str]] = None,
     request_timeout: Optional[float] = None,
 ):
     # Uploading a large build-context archive can take far longer than the 60s
@@ -156,10 +157,13 @@ async def upload_file(
                 # explicit Content-Length suppresses chunked transfer
                 # encoding, which S3 presigned URLs reject; reqwest keeps the
                 # Content-Length framing for the streamed body.
+                # Headers the API asked for, applied as given (Azure's Put
+                # Blob requires x-ms-blob-type, which its SAS cannot carry).
+                # Content-Length stays ours.
                 response = await client.put(
                     url,
                     content=aiter_io_chunks(tar_file),
-                    headers={"Content-Length": str(size)},
+                    headers={**(headers or {}), "Content-Length": str(size)},
                 )
             response.raise_for_status()
         finally:

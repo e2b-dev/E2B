@@ -63,6 +63,7 @@ from .template import Template
 from .template_alias_response import TemplateAliasResponse
 from .template_build import TemplateBuild
 from .template_build_file_upload import TemplateBuildFileUpload
+from .template_build_file_upload_headers import TemplateBuildFileUploadHeaders
 from .template_build_info import TemplateBuildInfo
 from .template_build_logs_response import TemplateBuildLogsResponse
 from .template_build_request import TemplateBuildRequest
@@ -144,6 +145,7 @@ __all__ = (
     "TemplateAliasResponse",
     "TemplateBuild",
     "TemplateBuildFileUpload",
+    "TemplateBuildFileUploadHeaders",
     "TemplateBuildInfo",
     "TemplateBuildLogsResponse",
     "TemplateBuildRequest",
