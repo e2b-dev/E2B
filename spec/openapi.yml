@@ -790,12 +790,7 @@ components:
           description: Lifecycle class of the sidecar
         state:
           type: string
-          enum:
-            - starting
-            - running
-            - failed
-            - stopped
-          description: Current state of the sidecar
+          description: Current state of the sidecar. Not a closed set; current values are starting, running, failed and stopped.
         name:
           type: string
           description: Name the sandbox reaches the sidecar at ("{entry}.sidecar.e2b.local")

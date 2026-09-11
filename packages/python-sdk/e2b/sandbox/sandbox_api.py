@@ -566,10 +566,11 @@ Role of a sidecar: ``"proxy"`` steers the sandbox's egress through it,
 SidecarClass = Literal["ephemeral", "stateful"]
 """Lifecycle class of a sidecar. Only ``"ephemeral"`` sidecars can be attached in this version."""
 
-SidecarState = Literal["starting", "running", "failed", "stopped"]
+SidecarState = Union[Literal["starting", "running", "failed", "stopped"], str]
 """
 State of a sidecar. ``"failed"`` is reached after one automatic restart
-attempt; the sandbox itself keeps running.
+attempt; the sandbox itself keeps running. The set is defined server-side and
+may grow, so any string is allowed.
 """
 
 
@@ -959,7 +960,7 @@ def from_client_sidecars(
             version=sidecar.version,
             role=cast(SidecarRole, sidecar.role.value),
             class_=cast(SidecarClass, sidecar.class_.value),
-            state=cast(SidecarState, sidecar.state.value),
+            state=sidecar.state,
             name=sidecar.name,
             address=sidecar.address if isinstance(sidecar.address, str) else None,
             ports=list(sidecar.ports) if not isinstance(sidecar.ports, Unset) else [],
@@ -980,7 +981,8 @@ def sidecar_api_exception(res: Any) -> Optional[Exception]:
     """
     try:
         body = json.loads(res.content) if res.content else {}
-    except json.JSONDecodeError:
+    except ValueError:
+        # JSONDecodeError and UnicodeDecodeError, for a non-JSON or non-UTF-8 body
         return None
     if not isinstance(body, dict):
         return None

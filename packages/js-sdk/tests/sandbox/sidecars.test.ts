@@ -162,6 +162,14 @@ test('Sandbox.getInfo returns the sidecars with their state', async () => {
   expect(info.sidecars).toEqual([redisInfo, failedProxyInfo])
 })
 
+test('Sandbox.getInfo passes through a state value the SDK does not know', async () => {
+  infoSidecars = [{ ...redisInfo, state: 'restarting' }]
+
+  const info = await Sandbox.getInfo(sandboxId, { apiKey: TEST_API_KEY })
+
+  expect(info.sidecars?.[0].state).toBe('restarting')
+})
+
 test('Sandbox.getInfo returns an empty sidecar list when the API sends none', async () => {
   const info = await Sandbox.getInfo(sandboxId, { apiKey: TEST_API_KEY })
 

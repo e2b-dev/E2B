@@ -2780,11 +2780,8 @@ export interface components {
              * @enum {string}
              */
             role: "proxy" | "service";
-            /**
-             * @description Current state of the sidecar
-             * @enum {string}
-             */
-            state: "starting" | "running" | "failed" | "stopped";
+            /** @description Current state of the sidecar. Not a closed set; current values are starting, running, failed and stopped. */
+            state: string;
             /** @description Catalog entry version */
             version: string;
         };

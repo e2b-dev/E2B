@@ -6,7 +6,6 @@ from attrs import field as _attrs_field
 
 from ..models.sidecar_info_class import SidecarInfoClass
 from ..models.sidecar_info_role import SidecarInfoRole
-from ..models.sidecar_info_state import SidecarInfoState
 from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="SidecarInfo")
@@ -21,7 +20,8 @@ class SidecarInfo:
         version (str): Catalog entry version
         role (SidecarInfoRole): Role of the sidecar
         class_ (SidecarInfoClass): Lifecycle class of the sidecar
-        state (SidecarInfoState): Current state of the sidecar
+        state (str): Current state of the sidecar. Not a closed set; current values are starting, running, failed and
+            stopped.
         name (str): Name the sandbox reaches the sidecar at ("{entry}.sidecar.e2b.local")
         address (Union[Unset, str]): Address of the sidecar inside the sandbox network
         ports (Union[Unset, list[int]]): Ports the sidecar listens on
@@ -32,7 +32,7 @@ class SidecarInfo:
     version: str
     role: SidecarInfoRole
     class_: SidecarInfoClass
-    state: SidecarInfoState
+    state: str
     name: str
     address: Union[Unset, str] = UNSET
     ports: Union[Unset, list[int]] = UNSET
@@ -48,7 +48,7 @@ class SidecarInfo:
 
         class_ = self.class_.value
 
-        state = self.state.value
+        state = self.state
 
         name = self.name
 
@@ -92,7 +92,7 @@ class SidecarInfo:
 
         class_ = SidecarInfoClass(d.pop("class"))
 
-        state = SidecarInfoState(d.pop("state"))
+        state = d.pop("state")
 
         name = d.pop("name")
 

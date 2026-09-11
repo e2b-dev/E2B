@@ -191,6 +191,16 @@ def test_info_returns_the_sidecars_with_their_state():
     assert info.sidecars == _expected_infos()
 
 
+def test_info_passes_through_a_state_value_the_sdk_does_not_know():
+    detail = SandboxDetail.from_dict(
+        {**SANDBOX_DETAIL, "sidecars": [{**REDIS_INFO, "state": "restarting"}]}
+    )
+
+    info = SandboxInfo._from_sandbox_detail(detail)
+
+    assert info.sidecars[0].state == "restarting"
+
+
 def test_info_returns_an_empty_sidecar_list_when_the_api_sends_none():
     info = SandboxInfo._from_sandbox_detail(SandboxDetail.from_dict(SANDBOX_DETAIL))
 
@@ -266,6 +276,7 @@ def test_sidecar_failed_keeps_the_entry_name_and_is_not_an_argument_error(
         pytest.param(b"not json", id="not-json"),
         pytest.param(b"", id="empty"),
         pytest.param(b"[1]", id="not-an-object"),
+        pytest.param(b"\xff\xfe{", id="not-utf8"),
     ],
 )
 def test_other_errors_keep_the_generic_mapping(content):

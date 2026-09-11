@@ -642,9 +642,11 @@ export type SidecarClass = 'ephemeral' | 'stateful'
 
 /**
  * State of a sidecar. `'failed'` is reached after one automatic restart
- * attempt; the sandbox itself keeps running.
+ * attempt; the sandbox itself keeps running. The set is defined server-side
+ * and may grow, so any string is allowed.
  */
-export type SidecarState = 'starting' | 'running' | 'failed' | 'stopped'
+export type SidecarState =
+  'starting' | 'running' | 'failed' | 'stopped' | (string & {})
 
 /**
  * A sidecar attached to a sandbox, as returned by the sandbox info and list

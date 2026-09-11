@@ -63,7 +63,6 @@ from .sidecar_attachment_secrets import SidecarAttachmentSecrets
 from .sidecar_info import SidecarInfo
 from .sidecar_info_class import SidecarInfoClass
 from .sidecar_info_role import SidecarInfoRole
-from .sidecar_info_state import SidecarInfoState
 from .snapshot_info import SnapshotInfo
 from .team_user import TeamUser
 from .template import Template
@@ -151,7 +150,6 @@ __all__ = (
     "SidecarInfo",
     "SidecarInfoClass",
     "SidecarInfoRole",
-    "SidecarInfoState",
     "SnapshotInfo",
     "TeamUser",
     "Template",
