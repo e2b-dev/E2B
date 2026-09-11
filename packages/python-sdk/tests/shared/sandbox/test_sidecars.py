@@ -122,8 +122,22 @@ async def test_async_create_sends_the_sidecars(monkeypatch, test_api_key):
     assert body["sidecars"] == SIDECARS_WIRE
 
 
-def test_create_omits_sidecars_when_not_provided(monkeypatch, test_api_key):
-    body = _sync_request_body(monkeypatch, test_api_key)
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        pytest.param({}, id="not-provided"),
+        pytest.param({"sidecars": None}, id="none"),
+        pytest.param({"sidecars": []}, id="empty-list"),
+    ],
+)
+def test_create_omits_sidecars_when_there_are_none(monkeypatch, test_api_key, kwargs):
+    body = _sync_request_body(monkeypatch, test_api_key, **kwargs)
+
+    assert "sidecars" not in body
+
+
+async def test_async_create_omits_an_empty_sidecar_list(monkeypatch, test_api_key):
+    body = await _async_request_body(monkeypatch, test_api_key, sidecars=[])
 
     assert "sidecars" not in body
 

@@ -1925,7 +1925,10 @@ export class SandboxApi extends ClientFactory {
     }
 
     if (opts?.sidecars != null) {
-      body.sidecars = buildSidecarsBody(opts.sidecars)
+      const sidecars = buildSidecarsBody(opts.sidecars)
+      if (sidecars.length) {
+        body.sidecars = sidecars
+      }
     }
 
     const apiOpts = this.resolveOpts(opts)

@@ -116,8 +116,12 @@ test('Sandbox.create sends the sidecars in the request body', async () => {
   ])
 })
 
-test('Sandbox.create omits sidecars when not provided', async () => {
-  await Sandbox.create('base', { apiKey: TEST_API_KEY })
+test.each([
+  ['not provided', {}],
+  ['an empty list', { sidecars: [] }],
+  ['null', { sidecars: null as any }],
+])('Sandbox.create omits sidecars when %s', async (_, opts) => {
+  await Sandbox.create('base', { apiKey: TEST_API_KEY, ...opts })
 
   expect(lastCreateBody).toBeDefined()
   expect(lastCreateBody).not.toHaveProperty('sidecars')

@@ -251,7 +251,7 @@ class SandboxApi(SandboxBase):
             network=SandboxNetworkConfig(**network_body) if network_body else UNSET,
             iam=iam_body or UNSET,
             volume_mounts=volume_mounts if volume_mounts else UNSET,
-            sidecars=sidecars_body if sidecars_body is not None else UNSET,
+            sidecars=sidecars_body if sidecars_body else UNSET,
         )
 
         api_client = get_api_client(config)
