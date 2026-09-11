@@ -511,13 +511,20 @@ class SidecarAttachment(TypedDict):
     Sidecar microVM to attach to a sandbox at creation, declared from the E2B
     sidecar catalog.
 
-    A sidecar runs next to the sandbox inside its private network. The catalog
-    carries two roles: a ``proxy`` sidecar (``"iron-proxy"``) that the
-    sandbox's egress is steered through and that swaps a placeholder token for
-    the real secret value on the way out, so the secret never enters the
-    sandbox; and a ``service`` sidecar (``"redis"``) the sandbox talks to
-    directly. Code in the sandbox reaches a sidecar by the name
-    ``{entry}.sidecar.e2b.local``, never by IP.
+    A sidecar runs next to the sandbox inside its private network, and code in
+    the sandbox reaches it by the name ``{entry}.sidecar.e2b.local``, never by
+    IP. The catalog has four entries:
+
+    - ``"iron-proxy"`` (proxy role): the sandbox's egress is steered through it
+      and it swaps a placeholder token for the real secret value on the way
+      out, so the secret never enters the sandbox.
+    - ``"redis"`` (service role): a cache the sandbox talks to directly.
+    - ``"sqlite"`` (service role): libsql-server over HTTP at
+      ``http://sqlite.sidecar.e2b.local:8080``.
+    - ``"iroh"`` (service role): a peer-to-peer tunnel configured with
+      ``pipes`` of ``publish`` / ``connect``; tickets are served at
+      ``http://iroh.sidecar.e2b.local:8080/tickets.json``, to be polled until
+      ``status == "ready"``. Takes an optional ``node_secret`` secret slot.
 
     Sidecars are ephemeral: torn down at pause and relaunched at resume with
     freshly injected configuration and secrets. Attaching one requires the
@@ -536,7 +543,7 @@ class SidecarAttachment(TypedDict):
     """
 
     entry: str
-    """Catalog entry name, e.g. ``"iron-proxy"`` or ``"redis"``."""
+    """Catalog entry name: ``"iron-proxy"``, ``"redis"``, ``"sqlite"`` or ``"iroh"``."""
 
     version: NotRequired[str]
     """Catalog entry version. Defaults to the entry's current version."""
