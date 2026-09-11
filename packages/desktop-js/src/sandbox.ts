@@ -8,6 +8,7 @@ import {
 } from 'e2b'
 
 import { generateRandomString } from './utils'
+import { DesktopStartupError } from './errors'
 
 interface CursorPosition {
   x: number
@@ -145,6 +146,9 @@ export class Sandbox extends SandboxBase {
    *
    * @returns sandbox instance for the new sandbox.
    *
+   * @throws {@link DesktopStartupError} When desktop startup and cleanup of the
+   * allocated sandbox both fail. Use `sandboxId` for targeted cleanup.
+   *
    * @example
    * ```ts
    * const sandbox = await Sandbox.create()
@@ -162,6 +166,9 @@ export class Sandbox extends SandboxBase {
    * @param opts connection options.
    *
    * @returns sandbox instance for the new sandbox.
+   *
+   * @throws {@link DesktopStartupError} When desktop startup and cleanup of the
+   * allocated sandbox both fail. Use `sandboxId` for targeted cleanup.
    *
    * @example
    * ```ts
@@ -201,7 +208,11 @@ export class Sandbox extends SandboxBase {
     try {
       await sbx._start(display, sandboxOptsWithDisplay)
     } catch (error) {
-      await sbx.kill().catch(() => {})
+      try {
+        await sbx.kill()
+      } catch (cleanupError) {
+        throw new DesktopStartupError(sbx.sandboxId, error, cleanupError)
+      }
       throw error
     }
 
