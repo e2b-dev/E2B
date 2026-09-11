@@ -98,9 +98,14 @@ def parse_dockerfile(
 
         # Set the base image from the first FROM instruction
         base_image = from_instructions[0]["value"]
-        # Remove AS alias if present (e.g., "node:18 AS builder" -> "node:18")
-        if " as " in base_image.lower():
-            base_image = base_image.split(" as ")[0].strip()
+        # Remove a stage alias if present (e.g., "node:18 AS builder" -> "node:18").
+        # AS is case-insensitive in Dockerfiles, so it must be matched that way:
+        # splitting on a lowercase " as " left the canonical uppercase form
+        # ("FROM node:18 AS builder") unstripped, leaking " AS builder" into the
+        # base image name.
+        base_image = re.split(
+            r"\s+as\s+", base_image, maxsplit=1, flags=re.IGNORECASE
+        )[0].strip()
 
         user_changed = False
         workdir_changed = False
