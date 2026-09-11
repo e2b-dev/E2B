@@ -283,6 +283,32 @@ def test_sidecar_failed_keeps_the_entry_name_and_is_not_an_argument_error(
 
 
 @pytest.mark.parametrize(
+    "code",
+    [
+        "sidecar_unknown_entry",
+        "sidecar_deprecated_entry",
+        "sidecar_limit",
+        "sidecar_one_proxy",
+        "sidecar_config_invalid",
+        "sidecar_secret_missing",
+        "sidecar_rule_collision",
+        "sidecar_egress_conflict",
+        "sidecar_flag_off",
+    ],
+)
+def test_every_400_sidecar_code_is_an_argument_error(code):
+    err = sidecar_api_exception(
+        _response(
+            400, f'{{"code":400,"error_code":"{code}","message":"rejected"}}'.encode()
+        )
+    )
+
+    assert isinstance(err, InvalidArgumentException)
+    assert err.status_code == 400
+    assert str(err) == f"{code}: rejected"
+
+
+@pytest.mark.parametrize(
     "content",
     [
         pytest.param(b'{"code":400,"message":"invalid template"}', id="no-code"),

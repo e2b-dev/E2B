@@ -975,9 +975,12 @@ def from_client_sidecars(
 def sidecar_api_exception(res: Any) -> Optional[Exception]:
     """Map a ``sidecar_*`` rejection, or ``None`` for any other response.
 
-    Sidecar validation failures are 400 with a ``sidecar_*`` semantic code; a
-    sidecar that did not start is ``sidecar_failed`` naming the entry. The code
-    stays in the message so callers can tell them apart.
+    Sidecar validation failures are 400 with a ``sidecar_*`` semantic code —
+    ``sidecar_unknown_entry``, ``sidecar_deprecated_entry``, ``sidecar_limit``,
+    ``sidecar_one_proxy``, ``sidecar_config_invalid``, ``sidecar_secret_missing``,
+    ``sidecar_rule_collision``, ``sidecar_egress_conflict``, ``sidecar_flag_off`` —
+    and a sidecar that did not start is ``sidecar_failed`` naming the entry. The
+    code stays in the message so callers can tell them apart.
     """
     try:
         body = json.loads(res.content) if res.content else {}

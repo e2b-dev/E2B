@@ -1305,9 +1305,12 @@ function fromApiSidecars(
 
 /**
  * Sidecar rejections carry a lower-snake `sidecar_*` semantic code, like every
- * other `error_code`: validation failures as 400, a sidecar that did not start
- * as `sidecar_failed` naming the entry. The code stays in the message so
- * callers can tell them apart.
+ * other `error_code`. Validation failures are 400 — `sidecar_unknown_entry`,
+ * `sidecar_deprecated_entry`, `sidecar_limit`, `sidecar_one_proxy`,
+ * `sidecar_config_invalid`, `sidecar_secret_missing`,
+ * `sidecar_rule_collision`, `sidecar_egress_conflict`, `sidecar_flag_off` —
+ * and a sidecar that did not start is `sidecar_failed` naming the entry. The
+ * code stays in the message so callers can tell them apart.
  */
 function sidecarApiError(res: {
   response: { status: number; statusText: string }

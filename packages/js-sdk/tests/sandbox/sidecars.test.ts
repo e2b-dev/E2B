@@ -233,6 +233,34 @@ test('sidecar_failed keeps the entry name and is not an argument error', async (
   expect((err as Error).message).toContain('redis')
 })
 
+test.each([
+  'sidecar_unknown_entry',
+  'sidecar_deprecated_entry',
+  'sidecar_limit',
+  'sidecar_one_proxy',
+  'sidecar_config_invalid',
+  'sidecar_secret_missing',
+  'sidecar_rule_collision',
+  'sidecar_egress_conflict',
+  'sidecar_flag_off',
+])('every 400 sidecar code (%s) is an InvalidArgumentError', async (code) => {
+  createResponse = () =>
+    HttpResponse.json(
+      { code: 400, error_code: code, message: 'rejected' },
+      {
+        status: 400,
+      }
+    )
+
+  const err = await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    sidecars: [{ entry: 'redis' }],
+  }).catch((e: unknown) => e)
+
+  expect(err).toBeInstanceOf(InvalidArgumentError)
+  expect((err as Error).message).toBe(`${code}: rejected`)
+})
+
 test('the sidecar code match is case-sensitive', async () => {
   createResponse = () =>
     HttpResponse.json(
