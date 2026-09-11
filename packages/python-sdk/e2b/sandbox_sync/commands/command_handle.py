@@ -172,6 +172,8 @@ class CommandHandle:
         :param on_stderr: Callback for stderr output
 
         :return: `CommandResult` result of command execution
+        :raises CommandExitException: the command exited with a non-zero exit code
+        :raises SandboxException: the command stream ended before an exit event was received, e.g. the sandbox was killed or timed out
         """
         try:
             for stdout, stderr, pty in self:
@@ -193,7 +195,9 @@ class CommandHandle:
             raise self._iteration_exception
 
         if self._result is None:
-            raise Exception("Command ended without an end event")
+            raise SandboxException(
+                "Command stream ended without an exit event. The sandbox may have been killed, paused, or timed out."
+            )
 
         if self._result.exit_code != 0:
             raise CommandExitException(
