@@ -60,7 +60,7 @@ const server = setupServer(
     HttpResponse.json(
       {
         code: 400,
-        error_code: 'SIDECAR_RULE_COLLISION',
+        error_code: 'sidecar_rule_collision',
         message: 'api.openai.com is routed through the iron-proxy sidecar',
       },
       { status: 400 }
@@ -188,12 +188,12 @@ test('Sandbox.list returns the sidecars of each sandbox', async () => {
   expect(info.sidecars).toEqual([redisInfo])
 })
 
-test('a SIDECAR_* 400 surfaces as InvalidArgumentError with the code preserved', async () => {
+test('a sidecar_* 400 surfaces as InvalidArgumentError with the code preserved', async () => {
   createResponse = () =>
     HttpResponse.json(
       {
         code: 400,
-        error_code: 'SIDECAR_UNKNOWN_ENTRY',
+        error_code: 'sidecar_unknown_entry',
         message: 'unknown sidecar entry "memcached"',
       },
       { status: 400 }
@@ -206,16 +206,16 @@ test('a SIDECAR_* 400 surfaces as InvalidArgumentError with the code preserved',
 
   expect(err).toBeInstanceOf(InvalidArgumentError)
   expect((err as SandboxError).statusCode).toBe(400)
-  expect((err as Error).message).toContain('SIDECAR_UNKNOWN_ENTRY')
+  expect((err as Error).message).toContain('sidecar_unknown_entry')
   expect((err as Error).message).toContain('memcached')
 })
 
-test('SIDECAR_FAILED keeps the entry name and is not an argument error', async () => {
+test('sidecar_failed keeps the entry name and is not an argument error', async () => {
   createResponse = () =>
     HttpResponse.json(
       {
         code: 500,
-        error_code: 'SIDECAR_FAILED',
+        error_code: 'sidecar_failed',
         message: 'sidecar "redis" failed to become ready',
       },
       { status: 500 }
@@ -229,8 +229,25 @@ test('SIDECAR_FAILED keeps the entry name and is not an argument error', async (
   expect(err).toBeInstanceOf(SandboxError)
   expect(err).not.toBeInstanceOf(InvalidArgumentError)
   expect((err as SandboxError).statusCode).toBe(500)
-  expect((err as Error).message).toContain('SIDECAR_FAILED')
+  expect((err as Error).message).toContain('sidecar_failed')
   expect((err as Error).message).toContain('redis')
+})
+
+test('the sidecar code match is case-sensitive', async () => {
+  createResponse = () =>
+    HttpResponse.json(
+      { code: 400, error_code: 'SIDECAR_UNKNOWN_ENTRY', message: 'nope' },
+      { status: 400 }
+    )
+
+  const err = await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    sidecars: [{ entry: 'memcached' }],
+  }).catch((e: unknown) => e)
+
+  expect(err).toBeInstanceOf(SandboxError)
+  expect(err).not.toBeInstanceOf(InvalidArgumentError)
+  expect((err as Error).message).toBe('400: nope')
 })
 
 test('a 400 without a sidecar code keeps the generic mapping', async () => {
@@ -249,7 +266,7 @@ test('a 400 without a sidecar code keeps the generic mapping', async () => {
   expect((err as Error).message).toBe('400: invalid template')
 })
 
-test('Sandbox.updateNetwork surfaces SIDECAR_RULE_COLLISION as InvalidArgumentError', async () => {
+test('Sandbox.updateNetwork surfaces sidecar_rule_collision as InvalidArgumentError', async () => {
   const err = await Sandbox.updateNetwork(
     sandboxId,
     { allowOut: ['api.openai.com'] },
@@ -257,5 +274,5 @@ test('Sandbox.updateNetwork surfaces SIDECAR_RULE_COLLISION as InvalidArgumentEr
   ).catch((e: unknown) => e)
 
   expect(err).toBeInstanceOf(InvalidArgumentError)
-  expect((err as Error).message).toContain('SIDECAR_RULE_COLLISION')
+  expect((err as Error).message).toContain('sidecar_rule_collision')
 })

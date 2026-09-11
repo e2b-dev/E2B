@@ -1259,7 +1259,7 @@ function fromApiEgressProxy(
 }
 
 // The spec's maxItems renders as a tuple union; the count is the API's to
-// enforce (SIDECAR_LIMIT), so the list is cast rather than re-validated here.
+// enforce (sidecar_limit), so the list is cast rather than re-validated here.
 function buildSidecarsBody(
   sidecars: SidecarAttachment[]
 ): NonNullable<components['schemas']['NewSandbox']['sidecars']> {
@@ -1304,9 +1304,10 @@ function fromApiSidecars(
 }
 
 /**
- * Sidecar rejections carry a `SIDECAR_*` semantic code: validation failures
- * as 400, a sidecar that did not start as `SIDECAR_FAILED` naming the entry.
- * The code stays in the message so callers can tell them apart.
+ * Sidecar rejections carry a lower-snake `sidecar_*` semantic code, like every
+ * other `error_code`: validation failures as 400, a sidecar that did not start
+ * as `sidecar_failed` naming the entry. The code stays in the message so
+ * callers can tell them apart.
  */
 function sidecarApiError(res: {
   response: { status: number; statusText: string }
@@ -1314,7 +1315,7 @@ function sidecarApiError(res: {
 }): Error | undefined {
   const body = isPlainObject(res.error) ? res.error : undefined
   const code = body?.error_code
-  if (typeof code !== 'string' || !code.startsWith('SIDECAR_')) {
+  if (typeof code !== 'string' || !code.startsWith('sidecar_')) {
     return
   }
 

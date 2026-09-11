@@ -973,10 +973,10 @@ def from_client_sidecars(
 
 
 def sidecar_api_exception(res: Any) -> Optional[Exception]:
-    """Map a ``SIDECAR_*`` rejection, or ``None`` for any other response.
+    """Map a ``sidecar_*`` rejection, or ``None`` for any other response.
 
-    Sidecar validation failures are 400 with a ``SIDECAR_*`` semantic code; a
-    sidecar that did not start is ``SIDECAR_FAILED`` naming the entry. The code
+    Sidecar validation failures are 400 with a ``sidecar_*`` semantic code; a
+    sidecar that did not start is ``sidecar_failed`` naming the entry. The code
     stays in the message so callers can tell them apart.
     """
     try:
@@ -988,7 +988,7 @@ def sidecar_api_exception(res: Any) -> Optional[Exception]:
         return None
 
     code = body.get("error_code")
-    if not isinstance(code, str) or not code.startswith("SIDECAR_"):
+    if not isinstance(code, str) or not code.startswith("sidecar_"):
         return None
 
     message = f"{code}: {body.get('message', res.status_code)}"

@@ -235,7 +235,7 @@ def test_a_sidecar_400_is_an_argument_error_with_the_code_preserved(
     request = Mock(
         return_value=_response(
             400,
-            b'{"code":400,"error_code":"SIDECAR_UNKNOWN_ENTRY",'
+            b'{"code":400,"error_code":"sidecar_unknown_entry",'
             b'"message":"unknown sidecar entry \\"memcached\\""}',
         )
     )
@@ -245,19 +245,19 @@ def test_a_sidecar_400_is_an_argument_error_with_the_code_preserved(
         Sandbox.create(api_key=test_api_key, sidecars=[{"entry": "memcached"}])
 
     assert excinfo.value.status_code == 400
-    assert "SIDECAR_UNKNOWN_ENTRY" in str(excinfo.value)
+    assert "sidecar_unknown_entry" in str(excinfo.value)
     assert "memcached" in str(excinfo.value)
 
 
 async def test_async_sidecar_400_is_an_argument_error(monkeypatch, test_api_key):
     request = AsyncMock(
         return_value=_response(
-            400, b'{"code":400,"error_code":"SIDECAR_FLAG_OFF","message":"off"}'
+            400, b'{"code":400,"error_code":"sidecar_flag_off","message":"off"}'
         )
     )
     monkeypatch.setattr(post_sandboxes, "asyncio_detailed", request)
 
-    with pytest.raises(InvalidArgumentException, match="SIDECAR_FLAG_OFF"):
+    with pytest.raises(InvalidArgumentException, match="sidecar_flag_off"):
         await AsyncSandbox.create(api_key=test_api_key, sidecars=[{"entry": "redis"}])
 
 
@@ -267,7 +267,7 @@ def test_sidecar_failed_keeps_the_entry_name_and_is_not_an_argument_error(
     request = Mock(
         return_value=_response(
             500,
-            b'{"code":500,"error_code":"SIDECAR_FAILED",'
+            b'{"code":500,"error_code":"sidecar_failed",'
             b'"message":"sidecar \\"redis\\" failed to become ready"}',
         )
     )
@@ -278,7 +278,7 @@ def test_sidecar_failed_keeps_the_entry_name_and_is_not_an_argument_error(
 
     assert not isinstance(excinfo.value, InvalidArgumentException)
     assert excinfo.value.status_code == 500
-    assert "SIDECAR_FAILED" in str(excinfo.value)
+    assert "sidecar_failed" in str(excinfo.value)
     assert "redis" in str(excinfo.value)
 
 
@@ -287,6 +287,7 @@ def test_sidecar_failed_keeps_the_entry_name_and_is_not_an_argument_error(
     [
         pytest.param(b'{"code":400,"message":"invalid template"}', id="no-code"),
         pytest.param(b'{"error_code":"sandbox_create_failed"}', id="other-code"),
+        pytest.param(b'{"error_code":"SIDECAR_UNKNOWN_ENTRY"}', id="uppercase"),
         pytest.param(b"not json", id="not-json"),
         pytest.param(b"", id="empty"),
         pytest.param(b"[1]", id="not-an-object"),
@@ -303,13 +304,13 @@ def test_update_network_surfaces_a_rule_collision_as_an_argument_error(
     request = Mock(
         return_value=_response(
             400,
-            b'{"code":400,"error_code":"SIDECAR_RULE_COLLISION",'
+            b'{"code":400,"error_code":"sidecar_rule_collision",'
             b'"message":"api.openai.com is routed through the iron-proxy sidecar"}',
         )
     )
     monkeypatch.setattr(put_sandboxes_sandbox_id_network, "sync_detailed", request)
 
-    with pytest.raises(InvalidArgumentException, match="SIDECAR_RULE_COLLISION"):
+    with pytest.raises(InvalidArgumentException, match="sidecar_rule_collision"):
         Sandbox.update_network(
             "sbx-test", {"allow_out": ["api.openai.com"]}, api_key=test_api_key
         )
@@ -320,7 +321,7 @@ def test_update_network_404_still_wins_over_the_sidecar_mapping(
 ):
     request = Mock(
         return_value=_response(
-            404, b'{"code":404,"error_code":"SIDECAR_X","message":"gone"}'
+            404, b'{"code":404,"error_code":"sidecar_x","message":"gone"}'
         )
     )
     monkeypatch.setattr(put_sandboxes_sandbox_id_network, "sync_detailed", request)
