@@ -72,6 +72,7 @@ def sandbox_factory(request, template, sandbox_test_id):
     def factory(*, template_name: str = template, **kwargs):
         metadata = kwargs.setdefault("metadata", dict())
         metadata.setdefault("sandbox_test_id", sandbox_test_id)
+        kwargs.setdefault("timeout", 300)
 
         sandbox = Sandbox.create(template_name, **kwargs)
 
@@ -99,6 +100,7 @@ async def async_sandbox_factory(request, template, sandbox_test_id):
     async def factory(*, template_name: str = template, **kwargs):
         metadata = kwargs.setdefault("metadata", dict())
         metadata.setdefault("sandbox_test_id", sandbox_test_id)
+        kwargs.setdefault("timeout", 300)
 
         sandbox = await AsyncSandbox.create(template_name, **kwargs)
         sandboxes.append(sandbox)

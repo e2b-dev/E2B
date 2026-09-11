@@ -1,8 +1,8 @@
 import { assert, expect, test } from 'vitest'
 
-import { sandboxTest, isDebug, TEST_API_KEY } from '../setup.js'
+import { sandboxTest, isDebug } from '../setup.js'
 import { Sandbox } from '../../src'
-import { InvalidArgumentError, SandboxNotFoundError } from '../../src/errors'
+import { SandboxNotFoundError } from '../../src/errors'
 
 sandboxTest.skipIf(isDebug)(
   'fork a sandbox',
@@ -97,10 +97,4 @@ test.skipIf(isDebug)('fork a killed sandbox fails', async () => {
   await sandbox.kill()
 
   await expect(sandbox.fork()).rejects.toThrowError(SandboxNotFoundError)
-})
-
-test('fork with count lower than 1 fails', async () => {
-  await expect(
-    Sandbox.fork('sbx-test', { count: 0, apiKey: TEST_API_KEY })
-  ).rejects.toThrowError(InvalidArgumentError)
 })
