@@ -1319,7 +1319,11 @@ function fromApiSidecars(
  * `sidecar_deprecated_entry`, `sidecar_limit`, `sidecar_one_proxy`,
  * `sidecar_config_invalid`, `sidecar_secret_missing`,
  * `sidecar_rule_collision`, `sidecar_egress_conflict`, `sidecar_flag_off` —
- * and a sidecar that did not start is `sidecar_failed` naming the entry. The
+ * and a sidecar that did not start is `sidecar_failed` naming the entry. On
+ * resume, `sidecar_version_unavailable` (409: the catalog version the sidecar
+ * was snapshotted with has been removed; the sandbox stays paused) and
+ * `sidecar_snapshot_mismatch` (500: a stored sidecar snapshot has no matching
+ * declaration) stay {@link SandboxError}s — the SDK has no conflict type. The
  * code stays in the message so callers can tell them apart.
  */
 function sidecarApiError(res: {
@@ -2082,7 +2086,7 @@ export class SandboxApi extends ClientFactory {
       throw new SandboxNotFoundError(`Paused sandbox ${sandboxId} not found`)
     }
 
-    const err = handleApiError(res)
+    const err = sidecarApiError(res) ?? handleApiError(res)
     if (err) {
       throw err
     }

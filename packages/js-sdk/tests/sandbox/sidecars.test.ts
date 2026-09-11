@@ -43,6 +43,8 @@ const sandboxDetail = {
 
 let lastCreateBody: Record<string, any> | undefined
 let createResponse: () => HttpResponse
+let connectResponse: () => HttpResponse = () =>
+  HttpResponse.json({ sandboxID: sandboxId, envdVersion: '0.2.4' })
 let infoSidecars: unknown[] | undefined
 
 const server = setupServer(
@@ -56,6 +58,7 @@ const server = setupServer(
   http.get(apiUrl('/v2/sandboxes'), () =>
     HttpResponse.json([{ ...sandboxDetail, sidecars: infoSidecars }])
   ),
+  http.post(apiUrl(`/sandboxes/${sandboxId}/connect`), () => connectResponse()),
   http.put(apiUrl(`/sandboxes/${sandboxId}/network`), () =>
     HttpResponse.json(
       {
@@ -293,6 +296,30 @@ test('a 400 without a sidecar code keeps the generic mapping', async () => {
   expect(err).not.toBeInstanceOf(InvalidArgumentError)
   expect((err as Error).message).toBe('400: invalid template')
 })
+
+test.each([
+  [
+    'sidecar_version_unavailable',
+    409,
+    'catalog version redis@7.4.0 is no longer available; sandbox stays paused',
+  ],
+  ['sidecar_snapshot_mismatch', 500, 'snapshot for iroh has no declaration'],
+])(
+  'Sandbox.connect surfaces %s as a SandboxError with the code and status',
+  async (code, status, message) => {
+    connectResponse = () =>
+      HttpResponse.json({ code: status, error_code: code, message }, { status })
+
+    const err = await Sandbox.connect(sandboxId, {
+      apiKey: TEST_API_KEY,
+    }).catch((e: unknown) => e)
+
+    expect(err).toBeInstanceOf(SandboxError)
+    expect(err).not.toBeInstanceOf(InvalidArgumentError)
+    expect((err as SandboxError).statusCode).toBe(status)
+    expect((err as Error).message).toBe(`${code}: ${message}`)
+  }
+)
 
 test('Sandbox.updateNetwork surfaces sidecar_rule_collision as InvalidArgumentError', async () => {
   const err = await Sandbox.updateNetwork(

@@ -7,6 +7,7 @@ import pytest
 from e2b import AsyncSandbox, Sandbox, SandboxInfo, SidecarInfo
 from e2b.api.client.api.sandboxes import (
     post_sandboxes,
+    post_sandboxes_sandbox_id_connect,
     put_sandboxes_sandbox_id_network,
 )
 from e2b.api.client.models import ListedSandbox, SandboxDetail
@@ -322,6 +323,48 @@ def test_every_400_sidecar_code_is_an_argument_error(code):
 )
 def test_other_errors_keep_the_generic_mapping(content):
     assert sidecar_api_exception(_response(400, content)) is None
+
+
+@pytest.mark.parametrize(
+    "code, status",
+    [
+        ("sidecar_version_unavailable", 409),
+        ("sidecar_snapshot_mismatch", 500),
+    ],
+)
+def test_resume_codes_stay_sandbox_exceptions_with_the_code_and_status(code, status):
+    err = sidecar_api_exception(
+        _response(
+            status,
+            f'{{"code":{status},"error_code":"{code}","message":"resume"}}'.encode(),
+        )
+    )
+
+    assert isinstance(err, SandboxException)
+    assert not isinstance(err, InvalidArgumentException)
+    assert err.status_code == status
+    assert str(err) == f"{code}: resume"
+
+
+def test_connect_surfaces_a_sidecar_version_unavailable_conflict(
+    monkeypatch, test_api_key
+):
+    request = Mock(
+        return_value=_response(
+            409,
+            b'{"code":409,"error_code":"sidecar_version_unavailable",'
+            b'"message":"catalog version redis@7.4.0 is no longer available"}',
+        )
+    )
+    monkeypatch.setattr(post_sandboxes_sandbox_id_connect, "sync_detailed", request)
+
+    with pytest.raises(SandboxException) as excinfo:
+        Sandbox.connect("sbx-test", api_key=test_api_key)
+
+    assert not isinstance(excinfo.value, InvalidArgumentException)
+    assert excinfo.value.status_code == 409
+    assert "sidecar_version_unavailable" in str(excinfo.value)
+    assert "redis@7.4.0" in str(excinfo.value)
 
 
 def test_update_network_surfaces_a_rule_collision_as_an_argument_error(

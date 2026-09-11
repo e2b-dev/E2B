@@ -557,7 +557,7 @@ class SandboxApi(SandboxBase):
             raise SandboxNotFoundException(f"Paused sandbox {sandbox_id} not found")
 
         if res.status_code >= 300:
-            raise handle_api_exception(res)
+            raise sidecar_api_exception(res) or handle_api_exception(res)
 
         # Check if res.parse is Error
         if isinstance(res.parsed, Error):
