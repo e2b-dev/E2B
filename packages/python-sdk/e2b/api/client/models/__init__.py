@@ -57,6 +57,13 @@ from .sandboxes_with_metrics import SandboxesWithMetrics
 from .secret import Secret
 from .secret_metadata import SecretMetadata
 from .secret_update import SecretUpdate
+from .sidecar_attachment import SidecarAttachment
+from .sidecar_attachment_config import SidecarAttachmentConfig
+from .sidecar_attachment_secrets import SidecarAttachmentSecrets
+from .sidecar_info import SidecarInfo
+from .sidecar_info_class import SidecarInfoClass
+from .sidecar_info_role import SidecarInfoRole
+from .sidecar_info_state import SidecarInfoState
 from .snapshot_info import SnapshotInfo
 from .team_user import TeamUser
 from .template import Template
@@ -138,6 +145,13 @@ __all__ = (
     "Secret",
     "SecretMetadata",
     "SecretUpdate",
+    "SidecarAttachment",
+    "SidecarAttachmentConfig",
+    "SidecarAttachmentSecrets",
+    "SidecarInfo",
+    "SidecarInfoClass",
+    "SidecarInfoRole",
+    "SidecarInfoState",
     "SnapshotInfo",
     "TeamUser",
     "Template",

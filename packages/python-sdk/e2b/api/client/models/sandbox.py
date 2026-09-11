@@ -1,10 +1,14 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from ..types import UNSET, Unset
+
+if TYPE_CHECKING:
+    from ..models.sidecar_info import SidecarInfo
+
 
 T = TypeVar("T", bound="Sandbox")
 
@@ -21,6 +25,7 @@ class Sandbox:
         envd_access_token (Union[Unset, str]): Access token used for envd communication
         traffic_access_token (Union[None, Unset, str]): Token required for accessing sandbox via proxy.
         domain (Union[None, Unset, str]): Base domain where the sandbox traffic is accessible
+        sidecars (Union[Unset, list['SidecarInfo']]):
     """
 
     template_id: str
@@ -31,6 +36,7 @@ class Sandbox:
     envd_access_token: Union[Unset, str] = UNSET
     traffic_access_token: Union[None, Unset, str] = UNSET
     domain: Union[None, Unset, str] = UNSET
+    sidecars: Union[Unset, list["SidecarInfo"]] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -58,6 +64,13 @@ class Sandbox:
         else:
             domain = self.domain
 
+        sidecars: Union[Unset, list[dict[str, Any]]] = UNSET
+        if not isinstance(self.sidecars, Unset):
+            sidecars = []
+            for sidecars_item_data in self.sidecars:
+                sidecars_item = sidecars_item_data.to_dict()
+                sidecars.append(sidecars_item)
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -76,11 +89,15 @@ class Sandbox:
             field_dict["trafficAccessToken"] = traffic_access_token
         if domain is not UNSET:
             field_dict["domain"] = domain
+        if sidecars is not UNSET:
+            field_dict["sidecars"] = sidecars
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.sidecar_info import SidecarInfo
+
         d = dict(src_dict)
         template_id = d.pop("templateID")
 
@@ -114,6 +131,13 @@ class Sandbox:
 
         domain = _parse_domain(d.pop("domain", UNSET))
 
+        sidecars = []
+        _sidecars = d.pop("sidecars", UNSET)
+        for sidecars_item_data in _sidecars or []:
+            sidecars_item = SidecarInfo.from_dict(sidecars_item_data)
+
+            sidecars.append(sidecars_item)
+
         sandbox = cls(
             template_id=template_id,
             sandbox_id=sandbox_id,
@@ -123,6 +147,7 @@ class Sandbox:
             envd_access_token=envd_access_token,
             traffic_access_token=traffic_access_token,
             domain=domain,
+            sidecars=sidecars,
         )
 
         sandbox.additional_properties = d

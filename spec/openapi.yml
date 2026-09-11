@@ -737,6 +737,80 @@ components:
         - name
         - path
 
+    SidecarAttachment:
+      type: object
+      description: A sidecar microVM to attach to the sandbox, declared from the E2B sidecar catalog.
+      required:
+        - entry
+      properties:
+        entry:
+          type: string
+          description: Catalog entry name (for example "iron-proxy" or "redis"). The sandbox reaches the sidecar at "{entry}.sidecar.e2b.local".
+        version:
+          type: string
+          description: Catalog entry version. Defaults to the entry's current version.
+        config:
+          type: object
+          description: Entry-specific configuration, validated against the entry's schema. String values may reference secrets as "${e2b.secrets.<name>}".
+          additionalProperties: true
+        secrets:
+          type: object
+          description: Secret slots the entry declares, keyed by slot name, each holding a secret reference the platform resolves at injection time. The secret value never enters the sandbox.
+          additionalProperties:
+            type: string
+
+    SidecarInfo:
+      type: object
+      description: A sidecar attached to the sandbox and its current state.
+      required:
+        - entry
+        - version
+        - role
+        - class
+        - state
+        - name
+      properties:
+        entry:
+          type: string
+          description: Catalog entry name
+        version:
+          type: string
+          description: Catalog entry version
+        role:
+          type: string
+          enum:
+            - proxy
+            - service
+          description: Role of the sidecar
+        class:
+          type: string
+          enum:
+            - ephemeral
+            - stateful
+          description: Lifecycle class of the sidecar
+        state:
+          type: string
+          enum:
+            - starting
+            - running
+            - failed
+            - stopped
+          description: Current state of the sidecar
+        name:
+          type: string
+          description: Name the sandbox reaches the sidecar at ("{entry}.sidecar.e2b.local")
+        address:
+          type: string
+          description: Address of the sidecar inside the sandbox network
+        ports:
+          type: array
+          description: Ports the sidecar listens on
+          items:
+            type: integer
+        lastError:
+          type: string
+          description: Last error of the sidecar, set when the state is failed
+
     Sandbox:
       required:
         - templateID
@@ -770,6 +844,10 @@ components:
           type: string
           nullable: true
           description: Base domain where the sandbox traffic is accessible
+        sidecars:
+          type: array
+          items:
+            $ref: "#/components/schemas/SidecarInfo"
 
     SandboxDetail:
       required:
@@ -836,6 +914,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SandboxVolumeMount"
+        sidecars:
+          type: array
+          items:
+            $ref: "#/components/schemas/SidecarInfo"
 
     ListedSandbox:
       required:
@@ -887,6 +969,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SandboxVolumeMount"
+        sidecars:
+          type: array
+          items:
+            $ref: "#/components/schemas/SidecarInfo"
 
     SandboxesWithMetrics:
       required:
@@ -948,6 +1034,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SandboxVolumeMount"
+        sidecars:
+          type: array
+          description: Sidecar microVMs to attach to the sandbox, at most four, at most one with the proxy role. Requires the team's sandbox-sidecars feature.
+          maxItems: 4
+          items:
+            $ref: "#/components/schemas/SidecarAttachment"
 
     SandboxIam:
       type: object
