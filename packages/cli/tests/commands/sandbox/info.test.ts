@@ -11,7 +11,7 @@ const sidecars: SidecarInfo[] = [
     entry: 'redis',
     version: '7.4.1',
     role: 'service',
-    class: 'ephemeral',
+    class: 'stateful',
     state: 'running',
     name: 'redis.sidecar.e2b.local',
     address: '169.254.0.25',
@@ -21,7 +21,7 @@ const sidecars: SidecarInfo[] = [
     entry: 'iron-proxy',
     version: '0.4.1',
     role: 'proxy',
-    class: 'ephemeral',
+    class: 'stateful',
     state: 'failed',
     name: 'iron-proxy.sidecar.e2b.local',
     lastError: 'readiness probe timed out',
@@ -44,9 +44,9 @@ describe('sandbox info sidecars', () => {
 
   test('formats a table with entry, version, role, class, state, name, address, ports and last error', () => {
     expect(formatSidecarTable(sidecars)).toEqual([
-      'ENTRY        VERSION   ROLE      CLASS       STATE     NAME                           ADDRESS        PORTS   LAST ERROR',
-      'redis        7.4.1     service   ephemeral   running   redis.sidecar.e2b.local        169.254.0.25   6379',
-      'iron-proxy   0.4.1     proxy     ephemeral   failed    iron-proxy.sidecar.e2b.local                          readiness probe timed out',
+      'ENTRY        VERSION   ROLE      CLASS      STATE     NAME                           ADDRESS        PORTS   LAST ERROR',
+      'redis        7.4.1     service   stateful   running   redis.sidecar.e2b.local        169.254.0.25   6379',
+      'iron-proxy   0.4.1     proxy     stateful   failed    iron-proxy.sidecar.e2b.local                          readiness probe timed out',
     ])
   })
 

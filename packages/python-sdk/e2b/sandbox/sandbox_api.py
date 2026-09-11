@@ -524,11 +524,15 @@ class SidecarAttachment(TypedDict):
     - ``"iroh"`` (service role): a peer-to-peer tunnel configured with
       ``pipes`` of ``publish`` / ``connect``; tickets are served at
       ``http://iroh.sidecar.e2b.local:8080/tickets.json``, to be polled until
-      ``status == "ready"``. Takes an optional ``node_secret`` secret slot.
+      ``status == "ready"``. Takes an optional ``node_secret`` secret slot. A
+      forked sandbox's iroh sidecar starts with a fresh peer identity.
 
-    Sidecars are ephemeral: torn down at pause and relaunched at resume with
-    freshly injected configuration and secrets. Attaching one requires the
-    team's ``sandbox-sidecars`` feature::
+    A sidecar follows the sandbox's lifecycle: it is paused and snapshotted
+    with the sandbox, comes back exactly as it was on resume (its data
+    included), is forked with it, and is terminated with it. A sidecar that
+    crashes is restarted once from its clean image and then reported
+    ``"failed"``; the sandbox keeps running. Attaching one requires the team's
+    ``sandbox-sidecars`` feature::
 
         sandbox = Sandbox.create(
             sidecars=[
@@ -571,7 +575,10 @@ Role of a sidecar: ``"proxy"`` steers the sandbox's egress through it,
 """
 
 SidecarClass = Literal["ephemeral", "stateful"]
-"""Lifecycle class of a sidecar. Only ``"ephemeral"`` sidecars can be attached in this version."""
+"""
+Lifecycle class of a sidecar, as reported by the API; every catalog entry today
+is ``"stateful"``. Kept for wire stability.
+"""
 
 SidecarState = Union[Literal["starting", "running", "failed", "stopped"], str]
 """
