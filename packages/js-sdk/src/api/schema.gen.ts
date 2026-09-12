@@ -2749,7 +2749,7 @@ export interface components {
             config?: {
                 [key: string]: unknown;
             };
-            /** @description Catalog entry name (for example "iron-proxy" or "redis"). The sandbox reaches the sidecar at "{entry}.sidecar.e2b.local". */
+            /** @description Catalog entry name (for example "iron-proxy" or "valkey"). The sandbox reaches the sidecar at "{entry}.sidecar.e2b.local". */
             entry: string;
             /** @description Secret slots the entry declares, keyed by slot name, each holding a secret reference the platform resolves at injection time. The secret value never enters the sandbox. */
             secrets?: {

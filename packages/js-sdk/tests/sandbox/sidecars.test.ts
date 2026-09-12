@@ -7,13 +7,13 @@ import { TEST_API_KEY, apiUrl } from '../setup'
 
 const sandboxId = 'test-sandbox-id'
 
-const redisInfo = {
-  entry: 'redis',
+const valkeyInfo = {
+  entry: 'valkey',
   version: '7.4.1',
   role: 'service',
   class: 'stateful',
   state: 'running',
-  name: 'redis.sidecar.e2b.local',
+  name: 'valkey.sidecar.e2b.local',
   address: '169.254.0.25',
   ports: [6379],
 }
@@ -98,7 +98,7 @@ test('Sandbox.create sends the sidecars in the request body', async () => {
   await Sandbox.create('base', {
     apiKey: TEST_API_KEY,
     sidecars: [
-      { entry: 'redis' },
+      { entry: 'valkey' },
       {
         entry: 'iron-proxy',
         version: '0.4.1',
@@ -109,7 +109,7 @@ test('Sandbox.create sends the sidecars in the request body', async () => {
   })
 
   expect(lastCreateBody?.sidecars).toEqual([
-    { entry: 'redis' },
+    { entry: 'valkey' },
     {
       entry: 'iron-proxy',
       version: '0.4.1',
@@ -136,11 +136,11 @@ test('Sandbox.create strips unknown sidecar properties', async () => {
     sidecars: [
       // An untyped caller can copy an extra key out of a config file; the
       // API rejects unknown properties.
-      { entry: 'redis', image: 'redis:7' } as any,
+      { entry: 'valkey', image: 'valkey:7' } as any,
     ],
   })
 
-  expect(lastCreateBody?.sidecars).toEqual([{ entry: 'redis' }])
+  expect(lastCreateBody?.sidecars).toEqual([{ entry: 'valkey' }])
 })
 
 test('Sandbox.create rejects a sidecar without an entry before any request', async () => {
@@ -154,7 +154,7 @@ test('Sandbox.create rejects a sidecar without an entry before any request', asy
   await expect(
     Sandbox.create('base', {
       apiKey: TEST_API_KEY,
-      sidecars: { entry: 'redis' } as any,
+      sidecars: { entry: 'valkey' } as any,
     })
   ).rejects.toThrowError(InvalidArgumentError)
 
@@ -162,15 +162,15 @@ test('Sandbox.create rejects a sidecar without an entry before any request', asy
 })
 
 test('Sandbox.getInfo returns the sidecars with their state', async () => {
-  infoSidecars = [redisInfo, failedProxyInfo]
+  infoSidecars = [valkeyInfo, failedProxyInfo]
 
   const info = await Sandbox.getInfo(sandboxId, { apiKey: TEST_API_KEY })
 
-  expect(info.sidecars).toEqual([redisInfo, failedProxyInfo])
+  expect(info.sidecars).toEqual([valkeyInfo, failedProxyInfo])
 })
 
 test('Sandbox.getInfo passes through a state value the SDK does not know', async () => {
-  infoSidecars = [{ ...redisInfo, state: 'restarting' }]
+  infoSidecars = [{ ...valkeyInfo, state: 'restarting' }]
 
   const info = await Sandbox.getInfo(sandboxId, { apiKey: TEST_API_KEY })
 
@@ -184,11 +184,11 @@ test('Sandbox.getInfo returns an empty sidecar list when the API sends none', as
 })
 
 test('Sandbox.list returns the sidecars of each sandbox', async () => {
-  infoSidecars = [redisInfo]
+  infoSidecars = [valkeyInfo]
 
   const [info] = await Sandbox.list({ apiKey: TEST_API_KEY }).nextItems()
 
-  expect(info.sidecars).toEqual([redisInfo])
+  expect(info.sidecars).toEqual([valkeyInfo])
 })
 
 test('a sidecar_* 400 surfaces as InvalidArgumentError with the code preserved', async () => {
@@ -219,21 +219,21 @@ test('sidecar_failed keeps the entry name and is not an argument error', async (
       {
         code: 500,
         error_code: 'sidecar_failed',
-        message: 'sidecar "redis" failed to become ready',
+        message: 'sidecar "valkey" failed to become ready',
       },
       { status: 500 }
     )
 
   const err = await Sandbox.create('base', {
     apiKey: TEST_API_KEY,
-    sidecars: [{ entry: 'redis' }],
+    sidecars: [{ entry: 'valkey' }],
   }).catch((e: unknown) => e)
 
   expect(err).toBeInstanceOf(SandboxError)
   expect(err).not.toBeInstanceOf(InvalidArgumentError)
   expect((err as SandboxError).statusCode).toBe(500)
   expect((err as Error).message).toContain('sidecar_failed')
-  expect((err as Error).message).toContain('redis')
+  expect((err as Error).message).toContain('valkey')
 })
 
 test.each([
@@ -257,7 +257,7 @@ test.each([
 
   const err = await Sandbox.create('base', {
     apiKey: TEST_API_KEY,
-    sidecars: [{ entry: 'redis' }],
+    sidecars: [{ entry: 'valkey' }],
   }).catch((e: unknown) => e)
 
   expect(err).toBeInstanceOf(InvalidArgumentError)
@@ -301,7 +301,7 @@ test.each([
   [
     'sidecar_version_unavailable',
     409,
-    'catalog version redis@7.4.0 is no longer available; sandbox stays paused',
+    'catalog version valkey@7.4.0 is no longer available; sandbox stays paused',
   ],
   ['sidecar_snapshot_mismatch', 500, 'snapshot for iroh has no declaration'],
 ])(

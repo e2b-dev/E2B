@@ -19,7 +19,7 @@ class SidecarAttachment:
     """A sidecar microVM to attach to the sandbox, declared from the E2B sidecar catalog.
 
     Attributes:
-        entry (str): Catalog entry name (for example "iron-proxy" or "redis"). The sandbox reaches the sidecar at
+        entry (str): Catalog entry name (for example "iron-proxy" or "valkey"). The sandbox reaches the sidecar at
             "{entry}.sidecar.e2b.local".
         version (Union[Unset, str]): Catalog entry version. Defaults to the entry's current version.
         config (Union[Unset, SidecarAttachmentConfig]): Entry-specific configuration, validated against the entry's

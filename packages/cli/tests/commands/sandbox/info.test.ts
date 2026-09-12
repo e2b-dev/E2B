@@ -8,12 +8,12 @@ import {
 
 const sidecars: SidecarInfo[] = [
   {
-    entry: 'redis',
+    entry: 'valkey',
     version: '7.4.1',
     role: 'service',
     class: 'stateful',
     state: 'running',
-    name: 'redis.sidecar.e2b.local',
+    name: 'valkey.sidecar.e2b.local',
     address: '169.254.0.25',
     ports: [6379],
   },
@@ -45,7 +45,7 @@ describe('sandbox info sidecars', () => {
   test('formats a table with entry, version, role, class, state, name, address, ports and last error', () => {
     expect(formatSidecarTable(sidecars)).toEqual([
       'ENTRY        VERSION   ROLE      CLASS      STATE     NAME                           ADDRESS        PORTS   LAST ERROR',
-      'redis        7.4.1     service   stateful   running   redis.sidecar.e2b.local        169.254.0.25   6379',
+      'valkey       7.4.1     service   stateful   running   valkey.sidecar.e2b.local       169.254.0.25   6379',
       'iron-proxy   0.4.1     proxy     stateful   failed    iron-proxy.sidecar.e2b.local                          readiness probe timed out',
     ])
   })
@@ -68,7 +68,7 @@ describe('sandbox info sidecars', () => {
     const start = lines.findIndex((line) => line.includes('Sidecars'))
     expect(start).toBeGreaterThan(0)
     expect(lines[start + 1]).toMatch(/^  ENTRY\s+VERSION/)
-    expect(lines[start + 2]).toMatch(/^  redis\s+7\.4\.1/)
+    expect(lines[start + 2]).toMatch(/^  valkey\s+7\.4\.1/)
     expect(lines[start + 3]).toMatch(/^  iron-proxy\s+0\.4\.1/)
   })
 

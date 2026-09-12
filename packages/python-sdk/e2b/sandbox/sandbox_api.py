@@ -518,7 +518,8 @@ class SidecarAttachment(TypedDict):
     - ``"iron-proxy"`` (proxy role): the sandbox's egress is steered through it
       and it swaps a placeholder token for the real secret value on the way
       out, so the secret never enters the sandbox.
-    - ``"redis"`` (service role): a cache the sandbox talks to directly.
+    - ``"valkey"`` (service role): a Valkey (Redis-compatible) cache the sandbox
+      talks to directly, on port 6379.
     - ``"sqlite"`` (service role): libsql-server over HTTP at
       ``http://sqlite.sidecar.e2b.local:8080``.
     - ``"iroh"`` (service role): a peer-to-peer tunnel configured with
@@ -536,7 +537,7 @@ class SidecarAttachment(TypedDict):
 
         sandbox = Sandbox.create(
             sidecars=[
-                {"entry": "redis"},
+                {"entry": "valkey"},
                 {
                     "entry": "iron-proxy",
                     # Slot names and config keys are defined by the catalog entry.
@@ -547,7 +548,7 @@ class SidecarAttachment(TypedDict):
     """
 
     entry: str
-    """Catalog entry name: ``"iron-proxy"``, ``"redis"``, ``"sqlite"`` or ``"iroh"``."""
+    """Catalog entry name: ``"iron-proxy"``, ``"valkey"``, ``"sqlite"`` or ``"iroh"``."""
 
     version: NotRequired[str]
     """Catalog entry version. Defaults to the entry's current version."""
@@ -933,7 +934,7 @@ def build_sidecars_body(
     ):
         raise InvalidArgumentException(
             "sidecars must be a list of dicts with a string 'entry' "
-            "(e.g. [{'entry': 'redis'}])."
+            "(e.g. [{'entry': 'valkey'}])."
         )
 
     body: List[ClientSidecarAttachment] = []
@@ -943,7 +944,7 @@ def build_sidecars_body(
         ):
             raise InvalidArgumentException(
                 f"sidecars[{i}] must be a dict with a string 'entry' naming a "
-                "catalog entry (e.g. 'redis')."
+                "catalog entry (e.g. 'valkey')."
             )
 
         attachment = ClientSidecarAttachment(entry=sidecar["entry"])

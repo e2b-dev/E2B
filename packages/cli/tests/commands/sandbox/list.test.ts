@@ -68,12 +68,12 @@ describe('sandbox list table rows', () => {
         ...sandbox('sbx-a', startedAt),
         sidecars: [
           {
-            entry: 'redis',
+            entry: 'valkey',
             version: '7.4.1',
             role: 'service',
             class: 'stateful',
             state: 'running',
-            name: 'redis.sidecar.e2b.local',
+            name: 'valkey.sidecar.e2b.local',
           },
           {
             entry: 'iron-proxy',
@@ -88,7 +88,7 @@ describe('sandbox list table rows', () => {
       sandbox('sbx-b', startedAt),
     ])
 
-    expect(withSidecars.sidecars).toBe('redis:running,iron-proxy:failed')
+    expect(withSidecars.sidecars).toBe('valkey:running,iron-proxy:failed')
     expect(without.sidecars).toBe('')
     expect(formatSidecars(undefined)).toBe('')
   })

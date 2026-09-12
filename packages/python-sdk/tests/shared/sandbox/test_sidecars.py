@@ -20,13 +20,13 @@ from e2b.exceptions import (
 )
 from e2b.sandbox.sandbox_api import build_sidecars_body, sidecar_api_exception
 
-REDIS_INFO: Dict[str, Any] = {
-    "entry": "redis",
+VALKEY_INFO: Dict[str, Any] = {
+    "entry": "valkey",
     "version": "7.4.1",
     "role": "service",
     "class": "stateful",
     "state": "running",
-    "name": "redis.sidecar.e2b.local",
+    "name": "valkey.sidecar.e2b.local",
     "address": "169.254.0.25",
     "ports": [6379],
 }
@@ -92,7 +92,7 @@ async def _async_request_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, 
 
 
 SIDECARS: List[Any] = [
-    {"entry": "redis"},
+    {"entry": "valkey"},
     {
         "entry": "iron-proxy",
         "version": "0.4.1",
@@ -102,7 +102,7 @@ SIDECARS: List[Any] = [
 ]
 
 SIDECARS_WIRE = [
-    {"entry": "redis"},
+    {"entry": "valkey"},
     {
         "entry": "iron-proxy",
         "version": "0.4.1",
@@ -147,10 +147,10 @@ async def test_async_create_omits_an_empty_sidecar_list(monkeypatch, test_api_ke
 def test_create_strips_unknown_sidecar_keys():
     # An untyped caller can copy an extra key out of a config file; the API
     # rejects unknown properties.
-    body = build_sidecars_body(cast(Any, [{"entry": "redis", "image": "redis:7"}]))
+    body = build_sidecars_body(cast(Any, [{"entry": "valkey", "image": "valkey:7"}]))
 
     assert body is not None
-    assert [s.to_dict() for s in body] == [{"entry": "redis"}]
+    assert [s.to_dict() for s in body] == [{"entry": "valkey"}]
 
 
 @pytest.mark.parametrize(
@@ -158,9 +158,9 @@ def test_create_strips_unknown_sidecar_keys():
     [
         pytest.param([{"version": "7.4.1"}], id="missing-entry"),
         pytest.param([{"entry": 6379}], id="non-string-entry"),
-        pytest.param(["redis"], id="string-item"),
-        pytest.param({"entry": "redis"}, id="dict-instead-of-list"),
-        pytest.param("redis", id="string"),
+        pytest.param(["valkey"], id="string-item"),
+        pytest.param({"entry": "valkey"}, id="dict-instead-of-list"),
+        pytest.param("valkey", id="string"),
     ],
 )
 def test_create_rejects_a_malformed_sidecar_list(monkeypatch, test_api_key, sidecars):
@@ -177,10 +177,10 @@ def test_create_rejects_a_malformed_sidecar_list(monkeypatch, test_api_key, side
     "sidecar, field",
     [
         pytest.param(
-            {"entry": "redis", "config": ["maxmemory"]}, "config", id="config-list"
+            {"entry": "valkey", "config": ["maxmemory"]}, "config", id="config-list"
         ),
         pytest.param(
-            {"entry": "redis", "config": "maxmemory=64mb"}, "config", id="config-str"
+            {"entry": "valkey", "config": "maxmemory=64mb"}, "config", id="config-str"
         ),
         pytest.param(
             {"entry": "iron-proxy", "secrets": ["upstream"]},
@@ -208,12 +208,12 @@ def test_create_rejects_a_malformed_sidecar_config_or_secrets_by_name(sidecar, f
 def _expected_infos() -> List[SidecarInfo]:
     return [
         SidecarInfo(
-            entry="redis",
+            entry="valkey",
             version="7.4.1",
             role="service",
             class_="stateful",
             state="running",
-            name="redis.sidecar.e2b.local",
+            name="valkey.sidecar.e2b.local",
             address="169.254.0.25",
             ports=[6379],
         ),
@@ -231,7 +231,7 @@ def _expected_infos() -> List[SidecarInfo]:
 
 def test_info_returns_the_sidecars_with_their_state():
     detail = SandboxDetail.from_dict(
-        {**SANDBOX_DETAIL, "sidecars": [REDIS_INFO, FAILED_PROXY_INFO]}
+        {**SANDBOX_DETAIL, "sidecars": [VALKEY_INFO, FAILED_PROXY_INFO]}
     )
 
     info = SandboxInfo._from_sandbox_detail(detail)
@@ -241,7 +241,7 @@ def test_info_returns_the_sidecars_with_their_state():
 
 def test_info_passes_through_a_state_value_the_sdk_does_not_know():
     detail = SandboxDetail.from_dict(
-        {**SANDBOX_DETAIL, "sidecars": [{**REDIS_INFO, "state": "restarting"}]}
+        {**SANDBOX_DETAIL, "sidecars": [{**VALKEY_INFO, "state": "restarting"}]}
     )
 
     info = SandboxInfo._from_sandbox_detail(detail)
@@ -255,7 +255,7 @@ def test_info_treats_null_optional_fields_as_absent():
         {
             **SANDBOX_DETAIL,
             "sidecars": [
-                {**REDIS_INFO, "ports": None, "address": None, "lastError": None}
+                {**VALKEY_INFO, "ports": None, "address": None, "lastError": None}
             ],
         }
     )
@@ -274,7 +274,7 @@ def test_info_returns_an_empty_sidecar_list_when_the_api_sends_none():
 
 
 def test_list_returns_the_sidecars_of_each_sandbox():
-    listed = ListedSandbox.from_dict({**SANDBOX_DETAIL, "sidecars": [REDIS_INFO]})
+    listed = ListedSandbox.from_dict({**SANDBOX_DETAIL, "sidecars": [VALKEY_INFO]})
 
     info = SandboxInfo._from_listed_sandbox(listed)
 
@@ -310,7 +310,7 @@ async def test_async_sidecar_400_is_an_argument_error(monkeypatch, test_api_key)
     monkeypatch.setattr(post_sandboxes, "asyncio_detailed", request)
 
     with pytest.raises(InvalidArgumentException, match="sidecar_flag_off"):
-        await AsyncSandbox.create(api_key=test_api_key, sidecars=[{"entry": "redis"}])
+        await AsyncSandbox.create(api_key=test_api_key, sidecars=[{"entry": "valkey"}])
 
 
 def test_sidecar_failed_keeps_the_entry_name_and_is_not_an_argument_error(
@@ -320,18 +320,18 @@ def test_sidecar_failed_keeps_the_entry_name_and_is_not_an_argument_error(
         return_value=_response(
             500,
             b'{"code":500,"error_code":"sidecar_failed",'
-            b'"message":"sidecar \\"redis\\" failed to become ready"}',
+            b'"message":"sidecar \\"valkey\\" failed to become ready"}',
         )
     )
     monkeypatch.setattr(post_sandboxes, "sync_detailed", request)
 
     with pytest.raises(SandboxException) as excinfo:
-        Sandbox.create(api_key=test_api_key, sidecars=[{"entry": "redis"}])
+        Sandbox.create(api_key=test_api_key, sidecars=[{"entry": "valkey"}])
 
     assert not isinstance(excinfo.value, InvalidArgumentException)
     assert excinfo.value.status_code == 500
     assert "sidecar_failed" in str(excinfo.value)
-    assert "redis" in str(excinfo.value)
+    assert "valkey" in str(excinfo.value)
 
 
 @pytest.mark.parametrize(
@@ -404,7 +404,7 @@ def test_connect_surfaces_a_sidecar_version_unavailable_conflict(
         return_value=_response(
             409,
             b'{"code":409,"error_code":"sidecar_version_unavailable",'
-            b'"message":"catalog version redis@7.4.0 is no longer available"}',
+            b'"message":"catalog version valkey@7.4.0 is no longer available"}',
         )
     )
     monkeypatch.setattr(post_sandboxes_sandbox_id_connect, "sync_detailed", request)
@@ -415,7 +415,7 @@ def test_connect_surfaces_a_sidecar_version_unavailable_conflict(
     assert not isinstance(excinfo.value, InvalidArgumentException)
     assert excinfo.value.status_code == 409
     assert "sidecar_version_unavailable" in str(excinfo.value)
-    assert "redis@7.4.0" in str(excinfo.value)
+    assert "valkey@7.4.0" in str(excinfo.value)
 
 
 def test_update_network_surfaces_a_rule_collision_as_an_argument_error(
@@ -489,8 +489,8 @@ def test_create_keeps_logger_positional_and_sidecars_keyword_only(
     assert create_sandbox.call_args.kwargs["logger"] is logger
     assert create_sandbox.call_args.kwargs["sidecars"] is None
 
-    Sandbox.create(api_key=test_api_key, sidecars=[{"entry": "redis"}])
-    assert create_sandbox.call_args.kwargs["sidecars"] == [{"entry": "redis"}]
+    Sandbox.create(api_key=test_api_key, sidecars=[{"entry": "valkey"}])
+    assert create_sandbox.call_args.kwargs["sidecars"] == [{"entry": "valkey"}]
 
     # cast: the extra positional argument is the point; ty would reject it statically.
     with pytest.raises(TypeError):
@@ -507,7 +507,7 @@ def test_create_keeps_logger_positional_and_sidecars_keyword_only(
             None,
             None,
             logger,
-            [{"entry": "redis"}],
+            [{"entry": "valkey"}],
             api_key=test_api_key,
         )
 
@@ -554,6 +554,6 @@ async def test_async_create_keeps_logger_positional_and_sidecars_keyword_only(
             None,
             None,
             logger,
-            [{"entry": "redis"}],
+            [{"entry": "valkey"}],
             api_key=test_api_key,
         )
