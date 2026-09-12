@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from ..models.sandbox_iam import SandboxIam
     from ..models.sandbox_network_config import SandboxNetworkConfig
     from ..models.sandbox_volume_mount import SandboxVolumeMount
+    from ..models.sidecar_attachment import SidecarAttachment
 
 
 T = TypeVar("T", bound="NewSandbox")
@@ -40,6 +41,8 @@ class NewSandbox:
         iam (Union[Unset, SandboxIam]): Sandbox workload identity configuration. A non-empty, valid tokens map enables
             workload identity for the sandbox.
         volume_mounts (Union[Unset, list['SandboxVolumeMount']]):
+        sidecars (Union[Unset, list['SidecarAttachment']]): Sidecar microVMs to attach to the sandbox, at most four, at
+            most one with the proxy role. Requires the team's sandbox-sidecars feature.
     """
 
     template_id: str
@@ -55,6 +58,7 @@ class NewSandbox:
     mcp: Union["McpType0", None, Unset] = UNSET
     iam: Union[Unset, "SandboxIam"] = UNSET
     volume_mounts: Union[Unset, list["SandboxVolumeMount"]] = UNSET
+    sidecars: Union[Unset, list["SidecarAttachment"]] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -103,6 +107,13 @@ class NewSandbox:
                 volume_mounts_item = volume_mounts_item_data.to_dict()
                 volume_mounts.append(volume_mounts_item)
 
+        sidecars: Union[Unset, list[dict[str, Any]]] = UNSET
+        if not isinstance(self.sidecars, Unset):
+            sidecars = []
+            for sidecars_item_data in self.sidecars:
+                sidecars_item = sidecars_item_data.to_dict()
+                sidecars.append(sidecars_item)
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -134,6 +145,8 @@ class NewSandbox:
             field_dict["iam"] = iam
         if volume_mounts is not UNSET:
             field_dict["volumeMounts"] = volume_mounts
+        if sidecars is not UNSET:
+            field_dict["sidecars"] = sidecars
 
         return field_dict
 
@@ -144,6 +157,7 @@ class NewSandbox:
         from ..models.sandbox_iam import SandboxIam
         from ..models.sandbox_network_config import SandboxNetworkConfig
         from ..models.sandbox_volume_mount import SandboxVolumeMount
+        from ..models.sidecar_attachment import SidecarAttachment
 
         d = dict(src_dict)
         template_id = d.pop("templateID")
@@ -207,6 +221,13 @@ class NewSandbox:
 
             volume_mounts.append(volume_mounts_item)
 
+        sidecars = []
+        _sidecars = d.pop("sidecars", UNSET)
+        for sidecars_item_data in _sidecars or []:
+            sidecars_item = SidecarAttachment.from_dict(sidecars_item_data)
+
+            sidecars.append(sidecars_item)
+
         new_sandbox = cls(
             template_id=template_id,
             timeout=timeout,
@@ -221,6 +242,7 @@ class NewSandbox:
             mcp=mcp,
             iam=iam,
             volume_mounts=volume_mounts,
+            sidecars=sidecars,
         )
 
         new_sandbox.additional_properties = d

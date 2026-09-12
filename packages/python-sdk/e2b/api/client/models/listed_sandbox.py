@@ -11,6 +11,7 @@ from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
     from ..models.sandbox_volume_mount import SandboxVolumeMount
+    from ..models.sidecar_info import SidecarInfo
 
 
 T = TypeVar("T", bound="ListedSandbox")
@@ -33,6 +34,7 @@ class ListedSandbox:
         alias (Union[Unset, str]): Alias of the template
         metadata (Union[Unset, Any]):
         volume_mounts (Union[Unset, list['SandboxVolumeMount']]):
+        sidecars (Union[Unset, list['SidecarInfo']]):
     """
 
     template_id: str
@@ -48,6 +50,7 @@ class ListedSandbox:
     alias: Union[Unset, str] = UNSET
     metadata: Union[Unset, Any] = UNSET
     volume_mounts: Union[Unset, list["SandboxVolumeMount"]] = UNSET
+    sidecars: Union[Unset, list["SidecarInfo"]] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -82,6 +85,13 @@ class ListedSandbox:
                 volume_mounts_item = volume_mounts_item_data.to_dict()
                 volume_mounts.append(volume_mounts_item)
 
+        sidecars: Union[Unset, list[dict[str, Any]]] = UNSET
+        if not isinstance(self.sidecars, Unset):
+            sidecars = []
+            for sidecars_item_data in self.sidecars:
+                sidecars_item = sidecars_item_data.to_dict()
+                sidecars.append(sidecars_item)
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -104,12 +114,15 @@ class ListedSandbox:
             field_dict["metadata"] = metadata
         if volume_mounts is not UNSET:
             field_dict["volumeMounts"] = volume_mounts
+        if sidecars is not UNSET:
+            field_dict["sidecars"] = sidecars
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.sandbox_volume_mount import SandboxVolumeMount
+        from ..models.sidecar_info import SidecarInfo
 
         d = dict(src_dict)
         template_id = d.pop("templateID")
@@ -143,6 +156,13 @@ class ListedSandbox:
 
             volume_mounts.append(volume_mounts_item)
 
+        sidecars = []
+        _sidecars = d.pop("sidecars", UNSET)
+        for sidecars_item_data in _sidecars or []:
+            sidecars_item = SidecarInfo.from_dict(sidecars_item_data)
+
+            sidecars.append(sidecars_item)
+
         listed_sandbox = cls(
             template_id=template_id,
             sandbox_id=sandbox_id,
@@ -157,6 +177,7 @@ class ListedSandbox:
             alias=alias,
             metadata=metadata,
             volume_mounts=volume_mounts,
+            sidecars=sidecars,
         )
 
         listed_sandbox.additional_properties = d

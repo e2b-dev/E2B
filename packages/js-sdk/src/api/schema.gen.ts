@@ -2282,6 +2282,7 @@ export interface components {
             metadata?: components["schemas"]["SandboxMetadata"];
             /** @description Identifier of the sandbox */
             sandboxID: string;
+            sidecars?: components["schemas"]["SidecarInfo"][];
             /**
              * Format: date-time
              * @description Time when the sandbox was started
@@ -2358,6 +2359,23 @@ export interface components {
             network?: components["schemas"]["SandboxNetworkConfig"];
             /** @description Secure all system communication with sandbox */
             secure?: boolean;
+            /** @description Sidecar microVMs to attach to the sandbox, at most four, at most one with the proxy role. Requires the team's sandbox-sidecars feature. */
+            sidecars?: [
+            ] | [
+                components["schemas"]["SidecarAttachment"]
+            ] | [
+                components["schemas"]["SidecarAttachment"],
+                components["schemas"]["SidecarAttachment"]
+            ] | [
+                components["schemas"]["SidecarAttachment"],
+                components["schemas"]["SidecarAttachment"],
+                components["schemas"]["SidecarAttachment"]
+            ] | [
+                components["schemas"]["SidecarAttachment"],
+                components["schemas"]["SidecarAttachment"],
+                components["schemas"]["SidecarAttachment"],
+                components["schemas"]["SidecarAttachment"]
+            ];
             /** @description Identifier of the required template */
             templateID: string;
             /**
@@ -2415,6 +2433,7 @@ export interface components {
             envdVersion: components["schemas"]["EnvdVersion"];
             /** @description Identifier of the sandbox */
             sandboxID: string;
+            sidecars?: components["schemas"]["SidecarInfo"][];
             /** @description Identifier of the template from which is the sandbox created */
             templateID: string;
             /** @description Token required for accessing sandbox via proxy. */
@@ -2457,6 +2476,7 @@ export interface components {
             network?: components["schemas"]["SandboxNetworkConfig"];
             /** @description Identifier of the sandbox */
             sandboxID: string;
+            sidecars?: components["schemas"]["SidecarInfo"][];
             /**
              * Format: date-time
              * @description Time when the sandbox was started
@@ -2722,6 +2742,48 @@ export interface components {
             metadata?: components["schemas"]["SecretMetadata"];
             /** @description Runtime marker stored as the secret's new version. The runtime resolves it to a value at sandbox egress. */
             value: string;
+        };
+        /** @description A sidecar microVM to attach to the sandbox, declared from the E2B sidecar catalog. */
+        SidecarAttachment: {
+            /** @description Entry-specific configuration, validated against the entry's schema. String values may reference secrets as "${e2b.secrets.<name>}". */
+            config?: {
+                [key: string]: unknown;
+            };
+            /** @description Catalog entry name (for example "iron-proxy" or "valkey"). The sandbox reaches the sidecar at "{entry}.sidecar.e2b.local". */
+            entry: string;
+            /** @description Secret slots the entry declares, keyed by slot name, each holding a secret reference the platform resolves at injection time. The secret value never enters the sandbox. */
+            secrets?: {
+                [key: string]: string;
+            };
+            /** @description Catalog entry version. Defaults to the entry's current version. */
+            version?: string;
+        };
+        /** @description A sidecar attached to the sandbox and its current state. */
+        SidecarInfo: {
+            /** @description Address of the sidecar inside the sandbox network */
+            address?: string;
+            /**
+             * @description Lifecycle class of the sidecar
+             * @enum {string}
+             */
+            class: "ephemeral" | "stateful";
+            /** @description Catalog entry name */
+            entry: string;
+            /** @description Last error of the sidecar, set when the state is failed */
+            lastError?: string;
+            /** @description Name the sandbox reaches the sidecar at ("{entry}.sidecar.e2b.local") */
+            name: string;
+            /** @description Ports the sidecar listens on */
+            ports?: number[];
+            /**
+             * @description Role of the sidecar
+             * @enum {string}
+             */
+            role: "proxy" | "service";
+            /** @description Current state of the sidecar. Not a closed set; current values are starting, running, failed and stopped. */
+            state: string;
+            /** @description Catalog entry version */
+            version: string;
         };
         SnapshotInfo: {
             /** @description Full names of the snapshot template including team namespace and tag (e.g. team-slug/my-snapshot:v2) */

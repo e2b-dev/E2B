@@ -28,6 +28,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxLifecycle,
     SandboxMetrics,
     SandboxNetworkOpts,
+    SidecarAttachment,
     SandboxNetworkUpdate,
     SandboxOnResume,
     SnapshotInfo,
@@ -183,6 +184,8 @@ class AsyncSandbox(SandboxApi):
         lifecycle: Optional[SandboxLifecycle] = None,
         volume_mounts: Optional[SandboxAsyncVolumeMount] = None,
         logger: Optional[logging.Logger] = None,
+        *,
+        sidecars: Optional[List[SidecarAttachment]] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -201,6 +204,7 @@ class AsyncSandbox(SandboxApi):
         :param iam: Sandbox workload identity configuration. A non-empty ``tokens`` map enables workload identity for the sandbox; token definitions can be created with :meth:`Secret.iam_token`. Example: ``{"tokens": {"aws": Secret.iam_token(audience="sts.amazonaws.com", token_type="JWT-SVID")}}``. Registered tokens are exposed to ``network.rules`` ``transform`` callables as ``ctx.iam.tokens[name]`` placeholders, which the egress proxy resolves per request
         :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` or ``"pause"`` (omitted from the request when unset, leaving the API's default, currently ``"kill"``, in effect), or an object ``{"action": "pause"|"kill", "keep_memory": bool}`` where ``keep_memory`` set to ``False`` makes a timeout auto-pause filesystem-only (cold-boots on resume; cannot be combined with ``auto_resume``); an omitted ``keep_memory`` leaves the snapshot kind to the API; ``auto_resume``: leave unset to let the API pick the behavior, set ``False`` to opt out explicitly, or ``True`` (only when ``on_timeout`` action is ``"pause"``). Example: ``{"on_timeout": {"action": "pause", "keep_memory": False}}``
         :param volume_mounts: Dictionary mapping mount paths to AsyncVolume instances or volume names
+        :param sidecars: Sidecar microVMs to attach to the sandbox from the E2B catalog — at most four, at most one with the proxy role. Each is a :class:`SidecarAttachment`: ``{"entry": "valkey"}`` for a service sidecar the sandbox reaches at ``valkey.sidecar.e2b.local``, or ``{"entry": "iron-proxy", "secrets": {"<slot>": "${e2b.secrets.<name>}"}}`` for the proxy sidecar that substitutes the real secret value on egress so it never enters the sandbox. A sidecar follows the sandbox's lifecycle (paused, snapshotted, resumed as it was, forked and terminated with it; a crashed sidecar is restarted once and then reported ``"failed"`` while the sandbox keeps running) and needs the team's ``sandbox-sidecars`` feature
         :param logger: Logger used for request and response logging for this sandbox. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
 
         :return: A Sandbox instance for the new sandbox
@@ -234,6 +238,7 @@ class AsyncSandbox(SandboxApi):
             iam=iam,
             lifecycle=lifecycle,
             volume_mounts=transformed_mounts,
+            sidecars=sidecars,
             logger=logger,
             **opts,
         )
@@ -1158,6 +1163,8 @@ class AsyncSandbox(SandboxApi):
         lifecycle: Optional[SandboxLifecycle] = None,
         volume_mounts: Optional[list] = None,
         logger: Optional[logging.Logger] = None,
+        *,
+        sidecars: Optional[List[SidecarAttachment]] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         params = cls._resolve_api_params(**opts)
@@ -1183,6 +1190,7 @@ class AsyncSandbox(SandboxApi):
                 iam=iam,
                 lifecycle=lifecycle,
                 volume_mounts=volume_mounts,
+                sidecars=sidecars,
                 logger=logger,
                 **params,
             )

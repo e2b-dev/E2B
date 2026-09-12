@@ -1,8 +1,9 @@
 import * as commander from 'commander'
-import { NotFoundError, Sandbox } from 'e2b'
+import { NotFoundError, Sandbox, SidecarInfo } from 'e2b'
 
 import { ensureAPIKey } from 'src/api'
 import { asBold } from 'src/utils/format'
+import { formatTable } from 'src/utils/table'
 
 const fieldLabels: Partial<Record<string, string>> = {
   sandboxId: 'Sandbox ID',
@@ -17,6 +18,7 @@ const fieldLabels: Partial<Record<string, string>> = {
   allowInternetAccess: 'Internet access',
   lifecycle: 'Lifecycle',
   network: 'Network',
+  sidecars: 'Sidecars',
   sandboxDomain: 'Sandbox domain',
   metadata: 'Metadata',
 }
@@ -34,6 +36,7 @@ const fieldOrder = [
   'allowInternetAccess',
   'lifecycle',
   'network',
+  'sidecars',
   'sandboxDomain',
   'metadata',
 ]
@@ -71,7 +74,7 @@ export const infoCommand = new commander.Command('info')
     }
   })
 
-function renderPrettyInfo(info: Record<string, unknown>) {
+export function renderPrettyInfo(info: Record<string, unknown>) {
   console.log(
     `\nSandbox info for ${asBold(String(info.sandboxId ?? 'unknown'))}:`
   )
@@ -87,8 +90,15 @@ function renderPrettyInfo(info: Record<string, unknown>) {
       continue
     }
 
+    if (key === 'sidecars' && Array.isArray(value) && value.length === 0) {
+      continue
+    }
+
     const label = fieldLabels[key] ?? key
-    const formattedValue = formatValue(value)
+    const formattedValue =
+      key === 'sidecars' && Array.isArray(value)
+        ? formatSidecarTable(value).join('\n')
+        : formatValue(value)
 
     if (formattedValue.includes('\n')) {
       const indentedValue = formattedValue
@@ -103,6 +113,32 @@ function renderPrettyInfo(info: Record<string, unknown>) {
   }
 
   process.stdout.write('\n')
+}
+
+export function formatSidecarTable(sidecars: SidecarInfo[]): string[] {
+  return formatTable(sidecars, [
+    { header: 'Entry', value: (sidecar) => sidecar.entry },
+    { header: 'Version', value: (sidecar) => sidecar.version },
+    { header: 'Role', value: (sidecar) => sidecar.role },
+    { header: 'Class', value: (sidecar) => sidecar.class },
+    { header: 'State', value: (sidecar) => sidecar.state },
+    { header: 'Name', value: (sidecar) => sidecar.name },
+    { header: 'Address', value: (sidecar) => sidecar.address },
+    { header: 'Ports', value: (sidecar) => sidecar.ports?.join(',') },
+    {
+      header: 'Last error',
+      value: (sidecar) => truncate(sidecar.lastError, LAST_ERROR_WIDTH),
+    },
+  ])
+}
+
+const LAST_ERROR_WIDTH = 60
+
+function truncate(value: string | undefined, width: number) {
+  if (value === undefined || value.length <= width) {
+    return value
+  }
+  return `${value.slice(0, width - 1)}…`
 }
 
 function formatValue(value: unknown): string {
