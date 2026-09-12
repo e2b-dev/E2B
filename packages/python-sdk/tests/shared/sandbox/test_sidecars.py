@@ -1,3 +1,4 @@
+import logging
 from types import SimpleNamespace
 from typing import Any, Dict, List, cast
 from unittest.mock import AsyncMock, Mock
@@ -397,3 +398,112 @@ def test_update_network_404_still_wins_over_the_sidecar_mapping(
 
     with pytest.raises(SandboxNotFoundException):
         Sandbox.update_network("sbx-test", {}, api_key=test_api_key)
+
+
+def _create_response():
+    return SimpleNamespace(
+        sandbox_id="sbx-test",
+        sandbox_domain=None,
+        envd_version="0.2.4",
+        envd_access_token=None,
+        traffic_access_token=None,
+    )
+
+
+def test_create_keeps_logger_positional_and_sidecars_keyword_only(
+    monkeypatch, test_api_key
+):
+    from e2b.sandbox_sync.sandbox_api import SandboxApi
+
+    create_sandbox = Mock(return_value=_create_response())
+    monkeypatch.setattr(SandboxApi, "_create_sandbox", create_sandbox)
+    logger = logging.getLogger("sidecar-test")
+
+    # The twelve positional parameters create() had before sidecars existed.
+    Sandbox.create(
+        "template-id",
+        60,
+        None,
+        None,
+        True,
+        True,
+        None,
+        None,
+        None,
+        None,
+        None,
+        logger,
+        api_key=test_api_key,
+    )
+
+    assert create_sandbox.call_args.kwargs["logger"] is logger
+    assert create_sandbox.call_args.kwargs["sidecars"] is None
+
+    Sandbox.create(api_key=test_api_key, sidecars=[{"entry": "redis"}])
+    assert create_sandbox.call_args.kwargs["sidecars"] == [{"entry": "redis"}]
+
+    # cast: the extra positional argument is the point; ty would reject it statically.
+    with pytest.raises(TypeError):
+        cast(Any, Sandbox.create)(
+            "template-id",
+            60,
+            None,
+            None,
+            True,
+            True,
+            None,
+            None,
+            None,
+            None,
+            None,
+            logger,
+            [{"entry": "redis"}],
+            api_key=test_api_key,
+        )
+
+
+async def test_async_create_keeps_logger_positional_and_sidecars_keyword_only(
+    monkeypatch, test_api_key
+):
+    from e2b.sandbox_async.sandbox_api import SandboxApi
+
+    create_sandbox = AsyncMock(return_value=_create_response())
+    monkeypatch.setattr(SandboxApi, "_create_sandbox", create_sandbox)
+    logger = logging.getLogger("sidecar-test")
+
+    await AsyncSandbox.create(
+        "template-id",
+        60,
+        None,
+        None,
+        True,
+        True,
+        None,
+        None,
+        None,
+        None,
+        None,
+        logger,
+        api_key=test_api_key,
+    )
+
+    assert create_sandbox.call_args.kwargs["logger"] is logger
+    assert create_sandbox.call_args.kwargs["sidecars"] is None
+
+    with pytest.raises(TypeError):
+        await cast(Any, AsyncSandbox.create)(
+            "template-id",
+            60,
+            None,
+            None,
+            True,
+            True,
+            None,
+            None,
+            None,
+            None,
+            None,
+            logger,
+            [{"entry": "redis"}],
+            api_key=test_api_key,
+        )

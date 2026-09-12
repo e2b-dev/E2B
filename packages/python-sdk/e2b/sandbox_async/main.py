@@ -183,8 +183,9 @@ class AsyncSandbox(SandboxApi):
         iam: Optional[SandboxIamOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
         volume_mounts: Optional[SandboxAsyncVolumeMount] = None,
-        sidecars: Optional[List[SidecarAttachment]] = None,
         logger: Optional[logging.Logger] = None,
+        *,
+        sidecars: Optional[List[SidecarAttachment]] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -1161,8 +1162,9 @@ class AsyncSandbox(SandboxApi):
         iam: Optional[SandboxIamOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
         volume_mounts: Optional[list] = None,
-        sidecars: Optional[List[SidecarAttachment]] = None,
         logger: Optional[logging.Logger] = None,
+        *,
+        sidecars: Optional[List[SidecarAttachment]] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         params = cls._resolve_api_params(**opts)
