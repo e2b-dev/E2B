@@ -217,6 +217,24 @@ def test_info_passes_through_a_state_value_the_sdk_does_not_know():
     assert info.sidecars[0].state == "restarting"
 
 
+def test_info_treats_null_optional_fields_as_absent():
+    # A wire `null` is neither Unset nor a value; it must not raise inside get_info()/list().
+    detail = SandboxDetail.from_dict(
+        {
+            **SANDBOX_DETAIL,
+            "sidecars": [
+                {**REDIS_INFO, "ports": None, "address": None, "lastError": None}
+            ],
+        }
+    )
+
+    [info] = SandboxInfo._from_sandbox_detail(detail).sidecars
+
+    assert info.ports == []
+    assert info.address is None
+    assert info.last_error is None
+
+
 def test_info_returns_an_empty_sidecar_list_when_the_api_sends_none():
     info = SandboxInfo._from_sandbox_detail(SandboxDetail.from_dict(SANDBOX_DETAIL))
 

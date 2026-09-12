@@ -962,28 +962,31 @@ def build_sidecars_body(
     return body
 
 
+def _from_client_sidecar(sidecar: ClientSidecarInfo) -> SidecarInfo:
+    # A wire null is neither Unset nor a value for the optional fields.
+    ports: List[int] = []
+    if not isinstance(sidecar.ports, Unset) and sidecar.ports is not None:
+        ports = list(sidecar.ports)
+    return SidecarInfo(
+        entry=sidecar.entry,
+        version=sidecar.version,
+        role=cast(SidecarRole, sidecar.role.value),
+        class_=cast(SidecarClass, sidecar.class_.value),
+        state=sidecar.state,
+        name=sidecar.name,
+        address=sidecar.address if isinstance(sidecar.address, str) else None,
+        ports=ports,
+        last_error=sidecar.last_error if isinstance(sidecar.last_error, str) else None,
+    )
+
+
 def from_client_sidecars(
     sidecars: Union[Unset, List[ClientSidecarInfo]],
 ) -> List[SidecarInfo]:
     if isinstance(sidecars, Unset):
         return []
 
-    return [
-        SidecarInfo(
-            entry=sidecar.entry,
-            version=sidecar.version,
-            role=cast(SidecarRole, sidecar.role.value),
-            class_=cast(SidecarClass, sidecar.class_.value),
-            state=sidecar.state,
-            name=sidecar.name,
-            address=sidecar.address if isinstance(sidecar.address, str) else None,
-            ports=list(sidecar.ports) if not isinstance(sidecar.ports, Unset) else [],
-            last_error=(
-                sidecar.last_error if isinstance(sidecar.last_error, str) else None
-            ),
-        )
-        for sidecar in sidecars
-    ]
+    return [_from_client_sidecar(sidecar) for sidecar in sidecars]
 
 
 def sidecar_api_exception(res: Any) -> Optional[Exception]:
