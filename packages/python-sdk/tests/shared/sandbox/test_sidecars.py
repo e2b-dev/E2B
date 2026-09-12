@@ -173,6 +173,38 @@ def test_create_rejects_a_malformed_sidecar_list(monkeypatch, test_api_key, side
     request.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    "sidecar, field",
+    [
+        pytest.param(
+            {"entry": "redis", "config": ["maxmemory"]}, "config", id="config-list"
+        ),
+        pytest.param(
+            {"entry": "redis", "config": "maxmemory=64mb"}, "config", id="config-str"
+        ),
+        pytest.param(
+            {"entry": "iron-proxy", "secrets": ["upstream"]},
+            "secrets",
+            id="secrets-list",
+        ),
+        pytest.param(
+            {"entry": "iron-proxy", "secrets": {"upstream": 1}},
+            "secrets",
+            id="secrets-non-str-value",
+        ),
+        pytest.param(
+            {"entry": "iron-proxy", "secrets": {1: "x"}},
+            "secrets",
+            id="secrets-non-str-key",
+        ),
+    ],
+)
+def test_create_rejects_a_malformed_sidecar_config_or_secrets_by_name(sidecar, field):
+    # dict() on a bad value used to escape as a bare ValueError that named nothing.
+    with pytest.raises(InvalidArgumentException, match=rf"sidecars\[0\]\.{field}"):
+        build_sidecars_body(cast(Any, [sidecar]))
+
+
 def _expected_infos() -> List[SidecarInfo]:
     return [
         SidecarInfo(

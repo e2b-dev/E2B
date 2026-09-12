@@ -950,10 +950,23 @@ def build_sidecars_body(
         if sidecar.get("version") is not None:
             attachment.version = sidecar["version"]
         if sidecar.get("config") is not None:
+            if not isinstance(sidecar["config"], Mapping):
+                raise InvalidArgumentException(
+                    f"sidecars[{i}].config must be a dict of entry-specific settings, "
+                    f"got {type(sidecar['config']).__name__}."
+                )
             config = ClientSidecarAttachmentConfig()
             config.additional_properties = dict(sidecar["config"])
             attachment.config = config
         if sidecar.get("secrets") is not None:
+            if not isinstance(sidecar["secrets"], Mapping) or not all(
+                isinstance(k, str) and isinstance(v, str)
+                for k, v in sidecar["secrets"].items()
+            ):
+                raise InvalidArgumentException(
+                    f"sidecars[{i}].secrets must be a dict of slot name to secret "
+                    "reference string (e.g. {'upstream': '${e2b.secrets.<name>}'})."
+                )
             secrets = ClientSidecarAttachmentSecrets()
             secrets.additional_properties = dict(sidecar["secrets"])
             attachment.secrets = secrets
