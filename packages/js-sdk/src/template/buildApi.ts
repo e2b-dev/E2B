@@ -195,8 +195,7 @@ async function putFileStream(
     body: stream.Readable.toWeb(
       fs.createReadStream(filePath)
     ) as ReadableStream,
-    // Headers the API asked for, applied as given (Azure's Put Blob requires
-    // x-ms-blob-type, which its SAS cannot carry). Content-Length stays ours.
+    // API-returned headers applied as given (Azure needs x-ms-blob-type, which a SAS cannot carry); Content-Length stays ours.
     headers: {
       ...headers,
       'Content-Length': size.toString(),

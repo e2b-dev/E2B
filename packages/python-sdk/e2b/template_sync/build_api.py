@@ -1,3 +1,4 @@
+import os
 import time
 from types import TracebackType
 from typing import Callable, Dict, Optional, List, Union
@@ -113,6 +114,7 @@ def upload_file(
     resolve_symlinks: bool,
     gzip: bool,
     stack_trace: Optional[TracebackType],
+    *,
     headers: Optional[Dict[str, str]] = None,
     request_timeout: Optional[float] = None,
 ):
@@ -128,6 +130,7 @@ def upload_file(
         tar_file = tar_file_stream(
             file_name, context_path, ignore_patterns, resolve_symlinks, gzip
         )
+        size = os.fstat(tar_file.fileno()).st_size
         try:
             # Through the pyqwest adapter the upload timeout is a
             # whole-request deadline for the entire transfer, not a per-write
@@ -149,13 +152,12 @@ def upload_file(
                     )
                 ),
             ) as client:
-                # httpx streams the archive from disk in chunks and sets
-                # Content-Length from the file size—S3 presigned URLs reject
-                # chunked transfer encoding, and reqwest keeps the
-                # Content-Length framing for the streamed body.
-                # Headers the API asked for, applied as given (Azure's Put
-                # Blob requires x-ms-blob-type, which its SAS cannot carry).
-                response = client.put(url, content=tar_file, headers=headers)
+                # API-returned headers applied as given, but Content-Length stays ours — explicit so S3 presigned URLs see no chunked encoding.
+                response = client.put(
+                    url,
+                    content=tar_file,
+                    headers={**(headers or {}), "Content-Length": str(size)},
+                )
             response.raise_for_status()
         finally:
             # Closing the spooled temp file is best-effort: a failure here

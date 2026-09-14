@@ -74,8 +74,7 @@ describe('uploadFile transfer encoding', () => {
     // the storage backend reject the upload with 403 Forbidden.
     expect(capturedHeaders['content-type']).toBeUndefined()
 
-    // S3 and GCS presigned PUTs sign the header set, so the upload must add
-    // nothing the API did not ask for.
+    // S3/GCS presigned PUTs sign the header set — the upload must add nothing the API did not ask for.
     expect(capturedHeaders['x-ms-blob-type']).toBeUndefined()
   })
 
@@ -93,8 +92,7 @@ describe('uploadFile transfer encoding', () => {
       undefined
     )
 
-    // Azure's Put Blob rejects the request without it, and its SAS cannot
-    // carry a required request header, so the API hands it back instead.
+    // Azure's Put Blob needs a request header a SAS cannot carry, so the API hands it back instead.
     expect(capturedHeaders['x-ms-blob-type']).toBe('BlockBlob')
   })
 

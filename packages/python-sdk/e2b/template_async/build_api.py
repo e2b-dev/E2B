@@ -115,6 +115,7 @@ async def upload_file(
     resolve_symlinks: bool,
     gzip: bool,
     stack_trace: Optional[TracebackType],
+    *,
     headers: Optional[Dict[str, str]] = None,
     request_timeout: Optional[float] = None,
 ):
@@ -153,13 +154,7 @@ async def upload_file(
                     )
                 ),
             ) as client:
-                # Stream the archive from disk via an async iterator. The
-                # explicit Content-Length suppresses chunked transfer
-                # encoding, which S3 presigned URLs reject; reqwest keeps the
-                # Content-Length framing for the streamed body.
-                # Headers the API asked for, applied as given (Azure's Put
-                # Blob requires x-ms-blob-type, which its SAS cannot carry).
-                # Content-Length stays ours.
+                # API-returned headers applied as given, but Content-Length stays ours — explicit so S3 presigned URLs see no chunked encoding.
                 response = await client.put(
                     url,
                     content=aiter_io_chunks(tar_file),

@@ -4,6 +4,7 @@ from typing import Callable, List, Optional, Union
 from typing_extensions import Unpack
 
 from e2b.api.client.client import AuthenticatedClient
+from e2b.api.client.types import Unset
 from e2b.connection_config import ApiParams, ConnectionConfig
 
 from e2b.api.client_sync import get_api_client
@@ -137,7 +138,11 @@ class Template(TemplateBase):
                     resolve_symlinks,
                     gzip,
                     stack_trace,
-                    headers=file_info.headers.to_dict() if file_info.headers else None,
+                    headers=(
+                        file_info.headers.to_dict()
+                        if not isinstance(file_info.headers, Unset)
+                        else None
+                    ),
                     request_timeout=request_timeout,
                 )
                 if on_build_logs:
