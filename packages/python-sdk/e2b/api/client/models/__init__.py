@@ -66,12 +66,9 @@ from .template_build_file_upload import TemplateBuildFileUpload
 from .template_build_file_upload_headers import TemplateBuildFileUploadHeaders
 from .template_build_info import TemplateBuildInfo
 from .template_build_logs_response import TemplateBuildLogsResponse
-from .template_build_request import TemplateBuildRequest
-from .template_build_request_v2 import TemplateBuildRequestV2
 from .template_build_request_v3 import TemplateBuildRequestV3
 from .template_build_start_v2 import TemplateBuildStartV2
 from .template_build_status import TemplateBuildStatus
-from .template_legacy import TemplateLegacy
 from .template_request_response_v3 import TemplateRequestResponseV3
 from .template_step import TemplateStep
 from .template_tag import TemplateTag
@@ -148,12 +145,9 @@ __all__ = (
     "TemplateBuildFileUploadHeaders",
     "TemplateBuildInfo",
     "TemplateBuildLogsResponse",
-    "TemplateBuildRequest",
-    "TemplateBuildRequestV2",
     "TemplateBuildRequestV3",
     "TemplateBuildStartV2",
     "TemplateBuildStatus",
-    "TemplateLegacy",
     "TemplateRequestResponseV3",
     "TemplateStep",
     "TemplateTag",

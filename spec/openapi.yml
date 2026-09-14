@@ -1293,71 +1293,6 @@ components:
           items:
             type: string
 
-    TemplateLegacy:
-      required:
-        - templateID
-        - buildID
-        - cpuCount
-        - memoryMB
-        - diskSizeMB
-        - public
-        - createdAt
-        - updatedAt
-        - createdBy
-        - lastSpawnedAt
-        - spawnCount
-        - buildCount
-        - envdVersion
-        - aliases
-      properties:
-        templateID:
-          type: string
-          description: Identifier of the template
-        buildID:
-          type: string
-          description: Identifier of the last successful build for given template
-        cpuCount:
-          $ref: "#/components/schemas/CPUCount"
-        memoryMB:
-          $ref: "#/components/schemas/MemoryMB"
-        diskSizeMB:
-          $ref: "#/components/schemas/DiskSizeMB"
-        public:
-          type: boolean
-          description: Whether the template is public or only accessible by the team
-        aliases:
-          type: array
-          description: Aliases of the template
-          items:
-            type: string
-        createdAt:
-          type: string
-          format: date-time
-          description: Time when the template was created
-        updatedAt:
-          type: string
-          format: date-time
-          description: Time when the template was last updated
-        createdBy:
-          allOf:
-            - $ref: "#/components/schemas/TeamUser"
-          nullable: true
-        lastSpawnedAt:
-          type: string
-          nullable: true
-          format: date-time
-          description: Time when the template was last used
-        spawnCount:
-          type: integer
-          format: int64
-          description: Number of times the template was used
-        buildCount:
-          type: integer
-          format: int32
-          description: Number of times the template was built
-        envdVersion:
-          $ref: "#/components/schemas/EnvdVersion"
-
     TemplateBuild:
       required:
         - buildID
@@ -1458,30 +1393,6 @@ components:
           type: boolean
           description: Whether the template is public or only accessible by the team
 
-    TemplateBuildRequest:
-      required:
-        - dockerfile
-      properties:
-        alias:
-          description: Alias of the template
-          type: string
-        dockerfile:
-          description: Dockerfile for the template
-          type: string
-        teamID:
-          type: string
-          description: Identifier of the team
-        startCmd:
-          description: Start command to execute in the template after the build
-          type: string
-        readyCmd:
-          description: Ready check command to execute in the template after the build
-          type: string
-        cpuCount:
-          $ref: "#/components/schemas/CPUCount"
-        memoryMB:
-          $ref: "#/components/schemas/MemoryMB"
-
     TemplateStep:
       description: Step in the template build process
       required:
@@ -1530,22 +1441,6 @@ components:
           $ref: "#/components/schemas/MemoryMB"
         minFreeDiskMb:
           $ref: "#/components/schemas/MinFreeDiskMb"
-
-    TemplateBuildRequestV2:
-      required:
-        - alias
-      properties:
-        alias:
-          description: Alias of the template
-          type: string
-        teamID:
-          deprecated: true
-          type: string
-          description: Identifier of the team
-        cpuCount:
-          $ref: "#/components/schemas/CPUCount"
-        memoryMB:
-          $ref: "#/components/schemas/MemoryMB"
 
     FromImageRegistry:
       oneOf:
@@ -1615,12 +1510,15 @@ components:
 
     TemplateBuildStartV2:
       type: object
+      description: Exactly one of fromImage or fromTemplate must be given and non-empty.
       properties:
         fromImage:
           type: string
+          minLength: 1
           description: Image to use as a base for the template build
         fromTemplate:
           type: string
+          minLength: 1
           description: Template to use as a base for the template build
         fromImageRegistry:
           $ref: "#/components/schemas/FromImageRegistry"
@@ -1721,7 +1619,8 @@ components:
       properties:
         logs:
           default: []
-          description: Build logs
+          deprecated: true
+          description: Build logs (always empty since the V1 build path was removed, use logEntries)
           type: array
           items:
             type: string
@@ -3303,41 +3202,6 @@ paths:
           $ref: "#/components/responses/403"
         "500":
           $ref: "#/components/responses/500"
-    post:
-      summary: Create template (v2)
-      description: Create a new template
-      deprecated: true
-      tags: [templates]
-      security:
-        - ApiKeyAuth: []
-        - AuthProviderBearerAuth: []
-          AuthProviderTeamAuth: []
-        - AdminApiKeyAuth: []
-          AdminTeamAuth: []
-        - AdminJWTAuth: []
-          AdminTeamAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/TemplateBuildRequestV2"
-
-      responses:
-        "202":
-          description: The build was requested successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TemplateLegacy"
-        "400":
-          $ref: "#/components/responses/400"
-        "401":
-          $ref: "#/components/responses/401"
-        "409":
-          $ref: "#/components/responses/409"
-        "500":
-          $ref: "#/components/responses/500"
 
   /templates/{templateID}/files/{hash}:
     get:
@@ -3411,36 +3275,6 @@ paths:
           $ref: "#/components/responses/401"
         "500":
           $ref: "#/components/responses/500"
-    post:
-      summary: Create template
-      description: Create a new template
-      deprecated: true
-      tags: [templates]
-      security:
-        - AuthProviderBearerAuth: []
-          AuthProviderTeamAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/TemplateBuildRequest"
-
-      responses:
-        "202":
-          description: The build was accepted
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TemplateLegacy"
-        "400":
-          $ref: "#/components/responses/400"
-        "401":
-          $ref: "#/components/responses/401"
-        "409":
-          $ref: "#/components/responses/409"
-        "500":
-          $ref: "#/components/responses/500"
 
   /templates/{templateID}:
     get:
@@ -3471,36 +3305,6 @@ paths:
                 $ref: "#/components/schemas/TemplateWithBuilds"
         "401":
           $ref: "#/components/responses/401"
-        "500":
-          $ref: "#/components/responses/500"
-    post:
-      summary: Rebuild template
-      description: Rebuild an template
-      deprecated: true
-      tags: [templates]
-      security:
-        - AuthProviderBearerAuth: []
-          AuthProviderTeamAuth: []
-      parameters:
-        - $ref: "#/components/parameters/templateID"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/TemplateBuildRequest"
-
-      responses:
-        "202":
-          description: The build was accepted
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TemplateLegacy"
-        "401":
-          $ref: "#/components/responses/401"
-        "409":
-          $ref: "#/components/responses/409"
         "500":
           $ref: "#/components/responses/500"
     delete:
@@ -3555,26 +3359,6 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
-  /templates/{templateID}/builds/{buildID}:
-    post:
-      summary: Start template build
-      description: Start the build
-      deprecated: true
-      tags: [templates]
-      security:
-        - AuthProviderBearerAuth: []
-          AuthProviderTeamAuth: []
-      parameters:
-        - $ref: "#/components/parameters/templateID"
-        - $ref: "#/components/parameters/buildID"
-      responses:
-        "202":
-          description: The build has started
-        "401":
-          $ref: "#/components/responses/401"
-        "500":
-          $ref: "#/components/responses/500"
-
   /v2/templates/{templateID}/builds/{buildID}:
     post:
       summary: Start template build (v2)
@@ -3600,6 +3384,8 @@ paths:
       responses:
         "202":
           description: The build has started
+        "400":
+          $ref: "#/components/responses/400"
         "401":
           $ref: "#/components/responses/401"
         "500":

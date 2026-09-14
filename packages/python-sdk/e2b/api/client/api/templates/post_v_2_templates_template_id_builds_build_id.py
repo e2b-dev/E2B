@@ -37,6 +37,10 @@ def _parse_response(
     if response.status_code == 202:
         response_202 = cast(Any, None)
         return response_202
+    if response.status_code == 400:
+        response_400 = Error.from_dict(response.json())
+
+        return response_400
     if response.status_code == 401:
         response_401 = Error.from_dict(response.json())
 
@@ -76,7 +80,8 @@ def sync_detailed(
     Args:
         template_id (str):
         build_id (str):
-        body (TemplateBuildStartV2):
+        body (TemplateBuildStartV2): Exactly one of fromImage or fromTemplate must be given and
+            non-empty.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -113,7 +118,8 @@ def sync(
     Args:
         template_id (str):
         build_id (str):
-        body (TemplateBuildStartV2):
+        body (TemplateBuildStartV2): Exactly one of fromImage or fromTemplate must be given and
+            non-empty.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -145,7 +151,8 @@ async def asyncio_detailed(
     Args:
         template_id (str):
         build_id (str):
-        body (TemplateBuildStartV2):
+        body (TemplateBuildStartV2): Exactly one of fromImage or fromTemplate must be given and
+            non-empty.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -180,7 +187,8 @@ async def asyncio(
     Args:
         template_id (str):
         build_id (str):
-        body (TemplateBuildStartV2):
+        body (TemplateBuildStartV2): Exactly one of fromImage or fromTemplate must be given and
+            non-empty.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
