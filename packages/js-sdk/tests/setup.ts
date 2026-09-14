@@ -145,6 +145,11 @@ export const volumeTest = base.extend<VolumeFixture>({
 
 export const isDebug = process.env.E2B_DEBUG !== undefined
 
+/** The sandbox `git` API is deprecated; its tests only run when opted in. */
+export const isGitTestsEnabled = process.env.ENABLE_GIT_TESTS !== undefined
+
+export const gitTest = sandboxTest.skipIf(!isGitTestsEnabled)
+
 /** Placeholder API key with a valid format for tests that don't hit the API. */
 export const TEST_API_KEY = `e2b_${'0'.repeat(40)}`
 
@@ -200,8 +205,7 @@ export async function wait(ms: number) {
 export async function waitForHttpStatus(
   url: string,
   expectedStatus: number,
-  init?: RequestInit,
-  timeoutMs = 30_000
+  { init, timeoutMs = 30_000 }: { init?: RequestInit; timeoutMs?: number } = {}
 ): Promise<string> {
   const deadline = Date.now() + timeoutMs
   let lastStatus: number | undefined

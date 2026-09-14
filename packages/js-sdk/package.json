@@ -1,6 +1,6 @@
 {
   "name": "e2b",
-  "version": "2.48.0",
+  "version": "2.49.1",
   "description": "E2B SDK that give agents cloud environments",
   "homepage": "https://e2b.dev/?utm_source=npm&utm_medium=referral&utm_campaign=package_homepage&utm_content=e2b",
   "license": "MIT",
@@ -47,7 +47,7 @@
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.18.7",
-    "@redocly/cli": "2.46.1",
+    "@redocly/cli": "2.51.2",
     "@types/node": "catalog:",
     "@types/platform": "^1.3.6",
     "@typescript/native": "catalog:",
@@ -60,11 +60,11 @@
     "msw": "^2.15.0",
     "npm-run-all": "^4.1.5",
     "openapi-typescript": "^7.13.0",
-    "playwright": "^1.62.1",
+    "playwright": "^1.63.0",
     "tsdown": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
-    "wrangler": "^4.127.0"
+    "wrangler": "^4.129.0"
   },
   "files": [
     "dist",
@@ -87,8 +87,8 @@
   ],
   "dependencies": {
     "@bufbuild/protobuf": "^2.14.1",
-    "@connectrpc/connect": "^2.1.2",
-    "@connectrpc/connect-web": "^2.1.2",
+    "@connectrpc/connect": "^2.2.0",
+    "@connectrpc/connect-web": "^2.2.0",
     "chalk": "^5.3.0",
     "compare-versions": "^6.1.0",
     "dockerfile-ast": "^0.7.1",
@@ -96,10 +96,10 @@
     "openapi-fetch": "^0.14.1",
     "platform": "^1.3.6",
     "tar": "^7.5.22",
-    "undici": "^7.29.0"
+    "undici": "^7.29.1"
   },
   "optionalDependencies": {
-    "undici8": "npm:undici@8.10.1"
+    "undici8": "npm:undici@8.10.2"
   },
   "engines": {
     "node": ">=20.18.1 <21 || >=22"

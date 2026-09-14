@@ -1,6 +1,6 @@
 /**
  * Allowed template name (alias) format, matching the server-side validation in
- * e2b-dev/infra (`id.identifierRegex`): the name is trimmed and lowercased,
+ * e2b-dev/runtime (`id.identifierRegex`): the name is trimmed and lowercased,
  * then must contain only lowercase letters, numbers, dashes and underscores.
  */
 const templateNameRegex = /^[a-z0-9-_]+$/

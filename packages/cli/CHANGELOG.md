@@ -1,5 +1,16 @@
 # @e2b/cli
 
+## 2.19.0
+
+### Minor Changes
+
+- f842aa8: Expose a configurable minimum free-disk target with `minFreeDiskMb` in JavaScript, `min_free_disk_mb` in Python, and `--min-free-disk-mb` in `template create`. Omission uses the team default, while explicit zero requests no minimum growth. Growth is best effort and never shrinks an existing filesystem.
+
+### Patch Changes
+
+- Updated dependencies [f842aa8]
+  - e2b@2.49.0
+
 ## 2.18.2
 
 ### Patch Changes

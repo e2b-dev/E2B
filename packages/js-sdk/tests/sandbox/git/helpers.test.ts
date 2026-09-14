@@ -1,8 +1,9 @@
 import { describe, expect, test, vi } from 'vitest'
 
+import { isGitTestsEnabled } from '../../setup.js'
 import { cleanupBaseDir } from './helpers.js'
 
-describe('cleanupBaseDir', () => {
+describe.skipIf(!isGitTestsEnabled)('cleanupBaseDir', () => {
   test('retries a Cloudflare dropped connection once', async () => {
     const run = vi
       .fn()

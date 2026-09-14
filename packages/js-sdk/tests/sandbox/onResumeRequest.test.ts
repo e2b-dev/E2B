@@ -104,3 +104,23 @@ test.for(unrecognized)(
     expect(lastConnectBody).toBeUndefined()
   }
 )
+
+test('an unrecognized onResume is InvalidArgumentError without an API key', async () => {
+  const previous = process.env.E2B_API_KEY
+  delete process.env.E2B_API_KEY
+  try {
+    await expect(
+      Sandbox.connect('test-sandbox-id', {
+        // @ts-expect-error deliberately outside the union
+        onResume: 'Reboot',
+      })
+    ).rejects.toThrowError(InvalidArgumentError)
+  } finally {
+    if (previous === undefined) {
+      delete process.env.E2B_API_KEY
+    } else {
+      process.env.E2B_API_KEY = previous
+    }
+  }
+  expect(lastConnectBody).toBeUndefined()
+})

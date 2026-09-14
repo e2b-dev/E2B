@@ -11,6 +11,7 @@ import {
   SandboxError,
 } from '../errors'
 import { createApiLogger } from '../logs'
+import { withRateLimitRetry } from '../retry'
 
 /**
  * Map an API error code and message to the matching error class — the same
@@ -105,7 +106,11 @@ class ApiClient {
 
     this.api = createClient<paths>({
       baseUrl: config.apiUrl,
-      fetch: createApiFetch(config.proxy),
+      fetch: withRateLimitRetry(
+        createApiFetch(config.proxy),
+        config.retries,
+        config.requestTimeoutMs
+      ),
       // In HTTP 1.1, all connections are considered persistent unless declared otherwise
       // keepalive: true,
       headers: {

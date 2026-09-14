@@ -286,7 +286,7 @@ export type SandboxNetworkOpts = {
    * connection is dialed. Omit it to send the sandbox's traffic out directly.
    *
    * Available on E2B Cloud and in BYOC deployments; a sandbox that names a
-   * proxy on a deployment built from the open source `e2b-dev/infra`
+   * proxy on a deployment built from the open source `e2b-dev/runtime`
    * repository is rejected as unsupported.
    *
    * @example
@@ -514,6 +514,7 @@ export interface SandboxApiOpts extends Partial<
     | 'debug'
     | 'domain'
     | 'requestTimeoutMs'
+    | 'retries'
     | 'signal'
   >
 > {}
@@ -709,6 +710,12 @@ export type SandboxConnectOpts = ConnectionOpts & {
    * flushed before the pause may be lost. Rejected where filesystem-only resume
    * is not enabled; a no-op for a snapshot without memory or a sandbox that is
    * already running.
+   *
+   * Needs a control plane that knows this option: E2B Cloud, or a self-hosted
+   * or BYOC deployment built from `e2b-dev/runtime` at or after the commit that
+   * added the `memory` field to connect/resume (2026-08-20). An older control
+   * plane drops the field and restores memory while answering as if the
+   * request had succeeded.
    *
    * @default 'restore'
    * @throws {@link InvalidArgumentError} if the value is outside the two literals.
@@ -1655,9 +1662,6 @@ export class SandboxApi extends ClientFactory {
     timeoutMs: number,
     opts?: SandboxOpts
   ) {
-    const apiOpts = this.resolveOpts(opts)
-    const config = new ConnectionConfig(apiOpts)
-    const client = new ApiClient(config)
     // onTimeout accepts a bare action (`'pause'` / `'kill'`) or the object form
     // `{ action, keepMemory }`. The discriminated union type forbids `keepMemory`
     // on `action: 'kill'`; re-check at runtime for untyped callers.
@@ -1740,6 +1744,9 @@ export class SandboxApi extends ClientFactory {
       )
     }
 
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
+    const client = new ApiClient(config)
     const res = await client.api.POST('/sandboxes', {
       body,
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
@@ -1842,9 +1849,6 @@ export class SandboxApi extends ClientFactory {
     const apiOpts = this.resolveOpts(opts)
     const timeoutMs = apiOpts?.timeoutMs ?? DEFAULT_SANDBOX_TIMEOUT_MS
 
-    const config = new ConnectionConfig(apiOpts)
-    const client = new ApiClient(config)
-
     // A nullish value is not a choice of restore, matching every other nullish
     // option. Any other value outside the union never reaches the API — it is
     // resolved here into the boolean memory field — so it cannot be rejected
@@ -1856,6 +1860,9 @@ export class SandboxApi extends ClientFactory {
         `onResume must be one of: ${allowedOnResume.join(', ')} (got ${JSON.stringify(onResume)}).`
       )
     }
+
+    const config = new ConnectionConfig(apiOpts)
+    const client = new ApiClient(config)
 
     const res = await client.api.POST('/sandboxes/{sandboxID}/connect', {
       params: {
