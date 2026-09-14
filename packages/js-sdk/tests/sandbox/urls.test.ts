@@ -31,6 +31,29 @@ describe('sandbox file URLs', () => {
     )
   })
 
+  test('upload URL without a path omits the path query parameter', async () => {
+    const unsecured = createSandbox()
+    assert.equal(
+      await unsecured.uploadUrl(),
+      'https://49983-sandbox-id.e2b.app/files'
+    )
+
+    const secured = createSandbox('access-token')
+    const url = new URL(await secured.uploadUrl())
+    assert.isNull(url.searchParams.get('path'))
+    assert.equal(
+      url.searchParams.get('signature'),
+      (
+        await getSignature({
+          path: '',
+          operation: 'write',
+          user: undefined,
+          envdAccessToken: 'access-token',
+        })
+      ).signature
+    )
+  })
+
   test('throws when signature expiration is used on unsecured sandbox', async () => {
     const sandbox = createSandbox()
 

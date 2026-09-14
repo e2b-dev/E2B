@@ -12,6 +12,7 @@ import {
   generateAndWriteTemplateFiles,
   GeneratedFiles,
   Language,
+  languageChoices,
   languageDisplay,
 } from './generators'
 import { generateReadmeContent } from './generators/handlebars'
@@ -202,24 +203,7 @@ export const initCommand = new commander.Command('init')
         } else {
           language = await select({
             message: 'Select target language for template files:',
-            choices: [
-              {
-                name: languageDisplay[Language.TypeScript],
-                value: Language.TypeScript,
-                description:
-                  'Generate .ts files for JavaScript/TypeScript projects',
-              },
-              {
-                name: languageDisplay[Language.PythonSync],
-                value: Language.PythonSync,
-                description: 'Generate synchronous Python template files',
-              },
-              {
-                name: languageDisplay[Language.PythonAsync],
-                value: Language.PythonAsync,
-                description: 'Generate asynchronous Python template files',
-              },
-            ],
+            choices: languageChoices,
             default: Language.TypeScript,
           })
         }

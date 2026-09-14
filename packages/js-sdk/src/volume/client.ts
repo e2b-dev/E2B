@@ -134,5 +134,5 @@ class VolumeApiClient {
   }
 }
 
-export type { components as VolumeApiComponents, paths as VolumeApiPaths }
+export type { components as VolumeApiComponents }
 export { VolumeApiClient, FILE_TIMEOUT_MS }
