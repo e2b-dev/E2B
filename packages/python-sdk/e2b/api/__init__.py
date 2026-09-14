@@ -106,8 +106,17 @@ pool_max_idle_per_host = int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20")
 envd_pool_shards = max(1, int(os.getenv("E2B_ENVD_POOL_SHARDS") or "4"))
 
 
-def envd_pool_shard(config: ConnectionConfig) -> int:
-    """Return the stable connection-pool shard for a sandbox's envd traffic.
+def envd_shard(config: ConnectionConfig) -> Optional[str]:
+    """The connection-pool ``shard`` for a config's envd traffic: its sandbox
+    ID, which every envd request carries, so one sandbox's RPC and HTTP
+    clients land on the same pool. Configs without one (control-plane
+    clients) get ``None``, the default shard."""
+    return config.sandbox_headers.get("E2b-Sandbox-Id") or None
+
+
+def pool_shard_index(shard: Optional[str]) -> int:
+    """Map a ``shard`` (a sandbox ID, or ``None`` for the default shard) to
+    one of ``envd_pool_shards`` connection pools.
 
     Production envd requests share one origin, whose HTTP/2 connection has a
     finite concurrent-stream limit. Long-running commands hold those streams,
@@ -115,14 +124,12 @@ def envd_pool_shard(config: ConnectionConfig) -> int:
     and account can run more sandboxes. A small bounded set of pools provides
     additional connections without returning to one connection per sandbox.
 
-    The sandbox ID is carried on every envd request and CRC32 is stable across
-    processes, unlike Python's randomized ``hash``. Configs without a sandbox
-    ID (including control-plane clients) stay on shard zero.
+    CRC32 is stable across processes, unlike Python's randomized ``hash``.
+    The default shard is index zero, which hashed sandboxes may share.
     """
-    sandbox_id = config.sandbox_headers.get("E2b-Sandbox-Id")
-    if not sandbox_id:
+    if shard is None:
         return 0
-    return zlib.crc32(sandbox_id.encode()) % envd_pool_shards
+    return zlib.crc32(shard.encode()) % envd_pool_shards
 
 
 class ProxyConfig(NamedTuple):
