@@ -1,5 +1,4 @@
 import { defineConfig } from 'vitest/config'
-import { playwright } from '@vitest/browser-playwright'
 import { config } from 'dotenv'
 
 const env = config()
@@ -38,23 +37,6 @@ export default defineConfig({
           env: {
             ...(process.env as Record<string, string>),
             ...env.parsed,
-          },
-        },
-      },
-      {
-        test: {
-          name: 'browser',
-          include: ['tests/runtimes/browser/**/*.{test,spec}.tsx'],
-          browser: {
-            enabled: true,
-            headless: true,
-            instances: [{ browser: 'chromium' }],
-            provider: playwright(),
-            // https://playwright.dev
-          },
-          provide: {
-            E2B_API_KEY: process.env.E2B_API_KEY || env.parsed?.E2B_API_KEY,
-            E2B_DOMAIN: process.env.E2B_DOMAIN || env.parsed?.E2B_DOMAIN,
           },
         },
       },

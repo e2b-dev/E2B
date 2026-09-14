@@ -8,10 +8,7 @@ sandboxTest('send input', async ({ sandbox }) => {
     onData: () => null,
   })
 
-  await sandbox.pty.sendInput(
-    terminal.pid,
-    new Uint8Array(Buffer.from('exit\n'))
-  )
+  await sandbox.pty.sendInput(terminal.pid, new TextEncoder().encode('exit\n'))
 
   await terminal.wait()
   expect(terminal.exitCode).toBe(0)
