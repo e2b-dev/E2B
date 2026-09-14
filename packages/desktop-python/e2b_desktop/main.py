@@ -5,6 +5,8 @@ from shlex import quote as quote_string
 from typing import Callable, Dict, Iterator, Literal, Optional, overload, Tuple, Union
 from uuid import uuid4
 
+from .exceptions import DesktopStartupException
+
 from e2b import (
     Sandbox as SandboxBase,
     CommandHandle,
@@ -248,6 +250,7 @@ class Sandbox(SandboxBase):
         :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`.
 
         :return: A Sandbox instance for the new sandbox
+        :raises DesktopStartupException: Desktop startup and cleanup of the allocated sandbox both failed; use ``sandbox_id`` for targeted cleanup.
 
         Use this method instead of using the constructor to create a new sandbox.
         """
@@ -291,11 +294,11 @@ class Sandbox(SandboxBase):
 
             sbx.__vnc_server = _VNCServer(sbx)
             sbx._start_xfce4()
-        except Exception:
+        except Exception as error:
             try:
                 sbx.kill()
-            except Exception:
-                pass
+            except Exception as cleanup_error:
+                raise DesktopStartupException(sbx.sandbox_id, error, cleanup_error)
             raise
 
         return sbx
