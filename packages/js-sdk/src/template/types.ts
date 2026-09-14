@@ -140,7 +140,7 @@ export type TemplateBuildStatusResponse = {
    */
   logEntries: LogEntry[]
   /**
-   * Build logs (raw strings).
+   * Build logs (raw strings). Always empty since the V1 build path was removed.
    * @deprecated Use `logEntries` instead.
    */
   logs: string[]

@@ -39,6 +39,7 @@ export interface paths {
                 };
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -71,6 +72,7 @@ export interface paths {
                 };
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
                 503: components["responses"]["503"];
                 504: components["responses"]["504"];
@@ -115,6 +117,7 @@ export interface paths {
                 };
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -144,6 +147,7 @@ export interface paths {
                 };
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -202,6 +206,7 @@ export interface paths {
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
                 409: components["responses"]["409"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
                 503: components["responses"]["503"];
                 504: components["responses"]["504"];
@@ -253,6 +258,7 @@ export interface paths {
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
                 409: components["responses"]["409"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
                 503: components["responses"]["503"];
             };
@@ -302,6 +308,7 @@ export interface paths {
                 };
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -351,6 +358,7 @@ export interface paths {
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -399,6 +407,7 @@ export interface paths {
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
                 409: components["responses"]["409"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -447,6 +456,7 @@ export interface paths {
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
                 409: components["responses"]["409"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
                 503: components["responses"]["503"];
             };
@@ -494,6 +504,7 @@ export interface paths {
                 };
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
             };
         };
         delete?: never;
@@ -544,6 +555,7 @@ export interface paths {
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
                 409: components["responses"]["409"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
                 503: components["responses"]["503"];
                 504: components["responses"]["504"];
@@ -595,6 +607,7 @@ export interface paths {
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -641,6 +654,7 @@ export interface paths {
                 };
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -684,6 +698,7 @@ export interface paths {
                 };
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -944,6 +959,7 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -985,6 +1001,7 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1034,6 +1051,7 @@ export interface paths {
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 403: components["responses"]["403"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1085,6 +1103,7 @@ export interface paths {
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 403: components["responses"]["403"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1129,42 +1148,12 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
         put?: never;
-        /**
-         * Create template
-         * @deprecated
-         * @description Create a new template
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["TemplateBuildRequest"];
-                };
-            };
-            responses: {
-                /** @description The build was accepted */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TemplateLegacy"];
-                    };
-                };
-                400: components["responses"]["400"];
-                401: components["responses"]["401"];
-                500: components["responses"]["500"];
-            };
-        };
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1209,43 +1198,12 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
         put?: never;
-        /**
-         * Rebuild template
-         * @deprecated
-         * @description Rebuild an template
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    templateID: components["parameters"]["templateID"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["TemplateBuildRequest"];
-                };
-            };
-            responses: {
-                /** @description The build was accepted */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TemplateLegacy"];
-                    };
-                };
-                401: components["responses"]["401"];
-                500: components["responses"]["500"];
-            };
-        };
+        post?: never;
         /**
          * Delete template
          * @description Delete a template
@@ -1269,6 +1227,7 @@ export interface paths {
                     content?: never;
                 };
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1303,52 +1262,10 @@ export interface paths {
                 };
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
-        trace?: never;
-    };
-    "/templates/{templateID}/builds/{buildID}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Start template build
-         * @deprecated
-         * @description Start the build
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    buildID: components["parameters"]["buildID"];
-                    templateID: components["parameters"]["templateID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The build has started */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["401"];
-                500: components["responses"]["500"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/templates/{templateID}/builds/{buildID}/logs": {
@@ -1394,6 +1311,7 @@ export interface paths {
                 };
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1445,6 +1363,7 @@ export interface paths {
                 };
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1491,6 +1410,7 @@ export interface paths {
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1536,6 +1456,7 @@ export interface paths {
                 401: components["responses"]["401"];
                 403: components["responses"]["403"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1581,6 +1502,7 @@ export interface paths {
                 400: components["responses"]["400"];
                 403: components["responses"]["403"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1630,6 +1552,7 @@ export interface paths {
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1660,6 +1583,7 @@ export interface paths {
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1716,6 +1640,7 @@ export interface paths {
                 };
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1771,6 +1696,7 @@ export interface paths {
                 };
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1821,42 +1747,12 @@ export interface paths {
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 403: components["responses"]["403"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
         put?: never;
-        /**
-         * Create template (v2)
-         * @deprecated
-         * @description Create a new template
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["TemplateBuildRequestV2"];
-                };
-            };
-            responses: {
-                /** @description The build was requested successfully */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TemplateLegacy"];
-                    };
-                };
-                400: components["responses"]["400"];
-                401: components["responses"]["401"];
-                500: components["responses"]["500"];
-            };
-        };
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1906,6 +1802,7 @@ export interface paths {
                 };
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1947,7 +1844,9 @@ export interface paths {
                     };
                     content?: never;
                 };
+                400: components["responses"]["400"];
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1995,6 +1894,8 @@ export interface paths {
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 403: components["responses"]["403"];
+                409: components["responses"]["409"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -2034,6 +1935,7 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -2066,6 +1968,7 @@ export interface paths {
                 };
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -2108,6 +2011,7 @@ export interface paths {
                 };
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -2137,6 +2041,7 @@ export interface paths {
                 };
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -2856,6 +2761,10 @@ export interface components {
             updatedAt: string;
         };
         TemplateBuildFileUpload: {
+            /** @description Request headers that must be sent with the upload request */
+            headers?: {
+                [key: string]: string;
+            };
             /** @description Whether the file is already present in the cache */
             present: boolean;
             /** @description Url where the file should be uploaded to */
@@ -2870,7 +2779,8 @@ export interface components {
              */
             logEntries: components["schemas"]["BuildLogEntry"][];
             /**
-             * @description Build logs
+             * @deprecated
+             * @description Build logs (always empty since the V1 build path was removed, use logEntries)
              * @default []
              */
             logs: string[];
@@ -2885,31 +2795,6 @@ export interface components {
              * @default []
              */
             logs: components["schemas"]["BuildLogEntry"][];
-        };
-        TemplateBuildRequest: {
-            /** @description Alias of the template */
-            alias?: string;
-            cpuCount?: components["schemas"]["CPUCount"];
-            /** @description Dockerfile for the template */
-            dockerfile: string;
-            memoryMB?: components["schemas"]["MemoryMB"];
-            /** @description Ready check command to execute in the template after the build */
-            readyCmd?: string;
-            /** @description Start command to execute in the template after the build */
-            startCmd?: string;
-            /** @description Identifier of the team */
-            teamID?: string;
-        };
-        TemplateBuildRequestV2: {
-            /** @description Alias of the template */
-            alias: string;
-            cpuCount?: components["schemas"]["CPUCount"];
-            memoryMB?: components["schemas"]["MemoryMB"];
-            /**
-             * @deprecated
-             * @description Identifier of the team
-             */
-            teamID?: string;
         };
         TemplateBuildRequestV3: {
             /**
@@ -2930,6 +2815,7 @@ export interface components {
              */
             teamID?: string;
         };
+        /** @description Exactly one of fromImage or fromTemplate must be given and non-empty. */
         TemplateBuildStartV2: {
             /**
              * @description Whether the whole build should be forced to run regardless of the cache
@@ -2956,46 +2842,6 @@ export interface components {
          * @enum {string}
          */
         TemplateBuildStatus: "building" | "waiting" | "ready" | "error";
-        TemplateLegacy: {
-            /** @description Aliases of the template */
-            aliases: string[];
-            /**
-             * Format: int32
-             * @description Number of times the template was built
-             */
-            buildCount: number;
-            /** @description Identifier of the last successful build for given template */
-            buildID: string;
-            cpuCount: components["schemas"]["CPUCount"];
-            /**
-             * Format: date-time
-             * @description Time when the template was created
-             */
-            createdAt: string;
-            createdBy: components["schemas"]["TeamUser"] | null;
-            diskSizeMB: components["schemas"]["DiskSizeMB"];
-            envdVersion: components["schemas"]["EnvdVersion"];
-            /**
-             * Format: date-time
-             * @description Time when the template was last used
-             */
-            lastSpawnedAt: string | null;
-            memoryMB: components["schemas"]["MemoryMB"];
-            /** @description Whether the template is public or only accessible by the team */
-            public: boolean;
-            /**
-             * Format: int64
-             * @description Number of times the template was used
-             */
-            spawnCount: number;
-            /** @description Identifier of the template */
-            templateID: string;
-            /**
-             * Format: date-time
-             * @description Time when the template was last updated
-             */
-            updatedAt: string;
-        };
         TemplateRequestResponseV3: {
             /**
              * @deprecated
@@ -3158,6 +3004,11 @@ export interface components {
         /** @description Too many requests */
         429: {
             headers: {
+                /**
+                 * @description When present, the number of seconds to wait before retrying the request.
+                 * @example 30
+                 */
+                "Retry-After"?: number;
                 [name: string]: unknown;
             };
             content: {
