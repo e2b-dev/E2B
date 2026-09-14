@@ -113,6 +113,7 @@ export async function uploadFile(
     fileName: string
     fileContextPath: string
     url: string
+    headers?: Record<string, string>
     ignorePatterns: string[]
     resolveSymlinks: boolean
     gzip: boolean
@@ -128,6 +129,7 @@ export async function uploadFile(
   const {
     fileName,
     url,
+    headers,
     fileContextPath,
     ignorePatterns,
     resolveSymlinks,
@@ -154,7 +156,7 @@ export async function uploadFile(
       abortOpts?.signal
     )
 
-    const res = await putFileStream(url, tar.path, tar.size, signal)
+    const res = await putFileStream(url, tar.path, tar.size, signal, headers)
 
     if (!res.ok) {
       throw new FileUploadError(
@@ -166,17 +168,37 @@ export async function uploadFile(
     if (error instanceof FileUploadError) {
       throw error
     }
-    throw new FileUploadError(`Failed to upload file: ${error}`, stackTrace)
+    // fetch reports transport failures as a bare "TypeError: fetch failed";
+    // the actual reason is on `cause`.
+    const cause = (error as { cause?: { message?: string } } | null)?.cause
+      ?.message
+    throw new FileUploadError(
+      `Failed to upload file: ${error}${cause ? ` (${cause})` : ''}`,
+      stackTrace
+    )
   } finally {
     await cleanup?.()
   }
+}
+
+const FRAMING_HEADERS = new Set(['content-length', 'transfer-encoding'])
+
+// The API's upload-header map is an open string map; a framing header from it
+// would shadow or duplicate the archive's own Content-Length.
+function withoutFramingHeaders(headers?: Record<string, string>) {
+  return Object.fromEntries(
+    Object.entries(headers ?? {}).filter(
+      ([name]) => !FRAMING_HEADERS.has(name.toLowerCase())
+    )
+  )
 }
 
 async function putFileStream(
   url: string,
   filePath: string,
   size: number,
-  signal: AbortSignal | undefined
+  signal: AbortSignal | undefined,
+  headers?: Record<string, string>
 ): Promise<{ ok: boolean; statusText: string }> {
   // Prefer undici's fetch: it honors the explicit Content-Length on stream
   // bodies on every runtime, while Deno's native fetch ignores the header and
@@ -192,7 +214,10 @@ async function putFileStream(
     body: stream.Readable.toWeb(
       fs.createReadStream(filePath)
     ) as ReadableStream,
+    // The upload link may require headers a signed URL cannot carry (Azure's
+    // Put Blob needs x-ms-blob-type); Content-Length is framing and wins.
     headers: {
+      ...withoutFramingHeaders(headers),
       'Content-Length': size.toString(),
     },
     // Streaming request bodies require half-duplex mode.

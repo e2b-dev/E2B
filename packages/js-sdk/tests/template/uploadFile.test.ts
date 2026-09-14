@@ -18,6 +18,7 @@ describe('uploadFile transfer encoding', () => {
   let server: Server
   let baseUrl: string
   let capturedHeaders: IncomingMessage['headers'] = {}
+  let capturedHeaderNames: string[] = []
   let capturedBodyLength = 0
 
   beforeAll(async () => {
@@ -26,6 +27,9 @@ describe('uploadFile transfer encoding', () => {
 
     server = createServer((req, res) => {
       capturedHeaders = req.headers
+      capturedHeaderNames = req.rawHeaders
+        .filter((_, i) => i % 2 === 0)
+        .map((name) => name.toLowerCase())
       let bytes = 0
       req.on('data', (chunk: Buffer) => {
         bytes += chunk.length
@@ -73,5 +77,54 @@ describe('uploadFile transfer encoding', () => {
     // Content-Type (e.g. inferred from the archive's file extension) makes
     // the storage backend reject the upload with 403 Forbidden.
     expect(capturedHeaders['content-type']).toBeUndefined()
+
+    expect(capturedHeaders['x-ms-blob-type']).toBeUndefined()
   })
+
+  test('sends the headers the upload link requires alongside Content-Length', async () => {
+    await uploadFile(
+      {
+        fileName: '*.txt',
+        fileContextPath: testDir,
+        url: baseUrl,
+        headers: { 'x-ms-blob-type': 'BlockBlob' },
+        ignorePatterns: [],
+        resolveSymlinks: false,
+        gzip: true,
+      },
+      undefined
+    )
+
+    expect(capturedHeaders['x-ms-blob-type']).toBe('BlockBlob')
+    expectIntactFraming()
+  })
+
+  test('drops a framing header the upload link returned', async () => {
+    await uploadFile(
+      {
+        fileName: '*.txt',
+        fileContextPath: testDir,
+        url: baseUrl,
+        headers: { 'x-ms-blob-type': 'BlockBlob', 'content-length': '1' },
+        ignorePatterns: [],
+        resolveSymlinks: false,
+        gzip: true,
+      },
+      undefined
+    )
+
+    expect(capturedHeaders['x-ms-blob-type']).toBe('BlockBlob')
+    expectIntactFraming()
+  })
+
+  function expectIntactFraming() {
+    expect(Number(capturedHeaders['content-length'])).toBe(capturedBodyLength)
+    expect(
+      capturedHeaderNames.filter((name) => name === 'content-length')
+    ).toHaveLength(1)
+    expect(
+      (capturedHeaders['transfer-encoding'] ?? '').toLowerCase()
+    ).not.toContain('chunked')
+    expect(capturedHeaders['content-type']).toBeUndefined()
+  }
 })
