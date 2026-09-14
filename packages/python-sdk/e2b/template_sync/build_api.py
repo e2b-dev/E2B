@@ -1,6 +1,7 @@
+import os
 import time
 from types import TracebackType
-from typing import Callable, Optional, List, Union
+from typing import Callable, Dict, Optional, List, Union
 
 import httpx
 from pyqwest import SyncHTTPTransport
@@ -40,7 +41,11 @@ from e2b.template.types import (
     TemplateTagInfo,
 )
 from e2b.template.consts import FILE_UPLOAD_TIMEOUT_SECONDS
-from e2b.template.utils import get_build_step_index, tar_file_stream
+from e2b.template.utils import (
+    get_build_step_index,
+    strip_framing_headers,
+    tar_file_stream,
+)
 
 
 def request_build(
@@ -113,6 +118,7 @@ def upload_file(
     resolve_symlinks: bool,
     gzip: bool,
     stack_trace: Optional[TracebackType],
+    headers: Optional[Dict[str, str]] = None,
     request_timeout: Optional[float] = None,
 ):
     # Uploading a large build-context archive can take far longer than the 60s
@@ -128,6 +134,8 @@ def upload_file(
             file_name, context_path, ignore_patterns, resolve_symlinks, gzip
         )
         try:
+            size = os.fstat(tar_file.fileno()).st_size
+
             # Through the pyqwest adapter the upload timeout is a
             # whole-request deadline for the entire transfer, not a per-write
             # bound as with the httpx transport this replaced.
@@ -148,11 +156,20 @@ def upload_file(
                     )
                 ),
             ) as client:
-                # httpx streams the archive from disk in chunks and sets
-                # Content-Length from the file size—S3 presigned URLs reject
-                # chunked transfer encoding, and reqwest keeps the
-                # Content-Length framing for the streamed body.
-                response = client.put(url, content=tar_file)
+                # Stream the archive from disk under an explicit
+                # Content-Length: S3 presigned URLs reject chunked transfer
+                # encoding, and reqwest keeps the Content-Length framing for
+                # the streamed body. The link may also require headers a SAS
+                # cannot carry (Azure's Put Blob needs x-ms-blob-type);
+                # Content-Length wins over them.
+                response = client.put(
+                    url,
+                    content=tar_file,
+                    headers={
+                        **strip_framing_headers(headers),
+                        "Content-Length": str(size),
+                    },
+                )
             response.raise_for_status()
         finally:
             # Closing the spooled temp file is best-effort: a failure here

@@ -1,15 +1,24 @@
+import os
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from types import SimpleNamespace
 from typing import Any, Dict
 from unittest import mock
 
 import httpx
 import pytest
 
+from e2b import Template
 from e2b.api.client.client import AuthenticatedClient
+from e2b.api.client.models import TemplateBuildFileUpload
+from e2b.api.client.models.template_build_file_upload_headers import (
+    TemplateBuildFileUploadHeaders,
+)
+from e2b.api.client.types import UNSET
 from e2b.template import utils as template_utils
 from e2b.exceptions import FileUploadException
 from e2b.template.consts import FILE_UPLOAD_TIMEOUT_SECONDS
+import e2b.template_sync.main as template_sync_main
 from e2b.template_sync.build_api import upload_file
 
 
@@ -28,6 +37,7 @@ def _make_server():
             # hyper (pyqwest) sends lowercase header names where httpcore
             # title-cased them; compare case-insensitively.
             state["headers"] = {k.lower(): v for k, v in self.headers.items()}
+            state["header_names"] = [k.lower() for k, _ in self.headers.items()]
             state["paths"].append(self.path)
             length = int(self.headers.get("Content-Length", 0))
             body = self.rfile.read(length) if length else b""
@@ -236,3 +246,134 @@ def test_upload_file_ignores_post_upload_close_failure(tmp_path):
         thread.join(timeout=5)
 
     assert state["headers"] is not None
+
+
+def _archive_size(tmp_path) -> int:
+    with template_utils.tar_file_stream("*.txt", str(tmp_path), [], False, True) as f:
+        return os.fstat(f.fileno()).st_size
+
+
+def _assert_intact_framing(state, tmp_path):
+    headers = state["headers"]
+    assert int(headers["content-length"]) == _archive_size(tmp_path)
+    assert state["body_length"] == _archive_size(tmp_path)
+    assert state["header_names"].count("content-length") == 1
+    assert "chunked" not in headers.get("transfer-encoding", "").lower()
+    assert "content-type" not in headers
+
+
+# The file-upload-link response carries headers the signed URL cannot carry
+# itself (Azure's Put Blob requires x-ms-blob-type); without them every
+# uncached COPY fails with a storage 400 on an Azure-backed cluster.
+
+
+def test_upload_file_sends_required_headers(tmp_path):
+    (tmp_path / "hello.txt").write_text("hello world")
+
+    server, thread, state = _make_server()
+    host, port = server.server_address
+    url = f"http://{host}:{port}/upload"
+
+    try:
+        upload_file(
+            api_client=AuthenticatedClient(base_url="http://test", token="test"),
+            file_name="*.txt",
+            context_path=str(tmp_path),
+            url=url,
+            ignore_patterns=[],
+            resolve_symlinks=False,
+            gzip=True,
+            stack_trace=None,
+            headers={"x-ms-blob-type": "BlockBlob"},
+        )
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+    assert state["headers"]["x-ms-blob-type"] == "BlockBlob"
+    _assert_intact_framing(state, tmp_path)
+
+
+@pytest.mark.parametrize(
+    "link_headers, expected_blob_type",
+    [
+        (
+            TemplateBuildFileUploadHeaders.from_dict({"x-ms-blob-type": "BlockBlob"}),
+            "BlockBlob",
+        ),
+        (UNSET, None),
+    ],
+)
+def test_build_forwards_upload_link_headers(
+    tmp_path, monkeypatch, link_headers, expected_blob_type
+):
+    (tmp_path / "hello.txt").write_text("hello world")
+
+    server, thread, state = _make_server()
+    host, port = server.server_address
+    url = f"http://{host}:{port}/upload"
+
+    monkeypatch.setattr(
+        template_sync_main,
+        "request_build",
+        lambda *args, **kwargs: SimpleNamespace(
+            template_id="template-id", build_id="build-id", tags=[]
+        ),
+    )
+    monkeypatch.setattr(
+        template_sync_main, "trigger_build", lambda *args, **kwargs: None
+    )
+    monkeypatch.setattr(
+        template_sync_main,
+        "get_file_upload_link",
+        lambda *args, **kwargs: TemplateBuildFileUpload(
+            present=False, url=url, headers=link_headers
+        ),
+    )
+
+    template = (
+        Template(file_context_path=str(tmp_path)).from_base_image().copy("*.txt", ".")
+    )
+
+    try:
+        Template._build(
+            AuthenticatedClient(base_url="http://test", token="test"),
+            template,
+            "upload-headers",
+        )
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+    assert state["headers"].get("x-ms-blob-type") == expected_blob_type
+    _assert_intact_framing(state, tmp_path)
+
+
+def test_upload_file_drops_framing_headers_from_the_api(tmp_path):
+    (tmp_path / "hello.txt").write_text("hello world")
+
+    server, thread, state = _make_server()
+    host, port = server.server_address
+    url = f"http://{host}:{port}/upload"
+
+    try:
+        upload_file(
+            api_client=AuthenticatedClient(base_url="http://test", token="test"),
+            file_name="*.txt",
+            context_path=str(tmp_path),
+            url=url,
+            ignore_patterns=[],
+            resolve_symlinks=False,
+            gzip=True,
+            stack_trace=None,
+            headers={"x-ms-blob-type": "BlockBlob", "content-length": "1"},
+        )
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+    assert state["headers"]["x-ms-blob-type"] == "BlockBlob"
+    _assert_intact_framing(state, tmp_path)

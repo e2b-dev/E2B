@@ -1,7 +1,7 @@
 import asyncio
 import os
 from types import TracebackType
-from typing import Callable, Optional, List, Union
+from typing import Callable, Dict, Optional, List, Union
 
 import httpx
 from pyqwest import HTTPTransport
@@ -42,7 +42,11 @@ from e2b.template.types import (
     TemplateTagInfo,
 )
 from e2b.template.consts import FILE_UPLOAD_TIMEOUT_SECONDS
-from e2b.template.utils import get_build_step_index, tar_file_stream
+from e2b.template.utils import (
+    get_build_step_index,
+    strip_framing_headers,
+    tar_file_stream,
+)
 
 
 async def request_build(
@@ -115,6 +119,7 @@ async def upload_file(
     resolve_symlinks: bool,
     gzip: bool,
     stack_trace: Optional[TracebackType],
+    headers: Optional[Dict[str, str]] = None,
     request_timeout: Optional[float] = None,
 ):
     # Uploading a large build-context archive can take far longer than the 60s
@@ -155,11 +160,16 @@ async def upload_file(
                 # Stream the archive from disk via an async iterator. The
                 # explicit Content-Length suppresses chunked transfer
                 # encoding, which S3 presigned URLs reject; reqwest keeps the
-                # Content-Length framing for the streamed body.
+                # Content-Length framing for the streamed body. The link may
+                # also require headers a SAS cannot carry (Azure's Put Blob
+                # needs x-ms-blob-type); Content-Length wins over them.
                 response = await client.put(
                     url,
                     content=aiter_io_chunks(tar_file),
-                    headers={"Content-Length": str(size)},
+                    headers={
+                        **strip_framing_headers(headers),
+                        "Content-Length": str(size),
+                    },
                 )
             response.raise_for_status()
         finally:

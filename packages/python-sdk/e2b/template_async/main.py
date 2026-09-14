@@ -4,6 +4,7 @@ from typing import Callable, List, Optional, Union
 from typing_extensions import Unpack
 
 from e2b.api.client.client import AuthenticatedClient
+from e2b.api.client.types import Unset
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.template.consts import GZIP, RESOLVE_SYMLINKS
 from e2b.template.logger import LogEntry, LogEntryEnd, LogEntryStart
@@ -137,6 +138,11 @@ class AsyncTemplate(TemplateBase):
                     resolve_symlinks,
                     gzip,
                     stack_trace,
+                    headers=(
+                        None
+                        if isinstance(file_info.headers, Unset)
+                        else file_info.headers.to_dict()
+                    ),
                     request_timeout=request_timeout,
                 )
                 if on_build_logs:

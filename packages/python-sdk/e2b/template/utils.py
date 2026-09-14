@@ -8,7 +8,7 @@ from wcmatch import glob
 import re
 import inspect
 from types import TracebackType, FrameType
-from typing import IO, List, Optional, Union
+from typing import IO, Dict, List, Optional, Union
 
 from e2b.exceptions import TemplateException
 from e2b.template.consts import BASE_STEP_NAME, FINALIZE_STEP_NAME
@@ -302,6 +302,24 @@ def tar_file_stream(
         except Exception:
             pass
         raise
+
+
+_FRAMING_HEADERS = frozenset({"content-length", "transfer-encoding"})
+
+
+def strip_framing_headers(headers: Optional[Dict[str, str]]) -> Dict[str, str]:
+    """
+    Drop framing headers from an API-supplied header map.
+
+    The upload-link header map is an open string map; a framing header from it
+    would shadow or duplicate the archive's own Content-Length.
+
+    :param headers: Headers returned by the file-upload-link response
+    :return: The headers with any framing entry removed
+    """
+    return {
+        k: v for k, v in (headers or {}).items() if k.lower() not in _FRAMING_HEADERS
+    }
 
 
 def strip_ansi_escape_codes(text: str) -> str:
