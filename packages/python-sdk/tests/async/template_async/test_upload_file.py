@@ -315,7 +315,8 @@ async def test_upload_file_keeps_its_own_content_length(tmp_path):
             resolve_symlinks=False,
             gzip=True,
             stack_trace=None,
-            headers={"x-ms-blob-type": "BlockBlob", "Content-Length": "1"},
+            # lowercase on purpose: header names are case-insensitive, dict keys are not
+            headers={"x-ms-blob-type": "BlockBlob", "content-length": "1"},
         )
     finally:
         server.shutdown()

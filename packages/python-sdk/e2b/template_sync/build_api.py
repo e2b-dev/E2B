@@ -156,7 +156,14 @@ def upload_file(
                 response = client.put(
                     url,
                     content=tar_file,
-                    headers={**(headers or {}), "Content-Length": str(size)},
+                    headers={
+                        **{
+                            k: v
+                            for k, v in (headers or {}).items()
+                            if k.lower() != "content-length"
+                        },
+                        "Content-Length": str(size),
+                    },
                 )
             response.raise_for_status()
         finally:

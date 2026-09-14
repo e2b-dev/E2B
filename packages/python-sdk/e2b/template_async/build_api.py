@@ -158,7 +158,14 @@ async def upload_file(
                 response = await client.put(
                     url,
                     content=aiter_io_chunks(tar_file),
-                    headers={**(headers or {}), "Content-Length": str(size)},
+                    headers={
+                        **{
+                            k: v
+                            for k, v in (headers or {}).items()
+                            if k.lower() != "content-length"
+                        },
+                        "Content-Length": str(size),
+                    },
                 )
             response.raise_for_status()
         finally:

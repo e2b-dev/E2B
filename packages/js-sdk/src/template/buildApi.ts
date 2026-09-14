@@ -195,9 +195,13 @@ async function putFileStream(
     body: stream.Readable.toWeb(
       fs.createReadStream(filePath)
     ) as ReadableStream,
-    // API-returned headers applied as given (Azure needs x-ms-blob-type, which a SAS cannot carry); Content-Length stays ours.
+    // API-returned headers applied as given (Azure needs x-ms-blob-type, which a SAS cannot carry); Content-Length stays ours, dropped case-insensitively since fetch header names are not case-sensitive.
     headers: {
-      ...headers,
+      ...Object.fromEntries(
+        Object.entries(headers ?? {}).filter(
+          ([name]) => name.toLowerCase() !== 'content-length'
+        )
+      ),
       'Content-Length': size.toString(),
     },
     // Streaming request bodies require half-duplex mode.

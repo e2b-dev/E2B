@@ -102,7 +102,8 @@ describe('uploadFile transfer encoding', () => {
         fileName: '*.txt',
         fileContextPath: testDir,
         url: baseUrl,
-        headers: { 'Content-Length': '1' },
+        // lowercase on purpose: header names are case-insensitive, object keys are not
+        headers: { 'content-length': '1' },
         ignorePatterns: [],
         resolveSymlinks: false,
         gzip: true,
