@@ -5,10 +5,13 @@ import {
   createRuntimeFetch,
   type UndiciModule,
 } from '../undici'
+import type { LimitConcurrencyOptions } from '../api/inflight'
 
 type EnvdFetchOptions = {
   connectionLimit?: number
   inflightLimit?: number
+  /** Forwarded to `limitConcurrency` (env-var name, reserved unary slots). */
+  inflight?: LimitConcurrencyOptions
   proxy?: string
   loadUndici?: () => Promise<UndiciModule | undefined>
 }
@@ -21,6 +24,11 @@ const DEFAULT_ENVD_CONNECTION_LIMIT = 10
 const DEFAULT_ENVD_RPC_CONNECTION_LIMIT = 200
 const DEFAULT_ENVD_INFLIGHT_LIMIT = 2000
 const DEFAULT_ENVD_RPC_INFLIGHT_LIMIT = 2000
+// Long-lived Connect streams (background commands, PTYs, watchDir) hold
+// their slots for their whole lifetime; keep one slot free for the short
+// unary calls that end them (kill, sendStdin, list) so streams can never
+// wedge their own teardown.
+const ENVD_RPC_RESERVED_UNARY_SLOTS = 1
 
 export function createEnvdFetchForRuntime(
   currentRuntime = runtime,
@@ -30,6 +38,7 @@ export function createEnvdFetchForRuntime(
     buildDispatchedFetch({
       connections: options.connectionLimit ?? DEFAULT_ENVD_CONNECTION_LIMIT,
       inflightLimit: options.inflightLimit ?? 0,
+      inflight: options.inflight,
       proxy: options.proxy,
       loadUndici: options.loadUndici,
     })
@@ -48,6 +57,7 @@ export function createEnvdFetch(proxy?: string): typeof fetch {
   // to h1, this favors connection pressure over per-sandbox throughput.
   const envdFetch = createEnvdFetchForRuntime(runtime, {
     inflightLimit: getEnvdInflightLimit(),
+    inflight: { envVarName: 'E2B_ENVD_INFLIGHT_REQUESTS' },
     proxy,
   })
   envdFetchers.set(key, envdFetch)
@@ -66,6 +76,10 @@ export function createEnvdRpcFetch(proxy?: string): typeof fetch {
   const envdRpcFetch = createEnvdFetchForRuntime(runtime, {
     connectionLimit: getEnvdRpcConnectionLimit(),
     inflightLimit: getEnvdRpcInflightLimit(),
+    inflight: {
+      envVarName: 'E2B_ENVD_RPC_INFLIGHT_REQUESTS',
+      reserved: ENVD_RPC_RESERVED_UNARY_SLOTS,
+    },
     proxy,
   })
   envdRpcFetchers.set(key, envdRpcFetch)
