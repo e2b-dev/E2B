@@ -17,13 +17,13 @@ function decodeJwtExp(token: string): number | undefined {
   }
 }
 
-export function isTokenExpired(accessToken: string): boolean {
+function isTokenExpired(accessToken: string): boolean {
   const exp = decodeJwtExp(accessToken)
   if (!exp) return true
   return Math.floor(Date.now() / 1000) >= exp - REFRESH_SKEW_SECONDS
 }
 
-export class TokenRefreshError extends Error {
+class TokenRefreshError extends Error {
   constructor(
     public status: number,
     public errorCode: string,
@@ -39,7 +39,7 @@ type RefreshedTokens = {
   refresh_token: string
 }
 
-export async function refreshOAuthToken(
+async function refreshOAuthToken(
   refreshToken: string,
   clientId: string,
   tokenEndpoint: string

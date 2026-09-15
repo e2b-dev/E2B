@@ -5,17 +5,17 @@ import * as fs from 'fs'
 /**
  * User configuration stored in ~/.e2b/config.json
  */
-export interface UserIdentity {
+interface UserIdentity {
   email: string
 }
 
-export interface UserOAuth {
+interface UserOAuth {
   token_endpoint: string
   revoke_endpoint: string
   client_id: string
 }
 
-export interface UserTokens {
+interface UserTokens {
   access_token: string
   refresh_token: string
 }
@@ -46,7 +46,7 @@ export const DOCS_BASE =
   process.env.E2B_DOCS_BASE ||
   `https://${process.env.E2B_DOMAIN || 'e2b.dev'}/docs`
 
-export const DASHBOARD_BASE =
+const DASHBOARD_BASE =
   process.env.E2B_DASHBOARD_BASE ||
   `https://${process.env.E2B_DOMAIN || 'e2b.dev'}/dashboard`
 
