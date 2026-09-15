@@ -17,7 +17,7 @@ sandboxTest('create PTY', async ({ sandbox }) => {
 
   await sandbox.pty.sendInput(
     terminal.pid,
-    new Uint8Array(Buffer.from('echo $ABC\nexit\n'))
+    new TextEncoder().encode('echo $ABC\nexit\n')
   )
 
   await terminal.wait()

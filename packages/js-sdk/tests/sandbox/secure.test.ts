@@ -1,7 +1,20 @@
 import { assert, test, describe } from 'vitest'
 import { getSignature, Sandbox } from '../../src'
 import { sandboxTest, isDebug } from '../setup'
-import { randomUUID, createHash } from 'node:crypto'
+
+/**
+ * Recomputes the signature envd expects, independently of the SDK's own
+ * implementation. WebCrypto rather than node:crypto so the expectation is
+ * computed the same way on every runtime the suite covers.
+ */
+async function expectedSignature(raw: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(raw)
+  )
+  const base64 = btoa(String.fromCharCode(...new Uint8Array(digest)))
+  return 'v1_' + base64.replace(/=+$/, '')
+}
 
 describe('secure sandbox', () => {
   sandboxTest.override({
@@ -40,16 +53,12 @@ test.skipIf(isDebug)('signing generation', async () => {
   const operation = 'read'
   const path = '/home/user/hello.txt'
   const user = 'root'
-  const envdAccessToken = randomUUID()
+  const envdAccessToken = crypto.randomUUID()
 
   const signatureRaw = `${path}:${operation}:${user}:${envdAccessToken}`
 
-  const buff = Buffer.from(signatureRaw, 'utf8')
-  const hash = createHash('sha256').update(buff).digest()
-  const signature = 'v1_' + hash.toString('base64').replace(/=+$/, '')
-
   const readSignatureExpected = {
-    signature: signature,
+    signature: await expectedSignature(signatureRaw),
     expiration: null,
   }
 
@@ -67,7 +76,7 @@ test.skipIf(isDebug)('signing generation with expiration', async () => {
   const operation = 'read'
   const path = '/home/user/hello.txt'
   const user = 'root'
-  const envdAccessToken = randomUUID()
+  const envdAccessToken = crypto.randomUUID()
   const expirationInSeconds = 120
 
   const signatureExpiration = expirationInSeconds
@@ -75,12 +84,8 @@ test.skipIf(isDebug)('signing generation with expiration', async () => {
     : null
   const signatureRaw = `${path}:${operation}:${user}:${envdAccessToken}:${signatureExpiration?.toString()}`
 
-  const buff = Buffer.from(signatureRaw, 'utf8')
-  const hash = createHash('sha256').update(buff).digest()
-  const signature = 'v1_' + hash.toString('base64').replace(/=+$/, '')
-
   const readSignatureExpected = {
-    signature: signature,
+    signature: await expectedSignature(signatureRaw),
     expiration: signatureExpiration,
   }
 
