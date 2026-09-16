@@ -140,7 +140,7 @@ async def test_allow_takes_precedence_over_deny(async_sandbox_factory):
 async def test_allow_public_traffic_false(async_sandbox_factory):
     """Test that sandbox with allow_public_traffic=False requires traffic access token."""
     async_sandbox = await async_sandbox_factory(
-        secure=True, network=SandboxNetworkOpts(allow_public_traffic=False)
+        network=SandboxNetworkOpts(allow_public_traffic=False)
     )
 
     # Verify the sandbox was created successfully and has a traffic access token

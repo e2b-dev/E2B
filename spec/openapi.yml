@@ -949,6 +949,59 @@ components:
           items:
             $ref: "#/components/schemas/SandboxVolumeMount"
 
+    NewSandboxV2:
+      description: >-
+        Sandbox creation request. All system communication with the sandbox is
+        always secured; the template's envd version must support secured access.
+      required:
+        - templateID
+      properties:
+        templateID:
+          type: string
+          description: Identifier of the required template
+        timeout:
+          type: integer
+          format: int32
+          minimum: 0
+          default: 300
+          description: Time to live for the sandbox in seconds.
+        autoPause:
+          type: boolean
+          default: false
+          description: Automatically pauses the sandbox after the timeout
+        autoPauseMemory:
+          type: boolean
+          default: true
+          description: >-
+            Controls the snapshot kind taken when the sandbox auto-pauses on
+            timeout (only relevant when autoPause is true). When false, the
+            auto-pause drops the in-memory state and persists only the
+            filesystem (a filesystem-only snapshot); resuming it cold-boots
+            (reboots) the sandbox from disk. Such a snapshot cannot be
+            auto-resumed by traffic and must be resumed explicitly, so it cannot
+            be combined with autoResume. Defaults to true (full memory snapshot).
+        autoResume:
+          $ref: "#/components/schemas/SandboxAutoResumeConfig"
+        allow_internet_access:
+          type: boolean
+          description:
+            Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut
+            to 0.0.0.0/0 in the network config.
+        network:
+          $ref: "#/components/schemas/SandboxNetworkConfig"
+        metadata:
+          $ref: "#/components/schemas/SandboxMetadata"
+        envVars:
+          $ref: "#/components/schemas/EnvVars"
+        mcp:
+          $ref: "#/components/schemas/Mcp"
+        iam:
+          $ref: "#/components/schemas/SandboxIam"
+        volumeMounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/SandboxVolumeMount"
+
     SandboxIam:
       type: object
       description: >-
@@ -1010,6 +1063,25 @@ components:
           type: integer
           format: int32
           minimum: 0
+        memory:
+          type: boolean
+          description: >-
+            Defaults to true. When false and the sandbox is paused, resume from disk state only: the
+            sandbox cold-boots fresh and any memory in the snapshot is ignored, never
+            modified or deleted. Disk state has crash-recovery semantics — writes not
+            flushed before the pause may be lost. A no-op for snapshots that contain
+            no memory. Rejected with an error in environments where this capability
+            is not enabled, never silently downgraded to a memory restore.
+
+    ConnectSandboxV2:
+      type: object
+      properties:
+        timeout:
+          description: Timeout in seconds from the current time after which the sandbox should expire
+          type: integer
+          format: int32
+          minimum: 0
+          default: 300
         memory:
           type: boolean
           description: >-
@@ -2496,7 +2568,8 @@ paths:
           $ref: "#/components/responses/500"
     post:
       summary: Create sandbox
-      description: Create a sandbox from the template
+      description: Create a sandbox from the template. Use POST /v2/sandboxes instead.
+      deprecated: true
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
@@ -2531,6 +2604,43 @@ paths:
           $ref: "#/components/responses/504"
 
   /v2/sandboxes:
+    post:
+      summary: Create sandbox (v2)
+      description: Create a sandbox from the template. All system communication with the sandbox is secured.
+      tags: [sandboxes]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewSandboxV2"
+      responses:
+        "201":
+          description: The sandbox was created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sandbox"
+        "401":
+          $ref: "#/components/responses/401"
+        "400":
+          $ref: "#/components/responses/400"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+        "503":
+          $ref: "#/components/responses/503"
+        "504":
+          $ref: "#/components/responses/504"
     get:
       summary: List sandboxes (v2)
       description: List all sandboxes
@@ -2981,7 +3091,8 @@ paths:
   /sandboxes/{sandboxID}/connect:
     post:
       summary: Connect sandbox
-      description: Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended.
+      description: Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. Use POST /v2/sandboxes/{sandboxID}/connect instead.
+      deprecated: true
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
@@ -3020,6 +3131,60 @@ paths:
           $ref: "#/components/responses/404"
         "409":
           $ref: "#/components/responses/409"
+        "500":
+          $ref: "#/components/responses/500"
+        "503":
+          $ref: "#/components/responses/503"
+        "504":
+          $ref: "#/components/responses/504"
+
+  /v2/sandboxes/{sandboxID}/connect:
+    post:
+      summary: Connect sandbox (v2)
+      description: >-
+        Returns sandbox details. If the sandbox is paused, it will be resumed.
+        TTL is only extended. The request body is optional; an omitted timeout
+        defaults to 300 seconds.
+      tags: [sandboxes]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConnectSandboxV2"
+      responses:
+        "200":
+          description: The sandbox was already running
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sandbox"
+        "201":
+          description: The sandbox was resumed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sandbox"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "409":
+          $ref: "#/components/responses/409"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
         "503":

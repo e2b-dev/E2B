@@ -171,7 +171,6 @@ class Sandbox(SandboxApi):
         timeout: Optional[int] = None,
         metadata: Optional[Dict[str, str]] = None,
         envs: Optional[Dict[str, str]] = None,
-        secure: Optional[bool] = None,
         allow_internet_access: Optional[bool] = None,
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
@@ -190,7 +189,6 @@ class Sandbox(SandboxApi):
         :param timeout: Timeout for the sandbox in **seconds**. The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
         :param metadata: Custom metadata for the sandbox
         :param envs: Custom environment variables for the sandbox
-        :param secure: Envd is secured with access token and cannot be used without it.
         :param allow_internet_access: Allow sandbox to access the internet. If set to `False`, it works the same as setting network `deny_out` to `[0.0.0.0/0]`.
         :param mcp: MCP server to enable in the sandbox
         :param network: Sandbox network configuration. ``allow_out``/``deny_out`` may also be a callable receiving a :class:`SandboxNetworkSelectorContext` (``ctx.all_traffic``, ``ctx.rules``) and returning a list of strings. Per-host transform rules are nested under ``network.rules``; a rule's ``transform`` may be a callable receiving a :class:`SandboxNetworkTransformContext` of placeholder strings (``ctx.iam.tokens[name]``).
@@ -223,7 +221,6 @@ class Sandbox(SandboxApi):
             timeout=timeout,
             metadata=metadata,
             envs=envs,
-            secure=secure,
             allow_internet_access=allow_internet_access,
             mcp=mcp,
             network=network,
@@ -1134,7 +1131,6 @@ class Sandbox(SandboxApi):
         timeout: Optional[int],
         metadata: Optional[Dict[str, str]],
         envs: Optional[Dict[str, str]],
-        secure: Optional[bool],
         allow_internet_access: Optional[bool],
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
@@ -1160,7 +1156,6 @@ class Sandbox(SandboxApi):
                 timeout=timeout,
                 metadata=metadata,
                 env_vars=envs,
-                secure=secure,
                 allow_internet_access=allow_internet_access,
                 mcp=mcp,
                 network=network,

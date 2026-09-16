@@ -138,9 +138,7 @@ def test_allow_takes_precedence_over_deny(sandbox_factory):
 @pytest.mark.skip_debug()
 def test_allow_public_traffic_false(sandbox_factory):
     """Test that sandbox with allow_public_traffic=False requires traffic access token."""
-    sandbox = sandbox_factory(
-        secure=True, network=SandboxNetworkOpts(allow_public_traffic=False)
-    )
+    sandbox = sandbox_factory(network=SandboxNetworkOpts(allow_public_traffic=False))
 
     # Verify the sandbox was created successfully and has a traffic access token
     assert sandbox.traffic_access_token is not None

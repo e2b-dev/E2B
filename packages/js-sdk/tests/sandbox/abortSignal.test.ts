@@ -20,7 +20,7 @@ function holdUntilAborted(signal: AbortSignal): Promise<never> {
 }
 
 const restHandlers = [
-  http.post(apiUrl('/sandboxes'), async ({ request }) => {
+  http.post(apiUrl('/v2/sandboxes'), async ({ request }) => {
     await holdUntilAborted(request.signal)
     return HttpResponse.json({})
   }),

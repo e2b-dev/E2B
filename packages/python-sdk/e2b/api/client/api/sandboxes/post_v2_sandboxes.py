@@ -6,20 +6,20 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
-from ...models.new_sandbox import NewSandbox
+from ...models.new_sandbox_v2 import NewSandboxV2
 from ...models.sandbox import Sandbox
 from ...types import Response
 
 
 def _get_kwargs(
     *,
-    body: NewSandbox,
+    body: NewSandboxV2,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     _kwargs: dict[str, Any] = {
         "method": "post",
-        "url": "/sandboxes",
+        "url": "/v2/sandboxes",
     }
 
     _kwargs["json"] = body.to_dict()
@@ -45,6 +45,10 @@ def _parse_response(
         response_401 = Error.from_dict(response.json())
 
         return response_401
+    if response.status_code == 429:
+        response_429 = Error.from_dict(response.json())
+
+        return response_429
     if response.status_code == 500:
         response_500 = Error.from_dict(response.json())
 
@@ -77,14 +81,15 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient,
-    body: NewSandbox,
+    body: NewSandboxV2,
 ) -> Response[Union[Error, Sandbox]]:
-    """Create sandbox
+    """Create sandbox (v2)
 
-     Create a sandbox from the template. Use POST /v2/sandboxes instead.
+     Create a sandbox from the template. All system communication with the sandbox is secured.
 
     Args:
-        body (NewSandbox):
+        body (NewSandboxV2): Sandbox creation request. All system communication with the sandbox
+            is always secured; the template's envd version must support secured access.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -108,14 +113,15 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient,
-    body: NewSandbox,
+    body: NewSandboxV2,
 ) -> Optional[Union[Error, Sandbox]]:
-    """Create sandbox
+    """Create sandbox (v2)
 
-     Create a sandbox from the template. Use POST /v2/sandboxes instead.
+     Create a sandbox from the template. All system communication with the sandbox is secured.
 
     Args:
-        body (NewSandbox):
+        body (NewSandboxV2): Sandbox creation request. All system communication with the sandbox
+            is always secured; the template's envd version must support secured access.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -134,14 +140,15 @@ def sync(
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
-    body: NewSandbox,
+    body: NewSandboxV2,
 ) -> Response[Union[Error, Sandbox]]:
-    """Create sandbox
+    """Create sandbox (v2)
 
-     Create a sandbox from the template. Use POST /v2/sandboxes instead.
+     Create a sandbox from the template. All system communication with the sandbox is secured.
 
     Args:
-        body (NewSandbox):
+        body (NewSandboxV2): Sandbox creation request. All system communication with the sandbox
+            is always secured; the template's envd version must support secured access.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -163,14 +170,15 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient,
-    body: NewSandbox,
+    body: NewSandboxV2,
 ) -> Optional[Union[Error, Sandbox]]:
-    """Create sandbox
+    """Create sandbox (v2)
 
-     Create a sandbox from the template. Use POST /v2/sandboxes instead.
+     Create a sandbox from the template. All system communication with the sandbox is secured.
 
     Args:
-        body (NewSandbox):
+        body (NewSandboxV2): Sandbox creation request. All system communication with the sandbox
+            is always secured; the template's envd version must support secured access.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

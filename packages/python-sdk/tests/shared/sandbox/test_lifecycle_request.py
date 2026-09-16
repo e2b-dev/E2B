@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 
 from e2b import AsyncSandbox, Sandbox
-from e2b.api.client.api.sandboxes import post_sandboxes
+from e2b.api.client.api.sandboxes import post_v2_sandboxes
 from e2b.api.client.models import Sandbox as SandboxModel
 from e2b.exceptions import InvalidArgumentException
 
@@ -24,7 +24,7 @@ def _created_sandbox():
 
 def _sync_request_body(monkeypatch, api_key: str, lifecycle) -> Dict[str, Any]:
     request = Mock(return_value=_created_sandbox())
-    monkeypatch.setattr(post_sandboxes, "sync_detailed", request)
+    monkeypatch.setattr(post_v2_sandboxes, "sync_detailed", request)
 
     Sandbox.create(api_key=api_key, lifecycle=lifecycle)
 
@@ -33,7 +33,7 @@ def _sync_request_body(monkeypatch, api_key: str, lifecycle) -> Dict[str, Any]:
 
 async def _async_request_body(monkeypatch, api_key: str, lifecycle) -> Dict[str, Any]:
     request = AsyncMock(return_value=_created_sandbox())
-    monkeypatch.setattr(post_sandboxes, "asyncio_detailed", request)
+    monkeypatch.setattr(post_v2_sandboxes, "asyncio_detailed", request)
 
     await AsyncSandbox.create(api_key=api_key, lifecycle=lifecycle)
 
@@ -214,7 +214,7 @@ def test_create_rejects_an_unrecognized_on_timeout(
     monkeypatch, test_api_key, on_timeout
 ):
     request = Mock(return_value=_created_sandbox())
-    monkeypatch.setattr(post_sandboxes, "sync_detailed", request)
+    monkeypatch.setattr(post_v2_sandboxes, "sync_detailed", request)
 
     with pytest.raises(InvalidArgumentException):
         Sandbox.create(
@@ -229,7 +229,7 @@ async def test_async_create_rejects_an_unrecognized_on_timeout(
     monkeypatch, test_api_key, on_timeout
 ):
     request = AsyncMock(return_value=_created_sandbox())
-    monkeypatch.setattr(post_sandboxes, "asyncio_detailed", request)
+    monkeypatch.setattr(post_v2_sandboxes, "asyncio_detailed", request)
 
     with pytest.raises(InvalidArgumentException):
         await AsyncSandbox.create(
@@ -251,7 +251,7 @@ def test_the_error_names_the_field_the_caller_wrote(
     monkeypatch, test_api_key, on_timeout, expected_field
 ):
     request = Mock(return_value=_created_sandbox())
-    monkeypatch.setattr(post_sandboxes, "sync_detailed", request)
+    monkeypatch.setattr(post_v2_sandboxes, "sync_detailed", request)
 
     with pytest.raises(InvalidArgumentException) as excinfo:
         Sandbox.create(

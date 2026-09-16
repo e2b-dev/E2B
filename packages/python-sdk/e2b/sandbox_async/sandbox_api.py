@@ -15,8 +15,8 @@ from e2b.api.client.api.sandboxes import (
     delete_sandboxes_sandbox_id,
     get_sandboxes_sandbox_id,
     get_sandboxes_sandbox_id_metrics,
-    post_sandboxes,
-    post_sandboxes_sandbox_id_connect,
+    post_v2_sandboxes,
+    post_v_2_sandboxes_sandbox_id_connect,
     post_sandboxes_sandbox_id_fork,
     post_sandboxes_sandbox_id_pause,
     post_sandboxes_sandbox_id_snapshots,
@@ -25,8 +25,9 @@ from e2b.api.client.api.sandboxes import (
 )
 from e2b.api.client.api.templates import delete_templates_template_id
 from e2b.api.client.models import (
+    ConnectSandboxV2,
     Error,
-    NewSandbox,
+    NewSandboxV2,
     SandboxSnapshotRequest,
     SandboxTimeoutRequest,
     SandboxForkRequest,
@@ -46,7 +47,6 @@ from e2b.exceptions import (
 from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
     build_network_update_body,
-    ConnectSandboxBody,
     McpServer,
     SandboxIamOpts,
     SandboxInfo,
@@ -213,7 +213,6 @@ class SandboxApi(SandboxBase):
         allow_internet_access: Optional[bool],
         metadata: Optional[Dict[str, str]],
         env_vars: Optional[Dict[str, str]],
-        secure: Optional[bool],
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
         iam: Optional[SandboxIamOpts] = None,
@@ -231,7 +230,7 @@ class SandboxApi(SandboxBase):
         # against the workload tokens this request registers.
         iam_body = build_iam_config(iam)
         network_body = build_network_config(network, iam_body)
-        body = NewSandbox(
+        body = NewSandboxV2(
             template_id=template,
             auto_pause=lifecycle_body.auto_pause,
             auto_pause_memory=lifecycle_body.auto_pause_memory,
@@ -240,7 +239,6 @@ class SandboxApi(SandboxBase):
             timeout=timeout if timeout is not None else UNSET,
             env_vars=env_vars or {},
             mcp=cast(Any, mcp) or UNSET,
-            secure=secure if secure is not None else UNSET,
             allow_internet_access=(
                 allow_internet_access if allow_internet_access is not None else UNSET
             ),
@@ -250,7 +248,7 @@ class SandboxApi(SandboxBase):
         )
 
         api_client = get_api_client(config)
-        res = await post_sandboxes.asyncio_detailed(
+        res = await post_v2_sandboxes.asyncio_detailed(
             body=body,
             client=api_client,
         )
@@ -534,11 +532,11 @@ class SandboxApi(SandboxBase):
         config = ConnectionConfig(logger=logger, **cls._resolve_api_params(**opts))
 
         api_client = get_api_client(config)
-        res = await post_sandboxes_sandbox_id_connect.asyncio_detailed(
+        res = await post_v_2_sandboxes_sandbox_id_connect.asyncio_detailed(
             sandbox_id,
             client=api_client,
-            body=ConnectSandboxBody(
-                timeout=timeout,
+            body=ConnectSandboxV2(
+                timeout=timeout if timeout is not None else UNSET,
                 memory=resolve_connect_memory(on_resume),
             ),
         )

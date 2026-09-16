@@ -18,7 +18,6 @@ from typing import (
 from typing_extensions import NotRequired, Unpack
 
 from e2b.api.client.models import (
-    ConnectSandbox,
     ListedSandbox,
     SandboxDetail,
     SandboxState,
@@ -72,25 +71,6 @@ from e2b.sandbox.iam import (
 )
 from e2b.sandbox.network import ALL_TRAFFIC
 from e2b.paginator import PaginatorBase
-
-
-class ConnectSandboxBody(ConnectSandbox):
-    """Connect request body that omits `timeout` when not provided so the
-    API default applies. The generated model still requires `timeout`;
-    remove this once the spec makes it optional."""
-
-    def __init__(
-        self,
-        timeout: Optional[int] = None,
-        memory: Union[Unset, bool] = UNSET,
-    ):
-        super().__init__(timeout=cast(int, timeout), memory=memory)
-
-    def to_dict(self) -> Dict[str, Any]:
-        result = super().to_dict()
-        if result["timeout"] is None:
-            del result["timeout"]
-        return result
 
 
 class GitHubMcpServerConfig(TypedDict):
@@ -607,7 +587,7 @@ class SandboxInfoLifecycle(TypedDict):
 def resolve_connect_memory(
     on_resume: Optional["SandboxOnResume"],
 ) -> Union[Unset, bool]:
-    """Resolve ``on_resume`` into ``ConnectSandbox.memory``.
+    """Resolve ``on_resume`` into ``ConnectSandboxV2.memory``.
 
     ``"restore"`` is the API's own default, so it travels as an omitted field.
     """
@@ -864,7 +844,7 @@ def build_iam_config(
 
 @dataclass(frozen=True)
 class SandboxLifecycleBody:
-    """Lifecycle fields of a create-sandbox request, as ``NewSandbox`` takes them."""
+    """Lifecycle fields of a create-sandbox request, as ``NewSandboxV2`` takes them."""
 
     auto_pause: Union[Unset, bool]
     auto_pause_memory: Union[Unset, bool]

@@ -45,7 +45,8 @@ export interface paths {
         put?: never;
         /**
          * Create sandbox
-         * @description Create a sandbox from the template
+         * @deprecated
+         * @description Create a sandbox from the template. Use POST /v2/sandboxes instead.
          */
         post: {
             parameters: {
@@ -163,7 +164,8 @@ export interface paths {
         put?: never;
         /**
          * Connect sandbox
-         * @description Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended.
+         * @deprecated
+         * @description Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. Use POST /v2/sandboxes/{sandboxID}/connect instead.
          */
         post: {
             parameters: {
@@ -1720,7 +1722,102 @@ export interface paths {
             };
         };
         put?: never;
-        post?: never;
+        /**
+         * Create sandbox (v2)
+         * @description Create a sandbox from the template. All system communication with the sandbox is secured.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["NewSandboxV2"];
+                };
+            };
+            responses: {
+                /** @description The sandbox was created successfully */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Sandbox"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                429: components["responses"]["429"];
+                500: components["responses"]["500"];
+                503: components["responses"]["503"];
+                504: components["responses"]["504"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/sandboxes/{sandboxID}/connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Connect sandbox (v2)
+         * @description Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. The request body is optional; an omitted timeout defaults to 300 seconds.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    sandboxID: components["parameters"]["sandboxID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ConnectSandboxV2"];
+                };
+            };
+            responses: {
+                /** @description The sandbox was already running */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Sandbox"];
+                    };
+                };
+                /** @description The sandbox was resumed successfully */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Sandbox"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                409: components["responses"]["409"];
+                429: components["responses"]["429"];
+                500: components["responses"]["500"];
+                503: components["responses"]["503"];
+                504: components["responses"]["504"];
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -2209,6 +2306,16 @@ export interface components {
              */
             timeout: number;
         };
+        ConnectSandboxV2: {
+            /** @description Defaults to true. When false and the sandbox is paused, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. */
+            memory?: boolean;
+            /**
+             * Format: int32
+             * @description Timeout in seconds from the current time after which the sandbox should expire
+             * @default 300
+             */
+            timeout?: number;
+        };
         /**
          * Format: int32
          * @description CPU cores for the sandbox
@@ -2364,6 +2471,36 @@ export interface components {
              * Format: int32
              * @description Time to live for the sandbox in seconds.
              * @default 15
+             */
+            timeout?: number;
+            volumeMounts?: components["schemas"]["SandboxVolumeMount"][];
+        };
+        /** @description Sandbox creation request. All system communication with the sandbox is always secured; the template's envd version must support secured access. */
+        NewSandboxV2: {
+            /** @description Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut to 0.0.0.0/0 in the network config. */
+            allow_internet_access?: boolean;
+            /**
+             * @description Automatically pauses the sandbox after the timeout
+             * @default false
+             */
+            autoPause?: boolean;
+            /**
+             * @description Controls the snapshot kind taken when the sandbox auto-pauses on timeout (only relevant when autoPause is true). When false, the auto-pause drops the in-memory state and persists only the filesystem (a filesystem-only snapshot); resuming it cold-boots (reboots) the sandbox from disk. Such a snapshot cannot be auto-resumed by traffic and must be resumed explicitly, so it cannot be combined with autoResume. Defaults to true (full memory snapshot).
+             * @default true
+             */
+            autoPauseMemory?: boolean;
+            autoResume?: components["schemas"]["SandboxAutoResumeConfig"];
+            envVars?: components["schemas"]["EnvVars"];
+            iam?: components["schemas"]["SandboxIam"];
+            mcp?: components["schemas"]["Mcp"];
+            metadata?: components["schemas"]["SandboxMetadata"];
+            network?: components["schemas"]["SandboxNetworkConfig"];
+            /** @description Identifier of the required template */
+            templateID: string;
+            /**
+             * Format: int32
+             * @description Time to live for the sandbox in seconds.
+             * @default 300
              */
             timeout?: number;
             volumeMounts?: components["schemas"]["SandboxVolumeMount"][];

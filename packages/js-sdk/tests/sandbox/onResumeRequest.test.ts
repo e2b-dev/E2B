@@ -8,7 +8,7 @@ import { TEST_API_KEY, apiUrl } from '../setup'
 let lastConnectBody: Record<string, unknown> | undefined
 
 const server = setupServer(
-  http.post(apiUrl('/sandboxes/:sandboxID/connect'), async ({ request }) => {
+  http.post(apiUrl('/v2/sandboxes/:sandboxID/connect'), async ({ request }) => {
     lastConnectBody = (await request.json()) as Record<string, unknown>
     return HttpResponse.json({
       sandboxID: 'test-sandbox-id',

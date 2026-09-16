@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, Mock
 
 from e2b import AsyncSandbox, Sandbox
 from e2b.api.client.api.sandboxes import (
-    post_sandboxes,
-    post_sandboxes_sandbox_id_connect,
+    post_v2_sandboxes,
+    post_v_2_sandboxes_sandbox_id_connect,
     post_sandboxes_sandbox_id_fork,
     post_sandboxes_sandbox_id_pause,
 )
@@ -26,7 +26,7 @@ def _created_sandbox():
 
 def _sync_create_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, Any]:
     request = Mock(return_value=_created_sandbox())
-    monkeypatch.setattr(post_sandboxes, "sync_detailed", request)
+    monkeypatch.setattr(post_v2_sandboxes, "sync_detailed", request)
 
     Sandbox.create(api_key=api_key, **kwargs)
 
@@ -35,7 +35,7 @@ def _sync_create_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, Any]:
 
 async def _async_create_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, Any]:
     request = AsyncMock(return_value=_created_sandbox())
-    monkeypatch.setattr(post_sandboxes, "asyncio_detailed", request)
+    monkeypatch.setattr(post_v2_sandboxes, "asyncio_detailed", request)
 
     await AsyncSandbox.create(api_key=api_key, **kwargs)
 
@@ -55,12 +55,10 @@ def test_create_sends_explicit_values(monkeypatch, test_api_key):
         monkeypatch,
         test_api_key,
         timeout=60,
-        secure=False,
         allow_internet_access=False,
     )
 
     assert body["timeout"] == 60
-    assert body["secure"] is False
     assert body["allow_internet_access"] is False
 
 
@@ -79,12 +77,10 @@ async def test_async_create_sends_explicit_values(monkeypatch, test_api_key):
         monkeypatch,
         test_api_key,
         timeout=60,
-        secure=False,
         allow_internet_access=False,
     )
 
     assert body["timeout"] == 60
-    assert body["secure"] is False
     assert body["allow_internet_access"] is False
 
 
@@ -180,7 +176,7 @@ async def test_async_pause_sends_explicit_keep_memory(monkeypatch, test_api_key)
 
 def _sync_connect_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, Any]:
     request = Mock(return_value=_created_sandbox())
-    monkeypatch.setattr(post_sandboxes_sandbox_id_connect, "sync_detailed", request)
+    monkeypatch.setattr(post_v_2_sandboxes_sandbox_id_connect, "sync_detailed", request)
 
     Sandbox.connect("sbx-test", api_key=api_key, **kwargs)
 
@@ -189,7 +185,9 @@ def _sync_connect_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, Any]:
 
 async def _async_connect_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, Any]:
     request = AsyncMock(return_value=_created_sandbox())
-    monkeypatch.setattr(post_sandboxes_sandbox_id_connect, "asyncio_detailed", request)
+    monkeypatch.setattr(
+        post_v_2_sandboxes_sandbox_id_connect, "asyncio_detailed", request
+    )
 
     await AsyncSandbox.connect("sbx-test", api_key=api_key, **kwargs)
 

@@ -11,7 +11,7 @@ let lastPauseBody: Record<string, unknown> | undefined
 let lastConnectBody: Record<string, unknown> | undefined
 
 const server = setupServer(
-  http.post(apiUrl('/sandboxes'), async ({ request }) => {
+  http.post(apiUrl('/v2/sandboxes'), async ({ request }) => {
     lastCreateBody = (await request.json()) as Record<string, unknown>
     return HttpResponse.json({
       sandboxID: 'test-sandbox-id',
@@ -19,7 +19,7 @@ const server = setupServer(
       envdVersion: '0.2.4',
     })
   }),
-  http.post(apiUrl('/sandboxes/:sandboxID/connect'), async ({ request }) => {
+  http.post(apiUrl('/v2/sandboxes/:sandboxID/connect'), async ({ request }) => {
     lastConnectBody = (await request.json()) as Record<string, unknown>
     return HttpResponse.json({
       sandboxID: 'test-sandbox-id',
@@ -57,7 +57,7 @@ afterEach(() => {
   server.resetHandlers()
 })
 
-test('Sandbox.create omits timeout, secure and allow_internet_access when unset', async () => {
+test('Sandbox.create omits timeout and allow_internet_access when unset', async () => {
   await Sandbox.create('base', { apiKey: TEST_API_KEY })
 
   expect(lastCreateBody).toBeDefined()
@@ -66,16 +66,14 @@ test('Sandbox.create omits timeout, secure and allow_internet_access when unset'
   expect(lastCreateBody).not.toHaveProperty('allow_internet_access')
 })
 
-test('Sandbox.create sends explicit timeout, secure and allow_internet_access', async () => {
+test('Sandbox.create sends explicit timeout and allow_internet_access', async () => {
   await Sandbox.create('base', {
     apiKey: TEST_API_KEY,
     timeoutMs: 60_000,
-    secure: false,
     allowInternetAccess: false,
   })
 
   expect(lastCreateBody?.timeout).toBe(60)
-  expect(lastCreateBody?.secure).toBe(false)
   expect(lastCreateBody?.allow_internet_access).toBe(false)
 })
 

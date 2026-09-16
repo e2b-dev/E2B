@@ -602,11 +602,6 @@ export interface SandboxOpts extends ConnectionOpts {
   timeoutMs?: number
 
   /**
-   * Secure all traffic coming to the sandbox controller with auth token
-   */
-  secure?: boolean
-
-  /**
    * Allow sandbox to access the internet. If set to `False`, it works the same as setting network `denyOut` to `[0.0.0.0/0]`.
    */
   allowInternetAccess?: boolean
@@ -1697,14 +1692,13 @@ export class SandboxApi extends ClientFactory {
     // against the workload tokens this request registers.
     const iam = buildIamBody(opts?.iam)
 
-    const body: components['schemas']['NewSandbox'] = {
+    const body: components['schemas']['NewSandboxV2'] = {
       templateID: template,
       metadata: opts?.metadata,
       mcp: opts?.mcp as Record<string, unknown> | undefined,
       envVars: opts?.envs,
       timeout:
         timeoutMs === undefined ? undefined : timeoutToSeconds(timeoutMs),
-      secure: opts?.secure,
       allow_internet_access: opts?.allowInternetAccess,
       network: buildNetworkBody(opts?.network, iam),
       iam,
@@ -1724,7 +1718,7 @@ export class SandboxApi extends ClientFactory {
       )
     }
 
-    const res = await client.api.POST('/sandboxes', {
+    const res = await client.api.POST('/v2/sandboxes', {
       body,
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
@@ -1838,18 +1832,17 @@ export class SandboxApi extends ClientFactory {
       )
     }
 
-    const res = await client.api.POST('/sandboxes/{sandboxID}/connect', {
+    const res = await client.api.POST('/v2/sandboxes/{sandboxID}/connect', {
       params: {
         path: {
           sandboxID: sandboxId,
         },
       },
-      // TODO: drop the cast once the API spec makes `timeout` optional
       body: {
         timeout:
           timeoutMs === undefined ? undefined : timeoutToSeconds(timeoutMs),
         memory: onResume === 'reboot' ? false : undefined,
-      } as components['schemas']['ConnectSandbox'],
+      },
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
