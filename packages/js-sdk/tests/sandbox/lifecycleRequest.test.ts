@@ -1,13 +1,13 @@
 import { afterAll, afterEach, beforeAll, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
-import { setupServer } from 'msw/node'
 
 import { InvalidArgumentError, Sandbox } from '../../src'
 import { TEST_API_KEY, apiUrl } from '../setup'
+import { setupMockApi } from '../mockApi'
 
 let lastCreateBody: Record<string, unknown> | undefined
 
-const server = setupServer(
+const server = setupMockApi(
   http.post(apiUrl('/v2/sandboxes'), async ({ request }) => {
     lastCreateBody = (await request.json()) as Record<string, unknown>
     return HttpResponse.json({
@@ -125,6 +125,39 @@ test('Sandbox.create rejects autoResume without a timeout action', async () => {
   ).rejects.toThrowError(InvalidArgumentError)
 
   expect(lastCreateBody).toBeUndefined()
+})
+
+async function expectInvalidLifecycleWithoutApiKey(
+  lifecycle: NonNullable<Parameters<typeof Sandbox.create>[1]>['lifecycle']
+) {
+  const previous = process.env.E2B_API_KEY
+  delete process.env.E2B_API_KEY
+  try {
+    await expect(Sandbox.create('base', { lifecycle })).rejects.toThrowError(
+      InvalidArgumentError
+    )
+  } finally {
+    if (previous === undefined) {
+      delete process.env.E2B_API_KEY
+    } else {
+      process.env.E2B_API_KEY = previous
+    }
+  }
+  expect(lastCreateBody).toBeUndefined()
+}
+
+test('filesystem-only auto-pause with auto-resume is InvalidArgumentError without an API key', async () => {
+  await expectInvalidLifecycleWithoutApiKey({
+    onTimeout: { action: 'pause', keepMemory: false },
+    autoResume: true,
+  })
+})
+
+test('keepMemory on kill is InvalidArgumentError without an API key', async () => {
+  await expectInvalidLifecycleWithoutApiKey({
+    // @ts-expect-error keepMemory is not allowed with action: 'kill'
+    onTimeout: { action: 'kill', keepMemory: false },
+  })
 })
 
 test('an explicit autoResume: false is sent', async () => {

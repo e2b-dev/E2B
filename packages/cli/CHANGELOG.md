@@ -1,5 +1,29 @@
 # @e2b/cli
 
+## 2.19.1
+
+### Patch Changes
+
+- 5b015ad: Removed the hidden `e2b template build` command (alias `bd`). It printed a V1 deprecation notice and exited 1; the V1 build system it fronted is gone from the API. A script still calling it now gets commander's unknown-command error with the same exit code. Build templates with `e2b template create` or the Template SDK; `e2b template migrate` still converts a V1 project (see https://e2b.dev/docs/template/migration-v2).
+- Updated dependencies [956e3ab]
+- Updated dependencies [e1fbe86]
+- Updated dependencies [80496c0]
+- Updated dependencies [5b015ad]
+- Updated dependencies [80496c0]
+- Updated dependencies [e1fbe86]
+  - e2b@2.50.0
+
+## 2.19.0
+
+### Minor Changes
+
+- f842aa8: Expose a configurable minimum free-disk target with `minFreeDiskMb` in JavaScript, `min_free_disk_mb` in Python, and `--min-free-disk-mb` in `template create`. Omission uses the team default, while explicit zero requests no minimum growth. Growth is best effort and never shrinks an existing filesystem.
+
+### Patch Changes
+
+- Updated dependencies [f842aa8]
+  - e2b@2.49.0
+
 ## 2.18.2
 
 ### Patch Changes

@@ -1,5 +1,32 @@
 # @e2b/python-sdk
 
+## 2.50.0
+
+### Minor Changes
+
+- 5b015ad: Removed the V1 template build operations and schemas from the generated API clients. The API no longer serves them (runtime `87968fc1e1fa`); control planes carrying that change answer `410 Gone`. Template builds go through the Template SDK.
+
+  Visible removal, classified minor: the JS `paths` namespace loses `POST /templates`, `POST /templates/{templateID}`, `POST /templates/{templateID}/builds/{buildID}` and `POST /v2/templates`, and `components['schemas']` loses `TemplateLegacy`, `TemplateBuildRequest` and `TemplateBuildRequestV2`; the Python `e2b.api.client.models` package loses `TemplateLegacy`, `TemplateBuildRequest` and `TemplateBuildRequestV2`, and `e2b.api.client.api.templates` loses the `post_templates`, `post_templates_template_id`, `post_templates_template_id_builds_build_id` and `post_v2_templates` modules. No SDK method accepted or returned them; code that imported these names directly must drop the import.
+
+  The regenerated clients also pick up a documented `429` on most operations, a `409` on template create (v3), the upload-request `headers` on the build file-upload link, `minLength: 1` on the v2 build source fields, and a deprecation marker on the always-empty `logs` field of the build status.
+
+### Patch Changes
+
+- 956e3ab: Apply the request headers the API returns with a template layer-file upload link. Azure Blob Storage requires `x-ms-blob-type` on the upload request, which its signed URL cannot carry, so `COPY` instructions failed on Azure-backed clusters. GCS- and S3-backed clusters return no headers and are unaffected.
+
+## 2.49.1
+
+### Patch Changes
+
+- 5e418dc: Document that `onResume` / `on_resume` needs a control plane that knows the option: an older self-hosted or BYOC control plane drops the `memory` field and restores memory while reporting success, instead of rejecting the request.
+- 9136603: Retry control-plane HTTP requests up to three times after `429` responses using the server's delta-seconds `Retry-After` delay. Retries can be configured or disabled with `retries`, and stop when waiting would exhaust the request timeout. Envd requests, including filesystem operations, and volume-content requests are not retried.
+
+## 2.49.0
+
+### Minor Changes
+
+- f842aa8: Expose a configurable minimum free-disk target with `minFreeDiskMb` in JavaScript, `min_free_disk_mb` in Python, and `--min-free-disk-mb` in `template create`. Omission uses the team default, while explicit zero requests no minimum growth. Growth is best effort and never shrinks an existing filesystem.
+
 ## 2.48.0
 
 ### Minor Changes

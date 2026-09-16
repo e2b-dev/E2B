@@ -1,13 +1,13 @@
 import { afterAll, afterEach, beforeAll, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
-import { setupServer } from 'msw/node'
 
 import { InvalidArgumentError, Sandbox } from '../../src'
 import { TEST_API_KEY, apiUrl } from '../setup'
+import { setupMockApi } from '../mockApi'
 
 let lastConnectBody: Record<string, unknown> | undefined
 
-const server = setupServer(
+const server = setupMockApi(
   http.post(apiUrl('/v2/sandboxes/:sandboxID/connect'), async ({ request }) => {
     lastConnectBody = (await request.json()) as Record<string, unknown>
     return HttpResponse.json({
@@ -104,3 +104,23 @@ test.for(unrecognized)(
     expect(lastConnectBody).toBeUndefined()
   }
 )
+
+test('an unrecognized onResume is InvalidArgumentError without an API key', async () => {
+  const previous = process.env.E2B_API_KEY
+  delete process.env.E2B_API_KEY
+  try {
+    await expect(
+      Sandbox.connect('test-sandbox-id', {
+        // @ts-expect-error deliberately outside the union
+        onResume: 'Reboot',
+      })
+    ).rejects.toThrowError(InvalidArgumentError)
+  } finally {
+    if (previous === undefined) {
+      delete process.env.E2B_API_KEY
+    } else {
+      process.env.E2B_API_KEY = previous
+    }
+  }
+  expect(lastConnectBody).toBeUndefined()
+})

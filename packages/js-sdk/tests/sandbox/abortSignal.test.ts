@@ -1,9 +1,9 @@
 import { afterAll, afterEach, beforeAll, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
-import { setupServer } from 'msw/node'
 
 import { Sandbox } from '../../src'
 import { TEST_API_KEY, apiUrl } from '../setup'
+import { setupMockApi } from '../mockApi'
 
 // Hold the request open until the caller aborts. If the signal is already
 // aborted by the time the handler runs, `addEventListener('abort', …)` would
@@ -34,7 +34,7 @@ const restHandlers = [
   }),
 ]
 
-const server = setupServer(...restHandlers)
+const server = setupMockApi(...restHandlers)
 
 beforeAll(() =>
   server.listen({

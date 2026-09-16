@@ -1,7 +1,5 @@
 import { describe, it, expect, afterAll, afterEach, beforeAll } from 'vitest'
 import { http, HttpResponse } from 'msw'
-import { setupServer } from 'msw/node'
-import { randomUUID } from 'node:crypto'
 
 import {
   Volume,
@@ -12,6 +10,7 @@ import {
 import { VolumeConnectionConfig } from '../../src/volume/client'
 import { runtime } from '../../src/utils'
 import { apiUrl } from '../setup'
+import { setupMockApi } from '../mockApi'
 
 // In-memory store for mock volumes
 const volumes = new Map<
@@ -26,8 +25,8 @@ const restHandlers = [
   // POST /volumes - create (returns VolumeAndToken)
   http.post(apiUrl('/volumes'), async ({ request }) => {
     const { name } = (await request.clone().json()) as { name: string }
-    const volumeID = randomUUID()
-    const token = `vol-token-${randomUUID()}`
+    const volumeID = crypto.randomUUID()
+    const token = `vol-token-${crypto.randomUUID()}`
     volumes.set(volumeID, { volumeID, name, token })
     return HttpResponse.json({ volumeID, name, token }, { status: 201 })
   }),
@@ -85,7 +84,7 @@ const restHandlers = [
   }),
 ]
 
-const server = setupServer(...restHandlers)
+const server = setupMockApi(...restHandlers)
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 afterAll(() => server.close())
@@ -222,8 +221,8 @@ describe('Volume BYOC domain', () => {
     server.use(
       http.post(apiUrl('/volumes'), async ({ request }) => {
         const { name } = (await request.clone().json()) as { name: string }
-        const volumeID = randomUUID()
-        const token = `vol-token-${randomUUID()}`
+        const volumeID = crypto.randomUUID()
+        const token = `vol-token-${crypto.randomUUID()}`
         return HttpResponse.json(
           { volumeID, name, token, domain: byocDomain },
           { status: 201 }

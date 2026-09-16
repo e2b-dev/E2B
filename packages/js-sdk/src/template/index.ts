@@ -1112,7 +1112,7 @@ export class TemplateBase
           stackTrace = this.stackTraces[index + 1]
         }
 
-        const { present, url } = await getFileUploadLink(
+        const { present, url, headers } = await getFileUploadLink(
           client,
           {
             templateID,
@@ -1131,6 +1131,7 @@ export class TemplateBase
               fileName: src,
               fileContextPath: this.fileContextPath.toString(),
               url,
+              headers,
               ignorePatterns: [
                 ...this.fileIgnorePatterns,
                 ...readDockerignore(this.fileContextPath.toString()),

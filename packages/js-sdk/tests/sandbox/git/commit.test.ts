@@ -1,6 +1,6 @@
 import { expect } from 'vitest'
 
-import { sandboxTest } from '../../setup.js'
+import { gitTest } from '../../setup.js'
 import {
   AUTHOR_EMAIL,
   AUTHOR_NAME,
@@ -9,7 +9,7 @@ import {
   createRepo,
 } from './helpers.js'
 
-sandboxTest('git commit creates commit', async ({ sandbox }) => {
+gitTest('git commit creates commit', async ({ sandbox }) => {
   const baseDir = await createBaseDir(sandbox)
 
   try {
@@ -31,7 +31,7 @@ sandboxTest('git commit creates commit', async ({ sandbox }) => {
   }
 })
 
-sandboxTest(
+gitTest(
   'git commit uses config for missing author fields',
   async ({ sandbox }) => {
     const baseDir = await createBaseDir(sandbox)
