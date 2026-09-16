@@ -57,7 +57,7 @@ class _Handler(BaseHTTPRequestHandler):
         if length:
             self.rfile.read(length)
 
-        if self.path.startswith("/sandboxes"):
+        if self.path.startswith("/v2/sandboxes"):
             self._record_and_respond(201, SANDBOX_RESPONSE)
         elif self.path.startswith("/volumes"):
             self._record_and_respond(

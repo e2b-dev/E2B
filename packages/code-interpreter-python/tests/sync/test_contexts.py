@@ -67,7 +67,7 @@ def test_restart_context(sandbox: Sandbox):
 # Secure traffic tests (public traffic disabled)
 @pytest.mark.skip_debug
 def test_create_context_secure_traffic(sandbox_factory):
-    sandbox = sandbox_factory(secure=True, network={"allow_public_traffic": False})
+    sandbox = sandbox_factory(network={"allow_public_traffic": False})
     context = sandbox.create_code_context()
 
     contexts = sandbox.list_code_contexts()
@@ -80,7 +80,7 @@ def test_create_context_secure_traffic(sandbox_factory):
 
 @pytest.mark.skip_debug
 def test_remove_context_secure_traffic(sandbox_factory):
-    sandbox = sandbox_factory(secure=True, network={"allow_public_traffic": False})
+    sandbox = sandbox_factory(network={"allow_public_traffic": False})
     context = sandbox.create_code_context()
 
     sandbox.remove_code_context(context.id)
@@ -91,7 +91,7 @@ def test_remove_context_secure_traffic(sandbox_factory):
 
 @pytest.mark.skip_debug
 def test_list_contexts_secure_traffic(sandbox_factory):
-    sandbox = sandbox_factory(secure=True, network={"allow_public_traffic": False})
+    sandbox = sandbox_factory(network={"allow_public_traffic": False})
     contexts = sandbox.list_code_contexts()
 
     # default contexts should include python and javascript
@@ -102,7 +102,7 @@ def test_list_contexts_secure_traffic(sandbox_factory):
 
 @pytest.mark.skip_debug
 def test_restart_context_secure_traffic(sandbox_factory):
-    sandbox = sandbox_factory(secure=True, network={"allow_public_traffic": False})
+    sandbox = sandbox_factory(network={"allow_public_traffic": False})
     context = sandbox.create_code_context()
 
     # set a variable in the context

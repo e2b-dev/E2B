@@ -143,7 +143,7 @@ test('client.Sandbox.create uses the client config instead of env vars', async (
 
   const sandbox = await client.Sandbox.create()
 
-  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/sandboxes`)
+  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/v2/sandboxes`)
   assert.equal(lastRequest().apiKey, API_KEY_A)
   // The bound config is also carried by the created sandbox instance.
   assert.equal(sandbox.sandboxDomain, DOMAIN_A)
@@ -156,7 +156,7 @@ test('client.Sandbox instances are subclass instances of Sandbox', async () => {
   assert.isTrue(client.Sandbox.prototype instanceof Sandbox)
   assert.instanceOf(await client.Sandbox.create(), Sandbox)
   // Class-level defaults are inherited from Sandbox.
-  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/sandboxes`)
+  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/v2/sandboxes`)
 })
 
 test('per-call options take precedence over the client config', async () => {
@@ -164,7 +164,7 @@ test('per-call options take precedence over the client config', async () => {
 
   await client.Sandbox.create({ apiKey: API_KEY_B, domain: DOMAIN_B })
 
-  assert.equal(lastRequest().url, `https://api.${DOMAIN_B}/sandboxes`)
+  assert.equal(lastRequest().url, `https://api.${DOMAIN_B}/v2/sandboxes`)
   assert.equal(lastRequest().apiKey, API_KEY_B)
 })
 
@@ -239,8 +239,8 @@ test('two clients with different configs stay isolated', async () => {
   assert.deepEqual(
     requests.map((r) => [r.url, r.apiKey]),
     [
-      [`https://api.${DOMAIN_A}/sandboxes`, API_KEY_A],
-      [`https://api.${DOMAIN_B}/sandboxes`, API_KEY_B],
+      [`https://api.${DOMAIN_A}/v2/sandboxes`, API_KEY_A],
+      [`https://api.${DOMAIN_B}/v2/sandboxes`, API_KEY_B],
     ]
   )
 })
@@ -252,14 +252,14 @@ test('mutating the options object does not change the bound config', async () =>
 
   await client.Sandbox.create()
 
-  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/sandboxes`)
+  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/v2/sandboxes`)
 })
 
 test('per-call options explicitly set to undefined keep the client config', async () => {
   const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
 
   await client.Sandbox.create({ apiKey: undefined, domain: undefined })
-  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/sandboxes`)
+  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/v2/sandboxes`)
   assert.equal(lastRequest().apiKey, API_KEY_A)
 
   await client.Sandbox.list().nextItems({ domain: undefined })
@@ -283,7 +283,7 @@ test('a signal is not bound to the client', async () => {
 
   await client.Sandbox.create()
 
-  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/sandboxes`)
+  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/v2/sandboxes`)
 })
 
 test('a __proto__ option does not pollute the prototype', async () => {
@@ -294,7 +294,7 @@ test('a __proto__ option does not pollute the prototype', async () => {
   )
 
   assert.isUndefined(({} as Record<string, unknown>).polluted)
-  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/sandboxes`)
+  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/v2/sandboxes`)
 })
 
 test('Template statics work detached from the class', async () => {
@@ -422,7 +422,7 @@ test('top-level exports keep using the environment configuration', async () => {
   await client.Sandbox.create()
 
   await Sandbox.create()
-  assert.equal(lastRequest().url, `https://api.${DOMAIN_ENV}/sandboxes`)
+  assert.equal(lastRequest().url, `https://api.${DOMAIN_ENV}/v2/sandboxes`)
   assert.equal(lastRequest().apiKey, TEST_API_KEY)
 
   await Volume.list()
@@ -442,6 +442,6 @@ test('the default export is still Sandbox', async () => {
 
   await DefaultExport.create()
 
-  assert.equal(lastRequest().url, `https://api.${DOMAIN_ENV}/sandboxes`)
+  assert.equal(lastRequest().url, `https://api.${DOMAIN_ENV}/v2/sandboxes`)
   assert.equal(lastRequest().apiKey, TEST_API_KEY)
 })
