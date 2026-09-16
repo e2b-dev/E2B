@@ -970,7 +970,7 @@ components:
         timeout:
           type: integer
           format: int32
-          minimum: 0
+          minimum: 1
           default: 300
           description: Time to live for the sandbox in seconds.
         autoPause:
@@ -1088,7 +1088,7 @@ components:
           description: Timeout in seconds from the current time after which the sandbox should expire
           type: integer
           format: int32
-          minimum: 0
+          minimum: 1
           default: 300
         memory:
           type: boolean
