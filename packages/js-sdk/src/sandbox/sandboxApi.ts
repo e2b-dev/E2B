@@ -603,6 +603,11 @@ export interface SandboxOpts extends ConnectionOpts {
   timeoutMs?: number
 
   /**
+   * @deprecated Every sandbox secures envd access; this option is accepted for backward compatibility and ignored.
+   */
+  secure?: boolean
+
+  /**
    * Allow sandbox to access the internet. If set to `False`, it works the same as setting network `denyOut` to `[0.0.0.0/0]`.
    */
   allowInternetAccess?: boolean

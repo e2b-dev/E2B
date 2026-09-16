@@ -377,14 +377,14 @@ class Template(TemplateBase):
     def get_build_status(
         cls,
         build_info: BuildInfo,
-        logs_offset: int = 0,
+        logs_offset: Optional[int] = None,
         **opts: Unpack[ApiParams],
     ):
         """
         Get the status of a build.
 
         :param build_info: Build identifiers returned from build_in_background
-        :param logs_offset: Offset for fetching logs
+        :param logs_offset: Offset for fetching logs; when omitted, the API default applies
         :return: TemplateBuild containing the build status and logs
 
         Example
@@ -392,7 +392,7 @@ class Template(TemplateBase):
         from e2b import Template
 
         build_info = Template.build_in_background(template, alias='my-template')
-        status = Template.get_build_status(build_info, logs_offset=0)
+        status = Template.get_build_status(build_info)
         ```
         """
         config = ConnectionConfig(**cls._resolve_api_params(**opts))

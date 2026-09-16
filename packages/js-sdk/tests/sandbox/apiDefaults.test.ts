@@ -66,6 +66,13 @@ test('Sandbox.create omits timeout and allow_internet_access when unset', async 
   expect(lastCreateBody).not.toHaveProperty('allow_internet_access')
 })
 
+test('Sandbox.create ignores the deprecated secure option', async () => {
+  await Sandbox.create('base', { apiKey: TEST_API_KEY, secure: true })
+
+  expect(lastCreateBody).toBeDefined()
+  expect(lastCreateBody).not.toHaveProperty('secure')
+})
+
 test('Sandbox.create sends explicit timeout and allow_internet_access', async () => {
   await Sandbox.create('base', {
     apiKey: TEST_API_KEY,

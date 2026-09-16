@@ -232,13 +232,16 @@ def _map_build_status_reason(reason) -> Optional[BuildStatusReason]:
 
 
 def get_build_status(
-    client: AuthenticatedClient, template_id: str, build_id: str, logs_offset: int
+    client: AuthenticatedClient,
+    template_id: str,
+    build_id: str,
+    logs_offset: Optional[int] = None,
 ) -> TemplateBuildStatusResponse:
     res = get_templates_template_id_builds_build_id_status.sync_detailed(
         template_id=encode_path_param(template_id),
         build_id=build_id,
         client=client,
-        logs_offset=logs_offset,
+        logs_offset=logs_offset if logs_offset is not None else UNSET,
     )
 
     if res.status_code >= 300:

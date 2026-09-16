@@ -62,6 +62,12 @@ def test_create_sends_explicit_values(monkeypatch, test_api_key):
     assert body["allow_internet_access"] is False
 
 
+def test_create_ignores_deprecated_secure(monkeypatch, test_api_key):
+    body = _sync_create_body(monkeypatch, test_api_key, secure=True)
+
+    assert "secure" not in body
+
+
 async def test_async_create_omits_api_owned_fields_when_unset(
     monkeypatch, test_api_key
 ):
@@ -82,6 +88,12 @@ async def test_async_create_sends_explicit_values(monkeypatch, test_api_key):
 
     assert body["timeout"] == 60
     assert body["allow_internet_access"] is False
+
+
+async def test_async_create_ignores_deprecated_secure(monkeypatch, test_api_key):
+    body = await _async_create_body(monkeypatch, test_api_key, secure=True)
+
+    assert "secure" not in body
 
 
 def _sync_fork_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, Any]:
