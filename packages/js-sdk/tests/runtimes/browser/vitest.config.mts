@@ -1,6 +1,6 @@
 import { createReadStream } from 'node:fs'
 import { createRequire } from 'node:module'
-import { dirname, join } from 'node:path'
+import { dirname, join, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { playwright } from '@vitest/browser-playwright'
@@ -17,9 +17,14 @@ const testEnv = Object.fromEntries(
   Object.entries(env).filter(([name]) => name.startsWith('E2B_'))
 ) as Record<string, string>
 
+// Vite module ids always use `/`, also on Windows.
+const toModuleId = (path: string) => path.split(sep).join('/')
+
 const testsDir = fileURLToPath(new URL('../..', import.meta.url))
-const nodeMockApi = join(testsDir, 'mockApi.ts')
-const browserMockApi = fileURLToPath(new URL('./mockApi.ts', import.meta.url))
+const nodeMockApi = toModuleId(join(testsDir, 'mockApi.ts'))
+const browserMockApi = toModuleId(
+  fileURLToPath(new URL('./mockApi.ts', import.meta.url))
+)
 const workerScript = join(
   dirname(createRequire(import.meta.url).resolve('msw/package.json')),
   'lib/mockServiceWorker.js'
