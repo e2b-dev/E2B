@@ -137,6 +137,13 @@ components:
           Identifier of the secret (sec_ prefixed), or its canonical
           lower-case name
 
+    webhookID:
+      name: webhookID
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
   headers:
     XNextToken:
       description: Cursor to fetch the next page of results, if more exist
@@ -2320,6 +2327,351 @@ components:
         metadata:
           $ref: "#/components/schemas/SecretMetadata"
 
+    SandboxEvent:
+      description: Sandbox event
+      required:
+        - id
+        - version
+        - type
+        - timestamp
+        - sandboxId
+        - sandboxExecutionId
+        - sandboxTemplateId
+        - sandboxBuildId
+        - sandboxTeamId
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Event unique identifier
+        version:
+          type: string
+          description: Event structure version
+        type:
+          type: string
+          description: Event name
+        eventCategory:
+          type: string
+          deprecated: true
+          description: Category of the event (e.g., 'lifecycle', 'process', etc.)
+        eventLabel:
+          type: string
+          deprecated: true
+          description: Label for the specific event type (e.g., 'sandbox_started', 'process_oom', etc.)
+        eventData:
+          type: object
+          nullable: true
+          description: Optional JSON data associated with the event
+
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of the event
+        sandboxId:
+          type: string
+          format: string
+          description: Unique identifier for the sandbox
+        sandboxExecutionId:
+          type: string
+          format: string
+          description: Unique identifier for the sandbox execution
+        sandboxTemplateId:
+          type: string
+          format: string
+          description: Unique identifier for the sandbox template
+        sandboxBuildId:
+          type: string
+          format: string
+          description: Unique identifier for the sandbox build
+        sandboxTeamId:
+          type: string
+          format: uuid
+          description: Team identifier associated with the sandbox
+    WebhookCreate:
+      description: Configuration for registering new webhooks
+      required:
+        - name
+        - url
+        - events
+        - signatureSecret
+      properties:
+        name:
+          type: string
+        url:
+          type: string
+          format: uri
+        events:
+          type: array
+          items:
+            type: string
+        enabled:
+          type: boolean
+          default: true
+        signatureSecret:
+          type: string
+          description: Secret used to sign the webhook payloads
+    WebhookCreation:
+      description: Webhook creation response
+      required:
+        - id
+        - name
+        - createdAt
+        - teamId
+        - url
+        - enabled
+        - events
+      properties:
+        id:
+          type: string
+          description: Webhook unique identifier
+        name:
+          type: string
+          description: Webhook user friendly name
+        createdAt:
+          type: string
+          format: date-time
+          description: Time when the template was created
+        teamId:
+          type: string
+          description: Unique identifier for the team
+        url:
+          type: string
+          format: uri
+        enabled:
+          type: boolean
+        events:
+          type: array
+          items:
+            type: string
+    WebhookDetail:
+      description: Webhook detail response
+      required:
+        - id
+        - teamId
+        - name
+        - createdAt
+        - url
+        - enabled
+        - events
+      properties:
+        id:
+          type: string
+          description: Webhook unique identifier
+        teamId:
+          type: string
+          description: Unique identifier for the team
+        name:
+          type: string
+          description: Webhook user friendly name
+        createdAt:
+          type: string
+          format: date-time
+          description: Time when the template was created
+        url:
+          type: string
+          format: uri
+        enabled:
+          type: boolean
+        events:
+          type: array
+          items:
+            type: string
+    WebhookConfiguration:
+      description: Configuration for updating existing webhooks
+      properties:
+        enabled:
+          type: boolean
+        name:
+          type: string
+          description: Webhook user friendly name
+        url:
+          type: string
+          format: uri
+        events:
+          type: array
+          items:
+            type: string
+        signatureSecret:
+          type: string
+          description: Secret used to sign the webhook payloads
+    WebhookDelivery:
+      description: Webhook delivery attempt
+      required:
+        - id
+        - teamId
+        - webhookId
+        - eventId
+        - sandboxId
+        - eventType
+        - status
+        - durationMs
+        - requestBody
+        - requestHeaders
+        - requestUrl
+        - errorClass
+        - timestamp
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Delivery attempt identifier
+        teamId:
+          type: string
+          format: uuid
+          description: Team identifier
+        webhookId:
+          type: string
+          format: uuid
+          description: Webhook configuration identifier
+        eventId:
+          type: string
+          format: uuid
+          description: Sandbox event identifier
+        sandboxId:
+          type: string
+          description: Sandbox identifier
+        eventType:
+          type: string
+          description: Sandbox event type
+        status:
+          type: string
+          enum: [success, failed]
+          description: Delivery attempt status
+        durationMs:
+          type: integer
+          format: int32
+          description: Delivery request duration in milliseconds
+        requestBody:
+          type: string
+          description: Serialized webhook request body
+        requestHeaders:
+          type: string
+          description: JSON-encoded request headers with sensitive values redacted
+        requestUrl:
+          type: string
+          format: uri
+          description: URL attempted for this delivery
+        responseBody:
+          type: string
+          nullable: true
+          description: Truncated response body, if a response was received
+        responseHeaders:
+          type: string
+          nullable: true
+          description: JSON-encoded response headers, if a response was received
+        responseHttpStatusCode:
+          type: integer
+          format: int32
+          nullable: true
+          description: HTTP response status code, if a response was received
+        errorClass:
+          type: string
+          nullable: true
+          enum:
+            - http_error
+            - dns_error
+            - timeout
+            - transport_error
+            - request_error
+            - signature_error
+            - canceled
+          description: Machine-readable non-HTTP or HTTP failure class
+        errorMessage:
+          type: string
+          nullable: true
+          description: Error message for failures without a useful response body
+        timestamp:
+          type: string
+          format: date-time
+          description: Time when the delivery attempt started
+    WebhookDeliveryStats:
+      description: Webhook delivery aggregate stats
+      required:
+        - buckets
+        - total
+        - failed
+        - durationMs
+      properties:
+        buckets:
+          type: array
+          items:
+            $ref: "#/components/schemas/WebhookDeliveryStatsBucket"
+        total:
+          type: integer
+          format: int64
+        failed:
+          type: integer
+          format: int64
+        durationMs:
+          $ref: "#/components/schemas/WebhookDeliveryDurationStats"
+    WebhookDeliveryDurationStats:
+      description: Webhook delivery duration statistics in milliseconds
+      required:
+        - minimum
+        - average
+        - maximum
+      properties:
+        minimum:
+          type: number
+          format: double
+        average:
+          type: number
+          format: double
+        maximum:
+          type: number
+          format: double
+    WebhookDeliveryStatsBucket:
+      description: Webhook delivery stats for a time bucket
+      required:
+        - timestamp
+        - total
+        - failed
+        - durationMs
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        total:
+          type: integer
+          format: int64
+        failed:
+          type: integer
+          format: int64
+        durationMs:
+          $ref: "#/components/schemas/WebhookDeliveryDurationStats"
+    WebhookDeliveryGroup:
+      description: Webhook delivery attempts grouped by sandbox event
+      required:
+        - eventId
+        - eventType
+        - sandboxId
+        - attempts
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        eventType:
+          type: string
+        sandboxId:
+          type: string
+        attempts:
+          type: array
+          items:
+            $ref: "#/components/schemas/WebhookDelivery"
+    WebhookDeliveriesListPayload:
+      description: Paginated webhook delivery attempts grouped by event
+      required:
+        - data
+        - nextCursor
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/WebhookDeliveryGroup"
+        nextCursor:
+          type: string
+          nullable: true
+          description: Cursor to pass to the next list request, or null when there is no next page.
 tags:
   - name: templates
   - name: sandboxes
@@ -2471,6 +2823,7 @@ paths:
   /sandboxes:
     get:
       summary: List running sandboxes
+      x-api-group: list
       description: List all running sandboxes. Use GET /v2/sandboxes instead.
       deprecated: true
       tags: [sandboxes]
@@ -2585,6 +2938,7 @@ paths:
           $ref: "#/components/responses/504"
     get:
       summary: List sandboxes (v2)
+      x-api-group: list
       description: List all sandboxes
       tags: [sandboxes]
       security:
@@ -2659,6 +3013,7 @@ paths:
   /sandboxes/metrics:
     get:
       summary: List sandbox metrics
+      x-api-group: list
       description: List metrics for given sandboxes
       tags: [sandboxes]
       security:
@@ -3295,6 +3650,7 @@ paths:
   /snapshots:
     get:
       summary: List snapshots
+      x-api-group: list
       description: List all snapshots for the team
       tags: [snapshots]
       security:
@@ -3382,6 +3738,7 @@ paths:
   /v2/templates:
     get:
       summary: List templates (v2)
+      x-api-group: list
       description: List all templates
       tags: [templates]
       security:
@@ -3467,6 +3824,7 @@ paths:
   /templates:
     get:
       summary: List templates
+      x-api-group: list
       description: List all templates
       deprecated: true
       tags: [templates]
@@ -3504,6 +3862,7 @@ paths:
   /templates/{templateID}:
     get:
       summary: List template builds
+      x-api-group: list
       description: List all builds for a template
       tags: [templates]
       security:
@@ -3846,6 +4205,7 @@ paths:
   /templates/{templateID}/tags:
     get:
       summary: List template tags
+      x-api-group: list
       description: List all tags for a template
       tags: [tags]
       security:
@@ -4172,6 +4532,7 @@ paths:
   /api-keys:
     get:
       summary: List team API keys
+      x-api-group: list
       description: List all team API keys
       tags: [api-keys]
       security:
@@ -4282,6 +4643,7 @@ paths:
   /volumes:
     get:
       summary: List team volumes
+      x-api-group: list
       description: List all team volumes
       tags: [volumes]
       security:
@@ -4402,6 +4764,7 @@ paths:
   /secrets:
     get:
       summary: List project secrets
+      x-api-group: list
       description: List the project's secrets. No response carries a secret value.
       tags: [secrets]
       security:
@@ -4808,3 +5171,406 @@ paths:
           $ref: "#/components/responses/500"
         "501":
           $ref: "#/components/responses/501"
+
+  /events/sandboxes/{sandboxID}:
+    get:
+      description: Get sandbox events
+      tags: [events]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: orderAsc
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: types
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+          description: Filter events to the provided event types
+      responses:
+        "200":
+          description: Successfully returned the sandbox events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SandboxEvent"
+        "400":
+          $ref: "#/components/responses/400"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /events/sandboxes:
+    get:
+      description: Get all sandbox events for the team associated with the API key
+      tags: [events]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: orderAsc
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: types
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+          description: Filter events to the provided event types
+      responses:
+        "200":
+          description: Successfully returned the sandbox events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SandboxEvent"
+        "400":
+          $ref: "#/components/responses/400"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /events/webhooks:
+    post:
+      description: Register events webhook.
+      tags: [webhooks]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookCreate"
+      responses:
+        "201":
+          description: Successfully created webhook.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookCreation"
+        "400":
+          $ref: "#/components/responses/400"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+    get:
+      description: List registered webhooks.
+      tags: [webhooks]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      responses:
+        "200":
+          description: List of registered webhooks.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WebhookDetail"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /events/webhooks/{webhookID}:
+    get:
+      description: Get a registered webhook.
+      tags: [webhooks]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/webhookID"
+      responses:
+        "200":
+          description: Successfully returned the webhook configuration.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookDetail"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+    patch:
+      description: Update a registered webhook configuration.
+      tags: [webhooks]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/webhookID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookConfiguration"
+      responses:
+        "200":
+          description: Successfully updated webhook.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookDetail"
+        "400":
+          $ref: "#/components/responses/400"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+    delete:
+      description: Delete a registered webhook.
+      tags: [webhooks]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/webhookID"
+      responses:
+        "200":
+          description: Successfully deleted webhook.
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /events/webhooks/{webhookID}/deliveries:
+    get:
+      description: List webhook delivery attempts.
+      tags: [webhooks]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/webhookID"
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Opaque cursor from the previous response's nextCursor field.
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 25
+        - name: orderAsc
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: start
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Include deliveries at or after this timestamp.
+        - name: end
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Include deliveries before this timestamp.
+        - name: deliveryStatus
+          in: query
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [success, failed]
+          description: Filter deliveries by delivery status
+        - name: eventType
+          in: query
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+          description: Filter deliveries by event type
+      responses:
+        "200":
+          description: List of webhook delivery attempts grouped by event.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookDeliveriesListPayload"
+        "400":
+          $ref: "#/components/responses/400"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /events/webhooks/{webhookID}/stats:
+    get:
+      description: Get webhook delivery aggregate stats.
+      tags: [webhooks]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/webhookID"
+        - name: start
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Inclusive stats range start. Defaults to 24 hours ago.
+        - name: end
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Exclusive stats range end. Defaults to now.
+      responses:
+        "200":
+          description: Webhook delivery stats.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookDeliveryStats"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
