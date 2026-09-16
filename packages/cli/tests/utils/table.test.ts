@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { renderTable } from '../../src/utils/table'
+import { formatTable, renderTable } from '../../src/utils/table'
 
 describe('renderTable', () => {
   afterEach(() => {
@@ -50,6 +50,21 @@ describe('renderTable', () => {
     expect(lines).toEqual(['A   B', 'x'])
   })
 
+  it('formats the same lines without printing them', () => {
+    const lines = capture()
+
+    const formatted = formatTable(
+      [{ id: 'sbx-1', name: 'alpha' }],
+      [
+        { header: 'Sandbox ID', value: (row) => row.id },
+        { header: 'Name', value: (row) => row.name },
+      ]
+    )
+
+    expect(formatted).toEqual(['SANDBOX ID   NAME', 'sbx-1        alpha'])
+    expect(lines).toEqual([])
+  })
+
   it('aligns columns containing wide (CJK) characters by display width', () => {
     const lines = capture()
 
@@ -64,10 +79,6 @@ describe('renderTable', () => {
       ]
     )
 
-    expect(lines).toEqual([
-      'NAME     STATE',
-      '日本語   ok',
-      'abcdef   ok',
-    ])
+    expect(lines).toEqual(['NAME     STATE', '日本語   ok', 'abcdef   ok'])
   })
 })

@@ -576,6 +576,112 @@ type SandboxForkResponse =
   | Error
 
 /**
+ * Sidecar microVM to attach to a sandbox at creation, declared from the E2B
+ * sidecar catalog.
+ *
+ * A sidecar runs next to the sandbox inside its private network, and code in
+ * the sandbox reaches it by the name `{entry}.sidecar.e2b.local`, never by IP.
+ * The catalog has four entries:
+ * - `'iron-proxy'` (proxy role): the sandbox's egress is steered through it
+ *   and it swaps a placeholder token for the real secret value on the way
+ *   out, so the secret never enters the sandbox.
+ * - `'valkey'` (service role): a Valkey (Redis-compatible) cache the sandbox
+ *   talks to directly, on port 6379.
+ * - `'sqlite'` (service role): libsql-server over HTTP at
+ *   `http://sqlite.sidecar.e2b.local:8080`.
+ * - `'iroh'` (service role): a peer-to-peer tunnel configured with `pipes` of
+ *   `publish` / `connect`; tickets are served at
+ *   `http://iroh.sidecar.e2b.local:8080/tickets.json`, to be polled until
+ *   `status == "ready"`. Takes an optional `node_secret` secret slot. A
+ *   forked sandbox's iroh sidecar starts with a fresh peer identity.
+ *
+ * A sidecar follows the sandbox's lifecycle: it is paused and snapshotted
+ * with the sandbox, comes back exactly as it was on resume (its data
+ * included), is forked with it, and is terminated with it. A sidecar that
+ * crashes is restarted once from its clean image and then reported
+ * `'failed'`; the sandbox keeps running. Attaching one requires the team's
+ * `sandbox-sidecars` feature.
+ *
+ * @example
+ * ```ts
+ * const sandbox = await Sandbox.create({
+ *   sidecars: [
+ *     { entry: 'valkey' },
+ *     {
+ *       entry: 'iron-proxy',
+ *       // Slot names and config keys are defined by the catalog entry.
+ *       secrets: { upstream: '${e2b.secrets.openai-key}' },
+ *     },
+ *   ],
+ * })
+ * ```
+ */
+export type SidecarAttachment = {
+  /** Catalog entry name: `'iron-proxy'`, `'valkey'`, `'sqlite'` or `'iroh'`. */
+  entry: string
+
+  /** Catalog entry version. Defaults to the entry's current version. */
+  version?: string
+
+  /**
+   * Entry-specific configuration, validated against the entry's schema by the
+   * API. String values may reference a secret as `'${e2b.secrets.<name>}'`;
+   * the platform resolves the reference when it injects the configuration,
+   * so the value never passes through the SDK.
+   */
+  config?: Record<string, unknown>
+
+  /**
+   * Secret slots the entry declares, keyed by slot name. Each value is a
+   * secret reference (`'${e2b.secrets.<name>}'`), never the secret itself.
+   * Every slot the entry declares has to be filled.
+   */
+  secrets?: Record<string, string>
+}
+
+/**
+ * Role of a sidecar: `'proxy'` steers the sandbox's egress through it,
+ * `'service'` is reached by the sandbox directly.
+ */
+export type SidecarRole = 'proxy' | 'service'
+
+/**
+ * Lifecycle class of a sidecar, as reported by the API; every catalog entry
+ * today is `'stateful'`. Kept for wire stability.
+ */
+export type SidecarClass = 'ephemeral' | 'stateful'
+
+/**
+ * State of a sidecar. `'failed'` is reached after one automatic restart
+ * attempt; the sandbox itself keeps running. The set is defined server-side
+ * and may grow, so any string is allowed.
+ */
+export type SidecarState =
+  'starting' | 'running' | 'failed' | 'stopped' | (string & {})
+
+/**
+ * A sidecar attached to a sandbox, as returned by the sandbox info and list
+ * endpoints.
+ */
+export type SidecarInfo = {
+  /** Catalog entry name. */
+  entry: string
+  /** Catalog entry version. */
+  version: string
+  role: SidecarRole
+  class: SidecarClass
+  state: SidecarState
+  /** Name the sandbox reaches the sidecar at (`{entry}.sidecar.e2b.local`). */
+  name: string
+  /** Address of the sidecar inside the sandbox network. */
+  address?: string
+  /** Ports the sidecar listens on. */
+  ports?: number[]
+  /** Last error of the sidecar, set when `state` is `'failed'`. */
+  lastError?: string
+}
+
+/**
  * Options for creating a new Sandbox.
  */
 export interface SandboxOpts extends ConnectionOpts {
@@ -669,6 +775,14 @@ export interface SandboxOpts extends ConnectionOpts {
    * @default undefined
    */
   volumeMounts?: Record<string, Volume | string>
+
+  /**
+   * Sidecar microVMs to attach to the sandbox — at most four, at most one
+   * with the proxy role. See {@link SidecarAttachment}.
+   *
+   * @default undefined
+   */
+  sidecars?: SidecarAttachment[]
 
   /**
    * Sandbox URL. Used for local development
@@ -920,6 +1034,12 @@ export interface SandboxInfo {
   volumeMounts?: Array<{ name: string; path: string }>
 
   /**
+   * Sidecars attached to the sandbox, empty when there are none. See
+   * {@link SidecarInfo}.
+   */
+  sidecars?: SidecarInfo[]
+
+  /**
    * Sandbox domain.
    */
   sandboxDomain?: string
@@ -1149,6 +1269,84 @@ function fromApiEgressProxy(
   }
 }
 
+// The spec's maxItems renders as a tuple union; the count is the API's to
+// enforce (sidecar_limit), so the list is cast rather than re-validated here.
+function buildSidecarsBody(
+  sidecars: SidecarAttachment[]
+): NonNullable<components['schemas']['NewSandbox']['sidecars']> {
+  if (!Array.isArray(sidecars)) {
+    throw new InvalidArgumentError(
+      `sidecars must be an array of { entry, version?, config?, secrets? } (got ${describeValue(sidecars)}).`
+    )
+  }
+
+  return sidecars.map((sidecar, i) => {
+    if (!isPlainObject(sidecar) || typeof sidecar.entry !== 'string') {
+      throw new InvalidArgumentError(
+        `sidecars[${i}] must be an object with a string 'entry' naming a catalog entry (e.g. 'valkey').`
+      )
+    }
+
+    return {
+      entry: sidecar.entry,
+      ...(sidecar.version != null ? { version: sidecar.version } : {}),
+      ...(sidecar.config != null ? { config: sidecar.config } : {}),
+      ...(sidecar.secrets != null ? { secrets: sidecar.secrets } : {}),
+    }
+  }) as NonNullable<components['schemas']['NewSandbox']['sidecars']>
+}
+
+function fromApiSidecars(
+  sidecars: components['schemas']['SidecarInfo'][] | undefined
+): SidecarInfo[] {
+  return (sidecars ?? []).map((sidecar) => ({
+    entry: sidecar.entry,
+    version: sidecar.version,
+    role: sidecar.role,
+    class: sidecar.class,
+    state: sidecar.state,
+    name: sidecar.name,
+    ...(sidecar.address !== undefined ? { address: sidecar.address } : {}),
+    ...(sidecar.ports !== undefined ? { ports: sidecar.ports } : {}),
+    ...(sidecar.lastError !== undefined
+      ? { lastError: sidecar.lastError }
+      : {}),
+  }))
+}
+
+/**
+ * Sidecar rejections carry a lower-snake `sidecar_*` semantic code, like every
+ * other `error_code`. Validation failures are 400 — `sidecar_unknown_entry`,
+ * `sidecar_deprecated_entry`, `sidecar_limit`, `sidecar_one_proxy`,
+ * `sidecar_config_invalid`, `sidecar_secret_missing`,
+ * `sidecar_rule_collision`, `sidecar_egress_conflict`, `sidecar_flag_off` —
+ * and a sidecar that did not start is `sidecar_failed` naming the entry. On
+ * resume, `sidecar_version_unavailable` (409: the catalog version the sidecar
+ * was snapshotted with has been removed; the sandbox stays paused) and
+ * `sidecar_snapshot_mismatch` (500: a stored sidecar snapshot has no matching
+ * declaration) stay {@link SandboxError}s — the SDK has no conflict type. The
+ * code stays in the message so callers can tell them apart.
+ */
+function sidecarApiError(res: {
+  response: { status: number; statusText: string }
+  error?: unknown
+}): Error | undefined {
+  const body = isPlainObject(res.error) ? res.error : undefined
+  const code = body?.error_code
+  if (typeof code !== 'string' || !code.startsWith('sidecar_')) {
+    return
+  }
+
+  const status = res.response.status
+  const message = `${code}: ${body?.message ?? res.response.statusText}`
+  const err =
+    status === 400
+      ? new InvalidArgumentError(message)
+      : new SandboxError(message)
+  err.statusCode = status
+  return err
+}
+
 function buildNetworkBody(
   network: SandboxNetworkOpts | undefined,
   iam: components['schemas']['SandboxIam'] | undefined
@@ -1344,6 +1542,7 @@ export class SandboxApi extends ClientFactory {
         : undefined,
       sandboxDomain: res.data.domain || undefined,
       volumeMounts: res.data.volumeMounts ?? [],
+      sidecars: fromApiSidecars(res.data.sidecars),
     }
   }
 
@@ -1503,7 +1702,7 @@ export class SandboxApi extends ClientFactory {
       throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
 
-    const err = handleApiError(res)
+    const err = sidecarApiError(res) ?? handleApiError(res)
     if (err) {
       throw err
     }
@@ -1744,6 +1943,13 @@ export class SandboxApi extends ClientFactory {
       )
     }
 
+    if (opts?.sidecars != null) {
+      const sidecars = buildSidecarsBody(opts.sidecars)
+      if (sidecars.length) {
+        body.sidecars = sidecars
+      }
+    }
+
     const apiOpts = this.resolveOpts(opts)
     const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
@@ -1752,7 +1958,7 @@ export class SandboxApi extends ClientFactory {
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
-    const err = handleApiError(res)
+    const err = sidecarApiError(res) ?? handleApiError(res)
     if (err) {
       throw err
     }
@@ -1881,7 +2087,7 @@ export class SandboxApi extends ClientFactory {
       throw new SandboxNotFoundError(`Paused sandbox ${sandboxId} not found`)
     }
 
-    const err = handleApiError(res)
+    const err = sidecarApiError(res) ?? handleApiError(res)
     if (err) {
       throw err
     }
@@ -1975,6 +2181,7 @@ export class SandboxPaginator extends Paginator<SandboxInfo, SandboxApiOpts> {
         memoryMB: sandbox.memoryMB,
         envdVersion: sandbox.envdVersion,
         volumeMounts: sandbox.volumeMounts ?? [],
+        sidecars: fromApiSidecars(sandbox.sidecars),
       })
     )
   }
