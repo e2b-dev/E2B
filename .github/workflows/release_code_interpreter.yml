@@ -44,7 +44,6 @@ jobs:
     with:
       group: code-interpreter
     secrets:
-      PYPI_TOKEN: ${{ secrets.CODE_INTERPRETER_PYPI_TOKEN }}
       VERSION_BUMPER_SECRET: ${{ secrets.VERSION_BUMPER_SECRET }}
 
   report-start:

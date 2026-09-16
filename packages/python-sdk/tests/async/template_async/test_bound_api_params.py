@@ -1,9 +1,12 @@
 from unittest.mock import AsyncMock
+from types import SimpleNamespace
 
 import pytest
 
 import e2b.template_async.main as template_async_main
+import e2b.template_async.build_api as template_async_build_api
 from e2b import AsyncTemplate, Template, TemplateTagInfo
+from e2b.api.client.types import UNSET
 from e2b.connection_config import ApiParams
 from e2b.template.types import BuildInfo
 
@@ -133,7 +136,7 @@ async def test_build_resolves_build_impl_and_config_off_cls(configs, monkeypatch
 
     assert (
         await BoundAsyncTemplate.build_in_background(
-            Template().from_base_image(), "my-template"
+            Template().from_base_image(), "my-template", min_free_disk_mb=0
         )
         is build_info
     )
@@ -141,6 +144,7 @@ async def test_build_resolves_build_impl_and_config_off_cls(configs, monkeypatch
     mock_build.assert_awaited_once()
     assert configs[0].api_key == BOUND_API_KEY
     assert configs[0].domain == BOUND_DOMAIN
+    assert mock_build.call_args.kwargs["min_free_disk_mb"] == 0
 
 
 @pytest.mark.asyncio
@@ -167,3 +171,45 @@ async def test_bound_request_timeout_reaches_the_build(configs, monkeypatch):
     )
 
     assert mock_build.call_args.kwargs["request_timeout"] == 12.5
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("method", ["build", "build_in_background"])
+@pytest.mark.parametrize(
+    "options, expected",
+    [
+        ({}, None),
+        ({"min_free_disk_mb": 0}, 0),
+        ({"min_free_disk_mb": 20480}, 20480),
+    ],
+)
+async def test_minimum_free_disk_option(
+    configs, monkeypatch, method, options, expected
+):
+    bodies = []
+
+    async def request(*, client, body):
+        bodies.append(body)
+        return SimpleNamespace(
+            status_code=202,
+            parsed=SimpleNamespace(
+                template_id="template-id", build_id="build-id", tags=[]
+            ),
+        )
+
+    monkeypatch.setattr(
+        template_async_build_api.post_v3_templates, "asyncio_detailed", request
+    )
+    monkeypatch.setattr(template_async_main, "trigger_build", AsyncMock())
+    monkeypatch.setattr(template_async_main, "wait_for_build_finish", AsyncMock())
+    await getattr(AsyncTemplate, method)(
+        Template().from_template("parent"), "minimum", **options
+    )
+    expected_body = {"name": "minimum", "cpuCount": 2, "memoryMB": 1024}
+    if expected is not None:
+        expected_body["minFreeDiskMb"] = expected
+    assert [body.to_dict() for body in bodies] == [expected_body]
+    if expected is None:
+        assert bodies[0].min_free_disk_mb is UNSET
+    else:
+        assert bodies[0].min_free_disk_mb == expected

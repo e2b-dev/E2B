@@ -1,5 +1,5 @@
-# Specs are fetched from their source-of-truth repositories (e2b-dev/infra
-# and e2b-dev/belt) at the commits pinned in spec/infra-ref and spec/belt-ref.
+# Specs are fetched from their source-of-truth repositories (e2b-dev/runtime
+# and e2b-dev/belt) at the commits pinned in spec/runtime-ref and spec/belt-ref.
 # To update the specs, bump the pins and re-run `make codegen`.
 # When a fetch fails (no GitHub token, no access to the private belt repo),
 # fall back to the tracked copy in spec/ with a warning.

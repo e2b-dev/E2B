@@ -1,6 +1,6 @@
 import { expect } from 'vitest'
 
-import { sandboxTest } from '../../setup.js'
+import { gitTest } from '../../setup.js'
 import {
   AUTHOR_EMAIL,
   AUTHOR_NAME,
@@ -10,7 +10,7 @@ import {
   startGitDaemon,
 } from './helpers.js'
 
-sandboxTest('git push updates remote', async ({ sandbox }) => {
+gitTest('git push updates remote', async ({ sandbox }) => {
   const baseDir = await createBaseDir(sandbox)
 
   try {
@@ -38,7 +38,7 @@ sandboxTest('git push updates remote', async ({ sandbox }) => {
   }
 })
 
-sandboxTest('git push warns when no upstream', async ({ sandbox }) => {
+gitTest('git push warns when no upstream', async ({ sandbox }) => {
   const baseDir = await createBaseDir(sandbox)
 
   try {
@@ -59,7 +59,7 @@ sandboxTest('git push warns when no upstream', async ({ sandbox }) => {
   }
 })
 
-sandboxTest('git pull updates clone', async ({ sandbox }) => {
+gitTest('git pull updates clone', async ({ sandbox }) => {
   const baseDir = await createBaseDir(sandbox)
 
   try {
@@ -94,7 +94,7 @@ sandboxTest('git pull updates clone', async ({ sandbox }) => {
   }
 })
 
-sandboxTest('git pull warns when no upstream', async ({ sandbox }) => {
+gitTest('git pull warns when no upstream', async ({ sandbox }) => {
   const baseDir = await createBaseDir(sandbox)
 
   try {

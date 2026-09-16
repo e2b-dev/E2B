@@ -56,6 +56,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxNetworkOpts,
     SandboxNetworkUpdate,
     SandboxOnResume,
+    resolve_connect_memory,
     SandboxQuery,
     SnapshotInfo,
     build_iam_config,
@@ -356,7 +357,7 @@ class SandboxApi(SandboxBase):
             client=api_client,
             body=ConnectSandbox(
                 timeout=timeout,
-                memory=False if on_resume == "reboot" else UNSET,
+                memory=resolve_connect_memory(on_resume),
             ),
         )
 

@@ -44,7 +44,6 @@ jobs:
     with:
       group: desktop
     secrets:
-      PYPI_TOKEN: ${{ secrets.DESKTOP_PYPI_TOKEN }}
       VERSION_BUMPER_SECRET: ${{ secrets.VERSION_BUMPER_SECRET }}
 
   report-start:

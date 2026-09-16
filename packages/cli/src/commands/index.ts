@@ -6,6 +6,9 @@ import { sandboxCommand } from './sandbox'
 import { authCommand } from './auth'
 
 export const program = new commander.Command()
+  // Fixed so help reads `e2b` however the entrypoint is invoked (npm bin
+  // symlink, `node dist/index.js`, or a distro wrapper script).
+  .name('e2b')
   .enablePositionalOptions()
   .description(
     `Create sandbox templates from Dockerfiles by running ${asPrimary(

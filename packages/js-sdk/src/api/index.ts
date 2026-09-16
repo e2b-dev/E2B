@@ -4,8 +4,14 @@ import type { components, paths } from './schema.gen'
 import { defaultHeaders } from './metadata'
 import { createApiFetch } from './http2'
 import { ConnectionConfig } from '../connectionConfig'
-import { AuthenticationError, RateLimitError, SandboxError } from '../errors'
+import {
+  AuthenticationError,
+  RateLimitError,
+  ServiceBusyError,
+  SandboxError,
+} from '../errors'
 import { createApiLogger } from '../logs'
+import { withRateLimitRetry } from '../retry'
 
 /**
  * Map an API error code and message to the matching error class — the same
@@ -33,7 +39,17 @@ export function apiErrorFromCode(
     return new RateLimitError(content ? `${message} - ${content}` : message)
   }
 
-  return new errorClass(`${code}: ${content}`, stackTrace)
+  if (code === 503) {
+    const message = 'Service temporarily unavailable, please retry'
+    return new ServiceBusyError(content ? `${message} - ${content}` : message)
+  }
+
+  const err = new errorClass(`${code}: ${content}`, stackTrace)
+  if (err instanceof SandboxError) {
+    err.statusCode = code
+  }
+
+  return err
 }
 
 export function handleApiError(
@@ -51,7 +67,7 @@ export function handleApiError(
   }
 
   const status = response.response.status
-  if (status === 401 || status === 429) {
+  if (status === 401 || status === 429 || status === 503) {
     return apiErrorFromCode(
       status,
       response.error?.message ?? response.error,
@@ -90,7 +106,11 @@ class ApiClient {
 
     this.api = createClient<paths>({
       baseUrl: config.apiUrl,
-      fetch: createApiFetch(config.proxy),
+      fetch: withRateLimitRetry(
+        createApiFetch(config.proxy),
+        config.retries,
+        config.requestTimeoutMs
+      ),
       // In HTTP 1.1, all connections are considered persistent unless declared otherwise
       // keepalive: true,
       headers: {

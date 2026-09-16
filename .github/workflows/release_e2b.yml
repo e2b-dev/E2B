@@ -43,7 +43,6 @@ jobs:
     with:
       group: e2b
     secrets:
-      PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
       VERSION_BUMPER_SECRET: ${{ secrets.VERSION_BUMPER_SECRET }}
 
   report-start:

@@ -1,6 +1,7 @@
+import os
 import time
 from types import TracebackType
-from typing import Callable, Optional, List, Union
+from typing import Callable, Dict, Optional, List, Union
 
 import httpx
 from pyqwest import SyncHTTPTransport
@@ -49,6 +50,7 @@ def request_build(
     tags: Optional[List[str]],
     cpu_count: int,
     memory_mb: int,
+    min_free_disk_mb: Optional[int],
 ):
     res = post_v3_templates.sync_detailed(
         client=client,
@@ -57,6 +59,9 @@ def request_build(
             tags=tags if tags else UNSET,
             cpu_count=cpu_count,
             memory_mb=memory_mb,
+            min_free_disk_mb=(
+                min_free_disk_mb if min_free_disk_mb is not None else UNSET
+            ),
         ),
     )
 
@@ -109,6 +114,8 @@ def upload_file(
     resolve_symlinks: bool,
     gzip: bool,
     stack_trace: Optional[TracebackType],
+    *,
+    headers: Optional[Dict[str, str]] = None,
     request_timeout: Optional[float] = None,
 ):
     # Uploading a large build-context archive can take far longer than the 60s
@@ -123,6 +130,7 @@ def upload_file(
         tar_file = tar_file_stream(
             file_name, context_path, ignore_patterns, resolve_symlinks, gzip
         )
+        size = os.fstat(tar_file.fileno()).st_size
         try:
             # Through the pyqwest adapter the upload timeout is a
             # whole-request deadline for the entire transfer, not a per-write
@@ -144,11 +152,19 @@ def upload_file(
                     )
                 ),
             ) as client:
-                # httpx streams the archive from disk in chunks and sets
-                # Content-Length from the file size—S3 presigned URLs reject
-                # chunked transfer encoding, and reqwest keeps the
-                # Content-Length framing for the streamed body.
-                response = client.put(url, content=tar_file)
+                # API-returned headers applied as given, but Content-Length stays ours — explicit so S3 presigned URLs see no chunked encoding.
+                response = client.put(
+                    url,
+                    content=tar_file,
+                    headers={
+                        **{
+                            k: v
+                            for k, v in (headers or {}).items()
+                            if k.lower() != "content-length"
+                        },
+                        "Content-Length": str(size),
+                    },
+                )
             response.raise_for_status()
         finally:
             # Closing the spooled temp file is best-effort: a failure here

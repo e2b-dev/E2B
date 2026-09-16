@@ -8,9 +8,6 @@ on:
         required: true
         type: string
     secrets:
-      PYPI_TOKEN:
-        description: PyPI token for the group's Python package; omit for groups without one
-        required: false
       VERSION_BUMPER_SECRET:
         required: true
 
@@ -22,6 +19,10 @@ jobs:
   publish:
     name: Version and publish
     runs-on: ubuntu-22.04
+    # Declared here rather than on the `publish` job in release_*.yml: a job
+    # that `uses:` a reusable workflow cannot carry `environment`. The
+    # environment's deployment branch policy only allows main.
+    environment: deployment
     steps:
       - uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1.12.0
         id: app-token
@@ -114,9 +115,9 @@ jobs:
           fi
 
       - name: Publish new versions
+        # npm and PyPI both authenticate with the job's OIDC token (trusted
+        # publishing), so no registry secrets are passed in.
         env:
           GROUP: ${{ inputs.group }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: '' # See https://github.com/changesets/changesets/issues/1152#issuecomment-3190884868
-          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
         run: node .github/scripts/release.cjs publish "$GROUP"

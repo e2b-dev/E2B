@@ -193,3 +193,69 @@ async def test_async_create_sends_auto_resume_only_when_configured(
         assert "autoResume" not in body
     else:
         assert body["autoResume"] == auto_resume
+
+
+# on_timeout is resolved into the boolean autoPause before the request is built,
+# so the API never sees the action and cannot reject a typo. Resolving it to
+# kill would delete a sandbox the caller asked to preserve.
+UNRECOGNIZED_ON_TIMEOUT = [
+    "Pause",
+    "PAUSE",
+    "pause\n",
+    "paused",
+    True,
+    {"action": "Pause"},
+    {},
+]
+
+
+@pytest.mark.parametrize("on_timeout", UNRECOGNIZED_ON_TIMEOUT)
+def test_create_rejects_an_unrecognized_on_timeout(
+    monkeypatch, test_api_key, on_timeout
+):
+    request = Mock(return_value=_created_sandbox())
+    monkeypatch.setattr(post_sandboxes, "sync_detailed", request)
+
+    with pytest.raises(InvalidArgumentException):
+        Sandbox.create(
+            api_key=test_api_key, lifecycle=cast(Any, {"on_timeout": on_timeout})
+        )
+
+    request.assert_not_called()
+
+
+@pytest.mark.parametrize("on_timeout", UNRECOGNIZED_ON_TIMEOUT)
+async def test_async_create_rejects_an_unrecognized_on_timeout(
+    monkeypatch, test_api_key, on_timeout
+):
+    request = AsyncMock(return_value=_created_sandbox())
+    monkeypatch.setattr(post_sandboxes, "asyncio_detailed", request)
+
+    with pytest.raises(InvalidArgumentException):
+        await AsyncSandbox.create(
+            api_key=test_api_key, lifecycle=cast(Any, {"on_timeout": on_timeout})
+        )
+
+    request.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "on_timeout,expected_field",
+    [
+        ("Pause", "on_timeout"),
+        ({"action": "Pause"}, 'on_timeout["action"]'),
+        ({}, 'on_timeout["action"]'),
+    ],
+)
+def test_the_error_names_the_field_the_caller_wrote(
+    monkeypatch, test_api_key, on_timeout, expected_field
+):
+    request = Mock(return_value=_created_sandbox())
+    monkeypatch.setattr(post_sandboxes, "sync_detailed", request)
+
+    with pytest.raises(InvalidArgumentException) as excinfo:
+        Sandbox.create(
+            api_key=test_api_key, lifecycle=cast(Any, {"on_timeout": on_timeout})
+        )
+
+    assert str(excinfo.value).startswith(f"{expected_field} must be one of")

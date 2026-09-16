@@ -211,9 +211,9 @@ async function version(cwd, groupName) {
     }
     // The Python packages pin the workspace `e2b` in their uv.lock, so a bump
     // of one Python package has to be re-locked in every other one.
-    for (const { dir } of workspacePackages(cwd).values()) {
-      if (fs.existsSync(path.join(dir, 'uv.lock'))) {
-        run('uv', ['lock'], { cwd: dir })
+    for (const { packageJson } of workspacePackages(cwd).values()) {
+      if (packageJson.scripts?.lock) {
+        run('pnpm', ['--filter', packageJson.name, 'run', 'lock'], { cwd })
       }
     }
   } finally {
@@ -315,16 +315,12 @@ function workspaceDependencies(pkg, packages) {
 }
 
 // Public packages go to npm with `pnpm publish`; private ones are Python
-// packages whose `postPublish` uploads them to PyPI.
+// packages whose `postPublish` uploads them to PyPI. Both registries trust the
+// job's OIDC token, so no credentials are needed here.
 function publish(cwd, groupName) {
   const packages = workspacePackages(cwd)
   const members = groupPackages(cwd, groupName)
   const publicMembers = members.filter((pkg) => !pkg.packageJson.private)
-  if (members.length > publicMembers.length && !process.env.PYPI_TOKEN) {
-    throw new Error(
-      `PYPI_TOKEN is not set, but the "${groupName}" group publishes to PyPI`
-    )
-  }
 
   // `pnpm publish` resolves `workspace:` ranges to the dependency's current
   // version, which consumers can only install once that version is on npm.

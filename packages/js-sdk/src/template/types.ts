@@ -43,6 +43,12 @@ export type BasicBuildOptions = {
    */
   memoryMB?: number
   /**
+   * Requested minimum free space for the template filesystem after the build steps
+   * have run, in MiB. Growth is best effort and the filesystem is never shrunk.
+   * Omit to use the team default or set to 0 to request no growth.
+   */
+  minFreeDiskMb?: number
+  /**
    * If true, skips cache and forces a complete rebuild.
    * @default false
    */
@@ -134,8 +140,8 @@ export type TemplateBuildStatusResponse = {
    */
   logEntries: LogEntry[]
   /**
-   * Build logs (raw strings).
-   * @deprecated Use `logEntries` instead.
+   * Build logs (raw strings). Always empty since the V1 build path was removed.
+   * @deprecated Use `logEntries` instead. Will be removed in the next major version.
    */
   logs: string[]
   /**

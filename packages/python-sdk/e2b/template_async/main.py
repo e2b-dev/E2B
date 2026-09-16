@@ -4,6 +4,7 @@ from typing import Callable, List, Optional, Union
 from typing_extensions import Unpack
 
 from e2b.api.client.client import AuthenticatedClient
+from e2b.api.client.types import Unset
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.template.consts import GZIP, RESOLVE_SYMLINKS
 from e2b.template.logger import LogEntry, LogEntryEnd, LogEntryStart
@@ -39,6 +40,7 @@ class AsyncTemplate(TemplateBase):
         tags: Optional[List[str]] = None,
         cpu_count: int = 2,
         memory_mb: int = 1024,
+        min_free_disk_mb: Optional[int] = None,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
         request_timeout: Optional[float] = None,
@@ -52,6 +54,7 @@ class AsyncTemplate(TemplateBase):
         :param tags: Optional tags for the template
         :param cpu_count: Number of CPUs allocated to the sandbox
         :param memory_mb: Amount of memory in MB allocated to the sandbox
+        :param min_free_disk_mb: Requested minimum free space after the build steps, in MiB. Growth is best effort and the filesystem is never shrunk. Omit to use the team default or set to 0 to request no growth.
         :param skip_cache: If True, forces a complete rebuild ignoring cache
         :param on_build_logs: Callback function to receive build logs during the build process
         """
@@ -74,6 +77,7 @@ class AsyncTemplate(TemplateBase):
             name=name,
             cpu_count=cpu_count,
             memory_mb=memory_mb,
+            min_free_disk_mb=min_free_disk_mb,
             tags=tags,
         )
 
@@ -134,6 +138,11 @@ class AsyncTemplate(TemplateBase):
                     resolve_symlinks,
                     gzip,
                     stack_trace,
+                    headers=(
+                        file_info.headers.to_dict()
+                        if not isinstance(file_info.headers, Unset)
+                        else None
+                    ),
                     request_timeout=request_timeout,
                 )
                 if on_build_logs:
@@ -198,6 +207,7 @@ class AsyncTemplate(TemplateBase):
         tags: Optional[List[str]] = None,
         cpu_count: int = 2,
         memory_mb: int = 1024,
+        min_free_disk_mb: Optional[int] = None,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
         **opts: Unpack[ApiParams],
@@ -211,6 +221,7 @@ class AsyncTemplate(TemplateBase):
         :param tags: Optional additional tags to assign to the template
         :param cpu_count: Number of CPUs allocated to the sandbox
         :param memory_mb: Amount of memory in MB allocated to the sandbox
+        :param min_free_disk_mb: Requested minimum free space after the build steps, in MiB. Growth is best effort and the filesystem is never shrunk. Omit to use the team default or set to 0 to request no growth.
         :param skip_cache: If True, forces a complete rebuild ignoring cache
         :param on_build_logs: Callback function to receive build logs during the build process
 
@@ -256,6 +267,7 @@ class AsyncTemplate(TemplateBase):
                 tags=tags,
                 cpu_count=cpu_count,
                 memory_mb=memory_mb,
+                min_free_disk_mb=min_free_disk_mb,
                 skip_cache=skip_cache,
                 on_build_logs=on_build_logs,
                 # Only honor an explicitly set request_timeout for uploads;
@@ -301,6 +313,7 @@ class AsyncTemplate(TemplateBase):
         tags: Optional[List[str]] = None,
         cpu_count: int = 2,
         memory_mb: int = 1024,
+        min_free_disk_mb: Optional[int] = None,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
         **opts: Unpack[ApiParams],
@@ -314,6 +327,7 @@ class AsyncTemplate(TemplateBase):
         :param tags: Optional additional tags to assign to the template
         :param cpu_count: Number of CPUs allocated to the sandbox
         :param memory_mb: Amount of memory in MB allocated to the sandbox
+        :param min_free_disk_mb: Requested minimum free space after the build steps, in MiB. Growth is best effort and the filesystem is never shrunk. Omit to use the team default or set to 0 to request no growth.
         :param skip_cache: If True, forces a complete rebuild ignoring cache
         :return: BuildInfo containing the template ID and build ID
 
@@ -350,6 +364,7 @@ class AsyncTemplate(TemplateBase):
             tags=tags,
             cpu_count=cpu_count,
             memory_mb=memory_mb,
+            min_free_disk_mb=min_free_disk_mb,
             skip_cache=skip_cache,
             on_build_logs=on_build_logs,
             # Only honor an explicitly set request_timeout for uploads;
