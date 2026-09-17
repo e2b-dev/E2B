@@ -48,14 +48,18 @@ export const forkCommand = new commander.Command('fork')
         })
 
         let failed = 0
-        for (const fork of forks) {
+        forks.forEach((fork, index) => {
           if (fork instanceof Error) {
             failed += 1
-            console.error(fork)
+            console.error(
+              `Fork ${asBold(String(index + 1))} of ${asBold(
+                sandboxID
+              )} failed: ${fork.message}`
+            )
           } else {
             console.log(fork.sandboxId)
           }
-        }
+        })
 
         process.exit(failed > 0 ? 1 : 0)
       } catch (err: unknown) {

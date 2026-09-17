@@ -96,7 +96,12 @@ describe('sandbox fork', () => {
     ])
 
     expect(logSpy).toHaveBeenCalledWith('fork-1')
-    expect(errorSpy).toHaveBeenCalledWith(failure)
+    expect(errorSpy).toHaveBeenCalledTimes(1)
+    const [message] = errorSpy.mock.calls[0] as [string]
+    expect(message).toContain('2')
+    expect(message).toContain('source-id')
+    expect(message).toContain('failed: rate limited')
+    expect(message).not.toContain('at ')
     expect(exitSpy).toHaveBeenCalledWith(1)
   })
 
