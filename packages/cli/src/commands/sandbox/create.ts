@@ -115,7 +115,7 @@ export function createCommand(
     )
 }
 
-function parseTimeout(timeoutRaw: string): number {
+export function parseTimeout(timeoutRaw: string): number {
   const timeoutSeconds = Number(timeoutRaw)
   const timeoutMs = Math.floor(timeoutSeconds * 1000)
   if (
