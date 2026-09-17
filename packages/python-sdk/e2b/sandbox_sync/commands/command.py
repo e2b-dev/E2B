@@ -330,6 +330,7 @@ class Commands:
                     pid, request_timeout
                 ),
                 check_health=self._check_health,
+                logger=self._connection_config.logger,
             )
         except Exception as e:
             try:
@@ -381,6 +382,7 @@ class Commands:
                     pid, request_timeout
                 ),
                 check_health=self._check_health,
+                logger=self._connection_config.logger,
             )
         except Exception as e:
             try:

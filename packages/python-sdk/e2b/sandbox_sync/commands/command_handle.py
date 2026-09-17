@@ -1,4 +1,5 @@
 import codecs
+import logging
 
 from typing import Optional, Callable, Any, Generator, List, Union, Tuple
 
@@ -42,6 +43,7 @@ class CommandHandle:
         ] = None,
         handle_close_stdin: Optional[Callable[[Optional[float]], None]] = None,
         check_health: Optional[Callable[[], Optional[bool]]] = None,
+        logger: Optional[logging.Logger] = None,
     ):
         self._pid = pid
         self._handle_kill = handle_kill
@@ -49,6 +51,7 @@ class CommandHandle:
         self._handle_close_stdin = handle_close_stdin
         self._check_health = check_health
         self._events = events
+        self._logger = logger
 
         self._stdout_chunks: List[str] = []
         self._stderr_chunks: List[str] = []
@@ -66,6 +69,18 @@ class CommandHandle:
         :return: Generator of command outputs
         """
         return self._handle_events()
+
+    def _log_stream_ended(self, reason: str) -> None:
+        """
+        Record why the command's output stream ended on the client side.
+
+        The server (envd) only sees that the stream was cancelled, not why; this
+        logs the local cause so the two can be correlated. No-op when no logger
+        was configured. See e2b-dev/E2B#1877.
+        """
+        if self._logger is None:
+            return
+        self._logger.info("command stream ended (pid=%s): %s", self._pid, reason)
 
     def _flush_decoders(
         self,
@@ -140,11 +155,24 @@ class CommandHandle:
             # characters instead of being silently dropped.
             if self._result is None:
                 yield from self._flush_decoders()
+        except GeneratorExit:
+            # The consumer stopped iterating before an end event (e.g. it broke
+            # out of the loop, was cancelled by a timeout/sibling task, or the
+            # caller exited). Closing this generator closes the underlying event
+            # stream, which the server (envd) records as a client cancellation —
+            # note the process itself is NOT killed and keeps running. Log the
+            # local cause so it can be correlated with the server-side line;
+            # see e2b-dev/E2B#1877.
+            self._log_stream_ended("consumer stopped iterating (break/cancel/exit)")
+            raise
         except Exception as e:
             # The stream raised before an end event (e.g. disconnect or RPC
             # failure). Flush any bytes still buffered in the decoders so
             # incomplete trailing sequences surface as replacement characters
             # instead of being silently dropped, then surface the error.
+            self._log_stream_ended(
+                f"stream error before end event: {type(e).__name__}: {e}"
+            )
             yield from self._flush_decoders()
             raise handle_rpc_exception_with_health(e, self._check_health)
 
@@ -155,6 +183,7 @@ class CommandHandle:
         The command is not killed, but SDK stops receiving events from the command.
         You can reconnect to the command using `sandbox.commands.connect` method.
         """
+        self._log_stream_ended("explicit disconnect() (command left running)")
         self._events.close()
 
     def wait(

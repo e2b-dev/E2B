@@ -172,6 +172,7 @@ class Pty:
                 events=events,
                 on_pty=on_data,
                 check_health=self._check_health,
+                logger=self._connection_config.logger,
             )
         except Exception as e:
             try:
@@ -221,6 +222,7 @@ class Pty:
                 events=events,
                 on_pty=on_data,
                 check_health=self._check_health,
+                logger=self._connection_config.logger,
             )
         except Exception as e:
             try:
