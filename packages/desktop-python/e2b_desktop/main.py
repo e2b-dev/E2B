@@ -519,7 +519,7 @@ class Sandbox(SandboxBase):
         """
         Drag the mouse from the given position to the given position.
 
-        :param from: The starting position.
+        :param fr: The starting position as a (x, y) tuple.
         :param to: The ending position.
         """
         self.move_mouse(fr[0], fr[1])
