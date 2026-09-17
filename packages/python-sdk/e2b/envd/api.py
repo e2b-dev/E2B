@@ -14,7 +14,6 @@ from e2b.exceptions import (
     format_sandbox_timeout_exception,
 )
 
-
 ENVD_API_FILES_ROUTE = "/files"
 ENVD_API_HEALTH_ROUTE = "/health"
 
@@ -119,7 +118,7 @@ def get_message(e: httpx.Response) -> str:
     # return a bare string or scalar. Mirror the JS SDK's `ApiError` handling
     # (`typeof error === 'string' ? error : error?.message`) rather than assuming
     # a dict and raising AttributeError.
-    if isinstance(data, str):
+    if isinstance(data, str) and data:
         return data
     if isinstance(data, dict):
         return data.get("message", e.text)

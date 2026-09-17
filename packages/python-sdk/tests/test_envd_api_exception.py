@@ -109,3 +109,10 @@ def test_non_dict_json_error_body_maps_without_crashing():
     err = handle_envd_api_exception(_json_response(502, b'"upstream connect error"'))
     assert isinstance(err, TimeoutException)
     assert "upstream connect error" in str(err)
+
+
+def test_get_message_falls_back_to_text_for_an_empty_json_string_body():
+    # An empty JSON string carries no message; fall back to the raw text so the
+    # envd path matches handle_api_exception rather than surfacing an empty one.
+    resp = _json_response(502, b'""')
+    assert get_message(resp) == resp.text
