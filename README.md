@@ -103,7 +103,7 @@ Visit our [Cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main) to get i
 
 ## Self-hosting
 
-Read the [self-hosting guide](https://github.com/e2b-dev/infra/blob/main/self-host.md) to learn how to set up the [E2B infrastructure](https://github.com/e2b-dev/infra) on your own. The infrastructure is deployed using Terraform. 
+Read the [self-hosting guide](https://github.com/e2b-dev/runtime) to learn how to set up the [E2B infrastructure](https://github.com/e2b-dev/runtime) on your own. The infrastructure is deployed using Terraform. 
 
 Supported cloud providers:
 - 🟢 AWS
