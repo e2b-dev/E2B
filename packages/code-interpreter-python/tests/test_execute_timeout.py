@@ -13,6 +13,7 @@ import time
 
 import httpx
 import pytest
+from pyqwest.httpx._transport import convert_timeout
 
 from e2b import TimeoutException
 from e2b.connection_config import ConnectionConfig
@@ -80,6 +81,11 @@ def _captured_timeout(captured: dict) -> httpx.Timeout:
     return timeout
 
 
+def _derived_deadline(timeout: httpx.Timeout) -> float | None:
+    """The single operation deadline the transport derives for a request."""
+    return convert_timeout({"timeout": timeout.as_dict()})
+
+
 class _StallingJupyterServer:
     """Plays a Jupyter server that sends the headers, then stalls.
 
@@ -136,6 +142,7 @@ def test_execution_timeout_is_the_request_deadline(timeout):
     assert tmo.read == timeout
     assert tmo.write == 0
     assert tmo.connect == REQUEST_TIMEOUT
+    assert _derived_deadline(tmo) == timeout
 
 
 @pytest.mark.parametrize("timeout", [3, 10, 300])
@@ -148,6 +155,7 @@ async def test_async_execution_timeout_is_the_request_deadline(timeout):
     assert tmo.read == timeout
     assert tmo.write == 0
     assert tmo.connect == REQUEST_TIMEOUT
+    assert _derived_deadline(tmo) == timeout
 
 
 def test_zero_timeout_disables_the_deadline():
