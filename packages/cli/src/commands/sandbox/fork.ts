@@ -6,11 +6,13 @@ import { ensureAPIKey } from 'src/api'
 import { asBold } from 'src/utils/format'
 import { parseTimeout } from './create'
 
+const MAX_COUNT = 100
+
 function parseCount(countRaw: string): number {
   const count = Number(countRaw)
-  if (!Number.isInteger(count) || count < 1) {
+  if (!Number.isInteger(count) || count < 1 || count > MAX_COUNT) {
     throw new commander.InvalidArgumentError(
-      '--count must be a positive integer'
+      `--count must be an integer between 1 and ${MAX_COUNT}`
     )
   }
 
@@ -28,7 +30,7 @@ export const forkCommand = new commander.Command('fork')
   .alias('fk')
   .option(
     '-n, --count <count>',
-    'number of forks to create (default: 1)',
+    `number of forks to create, at most ${MAX_COUNT} (default: 1)`,
     parseCount
   )
   .option(

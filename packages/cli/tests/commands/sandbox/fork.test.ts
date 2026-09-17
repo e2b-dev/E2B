@@ -114,10 +114,13 @@ describe('sandbox fork', () => {
     expect(exitSpy).toHaveBeenCalledWith(1)
   })
 
-  test('rejects a non-positive count', async () => {
-    await expect(runFork(['source-id', '--count', '0'])).rejects.toThrow(
-      '--count must be a positive integer'
-    )
-    expect(mocks.fork).not.toHaveBeenCalled()
-  })
+  test.each(['0', '101', '1.5', 'abc'])(
+    'rejects count %s',
+    async (count: string) => {
+      await expect(runFork(['source-id', '--count', count])).rejects.toThrow(
+        '--count must be an integer between 1 and 100'
+      )
+      expect(mocks.fork).not.toHaveBeenCalled()
+    }
+  )
 })
