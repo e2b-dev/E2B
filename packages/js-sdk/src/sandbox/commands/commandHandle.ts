@@ -4,6 +4,7 @@ import {
 } from '../../envd/rpc'
 import { SandboxError } from '../../errors'
 import { ConnectResponse, StartResponse } from '../../envd/process/process_pb'
+import { Logger } from '../../logs'
 import type { CommandRequestOpts } from '.'
 
 declare const __brand: unique symbol
@@ -121,9 +122,29 @@ export class CommandHandle
     private readonly handleCloseStdin?: (
       opts?: CommandRequestOpts
     ) => Promise<void>,
-    private readonly checkHealth?: SandboxHealthCheck
+    private readonly checkHealth?: SandboxHealthCheck,
+    private readonly logger?: Logger
   ) {
     this._wait = this.handleEvents()
+  }
+
+  private streamEndLogged = false
+
+  /**
+   * Record why the command's output stream ended on the client side.
+   *
+   * The server (envd) only sees that the stream was cancelled, not why; this
+   * logs the local cause so the two can be correlated. No-op when no logger was
+   * configured. Records at most once per handle so the disconnect() and
+   * stream-error paths cannot emit two contradictory causes for the same
+   * command. See e2b-dev/E2B#1877.
+   */
+  private logStreamEnded(reason: string) {
+    if (!this.logger?.info || this.streamEndLogged) {
+      return
+    }
+    this.streamEndLogged = true
+    this.logger.info(`command stream ended (pid=${this.pid}): ${reason}`)
   }
 
   /**
@@ -193,6 +214,7 @@ export class CommandHandle
    * whose stream produces no further output.
    */
   async disconnect() {
+    this.logStreamEnded('explicit disconnect() (command left running)')
     this.disconnected = true
     this.handleDisconnect()
   }
@@ -328,6 +350,9 @@ export class CommandHandle
       // failure). Flush any bytes still buffered in the decoders so incomplete
       // trailing sequences surface as replacement characters instead of being
       // silently dropped, then re-raise so the error is still surfaced.
+      this.logStreamEnded(
+        `stream error before end event: ${e instanceof Error ? `${e.name}: ${e.message}` : String(e)}`
+      )
       yield* this.flushDecoders()
       throw e
     }

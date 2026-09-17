@@ -43,6 +43,7 @@ class CommandHandle:
         ] = None,
         handle_close_stdin: Optional[Callable[[Optional[float]], None]] = None,
         check_health: Optional[Callable[[], Optional[bool]]] = None,
+        *,
         logger: Optional[logging.Logger] = None,
     ):
         self._pid = pid
@@ -52,6 +53,7 @@ class CommandHandle:
         self._check_health = check_health
         self._events = events
         self._logger = logger
+        self._stream_end_logged = False
 
         self._stdout_chunks: List[str] = []
         self._stderr_chunks: List[str] = []
@@ -76,10 +78,13 @@ class CommandHandle:
 
         The server (envd) only sees that the stream was cancelled, not why; this
         logs the local cause so the two can be correlated. No-op when no logger
-        was configured. See e2b-dev/E2B#1877.
+        was configured. Records at most once per handle so the disconnect() and
+        generator-close paths cannot emit two contradictory causes for the same
+        command.
         """
-        if self._logger is None:
+        if self._logger is None or self._stream_end_logged:
             return
+        self._stream_end_logged = True
         self._logger.info("command stream ended (pid=%s): %s", self._pid, reason)
 
     def _flush_decoders(
