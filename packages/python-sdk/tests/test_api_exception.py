@@ -71,3 +71,12 @@ def test_rate_limit_carries_429():
 
     assert isinstance(err, RateLimitException)
     assert err.status_code == 429
+
+
+def test_non_object_json_body_maps_without_crashing():
+    # A proxy or gateway in front of the API can return a bare scalar as the JSON
+    # error body; it must still map to a SandboxException, not raise a TypeError.
+    for body in (b"null", b"42", b"true"):
+        err = handle_api_exception(response(500, body))
+        assert isinstance(err, SandboxException)
+        assert err.status_code == 500

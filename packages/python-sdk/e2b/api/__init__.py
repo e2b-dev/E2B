@@ -225,7 +225,15 @@ def handle_api_exception(
     except json.JSONDecodeError:
         body = {}
 
-    message = body["message"] if "message" in body else None
+    # The body is valid JSON but not necessarily an object: a proxy or gateway
+    # in front of the API can return a bare string or scalar. Mirror the JS SDK,
+    # which tolerates a non-object body instead of raising a low-level error.
+    if isinstance(body, dict):
+        message = body.get("message")
+    elif isinstance(body, str) and body:
+        message = body
+    else:
+        message = None
     if message is None and e.status_code not in (401, 429, 503):
         err = default_exception_class(f"{e.status_code}: {e.content}").with_traceback(
             stack_trace
