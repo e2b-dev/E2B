@@ -1,6 +1,11 @@
 import { describe, expect, test, vi } from 'vitest'
 
-import { parseRetryAfter, resolveRetries, withRetry } from '../src/retry'
+import {
+  isConnectionError,
+  parseRetryAfter,
+  resolveRetries,
+  withRetry,
+} from '../src/retry'
 import { EnvdApiClient } from '../src/envd/api'
 import { InvalidArgumentError } from '../src/errors'
 
@@ -362,5 +367,145 @@ test('envd clients do not retry rate-limited requests', async () => {
   const response = await client.api.GET('/health')
 
   expect(response.response.status).toBe(429)
+  expect(fetchImpl).toHaveBeenCalledOnce()
+})
+
+function connectError(code: string, syscall = 'connect'): TypeError {
+  return new TypeError('fetch failed', {
+    cause: Object.assign(new Error(`${syscall} ${code}`), { code, syscall }),
+  })
+}
+
+describe('isConnectionError', () => {
+  test.each([
+    connectError('ECONNREFUSED'),
+    connectError('ENOTFOUND', 'getaddrinfo'),
+    connectError('ETIMEDOUT'),
+    Object.assign(new Error('fetch failed'), {
+      cause: new AggregateError([connectError('ECONNREFUSED').cause]),
+    }),
+    Object.assign(new TypeError('Unable to connect'), {
+      code: 'ConnectionRefused',
+    }),
+    new TypeError(
+      'error sending request for url (http://x): client error (Connect): tcp connect error'
+    ),
+  ])('recognizes %s', (error) => {
+    expect(isConnectionError(error)).toBe(true)
+  })
+
+  test.each([
+    new TypeError('fetch failed', {
+      cause: Object.assign(new Error('read ECONNRESET'), {
+        code: 'ECONNRESET',
+        syscall: 'read',
+      }),
+    }),
+    new TypeError('fetch failed', {
+      cause: Object.assign(new Error('socket'), { code: 'UND_ERR_SOCKET' }),
+    }),
+    new TypeError(
+      'error sending request for url (http://x): client error (SendRequest)'
+    ),
+    new DOMException('aborted', 'AbortError'),
+    'ECONNREFUSED',
+  ])('rejects %s', (error) => {
+    expect(isConnectionError(error)).toBe(false)
+  })
+})
+
+test('retries a connection failure with exponential backoff', async () => {
+  const outcomes = [
+    () => Promise.reject(connectError('ECONNREFUSED')),
+    () => Promise.reject(connectError('ENOTFOUND', 'getaddrinfo')),
+    () => Promise.resolve(new Response('ok')),
+  ]
+  const fetchImpl = vi.fn(() => outcomes.shift()!()) as typeof fetch
+  const sleep = vi.fn(async () => {})
+  const fetchWithRetry = withRetry(fetchImpl, 3, 60_000, {
+    monotonic: () => 0,
+    sleep,
+    random: () => 1,
+  })
+
+  const response = await fetchWithRetry('https://api.e2b.test/resource', {
+    method: 'POST',
+    body: 'payload',
+  })
+
+  expect(response.status).toBe(200)
+  expect(fetchImpl).toHaveBeenCalledTimes(3)
+  expect(sleep.mock.calls.map(([delayMs]) => delayMs)).toEqual([100, 200])
+  const bodies = await Promise.all(
+    fetchImpl.mock.calls.map(([request]) => (request as Request).text())
+  )
+  expect(bodies).toEqual(['payload', 'payload', 'payload'])
+})
+
+test('rethrows the connection failure after exhausting retries', async () => {
+  const error = connectError('ECONNREFUSED')
+  const fetchImpl = vi.fn(async () => {
+    throw error
+  }) as typeof fetch
+  const fetchWithRetry = withRetry(fetchImpl, 2, 10_000, {
+    monotonic: () => 0,
+    sleep: async () => {},
+  })
+
+  await expect(fetchWithRetry('https://api.e2b.test/resource')).rejects.toBe(
+    error
+  )
+  expect(fetchImpl).toHaveBeenCalledTimes(3)
+})
+
+test('rethrows a connection failure when the backoff would exceed the request timeout', async () => {
+  const error = connectError('ECONNREFUSED')
+  const fetchImpl = vi.fn(async () => {
+    throw error
+  }) as typeof fetch
+  const sleep = vi.fn(async () => {})
+  const fetchWithRetry = withRetry(fetchImpl, 3, 80, {
+    monotonic: () => 0,
+    sleep,
+    random: () => 1,
+  })
+
+  await expect(fetchWithRetry('https://api.e2b.test/resource')).rejects.toBe(
+    error
+  )
+  expect(fetchImpl).toHaveBeenCalledOnce()
+  expect(sleep).not.toHaveBeenCalled()
+})
+
+test.each([
+  new TypeError('fetch failed', {
+    cause: Object.assign(new Error('read ECONNRESET'), { code: 'ECONNRESET' }),
+  }),
+  new DOMException('aborted', 'AbortError'),
+])('does not retry %s', async (error) => {
+  const fetchImpl = vi.fn(async () => {
+    throw error
+  }) as typeof fetch
+  const fetchWithRetry = withRetry(fetchImpl, 3, 10_000, {
+    monotonic: () => 0,
+    sleep: async () => {},
+  })
+
+  await expect(fetchWithRetry('https://api.e2b.test/resource')).rejects.toBe(
+    error
+  )
+  expect(fetchImpl).toHaveBeenCalledOnce()
+})
+
+test('retries=0 propagates a connection failure unchanged', async () => {
+  const error = connectError('ECONNREFUSED')
+  const fetchImpl = vi.fn(async () => {
+    throw error
+  }) as typeof fetch
+  const fetchWithRetry = withRetry(fetchImpl, 0, 10_000)
+
+  await expect(fetchWithRetry('https://api.e2b.test/resource')).rejects.toBe(
+    error
+  )
   expect(fetchImpl).toHaveBeenCalledOnce()
 })

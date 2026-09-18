@@ -7,6 +7,24 @@ const BACKOFF_BASE_MS = 100
 const BACKOFF_MAX_MS = 10_000
 const BACKOFF_JITTER_MIN = 0.5
 const RETRYABLE_STATUSES = new Set([429, 502, 503])
+// Error codes raised while establishing the connection, before any request
+// bytes are written: Node/undici (`ECONNREFUSED`, `ENOTFOUND`, ...), Bun
+// (`ConnectionRefused`). Post-write failures such as `ECONNRESET` are
+// excluded: the server may have received the request.
+const CONNECTION_ERROR_CODES = new Set([
+  'ECONNREFUSED',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  'EHOSTUNREACH',
+  'ENETUNREACH',
+  'ENETDOWN',
+  'EHOSTDOWN',
+  'UND_ERR_CONNECT_TIMEOUT',
+  'ConnectionRefused',
+])
+const CONNECTION_ERROR_SYSCALLS = new Set(['connect', 'getaddrinfo'])
+// Deno reports hyper's connect-phase failures as `client error (Connect)`.
+const DENO_CONNECTION_ERROR = /client error \(Connect\)/
 
 export function resolveRetries(retries: number): number {
   if (!Number.isInteger(retries) || retries < 0) {
@@ -31,6 +49,27 @@ export function parseRetryAfter(
     : undefined
 }
 
+/**
+ * Whether `error` (thrown by `fetch`) is a failure to establish the connection.
+ * Walks `cause` chains and `AggregateError` members, as Node wraps the socket
+ * error in a `TypeError('fetch failed')`.
+ */
+export function isConnectionError(error: unknown, depth = 0): boolean {
+  if (!(error instanceof Error) || depth > 4) return false
+
+  const { code, syscall } = error as { code?: unknown; syscall?: unknown }
+  if (typeof code === 'string' && CONNECTION_ERROR_CODES.has(code)) return true
+  if (typeof syscall === 'string' && CONNECTION_ERROR_SYSCALLS.has(syscall)) {
+    return true
+  }
+  if (DENO_CONNECTION_ERROR.test(error.message)) return true
+
+  if (error instanceof AggregateError) {
+    return error.errors.some((member) => isConnectionError(member, depth + 1))
+  }
+  return isConnectionError(error.cause, depth + 1)
+}
+
 type RetryDependencies = {
   monotonic?: () => number
   sleep?: (delayMs: number, signal: AbortSignal) => Promise<void>
@@ -53,6 +92,13 @@ function wait(delayMs: number, signal: AbortSignal): Promise<void> {
   })
 }
 
+function backoffMs(attempt: number, random: () => number): number {
+  const backoff = Math.min(BACKOFF_BASE_MS * 2 ** attempt, BACKOFF_MAX_MS)
+  return Math.floor(
+    backoff * (BACKOFF_JITTER_MIN + random() * (1 - BACKOFF_JITTER_MIN))
+  )
+}
+
 /**
  * Delay before the next attempt, or `undefined` when the response is not
  * retried: `Retry-After` when the server sends a usable one, otherwise
@@ -70,15 +116,13 @@ function retryDelayMs(
   if (retryAfter !== undefined) return retryAfter * 1000
   if (response.status === 429) return undefined
 
-  const backoff = Math.min(BACKOFF_BASE_MS * 2 ** attempt, BACKOFF_MAX_MS)
-  return Math.floor(
-    backoff * (BACKOFF_JITTER_MIN + random() * (1 - BACKOFF_JITTER_MIN))
-  )
+  return backoffMs(attempt, random)
 }
 
 /**
- * Retry replayable requests after a 429 carrying `Retry-After` or a 502/503
- * (using `Retry-After` when present, exponential backoff otherwise).
+ * Retry replayable requests after a 429 carrying `Retry-After`, a 502/503
+ * (using `Retry-After` when present, exponential backoff otherwise) or a
+ * failure to establish the connection (exponential backoff).
  */
 export function withRetry(
   fetchImpl: typeof fetch,
@@ -109,9 +153,20 @@ export function withRetry(
       monotonic() + (requestTimeoutMs || MAX_RETRY_WAIT_WITHOUT_TIMEOUT_MS)
 
     for (let attempt = 0; ; attempt++) {
-      const response = await fetchImpl(
-        attempt === retries ? request : request.clone()
-      )
+      let response: Response
+      try {
+        response = await fetchImpl(
+          attempt === retries ? request : request.clone()
+        )
+      } catch (error) {
+        if (attempt === retries || !isConnectionError(error)) throw error
+
+        const delayMs = backoffMs(attempt, random)
+        if (monotonic() + delayMs >= deadline) throw error
+
+        await sleep(delayMs, request.signal)
+        continue
+      }
       if (attempt === retries) return response
 
       const delayMs = retryDelayMs(response, attempt, random)

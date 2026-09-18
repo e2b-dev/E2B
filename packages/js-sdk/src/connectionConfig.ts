@@ -61,11 +61,13 @@ export interface ConnectionOpts {
    */
   requestTimeoutMs?: number
   /**
-   * Number of control-plane API retries after a 429, 502 or 503 response.
+   * Number of control-plane API retries after a 429, 502 or 503 response or
+   * a failure to establish the connection (refused, DNS, unreachable host).
    * A 429 is retried only with a valid, non-negative integer delta-seconds
    * `Retry-After` header (HTTP-date and malformed values are not retried).
-   * 502 and 503 honor such a `Retry-After` when present and otherwise use
-   * exponential backoff with jitter starting at 100 ms (capped at 10 s).
+   * 502 and 503 honor such a `Retry-After` when present; otherwise they and
+   * connection failures use exponential backoff with jitter starting at
+   * 100 ms (capped at 10 s).
    * Retry waits use a 60-second total limit when request timeouts are disabled.
    *
    * @default 3
