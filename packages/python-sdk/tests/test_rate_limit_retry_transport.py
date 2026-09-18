@@ -180,13 +180,13 @@ def test_retries_unavailable_status_with_exponential_backoff_and_jitter(status):
     ).handle_request(request)
 
     assert response.status_code == 200
-    assert sleeps == [0.25, 1.0, 1.5]
+    assert sleeps == pytest.approx([0.05, 0.2, 0.3])
     assert [item.content for item in inner.requests] == [b"payload"] * 4
     assert all(item.is_closed for item in inner.responses[:-1])
 
 
 def test_backoff_is_capped_for_long_retry_sequences():
-    inner = FakeTransport([503] * 7, retry_after=None)
+    inner = FakeTransport([503] * 9, retry_after=None)
     sleeps = []
     request = httpx.Request(
         "GET",
@@ -196,13 +196,13 @@ def test_backoff_is_capped_for_long_retry_sequences():
 
     RetryableTransport(
         inner,
-        retries=6,
+        retries=8,
         sleep=sleeps.append,
         monotonic=lambda: 0.0,
         random_=lambda: 1.0,
     ).handle_request(request)
 
-    assert sleeps == [0.5, 1.0, 2.0, 4.0, 8.0, 8.0]
+    assert sleeps == pytest.approx([0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 10.0])
 
 
 def test_unavailable_status_prefers_retry_after_over_backoff():
@@ -238,7 +238,7 @@ def test_backoff_exceeding_timeout_is_propagated_as_is():
     request = httpx.Request(
         "GET",
         "https://api.test",
-        extensions={"timeout": {"connect": 0.4, "read": 0.4}},
+        extensions={"timeout": {"connect": 0.08, "read": 0.08}},
     )
 
     response = RetryableTransport(
@@ -477,7 +477,7 @@ async def test_async_retries_unavailable_status_with_backoff():
     )
 
     assert response.status_code == 200
-    assert sleeps == [0.25, 1.0]
+    assert sleeps == pytest.approx([0.05, 0.2])
     assert [item.content for item in inner.requests] == [b"payload"] * 3
     assert all(item.is_closed for item in inner.responses[:-1])
 

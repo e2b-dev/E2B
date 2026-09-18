@@ -202,9 +202,7 @@ test.each([502, 503])(
 
     expect(response.status).toBe(200)
     expect(fetchImpl).toHaveBeenCalledTimes(4)
-    expect(sleep.mock.calls.map(([delayMs]) => delayMs)).toEqual([
-      250, 1_000, 1_500,
-    ])
+    expect(sleep.mock.calls.map(([delayMs]) => delayMs)).toEqual([50, 200, 300])
   }
 )
 
@@ -213,7 +211,7 @@ test('caps the backoff for long retry sequences', async () => {
     async () => new Response(null, { status: 503 })
   ) as typeof fetch
   const sleep = vi.fn(async () => {})
-  const fetchWithRetry = withRetry(fetchImpl, 6, 0, {
+  const fetchWithRetry = withRetry(fetchImpl, 8, 0, {
     monotonic: () => 0,
     sleep,
     random: () => 1,
@@ -222,7 +220,7 @@ test('caps the backoff for long retry sequences', async () => {
   await fetchWithRetry('https://api.e2b.test/resource')
 
   expect(sleep.mock.calls.map(([delayMs]) => delayMs)).toEqual([
-    500, 1_000, 2_000, 4_000, 8_000, 8_000,
+    100, 200, 400, 800, 1_600, 3_200, 6_400, 10_000,
   ])
 })
 
@@ -271,7 +269,7 @@ test('propagates 502 when the backoff would exceed the request timeout', async (
     async () => new Response(null, { status: 502 })
   ) as typeof fetch
   const sleep = vi.fn(async () => {})
-  const fetchWithRetry = withRetry(fetchImpl, 3, 400, {
+  const fetchWithRetry = withRetry(fetchImpl, 3, 80, {
     monotonic: () => 0,
     sleep,
     random: () => 1,

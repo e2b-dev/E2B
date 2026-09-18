@@ -65,7 +65,7 @@ export interface ConnectionOpts {
    * A 429 is retried only with a valid, non-negative integer delta-seconds
    * `Retry-After` header (HTTP-date and malformed values are not retried).
    * 502 and 503 honor such a `Retry-After` when present and otherwise use
-   * exponential backoff with jitter starting at 500 ms.
+   * exponential backoff with jitter starting at 100 ms (capped at 10 s).
    * Retry waits use a 60-second total limit when request timeouts are disabled.
    *
    * @default 3

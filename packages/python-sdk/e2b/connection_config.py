@@ -55,7 +55,7 @@ class ApiParams(TypedDict, total=False):
     A 429 is retried only with a valid, non-negative integer delta-seconds
     ``Retry-After`` header (HTTP-date and malformed values are not retried).
     502 and 503 honor such a ``Retry-After`` when present and otherwise use
-    exponential backoff with jitter starting at 0.5 seconds.
+    exponential backoff with jitter starting at 0.1 seconds (capped at 10 seconds).
     A retry is skipped when its wait would exhaust the request timeout.
     Retry waits use a 60-second total limit when request timeouts are disabled.
     Set to ``0`` to disable retries. Defaults to 3 retries.

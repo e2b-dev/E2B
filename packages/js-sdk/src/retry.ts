@@ -3,8 +3,8 @@ import { isReadableStreamLike } from './is'
 
 const MAX_RETRY_AFTER_SECONDS = 2_147_483
 const MAX_RETRY_WAIT_WITHOUT_TIMEOUT_MS = 60_000
-const BACKOFF_BASE_MS = 500
-const BACKOFF_MAX_MS = 8_000
+const BACKOFF_BASE_MS = 100
+const BACKOFF_MAX_MS = 10_000
 const BACKOFF_JITTER_MIN = 0.5
 const RETRYABLE_STATUSES = new Set([429, 502, 503])
 
