@@ -12,8 +12,8 @@ e2b.ConnectionConfig.setIntegration(`e2b-cli/${packageJSON.version}`)
 export type Teams =
   e2b.paths['/teams']['get']['responses'][200]['content']['application/json']
 
-export let apiKey = process.env.E2B_API_KEY
-export const projectId = process.env.E2B_PROJECT_ID || process.env.E2B_TEAM_ID
+let apiKey = process.env.E2B_API_KEY
+const projectId = process.env.E2B_PROJECT_ID || process.env.E2B_TEAM_ID
 
 const authErrorBox = () => {
   const body = `You must be logged in to use this command. Run ${asBold(
