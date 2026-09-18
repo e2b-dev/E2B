@@ -377,39 +377,80 @@ function connectError(code: string, syscall = 'connect'): TypeError {
 }
 
 describe('isConnectionError', () => {
-  test.each([
-    connectError('ECONNREFUSED'),
-    connectError('ENOTFOUND', 'getaddrinfo'),
-    connectError('ETIMEDOUT'),
-    Object.assign(new Error('fetch failed'), {
+  // Shapes observed from `fetch()` against a refused port / unresolvable host.
+  const connectFailures = {
+    'Node refused': connectError('ECONNREFUSED'),
+    'Node dns': connectError('ENOTFOUND', 'getaddrinfo'),
+    'Node connect timeout': connectError('ETIMEDOUT'),
+    'Node happy-eyeballs': Object.assign(new Error('fetch failed'), {
       cause: new AggregateError([connectError('ECONNREFUSED').cause]),
     }),
-    Object.assign(new TypeError('Unable to connect'), {
-      code: 'ConnectionRefused',
-    }),
-    new TypeError(
+    'Bun refused': Object.assign(
+      new TypeError(
+        'Unable to connect. Is the computer able to access the url?'
+      ),
+      { code: 'ConnectionRefused' }
+    ),
+    'Bun dns': Object.assign(
+      new TypeError('getaddrinfo ENOTFOUND nonexistent.invalid'),
+      { code: 'ENOTFOUND', syscall: 'getaddrinfo' }
+    ),
+    'Deno refused': new TypeError(
       'error sending request for url (http://x): client error (Connect): tcp connect error'
     ),
-  ])('recognizes %s', (error) => {
+    'Deno dns': new TypeError(
+      'error sending request for url (http://x): client error (Connect): dns error'
+    ),
+  }
+
+  test.each(Object.entries(connectFailures))('recognizes %s', (_, error) => {
     expect(isConnectionError(error)).toBe(true)
   })
 
-  test.each([
-    new TypeError('fetch failed', {
+  // Connection dropped after the request was (at least partially) written:
+  // the server may have processed it, so these must not be replayed.
+  const terminated = {
+    Node: new TypeError('terminated'),
+    'Node reset': new TypeError('fetch failed', {
       cause: Object.assign(new Error('read ECONNRESET'), {
         code: 'ECONNRESET',
         syscall: 'read',
       }),
     }),
-    new TypeError('fetch failed', {
+    'Node socket': new TypeError('fetch failed', {
       cause: Object.assign(new Error('socket'), { code: 'UND_ERR_SOCKET' }),
     }),
-    new TypeError(
+    Bun: new Error('The socket connection was closed unexpectedly'),
+    Deno: new TypeError('error reading a body from connection'),
+    'Deno send': new TypeError(
       'error sending request for url (http://x): client error (SendRequest)'
     ),
-    new DOMException('aborted', 'AbortError'),
-    'ECONNREFUSED',
-  ])('rejects %s', (error) => {
+    'Cloudflare Workers': new Error('Network connection lost.'),
+    Browser: new TypeError('network error'),
+  }
+
+  // Opaque failures that look identical whether the connection was never
+  // established or was lost mid-request.
+  const opaque = {
+    'Cloudflare Workers': Object.assign(new Error('Network connection lost.'), {
+      remote: true,
+      retryable: true,
+    }),
+    'Cloudflare Workers dns': Object.assign(
+      new Error('internal error; reference = abc'),
+      { remote: true }
+    ),
+    Chrome: new TypeError('Failed to fetch'),
+    Firefox: new TypeError('NetworkError when attempting to fetch resource.'),
+    Safari: new TypeError('Load failed'),
+  }
+
+  test.each([
+    ...Object.entries(terminated),
+    ...Object.entries(opaque),
+    ['abort', new DOMException('aborted', 'AbortError')],
+    ['non-error', 'ECONNREFUSED'],
+  ])('rejects %s', (_, error) => {
     expect(isConnectionError(error)).toBe(false)
   })
 })
