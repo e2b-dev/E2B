@@ -147,7 +147,9 @@ def test_rpc_clients_run_on_the_shared_envd_transport(test_api_key, monkeypatch,
     # calls draw on the same pools and load counts. `pyqwest.SyncClient`
     # doesn't hand its transport back, so record what the normalization is
     # given.
-    config = ConnectionConfig(api_key=test_api_key, sandbox_http2=http2)
+    config = ConnectionConfig(
+        api_key=test_api_key, http_version="http2" if http2 else "http1"
+    )
     pool = api_client_sync.get_envd_pyqwest_transport(None, http2=http2)
     async_pool = api_client_async.get_envd_pyqwest_transport(None, http2=http2)
     assert isinstance(pool, api_client_sync.EnvdPoolTransport)

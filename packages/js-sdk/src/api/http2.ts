@@ -11,19 +11,19 @@ const DEFAULT_API_CONNECTION_LIMIT = 100
 // Override via env if your workload needs different.
 const DEFAULT_API_INFLIGHT_LIMIT = 1000
 
-// Fetchers are cached per proxy so requests without a proxy keep sharing a
-// single dispatcher while each distinct proxy URL gets its own.
+// Fetchers are cached per proxy and HTTP version so requests without a proxy
+// keep sharing a single dispatcher while each distinct proxy URL gets its own.
 const apiFetchers = new Map<string, typeof fetch>()
 
-export function createApiFetch(proxy?: string): typeof fetch {
-  const key = proxy ?? ''
+export function createApiFetch(proxy?: string, http2 = true): typeof fetch {
+  const key = `${http2 ? 'h2' : 'h1'}:${proxy ?? ''}`
 
   const cached = apiFetchers.get(key)
   if (cached) {
     return cached
   }
 
-  const apiFetch = createApiFetchForRuntime(runtime, { proxy })
+  const apiFetch = createApiFetchForRuntime(runtime, { proxy, http2 })
   apiFetchers.set(key, apiFetch)
 
   return apiFetch
@@ -35,6 +35,7 @@ export function createApiFetchForRuntime(
     connectionLimit?: number
     inflightLimit?: number
     proxy?: string
+    http2?: boolean
     loadUndici?: () => Promise<UndiciModule | undefined>
   } = {}
 ): typeof fetch {
@@ -45,6 +46,7 @@ export function createApiFetchForRuntime(
       connections: options.connectionLimit ?? getApiConnectionLimit(),
       inflightLimit: options.inflightLimit ?? getApiInflightLimit(),
       proxy: options.proxy,
+      http2: options.http2,
       loadUndici: options.loadUndici,
     })
   )

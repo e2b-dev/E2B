@@ -16,10 +16,13 @@ vi.mock('../../src/envd/http2', () => ({
 
 afterEach(() => {
   vi.clearAllMocks()
-  delete process.env.E2B_SANDBOX_HTTP2
+  delete process.env.E2B_HTTP_VERSION
 })
 
-async function createSandbox(opts: { sandboxHttp2?: boolean; proxy?: string }) {
+async function createSandbox(opts: {
+  httpVersion?: 'http1' | 'http2'
+  proxy?: string
+}) {
   const { ConnectionConfig, Sandbox } = await import('../../src')
   const config = new ConnectionConfig(opts)
   return new Sandbox({
@@ -38,8 +41,8 @@ test('envd fetchers default to HTTP/2', async () => {
   assert.deepEqual(mocks.createEnvdRpcFetch.mock.calls[0], [undefined, true])
 })
 
-test('sandboxHttp2: false pins envd HTTP and RPC fetchers to HTTP/1.1', async () => {
-  await createSandbox({ sandboxHttp2: false, proxy: 'http://127.0.0.1:8080' })
+test('httpVersion: http1 pins envd HTTP and RPC fetchers to HTTP/1.1', async () => {
+  await createSandbox({ httpVersion: 'http1', proxy: 'http://127.0.0.1:8080' })
 
   assert.deepEqual(mocks.createEnvdFetch.mock.calls[0], [
     'http://127.0.0.1:8080',
@@ -51,8 +54,8 @@ test('sandboxHttp2: false pins envd HTTP and RPC fetchers to HTTP/1.1', async ()
   ])
 })
 
-test('E2B_SANDBOX_HTTP2=false pins envd fetchers to HTTP/1.1', async () => {
-  process.env.E2B_SANDBOX_HTTP2 = 'false'
+test('E2B_HTTP_VERSION=http1 pins envd fetchers to HTTP/1.1', async () => {
+  process.env.E2B_HTTP_VERSION = 'http1'
   await createSandbox({})
 
   assert.deepEqual(mocks.createEnvdFetch.mock.calls[0], [undefined, false])

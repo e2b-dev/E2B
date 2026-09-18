@@ -2,7 +2,7 @@ import logging
 import os
 import re
 
-from typing import cast, Mapping, Optional, Dict, TypedDict, Union
+from typing import cast, Literal, Mapping, Optional, Dict, TypedDict, Union
 
 import httpx
 from typing_extensions import Unpack
@@ -38,6 +38,8 @@ READ_TIMEOUT: float = 60.0  # 60 seconds
 
 KEEPALIVE_PING_INTERVAL_SEC = 50  # 50 seconds
 KEEPALIVE_PING_HEADER = "Keepalive-Ping-Interval"
+
+HttpVersion = Literal["http1", "http2"]
 
 
 class ApiParams(TypedDict, total=False):
@@ -88,13 +90,13 @@ class ApiParams(TypedDict, total=False):
     sandbox_url: Optional[str]
     """URL to connect to sandbox, defaults to `E2B_SANDBOX_URL` environment variable."""
 
-    sandbox_http2: Optional[bool]
-    """Whether requests to the sandbox (commands, filesystem, PTY) may use
-    HTTP/2, defaults to `E2B_SANDBOX_HTTP2` environment variable or `True`.
-    Set to `False` to pin them to HTTP/1.1, which uses one connection per
+    http_version: Optional[HttpVersion]
+    """HTTP version for requests to the E2B API and to sandboxes (commands,
+    filesystem, PTY), defaults to `E2B_HTTP_VERSION` environment variable or
+    `"http2"`. `"http1"` pins them to HTTP/1.1, which uses one connection per
     concurrent request instead of multiplexing streams over shared connections
     — for example when an intermediary on the path retires or mishandles
-    long-lived HTTP/2 connections. Does not affect requests to the E2B API."""
+    long-lived HTTP/2 connections."""
 
 
 class ApiParamsWithLogger(ApiParams, total=False):
@@ -205,8 +207,13 @@ class ConnectionConfig:
         return os.getenv("E2B_SANDBOX_URL")
 
     @staticmethod
-    def _sandbox_http2():
-        return (os.getenv("E2B_SANDBOX_HTTP2") or "true").lower() != "false"
+    def _http_version() -> HttpVersion:
+        value = (os.getenv("E2B_HTTP_VERSION") or "http2").lower()
+        if value not in ("http1", "http2"):
+            raise ValueError(
+                f"E2B_HTTP_VERSION must be 'http1' or 'http2', got {value!r}"
+            )
+        return cast(HttpVersion, value)
 
     @staticmethod
     def _get_request_source() -> Optional[str]:
@@ -255,7 +262,7 @@ class ConnectionConfig:
         validate_api_key: Optional[bool] = None,
         api_url: Optional[str] = None,
         sandbox_url: Optional[str] = None,
-        sandbox_http2: Optional[bool] = None,
+        http_version: Optional[HttpVersion] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
         api_headers: Optional[Dict[str, str]] = None,
@@ -297,10 +304,10 @@ class ConnectionConfig:
         self._sandbox_url: Optional[str] = (
             sandbox_url or ConnectionConfig._sandbox_url()
         )
-        self.sandbox_http2 = (
-            sandbox_http2
-            if sandbox_http2 is not None
-            else ConnectionConfig._sandbox_http2()
+        self.http_version: HttpVersion = (
+            http_version
+            if http_version is not None
+            else ConnectionConfig._http_version()
         )
 
     @staticmethod
@@ -380,7 +387,7 @@ class ConnectionConfig:
         debug = opts.get("debug")
         proxy = opts.get("proxy")
         sandbox_url = opts.get("sandbox_url")
-        sandbox_http2 = opts.get("sandbox_http2")
+        http_version = opts.get("http_version")
         retries = opts.get("retries")
 
         req_headers = self.headers.copy()
@@ -420,8 +427,8 @@ class ConnectionConfig:
                     if sandbox_url is not None
                     else cast(Optional[str], self._sandbox_url)
                 ),
-                sandbox_http2=(
-                    sandbox_http2 if sandbox_http2 is not None else self.sandbox_http2
+                http_version=(
+                    http_version if http_version is not None else self.http_version
                 ),
                 logger=self.logger,
                 retries=retries if retries is not None else self.retries,

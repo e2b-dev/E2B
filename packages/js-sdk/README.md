@@ -66,15 +66,15 @@ const paginator = Sandbox.list()
 
 Per-call options still take precedence over the client's options, and clients are isolated from each other and from the env-configured top-level exports.
 
-### Sandbox transport
+### HTTP version
 
-In Node, sandbox `commands`, `files` and `pty` traffic goes through a bounded pool of HTTP/2 connections (`E2B_ENVD_RPC_CONNECTIONS`, default `200`, for streams). To avoid HTTP/2 for sandbox traffic altogether — for example when an intermediary on the path retires long-lived HTTP/2 connections — pin it to HTTP/1.1. Requests to the E2B API are unaffected:
+In Node, requests to the E2B API and to sandboxes (`commands`, `files`, `pty`) go through bounded pools of HTTP/2 connections (`E2B_API_CONNECTIONS`, default `100`; `E2B_ENVD_RPC_CONNECTIONS`, default `200`). To avoid HTTP/2 altogether — for example when an intermediary on the path retires long-lived HTTP/2 connections — pin the SDK to HTTP/1.1:
 
 ```ts
-const sandbox = await Sandbox.create({ sandboxHttp2: false })
+const sandbox = await Sandbox.create({ httpVersion: 'http1' })
 ```
 
-or, for the whole process, `E2B_SANDBOX_HTTP2=false`.
+or, for the whole process, `E2B_HTTP_VERSION=http1`.
 
 ### 5. Code execution with Code Interpreter
 

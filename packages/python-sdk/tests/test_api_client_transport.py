@@ -2,7 +2,6 @@ import asyncio
 import base64
 import json
 import logging
-import socket
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -251,13 +250,15 @@ def test_sync_envd_transports_are_shared_across_sandboxes(test_api_key):
         reset_transport_caches()
 
 
-def test_sync_envd_transport_follows_sandbox_http2_option(test_api_key):
+def test_sync_transports_follow_the_http_version_option(test_api_key):
     reset_transport_caches()
     default = sandbox_config(test_api_key, "sbx-0")
-    http1 = ConnectionConfig(api_key=test_api_key, sandbox_http2=False)
+    http1 = ConnectionConfig(api_key=test_api_key, http_version="http1")
 
     try:
-        assert default.sandbox_http2 is True
+        assert default.http_version == "http2"
+        assert get_sync_transport(http1) is get_sync_transport(default, http2=False)
+        assert get_sync_transport(http1) is not get_sync_transport(default)
         assert get_sync_envd_transport(default) is get_sync_envd_transport(
             default, http2=True
         )
@@ -517,12 +518,14 @@ async def test_async_envd_transports_are_shared_across_sandboxes(test_api_key):
 
 
 @pytest.mark.asyncio
-async def test_async_envd_transport_follows_sandbox_http2_option(test_api_key):
+async def test_async_transports_follow_the_http_version_option(test_api_key):
     reset_transport_caches()
     default = sandbox_config(test_api_key, "sbx-0")
-    http1 = ConnectionConfig(api_key=test_api_key, sandbox_http2=False)
+    http1 = ConnectionConfig(api_key=test_api_key, http_version="http1")
 
     try:
+        assert get_async_transport(http1) is get_async_transport(default, http2=False)
+        assert get_async_transport(http1) is not get_async_transport(default)
         assert get_async_envd_transport(http1) is get_async_envd_transport(
             default, http2=False
         )
@@ -739,15 +742,15 @@ class _EchoServer(ThreadingHTTPServer):
     request_queue_size = 64
 
 
-@pytest.fixture
-def refused_url():
-    """A loopback URL nothing listens on. Unlike a well-known closed port
-    (say 9), a just-released ephemeral port is refused at once on every OS —
-    Windows lets connects to filtered ports time out instead."""
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        port = probe.getsockname()[1]
-    return f"http://127.0.0.1:{port}/health"
+class RefusingPool:
+    """A pool whose every connect is refused, the way pyqwest reports it. Stands
+    in for a closed port, which not every OS refuses promptly."""
+
+    def execute_sync(self, request):
+        raise ConnectionError("connection refused")
+
+    async def execute(self, request):
+        raise ConnectionError("connection refused")
 
 
 @pytest.fixture
@@ -1226,14 +1229,16 @@ async def test_async_closing_one_client_leaves_the_shared_pool_open(
 
 @pytest.mark.parametrize("http2", [True, False])
 def test_sync_envd_transport_counts_requests_until_their_body_is_done(
-    test_api_key, echo_server, refused_url, http2
+    test_api_key, echo_server, http2
 ):
     # A request holds its slot on the pool it was sent on for as long as its
     # body may still be streaming — through the httpx adapter as much as for
     # a direct RPC — and gives it up exactly once however it ends: fully read,
     # closed early, timed out, or failed to connect.
     reset_transport_caches()
-    config = ConnectionConfig(api_key=test_api_key, sandbox_http2=http2)
+    config = ConnectionConfig(
+        api_key=test_api_key, http_version="http2" if http2 else "http1"
+    )
     envd_api = get_sync_envd_api(config, echo_server)
     transport = get_sync_envd_pyqwest_transport(None, http2=http2)
     balancer = transport.balancer
@@ -1263,8 +1268,13 @@ def test_sync_envd_transport_counts_requests_until_their_body_is_done(
             envd_api.get("/stall", timeout=0.2)
         assert balancer.active_streams == (0,)
 
-        with pytest.raises(httpx.ConnectError):
-            envd_api.get(refused_url)
+        open_pool = transport.open_pool
+        transport.open_pool = lambda index: RefusingPool()
+        try:
+            with pytest.raises(httpx.ConnectError):
+                envd_api.get("/health")
+        finally:
+            transport.open_pool = open_pool
         assert balancer.active_streams == (0,)
     finally:
         envd_api.close()
@@ -1274,10 +1284,12 @@ def test_sync_envd_transport_counts_requests_until_their_body_is_done(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("http2", [True, False])
 async def test_async_envd_transport_counts_requests_until_their_body_is_done(
-    test_api_key, echo_server, refused_url, http2
+    test_api_key, echo_server, http2
 ):
     reset_transport_caches()
-    config = ConnectionConfig(api_key=test_api_key, sandbox_http2=http2)
+    config = ConnectionConfig(
+        api_key=test_api_key, http_version="http2" if http2 else "http1"
+    )
     envd_api = get_async_envd_api(config, echo_server)
     transport = get_async_envd_pyqwest_transport(None, http2=http2)
     balancer = transport.balancer
@@ -1307,8 +1319,13 @@ async def test_async_envd_transport_counts_requests_until_their_body_is_done(
             await envd_api.get("/stall", timeout=0.2)
         assert balancer.active_streams == (0,)
 
-        with pytest.raises(httpx.ConnectError):
-            await envd_api.get(refused_url)
+        open_pool = transport.open_pool
+        transport.open_pool = lambda index: RefusingPool()
+        try:
+            with pytest.raises(httpx.ConnectError):
+                await envd_api.get("/health")
+        finally:
+            transport.open_pool = open_pool
         assert balancer.active_streams == (0,)
     finally:
         await envd_api.aclose()

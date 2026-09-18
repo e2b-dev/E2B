@@ -251,28 +251,38 @@ def test_retries_reject_invalid_values(retries):
         ConnectionConfig(retries=retries)
 
 
-def test_sandbox_http2_defaults_on_and_propagates(monkeypatch):
-    monkeypatch.delenv("E2B_SANDBOX_HTTP2", raising=False)
+def test_http_version_defaults_to_http2_and_propagates(monkeypatch):
+    monkeypatch.delenv("E2B_HTTP_VERSION", raising=False)
 
-    assert ConnectionConfig().sandbox_http2 is True
-    assert ConnectionConfig().get_api_params()["sandbox_http2"] is True
+    assert ConnectionConfig().http_version == "http2"
+    assert ConnectionConfig().get_api_params()["http_version"] == "http2"
 
-    config = ConnectionConfig(sandbox_http2=False)
-    assert config.sandbox_http2 is False
+    config = ConnectionConfig(http_version="http1")
+    assert config.http_version == "http1"
     # Reconstructed configs (a sandbox's sub-clients) keep the setting, and a
     # per-call value overrides it.
-    assert config.get_api_params()["sandbox_http2"] is False
-    assert ConnectionConfig(**config.get_api_params()).sandbox_http2 is False
-    assert config.get_api_params(sandbox_http2=True)["sandbox_http2"] is True
+    assert config.get_api_params()["http_version"] == "http1"
+    assert ConnectionConfig(**config.get_api_params()).http_version == "http1"
+    assert config.get_api_params(http_version="http2")["http_version"] == "http2"
 
 
 @pytest.mark.parametrize(
     ("value", "expected"),
-    [("false", False), ("FALSE", False), ("true", True), ("", True)],
+    [("http1", "http1"), ("HTTP1", "http1"), ("http2", "http2"), ("", "http2")],
 )
-def test_sandbox_http2_reads_env_var(monkeypatch, value, expected):
-    monkeypatch.setenv("E2B_SANDBOX_HTTP2", value)
+def test_http_version_reads_env_var(monkeypatch, value, expected):
+    monkeypatch.setenv("E2B_HTTP_VERSION", value)
 
-    assert ConnectionConfig().sandbox_http2 is expected
+    assert ConnectionConfig().http_version == expected
     # The explicit argument wins over the environment.
-    assert ConnectionConfig(sandbox_http2=not expected).sandbox_http2 is not expected
+    other = "http2" if expected == "http1" else "http1"
+    assert ConnectionConfig(http_version=other).http_version == other
+
+
+def test_http_version_rejects_unknown_env_value(monkeypatch):
+    monkeypatch.setenv("E2B_HTTP_VERSION", "http3")
+
+    with pytest.raises(ValueError, match="E2B_HTTP_VERSION"):
+        ConnectionConfig()
+    # An explicit option never consults the environment.
+    assert ConnectionConfig(http_version="http1").http_version == "http1"

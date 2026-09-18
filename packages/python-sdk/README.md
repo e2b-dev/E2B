@@ -76,15 +76,15 @@ If one process needs more than `16 × 90` concurrent sandbox streams, raise the 
 E2B_ENVD_POOL_SHARDS=32 python eval.py
 ```
 
-To avoid HTTP/2 for sandbox traffic altogether — for example when an intermediary on the path retires long-lived HTTP/2 connections — pin it to HTTP/1.1, which uses one connection per concurrent request. Requests to the E2B API are unaffected:
+To avoid HTTP/2 altogether — for example when an intermediary on the path retires long-lived HTTP/2 connections — pin the SDK to HTTP/1.1, which uses one connection per concurrent request:
 
 ```py
 from e2b import Sandbox
 
-sandbox = Sandbox.create(sandbox_http2=False)
+sandbox = Sandbox.create(http_version="http1")
 ```
 
-or, for the whole process, `E2B_SANDBOX_HTTP2=false`.
+or, for the whole process, `E2B_HTTP_VERSION=http1`.
 
 ### 5. Code execution with Code Interpreter
 
