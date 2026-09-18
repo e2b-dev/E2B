@@ -8,6 +8,7 @@ import {
   resolveRetries,
   withRetry,
 } from '../src/retry'
+import { NON_IDEMPOTENT_OPERATIONS } from '../src/api/retryPolicy.gen'
 import { EnvdApiClient } from '../src/envd/api'
 import { InvalidArgumentError } from '../src/errors'
 
@@ -493,17 +494,17 @@ const nonReplayable = [
   ['POST', '/sandboxes/sbx-1/fork'],
   ['POST', '/sandboxes/sbx-1/snapshots'],
   ['POST', '/v3/templates'],
-  ['POST', '/api-keys'],
-  ['POST', '/admin/teams/team-1/api-keys'],
   ['POST', '/volumes'],
   ['POST', '/secrets'],
-  ['POST', '/events/webhooks'],
 ]
 
 const replayable = [
   ['GET', '/sandboxes'],
   ['GET', '/sandboxes/sbx-1'],
   ['DELETE', '/sandboxes/sbx-1'],
+  ['GET', '/sandboxes/sbx-1/fork'],
+  ['POST', '/sandboxes/sbx-1/fork/extra'],
+  ['POST', '/sandboxes/a/b/fork'],
   ['POST', '/sandboxes/sbx-1/pause'],
   ['POST', '/sandboxes/sbx-1/resume'],
   ['POST', '/sandboxes/sbx-1/connect'],
@@ -522,6 +523,15 @@ const replayable = [
 ]
 
 describe('isReplayable', () => {
+  test('covers every operation the spec marks non-idempotent', () => {
+    expect(NON_IDEMPOTENT_OPERATIONS.length).toBeGreaterThan(0)
+    for (const [method, template] of NON_IDEMPOTENT_OPERATIONS) {
+      const path = template.replace(/\{[^}]+\}/g, 'id-1')
+      const request = new Request(`https://api.e2b.test${path}`, { method })
+      expect(isReplayable(request), `${method} ${template}`).toBe(false)
+    }
+  })
+
   test.each(nonReplayable)('%s %s is not replayable', (method, path) => {
     const request = new Request(`https://api.e2b.test${path}?x=1`, { method })
     expect(isReplayable(request)).toBe(false)

@@ -1,3 +1,5 @@
+import re
+
 import httpx
 import pytest
 
@@ -7,6 +9,7 @@ from e2b.retry import (
     is_replayable,
     parse_retry_after,
 )
+from e2b.retry_policy import NON_IDEMPOTENT_OPERATIONS
 
 
 class FakeTransport(httpx.BaseTransport):
@@ -407,17 +410,17 @@ NON_REPLAYABLE = [
     ("POST", "/sandboxes/sbx-1/fork"),
     ("POST", "/sandboxes/sbx-1/snapshots"),
     ("POST", "/v3/templates"),
-    ("POST", "/api-keys"),
-    ("POST", "/admin/teams/team-1/api-keys"),
     ("POST", "/volumes"),
     ("POST", "/secrets"),
-    ("POST", "/events/webhooks"),
 ]
 
 REPLAYABLE = [
     ("GET", "/sandboxes"),
     ("GET", "/sandboxes/sbx-1"),
     ("DELETE", "/sandboxes/sbx-1"),
+    ("GET", "/sandboxes/sbx-1/fork"),
+    ("POST", "/sandboxes/sbx-1/fork/extra"),
+    ("POST", "/sandboxes/a/b/fork"),
     ("POST", "/sandboxes/sbx-1/pause"),
     ("POST", "/sandboxes/sbx-1/resume"),
     ("POST", "/sandboxes/sbx-1/connect"),
@@ -440,6 +443,15 @@ NETWORK_ERRORS = [
     httpx.WriteError("broken pipe"),
     httpx.RemoteProtocolError("stream reset"),
 ]
+
+
+def test_non_idempotent_operations_are_not_replayable():
+    assert NON_IDEMPOTENT_OPERATIONS
+    for method, template in NON_IDEMPOTENT_OPERATIONS:
+        path = re.sub(r"\{[^}]+\}", "id-1", template)
+        assert not is_replayable(httpx.Request(method, f"https://api.test{path}")), (
+            f"{method} {template}"
+        )
 
 
 @pytest.mark.parametrize(("method", "path"), NON_REPLAYABLE)

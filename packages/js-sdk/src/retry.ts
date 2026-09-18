@@ -1,3 +1,4 @@
+import { NON_IDEMPOTENT_OPERATIONS } from './api/retryPolicy.gen'
 import { InvalidArgumentError } from './errors'
 import { isReadableStreamLike } from './is'
 
@@ -25,20 +26,25 @@ const CONNECTION_ERROR_CODES = new Set([
 const CONNECTION_ERROR_SYSCALLS = new Set(['connect', 'getaddrinfo'])
 // Deno reports hyper's connect-phase failures as `client error (Connect)`.
 const DENO_CONNECTION_ERROR = /client error \(Connect\)/
-// Operations that mint a resource without a client-supplied idempotency key:
-// replaying one whose first attempt may have reached the server could create
-// a duplicate, so only connection-establishment failures are retried for them.
-// Every other operation is idempotent (or a replay fails with 404/409 the SDK
-// already tolerates) and is retried after any network error.
-const NON_REPLAYABLE_OPERATIONS: [method: string, path: RegExp][] = [
-  ['POST', /^\/(v2\/)?sandboxes$/],
-  ['POST', /^\/sandboxes\/[^/]+\/(fork|snapshots)$/],
-  ['POST', /^\/v3\/templates$/],
-  ['POST', /^\/(admin\/teams\/[^/]+\/)?api-keys$/],
-  ['POST', /^\/volumes$/],
-  ['POST', /^\/secrets$/],
-  ['POST', /^\/events\/webhooks$/],
-]
+function pathTemplateToRegExp(template: string): RegExp {
+  const pattern = template
+    .split(/(\{[^}]+\})/)
+    .map((part) =>
+      part.startsWith('{')
+        ? '[^/]+'
+        : part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    )
+    .join('')
+  return new RegExp(`^${pattern}$`)
+}
+
+// Only connection-establishment failures are retried for the operations the
+// API spec marks non-idempotent; every other operation is retried after any
+// network error (a replay of one that already landed fails with a 404/409 the
+// SDK tolerates).
+const NON_REPLAYABLE_OPERATIONS = NON_IDEMPOTENT_OPERATIONS.map(
+  ([method, path]) => [method, pathTemplateToRegExp(path)] as const
+)
 
 export function resolveRetries(retries: number): number {
   if (!Number.isInteger(retries) || retries < 0) {

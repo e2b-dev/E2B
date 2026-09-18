@@ -7,6 +7,7 @@ from typing import Awaitable, Callable, List, Optional, Tuple
 import httpx
 
 from e2b.exceptions import InvalidArgumentException
+from e2b.retry_policy import NON_IDEMPOTENT_OPERATIONS
 
 MAX_RETRY_AFTER_SECONDS = 2_147_483_647
 MAX_RETRY_WAIT_WITHOUT_TIMEOUT_SECONDS = 60.0
@@ -15,21 +16,24 @@ BACKOFF_MAX_SECONDS = 10.0
 BACKOFF_JITTER_MIN = 0.5
 RETRYABLE_STATUSES = frozenset({429, 502, 503})
 
-# Operations that mint a resource without a client-supplied idempotency key:
-# replaying one whose first attempt may have reached the server could create a
-# duplicate, so they are not retried after a network error once the request
-# was written. (Connection-establishment failures are retried for every
-# operation by ``ConnectionRetryTransport`` underneath: the request never
-# left.) Every other operation is idempotent, or a replay fails with a 404/409
-# the SDK already tolerates.
+
+def _path_template_to_pattern(template: str) -> re.Pattern[str]:
+    parts = re.split(r"(\{[^}]+\})", template)
+    pattern = "".join(
+        "[^/]+" if part.startswith("{") else re.escape(part) for part in parts
+    )
+    return re.compile(f"^{pattern}$")
+
+
+# The operations the API spec marks non-idempotent are not retried after a
+# network error once the request was written. (Connection-establishment
+# failures are retried for every operation by ``ConnectionRetryTransport``
+# underneath: the request never left.) Every other operation is retried after
+# any network error; a replay of one that already landed fails with a 404/409
+# the SDK tolerates.
 NON_REPLAYABLE_OPERATIONS: List[Tuple[str, re.Pattern[str]]] = [
-    ("POST", re.compile(r"^/(v2/)?sandboxes$")),
-    ("POST", re.compile(r"^/sandboxes/[^/]+/(fork|snapshots)$")),
-    ("POST", re.compile(r"^/v3/templates$")),
-    ("POST", re.compile(r"^/(admin/teams/[^/]+/)?api-keys$")),
-    ("POST", re.compile(r"^/volumes$")),
-    ("POST", re.compile(r"^/secrets$")),
-    ("POST", re.compile(r"^/events/webhooks$")),
+    (method, _path_template_to_pattern(path))
+    for method, path in NON_IDEMPOTENT_OPERATIONS
 ]
 
 # Raised by the pyqwest httpx adapter once the request was (at least partially)
