@@ -36,9 +36,13 @@ ProcessEvent = Union[process_pb.StartResponse, process_pb.ConnectResponse]
 ProcessEvents = AsyncGenerator[ProcessEvent, Any]
 
 
-class AsyncProcessEventStream(AsyncIterator[ProcessEvent], Protocol):
+class AsyncProcessEventStream(Protocol):
     """What a command handle consumes: an async iterator of process events
     that can be closed to stop receiving them."""
+
+    def __aiter__(self) -> AsyncIterator[ProcessEvent]: ...
+
+    async def __anext__(self) -> ProcessEvent: ...
 
     async def aclose(self) -> None: ...
 

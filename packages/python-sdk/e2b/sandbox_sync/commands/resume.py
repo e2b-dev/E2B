@@ -26,9 +26,13 @@ ProcessEvent = Union[process_pb.StartResponse, process_pb.ConnectResponse]
 ProcessEvents = Generator[ProcessEvent, Any, None]
 
 
-class ProcessEventStream(Iterator[ProcessEvent], Protocol):
+class ProcessEventStream(Protocol):
     """What a command handle consumes: an iterator of process events that can
     be closed to stop receiving them."""
+
+    def __iter__(self) -> Iterator[ProcessEvent]: ...
+
+    def __next__(self) -> ProcessEvent: ...
 
     def close(self) -> None: ...
 
