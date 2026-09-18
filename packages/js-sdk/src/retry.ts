@@ -5,6 +5,7 @@ const MAX_RETRY_AFTER_SECONDS = 2_147_483
 const MAX_RETRY_WAIT_WITHOUT_TIMEOUT_MS = 60_000
 const BACKOFF_BASE_MS = 500
 const BACKOFF_MAX_MS = 8_000
+const BACKOFF_JITTER_MIN = 0.5
 const RETRYABLE_STATUSES = new Set([429, 502, 503])
 
 export function resolveRetries(retries: number): number {
@@ -70,7 +71,9 @@ function retryDelayMs(
   if (response.status === 429) return undefined
 
   const backoff = Math.min(BACKOFF_BASE_MS * 2 ** attempt, BACKOFF_MAX_MS)
-  return Math.floor(backoff * (0.5 + random() / 2))
+  return Math.floor(
+    backoff * (BACKOFF_JITTER_MIN + random() * (1 - BACKOFF_JITTER_MIN))
+  )
 }
 
 /**

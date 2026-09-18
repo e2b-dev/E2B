@@ -11,6 +11,7 @@ MAX_RETRY_AFTER_SECONDS = 2_147_483_647
 MAX_RETRY_WAIT_WITHOUT_TIMEOUT_SECONDS = 60.0
 BACKOFF_BASE_SECONDS = 0.5
 BACKOFF_MAX_SECONDS = 8.0
+BACKOFF_JITTER_MIN = 0.5
 RETRYABLE_STATUSES = frozenset({429, 502, 503})
 
 
@@ -50,7 +51,7 @@ def _retry_delay(
         return None
 
     backoff = min(BACKOFF_BASE_SECONDS * 2**attempt, BACKOFF_MAX_SECONDS)
-    return backoff * (0.5 + random_() / 2)
+    return backoff * (BACKOFF_JITTER_MIN + random_() * (1 - BACKOFF_JITTER_MIN))
 
 
 def _copy_request(
@@ -96,6 +97,7 @@ class RetryableTransport(httpx.BaseTransport):
         self,
         transport: httpx.BaseTransport,
         retries: int,
+        *,
         sleep: Callable[[float], None] = time.sleep,
         monotonic: Callable[[], float] = time.monotonic,
         random_: Callable[[], float] = random.random,
@@ -151,6 +153,7 @@ class AsyncRetryableTransport(httpx.AsyncBaseTransport):
         self,
         transport: httpx.AsyncBaseTransport,
         retries: int,
+        *,
         sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
         monotonic: Callable[[], float] = time.monotonic,
         random_: Callable[[], float] = random.random,
