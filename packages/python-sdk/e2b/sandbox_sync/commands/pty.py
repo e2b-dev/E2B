@@ -163,6 +163,7 @@ class Pty:
                 handle_kill=lambda: self.kill(pid),
                 events=events,
                 check_health=self._check_health,
+                logger=self._connection_config.logger,
             )
         except Exception as e:
             try:
@@ -207,6 +208,7 @@ class Pty:
                 handle_kill=lambda: self.kill(pid),
                 events=events,
                 check_health=self._check_health,
+                logger=self._connection_config.logger,
             )
         except Exception as e:
             try:

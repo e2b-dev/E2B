@@ -30,10 +30,8 @@ import {
   handleProcessStartEvent,
 } from '../../envd/api'
 
-export interface PtyCreateOpts extends Pick<
-  ConnectionOpts,
-  'requestTimeoutMs' | 'signal'
-> {
+export interface PtyCreateOpts
+  extends Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'> {
   /**
    * Number of columns for the PTY.
    */
@@ -157,7 +155,8 @@ export class Pty {
         opts.onData,
         undefined,
         undefined,
-        this.checkHealth
+        this.checkHealth,
+        this.connectionConfig.logger
       )
     } catch (err) {
       cleanup()
@@ -214,7 +213,8 @@ export class Pty {
         opts?.onData,
         undefined,
         undefined,
-        this.checkHealth
+        this.checkHealth,
+        this.connectionConfig.logger
       )
     } catch (err) {
       cleanup()
