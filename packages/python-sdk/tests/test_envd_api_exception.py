@@ -2,6 +2,8 @@ import httpx
 
 from e2b.envd.api import (
     format_envd_api_exception,
+    get_message,
+    handle_envd_api_exception,
     handle_envd_api_transport_exception,
 )
 from e2b.exceptions import (
@@ -82,3 +84,35 @@ def test_health_result_running_returns_raw_error():
     original = httpx.RemoteProtocolError("peer closed connection")
     err = handle_envd_api_transport_exception(original, sandbox_running=True)
     assert err is original
+
+
+def _json_response(status_code: int, content: bytes) -> httpx.Response:
+    return httpx.Response(
+        status_code, content=content, headers={"content-type": "application/json"}
+    )
+
+
+def test_get_message_uses_a_json_string_body():
+    assert (
+        get_message(_json_response(502, b'"upstream connect error"'))
+        == "upstream connect error"
+    )
+
+
+def test_get_message_falls_back_to_text_for_a_non_dict_non_string_body():
+    # Arrays and scalars carry no "message"; fall back to the raw text rather
+    # than raising AttributeError.
+    assert get_message(_json_response(502, b"[1, 2]")) == "[1, 2]"
+
+
+def test_non_dict_json_error_body_maps_without_crashing():
+    err = handle_envd_api_exception(_json_response(502, b'"upstream connect error"'))
+    assert isinstance(err, TimeoutException)
+    assert "upstream connect error" in str(err)
+
+
+def test_get_message_falls_back_to_text_for_an_empty_json_string_body():
+    # An empty JSON string carries no message; fall back to the raw text so the
+    # envd path matches handle_api_exception rather than surfacing an empty one.
+    resp = _json_response(502, b'""')
+    assert get_message(resp) == resp.text
