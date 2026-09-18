@@ -10,10 +10,10 @@ type UndiciRequestInit = RequestInit & {
 }
 
 export type UndiciModule = {
-  Agent: new (options: { allowH2: true; connections?: number }) => unknown
+  Agent: new (options: { allowH2: boolean; connections?: number }) => unknown
   ProxyAgent: new (options: {
     uri: string
-    allowH2: true
+    allowH2: boolean
     connections?: number
     proxyTunnel: true
   }) => unknown
@@ -87,15 +87,17 @@ export function createRuntimeFetch(
 }
 
 /**
- * Build a fetch bound to a bounded undici dispatcher (HTTP/2 enabled,
- * `connections` origin connections, optional proxy tunnel), capped at
- * `inflightLimit` in-flight requests (`0` disables the cap). Falls back to
- * the global fetch — still capped — when undici cannot be loaded.
+ * Build a fetch bound to a bounded undici dispatcher (HTTP/2 enabled unless
+ * `http2` is `false`, `connections` origin connections, optional proxy
+ * tunnel), capped at `inflightLimit` in-flight requests (`0` disables the
+ * cap). Falls back to the global fetch — still capped — when undici cannot be
+ * loaded.
  */
 export async function buildDispatchedFetch(options: {
   connections: number
   inflightLimit: number
   proxy?: string
+  http2?: boolean
   loadUndici?: () => Promise<UndiciModule | undefined>
 }): Promise<typeof fetch> {
   const undici = await (options.loadUndici ?? loadUndici)()
@@ -105,15 +107,16 @@ export async function buildDispatchedFetch(options: {
   }
 
   const { Agent, ProxyAgent, fetch: undiciFetch } = undici
+  const allowH2 = options.http2 ?? true
   const dispatcher = options.proxy
     ? new ProxyAgent({
         uri: options.proxy,
-        allowH2: true,
+        allowH2,
         connections: options.connections,
         proxyTunnel: true,
       })
     : new Agent({
-        allowH2: true,
+        allowH2,
         connections: options.connections,
       })
   const fetchWithDispatcher = undiciFetch as unknown as (

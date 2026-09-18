@@ -88,6 +88,14 @@ class ApiParams(TypedDict, total=False):
     sandbox_url: Optional[str]
     """URL to connect to sandbox, defaults to `E2B_SANDBOX_URL` environment variable."""
 
+    sandbox_http2: Optional[bool]
+    """Whether requests to the sandbox (commands, filesystem, PTY) may use
+    HTTP/2, defaults to `E2B_SANDBOX_HTTP2` environment variable or `True`.
+    Set to `False` to pin them to HTTP/1.1, which uses one connection per
+    concurrent request instead of multiplexing streams over shared connections
+    — for example when an intermediary on the path retires or mishandles
+    long-lived HTTP/2 connections. Does not affect requests to the E2B API."""
+
 
 class ApiParamsWithLogger(ApiParams, total=False):
     """:class:`ApiParams` plus the construction-time ``logger``.
@@ -197,6 +205,10 @@ class ConnectionConfig:
         return os.getenv("E2B_SANDBOX_URL")
 
     @staticmethod
+    def _sandbox_http2():
+        return (os.getenv("E2B_SANDBOX_HTTP2") or "true").lower() != "false"
+
+    @staticmethod
     def _get_request_source() -> Optional[str]:
         source = os.getenv("E2B_USER_AGENT_SOURCE")
         if source and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,31}", source):
@@ -243,6 +255,7 @@ class ConnectionConfig:
         validate_api_key: Optional[bool] = None,
         api_url: Optional[str] = None,
         sandbox_url: Optional[str] = None,
+        sandbox_http2: Optional[bool] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
         api_headers: Optional[Dict[str, str]] = None,
@@ -283,6 +296,11 @@ class ConnectionConfig:
 
         self._sandbox_url: Optional[str] = (
             sandbox_url or ConnectionConfig._sandbox_url()
+        )
+        self.sandbox_http2 = (
+            sandbox_http2
+            if sandbox_http2 is not None
+            else ConnectionConfig._sandbox_http2()
         )
 
     @staticmethod
@@ -362,6 +380,7 @@ class ConnectionConfig:
         debug = opts.get("debug")
         proxy = opts.get("proxy")
         sandbox_url = opts.get("sandbox_url")
+        sandbox_http2 = opts.get("sandbox_http2")
         retries = opts.get("retries")
 
         req_headers = self.headers.copy()
@@ -400,6 +419,9 @@ class ConnectionConfig:
                     sandbox_url
                     if sandbox_url is not None
                     else cast(Optional[str], self._sandbox_url)
+                ),
+                sandbox_http2=(
+                    sandbox_http2 if sandbox_http2 is not None else self.sandbox_http2
                 ),
                 logger=self.logger,
                 retries=retries if retries is not None else self.retries,

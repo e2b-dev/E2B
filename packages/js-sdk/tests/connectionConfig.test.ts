@@ -15,6 +15,7 @@ beforeEach(() => {
     E2B_API_URL: process.env.E2B_API_URL,
     E2B_DOMAIN: process.env.E2B_DOMAIN,
     E2B_SANDBOX_URL: process.env.E2B_SANDBOX_URL,
+    E2B_SANDBOX_HTTP2: process.env.E2B_SANDBOX_HTTP2,
     E2B_DEBUG: process.env.E2B_DEBUG,
     E2B_USER_AGENT_SOURCE: process.env.E2B_USER_AGENT_SOURCE,
   }
@@ -162,6 +163,31 @@ test('sandbox_url stays localhost in debug mode', () => {
     }),
     'http://localhost:49983'
   )
+})
+
+test('sandboxHttp2 defaults to true and reads E2B_SANDBOX_HTTP2', () => {
+  delete process.env.E2B_SANDBOX_HTTP2
+  assert.equal(new ConnectionConfig().sandboxHttp2, true)
+  assert.equal(
+    new ConnectionConfig({ sandboxHttp2: false }).sandboxHttp2,
+    false
+  )
+
+  process.env.E2B_SANDBOX_HTTP2 = 'false'
+  assert.equal(new ConnectionConfig().sandboxHttp2, false)
+  process.env.E2B_SANDBOX_HTTP2 = 'FALSE'
+  assert.equal(new ConnectionConfig().sandboxHttp2, false)
+  process.env.E2B_SANDBOX_HTTP2 = 'true'
+  assert.equal(new ConnectionConfig().sandboxHttp2, true)
+})
+
+test('sandboxHttp2 in args has priority over env var', () => {
+  process.env.E2B_SANDBOX_HTTP2 = 'false'
+  assert.equal(new ConnectionConfig({ sandboxHttp2: true }).sandboxHttp2, true)
+
+  // Per-call options and bound options keep the flag when merged.
+  const merged = ConnectionConfig.mergeOpts({ sandboxHttp2: false }, {})
+  assert.equal(new ConnectionConfig(merged).sandboxHttp2, false)
 })
 
 test('debug false in args overrides E2B_DEBUG env var', () => {

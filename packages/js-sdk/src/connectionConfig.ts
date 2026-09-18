@@ -88,6 +88,17 @@ export interface ConnectionOpts {
    * @example 'http://user:pass@127.0.0.1:8080'
    */
   proxy?: string
+  /**
+   * Whether requests to the sandbox (commands, filesystem, PTY) may use
+   * HTTP/2. Set to `false` to pin them to HTTP/1.1, which uses one connection
+   * per concurrent request instead of multiplexing streams over shared
+   * connections — for example when an intermediary on the path retires or
+   * mishandles long-lived HTTP/2 connections. Does not affect requests to the
+   * E2B API. Only applies in Node.
+   *
+   * @default E2B_SANDBOX_HTTP2 // environment variable or `true`
+   */
+  sandboxHttp2?: boolean
 
   /**
    * Additional headers to send with E2B API requests.
@@ -440,6 +451,7 @@ export class ConnectionConfig {
   readonly requestSource?: string
 
   readonly proxy?: string
+  readonly sandboxHttp2: boolean
 
   constructor(opts?: ConnectionOpts) {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
@@ -453,6 +465,7 @@ export class ConnectionConfig {
     this.headers = { ...(opts?.headers ?? {}), ...(opts?.apiHeaders ?? {}) }
     ConnectionConfig.applyUserAgent(this.headers, this.requestSource)
     this.proxy = opts?.proxy
+    this.sandboxHttp2 = opts?.sandboxHttp2 ?? ConnectionConfig.sandboxHttp2
 
     this.apiUrl =
       opts?.apiUrl ||
@@ -509,6 +522,10 @@ export class ConnectionConfig {
 
   private static get sandboxUrl() {
     return getEnvVar('E2B_SANDBOX_URL')
+  }
+
+  private static get sandboxHttp2() {
+    return (getEnvVar('E2B_SANDBOX_HTTP2') || 'true').toLowerCase() !== 'false'
   }
 
   private static get debug() {

@@ -249,3 +249,30 @@ def test_retries_default_to_three_and_propagate():
 def test_retries_reject_invalid_values(retries):
     with pytest.raises(InvalidArgumentException):
         ConnectionConfig(retries=retries)
+
+
+def test_sandbox_http2_defaults_on_and_propagates(monkeypatch):
+    monkeypatch.delenv("E2B_SANDBOX_HTTP2", raising=False)
+
+    assert ConnectionConfig().sandbox_http2 is True
+    assert ConnectionConfig().get_api_params()["sandbox_http2"] is True
+
+    config = ConnectionConfig(sandbox_http2=False)
+    assert config.sandbox_http2 is False
+    # Reconstructed configs (a sandbox's sub-clients) keep the setting, and a
+    # per-call value overrides it.
+    assert config.get_api_params()["sandbox_http2"] is False
+    assert ConnectionConfig(**config.get_api_params()).sandbox_http2 is False
+    assert config.get_api_params(sandbox_http2=True)["sandbox_http2"] is True
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [("false", False), ("FALSE", False), ("true", True), ("", True)],
+)
+def test_sandbox_http2_reads_env_var(monkeypatch, value, expected):
+    monkeypatch.setenv("E2B_SANDBOX_HTTP2", value)
+
+    assert ConnectionConfig().sandbox_http2 is expected
+    # The explicit argument wins over the environment.
+    assert ConnectionConfig(sandbox_http2=not expected).sandbox_http2 is not expected

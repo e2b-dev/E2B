@@ -15,8 +15,8 @@ from connectrpc.code import Code
 from connectrpc.errors import ConnectError
 from pyqwest import Client, Request, Response, Transport
 
-from e2b.api import envd_pool_shard, proxy_to_config
-from e2b.api.client_async import get_pyqwest_transport
+from e2b.api import proxy_to_config
+from e2b.api.client_async import get_envd_pyqwest_transport
 from e2b.connection_config import ConnectionConfig
 from e2b.envd.client_shared import (
     ENVD_JSON_CODEC,
@@ -66,24 +66,24 @@ def create_rpc_client(
     config: ConnectionConfig,
 ) -> TClient:
     """Build a generated async connectrpc client (e.g. ``ProcessClient``)
-    wired with the shared pyqwest transport (which retries failed connects,
-    see :class:`e2b.api.client_async.ConnectionRetryTransport`), the envd
-    JSON codec, and the SDK's default-header and logging interceptors.
+    wired with the shared envd transport (load-balanced pools that retry
+    failed connects, see :class:`e2b.api.client_async.EnvdPoolTransport`), the
+    envd JSON codec, and the SDK's default-header and logging interceptors.
     Compression is disabled (see ``ENVD_RPC_COMPRESSION``).
 
     The plain-error normalization is the one RPC-only transport concern, so it
-    wraps the shared pool per client instead of being cached with it — a
-    stateless wrapper over the pool the envd HTTP API uses for the same
-    sandbox, which is what lets both share a single HTTP/2 connection.
-    connectrpc arms the per-call deadline around the transport, so retry
-    backoff counts against the request timeout, and the normalization sits
-    outside the retries so it converts the settled response once.
+    wraps the shared transport per client instead of being cached with it — a
+    stateless wrapper over the very pools the envd HTTP API uses, which is
+    what lets both share connections. connectrpc arms the per-call deadline
+    around the transport, so retry backoff counts against the request timeout,
+    and the normalization sits outside the retries so it converts the settled
+    response once.
     """
     http_client = Client(
         PlainHTTPErrorTransport(
-            get_pyqwest_transport(
+            get_envd_pyqwest_transport(
                 proxy_to_config(config.proxy),
-                pool_shard=envd_pool_shard(config),
+                http2=config.sandbox_http2,
             )
         )
     )

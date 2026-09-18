@@ -66,6 +66,16 @@ const paginator = Sandbox.list()
 
 Per-call options still take precedence over the client's options, and clients are isolated from each other and from the env-configured top-level exports.
 
+### Sandbox transport
+
+In Node, sandbox `commands`, `files` and `pty` traffic goes through a bounded pool of HTTP/2 connections (`E2B_ENVD_RPC_CONNECTIONS`, default `200`, for streams). To avoid HTTP/2 for sandbox traffic altogether — for example when an intermediary on the path retires long-lived HTTP/2 connections — pin it to HTTP/1.1. Requests to the E2B API are unaffected:
+
+```ts
+const sandbox = await Sandbox.create({ sandboxHttp2: false })
+```
+
+or, for the whole process, `E2B_SANDBOX_HTTP2=false`.
+
 ### 5. Code execution with Code Interpreter
 
 If you need [`runCode()`](https://docs.e2b.dev/code-interpreting/analyze-data-with-ai?utm_source=npm&utm_medium=referral&utm_campaign=readme&utm_content=e2b), install the [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter):

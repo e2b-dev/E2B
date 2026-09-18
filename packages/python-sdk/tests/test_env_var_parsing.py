@@ -11,6 +11,7 @@ _ENV_VARS = (
     "E2B_MAX_KEEPALIVE_CONNECTIONS",
     "E2B_CONNECTION_RETRIES",
     "E2B_ENVD_POOL_SHARDS",
+    "E2B_ENVD_POOL_STREAMS",
 )
 
 
@@ -26,7 +27,8 @@ def test_empty_env_vars_fall_back_to_defaults(monkeypatch):
         assert api.pool_idle_timeout == 300
         assert api.pool_max_idle_per_host == 20
         assert api.connection_retries == 3
-        assert api.envd_pool_shards == 4
+        assert api.envd_pool_shards == 16
+        assert api.envd_pool_streams == 90
     finally:
         monkeypatch.undo()
         _reload()
@@ -36,11 +38,25 @@ def test_set_env_vars_are_honored(monkeypatch):
     monkeypatch.setenv("E2B_KEEPALIVE_EXPIRY", "42")
     monkeypatch.setenv("E2B_CONNECTION_RETRIES", "5")
     monkeypatch.setenv("E2B_ENVD_POOL_SHARDS", "8")
+    monkeypatch.setenv("E2B_ENVD_POOL_STREAMS", "50")
     try:
         api = _reload()
         assert api.pool_idle_timeout == 42
         assert api.connection_retries == 5
         assert api.envd_pool_shards == 8
+        assert api.envd_pool_streams == 50
+    finally:
+        monkeypatch.undo()
+        _reload()
+
+
+def test_pool_sizes_are_clamped_to_at_least_one(monkeypatch):
+    monkeypatch.setenv("E2B_ENVD_POOL_SHARDS", "0")
+    monkeypatch.setenv("E2B_ENVD_POOL_STREAMS", "-5")
+    try:
+        api = _reload()
+        assert api.envd_pool_shards == 1
+        assert api.envd_pool_streams == 1
     finally:
         monkeypatch.undo()
         _reload()
