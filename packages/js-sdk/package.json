@@ -33,6 +33,7 @@
     "generate:envd-api": "redocly bundle envd --config ../../redocly.yaml -o ../../spec/openapi_generated.envd.yml && openapi-typescript ../../spec/openapi_generated.envd.yml -x api_key --array-length --alphabetize --output src/envd/schema.gen.ts",
     "generate:volume-api": "redocly bundle volume --config ../../redocly.yaml -o ../../spec/openapi_generated.volume.yml && openapi-typescript ../../spec/openapi_generated.volume.yml -x api_key --array-length --alphabetize --output src/volume/schema.gen.ts",
     "generate:mcp": "json2ts -i ./../../spec/mcp-server.json -o src/sandbox/mcp.d.ts --unreachableDefinitions --style.singleQuote --no-style.semi",
+    "generate:retry-policy": "redocly bundle js-sdk --config ../../redocly.yaml -o ../../spec/openapi_generated.js-sdk.json && node ../../scripts/generate-retry-policy.mjs ../../spec/openapi_generated.js-sdk.json src/api/retryPolicy.gen.ts",
     "check-deps": "knip",
     "playwright:install": "playwright install chromium",
     "pretest:browser": "pnpm run playwright:install",
