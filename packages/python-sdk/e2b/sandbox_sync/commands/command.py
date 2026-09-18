@@ -25,7 +25,9 @@ from e2b.envd.versions import ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.main import ProcessInfo
 from e2b.sandbox.commands.command_handle import CommandResult
+from e2b.sandbox.commands.resume import extract_start_offsets
 from e2b.sandbox_sync.commands.command_handle import CommandHandle
+from e2b.sandbox_sync.commands.resume import ResumableEvents, connect_from_offsets
 
 
 class Commands:
@@ -322,7 +324,13 @@ class Commands:
             return CommandHandle(
                 pid=pid,
                 handle_kill=lambda: self.kill(pid),
-                events=events,
+                events=ResumableEvents(
+                    events,
+                    extract_start_offsets(start_event),
+                    connect_from_offsets(self._rpc, pid),
+                    timeout,
+                    check_health=self._check_health,
+                ),
                 handle_send_stdin=lambda data, request_timeout=None: self.send_stdin(
                     pid, data, request_timeout
                 ),
@@ -373,7 +381,13 @@ class Commands:
             return CommandHandle(
                 pid=pid,
                 handle_kill=lambda: self.kill(pid),
-                events=events,
+                events=ResumableEvents(
+                    events,
+                    extract_start_offsets(start_event),
+                    connect_from_offsets(self._rpc, pid),
+                    timeout,
+                    check_health=self._check_health,
+                ),
                 handle_send_stdin=lambda data, request_timeout=None: self.send_stdin(
                     pid, data, request_timeout
                 ),

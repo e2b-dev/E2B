@@ -1,11 +1,10 @@
 import codecs
 
-from typing import Optional, Callable, Any, Generator, List, Union, Tuple
+from typing import Optional, Callable, Generator, List, Union, Tuple
 
 from e2b.envd.rpc import handle_rpc_exception_with_health
 from protobuf import Oneof
 
-from e2b.envd.process import process_pb
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.command_handle import (
     CommandExitException,
@@ -14,6 +13,7 @@ from e2b.sandbox.commands.command_handle import (
     Stdout,
     PtyOutput,
 )
+from e2b.sandbox_sync.commands.resume import ProcessEventStream
 
 
 class CommandHandle:
@@ -34,9 +34,7 @@ class CommandHandle:
         self,
         pid: int,
         handle_kill: Callable[[], bool],
-        events: Generator[
-            Union[process_pb.StartResponse, process_pb.ConnectResponse], Any, None
-        ],
+        events: ProcessEventStream,
         handle_send_stdin: Optional[
             Callable[[Union[str, bytes], Optional[float]], None]
         ] = None,
