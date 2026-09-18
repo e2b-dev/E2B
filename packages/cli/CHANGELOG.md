@@ -1,5 +1,11 @@
 # @e2b/cli
 
+## 2.20.0
+
+### Minor Changes
+
+- 6a608ef: Add `e2b sandbox fork` command to fork a running sandbox into one or more new sandboxes
+
 ## 2.19.1
 
 ### Patch Changes
