@@ -152,15 +152,105 @@ def test_retry_wait_is_bounded_when_request_timeout_is_disabled():
     assert sleeps == []
 
 
-def test_does_not_retry_other_status_codes():
-    inner = FakeTransport([503], retry_after="0")
+@pytest.mark.parametrize("status", [400, 404, 500, 504])
+def test_does_not_retry_other_status_codes(status):
+    inner = FakeTransport([status], retry_after="0")
 
     response = RetryableTransport(inner, retries=3).handle_request(
         httpx.Request("GET", "https://api.test")
     )
 
-    assert response.status_code == 503
+    assert response is inner.responses[0]
     assert len(inner.requests) == 1
+
+
+@pytest.mark.parametrize("status", [502, 503])
+def test_retries_unavailable_status_with_exponential_backoff_and_jitter(status):
+    inner = FakeTransport([status, status, status, 200], retry_after=None)
+    sleeps = []
+    randoms = iter([0.0, 1.0, 0.5])
+    request = httpx.Request("POST", "https://api.test", content=b"payload")
+
+    response = RetryableTransport(
+        inner,
+        retries=3,
+        sleep=sleeps.append,
+        monotonic=lambda: 0.0,
+        random_=lambda: next(randoms),
+    ).handle_request(request)
+
+    assert response.status_code == 200
+    assert sleeps == [0.25, 1.0, 1.5]
+    assert [item.content for item in inner.requests] == [b"payload"] * 4
+    assert all(item.is_closed for item in inner.responses[:-1])
+
+
+def test_backoff_is_capped_for_long_retry_sequences():
+    inner = FakeTransport([503] * 7, retry_after=None)
+    sleeps = []
+    request = httpx.Request(
+        "GET",
+        "https://api.test",
+        extensions={"timeout": {"connect": None, "read": None}},
+    )
+
+    RetryableTransport(
+        inner,
+        retries=6,
+        sleep=sleeps.append,
+        monotonic=lambda: 0.0,
+        random_=lambda: 1.0,
+    ).handle_request(request)
+
+    assert sleeps == [0.5, 1.0, 2.0, 4.0, 8.0, 8.0]
+
+
+def test_unavailable_status_prefers_retry_after_over_backoff():
+    inner = FakeTransport([503, 200], retry_after="3")
+    sleeps = []
+
+    def random_():
+        raise AssertionError("backoff should not be used")
+
+    response = RetryableTransport(
+        inner, retries=3, sleep=sleeps.append, random_=random_
+    ).handle_request(httpx.Request("GET", "https://api.test"))
+
+    assert response.status_code == 200
+    assert sleeps == [3]
+
+
+def test_unavailable_status_exhaustion_returns_final_response():
+    inner = FakeTransport([503, 503, 503], retry_after=None)
+
+    response = RetryableTransport(
+        inner, retries=2, sleep=lambda _: None, random_=lambda: 0.0
+    ).handle_request(httpx.Request("GET", "https://api.test"))
+
+    assert response is inner.responses[-1]
+    assert len(inner.requests) == 3
+    assert response.content == b"response"
+
+
+def test_backoff_exceeding_timeout_is_propagated_as_is():
+    inner = FakeTransport([502], retry_after=None)
+    sleeps = []
+    request = httpx.Request(
+        "GET",
+        "https://api.test",
+        extensions={"timeout": {"connect": 0.4, "read": 0.4}},
+    )
+
+    response = RetryableTransport(
+        inner,
+        retries=3,
+        sleep=sleeps.append,
+        monotonic=lambda: 0.0,
+        random_=lambda: 1.0,
+    ).handle_request(request)
+
+    assert response is inner.responses[0]
+    assert sleeps == []
 
 
 def test_does_not_retry_when_cumulative_wait_reaches_request_timeout():
@@ -365,6 +455,44 @@ async def test_async_timeout_after_retry_wait_names_configuration_options():
             sleep=sleep,
             monotonic=clock.monotonic,
         ).handle_async_request(request)
+
+
+@pytest.mark.asyncio
+async def test_async_retries_unavailable_status_with_backoff():
+    inner = FakeAsyncTransport([503, 502, 200], retry_after=None)
+    sleeps = []
+    randoms = iter([0.0, 1.0])
+
+    async def sleep(delay):
+        sleeps.append(delay)
+
+    response = await AsyncRetryableTransport(
+        inner,
+        retries=3,
+        sleep=sleep,
+        monotonic=lambda: 0.0,
+        random_=lambda: next(randoms),
+    ).handle_async_request(
+        httpx.Request("POST", "https://api.test", content=b"payload")
+    )
+
+    assert response.status_code == 200
+    assert sleeps == [0.25, 1.0]
+    assert [item.content for item in inner.requests] == [b"payload"] * 3
+    assert all(item.is_closed for item in inner.responses[:-1])
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("status", [400, 404, 500, 504])
+async def test_async_does_not_retry_other_status_codes(status):
+    inner = FakeAsyncTransport([status], retry_after="0")
+
+    response = await AsyncRetryableTransport(inner, retries=3).handle_async_request(
+        httpx.Request("GET", "https://api.test")
+    )
+
+    assert response is inner.responses[0]
+    assert len(inner.requests) == 1
 
 
 @pytest.mark.asyncio

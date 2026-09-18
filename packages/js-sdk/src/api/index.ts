@@ -11,7 +11,7 @@ import {
   SandboxError,
 } from '../errors'
 import { createApiLogger } from '../logs'
-import { withRateLimitRetry } from '../retry'
+import { withRetry } from '../retry'
 
 /**
  * Map an API error code and message to the matching error class — the same
@@ -106,7 +106,7 @@ class ApiClient {
 
     this.api = createClient<paths>({
       baseUrl: config.apiUrl,
-      fetch: withRateLimitRetry(
+      fetch: withRetry(
         createApiFetch(config.proxy),
         config.retries,
         config.requestTimeoutMs

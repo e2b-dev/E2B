@@ -1,4 +1,5 @@
 import asyncio
+import random
 import time
 from typing import Awaitable, Callable, Optional
 
@@ -8,6 +9,9 @@ from e2b.exceptions import InvalidArgumentException
 
 MAX_RETRY_AFTER_SECONDS = 2_147_483_647
 MAX_RETRY_WAIT_WITHOUT_TIMEOUT_SECONDS = 60.0
+BACKOFF_BASE_SECONDS = 0.5
+BACKOFF_MAX_SECONDS = 8.0
+RETRYABLE_STATUSES = frozenset({429, 502, 503})
 
 
 def resolve_max_retries(retries: int) -> int:
@@ -27,6 +31,26 @@ def parse_retry_after(value: Optional[str]) -> Optional[int]:
         return None
     delay = int(value)
     return delay if delay <= MAX_RETRY_AFTER_SECONDS else None
+
+
+def _retry_delay(
+    response: httpx.Response, attempt: int, random_: Callable[[], float]
+) -> Optional[float]:
+    """Delay before the next attempt, or ``None`` when the response is not
+    retried: ``Retry-After`` when the server sends a usable one, otherwise
+    exponential backoff with jitter for 502/503. A 429 without ``Retry-After``
+    is not retried."""
+    if response.status_code not in RETRYABLE_STATUSES:
+        return None
+
+    retry_after = parse_retry_after(response.headers.get("Retry-After"))
+    if retry_after is not None:
+        return float(retry_after)
+    if response.status_code == 429:
+        return None
+
+    backoff = min(BACKOFF_BASE_SECONDS * 2**attempt, BACKOFF_MAX_SECONDS)
+    return backoff * (0.5 + random_() / 2)
 
 
 def _copy_request(
@@ -64,7 +88,9 @@ def _request_deadline(request: httpx.Request, monotonic: Callable[[], float]) ->
 
 
 class RetryableTransport(httpx.BaseTransport):
-    """Retry replayable requests after a 429 carrying ``Retry-After``."""
+    """Retry replayable requests after a 429 carrying ``Retry-After`` or a
+    502/503 (using ``Retry-After`` when present, exponential backoff
+    otherwise)."""
 
     def __init__(
         self,
@@ -72,11 +98,13 @@ class RetryableTransport(httpx.BaseTransport):
         retries: int,
         sleep: Callable[[float], None] = time.sleep,
         monotonic: Callable[[], float] = time.monotonic,
+        random_: Callable[[], float] = random.random,
     ):
         self.transport = transport
         self.retries = retries
         self._sleep = sleep
         self._monotonic = monotonic
+        self._random = random_
 
     def handle_request(self, request: httpx.Request) -> httpx.Response:
         # Iterators, files, and other streaming bodies may be consumed by the
@@ -92,24 +120,22 @@ class RetryableTransport(httpx.BaseTransport):
                 remaining_timeout = deadline - self._monotonic()
                 if remaining_timeout <= 0:
                     raise httpx.TimeoutException(
-                        "Request timed out while waiting to retry a rate-limited "
-                        "request. Increase `request_timeout` or lower `retries`.",
+                        "Request timed out while waiting to retry. "
+                        "Increase `request_timeout` or lower `retries`.",
                         request=request,
                     )
             response = self.transport.handle_request(
                 _copy_request(request, remaining_timeout)
             )
-            retry_after = parse_retry_after(response.headers.get("Retry-After"))
-            if (
-                response.status_code != 429
-                or retry_after is None
-                or attempt == self.retries
-                or (self._monotonic() + retry_after >= deadline)
-            ):
+            if attempt == self.retries:
+                return response
+
+            delay = _retry_delay(response, attempt, self._random)
+            if delay is None or self._monotonic() + delay >= deadline:
                 return response
 
             response.close()
-            self._sleep(retry_after)
+            self._sleep(delay)
 
         raise AssertionError("unreachable")
 
@@ -127,11 +153,13 @@ class AsyncRetryableTransport(httpx.AsyncBaseTransport):
         retries: int,
         sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
         monotonic: Callable[[], float] = time.monotonic,
+        random_: Callable[[], float] = random.random,
     ):
         self.transport = transport
         self.retries = retries
         self._sleep = sleep
         self._monotonic = monotonic
+        self._random = random_
 
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         # Iterators, files, and other streaming bodies may be consumed by the
@@ -147,24 +175,22 @@ class AsyncRetryableTransport(httpx.AsyncBaseTransport):
                 remaining_timeout = deadline - self._monotonic()
                 if remaining_timeout <= 0:
                     raise httpx.TimeoutException(
-                        "Request timed out while waiting to retry a rate-limited "
-                        "request. Increase `request_timeout` or lower `retries`.",
+                        "Request timed out while waiting to retry. "
+                        "Increase `request_timeout` or lower `retries`.",
                         request=request,
                     )
             response = await self.transport.handle_async_request(
                 _copy_request(request, remaining_timeout)
             )
-            retry_after = parse_retry_after(response.headers.get("Retry-After"))
-            if (
-                response.status_code != 429
-                or retry_after is None
-                or attempt == self.retries
-                or (self._monotonic() + retry_after >= deadline)
-            ):
+            if attempt == self.retries:
+                return response
+
+            delay = _retry_delay(response, attempt, self._random)
+            if delay is None or self._monotonic() + delay >= deadline:
                 return response
 
             await response.aclose()
-            await self._sleep(retry_after)
+            await self._sleep(delay)
 
         raise AssertionError("unreachable")
 

@@ -3,6 +3,9 @@ import { isReadableStreamLike } from './is'
 
 const MAX_RETRY_AFTER_SECONDS = 2_147_483
 const MAX_RETRY_WAIT_WITHOUT_TIMEOUT_MS = 60_000
+const BACKOFF_BASE_MS = 500
+const BACKOFF_MAX_MS = 8_000
+const RETRYABLE_STATUSES = new Set([429, 502, 503])
 
 export function resolveRetries(retries: number): number {
   if (!Number.isInteger(retries) || retries < 0) {
@@ -30,6 +33,7 @@ export function parseRetryAfter(
 type RetryDependencies = {
   monotonic?: () => number
   sleep?: (delayMs: number, signal: AbortSignal) => Promise<void>
+  random?: () => number
 }
 
 function wait(delayMs: number, signal: AbortSignal): Promise<void> {
@@ -48,8 +52,32 @@ function wait(delayMs: number, signal: AbortSignal): Promise<void> {
   })
 }
 
-/** Retry replayable requests after a 429 carrying `Retry-After`. */
-export function withRateLimitRetry(
+/**
+ * Delay before the next attempt, or `undefined` when the response is not
+ * retried: `Retry-After` when the server sends a usable one, otherwise
+ * exponential backoff with jitter for 502/503. A 429 without `Retry-After`
+ * is not retried.
+ */
+function retryDelayMs(
+  response: Response,
+  attempt: number,
+  random: () => number
+): number | undefined {
+  if (!RETRYABLE_STATUSES.has(response.status)) return undefined
+
+  const retryAfter = parseRetryAfter(response.headers.get('Retry-After'))
+  if (retryAfter !== undefined) return retryAfter * 1000
+  if (response.status === 429) return undefined
+
+  const backoff = Math.min(BACKOFF_BASE_MS * 2 ** attempt, BACKOFF_MAX_MS)
+  return Math.floor(backoff * (0.5 + random() / 2))
+}
+
+/**
+ * Retry replayable requests after a 429 carrying `Retry-After` or a 502/503
+ * (using `Retry-After` when present, exponential backoff otherwise).
+ */
+export function withRetry(
   fetchImpl: typeof fetch,
   retries: number,
   requestTimeoutMs: number,
@@ -57,6 +85,7 @@ export function withRateLimitRetry(
 ): typeof fetch {
   const monotonic = dependencies.monotonic ?? (() => performance.now())
   const sleep = dependencies.sleep ?? wait
+  const random = dependencies.random ?? Math.random
 
   return (async (input, init) => {
     // Streaming bodies would be consumed by the first attempt and cannot be
@@ -80,19 +109,16 @@ export function withRateLimitRetry(
       const response = await fetchImpl(
         attempt === retries ? request : request.clone()
       )
-      const retryAfter = parseRetryAfter(response.headers.get('Retry-After'))
-      const delayMs = retryAfter === undefined ? undefined : retryAfter * 1000
+      if (attempt === retries) return response
 
-      if (
-        response.status !== 429 ||
-        delayMs === undefined ||
-        attempt === retries ||
-        monotonic() + delayMs >= deadline
-      ) {
+      const delayMs = retryDelayMs(response, attempt, random)
+      if (delayMs === undefined || monotonic() + delayMs >= deadline) {
         return response
       }
 
-      await response.body?.cancel().catch(() => {})
+      // Not awaited: some fetch interceptors never settle `cancel()`, and the
+      // retry does not depend on the discarded body having been released.
+      void response.body?.cancel().catch(() => {})
       await sleep(delayMs, request.signal)
     }
   }) as typeof fetch
