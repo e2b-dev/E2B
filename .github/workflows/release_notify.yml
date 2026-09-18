@@ -1,0 +1,73 @@
+name: Release Notification
+
+on:
+  workflow_call:
+    inputs:
+      release:
+        description: Human-readable name of what is being released (e.g. "Desktop SDK")
+        required: true
+        type: string
+      status:
+        description: started, succeeded or failed
+        required: true
+        type: string
+      itinerary:
+        description: Slack-formatted list of the packages being released
+        required: false
+        type: string
+    secrets:
+      SLACK_WEBHOOK:
+        required: true
+
+permissions: {}
+
+jobs:
+  started:
+    name: Slack
+    if: inputs.status == 'started'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: rtCamp/action-slack-notify@33ca3be66c6f378fe1610fd1d5258632dbed5e58 # v2.4.0
+        env:
+          SLACK_COLOR: '#3aa3e3'
+          SLACK_MESSAGE: |
+            :rocket: A new ${{ inputs.release }} release has been triggered :hourglass_flowing_sand:
+
+            *Releasing:*
+            ${{ inputs.itinerary || '• (itinerary unavailable)' }}
+          SLACK_TITLE: ${{ inputs.release }} Release Started
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_CHANNEL: 'monitoring-releases'
+
+  succeeded:
+    name: Slack
+    if: inputs.status == 'succeeded'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: rtCamp/action-slack-notify@33ca3be66c6f378fe1610fd1d5258632dbed5e58 # v2.4.0
+        env:
+          SLACK_COLOR: '#36a64f'
+          SLACK_MESSAGE: |
+            :tada: A new ${{ inputs.release }} version has been released successfully! :ship-it-parrot:
+
+            *Released:*
+            ${{ inputs.itinerary || '• (itinerary unavailable)' }}
+          SLACK_TITLE: ${{ inputs.release }} Release Succeeded
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_CHANNEL: 'monitoring-releases'
+
+  failed:
+    name: Slack
+    if: inputs.status == 'failed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: rtCamp/action-slack-notify@33ca3be66c6f378fe1610fd1d5258632dbed5e58 # v2.4.0
+        env:
+          SLACK_COLOR: '#ff0000'
+          SLACK_MESSAGE: |
+            :here-we-go-again: :bob-the-destroyer: The ${{ inputs.release }} release failed. We need :fix-parrot: ASAP :pray:
+
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SLACK_TITLE: ${{ inputs.release }} Release Failed
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_CHANNEL: 'monitoring-releases'
