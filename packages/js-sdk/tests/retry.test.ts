@@ -2,6 +2,7 @@ import { describe, expect, test, vi } from 'vitest'
 
 import {
   isConnectionError,
+  isRetryableFetchError,
   parseRetryAfter,
   resolveRetries,
   withRetry,
@@ -376,83 +377,113 @@ function connectError(code: string, syscall = 'connect'): TypeError {
   })
 }
 
-describe('isConnectionError', () => {
-  // Shapes observed from `fetch()` against a refused port / unresolvable host.
-  const connectFailures = {
-    'Node refused': connectError('ECONNREFUSED'),
-    'Node dns': connectError('ENOTFOUND', 'getaddrinfo'),
-    'Node connect timeout': connectError('ETIMEDOUT'),
-    'Node happy-eyeballs': Object.assign(new Error('fetch failed'), {
-      cause: new AggregateError([connectError('ECONNREFUSED').cause]),
-    }),
-    'Bun refused': Object.assign(
-      new TypeError(
-        'Unable to connect. Is the computer able to access the url?'
-      ),
-      { code: 'ConnectionRefused' }
-    ),
-    'Bun dns': Object.assign(
-      new TypeError('getaddrinfo ENOTFOUND nonexistent.invalid'),
-      { code: 'ENOTFOUND', syscall: 'getaddrinfo' }
-    ),
-    'Deno refused': new TypeError(
-      'error sending request for url (http://x): client error (Connect): tcp connect error'
-    ),
-    'Deno dns': new TypeError(
-      'error sending request for url (http://x): client error (Connect): dns error'
-    ),
-  }
+// Shapes observed from `fetch()` against a refused port / unresolvable host.
+const connectFailures = {
+  'Node refused': connectError('ECONNREFUSED'),
+  'Node dns': connectError('ENOTFOUND', 'getaddrinfo'),
+  'Node connect timeout': connectError('ETIMEDOUT'),
+  'Node happy-eyeballs': Object.assign(new Error('fetch failed'), {
+    cause: new AggregateError([connectError('ECONNREFUSED').cause]),
+  }),
+  'Bun refused': Object.assign(
+    new TypeError('Unable to connect. Is the computer able to access the url?'),
+    { code: 'ConnectionRefused' }
+  ),
+  'Bun dns': Object.assign(
+    new TypeError('getaddrinfo ENOTFOUND nonexistent.invalid'),
+    { code: 'ENOTFOUND', syscall: 'getaddrinfo' }
+  ),
+  'Deno refused': new TypeError(
+    'error sending request for url (http://x): client error (Connect): tcp connect error'
+  ),
+  'Deno dns': new TypeError(
+    'error sending request for url (http://x): client error (Connect): dns error'
+  ),
+}
 
+// Connection dropped after the request was (at least partially) written:
+// the server may have processed it, so these are replayed only for a GET.
+const terminated = {
+  Node: new TypeError('terminated'),
+  'Node reset': new TypeError('fetch failed', {
+    cause: Object.assign(new Error('read ECONNRESET'), {
+      code: 'ECONNRESET',
+      syscall: 'read',
+    }),
+  }),
+  'Node socket': new TypeError('fetch failed', {
+    cause: Object.assign(new Error('socket'), { code: 'UND_ERR_SOCKET' }),
+  }),
+  Bun: new Error('The socket connection was closed unexpectedly'),
+  Deno: new TypeError('error reading a body from connection'),
+  'Deno send': new TypeError(
+    'error sending request for url (http://x): client error (SendRequest)'
+  ),
+  'Cloudflare Workers': new Error('Network connection lost.'),
+  Browser: new TypeError('network error'),
+}
+
+// Opaque failures that look identical whether the connection was never
+// established or was lost mid-request.
+const opaque = {
+  'Cloudflare Workers': Object.assign(new Error('Network connection lost.'), {
+    remote: true,
+    retryable: true,
+  }),
+  'Cloudflare Workers dns': Object.assign(
+    new Error('internal error; reference = abc'),
+    { remote: true }
+  ),
+  Chrome: new TypeError('Failed to fetch'),
+  Firefox: new TypeError('NetworkError when attempting to fetch resource.'),
+  Safari: new TypeError('Load failed'),
+}
+
+const aborts = {
+  abort: new DOMException('aborted', 'AbortError'),
+  timeout: new DOMException('timed out', 'TimeoutError'),
+}
+
+describe('isConnectionError', () => {
   test.each(Object.entries(connectFailures))('recognizes %s', (_, error) => {
     expect(isConnectionError(error)).toBe(true)
   })
 
-  // Connection dropped after the request was (at least partially) written:
-  // the server may have processed it, so these must not be replayed.
-  const terminated = {
-    Node: new TypeError('terminated'),
-    'Node reset': new TypeError('fetch failed', {
-      cause: Object.assign(new Error('read ECONNRESET'), {
-        code: 'ECONNRESET',
-        syscall: 'read',
-      }),
-    }),
-    'Node socket': new TypeError('fetch failed', {
-      cause: Object.assign(new Error('socket'), { code: 'UND_ERR_SOCKET' }),
-    }),
-    Bun: new Error('The socket connection was closed unexpectedly'),
-    Deno: new TypeError('error reading a body from connection'),
-    'Deno send': new TypeError(
-      'error sending request for url (http://x): client error (SendRequest)'
-    ),
-    'Cloudflare Workers': new Error('Network connection lost.'),
-    Browser: new TypeError('network error'),
-  }
-
-  // Opaque failures that look identical whether the connection was never
-  // established or was lost mid-request.
-  const opaque = {
-    'Cloudflare Workers': Object.assign(new Error('Network connection lost.'), {
-      remote: true,
-      retryable: true,
-    }),
-    'Cloudflare Workers dns': Object.assign(
-      new Error('internal error; reference = abc'),
-      { remote: true }
-    ),
-    Chrome: new TypeError('Failed to fetch'),
-    Firefox: new TypeError('NetworkError when attempting to fetch resource.'),
-    Safari: new TypeError('Load failed'),
-  }
-
   test.each([
     ...Object.entries(terminated),
     ...Object.entries(opaque),
-    ['abort', new DOMException('aborted', 'AbortError')],
+    ...Object.entries(aborts),
     ['non-error', 'ECONNREFUSED'],
   ])('rejects %s', (_, error) => {
     expect(isConnectionError(error)).toBe(false)
   })
+})
+
+describe('isRetryableFetchError', () => {
+  test.each(Object.entries(connectFailures))(
+    'retries %s for any method',
+    (_, error) => {
+      expect(isRetryableFetchError(error, 'GET')).toBe(true)
+      expect(isRetryableFetchError(error, 'POST')).toBe(true)
+    }
+  )
+
+  test.each([...Object.entries(terminated), ...Object.entries(opaque)])(
+    'retries %s only for GET',
+    (_, error) => {
+      expect(isRetryableFetchError(error, 'GET')).toBe(true)
+      expect(isRetryableFetchError(error, 'POST')).toBe(false)
+      expect(isRetryableFetchError(error, 'DELETE')).toBe(false)
+    }
+  )
+
+  test.each([...Object.entries(aborts), ['non-error', 'ECONNREFUSED']])(
+    'never retries %s',
+    (_, error) => {
+      expect(isRetryableFetchError(error, 'GET')).toBe(false)
+      expect(isRetryableFetchError(error, 'POST')).toBe(false)
+    }
+  )
 })
 
 test('retries a connection failure with exponential backoff', async () => {
@@ -518,12 +549,33 @@ test('rethrows a connection failure when the backoff would exceed the request ti
   expect(sleep).not.toHaveBeenCalled()
 })
 
+test('retries an opaque network error for a GET', async () => {
+  const outcomes = [
+    () => Promise.reject(opaque.Chrome),
+    () => Promise.reject(terminated['Node reset']),
+    () => Promise.resolve(new Response('ok')),
+  ]
+  const fetchImpl = vi.fn(() => outcomes.shift()!()) as typeof fetch
+  const sleep = vi.fn(async () => {})
+  const fetchWithRetry = withRetry(fetchImpl, 3, 60_000, {
+    monotonic: () => 0,
+    sleep,
+    random: () => 1,
+  })
+
+  const response = await fetchWithRetry('https://api.e2b.test/resource')
+
+  expect(response.status).toBe(200)
+  expect(fetchImpl).toHaveBeenCalledTimes(3)
+  expect(sleep.mock.calls.map(([delayMs]) => delayMs)).toEqual([100, 200])
+})
+
 test.each([
-  new TypeError('fetch failed', {
-    cause: Object.assign(new Error('read ECONNRESET'), { code: 'ECONNRESET' }),
-  }),
-  new DOMException('aborted', 'AbortError'),
-])('does not retry %s', async (error) => {
+  ['opaque network error', opaque.Chrome, 'POST'],
+  ['dropped connection', terminated['Node reset'], 'POST'],
+  ['dropped connection', terminated['Cloudflare Workers'], 'DELETE'],
+  ['abort', aborts.abort, 'GET'],
+])('does not retry %s for %s', async (_, error, method) => {
   const fetchImpl = vi.fn(async () => {
     throw error
   }) as typeof fetch
@@ -532,9 +584,29 @@ test.each([
     sleep: async () => {},
   })
 
-  await expect(fetchWithRetry('https://api.e2b.test/resource')).rejects.toBe(
-    error
-  )
+  await expect(
+    fetchWithRetry('https://api.e2b.test/resource', { method })
+  ).rejects.toBe(error)
+  expect(fetchImpl).toHaveBeenCalledOnce()
+})
+
+test('does not retry a GET whose signal was aborted', async () => {
+  const controller = new AbortController()
+  const reason = new Error('cancelled by caller')
+  const fetchImpl = vi.fn(async () => {
+    controller.abort(reason)
+    throw reason
+  }) as typeof fetch
+  const fetchWithRetry = withRetry(fetchImpl, 3, 10_000, {
+    monotonic: () => 0,
+    sleep: async () => {},
+  })
+
+  await expect(
+    fetchWithRetry('https://api.e2b.test/resource', {
+      signal: controller.signal,
+    })
+  ).rejects.toBe(reason)
   expect(fetchImpl).toHaveBeenCalledOnce()
 })
 

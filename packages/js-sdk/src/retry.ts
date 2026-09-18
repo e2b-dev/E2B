@@ -70,6 +70,20 @@ export function isConnectionError(error: unknown, depth = 0): boolean {
   return isConnectionError(error.cause, depth + 1)
 }
 
+/**
+ * Whether a `fetch` rejection may be retried for a request with `method`.
+ * Connection-establishment failures are replayable for any method. A GET is
+ * idempotent, so for it any other network error is retried as well: a
+ * connection dropped mid-request, or the opaque `TypeError` browsers and
+ * Cloudflare Workers raise for every network failure. Aborts are never
+ * retried.
+ */
+export function isRetryableFetchError(error: unknown, method: string): boolean {
+  if (error instanceof DOMException) return false
+  if (isConnectionError(error)) return true
+  return method === 'GET' && error instanceof Error
+}
+
 type RetryDependencies = {
   monotonic?: () => number
   sleep?: (delayMs: number, signal: AbortSignal) => Promise<void>
@@ -122,7 +136,7 @@ function retryDelayMs(
 /**
  * Retry replayable requests after a 429 carrying `Retry-After`, a 502/503
  * (using `Retry-After` when present, exponential backoff otherwise) or a
- * failure to establish the connection (exponential backoff).
+ * network failure (exponential backoff; see {@link isRetryableFetchError}).
  */
 export function withRetry(
   fetchImpl: typeof fetch,
@@ -159,7 +173,13 @@ export function withRetry(
           attempt === retries ? request : request.clone()
         )
       } catch (error) {
-        if (attempt === retries || !isConnectionError(error)) throw error
+        if (
+          attempt === retries ||
+          request.signal.aborted ||
+          !isRetryableFetchError(error, request.method)
+        ) {
+          throw error
+        }
 
         const delayMs = backoffMs(attempt, random)
         if (monotonic() + delayMs >= deadline) throw error
