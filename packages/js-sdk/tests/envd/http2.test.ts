@@ -89,23 +89,78 @@ test('uses a ProxyAgent dispatcher when a proxy is configured', async () => {
   expect(requests[0].init?.dispatcher).toBeInstanceOf(ProxyAgent)
 })
 
-test('caches envd fetchers per proxy', async () => {
+test('pins the dispatcher to HTTP/1.1 when http2 is false', async () => {
+  const agents: Array<{ allowH2?: boolean; connections?: number }> = []
+  const proxyAgents: Array<{ uri?: string; allowH2?: boolean }> = []
+
+  class Agent {
+    constructor(options: { allowH2?: boolean; connections?: number }) {
+      agents.push(options)
+    }
+  }
+
+  class ProxyAgent {
+    constructor(options: { uri?: string; allowH2?: boolean }) {
+      proxyAgents.push(options)
+    }
+  }
+
+  const undiciFetch = vi.fn(() => Promise.resolve(new Response('ok')))
+
+  const { createEnvdFetchForRuntime } = await import('../../src/envd/http2')
+
+  const direct = createEnvdFetchForRuntime('node', {
+    connectionLimit: 1,
+    http2: false,
+    loadUndici: () =>
+      Promise.resolve({ Agent, ProxyAgent, fetch: undiciFetch }),
+  })
+  await direct('https://example.com/status')
+
+  const proxied = createEnvdFetchForRuntime('node', {
+    connectionLimit: 1,
+    http2: false,
+    proxy: 'http://127.0.0.1:8080',
+    loadUndici: () =>
+      Promise.resolve({ Agent, ProxyAgent, fetch: undiciFetch }),
+  })
+  await proxied('https://example.com/status')
+
+  expect(agents).toEqual([{ allowH2: false, connections: 1 }])
+  expect(proxyAgents).toEqual([
+    {
+      uri: 'http://127.0.0.1:8080',
+      allowH2: false,
+      connections: 1,
+      proxyTunnel: true,
+    },
+  ])
+})
+
+test('caches envd fetchers per proxy and HTTP version', async () => {
   const { createEnvdFetch, createEnvdRpcFetch } =
     await import('../../src/envd/http2')
 
   const noProxy = createEnvdFetch()
   const proxyA = createEnvdFetch('http://127.0.0.1:8080')
+  const noProxyH1 = createEnvdFetch(undefined, false)
 
   expect(createEnvdFetch()).toBe(noProxy)
+  expect(createEnvdFetch(undefined, true)).toBe(noProxy)
   expect(createEnvdFetch('http://127.0.0.1:8080')).toBe(proxyA)
+  expect(createEnvdFetch(undefined, false)).toBe(noProxyH1)
   expect(proxyA).not.toBe(noProxy)
+  expect(noProxyH1).not.toBe(noProxy)
 
   const rpcNoProxy = createEnvdRpcFetch()
   const rpcProxyA = createEnvdRpcFetch('http://127.0.0.1:8080')
+  const rpcNoProxyH1 = createEnvdRpcFetch(undefined, false)
 
   expect(createEnvdRpcFetch()).toBe(rpcNoProxy)
   expect(createEnvdRpcFetch('http://127.0.0.1:8080')).toBe(rpcProxyA)
+  expect(createEnvdRpcFetch(undefined, false)).toBe(rpcNoProxyH1)
   expect(rpcProxyA).not.toBe(rpcNoProxy)
+  expect(rpcNoProxyH1).not.toBe(rpcNoProxy)
 })
 
 test('passes Request objects to undici as URL plus init', async () => {

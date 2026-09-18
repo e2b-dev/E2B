@@ -10,11 +10,12 @@ type EnvdFetchOptions = {
   connectionLimit?: number
   inflightLimit?: number
   proxy?: string
+  http2?: boolean
   loadUndici?: () => Promise<UndiciModule | undefined>
 }
 
-// Fetchers are cached per proxy so requests without a proxy keep sharing a
-// single dispatcher while each distinct proxy URL gets its own.
+// Fetchers are cached per proxy and HTTP version so requests without a proxy
+// keep sharing a single dispatcher while each distinct proxy URL gets its own.
 const envdFetchers = new Map<string, typeof fetch>()
 const envdRpcFetchers = new Map<string, typeof fetch>()
 const DEFAULT_ENVD_CONNECTION_LIMIT = 10
@@ -31,13 +32,18 @@ export function createEnvdFetchForRuntime(
       connections: options.connectionLimit ?? DEFAULT_ENVD_CONNECTION_LIMIT,
       inflightLimit: options.inflightLimit ?? 0,
       proxy: options.proxy,
+      http2: options.http2,
       loadUndici: options.loadUndici,
     })
   )
 }
 
-export function createEnvdFetch(proxy?: string): typeof fetch {
-  const key = proxy ?? ''
+function fetcherKey(proxy: string | undefined, http2: boolean): string {
+  return `${http2 ? 'h2' : 'h1'}:${proxy ?? ''}`
+}
+
+export function createEnvdFetch(proxy?: string, http2 = true): typeof fetch {
+  const key = fetcherKey(proxy, http2)
 
   const cached = envdFetchers.get(key)
   if (cached) {
@@ -49,14 +55,15 @@ export function createEnvdFetch(proxy?: string): typeof fetch {
   const envdFetch = createEnvdFetchForRuntime(runtime, {
     inflightLimit: getEnvdInflightLimit(),
     proxy,
+    http2,
   })
   envdFetchers.set(key, envdFetch)
 
   return envdFetch
 }
 
-export function createEnvdRpcFetch(proxy?: string): typeof fetch {
-  const key = proxy ?? ''
+export function createEnvdRpcFetch(proxy?: string, http2 = true): typeof fetch {
+  const key = fetcherKey(proxy, http2)
 
   const cached = envdRpcFetchers.get(key)
   if (cached) {
@@ -67,6 +74,7 @@ export function createEnvdRpcFetch(proxy?: string): typeof fetch {
     connectionLimit: getEnvdRpcConnectionLimit(),
     inflightLimit: getEnvdRpcInflightLimit(),
     proxy,
+    http2,
   })
   envdRpcFetchers.set(key, envdRpcFetch)
 

@@ -1,10 +1,10 @@
 import json
 import logging
 import os
-import zlib
+import threading
 from dataclasses import dataclass
 from types import TracebackType
-from typing import NamedTuple, Optional, Protocol, Tuple, Union
+from typing import List, NamedTuple, Optional, Protocol, Tuple, Union
 from urllib.parse import quote
 
 import httpx
@@ -103,26 +103,79 @@ connection_retries = int(os.getenv("E2B_CONNECTION_RETRIES") or "3")
 # is no longer read.
 pool_idle_timeout = float(os.getenv("E2B_KEEPALIVE_EXPIRY") or "300")
 pool_max_idle_per_host = int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20")
-envd_pool_shards = max(1, int(os.getenv("E2B_ENVD_POOL_SHARDS") or "4"))
+# Envd (sandbox) traffic is spread over connection pools opened on demand, see
+# `EnvdPoolBalancer`: at most `envd_pool_shards` pools, a further one opened
+# once every open pool carries `envd_pool_streams` streams. The stream bound
+# sits below the 100 concurrent streams the sandbox host advertises per HTTP/2
+# connection, so a pool is left before the peer limit starts queueing.
+envd_pool_shards = max(1, int(os.getenv("E2B_ENVD_POOL_SHARDS") or "16"))
+envd_pool_streams = max(1, int(os.getenv("E2B_ENVD_POOL_STREAMS") or "90"))
 
 
-def envd_pool_shard(config: ConnectionConfig) -> int:
-    """Return the stable connection-pool shard for a sandbox's envd traffic.
+class EnvdPoolBalancer:
+    """Least-loaded selection among a bounded set of envd connection pools.
 
     Production envd requests share one origin, whose HTTP/2 connection has a
-    finite concurrent-stream limit. Long-running commands hold those streams,
-    so one process-wide connection becomes a bottleneck even though the edge
-    and account can run more sandboxes. A small bounded set of pools provides
-    additional connections without returning to one connection per sandbox.
+    finite concurrent-stream limit. Long-running commands hold their streams
+    for their whole lifetime, so a saturated connection queues every further
+    request — a readiness check as much as the next command — behind them,
+    while the edge and account could serve far more. Spreading sandboxes over
+    a fixed number of connections by hashing only moves the ceiling, and opens
+    every connection even for a process running a single sandbox.
 
-    The sandbox ID is carried on every envd request and CRC32 is stable across
-    processes, unlike Python's randomized ``hash``. Configs without a sandbox
-    ID (including control-plane clients) stay on shard zero.
+    Each request is sent on the pool with the fewest requests in flight. A new
+    pool is opened only when every open pool already carries
+    ``streams_per_pool`` requests, up to ``max_pools``; past that the
+    least-loaded pool takes the request regardless. Ties go to the lowest
+    index, so load concentrates on the first pools and later ones fall idle
+    and expire once a burst is over.
+
+    A request is in flight from the moment it is sent until its response body
+    has been fully read or closed. Streamed responses (a running command's
+    output) are therefore counted for their whole lifetime, unary ones only
+    briefly. Thread-safe: the sync stack shares one balancer across threads.
     """
-    sandbox_id = config.sandbox_headers.get("E2b-Sandbox-Id")
-    if not sandbox_id:
-        return 0
-    return zlib.crc32(sandbox_id.encode()) % envd_pool_shards
+
+    def __init__(self, max_pools: int, streams_per_pool: int):
+        self._max_pools = max(1, max_pools)
+        self._streams_per_pool = max(1, streams_per_pool)
+        self._active: List[int] = []
+        self._lock = threading.Lock()
+
+    @property
+    def active_streams(self) -> Tuple[int, ...]:
+        """Requests in flight per open pool, by pool index."""
+        with self._lock:
+            return tuple(self._active)
+
+    def acquire(self) -> int:
+        """Pick the pool for a new request and count it in flight there. The
+        caller must pair it with exactly one :meth:`release` of the index."""
+        with self._lock:
+            if self._active:
+                index = min(range(len(self._active)), key=self._active.__getitem__)
+                if (
+                    self._active[index] < self._streams_per_pool
+                    or len(self._active) >= self._max_pools
+                ):
+                    self._active[index] += 1
+                    return index
+            self._active.append(1)
+            return len(self._active) - 1
+
+    def release(self, index: int) -> None:
+        with self._lock:
+            self._active[index] -= 1
+
+
+def envd_pool_balancer(http2: bool) -> EnvdPoolBalancer:
+    """The balancer for one set of envd pools, sized from the environment.
+    HTTP/1.1 has no per-connection stream limit to spread over — the pool
+    opens a connection per concurrent request — so it gets a single pool."""
+    return EnvdPoolBalancer(
+        envd_pool_shards if http2 else 1,
+        envd_pool_streams,
+    )
 
 
 class ProxyConfig(NamedTuple):

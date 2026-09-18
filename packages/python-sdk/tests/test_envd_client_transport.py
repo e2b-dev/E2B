@@ -140,17 +140,24 @@ def test_async_pool_is_cached_per_proxy():
     assert api_client_sync.get_pyqwest_transport(None) is not pool_a
 
 
-def test_rpc_clients_run_on_the_shared_pool(test_api_key, monkeypatch):
+@pytest.mark.parametrize("http2", [True, False])
+def test_rpc_clients_run_on_the_shared_envd_transport(test_api_key, monkeypatch, http2):
     # The RPC stack is the plain-HTTP-error normalization wrapping the very
-    # pool the httpx clients use, so an envd RPC and an envd HTTP call to the
-    # same sandbox share one HTTP/2 connection. `pyqwest.SyncClient` doesn't
-    # hand its transport back, so record what the normalization is given.
-    config = ConnectionConfig(api_key=test_api_key)
-    pool = api_client_sync.get_pyqwest_transport(None)
-    async_pool = api_client_async.get_pyqwest_transport(None)
-    # The httpx adapters every REST client uses sit on those same pools.
-    assert api_client_sync.get_httpx_transport(None)._transport is pool
-    assert api_client_async.get_httpx_transport(None)._transport is async_pool
+    # envd transport the envd httpx clients use, so envd RPC and envd HTTP
+    # calls draw on the same pools and load counts. `pyqwest.SyncClient`
+    # doesn't hand its transport back, so record what the normalization is
+    # given.
+    config = ConnectionConfig(
+        api_key=test_api_key, http_version="http2" if http2 else "http1"
+    )
+    pool = api_client_sync.get_envd_pyqwest_transport(None, http2=http2)
+    async_pool = api_client_async.get_envd_pyqwest_transport(None, http2=http2)
+    assert isinstance(pool, api_client_sync.EnvdPoolTransport)
+    assert isinstance(async_pool, api_client_async.EnvdPoolTransport)
+    assert pool is not api_client_sync.get_envd_pyqwest_transport(None, http2=not http2)
+    # The httpx adapters the envd HTTP API uses sit on those same transports.
+    assert api_client_sync.get_envd_transport(config)._transport is pool
+    assert api_client_async.get_envd_transport(config)._transport is async_pool
 
     wrapped = []
     for module in (client_sync, client_async):
