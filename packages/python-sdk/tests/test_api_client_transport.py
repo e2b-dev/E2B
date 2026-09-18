@@ -2,6 +2,7 @@ import asyncio
 import base64
 import json
 import logging
+import socket
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -739,6 +740,17 @@ class _EchoServer(ThreadingHTTPServer):
 
 
 @pytest.fixture
+def refused_url():
+    """A loopback URL nothing listens on. Unlike a well-known closed port
+    (say 9), a just-released ephemeral port is refused at once on every OS —
+    Windows lets connects to filtered ports time out instead."""
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
+    return f"http://127.0.0.1:{port}/health"
+
+
+@pytest.fixture
 def echo_server():
     _EchoHandler.rate_limit_requests = 0
     _EchoHandler.rate_limit_bodies = []
@@ -1214,7 +1226,7 @@ async def test_async_closing_one_client_leaves_the_shared_pool_open(
 
 @pytest.mark.parametrize("http2", [True, False])
 def test_sync_envd_transport_counts_requests_until_their_body_is_done(
-    test_api_key, echo_server, http2
+    test_api_key, echo_server, refused_url, http2
 ):
     # A request holds its slot on the pool it was sent on for as long as its
     # body may still be streaming — through the httpx adapter as much as for
@@ -1252,7 +1264,7 @@ def test_sync_envd_transport_counts_requests_until_their_body_is_done(
         assert balancer.active_streams == (0,)
 
         with pytest.raises(httpx.ConnectError):
-            envd_api.get("http://127.0.0.1:9/health")
+            envd_api.get(refused_url)
         assert balancer.active_streams == (0,)
     finally:
         envd_api.close()
@@ -1262,7 +1274,7 @@ def test_sync_envd_transport_counts_requests_until_their_body_is_done(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("http2", [True, False])
 async def test_async_envd_transport_counts_requests_until_their_body_is_done(
-    test_api_key, echo_server, http2
+    test_api_key, echo_server, refused_url, http2
 ):
     reset_transport_caches()
     config = ConnectionConfig(api_key=test_api_key, sandbox_http2=http2)
@@ -1296,7 +1308,7 @@ async def test_async_envd_transport_counts_requests_until_their_body_is_done(
         assert balancer.active_streams == (0,)
 
         with pytest.raises(httpx.ConnectError):
-            await envd_api.get("http://127.0.0.1:9/health")
+            await envd_api.get(refused_url)
         assert balancer.active_streams == (0,)
     finally:
         await envd_api.aclose()
