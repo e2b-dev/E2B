@@ -17,12 +17,6 @@ async function expectedSignature(raw: string): Promise<string> {
 }
 
 describe('secure sandbox', () => {
-  sandboxTest.override({
-    sandboxOpts: {
-      secure: true,
-    },
-  })
-
   sandboxTest.skipIf(isDebug)(
     'test access file with signing',
     async ({ sandbox }) => {

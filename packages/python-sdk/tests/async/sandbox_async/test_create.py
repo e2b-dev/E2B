@@ -7,7 +7,7 @@ import pytest
 
 from e2b import AsyncSandbox, SandboxException, SandboxQuery, SandboxState, Secret
 from e2b.api.client.models import (
-    NewSandbox,
+    NewSandboxV2,
     SandboxAutoResumeConfig,
 )
 from e2b.api.client.types import UNSET
@@ -102,7 +102,7 @@ async def test_mcp_gateway_start_failure_kills_created_sandbox(template):
 
 
 def test_create_payload_serializes_auto_resume_enabled():
-    body = NewSandbox(
+    body = NewSandboxV2(
         template_id="template-id",
         auto_pause=True,
         auto_resume=SandboxAutoResumeConfig(enabled=True),
@@ -113,7 +113,7 @@ def test_create_payload_serializes_auto_resume_enabled():
 
 
 def test_create_payload_deserializes_auto_resume_enabled():
-    body = NewSandbox.from_dict(
+    body = NewSandboxV2.from_dict(
         {
             "templateID": "template-id",
             "autoPause": False,
@@ -135,7 +135,7 @@ def test_create_payload_serializes_iam_tokens():
     )
     assert iam is not None
 
-    body = NewSandbox(template_id="template-id", iam=iam)
+    body = NewSandboxV2(template_id="template-id", iam=iam)
 
     assert body.to_dict()["iam"] == {
         "tokens": {
@@ -156,7 +156,7 @@ def test_create_payload_serializes_secret_iam_token():
     )
     assert iam is not None
 
-    body = NewSandbox(template_id="template-id", iam=iam)
+    body = NewSandboxV2(template_id="template-id", iam=iam)
 
     assert body.to_dict()["iam"] == {
         "tokens": {
@@ -170,7 +170,7 @@ def test_create_payload_omits_iam_when_not_provided_or_empty():
     assert build_iam_config({}) is None
     assert build_iam_config({"tokens": {}}) is None
 
-    body = NewSandbox(template_id="template-id", iam=UNSET)
+    body = NewSandboxV2(template_id="template-id", iam=UNSET)
 
     assert "iam" not in body.to_dict()
 

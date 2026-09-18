@@ -82,6 +82,7 @@ export const sandboxTest = base.extend<SandboxFixture>({
     async ({ sandboxTestId, sandboxOpts }, use) => {
       const sandbox = await Sandbox.create(template, {
         metadata: { sandboxTestId },
+        timeoutMs: 300_000,
         ...sandboxOpts,
       })
       onTestFailed(() => {

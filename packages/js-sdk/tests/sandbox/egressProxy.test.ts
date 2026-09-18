@@ -12,7 +12,7 @@ let lastUpdateBody: Record<string, any> | undefined
 let sandboxNetwork: Record<string, any> | undefined
 
 const server = setupMockApi(
-  http.post(apiUrl('/sandboxes'), async ({ request }) => {
+  http.post(apiUrl('/v2/sandboxes'), async ({ request }) => {
     lastCreateBody = (await request.json()) as Record<string, any>
     return HttpResponse.json({
       sandboxID: sandboxId,

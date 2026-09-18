@@ -7,7 +7,7 @@ import pytest
 
 from e2b import AsyncSandbox, Sandbox
 from e2b.exceptions import InvalidArgumentException
-from e2b.api.client.api.sandboxes import post_sandboxes_sandbox_id_connect
+from e2b.api.client.api.sandboxes import post_v_2_sandboxes_sandbox_id_connect
 from e2b.api.client.models import Sandbox as SandboxModel
 from e2b.sandbox_async.sandbox_api import SandboxApi as AsyncSandboxApi
 from e2b.sandbox_sync.sandbox_api import SandboxApi as SyncSandboxApi
@@ -29,7 +29,7 @@ def _connected_sandbox():
 
 def _sync_request_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, Any]:
     request = Mock(return_value=_connected_sandbox())
-    monkeypatch.setattr(post_sandboxes_sandbox_id_connect, "sync_detailed", request)
+    monkeypatch.setattr(post_v_2_sandboxes_sandbox_id_connect, "sync_detailed", request)
 
     Sandbox.connect(SANDBOX_ID, api_key=api_key, **kwargs)
 
@@ -38,7 +38,9 @@ def _sync_request_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, Any]:
 
 async def _async_request_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, Any]:
     request = AsyncMock(return_value=_connected_sandbox())
-    monkeypatch.setattr(post_sandboxes_sandbox_id_connect, "asyncio_detailed", request)
+    monkeypatch.setattr(
+        post_v_2_sandboxes_sandbox_id_connect, "asyncio_detailed", request
+    )
 
     await AsyncSandbox.connect(SANDBOX_ID, api_key=api_key, **kwargs)
 
@@ -87,7 +89,7 @@ async def test_async_connect_sends_memory_only_for_reboot(
 
 def test_instance_connect_carries_on_resume(monkeypatch, test_api_key):
     request = Mock(return_value=_connected_sandbox())
-    monkeypatch.setattr(post_sandboxes_sandbox_id_connect, "sync_detailed", request)
+    monkeypatch.setattr(post_v_2_sandboxes_sandbox_id_connect, "sync_detailed", request)
 
     sandbox = Sandbox.connect(SANDBOX_ID, api_key=test_api_key)
 
@@ -100,7 +102,9 @@ def test_instance_connect_carries_on_resume(monkeypatch, test_api_key):
 
 async def test_async_instance_connect_carries_on_resume(monkeypatch, test_api_key):
     request = AsyncMock(return_value=_connected_sandbox())
-    monkeypatch.setattr(post_sandboxes_sandbox_id_connect, "asyncio_detailed", request)
+    monkeypatch.setattr(
+        post_v_2_sandboxes_sandbox_id_connect, "asyncio_detailed", request
+    )
 
     sandbox = await AsyncSandbox.connect(SANDBOX_ID, api_key=test_api_key)
 
@@ -154,7 +158,7 @@ def test_on_resume_is_keyword_only_on_the_instance_form(sandbox):
 @pytest.mark.parametrize("value", UNRECOGNIZED)
 def test_connect_rejects_an_unrecognized_on_resume(monkeypatch, test_api_key, value):
     request = Mock(return_value=_connected_sandbox())
-    monkeypatch.setattr(post_sandboxes_sandbox_id_connect, "sync_detailed", request)
+    monkeypatch.setattr(post_v_2_sandboxes_sandbox_id_connect, "sync_detailed", request)
 
     with pytest.raises(InvalidArgumentException):
         Sandbox.connect(SANDBOX_ID, api_key=test_api_key, on_resume=cast(Any, value))
@@ -167,7 +171,9 @@ async def test_async_connect_rejects_an_unrecognized_on_resume(
     monkeypatch, test_api_key, value
 ):
     request = AsyncMock(return_value=_connected_sandbox())
-    monkeypatch.setattr(post_sandboxes_sandbox_id_connect, "asyncio_detailed", request)
+    monkeypatch.setattr(
+        post_v_2_sandboxes_sandbox_id_connect, "asyncio_detailed", request
+    )
 
     with pytest.raises(InvalidArgumentException):
         await AsyncSandbox.connect(

@@ -128,7 +128,7 @@ def test_write_with_secured_envd(sandbox_factory):
     filename = f"non_existing_dir_{uuid.uuid4()}/test_write.txt"
     content = "This should succeed too."
 
-    sbx = sandbox_factory(timeout=30, secure=True)
+    sbx = sandbox_factory(timeout=30)
     assert sbx.is_running()
     assert sbx._envd_version is not None
     assert sbx._envd_access_token is not None

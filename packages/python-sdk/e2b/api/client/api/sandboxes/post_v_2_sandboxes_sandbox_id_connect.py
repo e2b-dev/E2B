@@ -5,21 +5,22 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.connect_sandbox_v2 import ConnectSandboxV2
 from ...models.error import Error
-from ...models.new_sandbox import NewSandbox
 from ...models.sandbox import Sandbox
 from ...types import Response
 
 
 def _get_kwargs(
+    sandbox_id: str,
     *,
-    body: NewSandbox,
+    body: ConnectSandboxV2,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     _kwargs: dict[str, Any] = {
         "method": "post",
-        "url": "/sandboxes",
+        "url": f"/v2/sandboxes/{sandbox_id}/connect",
     }
 
     _kwargs["json"] = body.to_dict()
@@ -33,6 +34,10 @@ def _get_kwargs(
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
 ) -> Optional[Union[Error, Sandbox]]:
+    if response.status_code == 200:
+        response_200 = Sandbox.from_dict(response.json())
+
+        return response_200
     if response.status_code == 201:
         response_201 = Sandbox.from_dict(response.json())
 
@@ -45,6 +50,14 @@ def _parse_response(
         response_401 = Error.from_dict(response.json())
 
         return response_401
+    if response.status_code == 404:
+        response_404 = Error.from_dict(response.json())
+
+        return response_404
+    if response.status_code == 409:
+        response_409 = Error.from_dict(response.json())
+
+        return response_409
     if response.status_code == 429:
         response_429 = Error.from_dict(response.json())
 
@@ -79,16 +92,19 @@ def _build_response(
 
 
 def sync_detailed(
+    sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: NewSandbox,
+    body: ConnectSandboxV2,
 ) -> Response[Union[Error, Sandbox]]:
-    """Create sandbox
+    """Connect sandbox (v2)
 
-     Create a sandbox from the template. Use POST /v2/sandboxes instead.
+     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. The
+    request body is optional; an omitted timeout defaults to 300 seconds.
 
     Args:
-        body (NewSandbox):
+        sandbox_id (str):
+        body (ConnectSandboxV2):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -99,6 +115,7 @@ def sync_detailed(
     """
 
     kwargs = _get_kwargs(
+        sandbox_id=sandbox_id,
         body=body,
     )
 
@@ -110,16 +127,19 @@ def sync_detailed(
 
 
 def sync(
+    sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: NewSandbox,
+    body: ConnectSandboxV2,
 ) -> Optional[Union[Error, Sandbox]]:
-    """Create sandbox
+    """Connect sandbox (v2)
 
-     Create a sandbox from the template. Use POST /v2/sandboxes instead.
+     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. The
+    request body is optional; an omitted timeout defaults to 300 seconds.
 
     Args:
-        body (NewSandbox):
+        sandbox_id (str):
+        body (ConnectSandboxV2):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -130,22 +150,26 @@ def sync(
     """
 
     return sync_detailed(
+        sandbox_id=sandbox_id,
         client=client,
         body=body,
     ).parsed
 
 
 async def asyncio_detailed(
+    sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: NewSandbox,
+    body: ConnectSandboxV2,
 ) -> Response[Union[Error, Sandbox]]:
-    """Create sandbox
+    """Connect sandbox (v2)
 
-     Create a sandbox from the template. Use POST /v2/sandboxes instead.
+     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. The
+    request body is optional; an omitted timeout defaults to 300 seconds.
 
     Args:
-        body (NewSandbox):
+        sandbox_id (str):
+        body (ConnectSandboxV2):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -156,6 +180,7 @@ async def asyncio_detailed(
     """
 
     kwargs = _get_kwargs(
+        sandbox_id=sandbox_id,
         body=body,
     )
 
@@ -165,16 +190,19 @@ async def asyncio_detailed(
 
 
 async def asyncio(
+    sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: NewSandbox,
+    body: ConnectSandboxV2,
 ) -> Optional[Union[Error, Sandbox]]:
-    """Create sandbox
+    """Connect sandbox (v2)
 
-     Create a sandbox from the template. Use POST /v2/sandboxes instead.
+     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. The
+    request body is optional; an omitted timeout defaults to 300 seconds.
 
     Args:
-        body (NewSandbox):
+        sandbox_id (str):
+        body (ConnectSandboxV2):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -186,6 +214,7 @@ async def asyncio(
 
     return (
         await asyncio_detailed(
+            sandbox_id=sandbox_id,
             client=client,
             body=body,
         )

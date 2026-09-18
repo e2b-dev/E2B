@@ -99,7 +99,8 @@ def sync_detailed(
 ) -> Response[Union[Error, Sandbox]]:
     """Connect sandbox
 
-     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended.
+     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. Use
+    POST /v2/sandboxes/{sandboxID}/connect instead.
 
     Args:
         sandbox_id (str):
@@ -133,7 +134,8 @@ def sync(
 ) -> Optional[Union[Error, Sandbox]]:
     """Connect sandbox
 
-     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended.
+     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. Use
+    POST /v2/sandboxes/{sandboxID}/connect instead.
 
     Args:
         sandbox_id (str):
@@ -162,7 +164,8 @@ async def asyncio_detailed(
 ) -> Response[Union[Error, Sandbox]]:
     """Connect sandbox
 
-     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended.
+     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. Use
+    POST /v2/sandboxes/{sandboxID}/connect instead.
 
     Args:
         sandbox_id (str):
@@ -194,7 +197,8 @@ async def asyncio(
 ) -> Optional[Union[Error, Sandbox]]:
     """Connect sandbox
 
-     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended.
+     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. Use
+    POST /v2/sandboxes/{sandboxID}/connect instead.
 
     Args:
         sandbox_id (str):

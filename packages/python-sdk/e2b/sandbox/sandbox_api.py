@@ -587,7 +587,7 @@ class SandboxInfoLifecycle(TypedDict):
 def resolve_connect_memory(
     on_resume: Optional["SandboxOnResume"],
 ) -> Union[Unset, bool]:
-    """Resolve ``on_resume`` into ``ConnectSandbox.memory``.
+    """Resolve ``on_resume`` into ``ConnectSandboxV2.memory``.
 
     ``"restore"`` is the API's own default, so it travels as an omitted field.
     """
@@ -844,7 +844,7 @@ def build_iam_config(
 
 @dataclass(frozen=True)
 class SandboxLifecycleBody:
-    """Lifecycle fields of a create-sandbox request, as ``NewSandbox`` takes them."""
+    """Lifecycle fields of a create-sandbox request, as ``NewSandboxV2`` takes them."""
 
     auto_pause: Union[Unset, bool]
     auto_pause_memory: Union[Unset, bool]

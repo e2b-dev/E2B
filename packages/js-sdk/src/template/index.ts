@@ -266,7 +266,7 @@ export class TemplateBase
    *
    * @example
    * ```ts
-   * const status = await Template.getBuildStatus(data, { logsOffset: 0 })
+   * const status = await Template.getBuildStatus(data)
    * ```
    */
   static async getBuildStatus(
@@ -281,7 +281,7 @@ export class TemplateBase
       {
         templateID: data.templateId,
         buildID: data.buildId,
-        logsOffset: options?.logsOffset ?? 0,
+        logsOffset: options?.logsOffset,
       },
       config.getSignal(undefined, options?.signal)
     )
@@ -1076,8 +1076,8 @@ export class TemplateBase
       {
         name,
         tags: options.tags,
-        cpuCount: options.cpuCount ?? 2,
-        memoryMB: options.memoryMB ?? 1024,
+        cpuCount: options.cpuCount,
+        memoryMB: options.memoryMB,
         minFreeDiskMb: options.minFreeDiskMb,
       },
       config.getSignal(undefined, options.signal)

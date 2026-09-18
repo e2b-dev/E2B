@@ -51,7 +51,6 @@ export const isIntegrationTest = process.env.E2B_INTEGRATION_TEST !== undefined
 
 export const secureSandboxTest = sandboxTest.extend({
   sandboxOpts: {
-    secure: true,
     network: {
       allowPublicTraffic: false,
     },

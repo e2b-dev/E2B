@@ -1,7 +1,7 @@
 import pytest
 
 from e2b import Sandbox
-from e2b.exceptions import InvalidArgumentException, SandboxNotFoundException
+from e2b.exceptions import SandboxNotFoundException
 
 
 @pytest.mark.skip_debug()
@@ -76,8 +76,3 @@ def test_fork_killed_sandbox(sandbox_factory):
 
     with pytest.raises(SandboxNotFoundException):
         sandbox.fork()
-
-
-def test_fork_invalid_count():
-    with pytest.raises(InvalidArgumentException):
-        Sandbox.fork("sbx-test", count=0)

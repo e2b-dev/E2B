@@ -7,6 +7,7 @@ from .aws_registry_type import AWSRegistryType
 from .build_log_entry import BuildLogEntry
 from .build_status_reason import BuildStatusReason
 from .connect_sandbox import ConnectSandbox
+from .connect_sandbox_v2 import ConnectSandboxV2
 from .delete_template_tags_request import DeleteTemplateTagsRequest
 from .error import Error
 from .gcp_registry import GCPRegistry
@@ -19,6 +20,7 @@ from .logs_direction import LogsDirection
 from .logs_source import LogsSource
 from .mcp_type_0 import McpType0
 from .new_sandbox import NewSandbox
+from .new_sandbox_v2 import NewSandboxV2
 from .new_secret import NewSecret
 from .new_volume import NewVolume
 from .order_direction import OrderDirection
@@ -86,6 +88,7 @@ __all__ = (
     "BuildLogEntry",
     "BuildStatusReason",
     "ConnectSandbox",
+    "ConnectSandboxV2",
     "DeleteTemplateTagsRequest",
     "Error",
     "GCPRegistry",
@@ -98,6 +101,7 @@ __all__ = (
     "LogsSource",
     "McpType0",
     "NewSandbox",
+    "NewSandboxV2",
     "NewSecret",
     "NewVolume",
     "OrderDirection",

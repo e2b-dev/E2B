@@ -222,8 +222,8 @@ class Sandbox(SandboxBase):
         timeout: Optional[int] = None,
         metadata: Optional[Dict[str, str]] = None,
         envs: Optional[Dict[str, str]] = None,
-        secure: bool = True,
-        allow_internet_access: bool = True,
+        secure: Optional[bool] = None,
+        allow_internet_access: Optional[bool] = None,
         network: Optional[SandboxNetworkOpts] = None,
         iam: Optional[SandboxIamOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
@@ -244,8 +244,8 @@ class Sandbox(SandboxBase):
         :param timeout: Timeout for the sandbox in **seconds**, default to 300 seconds. The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
         :param metadata: Custom metadata for the sandbox
         :param envs: Custom environment variables for the sandbox
-        :param secure: Envd is secured with access token and cannot be used without it
-        :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`.
+        :param secure: Deprecated — every sandbox secures envd access; accepted for backward compatibility and ignored
+        :param allow_internet_access: Allow sandbox to access the internet
 
         :return: A Sandbox instance for the new sandbox
 
@@ -263,7 +263,6 @@ class Sandbox(SandboxBase):
             timeout=timeout,
             metadata=metadata,
             envs=envs,
-            secure=secure,
             allow_internet_access=allow_internet_access,
             network=network,
             iam=iam,

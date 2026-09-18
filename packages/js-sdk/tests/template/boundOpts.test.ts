@@ -184,8 +184,6 @@ test.each([
   expect(buildRequestBodies).toEqual([
     {
       name: 'minimum',
-      cpuCount: 2,
-      memoryMB: 1024,
       ...(expected === undefined ? {} : { minFreeDiskMb: expected }),
     },
   ])

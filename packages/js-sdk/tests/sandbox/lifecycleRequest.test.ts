@@ -8,7 +8,7 @@ import { setupMockApi } from '../mockApi'
 let lastCreateBody: Record<string, unknown> | undefined
 
 const server = setupMockApi(
-  http.post(apiUrl('/sandboxes'), async ({ request }) => {
+  http.post(apiUrl('/v2/sandboxes'), async ({ request }) => {
     lastCreateBody = (await request.json()) as Record<string, unknown>
     return HttpResponse.json({
       sandboxID: 'test-sandbox-id',

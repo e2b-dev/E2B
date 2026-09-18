@@ -38,8 +38,8 @@ class Template(TemplateBase):
         template: TemplateClass,
         name: str,
         tags: Optional[List[str]] = None,
-        cpu_count: int = 2,
-        memory_mb: int = 1024,
+        cpu_count: Optional[int] = None,
+        memory_mb: Optional[int] = None,
         min_free_disk_mb: Optional[int] = None,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
@@ -52,8 +52,8 @@ class Template(TemplateBase):
         :param template: The template to build
         :param name: Name for the template
         :param tags: Optional tags for the template
-        :param cpu_count: Number of CPUs allocated to the sandbox
-        :param memory_mb: Amount of memory in MB allocated to the sandbox
+        :param cpu_count: Number of CPUs allocated to the sandbox.
+        :param memory_mb: Amount of memory in MB allocated to the sandbox.
         :param min_free_disk_mb: Requested minimum free space after the build steps, in MiB. Growth is best effort and the filesystem is never shrunk. Omit to use the team default or set to 0 to request no growth.
         :param skip_cache: If True, forces a complete rebuild ignoring cache
         :param on_build_logs: Callback function to receive build logs during the build process
@@ -205,8 +205,8 @@ class Template(TemplateBase):
         *,
         alias: Optional[str] = None,
         tags: Optional[List[str]] = None,
-        cpu_count: int = 2,
-        memory_mb: int = 1024,
+        cpu_count: Optional[int] = None,
+        memory_mb: Optional[int] = None,
         min_free_disk_mb: Optional[int] = None,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
@@ -219,8 +219,8 @@ class Template(TemplateBase):
         :param name: Template name in 'name' or 'name:tag' format
         :param alias: (Deprecated) Alias name for the template. Use name instead.
         :param tags: Optional additional tags to assign to the template
-        :param cpu_count: Number of CPUs allocated to the sandbox
-        :param memory_mb: Amount of memory in MB allocated to the sandbox
+        :param cpu_count: Number of CPUs allocated to the sandbox.
+        :param memory_mb: Amount of memory in MB allocated to the sandbox.
         :param min_free_disk_mb: Requested minimum free space after the build steps, in MiB. Growth is best effort and the filesystem is never shrunk. Omit to use the team default or set to 0 to request no growth.
         :param skip_cache: If True, forces a complete rebuild ignoring cache
         :param on_build_logs: Callback function to receive build logs during the build process
@@ -312,8 +312,8 @@ class Template(TemplateBase):
         *,
         alias: Optional[str] = None,
         tags: Optional[List[str]] = None,
-        cpu_count: int = 2,
-        memory_mb: int = 1024,
+        cpu_count: Optional[int] = None,
+        memory_mb: Optional[int] = None,
         min_free_disk_mb: Optional[int] = None,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
@@ -326,8 +326,8 @@ class Template(TemplateBase):
         :param name: Template name in 'name' or 'name:tag' format
         :param alias: (Deprecated) Alias name for the template. Use name instead.
         :param tags: Optional additional tags to assign to the template
-        :param cpu_count: Number of CPUs allocated to the sandbox
-        :param memory_mb: Amount of memory in MB allocated to the sandbox
+        :param cpu_count: Number of CPUs allocated to the sandbox.
+        :param memory_mb: Amount of memory in MB allocated to the sandbox.
         :param min_free_disk_mb: Requested minimum free space after the build steps, in MiB. Growth is best effort and the filesystem is never shrunk. Omit to use the team default or set to 0 to request no growth.
         :param skip_cache: If True, forces a complete rebuild ignoring cache
         :return: BuildInfo containing the template ID and build ID
@@ -377,14 +377,14 @@ class Template(TemplateBase):
     def get_build_status(
         cls,
         build_info: BuildInfo,
-        logs_offset: int = 0,
+        logs_offset: Optional[int] = None,
         **opts: Unpack[ApiParams],
     ):
         """
         Get the status of a build.
 
         :param build_info: Build identifiers returned from build_in_background
-        :param logs_offset: Offset for fetching logs
+        :param logs_offset: Offset for fetching logs; when omitted, the API default applies
         :return: TemplateBuild containing the build status and logs
 
         Example
@@ -392,7 +392,7 @@ class Template(TemplateBase):
         from e2b import Template
 
         build_info = Template.build_in_background(template, alias='my-template')
-        status = Template.get_build_status(build_info, logs_offset=0)
+        status = Template.get_build_status(build_info)
         ```
         """
         config = ConnectionConfig(**cls._resolve_api_params(**opts))

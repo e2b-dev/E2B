@@ -179,7 +179,7 @@ def test_minimum_free_disk_option(configs, monkeypatch, method, options, expecte
     monkeypatch.setattr(template_sync_main, "trigger_build", Mock())
     monkeypatch.setattr(template_sync_main, "wait_for_build_finish", Mock())
     getattr(Template, method)(Template().from_template("parent"), "minimum", **options)
-    expected_body = {"name": "minimum", "cpuCount": 2, "memoryMB": 1024}
+    expected_body = {"name": "minimum"}
     if expected is not None:
         expected_body["minFreeDiskMb"] = expected
     assert [body.to_dict() for body in bodies] == [expected_body]
