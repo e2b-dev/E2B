@@ -23,6 +23,11 @@ from e2b.envd.utils import (
 )
 from e2b.envd.client_async import as_stream, create_rpc_client, first_event
 from e2b.sandbox.commands.command_handle import PtySize
+from e2b.sandbox.commands.resume import extract_start_offsets
+from e2b.sandbox_async.commands.resume import (
+    AsyncResumableEvents,
+    connect_from_offsets,
+)
 from e2b.sandbox_async.commands.command_handle import (
     AsyncCommandHandle,
     OutputHandler,
@@ -169,7 +174,16 @@ class Pty:
             return AsyncCommandHandle(
                 pid=pid,
                 handle_kill=lambda: self.kill(pid),
-                events=events,
+                events=AsyncResumableEvents(
+                    events,
+                    extract_start_offsets(start_event),
+                    connect_from_offsets(self._rpc, pid),
+                    timeout,
+                    request_timeout=self._connection_config.get_request_timeout(
+                        request_timeout
+                    ),
+                    check_health=self._check_health,
+                ),
                 on_pty=on_data,
                 check_health=self._check_health,
             )
@@ -218,7 +232,16 @@ class Pty:
             return AsyncCommandHandle(
                 pid=pid,
                 handle_kill=lambda: self.kill(pid),
-                events=events,
+                events=AsyncResumableEvents(
+                    events,
+                    extract_start_offsets(start_event),
+                    connect_from_offsets(self._rpc, pid),
+                    timeout,
+                    request_timeout=self._connection_config.get_request_timeout(
+                        request_timeout
+                    ),
+                    check_health=self._check_health,
+                ),
                 on_pty=on_data,
                 check_health=self._check_health,
             )
