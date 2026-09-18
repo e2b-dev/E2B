@@ -2,6 +2,7 @@ import { describe, expect, test, vi } from 'vitest'
 
 import {
   isConnectionError,
+  isReplayable,
   isRetryableFetchError,
   parseRetryAfter,
   resolveRetries,
@@ -402,7 +403,8 @@ const connectFailures = {
 }
 
 // Connection dropped after the request was (at least partially) written:
-// the server may have processed it, so these are replayed only for a GET.
+// the server may have processed it, so these are replayed only for
+// operations that are safe to replay.
 const terminated = {
   Node: new TypeError('terminated'),
   'Node reset': new TypeError('fetch failed', {
@@ -461,29 +463,74 @@ describe('isConnectionError', () => {
 
 describe('isRetryableFetchError', () => {
   test.each(Object.entries(connectFailures))(
-    'retries %s for any method',
+    'retries %s for any operation',
     (_, error) => {
-      expect(isRetryableFetchError(error, 'GET')).toBe(true)
-      expect(isRetryableFetchError(error, 'POST')).toBe(true)
+      expect(isRetryableFetchError(error, true)).toBe(true)
+      expect(isRetryableFetchError(error, false)).toBe(true)
     }
   )
 
   test.each([...Object.entries(terminated), ...Object.entries(opaque)])(
-    'retries %s only for GET',
+    'retries %s only for a replayable operation',
     (_, error) => {
-      expect(isRetryableFetchError(error, 'GET')).toBe(true)
-      expect(isRetryableFetchError(error, 'POST')).toBe(false)
-      expect(isRetryableFetchError(error, 'DELETE')).toBe(false)
+      expect(isRetryableFetchError(error, true)).toBe(true)
+      expect(isRetryableFetchError(error, false)).toBe(false)
     }
   )
 
   test.each([...Object.entries(aborts), ['non-error', 'ECONNREFUSED']])(
     'never retries %s',
     (_, error) => {
-      expect(isRetryableFetchError(error, 'GET')).toBe(false)
-      expect(isRetryableFetchError(error, 'POST')).toBe(false)
+      expect(isRetryableFetchError(error, true)).toBe(false)
+      expect(isRetryableFetchError(error, false)).toBe(false)
     }
   )
+})
+
+const nonReplayable = [
+  ['POST', '/sandboxes'],
+  ['POST', '/v2/sandboxes'],
+  ['POST', '/sandboxes/sbx-1/fork'],
+  ['POST', '/sandboxes/sbx-1/snapshots'],
+  ['POST', '/v3/templates'],
+  ['POST', '/api-keys'],
+  ['POST', '/admin/teams/team-1/api-keys'],
+  ['POST', '/volumes'],
+  ['POST', '/secrets'],
+  ['POST', '/events/webhooks'],
+]
+
+const replayable = [
+  ['GET', '/sandboxes'],
+  ['GET', '/sandboxes/sbx-1'],
+  ['DELETE', '/sandboxes/sbx-1'],
+  ['POST', '/sandboxes/sbx-1/pause'],
+  ['POST', '/sandboxes/sbx-1/resume'],
+  ['POST', '/sandboxes/sbx-1/connect'],
+  ['POST', '/v2/sandboxes/sbx-1/connect'],
+  ['POST', '/sandboxes/sbx-1/timeout'],
+  ['POST', '/sandboxes/sbx-1/refreshes'],
+  ['PUT', '/sandboxes/sbx-1/network'],
+  ['PATCH', '/templates/tpl-1'],
+  ['POST', '/v2/templates/tpl-1/builds/build-1'],
+  ['POST', '/templates/tags'],
+  ['DELETE', '/templates/tags'],
+  ['POST', '/admin/teams/team-1/sandboxes/kill'],
+  ['POST', '/secrets/secret-1'],
+  ['DELETE', '/volumes/vol-1'],
+  ['PATCH', '/events/webhooks/hook-1'],
+]
+
+describe('isReplayable', () => {
+  test.each(nonReplayable)('%s %s is not replayable', (method, path) => {
+    const request = new Request(`https://api.e2b.test${path}?x=1`, { method })
+    expect(isReplayable(request)).toBe(false)
+  })
+
+  test.each(replayable)('%s %s is replayable', (method, path) => {
+    const request = new Request(`https://api.e2b.test${path}?x=1`, { method })
+    expect(isReplayable(request)).toBe(true)
+  })
 })
 
 test('retries a connection failure with exponential backoff', async () => {
@@ -500,7 +547,7 @@ test('retries a connection failure with exponential backoff', async () => {
     random: () => 1,
   })
 
-  const response = await fetchWithRetry('https://api.e2b.test/resource', {
+  const response = await fetchWithRetry('https://api.e2b.test/sandboxes', {
     method: 'POST',
     body: 'payload',
   })
@@ -549,7 +596,11 @@ test('rethrows a connection failure when the backoff would exceed the request ti
   expect(sleep).not.toHaveBeenCalled()
 })
 
-test('retries an opaque network error for a GET', async () => {
+test.each([
+  ['GET', '/sandboxes'],
+  ['POST', '/sandboxes/sbx-1/pause'],
+  ['DELETE', '/sandboxes/sbx-1'],
+])('retries an opaque network error for %s %s', async (method, path) => {
   const outcomes = [
     () => Promise.reject(opaque.Chrome),
     () => Promise.reject(terminated['Node reset']),
@@ -563,7 +614,9 @@ test('retries an opaque network error for a GET', async () => {
     random: () => 1,
   })
 
-  const response = await fetchWithRetry('https://api.e2b.test/resource')
+  const response = await fetchWithRetry(`https://api.e2b.test${path}`, {
+    method,
+  })
 
   expect(response.status).toBe(200)
   expect(fetchImpl).toHaveBeenCalledTimes(3)
@@ -571,11 +624,16 @@ test('retries an opaque network error for a GET', async () => {
 })
 
 test.each([
-  ['opaque network error', opaque.Chrome, 'POST'],
-  ['dropped connection', terminated['Node reset'], 'POST'],
-  ['dropped connection', terminated['Cloudflare Workers'], 'DELETE'],
-  ['abort', aborts.abort, 'GET'],
-])('does not retry %s for %s', async (_, error, method) => {
+  ['opaque network error', opaque.Chrome, 'POST', '/sandboxes'],
+  ['dropped connection', terminated['Node reset'], 'POST', '/v2/sandboxes'],
+  [
+    'dropped connection',
+    terminated['Cloudflare Workers'],
+    'POST',
+    '/sandboxes/sbx-1/fork',
+  ],
+  ['abort', aborts.abort, 'GET', '/sandboxes'],
+])('does not retry %s for %s %s', async (_, error, method, path) => {
   const fetchImpl = vi.fn(async () => {
     throw error
   }) as typeof fetch
@@ -585,7 +643,7 @@ test.each([
   })
 
   await expect(
-    fetchWithRetry('https://api.e2b.test/resource', { method })
+    fetchWithRetry(`https://api.e2b.test${path}`, { method })
   ).rejects.toBe(error)
   expect(fetchImpl).toHaveBeenCalledOnce()
 })

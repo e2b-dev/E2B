@@ -1,7 +1,8 @@
 import asyncio
 import random
+import re
 import time
-from typing import Awaitable, Callable, Optional
+from typing import Awaitable, Callable, List, Optional, Tuple
 
 import httpx
 
@@ -13,6 +14,29 @@ BACKOFF_BASE_SECONDS = 0.1
 BACKOFF_MAX_SECONDS = 10.0
 BACKOFF_JITTER_MIN = 0.5
 RETRYABLE_STATUSES = frozenset({429, 502, 503})
+
+# Operations that mint a resource without a client-supplied idempotency key:
+# replaying one whose first attempt may have reached the server could create a
+# duplicate, so they are not retried after a network error once the request
+# was written. (Connection-establishment failures are retried for every
+# operation by ``ConnectionRetryTransport`` underneath: the request never
+# left.) Every other operation is idempotent, or a replay fails with a 404/409
+# the SDK already tolerates.
+NON_REPLAYABLE_OPERATIONS: List[Tuple[str, re.Pattern[str]]] = [
+    ("POST", re.compile(r"^/(v2/)?sandboxes$")),
+    ("POST", re.compile(r"^/sandboxes/[^/]+/(fork|snapshots)$")),
+    ("POST", re.compile(r"^/v3/templates$")),
+    ("POST", re.compile(r"^/(admin/teams/[^/]+/)?api-keys$")),
+    ("POST", re.compile(r"^/volumes$")),
+    ("POST", re.compile(r"^/secrets$")),
+    ("POST", re.compile(r"^/events/webhooks$")),
+]
+
+# Raised by the pyqwest httpx adapter once the request was (at least partially)
+# written: the connection dropped while sending it or awaiting the response.
+# ``httpx.ConnectError``/``ConnectTimeout`` are excluded — the connection layer
+# already retries those — as are timeouts, which exhaust the request's budget.
+NETWORK_ERRORS = (httpx.ReadError, httpx.WriteError, httpx.RemoteProtocolError)
 
 
 def resolve_max_retries(retries: int) -> int:
@@ -34,6 +58,21 @@ def parse_retry_after(value: Optional[str]) -> Optional[int]:
     return delay if delay <= MAX_RETRY_AFTER_SECONDS else None
 
 
+def is_replayable(request: httpx.Request) -> bool:
+    """Whether ``request`` may be sent again after a network error that may
+    have occurred once it was written (see ``NON_REPLAYABLE_OPERATIONS``)."""
+    path = request.url.path
+    return not any(
+        request.method == method and pattern.match(path)
+        for method, pattern in NON_REPLAYABLE_OPERATIONS
+    )
+
+
+def _backoff_delay(attempt: int, random_: Callable[[], float]) -> float:
+    backoff = min(BACKOFF_BASE_SECONDS * 2**attempt, BACKOFF_MAX_SECONDS)
+    return backoff * (BACKOFF_JITTER_MIN + random_() * (1 - BACKOFF_JITTER_MIN))
+
+
 def _retry_delay(
     response: httpx.Response, attempt: int, random_: Callable[[], float]
 ) -> Optional[float]:
@@ -50,8 +89,7 @@ def _retry_delay(
     if response.status_code == 429:
         return None
 
-    backoff = min(BACKOFF_BASE_SECONDS * 2**attempt, BACKOFF_MAX_SECONDS)
-    return backoff * (BACKOFF_JITTER_MIN + random_() * (1 - BACKOFF_JITTER_MIN))
+    return _backoff_delay(attempt, random_)
 
 
 def _copy_request(
@@ -91,7 +129,8 @@ def _request_deadline(request: httpx.Request, monotonic: Callable[[], float]) ->
 class RetryableTransport(httpx.BaseTransport):
     """Retry replayable requests after a 429 carrying ``Retry-After`` or a
     502/503 (using ``Retry-After`` when present, exponential backoff
-    otherwise)."""
+    otherwise), and — unless the operation is in ``NON_REPLAYABLE_OPERATIONS``
+    — after a network error once the request was written."""
 
     def __init__(
         self,
@@ -116,6 +155,7 @@ class RetryableTransport(httpx.BaseTransport):
 
         request.read()
         deadline = _request_deadline(request, self._monotonic)
+        replayable = is_replayable(request)
         for attempt in range(self.retries + 1):
             remaining_timeout = None
             if attempt > 0:
@@ -126,9 +166,18 @@ class RetryableTransport(httpx.BaseTransport):
                         "Increase `request_timeout` or lower `retries`.",
                         request=request,
                     )
-            response = self.transport.handle_request(
-                _copy_request(request, remaining_timeout)
-            )
+            try:
+                response = self.transport.handle_request(
+                    _copy_request(request, remaining_timeout)
+                )
+            except NETWORK_ERRORS:
+                if attempt == self.retries or not replayable:
+                    raise
+                delay = _backoff_delay(attempt, self._random)
+                if self._monotonic() + delay >= deadline:
+                    raise
+                self._sleep(delay)
+                continue
             if attempt == self.retries:
                 return response
 
@@ -172,6 +221,7 @@ class AsyncRetryableTransport(httpx.AsyncBaseTransport):
 
         await request.aread()
         deadline = _request_deadline(request, self._monotonic)
+        replayable = is_replayable(request)
         for attempt in range(self.retries + 1):
             remaining_timeout = None
             if attempt > 0:
@@ -182,9 +232,18 @@ class AsyncRetryableTransport(httpx.AsyncBaseTransport):
                         "Increase `request_timeout` or lower `retries`.",
                         request=request,
                     )
-            response = await self.transport.handle_async_request(
-                _copy_request(request, remaining_timeout)
-            )
+            try:
+                response = await self.transport.handle_async_request(
+                    _copy_request(request, remaining_timeout)
+                )
+            except NETWORK_ERRORS:
+                if attempt == self.retries or not replayable:
+                    raise
+                delay = _backoff_delay(attempt, self._random)
+                if self._monotonic() + delay >= deadline:
+                    raise
+                await self._sleep(delay)
+                continue
             if attempt == self.retries:
                 return response
 

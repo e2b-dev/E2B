@@ -25,6 +25,20 @@ const CONNECTION_ERROR_CODES = new Set([
 const CONNECTION_ERROR_SYSCALLS = new Set(['connect', 'getaddrinfo'])
 // Deno reports hyper's connect-phase failures as `client error (Connect)`.
 const DENO_CONNECTION_ERROR = /client error \(Connect\)/
+// Operations that mint a resource without a client-supplied idempotency key:
+// replaying one whose first attempt may have reached the server could create
+// a duplicate, so only connection-establishment failures are retried for them.
+// Every other operation is idempotent (or a replay fails with 404/409 the SDK
+// already tolerates) and is retried after any network error.
+const NON_REPLAYABLE_OPERATIONS: [method: string, path: RegExp][] = [
+  ['POST', /^\/(v2\/)?sandboxes$/],
+  ['POST', /^\/sandboxes\/[^/]+\/(fork|snapshots)$/],
+  ['POST', /^\/v3\/templates$/],
+  ['POST', /^\/(admin\/teams\/[^/]+\/)?api-keys$/],
+  ['POST', /^\/volumes$/],
+  ['POST', /^\/secrets$/],
+  ['POST', /^\/events\/webhooks$/],
+]
 
 export function resolveRetries(retries: number): number {
   if (!Number.isInteger(retries) || retries < 0) {
@@ -71,17 +85,30 @@ export function isConnectionError(error: unknown, depth = 0): boolean {
 }
 
 /**
- * Whether a `fetch` rejection may be retried for a request with `method`.
- * Connection-establishment failures are replayable for any method. A GET is
- * idempotent, so for it any other network error is retried as well: a
- * connection dropped mid-request, or the opaque `TypeError` browsers and
- * Cloudflare Workers raise for every network failure. Aborts are never
- * retried.
+ * Whether `request` may be sent again after a network error that may have
+ * occurred once the request was written (see `NON_REPLAYABLE_OPERATIONS`).
  */
-export function isRetryableFetchError(error: unknown, method: string): boolean {
+export function isReplayable(request: Request): boolean {
+  const { pathname } = new URL(request.url)
+  return !NON_REPLAYABLE_OPERATIONS.some(
+    ([method, path]) => request.method === method && path.test(pathname)
+  )
+}
+
+/**
+ * Whether a `fetch` rejection may be retried. Connection-establishment
+ * failures are always retried: the request never left. For a replayable
+ * request any other network error is retried as well — a connection dropped
+ * mid-request, or the opaque `TypeError` browsers and Cloudflare Workers raise
+ * for every network failure. Aborts are never retried.
+ */
+export function isRetryableFetchError(
+  error: unknown,
+  replayable: boolean
+): boolean {
   if (error instanceof DOMException) return false
   if (isConnectionError(error)) return true
-  return method === 'GET' && error instanceof Error
+  return replayable && error instanceof Error
 }
 
 type RetryDependencies = {
@@ -165,6 +192,7 @@ export function withRetry(
         : new Request(input, init)
     const deadline =
       monotonic() + (requestTimeoutMs || MAX_RETRY_WAIT_WITHOUT_TIMEOUT_MS)
+    const replayable = isReplayable(request)
 
     for (let attempt = 0; ; attempt++) {
       let response: Response
@@ -176,7 +204,7 @@ export function withRetry(
         if (
           attempt === retries ||
           request.signal.aborted ||
-          !isRetryableFetchError(error, request.method)
+          !isRetryableFetchError(error, replayable)
         ) {
           throw error
         }
