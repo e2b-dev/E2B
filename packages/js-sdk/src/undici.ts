@@ -1,6 +1,6 @@
 import { compareVersions } from 'compare-versions'
 
-import { limitConcurrency } from './api/inflight'
+import { limitConcurrency, type LimitConcurrencyOptions } from './api/inflight'
 import { isReadableStreamLike, isRequestLike } from './is'
 import { dynamicImport, toDispatchableStream } from './utils'
 
@@ -91,17 +91,25 @@ export function createRuntimeFetch(
  * `connections` origin connections, optional proxy tunnel), capped at
  * `inflightLimit` in-flight requests (`0` disables the cap). Falls back to
  * the global fetch — still capped — when undici cannot be loaded.
+ *
+ * `inflight` forwards env-var naming and reserved unary capacity into
+ * {@link limitConcurrency}.
  */
 export async function buildDispatchedFetch(options: {
   connections: number
   inflightLimit: number
+  inflight?: LimitConcurrencyOptions
   proxy?: string
   loadUndici?: () => Promise<UndiciModule | undefined>
 }): Promise<typeof fetch> {
   const undici = await (options.loadUndici ?? loadUndici)()
 
   if (!undici) {
-    return limitConcurrency(lateBoundGlobalFetch(), options.inflightLimit)
+    return limitConcurrency(
+      lateBoundGlobalFetch(),
+      options.inflightLimit,
+      options.inflight
+    )
   }
 
   const { Agent, ProxyAgent, fetch: undiciFetch } = undici
@@ -130,7 +138,7 @@ export async function buildDispatchedFetch(options: {
     })
   }) as typeof fetch
 
-  return limitConcurrency(wrapped, options.inflightLimit)
+  return limitConcurrency(wrapped, options.inflightLimit, options.inflight)
 }
 
 function toUndiciRequestInput(

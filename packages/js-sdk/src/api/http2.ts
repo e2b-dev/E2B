@@ -44,6 +44,7 @@ export function createApiFetchForRuntime(
     buildDispatchedFetch({
       connections: options.connectionLimit ?? getApiConnectionLimit(),
       inflightLimit: options.inflightLimit ?? getApiInflightLimit(),
+      inflight: { envVarName: 'E2B_API_INFLIGHT_REQUESTS' },
       proxy: options.proxy,
       loadUndici: options.loadUndici,
     })
