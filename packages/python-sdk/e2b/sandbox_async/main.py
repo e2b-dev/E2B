@@ -29,6 +29,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxMetrics,
     SandboxNetworkOpts,
     SidecarAttachment,
+    SidecarStateVersionInfo,
     SandboxNetworkUpdate,
     SandboxOnResume,
     SnapshotInfo,
@@ -617,6 +618,81 @@ class AsyncSandbox(SandboxApi):
         await SandboxApi._cls_set_timeout(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
+            **self.connection_config.get_api_params(**opts),
+        )
+
+    @overload
+    async def save_sidecar_state(
+        self,
+        entry: str,
+        name: str,
+        **opts: Unpack[ApiParams],
+    ) -> SidecarStateVersionInfo:
+        """
+        Save the data disk of one of the sandbox's sidecars as a new version of
+        a named, team-scoped sidecar state.
+
+        Only the catalog entries that hold data can be saved: `"valkey"` (its
+        `SAVE` runs first, so the keys are on disk) and `"sqlite"`. The sidecar
+        is frozen for the copy and keeps serving; the version is recorded only
+        once the upload is durable, so a failed save leaves no version behind.
+        Attach the state to a later sandbox with the `state` key of a sidecar
+        attachment. Requires the team's `sandbox-sidecar-states` feature.
+
+        :param entry: Catalog entry of the sidecar to save, e.g. `"sqlite"`
+        :param name: Name of the state; a new version is added under it
+
+        :return: The version that was saved
+        """
+        ...
+
+    @overload
+    @staticmethod
+    async def save_sidecar_state(
+        sandbox_id: str,
+        entry: str,
+        name: str,
+        **opts: Unpack[ApiParams],
+    ) -> SidecarStateVersionInfo:
+        """
+        Save the data disk of one of the sidecars of the sandbox specified by
+        sandbox ID as a new version of a named, team-scoped sidecar state.
+
+        :param sandbox_id: Sandbox ID
+        :param entry: Catalog entry of the sidecar to save, e.g. `"sqlite"`
+        :param name: Name of the state; a new version is added under it
+
+        :return: The version that was saved
+        """
+        ...
+
+    @class_method_variant("_cls_save_sidecar_state")
+    async def save_sidecar_state(
+        self,
+        entry: str,
+        name: str,
+        **opts: Unpack[ApiParams],
+    ) -> SidecarStateVersionInfo:
+        """
+        Save the data disk of one of the sandbox's sidecars as a new version of
+        a named, team-scoped sidecar state.
+
+        Only the catalog entries that hold data can be saved: `"valkey"` (its
+        `SAVE` runs first, so the keys are on disk) and `"sqlite"`. The sidecar
+        is frozen for the copy and keeps serving; the version is recorded only
+        once the upload is durable, so a failed save leaves no version behind.
+        Attach the state to a later sandbox with the `state` key of a sidecar
+        attachment. Requires the team's `sandbox-sidecar-states` feature.
+
+        :param entry: Catalog entry of the sidecar to save, e.g. `"sqlite"`
+        :param name: Name of the state; a new version is added under it
+
+        :return: The version that was saved
+        """
+        return await SandboxApi._cls_save_sidecar_state(
+            sandbox_id=self.sandbox_id,
+            entry=entry,
+            name=name,
             **self.connection_config.get_api_params(**opts),
         )
 

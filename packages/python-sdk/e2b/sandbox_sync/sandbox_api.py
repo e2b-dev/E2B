@@ -19,9 +19,16 @@ from e2b.api.client.api.sandboxes import (
     post_sandboxes_sandbox_id_connect,
     post_sandboxes_sandbox_id_fork,
     post_sandboxes_sandbox_id_pause,
+    post_sandboxes_sandbox_id_sidecars_entry_state,
     post_sandboxes_sandbox_id_snapshots,
     post_sandboxes_sandbox_id_timeout,
     put_sandboxes_sandbox_id_network,
+)
+from e2b.api.client.api.sidecar_states import (
+    delete_sidecar_states_name,
+    delete_sidecar_states_name_versions_version,
+    get_sidecar_states,
+    get_sidecar_states_name,
 )
 from e2b.api.client.api.templates import delete_templates_template_id
 from e2b.api.client.models import (
@@ -34,6 +41,16 @@ from e2b.api.client.models import (
     SandboxNetworkConfig,
     SandboxPauseRequest,
     SandboxVolumeMount as SandboxVolumeMountAPI,
+    SidecarStateSaveRequest,
+)
+from e2b.api.client.models import (
+    SidecarState as ClientSidecarState,
+)
+from e2b.api.client.models import (
+    SidecarStateDetail as ClientSidecarStateDetail,
+)
+from e2b.api.client.models import (
+    SidecarStateVersion as ClientSidecarStateVersion,
 )
 from e2b.api.client.types import UNSET, Unset
 from e2b.connection_config import ApiParams, ConnectionConfig
@@ -57,6 +74,8 @@ from e2b.sandbox.sandbox_api import (
     SandboxNetworkUpdate,
     SandboxOnResume,
     SidecarAttachment,
+    SidecarStateInfo,
+    SidecarStateVersionInfo,
     resolve_connect_memory,
     SandboxQuery,
     SnapshotInfo,
@@ -64,7 +83,10 @@ from e2b.sandbox.sandbox_api import (
     build_lifecycle_config,
     build_network_config,
     build_sidecars_body,
+    from_client_sidecar_state,
+    from_client_sidecar_state_version,
     sidecar_api_exception,
+    validate_sidecar_state_args,
 )
 from e2b.sandbox_sync.paginator import SandboxPaginator, get_api_client
 
@@ -204,6 +226,134 @@ class SandboxApi(SandboxBase):
 
         if res.status_code == 404:
             raise SandboxNotFoundException(f"Sandbox {sandbox_id} not found")
+
+        if res.status_code >= 300:
+            raise sidecar_api_exception(res) or handle_api_exception(res)
+
+    @classmethod
+    def _cls_save_sidecar_state(
+        cls,
+        sandbox_id: str,
+        entry: str,
+        name: str,
+        **opts: Unpack[ApiParams],
+    ) -> SidecarStateVersionInfo:
+        validate_sidecar_state_args(entry, name)
+
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
+
+        api_client = get_api_client(config)
+        res = post_sandboxes_sandbox_id_sidecars_entry_state.sync_detailed(
+            sandbox_id,
+            encode_path_param(entry),
+            client=api_client,
+            body=SidecarStateSaveRequest(name=name),
+        )
+
+        if res.status_code >= 300:
+            raise sidecar_api_exception(res) or (
+                SandboxNotFoundException(f"Sandbox {sandbox_id} not found")
+                if res.status_code == 404
+                else handle_api_exception(res)
+            )
+
+        if not isinstance(res.parsed, ClientSidecarStateVersion):
+            raise SandboxException("Body of the request is None")
+
+        return from_client_sidecar_state_version(res.parsed)
+
+    @classmethod
+    def list_sidecar_states(
+        cls,
+        **opts: Unpack[ApiParams],
+    ) -> List[SidecarStateInfo]:
+        """
+        List the team's named sidecar states, without their versions.
+
+        Requires the team's `sandbox-sidecar-states` feature.
+
+        :return: The team's sidecar states
+        """
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
+
+        api_client = get_api_client(config)
+        res = get_sidecar_states.sync_detailed(client=api_client)
+
+        if res.status_code >= 300:
+            raise sidecar_api_exception(res) or handle_api_exception(res)
+
+        if not isinstance(res.parsed, list):
+            raise SandboxException("Body of the request is None")
+
+        return [
+            from_client_sidecar_state(state)
+            for state in cast(List[ClientSidecarState], res.parsed)
+        ]
+
+    @classmethod
+    def get_sidecar_state(
+        cls,
+        name: str,
+        **opts: Unpack[ApiParams],
+    ) -> SidecarStateInfo:
+        """
+        Get one of the team's named sidecar states with every version kept
+        under it, newest first.
+
+        Requires the team's `sandbox-sidecar-states` feature.
+
+        :param name: Name of the state
+
+        :return: The state and its versions
+        """
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
+
+        api_client = get_api_client(config)
+        res = get_sidecar_states_name.sync_detailed(
+            encode_path_param(name),
+            client=api_client,
+        )
+
+        if res.status_code >= 300:
+            raise sidecar_api_exception(res) or handle_api_exception(res)
+
+        if not isinstance(res.parsed, ClientSidecarStateDetail):
+            raise SandboxException("Body of the request is None")
+
+        return from_client_sidecar_state(res.parsed)
+
+    @classmethod
+    def delete_sidecar_state(
+        cls,
+        name: str,
+        version: Optional[int] = None,
+        **opts: Unpack[ApiParams],
+    ) -> None:
+        """
+        Delete a named sidecar state, or one version of it.
+
+        Deleting the last version deletes the name. A sandbox that attached a
+        version runs on its own copy and is not affected.
+
+        Requires the team's `sandbox-sidecar-states` feature.
+
+        :param name: Name of the state
+        :param version: Version to delete, defaults to every version under the name
+        """
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
+
+        api_client = get_api_client(config)
+        if version is None:
+            res = delete_sidecar_states_name.sync_detailed(
+                encode_path_param(name),
+                client=api_client,
+            )
+        else:
+            res = delete_sidecar_states_name_versions_version.sync_detailed(
+                encode_path_param(name),
+                version,
+                client=api_client,
+            )
 
         if res.status_code >= 300:
             raise sidecar_api_exception(res) or handle_api_exception(res)

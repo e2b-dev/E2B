@@ -74,9 +74,22 @@ from e2b.api.client.models import (
 from e2b.api.client.models import (
     SidecarInfo as ClientSidecarInfo,
 )
+from e2b.api.client.models import (
+    SidecarState as ClientSidecarState,
+)
+from e2b.api.client.models import (
+    SidecarStateDetail as ClientSidecarStateDetail,
+)
+from e2b.api.client.models import (
+    SidecarStateVersion as ClientSidecarStateVersion,
+)
 from e2b.api.client.types import UNSET, Unset
 from e2b.connection_config import ApiParams
-from e2b.exceptions import InvalidArgumentException, SandboxException
+from e2b.exceptions import (
+    InvalidArgumentException,
+    NotFoundException,
+    SandboxException,
+)
 from e2b.sandbox.mcp import McpServer as BaseMcpServer
 from e2b.sandbox.iam import (
     IamTokenPlaceholders,
@@ -568,6 +581,22 @@ class SidecarAttachment(TypedDict):
     slot the entry declares has to be filled.
     """
 
+    state: NotRequired[str]
+    """
+    Name of one of the team's saved sidecar states (see
+    :meth:`SandboxApi.save_sidecar_state`) to start this sidecar from. A copy of
+    the state is attached, so two sandboxes never share it and later pauses
+    never touch the saved version. Only the entries that hold data —
+    ``"valkey"`` and ``"sqlite"`` — can be saved and attached; the state's entry
+    has to be this attachment's entry. Requires the team's
+    ``sandbox-sidecar-states`` feature.
+    """
+
+    state_version: NotRequired[int]
+    """
+    Version of ``state`` to attach. Defaults to the state's latest version.
+    """
+
 
 SidecarRole = Literal["proxy", "service"]
 """
@@ -611,6 +640,57 @@ class SidecarInfo:
     """Ports the sidecar listens on."""
     last_error: Optional[str] = None
     """Last error of the sidecar, set when ``state`` is ``"failed"``."""
+    state_name: Optional[str] = None
+    """Saved sidecar state this sidecar was attached from, when any."""
+    state_version: Optional[int] = None
+    """Version of ``state_name`` this sidecar was attached from."""
+
+
+@dataclass
+class SidecarStateVersionInfo:
+    """One immutable version of a named sidecar state."""
+
+    name: str
+    """Name of the state this version belongs to."""
+    entry: str
+    """Catalog entry the state was saved from."""
+    version: int
+    """Version number, counted from one under the name."""
+    entry_version: str
+    """Catalog entry version the state was saved from."""
+    size_bytes: int
+    """Size of the version's data layer, in bytes."""
+    source_sandbox_id: str
+    """Sandbox the version was saved from."""
+    created_at: datetime
+    """When the version was saved."""
+
+
+@dataclass
+class SidecarStateInfo:
+    """
+    A named sidecar state of the team: the saved data disk of a ``"valkey"`` or
+    ``"sqlite"`` sidecar, under a name that points at its latest version.
+    """
+
+    name: str
+    """Name of the state, unique within the team."""
+    entry: str
+    """Catalog entry the state belongs to."""
+    size_mib: int
+    """Size class of the state's data disk, in MiB."""
+    latest_version: int
+    """Highest version number under the name."""
+    version_count: int
+    """Number of versions kept under the name."""
+    created_at: datetime
+    updated_at: datetime
+    versions: List[SidecarStateVersionInfo] = field(default_factory=list)
+    """
+    Every version kept under the name, newest first. Only
+    :meth:`SandboxApi.get_sidecar_state` fills this in; the list endpoint leaves
+    it empty.
+    """
 
 
 class SandboxOnTimeoutPause(TypedDict):
@@ -971,6 +1051,10 @@ def build_sidecars_body(
             secrets = ClientSidecarAttachmentSecrets()
             secrets.additional_properties = dict(sidecar["secrets"])
             attachment.secrets = secrets
+        if sidecar.get("state") is not None:
+            attachment.state = sidecar["state"]
+        if sidecar.get("state_version") is not None:
+            attachment.state_version = sidecar["state_version"]
         body.append(attachment)
 
     return body
@@ -991,7 +1075,53 @@ def _from_client_sidecar(sidecar: ClientSidecarInfo) -> SidecarInfo:
         address=sidecar.address if isinstance(sidecar.address, str) else None,
         ports=ports,
         last_error=sidecar.last_error if isinstance(sidecar.last_error, str) else None,
+        state_name=sidecar.state_name if isinstance(sidecar.state_name, str) else None,
+        state_version=(
+            sidecar.state_version if isinstance(sidecar.state_version, int) else None
+        ),
     )
+
+
+def from_client_sidecar_state_version(
+    version: ClientSidecarStateVersion,
+) -> SidecarStateVersionInfo:
+    return SidecarStateVersionInfo(
+        name=version.name,
+        entry=version.entry,
+        version=version.version,
+        entry_version=version.entry_version,
+        size_bytes=version.size_bytes,
+        source_sandbox_id=version.source_sandbox_id,
+        created_at=version.created_at,
+    )
+
+
+def from_client_sidecar_state(
+    state: Union[ClientSidecarState, ClientSidecarStateDetail],
+) -> SidecarStateInfo:
+    versions = getattr(state, "versions", None)
+    return SidecarStateInfo(
+        name=state.name,
+        entry=state.entry,
+        size_mib=state.size_mi_b,
+        latest_version=state.latest_version,
+        version_count=state.version_count,
+        created_at=state.created_at,
+        updated_at=state.updated_at,
+        versions=[from_client_sidecar_state_version(v) for v in versions or []],
+    )
+
+
+def validate_sidecar_state_args(entry: str, name: str) -> None:
+    if not isinstance(entry, str) or not entry:
+        raise InvalidArgumentException(
+            "entry must be the catalog entry of one of the sandbox's sidecars "
+            f"(e.g. 'sqlite'), got {entry!r}."
+        )
+    if not isinstance(name, str) or not name:
+        raise InvalidArgumentException(
+            f"name must be a non-empty sidecar state name, got {name!r}."
+        )
 
 
 def from_client_sidecars(
@@ -1016,6 +1146,15 @@ def sidecar_api_exception(res: Any) -> Optional[Exception]:
     ``sidecar_snapshot_mismatch`` (500: a stored sidecar snapshot has no matching
     declaration) stay :class:`SandboxException` — the SDK has no conflict type.
     The code stays in the message so callers can tell them apart.
+
+    Named sidecar state adds ``sidecar_state_flag_off``,
+    ``sidecar_state_name_invalid``, ``sidecar_state_unknown``,
+    ``sidecar_state_version_unknown``, ``sidecar_state_entry_mismatch``,
+    ``sidecar_state_size_mismatch``, ``sidecar_state_unsupported`` and
+    ``sidecar_state_limit`` as 400s, ``sidecar_not_running`` and
+    ``sidecar_state_busy`` as 409s and ``sidecar_state_failed`` as a 500. On the
+    state endpoints an unknown name or version is a 404, which is a
+    :class:`NotFoundException` like every other missing resource.
     """
     try:
         body = json.loads(res.content) if res.content else {}
@@ -1032,6 +1171,8 @@ def sidecar_api_exception(res: Any) -> Optional[Exception]:
     message = f"{code}: {body.get('message', res.status_code)}"
     if res.status_code == 400:
         return InvalidArgumentException(message, status_code=400)
+    if res.status_code == 404:
+        return NotFoundException(message, status_code=404)
     return SandboxException(message, status_code=res.status_code)
 
 
