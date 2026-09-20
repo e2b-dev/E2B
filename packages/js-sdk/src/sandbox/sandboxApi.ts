@@ -1883,9 +1883,20 @@ export class SandboxApi extends ClientFactory {
       }
     )
 
-    const err = sidecarApiError(res) ?? handleApiError(res)
+    // The sidecar mapping runs first: a 404 that names a missing state keeps
+    // its code, a plain 404 is the sandbox.
+    const err = sidecarApiError(res)
     if (err) {
       throw err
+    }
+
+    if (res.error?.code === 404) {
+      throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
+    }
+
+    const apiErr = handleApiError(res)
+    if (apiErr) {
+      throw apiErr
     }
 
     return fromApiSidecarStateVersion(res.data!)

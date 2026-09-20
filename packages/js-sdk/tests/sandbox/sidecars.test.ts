@@ -7,6 +7,7 @@ import {
   NotFoundError,
   Sandbox,
   SandboxError,
+  SandboxNotFoundError,
 } from '../../src'
 import { TEST_API_KEY, apiUrl } from '../setup'
 
@@ -663,4 +664,19 @@ test('saveSidecarState rejects an empty entry or name before any request', async
   ).rejects.toThrowError(InvalidArgumentError)
 
   expect(lastSaveStateRequest).toBeUndefined()
+})
+
+test('saveSidecarState on an unknown sandbox is a SandboxNotFoundError', async () => {
+  saveStateResponse = () =>
+    HttpResponse.json({ code: 404, message: 'not found' }, { status: 404 })
+
+  const err = await Sandbox.saveSidecarState(
+    sandboxId,
+    'sqlite',
+    'project-db',
+    { apiKey: TEST_API_KEY }
+  ).catch((e: unknown) => e)
+
+  expect(err).toBeInstanceOf(SandboxNotFoundError)
+  expect((err as Error).message).toContain(sandboxId)
 })
