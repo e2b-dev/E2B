@@ -72,6 +72,17 @@ describe('sandbox info sidecars', () => {
     expect(lines[start + 3]).toMatch(/^  iron-proxy\s+0\.4\.1/)
   })
 
+  test('adds a saved-state column only when a sidecar was attached from one', () => {
+    const [header, row] = formatSidecarTable([
+      { ...sidecars[0], stateName: 'project-db', stateVersion: 2 },
+    ])
+
+    expect(header).toContain('SAVED STATE')
+    expect(row).toContain('project-db:2')
+    // The column is absent for the sandboxes that never attached a state.
+    expect(formatSidecarTable(sidecars)[0]).not.toContain('SAVED STATE')
+  })
+
   test('omits the sidecars field when the sandbox has none', () => {
     const lines = capture()
 

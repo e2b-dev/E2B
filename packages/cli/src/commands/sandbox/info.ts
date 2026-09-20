@@ -3,7 +3,7 @@ import { NotFoundError, Sandbox, SidecarInfo } from 'e2b'
 
 import { ensureAPIKey } from 'src/api'
 import { asBold } from 'src/utils/format'
-import { formatTable } from 'src/utils/table'
+import { Column, formatTable } from 'src/utils/table'
 
 const fieldLabels: Partial<Record<string, string>> = {
   sandboxId: 'Sandbox ID',
@@ -116,7 +116,7 @@ export function renderPrettyInfo(info: Record<string, unknown>) {
 }
 
 export function formatSidecarTable(sidecars: SidecarInfo[]): string[] {
-  return formatTable(sidecars, [
+  const columns: Column<SidecarInfo>[] = [
     { header: 'Entry', value: (sidecar) => sidecar.entry },
     { header: 'Version', value: (sidecar) => sidecar.version },
     { header: 'Role', value: (sidecar) => sidecar.role },
@@ -129,7 +129,20 @@ export function formatSidecarTable(sidecars: SidecarInfo[]): string[] {
       header: 'Last error',
       value: (sidecar) => truncate(sidecar.lastError, LAST_ERROR_WIDTH),
     },
-  ])
+  ]
+
+  // Only the sandboxes that attached a saved state carry the column.
+  if (sidecars.some((sidecar) => sidecar.stateName !== undefined)) {
+    columns.push({
+      header: 'Saved state',
+      value: (sidecar) =>
+        sidecar.stateName === undefined
+          ? undefined
+          : `${sidecar.stateName}:${sidecar.stateVersion}`,
+    })
+  }
+
+  return formatTable(sidecars, columns)
 }
 
 const LAST_ERROR_WIDTH = 60

@@ -1,0 +1,6 @@
+---
+'e2b': minor
+'@e2b/python-sdk': minor
+---
+
+Add named sidecar state: the data disk of a `valkey` or `sqlite` sidecar can be saved under a team-scoped name and attached to a later sandbox. `sandbox.saveSidecarState(entry, name)` / `sandbox.save_sidecar_state(entry, name)` adds an immutable version under the name (the sidecar is frozen for the copy and keeps serving; a failed save leaves no version behind), and `Sandbox.listSidecarStates()`, `Sandbox.getSidecarState(name)` and `Sandbox.deleteSidecarState(name, { version })` — `list_sidecar_states()`, `get_sidecar_state(name)`, `delete_sidecar_state(name, version=None)` in Python — manage them. A sidecar attachment gains `state` / `stateVersion` (`state` / `state_version`) to start from a copy of a saved version, so two sandboxes never share a writer and a sandbox's own pauses never touch the version it came from; sandbox info reports `stateName` / `stateVersion` (`state_name` / `state_version`) for a sidecar that was attached from one. Rejections keep the API's `sidecar_state_*` code in the message: 400s raise `InvalidArgumentError` / `InvalidArgumentException`, an unknown name or version raises `NotFoundError` / `NotFoundException`, and `sidecar_not_running`, `sidecar_state_busy` and `sidecar_state_failed` stay `SandboxError` / `SandboxException`. Requires the team's `sandbox-sidecar-states` feature.
