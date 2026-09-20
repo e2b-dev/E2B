@@ -63,6 +63,10 @@ from .sidecar_attachment_secrets import SidecarAttachmentSecrets
 from .sidecar_info import SidecarInfo
 from .sidecar_info_class import SidecarInfoClass
 from .sidecar_info_role import SidecarInfoRole
+from .sidecar_state import SidecarState
+from .sidecar_state_detail import SidecarStateDetail
+from .sidecar_state_save_request import SidecarStateSaveRequest
+from .sidecar_state_version import SidecarStateVersion
 from .snapshot_info import SnapshotInfo
 from .team_user import TeamUser
 from .template import Template
@@ -150,6 +154,10 @@ __all__ = (
     "SidecarInfo",
     "SidecarInfoClass",
     "SidecarInfoRole",
+    "SidecarState",
+    "SidecarStateDetail",
+    "SidecarStateSaveRequest",
+    "SidecarStateVersion",
     "SnapshotInfo",
     "TeamUser",
     "Template",

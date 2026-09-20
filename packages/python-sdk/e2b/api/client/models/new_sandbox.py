@@ -42,7 +42,10 @@ class NewSandbox:
             workload identity for the sandbox.
         volume_mounts (Union[Unset, list['SandboxVolumeMount']]):
         sidecars (Union[Unset, list['SidecarAttachment']]): Sidecar microVMs to attach to the sandbox, at most four, at
-            most one with the proxy role. Requires the team's sandbox-sidecars feature.
+            most one with the proxy role. Requires the team's sandbox-sidecars feature. An attachment that carries state
+            additionally requires the team's sandbox-sidecar-states feature and is rejected with error_code
+            sidecar_state_flag_off, sidecar_state_unknown, sidecar_state_version_unknown, sidecar_state_entry_mismatch,
+            sidecar_state_size_mismatch or sidecar_state_unsupported (400).
     """
 
     template_id: str

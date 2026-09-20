@@ -25,7 +25,7 @@ apis:
     decorators:
       filter-in:
         property: tags
-        value: [sandboxes, snapshots, templates, tags, auth, volumes, secrets]
+        value: [sandboxes, snapshots, sidecar-states, templates, tags, auth, volumes, secrets]
         matchStrategy: any
         applyTo: Operation
       remove-unused-components: on
@@ -37,7 +37,7 @@ apis:
     decorators:
       filter-in:
         property: tags
-        value: [sandboxes, snapshots, templates, tags, volumes, secrets]
+        value: [sandboxes, snapshots, sidecar-states, templates, tags, volumes, secrets]
         matchStrategy: any
         applyTo: Operation
       remove-unused-components: on

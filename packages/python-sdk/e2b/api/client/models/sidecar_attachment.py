@@ -26,12 +26,17 @@ class SidecarAttachment:
             schema. String values may reference secrets as "${e2b.secrets.<name>}".
         secrets (Union[Unset, SidecarAttachmentSecrets]): Secret slots the entry declares, keyed by slot name, each
             holding a secret reference the platform resolves at injection time. The secret value never enters the sandbox.
+        state (Union[Unset, str]): Name of one of the team's saved sidecar states; a copy of its latest version (or
+            stateVersion) is attached. The state's entry must equal this attachment's entry.
+        state_version (Union[Unset, int]): Version of the saved state to attach. Defaults to the state's latest version.
     """
 
     entry: str
     version: Union[Unset, str] = UNSET
     config: Union[Unset, "SidecarAttachmentConfig"] = UNSET
     secrets: Union[Unset, "SidecarAttachmentSecrets"] = UNSET
+    state: Union[Unset, str] = UNSET
+    state_version: Union[Unset, int] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -47,6 +52,10 @@ class SidecarAttachment:
         if not isinstance(self.secrets, Unset):
             secrets = self.secrets.to_dict()
 
+        state = self.state
+
+        state_version = self.state_version
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -60,6 +69,10 @@ class SidecarAttachment:
             field_dict["config"] = config
         if secrets is not UNSET:
             field_dict["secrets"] = secrets
+        if state is not UNSET:
+            field_dict["state"] = state
+        if state_version is not UNSET:
+            field_dict["stateVersion"] = state_version
 
         return field_dict
 
@@ -87,11 +100,17 @@ class SidecarAttachment:
         else:
             secrets = SidecarAttachmentSecrets.from_dict(_secrets)
 
+        state = d.pop("state", UNSET)
+
+        state_version = d.pop("stateVersion", UNSET)
+
         sidecar_attachment = cls(
             entry=entry,
             version=version,
             config=config,
             secrets=secrets,
+            state=state,
+            state_version=state_version,
         )
 
         sidecar_attachment.additional_properties = d

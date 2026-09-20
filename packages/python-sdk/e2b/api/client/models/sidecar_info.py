@@ -26,6 +26,8 @@ class SidecarInfo:
         address (Union[Unset, str]): Address of the sidecar inside the sandbox network
         ports (Union[Unset, list[int]]): Ports the sidecar listens on
         last_error (Union[Unset, str]): Last error of the sidecar, set when the state is failed
+        state_name (Union[Unset, str]): Saved state this sidecar was attached from, when any
+        state_version (Union[Unset, int]): Version of the saved state this sidecar was attached from, when any
     """
 
     entry: str
@@ -37,6 +39,8 @@ class SidecarInfo:
     address: Union[Unset, str] = UNSET
     ports: Union[Unset, list[int]] = UNSET
     last_error: Union[Unset, str] = UNSET
+    state_name: Union[Unset, str] = UNSET
+    state_version: Union[Unset, int] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -60,6 +64,10 @@ class SidecarInfo:
 
         last_error = self.last_error
 
+        state_name = self.state_name
+
+        state_version = self.state_version
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -78,6 +86,10 @@ class SidecarInfo:
             field_dict["ports"] = ports
         if last_error is not UNSET:
             field_dict["lastError"] = last_error
+        if state_name is not UNSET:
+            field_dict["stateName"] = state_name
+        if state_version is not UNSET:
+            field_dict["stateVersion"] = state_version
 
         return field_dict
 
@@ -102,6 +114,10 @@ class SidecarInfo:
 
         last_error = d.pop("lastError", UNSET)
 
+        state_name = d.pop("stateName", UNSET)
+
+        state_version = d.pop("stateVersion", UNSET)
+
         sidecar_info = cls(
             entry=entry,
             version=version,
@@ -112,6 +128,8 @@ class SidecarInfo:
             address=address,
             ports=ports,
             last_error=last_error,
+            state_name=state_name,
+            state_version=state_version,
         )
 
         sidecar_info.additional_properties = d

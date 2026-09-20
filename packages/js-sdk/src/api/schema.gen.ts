@@ -555,6 +555,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sandboxes/{sandboxID}/sidecars/{entry}/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save sidecar state
+         * @description Save the data disk of one of the sandbox's sidecars as a new version of a named, team-scoped sidecar state. The sidecar is quiesced for the copy and keeps serving; the version is recorded only once the upload is durable. Rejections carry an error_code: sidecar_state_flag_off, sidecar_state_name_invalid, sidecar_state_unsupported (the entry has no data disk), sidecar_state_entry_mismatch, sidecar_state_size_mismatch and sidecar_state_limit are 400; sidecar_not_running and sidecar_state_busy (a save for this sidecar is already in flight) are 409; sidecar_state_failed is 500.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Catalog entry of the sidecar to save, as reported by the sandbox info */
+                    entry: string;
+                    sandboxID: components["parameters"]["sandboxID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SidecarStateSaveRequest"];
+                };
+            };
+            responses: {
+                /** @description State version saved */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SidecarStateVersion"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                409: components["responses"]["409"];
+                500: components["responses"]["500"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sandboxes/{sandboxID}/snapshots": {
         parameters: {
             query?: never;
@@ -898,6 +950,168 @@ export interface paths {
                 500: components["responses"]["500"];
                 502: components["responses"]["502"];
                 504: components["responses"]["504"];
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sidecar-states": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List sidecar states
+         * @description List the team's named sidecar states. Rejected with error_code sidecar_state_flag_off (400) when the team does not have the sandbox-sidecar-states feature.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned the team's sidecar states */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SidecarState"][];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sidecar-states/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get sidecar state
+         * @description Get one of the team's named sidecar states with every version kept under it. Rejections carry an error_code: sidecar_state_flag_off (400) and sidecar_state_unknown (404).
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Name of the saved sidecar state */
+                    name: components["parameters"]["sidecarStateName"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned the sidecar state */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SidecarStateDetail"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        /**
+         * Delete sidecar state
+         * @description Delete a named sidecar state with every version under it and the objects those versions hold. Sandboxes that attached a version are unaffected. Rejections carry an error_code: sidecar_state_flag_off (400) and sidecar_state_unknown (404).
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Name of the saved sidecar state */
+                    name: components["parameters"]["sidecarStateName"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Sidecar state deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sidecar-states/{name}/versions/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete sidecar state version
+         * @description Delete one version of a named sidecar state and the objects it holds; deleting the last version deletes the name. Sandboxes that attached the version are unaffected. Rejections carry an error_code: sidecar_state_flag_off (400), sidecar_state_unknown (404) and sidecar_state_version_unknown (404).
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Name of the saved sidecar state */
+                    name: components["parameters"]["sidecarStateName"];
+                    /** @description Version number to delete */
+                    version: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Sidecar state version deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
             };
         };
         options?: never;
@@ -2359,7 +2573,7 @@ export interface components {
             network?: components["schemas"]["SandboxNetworkConfig"];
             /** @description Secure all system communication with sandbox */
             secure?: boolean;
-            /** @description Sidecar microVMs to attach to the sandbox, at most four, at most one with the proxy role. Requires the team's sandbox-sidecars feature. */
+            /** @description Sidecar microVMs to attach to the sandbox, at most four, at most one with the proxy role. Requires the team's sandbox-sidecars feature. An attachment that carries state additionally requires the team's sandbox-sidecar-states feature and is rejected with error_code sidecar_state_flag_off, sidecar_state_unknown, sidecar_state_version_unknown, sidecar_state_entry_mismatch, sidecar_state_size_mismatch or sidecar_state_unsupported (400). */
             sidecars?: [
             ] | [
                 components["schemas"]["SidecarAttachment"]
@@ -2755,6 +2969,10 @@ export interface components {
             secrets?: {
                 [key: string]: string;
             };
+            /** @description Name of one of the team's saved sidecar states; a copy of its latest version (or stateVersion) is attached. The state's entry must equal this attachment's entry. */
+            state?: string;
+            /** @description Version of the saved state to attach. Defaults to the state's latest version. */
+            stateVersion?: number;
             /** @description Catalog entry version. Defaults to the entry's current version. */
             version?: string;
         };
@@ -2782,8 +3000,59 @@ export interface components {
             role: "proxy" | "service";
             /** @description Current state of the sidecar. Not a closed set; current values are starting, running, failed and stopped. */
             state: string;
+            /** @description Saved state this sidecar was attached from, when any */
+            stateName?: string;
+            /** @description Version of the saved state this sidecar was attached from, when any */
+            stateVersion?: number;
             /** @description Catalog entry version */
             version: string;
+        };
+        /** @description A named sidecar state of the team and its versions' summary. */
+        SidecarState: {
+            /** Format: date-time */
+            createdAt: string;
+            /** @description Catalog entry the state belongs to */
+            entry: string;
+            /** @description Highest version number under the name */
+            latestVersion: number;
+            name: components["schemas"]["SidecarStateName"];
+            /** @description Size class of the state's data disk in MiB */
+            sizeMiB: number;
+            /** Format: date-time */
+            updatedAt: string;
+            /** @description Number of versions kept under the name */
+            versionCount: number;
+        };
+        SidecarStateDetail: components["schemas"]["SidecarState"] & {
+            /** @description Every version kept under the name, newest first */
+            versions: components["schemas"]["SidecarStateVersion"][];
+        };
+        /** @description Name of a saved sidecar state, unique within the team */
+        SidecarStateName: string;
+        SidecarStateSaveRequest: {
+            name: components["schemas"]["SidecarStateName"];
+        };
+        /** @description One immutable version of a saved sidecar state. */
+        SidecarStateVersion: {
+            /**
+             * Format: date-time
+             * @description When the version was saved
+             */
+            createdAt: string;
+            /** @description Catalog entry the state was saved from */
+            entry: string;
+            /** @description Catalog entry version the state was saved from */
+            entryVersion: string;
+            name: components["schemas"]["SidecarStateName"];
+            /**
+             * Format: int64
+             * @description Size of the version's data layer in bytes
+             */
+            sizeBytes: number;
+            /** @description Sandbox the version was saved from */
+            sourceSandboxID: string;
+            /** @description Version number, counted from one under the name */
+            version: number;
         };
         SnapshotInfo: {
             /** @description Full names of the snapshot template including team namespace and tag (e.g. team-slug/my-snapshot:v2) */
@@ -3271,6 +3540,8 @@ export interface components {
         paginationNextToken: string;
         sandboxID: string;
         secretID: string;
+        /** @description Name of the saved sidecar state */
+        sidecarStateName: components["schemas"]["SidecarStateName"];
         teamID: string;
         templateID: string;
         volumeID: string;
