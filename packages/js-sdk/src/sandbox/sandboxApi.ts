@@ -637,6 +637,23 @@ export type SidecarAttachment = {
    * Every slot the entry declares has to be filled.
    */
   secrets?: Record<string, string>
+
+  /**
+   * Name of one of the team's saved sidecar states (see
+   * {@link SandboxApi.saveSidecarState}) to start this sidecar from. A copy of
+   * the state is attached, so two sandboxes never share it and later pauses
+   * never touch the saved version. Only the entries that hold data — `'valkey'`
+   * and `'sqlite'` — can be saved and attached; the state's entry has to be
+   * this attachment's entry. Requires the team's `sandbox-sidecar-states`
+   * feature.
+   */
+  state?: string
+
+  /**
+   * Version of {@link SidecarAttachment.state} to attach. Defaults to the
+   * state's latest version.
+   */
+  stateVersion?: number
 }
 
 /**
@@ -679,6 +696,60 @@ export type SidecarInfo = {
   ports?: number[]
   /** Last error of the sidecar, set when `state` is `'failed'`. */
   lastError?: string
+  /** Saved sidecar state this sidecar was attached from, when any. */
+  stateName?: string
+  /** Version of {@link SidecarInfo.stateName} this sidecar was attached from. */
+  stateVersion?: number
+}
+
+/**
+ * A named sidecar state of the team: the saved data disk of a `'valkey'` or
+ * `'sqlite'` sidecar, under a name that points at its latest version.
+ */
+export type SidecarStateInfo = {
+  /** Name of the state, unique within the team. */
+  name: string
+  /** Catalog entry the state belongs to. */
+  entry: string
+  /** Size class of the state's data disk, in MiB. */
+  sizeMiB: number
+  /** Highest version number under the name. */
+  latestVersion: number
+  /** Number of versions kept under the name. */
+  versionCount: number
+  createdAt: Date
+  updatedAt: Date
+}
+
+/**
+ * One immutable version of a named sidecar state.
+ */
+export type SidecarStateVersionInfo = {
+  /** Name of the state this version belongs to. */
+  name: string
+  /** Catalog entry the state was saved from. */
+  entry: string
+  /** Version number, counted from one under the name. */
+  version: number
+  /** Catalog entry version the state was saved from. */
+  entryVersion: string
+  /** Size of the version's data layer, in bytes. */
+  sizeBytes: number
+  /** Sandbox the version was saved from. */
+  sourceSandboxId: string
+  createdAt: Date
+}
+
+/**
+ * Options for {@link SandboxApi.deleteSidecarState}.
+ */
+export interface SidecarStateDeleteOpts extends SandboxApiOpts {
+  /**
+   * Version to delete. Deleting the last version deletes the name.
+   *
+   * @default every version under the name
+   */
+  version?: number
 }
 
 /**
@@ -1292,6 +1363,10 @@ function buildSidecarsBody(
       ...(sidecar.version != null ? { version: sidecar.version } : {}),
       ...(sidecar.config != null ? { config: sidecar.config } : {}),
       ...(sidecar.secrets != null ? { secrets: sidecar.secrets } : {}),
+      ...(sidecar.state != null ? { state: sidecar.state } : {}),
+      ...(sidecar.stateVersion != null
+        ? { stateVersion: sidecar.stateVersion }
+        : {}),
     }
   }) as NonNullable<components['schemas']['NewSandbox']['sidecars']>
 }
@@ -1311,7 +1386,41 @@ function fromApiSidecars(
     ...(sidecar.lastError !== undefined
       ? { lastError: sidecar.lastError }
       : {}),
+    ...(sidecar.stateName !== undefined
+      ? { stateName: sidecar.stateName }
+      : {}),
+    ...(sidecar.stateVersion !== undefined
+      ? { stateVersion: sidecar.stateVersion }
+      : {}),
   }))
+}
+
+function fromApiSidecarState(
+  state: components['schemas']['SidecarState']
+): SidecarStateInfo {
+  return {
+    name: state.name,
+    entry: state.entry,
+    sizeMiB: state.sizeMiB,
+    latestVersion: state.latestVersion,
+    versionCount: state.versionCount,
+    createdAt: new Date(state.createdAt),
+    updatedAt: new Date(state.updatedAt),
+  }
+}
+
+function fromApiSidecarStateVersion(
+  version: components['schemas']['SidecarStateVersion']
+): SidecarStateVersionInfo {
+  return {
+    name: version.name,
+    entry: version.entry,
+    version: version.version,
+    entryVersion: version.entryVersion,
+    sizeBytes: version.sizeBytes,
+    sourceSandboxId: version.sourceSandboxID,
+    createdAt: new Date(version.createdAt),
+  }
 }
 
 /**
@@ -1326,6 +1435,15 @@ function fromApiSidecars(
  * `sidecar_snapshot_mismatch` (500: a stored sidecar snapshot has no matching
  * declaration) stay {@link SandboxError}s — the SDK has no conflict type. The
  * code stays in the message so callers can tell them apart.
+ *
+ * Named sidecar state adds `sidecar_state_flag_off`,
+ * `sidecar_state_name_invalid`, `sidecar_state_unknown`,
+ * `sidecar_state_version_unknown`, `sidecar_state_entry_mismatch`,
+ * `sidecar_state_size_mismatch`, `sidecar_state_unsupported` and
+ * `sidecar_state_limit` as 400s, `sidecar_not_running` and
+ * `sidecar_state_busy` as 409s and `sidecar_state_failed` as a 500. On the
+ * state endpoints an unknown name or version is a 404, which is a
+ * {@link NotFoundError} like every other missing resource.
  */
 function sidecarApiError(res: {
   response: { status: number; statusText: string }
@@ -1342,7 +1460,9 @@ function sidecarApiError(res: {
   const err =
     status === 400
       ? new InvalidArgumentError(message)
-      : new SandboxError(message)
+      : status === 404
+        ? new NotFoundError(message)
+        : new SandboxError(message)
   err.statusCode = status
   return err
 }
@@ -1701,6 +1821,174 @@ export class SandboxApi extends ClientFactory {
     if (res.error?.code === 404) {
       throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
     }
+
+    const err = sidecarApiError(res) ?? handleApiError(res)
+    if (err) {
+      throw err
+    }
+  }
+
+  /**
+   * Save the data disk of one of the sandbox's sidecars as a new version of a
+   * named, team-scoped sidecar state.
+   *
+   * Only the catalog entries that hold data can be saved: `'valkey'` (its
+   * `SAVE` runs first, so the keys are on disk) and `'sqlite'`. The sidecar is
+   * frozen for the copy and keeps serving; the version is recorded only once
+   * the upload is durable, so a failed save leaves no version behind. Attach
+   * the state to a later sandbox with {@link SidecarAttachment.state}.
+   *
+   * Requires the team's `sandbox-sidecar-states` feature.
+   *
+   * @param sandboxId sandbox ID.
+   * @param entry catalog entry of the sidecar to save, e.g. `'sqlite'`.
+   * @param name name of the state; a new version is added under it.
+   * @param opts connection options.
+   *
+   * @returns the version that was saved.
+   */
+  static async saveSidecarState(
+    sandboxId: string,
+    entry: string,
+    name: string,
+    opts?: SandboxApiOpts
+  ): Promise<SidecarStateVersionInfo> {
+    if (typeof entry !== 'string' || entry === '') {
+      throw new InvalidArgumentError(
+        `entry must be the catalog entry of one of the sandbox's sidecars (e.g. 'sqlite'), got ${describeValue(entry)}.`
+      )
+    }
+
+    if (typeof name !== 'string' || name === '') {
+      throw new InvalidArgumentError(
+        `name must be a non-empty sidecar state name, got ${describeValue(name)}.`
+      )
+    }
+
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.POST(
+      '/sandboxes/{sandboxID}/sidecars/{entry}/state',
+      {
+        params: {
+          path: {
+            sandboxID: sandboxId,
+            entry,
+          },
+        },
+        body: { name },
+        signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
+      }
+    )
+
+    const err = sidecarApiError(res) ?? handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    return fromApiSidecarStateVersion(res.data!)
+  }
+
+  /**
+   * List the team's named sidecar states, without their versions.
+   *
+   * Requires the team's `sandbox-sidecar-states` feature.
+   *
+   * @param opts connection options.
+   *
+   * @returns the team's sidecar states.
+   */
+  static async listSidecarStates(
+    opts?: SandboxApiOpts
+  ): Promise<SidecarStateInfo[]> {
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.GET('/sidecar-states', {
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
+    })
+
+    const err = sidecarApiError(res) ?? handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    return (res.data ?? []).map(fromApiSidecarState)
+  }
+
+  /**
+   * Get one of the team's named sidecar states with every version kept under
+   * it, newest first.
+   *
+   * Requires the team's `sandbox-sidecar-states` feature.
+   *
+   * @param name name of the state.
+   * @param opts connection options.
+   *
+   * @returns the state and its versions.
+   */
+  static async getSidecarState(
+    name: string,
+    opts?: SandboxApiOpts
+  ): Promise<SidecarStateInfo & { versions: SidecarStateVersionInfo[] }> {
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
+    const client = new ApiClient(config)
+
+    const res = await client.api.GET('/sidecar-states/{name}', {
+      params: {
+        path: {
+          name,
+        },
+      },
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
+    })
+
+    const err = sidecarApiError(res) ?? handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    return {
+      ...fromApiSidecarState(res.data!),
+      versions: (res.data!.versions ?? []).map(fromApiSidecarStateVersion),
+    }
+  }
+
+  /**
+   * Delete a named sidecar state, or one version of it.
+   *
+   * Deleting the last version deletes the name. A sandbox that attached a
+   * version runs on its own copy and is not affected.
+   *
+   * Requires the team's `sandbox-sidecar-states` feature.
+   *
+   * @param name name of the state.
+   * @param opts delete options, including `version`, and connection options.
+   */
+  static async deleteSidecarState(
+    name: string,
+    opts?: SidecarStateDeleteOpts
+  ): Promise<void> {
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
+    const client = new ApiClient(config)
+
+    const signal = config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal)
+
+    const res =
+      opts?.version === undefined
+        ? await client.api.DELETE('/sidecar-states/{name}', {
+            params: { path: { name } },
+            signal,
+          })
+        : await client.api.DELETE('/sidecar-states/{name}/versions/{version}', {
+            params: { path: { name, version: opts.version } },
+            signal,
+          })
 
     const err = sidecarApiError(res) ?? handleApiError(res)
     if (err) {

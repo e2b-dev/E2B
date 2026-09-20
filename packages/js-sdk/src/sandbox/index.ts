@@ -28,6 +28,7 @@ import {
   SnapshotPaginator,
   CreateSnapshotOpts,
   SandboxPauseOpts,
+  SidecarStateVersionInfo,
 } from './sandboxApi'
 import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
@@ -615,6 +616,33 @@ export class Sandbox extends SandboxApi {
     await SandboxApi.updateNetwork(
       this.sandboxId,
       network,
+      this.resolveApiOpts(opts)
+    )
+  }
+
+  /**
+   * Save the data disk of one of the sandbox's sidecars as a new version of a
+   * named, team-scoped sidecar state.
+   *
+   * Only the catalog entries that hold data can be saved: `'valkey'` and
+   * `'sqlite'`. Attach the state to a later sandbox with the `state` key of a
+   * sidecar attachment. Requires the team's `sandbox-sidecar-states` feature.
+   *
+   * @param entry catalog entry of the sidecar to save, e.g. `'sqlite'`.
+   * @param name name of the state; a new version is added under it.
+   * @param opts connection options.
+   *
+   * @returns the version that was saved.
+   */
+  async saveSidecarState(
+    entry: string,
+    name: string,
+    opts?: Pick<SandboxOpts, 'requestTimeoutMs' | 'signal'>
+  ): Promise<SidecarStateVersionInfo> {
+    return await SandboxApi.saveSidecarState(
+      this.sandboxId,
+      entry,
+      name,
       this.resolveApiOpts(opts)
     )
   }
