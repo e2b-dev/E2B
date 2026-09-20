@@ -66,12 +66,12 @@ def sync_detailed(
 ) -> Response[Union[Any, Error]]:
     """Delete sidecar state
 
-     Delete a named sidecar state with every version under it and the objects those versions hold.
-    Sandboxes that attached a version are unaffected. Rejections carry an error_code:
-    sidecar_state_flag_off (400) and sidecar_state_unknown (404).
+     Delete a saved sidecar state and every version under it. A sandbox that attached one of the versions
+    holds its own copy and is unaffected. A 400 response carries sidecar_state_flag_off; a 404 response
+    carries sidecar_state_unknown.
 
     Args:
-        name (str): Name of a saved sidecar state, unique within the team
+        name (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -99,12 +99,12 @@ def sync(
 ) -> Optional[Union[Any, Error]]:
     """Delete sidecar state
 
-     Delete a named sidecar state with every version under it and the objects those versions hold.
-    Sandboxes that attached a version are unaffected. Rejections carry an error_code:
-    sidecar_state_flag_off (400) and sidecar_state_unknown (404).
+     Delete a saved sidecar state and every version under it. A sandbox that attached one of the versions
+    holds its own copy and is unaffected. A 400 response carries sidecar_state_flag_off; a 404 response
+    carries sidecar_state_unknown.
 
     Args:
-        name (str): Name of a saved sidecar state, unique within the team
+        name (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -127,12 +127,12 @@ async def asyncio_detailed(
 ) -> Response[Union[Any, Error]]:
     """Delete sidecar state
 
-     Delete a named sidecar state with every version under it and the objects those versions hold.
-    Sandboxes that attached a version are unaffected. Rejections carry an error_code:
-    sidecar_state_flag_off (400) and sidecar_state_unknown (404).
+     Delete a saved sidecar state and every version under it. A sandbox that attached one of the versions
+    holds its own copy and is unaffected. A 400 response carries sidecar_state_flag_off; a 404 response
+    carries sidecar_state_unknown.
 
     Args:
-        name (str): Name of a saved sidecar state, unique within the team
+        name (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -158,12 +158,12 @@ async def asyncio(
 ) -> Optional[Union[Any, Error]]:
     """Delete sidecar state
 
-     Delete a named sidecar state with every version under it and the objects those versions hold.
-    Sandboxes that attached a version are unaffected. Rejections carry an error_code:
-    sidecar_state_flag_off (400) and sidecar_state_unknown (404).
+     Delete a saved sidecar state and every version under it. A sandbox that attached one of the versions
+    holds its own copy and is unaffected. A 400 response carries sidecar_state_flag_off; a 404 response
+    carries sidecar_state_unknown.
 
     Args:
-        name (str): Name of a saved sidecar state, unique within the team
+        name (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

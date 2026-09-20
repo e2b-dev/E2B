@@ -27,8 +27,12 @@ class SidecarAttachment:
         secrets (Union[Unset, SidecarAttachmentSecrets]): Secret slots the entry declares, keyed by slot name, each
             holding a secret reference the platform resolves at injection time. The secret value never enters the sandbox.
         state (Union[Unset, str]): Name of one of the team's saved sidecar states; a copy of its latest version (or
-            stateVersion) is attached. The state's entry must equal this attachment's entry.
-        state_version (Union[Unset, int]): Version of the saved state to attach. Defaults to the state's latest version.
+            stateVersion) is attached. The state's entry must equal this attachment's entry. Attaching copies: the sandbox
+            never writes the saved version, and deleting the version never affects a sandbox that attached it. A name
+            outside the accepted pattern is answered with the sidecar_state_name_invalid error code rather than a schema
+            rejection.
+        state_version (Union[Unset, int]): Version of the saved state to attach. When omitted, the latest version under
+            the name is attached.
     """
 
     entry: str

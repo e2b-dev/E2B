@@ -1932,7 +1932,7 @@ export class SandboxApi extends ClientFactory {
 
   /**
    * Get one of the team's named sidecar states with every version kept under
-   * it, newest first.
+   * it.
    *
    * Requires the team's `sandbox-sidecar-states` feature.
    *

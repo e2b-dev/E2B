@@ -85,13 +85,15 @@ def sync_detailed(
 ) -> Response[Union[Error, SidecarStateVersion]]:
     """Save sidecar state
 
-     Save the data disk of one of the sandbox's sidecars as a new version of a named, team-scoped sidecar
-    state. The sidecar is quiesced for the copy and keeps serving; the version is recorded only once the
-    upload is durable. Rejections carry an error_code: sidecar_state_flag_off,
-    sidecar_state_name_invalid, sidecar_state_unsupported (the entry has no data disk),
-    sidecar_state_entry_mismatch, sidecar_state_size_mismatch and sidecar_state_limit are 400;
-    sidecar_not_running and sidecar_state_busy (a save for this sidecar is already in flight) are 409;
-    sidecar_state_failed is 500.
+     Save the contents of a running sidecar's data disk as a new version under a team-scoped name,
+    creating the name when it is new. The sidecar is quiesced for the copy and keeps serving; the
+    version is recorded only once its data is durable, so a failed save leaves no version behind. A 400
+    response carries sidecar_state_flag_off, sidecar_state_name_invalid, sidecar_state_unsupported (the
+    entry has no data disk), sidecar_state_entry_mismatch (the name holds another entry's state),
+    sidecar_state_size_mismatch or sidecar_state_limit (the team is at 50 names, or the name at 20
+    versions). A 409 response carries sidecar_not_running (the sandbox is paused or the sidecar is not
+    running) or sidecar_state_busy (a save for this sidecar is already in flight). A 500 response
+    carries sidecar_state_failed.
 
     Args:
         sandbox_id (str):
@@ -128,13 +130,15 @@ def sync(
 ) -> Optional[Union[Error, SidecarStateVersion]]:
     """Save sidecar state
 
-     Save the data disk of one of the sandbox's sidecars as a new version of a named, team-scoped sidecar
-    state. The sidecar is quiesced for the copy and keeps serving; the version is recorded only once the
-    upload is durable. Rejections carry an error_code: sidecar_state_flag_off,
-    sidecar_state_name_invalid, sidecar_state_unsupported (the entry has no data disk),
-    sidecar_state_entry_mismatch, sidecar_state_size_mismatch and sidecar_state_limit are 400;
-    sidecar_not_running and sidecar_state_busy (a save for this sidecar is already in flight) are 409;
-    sidecar_state_failed is 500.
+     Save the contents of a running sidecar's data disk as a new version under a team-scoped name,
+    creating the name when it is new. The sidecar is quiesced for the copy and keeps serving; the
+    version is recorded only once its data is durable, so a failed save leaves no version behind. A 400
+    response carries sidecar_state_flag_off, sidecar_state_name_invalid, sidecar_state_unsupported (the
+    entry has no data disk), sidecar_state_entry_mismatch (the name holds another entry's state),
+    sidecar_state_size_mismatch or sidecar_state_limit (the team is at 50 names, or the name at 20
+    versions). A 409 response carries sidecar_not_running (the sandbox is paused or the sidecar is not
+    running) or sidecar_state_busy (a save for this sidecar is already in flight). A 500 response
+    carries sidecar_state_failed.
 
     Args:
         sandbox_id (str):
@@ -166,13 +170,15 @@ async def asyncio_detailed(
 ) -> Response[Union[Error, SidecarStateVersion]]:
     """Save sidecar state
 
-     Save the data disk of one of the sandbox's sidecars as a new version of a named, team-scoped sidecar
-    state. The sidecar is quiesced for the copy and keeps serving; the version is recorded only once the
-    upload is durable. Rejections carry an error_code: sidecar_state_flag_off,
-    sidecar_state_name_invalid, sidecar_state_unsupported (the entry has no data disk),
-    sidecar_state_entry_mismatch, sidecar_state_size_mismatch and sidecar_state_limit are 400;
-    sidecar_not_running and sidecar_state_busy (a save for this sidecar is already in flight) are 409;
-    sidecar_state_failed is 500.
+     Save the contents of a running sidecar's data disk as a new version under a team-scoped name,
+    creating the name when it is new. The sidecar is quiesced for the copy and keeps serving; the
+    version is recorded only once its data is durable, so a failed save leaves no version behind. A 400
+    response carries sidecar_state_flag_off, sidecar_state_name_invalid, sidecar_state_unsupported (the
+    entry has no data disk), sidecar_state_entry_mismatch (the name holds another entry's state),
+    sidecar_state_size_mismatch or sidecar_state_limit (the team is at 50 names, or the name at 20
+    versions). A 409 response carries sidecar_not_running (the sandbox is paused or the sidecar is not
+    running) or sidecar_state_busy (a save for this sidecar is already in flight). A 500 response
+    carries sidecar_state_failed.
 
     Args:
         sandbox_id (str):
@@ -207,13 +213,15 @@ async def asyncio(
 ) -> Optional[Union[Error, SidecarStateVersion]]:
     """Save sidecar state
 
-     Save the data disk of one of the sandbox's sidecars as a new version of a named, team-scoped sidecar
-    state. The sidecar is quiesced for the copy and keeps serving; the version is recorded only once the
-    upload is durable. Rejections carry an error_code: sidecar_state_flag_off,
-    sidecar_state_name_invalid, sidecar_state_unsupported (the entry has no data disk),
-    sidecar_state_entry_mismatch, sidecar_state_size_mismatch and sidecar_state_limit are 400;
-    sidecar_not_running and sidecar_state_busy (a save for this sidecar is already in flight) are 409;
-    sidecar_state_failed is 500.
+     Save the contents of a running sidecar's data disk as a new version under a team-scoped name,
+    creating the name when it is new. The sidecar is quiesced for the copy and keeps serving; the
+    version is recorded only once its data is durable, so a failed save leaves no version behind. A 400
+    response carries sidecar_state_flag_off, sidecar_state_name_invalid, sidecar_state_unsupported (the
+    entry has no data disk), sidecar_state_entry_mismatch (the name holds another entry's state),
+    sidecar_state_size_mismatch or sidecar_state_limit (the team is at 50 names, or the name at 20
+    versions). A 409 response carries sidecar_not_running (the sandbox is paused or the sidecar is not
+    running) or sidecar_state_busy (a save for this sidecar is already in flight). A 500 response
+    carries sidecar_state_failed.
 
     Args:
         sandbox_id (str):

@@ -13,8 +13,12 @@ from e2b.api import (
 )
 from e2b.api.client.api.sandboxes import (
     delete_sandboxes_sandbox_id,
+    delete_sidecar_states_name,
+    delete_sidecar_states_name_versions_version,
     get_sandboxes_sandbox_id,
     get_sandboxes_sandbox_id_metrics,
+    get_sidecar_states,
+    get_sidecar_states_name,
     post_sandboxes,
     post_sandboxes_sandbox_id_connect,
     post_sandboxes_sandbox_id_fork,
@@ -23,12 +27,6 @@ from e2b.api.client.api.sandboxes import (
     post_sandboxes_sandbox_id_snapshots,
     post_sandboxes_sandbox_id_timeout,
     put_sandboxes_sandbox_id_network,
-)
-from e2b.api.client.api.sidecar_states import (
-    delete_sidecar_states_name,
-    delete_sidecar_states_name_versions_version,
-    get_sidecar_states,
-    get_sidecar_states_name,
 )
 from e2b.api.client.api.templates import delete_templates_template_id
 from e2b.api.client.models import (
@@ -298,7 +296,7 @@ class SandboxApi(SandboxBase):
     ) -> SidecarStateInfo:
         """
         Get one of the team's named sidecar states with every version kept
-        under it, newest first.
+        under it.
 
         Requires the team's `sandbox-sidecar-states` feature.
 

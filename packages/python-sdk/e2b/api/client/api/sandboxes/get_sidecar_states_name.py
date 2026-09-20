@@ -1,21 +1,21 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, Union
 
 import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
+from ...models.sidecar_state_detail import SidecarStateDetail
 from ...types import Response
 
 
 def _get_kwargs(
     name: str,
-    version: int,
 ) -> dict[str, Any]:
     _kwargs: dict[str, Any] = {
-        "method": "delete",
-        "url": f"/sidecar-states/{name}/versions/{version}",
+        "method": "get",
+        "url": f"/sidecar-states/{name}",
     }
 
     return _kwargs
@@ -23,10 +23,11 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[Any, Error]]:
-    if response.status_code == 204:
-        response_204 = cast(Any, None)
-        return response_204
+) -> Optional[Union[Error, SidecarStateDetail]]:
+    if response.status_code == 200:
+        response_200 = SidecarStateDetail.from_dict(response.json())
+
+        return response_200
     if response.status_code == 400:
         response_400 = Error.from_dict(response.json())
 
@@ -51,7 +52,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Any, Error]]:
+) -> Response[Union[Error, SidecarStateDetail]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -62,32 +63,27 @@ def _build_response(
 
 def sync_detailed(
     name: str,
-    version: int,
     *,
     client: AuthenticatedClient,
-) -> Response[Union[Any, Error]]:
-    """Delete sidecar state version
+) -> Response[Union[Error, SidecarStateDetail]]:
+    """Get sidecar state
 
-     Delete one version of a named sidecar state and the objects it holds; deleting the last version
-    deletes the name. Sandboxes that attached the version are unaffected. Rejections carry an
-    error_code: sidecar_state_flag_off (400), sidecar_state_unknown (404) and
-    sidecar_state_version_unknown (404).
+     Return one saved sidecar state and every version under it. A 400 response carries
+    sidecar_state_flag_off; a 404 response carries sidecar_state_unknown.
 
     Args:
-        name (str): Name of a saved sidecar state, unique within the team
-        version (int):
+        name (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, Error]]
+        Response[Union[Error, SidecarStateDetail]]
     """
 
     kwargs = _get_kwargs(
         name=name,
-        version=version,
     )
 
     response = client.get_httpx_client().request(
@@ -99,64 +95,54 @@ def sync_detailed(
 
 def sync(
     name: str,
-    version: int,
     *,
     client: AuthenticatedClient,
-) -> Optional[Union[Any, Error]]:
-    """Delete sidecar state version
+) -> Optional[Union[Error, SidecarStateDetail]]:
+    """Get sidecar state
 
-     Delete one version of a named sidecar state and the objects it holds; deleting the last version
-    deletes the name. Sandboxes that attached the version are unaffected. Rejections carry an
-    error_code: sidecar_state_flag_off (400), sidecar_state_unknown (404) and
-    sidecar_state_version_unknown (404).
+     Return one saved sidecar state and every version under it. A 400 response carries
+    sidecar_state_flag_off; a 404 response carries sidecar_state_unknown.
 
     Args:
-        name (str): Name of a saved sidecar state, unique within the team
-        version (int):
+        name (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, Error]
+        Union[Error, SidecarStateDetail]
     """
 
     return sync_detailed(
         name=name,
-        version=version,
         client=client,
     ).parsed
 
 
 async def asyncio_detailed(
     name: str,
-    version: int,
     *,
     client: AuthenticatedClient,
-) -> Response[Union[Any, Error]]:
-    """Delete sidecar state version
+) -> Response[Union[Error, SidecarStateDetail]]:
+    """Get sidecar state
 
-     Delete one version of a named sidecar state and the objects it holds; deleting the last version
-    deletes the name. Sandboxes that attached the version are unaffected. Rejections carry an
-    error_code: sidecar_state_flag_off (400), sidecar_state_unknown (404) and
-    sidecar_state_version_unknown (404).
+     Return one saved sidecar state and every version under it. A 400 response carries
+    sidecar_state_flag_off; a 404 response carries sidecar_state_unknown.
 
     Args:
-        name (str): Name of a saved sidecar state, unique within the team
-        version (int):
+        name (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, Error]]
+        Response[Union[Error, SidecarStateDetail]]
     """
 
     kwargs = _get_kwargs(
         name=name,
-        version=version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -166,33 +152,28 @@ async def asyncio_detailed(
 
 async def asyncio(
     name: str,
-    version: int,
     *,
     client: AuthenticatedClient,
-) -> Optional[Union[Any, Error]]:
-    """Delete sidecar state version
+) -> Optional[Union[Error, SidecarStateDetail]]:
+    """Get sidecar state
 
-     Delete one version of a named sidecar state and the objects it holds; deleting the last version
-    deletes the name. Sandboxes that attached the version are unaffected. Rejections carry an
-    error_code: sidecar_state_flag_off (400), sidecar_state_unknown (404) and
-    sidecar_state_version_unknown (404).
+     Return one saved sidecar state and every version under it. A 400 response carries
+    sidecar_state_flag_off; a 404 response carries sidecar_state_unknown.
 
     Args:
-        name (str): Name of a saved sidecar state, unique within the team
-        version (int):
+        name (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, Error]
+        Union[Error, SidecarStateDetail]
     """
 
     return (
         await asyncio_detailed(
             name=name,
-            version=version,
             client=client,
         )
     ).parsed

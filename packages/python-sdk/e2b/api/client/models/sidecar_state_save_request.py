@@ -11,7 +11,7 @@ T = TypeVar("T", bound="SidecarStateSaveRequest")
 class SidecarStateSaveRequest:
     """
     Attributes:
-        name (str): Name of a saved sidecar state, unique within the team
+        name (str): Name of a saved sidecar state, unique within the team.
     """
 
     name: str

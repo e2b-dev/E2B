@@ -11,16 +11,17 @@ T = TypeVar("T", bound="SidecarStateVersion")
 
 @_attrs_define
 class SidecarStateVersion:
-    """One immutable version of a saved sidecar state.
+    """One immutable saved version of a sidecar's data disk. Versions are numbered from one under their name and never
+    change once written.
 
-    Attributes:
-        name (str): Name of a saved sidecar state, unique within the team
-        entry (str): Catalog entry the state was saved from
-        version (int): Version number, counted from one under the name
-        entry_version (str): Catalog entry version the state was saved from
-        size_bytes (int): Size of the version's data layer in bytes
-        source_sandbox_id (str): Sandbox the version was saved from
-        created_at (datetime.datetime): When the version was saved
+        Attributes:
+            name (str): Name of a saved sidecar state, unique within the team.
+            entry (str): Name of the catalog entry this state belongs to.
+            version (int): Version number under the name, starting at one.
+            entry_version (str): Catalog version of the entry the save was taken from.
+            size_bytes (int): Size of the version's stored layer in bytes.
+            source_sandbox_id (str): Sandbox the version was saved from. The sandbox may no longer exist.
+            created_at (datetime.datetime):
     """
 
     name: str

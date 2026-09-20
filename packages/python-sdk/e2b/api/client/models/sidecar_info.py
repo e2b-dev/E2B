@@ -26,8 +26,8 @@ class SidecarInfo:
         address (Union[Unset, str]): Address of the sidecar inside the sandbox network
         ports (Union[Unset, list[int]]): Ports the sidecar listens on
         last_error (Union[Unset, str]): Last error of the sidecar, set when the state is failed
-        state_name (Union[Unset, str]): Saved state this sidecar was attached from, when any
-        state_version (Union[Unset, int]): Version of the saved state this sidecar was attached from, when any
+        state_name (Union[Unset, str]): Saved state this sidecar was attached from, when any.
+        state_version (Union[Unset, int]): Version of the saved state this sidecar was attached from, when any.
     """
 
     entry: str

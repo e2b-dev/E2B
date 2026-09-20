@@ -17,14 +17,15 @@ T = TypeVar("T", bound="SidecarStateDetail")
 class SidecarStateDetail:
     """
     Attributes:
-        name (str): Name of a saved sidecar state, unique within the team
-        entry (str): Catalog entry the state belongs to
-        size_mi_b (int): Size class of the state's data disk in MiB
-        latest_version (int): Highest version number under the name
-        version_count (int): Number of versions kept under the name
+        name (str): Name of a saved sidecar state, unique within the team.
+        entry (str): Name of the catalog entry this state belongs to.
+        size_mi_b (int): Size of the entry's data disk when the name was created. A state only attaches to an entry of
+            the same size.
+        latest_version (int): Highest version under the name, which an attach without a pin resolves to.
+        version_count (int):
         created_at (datetime.datetime):
         updated_at (datetime.datetime):
-        versions (list['SidecarStateVersion']): Every version kept under the name, newest first
+        versions (list['SidecarStateVersion']):
     """
 
     name: str

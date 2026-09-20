@@ -687,7 +687,7 @@ class SidecarStateInfo:
     updated_at: datetime
     versions: List[SidecarStateVersionInfo] = field(default_factory=list)
     """
-    Every version kept under the name, newest first. Only
+    Every version kept under the name, in the order the API returns them. Only
     :meth:`SandboxApi.get_sidecar_state` fills this in; the list endpoint leaves
     it empty.
     """

@@ -15,16 +15,14 @@ from e2b import (
     SidecarStateVersionInfo,
 )
 from e2b.api.client.api.sandboxes import (
-    post_sandboxes,
-    post_sandboxes_sandbox_id_connect,
-    post_sandboxes_sandbox_id_sidecars_entry_state,
-    put_sandboxes_sandbox_id_network,
-)
-from e2b.api.client.api.sidecar_states import (
     delete_sidecar_states_name,
     delete_sidecar_states_name_versions_version,
     get_sidecar_states,
     get_sidecar_states_name,
+    post_sandboxes,
+    post_sandboxes_sandbox_id_connect,
+    post_sandboxes_sandbox_id_sidecars_entry_state,
+    put_sandboxes_sandbox_id_network,
 )
 from e2b.api.client.models import (
     ListedSandbox,
