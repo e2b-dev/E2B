@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from typing import Any, cast
 
 import pytest
@@ -288,3 +289,98 @@ async def test_async_flushes_incomplete_trailing_utf8_on_stream_error():
     # be flushed to the stdout callback as a replacement character.
     assert "".join(chunks) == "a�"
     assert isinstance(handle._iteration_exception, RuntimeError)
+
+
+def _capturing_logger(name: str):
+    """A real logging.Logger whose INFO messages are captured into a list."""
+    messages: list[str] = []
+
+    class _ListHandler(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            messages.append(record.getMessage())
+
+    logger = logging.getLogger(name)
+    logger.handlers = [_ListHandler()]
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
+    return logger, messages
+
+
+def test_sync_logs_stream_end_cause_on_stream_error():
+    def events():
+        yield _stdout_event(b"a")
+        raise RuntimeError("stream died")
+
+    logger, messages = _capturing_logger("e2b.test.sync.err")
+    handle = CommandHandle(
+        pid=42, handle_kill=lambda: True, events=events(), logger=logger
+    )
+
+    with pytest.raises(RuntimeError):
+        handle.wait()
+
+    assert len(messages) == 1
+    assert "pid=42" in messages[0]
+    assert "stream error before end event" in messages[0]
+    assert "RuntimeError" in messages[0]
+
+
+def test_sync_logs_disconnect_cause_once():
+    # disconnect() records the cause; the subsequent GeneratorExit path must not
+    # add a second, contradictory line for the same command (T-62 idempotency).
+    def events():
+        yield _stdout_event(b"a")
+        yield _end_event()
+
+    logger, messages = _capturing_logger("e2b.test.sync.disc")
+    handle = CommandHandle(
+        pid=7, handle_kill=lambda: True, events=events(), logger=logger
+    )
+    handle.disconnect()
+
+    assert len(messages) == 1
+    assert "pid=7" in messages[0]
+    assert "disconnect()" in messages[0]
+
+
+def test_sync_no_log_without_logger():
+    # No logger configured -> no logging attribute access, no error, no output.
+    def events():
+        yield _end_event()
+
+    handle = CommandHandle(pid=1, handle_kill=lambda: True, events=events())
+    handle.disconnect()  # must not raise
+
+
+async def test_async_logs_stream_end_cause_on_stream_error():
+    async def events():
+        yield _stdout_event(b"a")
+        raise RuntimeError("stream died")
+
+    logger, messages = _capturing_logger("e2b.test.async.err")
+    handle = AsyncCommandHandle(
+        pid=99, handle_kill=_kill, events=events(), logger=logger
+    )
+    await handle._wait
+
+    assert len(messages) == 1
+    assert "pid=99" in messages[0]
+    assert "stream error before end event" in messages[0]
+
+
+async def test_async_logs_disconnect_cause_once():
+    events = _AsyncControllableEvents()
+    logger, messages = _capturing_logger("e2b.test.async.disc")
+    handle = AsyncCommandHandle(
+        pid=8,
+        handle_kill=_kill,
+        events=cast(Any, events),
+        logger=logger,
+    )
+    await handle.disconnect()
+
+    # Exactly one cause, even though disconnect() cancels the reader task whose
+    # own error path would otherwise log a second line (T-62 idempotency).
+    assert len(messages) == 1
+    assert "pid=8" in messages[0]
+    assert "disconnect()" in messages[0]

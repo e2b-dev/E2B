@@ -1,6 +1,7 @@
 import asyncio
 import codecs
 import inspect
+import logging
 from typing import (
     Optional,
     Callable,
@@ -95,6 +96,8 @@ class AsyncCommandHandle:
             Callable[[Optional[float]], Coroutine[Any, Any, None]]
         ] = None,
         check_health: Optional[Callable[[], Awaitable[Optional[bool]]]] = None,
+        *,
+        logger: Optional[logging.Logger] = None,
     ):
         self._pid = pid
         self._handle_kill = handle_kill
@@ -102,6 +105,8 @@ class AsyncCommandHandle:
         self._handle_close_stdin = handle_close_stdin
         self._check_health = check_health
         self._events = events
+        self._logger = logger
+        self._stream_end_logged = False
 
         self._stdout_chunks: List[str] = []
         self._stderr_chunks: List[str] = []
@@ -137,6 +142,21 @@ class AsyncCommandHandle:
             self._stderr_chunks.append(err)
             events.append((None, err, None))
         return events
+
+    def _log_stream_ended(self, reason: str) -> None:
+        """
+        Record why the command's output stream ended on the client side.
+
+        The server (envd) only sees that the stream was cancelled, not why; this
+        logs the local cause so the two can be correlated. No-op when no logger
+        was configured. Records at most once per handle so the disconnect() and
+        reader-task paths cannot emit two contradictory causes for the same
+        command.
+        """
+        if self._logger is None or self._stream_end_logged:
+            return
+        self._stream_end_logged = True
+        self._logger.info("command stream ended (pid=%s): %s", self._pid, reason)
 
     async def _iterate_events(
         self,
@@ -209,6 +229,7 @@ class AsyncCommandHandle:
         The command is not killed, but SDK stops receiving events from the command.
         You can reconnect to the command using `sandbox.commands.connect` method.
         """
+        self._log_stream_ended("explicit disconnect() (command left running)")
         self._wait.cancel()
         await asyncio.wait([self._wait])
         try:
@@ -234,6 +255,9 @@ class AsyncCommandHandle:
         except StopAsyncIteration:
             pass
         except Exception as e:
+            self._log_stream_ended(
+                f"stream error before end event: {type(e).__name__}: {e}"
+            )
             self._iteration_exception = await ahandle_rpc_exception_with_health(
                 e, self._check_health
             )

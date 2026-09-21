@@ -37,9 +37,8 @@ export { Pty } from './pty'
 /**
  * Options for sending a command request.
  */
-export interface CommandRequestOpts extends Partial<
-  Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>
-> {}
+export interface CommandRequestOpts
+  extends Partial<Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>> {}
 
 /**
  * Options for starting a new command.
@@ -364,7 +363,8 @@ export class Commands {
         undefined,
         (data, stdinOpts) => this.sendStdin(pid, data, stdinOpts),
         (stdinOpts) => this.closeStdin(pid, stdinOpts),
-        this.checkHealth
+        this.checkHealth,
+        this.connectionConfig.logger
       )
     } catch (err) {
       cleanup()
@@ -479,7 +479,8 @@ export class Commands {
         undefined,
         (data, stdinOpts) => this.sendStdin(pid, data, stdinOpts),
         (stdinOpts) => this.closeStdin(pid, stdinOpts),
-        this.checkHealth
+        this.checkHealth,
+        this.connectionConfig.logger
       )
     } catch (err) {
       cleanup()
