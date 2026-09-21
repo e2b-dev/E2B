@@ -16,6 +16,5 @@ export const NON_IDEMPOTENT_OPERATIONS: readonly (readonly [
   ['POST', '/sandboxes/{sandboxID}/snapshots'],
   ['POST', '/secrets'],
   ['POST', '/v2/sandboxes'],
-  ['POST', '/v3/templates'],
   ['POST', '/volumes'],
 ]

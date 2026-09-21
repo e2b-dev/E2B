@@ -13,6 +13,5 @@ NON_IDEMPOTENT_OPERATIONS: List[Tuple[str, str]] = [
     ("POST", "/sandboxes/{sandboxID}/snapshots"),
     ("POST", "/secrets"),
     ("POST", "/v2/sandboxes"),
-    ("POST", "/v3/templates"),
     ("POST", "/volumes"),
 ]

@@ -493,7 +493,6 @@ const nonReplayable = [
   ['POST', '/v2/sandboxes'],
   ['POST', '/sandboxes/sbx-1/fork'],
   ['POST', '/sandboxes/sbx-1/snapshots'],
-  ['POST', '/v3/templates'],
   ['POST', '/volumes'],
   ['POST', '/secrets'],
 ]
@@ -513,6 +512,7 @@ const replayable = [
   ['POST', '/sandboxes/sbx-1/refreshes'],
   ['PUT', '/sandboxes/sbx-1/network'],
   ['PATCH', '/templates/tpl-1'],
+  ['POST', '/v3/templates'],
   ['POST', '/v2/templates/tpl-1/builds/build-1'],
   ['POST', '/templates/tags'],
   ['DELETE', '/templates/tags'],
