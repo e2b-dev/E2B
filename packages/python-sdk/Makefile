@@ -6,8 +6,6 @@ generate-api:
 	rm -rf e2b/api/client
 	mv e2b/api/api/e2b_api_client e2b/api/client
 	rm -rf e2b/api/api
-	redocly bundle python-sdk --config $(ROOT_DIR)/redocly.yaml -o $(ROOT_DIR)/spec/openapi_generated.python-sdk.json
-	node $(ROOT_DIR)/scripts/generate-retry-policy.mjs $(ROOT_DIR)/spec/openapi_generated.python-sdk.json e2b/retry_policy.py
 	ruff format .
 
 generate-volume-api:
