@@ -30,6 +30,42 @@ class CommandHandle:
         """
         return self._pid
 
+    @property
+    def stdout(self):
+        """
+        Command stdout output.
+        """
+        return "".join(self._stdout_chunks)
+
+    @property
+    def stderr(self):
+        """
+        Command stderr output.
+        """
+        return "".join(self._stderr_chunks)
+
+    @property
+    def error(self):
+        """
+        Command execution error message.
+        """
+        if self._result is None:
+            return None
+        return self._result.error
+
+    @property
+    def exit_code(self):
+        """
+        Command execution exit code.
+
+        `0` if the command finished successfully.
+
+        It is `None` if the command is still running.
+        """
+        if self._result is None:
+            return None
+        return self._result.exit_code
+
     def __init__(
         self,
         pid: int,

@@ -288,3 +288,26 @@ async def test_async_flushes_incomplete_trailing_utf8_on_stream_error():
     # be flushed to the stdout callback as a replacement character.
     assert "".join(chunks) == "a�"
     assert isinstance(handle._iteration_exception, RuntimeError)
+
+
+def test_sync_command_handle_exposes_result_accessors():
+    def events():
+        yield _stdout_event(b"out")
+        yield _stderr_event(b"err")
+        yield _end_event(0)
+
+    handle = CommandHandle(pid=1, handle_kill=lambda: True, events=events())
+
+    # None while the command is still running, matching the async twin.
+    assert handle.exit_code is None
+    assert handle.error is None
+    assert handle.stdout == ""
+    assert handle.stderr == ""
+
+    handle.wait()
+
+    assert handle.stdout == "out"
+    assert handle.stderr == "err"
+    assert handle.exit_code == 0
+    assert handle.error is None
+
