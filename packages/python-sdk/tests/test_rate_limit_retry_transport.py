@@ -411,6 +411,11 @@ NON_REPLAYABLE = [
     ("POST", "/volumes"),
     ("POST", "/secrets"),
     ("POST", "/events/webhooks"),
+    # POSTs not on the allowlist: unknown and near-miss paths
+    ("POST", "/sandboxes/sbx-1/pause/extra"),
+    ("POST", "/sandboxes/a/b/pause"),
+    ("POST", "/templates/tags/extra"),
+    ("POST", "/new-resources"),
 ]
 
 REPLAYABLE = [
@@ -429,7 +434,9 @@ REPLAYABLE = [
     ("POST", "/v2/templates/tpl-1/builds/build-1"),
     ("POST", "/templates/tags"),
     ("DELETE", "/templates/tags"),
+    ("POST", "/nodes/node-1"),
     ("POST", "/admin/teams/team-1/sandboxes/kill"),
+    ("POST", "/admin/teams/team-1/builds/cancel"),
     ("POST", "/secrets/secret-1"),
     ("DELETE", "/volumes/vol-1"),
     ("PATCH", "/events/webhooks/hook-1"),
@@ -443,7 +450,7 @@ NETWORK_ERRORS = [
 
 
 @pytest.mark.parametrize(("method", "path"), NON_REPLAYABLE)
-def test_resource_creating_operations_are_not_replayable(method, path):
+def test_unlisted_posts_are_not_replayable(method, path):
     assert not is_replayable(httpx.Request(method, f"https://api.test{path}?x=1"))
 
 

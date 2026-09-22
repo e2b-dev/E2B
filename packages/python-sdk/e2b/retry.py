@@ -15,20 +15,25 @@ BACKOFF_MAX_SECONDS = 10.0
 BACKOFF_JITTER_MIN = 0.5
 RETRYABLE_STATUSES = frozenset({429, 502, 503})
 
-# Operations that mint a resource without a client-supplied idempotency key:
-# replaying one whose first attempt may have reached the server could create a
-# duplicate, so they are not retried after a network error once the request
-# was written. (Connection-establishment failures are retried for every
-# operation by ``ConnectionRetryTransport`` underneath: the request never
-# left.) Every other operation is idempotent, or a replay fails with a 404/409
-# the SDK already tolerates.
-NON_REPLAYABLE_OPERATIONS: List[Tuple[str, re.Pattern[str]]] = [
-    ("POST", re.compile(r"^/(v2/)?sandboxes$")),
-    ("POST", re.compile(r"^/sandboxes/[^/]+/(fork|snapshots)$")),
-    ("POST", re.compile(r"^/(admin/teams/[^/]+/)?api-keys$")),
-    ("POST", re.compile(r"^/volumes$")),
-    ("POST", re.compile(r"^/secrets$")),
-    ("POST", re.compile(r"^/events/webhooks$")),
+# GET/PUT/PATCH/DELETE are idempotent by HTTP semantics. A POST is retried
+# after a network error that may have occurred once the request was written
+# only if it is listed here: a replay is a no-op or fails with a 404/409 the
+# SDK already tolerates. POSTs that mint a resource without a client-supplied
+# idempotency key (sandbox/fork/snapshot/API-key/volume/secret/webhook
+# creation) must stay off the list — a replay could create a duplicate — and
+# so does any new POST until it is reviewed. (Connection-establishment
+# failures are retried for every operation by ``ConnectionRetryTransport``
+# underneath: the request never left.)
+REPLAYABLE_METHODS = frozenset({"GET", "PUT", "PATCH", "DELETE"})
+REPLAYABLE_OPERATIONS: List[Tuple[str, re.Pattern[str]]] = [
+    ("POST", re.compile(r"^/sandboxes/[^/]+/(pause|resume|timeout|refreshes)$")),
+    ("POST", re.compile(r"^/(v2/)?sandboxes/[^/]+/connect$")),
+    ("POST", re.compile(r"^/v3/templates$")),
+    ("POST", re.compile(r"^/v2/templates/[^/]+/builds/[^/]+$")),
+    ("POST", re.compile(r"^/templates/tags$")),
+    ("POST", re.compile(r"^/nodes/[^/]+$")),
+    ("POST", re.compile(r"^/admin/teams/[^/]+/(sandboxes/kill|builds/cancel)$")),
+    ("POST", re.compile(r"^/secrets/[^/]+$")),
 ]
 
 # Raised by the pyqwest httpx adapter once the request was (at least partially)
@@ -59,11 +64,13 @@ def parse_retry_after(value: Optional[str]) -> Optional[int]:
 
 def is_replayable(request: httpx.Request) -> bool:
     """Whether ``request`` may be sent again after a network error that may
-    have occurred once it was written (see ``NON_REPLAYABLE_OPERATIONS``)."""
+    have occurred once it was written (see ``REPLAYABLE_OPERATIONS``)."""
+    if request.method in REPLAYABLE_METHODS:
+        return True
     path = request.url.path
-    return not any(
+    return any(
         request.method == method and pattern.match(path)
-        for method, pattern in NON_REPLAYABLE_OPERATIONS
+        for method, pattern in REPLAYABLE_OPERATIONS
     )
 
 
@@ -128,8 +135,7 @@ def _request_deadline(request: httpx.Request, monotonic: Callable[[], float]) ->
 class RetryableTransport(httpx.BaseTransport):
     """Retry replayable requests after a 429 carrying ``Retry-After`` or a
     502/503 (using ``Retry-After`` when present, exponential backoff
-    otherwise), and — unless the operation is in ``NON_REPLAYABLE_OPERATIONS``
-    — after a network error once the request was written."""
+    otherwise), and — for replayable operations (``is_replayable``) — after a network error once the request was written."""
 
     def __init__(
         self,
