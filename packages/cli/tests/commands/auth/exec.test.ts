@@ -24,7 +24,8 @@ describe('auth exec', () => {
         process.execPath,
         '-e',
         'process.stdout.write(JSON.stringify({ authenticated: process.env.E2B_API_KEY === "config-api-key", args: process.argv.slice(1) }))',
-        'first',
+        'value with spaces',
+        'C:\\Program Files\\task.mjs',
         '--flag',
       ],
       {
@@ -42,7 +43,7 @@ describe('auth exec', () => {
     expect(bufferToText(result.stderr)).toBe('')
     expect(JSON.parse(bufferToText(result.stdout))).toEqual({
       authenticated: true,
-      args: ['first', '--flag'],
+      args: ['value with spaces', 'C:\\Program Files\\task.mjs', '--flag'],
     })
   })
 
