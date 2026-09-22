@@ -51,9 +51,17 @@ class ApiParams(TypedDict, total=False):
     """Timeout for the request in **seconds**, defaults to 60 seconds."""
 
     retries: Optional[int]
-    """Number of control-plane HTTP retries after a 429 with a valid,
-    non-negative integer delta-seconds ``Retry-After`` header. HTTP-date and
-    malformed values are not retried.
+    """Number of control-plane HTTP retries after a 429, 502 or 503 response or
+    a network error once the request was written (dropped connection). The
+    latter is not retried for operations that create a resource (e.g. sandbox
+    creation), as the server may already have processed them; failures to
+    establish the connection are retried separately for every operation, see
+    ``E2B_CONNECTION_RETRIES``.
+    A 429 is retried only with a valid, non-negative integer delta-seconds
+    ``Retry-After`` header (HTTP-date and malformed values are not retried).
+    502 and 503 honor such a ``Retry-After`` when present; otherwise they and
+    network errors use exponential backoff with jitter starting at 0.1 seconds
+    (capped at 10 seconds).
     A retry is skipped when its wait would exhaust the request timeout.
     Retry waits use a 60-second total limit when request timeouts are disabled.
     Set to ``0`` to disable retries. Defaults to 3 retries.
