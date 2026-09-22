@@ -36,6 +36,14 @@ e2b auth login
 > in the [API Keys](https://e2b.dev/dashboard?tab=keys&utm_source=npm&utm_medium=referral&utm_campaign=readme&utm_content=e2b-cli) tab in the E2B dashboard.
 > Then use the CLI like this: `E2B_API_KEY=e2b_... e2b template create`.
 
+To run trusted local SDK tooling with the credential selected by the CLI, use:
+
+```bash
+e2b auth exec -- node script.mjs
+```
+
+The child process receives the credential as `E2B_API_KEY`, so only use this command with programs you trust.
+
 ### 3. Check out docs
 
 Visit our [CLI documentation](https://docs.e2b.dev/?utm_source=npm&utm_medium=referral&utm_campaign=readme&utm_content=e2b-cli) to learn more.

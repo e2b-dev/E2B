@@ -3,6 +3,7 @@ import { loginCommand } from './login'
 import { logoutCommand } from './logout'
 import { infoCommand } from './info'
 import { configureCommand } from './configure'
+import { execCommand } from './exec'
 
 export const authCommand = new commander.Command('auth')
   .description('authentication commands')
@@ -10,3 +11,4 @@ export const authCommand = new commander.Command('auth')
   .addCommand(logoutCommand)
   .addCommand(infoCommand)
   .addCommand(configureCommand)
+  .addCommand(execCommand)
