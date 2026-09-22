@@ -19,3 +19,5 @@ def reset_transport_caches() -> None:
     for module in (api_client_sync, api_client_async):
         module._transports.clear()
         module._httpx_transports.clear()
+        module._envd_transports.clear()
+        module._envd_httpx_transports.clear()

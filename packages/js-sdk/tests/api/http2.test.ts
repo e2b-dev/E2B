@@ -144,17 +144,44 @@ test('late-binds the global fetch fallback when undici cannot be loaded', async 
   }
 })
 
-test('caches API fetchers per proxy', async () => {
+test('pins the API dispatcher to HTTP/1.1 when http2 is false', async () => {
+  const agents: Array<{ allowH2?: boolean; connections?: number }> = []
+
+  class Agent {
+    constructor(options: { allowH2?: boolean; connections?: number }) {
+      agents.push(options)
+    }
+  }
+
+  const undiciFetch = vi.fn(() => Promise.resolve(new Response('ok')))
+
+  const { createApiFetchForRuntime } = await import('../../src/api/http2')
+
+  const fetcher = createApiFetchForRuntime('node', {
+    connectionLimit: 3,
+    http2: false,
+    loadUndici: () => Promise.resolve({ Agent, fetch: undiciFetch }),
+  })
+  await fetcher('https://api.e2b.app/sandboxes')
+
+  expect(agents).toEqual([{ allowH2: false, connections: 3 }])
+})
+
+test('caches API fetchers per proxy and HTTP version', async () => {
   const { createApiFetch } = await import('../../src/api/http2')
 
   const noProxy = createApiFetch()
   const proxyA = createApiFetch('http://127.0.0.1:8080')
   const proxyB = createApiFetch('http://127.0.0.1:9090')
+  const noProxyH1 = createApiFetch(undefined, false)
 
   expect(createApiFetch()).toBe(noProxy)
+  expect(createApiFetch(undefined, true)).toBe(noProxy)
   expect(createApiFetch('http://127.0.0.1:8080')).toBe(proxyA)
+  expect(createApiFetch(undefined, false)).toBe(noProxyH1)
   expect(proxyA).not.toBe(noProxy)
   expect(proxyA).not.toBe(proxyB)
+  expect(noProxyH1).not.toBe(noProxy)
 })
 
 test('getApiConnectionLimit throws on a malformed env value', async () => {

@@ -1,18 +1,25 @@
-from typing import Dict, Optional, Tuple, Union
+from typing import Callable, Dict, Iterator, Optional, Tuple, Union
 
 import httpx
 import threading
 
-from pyqwest import HTTPVersion, SyncHTTPTransport, SyncRequest, SyncResponse
+from pyqwest import (
+    HTTPVersion,
+    SyncHTTPTransport,
+    SyncRequest,
+    SyncResponse,
+    SyncTransport,
+)
 from pyqwest.httpx import PyqwestTransport
 from pyqwest.middleware.retry import RetryMode, SyncRetryTransport
 
 from e2b.retry import RetryableTransport
 from e2b.api import (
     ApiClient,
+    EnvdPoolBalancer,
     ProxyConfig,
     connection_retries,
-    envd_pool_shard,
+    envd_pool_balancer,
     make_logging_event_hooks,
     pool_idle_timeout,
     pool_max_idle_per_host,
@@ -54,6 +61,73 @@ class ConnectionRetryTransport(SyncRetryTransport):
         return isinstance(response, ConnectionError)
 
 
+class _TrackedContent:
+    """A pooled response's body, counted in flight on its pool until it is
+    fully read, fails, or is closed — whichever comes first, released once.
+    Closing closes the pooled response, which is what cancels an HTTP/2 stream
+    a consumer abandons early (see :func:`e2b.envd.client_sync.as_stream`)."""
+
+    def __init__(self, response: SyncResponse, release: Callable[[], None]):
+        self._response = response
+        self._content = iter(response.content)
+        self._release: Optional[Callable[[], None]] = release
+
+    def __iter__(self) -> Iterator[Union[bytes, bytearray, memoryview]]:
+        return self
+
+    def __next__(self) -> Union[bytes, bytearray, memoryview]:
+        try:
+            return next(self._content)
+        except BaseException:
+            self._settle()
+            raise
+
+    def close(self) -> None:
+        self._settle()
+        self._response.close()
+
+    def _settle(self) -> None:
+        release, self._release = self._release, None
+        if release is not None:
+            release()
+
+
+class EnvdPoolTransport:
+    """The envd transport: a set of connection pools opened on demand, each
+    request sent on the least-loaded one (see
+    :class:`e2b.api.EnvdPoolBalancer`). Pools are the cached transports of
+    :func:`get_pyqwest_transport`, so each brings the connect-only retries.
+
+    The response is re-wrapped so the body's lifetime — not just the response
+    head — is what holds the pool's slot: a running command's stream stays
+    counted until it ends. pyqwest responses cannot be subclassed, so the
+    wrapper is a fresh ``SyncResponse`` over the original head, body and
+    (shared, filled on completion) trailers."""
+
+    def __init__(
+        self,
+        open_pool: Callable[[int], SyncTransport],
+        balancer: EnvdPoolBalancer,
+    ):
+        self.open_pool = open_pool
+        self.balancer = balancer
+
+    def execute_sync(self, request: SyncRequest) -> SyncResponse:
+        index = self.balancer.acquire()
+        try:
+            response = self.open_pool(index).execute_sync(request)
+        except BaseException:
+            self.balancer.release(index)
+            raise
+        return SyncResponse(
+            status=response.status,
+            http_version=response.http_version,
+            headers=response.headers,
+            content=_TrackedContent(response, lambda: self.balancer.release(index)),
+            trailers=response.trailers,
+        )
+
+
 _TransportKey = Tuple[Optional[ProxyConfig], Optional[float], bool, int]
 """Cache key: proxy, idle read bound, HTTP version, connection-pool shard.
 
@@ -61,17 +135,24 @@ The first three are fixed when a pyqwest transport is constructed. The shard
 allows bounded parallel HTTP/2 connections to the stable envd host. Each
 distinct combination is necessarily its own pool."""
 
+_EnvdPoolKey = Tuple[Optional[ProxyConfig], Optional[float], bool]
+"""Cache key of the envd transports: a :class:`_TransportKey` without the
+shard, which the balancer picks per request."""
+
 _transport_lock = threading.Lock()
 # One pyqwest transport — one reqwest connection pool — per key; a `None` proxy
-# is the direct pool. Generic API and volume traffic use shard zero. Envd RPC
-# and non-streaming HTTP traffic for one sandbox use the same sandbox shard, so
-# they share one HTTP/2 connection instead of opening one per stack.
+# is the direct pool. Generic API and volume traffic use shard zero. Envd
+# traffic goes through `EnvdPoolTransport`, which opens further shards as the
+# ones in use fill up; envd RPC and HTTP share those, so a process with light
+# traffic keeps a single connection to the sandbox host.
 #
 # pyqwest transports are thread-safe, so unlike the httpx transports they
 # replaced, the caches are process-global rather than per-thread.
 _transports: Dict[_TransportKey, ConnectionRetryTransport] = {}
 # The httpx adapter over each pool, shared by every httpx client on it.
 _httpx_transports: Dict[_TransportKey, PyqwestTransport] = {}
+_envd_transports: Dict[_EnvdPoolKey, EnvdPoolTransport] = {}
+_envd_httpx_transports: Dict[_EnvdPoolKey, PyqwestTransport] = {}
 
 
 def get_pyqwest_transport(
@@ -132,16 +213,15 @@ def get_httpx_transport(
     proxy: Optional[ProxyConfig],
     read_timeout: Optional[float] = None,
     http2: bool = True,
-    pool_shard: int = 0,
 ) -> PyqwestTransport:
     """The httpx adapter over the shared pool of
     :func:`get_pyqwest_transport`, for the generated httpx clients (control
-    plane, envd HTTP API, volume content). The adapter holds no state of its
-    own and does not close the pool, so closing an httpx client leaves the
-    pool intact for the other clients on it."""
-    key = (proxy, read_timeout, http2, pool_shard)
+    plane, volume content). The adapter holds no state of its own and does not
+    close the pool, so closing an httpx client leaves the pool intact for the
+    other clients on it."""
+    key = (proxy, read_timeout, http2, 0)
     # Resolve the pool before taking the lock: it takes the same one.
-    pool = get_pyqwest_transport(proxy, read_timeout, http2, pool_shard)
+    pool = get_pyqwest_transport(proxy, read_timeout, http2)
     with _transport_lock:
         transport = _httpx_transports.get(key)
         if transport is None:
@@ -150,21 +230,58 @@ def get_httpx_transport(
         return transport
 
 
+def get_envd_pyqwest_transport(
+    proxy: Optional[ProxyConfig],
+    read_timeout: Optional[float] = None,
+    http2: bool = True,
+) -> EnvdPoolTransport:
+    """The shared envd transport for the given tuning: the envd RPC clients
+    take it directly, the envd HTTP API through :func:`get_envd_httpx_transport`,
+    so both draw on the same pools and load counts. Its pools are the shards
+    of :func:`get_pyqwest_transport` with the same tuning, sized by
+    :func:`e2b.api.envd_pool_balancer`."""
+    key = (proxy, read_timeout, http2)
+    with _transport_lock:
+        transport = _envd_transports.get(key)
+        if transport is None:
+            transport = EnvdPoolTransport(
+                lambda shard: get_pyqwest_transport(proxy, read_timeout, http2, shard),
+                envd_pool_balancer(http2),
+            )
+            _envd_transports[key] = transport
+        return transport
+
+
+def get_envd_httpx_transport(
+    proxy: Optional[ProxyConfig],
+    read_timeout: Optional[float] = None,
+    http2: bool = True,
+) -> PyqwestTransport:
+    """The httpx adapter over :func:`get_envd_pyqwest_transport`, for the
+    generated envd HTTP API clients."""
+    key = (proxy, read_timeout, http2)
+    pool = get_envd_pyqwest_transport(proxy, read_timeout, http2)
+    with _transport_lock:
+        transport = _envd_httpx_transports.get(key)
+        if transport is None:
+            transport = PyqwestTransport(pool)
+            _envd_httpx_transports[key] = transport
+        return transport
+
+
 def get_transport(
     config: ConnectionConfig,
     http2: bool = True,
     *,
     for_streaming: bool = False,
-    pool_shard: int = 0,
 ) -> PyqwestTransport:
-    """The shared httpx transport factory for the control-plane REST API and
-    envd HTTP API (file transfers, health checks). Generic callers use shard
-    zero; :func:`get_envd_transport` supplies a sandbox-specific shard. For TLS
-    connections ALPN negotiates the HTTP version (HTTP/2 against the E2B API),
-    like the http2-enabled httpx transport this replaced.
+    """The shared httpx transport factory for the control-plane REST API;
+    :func:`get_envd_transport` is its counterpart for the envd HTTP API. For
+    TLS connections ALPN negotiates the HTTP version (HTTP/2 against the E2B
+    API), like the http2-enabled httpx transport this replaced.
 
-    ``http2=False`` returns a separate transport (its own pool) pinned to
-    HTTP/1.1. That matters for a server that reacts to a client going away:
+    ``http2=False`` returns a separate transport (its own pool) pinned to HTTP/1.1. That
+    matters for a server that reacts to a client going away:
     HTTP/2 multiplexes requests over one connection, so abandoning a request
     only resets its stream and the server may never notice, while HTTP/1.1's
     one-connection-per-request closes the connection and the server observes
@@ -182,29 +299,26 @@ def get_transport(
         proxy_to_config(config.proxy),
         READ_TIMEOUT if for_streaming else None,
         http2,
-        pool_shard,
     )
 
 
 def get_envd_transport(
-    config: ConnectionConfig, http2: bool = True, *, for_streaming: bool = False
+    config: ConnectionConfig,
+    http2: bool = True,
+    *,
+    for_streaming: bool = False,
 ) -> PyqwestTransport:
-    """The envd HTTP API's transport, sharded by sandbox ID.
+    """The envd HTTP API's transport (file transfers, health checks), on the
+    load-balanced envd pools rather than the control plane's single pool.
 
-    Envd RPC and non-streaming HTTP traffic for one sandbox resolve the same
-    shard, retaining their shared connection while spreading different
-    sandboxes over a bounded number of connections to the stable sandbox host.
-    Streaming HTTP traffic uses the same shard number with a separate
-    read-timeout-keyed pool.
-
-    Kept as a separate factory because generic API transports stay on shard
-    zero while envd transports use the sandbox's shard.
+    ``http2=False`` pins the envd traffic to HTTP/1.1 (see :func:`get_transport` for what
+    that changes). ``for_streaming`` selects the read-timeout-keyed pools,
+    as for :func:`get_transport`.
     """
-    return get_transport(
-        config,
+    return get_envd_httpx_transport(
+        proxy_to_config(config.proxy),
+        READ_TIMEOUT if for_streaming else None,
         http2,
-        for_streaming=for_streaming,
-        pool_shard=envd_pool_shard(config),
     )
 
 
