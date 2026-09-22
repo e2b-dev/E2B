@@ -5,7 +5,6 @@ export { ConnectionConfig } from './connectionConfig'
 export type {
   ConnectionConfigOpts,
   ConnectionOpts,
-  HttpVersion,
   Username,
 } from './connectionConfig'
 export {

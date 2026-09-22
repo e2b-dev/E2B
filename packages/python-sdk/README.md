@@ -76,16 +76,6 @@ If one process needs more than `16 × 90` concurrent sandbox streams, raise the 
 E2B_ENVD_POOL_SHARDS=32 python eval.py
 ```
 
-To avoid HTTP/2 altogether — for example when an intermediary on the path retires long-lived HTTP/2 connections — pin the SDK to HTTP/1.1, which uses one connection per concurrent request:
-
-```py
-from e2b import Sandbox
-
-sandbox = Sandbox.create(http_version="http1")
-```
-
-or, for the whole process, `E2B_HTTP_VERSION=http1`.
-
 ### 5. Code execution with Code Interpreter
 
 If you need [`run_code()`](https://docs.e2b.dev/code-interpreting/analyze-data-with-ai?utm_source=pypi&utm_medium=referral&utm_campaign=readme&utm_content=e2b), install the [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter):

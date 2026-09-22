@@ -2,7 +2,7 @@ import logging
 import os
 import re
 
-from typing import cast, Literal, Mapping, Optional, Dict, TypedDict, Union
+from typing import cast, Mapping, Optional, Dict, TypedDict, Union
 
 import httpx
 from typing_extensions import Unpack
@@ -38,8 +38,6 @@ READ_TIMEOUT: float = 60.0  # 60 seconds
 
 KEEPALIVE_PING_INTERVAL_SEC = 50  # 50 seconds
 KEEPALIVE_PING_HEADER = "Keepalive-Ping-Interval"
-
-HttpVersion = Literal["http1", "http2"]
 
 
 class ApiParams(TypedDict, total=False):
@@ -89,14 +87,6 @@ class ApiParams(TypedDict, total=False):
 
     sandbox_url: Optional[str]
     """URL to connect to sandbox, defaults to `E2B_SANDBOX_URL` environment variable."""
-
-    http_version: Optional[HttpVersion]
-    """HTTP version for requests to the E2B API and to sandboxes (commands,
-    filesystem, PTY), defaults to `E2B_HTTP_VERSION` environment variable or
-    `"http2"`. `"http1"` pins them to HTTP/1.1, which uses one connection per
-    concurrent request instead of multiplexing streams over shared connections
-    — for example when an intermediary on the path retires or mishandles
-    long-lived HTTP/2 connections."""
 
 
 class ApiParamsWithLogger(ApiParams, total=False):
@@ -207,15 +197,6 @@ class ConnectionConfig:
         return os.getenv("E2B_SANDBOX_URL")
 
     @staticmethod
-    def _http_version() -> HttpVersion:
-        value = (os.getenv("E2B_HTTP_VERSION") or "http2").lower()
-        if value not in ("http1", "http2"):
-            raise ValueError(
-                f"E2B_HTTP_VERSION must be 'http1' or 'http2', got {value!r}"
-            )
-        return cast(HttpVersion, value)
-
-    @staticmethod
     def _get_request_source() -> Optional[str]:
         source = os.getenv("E2B_USER_AGENT_SOURCE")
         if source and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,31}", source):
@@ -262,7 +243,6 @@ class ConnectionConfig:
         validate_api_key: Optional[bool] = None,
         api_url: Optional[str] = None,
         sandbox_url: Optional[str] = None,
-        http_version: Optional[HttpVersion] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
         api_headers: Optional[Dict[str, str]] = None,
@@ -303,11 +283,6 @@ class ConnectionConfig:
 
         self._sandbox_url: Optional[str] = (
             sandbox_url or ConnectionConfig._sandbox_url()
-        )
-        self.http_version: HttpVersion = (
-            http_version
-            if http_version is not None
-            else ConnectionConfig._http_version()
         )
 
     @staticmethod
@@ -387,7 +362,6 @@ class ConnectionConfig:
         debug = opts.get("debug")
         proxy = opts.get("proxy")
         sandbox_url = opts.get("sandbox_url")
-        http_version = opts.get("http_version")
         retries = opts.get("retries")
 
         req_headers = self.headers.copy()
@@ -426,9 +400,6 @@ class ConnectionConfig:
                     sandbox_url
                     if sandbox_url is not None
                     else cast(Optional[str], self._sandbox_url)
-                ),
-                http_version=(
-                    http_version if http_version is not None else self.http_version
                 ),
                 logger=self.logger,
                 retries=retries if retries is not None else self.retries,

@@ -14,11 +14,6 @@ export const KEEPALIVE_PING_INTERVAL_SEC = 50 // 50 seconds
 export const KEEPALIVE_PING_HEADER = 'Keepalive-Ping-Interval'
 
 /**
- * HTTP version the SDK speaks to the E2B API and to sandboxes.
- */
-export type HttpVersion = 'http1' | 'http2'
-
-/**
  * Connection options for requests to the API.
  */
 export interface ConnectionOpts {
@@ -93,16 +88,6 @@ export interface ConnectionOpts {
    * @example 'http://user:pass@127.0.0.1:8080'
    */
   proxy?: string
-  /**
-   * HTTP version for requests to the E2B API and to sandboxes (commands,
-   * filesystem, PTY). `'http2'` multiplexes streams over shared connections;
-   * `'http1'` pins them to HTTP/1.1 with one connection per concurrent
-   * request — for example when an intermediary on the path retires or
-   * mishandles long-lived HTTP/2 connections. Only applies in Node.
-   *
-   * @default E2B_HTTP_VERSION // environment variable or `'http2'`
-   */
-  httpVersion?: HttpVersion
 
   /**
    * Additional headers to send with E2B API requests.
@@ -455,7 +440,6 @@ export class ConnectionConfig {
   readonly requestSource?: string
 
   readonly proxy?: string
-  readonly httpVersion: HttpVersion
 
   constructor(opts?: ConnectionOpts) {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
@@ -469,7 +453,6 @@ export class ConnectionConfig {
     this.headers = { ...(opts?.headers ?? {}), ...(opts?.apiHeaders ?? {}) }
     ConnectionConfig.applyUserAgent(this.headers, this.requestSource)
     this.proxy = opts?.proxy
-    this.httpVersion = opts?.httpVersion ?? ConnectionConfig.httpVersion
 
     this.apiUrl =
       opts?.apiUrl ||
@@ -526,16 +509,6 @@ export class ConnectionConfig {
 
   private static get sandboxUrl() {
     return getEnvVar('E2B_SANDBOX_URL')
-  }
-
-  private static get httpVersion(): HttpVersion {
-    const value = (getEnvVar('E2B_HTTP_VERSION') || 'http2').toLowerCase()
-    if (value !== 'http1' && value !== 'http2') {
-      throw new Error(
-        `E2B_HTTP_VERSION must be 'http1' or 'http2', got '${value}'`
-      )
-    }
-    return value
   }
 
   private static get debug() {
