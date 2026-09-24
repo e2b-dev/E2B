@@ -35,7 +35,13 @@ jobs:
               - '.github/workflows/lint.yml'
 
   lint:
-    name: Lint
+    # Not the required check itself (see `status` below): a job skipped via
+    # job-level `if` reports as a *successful* check run, so if this carried
+    # the "Lint" name directly, a failure in `changes` (dorny/paths-filter
+    # erroring instead of resolving to `false`) would skip this job and the
+    # branch protection required check would show green without lint ever
+    # having run. `status` exists to close exactly that gap.
+    name: Run Lint
     needs: changes
     if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
@@ -99,3 +105,28 @@ jobs:
           else
             echo "✅ No changes detected."
           fi
+
+  status:
+    name: Lint
+    # `changes` is included so a failure in change-detection (which would skip
+    # `lint`, reporting it as a successful no-op per GitHub Actions semantics)
+    # surfaces as a failed required check instead of a false green. Mirrors
+    # the `status` job in sdk_tests.yml.
+    needs:
+      - changes
+      - lint
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report aggregate result
+        run: |
+          echo "Job results: ${{ join(needs.*.result, ', ') }}"
+          if ${{ contains(needs.*.result, 'failure') }}; then
+            echo "::error::Change detection or Lint failed."
+            exit 1
+          fi
+          if ${{ contains(needs.*.result, 'cancelled') }}; then
+            echo "::error::Change detection or Lint was cancelled; linting was not verified — re-run before merging."
+            exit 1
+          fi
+          echo "Lint passed or was skipped because no relevant files changed."
