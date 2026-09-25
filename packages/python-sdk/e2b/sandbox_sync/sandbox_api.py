@@ -424,6 +424,8 @@ class SandboxApi(SandboxBase):
         cls,
         sandbox_id: str,
         name: Optional[str] = None,
+        *,
+        keep_memory: Optional[bool] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotInfo:
         config = ConnectionConfig(**cls._resolve_api_params(**opts))
@@ -432,7 +434,10 @@ class SandboxApi(SandboxBase):
         res = post_sandboxes_sandbox_id_snapshots.sync_detailed(
             sandbox_id,
             client=api_client,
-            body=SandboxSnapshotRequest(name=name if name else UNSET),
+            body=SandboxSnapshotRequest(
+                name=name if name else UNSET,
+                memory=keep_memory if keep_memory is not None else UNSET,
+            ),
         )
 
         if res.status_code == 404:

@@ -850,6 +850,18 @@ export interface CreateSnapshotOpts extends SandboxApiOpts {
    * to the existing template instead of creating a new one.
    */
   name?: string
+  /**
+   * Whether to capture a full memory snapshot.
+   *
+   * When `false`, only the filesystem is persisted (a filesystem-only
+   * snapshot): it is smaller and faster to take, and sandboxes created from it
+   * cold-boot (start fresh from disk) instead of restoring memory, so they
+   * begin without the running processes, in-memory state and open connections
+   * of the source sandbox. The source sandbox keeps running either way.
+   *
+   * @default true
+   */
+  keepMemory?: boolean
 }
 
 /**
@@ -1581,7 +1593,15 @@ export class SandboxApi extends ClientFactory {
    * The snapshot is a persistent image that survives sandbox deletion.
    *
    * @param sandboxId sandbox ID to create snapshot from.
-   * @param opts snapshot creation options including optional name and connection options.
+   * @param opts snapshot creation options including optional name, `keepMemory`
+   * to take a filesystem-only snapshot, and connection options.
+   *
+   * @throws {@link SandboxError} with `statusCode` 400 when `keepMemory: false`
+   * is requested but the feature is not enabled for the team
+   * (`snapshot_filesystem_only_disabled`), and with `statusCode` 409 when the
+   * sandbox's node runs an orchestrator that predates the option
+   * (`snapshot_filesystem_only_unsupported_node`). A full memory snapshot
+   * still works in both cases; for 409, pause and resume the sandbox and retry.
    *
    * @returns snapshot information including the snapshot name that can be used with Sandbox.create().
    */
@@ -1599,7 +1619,10 @@ export class SandboxApi extends ClientFactory {
           sandboxID: sandboxId,
         },
       },
-      body: apiOpts?.name ? { name: apiOpts.name } : {},
+      body: {
+        ...(apiOpts?.name ? { name: apiOpts.name } : {}),
+        memory: apiOpts?.keepMemory,
+      },
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 

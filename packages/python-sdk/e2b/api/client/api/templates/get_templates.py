@@ -80,7 +80,8 @@ def sync_detailed(
      List all templates
 
     Args:
-        team_id (Union[Unset, str]): Identifier of the team
+        team_id (Union[Unset, str]): Identifier of the team, as its UUID or its public project ID
+            (prj_)
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -111,7 +112,8 @@ def sync(
      List all templates
 
     Args:
-        team_id (Union[Unset, str]): Identifier of the team
+        team_id (Union[Unset, str]): Identifier of the team, as its UUID or its public project ID
+            (prj_)
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -137,7 +139,8 @@ async def asyncio_detailed(
      List all templates
 
     Args:
-        team_id (Union[Unset, str]): Identifier of the team
+        team_id (Union[Unset, str]): Identifier of the team, as its UUID or its public project ID
+            (prj_)
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -166,7 +169,8 @@ async def asyncio(
      List all templates
 
     Args:
-        team_id (Union[Unset, str]): Identifier of the team
+        team_id (Union[Unset, str]): Identifier of the team, as its UUID or its public project ID
+            (prj_)
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

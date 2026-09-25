@@ -298,17 +298,25 @@ export interface components {
             mem_cache?: number;
             /** @description Total virtual memory in bytes */
             mem_total?: number;
-            /** @description Total virtual memory in MiB */
-            mem_total_mib?: number;
             /** @description Used virtual memory in bytes */
             mem_used?: number;
-            /** @description Used virtual memory in MiB */
-            mem_used_mib?: number;
+            /** @description The latest 32 out-of-memory kills since the guest booted, oldest first. Reading does not consume them. Empty when there are none. Omitted when not known (while envd is still reading the kernel log, when it can't be read or envd stopped reading it, and outside Firecracker). */
+            oom_kills?: components["schemas"]["OOMKill"][];
             /**
              * Format: int64
              * @description Unix timestamp in UTC for current sandbox time
              */
             ts?: number;
+        };
+        /** @description A process the guest kernel killed for running out of memory */
+        OOMKill: {
+            /** @description Name of the killed process, or Unknown if the record doesn't show it */
+            process: string;
+            /**
+             * Format: int64
+             * @description Kernel log sequence number of the kill record. It only grows, across pauses and envd restarts.
+             */
+            seq: number;
         };
     };
     responses: {
