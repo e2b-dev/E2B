@@ -3,6 +3,7 @@ import {
   ClientFactory,
   ConnectionConfig,
   ConnectionOpts,
+  DEFAULT_SANDBOX_TIMEOUT_MS,
 } from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
 import { ALL_TRAFFIC } from './network'
@@ -548,6 +549,8 @@ export interface SandboxForkOpts extends ConnectionOpts {
   /**
    * Timeout for the forked sandboxes in **milliseconds**.
    * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
+   *
+   * @default 300_000 // 5 minutes
    */
   timeoutMs?: number
 }
@@ -1773,8 +1776,11 @@ export class SandboxApi extends ClientFactory {
         },
       },
       body: {
-        timeout:
-          timeoutMs === undefined ? undefined : timeoutToSeconds(timeoutMs),
+        // Unlike create and connect, the fork endpoint has no v2 route: an
+        // omitted timeout falls back to the legacy 15-second default, which is
+        // not a usable sandbox lifetime. Send the 5 minutes the SDK documents
+        // until the API's own fork default matches it.
+        timeout: timeoutToSeconds(timeoutMs ?? DEFAULT_SANDBOX_TIMEOUT_MS),
         count,
       },
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
