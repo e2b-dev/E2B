@@ -282,7 +282,7 @@ def test_http_version_reads_env_var(monkeypatch, value, expected):
 def test_http_version_rejects_unknown_env_value(monkeypatch):
     monkeypatch.setenv("E2B_HTTP_VERSION", "http3")
 
-    with pytest.raises(ValueError, match="E2B_HTTP_VERSION"):
+    with pytest.raises(InvalidArgumentException, match="E2B_HTTP_VERSION"):
         ConnectionConfig()
     # An explicit option never consults the environment.
     assert ConnectionConfig(http_version="http1").http_version == "http1"

@@ -14,7 +14,7 @@ from pyqwest import Proxy
 from e2b.api.client.client import AuthenticatedClient
 from e2b.api.client.types import Response
 from e2b.api.metadata import default_headers
-from e2b.connection_config import ConnectionConfig, ProxyTypes
+from e2b.connection_config import ConnectionConfig, HttpVersion, ProxyTypes
 from e2b.exceptions import (
     AuthenticationException,
     InvalidArgumentException,
@@ -168,12 +168,12 @@ class EnvdPoolBalancer:
             self._active[index] -= 1
 
 
-def envd_pool_balancer(http2: bool) -> EnvdPoolBalancer:
+def envd_pool_balancer(http_version: HttpVersion) -> EnvdPoolBalancer:
     """The balancer for one set of envd pools, sized from the environment.
     HTTP/1.1 has no per-connection stream limit to spread over — the pool
     opens a connection per concurrent request — so it gets a single pool."""
     return EnvdPoolBalancer(
-        envd_pool_shards if http2 else 1,
+        1 if http_version == "http1" else envd_pool_shards,
         envd_pool_streams,
     )
 

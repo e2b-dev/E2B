@@ -83,7 +83,7 @@ def create_rpc_client(
         PlainHTTPErrorTransport(
             get_envd_pyqwest_transport(
                 proxy_to_config(config.proxy),
-                http2=config.http_version == "http2",
+                http_version=config.http_version,
             )
         )
     )

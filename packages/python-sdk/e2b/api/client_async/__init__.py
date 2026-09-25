@@ -19,7 +19,12 @@ from e2b.api import (
     pool_max_idle_per_host,
     proxy_to_config,
 )
-from e2b.connection_config import READ_TIMEOUT, ConnectionConfig
+from e2b.connection_config import (
+    DEFAULT_HTTP_VERSION,
+    READ_TIMEOUT,
+    ConnectionConfig,
+    HttpVersion,
+)
 
 
 def get_api_client(config: ConnectionConfig, **kwargs) -> AsyncApiClient:
@@ -122,14 +127,14 @@ class EnvdPoolTransport:
         )
 
 
-_TransportKey = Tuple[Optional[ProxyConfig], Optional[float], bool, int]
+_TransportKey = Tuple[Optional[ProxyConfig], Optional[float], HttpVersion, int]
 """Cache key: proxy, idle read bound, HTTP version, connection-pool shard.
 
 The first three are fixed when a pyqwest transport is constructed. The shard
 allows bounded parallel HTTP/2 connections to the stable envd host. Each
 distinct combination is necessarily its own pool."""
 
-_EnvdPoolKey = Tuple[Optional[ProxyConfig], Optional[float], bool]
+_EnvdPoolKey = Tuple[Optional[ProxyConfig], Optional[float], HttpVersion]
 """Cache key of the envd transports: a :class:`_TransportKey` without the
 shard, which the balancer picks per request."""
 
@@ -153,7 +158,7 @@ _envd_httpx_transports: Dict[_EnvdPoolKey, AsyncPyqwestTransport] = {}
 def get_pyqwest_transport(
     proxy: Optional[ProxyConfig],
     read_timeout: Optional[float] = None,
-    http2: bool = True,
+    http_version: HttpVersion = DEFAULT_HTTP_VERSION,
     pool_shard: int = 0,
 ) -> ConnectionRetryTransport:
     """The shared pyqwest transport (= one connection pool) with the SDK's
@@ -166,10 +171,10 @@ def get_pyqwest_transport(
     stack's plain-HTTP-error normalization wraps it, headers and codecs are
     per-request — so that the pool stays shareable.
 
-    ``read_timeout`` bounds every read on the pool's connections and ``http2``
-    fixes the HTTP version; both are part of the cache key because they are
-    transport-construction knobs, so one pool cannot serve two values of
-    either. reqwest's read timer keeps running while a request body is sent and
+    ``read_timeout`` bounds every read on the pool's connections and
+    ``http_version`` fixes the HTTP version; both are part of the cache key
+    because they are transport-construction knobs, so one pool cannot serve
+    two values of either. reqwest's read timer keeps running while a request body is sent and
     while waiting for the response head, so a pool carrying one would cut off
     long uploads and slow responses — only streamed downloads ask for it, as an
     idle bound (see :func:`get_transport`).
@@ -178,7 +183,7 @@ def get_pyqwest_transport(
     ``pyqwest`` loggers at ``DEBUG`` (off unless enabled) — the transport-level
     diagnostics httpcore used to provide. The SDK's own ``logger`` option is
     separate and sits above this, on the httpx client."""
-    key = (proxy, read_timeout, http2, pool_shard)
+    key = (proxy, read_timeout, http_version, pool_shard)
     with _transport_lock:
         transport = _transports.get(key)
         if transport is None:
@@ -193,7 +198,7 @@ def get_pyqwest_transport(
                     # (HTTP/2 against the E2B API and envd) and uses HTTP/1 for
                     # plaintext, like the http2-enabled httpx transport this
                     # replaced.
-                    http_version=None if http2 else HTTPVersion.HTTP1,
+                    http_version=HTTPVersion.HTTP1 if http_version == "http1" else None,
                     # Redirects belong to the httpx client above (which the
                     # generated clients leave off), not to reqwest.
                     follow_redirects=False,
@@ -207,16 +212,16 @@ def get_pyqwest_transport(
 def get_httpx_transport(
     proxy: Optional[ProxyConfig],
     read_timeout: Optional[float] = None,
-    http2: bool = True,
+    http_version: HttpVersion = DEFAULT_HTTP_VERSION,
 ) -> AsyncPyqwestTransport:
     """The httpx adapter over the shared pool of
     :func:`get_pyqwest_transport`, for the generated httpx clients (control
     plane, volume content). The adapter holds no state of its own and does not
     close the pool, so closing an httpx client leaves the pool intact for the
     other clients on it."""
-    key = (proxy, read_timeout, http2, 0)
+    key = (proxy, read_timeout, http_version, 0)
     # Resolve the pool before taking the lock: it takes the same one.
-    pool = get_pyqwest_transport(proxy, read_timeout, http2)
+    pool = get_pyqwest_transport(proxy, read_timeout, http_version)
     with _transport_lock:
         transport = _httpx_transports.get(key)
         if transport is None:
@@ -228,20 +233,22 @@ def get_httpx_transport(
 def get_envd_pyqwest_transport(
     proxy: Optional[ProxyConfig],
     read_timeout: Optional[float] = None,
-    http2: bool = True,
+    http_version: HttpVersion = DEFAULT_HTTP_VERSION,
 ) -> EnvdPoolTransport:
     """The shared envd transport for the given tuning: the envd RPC clients
     take it directly, the envd HTTP API through :func:`get_envd_httpx_transport`,
     so both draw on the same pools and load counts. Its pools are the shards
     of :func:`get_pyqwest_transport` with the same tuning, sized by
     :func:`e2b.api.envd_pool_balancer`."""
-    key = (proxy, read_timeout, http2)
+    key = (proxy, read_timeout, http_version)
     with _transport_lock:
         transport = _envd_transports.get(key)
         if transport is None:
             transport = EnvdPoolTransport(
-                lambda shard: get_pyqwest_transport(proxy, read_timeout, http2, shard),
-                envd_pool_balancer(http2),
+                lambda shard: get_pyqwest_transport(
+                    proxy, read_timeout, http_version, shard
+                ),
+                envd_pool_balancer(http_version),
             )
             _envd_transports[key] = transport
         return transport
@@ -250,12 +257,12 @@ def get_envd_pyqwest_transport(
 def get_envd_httpx_transport(
     proxy: Optional[ProxyConfig],
     read_timeout: Optional[float] = None,
-    http2: bool = True,
+    http_version: HttpVersion = DEFAULT_HTTP_VERSION,
 ) -> AsyncPyqwestTransport:
     """The httpx adapter over :func:`get_envd_pyqwest_transport`, for the
     generated envd HTTP API clients."""
-    key = (proxy, read_timeout, http2)
-    pool = get_envd_pyqwest_transport(proxy, read_timeout, http2)
+    key = (proxy, read_timeout, http_version)
+    pool = get_envd_pyqwest_transport(proxy, read_timeout, http_version)
     with _transport_lock:
         transport = _envd_httpx_transports.get(key)
         if transport is None:
@@ -266,7 +273,7 @@ def get_envd_httpx_transport(
 
 def get_transport(
     config: ConnectionConfig,
-    http2: Optional[bool] = None,
+    http_version: Optional[HttpVersion] = None,
     *,
     for_streaming: bool = False,
 ) -> AsyncPyqwestTransport:
@@ -275,9 +282,9 @@ def get_transport(
     TLS connections ALPN negotiates the HTTP version (HTTP/2 against the E2B
     API), like the http2-enabled httpx transport this replaced.
 
-    ``http2`` defaults to the config's ``http_version`` option; ``False``
-    returns a separate transport (its own pool) pinned to HTTP/1.1. That
-    matters for a server that reacts to a client going away:
+    ``http_version`` defaults to the config's ``http_version`` option;
+    ``"http1"`` returns a separate transport (its own pool) pinned to
+    HTTP/1.1. That matters for a server that reacts to a client going away:
     HTTP/2 multiplexes requests over one connection, so abandoning a request
     only resets its stream and the server may never notice, while HTTP/1.1's
     one-connection-per-request closes the connection and the server observes
@@ -294,28 +301,28 @@ def get_transport(
     return get_httpx_transport(
         proxy_to_config(config.proxy),
         READ_TIMEOUT if for_streaming else None,
-        config.http_version == "http2" if http2 is None else http2,
+        config.http_version if http_version is None else http_version,
     )
 
 
 def get_envd_transport(
     config: ConnectionConfig,
-    http2: Optional[bool] = None,
+    http_version: Optional[HttpVersion] = None,
     *,
     for_streaming: bool = False,
 ) -> AsyncPyqwestTransport:
     """The envd HTTP API's transport (file transfers, health checks), on the
     load-balanced envd pools rather than the control plane's single pool.
 
-    ``http2`` defaults to the config's ``http_version`` option; ``False``
-    pins the envd traffic to HTTP/1.1 (see :func:`get_transport` for what
-    that changes). ``for_streaming`` selects the read-timeout-keyed pools,
-    as for :func:`get_transport`.
+    ``http_version`` defaults to the config's ``http_version`` option;
+    ``"http1"`` pins the envd traffic to HTTP/1.1 (see :func:`get_transport`
+    for what that changes). ``for_streaming`` selects the read-timeout-keyed
+    pools, as for :func:`get_transport`.
     """
     return get_envd_httpx_transport(
         proxy_to_config(config.proxy),
         READ_TIMEOUT if for_streaming else None,
-        config.http_version == "http2" if http2 is None else http2,
+        config.http_version if http_version is None else http_version,
     )
 
 

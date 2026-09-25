@@ -37,8 +37,8 @@ async function createSandbox(opts: {
 test('envd fetchers default to HTTP/2', async () => {
   await createSandbox({})
 
-  assert.deepEqual(mocks.createEnvdFetch.mock.calls[0], [undefined, true])
-  assert.deepEqual(mocks.createEnvdRpcFetch.mock.calls[0], [undefined, true])
+  assert.deepEqual(mocks.createEnvdFetch.mock.calls[0], [undefined, 'http2'])
+  assert.deepEqual(mocks.createEnvdRpcFetch.mock.calls[0], [undefined, 'http2'])
 })
 
 test('httpVersion: http1 pins envd HTTP and RPC fetchers to HTTP/1.1', async () => {
@@ -46,11 +46,11 @@ test('httpVersion: http1 pins envd HTTP and RPC fetchers to HTTP/1.1', async () 
 
   assert.deepEqual(mocks.createEnvdFetch.mock.calls[0], [
     'http://127.0.0.1:8080',
-    false,
+    'http1',
   ])
   assert.deepEqual(mocks.createEnvdRpcFetch.mock.calls[0], [
     'http://127.0.0.1:8080',
-    false,
+    'http1',
   ])
 })
 
@@ -58,6 +58,6 @@ test('E2B_HTTP_VERSION=http1 pins envd fetchers to HTTP/1.1', async () => {
   process.env.E2B_HTTP_VERSION = 'http1'
   await createSandbox({})
 
-  assert.deepEqual(mocks.createEnvdFetch.mock.calls[0], [undefined, false])
-  assert.deepEqual(mocks.createEnvdRpcFetch.mock.calls[0], [undefined, false])
+  assert.deepEqual(mocks.createEnvdFetch.mock.calls[0], [undefined, 'http1'])
+  assert.deepEqual(mocks.createEnvdRpcFetch.mock.calls[0], [undefined, 'http1'])
 })

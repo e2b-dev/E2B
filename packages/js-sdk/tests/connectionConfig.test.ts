@@ -6,6 +6,7 @@ import {
   wrapStreamWithConnectionCleanup,
 } from '../src/connectionConfig'
 import { runtime } from '../src/utils'
+import { InvalidArgumentError } from '../src/errors'
 
 // Store original env vars to restore after tests
 let originalEnv: { [key: string]: string | undefined }
@@ -181,6 +182,7 @@ test('httpVersion defaults to http2 and reads E2B_HTTP_VERSION', () => {
   assert.equal(new ConnectionConfig().httpVersion, 'http2')
 
   process.env.E2B_HTTP_VERSION = 'http3'
+  assert.throws(() => new ConnectionConfig(), InvalidArgumentError)
   assert.throws(() => new ConnectionConfig(), /E2B_HTTP_VERSION/)
   // An explicit option never consults the environment.
   assert.equal(

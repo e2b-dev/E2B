@@ -2,6 +2,7 @@ import { Logger } from './logs'
 import { getEnvVar, version } from './api/metadata'
 import { runtime } from './utils'
 import { resolveRetries } from './retry'
+import { InvalidArgumentError } from './errors'
 
 // Remove once all deployments support sandbox subdomains
 const supportedDomains = ['e2b.app', 'e2b.dev', 'e2b.pro', 'e2b-staging.dev']
@@ -17,6 +18,7 @@ export const KEEPALIVE_PING_HEADER = 'Keepalive-Ping-Interval'
  * HTTP version the SDK speaks to the E2B API and to sandboxes.
  */
 export type HttpVersion = 'http1' | 'http2'
+export const DEFAULT_HTTP_VERSION: HttpVersion = 'http2'
 
 /**
  * Connection options for requests to the API.
@@ -100,7 +102,7 @@ export interface ConnectionOpts {
    * request — for example when an intermediary on the path retires or
    * mishandles long-lived HTTP/2 connections. Only applies in Node.
    *
-   * @default E2B_HTTP_VERSION // environment variable or `'http2'`
+   * @default E2B_HTTP_VERSION // environment variable or {@link DEFAULT_HTTP_VERSION}
    */
   httpVersion?: HttpVersion
 
@@ -529,9 +531,11 @@ export class ConnectionConfig {
   }
 
   private static get httpVersion(): HttpVersion {
-    const value = (getEnvVar('E2B_HTTP_VERSION') || 'http2').toLowerCase()
+    const value = (
+      getEnvVar('E2B_HTTP_VERSION') || DEFAULT_HTTP_VERSION
+    ).toLowerCase()
     if (value !== 'http1' && value !== 'http2') {
-      throw new Error(
+      throw new InvalidArgumentError(
         `E2B_HTTP_VERSION must be 'http1' or 'http2', got '${value}'`
       )
     }

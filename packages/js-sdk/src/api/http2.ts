@@ -1,4 +1,5 @@
 import { runtime } from '../utils'
+import { DEFAULT_HTTP_VERSION, type HttpVersion } from '../connectionConfig'
 import { parseInflightLimitEnv, parsePositiveIntEnv } from './metadata'
 import {
   buildDispatchedFetch,
@@ -15,15 +16,18 @@ const DEFAULT_API_INFLIGHT_LIMIT = 1000
 // keep sharing a single dispatcher while each distinct proxy URL gets its own.
 const apiFetchers = new Map<string, typeof fetch>()
 
-export function createApiFetch(proxy?: string, http2 = true): typeof fetch {
-  const key = `${http2 ? 'h2' : 'h1'}:${proxy ?? ''}`
+export function createApiFetch(
+  proxy?: string,
+  httpVersion: HttpVersion = DEFAULT_HTTP_VERSION
+): typeof fetch {
+  const key = `${httpVersion}:${proxy ?? ''}`
 
   const cached = apiFetchers.get(key)
   if (cached) {
     return cached
   }
 
-  const apiFetch = createApiFetchForRuntime(runtime, { proxy, http2 })
+  const apiFetch = createApiFetchForRuntime(runtime, { proxy, httpVersion })
   apiFetchers.set(key, apiFetch)
 
   return apiFetch
@@ -35,7 +39,7 @@ export function createApiFetchForRuntime(
     connectionLimit?: number
     inflightLimit?: number
     proxy?: string
-    http2?: boolean
+    httpVersion?: HttpVersion
     loadUndici?: () => Promise<UndiciModule | undefined>
   } = {}
 ): typeof fetch {
@@ -46,7 +50,7 @@ export function createApiFetchForRuntime(
       connections: options.connectionLimit ?? getApiConnectionLimit(),
       inflightLimit: options.inflightLimit ?? getApiInflightLimit(),
       proxy: options.proxy,
-      http2: options.http2,
+      httpVersion: options.httpVersion,
       loadUndici: options.loadUndici,
     })
   )
