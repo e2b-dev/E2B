@@ -1,3 +1,5 @@
+import { Code, ConnectError } from '@connectrpc/connect'
+
 import {
   handleRpcErrorWithHealthCheck,
   SandboxHealthCheck,
@@ -77,6 +79,8 @@ export interface FilesystemEvent {
  * Use {@link WatchHandle.stop} to stop watching the directory.
  */
 export class WatchHandle {
+  private stopped = false
+
   constructor(
     private readonly handleStop: () => void,
     private readonly events: AsyncIterable<WatchDirResponse>,
@@ -91,6 +95,7 @@ export class WatchHandle {
    * Stop watching the directory.
    */
   async stop() {
+    this.stopped = true
     this.handleStop()
   }
 
@@ -104,6 +109,17 @@ export class WatchHandle {
         }
       }
     } catch (err) {
+      if (
+        this.stopped &&
+        err instanceof ConnectError &&
+        err.code === Code.Canceled
+      ) {
+        // stop() aborts the request, which the transport surfaces as a
+        // canceled error — the same code a request timeout maps to. That
+        // cancellation is the clean, user-initiated end of the watch, so end
+        // the stream without an error and let onExit fire with none.
+        return
+      }
       throw await handleRpcErrorWithHealthCheck(err, this.checkHealth)
     }
   }
