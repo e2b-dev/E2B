@@ -95,7 +95,6 @@ def make_async_logging_event_hooks(
 
 connection_retries = int(os.getenv("E2B_CONNECTION_RETRIES") or "3")
 
-
 # Pool tuning for the pyqwest transports, shared by the REST API, envd RPC,
 # and envd HTTP API stacks. `pool_max_idle_per_host` is per host rather than
 # the global idle cap the httpx transports took, which suits both: API traffic

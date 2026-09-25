@@ -271,7 +271,7 @@ def get_envd_httpx_transport(
 
 def get_transport(
     config: ConnectionConfig,
-    http2: bool = True,
+    http2: Optional[bool] = None,
     *,
     for_streaming: bool = False,
 ) -> PyqwestTransport:
@@ -280,7 +280,8 @@ def get_transport(
     TLS connections ALPN negotiates the HTTP version (HTTP/2 against the E2B
     API), like the http2-enabled httpx transport this replaced.
 
-    ``http2=False`` returns a separate transport (its own pool) pinned to HTTP/1.1. That
+    ``http2`` defaults to the config's ``http_version`` option; ``False``
+    returns a separate transport (its own pool) pinned to HTTP/1.1. That
     matters for a server that reacts to a client going away:
     HTTP/2 multiplexes requests over one connection, so abandoning a request
     only resets its stream and the server may never notice, while HTTP/1.1's
@@ -298,27 +299,28 @@ def get_transport(
     return get_httpx_transport(
         proxy_to_config(config.proxy),
         READ_TIMEOUT if for_streaming else None,
-        http2,
+        config.http_version == "http2" if http2 is None else http2,
     )
 
 
 def get_envd_transport(
     config: ConnectionConfig,
-    http2: bool = True,
+    http2: Optional[bool] = None,
     *,
     for_streaming: bool = False,
 ) -> PyqwestTransport:
     """The envd HTTP API's transport (file transfers, health checks), on the
     load-balanced envd pools rather than the control plane's single pool.
 
-    ``http2=False`` pins the envd traffic to HTTP/1.1 (see :func:`get_transport` for what
+    ``http2`` defaults to the config's ``http_version`` option; ``False``
+    pins the envd traffic to HTTP/1.1 (see :func:`get_transport` for what
     that changes). ``for_streaming`` selects the read-timeout-keyed pools,
     as for :func:`get_transport`.
     """
     return get_envd_httpx_transport(
         proxy_to_config(config.proxy),
         READ_TIMEOUT if for_streaming else None,
-        http2,
+        config.http_version == "http2" if http2 is None else http2,
     )
 
 

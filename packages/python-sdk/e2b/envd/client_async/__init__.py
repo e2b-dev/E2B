@@ -81,7 +81,10 @@ def create_rpc_client(
     """
     http_client = Client(
         PlainHTTPErrorTransport(
-            get_envd_pyqwest_transport(proxy_to_config(config.proxy))
+            get_envd_pyqwest_transport(
+                proxy_to_config(config.proxy),
+                http2=config.http_version == "http2",
+            )
         )
     )
     return client_cls(

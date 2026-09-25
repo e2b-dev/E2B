@@ -250,6 +250,33 @@ def test_sync_envd_transports_are_shared_across_sandboxes(test_api_key):
         reset_transport_caches()
 
 
+def test_sync_transports_follow_the_http_version_option(test_api_key):
+    reset_transport_caches()
+    default = sandbox_config(test_api_key, "sbx-0")
+    http1 = ConnectionConfig(api_key=test_api_key, http_version="http1")
+
+    try:
+        assert default.http_version == "http2"
+        assert get_sync_transport(http1) is get_sync_transport(default, http2=False)
+        assert get_sync_transport(http1) is not get_sync_transport(default)
+        assert get_sync_envd_transport(default) is get_sync_envd_transport(
+            default, http2=True
+        )
+        assert get_sync_envd_transport(http1) is get_sync_envd_transport(
+            default, http2=False
+        )
+        assert get_sync_envd_transport(http1) is not get_sync_envd_transport(default)
+        # The explicit argument wins over the option.
+        assert get_sync_envd_transport(http1, http2=True) is get_sync_envd_transport(
+            default
+        )
+        assert get_sync_envd_api(http1, "https://sandbox.e2b.app")._transport is (
+            get_sync_envd_transport(http1)
+        )
+    finally:
+        reset_transport_caches()
+
+
 def test_sync_transports_pass_http_version_to_pyqwest(test_api_key, monkeypatch):
     # `http_version=None` leaves the version to ALPN (HTTP/2 against the E2B
     # API), `HTTP1` pins HTTP/1.1. Which version was negotiated is only
@@ -486,6 +513,29 @@ async def test_async_envd_transports_are_shared_across_sandboxes(test_api_key):
     try:
         assert get_async_envd_transport(first) is get_async_envd_transport(second)
         assert get_async_envd_transport(first) is not get_async_transport(first)
+    finally:
+        reset_transport_caches()
+
+
+@pytest.mark.asyncio
+async def test_async_transports_follow_the_http_version_option(test_api_key):
+    reset_transport_caches()
+    default = sandbox_config(test_api_key, "sbx-0")
+    http1 = ConnectionConfig(api_key=test_api_key, http_version="http1")
+
+    try:
+        assert get_async_transport(http1) is get_async_transport(default, http2=False)
+        assert get_async_transport(http1) is not get_async_transport(default)
+        assert get_async_envd_transport(http1) is get_async_envd_transport(
+            default, http2=False
+        )
+        assert get_async_envd_transport(http1) is not get_async_envd_transport(default)
+        assert get_async_envd_transport(http1, http2=True) is get_async_envd_transport(
+            default
+        )
+        assert get_async_envd_api(http1, "https://sandbox.e2b.app")._transport is (
+            get_async_envd_transport(http1)
+        )
     finally:
         reset_transport_caches()
 
@@ -1186,11 +1236,11 @@ def test_sync_envd_transport_counts_requests_until_their_body_is_done(
     # a direct RPC — and gives it up exactly once however it ends: fully read,
     # closed early, timed out, or failed to connect.
     reset_transport_caches()
-    config = ConnectionConfig(api_key=test_api_key)
-    transport = get_sync_envd_pyqwest_transport(None, http2=http2)
-    envd_api = httpx.Client(
-        base_url=echo_server, transport=get_sync_envd_transport(config, http2)
+    config = ConnectionConfig(
+        api_key=test_api_key, http_version="http2" if http2 else "http1"
     )
+    envd_api = get_sync_envd_api(config, echo_server)
+    transport = get_sync_envd_pyqwest_transport(None, http2=http2)
     balancer = transport.balancer
 
     try:
@@ -1237,11 +1287,11 @@ async def test_async_envd_transport_counts_requests_until_their_body_is_done(
     test_api_key, echo_server, http2
 ):
     reset_transport_caches()
-    config = ConnectionConfig(api_key=test_api_key)
-    transport = get_async_envd_pyqwest_transport(None, http2=http2)
-    envd_api = httpx.AsyncClient(
-        base_url=echo_server, transport=get_async_envd_transport(config, http2)
+    config = ConnectionConfig(
+        api_key=test_api_key, http_version="http2" if http2 else "http1"
     )
+    envd_api = get_async_envd_api(config, echo_server)
+    transport = get_async_envd_pyqwest_transport(None, http2=http2)
     balancer = transport.balancer
 
     try:
