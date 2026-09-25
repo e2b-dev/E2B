@@ -535,18 +535,32 @@ components:
         mem_cache:
           type: integer
           description: Cached memory (page cache) in bytes
-        mem_total_mib:
-          type: integer
-          description: Total virtual memory in MiB
-        mem_used_mib:
-          type: integer
-          description: Used virtual memory in MiB
         disk_used:
           type: integer
           description: Used disk space in bytes
         disk_total:
           type: integer
           description: Total disk space in bytes
+        oom_kills:
+          type: array
+          description: The latest 32 out-of-memory kills since the guest booted, oldest first. Reading does not consume them. Empty when there are none. Omitted when not known (while envd is still reading the kernel log, when it can't be read or envd stopped reading it, and outside Firecracker).
+          x-go-type-skip-optional-pointer: false
+          items:
+            $ref: "#/components/schemas/OOMKill"
+    OOMKill:
+      type: object
+      description: A process the guest kernel killed for running out of memory
+      required:
+        - seq
+        - process
+      properties:
+        seq:
+          type: integer
+          format: int64
+          description: Kernel log sequence number of the kill record. It only grows, across pauses and envd restarts.
+        process:
+          type: string
+          description: Name of the killed process, or Unknown if the record doesn't show it
     FreezeResult:
       type: object
       description: Per-call statistics from a pre-pause workload freeze
