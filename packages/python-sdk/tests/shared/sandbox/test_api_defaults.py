@@ -114,10 +114,14 @@ async def _async_fork_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, Any
     return request.call_args.kwargs["body"].to_dict()
 
 
-def test_fork_omits_timeout_and_count_when_unset(monkeypatch, test_api_key):
+def test_fork_sends_the_five_minute_timeout_and_omits_count_when_unset(
+    monkeypatch, test_api_key
+):
     body = _sync_fork_body(monkeypatch, test_api_key)
 
-    assert "timeout" not in body
+    # The fork endpoint's own default is 15 seconds, so the SDK keeps sending
+    # the 5 minutes it documents.
+    assert body["timeout"] == 300
     assert "count" not in body
 
 
@@ -128,10 +132,12 @@ def test_fork_sends_explicit_timeout_and_count(monkeypatch, test_api_key):
     assert body["count"] == 2
 
 
-async def test_async_fork_omits_timeout_and_count_when_unset(monkeypatch, test_api_key):
+async def test_async_fork_sends_the_five_minute_timeout_and_omits_count_when_unset(
+    monkeypatch, test_api_key
+):
     body = await _async_fork_body(monkeypatch, test_api_key)
 
-    assert "timeout" not in body
+    assert body["timeout"] == 300
     assert "count" not in body
 
 
