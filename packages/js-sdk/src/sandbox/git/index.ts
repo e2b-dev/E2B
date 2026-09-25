@@ -723,24 +723,24 @@ export class Git {
       )
     }
 
-    if (username && password) {
-      const remoteName = await this.resolveRemoteName(path, remote, rest)
-      return this.withRemoteCredentials(
-        path,
-        remoteName,
-        username,
-        password,
-        rest,
-        () =>
-          this.runGit(
-            buildPushArgs(remoteName, { remote, branch, setUpstream }),
-            path,
-            rest
-          )
-      )
-    }
-
     try {
+      if (username && password) {
+        const remoteName = await this.resolveRemoteName(path, remote, rest)
+        return await this.withRemoteCredentials(
+          path,
+          remoteName,
+          username,
+          password,
+          rest,
+          () =>
+            this.runGit(
+              buildPushArgs(remoteName, { remote, branch, setUpstream }),
+              path,
+              rest
+            )
+        )
+      }
+
       return await this.runGit(
         buildPushArgs(undefined, { remote, branch, setUpstream }),
         path,
@@ -793,19 +793,19 @@ export class Git {
       return args
     }
 
-    if (username && password) {
-      const remoteName = await this.resolveRemoteName(path, remote, rest)
-      return this.withRemoteCredentials(
-        path,
-        remoteName,
-        username,
-        password,
-        rest,
-        () => this.runGit(buildArgs(remoteName), path, rest)
-      )
-    }
-
     try {
+      if (username && password) {
+        const remoteName = await this.resolveRemoteName(path, remote, rest)
+        return await this.withRemoteCredentials(
+          path,
+          remoteName,
+          username,
+          password,
+          rest,
+          () => this.runGit(buildArgs(remoteName), path, rest)
+        )
+      }
+
       return await this.runGit(buildArgs(), path, rest)
     } catch (err) {
       if (isAuthFailure(err)) {

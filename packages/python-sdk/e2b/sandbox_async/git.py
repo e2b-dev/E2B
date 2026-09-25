@@ -760,37 +760,37 @@ class Git:
                 "Username is required when using a password or token for git push."
             )
 
-        if username and password:
-            remote_name = await self._resolve_remote_name(
-                path, remote, envs, user, cwd, timeout, request_timeout
-            )
-            return await self._with_remote_credentials(
-                path,
-                remote_name,
-                username,
-                password,
-                envs,
-                user,
-                cwd,
-                timeout,
-                request_timeout,
-                operation=lambda: self._run_git(
-                    build_push_args(
-                        remote_name,
-                        remote=remote,
-                        branch=branch,
-                        set_upstream=set_upstream,
-                    ),
+        try:
+            if username and password:
+                remote_name = await self._resolve_remote_name(
+                    path, remote, envs, user, cwd, timeout, request_timeout
+                )
+                return await self._with_remote_credentials(
                     path,
+                    remote_name,
+                    username,
+                    password,
                     envs,
                     user,
                     cwd,
                     timeout,
                     request_timeout,
-                ),
-            )
+                    operation=lambda: self._run_git(
+                        build_push_args(
+                            remote_name,
+                            remote=remote,
+                            branch=branch,
+                            set_upstream=set_upstream,
+                        ),
+                        path,
+                        envs,
+                        user,
+                        cwd,
+                        timeout,
+                        request_timeout,
+                    ),
+                )
 
-        try:
             return await self._run_git(
                 build_push_args(
                     None,
@@ -856,32 +856,32 @@ class Git:
             if not has_upstream:
                 raise GitUpstreamException(build_upstream_error_message("pull"))
 
-        if username and password:
-            remote_name = await self._resolve_remote_name(
-                path, remote, envs, user, cwd, timeout, request_timeout
-            )
-            return await self._with_remote_credentials(
-                path,
-                remote_name,
-                username,
-                password,
-                envs,
-                user,
-                cwd,
-                timeout,
-                request_timeout,
-                operation=lambda: self._run_git(
-                    build_pull_args(remote, branch, remote_name),
+        try:
+            if username and password:
+                remote_name = await self._resolve_remote_name(
+                    path, remote, envs, user, cwd, timeout, request_timeout
+                )
+                return await self._with_remote_credentials(
                     path,
+                    remote_name,
+                    username,
+                    password,
                     envs,
                     user,
                     cwd,
                     timeout,
                     request_timeout,
-                ),
-            )
+                    operation=lambda: self._run_git(
+                        build_pull_args(remote, branch, remote_name),
+                        path,
+                        envs,
+                        user,
+                        cwd,
+                        timeout,
+                        request_timeout,
+                    ),
+                )
 
-        try:
             return await self._run_git(
                 build_pull_args(remote, branch),
                 path,
