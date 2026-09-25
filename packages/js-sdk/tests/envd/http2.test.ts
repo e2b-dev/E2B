@@ -89,7 +89,7 @@ test('uses a ProxyAgent dispatcher when a proxy is configured', async () => {
   expect(requests[0].init?.dispatcher).toBeInstanceOf(ProxyAgent)
 })
 
-test('pins the dispatcher to HTTP/1.1 when http2 is false', async () => {
+test('pins the dispatcher to HTTP/1.1 when httpVersion is http1', async () => {
   const agents: Array<{ allowH2?: boolean; connections?: number }> = []
   const proxyAgents: Array<{ uri?: string; allowH2?: boolean }> = []
 
@@ -111,7 +111,7 @@ test('pins the dispatcher to HTTP/1.1 when http2 is false', async () => {
 
   const direct = createEnvdFetchForRuntime('node', {
     connectionLimit: 1,
-    http2: false,
+    httpVersion: 'http1',
     loadUndici: () =>
       Promise.resolve({ Agent, ProxyAgent, fetch: undiciFetch }),
   })
@@ -119,7 +119,7 @@ test('pins the dispatcher to HTTP/1.1 when http2 is false', async () => {
 
   const proxied = createEnvdFetchForRuntime('node', {
     connectionLimit: 1,
-    http2: false,
+    httpVersion: 'http1',
     proxy: 'http://127.0.0.1:8080',
     loadUndici: () =>
       Promise.resolve({ Agent, ProxyAgent, fetch: undiciFetch }),
@@ -143,22 +143,22 @@ test('caches envd fetchers per proxy and HTTP version', async () => {
 
   const noProxy = createEnvdFetch()
   const proxyA = createEnvdFetch('http://127.0.0.1:8080')
-  const noProxyH1 = createEnvdFetch(undefined, false)
+  const noProxyH1 = createEnvdFetch(undefined, 'http1')
 
   expect(createEnvdFetch()).toBe(noProxy)
-  expect(createEnvdFetch(undefined, true)).toBe(noProxy)
+  expect(createEnvdFetch(undefined, 'http2')).toBe(noProxy)
   expect(createEnvdFetch('http://127.0.0.1:8080')).toBe(proxyA)
-  expect(createEnvdFetch(undefined, false)).toBe(noProxyH1)
+  expect(createEnvdFetch(undefined, 'http1')).toBe(noProxyH1)
   expect(proxyA).not.toBe(noProxy)
   expect(noProxyH1).not.toBe(noProxy)
 
   const rpcNoProxy = createEnvdRpcFetch()
   const rpcProxyA = createEnvdRpcFetch('http://127.0.0.1:8080')
-  const rpcNoProxyH1 = createEnvdRpcFetch(undefined, false)
+  const rpcNoProxyH1 = createEnvdRpcFetch(undefined, 'http1')
 
   expect(createEnvdRpcFetch()).toBe(rpcNoProxy)
   expect(createEnvdRpcFetch('http://127.0.0.1:8080')).toBe(rpcProxyA)
-  expect(createEnvdRpcFetch(undefined, false)).toBe(rpcNoProxyH1)
+  expect(createEnvdRpcFetch(undefined, 'http1')).toBe(rpcNoProxyH1)
   expect(rpcProxyA).not.toBe(rpcNoProxy)
   expect(rpcNoProxyH1).not.toBe(rpcNoProxy)
 })

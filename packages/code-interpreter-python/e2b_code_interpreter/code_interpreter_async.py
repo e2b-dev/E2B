@@ -85,7 +85,7 @@ class AsyncSandbox(BaseAsyncSandbox):
         # TODO: Remove later
         # Use a dedicated HTTP/1.1 transport for Jupyter requests.
         #
-        # The base SDK's shared transport now defaults to http2=True. With
+        # The base SDK's shared transport now defaults to HTTP/2. With
         # HTTP/2, multiple requests are multiplexed over a single TCP
         # connection, so when a client cancels a request (e.g. the caller
         # disconnects from the streaming `/execute` endpoint) the server
@@ -98,7 +98,7 @@ class AsyncSandbox(BaseAsyncSandbox):
         # cancelled reliably. The helper also caches the transport
         # per-event-loop for async.
         return AsyncClient(
-            transport=get_transport(self.connection_config, http2=False),
+            transport=get_transport(self.connection_config, http_version="http1"),
         )
 
     async def _handle_connection_error(self, err: Exception) -> None:

@@ -2,11 +2,12 @@ import logging
 import os
 import re
 
-from typing import cast, Mapping, Optional, Dict, TypedDict, Union
+from typing import cast, Literal, Mapping, Optional, Dict, TypedDict, Union
 
 import httpx
 from typing_extensions import Unpack
 
+from e2b.exceptions import InvalidArgumentException
 from e2b.retry import resolve_max_retries
 from e2b.api.metadata import package_version
 from e2b.sandbox_domains import is_supported_sandbox_domain
@@ -38,6 +39,9 @@ READ_TIMEOUT: float = 60.0  # 60 seconds
 
 KEEPALIVE_PING_INTERVAL_SEC = 50  # 50 seconds
 KEEPALIVE_PING_HEADER = "Keepalive-Ping-Interval"
+
+HttpVersion = Literal["http1", "http2"]
+DEFAULT_HTTP_VERSION: HttpVersion = "http2"
 
 
 class ApiParams(TypedDict, total=False):
@@ -87,6 +91,14 @@ class ApiParams(TypedDict, total=False):
 
     sandbox_url: Optional[str]
     """URL to connect to sandbox, defaults to `E2B_SANDBOX_URL` environment variable."""
+
+    http_version: Optional[HttpVersion]
+    """HTTP version for requests to the E2B API and to sandboxes (commands,
+    filesystem, PTY), defaults to `E2B_HTTP_VERSION` environment variable or
+    `DEFAULT_HTTP_VERSION` (`"http2"`). `"http1"` pins them to HTTP/1.1, which
+    uses one connection per concurrent request instead of multiplexing streams
+    over shared connections — for example when an intermediary on the path
+    retires or mishandles long-lived HTTP/2 connections."""
 
 
 class ApiParamsWithLogger(ApiParams, total=False):
@@ -197,6 +209,15 @@ class ConnectionConfig:
         return os.getenv("E2B_SANDBOX_URL")
 
     @staticmethod
+    def _http_version() -> HttpVersion:
+        value = (os.getenv("E2B_HTTP_VERSION") or DEFAULT_HTTP_VERSION).lower()
+        if value not in ("http1", "http2"):
+            raise InvalidArgumentException(
+                f"E2B_HTTP_VERSION must be 'http1' or 'http2', got {value!r}"
+            )
+        return cast(HttpVersion, value)
+
+    @staticmethod
     def _get_request_source() -> Optional[str]:
         source = os.getenv("E2B_USER_AGENT_SOURCE")
         if source and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,31}", source):
@@ -251,6 +272,7 @@ class ConnectionConfig:
         logger: Optional[logging.Logger] = None,
         *,
         retries: Optional[int] = None,
+        http_version: Optional[HttpVersion] = None,
     ):
         self.logger = logger
         self.domain = domain or ConnectionConfig._domain()
@@ -283,6 +305,11 @@ class ConnectionConfig:
 
         self._sandbox_url: Optional[str] = (
             sandbox_url or ConnectionConfig._sandbox_url()
+        )
+        self.http_version: HttpVersion = (
+            http_version
+            if http_version is not None
+            else ConnectionConfig._http_version()
         )
 
     @staticmethod
@@ -362,6 +389,7 @@ class ConnectionConfig:
         debug = opts.get("debug")
         proxy = opts.get("proxy")
         sandbox_url = opts.get("sandbox_url")
+        http_version = opts.get("http_version")
         retries = opts.get("retries")
 
         req_headers = self.headers.copy()
@@ -400,6 +428,9 @@ class ConnectionConfig:
                     sandbox_url
                     if sandbox_url is not None
                     else cast(Optional[str], self._sandbox_url)
+                ),
+                http_version=(
+                    http_version if http_version is not None else self.http_version
                 ),
                 logger=self.logger,
                 retries=retries if retries is not None else self.retries,

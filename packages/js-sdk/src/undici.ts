@@ -3,6 +3,7 @@ import { compareVersions } from 'compare-versions'
 import { limitConcurrency } from './api/inflight'
 import { isReadableStreamLike, isRequestLike } from './is'
 import { dynamicImport, toDispatchableStream } from './utils'
+import { DEFAULT_HTTP_VERSION, type HttpVersion } from './connectionConfig'
 
 type UndiciRequestInit = RequestInit & {
   dispatcher?: unknown
@@ -88,7 +89,7 @@ export function createRuntimeFetch(
 
 /**
  * Build a fetch bound to a bounded undici dispatcher (HTTP/2 enabled unless
- * `http2` is `false`, `connections` origin connections, optional proxy
+ * `httpVersion` is `'http1'`, `connections` origin connections, optional proxy
  * tunnel), capped at `inflightLimit` in-flight requests (`0` disables the
  * cap). Falls back to the global fetch — still capped — when undici cannot be
  * loaded.
@@ -97,7 +98,7 @@ export async function buildDispatchedFetch(options: {
   connections: number
   inflightLimit: number
   proxy?: string
-  http2?: boolean
+  httpVersion?: HttpVersion
   loadUndici?: () => Promise<UndiciModule | undefined>
 }): Promise<typeof fetch> {
   const undici = await (options.loadUndici ?? loadUndici)()
@@ -107,7 +108,7 @@ export async function buildDispatchedFetch(options: {
   }
 
   const { Agent, ProxyAgent, fetch: undiciFetch } = undici
-  const allowH2 = options.http2 ?? true
+  const allowH2 = (options.httpVersion ?? DEFAULT_HTTP_VERSION) === 'http2'
   const dispatcher = options.proxy
     ? new ProxyAgent({
         uri: options.proxy,

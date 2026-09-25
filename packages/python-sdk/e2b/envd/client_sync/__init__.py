@@ -76,7 +76,10 @@ def create_rpc_client(
     """
     http_client = SyncClient(
         PlainHTTPErrorTransport(
-            get_envd_pyqwest_transport(proxy_to_config(config.proxy))
+            get_envd_pyqwest_transport(
+                proxy_to_config(config.proxy),
+                http_version=config.http_version,
+            )
         )
     )
     return client_cls(

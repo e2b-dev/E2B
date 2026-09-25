@@ -6,6 +6,7 @@ import {
   wrapStreamWithConnectionCleanup,
 } from '../src/connectionConfig'
 import { runtime } from '../src/utils'
+import { InvalidArgumentError } from '../src/errors'
 
 // Store original env vars to restore after tests
 let originalEnv: { [key: string]: string | undefined }
@@ -15,6 +16,7 @@ beforeEach(() => {
     E2B_API_URL: process.env.E2B_API_URL,
     E2B_DOMAIN: process.env.E2B_DOMAIN,
     E2B_SANDBOX_URL: process.env.E2B_SANDBOX_URL,
+    E2B_HTTP_VERSION: process.env.E2B_HTTP_VERSION,
     E2B_DEBUG: process.env.E2B_DEBUG,
     E2B_USER_AGENT_SOURCE: process.env.E2B_USER_AGENT_SOURCE,
   }
@@ -162,6 +164,43 @@ test('sandbox_url stays localhost in debug mode', () => {
     }),
     'http://localhost:49983'
   )
+})
+
+test('httpVersion defaults to http2 and reads E2B_HTTP_VERSION', () => {
+  delete process.env.E2B_HTTP_VERSION
+  assert.equal(new ConnectionConfig().httpVersion, 'http2')
+  assert.equal(
+    new ConnectionConfig({ httpVersion: 'http1' }).httpVersion,
+    'http1'
+  )
+
+  process.env.E2B_HTTP_VERSION = 'http1'
+  assert.equal(new ConnectionConfig().httpVersion, 'http1')
+  process.env.E2B_HTTP_VERSION = 'HTTP1'
+  assert.equal(new ConnectionConfig().httpVersion, 'http1')
+  process.env.E2B_HTTP_VERSION = 'http2'
+  assert.equal(new ConnectionConfig().httpVersion, 'http2')
+
+  process.env.E2B_HTTP_VERSION = 'http3'
+  assert.throws(() => new ConnectionConfig(), InvalidArgumentError)
+  assert.throws(() => new ConnectionConfig(), /E2B_HTTP_VERSION/)
+  // An explicit option never consults the environment.
+  assert.equal(
+    new ConnectionConfig({ httpVersion: 'http1' }).httpVersion,
+    'http1'
+  )
+})
+
+test('httpVersion in args has priority over env var', () => {
+  process.env.E2B_HTTP_VERSION = 'http1'
+  assert.equal(
+    new ConnectionConfig({ httpVersion: 'http2' }).httpVersion,
+    'http2'
+  )
+
+  // Per-call options and bound options keep the option when merged.
+  const merged = ConnectionConfig.mergeOpts({ httpVersion: 'http1' }, {})
+  assert.equal(new ConnectionConfig(merged).httpVersion, 'http1')
 })
 
 test('debug false in args overrides E2B_DEBUG env var', () => {

@@ -82,7 +82,7 @@ class Sandbox(BaseSandbox):
         # TODO: Remove later
         # Use a dedicated HTTP/1.1 transport for Jupyter requests.
         #
-        # The base SDK's shared transport now defaults to http2=True. With
+        # The base SDK's shared transport now defaults to HTTP/2. With
         # HTTP/2, multiple requests are multiplexed over a single TCP
         # connection, so when a client cancels a request (e.g. the caller
         # disconnects from the streaming `/execute` endpoint) the server
@@ -93,7 +93,9 @@ class Sandbox(BaseSandbox):
         # connection and request, so client disconnects propagate to the
         # server as a TCP close and long-running executions can be
         # cancelled reliably.
-        return Client(transport=get_transport(self.connection_config, http2=False))
+        return Client(
+            transport=get_transport(self.connection_config, http_version="http1")
+        )
 
     def _handle_connection_error(self, err: Exception) -> None:
         """
