@@ -1,7 +1,13 @@
+import json
 import os
 import tempfile
 import pytest
-from e2b.template.utils import get_all_files_in_path
+from e2b import Template
+from e2b.template.utils import (
+    calculate_files_hash,
+    get_all_files_in_path,
+    read_dockerignore,
+)
 
 
 class TestGetAllFilesInPath:
@@ -332,3 +338,165 @@ class TestGetAllFilesInPath:
         assert any("helper.ts" in f for f in files)
         assert not any("Button.tsx" in f for f in files)
         assert not any("Button.test.tsx" in f for f in files)
+
+    def test_should_include_files_in_directories_with_glob_characters(self, test_dir):
+        """Test that directories with glob characters in their names are walked."""
+        os.makedirs(os.path.join(test_dir, "app", "[id]"))
+        with open(os.path.join(test_dir, "app", "[id]", "page.tsx"), "w") as f:
+            f.write("page")
+
+        files = get_all_files_in_path("app/*", test_dir, [])
+
+        assert sorted(os.path.relpath(f, test_dir) for f in files) == [
+            os.path.join("app", "[id]"),
+            os.path.join("app", "[id]", "page.tsx"),
+        ]
+
+
+class TestDockerignoreSemantics:
+    """Ignore patterns follow Docker's .dockerignore rules: each pattern is
+    matched against a path and its parent directories, the last matching
+    pattern wins."""
+
+    IGNORE = [".env", "node_modules", ".git", "**/*.spec.*", "src/generated"]
+    SRC_FILES = ["src", "src/app.ts", "src/node_modules", "src/node_modules/x.js"]
+
+    @pytest.fixture
+    def ctx(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for d in [
+                "node_modules/pkg",
+                "src/generated",
+                "src/node_modules",
+                ".git",
+                "dist",
+            ]:
+                os.makedirs(os.path.join(tmpdir, d))
+            for f in [
+                ".env",
+                "node_modules/pkg/index.js",
+                "src/app.ts",
+                "src/app.spec.ts",
+                "src/generated/api.ts",
+                "src/node_modules/x.js",
+                ".git/HEAD",
+            ]:
+                with open(os.path.join(tmpdir, f), "w") as fh:
+                    fh.write("x")
+            yield tmpdir
+
+    @staticmethod
+    def rel(src, ctx, ignore):
+        return sorted(
+            os.path.relpath(f, ctx).replace(os.sep, "/")
+            for f in get_all_files_in_path(src, ctx, ignore)
+        )
+
+    @pytest.mark.parametrize("src", [".", "./"])
+    def test_applies_patterns_and_excludes_directory_contents(self, ctx, src):
+        assert self.rel(src, ctx, self.IGNORE) == [".", "dist", *self.SRC_FILES]
+
+    @pytest.mark.parametrize("src", ["./src", "src/.", "dist/../src", "src"])
+    def test_applies_patterns_regardless_of_how_src_is_written(self, ctx, src):
+        assert self.rel(src, ctx, self.IGNORE) == self.SRC_FILES
+
+    def test_trailing_slash_and_globstar_directory_patterns(self, ctx):
+        ignore = ["node_modules/", "**/node_modules", ".*", "src/*"]
+        assert self.rel(".", ctx, ignore) == [".", "dist", "src"]
+
+    def test_leading_slash_is_root_relative(self, ctx):
+        ignore = ["/node_modules", "/src/generated/**", "/.git", "/.env"]
+        assert self.rel(".", ctx, ignore) == [
+            ".",
+            "dist",
+            "src",
+            "src/app.spec.ts",
+            "src/app.ts",
+            "src/node_modules",
+            "src/node_modules/x.js",
+        ]
+
+    def test_dot_pattern_is_ignored_and_never_drops_the_root(self, ctx):
+        assert self.rel(".", ctx, [".", "./", ""]) == self.rel(".", ctx, [])
+        assert self.rel(".", ctx, [".*", "*"]) == ["."]
+
+    def test_copying_a_path_inside_an_ignored_directory_finds_nothing(self, ctx):
+        assert self.rel("node_modules/pkg", ctx, ["node_modules"]) == []
+
+    def test_negation_reincludes_paths_last_match_wins(self, ctx):
+        assert self.rel(".", ctx, ["*", " !src ", "src/generated"]) == sorted(
+            [".", "src/app.spec.ts", *self.SRC_FILES]
+        )
+        assert self.rel(
+            ".",
+            ctx,
+            ["node_modules", "!node_modules/pkg/index.js", "*", "!node_modules"],
+        ) == [".", "node_modules", "node_modules/pkg", "node_modules/pkg/index.js"]
+
+    def test_negation_keeps_excluded_parent_directories(self, ctx):
+        reincluded = ["node_modules/pkg", "node_modules/pkg/index.js"]
+        assert self.rel(
+            "node_modules", ctx, ["node_modules", "!node_modules/pkg/index.js"]
+        ) == ["node_modules", *reincluded]
+        assert self.rel(".", ctx, ["*", "!node_modules/pkg/index.js"]) == [
+            ".",
+            "node_modules",
+            *reincluded,
+        ]
+
+    def test_wildcard_negation_reincludes_paths_inside_excluded_directories(self, ctx):
+        assert self.rel(".", ctx, ["*", "!src/**/*.ts"]) == [
+            ".",
+            "src",
+            "src/app.spec.ts",
+            "src/app.ts",
+            "src/generated",
+            "src/generated/api.ts",
+        ]
+        assert self.rel(".", ctx, ["*", "!**/index.js"]) == [
+            ".",
+            "node_modules",
+            "node_modules/pkg",
+            "node_modules/pkg/index.js",
+        ]
+
+    def test_files_hash_ignores_changes_to_ignored_directory_contents(self, ctx):
+        def files_hash():
+            return calculate_files_hash(".", "/app", ctx, [".git"], False, None)
+
+        before = files_hash()
+        with open(os.path.join(ctx, ".git", "HEAD"), "a") as fh:
+            fh.write("x")
+        assert files_hash() == before
+
+    def test_read_dockerignore_strips_utf8_bom(self, ctx):
+        with open(os.path.join(ctx, ".dockerignore"), "w", encoding="utf-8-sig") as fh:
+            fh.write(".env\n")
+        assert read_dockerignore(ctx) == [".env"]
+
+
+def test_file_ignore_patterns_take_precedence_and_may_be_absolute():
+    with tempfile.TemporaryDirectory() as ctx:
+        for name, content in [
+            ("app.ts", "x"),
+            ("secret.txt", "x"),
+            (".dockerignore", "!secret.txt\n"),
+        ]:
+            with open(os.path.join(ctx, name), "w") as f:
+                f.write(content)
+
+        def files_hash():
+            template = (
+                Template(
+                    file_context_path=ctx,
+                    file_ignore_patterns=[os.path.join(ctx, "secret.txt")],
+                )
+                .from_image("node:22")
+                .copy(".", "/app")
+            )
+            return json.loads(Template.to_json(template))["steps"][0]["filesHash"]
+
+        before = files_hash()
+        with open(os.path.join(ctx, "secret.txt"), "a") as f:
+            f.write("x")
+        assert files_hash() == before

@@ -10,7 +10,7 @@ from e2b.template.consts import GZIP, RESOLVE_SYMLINKS
 from e2b.template.logger import LogEntry, LogEntryEnd, LogEntryStart
 from e2b.template.main import TemplateBase, TemplateClass
 from e2b.template.types import BuildInfo, InstructionType, TemplateTag, TemplateTagInfo
-from e2b.template.utils import normalize_build_arguments, read_dockerignore
+from e2b.template.utils import normalize_build_arguments
 
 from .build_api import (
     assign_tags,
@@ -131,10 +131,7 @@ class AsyncTemplate(TemplateBase):
                     src,
                     template._template._file_context_path,
                     file_info.url,
-                    [
-                        *template._template._file_ignore_patterns,
-                        *read_dockerignore(template._template._file_context_path),
-                    ],
+                    template._template._get_ignore_patterns(),
                     resolve_symlinks,
                     gzip,
                     stack_trace,

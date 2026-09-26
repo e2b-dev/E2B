@@ -23,6 +23,7 @@ from e2b.template.utils import (
     pad_octal,
     read_dockerignore,
     read_gcp_service_account_json,
+    relativize_ignore_pattern,
     get_caller_frame,
     validate_relative_path,
 )
@@ -766,7 +767,7 @@ class TemplateBase(ClientFactory):
         Create a new template builder instance.
 
         :param file_context_path: Base path for resolving relative file paths in copy operations
-        :param file_ignore_patterns: List of glob patterns to ignore when copying files
+        :param file_ignore_patterns: List of patterns to ignore when copying files, in .dockerignore syntax. They are applied after the patterns in the context's .dockerignore file
         """
         self._default_base_image: str = "e2bdev/base"
         self._base_image: Optional[str] = self._default_base_image
@@ -787,6 +788,19 @@ class TemplateBase(ClientFactory):
         )
         self._file_ignore_patterns: List[str] = file_ignore_patterns or []
         self._stack_traces: List[Union[TracebackType, None]] = []
+
+    def _get_ignore_patterns(self) -> List[str]:
+        """
+        Get the ignore patterns for copied files: the .dockerignore lines, then
+        file_ignore_patterns, so that file_ignore_patterns take precedence.
+        """
+        return [
+            *read_dockerignore(self._file_context_path),
+            *(
+                relativize_ignore_pattern(pattern, self._file_context_path)
+                for pattern in self._file_ignore_patterns
+            ),
+        ]
 
     def skip_cache(self) -> "TemplateBase":
         """
@@ -1248,10 +1262,7 @@ class TemplateBase(ClientFactory):
                     src,
                     dest,
                     self._file_context_path,
-                    [
-                        *self._file_ignore_patterns,
-                        *read_dockerignore(self._file_context_path),
-                    ],
+                    self._get_ignore_patterns(),
                     resolve_symlinks
                     if resolve_symlinks is not None
                     else RESOLVE_SYMLINKS,

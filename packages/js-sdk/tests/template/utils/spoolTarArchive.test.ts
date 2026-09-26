@@ -173,6 +173,34 @@ describe('spoolTarArchive', () => {
     expect(contents.has('backup.txt')).toBe(false)
   })
 
+  test('should exclude ignored directory contents and keep re-included files', async () => {
+    await mkdir(join(testDir, 'node_modules', 'pkg'), { recursive: true })
+    await writeFile(join(testDir, 'node_modules', 'pkg', 'index.js'), 'keep')
+    await writeFile(join(testDir, 'node_modules', 'pkg', 'other.js'), 'drop')
+    await mkdir(join(testDir, '.git'), { recursive: true })
+    await writeFile(join(testDir, '.git', 'HEAD'), 'ref')
+    await writeFile(join(testDir, 'app.ts'), 'app')
+
+    const archive = await spoolTarArchive(
+      '.',
+      testDir,
+      ['.git', 'node_modules', '!node_modules/pkg/index.js'],
+      false,
+      true
+    )
+
+    const contents = await extractTarContents(archive)
+
+    expect([...contents.keys()].sort()).toEqual([
+      './',
+      'app.ts',
+      'node_modules/',
+      'node_modules/pkg/',
+      'node_modules/pkg/index.js',
+    ])
+    expect(contents.get('node_modules/pkg/index.js')?.toString()).toBe('keep')
+  })
+
   test('should handle nested files', async () => {
     const nestedDir = join(testDir, 'src', 'components')
     await mkdir(nestedDir, { recursive: true })

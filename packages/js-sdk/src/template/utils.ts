@@ -7,7 +7,7 @@ import { parse, type StackFrame } from 'error-stack-parser-es'
 import { dynamicImport } from '../utils'
 import { TemplateError } from '../errors'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
-import type { Path } from 'glob'
+import type { IgnoreLike, Path } from 'glob'
 import type { BuildOptions } from './types'
 
 /**
@@ -120,12 +120,103 @@ export function readDockerignore(contextPath: string): string[] {
 }
 
 /**
- * Normalize path separators to forward slashes for glob patterns (glob expects / even on Windows)
- * @param path - The path to normalize
- * @returns The normalized path
+ * Make an absolute ignore pattern that points inside the context relative to
+ * it. Other patterns are returned as they are.
+ *
+ * @param pattern Ignore pattern, optionally negated with `!`
+ * @param contextPath Context directory
+ * @returns The ignore pattern
  */
-function normalizePath(path: string): string {
-  return path.replace(/\\/g, '/')
+export function relativizeIgnorePattern(
+  pattern: string,
+  contextPath: string
+): string {
+  const trimmed = pattern.trim()
+  const negation = trimmed.startsWith('!') ? '!' : ''
+  const target = trimmed.slice(negation.length).trim()
+  if (!path.isAbsolute(target)) {
+    return pattern
+  }
+  const relative = path.relative(contextPath, target)
+  const inside =
+    relative !== '..' &&
+    !relative.startsWith('..' + path.sep) &&
+    !path.isAbsolute(relative)
+  return inside ? negation + relative : pattern
+}
+
+/**
+ * Build a glob ignore matcher that applies ignore patterns like Docker applies
+ * .dockerignore: patterns are relative to the context, a pattern excludes a
+ * path when it matches the path or one of its parent directories, and the last
+ * matching pattern wins, so `!` patterns re-include paths. The context root is
+ * never excluded.
+ */
+function createIgnoreMatcher(
+  patterns: string[],
+  Ignore: typeof import('glob').Ignore
+): Required<Pick<IgnoreLike, 'ignored' | 'childrenIgnored'>> {
+  // Match case-insensitively where glob does by default
+  const nocase = process.platform === 'darwin' || process.platform === 'win32'
+  const rules = patterns.flatMap((line) => {
+    const trimmed = line.trim()
+    const negate = trimmed.startsWith('!')
+    // Clean the pattern like Docker: drop `./`, resolve `..` and strip
+    // leading and trailing slashes
+    const pattern = path
+      .normalize((negate ? trimmed.slice(1) : trimmed).trim())
+      .split(path.sep)
+      .join('/')
+      .replace(/^\/+|\/+$/g, '')
+    // Docker ignores the pattern `.`
+    if (!pattern || pattern === '.') {
+      return []
+    }
+    return [{ negate, pattern, ignore: new Ignore([pattern], { nocase }) }]
+  })
+  // Like BuildKit, skip excluded directories only when every `!` pattern is a
+  // literal path, as a wildcard one may match anywhere inside them
+  const canSkip = !rules.some(
+    (rule) => rule.negate && /[*?[{(\\]/.test(rule.pattern)
+  )
+
+  // Index of the last rule that matches a path or one of its parent
+  // directories, -1 if none. Reuses the cached result of the parent.
+  const lastMatches = new Map<string, number>([['', -1]])
+  const lastMatch = (p: Path): number => {
+    const key = p.relativePosix()
+    let last = lastMatches.get(key)
+    if (last === undefined) {
+      last = p.parent ? lastMatch(p.parent) : -1
+      for (let i = rules.length - 1; i > last; i--) {
+        if (rules[i].ignore.ignored(p)) {
+          last = i
+          break
+        }
+      }
+      lastMatches.set(key, last)
+    }
+    return last
+  }
+
+  const ignored = (p: Path) => {
+    const last = lastMatch(p)
+    return last !== -1 && !rules[last].negate
+  }
+
+  // Skip an excluded directory unless a `!` pattern may re-include a path
+  // inside it (the same prefix check Docker does)
+  const childrenIgnored = (p: Path) => {
+    if (!canSkip || !ignored(p)) {
+      return false
+    }
+    const dir = p.relativePosix() + '/'
+    return !rules.some(
+      (rule) => rule.negate && (rule.pattern + '/').startsWith(dir)
+    )
+  }
+
+  return { ignored, childrenIgnored }
 }
 
 /**
@@ -133,7 +224,7 @@ function normalizePath(path: string): string {
  *
  * @param src Path to the source directory
  * @param contextPath Base directory for resolving relative paths
- * @param ignorePatterns Ignore patterns
+ * @param ignorePatterns Ignore patterns, in .dockerignore syntax
  * @returns Array of files
  */
 export async function getAllFilesInPath(
@@ -142,11 +233,15 @@ export async function getAllFilesInPath(
   ignorePatterns: string[],
   includeDirectories: boolean = true
 ) {
-  const { glob } = await dynamicImport<typeof import('glob')>('glob')
+  const { escape, glob, Ignore } =
+    await dynamicImport<typeof import('glob')>('glob')
   const files = new Map<string, Path>()
+  const ignore = createIgnoreMatcher(ignorePatterns, Ignore)
 
   const globFiles = await glob(src, {
-    ignore: ignorePatterns,
+    // Excluded paths are filtered below, so that `!` patterns can re-include
+    // paths inside a matched directory
+    ignore: { childrenIgnored: ignore.childrenIgnored },
     withFileTypes: true,
     dot: true,
     // this is required so that the ignore pattern is relative to the file path
@@ -154,26 +249,39 @@ export async function getAllFilesInPath(
   })
 
   for (const file of globFiles) {
-    if (file.isDirectory()) {
-      // For directories, add the directory itself and all files inside it
-      if (includeDirectories) {
+    const excluded = ignore.ignored(file)
+    if (!file.isDirectory()) {
+      if (!excluded) {
         files.set(file.fullpath(), file)
       }
-      const dirPattern = normalizePath(
-        // When the matched directory is '.', `file.relative()` can be an empty string.
-        // In that case, we want to match all files under the current directory instead of
-        // creating an absolute glob like '/**/*' which would traverse the entire filesystem.
-        path.join(file.relative() || '.', '**/*')
-      )
-      const dirFiles = await glob(dirPattern, {
-        ignore: ignorePatterns,
-        withFileTypes: true,
-        dot: true,
-        cwd: contextPath,
-      })
-      dirFiles.forEach((f) => files.set(f.fullpath(), f))
-    } else {
-      // For files, just add the file
+      continue
+    }
+
+    // For directories, add all files inside it
+    const dirPattern =
+      // When the matched directory is '.', `file.relativePosix()` is an empty string.
+      // In that case, we want to match all files under the current directory instead of
+      // creating an absolute glob like '/**/*' which would traverse the entire filesystem.
+      escape(file.relativePosix() || '.', { magicalBraces: true }) + '/**/*'
+    const dirFiles = await glob(dirPattern, {
+      ignore,
+      withFileTypes: true,
+      dot: true,
+      cwd: contextPath,
+    })
+    for (const dirFile of dirFiles) {
+      // Keep the excluded parent directories of a re-included path, like Docker
+      for (
+        let p: Path | undefined = dirFile;
+        p && p.fullpath() !== file.fullpath() && !files.has(p.fullpath());
+        p = p.parent
+      ) {
+        files.set(p.fullpath(), p)
+      }
+    }
+
+    // Add the directory itself, also when excluded but with re-included paths
+    if (includeDirectories && (!excluded || dirFiles.length > 0)) {
       files.set(file.fullpath(), file)
     }
   }
@@ -194,7 +302,7 @@ export async function getAllFilesInPath(
  * @param src Source path pattern for files to copy
  * @param dest Destination path where files will be copied
  * @param contextPath Base directory for resolving relative paths
- * @param ignorePatterns Glob patterns to ignore
+ * @param ignorePatterns Ignore patterns, in .dockerignore syntax
  * @param resolveSymlinks Whether to resolve symbolic links when hashing
  * @param stackTrace Optional stack trace for error reporting
  * @returns Hex string hash of all files

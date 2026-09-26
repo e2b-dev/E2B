@@ -95,6 +95,39 @@ class TestTarFileStream:
         assert "temp.txt" not in contents
         assert "backup.txt" not in contents
 
+    def test_should_exclude_ignored_directory_contents_and_keep_reincluded_files(
+        self, test_dir
+    ):
+        """Test that ignored directories are excluded with their contents."""
+        os.makedirs(os.path.join(test_dir, "node_modules", "pkg"))
+        os.makedirs(os.path.join(test_dir, ".git"))
+        for name, content in [
+            ("node_modules/pkg/index.js", "keep"),
+            ("node_modules/pkg/other.js", "drop"),
+            (".git/HEAD", "ref"),
+            ("app.ts", "app"),
+        ]:
+            with open(os.path.join(test_dir, name), "w") as f:
+                f.write(content)
+
+        tar_buffer = tar_file_stream(
+            ".",
+            test_dir,
+            [".git", "node_modules", "!node_modules/pkg/index.js"],
+            False,
+            True,
+        )
+        contents = self._extract_tar_contents(tar_buffer)
+
+        assert sorted(contents) == [
+            ".",
+            "app.ts",
+            "node_modules",
+            "node_modules/pkg",
+            "node_modules/pkg/index.js",
+        ]
+        assert contents["node_modules/pkg/index.js"] == b"keep"
+
     def test_should_handle_nested_files(self, test_dir):
         """Test that function handles nested directory structures."""
         # Create nested directory structure

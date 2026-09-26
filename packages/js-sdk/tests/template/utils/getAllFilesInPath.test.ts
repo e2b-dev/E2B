@@ -1,8 +1,12 @@
 import { expect, test, describe, beforeAll, afterAll, beforeEach } from 'vitest'
-import { writeFile, mkdir, mkdtemp, rm } from 'fs/promises'
+import { appendFile, writeFile, mkdir, mkdtemp, rm } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join, basename } from 'path'
-import { getAllFilesInPath } from '../../../src/template/utils'
+import { Template } from '../../../src'
+import {
+  calculateFilesHash,
+  getAllFilesInPath,
+} from '../../../src/template/utils'
 
 describe('getAllFilesInPath', () => {
   // A temp directory, so a test run never writes into the repository tree.
@@ -325,5 +329,207 @@ describe('getAllFilesInPath', () => {
     expect(files.some((f) => f.fullpath().endsWith('Button.tsx'))).toBe(true)
     expect(files.some((f) => f.fullpath().endsWith('helper.ts'))).toBe(true)
     expect(files.some((f) => f.fullpath().endsWith('test.spec.ts'))).toBe(false)
+  })
+
+  test('should include files in directories with glob characters in their names', async () => {
+    await mkdir(join(testDir, 'app', '[id]'), { recursive: true })
+    await writeFile(join(testDir, 'app', '[id]', 'page.tsx'), 'page')
+
+    const files = await getAllFilesInPath('app/*', testDir, [])
+
+    expect(files.map((f) => f.relativePosix()).sort()).toEqual([
+      'app/[id]',
+      'app/[id]/page.tsx',
+    ])
+  })
+})
+
+// Ignore patterns follow Docker's .dockerignore rules: each pattern is matched
+// against a path and its parent directories, the last matching pattern wins.
+describe('getAllFilesInPath dockerignore semantics', () => {
+  let ctx: string
+
+  const rel = async (src: string, ignore: string[]) =>
+    (await getAllFilesInPath(src, ctx, ignore))
+      .map((f) => f.relativePosix() || '.')
+      .sort()
+
+  beforeAll(async () => {
+    ctx = await mkdtemp(join(tmpdir(), 'getAllFilesInPath-ignore-test-'))
+    for (const dir of [
+      'node_modules/pkg',
+      'src/generated',
+      'src/node_modules',
+      '.git',
+      'dist',
+    ]) {
+      await mkdir(join(ctx, dir), { recursive: true })
+    }
+    for (const file of [
+      '.env',
+      'node_modules/pkg/index.js',
+      'src/app.ts',
+      'src/app.spec.ts',
+      'src/generated/api.ts',
+      'src/node_modules/x.js',
+      '.git/HEAD',
+    ]) {
+      await writeFile(join(ctx, file), 'x')
+    }
+  })
+
+  afterAll(async () => {
+    await rm(ctx, { recursive: true, force: true })
+  })
+
+  const ignore = [
+    '.env',
+    'node_modules',
+    '.git',
+    '**/*.spec.*',
+    'src/generated',
+  ]
+  const srcFiles = [
+    'src',
+    'src/app.ts',
+    'src/node_modules',
+    'src/node_modules/x.js',
+  ]
+
+  test.each(['.', './'])(
+    'applies patterns and excludes directory contents for %j',
+    async (src) => {
+      expect(await rel(src, ignore)).toEqual(['.', 'dist', ...srcFiles])
+    }
+  )
+
+  test.each(['./src', 'src/.', 'dist/../src', 'src'])(
+    'applies patterns regardless of how src is written: %j',
+    async (src) => {
+      expect(await rel(src, ignore)).toEqual(srcFiles)
+    }
+  )
+
+  test('trailing slash and ** directory patterns exclude contents', async () => {
+    expect(
+      await rel('.', ['node_modules/', '**/node_modules', '.*', 'src/*'])
+    ).toEqual(['.', 'dist', 'src'])
+  })
+
+  test('leading slash is root-relative', async () => {
+    expect(
+      await rel('.', ['/node_modules', '/src/generated/**', '/.git', '/.env'])
+    ).toEqual([
+      '.',
+      'dist',
+      'src',
+      'src/app.spec.ts',
+      'src/app.ts',
+      'src/node_modules',
+      'src/node_modules/x.js',
+    ])
+  })
+
+  test('. pattern is ignored and never drops the root', async () => {
+    const all = await rel('.', [])
+    expect(await rel('.', ['.', './', ''])).toEqual(all)
+    expect(await rel('.', ['.*', '*'])).toEqual(['.'])
+  })
+
+  test('copying a path inside an ignored directory finds nothing', async () => {
+    expect(await rel('node_modules/pkg', ['node_modules'])).toEqual([])
+  })
+
+  test('! re-includes paths, last matching pattern wins', async () => {
+    expect(await rel('.', ['*', ' !src ', 'src/generated'])).toEqual(
+      ['.', 'src/app.spec.ts', ...srcFiles].sort()
+    )
+    expect(
+      await rel('.', [
+        'node_modules',
+        '!node_modules/pkg/index.js',
+        '*',
+        '!node_modules',
+      ])
+    ).toEqual([
+      '.',
+      'node_modules',
+      'node_modules/pkg',
+      'node_modules/pkg/index.js',
+    ])
+  })
+
+  test('! keeps the excluded parent directories of re-included paths', async () => {
+    const reincluded = ['node_modules/pkg', 'node_modules/pkg/index.js']
+    expect(
+      await rel('node_modules', ['node_modules', '!node_modules/pkg/index.js'])
+    ).toEqual(['node_modules', ...reincluded])
+    expect(await rel('.', ['*', '!node_modules/pkg/index.js'])).toEqual([
+      '.',
+      'node_modules',
+      ...reincluded,
+    ])
+  })
+
+  test('wildcard ! patterns re-include paths inside excluded directories', async () => {
+    expect(await rel('.', ['*', '!src/**/*.ts'])).toEqual([
+      '.',
+      'src',
+      'src/app.spec.ts',
+      'src/app.ts',
+      'src/generated',
+      'src/generated/api.ts',
+    ])
+    expect(await rel('.', ['*', '!**/index.js'])).toEqual([
+      '.',
+      'node_modules',
+      'node_modules/pkg',
+      'node_modules/pkg/index.js',
+    ])
+  })
+
+  test.runIf(process.platform === 'darwin' || process.platform === 'win32')(
+    'matches case-insensitively on macOS and Windows',
+    async () => {
+      expect(await rel('src', ['SRC/GENERATED', 'src/APP.*'])).toEqual([
+        'src',
+        'src/node_modules',
+        'src/node_modules/x.js',
+      ])
+    }
+  )
+
+  test('files hash ignores changes to ignored directory contents', async () => {
+    const hash = () =>
+      calculateFilesHash('.', '/app', ctx, ['.git'], false, undefined)
+    const before = await hash()
+    await appendFile(join(ctx, '.git', 'HEAD'), 'x')
+    expect(await hash()).toBe(before)
+  })
+})
+
+describe('Template ignore patterns', () => {
+  test('fileIgnorePatterns take precedence over .dockerignore and may be absolute', async () => {
+    const ctx = await mkdtemp(join(tmpdir(), 'template-ignore-test-'))
+    try {
+      await writeFile(join(ctx, 'app.ts'), 'x')
+      await writeFile(join(ctx, 'secret.txt'), 'x')
+      await writeFile(join(ctx, '.dockerignore'), '!secret.txt\n')
+      const filesHash = async () => {
+        const template = Template({
+          fileContextPath: ctx,
+          fileIgnorePatterns: [join(ctx, 'secret.txt')],
+        })
+          .fromImage('node:22')
+          .copy('.', '/app')
+        return JSON.parse(await Template.toJSON(template)).steps[0].filesHash
+      }
+
+      const before = await filesHash()
+      await appendFile(join(ctx, 'secret.txt'), 'x')
+      expect(await filesHash()).toBe(before)
+    } finally {
+      await rm(ctx, { recursive: true, force: true })
+    }
   })
 })
