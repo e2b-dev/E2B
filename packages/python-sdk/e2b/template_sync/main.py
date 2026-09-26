@@ -24,7 +24,7 @@ from e2b.template_sync.build_api import (
     upload_file,
     wait_for_build_finish,
 )
-from e2b.template.utils import normalize_build_arguments, read_dockerignore
+from e2b.template.utils import normalize_build_arguments
 
 
 class Template(TemplateBase):
@@ -131,10 +131,7 @@ class Template(TemplateBase):
                     src,
                     template._template._file_context_path,
                     file_info.url,
-                    [
-                        *template._template._file_ignore_patterns,
-                        *read_dockerignore(template._template._file_context_path),
-                    ],
+                    template._template._get_ignore_patterns(),
                     resolve_symlinks,
                     gzip,
                     stack_trace,

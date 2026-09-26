@@ -50,6 +50,7 @@ import {
   normalizeBuildArguments,
   padOctal,
   readDockerignore,
+  relativizeIgnorePattern,
   readGCPServiceAccountJSON,
   validateRelativePath,
 } from './utils'
@@ -86,6 +87,20 @@ export class TemplateBase
       (runtime === 'browser' ? '.' : (getCallerDirectory() ?? '.'))
     this.fileIgnorePatterns =
       options?.fileIgnorePatterns ?? this.fileIgnorePatterns
+  }
+
+  /**
+   * Get the ignore patterns for copied files: the .dockerignore lines, then
+   * fileIgnorePatterns, so that fileIgnorePatterns take precedence.
+   */
+  private getIgnorePatterns(): string[] {
+    const contextPath = this.fileContextPath.toString()
+    return [
+      ...(runtime === 'browser' ? [] : readDockerignore(contextPath)),
+      ...this.fileIgnorePatterns.map((pattern) =>
+        relativizeIgnorePattern(pattern, contextPath)
+      ),
+    ]
   }
 
   /**
@@ -1132,10 +1147,7 @@ export class TemplateBase
               fileContextPath: this.fileContextPath.toString(),
               url,
               headers,
-              ignorePatterns: [
-                ...this.fileIgnorePatterns,
-                ...readDockerignore(this.fileContextPath.toString()),
-              ],
+              ignorePatterns: this.getIgnorePatterns(),
               resolveSymlinks: instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
               gzip: instruction.gzip ?? GZIP,
             },
@@ -1223,12 +1235,7 @@ export class TemplateBase
             src,
             dest,
             this.fileContextPath.toString(),
-            [
-              ...this.fileIgnorePatterns,
-              ...(runtime === 'browser'
-                ? []
-                : readDockerignore(this.fileContextPath.toString())),
-            ],
+            this.getIgnorePatterns(),
             instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
             stackTrace
           ),

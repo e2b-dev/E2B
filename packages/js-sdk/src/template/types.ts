@@ -14,7 +14,8 @@ export type TemplateOptions = {
    */
   fileContextPath?: PathLike
   /**
-   * Array of glob patterns to ignore when copying files.
+   * Array of patterns to ignore when copying files, in .dockerignore syntax.
+   * They are applied after the patterns in the context's .dockerignore file.
    */
   fileIgnorePatterns?: string[]
 }

@@ -1,5 +1,6 @@
 import hashlib
 import os
+import posixpath
 import tarfile
 import tempfile
 import json
@@ -114,7 +115,7 @@ def read_dockerignore(context_path: str) -> List[str]:
     if not os.path.exists(dockerignore_path):
         return []
 
-    with open(dockerignore_path, "r", encoding="utf-8") as f:
+    with open(dockerignore_path, "r", encoding="utf-8-sig") as f:
         content = f.read()
 
     return [
@@ -122,6 +123,24 @@ def read_dockerignore(context_path: str) -> List[str]:
         for line in content.split("\n")
         if line.strip() and not line.strip().startswith("#")
     ]
+
+
+def relativize_ignore_pattern(pattern: str, context_path: str) -> str:
+    """
+    Make an absolute ignore pattern that points inside the context relative to
+    it. Other patterns are returned as they are.
+
+    :param pattern: Ignore pattern, optionally negated with `!`
+    :param context_path: Context directory
+    :return: The ignore pattern
+    """
+    pattern = pattern.strip()
+    negation = "!" if pattern.startswith("!") else ""
+    target = os.path.normpath(pattern[len(negation) :].strip())
+    context_prefix = os.path.join(os.path.abspath(context_path), "")
+    if os.path.isabs(target) and target.startswith(context_prefix):
+        return negation + target[len(context_prefix) :]
+    return pattern
 
 
 def normalize_path(path: str) -> str:
@@ -132,6 +151,71 @@ def normalize_path(path: str) -> str:
     :return: The normalized path
     """
     return path.replace(os.sep, "/")
+
+
+class _IgnoreMatcher:
+    """
+    Apply ignore patterns like Docker applies .dockerignore: patterns are
+    relative to the context, a pattern excludes a path when it matches the path
+    or one of its parent directories, and the last matching pattern wins, so
+    `!` patterns re-include paths. The context root is never excluded.
+    """
+
+    def __init__(self, patterns: List[str]):
+        self._rules = []
+        for line in patterns:
+            line = line.strip()
+            negate = line.startswith("!")
+            pattern = (line[1:] if negate else line).strip()
+            # Clean the pattern like Docker: drop `./`, resolve `..` and strip
+            # leading and trailing slashes
+            pattern = normalize_path(os.path.normpath(pattern)).strip("/")
+            # Docker ignores the pattern `.`
+            if pattern and pattern != ".":
+                matcher = glob.compile(pattern, flags=glob.GLOBSTAR | glob.DOTMATCH)
+                self._rules.append((negate, pattern, matcher))
+        # Like BuildKit, skip excluded directories only when every `!` pattern
+        # is a literal path, as a wildcard one may match anywhere inside them
+        self._can_skip = not any(
+            negate and any(c in pattern for c in "*?[\\")
+            for negate, pattern, _ in self._rules
+        )
+        self._last_match_cache = {"": -1}
+
+    def _last_match(self, path: str) -> int:
+        """
+        Index of the last rule that matches the path or one of its parent
+        directories, -1 if none. Reuses the cached result of the parent.
+        """
+        if path not in self._last_match_cache:
+            last = self._last_match(path.rpartition("/")[0])
+            for i in range(len(self._rules) - 1, last, -1):
+                matcher = self._rules[i][2]
+                # Test `dir/` too, so `dir/**` excludes the directory itself
+                if matcher.match(path) or matcher.match(path + "/"):
+                    last = i
+                    break
+            self._last_match_cache[path] = last
+        return self._last_match_cache[path]
+
+    def ignored(self, path: str) -> bool:
+        """:param path: Path relative to the context, with forward slashes"""
+        path = "/".join(p for p in path.split("/") if p not in ("", "."))
+        last = self._last_match(path)
+        return last != -1 and not self._rules[last][0]
+
+    def children_ignored(self, path: str) -> bool:
+        """
+        Whether a directory can be skipped: it is excluded and no `!` pattern
+        may re-include a path inside it (the same prefix check Docker does).
+        """
+        if not self._can_skip or not self.ignored(path):
+            return False
+        prefix = path.rstrip("/") + "/"
+        return not any(
+            negate and (pattern + "/").startswith(prefix)
+            for negate, pattern, _ in self._rules
+        )
 
 
 def get_all_files_in_path(
@@ -145,39 +229,65 @@ def get_all_files_in_path(
 
     :param src: Path to the source directory
     :param context_path: Base directory for resolving relative paths
-    :param ignore_patterns: Ignore patterns
+    :param ignore_patterns: Ignore patterns, in .dockerignore syntax
     :param include_directories: Whether to include directories
     :return: Array of files
     """
     files = set()
+    abs_context_path = os.path.abspath(context_path)
+    ignore = _IgnoreMatcher(ignore_patterns)
+
+    # Resolve `.` and `..` segments, so glob results are relative to the
+    # context like the ignore patterns
+    if src:
+        normalized = posixpath.normpath(normalize_path(src))
+        src = (
+            normalized + "/" if src.endswith("/") and normalized != "." else normalized
+        )
 
     # Use glob to find all files/directories matching the pattern under context_path
-    abs_context_path = os.path.abspath(context_path)
     files_glob = glob.glob(
         src,
         flags=glob.GLOBSTAR | glob.DOTMATCH,
         root_dir=abs_context_path,
-        exclude=ignore_patterns,
     )
 
     for file in files_glob:
         # Join it with abs_context_path to get the absolute path
-        file_path = os.path.join(abs_context_path, file)
+        file_path = os.path.normpath(os.path.join(abs_context_path, file))
+        excluded = ignore.ignored(normalize_path(file))
 
-        if os.path.isdir(file_path):
-            # If it's a directory, add the directory and all entries recursively
-            if include_directories:
+        if not os.path.isdir(file_path):
+            if not excluded:
                 files.add(file_path)
-            dir_files = glob.glob(
-                normalize_path(file) + "/**/*",
-                flags=glob.GLOBSTAR | glob.DOTMATCH,
-                root_dir=abs_context_path,
-                exclude=ignore_patterns,
-            )
-            for dir_file in dir_files:
-                dir_file_path = os.path.join(abs_context_path, dir_file)
-                files.add(dir_file_path)
-        else:
+            continue
+
+        # If it's a directory, add all entries recursively
+        found = False
+        if not ignore.children_ignored(normalize_path(file)):
+            for root, dir_names, file_names in os.walk(file_path):
+                root_rel = normalize_path(os.path.relpath(root, abs_context_path))
+                prefix = "" if root_rel == "." else root_rel + "/"
+                for name in dir_names + file_names:
+                    if ignore.ignored(prefix + name):
+                        continue
+                    files.add(os.path.join(root, name))
+                    found = True
+                    # Keep the excluded parent directories of a re-included
+                    # path, like Docker
+                    parent = root
+                    while parent != file_path and parent not in files:
+                        files.add(parent)
+                        parent = os.path.dirname(parent)
+                # Don't descend into excluded directories
+                dir_names[:] = [
+                    name
+                    for name in dir_names
+                    if not ignore.children_ignored(prefix + name)
+                ]
+
+        # Add the directory itself, also when excluded but with re-included paths
+        if include_directories and (found or not excluded):
             files.add(file_path)
 
     return sorted(list(files))
@@ -200,7 +310,7 @@ def calculate_files_hash(
     :param src: Source path pattern for files to copy
     :param dest: Destination path where files will be copied
     :param context_path: Base directory for resolving relative paths
-    :param ignore_patterns: Glob patterns to ignore
+    :param ignore_patterns: Ignore patterns, in .dockerignore syntax
     :param resolve_symlinks: Whether to resolve symbolic links when hashing
     :param stack_trace: Optional stack trace for error reporting
 
@@ -217,7 +327,10 @@ def calculate_files_hash(
     files = get_all_files_in_path(src, context_path, ignore_patterns, True)
 
     if len(files) == 0:
-        raise ValueError(f"No files found in {src_path}").with_traceback(stack_trace)
+        raise ValueError(
+            f"No files found in {src_path}. Check that the path exists in the "
+            "context and is not excluded by .dockerignore or file_ignore_patterns."
+        ).with_traceback(stack_trace)
 
     def hash_stats(stat_info: os.stat_result) -> None:
         # Only include stable metadata (mode, size)
