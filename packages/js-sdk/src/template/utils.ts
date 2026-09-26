@@ -325,7 +325,9 @@ export async function calculateFilesHash(
   const files = await getAllFilesInPath(src, contextPath, ignorePatterns, true)
 
   if (files.length === 0) {
-    const error = new Error(`No files found in ${srcPath}`)
+    const error = new Error(
+      `No files found in ${srcPath}. Check that the path exists in the context and is not excluded by .dockerignore or fileIgnorePatterns.`
+    )
     if (stackTrace) {
       error.stack = stackTrace
     }

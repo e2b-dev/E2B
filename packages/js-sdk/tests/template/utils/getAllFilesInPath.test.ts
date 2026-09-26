@@ -499,6 +499,19 @@ describe('getAllFilesInPath dockerignore semantics', () => {
     }
   )
 
+  test('files hash error for an ignored source mentions ignore patterns', async () => {
+    await expect(
+      calculateFilesHash(
+        'node_modules/pkg',
+        '/app',
+        ctx,
+        ['node_modules'],
+        false,
+        undefined
+      )
+    ).rejects.toThrow(/excluded by \.dockerignore or fileIgnorePatterns/)
+  })
+
   test('files hash ignores changes to ignored directory contents', async () => {
     const hash = () =>
       calculateFilesHash('.', '/app', ctx, ['.git'], false, undefined)

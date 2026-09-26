@@ -327,7 +327,10 @@ def calculate_files_hash(
     files = get_all_files_in_path(src, context_path, ignore_patterns, True)
 
     if len(files) == 0:
-        raise ValueError(f"No files found in {src_path}").with_traceback(stack_trace)
+        raise ValueError(
+            f"No files found in {src_path}. Check that the path exists in the "
+            "context and is not excluded by .dockerignore or file_ignore_patterns."
+        ).with_traceback(stack_trace)
 
     def hash_stats(stat_info: os.stat_result) -> None:
         # Only include stable metadata (mode, size)

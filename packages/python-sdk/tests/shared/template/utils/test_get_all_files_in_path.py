@@ -460,6 +460,14 @@ class TestDockerignoreSemantics:
             "node_modules/pkg/index.js",
         ]
 
+    def test_files_hash_error_for_ignored_source_mentions_ignore_patterns(self, ctx):
+        with pytest.raises(
+            ValueError, match=r"excluded by \.dockerignore or file_ignore_patterns"
+        ):
+            calculate_files_hash(
+                "node_modules/pkg", "/app", ctx, ["node_modules"], False, None
+            )
+
     def test_files_hash_ignores_changes_to_ignored_directory_contents(self, ctx):
         def files_hash():
             return calculate_files_hash(".", "/app", ctx, [".git"], False, None)
