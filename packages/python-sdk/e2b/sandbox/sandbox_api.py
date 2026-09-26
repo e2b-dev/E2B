@@ -100,6 +100,44 @@ GitHubMcpServer = Dict[str, Union[GitHubMcpServerConfig, Any]]
 # Union type that combines base MCP servers with GitHub-based servers
 McpServer = Union[BaseMcpServer, GitHubMcpServer]
 
+# Wire names the mcp-gateway expects for GitHub MCP server configs.
+# The documented Python form of GitHubMcpServerConfig is snake_case, but the
+# gateway only recognizes camelCase, so these keys are renamed before the
+# config is serialized into `mcp-gateway --config <json>`.
+_github_mcp_server_wire_names: Dict[str, str] = {
+    "run_cmd": "runCmd",
+    "install_cmd": "installCmd",
+}
+
+
+def build_mcp_wire_config(mcp: McpServer) -> Dict[str, Any]:
+    """Map a user-facing :data:`McpServer` config to the wire form the mcp-gateway expects.
+
+    Entries keyed ``"github/owner/repo"`` have their documented snake_case keys
+    (``run_cmd``/``install_cmd``) renamed to the camelCase names the gateway
+    recognizes (``runCmd``/``installCmd``). Base server entries and all other
+    keys pass through unchanged. An explicitly spelled wire key (e.g. ``runCmd``)
+    always wins over its snake_case alias. The input dict is never mutated.
+    """
+    wire: Dict[str, Any] = {}
+    for server, config in mcp.items():
+        if (
+            isinstance(server, str)
+            and server.startswith("github/")
+            and isinstance(config, dict)
+        ):
+            mapped: Dict[str, Any] = {}
+            for key, value in config.items():
+                wire_key = _github_mcp_server_wire_names.get(key, key)
+                # An explicitly spelled wire key wins over its snake_case alias,
+                # regardless of dict order.
+                if wire_key == key or wire_key not in config:
+                    mapped[wire_key] = value
+            wire[server] = mapped
+        else:
+            wire[server] = config
+    return wire
+
 
 class SandboxNetworkTransform(TypedDict):
     """
