@@ -85,7 +85,6 @@ class Filesystem:
         connection_config: ConnectionConfig,
         envd_api: httpx.Client,
     ) -> None:
-        self._envd_api_url = envd_api_url
         self._envd_version = envd_version
         self._connection_config = connection_config
         self._rpc = create_rpc_client(
