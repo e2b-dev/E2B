@@ -720,3 +720,27 @@ test.each([
     expect(lastDeletePath).toBeUndefined()
   }
 )
+
+test.each([
+  ['a non-string state', { entry: 'sqlite', state: { name: 'db' } }, 'state'],
+  ['an empty state', { entry: 'sqlite', state: '' }, 'state'],
+  [
+    'a string stateVersion',
+    { entry: 'sqlite', state: 'db', stateVersion: '2' },
+    'stateVersion',
+  ],
+  [
+    'a zero stateVersion',
+    { entry: 'sqlite', state: 'db', stateVersion: 0 },
+    'stateVersion',
+  ],
+])('create rejects %s by name', async (_, sidecar, field) => {
+  const err = await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    sidecars: [sidecar as any],
+  }).catch((e: unknown) => e)
+
+  expect(err).toBeInstanceOf(InvalidArgumentError)
+  expect((err as Error).message).toContain(`sidecars[0].${field}`)
+  expect(lastCreateBody).toBeUndefined()
+})

@@ -1092,3 +1092,25 @@ async def test_the_async_state_endpoints_reject_an_empty_name(
 
     get_state.assert_not_called()
     delete_name.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "sidecar, field",
+    [
+        pytest.param({"entry": "sqlite", "state": {"name": "db"}}, "state", id="state"),
+        pytest.param({"entry": "sqlite", "state": ""}, "state", id="empty-state"),
+        pytest.param(
+            {"entry": "sqlite", "state": "db", "state_version": "2"},
+            "state_version",
+            id="state-version-string",
+        ),
+        pytest.param(
+            {"entry": "sqlite", "state": "db", "state_version": 0},
+            "state_version",
+            id="state-version-zero",
+        ),
+    ],
+)
+def test_create_rejects_a_malformed_attached_state_by_name(sidecar, field):
+    with pytest.raises(InvalidArgumentException, match=f"sidecars\\[0\\].{field}"):
+        build_sidecars_body([cast(Any, sidecar)])

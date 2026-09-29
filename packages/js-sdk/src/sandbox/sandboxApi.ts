@@ -1363,9 +1363,21 @@ function buildSidecarsBody(
       ...(sidecar.version != null ? { version: sidecar.version } : {}),
       ...(sidecar.config != null ? { config: sidecar.config } : {}),
       ...(sidecar.secrets != null ? { secrets: sidecar.secrets } : {}),
-      ...(sidecar.state != null ? { state: sidecar.state } : {}),
+      ...(sidecar.state != null
+        ? {
+            state: validateSidecarStateName(
+              `sidecars[${i}].state`,
+              sidecar.state
+            ),
+          }
+        : {}),
       ...(sidecar.stateVersion != null
-        ? { stateVersion: sidecar.stateVersion }
+        ? {
+            stateVersion: validateSidecarStateVersion(
+              `sidecars[${i}].stateVersion`,
+              sidecar.stateVersion
+            ),
+          }
         : {}),
     }
   }) as NonNullable<components['schemas']['NewSandbox']['sidecars']>
@@ -1395,12 +1407,14 @@ function fromApiSidecars(
   }))
 }
 
-function validateSidecarStateName(name: unknown): void {
+function validateSidecarStateName(what: string, name: unknown): string {
   if (typeof name !== 'string' || name === '') {
     throw new InvalidArgumentError(
-      `name must be a non-empty sidecar state name, got ${describeValue(name)}.`
+      `${what} must be a non-empty sidecar state name, got ${describeValue(name)}.`
     )
   }
+
+  return name
 }
 
 /**
@@ -1408,7 +1422,7 @@ function validateSidecarStateName(name: unknown): void {
  * plain positive integer can resolve to another route: `'..'` collapses
  * `/sidecar-states/{name}/versions/..` back onto the name itself.
  */
-function validateSidecarStateVersion(what: string, version: unknown): void {
+function validateSidecarStateVersion(what: string, version: unknown): number {
   if (
     typeof version !== 'number' ||
     !Number.isSafeInteger(version) ||
@@ -1418,6 +1432,8 @@ function validateSidecarStateVersion(what: string, version: unknown): void {
       `Invalid ${what}=${JSON.stringify(version) ?? describeValue(version)}: expected a positive integer.`
     )
   }
+
+  return version
 }
 
 function fromApiSidecarState(
@@ -1884,7 +1900,7 @@ export class SandboxApi extends ClientFactory {
       )
     }
 
-    validateSidecarStateName(name)
+    validateSidecarStateName('name', name)
 
     const apiOpts = this.resolveOpts(opts)
     const config = new ConnectionConfig(apiOpts)
@@ -1966,7 +1982,7 @@ export class SandboxApi extends ClientFactory {
     name: string,
     opts?: SandboxApiOpts
   ): Promise<SidecarStateInfo & { versions: SidecarStateVersionInfo[] }> {
-    validateSidecarStateName(name)
+    validateSidecarStateName('name', name)
 
     const apiOpts = this.resolveOpts(opts)
     const config = new ConnectionConfig(apiOpts)
@@ -2007,7 +2023,7 @@ export class SandboxApi extends ClientFactory {
     name: string,
     opts?: SidecarStateDeleteOpts
   ): Promise<void> {
-    validateSidecarStateName(name)
+    validateSidecarStateName('name', name)
 
     if (opts?.version !== undefined) {
       validateSidecarStateVersion('version', opts.version)

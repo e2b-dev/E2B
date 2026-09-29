@@ -1052,8 +1052,12 @@ def build_sidecars_body(
             secrets.additional_properties = dict(sidecar["secrets"])
             attachment.secrets = secrets
         if sidecar.get("state") is not None:
+            validate_sidecar_state_name(f"sidecars[{i}].state", sidecar["state"])
             attachment.state = sidecar["state"]
         if sidecar.get("state_version") is not None:
+            validate_sidecar_state_version(
+                f"sidecars[{i}].state_version", sidecar["state_version"]
+            )
             attachment.state_version = sidecar["state_version"]
         body.append(attachment)
 
@@ -1122,10 +1126,10 @@ def validate_sidecar_state_version(what: str, version: int) -> None:
         )
 
 
-def validate_sidecar_state_name(name: str) -> None:
+def validate_sidecar_state_name(what: str, name: str) -> None:
     if not isinstance(name, str) or not name:
         raise InvalidArgumentException(
-            f"name must be a non-empty sidecar state name, got {name!r}."
+            f"{what} must be a non-empty sidecar state name, got {name!r}."
         )
 
 
@@ -1135,7 +1139,7 @@ def validate_sidecar_state_args(entry: str, name: str) -> None:
             "entry must be the catalog entry of one of the sandbox's sidecars "
             f"(e.g. 'sqlite'), got {entry!r}."
         )
-    validate_sidecar_state_name(name)
+    validate_sidecar_state_name("name", name)
 
 
 def from_client_sidecars(

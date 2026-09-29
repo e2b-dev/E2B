@@ -307,7 +307,7 @@ class SandboxApi(SandboxBase):
 
         :return: The state and its versions
         """
-        validate_sidecar_state_name(name)
+        validate_sidecar_state_name("name", name)
 
         config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
@@ -343,7 +343,7 @@ class SandboxApi(SandboxBase):
         :param name: Name of the state
         :param version: Version to delete, defaults to every version under the name
         """
-        validate_sidecar_state_name(name)
+        validate_sidecar_state_name("name", name)
         if version is not None:
             validate_sidecar_state_version("version", version)
 
