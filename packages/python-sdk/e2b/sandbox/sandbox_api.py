@@ -73,6 +73,27 @@ from e2b.sandbox.network import ALL_TRAFFIC
 from e2b.paginator import PaginatorBase
 
 
+MAX_FORK_COUNT = 20
+
+
+def validate_fork_count(count: Any) -> None:
+    """Reject a fork count the SDK will not send.
+
+    ``None`` is left off the request so the API default applies.
+    """
+    if count is None:
+        return
+    if (
+        isinstance(count, bool)
+        or not isinstance(count, int)
+        or count < 1
+        or count > MAX_FORK_COUNT
+    ):
+        raise InvalidArgumentException(
+            f"count must be an integer between 1 and {MAX_FORK_COUNT}"
+        )
+
+
 class GitHubMcpServerConfig(TypedDict):
     """
     Configuration for a GitHub-based MCP server.
