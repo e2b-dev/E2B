@@ -1395,6 +1395,14 @@ function fromApiSidecars(
   }))
 }
 
+function validateSidecarStateName(name: unknown): void {
+  if (typeof name !== 'string' || name === '') {
+    throw new InvalidArgumentError(
+      `name must be a non-empty sidecar state name, got ${describeValue(name)}.`
+    )
+  }
+}
+
 /**
  * A version selector is interpolated into the request path, so anything but a
  * plain positive integer can resolve to another route: `'..'` collapses
@@ -1876,11 +1884,7 @@ export class SandboxApi extends ClientFactory {
       )
     }
 
-    if (typeof name !== 'string' || name === '') {
-      throw new InvalidArgumentError(
-        `name must be a non-empty sidecar state name, got ${describeValue(name)}.`
-      )
-    }
+    validateSidecarStateName(name)
 
     const apiOpts = this.resolveOpts(opts)
     const config = new ConnectionConfig(apiOpts)
@@ -1962,6 +1966,8 @@ export class SandboxApi extends ClientFactory {
     name: string,
     opts?: SandboxApiOpts
   ): Promise<SidecarStateInfo & { versions: SidecarStateVersionInfo[] }> {
+    validateSidecarStateName(name)
+
     const apiOpts = this.resolveOpts(opts)
     const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
@@ -2001,6 +2007,8 @@ export class SandboxApi extends ClientFactory {
     name: string,
     opts?: SidecarStateDeleteOpts
   ): Promise<void> {
+    validateSidecarStateName(name)
+
     if (opts?.version !== undefined) {
       validateSidecarStateVersion('version', opts.version)
     }

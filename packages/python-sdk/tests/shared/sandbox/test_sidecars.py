@@ -1057,3 +1057,38 @@ def test_a_traversing_version_would_have_widened_the_delete():
 
     assert widened.url.path == "/sidecar-states/project-db"
     assert retargeted.url.path == "/sidecar-states/warm-cache"
+
+
+@pytest.mark.parametrize("name", ["", None, 5])
+def test_the_state_endpoints_reject_a_name_that_is_not_a_non_empty_string(
+    monkeypatch, test_api_key, name
+):
+    get_state = Mock(return_value=_response(200))
+    delete_name = Mock(return_value=_response(204))
+    monkeypatch.setattr(get_sidecar_states_name, "sync_detailed", get_state)
+    monkeypatch.setattr(delete_sidecar_states_name, "sync_detailed", delete_name)
+
+    with pytest.raises(InvalidArgumentException, match="non-empty"):
+        Sandbox.get_sidecar_state(cast(Any, name), api_key=test_api_key)
+    with pytest.raises(InvalidArgumentException, match="non-empty"):
+        Sandbox.delete_sidecar_state(cast(Any, name), api_key=test_api_key)
+
+    get_state.assert_not_called()
+    delete_name.assert_not_called()
+
+
+async def test_the_async_state_endpoints_reject_an_empty_name(
+    monkeypatch, test_api_key
+):
+    get_state = AsyncMock(return_value=_response(200))
+    delete_name = AsyncMock(return_value=_response(204))
+    monkeypatch.setattr(get_sidecar_states_name, "asyncio_detailed", get_state)
+    monkeypatch.setattr(delete_sidecar_states_name, "asyncio_detailed", delete_name)
+
+    with pytest.raises(InvalidArgumentException, match="non-empty"):
+        await AsyncSandbox.get_sidecar_state("", api_key=test_api_key)
+    with pytest.raises(InvalidArgumentException, match="non-empty"):
+        await AsyncSandbox.delete_sidecar_state("", api_key=test_api_key)
+
+    get_state.assert_not_called()
+    delete_name.assert_not_called()

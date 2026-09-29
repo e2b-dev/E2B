@@ -1122,16 +1122,20 @@ def validate_sidecar_state_version(what: str, version: int) -> None:
         )
 
 
+def validate_sidecar_state_name(name: str) -> None:
+    if not isinstance(name, str) or not name:
+        raise InvalidArgumentException(
+            f"name must be a non-empty sidecar state name, got {name!r}."
+        )
+
+
 def validate_sidecar_state_args(entry: str, name: str) -> None:
     if not isinstance(entry, str) or not entry:
         raise InvalidArgumentException(
             "entry must be the catalog entry of one of the sandbox's sidecars "
             f"(e.g. 'sqlite'), got {entry!r}."
         )
-    if not isinstance(name, str) or not name:
-        raise InvalidArgumentException(
-            f"name must be a non-empty sidecar state name, got {name!r}."
-        )
+    validate_sidecar_state_name(name)
 
 
 def from_client_sidecars(

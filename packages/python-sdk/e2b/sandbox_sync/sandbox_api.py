@@ -85,6 +85,7 @@ from e2b.sandbox.sandbox_api import (
     from_client_sidecar_state_version,
     sidecar_api_exception,
     validate_sidecar_state_args,
+    validate_sidecar_state_name,
     validate_sidecar_state_version,
 )
 from e2b.sandbox_sync.paginator import SandboxPaginator, get_api_client
@@ -305,6 +306,8 @@ class SandboxApi(SandboxBase):
 
         :return: The state and its versions
         """
+        validate_sidecar_state_name(name)
+
         config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
         api_client = get_api_client(config)
@@ -339,6 +342,7 @@ class SandboxApi(SandboxBase):
         :param name: Name of the state
         :param version: Version to delete, defaults to every version under the name
         """
+        validate_sidecar_state_name(name)
         if version is not None:
             validate_sidecar_state_version("version", version)
 

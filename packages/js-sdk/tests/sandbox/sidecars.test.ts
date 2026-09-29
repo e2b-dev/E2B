@@ -701,3 +701,22 @@ test.each([
     expect(lastDeletePath).toBeUndefined()
   }
 )
+
+test.each([
+  [
+    'getSidecarState',
+    (name: string) => Sandbox.getSidecarState(name, { apiKey: TEST_API_KEY }),
+  ],
+  [
+    'deleteSidecarState',
+    (name: string) =>
+      Sandbox.deleteSidecarState(name, { apiKey: TEST_API_KEY }),
+  ],
+])(
+  '%s rejects an empty name instead of addressing the list route',
+  async (_, call) => {
+    await expect(call('')).rejects.toThrowError(InvalidArgumentError)
+
+    expect(lastDeletePath).toBeUndefined()
+  }
+)
