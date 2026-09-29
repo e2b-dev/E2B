@@ -1041,7 +1041,7 @@ export interface paths {
         post?: never;
         /**
          * Delete sidecar state
-         * @description Delete a saved sidecar state and every version under it. A sandbox that attached one of the versions holds its own copy and is unaffected. A 400 response carries sidecar_state_flag_off; a 404 response carries sidecar_state_unknown.
+         * @description Delete a saved sidecar state and every version under it. A running sandbox that attached one of the versions holds its own copy and is unaffected; a creation still restoring one fails instead. A 400 response carries sidecar_state_flag_off; a 404 response carries sidecar_state_unknown.
          */
         delete: {
             parameters: {
@@ -1085,7 +1085,7 @@ export interface paths {
         post?: never;
         /**
          * Delete sidecar state version
-         * @description Delete one version of a saved sidecar state. Deleting the last version deletes the name. A sandbox that attached the version holds its own copy and is unaffected. A 400 response carries sidecar_state_flag_off; a 404 response carries sidecar_state_unknown or sidecar_state_version_unknown.
+         * @description Delete one version of a saved sidecar state. Deleting the last version deletes the name. A running sandbox that attached the version holds its own copy and is unaffected; a creation still restoring the version fails instead. A 400 response carries sidecar_state_flag_off; a 404 response carries sidecar_state_unknown or sidecar_state_version_unknown.
          */
         delete: {
             parameters: {
@@ -2969,7 +2969,7 @@ export interface components {
             secrets?: {
                 [key: string]: string;
             };
-            /** @description Name of one of the team's saved sidecar states; a copy of its latest version (or stateVersion) is attached. The state's entry must equal this attachment's entry. Attaching copies: the sandbox never writes the saved version, and deleting the version never affects a sandbox that attached it. A name outside the accepted pattern is answered with the sidecar_state_name_invalid error code rather than a schema rejection. */
+            /** @description Name of one of the team's saved sidecar states; a copy of its latest version (or stateVersion) is attached. The state's entry must equal this attachment's entry. Attaching copies: the sandbox never writes the saved version, and once the sandbox is running, deleting the version does not affect it. A version deleted while a creation is still restoring it fails that creation instead. A name outside the accepted pattern is answered with the sidecar_state_name_invalid error code rather than a schema rejection. */
             state?: string;
             /** @description Version of the saved state to attach. When omitted, the latest version under the name is attached. */
             stateVersion?: number;

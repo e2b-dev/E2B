@@ -2014,8 +2014,9 @@ export class SandboxApi extends ClientFactory {
   /**
    * Delete a named sidecar state, or one version of it.
    *
-   * Deleting the last version deletes the name. A sandbox that attached a
-   * version runs on its own copy and is not affected.
+   * Deleting the last version deletes the name. A running sandbox that
+   * attached a version holds its own copy and is unaffected; a creation still
+   * restoring the version fails instead.
    *
    * Requires the team's `sandbox-sidecar-states` feature.
    *

@@ -66,9 +66,9 @@ def sync_detailed(
 ) -> Response[Union[Any, Error]]:
     """Delete sidecar state
 
-     Delete a saved sidecar state and every version under it. A sandbox that attached one of the versions
-    holds its own copy and is unaffected. A 400 response carries sidecar_state_flag_off; a 404 response
-    carries sidecar_state_unknown.
+     Delete a saved sidecar state and every version under it. A running sandbox that attached one of the
+    versions holds its own copy and is unaffected; a creation still restoring one fails instead. A 400
+    response carries sidecar_state_flag_off; a 404 response carries sidecar_state_unknown.
 
     Args:
         name (str):
@@ -99,9 +99,9 @@ def sync(
 ) -> Optional[Union[Any, Error]]:
     """Delete sidecar state
 
-     Delete a saved sidecar state and every version under it. A sandbox that attached one of the versions
-    holds its own copy and is unaffected. A 400 response carries sidecar_state_flag_off; a 404 response
-    carries sidecar_state_unknown.
+     Delete a saved sidecar state and every version under it. A running sandbox that attached one of the
+    versions holds its own copy and is unaffected; a creation still restoring one fails instead. A 400
+    response carries sidecar_state_flag_off; a 404 response carries sidecar_state_unknown.
 
     Args:
         name (str):
@@ -127,9 +127,9 @@ async def asyncio_detailed(
 ) -> Response[Union[Any, Error]]:
     """Delete sidecar state
 
-     Delete a saved sidecar state and every version under it. A sandbox that attached one of the versions
-    holds its own copy and is unaffected. A 400 response carries sidecar_state_flag_off; a 404 response
-    carries sidecar_state_unknown.
+     Delete a saved sidecar state and every version under it. A running sandbox that attached one of the
+    versions holds its own copy and is unaffected; a creation still restoring one fails instead. A 400
+    response carries sidecar_state_flag_off; a 404 response carries sidecar_state_unknown.
 
     Args:
         name (str):
@@ -158,9 +158,9 @@ async def asyncio(
 ) -> Optional[Union[Any, Error]]:
     """Delete sidecar state
 
-     Delete a saved sidecar state and every version under it. A sandbox that attached one of the versions
-    holds its own copy and is unaffected. A 400 response carries sidecar_state_flag_off; a 404 response
-    carries sidecar_state_unknown.
+     Delete a saved sidecar state and every version under it. A running sandbox that attached one of the
+    versions holds its own copy and is unaffected; a creation still restoring one fails instead. A 400
+    response carries sidecar_state_flag_off; a 404 response carries sidecar_state_unknown.
 
     Args:
         name (str):

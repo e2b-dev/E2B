@@ -68,10 +68,10 @@ def sync_detailed(
 ) -> Response[Union[Any, Error]]:
     """Delete sidecar state version
 
-     Delete one version of a saved sidecar state. Deleting the last version deletes the name. A sandbox
-    that attached the version holds its own copy and is unaffected. A 400 response carries
-    sidecar_state_flag_off; a 404 response carries sidecar_state_unknown or
-    sidecar_state_version_unknown.
+     Delete one version of a saved sidecar state. Deleting the last version deletes the name. A running
+    sandbox that attached the version holds its own copy and is unaffected; a creation still restoring
+    the version fails instead. A 400 response carries sidecar_state_flag_off; a 404 response carries
+    sidecar_state_unknown or sidecar_state_version_unknown.
 
     Args:
         name (str):
@@ -105,10 +105,10 @@ def sync(
 ) -> Optional[Union[Any, Error]]:
     """Delete sidecar state version
 
-     Delete one version of a saved sidecar state. Deleting the last version deletes the name. A sandbox
-    that attached the version holds its own copy and is unaffected. A 400 response carries
-    sidecar_state_flag_off; a 404 response carries sidecar_state_unknown or
-    sidecar_state_version_unknown.
+     Delete one version of a saved sidecar state. Deleting the last version deletes the name. A running
+    sandbox that attached the version holds its own copy and is unaffected; a creation still restoring
+    the version fails instead. A 400 response carries sidecar_state_flag_off; a 404 response carries
+    sidecar_state_unknown or sidecar_state_version_unknown.
 
     Args:
         name (str):
@@ -137,10 +137,10 @@ async def asyncio_detailed(
 ) -> Response[Union[Any, Error]]:
     """Delete sidecar state version
 
-     Delete one version of a saved sidecar state. Deleting the last version deletes the name. A sandbox
-    that attached the version holds its own copy and is unaffected. A 400 response carries
-    sidecar_state_flag_off; a 404 response carries sidecar_state_unknown or
-    sidecar_state_version_unknown.
+     Delete one version of a saved sidecar state. Deleting the last version deletes the name. A running
+    sandbox that attached the version holds its own copy and is unaffected; a creation still restoring
+    the version fails instead. A 400 response carries sidecar_state_flag_off; a 404 response carries
+    sidecar_state_unknown or sidecar_state_version_unknown.
 
     Args:
         name (str):
@@ -172,10 +172,10 @@ async def asyncio(
 ) -> Optional[Union[Any, Error]]:
     """Delete sidecar state version
 
-     Delete one version of a saved sidecar state. Deleting the last version deletes the name. A sandbox
-    that attached the version holds its own copy and is unaffected. A 400 response carries
-    sidecar_state_flag_off; a 404 response carries sidecar_state_unknown or
-    sidecar_state_version_unknown.
+     Delete one version of a saved sidecar state. Deleting the last version deletes the name. A running
+    sandbox that attached the version holds its own copy and is unaffected; a creation still restoring
+    the version fails instead. A 400 response carries sidecar_state_flag_off; a 404 response carries
+    sidecar_state_unknown or sidecar_state_version_unknown.
 
     Args:
         name (str):
