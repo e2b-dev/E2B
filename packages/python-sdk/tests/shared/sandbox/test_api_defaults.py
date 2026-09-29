@@ -136,7 +136,7 @@ def test_fork_sends_the_maximum_count(monkeypatch, test_api_key):
     assert body["count"] == 20
 
 
-@pytest.mark.parametrize("count", [0, 21, 101, 1.5, True, "abc"])
+@pytest.mark.parametrize("count", [0, -1, 21, 101, 1.5, True, "abc"])
 def test_fork_rejects_count_outside_1_to_20(monkeypatch, test_api_key, count):
     request = Mock(return_value=SimpleNamespace(status_code=200, parsed=[]))
     monkeypatch.setattr(post_sandboxes_sandbox_id_fork, "sync_detailed", request)
@@ -170,7 +170,7 @@ async def test_async_fork_sends_the_maximum_count(monkeypatch, test_api_key):
     assert body["count"] == 20
 
 
-@pytest.mark.parametrize("count", [0, 21, 101, 1.5, True, "abc"])
+@pytest.mark.parametrize("count", [0, -1, 21, 101, 1.5, True, "abc"])
 async def test_async_fork_rejects_count_outside_1_to_20(
     monkeypatch, test_api_key, count
 ):

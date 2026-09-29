@@ -130,7 +130,7 @@ describe('sandbox fork', () => {
     expect(exitSpy).toHaveBeenCalledWith(0)
   })
 
-  test.each(['0', '21', '101', '1.5', 'abc'])(
+  test.each(['0', '-1', '21', '101', '1.5', 'abc'])(
     'rejects count %s',
     async (count: string) => {
       await expect(runFork(['source-id', '--count', count])).rejects.toThrow(
