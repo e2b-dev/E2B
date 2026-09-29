@@ -77,6 +77,12 @@ export interface FilesystemEvent {
  * Use {@link WatchHandle.stop} to stop watching the directory.
  */
 export class WatchHandle {
+  /**
+   * Set by {@link WatchHandle.stop} so the stream abort it triggers is
+   * treated as a clean, user-initiated end rather than an error.
+   */
+  private stopped = false
+
   constructor(
     private readonly handleStop: () => void,
     private readonly events: AsyncIterable<WatchDirResponse>,
@@ -91,6 +97,7 @@ export class WatchHandle {
    * Stop watching the directory.
    */
   async stop() {
+    this.stopped = true
     this.handleStop()
   }
 
@@ -130,7 +137,12 @@ export class WatchHandle {
         })
       }
     } catch (err) {
-      iterationError = err as Error
+      // `stop()` aborts the stream, which surfaces here as an error (a
+      // Connect cancellation, mapped to `TimeoutError`). A user-initiated
+      // stop is a clean end, so it must not reach `onExit` as an error.
+      if (!this.stopped) {
+        iterationError = err as Error
+      }
     }
 
     try {
