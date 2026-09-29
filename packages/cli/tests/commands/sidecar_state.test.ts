@@ -1,6 +1,13 @@
 import * as commander from 'commander'
-import { describe, expect, test } from 'vitest'
-import { SidecarStateInfo, SidecarStateVersionInfo } from 'e2b'
+import { afterEach, describe, expect, test, vi } from 'vitest'
+import {
+  NotFoundError,
+  Sandbox,
+  SidecarStateInfo,
+  SidecarStateVersionInfo,
+} from 'e2b'
+
+vi.mock('src/api', () => ({ ensureAPIKey: () => 'test-api-key' }))
 
 import {
   formatSidecarStateTable,
@@ -96,5 +103,48 @@ describe('sidecar-state delete --version', () => {
   test('accepts a plain decimal integer', () => {
     expect(parseVersionOption('2')).toBe(2)
     expect(parseVersionOption('012')).toBe(12)
+  })
+})
+
+describe('sidecar-state delete not-found reporting', () => {
+  const strip = (value: string) =>
+    // eslint-disable-next-line no-control-regex
+    value.replace(/\u001b\[[0-9;]*m/g, '')
+
+  async function runDelete(args: string[]): Promise<string> {
+    const errors: string[] = []
+    // One long-lived Command per process in the CLI, one per test here.
+    sidecarStateCommand.commands
+      .find((command) => command.name() === 'delete')
+      ?.setOptionValue('version', undefined)
+    vi.spyOn(Sandbox, 'deleteSidecarState').mockRejectedValue(
+      new NotFoundError('sidecar_state_version_unknown: version 9 not found')
+    )
+    vi.spyOn(console, 'error').mockImplementation((...parts: unknown[]) => {
+      errors.push(parts.map(String).join(' '))
+    })
+    vi.spyOn(process, 'exit').mockImplementation((() => {
+      throw new Error('exit')
+    }) as never)
+
+    await expect(
+      sidecarStateCommand.parseAsync(['delete', ...args], { from: 'user' })
+    ).rejects.toThrow('exit')
+
+    return strip(errors.join('\n'))
+  }
+
+  afterEach(() => vi.restoreAllMocks())
+
+  test('names the version when one was asked for', async () => {
+    expect(await runDelete(['project-db', '--version', '9'])).toBe(
+      "Version 9 of sidecar state project-db wasn't found"
+    )
+  })
+
+  test('names the state when the whole name was asked for', async () => {
+    expect(await runDelete(['project-db'])).toBe(
+      "Sidecar state project-db wasn't found"
+    )
   })
 })

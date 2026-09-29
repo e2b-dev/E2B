@@ -114,7 +114,16 @@ const deleteCommand = new commander.Command('delete')
       )
     } catch (err: any) {
       if (err instanceof NotFoundError) {
-        console.error(`Sidecar state ${asBold(name)} wasn't found`)
+        // The 404 is either an unknown name or an unknown version, and the
+        // SDK maps both to NotFoundError; naming the version is true of both
+        // when one was asked for.
+        console.error(
+          options.version === undefined
+            ? `Sidecar state ${asBold(name)} wasn't found`
+            : `Version ${asBold(
+                String(options.version)
+              )} of sidecar state ${asBold(name)} wasn't found`
+        )
       } else {
         console.error(err)
       }
