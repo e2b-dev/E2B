@@ -84,11 +84,13 @@ test('Sandbox.create sends explicit timeout and allow_internet_access', async ()
   expect(lastCreateBody?.allow_internet_access).toBe(false)
 })
 
-test('Sandbox.fork omits timeout and count when unset', async () => {
+test('Sandbox.fork sends the 5-minute timeout and omits count when unset', async () => {
   await Sandbox.fork('test-sandbox-id', { apiKey: TEST_API_KEY })
 
   expect(lastForkBody).toBeDefined()
-  expect(lastForkBody).not.toHaveProperty('timeout')
+  // The fork endpoint's own default is 15 seconds, so the SDK keeps sending
+  // the 5 minutes it documents.
+  expect(lastForkBody?.timeout).toBe(300)
   expect(lastForkBody).not.toHaveProperty('count')
 })
 

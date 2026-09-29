@@ -451,8 +451,16 @@ class SandboxApi(SandboxBase):
         res = await post_sandboxes_sandbox_id_fork.asyncio_detailed(
             sandbox_id,
             client=api_client,
+            # Unlike create and connect, the fork endpoint has no v2 route: an
+            # omitted timeout falls back to the legacy 15-second default, which
+            # is not a usable sandbox lifetime. Send the 5 minutes the SDK
+            # documents until the API's own fork default matches it.
             body=SandboxForkRequest(
-                timeout=timeout if timeout is not None else UNSET,
+                timeout=(
+                    timeout
+                    if timeout is not None
+                    else SandboxBase.default_sandbox_timeout
+                ),
                 count=count if count is not None else UNSET,
             ),
         )
