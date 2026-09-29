@@ -1395,6 +1395,23 @@ function fromApiSidecars(
   }))
 }
 
+/**
+ * A version selector is interpolated into the request path, so anything but a
+ * plain positive integer can resolve to another route: `'..'` collapses
+ * `/sidecar-states/{name}/versions/..` back onto the name itself.
+ */
+function validateSidecarStateVersion(what: string, version: unknown): void {
+  if (
+    typeof version !== 'number' ||
+    !Number.isSafeInteger(version) ||
+    version < 1
+  ) {
+    throw new InvalidArgumentError(
+      `Invalid ${what}=${JSON.stringify(version) ?? describeValue(version)}: expected a positive integer.`
+    )
+  }
+}
+
 function fromApiSidecarState(
   state: components['schemas']['SidecarState']
 ): SidecarStateInfo {
@@ -1984,6 +2001,10 @@ export class SandboxApi extends ClientFactory {
     name: string,
     opts?: SidecarStateDeleteOpts
   ): Promise<void> {
+    if (opts?.version !== undefined) {
+      validateSidecarStateVersion('version', opts.version)
+    }
+
     const apiOpts = this.resolveOpts(opts)
     const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)

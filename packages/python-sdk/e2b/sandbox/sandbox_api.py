@@ -1112,6 +1112,16 @@ def from_client_sidecar_state(
     )
 
 
+def validate_sidecar_state_version(what: str, version: int) -> None:
+    """A version selector is interpolated into the request path, so anything
+    but a plain positive integer can resolve to another route: ``".."``
+    collapses ``/sidecar-states/{name}/versions/..`` back onto the name."""
+    if isinstance(version, bool) or not isinstance(version, int) or version < 1:
+        raise InvalidArgumentException(
+            f"Invalid {what}={version!r}: expected a positive integer."
+        )
+
+
 def validate_sidecar_state_args(entry: str, name: str) -> None:
     if not isinstance(entry, str) or not entry:
         raise InvalidArgumentException(

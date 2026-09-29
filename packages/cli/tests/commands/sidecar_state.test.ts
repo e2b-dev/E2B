@@ -1,9 +1,11 @@
+import * as commander from 'commander'
 import { describe, expect, test } from 'vitest'
 import { SidecarStateInfo, SidecarStateVersionInfo } from 'e2b'
 
 import {
   formatSidecarStateTable,
   formatSidecarStateVersionTable,
+  parseVersionOption,
   sidecarStateCommand,
 } from '../../src/commands/sidecarState'
 
@@ -78,5 +80,21 @@ describe('sidecar-state tables', () => {
         .map((command: { name: () => string }) => command.name())
         .sort()
     ).toEqual(['delete', 'get', 'list', 'save'])
+  })
+})
+
+describe('sidecar-state delete --version', () => {
+  test.each(['2.9', '2junk', '1e2', '0', '-1', '', ' 2', '0x2'])(
+    'rejects %o instead of coercing it to a version',
+    (value: string) => {
+      expect(() => parseVersionOption(value)).toThrowError(
+        commander.InvalidArgumentError
+      )
+    }
+  )
+
+  test('accepts a plain decimal integer', () => {
+    expect(parseVersionOption('2')).toBe(2)
+    expect(parseVersionOption('012')).toBe(12)
   })
 })

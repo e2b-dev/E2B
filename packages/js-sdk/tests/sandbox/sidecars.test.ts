@@ -680,3 +680,24 @@ test('saveSidecarState on an unknown sandbox is a SandboxNotFoundError', async (
   expect(err).toBeInstanceOf(SandboxNotFoundError)
   expect((err as Error).message).toContain(sandboxId)
 })
+
+test.each([
+  ['a parent segment', '..'],
+  ['another state', '../../warm-cache'],
+  ['a numeric string', '1'],
+  ['a float', 1.5],
+  ['zero', 0],
+  ['a negative', -1],
+])(
+  'deleteSidecarState rejects %s as a version before any request',
+  async (_, version) => {
+    const err = await Sandbox.deleteSidecarState('project-db', {
+      version: version as number,
+      apiKey: TEST_API_KEY,
+    }).catch((e: unknown) => e)
+
+    expect(err).toBeInstanceOf(InvalidArgumentError)
+    expect((err as Error).message).toContain('positive integer')
+    expect(lastDeletePath).toBeUndefined()
+  }
+)

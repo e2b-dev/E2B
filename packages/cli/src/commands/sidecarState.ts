@@ -73,6 +73,20 @@ const getCommand = new commander.Command('get')
     }
   })
 
+/**
+ * `parseInt` reads a prefix: it turns `2.9`, `2junk` and `1e2` into a version
+ * the operator did not ask to delete. The whole argument has to be a decimal
+ * integer.
+ */
+export function parseVersionOption(value: string): number {
+  const version = /^\d+$/.test(value) ? Number(value) : NaN
+  if (!Number.isSafeInteger(version) || version < 1) {
+    throw new commander.InvalidArgumentError('expected a positive integer.')
+  }
+
+  return version
+}
+
 const deleteCommand = new commander.Command('delete')
   .description('delete a saved sidecar state, or one of its versions')
   .argument('<name>', `delete the sidecar state named ${asBold('<name>')}`)
@@ -80,17 +94,11 @@ const deleteCommand = new commander.Command('delete')
   .option(
     '-v, --version <version>',
     'delete only this version; deleting the last version deletes the name',
-    (value) => parseInt(value)
+    parseVersionOption
   )
   .action(async (name: string, options: { version?: number }) => {
     try {
       const apiKey = ensureAPIKey()
-
-      if (options.version !== undefined && !Number.isInteger(options.version)) {
-        console.error('--version must be an integer')
-        process.exit(1)
-        return
-      }
 
       await Sandbox.deleteSidecarState(name, {
         apiKey,

@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from typing import Any, Dict, List, cast
 from unittest.mock import AsyncMock, Mock
 
+import httpx
 import pytest
 from dateutil.parser import isoparse
 
@@ -996,3 +997,63 @@ def test_list_sidecar_states_surfaces_the_flag_being_off(monkeypatch, test_api_k
 
     with pytest.raises(InvalidArgumentException, match="sidecar_state_flag_off"):
         Sandbox.list_sidecar_states(api_key=test_api_key)
+
+
+@pytest.mark.parametrize(
+    "version",
+    [
+        pytest.param("..", id="parent-segment"),
+        pytest.param("../../warm-cache", id="another-state"),
+        pytest.param("1", id="numeric-string"),
+        pytest.param(1.5, id="float"),
+        pytest.param(0, id="zero"),
+        pytest.param(-1, id="negative"),
+        pytest.param(True, id="bool"),
+    ],
+)
+def test_delete_sidecar_state_rejects_a_version_that_is_not_a_positive_int(
+    monkeypatch, test_api_key, version
+):
+    delete_name = Mock(return_value=_response(204))
+    delete_version = Mock(return_value=_response(204))
+    monkeypatch.setattr(delete_sidecar_states_name, "sync_detailed", delete_name)
+    monkeypatch.setattr(
+        delete_sidecar_states_name_versions_version, "sync_detailed", delete_version
+    )
+
+    with pytest.raises(InvalidArgumentException, match="positive integer"):
+        Sandbox.delete_sidecar_state(
+            "project-db", version=cast(Any, version), api_key=test_api_key
+        )
+
+    delete_name.assert_not_called()
+    delete_version.assert_not_called()
+
+
+async def test_async_delete_sidecar_state_rejects_a_path_traversing_version(
+    monkeypatch, test_api_key
+):
+    delete_version = AsyncMock(return_value=_response(204))
+    monkeypatch.setattr(
+        delete_sidecar_states_name_versions_version, "asyncio_detailed", delete_version
+    )
+
+    with pytest.raises(InvalidArgumentException, match="positive integer"):
+        await AsyncSandbox.delete_sidecar_state(
+            "project-db", version=cast(Any, ".."), api_key=test_api_key
+        )
+
+    delete_version.assert_not_called()
+
+
+def test_a_traversing_version_would_have_widened_the_delete():
+    """The blast radius the check above prevents, at the layer httpx builds."""
+    client = httpx.Client(base_url="https://api.e2b.dev")
+
+    widened = client.build_request("delete", "/sidecar-states/project-db/versions/..")
+    retargeted = client.build_request(
+        "delete", "/sidecar-states/project-db/versions/../../warm-cache"
+    )
+
+    assert widened.url.path == "/sidecar-states/project-db"
+    assert retargeted.url.path == "/sidecar-states/warm-cache"
