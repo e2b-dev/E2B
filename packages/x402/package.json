@@ -1,0 +1,44 @@
+{
+  "name": "@e2b/x402",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Pay-per-sandbox access to E2B via the x402 protocol (HTTP 402) — no E2B API key or account needed by the caller.",
+  "homepage": "https://e2b.dev",
+  "license": "MIT",
+  "author": {
+    "name": "FoundryLabs, Inc.",
+    "email": "hello@e2b.dev",
+    "url": "https://e2b.dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/e2b-dev/e2b",
+    "directory": "packages/x402"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev:server": "tsx src/devServer.ts",
+    "dev:mock-facilitator": "node src/mockFacilitator.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@x402/core": "^2.27.0",
+    "@x402/evm": "^2.27.0",
+    "@x402/express": "^2.27.0",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.0.0",
+    "@x402/fetch": "^2.27.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.7.0",
+    "viem": "^2.57.0",
+    "vitest": "^2.1.5"
+  },
+  "keywords": ["e2b", "x402", "agents", "payments", "sandbox", "mcp"]
+}
