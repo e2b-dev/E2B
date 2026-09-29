@@ -744,3 +744,12 @@ test.each([
   expect((err as Error).message).toContain(`sidecars[0].${field}`)
   expect(lastCreateBody).toBeUndefined()
 })
+
+test('a wire null on the state fields is no state, as in Python', async () => {
+  infoSidecars = [{ ...valkeyInfo, stateName: null, stateVersion: null }]
+
+  const info = await Sandbox.getInfo(sandboxId, { apiKey: TEST_API_KEY })
+
+  expect(info.sidecars?.[0]).not.toHaveProperty('stateName')
+  expect(info.sidecars?.[0]).not.toHaveProperty('stateVersion')
+})

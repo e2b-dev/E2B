@@ -1398,10 +1398,13 @@ function fromApiSidecars(
     ...(sidecar.lastError !== undefined
       ? { lastError: sidecar.lastError }
       : {}),
-    ...(sidecar.stateName !== undefined
+    // A wire null is "not attached from a state", not a value: the CLI's
+    // saved-state column would otherwise read `null:null`. The Python twin
+    // normalizes the same two fields.
+    ...(typeof sidecar.stateName === 'string'
       ? { stateName: sidecar.stateName }
       : {}),
-    ...(sidecar.stateVersion !== undefined
+    ...(typeof sidecar.stateVersion === 'number'
       ? { stateVersion: sidecar.stateVersion }
       : {}),
   }))
