@@ -25,6 +25,11 @@ from e2b.envd.process.process_connect import ProcessClient, ProcessClientSync
 from e2b.envd.process.process_pb import ConnectRequest
 from transport_caches import reset_transport_caches
 
+# Production `sandbox.e2b.app` advertises 100 concurrent streams per
+# connection; the SDK dials another once a pool carries that many.
+STREAMS_PER_CONNECTION = 100
+WAVE = 80
+
 
 def sandbox_config(sandbox_id: str) -> ConnectionConfig:
     return ConnectionConfig(
@@ -36,55 +41,124 @@ def sandbox_config(sandbox_id: str) -> ConnectionConfig:
     )
 
 
-def test_sync_envd_spreads_repeated_waves_across_reused_connections(monkeypatch):
-    """Fresh sync sandboxes keep filling the same four pools evenly."""
-    monkeypatch.setattr(api, "envd_pool_shards", 4)
-    reset_transport_caches()
-    build_transport = api_client_sync.SyncHTTPTransport
+def force_http2(monkeypatch, module, name):
+    # Production negotiates HTTP/2 over TLS. The frame server is plaintext, so
+    # force prior knowledge while retaining the production factory/cache.
+    build_transport = getattr(module, name)
 
     def build_http2_transport(**kwargs):
-        # Production negotiates HTTP/2 over TLS. The frame server is plaintext,
-        # so force prior knowledge while retaining the production factory/cache.
         kwargs["http_version"] = HTTPVersion.HTTP2
         return build_transport(**kwargs)
 
-    monkeypatch.setattr(api_client_sync, "SyncHTTPTransport", build_http2_transport)
+    monkeypatch.setattr(module, name, build_http2_transport)
+
+
+def active_streams(pool) -> list:
+    # Every stream in these tests goes to the frame server's one origin.
+    return [
+        sum(connection.active.values())
+        for connection in pool._transport.balancer.connections
+    ]
+
+
+def wave_counts(server, since: int) -> Counter:
+    return Counter(connection_id for connection_id, _ in server.streams[since:])
+
+
+def connections_used(server) -> int:
+    # Connections that carried a stream: hyper may race an extra dial for a
+    # fresh pool under concurrent requests and drop it unused.
+    return len(wave_counts(server, 0))
+
+
+def test_sync_envd_dials_connections_as_streams_fill_them(monkeypatch):
+    """Three waves of 80 sync streams: the first fits one connection, the
+    second spills onto a second, the third onto a third — and closed streams
+    hand their slots back so a fourth wave dials nothing new."""
+    monkeypatch.setattr(api, "streams_per_connection", STREAMS_PER_CONNECTION)
+    monkeypatch.setattr(api, "max_connections", 200)
+    reset_transport_caches()
+    force_http2(monkeypatch, api_client_sync, "SyncHTTPTransport")
+
+    streams = []
+
+    def open_wave(server, wave):
+        wave_streams = []
+        for index in range(WAVE):
+            client = create_sync_rpc_client(
+                ProcessClientSync,
+                f"http://127.0.0.1:{server.port}",
+                sandbox_config(f"sbx-wave-{wave}-{index}"),
+            )
+            wave_streams.append(as_sync_stream(client.connect(ConnectRequest())))
+        streams.extend(wave_streams)
+        with ThreadPoolExecutor(max_workers=len(wave_streams)) as executor:
+            futures = [executor.submit(next, stream) for stream in wave_streams]
+            assert len([future.result(timeout=2) for future in futures]) == WAVE
+        return wave_streams
+
+    try:
+        with stream_capacity_server(
+            max_concurrent_streams=STREAMS_PER_CONNECTION
+        ) as server:
+            pool = api_client_sync.get_pyqwest_transport(None)
+
+            first = open_wave(server, 0)
+            assert connections_used(server) == 1
+            assert active_streams(pool) == [80]
+
+            open_wave(server, 1)
+            assert connections_used(server) == 2
+            assert active_streams(pool) == [100, 60]
+            assert sorted(wave_counts(server, 80).values()) == [20, 60]
+
+            open_wave(server, 2)
+            assert connections_used(server) == 3
+            assert active_streams(pool) == [100, 100, 40]
+            assert len(server.active_streams) == 240
+
+            # Closing a stream resets it and frees its slot on the connection
+            # that carried it, so the next wave reuses that headroom instead
+            # of dialing.
+            for stream in first:
+                stream.close()
+            assert active_streams(pool) == [20, 100, 40]
+
+            open_wave(server, 3)
+            assert connections_used(server) == 3
+            assert active_streams(pool) == [70, 100, 70]
+            assert len(server.streams) == 320
+            server.assert_no_errors()
+    finally:
+        for stream in streams:
+            stream.close()
+        reset_transport_caches()
+
+
+def test_sync_envd_stops_dialing_at_the_connection_cap(monkeypatch):
+    monkeypatch.setattr(api, "streams_per_connection", 10)
+    monkeypatch.setattr(api, "max_connections", 2)
+    reset_transport_caches()
+    force_http2(monkeypatch, api_client_sync, "SyncHTTPTransport")
 
     streams = []
     try:
         with stream_capacity_server(max_concurrent_streams=100) as server:
-            connection_ids = None
-            for wave in range(3):
-                wave_streams = []
-                for index in range(80):
-                    client = create_sync_rpc_client(
-                        ProcessClientSync,
-                        f"http://127.0.0.1:{server.port}",
-                        sandbox_config(f"sbx-wave-{wave}-{index}"),
-                    )
-                    wave_streams.append(
-                        as_sync_stream(client.connect(ConnectRequest()))
-                    )
-                streams.extend(wave_streams)
-
-                stream_count = len(server.streams)
-                with ThreadPoolExecutor(max_workers=len(wave_streams)) as executor:
-                    futures = [executor.submit(next, stream) for stream in wave_streams]
-                    events = [future.result(timeout=2) for future in futures]
-
-                assert len(events) == 80
-                wave_counts = Counter(
-                    connection_id for connection_id, _ in server.streams[stream_count:]
+            for index in range(30):
+                client = create_sync_rpc_client(
+                    ProcessClientSync,
+                    f"http://127.0.0.1:{server.port}",
+                    sandbox_config(f"sbx-{index}"),
                 )
-                assert len(wave_counts) == 4
-                if connection_ids is None:
-                    connection_ids = set(wave_counts)
-                assert set(wave_counts) == connection_ids
-                assert max(wave_counts.values()) - min(wave_counts.values()) <= 2
-                assert len(server.active_streams) == (wave + 1) * 80
+                streams.append(as_sync_stream(client.connect(ConnectRequest())))
+            with ThreadPoolExecutor(max_workers=len(streams)) as executor:
+                futures = [executor.submit(next, stream) for stream in streams]
+                assert len([future.result(timeout=2) for future in futures]) == 30
 
-            assert len(server.connections) == 4
-            assert len(server.streams) == 240
+            pool = api_client_sync.get_pyqwest_transport(None)
+            assert connections_used(server) == 2
+            assert active_streams(pool) == [15, 15]
+            assert sorted(wave_counts(server, 0).values()) == [15, 15]
             server.assert_no_errors()
     finally:
         for stream in streams:
@@ -93,60 +167,93 @@ def test_sync_envd_spreads_repeated_waves_across_reused_connections(monkeypatch)
 
 
 @pytest.mark.asyncio
-async def test_async_envd_spreads_repeated_waves_across_reused_connections(
-    monkeypatch,
-):
-    """Fresh async sandboxes keep filling the same four pools evenly."""
-    monkeypatch.setattr(api, "envd_pool_shards", 4)
+async def test_async_envd_dials_connections_as_streams_fill_them(monkeypatch):
+    monkeypatch.setattr(api, "streams_per_connection", STREAMS_PER_CONNECTION)
+    monkeypatch.setattr(api, "max_connections", 200)
     reset_transport_caches()
-    build_transport = api_client_async.HTTPTransport
+    force_http2(monkeypatch, api_client_async, "HTTPTransport")
 
-    def build_http2_transport(**kwargs):
-        # Production negotiates HTTP/2 over TLS. The frame server is plaintext,
-        # so force prior knowledge while retaining the production factory/cache.
-        kwargs["http_version"] = HTTPVersion.HTTP2
-        return build_transport(**kwargs)
+    streams = []
 
-    monkeypatch.setattr(api_client_async, "HTTPTransport", build_http2_transport)
+    async def open_wave(server, wave):
+        wave_streams = []
+        for index in range(WAVE):
+            client = create_async_rpc_client(
+                ProcessClient,
+                f"http://127.0.0.1:{server.port}",
+                sandbox_config(f"sbx-wave-{wave}-{index}"),
+            )
+            wave_streams.append(as_async_stream(client.connect(ConnectRequest())))
+        streams.extend(wave_streams)
+        events = await asyncio.gather(
+            *(first_event(stream, 0.5) for stream in wave_streams),
+            return_exceptions=True,
+        )
+        assert not [event for event in events if isinstance(event, BaseException)]
+        return wave_streams
+
+    try:
+        with stream_capacity_server(
+            max_concurrent_streams=STREAMS_PER_CONNECTION
+        ) as server:
+            pool = api_client_async.get_pyqwest_transport(None)
+
+            first = await open_wave(server, 0)
+            assert connections_used(server) == 1
+            assert active_streams(pool) == [80]
+
+            await open_wave(server, 1)
+            assert connections_used(server) == 2
+            assert active_streams(pool) == [100, 60]
+            assert sorted(wave_counts(server, 80).values()) == [20, 60]
+
+            await open_wave(server, 2)
+            assert connections_used(server) == 3
+            assert active_streams(pool) == [100, 100, 40]
+            assert len(server.active_streams) == 240
+
+            await asyncio.gather(*(stream.aclose() for stream in first))
+            assert active_streams(pool) == [20, 100, 40]
+
+            await open_wave(server, 3)
+            assert connections_used(server) == 3
+            assert active_streams(pool) == [70, 100, 70]
+            assert len(server.streams) == 320
+            server.assert_no_errors()
+    finally:
+        await asyncio.gather(
+            *(stream.aclose() for stream in streams), return_exceptions=True
+        )
+        reset_transport_caches()
+
+
+@pytest.mark.asyncio
+async def test_async_envd_stops_dialing_at_the_connection_cap(monkeypatch):
+    monkeypatch.setattr(api, "streams_per_connection", 10)
+    monkeypatch.setattr(api, "max_connections", 2)
+    reset_transport_caches()
+    force_http2(monkeypatch, api_client_async, "HTTPTransport")
 
     streams = []
     try:
         with stream_capacity_server(max_concurrent_streams=100) as server:
-            connection_ids = None
-            for wave in range(3):
-                wave_streams = []
-                for index in range(80):
-                    client = create_async_rpc_client(
-                        ProcessClient,
-                        f"http://127.0.0.1:{server.port}",
-                        sandbox_config(f"sbx-wave-{wave}-{index}"),
-                    )
-                    wave_streams.append(
-                        as_async_stream(client.connect(ConnectRequest()))
-                    )
-                streams.extend(wave_streams)
-
-                stream_count = len(server.streams)
-                events = await asyncio.gather(
-                    *(first_event(stream, 0.5) for stream in wave_streams),
-                    return_exceptions=True,
+            for index in range(30):
+                client = create_async_rpc_client(
+                    ProcessClient,
+                    f"http://127.0.0.1:{server.port}",
+                    sandbox_config(f"sbx-{index}"),
                 )
+                streams.append(as_async_stream(client.connect(ConnectRequest())))
+            events = await asyncio.gather(
+                *(first_event(stream, 0.5) for stream in streams),
+                return_exceptions=True,
+            )
+            assert not [event for event in events if isinstance(event, BaseException)]
 
-                assert not [
-                    event for event in events if isinstance(event, BaseException)
-                ]
-                wave_counts = Counter(
-                    connection_id for connection_id, _ in server.streams[stream_count:]
-                )
-                assert len(wave_counts) == 4
-                if connection_ids is None:
-                    connection_ids = set(wave_counts)
-                assert set(wave_counts) == connection_ids
-                assert max(wave_counts.values()) - min(wave_counts.values()) <= 2
-                assert len(server.active_streams) == (wave + 1) * 80
-
-            assert len(server.connections) == 4
-            assert len(server.streams) == 240
+            pool = api_client_async.get_pyqwest_transport(None)
+            assert connections_used(server) == 2
+            assert active_streams(pool) == [15, 15]
+            assert sorted(wave_counts(server, 0).values()) == [15, 15]
             server.assert_no_errors()
     finally:
         await asyncio.gather(
