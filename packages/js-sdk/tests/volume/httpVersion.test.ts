@@ -1,4 +1,4 @@
-import { afterEach, assert, test, vi } from 'vitest'
+import { afterEach, expect, test, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   createApiFetch: vi.fn(() => vi.fn()),
@@ -35,27 +35,36 @@ async function createContentClient(
 test('volume content fetch defaults to HTTP/2', async () => {
   await createContentClient()
 
-  assert.deepEqual(mocks.createApiFetch.mock.calls[0], [undefined, '2'])
+  expect(mocks.createApiFetch.mock.calls[0][0]).toMatchObject({
+    proxy: undefined,
+    httpVersion: '2',
+  })
 })
 
 test('volume content fetch follows the httpVersion kept on the instance', async () => {
   await createContentClient('1.1', { proxy: 'http://127.0.0.1:8080' })
 
-  assert.deepEqual(mocks.createApiFetch.mock.calls[0], [
-    'http://127.0.0.1:8080',
-    '1.1',
-  ])
+  expect(mocks.createApiFetch.mock.calls[0][0]).toMatchObject({
+    proxy: 'http://127.0.0.1:8080',
+    httpVersion: '1.1',
+  })
 })
 
 test('a per-call httpVersion overrides the instance value', async () => {
   await createContentClient('1.1', { httpVersion: '2' })
 
-  assert.deepEqual(mocks.createApiFetch.mock.calls[0], [undefined, '2'])
+  expect(mocks.createApiFetch.mock.calls[0][0]).toMatchObject({
+    proxy: undefined,
+    httpVersion: '2',
+  })
 })
 
 test('E2B_HTTP_VERSION=1.1 pins volume content fetch to HTTP/1.1', async () => {
   process.env.E2B_HTTP_VERSION = '1.1'
   await createContentClient()
 
-  assert.deepEqual(mocks.createApiFetch.mock.calls[0], [undefined, '1.1'])
+  expect(mocks.createApiFetch.mock.calls[0][0]).toMatchObject({
+    proxy: undefined,
+    httpVersion: '1.1',
+  })
 })

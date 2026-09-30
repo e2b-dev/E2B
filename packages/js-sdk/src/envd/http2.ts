@@ -1,5 +1,6 @@
 import { runtime } from '../utils'
 import { DEFAULT_HTTP_VERSION, type HttpVersion } from '../connectionConfig'
+import type { FetchOpts } from '../api/http2'
 import { parseInflightLimitEnv, parsePositiveIntEnv } from '../api/metadata'
 import {
   buildDispatchedFetch,
@@ -46,10 +47,10 @@ function fetcherKey(
   return `${httpVersion}:${proxy ?? ''}`
 }
 
-export function createEnvdFetch(
-  proxy?: string,
-  httpVersion: HttpVersion = DEFAULT_HTTP_VERSION
-): typeof fetch {
+export function createEnvdFetch({
+  proxy,
+  httpVersion = DEFAULT_HTTP_VERSION,
+}: FetchOpts = {}): typeof fetch {
   const key = fetcherKey(proxy, httpVersion)
 
   const cached = envdFetchers.get(key)
@@ -69,10 +70,10 @@ export function createEnvdFetch(
   return envdFetch
 }
 
-export function createEnvdRpcFetch(
-  proxy?: string,
-  httpVersion: HttpVersion = DEFAULT_HTTP_VERSION
-): typeof fetch {
+export function createEnvdRpcFetch({
+  proxy,
+  httpVersion = DEFAULT_HTTP_VERSION,
+}: FetchOpts = {}): typeof fetch {
   const key = fetcherKey(proxy, httpVersion)
 
   const cached = envdRpcFetchers.get(key)

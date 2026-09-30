@@ -165,6 +165,7 @@ _httpx_transports: Dict[_TransportKey, PyqwestTransport] = {}
 def get_pyqwest_transport(
     proxy: Optional[ProxyConfig],
     read_timeout: Optional[float] = None,
+    *,
     http_version: HttpVersion = DEFAULT_HTTP_VERSION,
 ) -> ConnectionRetryTransport:
     """The shared pyqwest transport with the SDK's tuning — system CA certs
@@ -223,6 +224,7 @@ def get_pyqwest_transport(
 def get_httpx_transport(
     proxy: Optional[ProxyConfig],
     read_timeout: Optional[float] = None,
+    *,
     http_version: HttpVersion = DEFAULT_HTTP_VERSION,
 ) -> PyqwestTransport:
     """The httpx adapter over the shared transport of
@@ -232,7 +234,7 @@ def get_httpx_transport(
     intact for the other clients on it."""
     key = (proxy, read_timeout, http_version)
     # Resolve the pool before taking the lock: it takes the same one.
-    pool = get_pyqwest_transport(proxy, read_timeout, http_version)
+    pool = get_pyqwest_transport(proxy, read_timeout, http_version=http_version)
     with _transport_lock:
         transport = _httpx_transports.get(key)
         if transport is None:
@@ -243,8 +245,8 @@ def get_httpx_transport(
 
 def get_transport(
     config: ConnectionConfig,
-    http_version: Optional[HttpVersion] = None,
     *,
+    http_version: Optional[HttpVersion] = None,
     for_streaming: bool = False,
 ) -> PyqwestTransport:
     """The shared httpx transport factory for the control-plane REST API and
@@ -271,7 +273,7 @@ def get_transport(
     return get_httpx_transport(
         proxy_to_config(config.proxy),
         READ_TIMEOUT if for_streaming else None,
-        config.http_version if http_version is None else http_version,
+        http_version=(config.http_version if http_version is None else http_version),
     )
 
 

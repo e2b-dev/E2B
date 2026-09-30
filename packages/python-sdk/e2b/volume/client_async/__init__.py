@@ -90,5 +90,5 @@ def get_streaming_transport(
     whenever the two bounds agree.
     """
     return get_httpx_transport(
-        proxy_to_config(config.proxy), READ_TIMEOUT, config.http_version
+        proxy_to_config(config.proxy), READ_TIMEOUT, http_version=config.http_version
     )

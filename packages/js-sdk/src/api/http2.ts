@@ -16,10 +16,15 @@ const DEFAULT_API_INFLIGHT_LIMIT = 1000
 // keep sharing a single dispatcher while each distinct proxy URL gets its own.
 const apiFetchers = new Map<string, typeof fetch>()
 
-export function createApiFetch(
-  proxy?: string,
-  httpVersion: HttpVersion = DEFAULT_HTTP_VERSION
-): typeof fetch {
+export interface FetchOpts {
+  proxy?: string
+  httpVersion?: HttpVersion
+}
+
+export function createApiFetch({
+  proxy,
+  httpVersion = DEFAULT_HTTP_VERSION,
+}: FetchOpts = {}): typeof fetch {
   const key = `${httpVersion}:${proxy ?? ''}`
 
   const cached = apiFetchers.get(key)

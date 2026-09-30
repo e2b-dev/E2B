@@ -107,7 +107,7 @@ class ApiClient {
     this.api = createClient<paths>({
       baseUrl: config.apiUrl,
       fetch: withRetry(
-        createApiFetch(config.proxy, config.httpVersion),
+        createApiFetch(config),
         config.retries,
         config.requestTimeoutMs
       ),

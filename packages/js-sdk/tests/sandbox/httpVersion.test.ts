@@ -1,4 +1,4 @@
-import { afterEach, assert, test, vi } from 'vitest'
+import { afterEach, expect, test, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   createEnvdFetch: vi.fn(() => vi.fn()),
@@ -37,27 +37,39 @@ async function createSandbox(opts: {
 test('envd fetchers default to HTTP/2', async () => {
   await createSandbox({})
 
-  assert.deepEqual(mocks.createEnvdFetch.mock.calls[0], [undefined, '2'])
-  assert.deepEqual(mocks.createEnvdRpcFetch.mock.calls[0], [undefined, '2'])
+  expect(mocks.createEnvdFetch.mock.calls[0][0]).toMatchObject({
+    proxy: undefined,
+    httpVersion: '2',
+  })
+  expect(mocks.createEnvdRpcFetch.mock.calls[0][0]).toMatchObject({
+    proxy: undefined,
+    httpVersion: '2',
+  })
 })
 
 test('httpVersion: 1.1 pins envd HTTP and RPC fetchers to HTTP/1.1', async () => {
   await createSandbox({ httpVersion: '1.1', proxy: 'http://127.0.0.1:8080' })
 
-  assert.deepEqual(mocks.createEnvdFetch.mock.calls[0], [
-    'http://127.0.0.1:8080',
-    '1.1',
-  ])
-  assert.deepEqual(mocks.createEnvdRpcFetch.mock.calls[0], [
-    'http://127.0.0.1:8080',
-    '1.1',
-  ])
+  expect(mocks.createEnvdFetch.mock.calls[0][0]).toMatchObject({
+    proxy: 'http://127.0.0.1:8080',
+    httpVersion: '1.1',
+  })
+  expect(mocks.createEnvdRpcFetch.mock.calls[0][0]).toMatchObject({
+    proxy: 'http://127.0.0.1:8080',
+    httpVersion: '1.1',
+  })
 })
 
 test('E2B_HTTP_VERSION=1.1 pins envd fetchers to HTTP/1.1', async () => {
   process.env.E2B_HTTP_VERSION = '1.1'
   await createSandbox({})
 
-  assert.deepEqual(mocks.createEnvdFetch.mock.calls[0], [undefined, '1.1'])
-  assert.deepEqual(mocks.createEnvdRpcFetch.mock.calls[0], [undefined, '1.1'])
+  expect(mocks.createEnvdFetch.mock.calls[0][0]).toMatchObject({
+    proxy: undefined,
+    httpVersion: '1.1',
+  })
+  expect(mocks.createEnvdRpcFetch.mock.calls[0][0]).toMatchObject({
+    proxy: undefined,
+    httpVersion: '1.1',
+  })
 })

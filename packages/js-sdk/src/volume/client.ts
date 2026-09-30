@@ -136,7 +136,7 @@ class VolumeApiClient {
   constructor(config: VolumeConnectionConfig) {
     this.api = createClient<paths>({
       baseUrl: config.apiUrl,
-      fetch: createApiFetch(config.proxy, config.httpVersion),
+      fetch: createApiFetch(config),
       headers: {
         ...defaultHeaders,
         ...(config.token && { Authorization: `Bearer ${config.token}` }),
