@@ -160,6 +160,46 @@ def test_volume_transports_are_the_shared_sdk_pools(test_api_key):
         reset_volume_transports()
 
 
+def test_volume_transports_follow_the_http_version_option(monkeypatch, test_api_key):
+    reset_volume_transports()
+    monkeypatch.delenv("E2B_HTTP_VERSION", raising=False)
+    http1 = VolumeConnectionConfig(token="vol-token", http_version="1.1")
+    api_http1 = ConnectionConfig(api_key=test_api_key, http_version="1.1")
+    default = VolumeConnectionConfig(token="vol-token")
+
+    try:
+        assert default.http_version == "2"
+        assert http1.get_api_params()["http_version"] == "1.1"
+        for get_transport, get_streaming_transport, api in (
+            (get_sync_transport, get_sync_streaming_transport, api_client_sync),
+            (get_async_transport, get_async_streaming_transport, api_client_async),
+        ):
+            assert get_transport(http1) is api.get_transport(api_http1)
+            assert get_transport(http1) is not get_transport(default)
+            assert get_streaming_transport(http1) is api.get_transport(
+                api_http1, for_streaming=True
+            )
+            assert get_streaming_transport(http1) is not get_streaming_transport(
+                default
+            )
+
+        monkeypatch.setenv("E2B_HTTP_VERSION", "1.1")
+        assert VolumeConnectionConfig(token="vol-token").http_version == "1.1"
+        assert Volume("vol-id", "vol")._get_volume_config().http_version == "1.1"
+        assert (
+            Volume("vol-id", "vol", http_version="2")._get_volume_config().http_version
+            == "2"
+        )
+        assert (
+            AsyncVolume("vol-id", "vol", http_version="2")
+            ._get_volume_config()
+            .http_version
+            == "2"
+        )
+    finally:
+        reset_volume_transports()
+
+
 def test_sync_transport_is_shared_across_threads():
     # pyqwest transports are thread-safe, so one transport (and its pool)
     # serves all threads — the per-thread caching this replaced is gone.

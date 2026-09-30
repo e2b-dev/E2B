@@ -249,3 +249,48 @@ def test_retries_default_to_three_and_propagate():
 def test_retries_reject_invalid_values(retries):
     with pytest.raises(InvalidArgumentException):
         ConnectionConfig(retries=retries)
+
+
+def test_http_version_defaults_to_http2_and_propagates(monkeypatch):
+    monkeypatch.delenv("E2B_HTTP_VERSION", raising=False)
+
+    assert ConnectionConfig().http_version == "2"
+    assert ConnectionConfig().get_api_params()["http_version"] == "2"
+
+    config = ConnectionConfig(http_version="1.1")
+    assert config.http_version == "1.1"
+    # Reconstructed configs (a sandbox's sub-clients) keep the setting, and a
+    # per-call value overrides it.
+    assert config.get_api_params()["http_version"] == "1.1"
+    assert ConnectionConfig(**config.get_api_params()).http_version == "1.1"
+    assert config.get_api_params(http_version="2")["http_version"] == "2"
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [("1.1", "1.1"), ("2", "2"), ("", "2")],
+)
+def test_http_version_reads_env_var(monkeypatch, value, expected):
+    monkeypatch.setenv("E2B_HTTP_VERSION", value)
+
+    assert ConnectionConfig().http_version == expected
+    # The explicit argument wins over the environment.
+    other = "2" if expected == "1.1" else "1.1"
+    assert ConnectionConfig(http_version=other).http_version == other
+
+
+def test_http_version_rejects_unknown_env_value(monkeypatch):
+    monkeypatch.setenv("E2B_HTTP_VERSION", "http3")
+
+    with pytest.raises(InvalidArgumentException, match="E2B_HTTP_VERSION"):
+        ConnectionConfig()
+    # An explicit option never consults the environment.
+    assert ConnectionConfig(http_version="1.1").http_version == "1.1"
+
+
+@pytest.mark.parametrize("value", ["http1", "http2", "1", "2.0", "HTTP/1.1", ""])
+def test_http_version_rejects_unknown_explicit_value(monkeypatch, value):
+    monkeypatch.delenv("E2B_HTTP_VERSION", raising=False)
+
+    with pytest.raises(InvalidArgumentException, match="http_version"):
+        ConnectionConfig(http_version=value)

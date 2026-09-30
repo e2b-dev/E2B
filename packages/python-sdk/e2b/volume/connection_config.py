@@ -6,7 +6,7 @@ from typing import Dict, Optional, TypedDict
 from typing_extensions import Unpack
 
 from e2b.api.metadata import package_version
-from e2b.connection_config import ProxyTypes
+from e2b.connection_config import HttpVersion, ProxyTypes, resolve_http_version
 
 REQUEST_TIMEOUT: float = 60.0  # 60 seconds
 
@@ -53,6 +53,11 @@ class VolumeApiParams(TypedDict, total=False):
     proxy: Optional[ProxyTypes]
     """Proxy to use for the request."""
 
+    http_version: Optional[HttpVersion]
+    """HTTP version for requests to the volume content API, defaults to
+    `E2B_HTTP_VERSION` environment variable or `"2"` (see
+    `e2b.connection_config.ApiParams.http_version`)."""
+
     logger: Optional[logging.Logger]
     """Logger used for request and response logging. Accepts a standard library `logging.Logger`."""
 
@@ -98,6 +103,8 @@ class VolumeConnectionConfig:
         headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
         logger: Optional[logging.Logger] = None,
+        *,
+        http_version: Optional[HttpVersion] = None,
     ):
         self.logger = logger
         self.domain = domain or self._domain()
@@ -111,6 +118,7 @@ class VolumeConnectionConfig:
         self.access_token = token
         self.token = self.access_token
         self.proxy = proxy
+        self.http_version: HttpVersion = resolve_http_version(http_version)
 
         self.headers = dict(headers) if headers else {}
         self.headers["User-Agent"] = f"e2b-python-sdk/{package_version}"
@@ -136,6 +144,7 @@ class VolumeConnectionConfig:
         token = opts.get("token")
         api_url = opts.get("api_url")
         proxy = opts.get("proxy")
+        http_version = opts.get("http_version")
         logger = opts.get("logger")
 
         req_headers = self.headers.copy()
@@ -151,6 +160,9 @@ class VolumeConnectionConfig:
                 request_timeout=self.get_request_timeout(request_timeout),
                 headers=req_headers,
                 proxy=proxy if proxy is not None else self.proxy,
+                http_version=(
+                    http_version if http_version is not None else self.http_version
+                ),
                 logger=logger if logger is not None else self.logger,
             )
         )
