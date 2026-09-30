@@ -114,27 +114,27 @@ describe('sandbox fork', () => {
     expect(exitSpy).toHaveBeenCalledWith(1)
   })
 
-  test('accepts the maximum count', async () => {
+  test('leaves the count limit to the API', async () => {
     mocks.fork.mockResolvedValue(
-      Array.from({ length: 20 }, (_, index) => ({
+      Array.from({ length: 101 }, (_, index) => ({
         sandboxId: `fork-${index + 1}`,
       }))
     )
 
-    const { exitSpy } = await runFork(['source-id', '--count', '20'])
+    const { exitSpy } = await runFork(['source-id', '--count', '101'])
 
     expect(mocks.fork).toHaveBeenCalledWith('source-id', {
       apiKey: 'test-api-key',
-      count: 20,
+      count: 101,
     })
     expect(exitSpy).toHaveBeenCalledWith(0)
   })
 
-  test.each(['0', '-1', '21', '101', '1.5', 'abc'])(
+  test.each(['0', '-1', '1.5', 'abc'])(
     'rejects count %s',
     async (count: string) => {
       await expect(runFork(['source-id', '--count', count])).rejects.toThrow(
-        '--count must be an integer between 1 and 20'
+        '--count must be a positive integer'
       )
       expect(mocks.fork).not.toHaveBeenCalled()
     }

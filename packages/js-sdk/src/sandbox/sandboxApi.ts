@@ -537,7 +537,7 @@ export interface SandboxPauseOpts extends SandboxApiOpts {
  */
 export interface SandboxForkOpts extends ConnectionOpts {
   /**
-   * Number of forked sandboxes to create. Must be an integer between 1 and 20.
+   * Number of forked sandboxes to create. The API enforces the maximum.
    * When omitted, the field is left off the request and the API default applies.
    *
    * All forks boot from the same snapshot — the snapshot is captured once
@@ -548,6 +548,7 @@ export interface SandboxForkOpts extends ConnectionOpts {
 
   /**
    * Timeout for the forked sandboxes in **milliseconds**.
+   * When omitted, the API default (5 minutes) applies.
    * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
    */
   timeoutMs?: number
@@ -559,19 +560,6 @@ export interface SandboxForkOpts extends ConnectionOpts {
  * from starting. Per-fork error codes map to the same error classes as other
  * API errors (e.g. 429 to `RateLimitError`).
  */
-const MAX_FORK_COUNT = 20
-
-function validateForkCount(count: number | undefined) {
-  if (count === undefined) {
-    return
-  }
-  if (!Number.isInteger(count) || count < 1 || count > MAX_FORK_COUNT) {
-    throw new InvalidArgumentError(
-      `count must be an integer between 1 and ${MAX_FORK_COUNT}`
-    )
-  }
-}
-
 type SandboxForkResponse =
   | {
       sandboxId: string
@@ -1776,13 +1764,11 @@ export class SandboxApi extends ClientFactory {
     count?: number,
     opts?: SandboxApiOpts
   ): Promise<SandboxForkResponse[]> {
-    validateForkCount(count)
-
     const apiOpts = this.resolveOpts(opts)
     const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
-    const res = await client.api.POST('/sandboxes/{sandboxID}/fork', {
+    const res = await client.api.POST('/v2/sandboxes/{sandboxID}/fork', {
       params: {
         path: {
           sandboxID: sandboxId,

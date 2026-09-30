@@ -30,6 +30,7 @@ from .sandbox_auto_resume_config import SandboxAutoResumeConfig
 from .sandbox_detail import SandboxDetail
 from .sandbox_egress_proxy_config_type_0 import SandboxEgressProxyConfigType0
 from .sandbox_fork_request import SandboxForkRequest
+from .sandbox_fork_request_v2 import SandboxForkRequestV2
 from .sandbox_fork_result import SandboxForkResult
 from .sandbox_iam import SandboxIam
 from .sandbox_iam_token import SandboxIamToken
@@ -112,6 +113,7 @@ __all__ = (
     "SandboxEgressProxyConfigType0",
     "SandboxesWithMetrics",
     "SandboxForkRequest",
+    "SandboxForkRequestV2",
     "SandboxForkResult",
     "SandboxIam",
     "SandboxIamToken",
