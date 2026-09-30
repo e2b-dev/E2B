@@ -36,6 +36,12 @@ from e2b.api.client_sync import get_pyqwest_transport as get_sync_pyqwest_transp
 from e2b.api.client_sync import get_transport as get_sync_transport
 from e2b.connection_config import READ_TIMEOUT, ConnectionConfig
 
+# Origins the balancer counts streams for: production envd traffic to every
+# sandbox shares one, the REST API is another.
+ENVD = "https://sandbox.e2b.app"
+API = "https://api.e2b.app"
+ENVD_HEALTH = "http://envd"
+
 
 def run_in_worker_thread(fn):
     with ThreadPoolExecutor(max_workers=1) as executor:
@@ -59,17 +65,52 @@ def test_balancer_builds_the_first_pool_eagerly_and_the_rest_on_demand(
     # The first pool takes requests up to its stream limit before a second
     # one is dialed; each new pool is then the least loaded and fills up in
     # turn, until the cap, after which the least-loaded pool absorbs the rest.
-    connections = [balancer.acquire() for _ in range(7)]
+    connections = [balancer.acquire(ENVD) for _ in range(7)]
     assert [built.index(c.transport) for c in connections] == [0, 0, 1, 1, 2, 2, 0]
     assert len(built) == 3
-    assert [c.active for c in balancer.connections] == [3, 2, 2]
+    assert [c.in_flight(ENVD) for c in balancer.connections] == [3, 2, 2]
 
     # Releasing frees the slot; new requests prefer the pool with the fewest
     # in flight rather than the first one that has room.
     for connection in connections[2:4]:
-        balancer.release(connection)
-    assert [c.active for c in balancer.connections] == [3, 0, 2]
-    assert balancer.acquire().transport is built[1]
+        balancer.release(connection, ENVD)
+    assert [c.in_flight(ENVD) for c in balancer.connections] == [3, 0, 2]
+    assert balancer.acquire(ENVD).transport is built[1]
+
+
+def test_balancer_counts_streams_per_origin(monkeypatch):
+    """A pool holds one HTTP/2 connection per origin, so the stream limit is
+    per origin too: traffic to other hosts — the REST API, or each sandbox's
+    own host on a custom domain — neither fills a pool nor dials one."""
+    monkeypatch.setattr(api, "streams_per_connection", 2)
+    monkeypatch.setattr(api, "max_connections", 3)
+    balancer = ConnectionBalancer(object)
+
+    hosts = [f"https://49983-sbx-{index}.e2b-foo.dev" for index in range(5)]
+    for host in hosts:
+        balancer.acquire(host)
+    balancer.acquire(API)
+    balancer.acquire(API)
+    assert len(balancer.connections) == 1
+    assert balancer.connections[0].active == {**dict.fromkeys(hosts, 1), API: 2}
+
+    # The third request to one origin dials, and lands on the new pool.
+    first, second = balancer.acquire(ENVD), balancer.acquire(ENVD)
+    third = balancer.acquire(ENVD)
+    assert len(balancer.connections) == 2
+    assert third is balancer.connections[1]
+    assert third.in_flight(ENVD) == 1
+
+    # The new pool is least loaded for every origin, so it takes the next
+    # request to any of them without dialing again.
+    assert balancer.acquire(API) is third
+    assert len(balancer.connections) == 2
+
+    # Origins with nothing in flight are dropped, so the count does not grow
+    # with every sandbox a process has ever spoken to.
+    balancer.release(first, ENVD)
+    balancer.release(second, ENVD)
+    assert ENVD not in balancer.connections[0].active
 
 
 def test_balancer_never_exceeds_the_connection_cap(monkeypatch):
@@ -77,11 +118,11 @@ def test_balancer_never_exceeds_the_connection_cap(monkeypatch):
     monkeypatch.setattr(api, "max_connections", 1)
     balancer = ConnectionBalancer(object)
 
-    connections = [balancer.acquire() for _ in range(5)]
+    connections = [balancer.acquire(ENVD) for _ in range(5)]
 
     assert len(balancer.connections) == 1
     assert {c.transport for c in connections} == {balancer.connections[0].transport}
-    assert balancer.connections[0].active == 5
+    assert balancer.connections[0].in_flight(ENVD) == 5
 
 
 def test_sync_api_client_proxy_uses_explicit_transport(test_api_key):
@@ -1078,25 +1119,39 @@ def sync_balancing_transport(pool):
     return transport, transport.balancer.connections[0]
 
 
+def record_closed_at_release(transport, pool):
+    """How many times the pool had closed its response when each release
+    came in: a slot must not read as free while its stream is still open."""
+    closed_at_release = []
+    release = transport.balancer.release
+
+    def recording_release(connection, origin):
+        closed_at_release.append(pool.closed)
+        release(connection, origin)
+
+    transport.balancer.release = recording_release
+    return closed_at_release
+
+
 def test_sync_balancing_transport_counts_a_request_until_its_content_is_consumed():
     pool = FakeSyncPool()
     transport, connection = sync_balancing_transport(pool)
 
-    response = transport.execute_sync(SyncRequest("GET", "http://envd/health"))
+    response = transport.execute_sync(SyncRequest("GET", ENVD_HEALTH + "/health"))
 
     assert response.status == 200
     assert response.headers.get("content-type") == "text/plain"
-    assert connection.active == 1
+    assert connection.in_flight(ENVD_HEALTH) == 1
     assert next(response.content) == b"a"
-    assert connection.active == 1
+    assert connection.in_flight(ENVD_HEALTH) == 1
     assert list(response.content) == [b"b"]
     # Trailers are read off the original response after its content, as the
     # RPC clients do, and the slot is freed exactly once.
     assert response.trailers.get("grpc-status") == "0"
-    assert connection.active == 0
+    assert connection.in_flight(ENVD_HEALTH) == 0
     assert pool.closed == 1
     response.close()
-    assert connection.active == 0
+    assert connection.in_flight(ENVD_HEALTH) == 0
     assert pool.closed == 1
 
 
@@ -1104,16 +1159,20 @@ def test_sync_balancing_transport_frees_the_slot_when_the_response_is_closed():
     pool = FakeSyncPool()
     transport, connection = sync_balancing_transport(pool)
 
-    response = transport.execute_sync(SyncRequest("GET", "http://envd/health"))
+    closed_at_release = record_closed_at_release(transport, pool)
+
+    response = transport.execute_sync(SyncRequest("GET", ENVD_HEALTH + "/health"))
     assert next(response.content) == b"a"
-    assert connection.active == 1
+    assert connection.in_flight(ENVD_HEALTH) == 1
 
     response.close()
 
-    assert connection.active == 0
+    assert connection.in_flight(ENVD_HEALTH) == 0
     assert pool.closed == 1
+    assert closed_at_release == [1]
     response.close()
-    assert connection.active == 0
+    assert connection.in_flight(ENVD_HEALTH) == 0
+    assert closed_at_release == [1]
 
 
 def test_sync_balancing_transport_frees_the_slot_when_the_request_fails():
@@ -1121,22 +1180,25 @@ def test_sync_balancing_transport_frees_the_slot_when_the_request_fails():
     transport, connection = sync_balancing_transport(pool)
 
     with pytest.raises(ConnectionError):
-        transport.execute_sync(SyncRequest("GET", "http://envd/health"))
+        transport.execute_sync(SyncRequest("GET", ENVD_HEALTH + "/health"))
 
-    assert connection.active == 0
+    assert connection.in_flight(ENVD_HEALTH) == 0
 
 
 def test_sync_balancing_transport_frees_the_slot_when_the_response_is_dropped():
     pool = FakeSyncPool()
     transport, connection = sync_balancing_transport(pool)
 
-    response = transport.execute_sync(SyncRequest("GET", "http://envd/health"))
+    closed_at_release = record_closed_at_release(transport, pool)
+
+    response = transport.execute_sync(SyncRequest("GET", ENVD_HEALTH + "/health"))
     assert next(response.content) == b"a"
     del response
     gc.collect()
 
-    assert connection.active == 0
+    assert connection.in_flight(ENVD_HEALTH) == 0
     assert pool.closed == 1
+    assert closed_at_release == [1]
 
 
 class FakeAsyncPool:
@@ -1175,19 +1237,19 @@ async def test_async_balancing_transport_counts_a_request_until_its_content_is_c
     pool = FakeAsyncPool()
     transport, connection = async_balancing_transport(pool)
 
-    response = await transport.execute(Request("GET", "http://envd/health"))
+    response = await transport.execute(Request("GET", ENVD_HEALTH + "/health"))
 
     assert response.status == 200
     assert response.headers.get("content-type") == "text/plain"
-    assert connection.active == 1
+    assert connection.in_flight(ENVD_HEALTH) == 1
     assert await response.content.__anext__() == b"a"
-    assert connection.active == 1
+    assert connection.in_flight(ENVD_HEALTH) == 1
     assert [chunk async for chunk in response.content] == [b"b"]
     assert response.trailers.get("grpc-status") == "0"
-    assert connection.active == 0
+    assert connection.in_flight(ENVD_HEALTH) == 0
     assert pool.closed == 1
     await response.aclose()
-    assert connection.active == 0
+    assert connection.in_flight(ENVD_HEALTH) == 0
     assert pool.closed == 1
 
 
@@ -1196,16 +1258,20 @@ async def test_async_balancing_transport_frees_the_slot_when_the_response_is_clo
     pool = FakeAsyncPool()
     transport, connection = async_balancing_transport(pool)
 
-    response = await transport.execute(Request("GET", "http://envd/health"))
+    closed_at_release = record_closed_at_release(transport, pool)
+
+    response = await transport.execute(Request("GET", ENVD_HEALTH + "/health"))
     assert await response.content.__anext__() == b"a"
-    assert connection.active == 1
+    assert connection.in_flight(ENVD_HEALTH) == 1
 
     await response.aclose()
 
-    assert connection.active == 0
+    assert connection.in_flight(ENVD_HEALTH) == 0
     assert pool.closed == 1
+    assert closed_at_release == [1]
     await response.aclose()
-    assert connection.active == 0
+    assert connection.in_flight(ENVD_HEALTH) == 0
+    assert closed_at_release == [1]
 
 
 @pytest.mark.asyncio
@@ -1214,9 +1280,9 @@ async def test_async_balancing_transport_frees_the_slot_when_the_request_fails()
     transport, connection = async_balancing_transport(pool)
 
     with pytest.raises(ConnectionError):
-        await transport.execute(Request("GET", "http://envd/health"))
+        await transport.execute(Request("GET", ENVD_HEALTH + "/health"))
 
-    assert connection.active == 0
+    assert connection.in_flight(ENVD_HEALTH) == 0
 
 
 @pytest.mark.asyncio
@@ -1224,9 +1290,9 @@ async def test_async_balancing_transport_frees_the_slot_when_the_response_is_dro
     pool = FakeAsyncPool()
     transport, connection = async_balancing_transport(pool)
 
-    response = await transport.execute(Request("GET", "http://envd/health"))
+    response = await transport.execute(Request("GET", ENVD_HEALTH + "/health"))
     assert await response.content.__anext__() == b"a"
     del response
     gc.collect()
 
-    assert connection.active == 0
+    assert connection.in_flight(ENVD_HEALTH) == 0

@@ -54,7 +54,11 @@ def force_http2(monkeypatch, module, name):
 
 
 def active_streams(pool) -> list:
-    return [connection.active for connection in pool._transport.balancer.connections]
+    # Every stream in these tests goes to the frame server's one origin.
+    return [
+        sum(connection.active.values())
+        for connection in pool._transport.balancer.connections
+    ]
 
 
 def wave_counts(server, since: int) -> Counter:

@@ -18,6 +18,7 @@ from e2b.api import (
     pool_idle_timeout,
     pool_max_idle_per_host,
     proxy_to_config,
+    request_origin,
 )
 from e2b.connection_config import READ_TIMEOUT, ConnectionConfig
 
@@ -60,11 +61,11 @@ _Chunk = Union[bytes, bytearray, memoryview]
 
 class _TrackedContent:
     """The content iterator of a balanced response: hands back the original
-    response's chunks and releases its connection slot exactly once — when
-    the content is exhausted, when the response is closed (``Response``
-    forwards ``aclose`` to its content), when reading fails, or, failing all
-    of those, when it is garbage collected (which drops the original response
-    too; only its explicit close can be awaited)."""
+    response's chunks and releases its connection slot exactly once, after
+    the stream is over — when the content is exhausted, when the response is
+    closed (``Response`` forwards ``aclose`` to its content), when reading
+    fails, or, failing all of those, when it is garbage collected, which
+    drops the original response and so resets its stream."""
 
     __slots__ = ("_response", "_content", "_release")
 
@@ -84,43 +85,47 @@ class _TrackedContent:
             raise
 
     async def aclose(self) -> None:
-        if self._finish():
-            await self._response.aclose()
-
-    def _finish(self) -> bool:
         release, self._release = self._release, None
         if release is None:
-            return False
-        release()
-        return True
+            return
+        try:
+            await self._response.aclose()
+        finally:
+            release()
 
     def __del__(self) -> None:
-        self._finish()
+        release, self._release = self._release, None
+        if release is None:
+            return
+        del self._content, self._response
+        release()
 
 
 class BalancingTransport(Transport):
     """A pyqwest transport over a growable, bounded set of reqwest pools
     (see :class:`e2b.api.ConnectionBalancer`): each request runs on the pool
-    with the fewest in flight and counts against it until its response is
-    consumed or closed. Pools are built with ``build`` — the first eagerly,
-    the rest as load requires — so they share every construction knob."""
+    with the fewest in flight to its origin and counts against it until its
+    response is consumed or closed. Pools are built with ``build`` — the first
+    eagerly, the rest as load requires — so they share every construction
+    knob."""
 
     def __init__(self, build: Callable[[], HTTPTransport]) -> None:
         self.balancer: ConnectionBalancer[HTTPTransport] = ConnectionBalancer(build)
 
     async def execute(self, request: Request) -> Response:
-        connection = self.balancer.acquire()
+        origin = request_origin(request.url)
+        connection = self.balancer.acquire(origin)
         try:
             response = await connection.transport.execute(request)
         except BaseException:
-            self.balancer.release(connection)
+            self.balancer.release(connection, origin)
             raise
         return Response(
             status=response.status,
             http_version=response.http_version,
             headers=response.headers,
             content=_TrackedContent(
-                response, partial(self.balancer.release, connection)
+                response, partial(self.balancer.release, connection, origin)
             ),
             # Populated in place once the original content is consumed.
             trailers=response.trailers,

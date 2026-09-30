@@ -24,6 +24,7 @@ from e2b.api import (
     pool_idle_timeout,
     pool_max_idle_per_host,
     proxy_to_config,
+    request_origin,
 )
 from e2b.connection_config import READ_TIMEOUT, ConnectionConfig
 
@@ -66,10 +67,11 @@ _Chunk = Union[bytes, bytearray, memoryview]
 
 class _TrackedContent:
     """The content iterator of a balanced response: hands back the original
-    response's chunks and releases its connection slot exactly once — when
-    the content is exhausted, when the response is closed (``SyncResponse``
-    forwards ``close`` to its content), when reading fails, or, failing all
-    of those, when it is garbage collected."""
+    response's chunks and releases its connection slot exactly once, after
+    the stream is over — when the content is exhausted, when the response is
+    closed (``SyncResponse`` forwards ``close`` to its content), when reading
+    fails, or, failing all of those, when it is garbage collected, which
+    drops the original response and so resets its stream."""
 
     __slots__ = ("_response", "_content", "_release")
 
@@ -89,43 +91,47 @@ class _TrackedContent:
             raise
 
     def close(self) -> None:
-        if self._finish():
-            self._response.close()
-
-    def _finish(self) -> bool:
         release, self._release = self._release, None
         if release is None:
-            return False
-        release()
-        return True
+            return
+        try:
+            self._response.close()
+        finally:
+            release()
 
     def __del__(self) -> None:
-        self.close()
+        release, self._release = self._release, None
+        if release is None:
+            return
+        del self._content, self._response
+        release()
 
 
 class BalancingTransport(SyncTransport):
     """A pyqwest transport over a growable, bounded set of reqwest pools
     (see :class:`e2b.api.ConnectionBalancer`): each request runs on the pool
-    with the fewest in flight and counts against it until its response is
-    consumed or closed. Pools are built with ``build`` — the first eagerly,
-    the rest as load requires — so they share every construction knob."""
+    with the fewest in flight to its origin and counts against it until its
+    response is consumed or closed. Pools are built with ``build`` — the first
+    eagerly, the rest as load requires — so they share every construction
+    knob."""
 
     def __init__(self, build: Callable[[], SyncHTTPTransport]) -> None:
         self.balancer: ConnectionBalancer[SyncHTTPTransport] = ConnectionBalancer(build)
 
     def execute_sync(self, request: SyncRequest) -> SyncResponse:
-        connection = self.balancer.acquire()
+        origin = request_origin(request.url)
+        connection = self.balancer.acquire(origin)
         try:
             response = connection.transport.execute_sync(request)
         except BaseException:
-            self.balancer.release(connection)
+            self.balancer.release(connection, origin)
             raise
         return SyncResponse(
             status=response.status,
             http_version=response.http_version,
             headers=response.headers,
             content=_TrackedContent(
-                response, partial(self.balancer.release, connection)
+                response, partial(self.balancer.release, connection, origin)
             ),
             # Populated in place once the original content is consumed.
             trailers=response.trailers,

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from types import TracebackType
 from typing import (
     Callable,
+    Dict,
     Generic,
     List,
     NamedTuple,
@@ -15,7 +16,7 @@ from typing import (
     TypeVar,
     Union,
 )
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 
 import httpx
 from httpx import AsyncBaseTransport, BaseTransport, Timeout
@@ -112,29 +113,41 @@ connection_retries = int(os.getenv("E2B_CONNECTION_RETRIES") or "3")
 pool_idle_timeout = float(os.getenv("E2B_KEEPALIVE_EXPIRY") or "300")
 pool_max_idle_per_host = int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20")
 
-# A reqwest pool multiplexes every request to a host over one HTTP/2
+# A reqwest pool multiplexes every request to an origin over one HTTP/2
 # connection and queues past the server's concurrent-stream limit (envd's
 # edge, which all sandboxes share, advertises 100) rather than dialing another
 # — long-running commands hold those streams. So each cached transport is a
 # set of reqwest pools that grows on demand, like undici's
 # `Agent({ connections })` in the JS SDK: a request goes to the pool with the
-# fewest in-flight requests, another pool is dialed once every one carries
-# `streams_per_connection`, up to `max_connections` pools.
+# fewest in flight to its origin, another pool is dialed once every one
+# carries `streams_per_connection` to that origin, up to `max_connections`
+# pools.
 streams_per_connection = max(1, int(os.getenv("E2B_STREAMS_PER_CONNECTION") or "100"))
 max_connections = max(1, int(os.getenv("E2B_MAX_CONNECTIONS") or "200"))
 
 T = TypeVar("T")
 
 
+def request_origin(url: str) -> str:
+    """The origin a request URL is served from — what a reqwest pool keeps
+    one HTTP/2 connection, and so one concurrent-stream budget, for."""
+    parts = urlsplit(url)
+    return f"{parts.scheme}://{parts.netloc}".lower()
+
+
 class PooledConnection(Generic[T]):
     """One reqwest pool in a :class:`ConnectionBalancer` and the number of
-    requests in flight on it."""
+    requests in flight on it, per origin: the pool keeps a connection per
+    origin, so the streams of one never crowd out another's."""
 
     __slots__ = ("transport", "active")
 
     def __init__(self, transport: T) -> None:
         self.transport = transport
-        self.active = 0
+        self.active: Dict[str, int] = {}
+
+    def in_flight(self, origin: str) -> int:
+        return self.active.get(origin, 0)
 
 
 class ConnectionBalancer(Generic[T]):
@@ -152,21 +165,25 @@ class ConnectionBalancer(Generic[T]):
         self._lock = threading.RLock()
         self.connections: List[PooledConnection[T]] = [PooledConnection(build())]
 
-    def acquire(self) -> PooledConnection[T]:
+    def acquire(self, origin: str) -> PooledConnection[T]:
         with self._lock:
-            connection = min(self.connections, key=lambda c: c.active)
+            connection = min(self.connections, key=lambda c: c.in_flight(origin))
             if (
-                connection.active >= streams_per_connection
+                connection.in_flight(origin) >= streams_per_connection
                 and len(self.connections) < max_connections
             ):
                 connection = PooledConnection(self._build())
                 self.connections.append(connection)
-            connection.active += 1
+            connection.active[origin] = connection.in_flight(origin) + 1
             return connection
 
-    def release(self, connection: PooledConnection[T]) -> None:
+    def release(self, connection: PooledConnection[T], origin: str) -> None:
         with self._lock:
-            connection.active -= 1
+            remaining = connection.in_flight(origin) - 1
+            if remaining:
+                connection.active[origin] = remaining
+            else:
+                del connection.active[origin]
 
 
 class ProxyConfig(NamedTuple):
