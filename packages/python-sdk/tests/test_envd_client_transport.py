@@ -140,17 +140,24 @@ def test_async_pool_is_cached_per_proxy():
     assert api_client_sync.get_pyqwest_transport(None) is not pool_a
 
 
-def test_rpc_clients_run_on_the_shared_pool(test_api_key, monkeypatch):
+@pytest.mark.parametrize("http_version", ["2", "1.1"])
+def test_rpc_clients_run_on_the_shared_pool(test_api_key, monkeypatch, http_version):
     # The RPC stack is the plain-HTTP-error normalization wrapping the very
     # pool the httpx clients use, so an envd RPC and an envd HTTP call to the
     # same sandbox share one HTTP/2 connection. `pyqwest.SyncClient` doesn't
     # hand its transport back, so record what the normalization is given.
-    config = ConnectionConfig(api_key=test_api_key)
-    pool = api_client_sync.get_pyqwest_transport(None)
-    async_pool = api_client_async.get_pyqwest_transport(None)
+    other_version = "1.1" if http_version == "2" else "2"
+    config = ConnectionConfig(api_key=test_api_key, http_version=http_version)
+    pool = api_client_sync.get_pyqwest_transport(None, http_version=http_version)
+    async_pool = api_client_async.get_pyqwest_transport(
+        None, http_version=http_version
+    )
+    assert pool is not api_client_sync.get_pyqwest_transport(
+        None, http_version=other_version
+    )
     # The httpx adapters every REST client uses sit on those same pools.
-    assert api_client_sync.get_httpx_transport(None)._transport is pool
-    assert api_client_async.get_httpx_transport(None)._transport is async_pool
+    assert api_client_sync.get_transport(config)._transport is pool
+    assert api_client_async.get_transport(config)._transport is async_pool
 
     wrapped = []
     for module in (client_sync, client_async):

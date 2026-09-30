@@ -2,6 +2,7 @@ import { Logger } from './logs'
 import { getEnvVar, version } from './api/metadata'
 import { runtime } from './utils'
 import { resolveRetries } from './retry'
+import { InvalidArgumentError } from './errors'
 
 // Remove once all deployments support sandbox subdomains
 const supportedDomains = ['e2b.app', 'e2b.dev', 'e2b.pro', 'e2b-staging.dev']
@@ -11,6 +12,30 @@ export const DEFAULT_RETRIES = 3
 export const KEEPALIVE_PING_INTERVAL_SEC = 50 // 50 seconds
 
 export const KEEPALIVE_PING_HEADER = 'Keepalive-Ping-Interval'
+
+/**
+ * HTTP version the SDK speaks to the E2B API and to sandboxes.
+ */
+export type HttpVersion = '1.1' | '2'
+export const DEFAULT_HTTP_VERSION: HttpVersion = '2'
+
+/**
+ * The HTTP version to use: the explicit value, else `E2B_HTTP_VERSION`, else
+ * {@link DEFAULT_HTTP_VERSION}. Rejects anything but `'1.1'` or `'2'`.
+ */
+export function resolveHttpVersion(httpVersion?: string): HttpVersion {
+  let source = 'httpVersion'
+  if (httpVersion === undefined) {
+    source = 'E2B_HTTP_VERSION'
+    httpVersion = getEnvVar('E2B_HTTP_VERSION') || DEFAULT_HTTP_VERSION
+  }
+  if (httpVersion !== '1.1' && httpVersion !== '2') {
+    throw new InvalidArgumentError(
+      `${source} must be '1.1' or '2', got '${httpVersion}'`
+    )
+  }
+  return httpVersion
+}
 
 /**
  * Connection options for requests to the API.
@@ -94,6 +119,16 @@ export interface ConnectionOpts {
    * @example 'http://user:pass@127.0.0.1:8080'
    */
   proxy?: string
+  /**
+   * HTTP version for requests to the E2B API and to sandboxes (commands,
+   * filesystem, PTY). `'2'` multiplexes streams over shared connections;
+   * `'1.1'` pins them to HTTP/1.1 with one connection per concurrent
+   * request — for example when an intermediary on the path retires or
+   * mishandles long-lived HTTP/2 connections. Only applies in Node.
+   *
+   * @default E2B_HTTP_VERSION // environment variable or {@link DEFAULT_HTTP_VERSION}
+   */
+  httpVersion?: HttpVersion
 
   /**
    * Additional headers to send with E2B API requests.
@@ -446,6 +481,7 @@ export class ConnectionConfig {
   readonly requestSource?: string
 
   readonly proxy?: string
+  readonly httpVersion: HttpVersion
 
   constructor(opts?: ConnectionOpts) {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
@@ -459,6 +495,7 @@ export class ConnectionConfig {
     this.headers = { ...(opts?.headers ?? {}), ...(opts?.apiHeaders ?? {}) }
     ConnectionConfig.applyUserAgent(this.headers, this.requestSource)
     this.proxy = opts?.proxy
+    this.httpVersion = resolveHttpVersion(opts?.httpVersion)
 
     this.apiUrl =
       opts?.apiUrl ||

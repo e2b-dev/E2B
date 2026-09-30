@@ -189,6 +189,18 @@ describe('Volume CRUD', () => {
     expect(config.proxy).toBe('http://127.0.0.1:9090')
   })
 
+  it('should keep the httpVersion on the instance so content calls reuse it', async () => {
+    const vol = await Volume.create('http1-volume', { httpVersion: '1.1' })
+    expect(vol.httpVersion).toBe('1.1')
+    expect(new VolumeConnectionConfig(vol).httpVersion).toBe('1.1')
+    expect(
+      new VolumeConnectionConfig(vol, { httpVersion: '2' }).httpVersion
+    ).toBe('2')
+
+    const connected = await Volume.connect(vol.volumeId, { httpVersion: '1.1' })
+    expect(connected.httpVersion).toBe('1.1')
+  })
+
   it('should handle full lifecycle: create, get, list, destroy', async () => {
     // Create
     const vol = await Volume.create('lifecycle-vol')

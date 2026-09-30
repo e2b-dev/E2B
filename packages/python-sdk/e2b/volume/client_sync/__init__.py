@@ -73,7 +73,9 @@ def get_transport(config: VolumeConnectionConfig) -> PyqwestTransport:
     their whole-request deadlines instead). Streamed downloads, which do need
     an idle bound, use :func:`get_streaming_transport`.
     """
-    return get_httpx_transport(proxy_to_config(config.proxy))
+    return get_httpx_transport(
+        proxy_to_config(config.proxy), http_version=config.http_version
+    )
 
 
 def get_streaming_transport(config: VolumeConnectionConfig) -> PyqwestTransport:
@@ -85,4 +87,6 @@ def get_streaming_transport(config: VolumeConnectionConfig) -> PyqwestTransport:
     their own, shared with the sandbox filesystem's streaming transport
     whenever the two bounds agree.
     """
-    return get_httpx_transport(proxy_to_config(config.proxy), READ_TIMEOUT)
+    return get_httpx_transport(
+        proxy_to_config(config.proxy), READ_TIMEOUT, config.http_version
+    )

@@ -76,6 +76,20 @@ Both variables are read when `e2b` is imported:
 E2B_STREAMS_PER_CONNECTION=50 E2B_MAX_CONNECTIONS=400 python eval.py
 ```
 
+To avoid HTTP/2 altogether — for example when an intermediary on the path retires long-lived HTTP/2 connections — pin the SDK to HTTP/1.1, which uses one connection per concurrent request:
+
+```py
+from e2b import E2B, Sandbox
+
+sandbox = Sandbox.create(http_version="1.1")
+
+# or once, for every call made through a client
+client = E2B(http_version="1.1")
+sbx = client.Sandbox.create()
+```
+
+or, for the whole process, `E2B_HTTP_VERSION=1.1`.
+
 ### 5. Code execution with Code Interpreter
 
 If you need [`run_code()`](https://docs.e2b.dev/code-interpreting/analyze-data-with-ai?utm_source=pypi&utm_medium=referral&utm_campaign=readme&utm_content=e2b), install the [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter):
