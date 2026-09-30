@@ -339,6 +339,9 @@ export interface WatchOpts extends FilesystemRequestOpts {
   timeoutMs?: number
   /**
    * Callback to call when the watch operation stops.
+   *
+   * `err` is `undefined` after {@link WatchHandle.stop} or a clean stream end,
+   * and is set only when the watch fails.
    */
   onExit?: (err?: Error) => void | Promise<void>
   /**
