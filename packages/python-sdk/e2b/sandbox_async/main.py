@@ -413,8 +413,8 @@ class AsyncSandbox(SandboxApi):
         error codes map to the same exception classes as other API errors
         (e.g. 429 to `RateLimitException`).
 
-        :param timeout: Timeout for the forked sandboxes in **seconds**. Omitted, the API default (300 seconds) applies.
-        :param count: Number of forked sandboxes to create. The API enforces the maximum. Omitted, the API default applies.
+        :param timeout: Timeout for the forked sandboxes in **seconds**. Omitted, the API default applies.
+        :param count: Number of forked sandboxes to create. The API enforces a per-team maximum; a larger count raises `SandboxException` (``status_code`` 400) for the whole request before any fork is attempted. Omitted, the API default applies.
 
         :return: List with one entry per requested fork — a sandbox instance or an exception
 
@@ -452,8 +452,8 @@ class AsyncSandbox(SandboxApi):
         (e.g. 429 to `RateLimitException`).
 
         :param sandbox_id: Sandbox ID
-        :param timeout: Timeout for the forked sandboxes in **seconds**. Omitted, the API default (300 seconds) applies.
-        :param count: Number of forked sandboxes to create. The API enforces the maximum. Omitted, the API default applies.
+        :param timeout: Timeout for the forked sandboxes in **seconds**. Omitted, the API default applies.
+        :param count: Number of forked sandboxes to create. The API enforces a per-team maximum; a larger count raises `SandboxException` (``status_code`` 400) for the whole request before any fork is attempted. Omitted, the API default applies.
         :param logger: Logger used for request and response logging for the forked sandboxes. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
 
         :return: List with one entry per requested fork — a sandbox instance or an exception
@@ -489,8 +489,8 @@ class AsyncSandbox(SandboxApi):
         error codes map to the same exception classes as other API errors
         (e.g. 429 to `RateLimitException`).
 
-        :param timeout: Timeout for the forked sandboxes in **seconds**. Omitted, the API default (300 seconds) applies.
-        :param count: Number of forked sandboxes to create. The API enforces the maximum. Omitted, the API default applies.
+        :param timeout: Timeout for the forked sandboxes in **seconds**. Omitted, the API default applies.
+        :param count: Number of forked sandboxes to create. The API enforces a per-team maximum; a larger count raises `SandboxException` (``status_code`` 400) for the whole request before any fork is attempted. Omitted, the API default applies.
 
         :return: List with one entry per requested fork — a sandbox instance or an exception
 

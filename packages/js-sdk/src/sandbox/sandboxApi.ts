@@ -537,7 +537,9 @@ export interface SandboxPauseOpts extends SandboxApiOpts {
  */
 export interface SandboxForkOpts extends ConnectionOpts {
   /**
-   * Number of forked sandboxes to create. The API enforces the maximum.
+   * Number of forked sandboxes to create. The API enforces a per-team maximum:
+   * a larger count rejects the whole request with a `SandboxError`
+   * (`statusCode` 400) before any fork is attempted.
    * When omitted, the field is left off the request and the API default applies.
    *
    * All forks boot from the same snapshot — the snapshot is captured once
@@ -548,7 +550,7 @@ export interface SandboxForkOpts extends ConnectionOpts {
 
   /**
    * Timeout for the forked sandboxes in **milliseconds**.
-   * When omitted, the API default (5 minutes) applies.
+   * When omitted, the API default applies.
    * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
    */
   timeoutMs?: number
