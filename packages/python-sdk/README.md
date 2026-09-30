@@ -88,7 +88,7 @@ client = E2B(http_version="1.1")
 sbx = client.Sandbox.create()
 ```
 
-or, for the whole process, `E2B_HTTP_VERSION=1.1`. The setting covers the E2B API, sandbox and volume content traffic.
+or, for the whole process, `E2B_HTTP_VERSION=1.1`.
 
 ### 5. Code execution with Code Interpreter
 
