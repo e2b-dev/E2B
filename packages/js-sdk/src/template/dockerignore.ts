@@ -11,7 +11,8 @@ import { TemplateError } from '../errors'
 // Characters that have a meaning in a regex but not in a Docker pattern
 const LITERAL_REGEX_CHARS = new Set(['.', '+', '(', ')', '|', '{', '}', '$'])
 const WILDCARD_CHARS = /[*?[\\]/
-const BACKSLASH_IS_SEPARATOR = path.sep === '\\'
+// Evaluated lazily, as `node:path` is not available when loaded in the browser
+const backslashIsSeparator = () => path.sep === '\\'
 
 function escapeRegex(ch: string): string {
   return ch.replace(/[.*+?^${}()|[\]\\/-]/g, '\\$&')
@@ -19,7 +20,7 @@ function escapeRegex(ch: string): string {
 
 // Equivalent of Go's filepath.Clean followed by filepath.ToSlash
 function clean(pattern: string): string {
-  if (BACKSLASH_IS_SEPARATOR) {
+  if (backslashIsSeparator()) {
     pattern = pattern.replace(/\\/g, '/')
   }
   return path.posix.normalize(pattern).replace(/(.)\/$/, '$1')
@@ -28,6 +29,7 @@ function clean(pattern: string): string {
 function compile(pattern: string): RegExp {
   let regex = '^'
   const n = pattern.length
+  const backslashIsEscape = !backslashIsSeparator()
   let i = 0
   while (i < n) {
     const ch = pattern[i++]
@@ -46,7 +48,7 @@ function compile(pattern: string): RegExp {
       regex += '[^/]'
     } else if (LITERAL_REGEX_CHARS.has(ch)) {
       regex += '\\' + ch
-    } else if (ch === '\\' && !BACKSLASH_IS_SEPARATOR) {
+    } else if (ch === '\\' && backslashIsEscape) {
       // Escape the next character
       if (i < n) {
         regex += escapeRegex(pattern[i++])
