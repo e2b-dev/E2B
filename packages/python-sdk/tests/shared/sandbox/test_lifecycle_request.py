@@ -147,6 +147,45 @@ async def test_async_create_rejects_auto_resume_without_a_timeout_action(
         await AsyncSandbox.create(api_key=test_api_key, lifecycle=lifecycle)
 
 
+INVALID_LIFECYCLES = [
+    # A filesystem-only auto-pause snapshot can only be resumed explicitly.
+    pytest.param(
+        {"on_timeout": {"action": "pause", "keep_memory": False}, "auto_resume": True},
+        id="filesystem-only-pause-with-auto-resume",
+    ),
+    # The discriminated union forbids this at type-check time; the runtime
+    # guard covers callers that bypass the type.
+    pytest.param(
+        cast(Any, {"on_timeout": {"action": "kill", "keep_memory": False}}),
+        id="keep-memory-with-kill",
+    ),
+]
+
+
+@pytest.mark.parametrize("lifecycle", INVALID_LIFECYCLES)
+def test_create_rejects_an_invalid_lifecycle(monkeypatch, test_api_key, lifecycle):
+    request = Mock(return_value=_created_sandbox())
+    monkeypatch.setattr(post_v2_sandboxes, "sync_detailed", request)
+
+    with pytest.raises(InvalidArgumentException):
+        Sandbox.create(api_key=test_api_key, lifecycle=lifecycle)
+
+    request.assert_not_called()
+
+
+@pytest.mark.parametrize("lifecycle", INVALID_LIFECYCLES)
+async def test_async_create_rejects_an_invalid_lifecycle(
+    monkeypatch, test_api_key, lifecycle
+):
+    request = AsyncMock(return_value=_created_sandbox())
+    monkeypatch.setattr(post_v2_sandboxes, "asyncio_detailed", request)
+
+    with pytest.raises(InvalidArgumentException):
+        await AsyncSandbox.create(api_key=test_api_key, lifecycle=lifecycle)
+
+    request.assert_not_called()
+
+
 # `None` expects autoResume to be absent from the payload: an unconfigured
 # preference is not an explicit opt-out, so the API keeps ownership of the
 # default instead of receiving {"enabled": False}.
