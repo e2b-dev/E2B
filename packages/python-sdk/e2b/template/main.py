@@ -766,7 +766,7 @@ class TemplateBase(ClientFactory):
         Create a new template builder instance.
 
         :param file_context_path: Base path for resolving relative file paths in copy operations
-        :param file_ignore_patterns: List of glob patterns to ignore when copying files
+        :param file_ignore_patterns: Patterns in `.dockerignore` syntax for files to exclude when copying. They are applied after the `.dockerignore` file in the context directory, so they take precedence over it
         """
         self._default_base_image: str = "e2bdev/base"
         self._base_image: Optional[str] = self._default_base_image
@@ -1249,8 +1249,8 @@ class TemplateBase(ClientFactory):
                     dest,
                     self._file_context_path,
                     [
-                        *self._file_ignore_patterns,
                         *read_dockerignore(self._file_context_path),
+                        *self._file_ignore_patterns,
                     ],
                     resolve_symlinks
                     if resolve_symlinks is not None

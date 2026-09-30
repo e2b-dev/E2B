@@ -1,8 +1,12 @@
 import { expect, test, describe, beforeAll, afterAll, beforeEach } from 'vitest'
-import { writeFile, mkdir, mkdtemp, rm } from 'fs/promises'
+import { appendFile, writeFile, mkdir, mkdtemp, rm } from 'fs/promises'
 import { tmpdir } from 'os'
-import { join, basename } from 'path'
-import { getAllFilesInPath } from '../../../src/template/utils'
+import { join, basename, relative } from 'path'
+import {
+  calculateFilesHash,
+  getAllFilesInPath,
+  readDockerignore,
+} from '../../../src/template/utils'
 
 describe('getAllFilesInPath', () => {
   // A temp directory, so a test run never writes into the repository tree.
@@ -320,10 +324,134 @@ describe('getAllFilesInPath', () => {
       '**/*.spec.*',
     ])
 
-    expect(files).toHaveLength(6) // 3 files + 3 directories (src, components, utils)
+    // 3 files + 4 directories (src, components, utils and the emptied tests,
+    // since `tests/**` matches the contents of `tests`, as in Docker)
+    expect(files).toHaveLength(7)
     expect(files.some((f) => f.fullpath().endsWith('index.ts'))).toBe(true)
     expect(files.some((f) => f.fullpath().endsWith('Button.tsx'))).toBe(true)
     expect(files.some((f) => f.fullpath().endsWith('helper.ts'))).toBe(true)
     expect(files.some((f) => f.fullpath().endsWith('test.spec.ts'))).toBe(false)
+  })
+
+  describe('.dockerignore semantics', () => {
+    const relativePaths = async (src: string, ignorePatterns: string[]) =>
+      (await getAllFilesInPath(src, testDir, ignorePatterns))
+        .map((f) => relative(testDir, f.fullpath()) || '.')
+        .sort()
+
+    beforeEach(async () => {
+      await mkdir(join(testDir, 'node_modules', 'pkg'), { recursive: true })
+      await mkdir(join(testDir, 'src', 'generated'), { recursive: true })
+      await mkdir(join(testDir, 'src', 'node_modules'), { recursive: true })
+      await mkdir(join(testDir, '.git'), { recursive: true })
+      await writeFile(join(testDir, '.env'), 'SECRET=1')
+      await writeFile(join(testDir, 'node_modules', 'pkg', 'index.js'), 'x')
+      await writeFile(join(testDir, 'src', 'app.ts'), 'x')
+      await writeFile(join(testDir, 'src', 'app.spec.ts'), 'x')
+      await writeFile(join(testDir, 'src', 'generated', 'api.ts'), 'x')
+      await writeFile(join(testDir, 'src', 'node_modules', 'lib.js'), 'x')
+      await writeFile(join(testDir, '.git', 'HEAD'), 'ref')
+    })
+
+    const patterns = [
+      '.env',
+      'node_modules',
+      '.git',
+      '**/*.spec.*',
+      'src/generated',
+    ]
+
+    test.each(['.', './', './src', 'src', 'src/.', 'src/../src'])(
+      'should exclude ignored directories with their contents for %s',
+      async (src) => {
+        const files = await relativePaths(src, patterns)
+        const expected = [
+          'src',
+          'src/app.ts',
+          'src/node_modules',
+          'src/node_modules/lib.js',
+        ]
+        const copiesRoot = src === '.' || src === './'
+        expect(files).toEqual(copiesRoot ? ['.', ...expected] : expected)
+      }
+    )
+
+    test('should ignore a leading slash and a trailing slash', async () => {
+      const files = await relativePaths('.', [
+        '/node_modules',
+        '/.git/',
+        'src/',
+      ])
+      expect(files).toEqual(['.', '.env'])
+    })
+
+    test('should never exclude the context root', async () => {
+      const files = await relativePaths('.', ['.', '.*', 'src', 'node_modules'])
+      expect(files).toEqual(['.'])
+    })
+
+    test('should not copy paths inside an ignored directory', async () => {
+      const files = await relativePaths('node_modules/pkg', ['node_modules'])
+      expect(files).toEqual([])
+    })
+
+    test('should re-include paths matched by a negated pattern', async () => {
+      const files = await relativePaths('.', [
+        '*',
+        '!src',
+        'src/generated',
+        '!node_modules/pkg/index.js',
+      ])
+      expect(files).toEqual([
+        '.',
+        'node_modules/pkg/index.js',
+        'src',
+        'src/app.spec.ts',
+        'src/app.ts',
+        'src/node_modules',
+        'src/node_modules/lib.js',
+      ])
+    })
+
+    test('should make absolute patterns inside the context relative', async () => {
+      const files = await relativePaths('.', [
+        join(testDir, 'src'),
+        join(testDir, 'node_modules', '**'),
+        '.git',
+      ])
+      expect(files).toEqual(['.', '.env', 'node_modules'])
+    })
+
+    test('should match regex special characters literally', async () => {
+      await writeFile(join(testDir, 'file (1).txt'), 'x')
+      await writeFile(join(testDir, 'c++'), 'x')
+      await writeFile(join(testDir, 'a'), 'x')
+      const files = await relativePaths('*', ['file (1).txt', 'c++', 'a|b'])
+      expect(files).not.toContain('file (1).txt')
+      expect(files).not.toContain('c++')
+      expect(files).toContain('a')
+    })
+
+    test('should throw on an invalid pattern', async () => {
+      await expect(getAllFilesInPath('.', testDir, ['[abc'])).rejects.toThrow(
+        "Invalid ignore pattern '[abc'"
+      )
+    })
+
+    test('should keep the files hash stable when ignored files change', async () => {
+      const hash = () =>
+        calculateFilesHash('.', '/app', testDir, ['.git'], false, undefined)
+      const before = await hash()
+      await appendFile(join(testDir, '.git', 'HEAD'), 'x')
+      expect(await hash()).toBe(before)
+    })
+
+    test('should strip a UTF-8 BOM from .dockerignore', async () => {
+      await writeFile(
+        join(testDir, '.dockerignore'),
+        '\uFEFF.env\n# comment\n\nsrc\n'
+      )
+      expect(readDockerignore(testDir)).toEqual(['.env', 'src'])
+    })
   })
 })

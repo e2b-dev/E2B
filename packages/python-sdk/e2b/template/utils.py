@@ -12,6 +12,7 @@ from typing import IO, List, Optional, Union
 
 from e2b.exceptions import TemplateException
 from e2b.template.consts import BASE_STEP_NAME, FINALIZE_STEP_NAME
+from e2b.template.dockerignore import PatternMatcher
 
 
 def make_traceback(caller_frame: Optional[FrameType]) -> Optional[TracebackType]:
@@ -114,7 +115,7 @@ def read_dockerignore(context_path: str) -> List[str]:
     if not os.path.exists(dockerignore_path):
         return []
 
-    with open(dockerignore_path, "r", encoding="utf-8") as f:
+    with open(dockerignore_path, "r", encoding="utf-8-sig") as f:
         content = f.read()
 
     return [
@@ -134,6 +135,35 @@ def normalize_path(path: str) -> str:
     return path.replace(os.sep, "/")
 
 
+def _normalize_ignore_pattern(pattern: str, context_path: str) -> str:
+    """
+    Make an absolute ignore pattern that points into the context relative to it.
+    Other patterns are anchored at the context root, a leading `/` is ignored.
+
+    :param pattern: Ignore pattern
+    :param context_path: Absolute path of the context directory
+    :return: The normalized pattern
+    """
+    pattern = pattern.strip()
+    negated = pattern.startswith("!")
+    if negated:
+        pattern = pattern[1:].strip()
+    if os.path.isabs(pattern):
+        try:
+            relative = os.path.relpath(pattern, context_path)
+        except ValueError:
+            # Different drive on Windows
+            relative = None
+        if (
+            relative is not None
+            and relative != "."
+            and relative != ".."
+            and not relative.startswith(".." + os.sep)
+        ):
+            pattern = normalize_path(relative)
+    return ("!" if negated else "") + pattern
+
+
 def get_all_files_in_path(
     src: str,
     context_path: str,
@@ -143,40 +173,60 @@ def get_all_files_in_path(
     """
     Get all files for a given path and ignore patterns.
 
+    Ignore patterns follow `.dockerignore` semantics: they are relative to the
+    context root, a pattern matching a directory excludes everything under it,
+    and `!` patterns re-include paths (the last matching pattern wins).
+    The context root is never excluded.
+
     :param src: Path to the source directory
     :param context_path: Base directory for resolving relative paths
-    :param ignore_patterns: Ignore patterns
+    :param ignore_patterns: Ignore patterns in `.dockerignore` syntax
     :param include_directories: Whether to include directories
     :return: Array of files
     """
     files = set()
 
-    # Use glob to find all files/directories matching the pattern under context_path
     abs_context_path = os.path.abspath(context_path)
+    matcher = PatternMatcher(
+        [_normalize_ignore_pattern(p, abs_context_path) for p in ignore_patterns]
+    )
+
+    def walk(dir_path: str, dir_relative_path: str) -> None:
+        with os.scandir(dir_path) as entries:
+            for entry in entries:
+                relative_path = (
+                    entry.name
+                    if dir_relative_path == "."
+                    else f"{dir_relative_path}/{entry.name}"
+                )
+                ignored = matcher.matches(relative_path)
+                if not ignored:
+                    files.add(entry.path)
+                if entry.is_dir(follow_symlinks=False) and (
+                    not ignored or matcher.may_match_under(relative_path)
+                ):
+                    walk(entry.path, relative_path)
+
+    # Use glob to find all files/directories matching the pattern under context_path
     files_glob = glob.glob(
         src,
         flags=glob.GLOBSTAR | glob.DOTMATCH,
         root_dir=abs_context_path,
-        exclude=ignore_patterns,
     )
 
     for file in files_glob:
-        # Join it with abs_context_path to get the absolute path
-        file_path = os.path.join(abs_context_path, file)
+        # Join it with abs_context_path to get the absolute path, dropping
+        # any "." and ".." segments from src
+        file_path = os.path.normpath(os.path.join(abs_context_path, file))
+        relative_path = normalize_path(os.path.relpath(file_path, abs_context_path))
+        if relative_path != "." and matcher.matches(relative_path):
+            continue
 
         if os.path.isdir(file_path):
             # If it's a directory, add the directory and all entries recursively
             if include_directories:
                 files.add(file_path)
-            dir_files = glob.glob(
-                normalize_path(file) + "/**/*",
-                flags=glob.GLOBSTAR | glob.DOTMATCH,
-                root_dir=abs_context_path,
-                exclude=ignore_patterns,
-            )
-            for dir_file in dir_files:
-                dir_file_path = os.path.join(abs_context_path, dir_file)
-                files.add(dir_file_path)
+            walk(file_path, relative_path)
         else:
             files.add(file_path)
 

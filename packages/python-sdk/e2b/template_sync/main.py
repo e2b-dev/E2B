@@ -132,8 +132,8 @@ class Template(TemplateBase):
                     template._template._file_context_path,
                     file_info.url,
                     [
-                        *template._template._file_ignore_patterns,
                         *read_dockerignore(template._template._file_context_path),
+                        *template._template._file_ignore_patterns,
                     ],
                     resolve_symlinks,
                     gzip,
