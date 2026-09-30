@@ -6,7 +6,7 @@ import { ensureAPIKey } from 'src/api'
 import { asBold } from 'src/utils/format'
 import { parseTimeout } from './create'
 
-const MAX_COUNT = 100
+const MAX_COUNT = 20
 
 function parseCount(countRaw: string): number {
   const count = Number(countRaw)

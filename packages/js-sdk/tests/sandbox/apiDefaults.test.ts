@@ -1,7 +1,7 @@
 import { afterAll, afterEach, beforeAll, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
 
-import { Sandbox } from '../../src'
+import { InvalidArgumentError, Sandbox } from '../../src'
 import { TEST_API_KEY, apiUrl } from '../setup'
 import { setupMockApi } from '../mockApi'
 
@@ -102,6 +102,27 @@ test('Sandbox.fork sends explicit timeout and count', async () => {
   expect(lastForkBody?.timeout).toBe(60)
   expect(lastForkBody?.count).toBe(2)
 })
+
+test('Sandbox.fork sends the maximum count', async () => {
+  await Sandbox.fork('test-sandbox-id', {
+    apiKey: TEST_API_KEY,
+    count: 20,
+  })
+
+  expect(lastForkBody?.count).toBe(20)
+})
+
+test.each([0, -1, 21, 101, 1.5])(
+  'Sandbox.fork rejects count %s',
+  async (count) => {
+    await expect(
+      Sandbox.fork('test-sandbox-id', { apiKey: TEST_API_KEY, count })
+    ).rejects.toThrow(
+      new InvalidArgumentError('count must be an integer between 1 and 20')
+    )
+    expect(lastForkBody).toBeUndefined()
+  }
+)
 
 test('Sandbox.pause omits memory when keepMemory is unset', async () => {
   await Sandbox.pause('test-sandbox-id', { apiKey: TEST_API_KEY })

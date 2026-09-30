@@ -62,6 +62,7 @@ from e2b.sandbox.sandbox_api import (
     build_iam_config,
     build_lifecycle_config,
     build_network_config,
+    validate_fork_count,
 )
 from e2b.sandbox_async.paginator import AsyncSandboxPaginator
 
@@ -445,6 +446,7 @@ class SandboxApi(SandboxBase):
         logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> List[Union[SandboxCreateResponse, Exception]]:
+        validate_fork_count(count)
         config = ConnectionConfig(logger=logger, **cls._resolve_api_params(**opts))
 
         api_client = get_api_client(config)
