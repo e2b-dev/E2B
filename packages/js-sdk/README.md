@@ -66,20 +66,6 @@ const paginator = Sandbox.list()
 
 Per-call options still take precedence over the client's options, and clients are isolated from each other and from the env-configured top-level exports.
 
-### HTTP version
-
-In Node, requests to the E2B API and to sandboxes (`commands`, `files`, `pty`) go through bounded pools of HTTP/2 connections (`E2B_API_CONNECTIONS`, default `100`; `E2B_ENVD_RPC_CONNECTIONS`, default `200`). To avoid HTTP/2 altogether — for example when an intermediary on the path retires long-lived HTTP/2 connections — pin the SDK to HTTP/1.1:
-
-```ts
-const sandbox = await Sandbox.create({ httpVersion: '1.1' })
-
-// or once, for every call made through a client
-const client = new E2B({ httpVersion: '1.1' })
-const sbx = await client.Sandbox.create()
-```
-
-or, for the whole process, `E2B_HTTP_VERSION=1.1`.
-
 ### 5. Code execution with Code Interpreter
 
 If you need [`runCode()`](https://docs.e2b.dev/code-interpreting/analyze-data-with-ai?utm_source=npm&utm_medium=referral&utm_campaign=readme&utm_content=e2b), install the [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter):
