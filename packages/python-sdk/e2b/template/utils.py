@@ -241,20 +241,17 @@ def get_all_files_in_path(
     for file_path, relative_path in matches:
         if is_under_walked_dir(relative_path):
             continue
-        ignored = relative_path != "." and matcher.matches(relative_path)
+        if relative_path != "." and matcher.matches(relative_path):
+            continue
 
         # Symlinks are not followed, the link itself is copied
         if os.path.isdir(file_path) and not os.path.islink(file_path):
-            # Excluded directories are still walked when a `!` pattern may
-            # re-include files from them
-            if ignored and not matcher.may_match_under(relative_path):
-                continue
             # If it's a directory, add the directory and all entries recursively
-            if include_directories and not ignored:
+            if include_directories:
                 files.add(file_path)
             walk(file_path, relative_path)
             walked_dirs.add(relative_path)
-        elif not ignored:
+        else:
             files.add(file_path)
 
     return sorted(list(files))

@@ -512,14 +512,6 @@ class TestDockerignoreSemantics:
                 f.write("x")
         assert files_hash() == before
 
-    def test_should_reinclude_files_when_copying_an_excluded_directory(self, test_dir):
-        os.makedirs(os.path.join(test_dir, "dir"))
-        for name in ["keep.txt", "other.txt"]:
-            with open(os.path.join(test_dir, "dir", name), "w") as f:
-                f.write("x")
-        files = self.relative_paths("dir", test_dir, ["dir", "!dir/keep.txt"])
-        assert files == ["dir/keep.txt"]
-
     def test_should_not_expand_braces(self, test_dir):
         for name in ["a.txt", "b.{txt,md}"]:
             with open(os.path.join(test_dir, name), "w") as f:
