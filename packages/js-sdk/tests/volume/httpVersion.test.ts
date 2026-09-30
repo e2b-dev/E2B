@@ -27,7 +27,7 @@ async function createContentClient(
     undefined,
     undefined,
     opts?.proxy,
-    httpVersion
+    { httpVersion }
   )
   return new VolumeApiClient(new VolumeConnectionConfig(volume, opts))
 }

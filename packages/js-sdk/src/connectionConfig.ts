@@ -126,7 +126,7 @@ export interface ConnectionOpts {
    * request — for example when an intermediary on the path retires or
    * mishandles long-lived HTTP/2 connections. Only applies in Node.
    *
-   * @default E2B_HTTP_VERSION // environment variable or {@link DEFAULT_HTTP_VERSION}
+   * @default E2B_HTTP_VERSION // environment variable or `'2'`
    */
   httpVersion?: HttpVersion
 

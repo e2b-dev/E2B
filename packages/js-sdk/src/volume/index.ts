@@ -97,7 +97,7 @@ export class Volume extends ClientFactory {
    * @param domain domain for the volume API.
    * @param debug whether to use debug mode.
    * @param proxy proxy URL for the volume content API.
-   * @param httpVersion HTTP version for the volume content API, `'1.1'` or `'2'`.
+   * @param opts connection options kept for the volume content API.
    */
   constructor(
     volumeId: string,
@@ -106,7 +106,7 @@ export class Volume extends ClientFactory {
     domain?: string,
     debug?: boolean,
     proxy?: string,
-    httpVersion?: HttpVersion
+    opts?: Pick<ConnectionOpts, 'httpVersion'>
   ) {
     super()
     this.volumeId = volumeId
@@ -115,7 +115,7 @@ export class Volume extends ClientFactory {
     this.domain = domain
     this.debug = debug
     this.proxy = proxy
-    this.httpVersion = httpVersion
+    this.httpVersion = opts?.httpVersion
   }
 
   /**
@@ -158,7 +158,7 @@ export class Volume extends ClientFactory {
       res.data.domain || config.domain,
       config.debug,
       config.proxy,
-      config.httpVersion
+      { httpVersion: config.httpVersion }
     ) as InstanceType<V>
   }
 
@@ -185,7 +185,7 @@ export class Volume extends ClientFactory {
       domain ?? config.domain,
       config.debug,
       config.proxy,
-      config.httpVersion
+      { httpVersion: config.httpVersion }
     ) as InstanceType<V>
   }
 

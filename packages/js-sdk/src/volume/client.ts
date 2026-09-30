@@ -65,7 +65,7 @@ export interface VolumeApiOpts {
   /**
    * HTTP version for requests to the volume content API: `'1.1'` or `'2'`.
    *
-   * @default E2B_HTTP_VERSION // environment variable or {@link DEFAULT_HTTP_VERSION}
+   * @default E2B_HTTP_VERSION // environment variable or `'2'`
    */
   httpVersion?: HttpVersion
 

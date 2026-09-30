@@ -118,7 +118,7 @@ class ApiParams(TypedDict, total=False):
     http_version: Optional[HttpVersion]
     """HTTP version for requests to the E2B API and to sandboxes (commands,
     filesystem, PTY), defaults to `E2B_HTTP_VERSION` environment variable or
-    `DEFAULT_HTTP_VERSION` (`"2"`). `"1.1"` pins them to HTTP/1.1, which
+    `"2"`. `"1.1"` pins them to HTTP/1.1, which
     uses one connection per concurrent request instead of multiplexing streams
     over shared connections — for example when an intermediary on the path
     retires or mishandles long-lived HTTP/2 connections."""
