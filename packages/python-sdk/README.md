@@ -79,12 +79,16 @@ E2B_ENVD_POOL_SHARDS=32 python eval.py
 To avoid HTTP/2 altogether — for example when an intermediary on the path retires long-lived HTTP/2 connections — pin the SDK to HTTP/1.1, which uses one connection per concurrent request:
 
 ```py
-from e2b import Sandbox
+from e2b import E2B, Sandbox
 
-sandbox = Sandbox.create(http_version="http1")
+sandbox = Sandbox.create(http_version="1.1")
+
+# or once, for every call made through a client
+client = E2B(http_version="1.1")
+sbx = client.Sandbox.create()
 ```
 
-or, for the whole process, `E2B_HTTP_VERSION=http1`.
+or, for the whole process, `E2B_HTTP_VERSION=1.1`. The setting covers the E2B API, sandbox and volume content traffic.
 
 ### 5. Code execution with Code Interpreter
 

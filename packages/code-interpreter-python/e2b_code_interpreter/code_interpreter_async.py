@@ -98,7 +98,7 @@ class AsyncSandbox(BaseAsyncSandbox):
         # cancelled reliably. The helper also caches the transport
         # per-event-loop for async.
         return AsyncClient(
-            transport=get_transport(self.connection_config, http_version="http1"),
+            transport=get_transport(self.connection_config, http_version="1.1"),
         )
 
     async def _handle_connection_error(self, err: Exception) -> None:

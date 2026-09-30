@@ -105,7 +105,7 @@ def test_envd_pool_balancer_is_thread_safe():
     assert sum(balancer.active_streams) == 0
 
 
-@pytest.mark.parametrize("http_version", ["http2", "http1"])
+@pytest.mark.parametrize("http_version", ["2", "1.1"])
 def test_envd_transports_size_their_balancer_from_the_env(monkeypatch, http_version):
     monkeypatch.setattr(api, "envd_pool_shards", 7)
     monkeypatch.setattr(api, "envd_pool_streams", 42)
@@ -118,7 +118,7 @@ def test_envd_transports_size_their_balancer_from_the_env(monkeypatch, http_vers
             ).balancer
             assert balancer._streams_per_pool == 42
             # HTTP/1.1 has no per-connection stream limit to spread over.
-            assert balancer._max_pools == (1 if http_version == "http1" else 7)
+            assert balancer._max_pools == (1 if http_version == "1.1" else 7)
     finally:
         reset_transport_caches()
 
@@ -209,9 +209,9 @@ def test_sync_transports_keyed_by_http_version(test_api_key):
 
     try:
         negotiated = get_sync_transport(config)
-        http1 = get_sync_transport(config, http_version="http1")
+        http1 = get_sync_transport(config, http_version="1.1")
         envd_negotiated = get_sync_envd_transport(config)
-        envd_http1 = get_sync_envd_transport(config, http_version="http1")
+        envd_http1 = get_sync_envd_transport(config, http_version="1.1")
 
         assert http1 is not negotiated
         assert envd_http1 is not envd_negotiated
@@ -221,15 +221,15 @@ def test_sync_transports_keyed_by_http_version(test_api_key):
         assert envd_http1 is not http1
         # Each version still has one pool per proxy, and repeat calls with the
         # same arguments reuse it.
-        assert get_sync_transport(proxied_config, http_version="http1") not in (
+        assert get_sync_transport(proxied_config, http_version="1.1") not in (
             http1,
             negotiated,
         )
-        assert get_sync_transport(config, http_version="http1") is http1
+        assert get_sync_transport(config, http_version="1.1") is http1
         assert get_sync_transport(config) is negotiated
-        assert get_sync_envd_transport(config, http_version="http1") is envd_http1
+        assert get_sync_envd_transport(config, http_version="1.1") is envd_http1
         assert (
-            get_sync_envd_transport(config, http_version="http1", for_streaming=True)
+            get_sync_envd_transport(config, http_version="1.1", for_streaming=True)
             is not envd_http1
         )
     finally:
@@ -255,24 +255,24 @@ def test_sync_envd_transports_are_shared_across_sandboxes(test_api_key):
 def test_sync_transports_follow_the_http_version_option(test_api_key):
     reset_transport_caches()
     default = sandbox_config(test_api_key, "sbx-0")
-    http1 = ConnectionConfig(api_key=test_api_key, http_version="http1")
+    http1 = ConnectionConfig(api_key=test_api_key, http_version="1.1")
 
     try:
-        assert default.http_version == "http2"
+        assert default.http_version == "2"
         assert get_sync_transport(http1) is get_sync_transport(
-            default, http_version="http1"
+            default, http_version="1.1"
         )
         assert get_sync_transport(http1) is not get_sync_transport(default)
         assert get_sync_envd_transport(default) is get_sync_envd_transport(
-            default, http_version="http2"
+            default, http_version="2"
         )
         assert get_sync_envd_transport(http1) is get_sync_envd_transport(
-            default, http_version="http1"
+            default, http_version="1.1"
         )
         assert get_sync_envd_transport(http1) is not get_sync_envd_transport(default)
         # The explicit argument wins over the option.
         assert get_sync_envd_transport(
-            http1, http_version="http2"
+            http1, http_version="2"
         ) is get_sync_envd_transport(default)
         assert get_sync_envd_api(http1, "https://sandbox.e2b.app")._transport is (
             get_sync_envd_transport(http1)
@@ -283,7 +283,7 @@ def test_sync_transports_follow_the_http_version_option(test_api_key):
 
 def test_sync_transports_pass_http_version_to_pyqwest(test_api_key, monkeypatch):
     # `http_version=None` leaves the version to ALPN (HTTP/2 against the E2B
-    # API), `HTTP1` pins HTTP/1.1. Which version was negotiated is only
+    # API), `"1.1"` pins HTTP/1.1. Which version was negotiated is only
     # observable over TLS — the local echo server is plaintext, where both
     # settings speak HTTP/1 — so assert what reaches the pyqwest transport.
     reset_transport_caches()
@@ -299,15 +299,15 @@ def test_sync_transports_pass_http_version_to_pyqwest(test_api_key, monkeypatch)
 
     try:
         get_sync_transport(config)
-        get_sync_transport(config, http_version="http1")
+        get_sync_transport(config, http_version="1.1")
         # A third pool: same version as the call above, different idle bound.
-        get_sync_transport(config, http_version="http1", for_streaming=True)
+        get_sync_transport(config, http_version="1.1", for_streaming=True)
         # Envd pools are opened on first use with their transport's version;
         # shard zero is the control plane's pool above, already built.
-        get_sync_envd_transport(config, http_version="http1")
-        api_client_sync.get_envd_pyqwest_transport(
-            None, http_version="http1"
-        ).open_pool(1)
+        get_sync_envd_transport(config, http_version="1.1")
+        api_client_sync.get_envd_pyqwest_transport(None, http_version="1.1").open_pool(
+            1
+        )
         api_client_sync.get_envd_pyqwest_transport(None).open_pool(1)
 
         assert captured == [
@@ -489,9 +489,9 @@ async def test_async_transports_keyed_by_http_version(test_api_key):
 
     try:
         negotiated = get_async_transport(config)
-        http1 = get_async_transport(config, http_version="http1")
+        http1 = get_async_transport(config, http_version="1.1")
         envd_negotiated = get_async_envd_transport(config)
-        envd_http1 = get_async_envd_transport(config, http_version="http1")
+        envd_http1 = get_async_envd_transport(config, http_version="1.1")
 
         assert http1 is not negotiated
         assert envd_http1 is not envd_negotiated
@@ -499,11 +499,11 @@ async def test_async_transports_keyed_by_http_version(test_api_key):
         # the control plane's single pool.
         assert envd_negotiated is not negotiated
         assert envd_http1 is not http1
-        assert get_async_transport(config, http_version="http1") is http1
+        assert get_async_transport(config, http_version="1.1") is http1
         assert get_async_transport(config) is negotiated
-        assert get_async_envd_transport(config, http_version="http1") is envd_http1
+        assert get_async_envd_transport(config, http_version="1.1") is envd_http1
         assert (
-            get_async_envd_transport(config, http_version="http1", for_streaming=True)
+            get_async_envd_transport(config, http_version="1.1", for_streaming=True)
             is not envd_http1
         )
     finally:
@@ -527,19 +527,19 @@ async def test_async_envd_transports_are_shared_across_sandboxes(test_api_key):
 async def test_async_transports_follow_the_http_version_option(test_api_key):
     reset_transport_caches()
     default = sandbox_config(test_api_key, "sbx-0")
-    http1 = ConnectionConfig(api_key=test_api_key, http_version="http1")
+    http1 = ConnectionConfig(api_key=test_api_key, http_version="1.1")
 
     try:
         assert get_async_transport(http1) is get_async_transport(
-            default, http_version="http1"
+            default, http_version="1.1"
         )
         assert get_async_transport(http1) is not get_async_transport(default)
         assert get_async_envd_transport(http1) is get_async_envd_transport(
-            default, http_version="http1"
+            default, http_version="1.1"
         )
         assert get_async_envd_transport(http1) is not get_async_envd_transport(default)
         assert get_async_envd_transport(
-            http1, http_version="http2"
+            http1, http_version="2"
         ) is get_async_envd_transport(default)
         assert get_async_envd_api(http1, "https://sandbox.e2b.app")._transport is (
             get_async_envd_transport(http1)
@@ -563,15 +563,15 @@ async def test_async_transports_pass_http_version_to_pyqwest(test_api_key, monke
 
     try:
         get_async_transport(config)
-        get_async_transport(config, http_version="http1")
+        get_async_transport(config, http_version="1.1")
         # A third pool: same version as the call above, different idle bound.
-        get_async_transport(config, http_version="http1", for_streaming=True)
+        get_async_transport(config, http_version="1.1", for_streaming=True)
         # Envd pools are opened on first use with their transport's version;
         # shard zero is the control plane's pool above, already built.
-        get_async_envd_transport(config, http_version="http1")
-        api_client_async.get_envd_pyqwest_transport(
-            None, http_version="http1"
-        ).open_pool(1)
+        get_async_envd_transport(config, http_version="1.1")
+        api_client_async.get_envd_pyqwest_transport(None, http_version="1.1").open_pool(
+            1
+        )
         api_client_async.get_envd_pyqwest_transport(None).open_pool(1)
 
         assert captured == [
@@ -1115,7 +1115,7 @@ def test_sync_http1_transport_round_trips(test_api_key, echo_server, caplog):
     reset_transport_caches()
     config = ConnectionConfig(api_key=test_api_key)
     client = httpx.Client(
-        base_url=echo_server, transport=get_sync_transport(config, http_version="http1")
+        base_url=echo_server, transport=get_sync_transport(config, http_version="1.1")
     )
 
     try:
@@ -1139,7 +1139,7 @@ async def test_async_http1_transport_round_trips(test_api_key, echo_server):
     config = ConnectionConfig(api_key=test_api_key)
     client = httpx.AsyncClient(
         base_url=echo_server,
-        transport=get_async_transport(config, http_version="http1"),
+        transport=get_async_transport(config, http_version="1.1"),
     )
 
     try:
@@ -1238,7 +1238,7 @@ async def test_async_closing_one_client_leaves_the_shared_pool_open(
         reset_transport_caches()
 
 
-@pytest.mark.parametrize("http_version", ["http2", "http1"])
+@pytest.mark.parametrize("http_version", ["2", "1.1"])
 def test_sync_envd_transport_counts_requests_until_their_body_is_done(
     test_api_key, echo_server, http_version
 ):
@@ -1291,7 +1291,7 @@ def test_sync_envd_transport_counts_requests_until_their_body_is_done(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("http_version", ["http2", "http1"])
+@pytest.mark.parametrize("http_version", ["2", "1.1"])
 async def test_async_envd_transport_counts_requests_until_their_body_is_done(
     test_api_key, echo_server, http_version
 ):

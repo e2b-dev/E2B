@@ -2,7 +2,7 @@ import logging
 import os
 import re
 
-from typing import cast, Literal, Mapping, Optional, Dict, TypedDict, Union
+from typing import cast, Literal, Mapping, Optional, Dict, Tuple, TypedDict, Union
 
 import httpx
 from typing_extensions import Unpack
@@ -40,8 +40,23 @@ READ_TIMEOUT: float = 60.0  # 60 seconds
 KEEPALIVE_PING_INTERVAL_SEC = 50  # 50 seconds
 KEEPALIVE_PING_HEADER = "Keepalive-Ping-Interval"
 
-HttpVersion = Literal["http1", "http2"]
-DEFAULT_HTTP_VERSION: HttpVersion = "http2"
+HttpVersion = Literal["1.1", "2"]
+DEFAULT_HTTP_VERSION: HttpVersion = "2"
+HTTP_VERSIONS: Tuple[HttpVersion, ...] = ("1.1", "2")
+
+
+def resolve_http_version(http_version: Optional[str] = None) -> HttpVersion:
+    """The HTTP version to use: the explicit value, else ``E2B_HTTP_VERSION``,
+    else ``DEFAULT_HTTP_VERSION``. Rejects anything but ``"1.1"`` or ``"2"``."""
+    source = "http_version"
+    if http_version is None:
+        source = "E2B_HTTP_VERSION"
+        http_version = os.getenv("E2B_HTTP_VERSION") or DEFAULT_HTTP_VERSION
+    if http_version not in HTTP_VERSIONS:
+        raise InvalidArgumentException(
+            f"{source} must be '1.1' or '2', got {http_version!r}"
+        )
+    return cast(HttpVersion, http_version)
 
 
 class ApiParams(TypedDict, total=False):
@@ -95,7 +110,7 @@ class ApiParams(TypedDict, total=False):
     http_version: Optional[HttpVersion]
     """HTTP version for requests to the E2B API and to sandboxes (commands,
     filesystem, PTY), defaults to `E2B_HTTP_VERSION` environment variable or
-    `DEFAULT_HTTP_VERSION` (`"http2"`). `"http1"` pins them to HTTP/1.1, which
+    `DEFAULT_HTTP_VERSION` (`"2"`). `"1.1"` pins them to HTTP/1.1, which
     uses one connection per concurrent request instead of multiplexing streams
     over shared connections — for example when an intermediary on the path
     retires or mishandles long-lived HTTP/2 connections."""
@@ -209,15 +224,6 @@ class ConnectionConfig:
         return os.getenv("E2B_SANDBOX_URL")
 
     @staticmethod
-    def _http_version() -> HttpVersion:
-        value = (os.getenv("E2B_HTTP_VERSION") or DEFAULT_HTTP_VERSION).lower()
-        if value not in ("http1", "http2"):
-            raise InvalidArgumentException(
-                f"E2B_HTTP_VERSION must be 'http1' or 'http2', got {value!r}"
-            )
-        return cast(HttpVersion, value)
-
-    @staticmethod
     def _get_request_source() -> Optional[str]:
         source = os.getenv("E2B_USER_AGENT_SOURCE")
         if source and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,31}", source):
@@ -306,11 +312,7 @@ class ConnectionConfig:
         self._sandbox_url: Optional[str] = (
             sandbox_url or ConnectionConfig._sandbox_url()
         )
-        self.http_version: HttpVersion = (
-            http_version
-            if http_version is not None
-            else ConnectionConfig._http_version()
-        )
+        self.http_version: HttpVersion = resolve_http_version(http_version)
 
     @staticmethod
     def _get_request_timeout(

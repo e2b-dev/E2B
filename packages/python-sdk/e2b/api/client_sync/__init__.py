@@ -203,7 +203,7 @@ def get_pyqwest_transport(
                     # (HTTP/2 against the E2B API and envd) and uses HTTP/1 for
                     # plaintext, like the http2-enabled httpx transport this
                     # replaced.
-                    http_version=HTTPVersion.HTTP1 if http_version == "http1" else None,
+                    http_version=HTTPVersion.HTTP1 if http_version == "1.1" else None,
                     # Redirects belong to the httpx client above (which the
                     # generated clients leave off), not to reqwest.
                     follow_redirects=False,
@@ -288,7 +288,7 @@ def get_transport(
     API), like the http2-enabled httpx transport this replaced.
 
     ``http_version`` defaults to the config's ``http_version`` option;
-    ``"http1"`` returns a separate transport (its own pool) pinned to
+    ``"1.1"`` returns a separate transport (its own pool) pinned to
     HTTP/1.1. That matters for a server that reacts to a client going away:
     HTTP/2 multiplexes requests over one connection, so abandoning a request
     only resets its stream and the server may never notice, while HTTP/1.1's
@@ -320,7 +320,7 @@ def get_envd_transport(
     load-balanced envd pools rather than the control plane's single pool.
 
     ``http_version`` defaults to the config's ``http_version`` option;
-    ``"http1"`` pins the envd traffic to HTTP/1.1 (see :func:`get_transport`
+    ``"1.1"`` pins the envd traffic to HTTP/1.1 (see :func:`get_transport`
     for what that changes). ``for_streaming`` selects the read-timeout-keyed
     pools, as for :func:`get_transport`.
     """

@@ -159,7 +159,7 @@ test('pins the API dispatcher to HTTP/1.1 when httpVersion is http1', async () =
 
   const fetcher = createApiFetchForRuntime('node', {
     connectionLimit: 3,
-    httpVersion: 'http1',
+    httpVersion: '1.1',
     loadUndici: () => Promise.resolve({ Agent, fetch: undiciFetch }),
   })
   await fetcher('https://api.e2b.app/sandboxes')
@@ -173,12 +173,12 @@ test('caches API fetchers per proxy and HTTP version', async () => {
   const noProxy = createApiFetch()
   const proxyA = createApiFetch('http://127.0.0.1:8080')
   const proxyB = createApiFetch('http://127.0.0.1:9090')
-  const noProxyH1 = createApiFetch(undefined, 'http1')
+  const noProxyH1 = createApiFetch(undefined, '1.1')
 
   expect(createApiFetch()).toBe(noProxy)
-  expect(createApiFetch(undefined, 'http2')).toBe(noProxy)
+  expect(createApiFetch(undefined, '2')).toBe(noProxy)
   expect(createApiFetch('http://127.0.0.1:8080')).toBe(proxyA)
-  expect(createApiFetch(undefined, 'http1')).toBe(noProxyH1)
+  expect(createApiFetch(undefined, '1.1')).toBe(noProxyH1)
   expect(proxyA).not.toBe(noProxy)
   expect(proxyA).not.toBe(proxyB)
   expect(noProxyH1).not.toBe(noProxy)

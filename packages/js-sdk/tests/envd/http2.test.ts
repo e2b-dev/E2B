@@ -111,7 +111,7 @@ test('pins the dispatcher to HTTP/1.1 when httpVersion is http1', async () => {
 
   const direct = createEnvdFetchForRuntime('node', {
     connectionLimit: 1,
-    httpVersion: 'http1',
+    httpVersion: '1.1',
     loadUndici: () =>
       Promise.resolve({ Agent, ProxyAgent, fetch: undiciFetch }),
   })
@@ -119,7 +119,7 @@ test('pins the dispatcher to HTTP/1.1 when httpVersion is http1', async () => {
 
   const proxied = createEnvdFetchForRuntime('node', {
     connectionLimit: 1,
-    httpVersion: 'http1',
+    httpVersion: '1.1',
     proxy: 'http://127.0.0.1:8080',
     loadUndici: () =>
       Promise.resolve({ Agent, ProxyAgent, fetch: undiciFetch }),
@@ -143,22 +143,22 @@ test('caches envd fetchers per proxy and HTTP version', async () => {
 
   const noProxy = createEnvdFetch()
   const proxyA = createEnvdFetch('http://127.0.0.1:8080')
-  const noProxyH1 = createEnvdFetch(undefined, 'http1')
+  const noProxyH1 = createEnvdFetch(undefined, '1.1')
 
   expect(createEnvdFetch()).toBe(noProxy)
-  expect(createEnvdFetch(undefined, 'http2')).toBe(noProxy)
+  expect(createEnvdFetch(undefined, '2')).toBe(noProxy)
   expect(createEnvdFetch('http://127.0.0.1:8080')).toBe(proxyA)
-  expect(createEnvdFetch(undefined, 'http1')).toBe(noProxyH1)
+  expect(createEnvdFetch(undefined, '1.1')).toBe(noProxyH1)
   expect(proxyA).not.toBe(noProxy)
   expect(noProxyH1).not.toBe(noProxy)
 
   const rpcNoProxy = createEnvdRpcFetch()
   const rpcProxyA = createEnvdRpcFetch('http://127.0.0.1:8080')
-  const rpcNoProxyH1 = createEnvdRpcFetch(undefined, 'http1')
+  const rpcNoProxyH1 = createEnvdRpcFetch(undefined, '1.1')
 
   expect(createEnvdRpcFetch()).toBe(rpcNoProxy)
   expect(createEnvdRpcFetch('http://127.0.0.1:8080')).toBe(rpcProxyA)
-  expect(createEnvdRpcFetch(undefined, 'http1')).toBe(rpcNoProxyH1)
+  expect(createEnvdRpcFetch(undefined, '1.1')).toBe(rpcNoProxyH1)
   expect(rpcProxyA).not.toBe(rpcNoProxy)
   expect(rpcNoProxyH1).not.toBe(rpcNoProxy)
 })

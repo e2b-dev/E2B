@@ -140,7 +140,7 @@ def test_async_pool_is_cached_per_proxy():
     assert api_client_sync.get_pyqwest_transport(None) is not pool_a
 
 
-@pytest.mark.parametrize("http_version", ["http2", "http1"])
+@pytest.mark.parametrize("http_version", ["2", "1.1"])
 def test_rpc_clients_run_on_the_shared_envd_transport(
     test_api_key, monkeypatch, http_version
 ):
@@ -149,7 +149,7 @@ def test_rpc_clients_run_on_the_shared_envd_transport(
     # calls draw on the same pools and load counts. `pyqwest.SyncClient`
     # doesn't hand its transport back, so record what the normalization is
     # given.
-    other_version = "http1" if http_version == "http2" else "http2"
+    other_version = "1.1" if http_version == "2" else "2"
     config = ConnectionConfig(api_key=test_api_key, http_version=http_version)
     pool = api_client_sync.get_envd_pyqwest_transport(None, http_version=http_version)
     async_pool = api_client_async.get_envd_pyqwest_transport(

@@ -3,7 +3,12 @@ import createClient from 'openapi-fetch'
 import type { components, paths } from './schema.gen'
 import { defaultHeaders, getEnvVar } from '../api/metadata'
 import { createApiFetch } from '../api/http2'
-import { buildRequestSignal, REQUEST_TIMEOUT_MS } from '../connectionConfig'
+import {
+  buildRequestSignal,
+  HttpVersion,
+  REQUEST_TIMEOUT_MS,
+  resolveHttpVersion,
+} from '../connectionConfig'
 import { createApiLogger, Logger } from '../logs'
 import type { Volume } from './index'
 
@@ -58,6 +63,13 @@ export interface VolumeApiOpts {
   proxy?: string
 
   /**
+   * HTTP version for requests to the volume content API: `'1.1'` or `'2'`.
+   *
+   * @default E2B_HTTP_VERSION // environment variable or {@link DEFAULT_HTTP_VERSION}
+   */
+  httpVersion?: HttpVersion
+
+  /**
    * An optional `AbortSignal` that can be used to cancel the in-flight request.
    * When the signal is aborted, the underlying `fetch` is aborted and the
    * returned promise rejects with an `AbortError`.
@@ -75,6 +87,7 @@ export class VolumeConnectionConfig {
   readonly requestTimeoutMs: number
   readonly signal?: AbortSignal
   readonly proxy?: string
+  readonly httpVersion: HttpVersion
 
   constructor(volume: Volume, opts?: VolumeApiOpts) {
     this.domain = opts?.domain || volume.domain || VolumeConnectionConfig.domain
@@ -89,6 +102,9 @@ export class VolumeConnectionConfig {
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.signal = opts?.signal
     this.proxy = opts?.proxy || volume.proxy
+    this.httpVersion = resolveHttpVersion(
+      opts?.httpVersion ?? volume.httpVersion
+    )
   }
 
   private static get domain() {
@@ -120,7 +136,7 @@ class VolumeApiClient {
   constructor(config: VolumeConnectionConfig) {
     this.api = createClient<paths>({
       baseUrl: config.apiUrl,
-      fetch: createApiFetch(config.proxy),
+      fetch: createApiFetch(config.proxy, config.httpVersion),
       headers: {
         ...defaultHeaders,
         ...(config.token && { Authorization: `Bearer ${config.token}` }),

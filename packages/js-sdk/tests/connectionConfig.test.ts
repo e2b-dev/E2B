@@ -168,39 +168,42 @@ test('sandbox_url stays localhost in debug mode', () => {
 
 test('httpVersion defaults to http2 and reads E2B_HTTP_VERSION', () => {
   delete process.env.E2B_HTTP_VERSION
-  assert.equal(new ConnectionConfig().httpVersion, 'http2')
-  assert.equal(
-    new ConnectionConfig({ httpVersion: 'http1' }).httpVersion,
-    'http1'
-  )
+  assert.equal(new ConnectionConfig().httpVersion, '2')
+  assert.equal(new ConnectionConfig({ httpVersion: '1.1' }).httpVersion, '1.1')
 
-  process.env.E2B_HTTP_VERSION = 'http1'
-  assert.equal(new ConnectionConfig().httpVersion, 'http1')
-  process.env.E2B_HTTP_VERSION = 'HTTP1'
-  assert.equal(new ConnectionConfig().httpVersion, 'http1')
-  process.env.E2B_HTTP_VERSION = 'http2'
-  assert.equal(new ConnectionConfig().httpVersion, 'http2')
+  process.env.E2B_HTTP_VERSION = '1.1'
+  assert.equal(new ConnectionConfig().httpVersion, '1.1')
+  process.env.E2B_HTTP_VERSION = '2'
+  assert.equal(new ConnectionConfig().httpVersion, '2')
 
   process.env.E2B_HTTP_VERSION = 'http3'
   assert.throws(() => new ConnectionConfig(), InvalidArgumentError)
   assert.throws(() => new ConnectionConfig(), /E2B_HTTP_VERSION/)
   // An explicit option never consults the environment.
-  assert.equal(
-    new ConnectionConfig({ httpVersion: 'http1' }).httpVersion,
-    'http1'
-  )
+  assert.equal(new ConnectionConfig({ httpVersion: '1.1' }).httpVersion, '1.1')
+})
+
+test('httpVersion rejects values other than 1.1 and 2', () => {
+  delete process.env.E2B_HTTP_VERSION
+  for (const value of ['http1', 'http2', '1', '2.0', 'HTTP/1.1', '']) {
+    assert.throws(
+      () => new ConnectionConfig({ httpVersion: value as HttpVersion }),
+      InvalidArgumentError
+    )
+    assert.throws(
+      () => new ConnectionConfig({ httpVersion: value as HttpVersion }),
+      /httpVersion must be '1.1' or '2'/
+    )
+  }
 })
 
 test('httpVersion in args has priority over env var', () => {
-  process.env.E2B_HTTP_VERSION = 'http1'
-  assert.equal(
-    new ConnectionConfig({ httpVersion: 'http2' }).httpVersion,
-    'http2'
-  )
+  process.env.E2B_HTTP_VERSION = '1.1'
+  assert.equal(new ConnectionConfig({ httpVersion: '2' }).httpVersion, '2')
 
   // Per-call options and bound options keep the option when merged.
-  const merged = ConnectionConfig.mergeOpts({ httpVersion: 'http1' }, {})
-  assert.equal(new ConnectionConfig(merged).httpVersion, 'http1')
+  const merged = ConnectionConfig.mergeOpts({ httpVersion: '1.1' }, {})
+  assert.equal(new ConnectionConfig(merged).httpVersion, '1.1')
 })
 
 test('debug false in args overrides E2B_DEBUG env var', () => {

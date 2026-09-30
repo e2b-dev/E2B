@@ -89,7 +89,7 @@ export function createRuntimeFetch(
 
 /**
  * Build a fetch bound to a bounded undici dispatcher (HTTP/2 enabled unless
- * `httpVersion` is `'http1'`, `connections` origin connections, optional proxy
+ * `httpVersion` is `'1.1'`, `connections` origin connections, optional proxy
  * tunnel), capped at `inflightLimit` in-flight requests (`0` disables the
  * cap). Falls back to the global fetch — still capped — when undici cannot be
  * loaded.
@@ -108,7 +108,7 @@ export async function buildDispatchedFetch(options: {
   }
 
   const { Agent, ProxyAgent, fetch: undiciFetch } = undici
-  const allowH2 = (options.httpVersion ?? DEFAULT_HTTP_VERSION) === 'http2'
+  const allowH2 = (options.httpVersion ?? DEFAULT_HTTP_VERSION) === '2'
   const dispatcher = options.proxy
     ? new ProxyAgent({
         uri: options.proxy,

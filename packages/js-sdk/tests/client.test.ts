@@ -324,6 +324,22 @@ test('client.Volume.create uses the client config', async () => {
   assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/volumes`)
 })
 
+test('client httpVersion is bound and carried by volumes', async () => {
+  const client = new E2B({
+    apiKey: API_KEY_A,
+    domain: DOMAIN_A,
+    httpVersion: '1.1',
+  })
+
+  assert.equal((await client.Volume.create('test-volume')).httpVersion, '1.1')
+  // A per-call value overrides the bound one.
+  assert.equal(
+    (await client.Volume.create('test-volume', { httpVersion: '2' }))
+      .httpVersion,
+    '2'
+  )
+})
+
 test('client.Template statics use the client config', async () => {
   const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
 

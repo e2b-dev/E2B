@@ -173,7 +173,7 @@ def envd_pool_balancer(http_version: HttpVersion) -> EnvdPoolBalancer:
     HTTP/1.1 has no per-connection stream limit to spread over — the pool
     opens a connection per concurrent request — so it gets a single pool."""
     return EnvdPoolBalancer(
-        1 if http_version == "http1" else envd_pool_shards,
+        1 if http_version == "1.1" else envd_pool_shards,
         envd_pool_streams,
     )
 
