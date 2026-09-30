@@ -2,4 +2,4 @@
 "@e2b/python-sdk": patch
 ---
 
-The internal transport factories (`get_transport`, `get_httpx_transport`, `get_pyqwest_transport` in `e2b.api.client_sync` / `client_async`) now take `shard: Optional[str]` — a sandbox ID, or `None` for the default shard — in place of a `pool_shard` index; the pool index is derived from it internally. `get_envd_transport` is folded into `get_transport(config, shard=envd_shard(config))`. No change to how traffic is distributed.
+Sandbox `commands`/`files` traffic is now balanced across HTTP/2 connections the way the JS SDK's undici agent does it, instead of being sharded into a fixed number of pools by sandbox ID. Every request goes to the connection with the fewest streams in flight; a new connection is dialed only when all existing ones already carry `E2B_STREAMS_PER_CONNECTION` streams (default `100`), up to `E2B_MAX_CONNECTIONS` (default `200`). Envd RPC and HTTP calls share the same connections. `E2B_ENVD_POOL_SHARDS` and the `pool_shard` argument of the internal transport factories (`get_transport`, `get_httpx_transport`, `get_pyqwest_transport`, `get_envd_transport`) are removed.

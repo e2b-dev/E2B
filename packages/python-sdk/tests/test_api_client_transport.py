@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import gc
 import json
 import logging
 import threading
@@ -9,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import httpx
 import pytest
-from pyqwest import HTTPVersion, Request, SyncRequest
+from pyqwest import Headers, HTTPVersion, Request, Response, SyncRequest, SyncResponse
 from pyqwest.httpx import AsyncPyqwestTransport, PyqwestTransport
 from transport_caches import reset_transport_caches
 
@@ -17,10 +18,9 @@ import e2b.api as api
 import e2b.api.client_async as api_client_async
 import e2b.api.client_sync as api_client_sync
 from e2b.api import (
-    envd_shard,
+    ConnectionBalancer,
     pool_idle_timeout,
     pool_max_idle_per_host,
-    pool_shard_index,
     proxy_to_config,
 )
 from e2b.api.client_async import get_api_client as get_async_api_client
@@ -41,41 +41,46 @@ def run_in_worker_thread(fn):
         return executor.submit(fn).result()
 
 
-def sandbox_config(test_api_key: str, sandbox_id: str) -> ConnectionConfig:
-    return ConnectionConfig(
-        api_key=test_api_key,
-        extra_sandbox_headers={
-            "E2b-Sandbox-Id": sandbox_id,
-            "E2b-Sandbox-Port": "49983",
-        },
-    )
+def test_balancer_builds_the_first_pool_eagerly_and_the_rest_on_demand(
+    monkeypatch,
+):
+    monkeypatch.setattr(api, "streams_per_connection", 2)
+    monkeypatch.setattr(api, "max_connections", 3)
+    built = []
+
+    def build():
+        built.append(object())
+        return built[-1]
+
+    balancer = ConnectionBalancer(build)
+    assert len(built) == 1
+
+    # The first pool takes requests up to its stream limit before a second
+    # one is dialed; each new pool is then the least loaded and fills up in
+    # turn, until the cap, after which the least-loaded pool absorbs the rest.
+    connections = [balancer.acquire() for _ in range(7)]
+    assert [built.index(c.transport) for c in connections] == [0, 0, 1, 1, 2, 2, 0]
+    assert len(built) == 3
+    assert [c.active for c in balancer.connections] == [3, 2, 2]
+
+    # Releasing frees the slot; new requests prefer the pool with the fewest
+    # in flight rather than the first one that has room.
+    for connection in connections[2:4]:
+        balancer.release(connection)
+    assert [c.active for c in balancer.connections] == [3, 0, 2]
+    assert balancer.acquire().transport is built[1]
 
 
-def get_sync_envd_transport(config, http2=True, *, for_streaming=False):
-    return get_sync_transport(
-        config, http2, for_streaming=for_streaming, shard=envd_shard(config)
-    )
+def test_balancer_never_exceeds_the_connection_cap(monkeypatch):
+    monkeypatch.setattr(api, "streams_per_connection", 1)
+    monkeypatch.setattr(api, "max_connections", 1)
+    balancer = ConnectionBalancer(object)
 
+    connections = [balancer.acquire() for _ in range(5)]
 
-def get_async_envd_transport(config, http2=True, *, for_streaming=False):
-    return get_async_transport(
-        config, http2, for_streaming=for_streaming, shard=envd_shard(config)
-    )
-
-
-@pytest.mark.parametrize("pool_shards", [1, 4, 8])
-def test_pool_shard_index_respects_configured_count(monkeypatch, pool_shards):
-    monkeypatch.setattr(api, "envd_pool_shards", pool_shards)
-
-    assigned = {pool_shard_index(f"sbx-{index}") for index in range(100)}
-
-    assert assigned == set(range(pool_shards))
-    assert pool_shard_index(None) == 0
-
-
-def test_envd_shard_is_the_sandbox_id(test_api_key):
-    assert envd_shard(sandbox_config(test_api_key, "sbx-0")) == "sbx-0"
-    assert envd_shard(ConnectionConfig(api_key=test_api_key)) is None
+    assert len(balancer.connections) == 1
+    assert {c.transport for c in connections} == {balancer.connections[0].transport}
+    assert balancer.connections[0].active == 5
 
 
 def test_sync_api_client_proxy_uses_explicit_transport(test_api_key):
@@ -138,56 +143,22 @@ def test_sync_transports_keyed_by_http_version(test_api_key):
     try:
         negotiated = get_sync_transport(config)
         http1 = get_sync_transport(config, http2=False)
-        envd_negotiated = get_sync_envd_transport(config)
-        envd_http1 = get_sync_envd_transport(config, http2=False)
 
         assert http1 is not negotiated
-        assert envd_http1 is not envd_negotiated
-        # A config without a sandbox ID resolves envd to the default shard, so
-        # it shares the generic transport for each HTTP version.
-        assert envd_negotiated is negotiated
-        assert envd_http1 is http1
-        # Each version still has one pool per proxy, and repeat calls with the
-        # same arguments reuse it.
+        # Each version still has one transport per proxy, and repeat calls
+        # with the same arguments reuse it.
         assert get_sync_transport(proxied_config, http2=False) not in (
             http1,
             negotiated,
         )
         assert get_sync_transport(config, http2=False) is http1
         assert get_sync_transport(config) is negotiated
-        assert get_sync_envd_transport(config, http2=False) is envd_http1
-        assert (
-            get_sync_envd_transport(config, http2=False, for_streaming=True)
-            is not envd_http1
-        )
-    finally:
-        reset_transport_caches()
-
-
-def test_sync_envd_transports_are_consistently_sharded_by_sandbox(
-    test_api_key, monkeypatch
-):
-    monkeypatch.setattr(api, "envd_pool_shards", 4)
-    reset_transport_caches()
-    first = sandbox_config(test_api_key, "sbx-0")
-    same_shard = sandbox_config(test_api_key, "sbx-2")
-    different_shard = sandbox_config(test_api_key, "sbx-1")
-
-    try:
-        assert pool_shard_index("sbx-0") == pool_shard_index("sbx-2")
-        assert pool_shard_index("sbx-0") != pool_shard_index("sbx-1")
-        assert get_sync_envd_transport(first) is get_sync_envd_transport(same_shard)
-        assert get_sync_envd_transport(first) is not get_sync_envd_transport(
-            different_shard
-        )
-        # Generic API traffic remains on the default shard rather than
-        # multiplying control-plane connections for every envd shard.
-        assert get_sync_envd_transport(first) is not get_sync_transport(first)
-        # The RPC pool for the same sandbox is the one under the httpx adapter.
-        assert (
-            get_sync_pyqwest_transport(None, shard="sbx-0")
-            is get_sync_envd_transport(first)._transport
-        )
+        assert get_sync_transport(config, http2=False, for_streaming=True) is not http1
+        # The envd RPC clients' pyqwest transport is the one under the httpx
+        # adapter the envd HTTP API uses, so a sandbox's RPC and HTTP traffic
+        # share connections.
+        assert get_sync_pyqwest_transport(None) is negotiated._transport
+        assert get_sync_pyqwest_transport(None, http2=False) is http1._transport
     finally:
         reset_transport_caches()
 
@@ -212,9 +183,7 @@ def test_sync_transports_pass_http_version_to_pyqwest(test_api_key, monkeypatch)
         get_sync_transport(config)
         get_sync_transport(config, http2=False)
         # A third pool: same version as the call above, different idle bound.
-        # (`get_sync_envd_transport(config, http2=False)` would be a cache hit
-        # and build nothing, since it shares the control plane's pool.)
-        get_sync_envd_transport(config, http2=False, for_streaming=True)
+        get_sync_transport(config, http2=False, for_streaming=True)
 
         assert captured == [None, HTTPVersion.HTTP1, HTTPVersion.HTTP1]
     finally:
@@ -386,46 +355,13 @@ async def test_async_transports_keyed_by_http_version(test_api_key):
     try:
         negotiated = get_async_transport(config)
         http1 = get_async_transport(config, http2=False)
-        envd_negotiated = get_async_envd_transport(config)
-        envd_http1 = get_async_envd_transport(config, http2=False)
 
         assert http1 is not negotiated
-        assert envd_http1 is not envd_negotiated
-        # A config without a sandbox ID resolves envd to the default shard, so
-        # it shares the generic transport for each HTTP version.
-        assert envd_negotiated is negotiated
-        assert envd_http1 is http1
         assert get_async_transport(config, http2=False) is http1
         assert get_async_transport(config) is negotiated
-        assert get_async_envd_transport(config, http2=False) is envd_http1
-        assert (
-            get_async_envd_transport(config, http2=False, for_streaming=True)
-            is not envd_http1
-        )
-    finally:
-        reset_transport_caches()
-
-
-@pytest.mark.asyncio
-async def test_async_envd_transports_are_consistently_sharded_by_sandbox(
-    test_api_key, monkeypatch
-):
-    monkeypatch.setattr(api, "envd_pool_shards", 4)
-    reset_transport_caches()
-    first = sandbox_config(test_api_key, "sbx-0")
-    same_shard = sandbox_config(test_api_key, "sbx-2")
-    different_shard = sandbox_config(test_api_key, "sbx-1")
-
-    try:
-        assert get_async_envd_transport(first) is get_async_envd_transport(same_shard)
-        assert get_async_envd_transport(first) is not get_async_envd_transport(
-            different_shard
-        )
-        assert get_async_envd_transport(first) is not get_async_transport(first)
-        assert (
-            get_async_pyqwest_transport(None, shard="sbx-0")
-            is get_async_envd_transport(first)._transport
-        )
+        assert get_async_transport(config, http2=False, for_streaming=True) is not http1
+        assert get_async_pyqwest_transport(None) is negotiated._transport
+        assert get_async_pyqwest_transport(None, http2=False) is http1._transport
     finally:
         reset_transport_caches()
 
@@ -447,7 +383,7 @@ async def test_async_transports_pass_http_version_to_pyqwest(test_api_key, monke
         get_async_transport(config)
         get_async_transport(config, http2=False)
         # A third pool: same version as the call above, different idle bound.
-        get_async_envd_transport(config, http2=False, for_streaming=True)
+        get_async_transport(config, http2=False, for_streaming=True)
 
         assert captured == [None, HTTPVersion.HTTP1, HTTPVersion.HTTP1]
     finally:
@@ -965,3 +901,192 @@ async def test_async_closing_one_client_leaves_the_shared_pool_open(
     finally:
         await envd_api.aclose()
         reset_transport_caches()
+
+
+class FakeSyncPool:
+    """A stand-in reqwest pool: serves a canned streamed response and records
+    whether pyqwest's response was closed, so the balancing transport's
+    accounting can be checked without a server."""
+
+    def __init__(self, chunks=(b"a", b"b"), error=None):
+        self.chunks = chunks
+        self.error = error
+        self.closed = 0
+        self.trailers = Headers()
+
+    def execute_sync(self, request):
+        if self.error is not None:
+            raise self.error
+        return SyncResponse(
+            status=200,
+            headers=Headers([("content-type", "text/plain")]),
+            content=self._content(),
+            trailers=self.trailers,
+        )
+
+    def _content(self):
+        try:
+            for chunk in self.chunks:
+                yield chunk
+            self.trailers.add("grpc-status", "0")
+        finally:
+            self.closed += 1
+
+
+def sync_balancing_transport(pool):
+    transport = api_client_sync.BalancingTransport(lambda: pool)
+    return transport, transport.balancer.connections[0]
+
+
+def test_sync_balancing_transport_counts_a_request_until_its_content_is_consumed():
+    pool = FakeSyncPool()
+    transport, connection = sync_balancing_transport(pool)
+
+    response = transport.execute_sync(SyncRequest("GET", "http://envd/health"))
+
+    assert response.status == 200
+    assert response.headers.get("content-type") == "text/plain"
+    assert connection.active == 1
+    assert next(response.content) == b"a"
+    assert connection.active == 1
+    assert list(response.content) == [b"b"]
+    # Trailers are read off the original response after its content, as the
+    # RPC clients do, and the slot is freed exactly once.
+    assert response.trailers.get("grpc-status") == "0"
+    assert connection.active == 0
+    assert pool.closed == 1
+    response.close()
+    assert connection.active == 0
+    assert pool.closed == 1
+
+
+def test_sync_balancing_transport_frees_the_slot_when_the_response_is_closed():
+    pool = FakeSyncPool()
+    transport, connection = sync_balancing_transport(pool)
+
+    response = transport.execute_sync(SyncRequest("GET", "http://envd/health"))
+    assert next(response.content) == b"a"
+    assert connection.active == 1
+
+    response.close()
+
+    assert connection.active == 0
+    assert pool.closed == 1
+    response.close()
+    assert connection.active == 0
+
+
+def test_sync_balancing_transport_frees_the_slot_when_the_request_fails():
+    pool = FakeSyncPool(error=ConnectionError("refused"))
+    transport, connection = sync_balancing_transport(pool)
+
+    with pytest.raises(ConnectionError):
+        transport.execute_sync(SyncRequest("GET", "http://envd/health"))
+
+    assert connection.active == 0
+
+
+def test_sync_balancing_transport_frees_the_slot_when_the_response_is_dropped():
+    pool = FakeSyncPool()
+    transport, connection = sync_balancing_transport(pool)
+
+    response = transport.execute_sync(SyncRequest("GET", "http://envd/health"))
+    assert next(response.content) == b"a"
+    del response
+    gc.collect()
+
+    assert connection.active == 0
+    assert pool.closed == 1
+
+
+class FakeAsyncPool:
+    def __init__(self, chunks=(b"a", b"b"), error=None):
+        self.chunks = chunks
+        self.error = error
+        self.closed = 0
+        self.trailers = Headers()
+
+    async def execute(self, request):
+        if self.error is not None:
+            raise self.error
+        return Response(
+            status=200,
+            headers=Headers([("content-type", "text/plain")]),
+            content=self._content(),
+            trailers=self.trailers,
+        )
+
+    async def _content(self):
+        try:
+            for chunk in self.chunks:
+                yield chunk
+            self.trailers.add("grpc-status", "0")
+        finally:
+            self.closed += 1
+
+
+def async_balancing_transport(pool):
+    transport = api_client_async.BalancingTransport(lambda: pool)
+    return transport, transport.balancer.connections[0]
+
+
+@pytest.mark.asyncio
+async def test_async_balancing_transport_counts_a_request_until_its_content_is_consumed():
+    pool = FakeAsyncPool()
+    transport, connection = async_balancing_transport(pool)
+
+    response = await transport.execute(Request("GET", "http://envd/health"))
+
+    assert response.status == 200
+    assert response.headers.get("content-type") == "text/plain"
+    assert connection.active == 1
+    assert await response.content.__anext__() == b"a"
+    assert connection.active == 1
+    assert [chunk async for chunk in response.content] == [b"b"]
+    assert response.trailers.get("grpc-status") == "0"
+    assert connection.active == 0
+    assert pool.closed == 1
+    await response.aclose()
+    assert connection.active == 0
+    assert pool.closed == 1
+
+
+@pytest.mark.asyncio
+async def test_async_balancing_transport_frees_the_slot_when_the_response_is_closed():
+    pool = FakeAsyncPool()
+    transport, connection = async_balancing_transport(pool)
+
+    response = await transport.execute(Request("GET", "http://envd/health"))
+    assert await response.content.__anext__() == b"a"
+    assert connection.active == 1
+
+    await response.aclose()
+
+    assert connection.active == 0
+    assert pool.closed == 1
+    await response.aclose()
+    assert connection.active == 0
+
+
+@pytest.mark.asyncio
+async def test_async_balancing_transport_frees_the_slot_when_the_request_fails():
+    pool = FakeAsyncPool(error=ConnectionError("refused"))
+    transport, connection = async_balancing_transport(pool)
+
+    with pytest.raises(ConnectionError):
+        await transport.execute(Request("GET", "http://envd/health"))
+
+    assert connection.active == 0
+
+
+@pytest.mark.asyncio
+async def test_async_balancing_transport_frees_the_slot_when_the_response_is_dropped():
+    pool = FakeAsyncPool()
+    transport, connection = async_balancing_transport(pool)
+
+    response = await transport.execute(Request("GET", "http://envd/health"))
+    assert await response.content.__anext__() == b"a"
+    del response
+    gc.collect()
+
+    assert connection.active == 0

@@ -1,10 +1,20 @@
 import json
 import logging
 import os
-import zlib
+import threading
 from dataclasses import dataclass
 from types import TracebackType
-from typing import NamedTuple, Optional, Protocol, Tuple, Union
+from typing import (
+    Callable,
+    Generic,
+    List,
+    NamedTuple,
+    Optional,
+    Protocol,
+    Tuple,
+    TypeVar,
+    Union,
+)
 from urllib.parse import quote
 
 import httpx
@@ -97,38 +107,65 @@ connection_retries = int(os.getenv("E2B_CONNECTION_RETRIES") or "3")
 # Pool tuning for the pyqwest transports, shared by the REST API, envd RPC,
 # and envd HTTP API stacks. `pool_max_idle_per_host` is per host rather than
 # the global idle cap the httpx transports took, which suits both: API traffic
-# goes to a single host and each sandbox is its own host. `E2B_MAX_CONNECTIONS`
-# has no counterpart left — reqwest does not cap concurrent connections — so it
-# is no longer read.
+# goes to a single host and each sandbox is its own host.
 pool_idle_timeout = float(os.getenv("E2B_KEEPALIVE_EXPIRY") or "300")
 pool_max_idle_per_host = int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20")
-envd_pool_shards = max(1, int(os.getenv("E2B_ENVD_POOL_SHARDS") or "4"))
+
+# A reqwest pool multiplexes every request to a host over one HTTP/2
+# connection and queues past the server's concurrent-stream limit (envd's
+# edge, which all sandboxes share, advertises 100) rather than dialing another
+# — long-running commands hold those streams. So each cached transport is a
+# set of reqwest pools that grows on demand, like undici's
+# `Agent({ connections })` in the JS SDK: a request goes to the pool with the
+# fewest in-flight requests, another pool is dialed once every one carries
+# `streams_per_connection`, up to `max_connections` pools.
+streams_per_connection = max(1, int(os.getenv("E2B_STREAMS_PER_CONNECTION") or "100"))
+max_connections = max(1, int(os.getenv("E2B_MAX_CONNECTIONS") or "200"))
+
+T = TypeVar("T")
 
 
-def envd_shard(config: ConnectionConfig) -> Optional[str]:
-    """The connection-pool ``shard`` for a config's envd traffic: its sandbox
-    ID, which every envd request carries, so one sandbox's RPC and HTTP
-    clients land on the same pool. Configs without one (control-plane
-    clients) get ``None``, the default shard."""
-    return config.sandbox_headers.get("E2b-Sandbox-Id") or None
+class PooledConnection(Generic[T]):
+    """One reqwest pool in a :class:`ConnectionBalancer` and the number of
+    requests in flight on it."""
+
+    __slots__ = ("transport", "active")
+
+    def __init__(self, transport: T) -> None:
+        self.transport = transport
+        self.active = 0
 
 
-def pool_shard_index(shard: Optional[str]) -> int:
-    """Map a ``shard`` (a sandbox ID, or ``None`` for the default shard) to
-    one of ``envd_pool_shards`` connection pools.
+class ConnectionBalancer(Generic[T]):
+    """Least-loaded selection over a growable, bounded set of reqwest pools.
 
-    Production envd requests share one origin, whose HTTP/2 connection has a
-    finite concurrent-stream limit. Long-running commands hold those streams,
-    so one process-wide connection becomes a bottleneck even though the edge
-    and account can run more sandboxes. A small bounded set of pools provides
-    additional connections without returning to one connection per sandbox.
+    The policy shared by the sync and async balancing transports, which do the
+    I/O: :meth:`acquire` picks (or dials) a pool and counts the request on it,
+    :meth:`release` uncounts it once the response is consumed or closed.
+    Per-request state is a lock away from every thread and loop that shares
+    the transport; the lock is reentrant because a release can run from a
+    ``__del__`` at any point, including inside :meth:`acquire`."""
 
-    CRC32 is stable across processes, unlike Python's randomized ``hash``.
-    The default shard is index zero, which hashed sandboxes may share.
-    """
-    if shard is None:
-        return 0
-    return zlib.crc32(shard.encode()) % envd_pool_shards
+    def __init__(self, build: Callable[[], T]) -> None:
+        self._build = build
+        self._lock = threading.RLock()
+        self.connections: List[PooledConnection[T]] = [PooledConnection(build())]
+
+    def acquire(self) -> PooledConnection[T]:
+        with self._lock:
+            connection = min(self.connections, key=lambda c: c.active)
+            if (
+                connection.active >= streams_per_connection
+                and len(self.connections) < max_connections
+            ):
+                connection = PooledConnection(self._build())
+                self.connections.append(connection)
+            connection.active += 1
+            return connection
+
+    def release(self, connection: PooledConnection[T]) -> None:
+        with self._lock:
+            connection.active -= 1
 
 
 class ProxyConfig(NamedTuple):
