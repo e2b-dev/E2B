@@ -22,7 +22,7 @@
   },
   "devDependencies": {
     "@changesets/cli": "2.31.1",
-    "@cloudflare/vitest-pool-workers": "^0.18.7",
+    "@cloudflare/vitest-pool-workers": "^0.18.8",
     "@types/node": "catalog:",
     "dotenv": "^16.4.5",
     "oxlint": "^1.81.0",
