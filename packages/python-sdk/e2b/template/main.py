@@ -766,7 +766,7 @@ class TemplateBase(ClientFactory):
         Create a new template builder instance.
 
         :param file_context_path: Base path for resolving relative file paths in copy operations
-        :param file_ignore_patterns: Patterns in `.dockerignore` syntax for files to exclude when copying. They are applied after the `.dockerignore` file in the context directory, so they take precedence over it. An invalid pattern (such as an unterminated `[`) raises a :class:`TemplateException`
+        :param file_ignore_patterns: Patterns in `.dockerignore` syntax for files to exclude when copying. They are applied after the `.dockerignore` file in the context directory, so they take precedence over it. An invalid pattern (such as an unterminated `[`) raises a :class:`TemplateException`. Brace expansion (`{a,b}`) is not supported, as in Docker
         """
         self._default_base_image: str = "e2bdev/base"
         self._base_image: Optional[str] = self._default_base_image

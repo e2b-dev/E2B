@@ -496,6 +496,23 @@ describe('getAllFilesInPath', () => {
       expect(await hash()).toBe(before)
     })
 
+    test('should re-include files when copying an excluded directory', async () => {
+      await mkdir(join(testDir, 'dir'))
+      await writeFile(join(testDir, 'dir', 'keep.txt'), 'x')
+      await writeFile(join(testDir, 'dir', 'other.txt'), 'x')
+      expect(await relativePaths('dir', ['dir', '!dir/keep.txt'])).toEqual([
+        'dir/keep.txt',
+      ])
+    })
+
+    test('should not expand braces', async () => {
+      await writeFile(join(testDir, 'a.txt'), 'x')
+      await writeFile(join(testDir, 'b.{txt,md}'), 'x')
+      const files = await relativePaths('*', ['*.{txt,md}'])
+      expect(files).toContain('a.txt')
+      expect(files).not.toContain('b.{txt,md}')
+    })
+
     test('should strip a UTF-8 BOM from .dockerignore', async () => {
       await writeFile(
         join(testDir, '.dockerignore'),

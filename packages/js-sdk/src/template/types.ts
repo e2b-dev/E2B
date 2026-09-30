@@ -17,6 +17,7 @@ export type TemplateOptions = {
    * Patterns in `.dockerignore` syntax for files to exclude when copying.
    * They are applied after the `.dockerignore` file in the context directory, so they take precedence over it.
    * An invalid pattern (such as an unterminated `[`) throws a `TemplateError`.
+   * Brace expansion (`{a,b}`) is not supported, as in Docker.
    */
   fileIgnorePatterns?: string[]
 }

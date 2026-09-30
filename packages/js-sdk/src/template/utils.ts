@@ -8,7 +8,7 @@ import { dynamicImport } from '../utils'
 import { TemplateError } from '../errors'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
 import { PatternMatcher } from './dockerignore'
-import type { IgnoreLike, Path } from 'glob'
+import type { Path } from 'glob'
 import type { BuildOptions } from './types'
 
 /**
@@ -166,7 +166,11 @@ function normalizeIgnorePattern(pattern: string, contextPath: string): string {
 function createIgnoreMatcher(
   ignorePatterns: string[],
   contextPath: string
-): IgnoreLike {
+): {
+  ignored: (p: Path) => boolean
+  childrenIgnored: (p: Path) => boolean
+  mayMatchUnder: (p: Path) => boolean
+} {
   const absoluteContextPath = path.resolve(contextPath)
   const matcher = new PatternMatcher(
     ignorePatterns.map((pattern) =>
@@ -183,6 +187,7 @@ function createIgnoreMatcher(
     ignored,
     childrenIgnored: (p) =>
       ignored(p) && !matcher.mayMatchUnder(p.relativePosix()),
+    mayMatchUnder: (p) => matcher.mayMatchUnder(p.relativePosix()),
   }
 }
 
@@ -205,7 +210,12 @@ export async function getAllFilesInPath(
   const ignore = createIgnoreMatcher(ignorePatterns, contextPath)
 
   const globFiles = await glob(src, {
-    ignore,
+    // Keep excluded directories that a `!` pattern may re-include files from,
+    // so they are walked below
+    ignore: {
+      ignored: (p) => ignore.ignored(p) && !ignore.mayMatchUnder(p),
+      childrenIgnored: ignore.childrenIgnored,
+    },
     withFileTypes: true,
     dot: true,
     cwd: contextPath,
@@ -242,7 +252,7 @@ export async function getAllFilesInPath(
     if (file.isDirectory()) {
       walkedDirs.add(file.relativePosix())
       // For directories, add the directory itself and all files inside it
-      if (includeDirectories) {
+      if (includeDirectories && !ignore.ignored(file)) {
         files.set(file.fullpath(), file)
       }
       const dirPattern = normalizePath(
@@ -258,7 +268,7 @@ export async function getAllFilesInPath(
         cwd: contextPath,
       })
       dirFiles.forEach((f) => files.set(f.fullpath(), f))
-    } else {
+    } else if (!ignore.ignored(file)) {
       // For files, just add the file
       files.set(file.fullpath(), file)
     }
