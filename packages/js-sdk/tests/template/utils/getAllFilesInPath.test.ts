@@ -336,7 +336,7 @@ describe('getAllFilesInPath', () => {
   describe('.dockerignore semantics', () => {
     const relativePaths = async (src: string, ignorePatterns: string[]) =>
       (await getAllFilesInPath(src, testDir, ignorePatterns))
-        .map((f) => relative(testDir, f.fullpath()) || '.')
+        .map((f) => relative(testDir, f.fullpath()).replace(/\\/g, '/') || '.')
         .sort()
 
     beforeEach(async () => {

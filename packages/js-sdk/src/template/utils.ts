@@ -7,6 +7,7 @@ import { parse, type StackFrame } from 'error-stack-parser-es'
 import { dynamicImport } from '../utils'
 import { TemplateError } from '../errors'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
+import { PatternMatcher } from './dockerignore'
 import type { IgnoreLike, Path } from 'glob'
 import type { BuildOptions } from './types'
 
@@ -130,33 +131,6 @@ function normalizePath(path: string): string {
   return path.replace(/\\/g, '/')
 }
 
-// Characters that Docker's pattern matcher treats literally but
-// `@balena/dockerignore` (a port of an older Docker release) would pass to the
-// regex unescaped.
-const LITERAL_REGEX_CHARS = new Set(['+', '(', ')', '|', '{', '}'])
-
-function escapeLiteralRegexChars(pattern: string): string {
-  let result = ''
-  let inCharClass = false
-  for (let i = 0; i < pattern.length; i++) {
-    const ch = pattern[i]
-    // On Windows the backslash is a path separator, not an escape character.
-    if (ch === '\\' && path.sep === '/') {
-      result += ch + (pattern[i + 1] ?? '')
-      i++
-    } else if (inCharClass) {
-      inCharClass = ch !== ']'
-      result += ch
-    } else if (ch === '[') {
-      inCharClass = true
-      result += ch
-    } else {
-      result += LITERAL_REGEX_CHARS.has(ch) ? `[${ch}]` : ch
-    }
-  }
-  return result
-}
-
 function normalizeIgnorePattern(pattern: string, contextPath: string): string {
   let trimmed = pattern.trim()
   const negated = trimmed.startsWith('!')
@@ -176,11 +150,7 @@ function normalizeIgnorePattern(pattern: string, contextPath: string): string {
       trimmed = relative
     }
   }
-  return (negated ? '!' : '') + escapeLiteralRegexChars(trimmed)
-}
-
-function isWildcardSegment(segment: string): boolean {
-  return /[*?[\\]/.test(segment)
+  return (negated ? '!' : '') + trimmed
 }
 
 /**
@@ -193,70 +163,26 @@ function isWildcardSegment(segment: string): boolean {
  * @param contextPath Base directory the patterns are relative to
  * @returns Matcher to pass as the glob `ignore` option
  */
-async function createIgnoreMatcher(
+function createIgnoreMatcher(
   ignorePatterns: string[],
   contextPath: string
-): Promise<IgnoreLike> {
-  const { default: dockerignore } = await dynamicImport<
-    typeof import('@balena/dockerignore')
-  >('@balena/dockerignore')
+): IgnoreLike {
   const absoluteContextPath = path.resolve(contextPath)
-  const patterns = ignorePatterns.map((pattern) =>
-    normalizeIgnorePattern(pattern, absoluteContextPath)
-  )
-
-  for (const [i, pattern] of patterns.entries()) {
-    try {
-      // Patterns are compiled lazily, so test one path to surface syntax errors.
-      dockerignore({ ignorecase: false }).add(pattern).ignores('.')
-    } catch (err) {
-      throw new TemplateError(
-        `Invalid ignore pattern '${ignorePatterns[i]}': ${(err as Error).message}`
-      )
-    }
-  }
-  const matcher = dockerignore({ ignorecase: false }).add(patterns)
-
-  const negatedPatternSegments = patterns
-    .filter((pattern) => pattern.startsWith('!'))
-    .map((pattern) =>
-      path.posix
-        .normalize(
-          path.sep === '\\'
-            ? normalizePath(pattern.slice(1).trim())
-            : pattern.slice(1).trim()
-        )
-        .replace(/^\/+|\/+$/g, '')
-        .split('/')
+  const matcher = new PatternMatcher(
+    ignorePatterns.map((pattern) =>
+      normalizeIgnorePattern(pattern, absoluteContextPath)
     )
-
-  // Whether a `!` pattern could re-include a path under an excluded directory,
-  // in which case the directory must still be walked.
-  const mayReincludeUnder = (dirSegments: string[]) =>
-    negatedPatternSegments.some((segments) => {
-      for (let i = 0; i < dirSegments.length; i++) {
-        if (i >= segments.length) {
-          return false
-        }
-        if (segments[i].includes('**')) {
-          return true
-        }
-        if (!isWildcardSegment(segments[i]) && segments[i] !== dirSegments[i]) {
-          return false
-        }
-      }
-      return segments.length > dirSegments.length
-    })
+  )
 
   const ignored = (p: Path) => {
     const relativePath = p.relativePosix()
-    return relativePath !== '' && matcher.ignores(relativePath)
+    return relativePath !== '' && matcher.matches(relativePath)
   }
 
   return {
     ignored,
     childrenIgnored: (p) =>
-      ignored(p) && !mayReincludeUnder(p.relativePosix().split('/')),
+      ignored(p) && !matcher.mayMatchUnder(p.relativePosix()),
   }
 }
 
@@ -276,7 +202,7 @@ export async function getAllFilesInPath(
 ) {
   const { glob } = await dynamicImport<typeof import('glob')>('glob')
   const files = new Map<string, Path>()
-  const ignore = await createIgnoreMatcher(ignorePatterns, contextPath)
+  const ignore = createIgnoreMatcher(ignorePatterns, contextPath)
 
   const globFiles = await glob(src, {
     ignore,

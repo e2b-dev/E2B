@@ -86,7 +86,6 @@
     "typescript"
   ],
   "dependencies": {
-    "@balena/dockerignore": "^1.0.2",
     "@bufbuild/protobuf": "^2.15.0",
     "@connectrpc/connect": "^2.2.0",
     "@connectrpc/connect-web": "^2.2.0",
