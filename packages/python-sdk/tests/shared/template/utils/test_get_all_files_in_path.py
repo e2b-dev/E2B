@@ -1,7 +1,13 @@
 import os
+import sys
 import tempfile
 import pytest
-from e2b.template.utils import get_all_files_in_path
+from e2b.exceptions import TemplateException
+from e2b.template.utils import (
+    calculate_files_hash,
+    get_all_files_in_path,
+    read_dockerignore,
+)
 
 
 class TestGetAllFilesInPath:
@@ -217,7 +223,9 @@ class TestGetAllFilesInPath:
 
         files = get_all_files_in_path("src", test_dir, ["**/tests/**", "**/*.spec.*"])
 
-        assert len(files) == 6  # 3 files + 3 directories (src, components, utils)
+        # 3 files + 4 directories (src, components, utils and the emptied tests,
+        # since `tests/**` matches the contents of `tests`, as in Docker)
+        assert len(files) == 7
         assert any("index.ts" in f for f in files)
         assert any("Button.tsx" in f for f in files)
         assert any("helper.ts" in f for f in files)
@@ -324,11 +332,190 @@ class TestGetAllFilesInPath:
 
         files = get_all_files_in_path("src", test_dir, ["**/ui/**"])
 
-        assert (
-            len(files) == 7
-        )  # 3 files + 4 directories (src, components, forms, utils)
+        # 3 files + 5 directories (src, components, forms, utils and the emptied
+        # ui, since `ui/**` matches the contents of `ui`, as in Docker)
+        assert len(files) == 8
         assert any("index.ts" in f for f in files)
         assert any("Input.tsx" in f for f in files)
         assert any("helper.ts" in f for f in files)
         assert not any("Button.tsx" in f for f in files)
         assert not any("Button.test.tsx" in f for f in files)
+
+
+class TestDockerignoreSemantics:
+    PATTERNS = [".env", "node_modules", ".git", "**/*.spec.*", "src/generated"]
+
+    @pytest.fixture
+    def test_dir(self):
+        """Create a build context with files that are usually ignored."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for path, content in {
+                ".env": "SECRET=1",
+                "node_modules/pkg/index.js": "x",
+                "src/app.ts": "x",
+                "src/app.spec.ts": "x",
+                "src/generated/api.ts": "x",
+                "src/node_modules/lib.js": "x",
+                ".git/HEAD": "ref",
+            }.items():
+                full_path = os.path.join(tmpdir, path)
+                os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                with open(full_path, "w") as f:
+                    f.write(content)
+            yield tmpdir
+
+    @staticmethod
+    def relative_paths(src, test_dir, ignore_patterns):
+        return sorted(
+            os.path.relpath(f, test_dir).replace(os.sep, "/")
+            for f in get_all_files_in_path(src, test_dir, ignore_patterns)
+        )
+
+    @pytest.mark.parametrize("src", [".", "./", "./src", "src", "src/.", "src/../src"])
+    def test_should_exclude_ignored_directories_with_their_contents(
+        self, test_dir, src
+    ):
+        expected = ["src", "src/app.ts", "src/node_modules", "src/node_modules/lib.js"]
+        if src in (".", "./"):
+            expected = [".", *expected]
+        assert self.relative_paths(src, test_dir, self.PATTERNS) == expected
+
+    def test_should_ignore_a_leading_slash_and_a_trailing_slash(self, test_dir):
+        files = self.relative_paths(".", test_dir, ["/node_modules", "/.git/", "src/"])
+        assert files == [".", ".env"]
+
+    def test_should_never_exclude_the_context_root(self, test_dir):
+        files = self.relative_paths(".", test_dir, [".", ".*", "src", "node_modules"])
+        assert files == ["."]
+
+    def test_should_not_copy_paths_inside_an_ignored_directory(self, test_dir):
+        assert self.relative_paths("node_modules/pkg", test_dir, ["node_modules"]) == []
+
+    def test_should_reinclude_paths_matched_by_a_negated_pattern(self, test_dir):
+        files = self.relative_paths(
+            ".",
+            test_dir,
+            ["*", "!src", "src/generated", "!node_modules/pkg/index.js"],
+        )
+        assert files == [
+            ".",
+            "node_modules/pkg/index.js",
+            "src",
+            "src/app.spec.ts",
+            "src/app.ts",
+            "src/node_modules",
+            "src/node_modules/lib.js",
+        ]
+
+    def test_should_make_absolute_patterns_inside_the_context_relative(self, test_dir):
+        files = self.relative_paths(
+            ".",
+            test_dir,
+            [
+                os.path.join(test_dir, "src"),
+                os.path.join(test_dir, "node_modules", "**"),
+                ".git",
+            ],
+        )
+        assert files == [".", ".env", "node_modules"]
+
+    def test_should_match_regex_special_characters_literally(self, test_dir):
+        for name in ["file (1).txt", "c++", "a"]:
+            with open(os.path.join(test_dir, name), "w") as f:
+                f.write("x")
+        files = self.relative_paths("*", test_dir, ["file (1).txt", "c++", "a|b"])
+        assert "file (1).txt" not in files
+        assert "c++" not in files
+        assert "a" in files
+
+    def test_should_raise_on_an_invalid_pattern(self, test_dir):
+        with pytest.raises(TemplateException, match="Invalid ignore pattern '\\[abc'"):
+            get_all_files_in_path(".", test_dir, ["[abc"])
+
+    def test_should_keep_the_files_hash_stable_when_ignored_files_change(
+        self, test_dir
+    ):
+        def files_hash():
+            return calculate_files_hash(".", "/app", test_dir, [".git"], False, None)
+
+        before = files_hash()
+        with open(os.path.join(test_dir, ".git", "HEAD"), "a") as f:
+            f.write("x")
+        assert files_hash() == before
+
+    def test_should_strip_a_utf8_bom_from_dockerignore(self, test_dir):
+        with open(os.path.join(test_dir, ".dockerignore"), "w", encoding="utf-8") as f:
+            f.write("\ufeff.env\n# comment\n\nsrc\n")
+        assert read_dockerignore(test_dir) == [".env", "src"]
+
+    def test_should_match_a_caret_literally_outside_a_bracket_expression(
+        self, test_dir
+    ):
+        for name in ["report^draft.txt", "ax", "bx"]:
+            with open(os.path.join(test_dir, name), "w") as f:
+                f.write("x")
+        files = self.relative_paths("*", test_dir, ["report^draft.txt", "[^a]x"])
+        assert "report^draft.txt" not in files
+        assert "bx" not in files
+        assert "ax" in files
+
+    def test_should_not_walk_the_recursive_matches_of_a_directory_again(
+        self, test_dir, monkeypatch
+    ):
+        os.makedirs(os.path.join(test_dir, "a", "b", "c", "d", "e"))
+        scanned = []
+        scandir = os.scandir
+
+        def counting_scandir(path="."):
+            scanned.append(os.path.normpath(path))
+            return scandir(path)
+
+        monkeypatch.setattr(os, "scandir", counting_scandir)
+        files = self.relative_paths("**/*", test_dir, self.PATTERNS)
+        monkeypatch.undo()
+
+        assert files == [
+            "a",
+            "a/b",
+            "a/b/c",
+            "a/b/c/d",
+            "a/b/c/d/e",
+            "src",
+            "src/app.ts",
+            "src/node_modules",
+            "src/node_modules/lib.js",
+        ]
+        deepest = os.path.normpath(os.path.join(test_dir, "a", "b", "c", "d", "e"))
+        # Once by the walk, and at most once by the glob expansion
+        assert scanned.count(deepest) <= 2
+
+    @pytest.mark.skipif(sys.platform == "win32", reason="Symlinks need privileges")
+    def test_should_copy_a_symlink_to_a_directory_without_its_contents(self, test_dir):
+        os.makedirs(os.path.join(test_dir, "real"))
+        with open(os.path.join(test_dir, "real", "secret.txt"), "w") as f:
+            f.write("x")
+        os.symlink("real", os.path.join(test_dir, "linked"))
+        assert self.relative_paths("linked", test_dir, []) == ["linked"]
+
+    def test_should_keep_the_files_hash_stable_when_ignored_files_grow_a_directory(
+        self, test_dir
+    ):
+        def files_hash():
+            return calculate_files_hash(
+                ".", "/app", test_dir, ["node_modules/*"], False, None
+            )
+
+        before = files_hash()
+        for i in range(300):
+            name = f"ignored-file-with-a-long-name-{i}"
+            with open(os.path.join(test_dir, "node_modules", name), "w") as f:
+                f.write("x")
+        assert files_hash() == before
+
+    def test_should_not_expand_braces(self, test_dir):
+        for name in ["a.txt", "b.{txt,md}"]:
+            with open(os.path.join(test_dir, name), "w") as f:
+                f.write("x")
+        files = self.relative_paths("*", test_dir, ["*.{txt,md}"])
+        assert "a.txt" in files
+        assert "b.{txt,md}" not in files

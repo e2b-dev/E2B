@@ -1133,8 +1133,8 @@ export class TemplateBase
               url,
               headers,
               ignorePatterns: [
-                ...this.fileIgnorePatterns,
                 ...readDockerignore(this.fileContextPath.toString()),
+                ...this.fileIgnorePatterns,
               ],
               resolveSymlinks: instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
               gzip: instruction.gzip ?? GZIP,
@@ -1224,10 +1224,10 @@ export class TemplateBase
             dest,
             this.fileContextPath.toString(),
             [
-              ...this.fileIgnorePatterns,
               ...(runtime === 'browser'
                 ? []
                 : readDockerignore(this.fileContextPath.toString())),
+              ...this.fileIgnorePatterns,
             ],
             instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
             stackTrace

@@ -215,6 +215,27 @@ test('client replays serialized control-plane JSON after a rate limit', async ()
   expect(bodies[1]).toEqual(bodies[0])
 })
 
+test('client retries sandbox creation after a 503', async () => {
+  let attempts = 0
+  server.use(
+    http.post(/\/sandboxes$/, () => {
+      attempts++
+      if (attempts === 1) {
+        return HttpResponse.json(
+          { code: 503, message: 'not enough capacity' },
+          { status: 503, headers: { 'Retry-After': '0' } }
+        )
+      }
+      return HttpResponse.json(sandboxResponse)
+    })
+  )
+  const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
+
+  await client.Sandbox.create()
+
+  assert.equal(attempts, 2)
+})
+
 test('client.Sandbox can be rebound to a variable', async () => {
   const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
   const S = client.Sandbox

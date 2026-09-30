@@ -537,7 +537,8 @@ export interface SandboxPauseOpts extends SandboxApiOpts {
  */
 export interface SandboxForkOpts extends ConnectionOpts {
   /**
-   * Number of forked sandboxes to create.
+   * Number of forked sandboxes to create. Must be an integer between 1 and 20.
+   * When omitted, the field is left off the request and the API default applies.
    *
    * All forks boot from the same snapshot — the snapshot is captured once
    * regardless of count. Each fork succeeds or fails independently; the
@@ -558,6 +559,19 @@ export interface SandboxForkOpts extends ConnectionOpts {
  * from starting. Per-fork error codes map to the same error classes as other
  * API errors (e.g. 429 to `RateLimitError`).
  */
+const MAX_FORK_COUNT = 20
+
+function validateForkCount(count: number | undefined) {
+  if (count === undefined) {
+    return
+  }
+  if (!Number.isInteger(count) || count < 1 || count > MAX_FORK_COUNT) {
+    throw new InvalidArgumentError(
+      `count must be an integer between 1 and ${MAX_FORK_COUNT}`
+    )
+  }
+}
+
 type SandboxForkResponse =
   | {
       sandboxId: string
@@ -1762,6 +1776,8 @@ export class SandboxApi extends ClientFactory {
     count?: number,
     opts?: SandboxApiOpts
   ): Promise<SandboxForkResponse[]> {
+    validateForkCount(count)
+
     const apiOpts = this.resolveOpts(opts)
     const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)

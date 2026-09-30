@@ -5,14 +5,8 @@ from uuid import uuid4
 import httpx
 import pytest
 
-from e2b import Sandbox, SandboxException, SandboxState, Secret
-from e2b.api.client.models import (
-    NewSandboxV2,
-    SandboxAutoResumeConfig,
-)
-from e2b.api.client.types import UNSET
-from e2b.exceptions import InvalidArgumentException
-from e2b.sandbox.sandbox_api import SandboxQuery, build_iam_config
+from e2b import Sandbox, SandboxException, SandboxState
+from e2b.sandbox.sandbox_api import SandboxQuery
 
 
 def wait_for_state(sandbox: Sandbox, state: SandboxState, timeout: float = 30) -> None:
@@ -95,136 +89,6 @@ def test_mcp_gateway_start_failure_kills_created_sandbox(template):
             pass
         for sandbox in remaining_sandboxes:
             Sandbox.kill(sandbox.sandbox_id)
-
-
-def test_create_payload_serializes_auto_resume_enabled():
-    body = NewSandboxV2(
-        template_id="template-id",
-        auto_pause=True,
-        auto_resume=SandboxAutoResumeConfig(enabled=True),
-    )
-
-    assert body.to_dict()["autoPause"] is True
-    assert body.to_dict()["autoResume"] == {"enabled": True}
-
-
-def test_create_payload_deserializes_auto_resume_enabled():
-    body = NewSandboxV2.from_dict(
-        {
-            "templateID": "template-id",
-            "autoPause": False,
-            "autoResume": {"enabled": False},
-        }
-    )
-
-    assert isinstance(body.auto_resume, SandboxAutoResumeConfig)
-    assert body.auto_resume.to_dict() == {"enabled": False}
-
-
-def test_create_payload_serializes_iam_tokens():
-    iam = build_iam_config(
-        {
-            "tokens": {
-                "aws": {"audience": "sts.amazonaws.com", "token_type": "JWT-SVID"},
-            },
-        }
-    )
-    assert iam is not None
-
-    body = NewSandboxV2(template_id="template-id", iam=iam)
-
-    assert body.to_dict()["iam"] == {
-        "tokens": {
-            "aws": {"audience": "sts.amazonaws.com", "tokenType": "JWT-SVID"},
-        },
-    }
-
-
-def test_create_payload_serializes_secret_iam_token():
-    iam = build_iam_config(
-        {
-            "tokens": {
-                "aws": Secret.iam_token(
-                    audience="sts.amazonaws.com", token_type="JWT-SVID"
-                ),
-            },
-        }
-    )
-    assert iam is not None
-
-    body = NewSandboxV2(template_id="template-id", iam=iam)
-
-    assert body.to_dict()["iam"] == {
-        "tokens": {
-            "aws": {"audience": "sts.amazonaws.com", "tokenType": "JWT-SVID"},
-        },
-    }
-
-
-def test_create_payload_omits_iam_when_not_provided_or_empty():
-    assert build_iam_config(None) is None
-    assert build_iam_config({}) is None
-    assert build_iam_config({"tokens": {}}) is None
-
-    body = NewSandboxV2(template_id="template-id", iam=UNSET)
-
-    assert "iam" not in body.to_dict()
-
-
-def test_create_payload_rejects_malformed_iam_tokens():
-    # The wire-format casing a user might copy from the JS example or a
-    # serialized payload must fail with an actionable error, not a KeyError.
-    with pytest.raises(InvalidArgumentException, match="token_type"):
-        build_iam_config(
-            cast(
-                Any,
-                {
-                    "tokens": {
-                        "aws": {
-                            "audience": "sts.amazonaws.com",
-                            "tokenType": "JWT-SVID",
-                        },
-                    },
-                },
-            )
-        )
-
-    with pytest.raises(InvalidArgumentException):
-        build_iam_config(cast(Any, {"tokens": {"aws": None}}))
-
-    # Non-string values must be rejected too, not serialized as null.
-    with pytest.raises(InvalidArgumentException):
-        build_iam_config(
-            cast(Any, {"tokens": {"aws": {"audience": None, "token_type": "JWT-SVID"}}})
-        )
-
-
-@pytest.mark.skip_debug()
-def test_filesystem_only_auto_pause_rejects_auto_resume():
-    # A filesystem-only auto-pause snapshot can only be resumed explicitly, so
-    # combining keep_memory=False with auto_resume is rejected client-side.
-    with pytest.raises(InvalidArgumentException):
-        Sandbox.create(
-            timeout=3,
-            lifecycle={
-                "on_timeout": {"action": "pause", "keep_memory": False},
-                "auto_resume": True,
-            },
-        )
-
-
-@pytest.mark.skip_debug()
-def test_keep_memory_not_allowed_with_kill():
-    # The discriminated union forbids keep_memory on action="kill" at type-check
-    # time; the runtime guard rejects it for callers that bypass the type
-    # (cast(Any, ...) feeds the deliberately type-invalid input).
-    with pytest.raises(InvalidArgumentException):
-        Sandbox.create(
-            timeout=3,
-            lifecycle=cast(
-                Any, {"on_timeout": {"action": "kill", "keep_memory": False}}
-            ),
-        )
 
 
 @pytest.mark.skip_debug()

@@ -414,7 +414,7 @@ class AsyncSandbox(SandboxApi):
         (e.g. 429 to `RateLimitException`).
 
         :param timeout: Timeout for the forked sandboxes in **seconds**.
-        :param count: Number of forked sandboxes to create.
+        :param count: Number of forked sandboxes to create. An integer between 1 and 20. Omitted, the API default applies.
 
         :return: List with one entry per requested fork — a sandbox instance or an exception
 
@@ -453,7 +453,7 @@ class AsyncSandbox(SandboxApi):
 
         :param sandbox_id: Sandbox ID
         :param timeout: Timeout for the forked sandboxes in **seconds**.
-        :param count: Number of forked sandboxes to create.
+        :param count: Number of forked sandboxes to create. An integer between 1 and 20. Omitted, the API default applies.
         :param logger: Logger used for request and response logging for the forked sandboxes. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
 
         :return: List with one entry per requested fork — a sandbox instance or an exception
@@ -490,7 +490,7 @@ class AsyncSandbox(SandboxApi):
         (e.g. 429 to `RateLimitException`).
 
         :param timeout: Timeout for the forked sandboxes in **seconds**.
-        :param count: Number of forked sandboxes to create.
+        :param count: Number of forked sandboxes to create. An integer between 1 and 20. Omitted, the API default applies.
 
         :return: List with one entry per requested fork — a sandbox instance or an exception
 

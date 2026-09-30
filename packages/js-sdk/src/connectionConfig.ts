@@ -8,7 +8,6 @@ const supportedDomains = ['e2b.app', 'e2b.dev', 'e2b.pro', 'e2b-staging.dev']
 
 export const REQUEST_TIMEOUT_MS = 60_000 // 60 seconds
 export const DEFAULT_RETRIES = 3
-export const DEFAULT_SANDBOX_TIMEOUT_MS = 300_000 // 300 seconds
 export const KEEPALIVE_PING_INTERVAL_SEC = 50 // 50 seconds
 
 export const KEEPALIVE_PING_HEADER = 'Keepalive-Ping-Interval'
@@ -61,9 +60,16 @@ export interface ConnectionOpts {
    */
   requestTimeoutMs?: number
   /**
-   * Number of control-plane API retries after a 429 response with a valid,
-   * non-negative integer delta-seconds `Retry-After` header. HTTP-date and
-   * malformed values are not retried.
+   * Number of control-plane API retries after a 429, 502 or 503 response or
+   * a failure to establish the connection (refused, DNS, unreachable host).
+   * Any other network error (dropped connection, opaque browser/Workers
+   * `TypeError`) is retried too, except for operations that create a resource
+   * (e.g. sandbox creation), as the server may already have processed them.
+   * A 429 is retried only with a valid, non-negative integer delta-seconds
+   * `Retry-After` header (HTTP-date and malformed values are not retried).
+   * 502 and 503 honor such a `Retry-After` when present; otherwise they and
+   * connection failures use exponential backoff with jitter starting at
+   * 100 ms (capped at 10 s).
    * Retry waits use a 60-second total limit when request timeouts are disabled.
    *
    * @default 3
