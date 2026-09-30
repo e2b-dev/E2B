@@ -222,7 +222,10 @@ def test_sync_transports_keyed_by_http_version(test_api_key):
         )
         assert get_sync_transport(config, http_version="1.1") is http1
         assert get_sync_transport(config) is negotiated
-        assert get_sync_transport(config, http_version="1.1", for_streaming=True) is not http1
+        assert (
+            get_sync_transport(config, http_version="1.1", for_streaming=True)
+            is not http1
+        )
         # The envd RPC clients' pyqwest transport is the one under the httpx
         # adapter the envd HTTP API uses, so a sandbox's RPC and HTTP traffic
         # share connections.
@@ -281,6 +284,7 @@ def test_sync_transports_follow_the_http_version_option(test_api_key):
             get_sync_transport(http1)
         )
         api_client = get_sync_api_client(http1).get_httpx_client()
+        assert isinstance(api_client._transport, RetryableTransport)
         assert api_client._transport.transport is get_sync_transport(http1)
         api_client.close()
     finally:
@@ -457,7 +461,10 @@ async def test_async_transports_keyed_by_http_version(test_api_key):
         assert http1 is not negotiated
         assert get_async_transport(config, http_version="1.1") is http1
         assert get_async_transport(config) is negotiated
-        assert get_async_transport(config, http_version="1.1", for_streaming=True) is not http1
+        assert (
+            get_async_transport(config, http_version="1.1", for_streaming=True)
+            is not http1
+        )
         assert get_async_pyqwest_transport(None) is negotiated._transport
         assert get_async_pyqwest_transport(None, http_version="1.1") is http1._transport
     finally:
@@ -506,6 +513,7 @@ async def test_async_transports_follow_the_http_version_option(test_api_key):
             get_async_transport(http1)
         )
         api_client = get_async_api_client(http1).get_async_httpx_client()
+        assert isinstance(api_client._transport, AsyncRetryableTransport)
         assert api_client._transport.transport is get_async_transport(http1)
         await api_client.aclose()
     finally:

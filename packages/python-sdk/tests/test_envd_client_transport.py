@@ -149,9 +149,7 @@ def test_rpc_clients_run_on_the_shared_pool(test_api_key, monkeypatch, http_vers
     other_version = "1.1" if http_version == "2" else "2"
     config = ConnectionConfig(api_key=test_api_key, http_version=http_version)
     pool = api_client_sync.get_pyqwest_transport(None, http_version=http_version)
-    async_pool = api_client_async.get_pyqwest_transport(
-        None, http_version=http_version
-    )
+    async_pool = api_client_async.get_pyqwest_transport(None, http_version=http_version)
     assert pool is not api_client_sync.get_pyqwest_transport(
         None, http_version=other_version
     )
