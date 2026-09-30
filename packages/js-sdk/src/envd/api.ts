@@ -14,7 +14,11 @@ import {
   RateLimitError,
   TimeoutError,
 } from '../errors'
-import { StartResponse, ConnectResponse } from './process/process_pb'
+import {
+  StartResponse,
+  ConnectResponse,
+  OutputOffsets,
+} from './process/process_pb'
 import { Code, ConnectError } from '@connectrpc/connect'
 import { WatchDirResponse } from './filesystem/filesystem_pb'
 import { isConnectionTerminatedMessage, SandboxHealthCheck } from './rpc'
@@ -140,9 +144,21 @@ export async function handleEnvdApiError(
   return new SandboxError(`${res.response.status}: ${message}`)
 }
 
+/**
+ * Position in a process stream announced by its start event.
+ *
+ * `offsets` is the position in each output stream at which the events
+ * following the start event begin; it is `undefined` when the sandbox's envd
+ * predates output retention and therefore cannot resume a dropped stream.
+ */
+export interface ProcessStart {
+  pid: number
+  offsets?: OutputOffsets
+}
+
 export async function handleProcessStartEvent(
   events: AsyncIterable<StartResponse | ConnectResponse>
-) {
+): Promise<ProcessStart> {
   let startEvent: StartResponse | ConnectResponse
 
   try {
@@ -162,7 +178,10 @@ export async function handleProcessStartEvent(
     throw new Error('Expected start event')
   }
 
-  return startEvent.event.event.value.pid
+  return {
+    pid: startEvent.event.event.value.pid,
+    offsets: startEvent.event.event.value.offsets,
+  }
 }
 
 export async function handleWatchDirStartEvent(

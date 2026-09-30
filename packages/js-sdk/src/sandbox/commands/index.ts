@@ -32,6 +32,7 @@ import {
 import { ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE } from '../../envd/versions'
 import { SandboxError } from '../../errors'
 import { CommandHandle, CommandResult } from './commandHandle'
+import { connectProcessFrom, ResumableProcessStream } from './resumableStream'
 export { Pty } from './pty'
 
 /**
@@ -326,6 +327,7 @@ export class Commands {
   ): Promise<CommandHandle> {
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
+    const timeoutMs = opts?.timeoutMs ?? this.defaultProcessConnectionTimeout
 
     const { controller, clearStartTimeout, cleanup } = setupRequestController(
       requestTimeoutMs,
@@ -346,19 +348,30 @@ export class Commands {
         headers: {
           [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
         },
-        timeoutMs: opts?.timeoutMs ?? this.defaultProcessConnectionTimeout,
+        timeoutMs,
       }
     )
 
     try {
-      const pid = await handleProcessStartEvent(events)
+      const { pid, offsets } = await handleProcessStartEvent(events)
       clearStartTimeout()
+
+      const stream = new ResumableProcessStream({
+        events,
+        offsets,
+        cleanup,
+        connect: connectProcessFrom(this.rpc, pid),
+        requestTimeoutMs,
+        signal: opts?.signal,
+        timeoutMs,
+        checkHealth: this.checkHealth,
+      })
 
       return new CommandHandle(
         pid,
-        cleanup,
+        () => stream.disconnect(),
         () => this.kill(pid),
-        events,
+        stream,
         opts?.onStdout,
         opts?.onStderr,
         undefined,
@@ -439,6 +452,7 @@ export class Commands {
 
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
+    const timeoutMs = opts?.timeoutMs ?? this.defaultProcessConnectionTimeout
 
     const { controller, clearStartTimeout, cleanup } = setupRequestController(
       requestTimeoutMs,
@@ -461,19 +475,30 @@ export class Commands {
           [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
         },
         signal: controller.signal,
-        timeoutMs: opts?.timeoutMs ?? this.defaultProcessConnectionTimeout,
+        timeoutMs,
       }
     )
 
     try {
-      const pid = await handleProcessStartEvent(events)
+      const { pid, offsets } = await handleProcessStartEvent(events)
       clearStartTimeout()
+
+      const stream = new ResumableProcessStream({
+        events,
+        offsets,
+        cleanup,
+        connect: connectProcessFrom(this.rpc, pid),
+        requestTimeoutMs,
+        signal: opts?.signal,
+        timeoutMs,
+        checkHealth: this.checkHealth,
+      })
 
       return new CommandHandle(
         pid,
-        cleanup,
+        () => stream.disconnect(),
         () => this.kill(pid),
-        events,
+        stream,
         opts?.onStdout,
         opts?.onStderr,
         undefined,

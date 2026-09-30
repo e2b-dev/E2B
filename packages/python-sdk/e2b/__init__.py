@@ -67,6 +67,7 @@ from .sandbox.commands.command_handle import (
     Stdout,
 )
 from .sandbox.commands.main import ProcessInfo
+from .sandbox.commands.resume import CommandOutputLostException
 from .sandbox.filesystem.filesystem import EntryInfo, FileType, WriteInfo
 from .sandbox.filesystem.watch_handle import (
     FilesystemEvent,
@@ -212,6 +213,7 @@ __all__ = [
     "Stderr",
     "Stdout",
     "CommandExitException",
+    "CommandOutputLostException",
     "PtyOutput",
     "PtySize",
     # Filesystem

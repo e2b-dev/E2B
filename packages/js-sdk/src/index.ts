@@ -48,6 +48,7 @@ export type {
 } from './sandbox/filesystem/watchHandle'
 
 export { CommandExitError } from './sandbox/commands/commandHandle'
+export { CommandOutputLostError } from './sandbox/commands/resumableStream'
 export type {
   CommandResult,
   Stdout,

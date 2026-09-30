@@ -19,6 +19,7 @@ import {
   setupRequestController,
 } from '../../connectionConfig'
 import { CommandHandle } from './commandHandle'
+import { connectProcessFrom, ResumableProcessStream } from './resumableStream'
 import {
   authenticationHeader,
   handleRpcErrorWithHealthCheck,
@@ -108,6 +109,7 @@ export class Pty {
   async create(opts: PtyCreateOpts) {
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
+    const timeoutMs = opts?.timeoutMs ?? this.defaultPtyConnectionTimeout
     const envs = { ...(opts?.envs ?? {}) }
     envs.TERM = envs.TERM ?? 'xterm-256color'
     envs.LANG = envs.LANG ?? 'C.UTF-8'
@@ -139,19 +141,30 @@ export class Pty {
           [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
         },
         signal: controller.signal,
-        timeoutMs: opts?.timeoutMs ?? this.defaultPtyConnectionTimeout,
+        timeoutMs,
       }
     )
 
     try {
-      const pid = await handleProcessStartEvent(events)
+      const { pid, offsets } = await handleProcessStartEvent(events)
       clearStartTimeout()
+
+      const stream = new ResumableProcessStream({
+        events,
+        offsets,
+        cleanup,
+        connect: connectProcessFrom(this.rpc, pid),
+        requestTimeoutMs,
+        signal: opts?.signal,
+        timeoutMs,
+        checkHealth: this.checkHealth,
+      })
 
       return new CommandHandle(
         pid,
-        cleanup,
+        () => stream.disconnect(),
         () => this.kill(pid),
-        events,
+        stream,
         undefined,
         undefined,
         opts.onData,
@@ -176,6 +189,7 @@ export class Pty {
   async connect(pid: number, opts?: PtyConnectOpts): Promise<CommandHandle> {
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
+    const timeoutMs = opts?.timeoutMs ?? this.defaultPtyConnectionTimeout
 
     const { controller, clearStartTimeout, cleanup } = setupRequestController(
       requestTimeoutMs,
@@ -196,19 +210,30 @@ export class Pty {
         headers: {
           [KEEPALIVE_PING_HEADER]: KEEPALIVE_PING_INTERVAL_SEC.toString(),
         },
-        timeoutMs: opts?.timeoutMs ?? this.defaultPtyConnectionTimeout,
+        timeoutMs,
       }
     )
 
     try {
-      const pid = await handleProcessStartEvent(events)
+      const { pid, offsets } = await handleProcessStartEvent(events)
       clearStartTimeout()
+
+      const stream = new ResumableProcessStream({
+        events,
+        offsets,
+        cleanup,
+        connect: connectProcessFrom(this.rpc, pid),
+        requestTimeoutMs,
+        signal: opts?.signal,
+        timeoutMs,
+        checkHealth: this.checkHealth,
+      })
 
       return new CommandHandle(
         pid,
-        cleanup,
+        () => stream.disconnect(),
         () => this.kill(pid),
-        events,
+        stream,
         undefined,
         undefined,
         opts?.onData,

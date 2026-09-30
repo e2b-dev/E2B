@@ -16,7 +16,6 @@ from typing import (
 from e2b.envd.rpc import ahandle_rpc_exception_with_health
 from protobuf import Oneof
 
-from e2b.envd.process import process_pb
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.command_handle import (
     CommandExitException,
@@ -26,6 +25,7 @@ from e2b.sandbox.commands.command_handle import (
     PtyOutput,
 )
 from e2b.sandbox_async.utils import OutputHandler
+from e2b.sandbox_async.commands.resume import AsyncProcessEventStream
 
 
 class AsyncCommandHandle:
@@ -82,9 +82,7 @@ class AsyncCommandHandle:
         self,
         pid: int,
         handle_kill: Callable[[], Coroutine[Any, Any, bool]],
-        events: AsyncGenerator[
-            Union[process_pb.StartResponse, process_pb.ConnectResponse], Any
-        ],
+        events: AsyncProcessEventStream,
         on_stdout: Optional[OutputHandler[Stdout]] = None,
         on_stderr: Optional[OutputHandler[Stderr]] = None,
         on_pty: Optional[OutputHandler[PtyOutput]] = None,

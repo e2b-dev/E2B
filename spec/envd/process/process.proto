@@ -76,6 +76,11 @@ message ProcessEvent {
     
     message StartEvent {
         uint32 pid = 1;
+        // Position in each output stream at which the output following this
+        // event begins: zero for a fresh start, the current position for a
+        // live-only connect, the requested position for a resumed one. Absent
+        // when the server does not retain output for resuming.
+        optional OutputOffsets offsets = 2;
     }
     
     message DataEvent {
@@ -84,6 +89,10 @@ message ProcessEvent {
             bytes stderr = 2;
             bytes pty = 3;
         }
+        // Position of the first byte of this chunk within its output stream,
+        // counted from the start of the process. Absent when the server does
+        // not retain output for resuming.
+        optional uint64 offset = 4;
     }
     
     message EndEvent {
@@ -161,6 +170,19 @@ message CloseStdinResponse {}
 
 message ConnectRequest {
     ProcessSelector process = 1;
+    // When set, output retained since these offsets is replayed before live
+    // output continues from it. Fails with OUT_OF_RANGE when an offset is older
+    // than what is still retained, and with INVALID_ARGUMENT when it is beyond
+    // what the process has produced.
+    optional OutputOffsets resume_from = 2;
+}
+
+// Byte positions in each output stream of a process. A stream the process
+// does not use (pty for a piped process, stdout/stderr for a pty one) stays 0.
+message OutputOffsets {
+    uint64 stdout = 1;
+    uint64 stderr = 2;
+    uint64 pty = 3;
 }
 
 message ProcessSelector {

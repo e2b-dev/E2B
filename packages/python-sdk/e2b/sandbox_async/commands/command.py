@@ -25,6 +25,11 @@ from e2b.envd.versions import ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.main import ProcessInfo
 from e2b.sandbox.commands.command_handle import CommandResult
+from e2b.sandbox.commands.resume import extract_start_offsets
+from e2b.sandbox_async.commands.resume import (
+    AsyncResumableEvents,
+    connect_from_offsets,
+)
 from e2b.sandbox_async.commands.command_handle import AsyncCommandHandle, Stderr, Stdout
 from e2b.sandbox_async.utils import OutputHandler
 
@@ -324,7 +329,16 @@ class Commands:
             return AsyncCommandHandle(
                 pid=pid,
                 handle_kill=lambda: self.kill(pid),
-                events=events,
+                events=AsyncResumableEvents(
+                    events,
+                    extract_start_offsets(start_event),
+                    connect_from_offsets(self._rpc, pid),
+                    timeout,
+                    request_timeout=self._connection_config.get_request_timeout(
+                        request_timeout
+                    ),
+                    check_health=self._check_health,
+                ),
                 on_stdout=on_stdout,
                 on_stderr=on_stderr,
                 handle_send_stdin=lambda data, request_timeout=None: self.send_stdin(
@@ -383,7 +397,16 @@ class Commands:
             return AsyncCommandHandle(
                 pid=pid,
                 handle_kill=lambda: self.kill(pid),
-                events=events,
+                events=AsyncResumableEvents(
+                    events,
+                    extract_start_offsets(start_event),
+                    connect_from_offsets(self._rpc, pid),
+                    timeout,
+                    request_timeout=self._connection_config.get_request_timeout(
+                        request_timeout
+                    ),
+                    check_health=self._check_health,
+                ),
                 on_stdout=on_stdout,
                 on_stderr=on_stderr,
                 handle_send_stdin=lambda data, request_timeout=None: self.send_stdin(
