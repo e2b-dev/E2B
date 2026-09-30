@@ -3,7 +3,6 @@ name: Release
 on:
   workflow_dispatch: {}
 
-# Shared literal group so production and candidate releases on the same ref serialize.
 concurrency: release-${{ github.ref }}
 
 permissions:
@@ -28,8 +27,7 @@ jobs:
       - name: Check the ref
         # `workflow_dispatch` offers every branch in the picker, and a feature
         # branch carrying changesets would otherwise publish real packages and
-        # push the version bump to that branch. Candidates cut from a branch go
-        # through release-candidate.yml.
+        # push the version bump to that branch.
         if: github.ref != 'refs/heads/main'
         env:
           REF: ${{ github.ref }}

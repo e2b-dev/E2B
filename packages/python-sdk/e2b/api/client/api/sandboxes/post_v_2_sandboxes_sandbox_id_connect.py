@@ -5,22 +5,22 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.connect_sandbox_v2 import ConnectSandboxV2
 from ...models.error import Error
-from ...models.template_build_request import TemplateBuildRequest
-from ...models.template_legacy import TemplateLegacy
+from ...models.sandbox import Sandbox
 from ...types import Response
 
 
 def _get_kwargs(
-    template_id: str,
+    sandbox_id: str,
     *,
-    body: TemplateBuildRequest,
+    body: ConnectSandboxV2,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     _kwargs: dict[str, Any] = {
         "method": "post",
-        "url": f"/templates/{template_id}",
+        "url": f"/v2/sandboxes/{sandbox_id}/connect",
     }
 
     _kwargs["json"] = body.to_dict()
@@ -33,19 +33,47 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[Error, TemplateLegacy]]:
-    if response.status_code == 202:
-        response_202 = TemplateLegacy.from_dict(response.json())
+) -> Optional[Union[Error, Sandbox]]:
+    if response.status_code == 200:
+        response_200 = Sandbox.from_dict(response.json())
 
-        return response_202
+        return response_200
+    if response.status_code == 201:
+        response_201 = Sandbox.from_dict(response.json())
+
+        return response_201
+    if response.status_code == 400:
+        response_400 = Error.from_dict(response.json())
+
+        return response_400
     if response.status_code == 401:
         response_401 = Error.from_dict(response.json())
 
         return response_401
+    if response.status_code == 404:
+        response_404 = Error.from_dict(response.json())
+
+        return response_404
+    if response.status_code == 409:
+        response_409 = Error.from_dict(response.json())
+
+        return response_409
+    if response.status_code == 429:
+        response_429 = Error.from_dict(response.json())
+
+        return response_429
     if response.status_code == 500:
         response_500 = Error.from_dict(response.json())
 
         return response_500
+    if response.status_code == 503:
+        response_503 = Error.from_dict(response.json())
+
+        return response_503
+    if response.status_code == 504:
+        response_504 = Error.from_dict(response.json())
+
+        return response_504
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -54,7 +82,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Error, TemplateLegacy]]:
+) -> Response[Union[Error, Sandbox]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -64,29 +92,30 @@ def _build_response(
 
 
 def sync_detailed(
-    template_id: str,
+    sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: TemplateBuildRequest,
-) -> Response[Union[Error, TemplateLegacy]]:
-    """Rebuild template
+    body: ConnectSandboxV2,
+) -> Response[Union[Error, Sandbox]]:
+    """Connect sandbox (v2)
 
-     Rebuild an template
+     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. The
+    request body is optional; an omitted timeout defaults to 300 seconds.
 
     Args:
-        template_id (str):
-        body (TemplateBuildRequest):
+        sandbox_id (str):
+        body (ConnectSandboxV2):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, TemplateLegacy]]
+        Response[Union[Error, Sandbox]]
     """
 
     kwargs = _get_kwargs(
-        template_id=template_id,
+        sandbox_id=sandbox_id,
         body=body,
     )
 
@@ -98,58 +127,60 @@ def sync_detailed(
 
 
 def sync(
-    template_id: str,
+    sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: TemplateBuildRequest,
-) -> Optional[Union[Error, TemplateLegacy]]:
-    """Rebuild template
+    body: ConnectSandboxV2,
+) -> Optional[Union[Error, Sandbox]]:
+    """Connect sandbox (v2)
 
-     Rebuild an template
+     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. The
+    request body is optional; an omitted timeout defaults to 300 seconds.
 
     Args:
-        template_id (str):
-        body (TemplateBuildRequest):
+        sandbox_id (str):
+        body (ConnectSandboxV2):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, TemplateLegacy]
+        Union[Error, Sandbox]
     """
 
     return sync_detailed(
-        template_id=template_id,
+        sandbox_id=sandbox_id,
         client=client,
         body=body,
     ).parsed
 
 
 async def asyncio_detailed(
-    template_id: str,
+    sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: TemplateBuildRequest,
-) -> Response[Union[Error, TemplateLegacy]]:
-    """Rebuild template
+    body: ConnectSandboxV2,
+) -> Response[Union[Error, Sandbox]]:
+    """Connect sandbox (v2)
 
-     Rebuild an template
+     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. The
+    request body is optional; an omitted timeout defaults to 300 seconds.
 
     Args:
-        template_id (str):
-        body (TemplateBuildRequest):
+        sandbox_id (str):
+        body (ConnectSandboxV2):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, TemplateLegacy]]
+        Response[Union[Error, Sandbox]]
     """
 
     kwargs = _get_kwargs(
-        template_id=template_id,
+        sandbox_id=sandbox_id,
         body=body,
     )
 
@@ -159,30 +190,31 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    template_id: str,
+    sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: TemplateBuildRequest,
-) -> Optional[Union[Error, TemplateLegacy]]:
-    """Rebuild template
+    body: ConnectSandboxV2,
+) -> Optional[Union[Error, Sandbox]]:
+    """Connect sandbox (v2)
 
-     Rebuild an template
+     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. The
+    request body is optional; an omitted timeout defaults to 300 seconds.
 
     Args:
-        template_id (str):
-        body (TemplateBuildRequest):
+        sandbox_id (str):
+        body (ConnectSandboxV2):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, TemplateLegacy]
+        Union[Error, Sandbox]
     """
 
     return (
         await asyncio_detailed(
-            template_id=template_id,
+            sandbox_id=sandbox_id,
             client=client,
             body=body,
         )

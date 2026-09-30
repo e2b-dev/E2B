@@ -3,7 +3,6 @@ import { createConnectTransport } from '@connectrpc/connect-web'
 import {
   ConnectionConfig,
   ConnectionOpts,
-  DEFAULT_SANDBOX_TIMEOUT_MS,
   defaultUsername,
   Username,
 } from '../connectionConfig'
@@ -75,7 +74,6 @@ export interface SandboxUrlOpts {
 export class Sandbox extends SandboxApi {
   protected static readonly defaultTemplate: string = 'base'
   protected static readonly defaultMcpTemplate: string = 'mcp-gateway'
-  protected static readonly defaultSandboxTimeoutMs = DEFAULT_SANDBOX_TIMEOUT_MS
 
   /**
    * Module for interacting with the sandbox filesystem
@@ -318,7 +316,7 @@ export class Sandbox extends SandboxApi {
 
     const sandboxInfo = await this.createSandbox(
       template,
-      apiOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
+      apiOpts?.timeoutMs,
       apiOpts
     )
 
@@ -434,8 +432,8 @@ export class Sandbox extends SandboxApi {
 
     const results = await this.forkSandbox(
       sandboxId,
-      apiOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
-      apiOpts?.count ?? 1,
+      apiOpts?.timeoutMs,
+      apiOpts?.count,
       apiOpts
     )
 

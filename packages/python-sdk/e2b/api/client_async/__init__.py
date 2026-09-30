@@ -8,6 +8,7 @@ from pyqwest import HTTPTransport, HTTPVersion, Request, Response, Transport
 from pyqwest.httpx import AsyncPyqwestTransport
 from pyqwest.middleware.retry import RetryMode, RetryTransport
 
+from e2b.retry import AsyncRetryableTransport
 from e2b.api import (
     AsyncApiClient,
     ConnectionBalancer,
@@ -22,7 +23,11 @@ from e2b.connection_config import READ_TIMEOUT, ConnectionConfig
 
 
 def get_api_client(config: ConnectionConfig, **kwargs) -> AsyncApiClient:
-    return AsyncApiClient(config, transport=get_transport(config), **kwargs)
+    return AsyncApiClient(
+        config,
+        transport=AsyncRetryableTransport(get_transport(config), config.retries),
+        **kwargs,
+    )
 
 
 class ConnectionRetryTransport(RetryTransport):

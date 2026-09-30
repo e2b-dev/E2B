@@ -19,7 +19,7 @@ T = TypeVar("T", bound="TemplateBuildInfo")
 class TemplateBuildInfo:
     """
     Attributes:
-        logs (list[str]): Build logs
+        logs (list[str]): Build logs (always empty since the V1 build path was removed, use logEntries)
         log_entries (list['BuildLogEntry']): Build logs structured
         template_id (str): Identifier of the template
         build_id (str): Identifier of the build

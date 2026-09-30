@@ -6,20 +6,20 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
-from ...models.template_build_request_v2 import TemplateBuildRequestV2
-from ...models.template_legacy import TemplateLegacy
+from ...models.new_sandbox_v2 import NewSandboxV2
+from ...models.sandbox import Sandbox
 from ...types import Response
 
 
 def _get_kwargs(
     *,
-    body: TemplateBuildRequestV2,
+    body: NewSandboxV2,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     _kwargs: dict[str, Any] = {
         "method": "post",
-        "url": "/v2/templates",
+        "url": "/v2/sandboxes",
     }
 
     _kwargs["json"] = body.to_dict()
@@ -32,11 +32,11 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[Error, TemplateLegacy]]:
-    if response.status_code == 202:
-        response_202 = TemplateLegacy.from_dict(response.json())
+) -> Optional[Union[Error, Sandbox]]:
+    if response.status_code == 201:
+        response_201 = Sandbox.from_dict(response.json())
 
-        return response_202
+        return response_201
     if response.status_code == 400:
         response_400 = Error.from_dict(response.json())
 
@@ -45,10 +45,22 @@ def _parse_response(
         response_401 = Error.from_dict(response.json())
 
         return response_401
+    if response.status_code == 429:
+        response_429 = Error.from_dict(response.json())
+
+        return response_429
     if response.status_code == 500:
         response_500 = Error.from_dict(response.json())
 
         return response_500
+    if response.status_code == 503:
+        response_503 = Error.from_dict(response.json())
+
+        return response_503
+    if response.status_code == 504:
+        response_504 = Error.from_dict(response.json())
+
+        return response_504
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -57,7 +69,7 @@ def _parse_response(
 
 def _build_response(
     *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Error, TemplateLegacy]]:
+) -> Response[Union[Error, Sandbox]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -69,21 +81,22 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient,
-    body: TemplateBuildRequestV2,
-) -> Response[Union[Error, TemplateLegacy]]:
-    """Create template (v2)
+    body: NewSandboxV2,
+) -> Response[Union[Error, Sandbox]]:
+    """Create sandbox (v2)
 
-     Create a new template
+     Create a sandbox from the template. All system communication with the sandbox is secured.
 
     Args:
-        body (TemplateBuildRequestV2):
+        body (NewSandboxV2): Sandbox creation request. All system communication with the sandbox
+            is always secured; the template's envd version must support secured access.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, TemplateLegacy]]
+        Response[Union[Error, Sandbox]]
     """
 
     kwargs = _get_kwargs(
@@ -100,21 +113,22 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient,
-    body: TemplateBuildRequestV2,
-) -> Optional[Union[Error, TemplateLegacy]]:
-    """Create template (v2)
+    body: NewSandboxV2,
+) -> Optional[Union[Error, Sandbox]]:
+    """Create sandbox (v2)
 
-     Create a new template
+     Create a sandbox from the template. All system communication with the sandbox is secured.
 
     Args:
-        body (TemplateBuildRequestV2):
+        body (NewSandboxV2): Sandbox creation request. All system communication with the sandbox
+            is always secured; the template's envd version must support secured access.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, TemplateLegacy]
+        Union[Error, Sandbox]
     """
 
     return sync_detailed(
@@ -126,21 +140,22 @@ def sync(
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
-    body: TemplateBuildRequestV2,
-) -> Response[Union[Error, TemplateLegacy]]:
-    """Create template (v2)
+    body: NewSandboxV2,
+) -> Response[Union[Error, Sandbox]]:
+    """Create sandbox (v2)
 
-     Create a new template
+     Create a sandbox from the template. All system communication with the sandbox is secured.
 
     Args:
-        body (TemplateBuildRequestV2):
+        body (NewSandboxV2): Sandbox creation request. All system communication with the sandbox
+            is always secured; the template's envd version must support secured access.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Error, TemplateLegacy]]
+        Response[Union[Error, Sandbox]]
     """
 
     kwargs = _get_kwargs(
@@ -155,21 +170,22 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient,
-    body: TemplateBuildRequestV2,
-) -> Optional[Union[Error, TemplateLegacy]]:
-    """Create template (v2)
+    body: NewSandboxV2,
+) -> Optional[Union[Error, Sandbox]]:
+    """Create sandbox (v2)
 
-     Create a new template
+     Create a sandbox from the template. All system communication with the sandbox is secured.
 
     Args:
-        body (TemplateBuildRequestV2):
+        body (NewSandboxV2): Sandbox creation request. All system communication with the sandbox
+            is always secured; the template's envd version must support secured access.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Error, TemplateLegacy]
+        Union[Error, Sandbox]
     """
 
     return (

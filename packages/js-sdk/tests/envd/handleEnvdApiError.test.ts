@@ -126,6 +126,7 @@ describe('handleEnvdApiFetchError', () => {
     Bun: new Error('The socket connection was closed unexpectedly'),
     Deno: new TypeError('error reading a body from connection'),
     'Cloudflare Workers': new Error('Network connection lost.'),
+    Browser: new TypeError('network error'),
   }
 
   for (const [runtime, error] of Object.entries(runtimeTerminatedErrors)) {

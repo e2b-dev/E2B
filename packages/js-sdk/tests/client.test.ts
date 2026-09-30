@@ -1,6 +1,5 @@
 import { afterAll, afterEach, assert, beforeAll, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
-import { setupServer } from 'msw/node'
 
 import DefaultExport, {
   type ConnectionOpts,
@@ -11,7 +10,9 @@ import DefaultExport, {
   TemplateBase,
   Volume,
 } from '../src'
+import { runtime } from '../src/utils'
 import { TEST_API_KEY } from './setup'
+import { setupMockApi } from './mockApi'
 
 const API_KEY_A = `e2b_${'a'.repeat(40)}`
 const API_KEY_B = `e2b_${'b'.repeat(40)}`
@@ -51,7 +52,7 @@ const secretResponse = {
   updatedAt: new Date().toISOString(),
 }
 
-const server = setupServer(
+const server = setupMockApi(
   http.post(/\/sandboxes$/, async ({ request }) => {
     record(request)
     return HttpResponse.json(sandboxResponse)
@@ -107,7 +108,7 @@ const envOverrides = {
   E2B_DEBUG: undefined,
 }
 
-beforeAll(() => {
+beforeAll(async () => {
   for (const [key, value] of Object.entries(envOverrides)) {
     envBackup[key] = process.env[key]
     if (value === undefined) {
@@ -117,11 +118,11 @@ beforeAll(() => {
     }
   }
 
-  server.listen({ onUnhandledRequest: 'error' })
+  await server.listen({ onUnhandledRequest: 'error' })
 })
 
-afterAll(() => {
-  server.close()
+afterAll(async () => {
+  await server.close()
 
   for (const [key, value] of Object.entries(envBackup)) {
     if (value === undefined) {
@@ -142,7 +143,7 @@ test('client.Sandbox.create uses the client config instead of env vars', async (
 
   const sandbox = await client.Sandbox.create()
 
-  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/sandboxes`)
+  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/v2/sandboxes`)
   assert.equal(lastRequest().apiKey, API_KEY_A)
   // The bound config is also carried by the created sandbox instance.
   assert.equal(sandbox.sandboxDomain, DOMAIN_A)
@@ -155,7 +156,7 @@ test('client.Sandbox instances are subclass instances of Sandbox', async () => {
   assert.isTrue(client.Sandbox.prototype instanceof Sandbox)
   assert.instanceOf(await client.Sandbox.create(), Sandbox)
   // Class-level defaults are inherited from Sandbox.
-  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/sandboxes`)
+  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/v2/sandboxes`)
 })
 
 test('per-call options take precedence over the client config', async () => {
@@ -163,8 +164,76 @@ test('per-call options take precedence over the client config', async () => {
 
   await client.Sandbox.create({ apiKey: API_KEY_B, domain: DOMAIN_B })
 
-  assert.equal(lastRequest().url, `https://api.${DOMAIN_B}/sandboxes`)
+  assert.equal(lastRequest().url, `https://api.${DOMAIN_B}/v2/sandboxes`)
   assert.equal(lastRequest().apiKey, API_KEY_B)
+})
+
+test('client retries rate-limited control-plane requests', async () => {
+  let attempts = 0
+  server.use(
+    http.get(/\/v2\/sandboxes/, () => {
+      attempts++
+      if (attempts === 1) {
+        return new HttpResponse(null, {
+          status: 429,
+          headers: { 'Retry-After': '0' },
+        })
+      }
+      return HttpResponse.json([])
+    })
+  )
+  const client = new E2B({
+    apiKey: API_KEY_A,
+    domain: DOMAIN_A,
+  })
+
+  await client.Sandbox.list().nextItems()
+
+  assert.equal(attempts, 2)
+})
+
+test('client replays serialized control-plane JSON after a rate limit', async () => {
+  const bodies: unknown[] = []
+  server.use(
+    http.post(/\/sandboxes$/, async ({ request }) => {
+      bodies.push(await request.json())
+      if (bodies.length === 1) {
+        return new HttpResponse(null, {
+          status: 429,
+          headers: { 'Retry-After': '0' },
+        })
+      }
+      return HttpResponse.json(sandboxResponse)
+    })
+  )
+  const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
+
+  await client.Sandbox.create()
+
+  expect(bodies).toHaveLength(2)
+  expect(bodies[0]).toMatchObject({ templateID: 'base' })
+  expect(bodies[1]).toEqual(bodies[0])
+})
+
+test('client retries sandbox creation after a 503', async () => {
+  let attempts = 0
+  server.use(
+    http.post(/\/sandboxes$/, () => {
+      attempts++
+      if (attempts === 1) {
+        return HttpResponse.json(
+          { code: 503, message: 'not enough capacity' },
+          { status: 503, headers: { 'Retry-After': '0' } }
+        )
+      }
+      return HttpResponse.json(sandboxResponse)
+    })
+  )
+  const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
+
+  await client.Sandbox.create()
+
+  assert.equal(attempts, 2)
 })
 
 test('client.Sandbox can be rebound to a variable', async () => {
@@ -191,8 +260,8 @@ test('two clients with different configs stay isolated', async () => {
   assert.deepEqual(
     requests.map((r) => [r.url, r.apiKey]),
     [
-      [`https://api.${DOMAIN_A}/sandboxes`, API_KEY_A],
-      [`https://api.${DOMAIN_B}/sandboxes`, API_KEY_B],
+      [`https://api.${DOMAIN_A}/v2/sandboxes`, API_KEY_A],
+      [`https://api.${DOMAIN_B}/v2/sandboxes`, API_KEY_B],
     ]
   )
 })
@@ -204,14 +273,14 @@ test('mutating the options object does not change the bound config', async () =>
 
   await client.Sandbox.create()
 
-  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/sandboxes`)
+  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/v2/sandboxes`)
 })
 
 test('per-call options explicitly set to undefined keep the client config', async () => {
   const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
 
   await client.Sandbox.create({ apiKey: undefined, domain: undefined })
-  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/sandboxes`)
+  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/v2/sandboxes`)
   assert.equal(lastRequest().apiKey, API_KEY_A)
 
   await client.Sandbox.list().nextItems({ domain: undefined })
@@ -235,7 +304,7 @@ test('a signal is not bound to the client', async () => {
 
   await client.Sandbox.create()
 
-  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/sandboxes`)
+  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/v2/sandboxes`)
 })
 
 test('a __proto__ option does not pollute the prototype', async () => {
@@ -246,7 +315,7 @@ test('a __proto__ option does not pollute the prototype', async () => {
   )
 
   assert.isUndefined(({} as Record<string, unknown>).polluted)
-  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/sandboxes`)
+  assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/v2/sandboxes`)
 })
 
 test('Template statics work detached from the class', async () => {
@@ -299,18 +368,23 @@ test('client.Template statics use the client config', async () => {
   assert.equal(lastRequest().apiKey, API_KEY_B)
 })
 
-test('client.Template builds template instances', async () => {
-  const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
-  const template = client.Template().fromPythonImage('3')
+// The template builder is Node-only (node:path/node:fs); tests/template/** is
+// excluded from the browser suite for the same reason.
+test.skipIf(runtime === 'browser')(
+  'client.Template builds template instances',
+  async () => {
+    const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
+    const template = client.Template().fromPythonImage('3')
 
-  assert.instanceOf(template, TemplateBase)
-  assert.instanceOf(template, client.Template)
-  assert.instanceOf(new client.Template(), client.Template)
-  assert.equal(
-    await client.Template.toDockerfile(template),
-    await Template.toDockerfile(Template().fromPythonImage('3'))
-  )
-})
+    assert.instanceOf(template, TemplateBase)
+    assert.instanceOf(template, client.Template)
+    assert.instanceOf(new client.Template(), client.Template)
+    assert.equal(
+      await client.Template.toDockerfile(template),
+      await Template.toDockerfile(Template().fromPythonImage('3'))
+    )
+  }
+)
 
 test('client.Template can be rebound to a variable', async () => {
   const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })
@@ -369,7 +443,7 @@ test('top-level exports keep using the environment configuration', async () => {
   await client.Sandbox.create()
 
   await Sandbox.create()
-  assert.equal(lastRequest().url, `https://api.${DOMAIN_ENV}/sandboxes`)
+  assert.equal(lastRequest().url, `https://api.${DOMAIN_ENV}/v2/sandboxes`)
   assert.equal(lastRequest().apiKey, TEST_API_KEY)
 
   await Volume.list()
@@ -389,6 +463,6 @@ test('the default export is still Sandbox', async () => {
 
   await DefaultExport.create()
 
-  assert.equal(lastRequest().url, `https://api.${DOMAIN_ENV}/sandboxes`)
+  assert.equal(lastRequest().url, `https://api.${DOMAIN_ENV}/v2/sandboxes`)
   assert.equal(lastRequest().apiKey, TEST_API_KEY)
 })

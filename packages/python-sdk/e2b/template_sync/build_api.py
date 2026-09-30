@@ -1,6 +1,7 @@
+import os
 import time
 from types import TracebackType
-from typing import Callable, Optional, List, Union
+from typing import Callable, Dict, Optional, List, Union
 
 import httpx
 from pyqwest import SyncHTTPTransport
@@ -47,16 +48,20 @@ def request_build(
     client: AuthenticatedClient,
     name: str,
     tags: Optional[List[str]],
-    cpu_count: int,
-    memory_mb: int,
+    cpu_count: Optional[int],
+    memory_mb: Optional[int],
+    min_free_disk_mb: Optional[int],
 ):
     res = post_v3_templates.sync_detailed(
         client=client,
         body=TemplateBuildRequestV3(
             name=name,
             tags=tags if tags else UNSET,
-            cpu_count=cpu_count,
-            memory_mb=memory_mb,
+            cpu_count=cpu_count if cpu_count is not None else UNSET,
+            memory_mb=memory_mb if memory_mb is not None else UNSET,
+            min_free_disk_mb=(
+                min_free_disk_mb if min_free_disk_mb is not None else UNSET
+            ),
         ),
     )
 
@@ -109,6 +114,8 @@ def upload_file(
     resolve_symlinks: bool,
     gzip: bool,
     stack_trace: Optional[TracebackType],
+    *,
+    headers: Optional[Dict[str, str]] = None,
     request_timeout: Optional[float] = None,
 ):
     # Uploading a large build-context archive can take far longer than the 60s
@@ -123,6 +130,7 @@ def upload_file(
         tar_file = tar_file_stream(
             file_name, context_path, ignore_patterns, resolve_symlinks, gzip
         )
+        size = os.fstat(tar_file.fileno()).st_size
         try:
             # Through the pyqwest adapter the upload timeout is a
             # whole-request deadline for the entire transfer, not a per-write
@@ -144,11 +152,19 @@ def upload_file(
                     )
                 ),
             ) as client:
-                # httpx streams the archive from disk in chunks and sets
-                # Content-Length from the file size—S3 presigned URLs reject
-                # chunked transfer encoding, and reqwest keeps the
-                # Content-Length framing for the streamed body.
-                response = client.put(url, content=tar_file)
+                # API-returned headers applied as given, but Content-Length stays ours — explicit so S3 presigned URLs see no chunked encoding.
+                response = client.put(
+                    url,
+                    content=tar_file,
+                    headers={
+                        **{
+                            k: v
+                            for k, v in (headers or {}).items()
+                            if k.lower() != "content-length"
+                        },
+                        "Content-Length": str(size),
+                    },
+                )
             response.raise_for_status()
         finally:
             # Closing the spooled temp file is best-effort: a failure here
@@ -216,13 +232,16 @@ def _map_build_status_reason(reason) -> Optional[BuildStatusReason]:
 
 
 def get_build_status(
-    client: AuthenticatedClient, template_id: str, build_id: str, logs_offset: int
+    client: AuthenticatedClient,
+    template_id: str,
+    build_id: str,
+    logs_offset: Optional[int] = None,
 ) -> TemplateBuildStatusResponse:
     res = get_templates_template_id_builds_build_id_status.sync_detailed(
         template_id=encode_path_param(template_id),
         build_id=build_id,
         client=client,
-        logs_offset=logs_offset,
+        logs_offset=logs_offset if logs_offset is not None else UNSET,
     )
 
     if res.status_code >= 300:

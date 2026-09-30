@@ -18,7 +18,7 @@ sandboxTest('pty connect/reconnect', async ({ sandbox }) => {
 
   await sandbox.pty.sendInput(
     terminal.pid,
-    new Uint8Array(Buffer.from('echo $FOO\n'))
+    new TextEncoder().encode('echo $FOO\n')
   )
 
   // Give time for the command output in the first connection
@@ -35,7 +35,7 @@ sandboxTest('pty connect/reconnect', async ({ sandbox }) => {
 
   await sandbox.pty.sendInput(
     terminal.pid,
-    new Uint8Array(Buffer.from('echo $FOO\nexit\n'))
+    new TextEncoder().encode('echo $FOO\nexit\n')
   )
 
   await reconnectHandle.wait()

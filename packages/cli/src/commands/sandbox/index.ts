@@ -11,6 +11,7 @@ import { logsCommand } from './logs'
 import { metricsCommand } from './metrics'
 import { execCommand } from './exec'
 import { snapshotCommand } from './snapshot'
+import { forkCommand } from './fork'
 
 export const sandboxCommand = new commander.Command('sandbox')
   .description('work with sandboxes')
@@ -28,3 +29,4 @@ export const sandboxCommand = new commander.Command('sandbox')
   .addCommand(metricsCommand)
   .addCommand(execCommand)
   .addCommand(snapshotCommand)
+  .addCommand(forkCommand)

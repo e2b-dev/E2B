@@ -66,9 +66,7 @@ async def test_restart_context(async_sandbox: AsyncSandbox):
 
 @pytest.mark.skip_debug
 async def test_create_context_secure_traffic(async_sandbox_factory):
-    async_sandbox = await async_sandbox_factory(
-        secure=True, network={"allow_public_traffic": False}
-    )
+    async_sandbox = await async_sandbox_factory(network={"allow_public_traffic": False})
     context = await async_sandbox.create_code_context()
 
     contexts = await async_sandbox.list_code_contexts()
@@ -81,9 +79,7 @@ async def test_create_context_secure_traffic(async_sandbox_factory):
 
 @pytest.mark.skip_debug
 async def test_remove_context_secure_traffic(async_sandbox_factory):
-    async_sandbox = await async_sandbox_factory(
-        secure=True, network={"allow_public_traffic": False}
-    )
+    async_sandbox = await async_sandbox_factory(network={"allow_public_traffic": False})
     context = await async_sandbox.create_code_context()
 
     await async_sandbox.remove_code_context(context.id)
@@ -94,9 +90,7 @@ async def test_remove_context_secure_traffic(async_sandbox_factory):
 
 @pytest.mark.skip_debug
 async def test_list_contexts_secure_traffic(async_sandbox_factory):
-    async_sandbox = await async_sandbox_factory(
-        secure=True, network={"allow_public_traffic": False}
-    )
+    async_sandbox = await async_sandbox_factory(network={"allow_public_traffic": False})
     contexts = await async_sandbox.list_code_contexts()
 
     # default contexts should include python and javascript
@@ -107,9 +101,7 @@ async def test_list_contexts_secure_traffic(async_sandbox_factory):
 
 @pytest.mark.skip_debug
 async def test_restart_context_secure_traffic(async_sandbox_factory):
-    async_sandbox = await async_sandbox_factory(
-        secure=True, network={"allow_public_traffic": False}
-    )
+    async_sandbox = await async_sandbox_factory(network={"allow_public_traffic": False})
     context = await async_sandbox.create_code_context()
 
     # set a variable in the context

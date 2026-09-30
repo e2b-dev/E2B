@@ -3,6 +3,7 @@ import { handleApiError } from '../../src/api'
 import {
   AuthenticationError,
   RateLimitError,
+  ServiceBusyError,
   SandboxError,
 } from '../../src/errors'
 
@@ -66,6 +67,51 @@ describe('handleApiError', () => {
       const err = handleApiError(res as any)
       assert.instanceOf(err, AuthenticationError)
       assert.include(err?.message, 'Unauthorized')
+    })
+
+    test('returns ServiceBusyError for 503 with undefined error', () => {
+      const res = createMockResponse(503, undefined)
+      const err = handleApiError(res as any)
+      assert.instanceOf(err, ServiceBusyError)
+      assert.include(err?.message, 'temporarily unavailable')
+    })
+  })
+
+  describe('status code on the error', () => {
+    test('a refused pause is a ServiceBusyError carrying 503 and the API message', () => {
+      const res = createMockResponse(503, {
+        message: 'node is busy persisting sandbox, please retry',
+      })
+      const err = handleApiError(res as any) as ServiceBusyError
+      assert.instanceOf(err, ServiceBusyError)
+      assert.equal(err.statusCode, 503)
+      assert.include(err.message, 'node is busy persisting sandbox')
+    })
+
+    test('a generic failure keeps SandboxError and carries its status', () => {
+      const res = createMockResponse(500, { message: 'boom' })
+      const err = handleApiError(res as any) as SandboxError
+      assert.instanceOf(err, SandboxError)
+      assert.equal(err.statusCode, 500)
+    })
+
+    test('a 503 is a ServiceBusyError whatever error class the caller asked for', () => {
+      class BuildLikeError extends SandboxError {
+        constructor(message: string) {
+          super(message)
+          this.name = 'BuildLikeError'
+        }
+      }
+      const res = createMockResponse(503, { message: 'no capacity' })
+      const err = handleApiError(res as any, BuildLikeError)
+      assert.instanceOf(err, ServiceBusyError)
+    })
+
+    test('RateLimitError carries 429', () => {
+      const res = createMockResponse(429, { message: 'slow down' })
+      const err = handleApiError(res as any) as SandboxError
+      assert.instanceOf(err, RateLimitError)
+      assert.equal(err.statusCode, 429)
     })
   })
 

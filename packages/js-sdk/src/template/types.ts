@@ -14,7 +14,10 @@ export type TemplateOptions = {
    */
   fileContextPath?: PathLike
   /**
-   * Array of glob patterns to ignore when copying files.
+   * Patterns in `.dockerignore` syntax for files to exclude when copying.
+   * They are applied after the `.dockerignore` file in the context directory, so they take precedence over it.
+   * An invalid pattern (such as an unterminated `[`) throws a `TemplateError`.
+   * Brace expansion (`{a,b}`) is not supported, as in Docker.
    */
   fileIgnorePatterns?: string[]
 }
@@ -34,14 +37,18 @@ export type BasicBuildOptions = {
   tags?: string[]
   /**
    * Number of CPUs allocated to the sandbox.
-   * @default 2
    */
   cpuCount?: number
   /**
    * Amount of memory in MB allocated to the sandbox.
-   * @default 1024
    */
   memoryMB?: number
+  /**
+   * Requested minimum free space for the template filesystem after the build steps
+   * have run, in MiB. Growth is best effort and the filesystem is never shrunk.
+   * Omit to use the team default or set to 0 to request no growth.
+   */
+  minFreeDiskMb?: number
   /**
    * If true, skips cache and forces a complete rebuild.
    * @default false
@@ -134,8 +141,8 @@ export type TemplateBuildStatusResponse = {
    */
   logEntries: LogEntry[]
   /**
-   * Build logs (raw strings).
-   * @deprecated Use `logEntries` instead.
+   * Build logs (raw strings). Always empty since the V1 build path was removed.
+   * @deprecated Use `logEntries` instead. Will be removed in the next major version.
    */
   logs: string[]
   /**

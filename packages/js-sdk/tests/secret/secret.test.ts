@@ -1,10 +1,9 @@
 import { describe, it, expect, afterAll, afterEach, beforeAll } from 'vitest'
 import { http, HttpResponse } from 'msw'
-import { setupServer } from 'msw/node'
-import { randomUUID } from 'node:crypto'
 
 import { InvalidArgumentError, Secret, SecretNotFoundError } from '../../src'
 import { apiUrl } from '../setup'
+import { setupMockApi } from '../mockApi'
 
 interface MockSecret {
   secretID: string
@@ -34,7 +33,7 @@ const restHandlers = [
     }
     const now = new Date().toISOString()
     const secret: MockSecret = {
-      secretID: `sec_${randomUUID()}`,
+      secretID: `sec_${crypto.randomUUID()}`,
       name: name.toLowerCase(),
       currentVersion: 1,
       metadata: metadata ?? {},
@@ -110,7 +109,7 @@ const restHandlers = [
   ),
 ]
 
-const server = setupServer(...restHandlers)
+const server = setupMockApi(...restHandlers)
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 afterAll(() => server.close())

@@ -137,6 +137,13 @@ components:
           Identifier of the secret (sec_ prefixed), or its canonical
           lower-case name
 
+    webhookID:
+      name: webhookID
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
   headers:
     XNextToken:
       description: Cursor to fetch the next page of results, if more exist
@@ -183,6 +190,14 @@ components:
             $ref: "#/components/schemas/Error"
     "429":
       description: Too many requests
+      headers:
+        Retry-After:
+          description: When present, the number of seconds to wait before retrying the request.
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+          example: 30
       content:
         application/json:
           schema:
@@ -385,6 +400,17 @@ components:
       format: int32
       minimum: 0
       description: Disk size for the sandbox in MiB
+
+    MinFreeDiskMb:
+      type: integer
+      format: int32
+      minimum: 0
+      description: >-
+        Requested minimum free space after the template's build steps, in MiB.
+        Omit to use the team's default. Set to 0 to request no minimum free-disk
+        growth. The filesystem is never shrunk, including inherited or already-larger
+        filesystems. Growth is best effort, so filesystem metadata can leave the
+        available space slightly below the requested minimum.
 
     EnvdVersion:
       type: string
@@ -938,6 +964,59 @@ components:
           items:
             $ref: "#/components/schemas/SandboxVolumeMount"
 
+    NewSandboxV2:
+      description: >-
+        Sandbox creation request. All system communication with the sandbox is
+        always secured; the template's envd version must support secured access.
+      required:
+        - templateID
+      properties:
+        templateID:
+          type: string
+          description: Identifier of the required template
+        timeout:
+          type: integer
+          format: int32
+          minimum: 1
+          default: 300
+          description: Time to live for the sandbox in seconds.
+        autoPause:
+          type: boolean
+          default: false
+          description: Automatically pauses the sandbox after the timeout
+        autoPauseMemory:
+          type: boolean
+          default: true
+          description: >-
+            Controls the snapshot kind taken when the sandbox auto-pauses on
+            timeout (only relevant when autoPause is true). When false, the
+            auto-pause drops the in-memory state and persists only the
+            filesystem (a filesystem-only snapshot); resuming it cold-boots
+            (reboots) the sandbox from disk. Such a snapshot cannot be
+            auto-resumed by traffic and must be resumed explicitly, so it cannot
+            be combined with autoResume. Defaults to true (full memory snapshot).
+        autoResume:
+          $ref: "#/components/schemas/SandboxAutoResumeConfig"
+        allow_internet_access:
+          type: boolean
+          description:
+            Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut
+            to 0.0.0.0/0 in the network config.
+        network:
+          $ref: "#/components/schemas/SandboxNetworkConfig"
+        metadata:
+          $ref: "#/components/schemas/SandboxMetadata"
+        envVars:
+          $ref: "#/components/schemas/EnvVars"
+        mcp:
+          $ref: "#/components/schemas/Mcp"
+        iam:
+          $ref: "#/components/schemas/SandboxIam"
+        volumeMounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/SandboxVolumeMount"
+
     SandboxIam:
       type: object
       description: >-
@@ -999,6 +1078,25 @@ components:
           type: integer
           format: int32
           minimum: 0
+        memory:
+          type: boolean
+          description: >-
+            Defaults to true. When false and the sandbox is paused, resume from disk state only: the
+            sandbox cold-boots fresh and any memory in the snapshot is ignored, never
+            modified or deleted. Disk state has crash-recovery semantics — writes not
+            flushed before the pause may be lost. A no-op for snapshots that contain
+            no memory. Rejected with an error in environments where this capability
+            is not enabled, never silently downgraded to a memory restore.
+
+    ConnectSandboxV2:
+      type: object
+      properties:
+        timeout:
+          description: Timeout in seconds from the current time after which the sandbox should expire
+          type: integer
+          format: int32
+          minimum: 1
+          default: 300
         memory:
           type: boolean
           description: >-
@@ -1282,71 +1380,6 @@ components:
           items:
             type: string
 
-    TemplateLegacy:
-      required:
-        - templateID
-        - buildID
-        - cpuCount
-        - memoryMB
-        - diskSizeMB
-        - public
-        - createdAt
-        - updatedAt
-        - createdBy
-        - lastSpawnedAt
-        - spawnCount
-        - buildCount
-        - envdVersion
-        - aliases
-      properties:
-        templateID:
-          type: string
-          description: Identifier of the template
-        buildID:
-          type: string
-          description: Identifier of the last successful build for given template
-        cpuCount:
-          $ref: "#/components/schemas/CPUCount"
-        memoryMB:
-          $ref: "#/components/schemas/MemoryMB"
-        diskSizeMB:
-          $ref: "#/components/schemas/DiskSizeMB"
-        public:
-          type: boolean
-          description: Whether the template is public or only accessible by the team
-        aliases:
-          type: array
-          description: Aliases of the template
-          items:
-            type: string
-        createdAt:
-          type: string
-          format: date-time
-          description: Time when the template was created
-        updatedAt:
-          type: string
-          format: date-time
-          description: Time when the template was last updated
-        createdBy:
-          allOf:
-            - $ref: "#/components/schemas/TeamUser"
-          nullable: true
-        lastSpawnedAt:
-          type: string
-          nullable: true
-          format: date-time
-          description: Time when the template was last used
-        spawnCount:
-          type: integer
-          format: int64
-          description: Number of times the template was used
-        buildCount:
-          type: integer
-          format: int32
-          description: Number of times the template was built
-        envdVersion:
-          $ref: "#/components/schemas/EnvdVersion"
-
     TemplateBuild:
       required:
         - buildID
@@ -1447,30 +1480,6 @@ components:
           type: boolean
           description: Whether the template is public or only accessible by the team
 
-    TemplateBuildRequest:
-      required:
-        - dockerfile
-      properties:
-        alias:
-          description: Alias of the template
-          type: string
-        dockerfile:
-          description: Dockerfile for the template
-          type: string
-        teamID:
-          type: string
-          description: Identifier of the team
-        startCmd:
-          description: Start command to execute in the template after the build
-          type: string
-        readyCmd:
-          description: Ready check command to execute in the template after the build
-          type: string
-        cpuCount:
-          $ref: "#/components/schemas/CPUCount"
-        memoryMB:
-          $ref: "#/components/schemas/MemoryMB"
-
     TemplateStep:
       description: Step in the template build process
       required:
@@ -1517,22 +1526,8 @@ components:
           $ref: "#/components/schemas/CPUCount"
         memoryMB:
           $ref: "#/components/schemas/MemoryMB"
-
-    TemplateBuildRequestV2:
-      required:
-        - alias
-      properties:
-        alias:
-          description: Alias of the template
-          type: string
-        teamID:
-          deprecated: true
-          type: string
-          description: Identifier of the team
-        cpuCount:
-          $ref: "#/components/schemas/CPUCount"
-        memoryMB:
-          $ref: "#/components/schemas/MemoryMB"
+        minFreeDiskMb:
+          $ref: "#/components/schemas/MinFreeDiskMb"
 
     FromImageRegistry:
       oneOf:
@@ -1602,12 +1597,15 @@ components:
 
     TemplateBuildStartV2:
       type: object
+      description: Exactly one of fromImage or fromTemplate must be given and non-empty.
       properties:
         fromImage:
           type: string
+          minLength: 1
           description: Image to use as a base for the template build
         fromTemplate:
           type: string
+          minLength: 1
           description: Template to use as a base for the template build
         fromImageRegistry:
           $ref: "#/components/schemas/FromImageRegistry"
@@ -1638,6 +1636,11 @@ components:
         url:
           description: Url where the file should be uploaded to
           type: string
+        headers:
+          description: Request headers that must be sent with the upload request
+          type: object
+          additionalProperties:
+            type: string
 
     LogLevel:
       type: string
@@ -1703,7 +1706,8 @@ components:
       properties:
         logs:
           default: []
-          description: Build logs
+          deprecated: true
+          description: Build logs (always empty since the V1 build path was removed, use logEntries)
           type: array
           items:
             type: string
@@ -1759,7 +1763,6 @@ components:
       type: string
       description: |
         Status of the node.
-        - draining: the node is bound to be shut down. It will not accept new sandboxes and will stop once all existing sandboxes are done.
         - standby: the node is not actively used, but it can return to ready and continue serving traffic.
       enum:
         - ready
@@ -1767,12 +1770,14 @@ components:
         - connecting
         - unhealthy
         - standby
+        - shutting_down
       x-enum-varnames:
         - NodeStatusReady
         - NodeStatusDraining
         - NodeStatusConnecting
         - NodeStatusUnhealthy
         - NodeStatusStandby
+        - NodeStatusShuttingDown
 
     NodeStatusChange:
       required:
@@ -1934,6 +1939,15 @@ components:
           type: integer
           format: uint32
           description: Number of sandboxes running on the node
+        maxSandboxes:
+          type: integer
+          format: int64
+          description: Node-scoped configured sandbox admission limit. Nonpositive values reject creation. Omitted when unknown or not an orchestrator.
+        outstandingWork:
+          type: integer
+          format: uint64
+          minimum: 0
+          description: Observed work holds on the node. Omitted when unknown; zero does not authorize deletion.
         metrics:
           $ref: "#/components/schemas/NodeMetrics"
         createSuccesses:
@@ -1991,6 +2005,15 @@ components:
           type: integer
           format: uint32
           description: Number of sandboxes running on the node
+        maxSandboxes:
+          type: integer
+          format: int64
+          description: Node-scoped configured sandbox admission limit. Nonpositive values reject creation. Omitted when unknown or not an orchestrator.
+        outstandingWork:
+          type: integer
+          format: uint64
+          minimum: 0
+          description: Observed work holds on the node. Omitted when unknown; zero does not authorize deletion.
         metrics:
           $ref: "#/components/schemas/NodeMetrics"
         createSuccesses:
@@ -2304,6 +2327,351 @@ components:
         metadata:
           $ref: "#/components/schemas/SecretMetadata"
 
+    SandboxEvent:
+      description: Sandbox event
+      required:
+        - id
+        - version
+        - type
+        - timestamp
+        - sandboxId
+        - sandboxExecutionId
+        - sandboxTemplateId
+        - sandboxBuildId
+        - sandboxTeamId
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Event unique identifier
+        version:
+          type: string
+          description: Event structure version
+        type:
+          type: string
+          description: Event name
+        eventCategory:
+          type: string
+          deprecated: true
+          description: Category of the event (e.g., 'lifecycle', 'process', etc.)
+        eventLabel:
+          type: string
+          deprecated: true
+          description: Label for the specific event type (e.g., 'sandbox_started', 'process_oom', etc.)
+        eventData:
+          type: object
+          nullable: true
+          description: Optional JSON data associated with the event
+
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of the event
+        sandboxId:
+          type: string
+          format: string
+          description: Unique identifier for the sandbox
+        sandboxExecutionId:
+          type: string
+          format: string
+          description: Unique identifier for the sandbox execution
+        sandboxTemplateId:
+          type: string
+          format: string
+          description: Unique identifier for the sandbox template
+        sandboxBuildId:
+          type: string
+          format: string
+          description: Unique identifier for the sandbox build
+        sandboxTeamId:
+          type: string
+          format: uuid
+          description: Team identifier associated with the sandbox
+    WebhookCreate:
+      description: Configuration for registering new webhooks
+      required:
+        - name
+        - url
+        - events
+        - signatureSecret
+      properties:
+        name:
+          type: string
+        url:
+          type: string
+          format: uri
+        events:
+          type: array
+          items:
+            type: string
+        enabled:
+          type: boolean
+          default: true
+        signatureSecret:
+          type: string
+          description: Secret used to sign the webhook payloads
+    WebhookCreation:
+      description: Webhook creation response
+      required:
+        - id
+        - name
+        - createdAt
+        - teamId
+        - url
+        - enabled
+        - events
+      properties:
+        id:
+          type: string
+          description: Webhook unique identifier
+        name:
+          type: string
+          description: Webhook user friendly name
+        createdAt:
+          type: string
+          format: date-time
+          description: Time when the template was created
+        teamId:
+          type: string
+          description: Unique identifier for the team
+        url:
+          type: string
+          format: uri
+        enabled:
+          type: boolean
+        events:
+          type: array
+          items:
+            type: string
+    WebhookDetail:
+      description: Webhook detail response
+      required:
+        - id
+        - teamId
+        - name
+        - createdAt
+        - url
+        - enabled
+        - events
+      properties:
+        id:
+          type: string
+          description: Webhook unique identifier
+        teamId:
+          type: string
+          description: Unique identifier for the team
+        name:
+          type: string
+          description: Webhook user friendly name
+        createdAt:
+          type: string
+          format: date-time
+          description: Time when the template was created
+        url:
+          type: string
+          format: uri
+        enabled:
+          type: boolean
+        events:
+          type: array
+          items:
+            type: string
+    WebhookConfiguration:
+      description: Configuration for updating existing webhooks
+      properties:
+        enabled:
+          type: boolean
+        name:
+          type: string
+          description: Webhook user friendly name
+        url:
+          type: string
+          format: uri
+        events:
+          type: array
+          items:
+            type: string
+        signatureSecret:
+          type: string
+          description: Secret used to sign the webhook payloads
+    WebhookDelivery:
+      description: Webhook delivery attempt
+      required:
+        - id
+        - teamId
+        - webhookId
+        - eventId
+        - sandboxId
+        - eventType
+        - status
+        - durationMs
+        - requestBody
+        - requestHeaders
+        - requestUrl
+        - errorClass
+        - timestamp
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Delivery attempt identifier
+        teamId:
+          type: string
+          format: uuid
+          description: Team identifier
+        webhookId:
+          type: string
+          format: uuid
+          description: Webhook configuration identifier
+        eventId:
+          type: string
+          format: uuid
+          description: Sandbox event identifier
+        sandboxId:
+          type: string
+          description: Sandbox identifier
+        eventType:
+          type: string
+          description: Sandbox event type
+        status:
+          type: string
+          enum: [success, failed]
+          description: Delivery attempt status
+        durationMs:
+          type: integer
+          format: int32
+          description: Delivery request duration in milliseconds
+        requestBody:
+          type: string
+          description: Serialized webhook request body
+        requestHeaders:
+          type: string
+          description: JSON-encoded request headers with sensitive values redacted
+        requestUrl:
+          type: string
+          format: uri
+          description: URL attempted for this delivery
+        responseBody:
+          type: string
+          nullable: true
+          description: Truncated response body, if a response was received
+        responseHeaders:
+          type: string
+          nullable: true
+          description: JSON-encoded response headers, if a response was received
+        responseHttpStatusCode:
+          type: integer
+          format: int32
+          nullable: true
+          description: HTTP response status code, if a response was received
+        errorClass:
+          type: string
+          nullable: true
+          enum:
+            - http_error
+            - dns_error
+            - timeout
+            - transport_error
+            - request_error
+            - signature_error
+            - canceled
+          description: Machine-readable non-HTTP or HTTP failure class
+        errorMessage:
+          type: string
+          nullable: true
+          description: Error message for failures without a useful response body
+        timestamp:
+          type: string
+          format: date-time
+          description: Time when the delivery attempt started
+    WebhookDeliveryStats:
+      description: Webhook delivery aggregate stats
+      required:
+        - buckets
+        - total
+        - failed
+        - durationMs
+      properties:
+        buckets:
+          type: array
+          items:
+            $ref: "#/components/schemas/WebhookDeliveryStatsBucket"
+        total:
+          type: integer
+          format: int64
+        failed:
+          type: integer
+          format: int64
+        durationMs:
+          $ref: "#/components/schemas/WebhookDeliveryDurationStats"
+    WebhookDeliveryDurationStats:
+      description: Webhook delivery duration statistics in milliseconds
+      required:
+        - minimum
+        - average
+        - maximum
+      properties:
+        minimum:
+          type: number
+          format: double
+        average:
+          type: number
+          format: double
+        maximum:
+          type: number
+          format: double
+    WebhookDeliveryStatsBucket:
+      description: Webhook delivery stats for a time bucket
+      required:
+        - timestamp
+        - total
+        - failed
+        - durationMs
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        total:
+          type: integer
+          format: int64
+        failed:
+          type: integer
+          format: int64
+        durationMs:
+          $ref: "#/components/schemas/WebhookDeliveryDurationStats"
+    WebhookDeliveryGroup:
+      description: Webhook delivery attempts grouped by sandbox event
+      required:
+        - eventId
+        - eventType
+        - sandboxId
+        - attempts
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        eventType:
+          type: string
+        sandboxId:
+          type: string
+        attempts:
+          type: array
+          items:
+            $ref: "#/components/schemas/WebhookDelivery"
+    WebhookDeliveriesListPayload:
+      description: Paginated webhook delivery attempts grouped by event
+      required:
+        - data
+        - nextCursor
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/WebhookDeliveryGroup"
+        nextCursor:
+          type: string
+          nullable: true
+          description: Cursor to pass to the next list request, or null when there is no next page.
 tags:
   - name: templates
   - name: sandboxes
@@ -2323,6 +2691,8 @@ paths:
           description: The service is healthy
         "401":
           $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
 
   /teams:
     get:
@@ -2342,6 +2712,8 @@ paths:
                   $ref: "#/components/schemas/Team"
         "401":
           $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -2389,6 +2761,8 @@ paths:
           $ref: "#/components/responses/401"
         "403":
           $ref: "#/components/responses/403"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -2441,12 +2815,15 @@ paths:
           $ref: "#/components/responses/401"
         "403":
           $ref: "#/components/responses/403"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
   /sandboxes:
     get:
       summary: List running sandboxes
+      x-api-group: list
       description: List all running sandboxes. Use GET /v2/sandboxes instead.
       deprecated: true
       tags: [sandboxes]
@@ -2478,11 +2855,14 @@ paths:
           $ref: "#/components/responses/401"
         "400":
           $ref: "#/components/responses/400"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
     post:
       summary: Create sandbox
-      description: Create a sandbox from the template
+      description: Create a sandbox from the template. Use POST /v2/sandboxes instead.
+      deprecated: true
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
@@ -2509,6 +2889,8 @@ paths:
           $ref: "#/components/responses/401"
         "400":
           $ref: "#/components/responses/400"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
         "503":
@@ -2517,8 +2899,46 @@ paths:
           $ref: "#/components/responses/504"
 
   /v2/sandboxes:
+    post:
+      summary: Create sandbox (v2)
+      description: Create a sandbox from the template. All system communication with the sandbox is secured.
+      tags: [sandboxes]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewSandboxV2"
+      responses:
+        "201":
+          description: The sandbox was created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sandbox"
+        "401":
+          $ref: "#/components/responses/401"
+        "400":
+          $ref: "#/components/responses/400"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+        "503":
+          $ref: "#/components/responses/503"
+        "504":
+          $ref: "#/components/responses/504"
     get:
       summary: List sandboxes (v2)
+      x-api-group: list
       description: List all sandboxes
       tags: [sandboxes]
       security:
@@ -2585,12 +3005,15 @@ paths:
           $ref: "#/components/responses/401"
         "400":
           $ref: "#/components/responses/400"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
   /sandboxes/metrics:
     get:
       summary: List sandbox metrics
+      x-api-group: list
       description: List metrics for given sandboxes
       tags: [sandboxes]
       security:
@@ -2624,6 +3047,8 @@ paths:
           $ref: "#/components/responses/401"
         "400":
           $ref: "#/components/responses/400"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -2669,6 +3094,8 @@ paths:
           $ref: "#/components/responses/404"
         "401":
           $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -2730,6 +3157,8 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -2759,6 +3188,8 @@ paths:
           $ref: "#/components/responses/404"
         "401":
           $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -2783,6 +3214,8 @@ paths:
           $ref: "#/components/responses/404"
         "401":
           $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -2831,6 +3264,8 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -2865,8 +3300,12 @@ paths:
           $ref: "#/components/responses/404"
         "401":
           $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
+        "503":
+          $ref: "#/components/responses/503"
 
   /sandboxes/{sandboxID}/resume:
     post:
@@ -2905,6 +3344,8 @@ paths:
           $ref: "#/components/responses/400"
         "401":
           $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
         "503":
@@ -2957,6 +3398,8 @@ paths:
           $ref: "#/components/responses/404"
         "401":
           $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
         "503":
@@ -2965,7 +3408,8 @@ paths:
   /sandboxes/{sandboxID}/connect:
     post:
       summary: Connect sandbox
-      description: Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended.
+      description: Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. Use POST /v2/sandboxes/{sandboxID}/connect instead.
+      deprecated: true
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
@@ -3004,6 +3448,62 @@ paths:
           $ref: "#/components/responses/404"
         "409":
           $ref: "#/components/responses/409"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+        "503":
+          $ref: "#/components/responses/503"
+        "504":
+          $ref: "#/components/responses/504"
+
+  /v2/sandboxes/{sandboxID}/connect:
+    post:
+      summary: Connect sandbox (v2)
+      description: >-
+        Returns sandbox details. If the sandbox is paused, it will be resumed.
+        TTL is only extended. The request body is optional; an omitted timeout
+        defaults to 300 seconds.
+      tags: [sandboxes]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConnectSandboxV2"
+      responses:
+        "200":
+          description: The sandbox was already running
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sandbox"
+        "201":
+          description: The sandbox was resumed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sandbox"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "409":
+          $ref: "#/components/responses/409"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
         "503":
@@ -3038,6 +3538,8 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -3071,6 +3573,8 @@ paths:
           $ref: "#/components/responses/404"
         "409":
           $ref: "#/components/responses/409"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -3101,6 +3605,8 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
 
   /sandboxes/{sandboxID}/snapshots:
     post:
@@ -3136,12 +3642,15 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
   /snapshots:
     get:
       summary: List snapshots
+      x-api-group: list
       description: List all snapshots for the team
       tags: [snapshots]
       security:
@@ -3181,6 +3690,8 @@ paths:
                   $ref: "#/components/schemas/SnapshotInfo"
         "401":
           $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -3217,12 +3728,17 @@ paths:
           $ref: "#/components/responses/401"
         "403":
           $ref: "#/components/responses/403"
+        "409":
+          $ref: "#/components/responses/409"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
   /v2/templates:
     get:
       summary: List templates (v2)
+      x-api-group: list
       description: List all templates
       tags: [templates]
       security:
@@ -3260,39 +3776,8 @@ paths:
           $ref: "#/components/responses/401"
         "403":
           $ref: "#/components/responses/403"
-        "500":
-          $ref: "#/components/responses/500"
-    post:
-      summary: Create template (v2)
-      description: Create a new template
-      deprecated: true
-      tags: [templates]
-      security:
-        - ApiKeyAuth: []
-        - AuthProviderBearerAuth: []
-          AuthProviderTeamAuth: []
-        - AdminApiKeyAuth: []
-          AdminTeamAuth: []
-        - AdminJWTAuth: []
-          AdminTeamAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/TemplateBuildRequestV2"
-
-      responses:
-        "202":
-          description: The build was requested successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TemplateLegacy"
-        "400":
-          $ref: "#/components/responses/400"
-        "401":
-          $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -3331,12 +3816,15 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
   /templates:
     get:
       summary: List templates
+      x-api-group: list
       description: List all templates
       deprecated: true
       tags: [templates]
@@ -3366,40 +3854,15 @@ paths:
                   $ref: "#/components/schemas/Template"
         "401":
           $ref: "#/components/responses/401"
-        "500":
-          $ref: "#/components/responses/500"
-    post:
-      summary: Create template
-      description: Create a new template
-      deprecated: true
-      tags: [templates]
-      security:
-        - AuthProviderBearerAuth: []
-          AuthProviderTeamAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/TemplateBuildRequest"
-
-      responses:
-        "202":
-          description: The build was accepted
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TemplateLegacy"
-        "400":
-          $ref: "#/components/responses/400"
-        "401":
-          $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
   /templates/{templateID}:
     get:
       summary: List template builds
+      x-api-group: list
       description: List all builds for a template
       tags: [templates]
       security:
@@ -3426,34 +3889,8 @@ paths:
                 $ref: "#/components/schemas/TemplateWithBuilds"
         "401":
           $ref: "#/components/responses/401"
-        "500":
-          $ref: "#/components/responses/500"
-    post:
-      summary: Rebuild template
-      description: Rebuild an template
-      deprecated: true
-      tags: [templates]
-      security:
-        - AuthProviderBearerAuth: []
-          AuthProviderTeamAuth: []
-      parameters:
-        - $ref: "#/components/parameters/templateID"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/TemplateBuildRequest"
-
-      responses:
-        "202":
-          description: The build was accepted
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TemplateLegacy"
-        "401":
-          $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
     delete:
@@ -3475,6 +3912,8 @@ paths:
           description: The template was deleted successfully
         "401":
           $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
     patch:
@@ -3505,26 +3944,8 @@ paths:
           $ref: "#/components/responses/400"
         "401":
           $ref: "#/components/responses/401"
-        "500":
-          $ref: "#/components/responses/500"
-
-  /templates/{templateID}/builds/{buildID}:
-    post:
-      summary: Start template build
-      description: Start the build
-      deprecated: true
-      tags: [templates]
-      security:
-        - AuthProviderBearerAuth: []
-          AuthProviderTeamAuth: []
-      parameters:
-        - $ref: "#/components/parameters/templateID"
-        - $ref: "#/components/parameters/buildID"
-      responses:
-        "202":
-          description: The build has started
-        "401":
-          $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -3553,8 +3974,12 @@ paths:
       responses:
         "202":
           description: The build has started
+        "400":
+          $ref: "#/components/responses/400"
         "401":
           $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -3590,6 +4015,8 @@ paths:
           $ref: "#/components/responses/400"
         "401":
           $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -3641,6 +4068,8 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -3700,6 +4129,8 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -3735,6 +4166,8 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
     delete:
@@ -3764,12 +4197,15 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
   /templates/{templateID}/tags:
     get:
       summary: List template tags
+      x-api-group: list
       description: List all tags for a template
       tags: [tags]
       security:
@@ -3797,6 +4233,8 @@ paths:
           $ref: "#/components/responses/403"
         "404":
           $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -3833,6 +4271,8 @@ paths:
           $ref: "#/components/responses/403"
         "404":
           $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -3863,6 +4303,8 @@ paths:
                   $ref: "#/components/schemas/Node"
         "401":
           $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -3894,6 +4336,8 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
     post:
@@ -3919,6 +4363,8 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -3949,6 +4395,8 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -3971,6 +4419,8 @@ paths:
                 $ref: "#/components/schemas/AdminTeamRunningSandboxCounts"
         "401":
           $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -4001,6 +4451,8 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -4041,6 +4493,8 @@ paths:
           $ref: "#/components/responses/403"
         "404":
           $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -4070,12 +4524,15 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
   /api-keys:
     get:
       summary: List team API keys
+      x-api-group: list
       description: List all team API keys
       tags: [api-keys]
       security:
@@ -4096,6 +4553,8 @@ paths:
                   $ref: "#/components/schemas/TeamAPIKey"
         "401":
           $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
     post:
@@ -4120,6 +4579,8 @@ paths:
                 $ref: "#/components/schemas/CreatedTeamAPIKey"
         "401":
           $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -4150,6 +4611,8 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
     delete:
@@ -4172,12 +4635,15 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
   /volumes:
     get:
       summary: List team volumes
+      x-api-group: list
       description: List all team volumes
       tags: [volumes]
       security:
@@ -4199,6 +4665,8 @@ paths:
                   $ref: "#/components/schemas/Volume"
         "401":
           $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -4231,6 +4699,8 @@ paths:
           $ref: "#/components/responses/400"
         "401":
           $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -4260,6 +4730,8 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
@@ -4284,12 +4756,15 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
 
   /secrets:
     get:
       summary: List project secrets
+      x-api-group: list
       description: List the project's secrets. No response carries a secret value.
       tags: [secrets]
       security:
@@ -4528,6 +5003,8 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
         "501":
@@ -4564,6 +5041,8 @@ paths:
           $ref: "#/components/responses/404"
         "409":
           $ref: "#/components/responses/409"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
         "501":
@@ -4606,6 +5085,8 @@ paths:
           $ref: "#/components/responses/404"
         "409":
           $ref: "#/components/responses/409"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
         "501":
@@ -4639,6 +5120,8 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
         "501":
@@ -4682,7 +5165,412 @@ paths:
           $ref: "#/components/responses/401"
         "404":
           $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
         "501":
           $ref: "#/components/responses/501"
+
+  /events/sandboxes/{sandboxID}:
+    get:
+      description: Get sandbox events
+      tags: [events]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: orderAsc
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: types
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+          description: Filter events to the provided event types
+      responses:
+        "200":
+          description: Successfully returned the sandbox events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SandboxEvent"
+        "400":
+          $ref: "#/components/responses/400"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /events/sandboxes:
+    get:
+      description: Get all sandbox events for the team associated with the API key
+      tags: [events]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: orderAsc
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: types
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+          description: Filter events to the provided event types
+      responses:
+        "200":
+          description: Successfully returned the sandbox events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SandboxEvent"
+        "400":
+          $ref: "#/components/responses/400"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /events/webhooks:
+    post:
+      description: Register events webhook.
+      tags: [webhooks]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookCreate"
+      responses:
+        "201":
+          description: Successfully created webhook.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookCreation"
+        "400":
+          $ref: "#/components/responses/400"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+    get:
+      description: List registered webhooks.
+      tags: [webhooks]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      responses:
+        "200":
+          description: List of registered webhooks.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WebhookDetail"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /events/webhooks/{webhookID}:
+    get:
+      description: Get a registered webhook.
+      tags: [webhooks]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/webhookID"
+      responses:
+        "200":
+          description: Successfully returned the webhook configuration.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookDetail"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+    patch:
+      description: Update a registered webhook configuration.
+      tags: [webhooks]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/webhookID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookConfiguration"
+      responses:
+        "200":
+          description: Successfully updated webhook.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookDetail"
+        "400":
+          $ref: "#/components/responses/400"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+    delete:
+      description: Delete a registered webhook.
+      tags: [webhooks]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/webhookID"
+      responses:
+        "200":
+          description: Successfully deleted webhook.
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /events/webhooks/{webhookID}/deliveries:
+    get:
+      description: List webhook delivery attempts.
+      tags: [webhooks]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/webhookID"
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Opaque cursor from the previous response's nextCursor field.
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 25
+        - name: orderAsc
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: start
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Include deliveries at or after this timestamp.
+        - name: end
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Include deliveries before this timestamp.
+        - name: deliveryStatus
+          in: query
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [success, failed]
+          description: Filter deliveries by delivery status
+        - name: eventType
+          in: query
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+          description: Filter deliveries by event type
+      responses:
+        "200":
+          description: List of webhook delivery attempts grouped by event.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookDeliveriesListPayload"
+        "400":
+          $ref: "#/components/responses/400"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /events/webhooks/{webhookID}/stats:
+    get:
+      description: Get webhook delivery aggregate stats.
+      tags: [webhooks]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/webhookID"
+        - name: start
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Inclusive stats range start. Defaults to 24 hours ago.
+        - name: end
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Exclusive stats range end. Defaults to now.
+      responses:
+        "200":
+          description: Webhook delivery stats.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookDeliveryStats"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"

@@ -59,7 +59,7 @@ describe('Template Init', () => {
     })
 
     test('should validate template name format', async () => {
-      // Matches the server-side rule in e2b-dev/infra (id.identifierRegex):
+      // Matches the server-side rule in e2b-dev/runtime (id.identifierRegex):
       // only lowercase letters, numbers, dashes and underscores are allowed.
       const invalidNames = [
         'invalid space', // contains space

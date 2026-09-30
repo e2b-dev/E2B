@@ -29,7 +29,6 @@ def template():
 @pytest.fixture()
 def sandbox_factory(request, template, sandbox_test_id):
     def factory(*, template_name: str = template, **kwargs):
-        kwargs.setdefault("secure", False)
         kwargs.setdefault("timeout", DEFAULT_TEST_SANDBOX_TIMEOUT)
 
         metadata = kwargs.setdefault("metadata", dict())
