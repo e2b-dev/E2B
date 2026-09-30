@@ -14,7 +14,7 @@ from typing import List
 from e2b.exceptions import TemplateException
 
 # Characters that have a meaning in a regex but not in a Docker pattern
-_LITERAL_REGEX_CHARS = set(".+()|{}$")
+_LITERAL_REGEX_CHARS = set(".+()|{}$^")
 _WILDCARD_CHARS = re.compile(r"[*?\[\\]")
 _BACKSLASH_IS_SEPARATOR = os.sep == "\\"
 
@@ -43,6 +43,17 @@ def _compile(pattern: str) -> "re.Pattern[str]":
                 regex += "[^/]*"
         elif ch == "?":
             regex += "[^/]"
+        elif ch == "[":
+            # Copy a bracket expression as is, a leading "^" negates it
+            j = i
+            if j < n and pattern[j] == "^":
+                j += 1
+            while j < n and pattern[j] != "]":
+                if pattern[j] == "\\" and not _BACKSLASH_IS_SEPARATOR:
+                    j += 1
+                j += 1
+            regex += pattern[i - 1 : j + 1]
+            i = j + 1
         elif ch in _LITERAL_REGEX_CHARS:
             regex += "\\" + ch
         elif ch == "\\" and not _BACKSLASH_IS_SEPARATOR:

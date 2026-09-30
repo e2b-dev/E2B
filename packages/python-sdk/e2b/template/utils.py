@@ -1,5 +1,6 @@
 import hashlib
 import os
+import posixpath
 import tarfile
 import tempfile
 import json
@@ -214,19 +215,42 @@ def get_all_files_in_path(
         root_dir=abs_context_path,
     )
 
+    matches = []
     for file in files_glob:
         # Join it with abs_context_path to get the absolute path, dropping
         # any "." and ".." segments from src
         file_path = os.path.normpath(os.path.join(abs_context_path, file))
         relative_path = normalize_path(os.path.relpath(file_path, abs_context_path))
+        matches.append((file_path, relative_path))
+
+    # Visit parents before their children, so paths under an already walked
+    # directory are not walked again
+    matches.sort(key=lambda m: 0 if m[1] == "." else m[1].count("/") + 1)
+    walked_dirs = set()
+
+    def is_under_walked_dir(relative_path: str) -> bool:
+        if "." in walked_dirs:
+            return True
+        parent = posixpath.dirname(relative_path)
+        while parent:
+            if parent in walked_dirs:
+                return True
+            parent = posixpath.dirname(parent)
+        return False
+
+    for file_path, relative_path in matches:
+        if is_under_walked_dir(relative_path):
+            continue
         if relative_path != "." and matcher.matches(relative_path):
             continue
 
-        if os.path.isdir(file_path):
+        # Symlinks are not followed, the link itself is copied
+        if os.path.isdir(file_path) and not os.path.islink(file_path):
             # If it's a directory, add the directory and all entries recursively
             if include_directories:
                 files.add(file_path)
             walk(file_path, relative_path)
+            walked_dirs.add(relative_path)
         else:
             files.add(file_path)
 
@@ -250,7 +274,7 @@ def calculate_files_hash(
     :param src: Source path pattern for files to copy
     :param dest: Destination path where files will be copied
     :param context_path: Base directory for resolving relative paths
-    :param ignore_patterns: Glob patterns to ignore
+    :param ignore_patterns: Ignore patterns in `.dockerignore` syntax
     :param resolve_symlinks: Whether to resolve symbolic links when hashing
     :param stack_trace: Optional stack trace for error reporting
 
@@ -273,7 +297,9 @@ def calculate_files_hash(
         # Only include stable metadata (mode, size)
         # Exclude uid, gid, and mtime to ensure consistent hashes across environments
         hash_obj.update(str(stat_info.st_mode).encode())
-        hash_obj.update(str(stat_info.st_size).encode())
+        # A directory's size depends on the filesystem, not on the copied files
+        if not stat.S_ISDIR(stat_info.st_mode):
+            hash_obj.update(str(stat_info.st_size).encode())
 
     for file in files:
         # Hash the relative path

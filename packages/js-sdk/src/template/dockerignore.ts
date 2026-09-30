@@ -9,7 +9,17 @@ import path from 'node:path'
 import { TemplateError } from '../errors'
 
 // Characters that have a meaning in a regex but not in a Docker pattern
-const LITERAL_REGEX_CHARS = new Set(['.', '+', '(', ')', '|', '{', '}', '$'])
+const LITERAL_REGEX_CHARS = new Set([
+  '.',
+  '+',
+  '(',
+  ')',
+  '|',
+  '{',
+  '}',
+  '$',
+  '^',
+])
 const WILDCARD_CHARS = /[*?[\\]/
 // Evaluated lazily, as `node:path` is not available when loaded in the browser
 const backslashIsSeparator = () => path.sep === '\\'
@@ -46,6 +56,20 @@ function compile(pattern: string): RegExp {
       }
     } else if (ch === '?') {
       regex += '[^/]'
+    } else if (ch === '[') {
+      // Copy a bracket expression as is, a leading "^" negates it
+      let j = i
+      if (pattern[j] === '^') {
+        j++
+      }
+      while (j < n && pattern[j] !== ']') {
+        if (pattern[j] === '\\' && backslashIsEscape) {
+          j++
+        }
+        j++
+      }
+      regex += pattern.slice(i - 1, j + 1)
+      i = j + 1
     } else if (LITERAL_REGEX_CHARS.has(ch)) {
       regex += '\\' + ch
     } else if (ch === '\\' && backslashIsEscape) {

@@ -1,4 +1,5 @@
 import os
+import sys
 import tempfile
 import pytest
 from e2b.exceptions import TemplateException
@@ -446,3 +447,67 @@ class TestDockerignoreSemantics:
         with open(os.path.join(test_dir, ".dockerignore"), "w", encoding="utf-8") as f:
             f.write("\ufeff.env\n# comment\n\nsrc\n")
         assert read_dockerignore(test_dir) == [".env", "src"]
+
+    def test_should_match_a_caret_literally_outside_a_bracket_expression(
+        self, test_dir
+    ):
+        for name in ["report^draft.txt", "ax", "bx"]:
+            with open(os.path.join(test_dir, name), "w") as f:
+                f.write("x")
+        files = self.relative_paths("*", test_dir, ["report^draft.txt", "[^a]x"])
+        assert "report^draft.txt" not in files
+        assert "bx" not in files
+        assert "ax" in files
+
+    def test_should_not_walk_the_recursive_matches_of_a_directory_again(
+        self, test_dir, monkeypatch
+    ):
+        os.makedirs(os.path.join(test_dir, "a", "b", "c", "d", "e"))
+        scanned = []
+        scandir = os.scandir
+
+        def counting_scandir(path="."):
+            scanned.append(os.path.normpath(path))
+            return scandir(path)
+
+        monkeypatch.setattr(os, "scandir", counting_scandir)
+        files = self.relative_paths("**/*", test_dir, self.PATTERNS)
+        monkeypatch.undo()
+
+        assert files == [
+            "a",
+            "a/b",
+            "a/b/c",
+            "a/b/c/d",
+            "a/b/c/d/e",
+            "src",
+            "src/app.ts",
+            "src/node_modules",
+            "src/node_modules/lib.js",
+        ]
+        deepest = os.path.normpath(os.path.join(test_dir, "a", "b", "c", "d", "e"))
+        # Once by the walk, and at most once by the glob expansion
+        assert scanned.count(deepest) <= 2
+
+    @pytest.mark.skipif(sys.platform == "win32", reason="Symlinks need privileges")
+    def test_should_copy_a_symlink_to_a_directory_without_its_contents(self, test_dir):
+        os.makedirs(os.path.join(test_dir, "real"))
+        with open(os.path.join(test_dir, "real", "secret.txt"), "w") as f:
+            f.write("x")
+        os.symlink("real", os.path.join(test_dir, "linked"))
+        assert self.relative_paths("linked", test_dir, []) == ["linked"]
+
+    def test_should_keep_the_files_hash_stable_when_ignored_files_grow_a_directory(
+        self, test_dir
+    ):
+        def files_hash():
+            return calculate_files_hash(
+                ".", "/app", test_dir, ["node_modules/*"], False, None
+            )
+
+        before = files_hash()
+        for i in range(300):
+            name = f"ignored-file-with-a-long-name-{i}"
+            with open(os.path.join(test_dir, "node_modules", name), "w") as f:
+                f.write("x")
+        assert files_hash() == before

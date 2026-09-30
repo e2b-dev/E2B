@@ -211,8 +211,36 @@ export async function getAllFilesInPath(
     cwd: contextPath,
   })
 
+  // Visit parents before their children, so paths under an already walked
+  // directory are not walked again
+  const depth = (p: Path) => {
+    const relativePath = p.relativePosix()
+    return relativePath === '' ? 0 : relativePath.split('/').length
+  }
+  globFiles.sort((a, b) => depth(a) - depth(b))
+  const walkedDirs = new Set<string>()
+  const isUnderWalkedDir = (relativePath: string) => {
+    if (walkedDirs.has('')) {
+      return true
+    }
+    for (
+      let parent = path.posix.dirname(relativePath);
+      parent !== '.' && parent !== '/';
+      parent = path.posix.dirname(parent)
+    ) {
+      if (walkedDirs.has(parent)) {
+        return true
+      }
+    }
+    return false
+  }
+
   for (const file of globFiles) {
+    if (isUnderWalkedDir(file.relativePosix())) {
+      continue
+    }
     if (file.isDirectory()) {
+      walkedDirs.add(file.relativePosix())
       // For directories, add the directory itself and all files inside it
       if (includeDirectories) {
         files.set(file.fullpath(), file)
@@ -252,7 +280,7 @@ export async function getAllFilesInPath(
  * @param src Source path pattern for files to copy
  * @param dest Destination path where files will be copied
  * @param contextPath Base directory for resolving relative paths
- * @param ignorePatterns Glob patterns to ignore
+ * @param ignorePatterns Ignore patterns in `.dockerignore` syntax
  * @param resolveSymlinks Whether to resolve symbolic links when hashing
  * @param stackTrace Optional stack trace for error reporting
  * @returns Hex string hash of all files
@@ -286,7 +314,10 @@ export async function calculateFilesHash(
   // Exclude uid, gid, and mtime to ensure consistent hashes across environments
   const hashStats = (stats: fs.Stats) => {
     hash.update(stats.mode.toString())
-    hash.update(stats.size.toString())
+    // A directory's size depends on the filesystem, not on the copied files
+    if (!stats.isDirectory()) {
+      hash.update(stats.size.toString())
+    }
   }
 
   // Process files recursively

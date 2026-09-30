@@ -1,5 +1,5 @@
 import { expect, test, describe, beforeAll, afterAll, beforeEach } from 'vitest'
-import { appendFile, writeFile, mkdir, mkdtemp, rm } from 'fs/promises'
+import { appendFile, writeFile, mkdir, mkdtemp, rm, symlink } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join, basename, relative } from 'path'
 import {
@@ -443,6 +443,56 @@ describe('getAllFilesInPath', () => {
         calculateFilesHash('.', '/app', testDir, ['.git'], false, undefined)
       const before = await hash()
       await appendFile(join(testDir, '.git', 'HEAD'), 'x')
+      expect(await hash()).toBe(before)
+    })
+
+    test('should match a caret literally outside a bracket expression', async () => {
+      for (const name of ['report^draft.txt', 'ax', 'bx']) {
+        await writeFile(join(testDir, name), 'x')
+      }
+      const files = await relativePaths('*', ['report^draft.txt', '[^a]x'])
+      expect(files).not.toContain('report^draft.txt')
+      expect(files).not.toContain('bx')
+      expect(files).toContain('ax')
+    })
+
+    test('should not walk the recursive matches of a directory again', async () => {
+      const files = await relativePaths('**/*', patterns)
+      expect(files).toEqual([
+        'src',
+        'src/app.ts',
+        'src/node_modules',
+        'src/node_modules/lib.js',
+      ])
+    })
+
+    test.skipIf(process.platform === 'win32')(
+      'should copy a symlink to a directory without its contents',
+      async () => {
+        await mkdir(join(testDir, 'real'))
+        await writeFile(join(testDir, 'real', 'secret.txt'), 'x')
+        await symlink('real', join(testDir, 'linked'))
+        expect(await relativePaths('linked', [])).toEqual(['linked'])
+      }
+    )
+
+    test('should keep the files hash stable when ignored files grow a directory', async () => {
+      const hash = () =>
+        calculateFilesHash(
+          '.',
+          '/app',
+          testDir,
+          ['node_modules/*'],
+          false,
+          undefined
+        )
+      const before = await hash()
+      for (let i = 0; i < 300; i++) {
+        await writeFile(
+          join(testDir, 'node_modules', `ignored-file-with-a-long-name-${i}`),
+          'x'
+        )
+      }
       expect(await hash()).toBe(before)
     })
 
