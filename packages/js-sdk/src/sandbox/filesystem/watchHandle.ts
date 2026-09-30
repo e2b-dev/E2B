@@ -95,6 +95,8 @@ export class WatchHandle {
 
   /**
    * Stop watching the directory.
+   *
+   * Calls `onExit` with no error after the watch stops.
    */
   async stop() {
     this.stopped = true
