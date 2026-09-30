@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 
+import { Code, ConnectError } from '@connectrpc/connect'
+
 import { EventType } from '../../../src/envd/filesystem/filesystem_pb'
+import { TimeoutError } from '../../../src/errors'
 import {
   FilesystemEventType,
   WatchHandle,
@@ -108,6 +111,71 @@ describe('WatchHandle', () => {
     // No error is passed on a clean exit — onExit is called with zero args.
     expect(exitArgs).toEqual([])
     expect(received).toEqual([FilesystemEventType.WRITE])
+  })
+
+  it('fires onExit with no error when stop() cancels the stream', async () => {
+    // stop() aborts the request, which the transport surfaces as a canceled
+    // ConnectError ("This operation was aborted"). The watch must treat that
+    // cancellation as the clean, user-initiated end — onExit with no error —
+    // not as the request-timeout error the canceled code maps to.
+    let abortStream: (() => void) | undefined
+    const streamAborted = new Promise<void>((resolve) => {
+      abortStream = resolve
+    })
+
+    async function* canceledOnStop() {
+      yield filesystemEvent('a.txt') as any
+      await streamAborted
+      throw new ConnectError('This operation was aborted', Code.Canceled)
+    }
+
+    let exitArgs: unknown[] | undefined
+
+    const handle = new WatchHandle(
+      () => abortStream?.(),
+      canceledOnStop(),
+      () => {},
+      (...args: unknown[]) => {
+        exitArgs = args
+      }
+    )
+
+    await handle.stop()
+
+    await vi.waitFor(() => {
+      expect(exitArgs).toBeDefined()
+    })
+    // A user-initiated stop is a clean end — onExit is called with zero args.
+    expect(exitArgs).toEqual([])
+  })
+
+  it('fires onExit with the error when the stream is canceled without stop()', async () => {
+    // Only the cancellation stop() itself triggers is a clean end. A
+    // cancellation from anywhere else (e.g. a request timeout aborting the
+    // signal) is still an error.
+    async function* canceledStream() {
+      yield filesystemEvent('a.txt') as any
+      throw new ConnectError(
+        'The operation was aborted due to timeout',
+        Code.Canceled
+      )
+    }
+
+    let exitErr: Error | undefined | 'unset' = 'unset'
+
+    new WatchHandle(
+      () => {},
+      canceledStream(),
+      () => {},
+      (err) => {
+        exitErr = err ?? undefined
+      }
+    )
+
+    await vi.waitFor(() => {
+      expect(exitErr).not.toBe('unset')
+    })
+    expect(exitErr).toBeInstanceOf(TimeoutError)
   })
 
   it('does not let a throwing onExit become an unhandled rejection', async () => {
