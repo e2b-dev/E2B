@@ -213,6 +213,47 @@ test.each([502, 503])(
   }
 )
 
+test.each([
+  ['POST', '/sandboxes', 1],
+  ['POST', '/secrets/secret-1', 1],
+  ['POST', '/sandboxes/sbx-1/pause', 2],
+  ['GET', '/sandboxes', 2],
+])('a 502 for %s %s is attempted %i time(s)', async (method, path, calls) => {
+  const statuses = [502, 200]
+  const fetchImpl = vi.fn(
+    async () => new Response(null, { status: statuses.shift() })
+  ) as typeof fetch
+  const fetchWithRetry = withRetry(fetchImpl, 3, 60_000, {
+    monotonic: () => 0,
+    sleep: async () => {},
+  })
+
+  const response = await fetchWithRetry(`https://api.e2b.test${path}`, {
+    method,
+  })
+
+  expect(response.status).toBe(calls === 1 ? 502 : 200)
+  expect(fetchImpl).toHaveBeenCalledTimes(calls)
+})
+
+test('retries a 503 for a non-replayable POST', async () => {
+  const statuses = [503, 200]
+  const fetchImpl = vi.fn(
+    async () => new Response(null, { status: statuses.shift() })
+  ) as typeof fetch
+  const fetchWithRetry = withRetry(fetchImpl, 3, 60_000, {
+    monotonic: () => 0,
+    sleep: async () => {},
+  })
+
+  const response = await fetchWithRetry('https://api.e2b.test/sandboxes', {
+    method: 'POST',
+  })
+
+  expect(response.status).toBe(200)
+  expect(fetchImpl).toHaveBeenCalledTimes(2)
+})
+
 test('caps the backoff for long retry sequences', async () => {
   const fetchImpl = vi.fn(
     async () => new Response(null, { status: 503 })
@@ -496,6 +537,7 @@ const nonReplayable = [
   ['POST', '/admin/teams/team-1/api-keys'],
   ['POST', '/volumes'],
   ['POST', '/secrets'],
+  ['POST', '/secrets/secret-1'],
   ['POST', '/events/webhooks'],
   // POSTs not on the allowlist: unknown and near-miss paths
   ['POST', '/sandboxes/sbx-1/pause/extra'],
@@ -523,7 +565,6 @@ const replayable = [
   ['POST', '/nodes/node-1'],
   ['POST', '/admin/teams/team-1/sandboxes/kill'],
   ['POST', '/admin/teams/team-1/builds/cancel'],
-  ['POST', '/secrets/secret-1'],
   ['DELETE', '/volumes/vol-1'],
   ['PATCH', '/events/webhooks/hook-1'],
 ]

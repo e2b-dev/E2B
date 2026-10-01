@@ -180,7 +180,9 @@ def test_retries_unavailable_status_with_exponential_backoff_and_jitter(status):
     inner = FakeTransport([status, status, status, 200], retry_after=None)
     sleeps = []
     randoms = iter([0.0, 1.0, 0.5])
-    request = httpx.Request("POST", "https://api.test", content=b"payload")
+    request = httpx.Request(
+        "POST", "https://api.test/sandboxes/sbx-1/pause", content=b"payload"
+    )
 
     response = RetryableTransport(
         inner,
@@ -194,6 +196,37 @@ def test_retries_unavailable_status_with_exponential_backoff_and_jitter(status):
     assert sleeps == pytest.approx([0.05, 0.2, 0.3])
     assert [item.content for item in inner.requests] == [b"payload"] * 4
     assert all(item.is_closed for item in inner.responses[:-1])
+
+
+@pytest.mark.parametrize(
+    ("method", "path", "attempts"),
+    [
+        ("POST", "/sandboxes", 1),
+        ("POST", "/secrets/secret-1", 1),
+        ("POST", "/sandboxes/sbx-1/pause", 2),
+        ("GET", "/sandboxes", 2),
+    ],
+)
+def test_bad_gateway_is_retried_only_for_replayable_operations(method, path, attempts):
+    inner = FakeTransport([502, 200], retry_after=None)
+
+    response = RetryableTransport(
+        inner, retries=3, sleep=lambda _: None, monotonic=lambda: 0.0
+    ).handle_request(httpx.Request(method, f"https://api.test{path}", content=b"p"))
+
+    assert response.status_code == (502 if attempts == 1 else 200)
+    assert len(inner.requests) == attempts
+
+
+def test_service_unavailable_is_retried_for_non_replayable_operation():
+    inner = FakeTransport([503, 200], retry_after=None)
+
+    response = RetryableTransport(
+        inner, retries=3, sleep=lambda _: None, monotonic=lambda: 0.0
+    ).handle_request(httpx.Request("POST", "https://api.test/sandboxes", content=b"p"))
+
+    assert response.status_code == 200
+    assert len(inner.requests) == 2
 
 
 def test_backoff_is_capped_for_long_retry_sequences():
@@ -410,6 +443,7 @@ NON_REPLAYABLE = [
     ("POST", "/admin/teams/team-1/api-keys"),
     ("POST", "/volumes"),
     ("POST", "/secrets"),
+    ("POST", "/secrets/secret-1"),
     ("POST", "/events/webhooks"),
     # POSTs not on the allowlist: unknown and near-miss paths
     ("POST", "/sandboxes/sbx-1/pause/extra"),
@@ -437,7 +471,6 @@ REPLAYABLE = [
     ("POST", "/nodes/node-1"),
     ("POST", "/admin/teams/team-1/sandboxes/kill"),
     ("POST", "/admin/teams/team-1/builds/cancel"),
-    ("POST", "/secrets/secret-1"),
     ("DELETE", "/volumes/vol-1"),
     ("PATCH", "/events/webhooks/hook-1"),
 ]
@@ -627,13 +660,43 @@ async def test_async_retries_unavailable_status_with_backoff():
         monotonic=lambda: 0.0,
         random_=lambda: next(randoms),
     ).handle_async_request(
-        httpx.Request("POST", "https://api.test", content=b"payload")
+        httpx.Request(
+            "POST", "https://api.test/sandboxes/sbx-1/pause", content=b"payload"
+        )
     )
 
     assert response.status_code == 200
     assert sleeps == pytest.approx([0.05, 0.2])
     assert [item.content for item in inner.requests] == [b"payload"] * 3
     assert all(item.is_closed for item in inner.responses[:-1])
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("method", "path", "attempts"),
+    [
+        ("POST", "/sandboxes", 1),
+        ("POST", "/secrets/secret-1", 1),
+        ("POST", "/sandboxes/sbx-1/pause", 2),
+        ("GET", "/sandboxes", 2),
+    ],
+)
+async def test_async_bad_gateway_is_retried_only_for_replayable_operations(
+    method, path, attempts
+):
+    inner = FakeAsyncTransport([502, 200], retry_after=None)
+
+    async def sleep(_):
+        pass
+
+    response = await AsyncRetryableTransport(
+        inner, retries=3, sleep=sleep, monotonic=lambda: 0.0
+    ).handle_async_request(
+        httpx.Request(method, f"https://api.test{path}", content=b"p")
+    )
+
+    assert response.status_code == (502 if attempts == 1 else 200)
+    assert len(inner.requests) == attempts
 
 
 @pytest.mark.asyncio
