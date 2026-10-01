@@ -141,9 +141,7 @@ describe('WatchHandle', () => {
     const stream = (async function* () {
       await new Promise<never>((_, reject) => {
         abortStream = () =>
-          reject(
-            new ConnectError('This operation was aborted', Code.Canceled)
-          )
+          reject(new ConnectError('This operation was aborted', Code.Canceled))
       })
     })()
 
@@ -191,4 +189,3 @@ describe('WatchHandle', () => {
     expect(exitArgs).toEqual([failure])
   })
 })
-
