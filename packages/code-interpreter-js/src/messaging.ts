@@ -13,8 +13,12 @@ export async function extractError(res: Response) {
       )
     case 404:
       return new NotFoundError(await res.text())
-    default:
-      return new SandboxError(`${res.status} ${res.statusText}`)
+    default: {
+      const body = (await res.text()).trim()
+      return new SandboxError(
+        `${res.status} ${res.statusText}${body ? `: ${body}` : ''}`
+      )
+    }
   }
 }
 

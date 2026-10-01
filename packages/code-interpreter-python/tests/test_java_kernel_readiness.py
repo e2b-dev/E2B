@@ -7,7 +7,7 @@ from tests.conftest import _wait_for_kernel, _wait_for_kernel_async
 
 
 def java_not_ready_error() -> SandboxException:
-    return SandboxException("500:")
+    return SandboxException("500 Internal Server Error")
 
 
 @pytest.mark.parametrize("language", ["java", "r"])

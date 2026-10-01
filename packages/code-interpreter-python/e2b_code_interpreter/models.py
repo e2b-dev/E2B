@@ -427,7 +427,10 @@ def format_exception(res: Response):
             f"{res.text}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeout' when starting the sandbox or calling '.set_timeout' on the sandbox with the desired timeout."
         )
     else:
-        return SandboxException(f"{res.status_code}: {res.text}")
+        body = res.text.strip()
+        return SandboxException(
+            f"{res.status_code} {res.reason_phrase}{f': {body}' if body else ''}"
+        )
 
 
 def parse_output(
