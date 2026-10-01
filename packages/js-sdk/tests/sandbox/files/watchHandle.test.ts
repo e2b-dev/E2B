@@ -188,4 +188,27 @@ describe('WatchHandle', () => {
     })
     expect(exitArgs).toEqual([failure])
   })
+
+  it('still reports onEvent errors raised after the watch is stopped', async () => {
+    const failure = new Error('onEvent failed')
+    let handle: WatchHandle | undefined
+    let exitArgs: unknown[] | undefined
+
+    handle = new WatchHandle(
+      () => {},
+      events([filesystemEvent('a.txt')]),
+      async () => {
+        await handle?.stop()
+        throw failure
+      },
+      (...args: unknown[]) => {
+        exitArgs = args
+      }
+    )
+
+    await vi.waitFor(() => {
+      expect(exitArgs).toBeDefined()
+    })
+    expect(exitArgs).toEqual([failure])
+  })
 })
