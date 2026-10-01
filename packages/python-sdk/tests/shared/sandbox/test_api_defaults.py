@@ -120,6 +120,7 @@ def test_fork_omits_timeout_and_count_when_unset(monkeypatch, test_api_key):
 
     assert "timeout" not in body
     assert "count" not in body
+    assert "memory" not in body
 
 
 def test_fork_sends_explicit_timeout_and_count(monkeypatch, test_api_key):
@@ -127,6 +128,12 @@ def test_fork_sends_explicit_timeout_and_count(monkeypatch, test_api_key):
 
     assert body["timeout"] == 60
     assert body["count"] == 2
+
+
+def test_fork_sends_an_explicit_keep_memory(monkeypatch, test_api_key):
+    body = _sync_fork_body(monkeypatch, test_api_key, keep_memory=False)
+
+    assert body["memory"] is False
 
 
 def test_fork_leaves_the_count_limit_to_the_api(monkeypatch, test_api_key):
@@ -140,6 +147,7 @@ async def test_async_fork_omits_timeout_and_count_when_unset(monkeypatch, test_a
 
     assert "timeout" not in body
     assert "count" not in body
+    assert "memory" not in body
 
 
 async def test_async_fork_sends_explicit_timeout_and_count(monkeypatch, test_api_key):
@@ -147,6 +155,12 @@ async def test_async_fork_sends_explicit_timeout_and_count(monkeypatch, test_api
 
     assert body["timeout"] == 60
     assert body["count"] == 2
+
+
+async def test_async_fork_sends_an_explicit_keep_memory(monkeypatch, test_api_key):
+    body = await _async_fork_body(monkeypatch, test_api_key, keep_memory=False)
+
+    assert body["memory"] is False
 
 
 async def test_async_fork_leaves_the_count_limit_to_the_api(monkeypatch, test_api_key):

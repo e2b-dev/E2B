@@ -90,6 +90,7 @@ test('Sandbox.fork omits timeout and count when unset', async () => {
   expect(lastForkBody).toBeDefined()
   expect(lastForkBody).not.toHaveProperty('timeout')
   expect(lastForkBody).not.toHaveProperty('count')
+  expect(lastForkBody).not.toHaveProperty('memory')
 })
 
 test('Sandbox.fork sends explicit timeout and count', async () => {
@@ -110,6 +111,15 @@ test('Sandbox.fork leaves the count limit to the API', async () => {
   })
 
   expect(lastForkBody?.count).toBe(101)
+})
+
+test('Sandbox.fork sends an explicit keepMemory', async () => {
+  await Sandbox.fork('test-sandbox-id', {
+    apiKey: TEST_API_KEY,
+    keepMemory: false,
+  })
+
+  expect(lastForkBody?.memory).toBe(false)
 })
 
 test('Sandbox.pause omits memory when keepMemory is unset', async () => {

@@ -554,6 +554,14 @@ export interface SandboxForkOpts extends ConnectionOpts {
    * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
    */
   timeoutMs?: number
+
+  /**
+   * When `false`, only the filesystem is captured: the forks cold-boot
+   * (start fresh from disk) without the source sandbox's running processes,
+   * in-memory state, and open connections. The source sandbox keeps running
+   * either way. When omitted, the forks restore the source's memory.
+   */
+  keepMemory?: boolean
 }
 
 /**
@@ -1764,6 +1772,7 @@ export class SandboxApi extends ClientFactory {
     sandboxId: string,
     timeoutMs?: number,
     count?: number,
+    keepMemory?: boolean,
     opts?: SandboxApiOpts
   ): Promise<SandboxForkResponse[]> {
     const apiOpts = this.resolveOpts(opts)
@@ -1780,6 +1789,7 @@ export class SandboxApi extends ClientFactory {
         timeout:
           timeoutMs === undefined ? undefined : timeoutToSeconds(timeoutMs),
         count,
+        memory: keepMemory,
       },
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })

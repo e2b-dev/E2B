@@ -2597,6 +2597,8 @@ export interface components {
              * @default 1
              */
             count?: number;
+            /** @description Whether the forks restore the source sandbox's memory. When false, only the filesystem is captured: the snapshot is smaller and faster to take, and the forks cold-boot (start fresh from disk) instead of restoring memory, so they begin without the source sandbox's running processes, in-memory state, and open connections. The source sandbox keeps running in both cases. Rejected with an error where this capability is not enabled, never silently downgraded to a memory fork. Defaults to true. */
+            memory?: boolean;
             /**
              * Format: int32
              * @description Time to live for the new forked sandboxes in seconds.

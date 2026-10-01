@@ -17,16 +17,24 @@ class SandboxForkRequestV2:
         count (Union[Unset, int]): Number of forked sandboxes to create, capped per team (20 by default). All forks boot
             from the same snapshot, so the snapshot is captured once regardless of count. Each fork succeeds or fails
             independently; the outcome of each is reported in its entry of the response list. Default: 1.
+        memory (Union[Unset, bool]): Whether the forks restore the source sandbox's memory. When false, only the
+            filesystem is captured: the snapshot is smaller and faster to take, and the forks cold-boot (start fresh from
+            disk) instead of restoring memory, so they begin without the source sandbox's running processes, in-memory
+            state, and open connections. The source sandbox keeps running in both cases. Rejected with an error where this
+            capability is not enabled, never silently downgraded to a memory fork. Defaults to true.
     """
 
     timeout: Union[Unset, int] = 300
     count: Union[Unset, int] = 1
+    memory: Union[Unset, bool] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         timeout = self.timeout
 
         count = self.count
+
+        memory = self.memory
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -35,6 +43,8 @@ class SandboxForkRequestV2:
             field_dict["timeout"] = timeout
         if count is not UNSET:
             field_dict["count"] = count
+        if memory is not UNSET:
+            field_dict["memory"] = memory
 
         return field_dict
 
@@ -45,9 +55,12 @@ class SandboxForkRequestV2:
 
         count = d.pop("count", UNSET)
 
+        memory = d.pop("memory", UNSET)
+
         sandbox_fork_request_v2 = cls(
             timeout=timeout,
             count=count,
+            memory=memory,
         )
 
         sandbox_fork_request_v2.additional_properties = d

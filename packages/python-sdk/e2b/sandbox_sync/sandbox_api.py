@@ -396,6 +396,7 @@ class SandboxApi(SandboxBase):
         sandbox_id: str,
         timeout: Optional[int] = None,
         count: Optional[int] = None,
+        keep_memory: Optional[bool] = None,
         logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> List[Union[SandboxCreateResponse, Exception]]:
@@ -408,6 +409,7 @@ class SandboxApi(SandboxBase):
             body=SandboxForkRequestV2(
                 timeout=timeout if timeout is not None else UNSET,
                 count=count if count is not None else UNSET,
+                memory=keep_memory if keep_memory is not None else UNSET,
             ),
         )
 
