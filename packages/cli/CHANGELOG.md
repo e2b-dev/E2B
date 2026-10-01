@@ -1,5 +1,23 @@
 # @e2b/cli
 
+## 2.21.0
+
+### Minor Changes
+
+- 2de0cc3: Cap sandbox fork count at 20. `e2b sandbox fork --count`, JavaScript `Sandbox.fork({ count })`, and Python `Sandbox.fork(count=...)` reject a count outside 1–20 before the API call. Counts from 21 through 100 used to reach the API. Omitting count still leaves the field off the request so the API default applies.
+
+### Patch Changes
+
+- 8c7e5cb: Update the protobuf and OpenAPI clients, terminal styling, and interactive prompts to compatible minor releases.
+- Updated dependencies [2de0cc3]
+- Updated dependencies [03887ad]
+- Updated dependencies [2f92cc3]
+- Updated dependencies [8c7e5cb]
+- Updated dependencies [97522f8]
+- Updated dependencies [8c7e5cb]
+- Updated dependencies [4975149]
+  - e2b@2.52.0
+
 ## 2.20.0
 
 ### Minor Changes

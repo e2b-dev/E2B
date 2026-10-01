@@ -1,5 +1,31 @@
 # @e2b/python-sdk
 
+## 2.52.0
+
+### Minor Changes
+
+- 2de0cc3: Cap sandbox fork count at 20. `e2b sandbox fork --count`, JavaScript `Sandbox.fork({ count })`, and Python `Sandbox.fork(count=...)` reject a count outside 1–20 before the API call. Counts from 21 through 100 used to reach the API. Omitting count still leaves the field off the request so the API default applies.
+- 03887ad: Apply `.dockerignore` and `fileIgnorePatterns` / `file_ignore_patterns` the way Docker does when copying files into a template, so ignored files are no longer uploaded or included in the files hash:
+
+  - A pattern that matches a directory (`node_modules`, `.git`, `dist/`) now excludes everything under it, and a leading `/` is ignored.
+  - `!` patterns re-include paths; the last matching pattern wins.
+  - In Python, patterns now also apply when the copied path contains `.` or `..` segments (for example `copy(".")`).
+  - `fileIgnorePatterns` / `file_ignore_patterns` are applied after the `.dockerignore` lines, so they take precedence.
+  - Absolute patterns pointing into the context directory are treated as relative to it.
+  - Brace expansion (`{a,b}`) is not supported, as in Docker. In JS, `fileIgnorePatterns` such as `**/*.{env,pem}` previously expanded and now match `{env,pem}` literally; list each pattern separately instead (`**/*.env`, `**/*.pem`).
+  - In Python, copying a symlink to a directory copies the link itself instead of the directory's contents, as in JS.
+  - Copying a path inside an ignored directory now fails with "No files found", as in Docker. An invalid pattern (such as an unterminated `[`) now raises an error.
+
+  Directory sizes are no longer part of the files hash, since they depend on the filesystem rather than on the copied files. The files hash of `copy()` steps that copy directories or are affected by ignore patterns changes once, so those steps are rebuilt on the next build.
+
+- 2f92cc3: Add an `http_version` (Python) / `httpVersion` (JS) connection option, `"1.1"` or `"2"` (default), also settable with the `E2B_HTTP_VERSION` environment variable, to pin requests to the E2B API, to sandboxes (commands, filesystem, PTY) and to volume content to HTTP/1.1. It can also be bound once on a client: `E2B(http_version="1.1")` / `new E2B({ httpVersion: '1.1' })`.
+
+### Patch Changes
+
+- 97522f8: Retry control-plane HTTP requests after `502` and `503` responses, in addition to `429`, and after a network error once the request was written (dropped connection) — except for `POST` operations not known to be safe to replay (sandbox creation, fork, snapshot, volume/secret/API-key/webhook creation), which the server may already have processed. Failures to establish the connection keep being retried for every operation (`E2B_CONNECTION_RETRIES`). `Retry-After` is honored when the server sends one; otherwise retries back off exponentially with jitter, starting at 0.1 seconds and capped at 10 seconds. The existing `retries` option (default 3, `0` to disable) and request-timeout budget apply to all of them.
+- f713914: Sandbox `commands`/`files` traffic is now balanced across HTTP/2 connections the way the JS SDK's undici agent does it, instead of being sharded into a fixed number of pools by sandbox ID. Every request goes to the connection with the fewest streams in flight to its host; a new connection is dialed only when all existing ones already carry `E2B_STREAMS_PER_CONNECTION` streams to that host (default `100`), up to `E2B_MAX_CONNECTIONS` (default `200`). Envd RPC and HTTP calls share the same connections. `E2B_ENVD_POOL_SHARDS` and the `pool_shard` argument of the internal transport factories (`get_transport`, `get_httpx_transport`, `get_pyqwest_transport`, `get_envd_transport`) are removed.
+- 4975149: Remove unused internal constants and attributes, and share the command handle setup between `Commands.run` and `Commands.connect`
+
 ## 2.51.0
 
 ### Minor Changes
