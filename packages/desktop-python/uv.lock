@@ -431,6 +431,7 @@ dependencies = [
     { name = "e2b" },
     { name = "pillow" },
     { name = "requests" },
+    { name = "urllib3" },
 ]
 
 [package.dev-dependencies]
@@ -448,6 +449,7 @@ requires-dist = [
     { name = "e2b", editable = "../python-sdk" },
     { name = "pillow", specifier = ">=12.0.0,<13" },
     { name = "requests", specifier = ">=2.32.3,<3" },
+    { name = "urllib3", specifier = ">=2.8.0,<3" },
 ]
 
 [package.metadata.requires-dev]
