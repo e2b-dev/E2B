@@ -80,7 +80,11 @@ def create_rpc_client(
     outside the retries so it converts the settled response once.
     """
     http_client = Client(
-        PlainHTTPErrorTransport(get_pyqwest_transport(proxy_to_config(config.proxy)))
+        PlainHTTPErrorTransport(
+            get_pyqwest_transport(
+                proxy_to_config(config.proxy), http_version=config.http_version
+            )
+        )
     )
     return client_cls(
         base_url,

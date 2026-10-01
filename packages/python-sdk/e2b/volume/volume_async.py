@@ -24,6 +24,7 @@ from e2b.connection_config import (
     ApiParams,
     ClientFactory,
     ConnectionConfig,
+    HttpVersion,
     ProxyTypes,
 )
 from e2b.exceptions import (
@@ -78,6 +79,8 @@ class AsyncVolume(ClientFactory):
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         proxy: Optional[ProxyTypes] = None,
+        *,
+        http_version: Optional[HttpVersion] = None,
     ):
         self._volume_id = volume_id
         self._name = name
@@ -85,6 +88,7 @@ class AsyncVolume(ClientFactory):
         self._domain = domain
         self._debug = debug
         self._proxy = proxy
+        self._http_version = http_version
 
     @property
     def volume_id(self) -> str:
@@ -110,6 +114,11 @@ class AsyncVolume(ClientFactory):
             headers=opts.get("headers"),
             logger=opts.get("logger"),
             proxy=opts.get("proxy") if opts.get("proxy") is not None else self._proxy,
+            http_version=(
+                opts.get("http_version")
+                if opts.get("http_version") is not None
+                else self._http_version
+            ),
         )
 
     @classmethod
@@ -150,6 +159,7 @@ class AsyncVolume(ClientFactory):
             domain=domain or config.domain,
             debug=config.debug,
             proxy=config.proxy,
+            http_version=config.http_version,
         )
         return vol
 
@@ -171,6 +181,7 @@ class AsyncVolume(ClientFactory):
             domain=info.domain or config.domain,
             debug=config.debug,
             proxy=config.proxy,
+            http_version=config.http_version,
         )
 
     @classmethod

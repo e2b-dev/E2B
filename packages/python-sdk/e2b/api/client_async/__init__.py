@@ -20,7 +20,12 @@ from e2b.api import (
     proxy_to_config,
     request_origin,
 )
-from e2b.connection_config import READ_TIMEOUT, ConnectionConfig
+from e2b.connection_config import (
+    DEFAULT_HTTP_VERSION,
+    READ_TIMEOUT,
+    ConnectionConfig,
+    HttpVersion,
+)
 
 
 def get_api_client(config: ConnectionConfig, **kwargs) -> AsyncApiClient:
@@ -132,7 +137,7 @@ class BalancingTransport(Transport):
         )
 
 
-_TransportKey = Tuple[Optional[ProxyConfig], Optional[float], bool]
+_TransportKey = Tuple[Optional[ProxyConfig], Optional[float], HttpVersion]
 """Cache key: proxy, idle read bound, HTTP version — fixed when a pyqwest
 transport is constructed, so each distinct combination is necessarily its own
 transport."""
@@ -155,7 +160,8 @@ _httpx_transports: Dict[_TransportKey, AsyncPyqwestTransport] = {}
 def get_pyqwest_transport(
     proxy: Optional[ProxyConfig],
     read_timeout: Optional[float] = None,
-    http2: bool = True,
+    *,
+    http_version: HttpVersion = DEFAULT_HTTP_VERSION,
 ) -> ConnectionRetryTransport:
     """The shared pyqwest transport with the SDK's tuning — system CA certs
     (without which TLS through an intercepting proxy fails) and the
@@ -170,10 +176,10 @@ def get_pyqwest_transport(
     RPC stack's plain-HTTP-error normalization wraps it, headers and codecs are
     per-request — so that the pools stay shareable.
 
-    ``read_timeout`` bounds every read on the pools' connections and ``http2``
-    fixes the HTTP version; both are part of the cache key because they are
-    transport-construction knobs, so one pool cannot serve two values of
-    either. reqwest's read timer keeps running while a request body is sent and
+    ``read_timeout`` bounds every read on the pools' connections and
+    ``http_version`` fixes the HTTP version; both are part of the cache key
+    because they are transport-construction knobs, so one pool cannot serve two
+    values of either. reqwest's read timer keeps running while a request body is sent and
     while waiting for the response head, so a pool carrying one would cut off
     long uploads and slow responses — only streamed downloads ask for it, as an
     idle bound (see :func:`get_transport`).
@@ -182,7 +188,7 @@ def get_pyqwest_transport(
     ``pyqwest`` loggers at ``DEBUG`` (off unless enabled) — the transport-level
     diagnostics httpcore used to provide. The SDK's own ``logger`` option is
     separate and sits above this, on the httpx client."""
-    key = (proxy, read_timeout, http2)
+    key = (proxy, read_timeout, http_version)
 
     def build() -> HTTPTransport:
         return HTTPTransport(
@@ -194,7 +200,7 @@ def get_pyqwest_transport(
             # `None` leaves the version to ALPN on TLS connections (HTTP/2
             # against the E2B API and envd) and uses HTTP/1 for plaintext,
             # like the http2-enabled httpx transport this replaced.
-            http_version=None if http2 else HTTPVersion.HTTP1,
+            http_version=HTTPVersion.HTTP1 if http_version == "1.1" else None,
             # Redirects belong to the httpx client above (which the generated
             # clients leave off), not to reqwest.
             follow_redirects=False,
@@ -213,16 +219,17 @@ def get_pyqwest_transport(
 def get_httpx_transport(
     proxy: Optional[ProxyConfig],
     read_timeout: Optional[float] = None,
-    http2: bool = True,
+    *,
+    http_version: HttpVersion = DEFAULT_HTTP_VERSION,
 ) -> AsyncPyqwestTransport:
     """The httpx adapter over the shared transport of
     :func:`get_pyqwest_transport`, for the generated httpx clients (control
     plane, envd HTTP API, volume content). The adapter holds no state of its
     own and does not close the pools, so closing an httpx client leaves them
     intact for the other clients on it."""
-    key = (proxy, read_timeout, http2)
+    key = (proxy, read_timeout, http_version)
     # Resolve the pool before taking the lock: it takes the same one.
-    pool = get_pyqwest_transport(proxy, read_timeout, http2)
+    pool = get_pyqwest_transport(proxy, read_timeout, http_version=http_version)
     with _transport_lock:
         transport = _httpx_transports.get(key)
         if transport is None:
@@ -233,8 +240,8 @@ def get_httpx_transport(
 
 def get_transport(
     config: ConnectionConfig,
-    http2: bool = True,
     *,
+    http_version: Optional[HttpVersion] = None,
     for_streaming: bool = False,
 ) -> AsyncPyqwestTransport:
     """The shared httpx transport factory for the control-plane REST API and
@@ -242,10 +249,11 @@ def get_transport(
     negotiates the HTTP version (HTTP/2 against the E2B API), like the
     http2-enabled httpx transport this replaced.
 
-    ``http2=False`` returns a separate transport (its own pool) pinned to
-    HTTP/1.1. That matters for a server that reacts to a client going away:
-    HTTP/2 multiplexes requests over one connection, so abandoning a request
-    only resets its stream and the server may never notice, while HTTP/1.1's
+    ``http_version`` defaults to the config's ``http_version`` option;
+    ``"1.1"`` returns a separate transport (its own pool) pinned to HTTP/1.1.
+    That matters for a server that reacts to a client going away: HTTP/2
+    multiplexes requests over one connection, so abandoning a request only
+    resets its stream and the server may never notice, while HTTP/1.1's
     one-connection-per-request closes the connection and the server observes
     the disconnect.
 
@@ -260,7 +268,7 @@ def get_transport(
     return get_httpx_transport(
         proxy_to_config(config.proxy),
         READ_TIMEOUT if for_streaming else None,
-        http2,
+        http_version=(config.http_version if http_version is None else http_version),
     )
 
 

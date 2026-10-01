@@ -211,23 +211,26 @@ def test_sync_transports_keyed_by_http_version(test_api_key):
 
     try:
         negotiated = get_sync_transport(config)
-        http1 = get_sync_transport(config, http2=False)
+        http1 = get_sync_transport(config, http_version="1.1")
 
         assert http1 is not negotiated
         # Each version still has one transport per proxy, and repeat calls
         # with the same arguments reuse it.
-        assert get_sync_transport(proxied_config, http2=False) not in (
+        assert get_sync_transport(proxied_config, http_version="1.1") not in (
             http1,
             negotiated,
         )
-        assert get_sync_transport(config, http2=False) is http1
+        assert get_sync_transport(config, http_version="1.1") is http1
         assert get_sync_transport(config) is negotiated
-        assert get_sync_transport(config, http2=False, for_streaming=True) is not http1
+        assert (
+            get_sync_transport(config, http_version="1.1", for_streaming=True)
+            is not http1
+        )
         # The envd RPC clients' pyqwest transport is the one under the httpx
         # adapter the envd HTTP API uses, so a sandbox's RPC and HTTP traffic
         # share connections.
         assert get_sync_pyqwest_transport(None) is negotiated._transport
-        assert get_sync_pyqwest_transport(None, http2=False) is http1._transport
+        assert get_sync_pyqwest_transport(None, http_version="1.1") is http1._transport
     finally:
         reset_transport_caches()
 
@@ -250,11 +253,40 @@ def test_sync_transports_pass_http_version_to_pyqwest(test_api_key, monkeypatch)
 
     try:
         get_sync_transport(config)
-        get_sync_transport(config, http2=False)
+        get_sync_transport(config, http_version="1.1")
         # A third pool: same version as the call above, different idle bound.
-        get_sync_transport(config, http2=False, for_streaming=True)
+        get_sync_transport(config, http_version="1.1", for_streaming=True)
 
         assert captured == [None, HTTPVersion.HTTP1, HTTPVersion.HTTP1]
+    finally:
+        reset_transport_caches()
+
+
+def test_sync_transports_follow_the_http_version_option(test_api_key):
+    reset_transport_caches()
+    default = ConnectionConfig(api_key=test_api_key)
+    http1 = ConnectionConfig(api_key=test_api_key, http_version="1.1")
+
+    try:
+        assert default.http_version == "2"
+        assert get_sync_transport(default) is get_sync_transport(
+            default, http_version="2"
+        )
+        assert get_sync_transport(http1) is get_sync_transport(
+            default, http_version="1.1"
+        )
+        assert get_sync_transport(http1) is not get_sync_transport(default)
+        # The explicit argument wins over the option.
+        assert get_sync_transport(http1, http_version="2") is get_sync_transport(
+            default
+        )
+        assert get_sync_envd_api(http1, "https://sandbox.e2b.app")._transport is (
+            get_sync_transport(http1)
+        )
+        api_client = get_sync_api_client(http1).get_httpx_client()
+        assert isinstance(api_client._transport, RetryableTransport)
+        assert api_client._transport.transport is get_sync_transport(http1)
+        api_client.close()
     finally:
         reset_transport_caches()
 
@@ -424,14 +456,17 @@ async def test_async_transports_keyed_by_http_version(test_api_key):
 
     try:
         negotiated = get_async_transport(config)
-        http1 = get_async_transport(config, http2=False)
+        http1 = get_async_transport(config, http_version="1.1")
 
         assert http1 is not negotiated
-        assert get_async_transport(config, http2=False) is http1
+        assert get_async_transport(config, http_version="1.1") is http1
         assert get_async_transport(config) is negotiated
-        assert get_async_transport(config, http2=False, for_streaming=True) is not http1
+        assert (
+            get_async_transport(config, http_version="1.1", for_streaming=True)
+            is not http1
+        )
         assert get_async_pyqwest_transport(None) is negotiated._transport
-        assert get_async_pyqwest_transport(None, http2=False) is http1._transport
+        assert get_async_pyqwest_transport(None, http_version="1.1") is http1._transport
     finally:
         reset_transport_caches()
 
@@ -451,11 +486,36 @@ async def test_async_transports_pass_http_version_to_pyqwest(test_api_key, monke
 
     try:
         get_async_transport(config)
-        get_async_transport(config, http2=False)
+        get_async_transport(config, http_version="1.1")
         # A third pool: same version as the call above, different idle bound.
-        get_async_transport(config, http2=False, for_streaming=True)
+        get_async_transport(config, http_version="1.1", for_streaming=True)
 
         assert captured == [None, HTTPVersion.HTTP1, HTTPVersion.HTTP1]
+    finally:
+        reset_transport_caches()
+
+
+@pytest.mark.asyncio
+async def test_async_transports_follow_the_http_version_option(test_api_key):
+    reset_transport_caches()
+    default = ConnectionConfig(api_key=test_api_key)
+    http1 = ConnectionConfig(api_key=test_api_key, http_version="1.1")
+
+    try:
+        assert get_async_transport(http1) is get_async_transport(
+            default, http_version="1.1"
+        )
+        assert get_async_transport(http1) is not get_async_transport(default)
+        assert get_async_transport(http1, http_version="2") is get_async_transport(
+            default
+        )
+        assert get_async_envd_api(http1, "https://sandbox.e2b.app")._transport is (
+            get_async_transport(http1)
+        )
+        api_client = get_async_api_client(http1).get_async_httpx_client()
+        assert isinstance(api_client._transport, AsyncRetryableTransport)
+        assert api_client._transport.transport is get_async_transport(http1)
+        await api_client.aclose()
     finally:
         reset_transport_caches()
 
@@ -967,7 +1027,7 @@ def test_sync_http1_transport_round_trips(test_api_key, echo_server, caplog):
     reset_transport_caches()
     config = ConnectionConfig(api_key=test_api_key)
     client = httpx.Client(
-        base_url=echo_server, transport=get_sync_transport(config, http2=False)
+        base_url=echo_server, transport=get_sync_transport(config, http_version="1.1")
     )
 
     try:
@@ -990,7 +1050,7 @@ async def test_async_http1_transport_round_trips(test_api_key, echo_server):
     reset_transport_caches()
     config = ConnectionConfig(api_key=test_api_key)
     client = httpx.AsyncClient(
-        base_url=echo_server, transport=get_async_transport(config, http2=False)
+        base_url=echo_server, transport=get_async_transport(config, http_version="1.1")
     )
 
     try:

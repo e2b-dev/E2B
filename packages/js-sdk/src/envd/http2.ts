@@ -1,4 +1,6 @@
 import { runtime } from '../utils'
+import { DEFAULT_HTTP_VERSION, type HttpVersion } from '../connectionConfig'
+import type { FetchOpts } from '../api/http2'
 import { parseInflightLimitEnv, parsePositiveIntEnv } from '../api/metadata'
 import {
   buildDispatchedFetch,
@@ -10,11 +12,12 @@ type EnvdFetchOptions = {
   connectionLimit?: number
   inflightLimit?: number
   proxy?: string
+  httpVersion?: HttpVersion
   loadUndici?: () => Promise<UndiciModule | undefined>
 }
 
-// Fetchers are cached per proxy so requests without a proxy keep sharing a
-// single dispatcher while each distinct proxy URL gets its own.
+// Fetchers are cached per proxy and HTTP version so requests without a proxy
+// keep sharing a single dispatcher while each distinct proxy URL gets its own.
 const envdFetchers = new Map<string, typeof fetch>()
 const envdRpcFetchers = new Map<string, typeof fetch>()
 const DEFAULT_ENVD_CONNECTION_LIMIT = 10
@@ -31,13 +34,24 @@ export function createEnvdFetchForRuntime(
       connections: options.connectionLimit ?? DEFAULT_ENVD_CONNECTION_LIMIT,
       inflightLimit: options.inflightLimit ?? 0,
       proxy: options.proxy,
+      httpVersion: options.httpVersion,
       loadUndici: options.loadUndici,
     })
   )
 }
 
-export function createEnvdFetch(proxy?: string): typeof fetch {
-  const key = proxy ?? ''
+function fetcherKey(
+  proxy: string | undefined,
+  httpVersion: HttpVersion
+): string {
+  return `${httpVersion}:${proxy ?? ''}`
+}
+
+export function createEnvdFetch({
+  proxy,
+  httpVersion = DEFAULT_HTTP_VERSION,
+}: FetchOpts = {}): typeof fetch {
+  const key = fetcherKey(proxy, httpVersion)
 
   const cached = envdFetchers.get(key)
   if (cached) {
@@ -49,14 +63,18 @@ export function createEnvdFetch(proxy?: string): typeof fetch {
   const envdFetch = createEnvdFetchForRuntime(runtime, {
     inflightLimit: getEnvdInflightLimit(),
     proxy,
+    httpVersion,
   })
   envdFetchers.set(key, envdFetch)
 
   return envdFetch
 }
 
-export function createEnvdRpcFetch(proxy?: string): typeof fetch {
-  const key = proxy ?? ''
+export function createEnvdRpcFetch({
+  proxy,
+  httpVersion = DEFAULT_HTTP_VERSION,
+}: FetchOpts = {}): typeof fetch {
+  const key = fetcherKey(proxy, httpVersion)
 
   const cached = envdRpcFetchers.get(key)
   if (cached) {
@@ -67,6 +85,7 @@ export function createEnvdRpcFetch(proxy?: string): typeof fetch {
     connectionLimit: getEnvdRpcConnectionLimit(),
     inflightLimit: getEnvdRpcInflightLimit(),
     proxy,
+    httpVersion,
   })
   envdRpcFetchers.set(key, envdRpcFetch)
 
