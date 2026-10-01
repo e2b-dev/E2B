@@ -1,3 +1,4 @@
+import { Code, ConnectError } from '@connectrpc/connect'
 import { describe, expect, it, vi } from 'vitest'
 
 import { EventType } from '../../../src/envd/filesystem/filesystem_pb'
@@ -130,5 +131,84 @@ describe('WatchHandle', () => {
     await vi.waitFor(() => {
       expect(stopped).toBe(true)
     })
+  })
+
+  it('calls onExit with no argument when the watch is stopped by the user', async () => {
+    // Simulates the transport: the stream stays open until `handleStop`
+    // aborts it, then surfaces the abort as a Connect cancellation (which
+    // `handleRpcError` would map to `TimeoutError`).
+    let abortStream: (() => void) | undefined
+    const stream = (async function* () {
+      await new Promise<never>((_, reject) => {
+        abortStream = () =>
+          reject(new ConnectError('This operation was aborted', Code.Canceled))
+      })
+    })()
+
+    let exitArgs: unknown[] | undefined
+
+    const handle = new WatchHandle(
+      () => abortStream?.(),
+      stream,
+      undefined,
+      (...args: unknown[]) => {
+        exitArgs = args
+      }
+    )
+
+    await handle.stop()
+
+    await vi.waitFor(() => {
+      expect(exitArgs).toBeDefined()
+    })
+    // A user-initiated stop is a clean end - no error is passed to onExit.
+    expect(exitArgs).toEqual([])
+  })
+
+  it('still reports stream errors when the watch was not stopped by the user', async () => {
+    const failure = new Error('stream broke')
+
+    const stream = (async function* () {
+      throw failure
+    })()
+
+    let exitArgs: unknown[] | undefined
+
+    new WatchHandle(
+      () => {},
+      stream,
+      undefined,
+      (...args: unknown[]) => {
+        exitArgs = args
+      }
+    )
+
+    await vi.waitFor(() => {
+      expect(exitArgs).toBeDefined()
+    })
+    expect(exitArgs).toEqual([failure])
+  })
+
+  it('still reports onEvent errors raised after the watch is stopped', async () => {
+    const failure = new Error('onEvent failed')
+    let handle: WatchHandle | undefined
+    let exitArgs: unknown[] | undefined
+
+    handle = new WatchHandle(
+      () => {},
+      events([filesystemEvent('a.txt')]),
+      async () => {
+        await handle?.stop()
+        throw failure
+      },
+      (...args: unknown[]) => {
+        exitArgs = args
+      }
+    )
+
+    await vi.waitFor(() => {
+      expect(exitArgs).toBeDefined()
+    })
+    expect(exitArgs).toEqual([failure])
   })
 })

@@ -77,6 +77,8 @@ export interface FilesystemEvent {
  * Use {@link WatchHandle.stop} to stop watching the directory.
  */
 export class WatchHandle {
+  private stopped = false
+
   constructor(
     private readonly handleStop: () => void,
     private readonly events: AsyncIterable<WatchDirResponse>,
@@ -89,8 +91,11 @@ export class WatchHandle {
 
   /**
    * Stop watching the directory.
+   *
+   * `onExit` is then called asynchronously, with no error.
    */
   async stop() {
+    this.stopped = true
     this.handleStop()
   }
 
@@ -104,6 +109,10 @@ export class WatchHandle {
         }
       }
     } catch (err) {
+      // `stop()` aborts the stream, so a stream error after it is a clean end.
+      if (this.stopped) {
+        return
+      }
       throw await handleRpcErrorWithHealthCheck(err, this.checkHealth)
     }
   }
