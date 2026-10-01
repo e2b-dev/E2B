@@ -71,9 +71,10 @@ class ApiParams(TypedDict, total=False):
 
     retries: Optional[int]
     """Number of control-plane HTTP retries after a 429, 502 or 503 response or
-    a network error once the request was written (dropped connection). The
-    latter is not retried for operations that create a resource (e.g. sandbox
-    creation), as the server may already have processed them; failures to
+    a network error once the request was written (dropped connection). A 502
+    and such network errors are not retried for operations that create a
+    resource (e.g. sandbox creation) or append to one (secret update), as the
+    server may already have processed them; failures to
     establish the connection are retried separately for every operation, see
     ``E2B_CONNECTION_RETRIES``.
     A 429 is retried only with a valid, non-negative integer delta-seconds

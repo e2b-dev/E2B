@@ -16,12 +16,13 @@ BACKOFF_JITTER_MIN = 0.5
 RETRYABLE_STATUSES = frozenset({429, 502, 503})
 
 # GET/PUT/PATCH/DELETE are idempotent by HTTP semantics. A POST is retried
-# after a network error that may have occurred once the request was written
-# only if it is listed here: a replay is a no-op or fails with a 404/409 the
-# SDK already tolerates. POSTs that mint a resource without a client-supplied
-# idempotency key (sandbox/fork/snapshot/API-key/volume/secret/webhook
-# creation) must stay off the list — a replay could create a duplicate — and
-# so does any new POST until it is reviewed. (Connection-establishment
+# after a 502 or a network error that may have occurred once the request was
+# written only if it is listed here: a replay is a no-op or fails with a
+# 404/409 the SDK already tolerates. POSTs that mint a resource without a
+# client-supplied idempotency key (sandbox/fork/snapshot/API-key/volume/secret/
+# webhook creation) or append to one (secret update) must stay off the list —
+# a replay could create a duplicate — and so does any new POST until it is
+# reviewed. (Connection-establishment
 # failures are retried for every operation by ``ConnectionRetryTransport``
 # underneath: the request never left.)
 REPLAYABLE_METHODS = frozenset({"GET", "PUT", "PATCH", "DELETE"})
@@ -33,7 +34,6 @@ REPLAYABLE_OPERATIONS: List[Tuple[str, re.Pattern[str]]] = [
     ("POST", re.compile(r"^/templates/tags$")),
     ("POST", re.compile(r"^/nodes/[^/]+$")),
     ("POST", re.compile(r"^/admin/teams/[^/]+/(sandboxes/kill|builds/cancel)$")),
-    ("POST", re.compile(r"^/secrets/[^/]+$")),
 ]
 
 # Raised by the pyqwest httpx adapter once the request was (at least partially)
@@ -63,8 +63,8 @@ def parse_retry_after(value: Optional[str]) -> Optional[int]:
 
 
 def is_replayable(request: httpx.Request) -> bool:
-    """Whether ``request`` may be sent again after a network error that may
-    have occurred once it was written (see ``REPLAYABLE_OPERATIONS``)."""
+    """Whether ``request`` may be sent again after a 502 or a network error
+    that may have occurred once it was written (see ``REPLAYABLE_OPERATIONS``)."""
     if request.method in REPLAYABLE_METHODS:
         return True
     path = request.url.path
@@ -80,13 +80,19 @@ def _backoff_delay(attempt: int, random_: Callable[[], float]) -> float:
 
 
 def _retry_delay(
-    response: httpx.Response, attempt: int, random_: Callable[[], float]
+    response: httpx.Response,
+    attempt: int,
+    replayable: bool,
+    random_: Callable[[], float],
 ) -> Optional[float]:
     """Delay before the next attempt, or ``None`` when the response is not
     retried: ``Retry-After`` when the server sends a usable one, otherwise
     exponential backoff with jitter for 502/503. A 429 without ``Retry-After``
-    is not retried."""
+    is not retried, nor is a 502 for a non-replayable request: a gateway may
+    answer 502 after the backend already processed it."""
     if response.status_code not in RETRYABLE_STATUSES:
+        return None
+    if response.status_code == 502 and not replayable:
         return None
 
     retry_after = parse_retry_after(response.headers.get("Retry-After"))
@@ -133,9 +139,10 @@ def _request_deadline(request: httpx.Request, monotonic: Callable[[], float]) ->
 
 
 class RetryableTransport(httpx.BaseTransport):
-    """Retry replayable requests after a 429 carrying ``Retry-After`` or a
-    502/503 (using ``Retry-After`` when present, exponential backoff
-    otherwise), and — for replayable operations (``is_replayable``) — after a network error once the request was written."""
+    """Retry requests after a 429 carrying ``Retry-After`` or a 503, and — for
+    replayable operations (``is_replayable``) — after a 502 (using
+    ``Retry-After`` when present, exponential backoff otherwise) or a network
+    error once the request was written."""
 
     def __init__(
         self,
@@ -186,7 +193,7 @@ class RetryableTransport(httpx.BaseTransport):
             if attempt == self.retries:
                 return response
 
-            delay = _retry_delay(response, attempt, self._random)
+            delay = _retry_delay(response, attempt, replayable, self._random)
             if delay is None or self._monotonic() + delay >= deadline:
                 return response
 
@@ -252,7 +259,7 @@ class AsyncRetryableTransport(httpx.AsyncBaseTransport):
             if attempt == self.retries:
                 return response
 
-            delay = _retry_delay(response, attempt, self._random)
+            delay = _retry_delay(response, attempt, replayable, self._random)
             if delay is None or self._monotonic() + delay >= deadline:
                 return response
 

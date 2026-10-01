@@ -88,8 +88,10 @@ export interface ConnectionOpts {
    * Number of control-plane API retries after a 429, 502 or 503 response or
    * a failure to establish the connection (refused, DNS, unreachable host).
    * Any other network error (dropped connection, opaque browser/Workers
-   * `TypeError`) is retried too, except for operations that create a resource
-   * (e.g. sandbox creation), as the server may already have processed them.
+   * `TypeError`) is retried too. A 502 and those network errors are not
+   * retried for operations that create a resource (e.g. sandbox creation) or
+   * append to one (secret update), as the server may already have processed
+   * them.
    * A 429 is retried only with a valid, non-negative integer delta-seconds
    * `Retry-After` header (HTTP-date and malformed values are not retried).
    * 502 and 503 honor such a `Retry-After` when present; otherwise they and

@@ -26,12 +26,13 @@ const CONNECTION_ERROR_SYSCALLS = new Set(['connect', 'getaddrinfo'])
 // Deno reports hyper's connect-phase failures as `client error (Connect)`.
 const DENO_CONNECTION_ERROR = /client error \(Connect\)/
 // GET/PUT/PATCH/DELETE are idempotent by HTTP semantics. A POST is retried
-// after a network error that may have occurred once the request was written
-// only if it is listed here: a replay is a no-op or fails with a 404/409 the
-// SDK already tolerates. POSTs that mint a resource without a client-supplied
-// idempotency key (sandbox/fork/snapshot/API-key/volume/secret/webhook
-// creation) must stay off the list — a replay could create a duplicate — and
-// so does any new POST until it is reviewed. Connection-establishment failures
+// after a 502 or a network error that may have occurred once the request was
+// written only if it is listed here: a replay is a no-op or fails with a
+// 404/409 the SDK already tolerates. POSTs that mint a resource without a
+// client-supplied idempotency key (sandbox/fork/snapshot/API-key/volume/secret/
+// webhook creation) or append to one (secret update) must stay off the list —
+// a replay could create a duplicate — and so does any new POST until it is
+// reviewed. Connection-establishment failures
 // are retried for every operation regardless: the request never left.
 const REPLAYABLE_METHODS = new Set(['GET', 'PUT', 'PATCH', 'DELETE'])
 const REPLAYABLE_OPERATIONS: [method: string, path: RegExp][] = [
@@ -42,7 +43,6 @@ const REPLAYABLE_OPERATIONS: [method: string, path: RegExp][] = [
   ['POST', /^\/templates\/tags$/],
   ['POST', /^\/nodes\/[^/]+$/],
   ['POST', /^\/admin\/teams\/[^/]+\/(sandboxes\/kill|builds\/cancel)$/],
-  ['POST', /^\/secrets\/[^/]+$/],
 ]
 
 export function resolveRetries(retries: number): number {
@@ -90,8 +90,8 @@ export function isConnectionError(error: unknown, depth = 0): boolean {
 }
 
 /**
- * Whether `request` may be sent again after a network error that may have
- * occurred once the request was written (see `REPLAYABLE_OPERATIONS`).
+ * Whether `request` may be sent again after a 502 or a network error that may
+ * have occurred once the request was written (see `REPLAYABLE_OPERATIONS`).
  */
 export function isReplayable(request: Request): boolean {
   if (REPLAYABLE_METHODS.has(request.method)) return true
@@ -150,14 +150,17 @@ function backoffMs(attempt: number, random: () => number): number {
  * Delay before the next attempt, or `undefined` when the response is not
  * retried: `Retry-After` when the server sends a usable one, otherwise
  * exponential backoff with jitter for 502/503. A 429 without `Retry-After`
- * is not retried.
+ * is not retried, nor is a 502 for a non-replayable request: a gateway may
+ * answer 502 after the backend already processed it.
  */
 function retryDelayMs(
   response: Response,
   attempt: number,
+  replayable: boolean,
   random: () => number
 ): number | undefined {
   if (!RETRYABLE_STATUSES.has(response.status)) return undefined
+  if (response.status === 502 && !replayable) return undefined
 
   const retryAfter = parseRetryAfter(response.headers.get('Retry-After'))
   if (retryAfter !== undefined) return retryAfter * 1000
@@ -167,9 +170,10 @@ function retryDelayMs(
 }
 
 /**
- * Retry replayable requests after a 429 carrying `Retry-After`, a 502/503
- * (using `Retry-After` when present, exponential backoff otherwise) or a
- * network failure (exponential backoff; see {@link isRetryableFetchError}).
+ * Retry requests after a 429 carrying `Retry-After`, a 503 or — for replayable
+ * requests ({@link isReplayable}) — a 502 (using `Retry-After` when present,
+ * exponential backoff otherwise), or a network failure (exponential backoff;
+ * see {@link isRetryableFetchError}).
  */
 export function withRetry(
   fetchImpl: typeof fetch,
@@ -223,7 +227,7 @@ export function withRetry(
       }
       if (attempt === retries) return response
 
-      const delayMs = retryDelayMs(response, attempt, random)
+      const delayMs = retryDelayMs(response, attempt, replayable, random)
       if (delayMs === undefined || monotonic() + delayMs >= deadline) {
         return response
       }
