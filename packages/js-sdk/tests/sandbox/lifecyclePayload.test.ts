@@ -24,11 +24,6 @@ async function waitForState(
   )
 }
 
-function withRequestSource(url: string): string {
-  const source = process.env.E2B_USER_AGENT_SOURCE
-  return source ? `${url}?source=${encodeURIComponent(source)}` : url
-}
-
 test.skipIf(isDebug)(
   'auto-pause without auto-resume requires connect to wake',
   async () => {
@@ -120,7 +115,7 @@ sandboxTest.skipIf(isDebug)(
       // Each request is a wake signal; keep sending them until the guest
       // server answers, since a request that races the pause finalizing or
       // times out at the gateway while the sandbox resumes may not wake it.
-      const url = withRequestSource(`https://${sandbox.getHost(8000)}`)
+      const url = `https://${sandbox.getHost(8000)}`
       await waitForHttpStatus(url, 200, { timeoutMs: 60_000 })
       await waitForState(sandbox, 'running')
       assert.isTrue(await sandbox.isRunning())

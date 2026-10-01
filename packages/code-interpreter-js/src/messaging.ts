@@ -1,35 +1,20 @@
 import { NotFoundError, SandboxError, TimeoutError } from 'e2b'
 import { ChartTypes } from './charts'
 
-export async function extractError(res: Response, includeDiagnostics = false) {
+export async function extractError(res: Response) {
   if (res.ok) {
     return
   }
 
-  const traceId = includeDiagnostics ? res.headers.get('X-E2B-Trace-ID') : null
-  const traceSuffix = traceId ? ` (trace_id=${traceId})` : ''
-
   switch (res.status) {
-    case 502: {
-      const body = await res.text()
+    case 502:
       return new TimeoutError(
-        `${body}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeoutMs' when starting the sandbox or calling '.setTimeout' on the sandbox with the desired timeout.${traceSuffix}`
+        `${await res.text()}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeoutMs' when starting the sandbox or calling '.setTimeout' on the sandbox with the desired timeout.`
       )
-    }
-    case 404: {
-      const body = await res.text()
-      return new NotFoundError(`${body}${traceSuffix}`)
-    }
-    default: {
-      if (!includeDiagnostics) {
-        return new SandboxError(`${res.status} ${res.statusText}`)
-      }
-
-      const body = (await res.text()).trim()
-      return new SandboxError(
-        `${res.status} ${res.statusText}${body ? `: ${body}` : ''}${traceSuffix}`
-      )
-    }
+    case 404:
+      return new NotFoundError(await res.text())
+    default:
+      return new SandboxError(`${res.status} ${res.statusText}`)
   }
 }
 

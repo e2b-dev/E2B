@@ -98,7 +98,6 @@ async def test_connect_sets_stable_host_routing_headers(monkeypatch, test_api_ke
     monkeypatch.setattr(sandbox_async_main.SandboxApi, "_cls_connect", mock_connect)
 
     monkeypatch.setattr(ConnectionConfig, "_integration", "testing/version")
-    monkeypatch.setenv("E2B_USER_AGENT_SOURCE", "ci")
     config = ConnectionConfig(
         api_key=test_api_key,
         headers=BASE_HEADERS,
@@ -113,9 +112,9 @@ async def test_connect_sets_stable_host_routing_headers(monkeypatch, test_api_ke
     assert sandbox.connection_config.sandbox_headers["User-Agent"].startswith(
         "e2b-python-sdk/"
     )
-    user_agent_tokens = sandbox.connection_config.sandbox_headers["User-Agent"].split()
-    assert "testing/version" in user_agent_tokens
-    assert "source/ci" in user_agent_tokens
+    assert sandbox.connection_config.sandbox_headers["User-Agent"].endswith(
+        " testing/version"
+    )
     assert sandbox.connection_config.sandbox_headers["E2b-Sandbox-Id"] == "sbx-test"
     assert sandbox.connection_config.sandbox_headers["E2b-Sandbox-Port"] == str(
         ConnectionConfig.envd_port
