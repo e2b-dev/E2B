@@ -27,6 +27,16 @@ def _clean(pattern: str) -> str:
 
 
 def _compile(pattern: str) -> "re.Pattern[str]":
+    # Moby treats a leading ** followed only by literals as a suffix match.
+    suffix = pattern[2:]
+    if (
+        pattern.startswith("**")
+        and not pattern.startswith("**/")
+        and not _WILDCARD_CHARS.search(suffix)
+        and "]" not in suffix
+    ):
+        return re.compile("^.*" + re.escape(suffix) + "$")
+
     regex = "^"
     i, n = 0, len(pattern)
     while i < n:

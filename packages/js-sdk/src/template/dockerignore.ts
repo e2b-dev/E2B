@@ -37,6 +37,17 @@ function clean(pattern: string): string {
 }
 
 function compile(pattern: string): RegExp {
+  // Moby treats a leading ** followed only by literals as a suffix match.
+  const suffix = pattern.slice(2)
+  if (
+    pattern.startsWith('**') &&
+    !pattern.startsWith('**/') &&
+    !WILDCARD_CHARS.test(suffix) &&
+    !suffix.includes(']')
+  ) {
+    return new RegExp('^.*' + escapeRegex(suffix) + '$')
+  }
+
   let regex = '^'
   const n = pattern.length
   const backslashIsEscape = !backslashIsSeparator()

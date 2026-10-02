@@ -390,6 +390,49 @@ describe('getAllFilesInPath', () => {
       expect(files).toEqual(['.'])
     })
 
+    test.each(['.txt', '(1).txt'])(
+      'should match a leading globstar with literal suffix %s',
+      async (suffix) => {
+        const ignored = [
+          `root${suffix}`,
+          `src/nested${suffix}`,
+          `src/generated/deep${suffix}`,
+        ]
+        for (const name of [...ignored, `keep${suffix}.bak`, 'keep1.txt']) {
+          await writeFile(join(testDir, name), 'x')
+        }
+        const files = await relativePaths('.', [`**${suffix}`])
+        for (const name of ignored) {
+          expect(files).not.toContain(name)
+        }
+        expect(files).toContain(`keep${suffix}.bak`)
+        if (suffix === '(1).txt') {
+          expect(files).toContain('keep1.txt')
+        }
+      }
+    )
+
+    test.each(['**.t?t', '**.[t]xt', '**.*txt'])(
+      'should keep globstar regex matching with more wildcards for %s',
+      async (pattern) => {
+        for (const name of ['root.txt', 'src/nested.txt']) {
+          await writeFile(join(testDir, name), 'x')
+        }
+        const files = await relativePaths('.', [pattern])
+        expect(files).toContain('root.txt')
+        expect(files).toContain('src/nested.txt')
+      }
+    )
+
+    test('should re-include a literal globstar suffix', async () => {
+      expect(await relativePaths('.', ['**', '!**.ts'])).toEqual([
+        '.',
+        'src/app.spec.ts',
+        'src/app.ts',
+        'src/generated/api.ts',
+      ])
+    })
+
     test('should not copy paths inside an ignored directory', async () => {
       const files = await relativePaths('node_modules/pkg', ['node_modules'])
       expect(files).toEqual([])
