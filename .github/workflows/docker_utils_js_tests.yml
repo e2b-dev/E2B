@@ -1,33 +1,19 @@
-name: Test CLI
+name: Test Docker Utils JS
 
 on:
-  workflow_call:
-    inputs:
-      E2B_DOMAIN:
-        required: false
-        type: string
-        default: ''
-    secrets:
-      E2B_API_KEY:
-        required: true
+  workflow_call: {}
 
 permissions:
   contents: read
-
-env:
-  E2B_USER_AGENT_SOURCE: ci
 
 jobs:
   test:
     defaults:
       run:
-        working-directory: ./packages/cli
+        working-directory: ./packages/docker-utils-js
         shell: bash
-    name: CLI - Build (${{ matrix.os }})
-    strategy:
-      matrix:
-        os: [ubuntu-22.04, windows-latest]
-    runs-on: ${{ matrix.os }}
+    name: Docker Utils JS - Build and test
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -55,25 +41,13 @@ jobs:
       - name: Configure pnpm
         run: |
           pnpm config set auto-install-peers true
+          pnpm config set exclude-links-from-lockfile true
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build Docker Utils JS (pre-requisite for the SDK)
+      - name: Test build
         run: pnpm build
-        working-directory: ./packages/docker-utils-js
-
-      - name: Build the SDK (pre-requisite for the tests)
-        run: pnpm build
-        working-directory: ./packages/js-sdk
-
-      - name: Build the CLI
-        run: pnpm build
-        working-directory: ./packages/cli
 
       - name: Run tests
         run: pnpm test
-        working-directory: ./packages/cli
-        env:
-          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}

@@ -196,3 +196,201 @@ COPY --chown=anotheruser config.json /config/`
   assert.equal(copyInstruction2.args[1], '/config/')
   assert.equal(copyInstruction2.args[2], 'anotheruser') // user from --chown (without group)
 })
+
+function instructionsOf(template: unknown) {
+  // @ts-expect-error - instructions is not a property of TemplateBuilder
+  return template.instructions as { type: InstructionType; args: string[] }[]
+}
+
+buildTemplateTest('fromDockerfile with quoted ENV and ARG values', () => {
+  const dockerfile = `FROM node:24
+ENV A="hello world" B='single quoted' C=plain D=escaped\\ space
+ENV LEGACY some value with  spaces
+ENV MULTI=1 \\
+    # comment inside continuation
+    LINE="two \\
+words"
+ARG VERSION=1.0 NAME="with space" EMPTY
+ENV REF="$HOME/bin:\${PATH}"`
+
+  const template = Template().fromDockerfile(dockerfile)
+  const envs = instructionsOf(template)
+    .filter((i) => i.type === InstructionType.ENV)
+    .map((i) => i.args)
+
+  assert.deepEqual(envs, [
+    [
+      'A',
+      'hello world',
+      'B',
+      'single quoted',
+      'C',
+      'plain',
+      'D',
+      'escaped space',
+    ],
+    ['LEGACY', 'some value with  spaces'],
+    ['MULTI', '1', 'LINE', 'two words'],
+    ['VERSION', '1.0', 'NAME', 'with space', 'EMPTY', ''],
+    ['REF', '$HOME/bin:${PATH}'],
+  ])
+})
+
+buildTemplateTest(
+  'fromDockerfile with mixed-case keywords and AS alias',
+  () => {
+    const dockerfile = `from node:24 As Builder
+run echo hi
+Workdir /app
+uSeR node`
+
+    const template = Template().fromDockerfile(dockerfile)
+    // @ts-expect-error - baseImage is not a property of TemplateBuilder
+    assert.equal(template.baseImage, 'node:24')
+    const instructions = instructionsOf(template)
+    assert.equal(instructions[2].type, InstructionType.RUN)
+    assert.deepEqual(instructions[2].args, ['echo hi'])
+    assert.deepEqual(instructions[3].args, ['/app'])
+    assert.deepEqual(instructions[4].args, ['node'])
+  }
+)
+
+buildTemplateTest(
+  'fromDockerfile preserves whitespace in RUN and uses shell form',
+  () => {
+    const dockerfile = `FROM node:24
+RUN echo "a   b"   &&   \\
+    echo 'c   d'
+RUN ["echo", "hello world", "it's"]`
+
+    const template = Template().fromDockerfile(dockerfile)
+    const runs = instructionsOf(template)
+      .filter((i) => i.type === InstructionType.RUN)
+      .map((i) => i.args[0])
+
+    assert.deepEqual(runs, [
+      `echo "a   b"   &&       echo 'c   d'`,
+      `echo 'hello world' 'it'"'"'s'`,
+    ])
+  }
+)
+
+buildTemplateTest('fromDockerfile with escape directive', () => {
+  const dockerfile = `# escape=\`
+FROM node:24
+RUN echo one \`
+    && echo two
+ENV P="C:\\tools"`
+
+  const template = Template().fromDockerfile(dockerfile)
+  const instructions = instructionsOf(template)
+  assert.deepEqual(instructions[2].args, ['echo one     && echo two'])
+  assert.deepEqual(instructions[3].args, ['P', 'C:\\tools'])
+})
+
+buildTemplateTest('fromDockerfile with COPY --chmod and quoted paths', () => {
+  const dockerfile = `FROM node:24
+COPY --chmod=755 --chown=app:app "my file.txt" other.txt /dest/
+COPY ["json file.txt", "/dest/"]
+ADD archive.tar.gz /opt/`
+
+  const template = Template().fromDockerfile(dockerfile)
+  const copies = instructionsOf(template)
+    .filter((i) => i.type === InstructionType.COPY)
+    .map((i) => i.args)
+
+  assert.deepEqual(copies, [
+    ['my file.txt', '/dest/', 'app:app', '0755'],
+    ['other.txt', '/dest/', 'app:app', '0755'],
+    ['json file.txt', '/dest/', '', ''],
+    ['archive.tar.gz', '/opt/', '', ''],
+  ])
+})
+
+buildTemplateTest('fromDockerfile with heredocs', () => {
+  const dockerfile = `FROM node:24
+RUN <<EOF
+npm install
+npm run build
+EOF
+RUN <<-EOT
+\techo tabbed
+EOT
+RUN python3 - <<PY
+print("hi")
+PY
+COPY <<'CONF' /etc/app.conf
+key=$VALUE
+CONF`
+
+  const template = Template().fromDockerfile(dockerfile)
+  const runs = instructionsOf(template)
+    .filter((i) => i.type === InstructionType.RUN)
+    .map((i) => i.args[0])
+
+  assert.deepEqual(runs, [
+    'npm install\nnpm run build\n',
+    'echo tabbed\n',
+    'python3 - <<PY\nprint("hi")\nPY',
+    `mkdir -p "$(dirname /etc/app.conf)" && cat <<'E2B_HEREDOC_CONF' >/etc/app.conf\nkey=$VALUE\nE2B_HEREDOC_CONF`,
+  ])
+})
+
+buildTemplateTest('fromDockerfile combines ENTRYPOINT and CMD', () => {
+  const cases: [string, string | undefined][] = [
+    [
+      'ENTRYPOINT ["npm", "run"]\nCMD ["start", "--port 80"]',
+      `npm run start '--port 80'`,
+    ],
+    ['ENTRYPOINT ["npm"]\nCMD run start', `npm /bin/sh -c 'run start'`],
+    ['ENTRYPOINT npm start\nCMD ["ignored"]', 'npm start'],
+    ['CMD npm start', 'npm start'],
+    ['CMD ["npm", "start"]', 'npm start'],
+    ['', undefined],
+  ]
+  for (const [tail, expected] of cases) {
+    const template = Template().fromDockerfile(`FROM node:24\n${tail}`)
+    // @ts-expect-error - startCmd is not a property of TemplateBuilder
+    assert.equal(template.startCmd, expected, tail)
+  }
+})
+
+buildTemplateTest(
+  'fromDockerfile ignores metadata instructions and flags',
+  () => {
+    const dockerfile = `FROM --platform=linux/amd64 node:24
+EXPOSE 80 443
+VOLUME ["/data"]
+LABEL maintainer="me"
+STOPSIGNAL SIGTERM
+HEALTHCHECK NONE
+RUN --mount=type=cache,target=/root/.npm npm ci`
+
+    const template = Template().fromDockerfile(dockerfile)
+    const instructions = instructionsOf(template)
+    assert.equal(instructions[2].type, InstructionType.RUN)
+    assert.deepEqual(instructions[2].args, ['npm ci'])
+  }
+)
+
+buildTemplateTest('fromDockerfile rejects invalid Dockerfiles', () => {
+  const cases: [string, RegExp][] = [
+    ['', /must contain a FROM/],
+    ['RUN echo hi', /must contain a FROM/],
+    ['FROM a\nFROM b', /Multi-stage/],
+    ['FROM a\nRUN <<EOF\nnever closed', /unterminated heredoc/],
+    ['FROM a\nBOGUS instruction', /unknown instruction: BOGUS/],
+    ['FROM a\nCOPY --unknown=1 a b', /unknown flag: unknown/],
+    ['FROM a\nCOPY --from=builder a b', /--from is not supported/],
+    ['FROM a\nENV K="unterminated', /looking for matching double-quote/],
+    ['FROM a\nRUN ["not", 1]', /Only strings are supported/],
+  ]
+  for (const [dockerfile, expected] of cases) {
+    assert.throws(
+      () => Template().fromDockerfile(dockerfile),
+      expected,
+      undefined,
+      dockerfile
+    )
+  }
+})

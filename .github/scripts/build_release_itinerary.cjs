@@ -11,6 +11,8 @@ const labels = {
   e2b: 'JS SDK (e2b)',
   '@e2b/python-sdk': 'Python SDK (e2b)',
   '@e2b/cli': 'CLI (@e2b/cli)',
+  '@e2b/docker-utils': 'Docker Utils JS (@e2b/docker-utils)',
+  '@e2b/docker-utils-python': 'Docker Utils Python (e2b-docker-utils)',
 }
 
 const statusFile = process.argv[2]
