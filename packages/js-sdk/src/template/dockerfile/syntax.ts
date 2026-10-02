@@ -90,7 +90,11 @@ type LineParser = (
 ) => { args: string[]; json: boolean }
 
 function trimNewline(line: string): string {
-  return line.replace(/[\r\n]+$/, '')
+  let end = line.length
+  while (end > 0 && (line[end - 1] === '\n' || line[end - 1] === '\r')) {
+    end--
+  }
+  return line.slice(0, end)
 }
 
 function trimLeadingWhitespace(line: string): string {
