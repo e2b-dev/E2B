@@ -1,5 +1,6 @@
+from collections.abc import Generator
 from functools import partial
-from typing import Callable, Dict, Iterator, Optional, Tuple, Union
+from typing import Callable, Dict, Iterator, List, Optional, Tuple, Union
 
 import httpx
 import threading
@@ -20,10 +21,12 @@ from e2b.api import (
     ConnectionBalancer,
     ProxyConfig,
     connection_retries,
+    is_refused_stream,
     make_logging_event_hooks,
     pool_idle_timeout,
     pool_max_idle_per_host,
     proxy_to_config,
+    replay_buffer_limit,
     request_origin,
 )
 from e2b.connection_config import (
@@ -112,25 +115,82 @@ class _TrackedContent:
         release()
 
 
+class _ReplayableContent:
+    """A streamed request body mirrored as it is sent, up to
+    ``replay_buffer_limit`` bytes, so that a request the server refused can be
+    sent again once the body has been read to its end. Closing the body closes
+    the iterator it reads from, as pyqwest would."""
+
+    __slots__ = ("_content", "_chunks", "_size", "_exhausted")
+
+    def __init__(self, content: Iterator[bytes]) -> None:
+        self._content = content
+        self._chunks: Optional[List[bytes]] = []
+        self._size = 0
+        self._exhausted = False
+
+    def body(self) -> Iterator[bytes]:
+        try:
+            for chunk in self._content:
+                if self._chunks is not None:
+                    self._size += len(chunk)
+                    if self._size > replay_buffer_limit:
+                        self._chunks = None
+                    else:
+                        self._chunks.append(bytes(chunk))
+                yield chunk
+            self._exhausted = True
+        finally:
+            if isinstance(self._content, Generator):
+                self._content.close()
+
+    def replay(self) -> Optional[bytes]:
+        """The whole body, or ``None`` when it was not read to its end or
+        outgrew the mirror."""
+        if not self._exhausted or self._chunks is None:
+            return None
+        return b"".join(self._chunks)
+
+
 class BalancingTransport(SyncTransport):
     """A pyqwest transport over a growable, bounded set of reqwest pools
     (see :class:`e2b.api.ConnectionBalancer`): each request runs on the pool
     with the fewest in flight to its origin and counts against it until its
     response is consumed or closed. Pools are built with ``build`` — the first
     eagerly, the rest as load requires — so they share every construction
-    knob."""
+    knob.
+
+    A request whose HTTP/2 stream the server refused (see
+    :func:`e2b.api.is_refused_stream`) — typically one that crossed a
+    ``GOAWAY`` retiring its connection — is sent again, up to
+    ``connection_retries`` times, as the server never processed it."""
 
     def __init__(self, build: Callable[[], SyncHTTPTransport]) -> None:
         self.balancer: ConnectionBalancer[SyncHTTPTransport] = ConnectionBalancer(build)
 
     def execute_sync(self, request: SyncRequest) -> SyncResponse:
         origin = request_origin(request.url)
-        connection = self.balancer.acquire(origin)
-        try:
-            response = connection.transport.execute_sync(request)
-        except BaseException:
-            self.balancer.release(connection, origin)
-            raise
+        content = request.content
+        replayable: Optional[_ReplayableContent] = None
+        if not isinstance(content, bytes):
+            replayable = _ReplayableContent(content)
+            request = self._with_content(request, replayable.body())
+        retries = 0
+        while True:
+            connection = self.balancer.acquire(origin)
+            try:
+                response = connection.transport.execute_sync(request)
+            except BaseException as e:
+                self.balancer.release(connection, origin)
+                if retries >= connection_retries or not is_refused_stream(e):
+                    raise
+                replay = content if replayable is None else replayable.replay()
+                if not isinstance(replay, bytes):
+                    raise
+                retries += 1
+                request = self._with_content(request, replay)
+                continue
+            break
         return SyncResponse(
             status=response.status,
             http_version=response.http_version,
@@ -140,6 +200,17 @@ class BalancingTransport(SyncTransport):
             ),
             # Populated in place once the original content is consumed.
             trailers=response.trailers,
+        )
+
+    @staticmethod
+    def _with_content(
+        request: SyncRequest, content: Union[bytes, Iterator[bytes]]
+    ) -> SyncRequest:
+        return SyncRequest(
+            method=request.method,
+            url=request.url,
+            headers=request.headers,
+            content=content,
         )
 
 
