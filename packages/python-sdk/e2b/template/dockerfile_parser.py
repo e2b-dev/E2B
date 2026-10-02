@@ -1,10 +1,25 @@
-import json
 import os
 import re
-import tempfile
-from typing import Dict, List, Optional, Protocol, Union, Literal
+import shlex
+from typing import Dict, List, Literal, Mapping, Optional, Protocol, Union
 
-from dockerfile_parse import DockerfileParser
+from e2b.template.dockerfile.lexer import ShellLex
+from e2b.template.dockerfile.syntax import (
+    DockerfileHeredoc,
+    DockerfileInstruction,
+    DockerfileSyntaxError,
+    chomp_heredoc_content,
+    parse_dockerfile_ast,
+    parse_heredoc,
+)
+from e2b.template.readycmd import wait_for_timeout
+
+__all__ = [
+    "DockerfileParserInterface",
+    "DockerfFileFinalParserInterface",
+    "DockerfileSyntaxError",
+    "parse_dockerfile",
+]
 
 
 class DockerfFileFinalParserInterface(Protocol):
@@ -52,6 +67,422 @@ class DockerfileParserInterface(Protocol):
         ...
 
 
+# flag name -> (type, ignored). Ignored flags are accepted with a warning.
+FlagSpecs = Mapping[str, "tuple[str, bool]"]
+
+_RUN_FLAGS: FlagSpecs = {
+    "mount": ("string", True),
+    "network": ("string", True),
+    "security": ("string", True),
+    "device": ("string", True),
+}
+
+_COPY_FLAGS: FlagSpecs = {
+    "chown": ("string", False),
+    "chmod": ("string", False),
+    "from": ("string", False),
+    "link": ("bool", True),
+    "exclude": ("string", True),
+    "parents": ("bool", True),
+}
+
+_ADD_FLAGS: FlagSpecs = {
+    **_COPY_FLAGS,
+    "keep-git-dir": ("bool", True),
+    "checksum": ("string", True),
+    "unpack": ("bool", True),
+}
+
+_FROM_FLAGS: FlagSpecs = {
+    "platform": ("string", True),
+}
+
+# Metadata-only instructions that have no equivalent in a template.
+_IGNORED_INSTRUCTIONS = {"EXPOSE", "VOLUME", "LABEL", "MAINTAINER"}
+
+_CHMOD = re.compile(r"^[0-7]{3,4}$")
+_REMOTE_URL = re.compile(r"^[a-z][a-z0-9+.-]*://", re.IGNORECASE)
+
+
+def _shell_join(words: List[str]) -> str:
+    return " ".join(shlex.quote(word) for word in words)
+
+
+def _with_trailing_newline(content: str) -> str:
+    if content == "" or content.endswith("\n"):
+        return content
+    return content + "\n"
+
+
+class _StartCommand:
+    def __init__(self, json: bool, args: List[str]) -> None:
+        self.json = json
+        self.args = args
+
+
+class _DockerfileConverter:
+    def __init__(
+        self, template_builder: DockerfileParserInterface, escape_token: str
+    ) -> None:
+        self._template_builder = template_builder
+        self._lex = ShellLex(escape_token)
+        self._user_changed = False
+        self._workdir_changed = False
+        self._cmd: Optional[_StartCommand] = None
+        self._entrypoint: Optional[_StartCommand] = None
+
+    def convert(self, instructions: List[DockerfileInstruction]) -> str:
+        from_instructions = [i for i in instructions if i.name == "FROM"]
+        if len(from_instructions) > 1:
+            raise ValueError("Multi-stage Dockerfiles are not supported")
+        if not from_instructions:
+            raise ValueError("Dockerfile must contain a FROM instruction")
+
+        from_instruction = from_instructions[0]
+        base_image = self._handle_from(from_instruction)
+
+        # Set the user and workdir to the Docker defaults
+        self._template_builder.set_user("root")
+        self._template_builder.set_workdir("/")
+
+        for instruction in instructions:
+            if instruction.name == "FROM":
+                continue
+            if (
+                instruction.start_line < from_instruction.start_line
+                and instruction.name != "ARG"
+            ):
+                raise DockerfileSyntaxError(
+                    f"{instruction.name} must be preceded by a FROM instruction",
+                    instruction.start_line,
+                )
+            self._handle_instruction(instruction)
+
+        self._apply_start_cmd()
+
+        # Set the user and workdir to the E2B defaults
+        if not self._user_changed:
+            self._template_builder.set_user("user")
+        if not self._workdir_changed:
+            self._template_builder.set_workdir("/home/user")
+
+        return base_image
+
+    def _handle_instruction(self, instruction: DockerfileInstruction) -> None:
+        name = instruction.name
+        if name == "RUN":
+            self._handle_run(instruction)
+        elif name == "COPY":
+            self._handle_copy(instruction, _COPY_FLAGS)
+        elif name == "ADD":
+            self._handle_copy(instruction, _ADD_FLAGS)
+        elif name == "WORKDIR":
+            self._template_builder.set_workdir(self._expand_single(instruction))
+            self._workdir_changed = True
+        elif name == "USER":
+            self._template_builder.set_user(self._expand_single(instruction))
+            self._user_changed = True
+        elif name == "ENV":
+            self._handle_env(instruction)
+        elif name == "ARG":
+            self._handle_arg(instruction)
+        elif name == "CMD":
+            self._parse_flags(instruction, {})
+            self._cmd = _StartCommand(instruction.json, instruction.args)
+        elif name == "ENTRYPOINT":
+            self._parse_flags(instruction, {})
+            self._entrypoint = _StartCommand(instruction.json, instruction.args)
+        elif name not in _IGNORED_INSTRUCTIONS:
+            print(f"Unsupported instruction: {name}")
+
+    def _expand(self, instruction: DockerfileInstruction, word: str) -> str:
+        """Resolve quotes and escapes in a word, keeping ``$VAR`` references."""
+        try:
+            return self._lex.process_word(word)
+        except ValueError as err:
+            raise DockerfileSyntaxError(str(err), instruction.start_line) from None
+
+    def _expand_single(self, instruction: DockerfileInstruction) -> str:
+        self._parse_flags(instruction, {})
+        if len(instruction.args) != 1:
+            raise DockerfileSyntaxError(
+                f"{instruction.name} requires exactly one argument",
+                instruction.start_line,
+            )
+        return self._expand(instruction, instruction.args[0])
+
+    def _parse_flags(
+        self, instruction: DockerfileInstruction, specs: FlagSpecs
+    ) -> Dict[str, str]:
+        values: Dict[str, str] = {}
+        for flag in instruction.flags:
+            if not flag.startswith("--"):
+                raise DockerfileSyntaxError(
+                    f"arg should start with -- : {flag}", instruction.start_line
+                )
+            body = flag[2:]
+            name, sep, raw_value = body.partition("=")
+            has_value = sep == "="
+
+            spec = specs.get(name)
+            if spec is None:
+                raise DockerfileSyntaxError(
+                    f"unknown flag: {name}", instruction.start_line
+                )
+            if name in values:
+                raise DockerfileSyntaxError(
+                    f"duplicate flag specified: {name}", instruction.start_line
+                )
+
+            flag_type, ignored = spec
+            if flag_type == "bool":
+                if not has_value or raw_value in ("", "true"):
+                    value = "true"
+                elif raw_value == "false":
+                    value = "false"
+                else:
+                    raise DockerfileSyntaxError(
+                        f"expecting boolean value for flag {name}, not: {raw_value}",
+                        instruction.start_line,
+                    )
+            else:
+                if not has_value:
+                    raise DockerfileSyntaxError(
+                        f"missing a value on flag: {name}", instruction.start_line
+                    )
+                value = raw_value
+
+            if ignored:
+                print(
+                    f"Ignoring unsupported {instruction.name} flag --{name} "
+                    f"(line {instruction.start_line})"
+                )
+                continue
+            values[name] = value
+        return values
+
+    def _handle_from(self, instruction: DockerfileInstruction) -> str:
+        self._parse_flags(instruction, _FROM_FLAGS)
+        args = instruction.args
+        if len(args) == 3 and args[1].lower() == "as":
+            pass  # stage alias is irrelevant for a single-stage build
+        elif len(args) != 1:
+            raise DockerfileSyntaxError(
+                "FROM requires either one or three arguments",
+                instruction.start_line,
+            )
+        return self._expand(instruction, args[0])
+
+    def _handle_run(self, instruction: DockerfileInstruction) -> None:
+        self._parse_flags(instruction, _RUN_FLAGS)
+        args = instruction.args
+        if not args:
+            raise DockerfileSyntaxError(
+                "RUN requires at least one argument", instruction.start_line
+            )
+
+        if instruction.json:
+            command = _shell_join(args)
+        elif instruction.heredocs:
+            command = self._run_with_heredocs(args[0], instruction.heredocs)
+        else:
+            command = args[0]
+        self._template_builder.run_cmd(command)
+
+    @staticmethod
+    def _run_with_heredocs(line: str, heredocs: List[DockerfileHeredoc]) -> str:
+        def heredoc_content(heredoc: DockerfileHeredoc) -> str:
+            if heredoc.chomp:
+                return chomp_heredoc_content(heredoc.content)
+            return heredoc.content
+
+        # `RUN <<EOF` on its own: the heredoc body is the script itself.
+        if len(heredocs) == 1 and parse_heredoc(line.strip()) is not None:
+            heredoc = heredocs[0]
+            content = heredoc_content(heredoc)
+            if not content.startswith("#!"):
+                return content
+            # A shebang script: write it to a temporary file and execute it.
+            script = shlex.quote(f"/tmp/{heredoc.name}")
+            terminator = f"E2B_HEREDOC_{heredoc.name}"
+            return (
+                f"cat <<'{terminator}' >{script}\n"
+                + _with_trailing_newline(content)
+                + f"{terminator}\n"
+                + f"chmod +x {script} && {script}\n"
+                + f"E2B_EXIT=$?; rm -f {script}; exit $E2B_EXIT"
+            )
+
+        # Heredocs used as part of a larger command (`cat <<EOF > file`,
+        # `python3 <<EOF`): rebuild the heredoc so the shell handles it.
+        full = line
+        for heredoc in heredocs:
+            full += "\n" + heredoc.content + heredoc.name
+        return full
+
+    def _handle_copy(
+        self, instruction: DockerfileInstruction, specs: FlagSpecs
+    ) -> None:
+        flags = self._parse_flags(instruction, specs)
+        if len(instruction.args) < 2:
+            raise DockerfileSyntaxError(
+                f"{instruction.name} requires at least two arguments",
+                instruction.start_line,
+            )
+        if "from" in flags:
+            raise DockerfileSyntaxError(
+                f"{instruction.name} --from is not supported "
+                "(multi-stage builds are not supported)",
+                instruction.start_line,
+            )
+
+        user = self._expand(instruction, flags["chown"]) if "chown" in flags else None
+        mode: Optional[int] = None
+        if "chmod" in flags:
+            chmod = self._expand(instruction, flags["chmod"])
+            if not _CHMOD.match(chmod):
+                raise DockerfileSyntaxError(
+                    f'invalid chmod value "{chmod}", expected an octal mode such as 0755',
+                    instruction.start_line,
+                )
+            mode = int(chmod, 8)
+
+        args = [self._expand(instruction, arg) for arg in instruction.args]
+        dest = args[-1]
+        sources = args[:-1]
+
+        if parse_heredoc(dest) is not None:
+            raise DockerfileSyntaxError(
+                f"{instruction.name} cannot accept a heredoc as a destination",
+                instruction.start_line,
+            )
+
+        heredocs_by_name = {heredoc.name: heredoc for heredoc in instruction.heredocs}
+
+        for src in sources:
+            heredoc = parse_heredoc(src)
+            if heredoc is not None:
+                content = heredocs_by_name.get(heredoc.name)
+                if content is None:
+                    raise DockerfileSyntaxError(
+                        f"missing heredoc content for {heredoc.name}",
+                        instruction.start_line,
+                    )
+                self._copy_heredoc(content, dest, user, mode)
+                continue
+            if instruction.name == "ADD" and _REMOTE_URL.match(src):
+                raise DockerfileSyntaxError(
+                    f"ADD from a remote URL is not supported: {src}",
+                    instruction.start_line,
+                )
+            self._template_builder.copy(src, dest, user=user, mode=mode)
+
+    def _copy_heredoc(
+        self,
+        heredoc: DockerfileHeredoc,
+        dest: str,
+        user: Optional[str],
+        mode: Optional[int],
+    ) -> None:
+        """``COPY <<EOF /path`` writes the heredoc body to a file inside the sandbox."""
+        target = dest + heredoc.name if dest.endswith("/") else dest
+        content = (
+            chomp_heredoc_content(heredoc.content) if heredoc.chomp else heredoc.content
+        )
+        plain_terminator = f"E2B_HEREDOC_{heredoc.name}"
+        terminator = plain_terminator if heredoc.expand else f"'{plain_terminator}'"
+        quoted_target = shlex.quote(target)
+
+        command = (
+            f'mkdir -p "$(dirname {quoted_target})" && cat <<{terminator} >{quoted_target}\n'
+            + _with_trailing_newline(content)
+            + plain_terminator
+        )
+        if user is not None:
+            command += f"\nchown {shlex.quote(user)} {quoted_target}"
+        if mode is not None:
+            command += f"\nchmod {mode:o} {quoted_target}"
+        self._template_builder.run_cmd(command)
+
+    def _handle_env(self, instruction: DockerfileInstruction) -> None:
+        self._parse_flags(instruction, {})
+        args = instruction.args
+        if not args:
+            raise DockerfileSyntaxError(
+                "ENV requires at least one argument", instruction.start_line
+            )
+        envs: Dict[str, str] = {}
+        for i in range(0, len(args) - 2, 3):
+            key = self._expand(instruction, args[i])
+            if key == "":
+                raise DockerfileSyntaxError(
+                    "ENV names can not be blank", instruction.start_line
+                )
+            envs[key] = self._expand(instruction, args[i + 1])
+        self._template_builder.set_envs(envs)
+
+    def _handle_arg(self, instruction: DockerfileInstruction) -> None:
+        self._parse_flags(instruction, {})
+        args = instruction.args
+        if not args:
+            raise DockerfileSyntaxError(
+                "ARG requires at least one argument", instruction.start_line
+            )
+        envs: Dict[str, str] = {}
+        for arg in args:
+            name, sep, value = arg.partition("=")
+            key = self._expand(instruction, name)
+            if key == "":
+                raise DockerfileSyntaxError(
+                    "ARG names can not be blank", instruction.start_line
+                )
+            envs[key] = self._expand(instruction, value) if sep else ""
+        self._template_builder.set_envs(envs)
+
+    def _apply_start_cmd(self) -> None:
+        """
+        Combine ENTRYPOINT and CMD following Docker's rules:
+        - exec-form ENTRYPOINT gets CMD appended as arguments
+          (a shell-form CMD is appended as ``/bin/sh -c <cmd>``),
+        - shell-form ENTRYPOINT ignores CMD,
+        - without ENTRYPOINT the CMD is used as-is.
+        """
+        cmd = self._cmd
+        entrypoint = self._entrypoint
+        command: Optional[str] = None
+
+        if entrypoint is not None:
+            if entrypoint.json:
+                words = list(entrypoint.args)
+                if cmd is not None:
+                    if cmd.json:
+                        words.extend(cmd.args)
+                    elif cmd.args:
+                        words.extend(["/bin/sh", "-c", cmd.args[0]])
+                command = _shell_join(words) if words else None
+            else:
+                command = entrypoint.args[0]
+        elif cmd is not None:
+            if cmd.json:
+                command = _shell_join(cmd.args) if cmd.args else None
+            else:
+                command = cmd.args[0]
+
+        if command is not None and command.strip() != "":
+            self._template_builder.set_start_cmd(command, wait_for_timeout(20_000))
+
+
+def _read_dockerfile(dockerfile_content_or_path: str) -> str:
+    try:
+        if os.path.isfile(dockerfile_content_or_path):
+            with open(dockerfile_content_or_path, "r", encoding="utf-8") as f:
+                return f.read()
+    except (OSError, ValueError):
+        # If there's any error checking the file, treat as content
+        pass
+    return dockerfile_content_or_path
+
+
 def parse_dockerfile(
     dockerfile_content_or_path: str, template_builder: DockerfileParserInterface
 ) -> str:
@@ -65,222 +496,12 @@ def parse_dockerfile(
 
     :raises ValueError: If the Dockerfile is invalid or unsupported
     """
-    # Check if input is a file path that exists
-    if os.path.isfile(dockerfile_content_or_path):
-        # Read the file content
-        with open(dockerfile_content_or_path, "r", encoding="utf-8") as f:
-            dockerfile_content = f.read()
-    else:
-        # Treat as content directly
-        dockerfile_content = dockerfile_content_or_path
+    dockerfile_content = _read_dockerfile(dockerfile_content_or_path)
+    ast = parse_dockerfile_ast(dockerfile_content)
 
-    # Use a temporary directory to avoid creating files in the current directory
-    with tempfile.TemporaryDirectory() as temp_dir:
-        # Create a temporary Dockerfile
-        dockerfile_path = os.path.join(temp_dir, "Dockerfile")
-        with open(dockerfile_path, "w") as f:
-            f.write(dockerfile_content)
+    for warning in ast.warnings:
+        print(f"{warning.message} (line {warning.line})")
 
-        dfp = DockerfileParser(path=temp_dir)
-
-        # Check for multi-stage builds
-        from_instructions = [
-            instruction
-            for instruction in dfp.structure
-            if instruction["instruction"] == "FROM"
-        ]
-
-        if len(from_instructions) > 1:
-            raise ValueError("Multi-stage Dockerfiles are not supported")
-
-        if len(from_instructions) == 0:
-            raise ValueError("Dockerfile must contain a FROM instruction")
-
-        # Set the base image from the first FROM instruction
-        base_image = from_instructions[0]["value"]
-        # Remove AS alias if present (e.g., "node:18 AS builder" -> "node:18")
-        if " as " in base_image.lower():
-            base_image = base_image.split(" as ")[0].strip()
-
-        user_changed = False
-        workdir_changed = False
-
-        # Set the user and workdir to the Docker defaults
-        template_builder.set_user("root")
-        template_builder.set_workdir("/")
-
-        # Process all other instructions
-        for instruction_data in dfp.structure:
-            instruction = instruction_data["instruction"]
-            value = instruction_data["value"]
-
-            if instruction == "FROM":
-                # Already handled above
-                continue
-            elif instruction == "RUN":
-                _handle_run_instruction(value, template_builder)
-            elif instruction in ["COPY", "ADD"]:
-                _handle_copy_instruction(value, template_builder)
-            elif instruction == "WORKDIR":
-                _handle_workdir_instruction(value, template_builder)
-                workdir_changed = True
-            elif instruction == "USER":
-                _handle_user_instruction(value, template_builder)
-                user_changed = True
-            elif instruction in ["ENV", "ARG"]:
-                _handle_env_instruction(value, instruction, template_builder)
-            elif instruction in ["CMD", "ENTRYPOINT"]:
-                _handle_cmd_entrypoint_instruction(value, template_builder)
-            else:
-                print(f"Unsupported instruction: {instruction}")
-                continue
-
-    # Set the user and workdir to the E2B defaults
-    if not user_changed:
-        template_builder.set_user("user")
-    if not workdir_changed:
-        template_builder.set_workdir("/home/user")
-
-    return base_image
-
-
-def _handle_run_instruction(
-    value: str, template_builder: DockerfileParserInterface
-) -> None:
-    """Handle RUN instruction"""
-    if not value.strip():
-        return
-    # Remove line continuations and normalize whitespace
-    command = re.sub(r"\\\s*\n\s*", " ", value).strip()
-    template_builder.run_cmd(command)
-
-
-def _handle_copy_instruction(
-    value: str, template_builder: DockerfileParserInterface
-) -> None:
-    """Handle COPY/ADD instruction"""
-    if not value.strip():
-        return
-    # Parse source and destination from COPY/ADD command
-    # Handle both quoted and unquoted paths
-    parts = []
-    current_part = ""
-    in_quotes = False
-    quote_char = None
-
-    i = 0
-    while i < len(value):
-        char = value[i]
-        if char in ['"', "'"] and (i == 0 or value[i - 1] != "\\"):
-            if not in_quotes:
-                in_quotes = True
-                quote_char = char
-            elif char == quote_char:
-                in_quotes = False
-                quote_char = None
-            else:
-                current_part += char
-        elif char == " " and not in_quotes:
-            if current_part:
-                parts.append(current_part)
-                current_part = ""
-        else:
-            current_part += char
-        i += 1
-
-    if current_part:
-        parts.append(current_part)
-
-    # Extract --chown flag and separate from paths
-    user = None
-    non_flag_parts = []
-    for part in parts:
-        if part.startswith("--chown="):
-            user = part[8:]  # Extract value after "--chown="
-        elif not part.startswith("--"):
-            non_flag_parts.append(part)
-
-    if len(non_flag_parts) >= 2:
-        dest = non_flag_parts[-1]  # Last part is destination
-        sources = non_flag_parts[:-1]
-
-        for src in sources:
-            template_builder.copy(src, dest, user=user)
-
-
-def _handle_workdir_instruction(
-    value: str, template_builder: DockerfileParserInterface
-) -> None:
-    """Handle WORKDIR instruction"""
-    if not value.strip():
-        return
-    workdir = value.strip()
-    template_builder.set_workdir(workdir)
-
-
-def _handle_user_instruction(
-    value: str, template_builder: DockerfileParserInterface
-) -> None:
-    """Handle USER instruction"""
-    if not value.strip():
-        return
-    user = value.strip()
-    template_builder.set_user(user)
-
-
-def _handle_env_instruction(
-    value: str, instruction_type: str, template_builder: DockerfileParserInterface
-) -> None:
-    """Handle ENV/ARG instruction"""
-    if not value.strip():
-        return
-
-    # Parse environment variables from the value
-    # Handle both "KEY=value" and "KEY value" formats
-    env_vars = {}
-
-    # First try to split on = for KEY=value format
-    if "=" in value:
-        # Handle multiple KEY=value pairs on one line
-        pairs = re.findall(r"(\w+)=([^\s]*(?:\s+(?!\w+=)[^\s]*)*)", value)
-        for key, val in pairs:
-            env_vars[key] = val.strip("\"'")
-    else:
-        # Handle "KEY value" format
-        parts = value.split(None, 1)
-        if len(parts) == 2:
-            key, val = parts
-            env_vars[key] = val.strip("\"'")
-        elif len(parts) == 1 and instruction_type == "ARG":
-            # ARG without default value
-            key = parts[0]
-            env_vars[key] = ""
-
-    # Add each environment variable
-    if env_vars:
-        template_builder.set_envs(env_vars)
-
-
-def _handle_cmd_entrypoint_instruction(
-    value: str, template_builder: DockerfileParserInterface
-) -> None:
-    """Handle CMD/ENTRYPOINT instruction - convert to set_start_cmd with 20s timeout"""
-    if not value.strip():
-        return
-    command = value.strip()
-
-    # Try to parse as JSON (for array format like CMD ["sleep", "infinity"])
-    try:
-        parsed_command = json.loads(command)
-        if isinstance(parsed_command, list):
-            command = " ".join(str(item) for item in parsed_command)
-    except Exception:
-        pass
-
-    # Import wait_for_timeout locally to avoid circular dependency
-    def wait_for_timeout(timeout: int) -> str:
-        # convert to seconds, but ensure minimum of 1 second
-        seconds = max(1, timeout // 1000)
-        return f"sleep {seconds}"
-
-    template_builder.set_start_cmd(command, wait_for_timeout(20_000))
+    return _DockerfileConverter(template_builder, ast.escape_token).convert(
+        ast.instructions
+    )
