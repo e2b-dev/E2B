@@ -462,7 +462,7 @@ class TestDockerignoreSemantics:
             get_all_files_in_path(".", test_dir, ["[abc"])
 
     @pytest.mark.skipif(sys.platform == "win32", reason="Backslash is a separator")
-    def test_should_reject_unknown_escapes_in_a_bracket_expression(self, test_dir):
+    def test_should_handle_escapes_in_a_bracket_expression_like_python(self, test_dir):
         with pytest.raises(
             TemplateException, match=r"Invalid ignore pattern '\[\\q\]'"
         ):
@@ -470,6 +470,13 @@ class TestDockerignoreSemantics:
         with open(os.path.join(test_dir, "a"), "w") as f:
             f.write("x")
         assert "a" in self.relative_paths("*", test_dir, ["[\\a]"])
+        for name in ["b", "c"]:
+            with open(os.path.join(test_dir, name), "w") as f:
+                f.write("x")
+        files = self.relative_paths("*", test_dir, ["[\\x61]", "[\\142]"])
+        assert "a" not in files
+        assert "b" not in files
+        assert "c" in files
 
     def test_should_keep_the_files_hash_stable_when_ignored_files_change(
         self, test_dir

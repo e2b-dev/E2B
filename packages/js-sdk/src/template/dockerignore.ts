@@ -31,6 +31,7 @@ function escapeRegex(ch: string): string {
 // Escapes that keep their regex meaning in a bracket expression, like in Python
 const CLASS_ESCAPES = new Set('dDsSwWfnrtv')
 const CLASS_CONTROL_ESCAPES: Record<string, string> = { a: '\\x07', b: '\\x08' }
+const CLASS_HEX_ESCAPE_LENGTHS: Record<string, number> = { x: 2, u: 4, U: 8 }
 // Characters that must stay escaped in a bracket expression with the `u` flag
 const CLASS_SYNTAX_CHARS = new Set('^$\\.*+?()[]{}|/-')
 
@@ -50,6 +51,30 @@ function translateClass(body: string, backslashIsEscape: boolean): string {
         cls += '\\' + next
       } else if (next in CLASS_CONTROL_ESCAPES) {
         cls += CLASS_CONTROL_ESCAPES[next]
+      } else if (next in CLASS_HEX_ESCAPE_LENGTHS) {
+        const length = CLASS_HEX_ESCAPE_LENGTHS[next]
+        const hex = body.slice(i, i + length)
+        if (hex.length < length || !/^[0-9a-fA-F]+$/.test(hex)) {
+          throw new Error(`incomplete escape \\${next}${hex}`)
+        }
+        const code = parseInt(hex, 16)
+        if (code > 0x10ffff) {
+          throw new Error(`bad escape \\${next}${hex}`)
+        }
+        cls += `\\u{${code.toString(16)}}`
+        i += length
+      } else if (/[0-7]/.test(next)) {
+        let octal = next
+        while (octal.length < 3 && /[0-7]/.test(body[i] ?? '')) {
+          octal += body[i++]
+        }
+        const code = parseInt(octal, 8)
+        if (code > 0o377) {
+          throw new Error(
+            `octal escape value \\${octal} outside of range 0-0o377`
+          )
+        }
+        cls += `\\u{${code.toString(16)}}`
       } else if (/[A-Za-z0-9]/.test(next)) {
         throw new Error(`bad escape \\${next}`)
       } else {

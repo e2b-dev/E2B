@@ -467,13 +467,19 @@ describe('getAllFilesInPath', () => {
     })
 
     test.skipIf(process.platform === 'win32')(
-      'should reject unknown escapes in a bracket expression',
+      'should handle escapes in a bracket expression like Python',
       async () => {
         await expect(
           getAllFilesInPath('.', testDir, ['[\\q]'])
         ).rejects.toThrow("Invalid ignore pattern '[\\q]'")
         await writeFile(join(testDir, 'a'), 'x')
         expect(await relativePaths('*', ['[\\a]'])).toContain('a')
+        await writeFile(join(testDir, 'b'), 'x')
+        await writeFile(join(testDir, 'c'), 'x')
+        const files = await relativePaths('*', ['[\\x61]', '[\\142]'])
+        expect(files).not.toContain('a')
+        expect(files).not.toContain('b')
+        expect(files).toContain('c')
       }
     )
 
