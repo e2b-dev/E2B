@@ -14,7 +14,6 @@ from e2b.exceptions import (
     format_sandbox_timeout_exception,
 )
 
-
 ENVD_API_FILES_ROUTE = "/files"
 ENVD_API_HEALTH_ROUTE = "/health"
 
@@ -111,11 +110,19 @@ async def ahandle_envd_api_transport_exception_with_health(
 
 def get_message(e: httpx.Response) -> str:
     try:
-        message = e.json().get("message", e.text)
+        data = e.json()
     except json.JSONDecodeError:
-        message = e.text
+        return e.text
 
-    return message
+    # A JSON error body is not necessarily an object -- a proxy or gateway can
+    # return a bare string or scalar. Mirror the JS SDK's `ApiError` handling
+    # (`typeof error === 'string' ? error : error?.message`) rather than assuming
+    # a dict and raising AttributeError.
+    if isinstance(data, str) and data:
+        return data
+    if isinstance(data, dict):
+        return data.get("message", e.text)
+    return e.text
 
 
 def handle_envd_api_exception(
