@@ -176,6 +176,7 @@ source = { editable = "." }
 dependencies = [
     { name = "attrs" },
     { name = "connectrpc" },
+    { name = "e2b-docker-utils" },
     { name = "h2" },
     { name = "httpx" },
     { name = "packaging" },
@@ -210,6 +211,7 @@ dev = [
 requires-dist = [
     { name = "attrs", specifier = ">=23.2.0" },
     { name = "connectrpc", specifier = ">=0.11.1,<0.12" },
+    { name = "e2b-docker-utils", editable = "../docker-utils-python" },
     { name = "h2", specifier = ">=4.4.1,<5" },
     { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
     { name = "packaging", specifier = ">=24.1" },
@@ -236,6 +238,20 @@ dev = [
     { name = "pytest-timeout", specifier = ">=2.4.0,<3" },
     { name = "pytest-xdist", specifier = ">=3.3.1,<4" },
     { name = "python-dotenv", specifier = ">=1.0.0,<2" },
+    { name = "ruff", specifier = ">=0.11.12,<0.12" },
+    { name = "ty", specifier = ">=0.0.15,<0.0.16" },
+]
+
+[[package]]
+name = "e2b-docker-utils"
+version = "0.0.0"
+source = { editable = "../docker-utils-python" }
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=9.0.3,<10" },
     { name = "ruff", specifier = ">=0.11.12,<0.12" },
     { name = "ty", specifier = ">=0.0.15,<0.0.16" },
 ]
