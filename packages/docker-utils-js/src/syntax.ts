@@ -81,7 +81,6 @@ function withLine<T>(line: number, fn: () => T): T {
 const WHITESPACE = /[\t\v\f\r ]+/
 const DIRECTIVE = /^#\s*([a-zA-Z][a-zA-Z0-9]*)\s*=\s*(.+?)\s*$/
 const VALID_DIRECTIVES = new Set(['syntax', 'escape', 'check'])
-const HEREDOC = /^(\d*)<<(-?)\s*([^<]*)$/
 const HEREDOC_INSTRUCTIONS = new Set(['ADD', 'COPY', 'RUN'])
 
 type LineParser = (
@@ -486,14 +485,42 @@ function splitCommand(
   return { command, flags, rest: rest.trim() }
 }
 
+// Matches `^(\d*)<<(-?)\s*([^<]*)$` without a regex, whose adjacent `\s*`
+// and `[^<]*` are ambiguous on whitespace runs (polynomial backtracking).
+function matchHeredocMarker(
+  word: string
+): { fileDescriptor: string; chomp: boolean; rest: string } | undefined {
+  let i = 0
+  while (i < word.length && word[i] >= '0' && word[i] <= '9') {
+    i++
+  }
+  if (!word.startsWith('<<', i)) {
+    return undefined
+  }
+  const fileDescriptor = word.slice(0, i)
+  i += 2
+  const chomp = word[i] === '-'
+  if (chomp) {
+    i++
+  }
+  while (i < word.length && /\s/.test(word[i])) {
+    i++
+  }
+  const rest = word.slice(i)
+  if (rest.includes('<')) {
+    return undefined
+  }
+  return { fileDescriptor, chomp, rest }
+}
+
 export function parseHeredoc(word: string): DockerfileHeredoc | undefined {
-  const match = HEREDOC.exec(word)
+  const match = matchHeredocMarker(word)
   if (!match) {
     return undefined
   }
-  const fileDescriptor = match[1] === '' ? 0 : parseInt(match[1], 10)
-  const chomp = match[2] === '-'
-  const rest = match[3]
+  const fileDescriptor =
+    match.fileDescriptor === '' ? 0 : parseInt(match.fileDescriptor, 10)
+  const { chomp, rest } = match
   if (rest.length === 0) {
     return undefined
   }
