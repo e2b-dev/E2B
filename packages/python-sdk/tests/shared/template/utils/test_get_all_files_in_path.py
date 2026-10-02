@@ -461,6 +461,16 @@ class TestDockerignoreSemantics:
         with pytest.raises(TemplateException, match="Invalid ignore pattern '\\[abc'"):
             get_all_files_in_path(".", test_dir, ["[abc"])
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Backslash is a separator")
+    def test_should_reject_unknown_escapes_in_a_bracket_expression(self, test_dir):
+        with pytest.raises(
+            TemplateException, match=r"Invalid ignore pattern '\[\\q\]'"
+        ):
+            get_all_files_in_path(".", test_dir, ["[\\q]"])
+        with open(os.path.join(test_dir, "a"), "w") as f:
+            f.write("x")
+        assert "a" in self.relative_paths("*", test_dir, ["[\\a]"])
+
     def test_should_keep_the_files_hash_stable_when_ignored_files_change(
         self, test_dir
     ):

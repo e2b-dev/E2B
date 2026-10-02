@@ -466,6 +466,17 @@ describe('getAllFilesInPath', () => {
       )
     })
 
+    test.skipIf(process.platform === 'win32')(
+      'should reject unknown escapes in a bracket expression',
+      async () => {
+        await expect(
+          getAllFilesInPath('.', testDir, ['[\\q]'])
+        ).rejects.toThrow("Invalid ignore pattern '[\\q]'")
+        await writeFile(join(testDir, 'a'), 'x')
+        expect(await relativePaths('*', ['[\\a]'])).toContain('a')
+      }
+    )
+
     test('should keep the files hash stable when ignored files change', async () => {
       const hash = () =>
         calculateFilesHash('.', '/app', testDir, ['.git'], false, undefined)

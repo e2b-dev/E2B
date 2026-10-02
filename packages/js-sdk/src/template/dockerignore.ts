@@ -28,8 +28,9 @@ function escapeRegex(ch: string): string {
   return ch.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
 }
 
-// Escapes that keep their regex meaning in a bracket expression, like in Go
+// Escapes that keep their regex meaning in a bracket expression, like in Python
 const CLASS_ESCAPES = new Set('dDsSwWfnrtv')
+const CLASS_CONTROL_ESCAPES: Record<string, string> = { a: '\\x07', b: '\\x08' }
 // Characters that must stay escaped in a bracket expression with the `u` flag
 const CLASS_SYNTAX_CHARS = new Set('^$\\.*+?()[]{}|/-')
 
@@ -47,8 +48,10 @@ function translateClass(body: string, backslashIsEscape: boolean): string {
       const next = body[i++]
       if (CLASS_ESCAPES.has(next)) {
         cls += '\\' + next
-      } else if (/[\p{L}\p{N}]/u.test(next)) {
-        cls += next
+      } else if (next in CLASS_CONTROL_ESCAPES) {
+        cls += CLASS_CONTROL_ESCAPES[next]
+      } else if (/[A-Za-z0-9]/.test(next)) {
+        throw new Error(`bad escape \\${next}`)
       } else {
         cls += CLASS_SYNTAX_CHARS.has(next) ? '\\' + next : next
       }
@@ -67,11 +70,18 @@ function clean(pattern: string): string {
 
 type Matcher = (p: string) => boolean
 
+enum MatchType {
+  Exact = 'exact',
+  Prefix = 'prefix',
+  Suffix = 'suffix',
+  Regex = 'regex',
+}
+
 // Like moby, use plain string checks for patterns without wildcards and only
 // fall back to a regex otherwise
 function compile(pattern: string): Matcher {
   let regex = '^'
-  let matchType: 'exact' | 'prefix' | 'suffix' | 'regex' = 'exact'
+  let matchType = MatchType.Exact
   const n = pattern.length
   const backslashIsEscape = !backslashIsSeparator()
   let i = 0
@@ -87,21 +97,22 @@ function compile(pattern: string): Matcher {
         }
         if (i >= n) {
           regex += '.*'
-          matchType = matchType === 'exact' ? 'prefix' : 'regex'
+          matchType =
+            matchType === MatchType.Exact ? MatchType.Prefix : MatchType.Regex
         } else {
           regex += '(.*/)?'
-          matchType = 'regex'
+          matchType = MatchType.Regex
         }
         if (first) {
-          matchType = 'suffix'
+          matchType = MatchType.Suffix
         }
       } else {
         regex += '[^/]*'
-        matchType = 'regex'
+        matchType = MatchType.Regex
       }
     } else if (ch === '?') {
       regex += '[^/]'
-      matchType = 'regex'
+      matchType = MatchType.Regex
     } else if (ch === '[') {
       // Copy a bracket expression, a leading "^" negates it
       let j = i
@@ -119,17 +130,17 @@ function compile(pattern: string): Matcher {
         translateClass(pattern.slice(i, Math.min(j, n)), backslashIsEscape) +
         (j < n ? ']' : '')
       i = j + 1
-      matchType = 'regex'
+      matchType = MatchType.Regex
     } else if (ch === ']') {
       regex += '\\]'
-      matchType = 'regex'
+      matchType = MatchType.Regex
     } else if (LITERAL_REGEX_CHARS.has(ch)) {
       regex += '\\' + ch
     } else if (ch === '\\' && backslashIsEscape) {
       // Escape the next character
       if (i < n) {
         regex += escapeRegex(pattern[i++])
-        matchType = 'regex'
+        matchType = MatchType.Regex
       } else {
         regex += '\\\\'
       }
@@ -139,19 +150,19 @@ function compile(pattern: string): Matcher {
   }
 
   switch (matchType) {
-    case 'exact':
+    case MatchType.Exact:
       return (p) => p === pattern
-    case 'prefix': {
+    case MatchType.Prefix: {
       const prefix = pattern.slice(0, -2)
       return (p) => p.startsWith(prefix)
     }
-    case 'suffix': {
+    case MatchType.Suffix: {
       const suffix = pattern.slice(2)
       // "**/foo" also matches "foo"
       return (p) =>
         p.endsWith(suffix) || (suffix[0] === '/' && p === suffix.slice(1))
     }
-    default: {
+    case MatchType.Regex: {
       const re = new RegExp(regex + '$', 'u')
       return (p) => re.test(p)
     }

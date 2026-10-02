@@ -9,6 +9,7 @@ https://github.com/moby/patternmatcher
 import os
 import posixpath
 import re
+from enum import Enum
 from typing import Callable, List
 
 from e2b.exceptions import TemplateException
@@ -17,6 +18,13 @@ from e2b.exceptions import TemplateException
 _LITERAL_REGEX_CHARS = set(".+()|{}$^")
 _WILDCARD_CHARS = re.compile(r"[*?\[\\]")
 _BACKSLASH_IS_SEPARATOR = os.sep == "\\"
+
+
+class _MatchType(Enum):
+    EXACT = "exact"
+    PREFIX = "prefix"
+    SUFFIX = "suffix"
+    REGEX = "regex"
 
 
 def _clean(pattern: str) -> str:
@@ -30,7 +38,7 @@ def _compile(pattern: str) -> Callable[[str], bool]:
     # Like moby, use plain string checks for patterns without wildcards and
     # only fall back to a regex otherwise
     regex = "^"
-    match_type = "exact"
+    match_type = _MatchType.EXACT
     i, n = 0, len(pattern)
     while i < n:
         first = i == 0
@@ -44,18 +52,22 @@ def _compile(pattern: str) -> Callable[[str], bool]:
                     i += 1
                 if i >= n:
                     regex += ".*"
-                    match_type = "prefix" if match_type == "exact" else "regex"
+                    match_type = (
+                        _MatchType.PREFIX
+                        if match_type is _MatchType.EXACT
+                        else _MatchType.REGEX
+                    )
                 else:
                     regex += "(.*/)?"
-                    match_type = "regex"
+                    match_type = _MatchType.REGEX
                 if first:
-                    match_type = "suffix"
+                    match_type = _MatchType.SUFFIX
             else:
                 regex += "[^/]*"
-                match_type = "regex"
+                match_type = _MatchType.REGEX
         elif ch == "?":
             regex += "[^/]"
-            match_type = "regex"
+            match_type = _MatchType.REGEX
         elif ch == "[":
             # Copy a bracket expression as is, a leading "^" negates it
             j = i
@@ -67,10 +79,10 @@ def _compile(pattern: str) -> Callable[[str], bool]:
                 j += 1
             regex += pattern[i - 1 : j + 1]
             i = j + 1
-            match_type = "regex"
+            match_type = _MatchType.REGEX
         elif ch == "]":
             regex += ch
-            match_type = "regex"
+            match_type = _MatchType.REGEX
         elif ch in _LITERAL_REGEX_CHARS:
             regex += "\\" + ch
         elif ch == "\\" and not _BACKSLASH_IS_SEPARATOR:
@@ -78,18 +90,18 @@ def _compile(pattern: str) -> Callable[[str], bool]:
             if i < n:
                 regex += re.escape(pattern[i])
                 i += 1
-                match_type = "regex"
+                match_type = _MatchType.REGEX
             else:
                 regex += "\\\\"
         else:
             regex += ch
 
-    if match_type == "exact":
+    if match_type is _MatchType.EXACT:
         return lambda path: path == pattern
-    if match_type == "prefix":
+    if match_type is _MatchType.PREFIX:
         prefix = pattern[:-2]
         return lambda path: path.startswith(prefix)
-    if match_type == "suffix":
+    if match_type is _MatchType.SUFFIX:
         suffix = pattern[2:]
         # "**/foo" also matches "foo"
         return lambda path: path.endswith(suffix) or (
