@@ -48,6 +48,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build Docker Utils JS
+        working-directory: packages/docker-utils-js
+        run: pnpm run build
+
       - name: Build JS SDK
         working-directory: packages/js-sdk
         run: pnpm run build
@@ -119,6 +123,22 @@ jobs:
           name: e2b-js-sdk
           path: packages/js-sdk/*.tgz
 
+      # After the SDK is packed: the SDK's `workspace:^` range on this package
+      # must resolve to the regular version, not the prerelease set here.
+      - name: Pack Docker Utils JS
+        if: ${{ !cancelled() }}
+        working-directory: packages/docker-utils-js
+        run: |
+          pnpm version prerelease --preid=${{ env.BRANCH_ID }} --no-git-tag-version
+          pnpm pack
+
+      - name: Upload Docker Utils JS artifact
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: e2b-docker-utils-js
+          path: packages/docker-utils-js/*.tgz
+
       - name: Install uv
         uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
         with:
@@ -151,6 +171,19 @@ jobs:
         with:
           name: e2b-code-interpreter-python
           path: packages/code-interpreter-python/dist/*
+
+      - name: Build Docker Utils Python
+        working-directory: packages/docker-utils-python
+        run: |
+          BASE_VERSION=$(uv version --short)
+          uv version "${BASE_VERSION}+${BRANCH_ID}"
+          uv build
+
+      - name: Upload Docker Utils Python artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: e2b-docker-utils-python
+          path: packages/docker-utils-python/dist/*
 
       - name: Build Desktop Python SDK
         working-directory: packages/desktop-python

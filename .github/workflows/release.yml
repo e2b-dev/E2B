@@ -22,6 +22,8 @@ jobs:
       code_interpreter_python: ${{ steps.code_interpreter_python.outputs.release }}
       desktop_js: ${{ steps.desktop_js.outputs.release }}
       desktop_python: ${{ steps.desktop_python.outputs.release }}
+      docker_utils_js: ${{ steps.docker_utils_js.outputs.release }}
+      docker_utils_python: ${{ steps.docker_utils_python.outputs.release }}
       itinerary: ${{ steps.itinerary.outputs.itinerary }}
     steps:
       - name: Check the ref
@@ -122,6 +124,20 @@ jobs:
           IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/desktop-python")
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
+      - name: Check Docker Utils JavaScript Release
+        id: docker_utils_js
+        if: steps.version.outputs.release == 'true'
+        run: |
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/docker-utils")
+          echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Check Docker Utils Python Release
+        id: docker_utils_python
+        if: steps.version.outputs.release == 'true'
+        run: |
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/docker-utils-python")
+          echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
+
       - name: Build release itinerary
         id: itinerary
         if: steps.version.outputs.release == 'true'
@@ -187,6 +203,18 @@ jobs:
     uses: ./.github/workflows/desktop_python_tests.yml
     secrets: inherit
 
+  docker-utils-js-tests:
+    name: Docker Utils JS Tests
+    needs: [preflight]
+    if: needs.preflight.outputs.docker_utils_js == 'true'
+    uses: ./.github/workflows/docker_utils_js_tests.yml
+
+  docker-utils-python-tests:
+    name: Docker Utils Python Tests
+    needs: [preflight]
+    if: needs.preflight.outputs.docker_utils_python == 'true'
+    uses: ./.github/workflows/docker_utils_python_tests.yml
+
   publish:
     name: Publish
     needs:
@@ -198,6 +226,8 @@ jobs:
       - code-interpreter-python-tests
       - desktop-js-tests
       - desktop-python-tests
+      - docker-utils-js-tests
+      - docker-utils-python-tests
     if: (!cancelled()) && !contains(needs.*.result, 'failure') && needs.preflight.outputs.release == 'true'
     uses: ./.github/workflows/publish_packages.yml
     secrets: inherit
@@ -233,6 +263,8 @@ jobs:
       - code-interpreter-python-tests
       - desktop-js-tests
       - desktop-python-tests
+      - docker-utils-js-tests
+      - docker-utils-python-tests
       - publish
     if: failure()
     name: Release Failed - Slack Notification

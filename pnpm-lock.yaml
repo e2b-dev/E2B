@@ -243,6 +243,26 @@ importers:
 
   packages/desktop-python: {}
 
+  packages/docker-utils-js:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.19.43
+      '@typescript/native':
+        specifier: 'catalog:'
+        version: typescript@7.0.2
+      tsdown:
+        specifier: 'catalog:'
+        version: 0.22.14(@typescript/typescript6@6.0.2)(tsx@4.23.12)
+      typescript:
+        specifier: 'catalog:'
+        version: '@typescript/typescript6@6.0.2'
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.11(@types/node@20.19.43)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.4.2)(terser@5.46.0)(tsx@4.23.12))
+
+  packages/docker-utils-python: {}
+
   packages/js-sdk:
     dependencies:
       '@bufbuild/protobuf':
@@ -254,6 +274,9 @@ importers:
       '@connectrpc/connect-web':
         specifier: ^2.2.0
         version: 2.2.0(@bufbuild/protobuf@2.15.0)(@connectrpc/connect@2.2.0(@bufbuild/protobuf@2.15.0))
+      '@e2b/docker-utils':
+        specifier: workspace:^
+        version: link:../docker-utils-js
       chalk:
         specifier: ^5.6.2
         version: 5.6.2

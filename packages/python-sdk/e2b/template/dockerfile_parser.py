@@ -3,11 +3,11 @@ import re
 import shlex
 from typing import Dict, List, Literal, Mapping, Optional, Protocol, Union
 
-from e2b.template.dockerfile.lexer import ShellLex
-from e2b.template.dockerfile.syntax import (
+from e2b_docker_utils import (
     DockerfileHeredoc,
     DockerfileInstruction,
     DockerfileSyntaxError,
+    ShellLex,
     chomp_heredoc_content,
     parse_dockerfile_ast,
     parse_heredoc,

@@ -111,6 +111,9 @@ jobs:
         if: matrix.runtime == 'browser'
         run: pnpm run playwright:install
 
+      - name: Build Docker Utils JS
+        run: pnpm --dir ../docker-utils-js build
+
       # The unit bundle test and the Cloudflare deploy config fail in CI when
       # the build output is missing.
       - name: Test build

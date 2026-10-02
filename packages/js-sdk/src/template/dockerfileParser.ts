@@ -5,11 +5,11 @@ import {
   DockerfileHeredoc,
   DockerfileInstruction,
   DockerfileSyntaxError,
+  ShellLex,
   chompHeredocContent,
   parseDockerfileAst,
   parseHeredoc,
-} from './dockerfile/syntax'
-import { ShellLex } from './dockerfile/lexer'
+} from '@e2b/docker-utils'
 
 export { DockerfileSyntaxError }
 
