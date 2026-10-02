@@ -1,3 +1,5 @@
+import type { FetchResponse } from 'openapi-fetch'
+
 import { ApiClient, components, handleApiError } from './api'
 import {
   ClientFactory,
@@ -101,6 +103,23 @@ function convertSecretInfo(
 }
 
 /**
+ * Convert a response returning a single secret into {@link SecretInfo},
+ * throwing for error responses and empty bodies.
+ */
+function secretInfoFromResponse(res: FetchResponse<any, any, any>): SecretInfo {
+  const err = handleApiError(res, SecretError)
+  if (err) {
+    throw err
+  }
+
+  if (!res.data) {
+    throw new Error('Response data is missing')
+  }
+
+  return convertSecretInfo(res.data)
+}
+
+/**
  * Paginator for listing secrets.
  *
  * @example
@@ -182,16 +201,7 @@ export class Secret extends ClientFactory {
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
-    const err = handleApiError(res, SecretError)
-    if (err) {
-      throw err
-    }
-
-    if (!res.data) {
-      throw new Error('Response data is missing')
-    }
-
-    return convertSecretInfo(res.data)
+    return secretInfoFromResponse(res)
   }
 
   /**
@@ -230,16 +240,7 @@ export class Secret extends ClientFactory {
       throw new SecretNotFoundError(`Secret ${secret} not found`)
     }
 
-    const err = handleApiError(res, SecretError)
-    if (err) {
-      throw err
-    }
-
-    if (!res.data) {
-      throw new Error('Response data is missing')
-    }
-
-    return convertSecretInfo(res.data)
+    return secretInfoFromResponse(res)
   }
 
   /**
@@ -272,16 +273,7 @@ export class Secret extends ClientFactory {
       throw new SecretNotFoundError(`Secret ${secret} not found`)
     }
 
-    const err = handleApiError(res, SecretError)
-    if (err) {
-      throw err
-    }
-
-    if (!res.data) {
-      throw new Error('Response data is missing')
-    }
-
-    return convertSecretInfo(res.data)
+    return secretInfoFromResponse(res)
   }
 
   /**

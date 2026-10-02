@@ -1,3 +1,5 @@
+import type { FetchResponse } from 'openapi-fetch'
+
 import { ApiClient, handleApiError, components as ApiComponents } from '../api'
 import {
   VolumeApiClient,
@@ -44,6 +46,43 @@ function convertVolumeEntryStat(
     mtime: new Date(entry.mtime),
     ctime: new Date(entry.ctime),
   }
+}
+
+/**
+ * Throw for any non-2xx volume-content response, mapping a 404 to the path
+ * not existing.
+ */
+function throwOnVolumePathError(
+  res: FetchResponse<any, any, any>,
+  path: string
+): void {
+  if (res.response.status === 404) {
+    throw new VolumePathNotFoundError(`Path ${path} not found`)
+  }
+
+  const err = handleApiError(res, VolumeError)
+  if (err) {
+    throw err
+  }
+}
+
+/**
+ * Convert a volume-content response that returns a single entry into an SDK
+ * {@link VolumeEntryStat}, throwing for error responses and empty bodies.
+ */
+function volumeEntryStatFromResponse(
+  res: FetchResponse<any, any, any>,
+  path: string
+): VolumeEntryStat {
+  throwOnVolumePathError(res, path)
+
+  if (!res.data) {
+    throw new Error('Response data is missing')
+  }
+
+  return convertVolumeEntryStat(
+    res.data as VolumeApiComponents['schemas']['VolumeEntryStat']
+  )
 }
 
 /**
@@ -322,14 +361,7 @@ export class Volume extends ClientFactory {
       signal: config.getSignal(),
     })
 
-    if (res.response.status === 404) {
-      throw new VolumePathNotFoundError(`Path ${path} not found`)
-    }
-
-    const err = handleApiError(res, VolumeError)
-    if (err) {
-      throw err
-    }
+    throwOnVolumePathError(res, path)
 
     // VolumeDirectoryListing is an array according to the spec
     const entries = Array.isArray(res.data) ? res.data : []
@@ -366,22 +398,7 @@ export class Volume extends ClientFactory {
       signal: config.getSignal(),
     })
 
-    if (res.response.status === 404) {
-      throw new VolumePathNotFoundError(`Path ${path} not found`)
-    }
-
-    const err = handleApiError(res, VolumeError)
-    if (err) {
-      throw err
-    }
-
-    if (!res.data) {
-      throw new Error('Response data is missing')
-    }
-
-    return convertVolumeEntryStat(
-      res.data as VolumeApiComponents['schemas']['VolumeEntryStat']
-    )
+    return volumeEntryStatFromResponse(res, path)
   }
 
   /**
@@ -408,22 +425,7 @@ export class Volume extends ClientFactory {
       signal: config.getSignal(),
     })
 
-    if (res.response.status === 404) {
-      throw new VolumePathNotFoundError(`Path ${path} not found`)
-    }
-
-    const err = handleApiError(res, VolumeError)
-    if (err) {
-      throw err
-    }
-
-    if (!res.data) {
-      throw new Error('Response data is missing')
-    }
-
-    return convertVolumeEntryStat(
-      res.data as VolumeApiComponents['schemas']['VolumeEntryStat']
-    )
+    return volumeEntryStatFromResponse(res, path)
   }
 
   /**
@@ -483,22 +485,7 @@ export class Volume extends ClientFactory {
       signal: config.getSignal(),
     })
 
-    if (res.response.status === 404) {
-      throw new VolumePathNotFoundError(`Path ${path} not found`)
-    }
-
-    const err = handleApiError(res, VolumeError)
-    if (err) {
-      throw err
-    }
-
-    if (!res.data) {
-      throw new Error('Response data is missing')
-    }
-
-    return convertVolumeEntryStat(
-      res.data as VolumeApiComponents['schemas']['VolumeEntryStat']
-    )
+    return volumeEntryStatFromResponse(res, path)
   }
 
   /**
@@ -641,14 +628,7 @@ export class Volume extends ClientFactory {
       signal: config.getSignal(),
     })
 
-    if (res.response.status === 404) {
-      throw new VolumePathNotFoundError(`Path ${path} not found`)
-    }
-
-    const err = handleApiError(res, VolumeError)
-    if (err) {
-      throw err
-    }
+    throwOnVolumePathError(res, path)
 
     // When the file is empty, `res.data` is `undefined`, so empty values are synthesized below.
     if (format === 'bytes') {
@@ -723,22 +703,7 @@ export class Volume extends ClientFactory {
       ...(streamed && { duplex: 'half' as const }),
     })
 
-    if (res.response.status === 404) {
-      throw new VolumePathNotFoundError(`Path ${path} not found`)
-    }
-
-    const err = handleApiError(res, VolumeError)
-    if (err) {
-      throw err
-    }
-
-    if (!res.data) {
-      throw new Error('Response data is missing')
-    }
-
-    return convertVolumeEntryStat(
-      res.data as VolumeApiComponents['schemas']['VolumeEntryStat']
-    )
+    return volumeEntryStatFromResponse(res, path)
   }
 
   /**
@@ -763,14 +728,7 @@ export class Volume extends ClientFactory {
       signal: config.getSignal(),
     })
 
-    if (res.response.status === 404) {
-      throw new VolumePathNotFoundError(`Path ${path} not found`)
-    }
-
-    const err = handleApiError(res, VolumeError)
-    if (err) {
-      throw err
-    }
+    throwOnVolumePathError(res, path)
   }
 }
 
