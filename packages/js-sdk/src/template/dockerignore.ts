@@ -30,6 +30,8 @@ function escapeRegex(ch: string): string {
 
 // Escapes that keep their regex meaning in a bracket expression, like in Go
 const CLASS_ESCAPES = new Set('dDsSwWfnrtv')
+// Characters that must stay escaped in a bracket expression with the `u` flag
+const CLASS_SYNTAX_CHARS = new Set('^$\\.*+?()[]{}|/-')
 
 // Make a bracket expression body valid with the regex `u` flag
 function translateClass(body: string, backslashIsEscape: boolean): string {
@@ -48,7 +50,7 @@ function translateClass(body: string, backslashIsEscape: boolean): string {
       } else if (/[\p{L}\p{N}]/u.test(next)) {
         cls += next
       } else {
-        cls += next.replace(/[\^$\\.*+?()[\]{}|/-]/, '\\$&')
+        cls += CLASS_SYNTAX_CHARS.has(next) ? '\\' + next : next
       }
     }
   }
