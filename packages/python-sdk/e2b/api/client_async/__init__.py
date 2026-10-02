@@ -1,7 +1,17 @@
 import threading
-from collections.abc import AsyncGenerator
 from functools import partial
-from typing import AsyncIterator, Callable, Dict, List, Optional, Tuple, Union
+from typing import (
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Protocol,
+    Tuple,
+    Union,
+    runtime_checkable,
+)
 
 import httpx
 
@@ -109,21 +119,30 @@ class _TrackedContent:
         release()
 
 
+@runtime_checkable
+class _Closeable(Protocol):
+    def aclose(self) -> Awaitable[object]: ...
+
+
 class _ReplayableContent:
     """A streamed request body mirrored as it is sent, up to
     ``replay_buffer_limit`` bytes, so that a request the server refused can be
-    sent again once the body has been read to its end. Closing the body closes
-    the iterator it reads from, as the retry middleware would."""
+    sent again: as a fresh :meth:`body` when no attempt started reading it, or
+    from the mirror once the body has been read to its end. The iterator the
+    body reads from is closed, as the retry middleware would, when a started body ends or
+    on :meth:`abandon`."""
 
-    __slots__ = ("_content", "_chunks", "_size", "_exhausted")
+    __slots__ = ("_content", "_chunks", "_size", "_started", "_exhausted")
 
     def __init__(self, content: AsyncIterator[bytes]) -> None:
         self._content = content
         self._chunks: Optional[List[bytes]] = []
         self._size = 0
+        self._started = False
         self._exhausted = False
 
     async def body(self) -> AsyncIterator[bytes]:
+        self._started = True
         try:
             async for chunk in self._content:
                 if self._chunks is not None:
@@ -135,15 +154,27 @@ class _ReplayableContent:
                 yield chunk
             self._exhausted = True
         finally:
-            if isinstance(self._content, AsyncGenerator):
-                await self._content.aclose()
+            await self._close()
 
-    def replay(self) -> Optional[bytes]:
-        """The whole body, or ``None`` when it was not read to its end or
-        outgrew the mirror."""
+    def replay(self) -> Union[bytes, AsyncIterator[bytes], None]:
+        """The content to send the request again with, or ``None`` when an
+        attempt stopped reading the body before its end or it outgrew the
+        mirror."""
+        if not self._started:
+            return self.body()
         if not self._exhausted or self._chunks is None:
             return None
         return b"".join(self._chunks)
+
+    async def abandon(self) -> None:
+        """Closes the iterator the body reads from if no attempt started
+        reading it (a started body closes it itself)."""
+        if not self._started:
+            await self._close()
+
+    async def _close(self) -> None:
+        if isinstance(self._content, _Closeable):
+            await self._content.aclose()
 
 
 class BalancingTransport(Transport):
@@ -176,10 +207,12 @@ class BalancingTransport(Transport):
                 response = await connection.transport.execute(request)
             except BaseException as e:
                 self.balancer.release(connection, origin)
-                if retries >= connection_retries or not is_refused_stream(e):
-                    raise
-                replay = content if replayable is None else replayable.replay()
-                if not isinstance(replay, bytes):
+                replay: Union[bytes, AsyncIterator[bytes], None] = None
+                if retries < connection_retries and is_refused_stream(e):
+                    replay = content if replayable is None else replayable.replay()
+                if replay is None:
+                    if replayable is not None:
+                        await replayable.abandon()
                     raise
                 retries += 1
                 request = self._with_content(request, replay)

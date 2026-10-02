@@ -1377,12 +1377,15 @@ class RefusingSyncPool:
     reqwest pool does before the server's refusal can arrive, then answers
     with the body it read."""
 
-    def __init__(self, errors):
+    def __init__(self, errors, read_before_error=True):
         self.errors = list(errors)
+        self.read_before_error = read_before_error
         self.bodies = []
 
     def execute_sync(self, request):
         content = request.content
+        if self.errors and not self.read_before_error:
+            raise self.errors.pop(0)
         body = content if isinstance(content, bytes) else b"".join(content)
         self.bodies.append(body)
         if self.errors:
@@ -1391,12 +1394,15 @@ class RefusingSyncPool:
 
 
 class RefusingAsyncPool:
-    def __init__(self, errors):
+    def __init__(self, errors, read_before_error=True):
         self.errors = list(errors)
+        self.read_before_error = read_before_error
         self.bodies = []
 
     async def execute(self, request):
         content = request.content
+        if self.errors and not self.read_before_error:
+            raise self.errors.pop(0)
         if isinstance(content, bytes):
             body = content
         else:
@@ -1558,3 +1564,105 @@ async def test_async_balancing_transport_does_not_replay_a_body_too_large_to_mir
         )
 
     assert pool.bodies == [b"payload"]
+
+
+class ClosableChunks:
+    """A request body that is not a generator but has a close hook."""
+
+    def __init__(self):
+        self.chunks = [b"pay", b"load"]
+        self.closed = False
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if not self.chunks:
+            raise StopIteration
+        return self.chunks.pop(0)
+
+    def close(self):
+        self.closed = True
+
+
+class AsyncClosableChunks:
+    def __init__(self):
+        self.chunks = [b"pay", b"load"]
+        self.closed = False
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        if not self.chunks:
+            raise StopAsyncIteration
+        return self.chunks.pop(0)
+
+    async def aclose(self):
+        self.closed = True
+
+
+def test_sync_balancing_transport_replays_a_stream_refused_before_its_body_was_read():
+    pool = RefusingSyncPool([refused()], read_before_error=False)
+    transport, connection = sync_balancing_transport(pool)
+    content = ClosableChunks()
+
+    response = transport.execute_sync(
+        SyncRequest("POST", ENVD_HEALTH + "/rpc", content=content)
+    )
+
+    assert list(response.content) == [b"payload"]
+    assert pool.bodies == [b"payload"]
+    assert content.closed
+    assert connection.in_flight(ENVD_HEALTH) == 0
+
+
+@pytest.mark.parametrize("read_before_error", [True, False])
+def test_sync_balancing_transport_closes_a_body_it_does_not_replay(
+    read_before_error,
+):
+    pool = RefusingSyncPool(
+        [WriteError("connection closed")], read_before_error=read_before_error
+    )
+    transport, _ = sync_balancing_transport(pool)
+    content = ClosableChunks()
+
+    with pytest.raises(WriteError):
+        transport.execute_sync(
+            SyncRequest("POST", ENVD_HEALTH + "/rpc", content=content)
+        )
+
+    assert content.closed
+
+
+@pytest.mark.asyncio
+async def test_async_balancing_transport_replays_a_stream_refused_before_its_body_was_read():
+    pool = RefusingAsyncPool([refused()], read_before_error=False)
+    transport, connection = async_balancing_transport(pool)
+    content = AsyncClosableChunks()
+
+    response = await transport.execute(
+        Request("POST", ENVD_HEALTH + "/rpc", content=content)
+    )
+
+    assert [chunk async for chunk in response.content] == [b"payload"]
+    assert pool.bodies == [b"payload"]
+    assert content.closed
+    assert connection.in_flight(ENVD_HEALTH) == 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("read_before_error", [True, False])
+async def test_async_balancing_transport_closes_a_body_it_does_not_replay(
+    read_before_error,
+):
+    pool = RefusingAsyncPool(
+        [WriteError("connection closed")], read_before_error=read_before_error
+    )
+    transport, _ = async_balancing_transport(pool)
+    content = AsyncClosableChunks()
+
+    with pytest.raises(WriteError):
+        await transport.execute(Request("POST", ENVD_HEALTH + "/rpc", content=content))
+
+    assert content.closed
