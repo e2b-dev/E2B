@@ -32,6 +32,7 @@ from e2b.exceptions import (
     VolumeNotFoundException,
     VolumePathNotFoundException,
 )
+from e2b.sandbox.filesystem.filesystem import ReadFormat, validate_read_format
 from e2b.volume.client.api.volumes import (
     get_volumecontent_volume_id_path as get_path,
     get_volumecontent_volume_id_dir as get_dir,
@@ -491,7 +492,7 @@ class Volume(ClientFactory):
     def read_file(
         self,
         path: str,
-        format: Literal["text", "bytes", "stream"] = "text",
+        format: ReadFormat = "text",
         stream_idle_timeout: Optional[float] = None,
         **opts: Unpack[VolumeApiParams],
     ) -> Union[str, bytes, Iterator[bytes]]:
@@ -511,6 +512,7 @@ class Volume(ClientFactory):
 
         :return: File content as string, bytes, or iterator of bytes
         """
+        validate_read_format(format)
         config = self._get_volume_config(**opts)
         api_client = get_volume_api_client(config)
 
