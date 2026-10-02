@@ -17,7 +17,7 @@ from e2b.api.client.api.sandboxes import (
     get_sandboxes_sandbox_id_metrics,
     post_v2_sandboxes,
     post_v_2_sandboxes_sandbox_id_connect,
-    post_sandboxes_sandbox_id_fork,
+    post_v_2_sandboxes_sandbox_id_fork,
     post_sandboxes_sandbox_id_pause,
     post_sandboxes_sandbox_id_snapshots,
     post_sandboxes_sandbox_id_timeout,
@@ -30,7 +30,7 @@ from e2b.api.client.models import (
     NewSandboxV2,
     SandboxSnapshotRequest,
     SandboxTimeoutRequest,
-    SandboxForkRequest,
+    SandboxForkRequestV2,
     SandboxNetworkConfig,
     SandboxPauseRequest,
     SandboxVolumeMount as SandboxVolumeMountAPI,
@@ -62,7 +62,6 @@ from e2b.sandbox.sandbox_api import (
     build_iam_config,
     build_lifecycle_config,
     build_network_config,
-    validate_fork_count,
 )
 from e2b.sandbox_async.paginator import AsyncSandboxPaginator
 
@@ -443,19 +442,20 @@ class SandboxApi(SandboxBase):
         sandbox_id: str,
         timeout: Optional[int] = None,
         count: Optional[int] = None,
+        keep_memory: Optional[bool] = None,
         logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> List[Union[SandboxCreateResponse, Exception]]:
-        validate_fork_count(count)
         config = ConnectionConfig(logger=logger, **cls._resolve_api_params(**opts))
 
         api_client = get_api_client(config)
-        res = await post_sandboxes_sandbox_id_fork.asyncio_detailed(
+        res = await post_v_2_sandboxes_sandbox_id_fork.asyncio_detailed(
             sandbox_id,
             client=api_client,
-            body=SandboxForkRequest(
+            body=SandboxForkRequestV2(
                 timeout=timeout if timeout is not None else UNSET,
                 count=count if count is not None else UNSET,
+                memory=keep_memory if keep_memory is not None else UNSET,
             ),
         )
 

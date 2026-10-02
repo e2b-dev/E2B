@@ -1169,6 +1169,38 @@ components:
             Each fork succeeds or fails independently; the outcome of each is
             reported in its entry of the response list.
 
+    SandboxForkRequestV2:
+      type: object
+      properties:
+        timeout:
+          type: integer
+          format: int32
+          minimum: 1
+          default: 300
+          description: Time to live for the new forked sandboxes in seconds.
+        count:
+          type: integer
+          format: int32
+          minimum: 1
+          default: 1
+          description: >-
+            Number of forked sandboxes to create, capped per team (20 by
+            default). All forks boot from the same snapshot, so the snapshot
+            is captured once regardless of count. Each fork succeeds or fails
+            independently; the outcome of each is reported in its entry of the
+            response list.
+        memory:
+          type: boolean
+          description: >-
+            Whether the forks restore the source sandbox's memory. When false,
+            only the filesystem is captured: the snapshot is smaller and faster
+            to take, and the forks cold-boot (start fresh from disk) instead of
+            restoring memory, so they begin without the source sandbox's running
+            processes, in-memory state, and open connections. The source sandbox
+            keeps running in both cases. Rejected with an error where this
+            capability is not enabled, never silently downgraded to a memory
+            fork. Defaults to true.
+
     SandboxForkResult:
       type: object
       description: >-
@@ -3363,7 +3395,9 @@ paths:
         new sandboxes from that snapshot. Returns one result per requested
         fork, each carrying either the created sandbox or the error that
         prevented it from starting. A non-201 status means the request failed
-        before any fork was attempted.
+        before any fork was attempted. Use POST
+        /v2/sandboxes/{sandboxID}/fork instead.
+      deprecated: true
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
@@ -3510,6 +3544,61 @@ paths:
           $ref: "#/components/responses/503"
         "504":
           $ref: "#/components/responses/504"
+
+  /v2/sandboxes/{sandboxID}/fork:
+    post:
+      summary: Fork sandbox (v2)
+      description: >-
+        Fork the sandbox: checkpoint the running sandbox in place (it is
+        briefly paused, snapshotted with its full memory state, and resumed on
+        its node, keeping its ID and expiration untouched) and create count
+        new sandboxes from that snapshot. Returns one result per requested
+        fork, each carrying either the created sandbox or the error that
+        prevented it from starting. A non-201 status means the request failed
+        before any fork was attempted. An omitted timeout defaults to 300
+        seconds.
+      tags: [sandboxes]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SandboxForkRequestV2"
+      responses:
+        "201":
+          description: >-
+            The sandbox was snapshotted and the forks were attempted; each
+            entry reports one fork's outcome
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SandboxForkResult"
+        "400":
+          $ref: "#/components/responses/400"
+        "409":
+          $ref: "#/components/responses/409"
+        "404":
+          $ref: "#/components/responses/404"
+        "401":
+          $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+        "503":
+          $ref: "#/components/responses/503"
 
   /sandboxes/{sandboxID}/timeout:
     post:

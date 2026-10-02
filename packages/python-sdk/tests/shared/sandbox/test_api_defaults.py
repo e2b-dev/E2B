@@ -2,13 +2,12 @@ from types import SimpleNamespace
 from typing import Any, Dict
 from unittest.mock import AsyncMock, Mock
 
-import pytest
 
-from e2b import AsyncSandbox, InvalidArgumentException, Sandbox
+from e2b import AsyncSandbox, Sandbox
 from e2b.api.client.api.sandboxes import (
     post_v2_sandboxes,
     post_v_2_sandboxes_sandbox_id_connect,
-    post_sandboxes_sandbox_id_fork,
+    post_v_2_sandboxes_sandbox_id_fork,
     post_sandboxes_sandbox_id_pause,
 )
 from e2b.api.client.models import Sandbox as SandboxModel
@@ -100,7 +99,7 @@ async def test_async_create_ignores_deprecated_secure(monkeypatch, test_api_key)
 
 def _sync_fork_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, Any]:
     request = Mock(return_value=SimpleNamespace(status_code=200, parsed=[]))
-    monkeypatch.setattr(post_sandboxes_sandbox_id_fork, "sync_detailed", request)
+    monkeypatch.setattr(post_v_2_sandboxes_sandbox_id_fork, "sync_detailed", request)
 
     Sandbox.fork("sbx-test", api_key=api_key, **kwargs)
 
@@ -109,7 +108,7 @@ def _sync_fork_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, Any]:
 
 async def _async_fork_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, Any]:
     request = AsyncMock(return_value=SimpleNamespace(status_code=200, parsed=[]))
-    monkeypatch.setattr(post_sandboxes_sandbox_id_fork, "asyncio_detailed", request)
+    monkeypatch.setattr(post_v_2_sandboxes_sandbox_id_fork, "asyncio_detailed", request)
 
     await AsyncSandbox.fork("sbx-test", api_key=api_key, **kwargs)
 
@@ -121,6 +120,7 @@ def test_fork_omits_timeout_and_count_when_unset(monkeypatch, test_api_key):
 
     assert "timeout" not in body
     assert "count" not in body
+    assert "memory" not in body
 
 
 def test_fork_sends_explicit_timeout_and_count(monkeypatch, test_api_key):
@@ -130,24 +130,16 @@ def test_fork_sends_explicit_timeout_and_count(monkeypatch, test_api_key):
     assert body["count"] == 2
 
 
-def test_fork_sends_the_maximum_count(monkeypatch, test_api_key):
-    body = _sync_fork_body(monkeypatch, test_api_key, count=20)
+def test_fork_sends_an_explicit_keep_memory(monkeypatch, test_api_key):
+    body = _sync_fork_body(monkeypatch, test_api_key, keep_memory=False)
 
-    assert body["count"] == 20
+    assert body["memory"] is False
 
 
-@pytest.mark.parametrize("count", [0, -1, 21, 101, 1.5, True, "abc"])
-def test_fork_rejects_count_outside_1_to_20(monkeypatch, test_api_key, count):
-    request = Mock(return_value=SimpleNamespace(status_code=200, parsed=[]))
-    monkeypatch.setattr(post_sandboxes_sandbox_id_fork, "sync_detailed", request)
+def test_fork_leaves_the_count_limit_to_the_api(monkeypatch, test_api_key):
+    body = _sync_fork_body(monkeypatch, test_api_key, count=101)
 
-    with pytest.raises(
-        InvalidArgumentException,
-        match="count must be an integer between 1 and 20",
-    ):
-        Sandbox.fork("sbx-test", api_key=test_api_key, count=count)
-
-    request.assert_not_called()
+    assert body["count"] == 101
 
 
 async def test_async_fork_omits_timeout_and_count_when_unset(monkeypatch, test_api_key):
@@ -155,6 +147,7 @@ async def test_async_fork_omits_timeout_and_count_when_unset(monkeypatch, test_a
 
     assert "timeout" not in body
     assert "count" not in body
+    assert "memory" not in body
 
 
 async def test_async_fork_sends_explicit_timeout_and_count(monkeypatch, test_api_key):
@@ -164,26 +157,16 @@ async def test_async_fork_sends_explicit_timeout_and_count(monkeypatch, test_api
     assert body["count"] == 2
 
 
-async def test_async_fork_sends_the_maximum_count(monkeypatch, test_api_key):
-    body = await _async_fork_body(monkeypatch, test_api_key, count=20)
+async def test_async_fork_sends_an_explicit_keep_memory(monkeypatch, test_api_key):
+    body = await _async_fork_body(monkeypatch, test_api_key, keep_memory=False)
 
-    assert body["count"] == 20
+    assert body["memory"] is False
 
 
-@pytest.mark.parametrize("count", [0, -1, 21, 101, 1.5, True, "abc"])
-async def test_async_fork_rejects_count_outside_1_to_20(
-    monkeypatch, test_api_key, count
-):
-    request = AsyncMock(return_value=SimpleNamespace(status_code=200, parsed=[]))
-    monkeypatch.setattr(post_sandboxes_sandbox_id_fork, "asyncio_detailed", request)
+async def test_async_fork_leaves_the_count_limit_to_the_api(monkeypatch, test_api_key):
+    body = await _async_fork_body(monkeypatch, test_api_key, count=101)
 
-    with pytest.raises(
-        InvalidArgumentException,
-        match="count must be an integer between 1 and 20",
-    ):
-        await AsyncSandbox.fork("sbx-test", api_key=test_api_key, count=count)
-
-    request.assert_not_called()
+    assert body["count"] == 101
 
 
 def _sync_pause_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, Any]:

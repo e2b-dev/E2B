@@ -6,7 +6,7 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error import Error
-from ...models.sandbox_fork_request import SandboxForkRequest
+from ...models.sandbox_fork_request_v2 import SandboxForkRequestV2
 from ...models.sandbox_fork_result import SandboxForkResult
 from ...types import Response
 
@@ -14,13 +14,13 @@ from ...types import Response
 def _get_kwargs(
     sandbox_id: str,
     *,
-    body: SandboxForkRequest,
+    body: SandboxForkRequestV2,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     _kwargs: dict[str, Any] = {
         "method": "post",
-        "url": f"/sandboxes/{sandbox_id}/fork",
+        "url": f"/v2/sandboxes/{sandbox_id}/fork",
     }
 
     _kwargs["json"] = body.to_dict()
@@ -43,6 +43,10 @@ def _parse_response(
             response_201.append(response_201_item)
 
         return response_201
+    if response.status_code == 400:
+        response_400 = Error.from_dict(response.json())
+
+        return response_400
     if response.status_code == 401:
         response_401 = Error.from_dict(response.json())
 
@@ -88,19 +92,19 @@ def sync_detailed(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: SandboxForkRequest,
+    body: SandboxForkRequestV2,
 ) -> Response[Union[Error, list["SandboxForkResult"]]]:
-    """Fork sandbox
+    """Fork sandbox (v2)
 
      Fork the sandbox: checkpoint the running sandbox in place (it is briefly paused, snapshotted with
     its full memory state, and resumed on its node, keeping its ID and expiration untouched) and create
     count new sandboxes from that snapshot. Returns one result per requested fork, each carrying either
     the created sandbox or the error that prevented it from starting. A non-201 status means the request
-    failed before any fork was attempted. Use POST /v2/sandboxes/{sandboxID}/fork instead.
+    failed before any fork was attempted. An omitted timeout defaults to 300 seconds.
 
     Args:
         sandbox_id (str):
-        body (SandboxForkRequest):
+        body (SandboxForkRequestV2):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -126,19 +130,19 @@ def sync(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: SandboxForkRequest,
+    body: SandboxForkRequestV2,
 ) -> Optional[Union[Error, list["SandboxForkResult"]]]:
-    """Fork sandbox
+    """Fork sandbox (v2)
 
      Fork the sandbox: checkpoint the running sandbox in place (it is briefly paused, snapshotted with
     its full memory state, and resumed on its node, keeping its ID and expiration untouched) and create
     count new sandboxes from that snapshot. Returns one result per requested fork, each carrying either
     the created sandbox or the error that prevented it from starting. A non-201 status means the request
-    failed before any fork was attempted. Use POST /v2/sandboxes/{sandboxID}/fork instead.
+    failed before any fork was attempted. An omitted timeout defaults to 300 seconds.
 
     Args:
         sandbox_id (str):
-        body (SandboxForkRequest):
+        body (SandboxForkRequestV2):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -159,19 +163,19 @@ async def asyncio_detailed(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: SandboxForkRequest,
+    body: SandboxForkRequestV2,
 ) -> Response[Union[Error, list["SandboxForkResult"]]]:
-    """Fork sandbox
+    """Fork sandbox (v2)
 
      Fork the sandbox: checkpoint the running sandbox in place (it is briefly paused, snapshotted with
     its full memory state, and resumed on its node, keeping its ID and expiration untouched) and create
     count new sandboxes from that snapshot. Returns one result per requested fork, each carrying either
     the created sandbox or the error that prevented it from starting. A non-201 status means the request
-    failed before any fork was attempted. Use POST /v2/sandboxes/{sandboxID}/fork instead.
+    failed before any fork was attempted. An omitted timeout defaults to 300 seconds.
 
     Args:
         sandbox_id (str):
-        body (SandboxForkRequest):
+        body (SandboxForkRequestV2):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -195,19 +199,19 @@ async def asyncio(
     sandbox_id: str,
     *,
     client: AuthenticatedClient,
-    body: SandboxForkRequest,
+    body: SandboxForkRequestV2,
 ) -> Optional[Union[Error, list["SandboxForkResult"]]]:
-    """Fork sandbox
+    """Fork sandbox (v2)
 
      Fork the sandbox: checkpoint the running sandbox in place (it is briefly paused, snapshotted with
     its full memory state, and resumed on its node, keeping its ID and expiration untouched) and create
     count new sandboxes from that snapshot. Returns one result per requested fork, each carrying either
     the created sandbox or the error that prevented it from starting. A non-201 status means the request
-    failed before any fork was attempted. Use POST /v2/sandboxes/{sandboxID}/fork instead.
+    failed before any fork was attempted. An omitted timeout defaults to 300 seconds.
 
     Args:
         sandbox_id (str):
-        body (SandboxForkRequest):
+        body (SandboxForkRequestV2):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

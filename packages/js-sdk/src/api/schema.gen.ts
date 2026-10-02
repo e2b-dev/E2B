@@ -231,7 +231,8 @@ export interface paths {
         put?: never;
         /**
          * Fork sandbox
-         * @description Fork the sandbox: checkpoint the running sandbox in place (it is briefly paused, snapshotted with its full memory state, and resumed on its node, keeping its ID and expiration untouched) and create count new sandboxes from that snapshot. Returns one result per requested fork, each carrying either the created sandbox or the error that prevented it from starting. A non-201 status means the request failed before any fork was attempted.
+         * @deprecated
+         * @description Fork the sandbox: checkpoint the running sandbox in place (it is briefly paused, snapshotted with its full memory state, and resumed on its node, keeping its ID and expiration untouched) and create count new sandboxes from that snapshot. Returns one result per requested fork, each carrying either the created sandbox or the error that prevented it from starting. A non-201 status means the request failed before any fork was attempted. Use POST /v2/sandboxes/{sandboxID}/fork instead.
          */
         post: {
             parameters: {
@@ -1749,6 +1750,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v2/sandboxes/{sandboxID}/fork": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Fork sandbox (v2)
+         * @description Fork the sandbox: checkpoint the running sandbox in place (it is briefly paused, snapshotted with its full memory state, and resumed on its node, keeping its ID and expiration untouched) and create count new sandboxes from that snapshot. Returns one result per requested fork, each carrying either the created sandbox or the error that prevented it from starting. A non-201 status means the request failed before any fork was attempted. An omitted timeout defaults to 300 seconds.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    sandboxID: components["parameters"]["sandboxID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["SandboxForkRequestV2"];
+                };
+            };
+            responses: {
+                /** @description The sandbox was snapshotted and the forks were attempted; each entry reports one fork's outcome */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SandboxForkResult"][];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                409: components["responses"]["409"];
+                429: components["responses"]["429"];
+                500: components["responses"]["500"];
+                503: components["responses"]["503"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v2/sandboxes/{sandboxID}/logs": {
         parameters: {
             query?: never;
@@ -2534,6 +2587,22 @@ export interface components {
              * Format: int32
              * @description Time to live for the new forked sandboxes in seconds.
              * @default 15
+             */
+            timeout?: number;
+        };
+        SandboxForkRequestV2: {
+            /**
+             * Format: int32
+             * @description Number of forked sandboxes to create, capped per team (20 by default). All forks boot from the same snapshot, so the snapshot is captured once regardless of count. Each fork succeeds or fails independently; the outcome of each is reported in its entry of the response list.
+             * @default 1
+             */
+            count?: number;
+            /** @description Whether the forks restore the source sandbox's memory. When false, only the filesystem is captured: the snapshot is smaller and faster to take, and the forks cold-boot (start fresh from disk) instead of restoring memory, so they begin without the source sandbox's running processes, in-memory state, and open connections. The source sandbox keeps running in both cases. Rejected with an error where this capability is not enabled, never silently downgraded to a memory fork. Defaults to true. */
+            memory?: boolean;
+            /**
+             * Format: int32
+             * @description Time to live for the new forked sandboxes in seconds.
+             * @default 300
              */
             timeout?: number;
         };

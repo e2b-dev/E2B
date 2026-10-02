@@ -396,8 +396,8 @@ export class Sandbox extends SandboxApi {
   /**
    * Fork a running sandbox specified by sandbox ID.
    *
-   * The sandbox is checkpointed in place (briefly paused, snapshotted with its
-   * full memory state, and resumed — its ID and expiration stay untouched) and
+   * The sandbox is checkpointed in place (briefly paused, snapshotted, and
+   * resumed — its ID and expiration stay untouched) and
    * `count` new sandboxes are created from that snapshot. All forks boot from
    * the same snapshot, so the snapshot is captured once regardless of count.
    *
@@ -408,7 +408,7 @@ export class Sandbox extends SandboxApi {
    * classes as other API errors (e.g. 429 to `RateLimitError`).
    *
    * @param sandboxId sandbox ID.
-   * @param opts fork options — `count`, `timeoutMs` and connection options.
+   * @param opts fork options — `count`, `timeoutMs`, `keepMemory` and connection options.
    *
    * @returns array with one entry per requested fork — a sandbox instance or an error.
    *
@@ -434,6 +434,7 @@ export class Sandbox extends SandboxApi {
       sandboxId,
       apiOpts?.timeoutMs,
       apiOpts?.count,
+      apiOpts?.keepMemory,
       apiOpts
     )
 
@@ -477,8 +478,8 @@ export class Sandbox extends SandboxApi {
   /**
    * Fork the sandbox.
    *
-   * The sandbox is checkpointed in place (briefly paused, snapshotted with its
-   * full memory state, and resumed — its ID and expiration stay untouched) and
+   * The sandbox is checkpointed in place (briefly paused, snapshotted, and
+   * resumed — its ID and expiration stay untouched) and
    * `count` new sandboxes are created from that snapshot. All forks boot from
    * the same snapshot, so the snapshot is captured once regardless of count.
    *
@@ -488,7 +489,7 @@ export class Sandbox extends SandboxApi {
    * (`Promise.allSettled`-style). Per-fork error codes map to the same error
    * classes as other API errors (e.g. 429 to `RateLimitError`).
    *
-   * @param opts fork options — `count`, `timeoutMs` and connection options.
+   * @param opts fork options — `count`, `timeoutMs`, `keepMemory` and connection options.
    *
    * @returns array with one entry per requested fork — a sandbox instance or an error.
    *

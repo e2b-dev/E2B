@@ -1,0 +1,83 @@
+from collections.abc import Mapping
+from typing import Any, TypeVar, Union
+
+from attrs import define as _attrs_define
+from attrs import field as _attrs_field
+
+from ..types import UNSET, Unset
+
+T = TypeVar("T", bound="SandboxForkRequestV2")
+
+
+@_attrs_define
+class SandboxForkRequestV2:
+    """
+    Attributes:
+        timeout (Union[Unset, int]): Time to live for the new forked sandboxes in seconds. Default: 300.
+        count (Union[Unset, int]): Number of forked sandboxes to create, capped per team (20 by default). All forks boot
+            from the same snapshot, so the snapshot is captured once regardless of count. Each fork succeeds or fails
+            independently; the outcome of each is reported in its entry of the response list. Default: 1.
+        memory (Union[Unset, bool]): Whether the forks restore the source sandbox's memory. When false, only the
+            filesystem is captured: the snapshot is smaller and faster to take, and the forks cold-boot (start fresh from
+            disk) instead of restoring memory, so they begin without the source sandbox's running processes, in-memory
+            state, and open connections. The source sandbox keeps running in both cases. Rejected with an error where this
+            capability is not enabled, never silently downgraded to a memory fork. Defaults to true.
+    """
+
+    timeout: Union[Unset, int] = 300
+    count: Union[Unset, int] = 1
+    memory: Union[Unset, bool] = UNSET
+    additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        timeout = self.timeout
+
+        count = self.count
+
+        memory = self.memory
+
+        field_dict: dict[str, Any] = {}
+        field_dict.update(self.additional_properties)
+        field_dict.update({})
+        if timeout is not UNSET:
+            field_dict["timeout"] = timeout
+        if count is not UNSET:
+            field_dict["count"] = count
+        if memory is not UNSET:
+            field_dict["memory"] = memory
+
+        return field_dict
+
+    @classmethod
+    def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        d = dict(src_dict)
+        timeout = d.pop("timeout", UNSET)
+
+        count = d.pop("count", UNSET)
+
+        memory = d.pop("memory", UNSET)
+
+        sandbox_fork_request_v2 = cls(
+            timeout=timeout,
+            count=count,
+            memory=memory,
+        )
+
+        sandbox_fork_request_v2.additional_properties = d
+        return sandbox_fork_request_v2
+
+    @property
+    def additional_keys(self) -> list[str]:
+        return list(self.additional_properties.keys())
+
+    def __getitem__(self, key: str) -> Any:
+        return self.additional_properties[key]
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self.additional_properties[key] = value
+
+    def __delitem__(self, key: str) -> None:
+        del self.additional_properties[key]
+
+    def __contains__(self, key: str) -> bool:
+        return key in self.additional_properties

@@ -1,7 +1,7 @@
 import { afterAll, afterEach, beforeAll, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
 
-import { InvalidArgumentError, Sandbox } from '../../src'
+import { Sandbox } from '../../src'
 import { TEST_API_KEY, apiUrl } from '../setup'
 import { setupMockApi } from '../mockApi'
 
@@ -27,7 +27,7 @@ const server = setupMockApi(
       envdVersion: '0.2.4',
     })
   }),
-  http.post(apiUrl('/sandboxes/:sandboxID/fork'), async ({ request }) => {
+  http.post(apiUrl('/v2/sandboxes/:sandboxID/fork'), async ({ request }) => {
     lastForkBody = (await request.json()) as Record<string, unknown>
     return HttpResponse.json([
       {
@@ -90,6 +90,7 @@ test('Sandbox.fork omits timeout and count when unset', async () => {
   expect(lastForkBody).toBeDefined()
   expect(lastForkBody).not.toHaveProperty('timeout')
   expect(lastForkBody).not.toHaveProperty('count')
+  expect(lastForkBody).not.toHaveProperty('memory')
 })
 
 test('Sandbox.fork sends explicit timeout and count', async () => {
@@ -103,26 +104,23 @@ test('Sandbox.fork sends explicit timeout and count', async () => {
   expect(lastForkBody?.count).toBe(2)
 })
 
-test('Sandbox.fork sends the maximum count', async () => {
+test('Sandbox.fork leaves the count limit to the API', async () => {
   await Sandbox.fork('test-sandbox-id', {
     apiKey: TEST_API_KEY,
-    count: 20,
+    count: 101,
   })
 
-  expect(lastForkBody?.count).toBe(20)
+  expect(lastForkBody?.count).toBe(101)
 })
 
-test.each([0, -1, 21, 101, 1.5])(
-  'Sandbox.fork rejects count %s',
-  async (count) => {
-    await expect(
-      Sandbox.fork('test-sandbox-id', { apiKey: TEST_API_KEY, count })
-    ).rejects.toThrow(
-      new InvalidArgumentError('count must be an integer between 1 and 20')
-    )
-    expect(lastForkBody).toBeUndefined()
-  }
-)
+test('Sandbox.fork sends an explicit keepMemory', async () => {
+  await Sandbox.fork('test-sandbox-id', {
+    apiKey: TEST_API_KEY,
+    keepMemory: false,
+  })
+
+  expect(lastForkBody?.memory).toBe(false)
+})
 
 test('Sandbox.pause omits memory when keepMemory is unset', async () => {
   await Sandbox.pause('test-sandbox-id', { apiKey: TEST_API_KEY })

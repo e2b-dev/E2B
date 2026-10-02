@@ -396,14 +396,14 @@ class AsyncSandbox(SandboxApi):
         self,
         timeout: Optional[int] = None,
         count: Optional[int] = None,
+        keep_memory: Optional[bool] = None,
         **opts: Unpack[ApiParams],
     ) -> List[Union[Self, Exception]]:
         """
         Fork the sandbox.
 
-        The sandbox is checkpointed in place (briefly paused, snapshotted with
-        its full memory state, and resumed — its ID and expiration stay
-        untouched) and `count` new sandboxes are created from that snapshot.
+        The sandbox is checkpointed in place (briefly paused, snapshotted, and
+        resumed — its ID and expiration stay untouched) and `count` new sandboxes are created from that snapshot.
         All forks boot from the same snapshot, so the snapshot is captured once
         regardless of count.
 
@@ -413,8 +413,9 @@ class AsyncSandbox(SandboxApi):
         error codes map to the same exception classes as other API errors
         (e.g. 429 to `RateLimitException`).
 
-        :param timeout: Timeout for the forked sandboxes in **seconds**.
-        :param count: Number of forked sandboxes to create. An integer between 1 and 20. Omitted, the API default applies.
+        :param timeout: Timeout for the forked sandboxes in **seconds**. Omitted, the API default applies.
+        :param count: Number of forked sandboxes to create. The API enforces a per-team maximum; a larger count raises `SandboxException` (``status_code`` 400) for the whole request before any fork is attempted. Omitted, the API default applies.
+        :param keep_memory: When `False`, only the filesystem is captured: the forks cold-boot (start fresh from disk) without the source sandbox's running processes, in-memory state, and open connections. The source sandbox keeps running either way. Omitted, the forks restore the source's memory.
 
         :return: List with one entry per requested fork — a sandbox instance or an exception
 
@@ -433,15 +434,15 @@ class AsyncSandbox(SandboxApi):
         sandbox_id: str,
         timeout: Optional[int] = None,
         count: Optional[int] = None,
+        keep_memory: Optional[bool] = None,
         logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> List[Union["AsyncSandbox", Exception]]:
         """
         Fork a running sandbox specified by sandbox ID.
 
-        The sandbox is checkpointed in place (briefly paused, snapshotted with
-        its full memory state, and resumed — its ID and expiration stay
-        untouched) and `count` new sandboxes are created from that snapshot.
+        The sandbox is checkpointed in place (briefly paused, snapshotted, and
+        resumed — its ID and expiration stay untouched) and `count` new sandboxes are created from that snapshot.
         All forks boot from the same snapshot, so the snapshot is captured once
         regardless of count.
 
@@ -452,8 +453,9 @@ class AsyncSandbox(SandboxApi):
         (e.g. 429 to `RateLimitException`).
 
         :param sandbox_id: Sandbox ID
-        :param timeout: Timeout for the forked sandboxes in **seconds**.
-        :param count: Number of forked sandboxes to create. An integer between 1 and 20. Omitted, the API default applies.
+        :param timeout: Timeout for the forked sandboxes in **seconds**. Omitted, the API default applies.
+        :param count: Number of forked sandboxes to create. The API enforces a per-team maximum; a larger count raises `SandboxException` (``status_code`` 400) for the whole request before any fork is attempted. Omitted, the API default applies.
+        :param keep_memory: When `False`, only the filesystem is captured: the forks cold-boot (start fresh from disk) without the source sandbox's running processes, in-memory state, and open connections. The source sandbox keeps running either way. Omitted, the forks restore the source's memory.
         :param logger: Logger used for request and response logging for the forked sandboxes. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
 
         :return: List with one entry per requested fork — a sandbox instance or an exception
@@ -472,14 +474,14 @@ class AsyncSandbox(SandboxApi):
         self,
         timeout: Optional[int] = None,
         count: Optional[int] = None,
+        keep_memory: Optional[bool] = None,
         **opts: Unpack[ApiParams],
     ) -> List[Union[Self, Exception]]:
         """
         Fork the sandbox.
 
-        The sandbox is checkpointed in place (briefly paused, snapshotted with
-        its full memory state, and resumed — its ID and expiration stay
-        untouched) and `count` new sandboxes are created from that snapshot.
+        The sandbox is checkpointed in place (briefly paused, snapshotted, and
+        resumed — its ID and expiration stay untouched) and `count` new sandboxes are created from that snapshot.
         All forks boot from the same snapshot, so the snapshot is captured once
         regardless of count.
 
@@ -489,8 +491,9 @@ class AsyncSandbox(SandboxApi):
         error codes map to the same exception classes as other API errors
         (e.g. 429 to `RateLimitException`).
 
-        :param timeout: Timeout for the forked sandboxes in **seconds**.
-        :param count: Number of forked sandboxes to create. An integer between 1 and 20. Omitted, the API default applies.
+        :param timeout: Timeout for the forked sandboxes in **seconds**. Omitted, the API default applies.
+        :param count: Number of forked sandboxes to create. The API enforces a per-team maximum; a larger count raises `SandboxException` (``status_code`` 400) for the whole request before any fork is attempted. Omitted, the API default applies.
+        :param keep_memory: When `False`, only the filesystem is captured: the forks cold-boot (start fresh from disk) without the source sandbox's running processes, in-memory state, and open connections. The source sandbox keeps running either way. Omitted, the forks restore the source's memory.
 
         :return: List with one entry per requested fork — a sandbox instance or an exception
 
@@ -505,6 +508,7 @@ class AsyncSandbox(SandboxApi):
             self.sandbox_id,
             timeout=timeout,
             count=count,
+            keep_memory=keep_memory,
             **self.connection_config.get_api_params(**opts),
         )
 
@@ -1098,6 +1102,7 @@ class AsyncSandbox(SandboxApi):
         sandbox_id: str,
         timeout: Optional[int] = None,
         count: Optional[int] = None,
+        keep_memory: Optional[bool] = None,
         logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> List[Union[Self, Exception]]:
@@ -1106,6 +1111,7 @@ class AsyncSandbox(SandboxApi):
             sandbox_id=sandbox_id,
             timeout=timeout,
             count=count,
+            keep_memory=keep_memory,
             logger=logger,
             **params,
         )
