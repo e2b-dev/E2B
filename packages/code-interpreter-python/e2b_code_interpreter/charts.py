@@ -1,4 +1,5 @@
 import enum
+from dataclasses import dataclass
 from typing import Any, List, Tuple, Optional, Union
 
 
@@ -33,6 +34,7 @@ class ScaleType(str, enum.Enum):
     UNKNOWN = "unknown"
 
 
+@dataclass(init=False, repr=False, eq=False)
 class Chart:
     """
     Extracted data from a chart. It's useful for building an interactive charts or custom visualizations.
@@ -53,6 +55,7 @@ class Chart:
         return self._raw_data
 
 
+@dataclass(init=False, repr=False, eq=False)
 class Chart2D(Chart):
     x_label: Optional[str]
     y_label: Optional[str]
@@ -67,6 +70,7 @@ class Chart2D(Chart):
         self.y_unit = kwargs["y_unit"]
 
 
+@dataclass(init=False, repr=False, eq=False)
 class PointData:
     label: str
     points: List[Tuple[Union[str, float], Union[str, float]]]
@@ -76,6 +80,7 @@ class PointData:
         self.points = [(x, y) for x, y in kwargs["points"]]
 
 
+@dataclass(init=False, repr=False, eq=False)
 class PointChart(Chart2D):
     x_ticks: List[Union[str, float]]
     x_tick_labels: List[str]
@@ -112,14 +117,17 @@ class PointChart(Chart2D):
         self.elements = [PointData(**d) for d in kwargs["elements"]]
 
 
+@dataclass(init=False, repr=False, eq=False)
 class LineChart(PointChart):
     type = ChartType.LINE
 
 
+@dataclass(init=False, repr=False, eq=False)
 class ScatterChart(PointChart):
     type = ChartType.SCATTER
 
 
+@dataclass(init=False, repr=False, eq=False)
 class BarData:
     label: str
     group: str
@@ -131,6 +139,7 @@ class BarData:
         self.group = kwargs["group"]
 
 
+@dataclass(init=False, repr=False, eq=False)
 class BarChart(Chart2D):
     type = ChartType.BAR
 
@@ -141,6 +150,7 @@ class BarChart(Chart2D):
         self.elements = [BarData(**d) for d in kwargs["elements"]]
 
 
+@dataclass(init=False, repr=False, eq=False)
 class PieData:
     label: str
     angle: float
@@ -152,6 +162,7 @@ class PieData:
         self.radius = kwargs["radius"]
 
 
+@dataclass(init=False, repr=False, eq=False)
 class PieChart(Chart):
     type = ChartType.PIE
 
@@ -162,6 +173,7 @@ class PieChart(Chart):
         self.elements = [PieData(**d) for d in kwargs["elements"]]
 
 
+@dataclass(init=False, repr=False, eq=False)
 class BoxAndWhiskerData:
     label: str
     min: float
@@ -181,6 +193,7 @@ class BoxAndWhiskerData:
         self.outliers = kwargs.get("outliers") or []
 
 
+@dataclass(init=False, repr=False, eq=False)
 class BoxAndWhiskerChart(Chart2D):
     type = ChartType.BOX_AND_WHISKER
 
@@ -191,6 +204,7 @@ class BoxAndWhiskerChart(Chart2D):
         self.elements = [BoxAndWhiskerData(**d) for d in kwargs["elements"]]
 
 
+@dataclass(init=False, repr=False, eq=False)
 class SuperChart(Chart):
     type = ChartType.SUPERCHART
 
