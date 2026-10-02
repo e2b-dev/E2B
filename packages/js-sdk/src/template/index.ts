@@ -1043,8 +1043,8 @@ export class TemplateBase
    * Internal implementation of the template build process.
    *
    * @param client API client for communicating with E2B backend
+   * @param config Connection configuration for the build.
    * @param name Template name in 'name' or 'name:tag' format
-   * @param tags Additional tags to assign to the build
    * @param options Build configuration options
    * @throws BuildError if the build fails
    */
