@@ -9,7 +9,7 @@ https://github.com/moby/patternmatcher
 import os
 import posixpath
 import re
-from typing import List
+from typing import Callable, List
 
 from e2b.exceptions import TemplateException
 
@@ -26,10 +26,14 @@ def _clean(pattern: str) -> str:
     return posixpath.normpath(re.sub("/+", "/", pattern))
 
 
-def _compile(pattern: str) -> "re.Pattern[str]":
+def _compile(pattern: str) -> Callable[[str], bool]:
+    # Like moby, use plain string checks for patterns without wildcards and
+    # only fall back to a regex otherwise
     regex = "^"
+    match_type = "exact"
     i, n = 0, len(pattern)
     while i < n:
+        first = i == 0
         ch = pattern[i]
         i += 1
         if ch == "*":
@@ -38,11 +42,20 @@ def _compile(pattern: str) -> "re.Pattern[str]":
                 # Treat "**/" as "**"
                 if i < n and pattern[i] == "/":
                     i += 1
-                regex += ".*" if i >= n else "(.*/)?"
+                if i >= n:
+                    regex += ".*"
+                    match_type = "prefix" if match_type == "exact" else "regex"
+                else:
+                    regex += "(.*/)?"
+                    match_type = "regex"
+                if first:
+                    match_type = "suffix"
             else:
                 regex += "[^/]*"
+                match_type = "regex"
         elif ch == "?":
             regex += "[^/]"
+            match_type = "regex"
         elif ch == "[":
             # Copy a bracket expression as is, a leading "^" negates it
             j = i
@@ -54,6 +67,10 @@ def _compile(pattern: str) -> "re.Pattern[str]":
                 j += 1
             regex += pattern[i - 1 : j + 1]
             i = j + 1
+            match_type = "regex"
+        elif ch == "]":
+            regex += ch
+            match_type = "regex"
         elif ch in _LITERAL_REGEX_CHARS:
             regex += "\\" + ch
         elif ch == "\\" and not _BACKSLASH_IS_SEPARATOR:
@@ -61,21 +78,32 @@ def _compile(pattern: str) -> "re.Pattern[str]":
             if i < n:
                 regex += re.escape(pattern[i])
                 i += 1
+                match_type = "regex"
             else:
                 regex += "\\\\"
         else:
             regex += ch
-    return re.compile(regex + "$")
+
+    if match_type == "exact":
+        return lambda path: path == pattern
+    if match_type == "prefix":
+        prefix = pattern[:-2]
+        return lambda path: path.startswith(prefix)
+    if match_type == "suffix":
+        suffix = pattern[2:]
+        # "**/foo" also matches "foo"
+        return lambda path: path.endswith(suffix) or (
+            suffix.startswith("/") and path == suffix[1:]
+        )
+    compiled = re.compile(regex + r"\Z")
+    return lambda path: compiled.match(path) is not None
 
 
 class _Pattern:
     def __init__(self, cleaned_pattern: str, exclusion: bool):
         self.exclusion = exclusion
         self.dirs = cleaned_pattern.split("/")
-        self._regex = _compile(cleaned_pattern)
-
-    def match(self, path: str) -> bool:
-        return self._regex.match(path) is not None
+        self.match = _compile(cleaned_pattern)
 
 
 class PatternMatcher:
@@ -110,26 +138,33 @@ class PatternMatcher:
 
     def matches(self, path: str) -> bool:
         """
-        Whether the path or one of its parent directories is excluded.
+        Whether the path is excluded. Like BuildKit, the patterns are evaluated
+        on each parent directory first, and a pattern that matched a parent
+        directory also matches the paths under it.
 
         :param path: Slash-separated path relative to the context root
         :return: True if the path is excluded
         """
-        parent_path = posixpath.dirname(path)
-        parent_dirs = parent_path.split("/") if parent_path else []
-
+        segments = path.split("/")
+        parent_matched: List[bool] = []
         matched = False
-        for pattern in self._patterns:
-            # An inclusion can't change an already matched path, and an
-            # exclusion can't change a path that hasn't matched yet
-            if pattern.exclusion != matched:
-                continue
-            match = pattern.match(path) or any(
-                pattern.match("/".join(parent_dirs[: i + 1]))
-                for i in range(len(parent_dirs))
-            )
-            if match:
-                matched = not pattern.exclusion
+        for depth in range(1, len(segments) + 1):
+            current = "/".join(segments[:depth])
+            current_matched: List[bool] = []
+            matched = False
+            for i, pattern in enumerate(self._patterns):
+                match = bool(parent_matched) and parent_matched[i]
+                if not match:
+                    # An inclusion can't change an already matched path, and
+                    # an exclusion can't change a path that hasn't matched yet
+                    if pattern.exclusion != matched:
+                        current_matched.append(False)
+                        continue
+                    match = pattern.match(current)
+                current_matched.append(match)
+                if match:
+                    matched = not pattern.exclusion
+            parent_matched = current_matched
         return matched
 
     def may_match_under(self, dir_path: str) -> bool:

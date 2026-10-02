@@ -413,6 +413,34 @@ describe('getAllFilesInPath', () => {
       ])
     })
 
+    test('should not re-include a path through a negated parent directory', async () => {
+      const files = await relativePaths('.', ['src/app.ts', '**/*.js', '!src'])
+      expect(files).not.toContain('src/app.ts')
+      expect(files).not.toContain('src/node_modules/lib.js')
+      expect(files).toContain('src/app.spec.ts')
+    })
+
+    test('should match a leading globstar with a literal suffix', async () => {
+      for (const name of ['root.txt', 'src/nested.txt', 'keep.txt.bak']) {
+        await writeFile(join(testDir, name), 'x')
+      }
+      const files = await relativePaths('.', ['**.txt', '**/generated'])
+      expect(files).not.toContain('root.txt')
+      expect(files).not.toContain('src/nested.txt')
+      expect(files).not.toContain('src/generated/api.ts')
+      expect(files).toContain('keep.txt.bak')
+    })
+
+    test('should match characters outside the BMP as a single character', async () => {
+      for (const name of ['😀.txt', '😀😀.txt']) {
+        await writeFile(join(testDir, name), 'x')
+      }
+      const files = await relativePaths('*', ['?.txt'])
+      expect(files).not.toContain('😀.txt')
+      expect(files).toContain('😀😀.txt')
+      expect(await relativePaths('*', ['[😀]?.txt'])).not.toContain('😀😀.txt')
+    })
+
     test('should make absolute patterns inside the context relative', async () => {
       const files = await relativePaths('.', [
         join(testDir, 'src'),

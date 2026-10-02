@@ -25,7 +25,34 @@ const WILDCARD_CHARS = /[*?[\\]/
 const backslashIsSeparator = () => path.sep === '\\'
 
 function escapeRegex(ch: string): string {
-  return ch.replace(/[.*+?^${}()|[\]\\/-]/g, '\\$&')
+  return ch.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
+}
+
+// Escapes that keep their regex meaning in a bracket expression, like in Go
+const CLASS_ESCAPES = new Set('dDsSwWfnrtv')
+
+// Make a bracket expression body valid with the regex `u` flag
+function translateClass(body: string, backslashIsEscape: boolean): string {
+  let cls = ''
+  let i = 0
+  while (i < body.length) {
+    const ch = body[i++]
+    if (ch !== '\\') {
+      cls += ch
+    } else if (!backslashIsEscape || i >= body.length) {
+      cls += '\\\\'
+    } else {
+      const next = body[i++]
+      if (CLASS_ESCAPES.has(next)) {
+        cls += '\\' + next
+      } else if (/[\p{L}\p{N}]/u.test(next)) {
+        cls += next
+      } else {
+        cls += next.replace(/[\^$\\.*+?()[\]{}|/-]/, '\\$&')
+      }
+    }
+  }
+  return cls
 }
 
 // Equivalent of Go's filepath.Clean followed by filepath.ToSlash
@@ -36,12 +63,18 @@ function clean(pattern: string): string {
   return path.posix.normalize(pattern).replace(/(.)\/$/, '$1')
 }
 
-function compile(pattern: string): RegExp {
+type Matcher = (p: string) => boolean
+
+// Like moby, use plain string checks for patterns without wildcards and only
+// fall back to a regex otherwise
+function compile(pattern: string): Matcher {
   let regex = '^'
+  let matchType: 'exact' | 'prefix' | 'suffix' | 'regex' = 'exact'
   const n = pattern.length
   const backslashIsEscape = !backslashIsSeparator()
   let i = 0
   while (i < n) {
+    const first = i === 0
     const ch = pattern[i++]
     if (ch === '*') {
       if (pattern[i] === '*') {
@@ -50,14 +83,25 @@ function compile(pattern: string): RegExp {
         if (pattern[i] === '/') {
           i++
         }
-        regex += i >= n ? '.*' : '(.*/)?'
+        if (i >= n) {
+          regex += '.*'
+          matchType = matchType === 'exact' ? 'prefix' : 'regex'
+        } else {
+          regex += '(.*/)?'
+          matchType = 'regex'
+        }
+        if (first) {
+          matchType = 'suffix'
+        }
       } else {
         regex += '[^/]*'
+        matchType = 'regex'
       }
     } else if (ch === '?') {
       regex += '[^/]'
+      matchType = 'regex'
     } else if (ch === '[') {
-      // Copy a bracket expression as is, a leading "^" negates it
+      // Copy a bracket expression, a leading "^" negates it
       let j = i
       if (pattern[j] === '^') {
         j++
@@ -68,14 +112,22 @@ function compile(pattern: string): RegExp {
         }
         j++
       }
-      regex += pattern.slice(i - 1, j + 1)
+      regex +=
+        '[' +
+        translateClass(pattern.slice(i, Math.min(j, n)), backslashIsEscape) +
+        (j < n ? ']' : '')
       i = j + 1
+      matchType = 'regex'
+    } else if (ch === ']') {
+      regex += '\\]'
+      matchType = 'regex'
     } else if (LITERAL_REGEX_CHARS.has(ch)) {
       regex += '\\' + ch
     } else if (ch === '\\' && backslashIsEscape) {
       // Escape the next character
       if (i < n) {
         regex += escapeRegex(pattern[i++])
+        matchType = 'regex'
       } else {
         regex += '\\\\'
       }
@@ -83,13 +135,31 @@ function compile(pattern: string): RegExp {
       regex += ch
     }
   }
-  return new RegExp(regex + '$')
+
+  switch (matchType) {
+    case 'exact':
+      return (p) => p === pattern
+    case 'prefix': {
+      const prefix = pattern.slice(0, -2)
+      return (p) => p.startsWith(prefix)
+    }
+    case 'suffix': {
+      const suffix = pattern.slice(2)
+      // "**/foo" also matches "foo"
+      return (p) =>
+        p.endsWith(suffix) || (suffix[0] === '/' && p === suffix.slice(1))
+    }
+    default: {
+      const re = new RegExp(regex + '$', 'u')
+      return (p) => re.test(p)
+    }
+  }
 }
 
 interface Pattern {
   exclusion: boolean
   dirs: string[]
-  regex: RegExp
+  match: Matcher
 }
 
 /**
@@ -119,43 +189,48 @@ export class PatternMatcher {
       if (pattern.length > 1 && pattern.startsWith('/')) {
         pattern = pattern.slice(1)
       }
-      let regex: RegExp
+      let match: Matcher
       try {
-        regex = compile(pattern)
+        match = compile(pattern)
       } catch (err) {
         throw new TemplateError(
           `Invalid ignore pattern '${original}': ${(err as Error).message}`
         )
       }
-      this.patterns.push({ exclusion, dirs: pattern.split('/'), regex })
+      this.patterns.push({ exclusion, dirs: pattern.split('/'), match })
     }
   }
 
   /**
-   * Whether the path or one of its parent directories is excluded.
+   * Whether the path is excluded. Like BuildKit, the patterns are evaluated
+   * on each parent directory first, and a pattern that matched a parent
+   * directory also matches the paths under it.
    *
    * @param p Slash-separated path relative to the context root
    * @returns True if the path is excluded
    */
   matches(p: string): boolean {
-    const parentPath = path.posix.dirname(p)
-    const parentDirs = parentPath === '.' ? [] : parentPath.split('/')
-
+    const segments = p.split('/')
+    let parentMatched: boolean[] = []
     let matched = false
-    for (const pattern of this.patterns) {
-      // An inclusion can't change an already matched path, and an
-      // exclusion can't change a path that hasn't matched yet
-      if (pattern.exclusion !== matched) {
-        continue
-      }
-      const match =
-        pattern.regex.test(p) ||
-        parentDirs.some((_, i) =>
-          pattern.regex.test(parentDirs.slice(0, i + 1).join('/'))
-        )
-      if (match) {
-        matched = !pattern.exclusion
-      }
+    for (let depth = 1; depth <= segments.length; depth++) {
+      const current = segments.slice(0, depth).join('/')
+      matched = false
+      parentMatched = this.patterns.map((pattern, i) => {
+        let match = parentMatched[i] ?? false
+        if (!match) {
+          // An inclusion can't change an already matched path, and an
+          // exclusion can't change a path that hasn't matched yet
+          if (pattern.exclusion !== matched) {
+            return false
+          }
+          match = pattern.match(current)
+        }
+        if (match) {
+          matched = !pattern.exclusion
+        }
+        return match
+      })
     }
     return matched
   }
