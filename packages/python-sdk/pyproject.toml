@@ -20,7 +20,7 @@ dependencies = [
     "dockerfile-parse>=2.0.1,<3",
     "rich>=14.0.0",
     "connectrpc>=0.11.1,<0.12",
-    "pyqwest>=0.10.0,<0.11",
+    "pyqwest>=0.11.0,<0.12",
 ]
 
 [project.urls]
@@ -56,6 +56,11 @@ codegen = [
 [build-system]
 requires = ["uv_build>=0.10.0,<0.11.0"]
 build-backend = "uv_build"
+
+# TODO: drop once pyqwest publishes client-side load balancing
+# (curioswitch/pyqwest#246) and raise the floor above to that release.
+[tool.uv.sources]
+pyqwest = { git = "https://github.com/curioswitch/pyqwest", rev = "c4aae51ac47ed3d7b8edf734b1aeeaec154e3e1c" }
 
 [tool.uv.build-backend]
 module-name = ["e2b"]
