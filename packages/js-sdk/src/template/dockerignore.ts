@@ -25,7 +25,64 @@ const WILDCARD_CHARS = /[*?[\\]/
 const backslashIsSeparator = () => path.sep === '\\'
 
 function escapeRegex(ch: string): string {
-  return ch.replace(/[.*+?^${}()|[\]\\/-]/g, '\\$&')
+  return ch.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
+}
+
+// Escapes that keep their regex meaning in a bracket expression, like in Python
+const CLASS_ESCAPES = new Set('dDsSwWfnrtv')
+const CLASS_CONTROL_ESCAPES: Record<string, string> = { a: '\\x07', b: '\\x08' }
+const CLASS_HEX_ESCAPE_LENGTHS: Record<string, number> = { x: 2, u: 4, U: 8 }
+// Characters that must stay escaped in a bracket expression with the `u` flag
+const CLASS_SYNTAX_CHARS = new Set('^$\\.*+?()[]{}|/-')
+
+// Make a bracket expression body valid with the regex `u` flag
+function translateClass(body: string, backslashIsEscape: boolean): string {
+  let cls = ''
+  let i = 0
+  while (i < body.length) {
+    const ch = body[i++]
+    if (ch !== '\\') {
+      cls += ch
+    } else if (!backslashIsEscape || i >= body.length) {
+      cls += '\\\\'
+    } else {
+      const next = body[i++]
+      if (CLASS_ESCAPES.has(next)) {
+        cls += '\\' + next
+      } else if (next in CLASS_CONTROL_ESCAPES) {
+        cls += CLASS_CONTROL_ESCAPES[next]
+      } else if (next in CLASS_HEX_ESCAPE_LENGTHS) {
+        const length = CLASS_HEX_ESCAPE_LENGTHS[next]
+        const hex = body.slice(i, i + length)
+        if (hex.length < length || !/^[0-9a-fA-F]+$/.test(hex)) {
+          throw new Error(`incomplete escape \\${next}${hex}`)
+        }
+        const code = parseInt(hex, 16)
+        if (code > 0x10ffff) {
+          throw new Error(`bad escape \\${next}${hex}`)
+        }
+        cls += `\\u{${code.toString(16)}}`
+        i += length
+      } else if (/[0-7]/.test(next)) {
+        let octal = next
+        while (octal.length < 3 && /[0-7]/.test(body[i] ?? '')) {
+          octal += body[i++]
+        }
+        const code = parseInt(octal, 8)
+        if (code > 0o377) {
+          throw new Error(
+            `octal escape value \\${octal} outside of range 0-0o377`
+          )
+        }
+        cls += `\\u{${code.toString(16)}}`
+      } else if (/[A-Za-z0-9]/.test(next)) {
+        throw new Error(`bad escape \\${next}`)
+      } else {
+        cls += CLASS_SYNTAX_CHARS.has(next) ? '\\' + next : next
+      }
+    }
+  }
+  return cls
 }
 
 // Equivalent of Go's filepath.Clean followed by filepath.ToSlash
@@ -36,12 +93,25 @@ function clean(pattern: string): string {
   return path.posix.normalize(pattern).replace(/(.)\/$/, '$1')
 }
 
-function compile(pattern: string): RegExp {
+type Matcher = (p: string) => boolean
+
+enum MatchType {
+  Exact = 'exact',
+  Prefix = 'prefix',
+  Suffix = 'suffix',
+  Regex = 'regex',
+}
+
+// Like moby, use plain string checks for patterns without wildcards and only
+// fall back to a regex otherwise
+function compile(pattern: string): Matcher {
   let regex = '^'
+  let matchType = MatchType.Exact
   const n = pattern.length
   const backslashIsEscape = !backslashIsSeparator()
   let i = 0
   while (i < n) {
+    const first = i === 0
     const ch = pattern[i++]
     if (ch === '*') {
       if (pattern[i] === '*') {
@@ -50,14 +120,26 @@ function compile(pattern: string): RegExp {
         if (pattern[i] === '/') {
           i++
         }
-        regex += i >= n ? '.*' : '(.*/)?'
+        if (i >= n) {
+          regex += '.*'
+          matchType =
+            matchType === MatchType.Exact ? MatchType.Prefix : MatchType.Regex
+        } else {
+          regex += '(.*/)?'
+          matchType = MatchType.Regex
+        }
+        if (first) {
+          matchType = MatchType.Suffix
+        }
       } else {
         regex += '[^/]*'
+        matchType = MatchType.Regex
       }
     } else if (ch === '?') {
       regex += '[^/]'
+      matchType = MatchType.Regex
     } else if (ch === '[') {
-      // Copy a bracket expression as is, a leading "^" negates it
+      // Copy a bracket expression, a leading "^" negates it
       let j = i
       if (pattern[j] === '^') {
         j++
@@ -68,14 +150,22 @@ function compile(pattern: string): RegExp {
         }
         j++
       }
-      regex += pattern.slice(i - 1, j + 1)
+      regex +=
+        '[' +
+        translateClass(pattern.slice(i, Math.min(j, n)), backslashIsEscape) +
+        (j < n ? ']' : '')
       i = j + 1
+      matchType = MatchType.Regex
+    } else if (ch === ']') {
+      regex += '\\]'
+      matchType = MatchType.Regex
     } else if (LITERAL_REGEX_CHARS.has(ch)) {
       regex += '\\' + ch
     } else if (ch === '\\' && backslashIsEscape) {
       // Escape the next character
       if (i < n) {
         regex += escapeRegex(pattern[i++])
+        matchType = MatchType.Regex
       } else {
         regex += '\\\\'
       }
@@ -83,13 +173,31 @@ function compile(pattern: string): RegExp {
       regex += ch
     }
   }
-  return new RegExp(regex + '$')
+
+  switch (matchType) {
+    case MatchType.Exact:
+      return (p) => p === pattern
+    case MatchType.Prefix: {
+      const prefix = pattern.slice(0, -2)
+      return (p) => p.startsWith(prefix)
+    }
+    case MatchType.Suffix: {
+      const suffix = pattern.slice(2)
+      // "**/foo" also matches "foo"
+      return (p) =>
+        p.endsWith(suffix) || (suffix[0] === '/' && p === suffix.slice(1))
+    }
+    case MatchType.Regex: {
+      const re = new RegExp(regex + '$', 'u')
+      return (p) => re.test(p)
+    }
+  }
 }
 
 interface Pattern {
   exclusion: boolean
   dirs: string[]
-  regex: RegExp
+  match: Matcher
 }
 
 /**
@@ -119,43 +227,48 @@ export class PatternMatcher {
       if (pattern.length > 1 && pattern.startsWith('/')) {
         pattern = pattern.slice(1)
       }
-      let regex: RegExp
+      let match: Matcher
       try {
-        regex = compile(pattern)
+        match = compile(pattern)
       } catch (err) {
         throw new TemplateError(
           `Invalid ignore pattern '${original}': ${(err as Error).message}`
         )
       }
-      this.patterns.push({ exclusion, dirs: pattern.split('/'), regex })
+      this.patterns.push({ exclusion, dirs: pattern.split('/'), match })
     }
   }
 
   /**
-   * Whether the path or one of its parent directories is excluded.
+   * Whether the path is excluded. Like BuildKit, the patterns are evaluated
+   * on each parent directory first, and a pattern that matched a parent
+   * directory also matches the paths under it.
    *
    * @param p Slash-separated path relative to the context root
    * @returns True if the path is excluded
    */
   matches(p: string): boolean {
-    const parentPath = path.posix.dirname(p)
-    const parentDirs = parentPath === '.' ? [] : parentPath.split('/')
-
+    const segments = p.split('/')
+    let parentMatched: boolean[] = []
     let matched = false
-    for (const pattern of this.patterns) {
-      // An inclusion can't change an already matched path, and an
-      // exclusion can't change a path that hasn't matched yet
-      if (pattern.exclusion !== matched) {
-        continue
-      }
-      const match =
-        pattern.regex.test(p) ||
-        parentDirs.some((_, i) =>
-          pattern.regex.test(parentDirs.slice(0, i + 1).join('/'))
-        )
-      if (match) {
-        matched = !pattern.exclusion
-      }
+    for (let depth = 1; depth <= segments.length; depth++) {
+      const current = segments.slice(0, depth).join('/')
+      matched = false
+      parentMatched = this.patterns.map((pattern, i) => {
+        let match = parentMatched[i] ?? false
+        if (!match) {
+          // An inclusion can't change an already matched path, and an
+          // exclusion can't change a path that hasn't matched yet
+          if (pattern.exclusion !== matched) {
+            return false
+          }
+          match = pattern.match(current)
+        }
+        if (match) {
+          matched = !pattern.exclusion
+        }
+        return match
+      })
     }
     return matched
   }
