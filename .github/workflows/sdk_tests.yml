@@ -10,10 +10,13 @@ permissions:
   contents: read
 
 # A new push to a PR supersedes its in-flight run, so cancel it instead of
-# letting both runs build the same test templates in parallel.
+# letting both runs build the same test templates in parallel. Only first
+# attempts of PR runs share the per-PR group: a rerun of an older commit must
+# not cancel the current head's run, and manual dispatches must not replace
+# each other in the group's single pending slot, so both get their own group.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ${{ github.workflow }}-${{ (github.event_name == 'pull_request' && github.run_attempt == '1') && format('pr-{0}', github.event.pull_request.number) || format('run-{0}', github.run_id) }}
+  cancel-in-progress: true
 
 jobs:
   changes:
