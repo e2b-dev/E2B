@@ -789,7 +789,15 @@ export interface paths {
                 401: components["responses"]["401"];
                 403: components["responses"]["403"];
                 404: components["responses"]["404"];
-                409: components["responses"]["409"];
+                /** @description Secret name conflict or project live-secret limit reached. A quota response has error_code secret_limit_reached and, when reported by the backend, the effective cap in message. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
                 429: components["responses"]["429"];
                 500: components["responses"]["500"];
                 502: components["responses"]["502"];
@@ -1035,6 +1043,7 @@ export interface paths {
                 };
                 header?: never;
                 path: {
+                    /** @description Identifier of the team, as its UUID or its public project ID (prj_) */
                     teamID: components["parameters"]["teamID"];
                 };
                 cookie?: never;
@@ -1087,6 +1096,7 @@ export interface paths {
                 };
                 header?: never;
                 path: {
+                    /** @description Identifier of the team, as its UUID or its public project ID (prj_) */
                     teamID: components["parameters"]["teamID"];
                 };
                 cookie?: never;
@@ -2248,7 +2258,7 @@ export interface components {
              * @description Error code
              */
             code: number;
-            /** @description Machine-readable semantic error code. Not a closed set; initial values: sandbox_capacity_unavailable, sandbox_placement_timeout, sandbox_no_compatible_node, sandbox_create_failed, internal_server_error. */
+            /** @description Machine-readable semantic error code. Not a closed set; initial values: sandbox_capacity_unavailable, sandbox_placement_timeout, sandbox_no_compatible_node, sandbox_create_failed, internal_server_error, secret_limit_reached. */
             error_code?: string;
             /** @description Error */
             message: string;
@@ -2712,6 +2722,8 @@ export interface components {
             duration?: number;
         };
         SandboxSnapshotRequest: {
+            /** @description Whether to capture a full memory snapshot. When false, only the filesystem is persisted: the snapshot is smaller and faster to take, and sandboxes created from it cold-boot (start fresh from disk) instead of restoring memory, so they begin without the source sandbox's running processes, in-memory state, and open connections. The source sandbox keeps running in both cases. Defaults to true. */
+            memory?: boolean;
             /** @description Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one. */
             name?: string;
         };
@@ -2948,7 +2960,7 @@ export interface components {
             tags?: string[];
             /**
              * @deprecated
-             * @description Identifier of the team
+             * @description Identifier of the team, as its UUID or its public project ID (prj_)
              */
             teamID?: string;
         };
@@ -3197,6 +3209,7 @@ export interface components {
         paginationNextToken: string;
         sandboxID: string;
         secretID: string;
+        /** @description Identifier of the team, as its UUID or its public project ID (prj_) */
         teamID: string;
         templateID: string;
         volumeID: string;

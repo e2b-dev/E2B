@@ -197,3 +197,51 @@ async def test_create_snapshot_class_method(async_sandbox: AsyncSandbox):
     assert len(snapshot.snapshot_id) > 0
 
     await AsyncSandbox.delete_snapshot(snapshot.snapshot_id)
+
+
+async def _boot_id(sandbox: AsyncSandbox) -> str:
+    # Kernel boot id: it changes only across a real (cold) boot. Read via a
+    # command, not files.read: envd serves procfs files as an empty 200
+    # because it sizes them by stat.
+    result = await sandbox.commands.run("cat /proc/sys/kernel/random/boot_id")
+    return result.stdout.strip()
+
+
+@pytest.mark.skip_debug()
+async def test_create_filesystem_only_snapshot(async_sandbox: AsyncSandbox):
+    test_content = "filesystem-only snapshot content"
+    await async_sandbox.files.write("/home/user/fs-only.txt", test_content)
+    source_boot = await _boot_id(async_sandbox)
+    assert source_boot
+
+    try:
+        snapshot = await async_sandbox.create_snapshot(keep_memory=False)
+    except SandboxException as error:
+        # The API answers 400 while filesystem-only snapshots are not enabled
+        # for the team; there is nothing to prove in that environment.
+        if error.status_code == 400 and "not enabled for this team" in str(error):
+            pytest.skip("filesystem-only snapshots are not enabled for this team")
+        raise
+    assert snapshot.snapshot_id
+
+    try:
+        # The source sandbox keeps running and was not rebooted.
+        assert await async_sandbox.is_running()
+        assert await async_sandbox.files.read("/home/user/fs-only.txt") == test_content
+        assert await _boot_id(async_sandbox) == source_boot
+
+        # A sandbox created from it has the files and a fresh boot id: it
+        # cold-booted instead of restoring memory. A memory snapshot would
+        # carry the source's boot id over, so this is what tells them apart.
+        new_sandbox = await AsyncSandbox.create(snapshot.snapshot_id)
+        try:
+            assert (
+                await new_sandbox.files.read("/home/user/fs-only.txt") == test_content
+            )
+            new_boot = await _boot_id(new_sandbox)
+            assert new_boot
+            assert new_boot != source_boot
+        finally:
+            await new_sandbox.kill()
+    finally:
+        await AsyncSandbox.delete_snapshot(snapshot.snapshot_id)

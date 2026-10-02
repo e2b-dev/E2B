@@ -864,6 +864,8 @@ class Sandbox(SandboxApi):
     def create_snapshot(
         self,
         name: Optional[str] = None,
+        *,
+        keep_memory: Optional[bool] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotInfo:
         """
@@ -876,6 +878,8 @@ class Sandbox(SandboxApi):
         Use the returned `snapshot_id` with `Sandbox.create(snapshot_id)` to create a new sandbox from the snapshot.
 
         :param name: Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one.
+        :param keep_memory: When `False`, only the filesystem is persisted (a filesystem-only snapshot): it is smaller and faster to take, and sandboxes created from it cold-boot (start fresh from disk) instead of restoring memory, so they begin without the running processes, in-memory state and open connections of the source sandbox. The source sandbox keeps running either way. Defaults to `True` (full memory snapshot).
+        :raises SandboxException: when the API refuses a filesystem-only snapshot. ``status_code`` 400 means the feature is not enabled for the team (``snapshot_filesystem_only_disabled``); 409 means the sandbox's node runs an orchestrator that predates the option (``snapshot_filesystem_only_unsupported_node``). A full memory snapshot still works in both cases; for 409, pause and resume the sandbox and retry.
 
         :return: Snapshot information including the snapshot ID and names
         """
@@ -886,6 +890,8 @@ class Sandbox(SandboxApi):
     def create_snapshot(
         sandbox_id: str,
         name: Optional[str] = None,
+        *,
+        keep_memory: Optional[bool] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotInfo:
         """
@@ -895,6 +901,8 @@ class Sandbox(SandboxApi):
 
         :param sandbox_id: Sandbox ID
         :param name: Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one.
+        :param keep_memory: When `False`, only the filesystem is persisted (a filesystem-only snapshot): it is smaller and faster to take, and sandboxes created from it cold-boot (start fresh from disk) instead of restoring memory, so they begin without the running processes, in-memory state and open connections of the source sandbox. The source sandbox keeps running either way. Defaults to `True` (full memory snapshot).
+        :raises SandboxException: when the API refuses a filesystem-only snapshot. ``status_code`` 400 means the feature is not enabled for the team (``snapshot_filesystem_only_disabled``); 409 means the sandbox's node runs an orchestrator that predates the option (``snapshot_filesystem_only_unsupported_node``). A full memory snapshot still works in both cases; for 409, pause and resume the sandbox and retry.
 
         :return: Snapshot information including the snapshot ID and names
         """
@@ -904,6 +912,8 @@ class Sandbox(SandboxApi):
     def create_snapshot(
         self,
         name: Optional[str] = None,
+        *,
+        keep_memory: Optional[bool] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotInfo:
         """
@@ -916,12 +926,15 @@ class Sandbox(SandboxApi):
         Use the returned `snapshot_id` with `Sandbox.create(snapshot_id)` to create a new sandbox from the snapshot.
 
         :param name: Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one.
+        :param keep_memory: When `False`, only the filesystem is persisted (a filesystem-only snapshot): it is smaller and faster to take, and sandboxes created from it cold-boot (start fresh from disk) instead of restoring memory, so they begin without the running processes, in-memory state and open connections of the source sandbox. The source sandbox keeps running either way. Defaults to `True` (full memory snapshot).
+        :raises SandboxException: when the API refuses a filesystem-only snapshot. ``status_code`` 400 means the feature is not enabled for the team (``snapshot_filesystem_only_disabled``); 409 means the sandbox's node runs an orchestrator that predates the option (``snapshot_filesystem_only_unsupported_node``). A full memory snapshot still works in both cases; for 409, pause and resume the sandbox and retry.
 
         :return: Snapshot information including the snapshot ID and names
         """
         return SandboxApi._cls_create_snapshot(
             sandbox_id=self.sandbox_id,
             name=name,
+            keep_memory=keep_memory,
             **self.connection_config.get_api_params(**opts),
         )
 

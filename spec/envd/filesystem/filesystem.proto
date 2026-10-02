@@ -66,6 +66,8 @@ message EntryInfo {
   // Keys live under the `user.e2b.` xattr namespace; the prefix is stripped here.
   // Plain `user.*` xattrs written by other tooling are not reflected.
   map<string, string> metadata = 11;
+  // True when the entry itself is a symlink; type then describes the symlink's target.
+  bool is_symlink = 12;
 }
 
 enum FileType {
