@@ -9,6 +9,12 @@ on:
 permissions:
   contents: read
 
+# A new push to a PR supersedes its in-flight run, so cancel it instead of
+# letting both runs build the same test templates in parallel.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   changes:
     name: Detect changes
