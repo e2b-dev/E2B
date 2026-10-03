@@ -37,6 +37,20 @@ function clean(pattern: string): string {
 }
 
 function compile(pattern: string): RegExp {
+  // Moby treats a leading ** followed only by literals as a suffix match.
+  const suffix = pattern.slice(2)
+  if (
+    pattern.startsWith('**') &&
+    !pattern.startsWith('**/') &&
+    !WILDCARD_CHARS.test(suffix) &&
+    !suffix.includes(']')
+  ) {
+    // 's' (dotAll): a filename can contain newlines and JS '.' does not
+    // match them by default, so without the flag '**.txt' misses
+    // 'a\n.txt'. ($ without 'm' already anchors to the absolute end.)
+    return new RegExp('^.*' + escapeRegex(suffix) + '$', 's')
+  }
+
   let regex = '^'
   const n = pattern.length
   const backslashIsEscape = !backslashIsSeparator()

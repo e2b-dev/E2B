@@ -27,6 +27,20 @@ def _clean(pattern: str) -> str:
 
 
 def _compile(pattern: str) -> "re.Pattern[str]":
+    # Moby treats a leading ** followed only by literals as a suffix match.
+    suffix = pattern[2:]
+    if (
+        pattern.startswith("**")
+        and not pattern.startswith("**/")
+        and not _WILDCARD_CHARS.search(suffix)
+        and "]" not in suffix
+    ):
+        # ``re.DOTALL`` and ``\Z`` (not ``$``): a filename can contain
+        # newlines, Python's ``$`` also matches just before a trailing one, and
+        # '.' does not cross newlines by default — so a literal suffix match
+        # needs dot-all matching anchored at the absolute end of the path.
+        return re.compile("^.*" + re.escape(suffix) + r"\Z", re.DOTALL)
+
     regex = "^"
     i, n = 0, len(pattern)
     while i < n:

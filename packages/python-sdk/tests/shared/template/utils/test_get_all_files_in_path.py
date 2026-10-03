@@ -384,6 +384,39 @@ class TestDockerignoreSemantics:
         files = self.relative_paths(".", test_dir, ["/node_modules", "/.git/", "src/"])
         assert files == [".", ".env"]
 
+    @pytest.mark.parametrize("suffix", [".txt", "(1).txt"])
+    def test_should_match_a_leading_globstar_with_a_literal_suffix(
+        self, test_dir, suffix
+    ):
+        ignored = [
+            f"root{suffix}",
+            f"src/nested{suffix}",
+            f"src/generated/deep{suffix}",
+        ]
+        for name in [*ignored, f"keep{suffix}.bak", "keep1.txt"]:
+            with open(os.path.join(test_dir, name), "w") as f:
+                f.write("x")
+        files = self.relative_paths(".", test_dir, [f"**{suffix}"])
+        assert not set(ignored).intersection(files)
+        assert f"keep{suffix}.bak" in files
+        if suffix == "(1).txt":
+            assert "keep1.txt" in files
+
+    @pytest.mark.parametrize("pattern", ["**.t?t", "**.[t]xt", "**.*txt"])
+    def test_should_keep_globstar_regex_matching_with_more_wildcards(
+        self, test_dir, pattern
+    ):
+        for name in ["root.txt", "src/nested.txt"]:
+            with open(os.path.join(test_dir, name), "w") as f:
+                f.write("x")
+        files = self.relative_paths(".", test_dir, [pattern])
+        assert "root.txt" in files
+        assert "src/nested.txt" in files
+
+    def test_should_reinclude_a_literal_globstar_suffix(self, test_dir):
+        files = self.relative_paths(".", test_dir, ["**", "!**.ts"])
+        assert files == [".", "src/app.spec.ts", "src/app.ts", "src/generated/api.ts"]
+
     def test_should_never_exclude_the_context_root(self, test_dir):
         files = self.relative_paths(".", test_dir, [".", ".*", "src", "node_modules"])
         assert files == ["."]
