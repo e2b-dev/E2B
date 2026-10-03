@@ -12,7 +12,7 @@ from e2b.connection_config import (
 from e2b.envd.api import ENVD_API_FILES_ROUTE
 from e2b.envd.versions import ENVD_DEFAULT_USER
 from e2b.exceptions import InvalidArgumentException
-from e2b.sandbox.signature import get_signature
+from e2b.sandbox.signature import Operation, get_signature
 
 
 class SandboxOpts(TypedDict):
@@ -143,30 +143,7 @@ class SandboxBase(ClientFactory):
 
         :return: URL for downloading file
         """
-
-        use_signature = self._envd_access_token is not None
-        if not use_signature and use_signature_expiration is not None:
-            raise InvalidArgumentException(
-                "Signature expiration can be used only when sandbox is created as secured."
-            )
-
-        username = user
-        if username is None and self._envd_version < ENVD_DEFAULT_USER:
-            username = default_username
-
-        if use_signature:
-            signature = get_signature(
-                path,
-                "read",
-                username,
-                self._envd_access_token,
-                use_signature_expiration,
-            )
-            return self._file_url(
-                path, username, signature["signature"], signature["expiration"]
-            )
-        else:
-            return self._file_url(path, username)
+        return self._signed_file_url(path, "read", user, use_signature_expiration)
 
     def upload_url(
         self,
@@ -185,7 +162,15 @@ class SandboxBase(ClientFactory):
 
         :return: URL for uploading file
         """
+        return self._signed_file_url(path, "write", user, use_signature_expiration)
 
+    def _signed_file_url(
+        self,
+        path: str,
+        operation: Operation,
+        user: Optional[str],
+        use_signature_expiration: Optional[int],
+    ) -> str:
         use_signature = self._envd_access_token is not None
         if not use_signature and use_signature_expiration is not None:
             raise InvalidArgumentException(
@@ -196,19 +181,19 @@ class SandboxBase(ClientFactory):
         if username is None and self._envd_version < ENVD_DEFAULT_USER:
             username = default_username
 
-        if use_signature:
-            signature = get_signature(
-                path,
-                "write",
-                username,
-                self._envd_access_token,
-                use_signature_expiration,
-            )
-            return self._file_url(
-                path, username, signature["signature"], signature["expiration"]
-            )
-        else:
+        if not use_signature:
             return self._file_url(path, username)
+
+        signature = get_signature(
+            path,
+            operation,
+            username,
+            self._envd_access_token,
+            use_signature_expiration,
+        )
+        return self._file_url(
+            path, username, signature["signature"], signature["expiration"]
+        )
 
     def get_host(self, port: int) -> str:
         """

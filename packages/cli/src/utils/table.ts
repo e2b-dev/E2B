@@ -6,7 +6,7 @@ import { wcswidth } from 'simple-wcswidth'
 
 const COLUMN_PADDING = 3
 
-export interface Column<T> {
+interface Column<T> {
   header: string
   value: (item: T) => string | null | undefined
 }

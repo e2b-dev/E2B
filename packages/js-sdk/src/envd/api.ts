@@ -140,24 +140,22 @@ export async function handleEnvdApiError(
   return new SandboxError(`${res.response.status}: ${message}`)
 }
 
-export async function handleProcessStartEvent(
-  events: AsyncIterable<StartResponse | ConnectResponse>
-) {
-  let startEvent: StartResponse | ConnectResponse
-
+async function readFirstEvent<T>(events: AsyncIterable<T>): Promise<T> {
   try {
-    startEvent = (await events[Symbol.asyncIterator]().next()).value
+    return (await events[Symbol.asyncIterator]().next()).value
   } catch (err) {
-    if (err instanceof ConnectError) {
-      if (err.code === Code.Unavailable) {
-        throw new SandboxNotFoundError(
-          'Sandbox is probably not running anymore'
-        )
-      }
+    if (err instanceof ConnectError && err.code === Code.Unavailable) {
+      throw new SandboxNotFoundError('Sandbox is probably not running anymore')
     }
 
     throw err
   }
+}
+
+export async function handleProcessStartEvent(
+  events: AsyncIterable<StartResponse | ConnectResponse>
+) {
+  const startEvent = await readFirstEvent(events)
   if (startEvent.event?.event.case !== 'start') {
     throw new Error('Expected start event')
   }
@@ -168,21 +166,7 @@ export async function handleProcessStartEvent(
 export async function handleWatchDirStartEvent(
   events: AsyncIterable<WatchDirResponse>
 ) {
-  let startEvent: WatchDirResponse
-
-  try {
-    startEvent = (await events[Symbol.asyncIterator]().next()).value
-  } catch (err) {
-    if (err instanceof ConnectError) {
-      if (err.code === Code.Unavailable) {
-        throw new SandboxNotFoundError(
-          'Sandbox is probably not running anymore'
-        )
-      }
-    }
-
-    throw err
-  }
+  const startEvent = await readFirstEvent(events)
   if (startEvent.event?.case !== 'start') {
     throw new Error('Expected start event')
   }

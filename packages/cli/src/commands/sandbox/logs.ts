@@ -239,7 +239,7 @@ function printLog(
   }
 }
 
-export async function listSandboxLogs({
+async function listSandboxLogs({
   sandboxID,
   start,
 }: {

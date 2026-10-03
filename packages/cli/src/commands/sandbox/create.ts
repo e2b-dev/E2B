@@ -164,7 +164,7 @@ function buildLifecycle(
   return { onTimeout, ...(autoResume ? { autoResume: true } : {}) }
 }
 
-export async function connectSandbox({
+async function connectSandbox({
   sandbox,
   template,
   timeoutMs,
