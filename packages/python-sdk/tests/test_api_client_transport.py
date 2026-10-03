@@ -10,7 +10,17 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import httpx
 import pytest
-from pyqwest import Headers, HTTPVersion, Request, Response, SyncRequest, SyncResponse
+from pyqwest import (
+    Headers,
+    HTTPVersion,
+    Request,
+    Response,
+    StreamError,
+    StreamErrorCode,
+    SyncRequest,
+    SyncResponse,
+    WriteError,
+)
 from pyqwest.httpx import AsyncPyqwestTransport, PyqwestTransport
 from transport_caches import reset_transport_caches
 
@@ -1356,3 +1366,303 @@ async def test_async_balancing_transport_frees_the_slot_when_the_response_is_dro
     gc.collect()
 
     assert connection.in_flight(ENVD_HEALTH) == 0
+
+
+def refused(code=StreamErrorCode.NO_ERROR):
+    return StreamError("stream refused", code)
+
+
+class RefusingSyncPool:
+    """Raises the queued errors after reading each request's body, as the
+    reqwest pool does before the server's refusal can arrive, then answers
+    with the body it read."""
+
+    def __init__(self, errors, read_before_error=True):
+        self.errors = list(errors)
+        self.read_before_error = read_before_error
+        self.bodies = []
+
+    def execute_sync(self, request):
+        content = request.content
+        if self.errors and not self.read_before_error:
+            raise self.errors.pop(0)
+        body = content if isinstance(content, bytes) else b"".join(content)
+        self.bodies.append(body)
+        if self.errors:
+            raise self.errors.pop(0)
+        return SyncResponse(status=200, content=iter([body]))
+
+
+class RefusingAsyncPool:
+    def __init__(self, errors, read_before_error=True):
+        self.errors = list(errors)
+        self.read_before_error = read_before_error
+        self.bodies = []
+
+    async def execute(self, request):
+        content = request.content
+        if self.errors and not self.read_before_error:
+            raise self.errors.pop(0)
+        if isinstance(content, bytes):
+            body = content
+        else:
+            body = b"".join([chunk async for chunk in content])
+        self.bodies.append(body)
+        if self.errors:
+            raise self.errors.pop(0)
+        return Response(status=200, content=self._content(body))
+
+    async def _content(self, body):
+        yield body
+
+
+def sync_chunks():
+    yield b"pay"
+    yield b"load"
+
+
+async def async_chunks():
+    yield b"pay"
+    yield b"load"
+
+
+@pytest.mark.parametrize(
+    "code", [StreamErrorCode.NO_ERROR, StreamErrorCode.REFUSED_STREAM]
+)
+@pytest.mark.parametrize("content", [b"payload", sync_chunks])
+def test_sync_balancing_transport_replays_a_refused_stream(code, content):
+    pool = RefusingSyncPool([refused(code)])
+    transport, connection = sync_balancing_transport(pool)
+    if callable(content):
+        content = content()
+
+    response = transport.execute_sync(
+        SyncRequest("POST", ENVD_HEALTH + "/rpc", content=content)
+    )
+
+    assert list(response.content) == [b"payload"]
+    assert pool.bodies == [b"payload", b"payload"]
+    assert connection.in_flight(ENVD_HEALTH) == 0
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        refused(StreamErrorCode.INTERNAL_ERROR),
+        refused(StreamErrorCode.CANCEL),
+        WriteError("connection closed"),
+    ],
+)
+def test_sync_balancing_transport_does_not_replay_other_failures(error):
+    pool = RefusingSyncPool([error])
+    transport, connection = sync_balancing_transport(pool)
+
+    with pytest.raises(type(error)):
+        transport.execute_sync(
+            SyncRequest("POST", ENVD_HEALTH + "/rpc", content=b"payload")
+        )
+
+    assert len(pool.bodies) == 1
+    assert connection.in_flight(ENVD_HEALTH) == 0
+
+
+def test_sync_balancing_transport_bounds_replays_of_refused_streams():
+    pool = RefusingSyncPool([refused()] * (api_client_sync.connection_retries + 2))
+    transport, connection = sync_balancing_transport(pool)
+
+    with pytest.raises(StreamError):
+        transport.execute_sync(
+            SyncRequest("POST", ENVD_HEALTH + "/rpc", content=b"payload")
+        )
+
+    assert len(pool.bodies) == api_client_sync.connection_retries + 1
+    assert connection.in_flight(ENVD_HEALTH) == 0
+
+
+def test_sync_balancing_transport_does_not_replay_a_body_too_large_to_mirror(
+    monkeypatch,
+):
+    monkeypatch.setattr(api_client_sync, "replay_buffer_limit", 4)
+    pool = RefusingSyncPool([refused()])
+    transport, _ = sync_balancing_transport(pool)
+
+    with pytest.raises(StreamError):
+        transport.execute_sync(
+            SyncRequest("POST", ENVD_HEALTH + "/rpc", content=sync_chunks())
+        )
+
+    assert pool.bodies == [b"payload"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "code", [StreamErrorCode.NO_ERROR, StreamErrorCode.REFUSED_STREAM]
+)
+@pytest.mark.parametrize("content", [b"payload", async_chunks])
+async def test_async_balancing_transport_replays_a_refused_stream(code, content):
+    pool = RefusingAsyncPool([refused(code)])
+    transport, connection = async_balancing_transport(pool)
+    if callable(content):
+        content = content()
+
+    response = await transport.execute(
+        Request("POST", ENVD_HEALTH + "/rpc", content=content)
+    )
+
+    assert [chunk async for chunk in response.content] == [b"payload"]
+    assert pool.bodies == [b"payload", b"payload"]
+    assert connection.in_flight(ENVD_HEALTH) == 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "error",
+    [
+        refused(StreamErrorCode.INTERNAL_ERROR),
+        refused(StreamErrorCode.CANCEL),
+        WriteError("connection closed"),
+    ],
+)
+async def test_async_balancing_transport_does_not_replay_other_failures(error):
+    pool = RefusingAsyncPool([error])
+    transport, connection = async_balancing_transport(pool)
+
+    with pytest.raises(type(error)):
+        await transport.execute(
+            Request("POST", ENVD_HEALTH + "/rpc", content=b"payload")
+        )
+
+    assert len(pool.bodies) == 1
+    assert connection.in_flight(ENVD_HEALTH) == 0
+
+
+@pytest.mark.asyncio
+async def test_async_balancing_transport_bounds_replays_of_refused_streams():
+    pool = RefusingAsyncPool([refused()] * (api_client_async.connection_retries + 2))
+    transport, connection = async_balancing_transport(pool)
+
+    with pytest.raises(StreamError):
+        await transport.execute(
+            Request("POST", ENVD_HEALTH + "/rpc", content=b"payload")
+        )
+
+    assert len(pool.bodies) == api_client_async.connection_retries + 1
+    assert connection.in_flight(ENVD_HEALTH) == 0
+
+
+@pytest.mark.asyncio
+async def test_async_balancing_transport_does_not_replay_a_body_too_large_to_mirror(
+    monkeypatch,
+):
+    monkeypatch.setattr(api_client_async, "replay_buffer_limit", 4)
+    pool = RefusingAsyncPool([refused()])
+    transport, _ = async_balancing_transport(pool)
+
+    with pytest.raises(StreamError):
+        await transport.execute(
+            Request("POST", ENVD_HEALTH + "/rpc", content=async_chunks())
+        )
+
+    assert pool.bodies == [b"payload"]
+
+
+class ClosableChunks:
+    """A request body that is not a generator but has a close hook."""
+
+    def __init__(self):
+        self.chunks = [b"pay", b"load"]
+        self.closed = False
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if not self.chunks:
+            raise StopIteration
+        return self.chunks.pop(0)
+
+    def close(self):
+        self.closed = True
+
+
+class AsyncClosableChunks:
+    def __init__(self):
+        self.chunks = [b"pay", b"load"]
+        self.closed = False
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        if not self.chunks:
+            raise StopAsyncIteration
+        return self.chunks.pop(0)
+
+    async def aclose(self):
+        self.closed = True
+
+
+def test_sync_balancing_transport_replays_a_stream_refused_before_its_body_was_read():
+    pool = RefusingSyncPool([refused()], read_before_error=False)
+    transport, connection = sync_balancing_transport(pool)
+    content = ClosableChunks()
+
+    response = transport.execute_sync(
+        SyncRequest("POST", ENVD_HEALTH + "/rpc", content=content)
+    )
+
+    assert list(response.content) == [b"payload"]
+    assert pool.bodies == [b"payload"]
+    assert content.closed
+    assert connection.in_flight(ENVD_HEALTH) == 0
+
+
+@pytest.mark.parametrize("read_before_error", [True, False])
+def test_sync_balancing_transport_closes_a_body_it_does_not_replay(
+    read_before_error,
+):
+    pool = RefusingSyncPool(
+        [WriteError("connection closed")], read_before_error=read_before_error
+    )
+    transport, _ = sync_balancing_transport(pool)
+    content = ClosableChunks()
+
+    with pytest.raises(WriteError):
+        transport.execute_sync(
+            SyncRequest("POST", ENVD_HEALTH + "/rpc", content=content)
+        )
+
+    assert content.closed
+
+
+@pytest.mark.asyncio
+async def test_async_balancing_transport_replays_a_stream_refused_before_its_body_was_read():
+    pool = RefusingAsyncPool([refused()], read_before_error=False)
+    transport, connection = async_balancing_transport(pool)
+    content = AsyncClosableChunks()
+
+    response = await transport.execute(
+        Request("POST", ENVD_HEALTH + "/rpc", content=content)
+    )
+
+    assert [chunk async for chunk in response.content] == [b"payload"]
+    assert pool.bodies == [b"payload"]
+    assert content.closed
+    assert connection.in_flight(ENVD_HEALTH) == 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("read_before_error", [True, False])
+async def test_async_balancing_transport_closes_a_body_it_does_not_replay(
+    read_before_error,
+):
+    pool = RefusingAsyncPool(
+        [WriteError("connection closed")], read_before_error=read_before_error
+    )
+    transport, _ = async_balancing_transport(pool)
+    content = AsyncClosableChunks()
+
+    with pytest.raises(WriteError):
+        await transport.execute(Request("POST", ENVD_HEALTH + "/rpc", content=content))
+
+    assert content.closed
