@@ -35,7 +35,11 @@ def _compile(pattern: str) -> "re.Pattern[str]":
         and not _WILDCARD_CHARS.search(suffix)
         and "]" not in suffix
     ):
-        return re.compile("^.*" + re.escape(suffix) + "$")
+        # ``re.DOTALL`` and ``\Z`` (not ``$``): a filename can contain
+        # newlines, Python's ``$`` also matches just before a trailing one, and
+        # '.' does not cross newlines by default — so a literal suffix match
+        # needs dot-all matching anchored at the absolute end of the path.
+        return re.compile("^.*" + re.escape(suffix) + r"\Z", re.DOTALL)
 
     regex = "^"
     i, n = 0, len(pattern)

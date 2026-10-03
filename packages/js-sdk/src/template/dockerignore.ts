@@ -45,7 +45,10 @@ function compile(pattern: string): RegExp {
     !WILDCARD_CHARS.test(suffix) &&
     !suffix.includes(']')
   ) {
-    return new RegExp('^.*' + escapeRegex(suffix) + '$')
+    // 's' (dotAll): a filename can contain newlines and JS '.' does not
+    // match them by default, so without the flag '**.txt' misses
+    // 'a\n.txt'. ($ without 'm' already anchors to the absolute end.)
+    return new RegExp('^.*' + escapeRegex(suffix) + '$', 's')
   }
 
   let regex = '^'
