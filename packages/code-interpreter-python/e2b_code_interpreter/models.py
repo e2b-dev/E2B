@@ -400,40 +400,36 @@ class Execution:
         return json.dumps(data)
 
 
-async def aextract_exception(res: Response, include_diagnostics: bool = False):
+async def aextract_exception(res: Response):
     if res.is_success:
         return None
 
     await res.aread()
-    return extract_exception(res, include_diagnostics)
+    return extract_exception(res)
 
 
-def extract_exception(res: Response, include_diagnostics: bool = False):
+def extract_exception(res: Response):
     if res.is_success:
         return None
 
     res.read()
-    return format_exception(res, include_diagnostics)
+    return format_exception(res)
 
 
-def format_exception(res: Response, include_diagnostics: bool = False):
+def format_exception(res: Response):
     if res.is_success:
         return None
 
-    body = res.text
-    trace_id = res.headers.get("X-E2B-Trace-ID") if include_diagnostics else None
-    trace_suffix = f" (trace_id={trace_id})" if trace_id else ""
-
     if res.status_code == 404:
-        return NotFoundException(f"{body}{trace_suffix}")
+        return NotFoundException(res.text)
     elif res.status_code == 502:
         return TimeoutException(
-            f"{body}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeout' when starting the sandbox or calling '.set_timeout' on the sandbox with the desired timeout.{trace_suffix}"
+            f"{res.text}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeout' when starting the sandbox or calling '.set_timeout' on the sandbox with the desired timeout."
         )
     else:
-        body_separator = "" if trace_suffix and not body else " "
+        body = res.text.strip()
         return SandboxException(
-            f"{res.status_code}:{body_separator}{body}{trace_suffix}"
+            f"{res.status_code} {res.reason_phrase}{f': {body}' if body else ''}"
         )
 
 

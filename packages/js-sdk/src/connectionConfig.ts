@@ -394,22 +394,11 @@ export class ConnectionConfig {
 
   private static readonly sdkUserAgentPrefix = 'e2b-js-sdk/'
 
-  private static getRequestSource() {
-    const source = getEnvVar('E2B_USER_AGENT_SOURCE')
-    return source && /^[A-Za-z0-9][A-Za-z0-9._-]{0,31}$/.test(source)
-      ? source
-      : undefined
-  }
-
-  private static buildUserAgent(requestSource?: string) {
+  private static buildUserAgent() {
     const userAgentParts = [`${ConnectionConfig.sdkUserAgentPrefix}${version}`]
 
     if (ConnectionConfig.integration) {
       userAgentParts.push(ConnectionConfig.integration)
-    }
-
-    if (requestSource) {
-      userAgentParts.push(`source/${requestSource}`)
     }
 
     return userAgentParts.join(' ')
@@ -423,10 +412,7 @@ export class ConnectionConfig {
    * rebuilt via `new ConnectionConfig({ ...config })`) is recognized by its
    * prefix and rebuilt, so it stays in sync with the current integration.
    */
-  private static applyUserAgent(
-    headers: Record<string, string>,
-    requestSource?: string
-  ) {
+  private static applyUserAgent(headers: Record<string, string>) {
     const userAgent = headers['User-Agent']
 
     if (
@@ -436,7 +422,7 @@ export class ConnectionConfig {
       return
     }
 
-    headers['User-Agent'] = ConnectionConfig.buildUserAgent(requestSource)
+    headers['User-Agent'] = ConnectionConfig.buildUserAgent()
   }
 
   /**
@@ -473,15 +459,6 @@ export class ConnectionConfig {
 
   readonly headers?: Record<string, string>
 
-  /**
-   * Validated traffic source used for request correlation.
-   *
-   * @internal
-   * @hidden
-   * @hide
-   */
-  readonly requestSource?: string
-
   readonly proxy?: string
   readonly httpVersion: HttpVersion
 
@@ -493,9 +470,8 @@ export class ConnectionConfig {
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.retries = resolveRetries(opts?.retries ?? DEFAULT_RETRIES)
     this.logger = opts?.logger
-    this.requestSource = ConnectionConfig.getRequestSource()
     this.headers = { ...(opts?.headers ?? {}), ...(opts?.apiHeaders ?? {}) }
-    ConnectionConfig.applyUserAgent(this.headers, this.requestSource)
+    ConnectionConfig.applyUserAgent(this.headers)
     this.proxy = opts?.proxy
     this.httpVersion = resolveHttpVersion(opts?.httpVersion)
 

@@ -138,20 +138,6 @@ export class Sandbox extends BaseSandbox {
     })
   }
 
-  private getJupyterRequestUrl(path: string): string {
-    const url = `${this.jupyterUrl}${path}`
-    const source = this.connectionConfig.requestSource
-    if (!source) {
-      return url
-    }
-
-    return `${url}${url.includes('?') ? '&' : '?'}source=${encodeURIComponent(source)}`
-  }
-
-  private get includeDiagnostics(): boolean {
-    return this.connectionConfig.requestSource === 'ci'
-  }
-
   /**
    * Run the code for the specified language.
    *
@@ -235,7 +221,7 @@ export class Sandbox extends BaseSandbox {
     }
 
     try {
-      const res = await fetch(this.getJupyterRequestUrl('/execute'), {
+      const res = await fetch(`${this.jupyterUrl}/execute`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -248,7 +234,7 @@ export class Sandbox extends BaseSandbox {
         keepalive: true,
       })
 
-      const error = await extractError(res, this.includeDiagnostics)
+      const error = await extractError(res)
       if (error) {
         throw error
       }
@@ -313,7 +299,7 @@ export class Sandbox extends BaseSandbox {
         headers['E2B-Traffic-Access-Token'] = this.trafficAccessToken
       }
 
-      const res = await fetch(this.getJupyterRequestUrl('/contexts'), {
+      const res = await fetch(`${this.jupyterUrl}/contexts`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -324,7 +310,7 @@ export class Sandbox extends BaseSandbox {
         signal: this.connectionConfig.getSignal(opts?.requestTimeoutMs),
       })
 
-      const error = await extractError(res, this.includeDiagnostics)
+      const error = await extractError(res)
       if (error) {
         throw error
       }
@@ -355,7 +341,7 @@ export class Sandbox extends BaseSandbox {
         headers['E2B-Traffic-Access-Token'] = this.trafficAccessToken
       }
 
-      const res = await fetch(this.getJupyterRequestUrl(`/contexts/${id}`), {
+      const res = await fetch(`${this.jupyterUrl}/contexts/${id}`, {
         method: 'DELETE',
         headers,
         keepalive: true,
@@ -364,7 +350,7 @@ export class Sandbox extends BaseSandbox {
         ),
       })
 
-      const error = await extractError(res, this.includeDiagnostics)
+      const error = await extractError(res)
       if (error) {
         throw error
       }
@@ -390,7 +376,7 @@ export class Sandbox extends BaseSandbox {
         headers['E2B-Traffic-Access-Token'] = this.trafficAccessToken
       }
 
-      const res = await fetch(this.getJupyterRequestUrl('/contexts'), {
+      const res = await fetch(`${this.jupyterUrl}/contexts`, {
         method: 'GET',
         headers,
         keepalive: true,
@@ -399,7 +385,7 @@ export class Sandbox extends BaseSandbox {
         ),
       })
 
-      const error = await extractError(res, this.includeDiagnostics)
+      const error = await extractError(res)
       if (error) {
         throw error
       }
@@ -430,19 +416,16 @@ export class Sandbox extends BaseSandbox {
         headers['E2B-Traffic-Access-Token'] = this.trafficAccessToken
       }
 
-      const res = await fetch(
-        this.getJupyterRequestUrl(`/contexts/${id}/restart`),
-        {
-          method: 'POST',
-          headers,
-          keepalive: true,
-          signal: this.connectionConfig.getSignal(
-            this.connectionConfig.requestTimeoutMs
-          ),
-        }
-      )
+      const res = await fetch(`${this.jupyterUrl}/contexts/${id}/restart`, {
+        method: 'POST',
+        headers,
+        keepalive: true,
+        signal: this.connectionConfig.getSignal(
+          this.connectionConfig.requestTimeoutMs
+        ),
+      })
 
-      const error = await extractError(res, this.includeDiagnostics)
+      const error = await extractError(res)
       if (error) {
         throw error
       }

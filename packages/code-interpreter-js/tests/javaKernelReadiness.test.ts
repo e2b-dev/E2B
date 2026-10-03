@@ -4,8 +4,6 @@ import { Sandbox, SandboxError } from '../src'
 import { waitForKernel } from './setup'
 
 const javaNotReadyError = () => new SandboxError('500 Internal Server Error')
-const tracedNotReadyError = () =>
-  new SandboxError('500 Internal Server Error (trace_id=trace-123)')
 
 function mockSandbox(runCode: ReturnType<typeof vi.fn>) {
   return { runCode } as unknown as Sandbox
@@ -50,15 +48,4 @@ test('does not retry an unrelated Java error', async () => {
 
   await expect(waitForKernel(mockSandbox(runCode), 'java')).rejects.toBe(error)
   expect(runCode).toHaveBeenCalledTimes(1)
-})
-
-test('retries an empty readiness 500 that includes a trace ID', async () => {
-  const runCode = vi
-    .fn()
-    .mockRejectedValueOnce(tracedNotReadyError())
-    .mockResolvedValueOnce(undefined)
-
-  await waitForKernel(mockSandbox(runCode), 'r')
-
-  expect(runCode).toHaveBeenCalledTimes(2)
 })

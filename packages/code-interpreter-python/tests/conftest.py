@@ -1,6 +1,5 @@
 import asyncio
 import os
-import re
 import uuid
 
 import pytest
@@ -83,9 +82,7 @@ def _wait_for_kernel(sandbox: Sandbox, language: str) -> None:
             # A newly running sandbox can briefly return this response while
             # Foxtrot initializes a lazy language context. Retry only that known
             # readiness failure; the test's actual execution still runs once.
-            is_readiness_error = re.fullmatch(
-                r"500:(?: \(trace_id=[^)]+\))?", str(error).strip()
-            )
+            is_readiness_error = str(error) == "500 Internal Server Error"
             if not is_readiness_error or attempt == KERNEL_READINESS_ATTEMPTS - 1:
                 raise
 
@@ -96,9 +93,7 @@ async def _wait_for_kernel_async(sandbox: AsyncSandbox, language: str) -> None:
             await sandbox.run_code("1", language=language)
             return
         except SandboxException as error:
-            is_readiness_error = re.fullmatch(
-                r"500:(?: \(trace_id=[^)]+\))?", str(error).strip()
-            )
+            is_readiness_error = str(error) == "500 Internal Server Error"
             if not is_readiness_error or attempt == KERNEL_READINESS_ATTEMPTS - 1:
                 raise
 
