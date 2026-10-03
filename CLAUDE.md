@@ -8,3 +8,11 @@ When creating a pull request, add usage examples for user-facing changes to the 
 When opening a new pull request, use the Linear MCP if available to link to related issues, or create a new issue from the PR description.
 Keep PR descriptions up-to-date with changes.
 Default credentials are stored in .env.local in the repository root or inside ~/.e2b/config.json.
+
+## Cloud Agent environment
+
+Toolchain pins are in `.tool-versions`. Root `pnpm install --frozen-lockfile` installs the JavaScript workspace only. Python packages are separate uv projects; sync each one with `uv sync --locked --python 3.10` in `packages/python-sdk`, `packages/code-interpreter-python`, and `packages/desktop-python`.
+
+Node must be 22.18 or newer. `.npmrc` sets `engine-strict`, and `tsdown` rejects older 22.x releases. Bun 1.3.14 and Deno 2.8.1 are used by the JavaScript SDK's extra runtime test scripts.
+
+Live sandbox examples and most SDK tests call the E2B API and need `E2B_API_KEY`. `make codegen` needs Docker and is only for regenerating clients after a spec pin bump.
