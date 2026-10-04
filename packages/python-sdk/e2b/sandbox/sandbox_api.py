@@ -14,6 +14,7 @@ from typing import (
     Union,
     cast,
 )
+from urllib.parse import quote
 
 from typing_extensions import NotRequired, Unpack
 
@@ -1134,6 +1135,15 @@ class SandboxInfo:
 
 SandboxListOrder = Literal["asc", "desc"]
 """Sort order for listing sandboxes by start time."""
+
+
+def _encode_metadata_query(metadata: Mapping[str, str]) -> str:
+    """Encode metadata query components while preserving their separators."""
+    safe = "!~*'()-._"
+    return "&".join(
+        f"{quote(key, safe=safe)}={quote(value, safe=safe)}"
+        for key, value in metadata.items()
+    )
 
 
 @dataclass

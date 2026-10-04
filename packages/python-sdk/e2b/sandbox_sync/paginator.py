@@ -1,4 +1,3 @@
-import urllib.parse
 from typing import Optional, List
 
 from typing_extensions import Unpack
@@ -16,6 +15,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxInfo,
     SnapshotPaginatorBase,
     SnapshotInfo,
+    _encode_metadata_query,
 )
 from e2b.api.client_sync import get_api_client
 
@@ -52,11 +52,7 @@ class SandboxPaginator(SandboxPaginatorBase):
         # Convert filters to the format expected by the API
         metadata: Optional[str] = None
         if self.query and self.query.metadata:
-            quoted_metadata = {
-                urllib.parse.quote(k): urllib.parse.quote(v)
-                for k, v in self.query.metadata.items()
-            }
-            metadata = urllib.parse.urlencode(quoted_metadata)
+            metadata = _encode_metadata_query(self.query.metadata)
 
         if self.order is None:
             order = UNSET

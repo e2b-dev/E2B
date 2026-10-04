@@ -1923,14 +1923,12 @@ export class SandboxPaginator extends Paginator<SandboxInfo, SandboxApiOpts> {
 
     let metadata = undefined
     if (this.query?.metadata) {
-      const encodedPairs: Record<string, string> = Object.fromEntries(
-        Object.entries(this.query.metadata).map(([key, value]) => [
-          encodeURIComponent(key),
-          encodeURIComponent(value),
-        ])
-      )
-
-      metadata = new URLSearchParams(encodedPairs).toString()
+      metadata = Object.entries(this.query.metadata)
+        .map(
+          ([key, value]) =>
+            `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
+        )
+        .join('&')
     }
 
     const apiOpts = ConnectionConfig.mergeOpts(this.opts, opts)
