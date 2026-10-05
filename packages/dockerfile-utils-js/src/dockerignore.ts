@@ -105,6 +105,56 @@ function cleanPath(p: string): string {
 
 type Matcher = (p: string) => boolean
 
+const BAD_PATTERN = 'syntax error in pattern'
+
+// Advances over one (possibly escaped) character of a bracket expression
+function classChar(pattern: string, i: number, backslashIsEscape: boolean) {
+  const n = pattern.length
+  if (i >= n || pattern[i] === '-' || pattern[i] === ']') {
+    throw new Error(BAD_PATTERN)
+  }
+  if (pattern[i] === '\\' && backslashIsEscape) {
+    i++
+    if (i >= n) {
+      throw new Error(BAD_PATTERN)
+    }
+  }
+  i += (pattern.codePointAt(i) as number) > 0xffff ? 2 : 1
+  if (i >= n) {
+    throw new Error(BAD_PATTERN)
+  }
+  return i
+}
+
+// Rejects what Go's filepath.Match rejects (Docker validates patterns with
+// it), as regex engines are more lenient about bracket expressions
+function validatePattern(pattern: string, backslashIsEscape: boolean): void {
+  const n = pattern.length
+  let i = 0
+  while (i < n) {
+    const ch = pattern[i++]
+    if (ch === '\\' && backslashIsEscape) {
+      if (i >= n) {
+        throw new Error(BAD_PATTERN)
+      }
+      i++
+    } else if (ch === '[') {
+      if (pattern[i] === '^') {
+        i++
+      }
+      let ranges = 0
+      while (!(ranges > 0 && pattern[i] === ']')) {
+        i = classChar(pattern, i, backslashIsEscape)
+        if (pattern[i] === '-') {
+          i = classChar(pattern, i + 1, backslashIsEscape)
+        }
+        ranges++
+      }
+      i++
+    }
+  }
+}
+
 enum MatchType {
   Exact = 'exact',
   Prefix = 'prefix',
@@ -115,6 +165,7 @@ enum MatchType {
 // Like moby, use plain string checks for patterns without wildcards and only
 // fall back to a regex otherwise
 function compile(pattern: string, backslashIsEscape: boolean): Matcher {
+  validatePattern(pattern, backslashIsEscape)
   let regex = '^'
   let matchType = MatchType.Exact
   const n = pattern.length
@@ -229,10 +280,18 @@ export interface PatternMatcherOptions {
  * @throws {Error} If a pattern is invalid, such as an unterminated `[`
  */
 export class PatternMatcher {
-  private readonly patterns: Pattern[] = []
+  private readonly compiled: Pattern[] = []
+  private readonly backslashIsSeparator: boolean
+
+  /**
+   * The cleaned patterns, `!` prefixed for exclusions. Empty lines and
+   * comments are dropped.
+   */
+  readonly patterns: string[] = []
 
   constructor(patterns: string[], options: PatternMatcherOptions = {}) {
     const backslashIsSeparator = options.backslashIsSeparator ?? false
+    this.backslashIsSeparator = backslashIsSeparator
     for (const original of patterns) {
       let pattern = original.trim()
       if (!pattern || pattern.startsWith('#')) {
@@ -242,7 +301,9 @@ export class PatternMatcher {
       if (exclusion) {
         pattern = pattern.slice(1).trim()
         if (!pattern) {
-          continue
+          throw new Error(
+            `Invalid ignore pattern '${original}': illegal exclusion pattern`
+          )
         }
       }
       if (backslashIsSeparator) {
@@ -260,8 +321,13 @@ export class PatternMatcher {
           `Invalid ignore pattern '${original}': ${(err as Error).message}`
         )
       }
-      this.patterns.push({ exclusion, dirs: pattern.split('/'), match })
+      this.compiled.push({ exclusion, dirs: pattern.split('/'), match })
+      this.patterns.push((exclusion ? '!' : '') + pattern)
     }
+  }
+
+  private toSlash(p: string): string {
+    return this.backslashIsSeparator ? p.replace(/\\/g, '/') : p
   }
 
   /**
@@ -273,13 +339,13 @@ export class PatternMatcher {
    * @returns True if the path is excluded
    */
   matches(p: string): boolean {
-    const segments = p.split('/')
+    const segments = this.toSlash(p).split('/')
     let parentMatched: boolean[] = []
     let matched = false
     for (let depth = 1; depth <= segments.length; depth++) {
       const current = segments.slice(0, depth).join('/')
       matched = false
-      parentMatched = this.patterns.map((pattern, i) => {
+      parentMatched = this.compiled.map((pattern, i) => {
         let match = parentMatched[i] ?? false
         if (!match) {
           // An inclusion can't change an already matched path, and an
@@ -306,8 +372,8 @@ export class PatternMatcher {
    * @returns True if a path under the directory could be re-included
    */
   mayMatchUnder(dirPath: string): boolean {
-    const dirSegments = dirPath.split('/')
-    return this.patterns.some(
+    const dirSegments = this.toSlash(dirPath).split('/')
+    return this.compiled.some(
       (pattern) =>
         pattern.exclusion && patternMayMatchUnder(pattern, dirSegments)
     )

@@ -190,6 +190,21 @@ def _parse_maybe_json(rest: str, _escape_token: str) -> ParsedArgs:
         return [rest], False
 
 
+def _parse_health_config(rest: str, escape_token: str) -> ParsedArgs:
+    # `HEALTHCHECK [flags] <type> <command>`: the type (`CMD`/`NONE`) is the
+    # first argument, the command follows in JSON or shell form
+    sep = 0
+    while sep < len(rest) and not is_space(rest[sep]):
+        sep += 1
+    nxt = sep
+    while nxt < len(rest) and is_space(rest[nxt]):
+        nxt += 1
+    if sep == 0:
+        return [], False
+    args, is_json = _parse_maybe_json(rest[nxt:], escape_token)
+    return [rest[:sep], *args], is_json
+
+
 def _parse_maybe_json_to_list(rest: str, escape_token: str) -> ParsedArgs:
     try:
         return _parse_json(rest), True
@@ -321,7 +336,7 @@ _LINE_PARSERS: Dict[str, LineParser] = {
     "ENV": _parse_name_val("ENV"),
     "EXPOSE": _parse_strings_whitespace_delimited,
     "FROM": _parse_strings_whitespace_delimited,
-    "HEALTHCHECK": _parse_ignore,
+    "HEALTHCHECK": _parse_health_config,
     "LABEL": _parse_name_val("LABEL"),
     "MAINTAINER": _parse_string,
     "ONBUILD": _parse_ignore,

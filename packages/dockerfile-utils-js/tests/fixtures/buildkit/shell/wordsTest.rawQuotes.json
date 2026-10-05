@@ -1,0 +1,123 @@
+[
+  {
+    "input": "hello",
+    "word": "hello",
+    "words": ["hello"]
+  },
+  {
+    "input": "hello${hi}bye",
+    "word": "hello${hi}bye",
+    "words": ["hello${hi}bye"]
+  },
+  {
+    "input": "hello${hi}bye",
+    "word": "hello${hi}bye",
+    "words": ["hello${hi}bye"]
+  },
+  {
+    "input": "hello${space}bye",
+    "word": "hello${space}bye",
+    "words": ["hello${space}bye"]
+  },
+  {
+    "input": "hello\"${space}\"bye",
+    "word": "hello\"${space}\"bye",
+    "words": ["hello\"${space}\"bye"]
+  },
+  {
+    "input": "hello \"${space}\"bye",
+    "word": "hello \"${space}\"bye",
+    "words": ["hello", "\"${space}\"bye"]
+  },
+  {
+    "input": "hello${leading}def",
+    "word": "hello${leading}def",
+    "words": ["hello${leading}def"]
+  },
+  {
+    "input": "hello\"${leading}\" def",
+    "word": "hello\"${leading}\" def",
+    "words": ["hello\"${leading}\"", "def"]
+  },
+  {
+    "input": "hello\"${leading}\"",
+    "word": "hello\"${leading}\"",
+    "words": ["hello\"${leading}\""]
+  },
+  {
+    "input": "hello${leading}",
+    "word": "hello${leading}",
+    "words": ["hello${leading}"]
+  },
+  {
+    "input": "hello${trailing}",
+    "word": "hello${trailing}",
+    "words": ["hello${trailing}"]
+  },
+  {
+    "input": "hello${trailing}d",
+    "word": "hello${trailing}d",
+    "words": ["hello${trailing}d"]
+  },
+  {
+    "input": "hello\"${trailing}\"d",
+    "word": "hello\"${trailing}\"d",
+    "words": ["hello\"${trailing}\"d"]
+  },
+  {
+    "input": "hel\"lo${trailing}\"",
+    "word": "hel\"lo${trailing}\"",
+    "words": ["hel\"lo${trailing}\""]
+  },
+  {
+    "input": "hello\" there  \"",
+    "word": "hello\" there  \"",
+    "words": ["hello\" there  \""]
+  },
+  {
+    "input": "hello there",
+    "word": "hello there",
+    "words": ["hello", "there"]
+  },
+  {
+    "input": "hello\\ there",
+    "word": "hello there",
+    "words": ["hello there"]
+  },
+  {
+    "input": "hello\" there",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "hello\\\" there",
+    "word": "hello\" there",
+    "words": ["hello\"", "there"]
+  },
+  {
+    "input": "hello\"\\\\there\"",
+    "word": "hello\"\\there\"",
+    "words": ["hello\"\\there\""]
+  },
+  {
+    "input": "hello\"\\there\"",
+    "word": "hello\"\\there\"",
+    "words": ["hello\"\\there\""]
+  },
+  {
+    "input": "hello'\\\\there'",
+    "word": "hello'\\\\there'",
+    "words": ["hello'\\\\there'"]
+  },
+  {
+    "input": "hello'\\there'",
+    "word": "hello'\\there'",
+    "words": ["hello'\\there'"]
+  },
+  {
+    "input": "hello'$there'",
+    "word": "hello'$there'",
+    "words": ["hello'$there'"]
+  }
+]

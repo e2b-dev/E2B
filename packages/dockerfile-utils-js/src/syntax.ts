@@ -221,6 +221,25 @@ function parseMaybeJSON(rest: string) {
   }
 }
 
+// `HEALTHCHECK [flags] <type> <command>`: the type (`CMD`/`NONE`) is the first
+// argument, the command follows in JSON or shell form
+function parseHealthConfig(rest: string) {
+  const chars = Array.from(rest)
+  let sep = 0
+  while (sep < chars.length && !isSpace(chars[sep])) {
+    sep++
+  }
+  let next = sep
+  while (next < chars.length && isSpace(chars[next])) {
+    next++
+  }
+  if (sep === 0) {
+    return { args: [], json: false }
+  }
+  const { args, json } = parseMaybeJSON(chars.slice(next).join(''))
+  return { args: [chars.slice(0, sep).join(''), ...args], json }
+}
+
 function parseMaybeJSONToList(rest: string) {
   try {
     return { args: parseJSON(rest), json: true }
@@ -372,7 +391,7 @@ const LINE_PARSERS: Record<string, LineParser> = {
   ENV: parseNameVal('ENV'),
   EXPOSE: parseStringsWhitespaceDelimited,
   FROM: parseStringsWhitespaceDelimited,
-  HEALTHCHECK: parseIgnore,
+  HEALTHCHECK: parseHealthConfig,
   LABEL: parseNameVal('LABEL'),
   MAINTAINER: parseString,
   ONBUILD: parseIgnore,
