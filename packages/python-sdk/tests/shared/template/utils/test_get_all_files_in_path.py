@@ -407,6 +407,35 @@ class TestDockerignoreSemantics:
             "src/node_modules/lib.js",
         ]
 
+    def test_should_not_reinclude_a_path_through_a_negated_parent_directory(
+        self, test_dir
+    ):
+        files = self.relative_paths(".", test_dir, ["src/app.ts", "**/*.js", "!src"])
+        assert "src/app.ts" not in files
+        assert "src/node_modules/lib.js" not in files
+        assert "src/app.spec.ts" in files
+
+    def test_should_match_a_leading_globstar_with_a_literal_suffix(self, test_dir):
+        for name in ["root.txt", "src/nested.txt", "keep.txt.bak"]:
+            with open(os.path.join(test_dir, name), "w") as f:
+                f.write("x")
+        files = self.relative_paths(".", test_dir, ["**.txt", "**/generated"])
+        assert "root.txt" not in files
+        assert "src/nested.txt" not in files
+        assert "src/generated/api.ts" not in files
+        assert "keep.txt.bak" in files
+
+    def test_should_match_characters_outside_the_bmp_as_a_single_character(
+        self, test_dir
+    ):
+        for name in ["😀.txt", "😀😀.txt"]:
+            with open(os.path.join(test_dir, name), "w") as f:
+                f.write("x")
+        files = self.relative_paths("*", test_dir, ["?.txt"])
+        assert "😀.txt" not in files
+        assert "😀😀.txt" in files
+        assert "😀😀.txt" not in self.relative_paths("*", test_dir, ["[😀]?.txt"])
+
     def test_should_make_absolute_patterns_inside_the_context_relative(self, test_dir):
         files = self.relative_paths(
             ".",
@@ -431,6 +460,23 @@ class TestDockerignoreSemantics:
     def test_should_raise_on_an_invalid_pattern(self, test_dir):
         with pytest.raises(TemplateException, match="Invalid ignore pattern '\\[abc'"):
             get_all_files_in_path(".", test_dir, ["[abc"])
+
+    @pytest.mark.skipif(sys.platform == "win32", reason="Backslash is a separator")
+    def test_should_handle_escapes_in_a_bracket_expression_like_python(self, test_dir):
+        with pytest.raises(
+            TemplateException, match=r"Invalid ignore pattern '\[\\q\]'"
+        ):
+            get_all_files_in_path(".", test_dir, ["[\\q]"])
+        with open(os.path.join(test_dir, "a"), "w") as f:
+            f.write("x")
+        assert "a" in self.relative_paths("*", test_dir, ["[\\a]"])
+        for name in ["b", "c"]:
+            with open(os.path.join(test_dir, name), "w") as f:
+                f.write("x")
+        files = self.relative_paths("*", test_dir, ["[\\x61]", "[\\142]"])
+        assert "a" not in files
+        assert "b" not in files
+        assert "c" in files
 
     def test_should_keep_the_files_hash_stable_when_ignored_files_change(
         self, test_dir
