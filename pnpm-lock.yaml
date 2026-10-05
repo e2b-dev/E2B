@@ -361,7 +361,11 @@ importers:
         specifier: npm:undici@8.11.2
         version: undici@8.11.2
 
-  packages/python-sdk: {}
+  packages/python-sdk:
+    dependencies:
+      '@e2b/dockerfile-utils-python':
+        specifier: workspace:*
+        version: link:../dockerfile-utils-python
 
 packages:
 

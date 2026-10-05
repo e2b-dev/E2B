@@ -319,6 +319,9 @@ EOT
 RUN python3 - <<PY
 print("hi")
 PY
+RUN 3<<FD
+touch /tmp/never-run
+FD
 COPY <<'CONF' /etc/app.conf
 key=$VALUE
 CONF`
@@ -332,6 +335,7 @@ CONF`
     'npm install\nnpm run build\n',
     'echo tabbed\n',
     'python3 - <<PY\nprint("hi")\nPY',
+    '3<<FD\ntouch /tmp/never-run\nFD',
     `mkdir -p "$(dirname /etc/app.conf)" && cat <<'E2B_HEREDOC_CONF' >/etc/app.conf\nkey=$VALUE\nE2B_HEREDOC_CONF`,
   ])
 })
@@ -356,6 +360,26 @@ EOF`
     ],
   ])
 })
+
+buildTemplateTest(
+  'fromDockerfile heredoc terminator avoids the content',
+  () => {
+    const dockerfile = `FROM node:24
+COPY <<EOF /etc/app.conf
+E2B_HEREDOC_EOF___ E2B_HEREDOC_EOF_
+E2B_HEREDOC_EOF
+EOF`
+
+    const template = Template().fromDockerfile(dockerfile)
+    const runs = instructionsOf(template)
+      .filter((i) => i.type === InstructionType.RUN)
+      .map((i) => i.args[0])
+
+    assert.deepEqual(runs, [
+      `mkdir -p "$(dirname /etc/app.conf)" && cat <<E2B_HEREDOC_EOF____ >/etc/app.conf\nE2B_HEREDOC_EOF___ E2B_HEREDOC_EOF_\nE2B_HEREDOC_EOF\nE2B_HEREDOC_EOF____`,
+    ])
+  }
+)
 
 buildTemplateTest(
   'fromDockerfile COPY with literal paths and zero mode',

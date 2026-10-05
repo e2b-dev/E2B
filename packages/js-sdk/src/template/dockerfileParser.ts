@@ -100,11 +100,17 @@ export function shellQuote(word: string): string {
 
 /** A heredoc delimiter that does not occur in the content it wraps. */
 function heredocTerminator(name: string, content: string): string {
-  let terminator = `E2B_HEREDOC_${name}`
-  while (content.includes(terminator)) {
-    terminator += '_'
+  const base = `E2B_HEREDOC_${name}`
+  let underscores = 0
+  for (let i = content.indexOf(base); i !== -1; i = content.indexOf(base, i)) {
+    const start = i + base.length
+    i = start
+    while (content[i] === '_') {
+      i++
+    }
+    underscores = Math.max(underscores, i - start + 1)
   }
-  return terminator
+  return base + '_'.repeat(underscores)
 }
 
 function withTrailingNewline(content: string): string {
@@ -347,7 +353,11 @@ class DockerfileConverter {
       heredoc.chomp ? chompHeredocContent(heredoc.content) : heredoc.content
 
     // `RUN <<EOF` on its own: the heredoc body is the script itself.
-    if (heredocs.length === 1 && parseHeredoc(line.trim())) {
+    if (
+      heredocs.length === 1 &&
+      heredocs[0].fileDescriptor === 0 &&
+      parseHeredoc(line.trim())
+    ) {
       const heredoc = heredocs[0]
       const content = heredocContent(heredoc)
       if (!content.startsWith('#!')) {

@@ -110,10 +110,17 @@ def _shell_join(words: List[str]) -> str:
 
 def _heredoc_terminator(name: str, content: str) -> str:
     """A heredoc delimiter that does not occur in the content it wraps."""
-    terminator = f"E2B_HEREDOC_{name}"
-    while terminator in content:
-        terminator += "_"
-    return terminator
+    base = f"E2B_HEREDOC_{name}"
+    underscores = 0
+    i = content.find(base)
+    while i != -1:
+        start = i + len(base)
+        i = start
+        while i < len(content) and content[i] == "_":
+            i += 1
+        underscores = max(underscores, i - start + 1)
+        i = content.find(base, i)
+    return base + "_" * underscores
 
 
 def _with_trailing_newline(content: str) -> str:
@@ -305,7 +312,11 @@ class _DockerfileConverter:
             return heredoc.content
 
         # `RUN <<EOF` on its own: the heredoc body is the script itself.
-        if len(heredocs) == 1 and parse_heredoc(line.strip()) is not None:
+        if (
+            len(heredocs) == 1
+            and heredocs[0].file_descriptor == 0
+            and parse_heredoc(line.strip()) is not None
+        ):
             heredoc = heredocs[0]
             content = heredoc_content(heredoc)
             if not content.startswith("#!"):
