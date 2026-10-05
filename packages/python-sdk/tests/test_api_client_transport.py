@@ -1683,3 +1683,36 @@ async def test_async_balancing_transport_closes_a_body_it_does_not_replay(
         await transport.execute(Request("POST", ENVD_HEALTH + "/rpc", content=content))
 
     assert content.closed
+
+
+def test_sync_connection_retry_sends_a_whole_streamed_body_after_a_connect_failure():
+    pool = RefusingSyncPool(
+        [ConnectionError("connect failed")], read_before_error=False
+    )
+    transport = api_client_sync.ConnectionRetryTransport(
+        api_client_sync.BalancingTransport(lambda: pool), initial_interval=0
+    )
+
+    response = transport.execute_sync(
+        SyncRequest("POST", ENVD_HEALTH + "/rpc", content=sync_chunks())
+    )
+
+    assert list(response.content) == [b"payload"]
+    assert pool.bodies == [b"payload"]
+
+
+@pytest.mark.asyncio
+async def test_async_connection_retry_sends_a_whole_streamed_body_after_a_connect_failure():
+    pool = RefusingAsyncPool(
+        [ConnectionError("connect failed")], read_before_error=False
+    )
+    transport = api_client_async.ConnectionRetryTransport(
+        api_client_async.BalancingTransport(lambda: pool), initial_interval=0
+    )
+
+    response = await transport.execute(
+        Request("POST", ENVD_HEALTH + "/rpc", content=async_chunks())
+    )
+
+    assert [chunk async for chunk in response.content] == [b"payload"]
+    assert pool.bodies == [b"payload"]
