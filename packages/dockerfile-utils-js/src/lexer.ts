@@ -346,7 +346,7 @@ class ShellWord {
 
     if (ch === '}') {
       if (value === undefined && this.skipUnsetEnv) {
-        return `\${${name}}`
+        return '${' + name + '}'
       }
       return value ?? ''
     }
@@ -377,7 +377,7 @@ class ShellWord {
     }
     const word = this.processStopOnOrMissingBrace('}', rawEscapes)
     if (value === undefined && this.skipUnsetEnv) {
-      return `\${${name}${chs}${word}}`
+      return '${' + name + chs + word + '}'
     }
 
     const unset = value === undefined || (nullIsUnset && value === '')
@@ -427,7 +427,7 @@ class ShellWord {
 
     const value = this.env.get(name)
     if (value === undefined && this.skipUnsetEnv) {
-      return `\${${name}${op}${pattern}/${replacement}}`
+      return '${' + name + op + pattern + '/' + replacement + '}'
     }
     const re = shellPatternToRegex(pattern, true, false, op === '//')
     return (value ?? '').replace(re, () => replacement)
