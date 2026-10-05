@@ -27,7 +27,10 @@ describe('ShellLex', () => {
     ])
     const lex = new ShellLex('\\', { env })
     assert.equal(lex.processWord('$V-${V}-"$V"'), 'a/b/c-a/b/c-a/b/c')
-    assert.equal(lex.processWord('${V:-x}${E:-x}${E-x}${U:-x}'), 'a/b/cx${U:-x}')
+    assert.equal(
+      lex.processWord('${V:-x}${E:-x}${E-x}${U:-x}'),
+      'a/b/cx${U:-x}'
+    )
     assert.equal(lex.processWord('${V:+y}${E:+y}${E+y}${U+y}'), 'yy${U+y}')
     assert.equal(lex.processWord('${V:?}${U:?msg}'), 'a/b/c${U:?msg}')
     assert.throws(() => lex.processWord('${E:?empty}'), /E: empty/)
