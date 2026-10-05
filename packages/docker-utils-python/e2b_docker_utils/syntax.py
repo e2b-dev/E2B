@@ -70,7 +70,6 @@ _DEFAULT_ESCAPE_TOKEN = "\\"
 _WHITESPACE = re.compile(r"[\t\v\f\r ]+")
 _DIRECTIVE = re.compile(r"^#\s*([a-zA-Z][a-zA-Z0-9]*)\s*=\s*(.+?)\s*$")
 _VALID_DIRECTIVES = {"syntax", "escape", "check"}
-_HEREDOC = re.compile(r"^(\d*)<<(-?)\s*([^<]*)$")
 _HEREDOC_INSTRUCTIONS = {"ADD", "COPY", "RUN"}
 _LINES = re.compile(r"[^\n]*\n|[^\n]+$")
 
@@ -422,13 +421,32 @@ def _split_command(line: str, escape_token: str) -> Tuple[str, List[str], str]:
     return command, flags, rest.strip()
 
 
-def parse_heredoc(word: str) -> Optional[DockerfileHeredoc]:
-    match = _HEREDOC.match(word)
-    if not match:
+def _match_heredoc_marker(word: str) -> Optional[Tuple[str, bool, str]]:
+    """Split ``[fd]<<[-]name`` into its parts without a backtracking regex."""
+    i = 0
+    while i < len(word) and word[i].isdigit():
+        i += 1
+    if not word.startswith("<<", i):
         return None
-    file_descriptor = int(match.group(1)) if match.group(1) else 0
-    chomp = match.group(2) == "-"
-    rest = match.group(3)
+    file_descriptor = word[:i]
+    i += 2
+    chomp = i < len(word) and word[i] == "-"
+    if chomp:
+        i += 1
+    while i < len(word) and word[i].isspace():
+        i += 1
+    rest = word[i:]
+    if "<" in rest:
+        return None
+    return file_descriptor, chomp, rest
+
+
+def parse_heredoc(word: str) -> Optional[DockerfileHeredoc]:
+    match = _match_heredoc_marker(word)
+    if match is None:
+        return None
+    fd, chomp, rest = match
+    file_descriptor = int(fd) if fd else 0
     if not rest:
         return None
 

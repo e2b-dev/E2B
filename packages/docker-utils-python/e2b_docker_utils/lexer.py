@@ -117,7 +117,7 @@ class ShellLex:
         )
         try:
             return sw.process_stop_on(None, self._raw_escapes)
-        except ValueError as err:
+        except (ValueError, RecursionError) as err:
             raise ValueError(f"failed to process {word!r}: {err}") from None
 
 

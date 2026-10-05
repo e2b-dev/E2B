@@ -100,6 +100,8 @@ def test_rejects_unknown_instructions_with_a_line_number():
 
 
 def test_parse_heredoc():
+    assert parse_heredoc("<<" + " " * 50_000 + "<") is None
+    assert parse_heredoc("<<" + " " * 50_000) is None
     assert parse_heredoc("<<-EOF") == DockerfileHeredoc(
         name="EOF", content="", chomp=True, expand=True, file_descriptor=0
     )

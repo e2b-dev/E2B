@@ -108,6 +108,14 @@ def _shell_join(words: List[str]) -> str:
     return " ".join(shlex.quote(word) for word in words)
 
 
+def _heredoc_terminator(name: str, content: str) -> str:
+    """A heredoc delimiter that does not occur in the content it wraps."""
+    terminator = f"E2B_HEREDOC_{name}"
+    while terminator in content:
+        terminator += "_"
+    return terminator
+
+
 def _with_trailing_newline(content: str) -> str:
     if content == "" or content.endswith("\n"):
         return content
@@ -199,7 +207,7 @@ class _DockerfileConverter:
         """Resolve quotes and escapes in a word, keeping ``$VAR`` references."""
         try:
             return self._lex.process_word(word)
-        except ValueError as err:
+        except (ValueError, RecursionError) as err:
             raise DockerfileSyntaxError(str(err), instruction.start_line) from None
 
     def _expand_single(self, instruction: DockerfileInstruction) -> str:
@@ -304,7 +312,7 @@ class _DockerfileConverter:
                 return content
             # A shebang script: write it to a temporary file and execute it.
             script = shlex.quote(f"/tmp/{heredoc.name}")
-            terminator = f"E2B_HEREDOC_{heredoc.name}"
+            terminator = _heredoc_terminator(heredoc.name, content)
             return (
                 f"cat <<'{terminator}' >{script}\n"
                 + _with_trailing_newline(content)
@@ -347,20 +355,20 @@ class _DockerfileConverter:
                 )
             mode = int(chmod, 8)
 
-        args = [self._expand(instruction, arg) for arg in instruction.args]
-        dest = args[-1]
-        sources = args[:-1]
-
-        if parse_heredoc(dest) is not None:
+        # Heredoc markers are recognized on the raw tokens, like the AST does:
+        # a quoted `"<<EOF"` is a literal file name, not a heredoc.
+        raw_dest = instruction.args[-1]
+        if parse_heredoc(raw_dest) is not None:
             raise DockerfileSyntaxError(
                 f"{instruction.name} cannot accept a heredoc as a destination",
                 instruction.start_line,
             )
+        dest = self._expand(instruction, raw_dest)
 
         heredocs_by_name = {heredoc.name: heredoc for heredoc in instruction.heredocs}
 
-        for src in sources:
-            heredoc = parse_heredoc(src)
+        for raw_src in instruction.args[:-1]:
+            heredoc = parse_heredoc(raw_src)
             if heredoc is not None:
                 content = heredocs_by_name.get(heredoc.name)
                 if content is None:
@@ -370,6 +378,7 @@ class _DockerfileConverter:
                     )
                 self._copy_heredoc(content, dest, user, mode)
                 continue
+            src = self._expand(instruction, raw_src)
             if instruction.name == "ADD" and _REMOTE_URL.match(src):
                 raise DockerfileSyntaxError(
                     f"ADD from a remote URL is not supported: {src}",
@@ -389,7 +398,7 @@ class _DockerfileConverter:
         content = (
             chomp_heredoc_content(heredoc.content) if heredoc.chomp else heredoc.content
         )
-        plain_terminator = f"E2B_HEREDOC_{heredoc.name}"
+        plain_terminator = _heredoc_terminator(heredoc.name, content)
         terminator = plain_terminator if heredoc.expand else f"'{plain_terminator}'"
         quoted_target = shlex.quote(target)
 
@@ -402,7 +411,8 @@ class _DockerfileConverter:
             command += f"\nchown {shlex.quote(user)} {quoted_target}"
         if mode is not None:
             command += f"\nchmod {mode:o} {quoted_target}"
-        self._template_builder.run_cmd(command)
+        # COPY writes as the builder (root), independent of the current USER.
+        self._template_builder.run_cmd(command, user="root")
 
     def _handle_env(self, instruction: DockerfileInstruction) -> None:
         self._parse_flags(instruction, {})
@@ -461,12 +471,12 @@ class _DockerfileConverter:
                         words.extend(["/bin/sh", "-c", cmd.args[0]])
                 command = _shell_join(words) if words else None
             else:
-                command = entrypoint.args[0]
+                command = entrypoint.args[0] if entrypoint.args else None
         elif cmd is not None:
             if cmd.json:
                 command = _shell_join(cmd.args) if cmd.args else None
             else:
-                command = cmd.args[0]
+                command = cmd.args[0] if cmd.args else None
 
         if command is not None and command.strip() != "":
             self._template_builder.set_start_cmd(command, wait_for_timeout(20_000))

@@ -266,6 +266,46 @@ CONF"""
 
 
 @pytest.mark.skip_debug()
+def test_from_dockerfile_copy_heredoc_runs_as_root():
+    dockerfile = """FROM node:24
+USER app
+COPY <<EOF /etc/app.conf
+E2B_HEREDOC_EOF
+x=1
+EOF"""
+
+    template = Template().from_dockerfile(dockerfile)
+    runs = [
+        i["args"] for i in _instructions(template) if i["type"] == InstructionType.RUN
+    ]
+
+    assert runs == [
+        [
+            'mkdir -p "$(dirname /etc/app.conf)" && cat <<E2B_HEREDOC_EOF_ >/etc/app.conf\n'
+            "E2B_HEREDOC_EOF\nx=1\nE2B_HEREDOC_EOF_",
+            "root",
+        ],
+    ]
+
+
+@pytest.mark.skip_debug()
+def test_from_dockerfile_copy_with_literal_paths_and_zero_mode():
+    dockerfile = """FROM node:24
+COPY "<<EOF" /tmp/
+COPY --chmod=000 secret.txt /tmp/"""
+
+    template = Template().from_dockerfile(dockerfile)
+    copies = [
+        i["args"] for i in _instructions(template) if i["type"] == InstructionType.COPY
+    ]
+
+    assert copies == [
+        ["<<EOF", "/tmp/", "", ""],
+        ["secret.txt", "/tmp/", "", "0000"],
+    ]
+
+
+@pytest.mark.skip_debug()
 def test_from_dockerfile_combines_entrypoint_and_cmd():
     cases = [
         (
@@ -277,6 +317,8 @@ def test_from_dockerfile_combines_entrypoint_and_cmd():
         ("CMD npm start", "npm start"),
         ('CMD ["npm", "start"]', "npm start"),
         ("", None),
+        ("CMD", None),
+        ("ENTRYPOINT", None),
     ]
     for tail, expected in cases:
         template = Template().from_dockerfile(f"FROM node:24\n{tail}")
@@ -309,6 +351,7 @@ def test_from_dockerfile_rejects_invalid_dockerfiles():
         ("FROM a\nBOGUS instruction", "unknown instruction: BOGUS"),
         ("FROM a\nCOPY --unknown=1 a b", "unknown flag: unknown"),
         ("FROM a\nCOPY --from=builder a b", "--from is not supported"),
+        ("FROM a\nCOPY --toString=1 a b", "unknown flag: toString"),
         ('FROM a\nENV K="unterminated', "looking for matching double-quote"),
         ('FROM a\nRUN ["not", 1]', "Only strings are supported"),
     ]

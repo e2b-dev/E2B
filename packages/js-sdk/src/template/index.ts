@@ -613,7 +613,7 @@ export class TemplateBase
         srcString,
         dest.toString(),
         options?.user ?? '',
-        options?.mode ? padOctal(options.mode) : '',
+        options?.mode !== undefined ? padOctal(options.mode) : '',
       ]
 
       this.instructions.push({
@@ -694,7 +694,7 @@ export class TemplateBase
   ): TemplateBuilder {
     const paths = Array.isArray(path) ? path : [path]
     const args = ['mkdir', '-p']
-    if (options?.mode) {
+    if (options?.mode !== undefined) {
       args.push(`-m ${padOctal(options.mode)}`)
     }
     args.push(...paths.map((p) => shellQuote(p.toString())))

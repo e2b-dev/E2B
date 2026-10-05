@@ -124,6 +124,8 @@ describe('parseDockerfileAst', () => {
 })
 
 test('parseHeredoc', () => {
+  assert.equal(parseHeredoc('<<' + ' '.repeat(50_000) + '<'), undefined)
+  assert.equal(parseHeredoc('<<' + ' '.repeat(50_000)), undefined)
   assert.deepEqual(parseHeredoc('<<-EOF'), {
     name: 'EOF',
     content: '',

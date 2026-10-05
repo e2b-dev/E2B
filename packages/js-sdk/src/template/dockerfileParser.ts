@@ -98,6 +98,15 @@ export function shellQuote(word: string): string {
   return "'" + word.replace(/'/g, `'"'"'`) + "'"
 }
 
+/** A heredoc delimiter that does not occur in the content it wraps. */
+function heredocTerminator(name: string, content: string): string {
+  let terminator = `E2B_HEREDOC_${name}`
+  while (content.includes(terminator)) {
+    terminator += '_'
+  }
+  return terminator
+}
+
 function withTrailingNewline(content: string): string {
   return content === '' || content.endsWith('\n') ? content : content + '\n'
 }
@@ -251,7 +260,7 @@ class DockerfileConverter {
       const name = eq === -1 ? body : body.slice(0, eq)
       const rawValue = eq === -1 ? undefined : body.slice(eq + 1)
 
-      const spec = specs[name]
+      const spec = Object.hasOwn(specs, name) ? specs[name] : undefined
       if (!spec) {
         throw new DockerfileSyntaxError(
           `unknown flag: ${name}`,
@@ -346,7 +355,7 @@ class DockerfileConverter {
       }
       // A shebang script: write it to a temporary file and execute it.
       const script = shellQuote(`/tmp/${heredoc.name}`)
-      const terminator = `E2B_HEREDOC_${heredoc.name}`
+      const terminator = heredocTerminator(heredoc.name, content)
       return (
         `cat <<'${terminator}' >${script}\n` +
         withTrailingNewline(content) +
@@ -399,23 +408,23 @@ class DockerfileConverter {
       mode = parseInt(chmod, 8)
     }
 
-    const args = instruction.args.map((arg) => this.expand(instruction, arg))
-    const dest = args[args.length - 1]
-    const sources = args.slice(0, -1)
-
-    if (parseHeredoc(dest)) {
+    // Heredoc markers are recognized on the raw tokens, like the AST does:
+    // a quoted `"<<EOF"` is a literal file name, not a heredoc.
+    const rawDest = instruction.args[instruction.args.length - 1]
+    if (parseHeredoc(rawDest)) {
       throw new DockerfileSyntaxError(
         `${instruction.name} cannot accept a heredoc as a destination`,
         instruction.startLine
       )
     }
+    const dest = this.expand(instruction, rawDest)
 
     const heredocsByName = new Map(
       instruction.heredocs.map((heredoc) => [heredoc.name, heredoc])
     )
 
-    for (const src of sources) {
-      const heredoc = parseHeredoc(src)
+    for (const rawSrc of instruction.args.slice(0, -1)) {
+      const heredoc = parseHeredoc(rawSrc)
       if (heredoc) {
         const content = heredocsByName.get(heredoc.name)
         if (!content) {
@@ -427,6 +436,7 @@ class DockerfileConverter {
         this.copyHeredoc(content, dest, user, mode)
         continue
       }
+      const src = this.expand(instruction, rawSrc)
       if (instruction.name === 'ADD' && /^[a-z][a-z0-9+.-]*:\/\//i.test(src)) {
         throw new DockerfileSyntaxError(
           `ADD from a remote URL is not supported: ${src}`,
@@ -448,10 +458,8 @@ class DockerfileConverter {
     const content = heredoc.chomp
       ? chompHeredocContent(heredoc.content)
       : heredoc.content
-    const terminator = heredoc.expand
-      ? `E2B_HEREDOC_${heredoc.name}`
-      : `'E2B_HEREDOC_${heredoc.name}'`
-    const plainTerminator = `E2B_HEREDOC_${heredoc.name}`
+    const plainTerminator = heredocTerminator(heredoc.name, content)
+    const terminator = heredoc.expand ? plainTerminator : `'${plainTerminator}'`
     const quotedTarget = shellQuote(target)
 
     let command =
@@ -464,7 +472,8 @@ class DockerfileConverter {
     if (mode !== undefined) {
       command += `\nchmod ${mode.toString(8)} ${quotedTarget}`
     }
-    this.templateBuilder.runCmd(command)
+    // COPY writes as the builder (root), independent of the current USER.
+    this.templateBuilder.runCmd(command, { user: 'root' })
   }
 
   private handleEnv(instruction: DockerfileInstruction) {
@@ -537,14 +546,14 @@ class DockerfileConverter {
         }
         command = words.length > 0 ? shellJoin(words) : undefined
       } else {
-        command = entrypoint.args[0]
+        command = entrypoint.args.length > 0 ? entrypoint.args[0] : undefined
       }
     } else if (cmd) {
-      command = cmd.json
-        ? cmd.args.length > 0
-          ? shellJoin(cmd.args)
-          : undefined
-        : cmd.args[0]
+      if (cmd.json) {
+        command = cmd.args.length > 0 ? shellJoin(cmd.args) : undefined
+      } else {
+        command = cmd.args.length > 0 ? cmd.args[0] : undefined
+      }
     }
 
     if (command !== undefined && command.trim() !== '') {

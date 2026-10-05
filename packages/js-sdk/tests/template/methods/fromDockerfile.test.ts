@@ -336,6 +336,46 @@ CONF`
   ])
 })
 
+buildTemplateTest('fromDockerfile COPY heredoc runs as root', () => {
+  const dockerfile = `FROM node:24
+USER app
+COPY <<EOF /etc/app.conf
+E2B_HEREDOC_EOF
+x=1
+EOF`
+
+  const template = Template().fromDockerfile(dockerfile)
+  const runs = instructionsOf(template)
+    .filter((i) => i.type === InstructionType.RUN)
+    .map((i) => i.args)
+
+  assert.deepEqual(runs, [
+    [
+      `mkdir -p "$(dirname /etc/app.conf)" && cat <<E2B_HEREDOC_EOF_ >/etc/app.conf\nE2B_HEREDOC_EOF\nx=1\nE2B_HEREDOC_EOF_`,
+      'root',
+    ],
+  ])
+})
+
+buildTemplateTest(
+  'fromDockerfile COPY with literal paths and zero mode',
+  () => {
+    const dockerfile = `FROM node:24
+COPY "<<EOF" /tmp/
+COPY --chmod=000 secret.txt /tmp/`
+
+    const template = Template().fromDockerfile(dockerfile)
+    const copies = instructionsOf(template)
+      .filter((i) => i.type === InstructionType.COPY)
+      .map((i) => i.args)
+
+    assert.deepEqual(copies, [
+      ['<<EOF', '/tmp/', '', ''],
+      ['secret.txt', '/tmp/', '', '0000'],
+    ])
+  }
+)
+
 buildTemplateTest('fromDockerfile combines ENTRYPOINT and CMD', () => {
   const cases: [string, string | undefined][] = [
     [
@@ -347,6 +387,8 @@ buildTemplateTest('fromDockerfile combines ENTRYPOINT and CMD', () => {
     ['CMD npm start', 'npm start'],
     ['CMD ["npm", "start"]', 'npm start'],
     ['', undefined],
+    ['CMD', undefined],
+    ['ENTRYPOINT', undefined],
   ]
   for (const [tail, expected] of cases) {
     const template = Template().fromDockerfile(`FROM node:24\n${tail}`)
@@ -382,6 +424,7 @@ buildTemplateTest('fromDockerfile rejects invalid Dockerfiles', () => {
     ['FROM a\nBOGUS instruction', /unknown instruction: BOGUS/],
     ['FROM a\nCOPY --unknown=1 a b', /unknown flag: unknown/],
     ['FROM a\nCOPY --from=builder a b', /--from is not supported/],
+    ['FROM a\nCOPY --toString=1 a b', /unknown flag: toString/],
     ['FROM a\nENV K="unterminated', /looking for matching double-quote/],
     ['FROM a\nRUN ["not", 1]', /Only strings are supported/],
   ]
