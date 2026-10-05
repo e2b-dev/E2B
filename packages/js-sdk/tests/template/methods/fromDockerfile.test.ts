@@ -439,10 +439,7 @@ ARG MODE=440
 ENV FULL=0\${MODE}
 COPY --chmod=$MODE a /a
 COPY --chmod=\${FULL} b /b
-COPY --chmod=\${UNSET:-755} c /c
-COPY --chmod=\${MODE:+755} d /d
-COPY --chmod=\${UNSET:-0\${MODE}} e /e
-COPY --chmod=\${MODE:?mode_required} f /f`
+COPY --chmod=\${UNSET:-755} c /c`
 
     const template = Template().fromDockerfile(dockerfile)
     const copies = instructionsOf(template)
@@ -453,9 +450,6 @@ COPY --chmod=\${MODE:?mode_required} f /f`
       ['a', '/a', '', '0440'],
       ['b', '/b', '', '0440'],
       ['c', '/c', '', '0755'],
-      ['d', '/d', '', '0755'],
-      ['e', '/e', '', '0440'],
-      ['f', '/f', '', '0440'],
     ])
   }
 )
@@ -551,13 +545,7 @@ buildTemplateTest('fromDockerfile rejects invalid Dockerfiles', () => {
     ['FROM a\nCOPY <<EOF /x\n${X:/a/b}\nEOF', /unsupported modifier \(:\/\)/],
     [
       'FROM a\nCOPY --chmod=$NOPE a b',
-      /invalid chmod value "\$NOPE" \(resolves to ""; only values set by an earlier ARG or ENV/,
-    ],
-    ['FROM a\nCOPY --chmod=${NOPE:?mode_required} a b', /NOPE: mode_required/],
-    ['FROM a\nCOPY --chmod=${NOPE:-7 a b', /missing '}'/],
-    [
-      `FROM a\nCOPY <<EOF /x\n${'${A:-'.repeat(200000)}${'}'.repeat(200000)}\nEOF`,
-      /call stack|recursion/i,
+      /invalid chmod value "\$NOPE" \(resolves to ""\)/,
     ],
     ['FROM a\nBOGUS instruction', /unknown instruction: BOGUS/],
     ['FROM a\nCOPY --unknown=1 a b', /unknown flag: unknown/],

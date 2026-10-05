@@ -88,17 +88,11 @@ const IGNORED_INSTRUCTIONS = new Set([
 
 /** A heredoc delimiter that does not occur in the content it wraps. */
 function heredocTerminator(name: string, content: string): string {
-  const base = `E2B_HEREDOC_${name.replace(/[^A-Za-z0-9_]/g, '_')}`
-  let underscores = 0
-  for (let i = content.indexOf(base); i !== -1; i = content.indexOf(base, i)) {
-    const start = i + base.length
-    i = start
-    while (content[i] === '_') {
-      i++
-    }
-    underscores = Math.max(underscores, i - start + 1)
+  let terminator = `E2B_HEREDOC_${name.replace(/[^A-Za-z0-9_]/g, '_')}`
+  while (content.includes(terminator)) {
+    terminator += '_'
   }
-  return base + '_'.repeat(underscores)
+  return terminator
 }
 
 function withTrailingNewline(content: string): string {
@@ -106,6 +100,8 @@ function withTrailingNewline(content: string): string {
 }
 
 const VARIABLE_NAME = /\p{Nd}+|[@*#?\-$!0]|[\p{L}\p{Nd}_]+/uy
+const BUILD_VARIABLE =
+  /\$(?:([A-Za-z_][A-Za-z0-9_]*)|\{([A-Za-z_][A-Za-z0-9_]*)(?:(:?-)([^}]*))?\})/g
 
 function shellLiteral(ch: string, stopChar?: string): string {
   return ch === '\\' || ch === '`' || ch === '$' || ch === stopChar
@@ -336,93 +332,29 @@ class DockerfileConverter {
   }
 
   /**
-   * Expand `$VAR` references against the `ARG` / `ENV` values declared earlier
-   * in the Dockerfile, with BuildKit's `-`, `+` and `?` modifier semantics.
-   * Only used where the converter itself needs the concrete value.
+   * Substitute `ARG` / `ENV` values declared earlier in the Dockerfile, for
+   * the few places where the converter itself needs the concrete value.
    */
-  private resolveVars(word: string, line: number): string {
-    let i = 0
-    const readName = () => {
-      const start = i
-      while (i < word.length && /[A-Za-z0-9_]/.test(word[i])) {
-        i++
+  private resolveVars(word: string): string {
+    return word.replace(
+      BUILD_VARIABLE,
+      (
+        _match: string,
+        bare: string | undefined,
+        braced: string | undefined,
+        op: string | undefined,
+        fallback: string | undefined
+      ) => {
+        const value = this.vars.get(bare ?? braced ?? '')
+        if (
+          op !== undefined &&
+          (value === undefined || (op === ':-' && value === ''))
+        ) {
+          return fallback ?? ''
+        }
+        return value ?? ''
       }
-      return word.slice(start, i)
-    }
-    const scan = (stop?: string): string => {
-      let out = ''
-      while (i < word.length) {
-        const ch = word[i]
-        if (ch === stop) {
-          return out
-        }
-        if (ch !== '$') {
-          out += ch
-          i++
-          continue
-        }
-        i++
-        if (word[i] !== '{') {
-          const name = readName()
-          out += name === '' ? '$' : (this.vars.get(name) ?? '')
-          continue
-        }
-        i++
-        const name = readName()
-        const value = this.vars.get(name)
-        if (word[i] === '}') {
-          i++
-          out += value ?? ''
-          continue
-        }
-        let modifier = word[i++] ?? ''
-        const nullIsUnset = modifier === ':'
-        if (nullIsUnset) {
-          modifier += word[i++] ?? ''
-        }
-        if (i > word.length) {
-          throw new DockerfileSyntaxError("syntax error: missing '}'", line)
-        }
-        if (!'-+?'.includes(modifier[modifier.length - 1])) {
-          throw new DockerfileSyntaxError(
-            `unsupported modifier (${modifier}) in substitution when resolving ${JSON.stringify(word)}`,
-            line
-          )
-        }
-        const fallback = scan('}')
-        i++
-        const unset = value === undefined || (nullIsUnset && value === '')
-        switch (modifier[modifier.length - 1]) {
-          case '-':
-            out += unset ? fallback : value
-            break
-          case '+':
-            out += unset ? '' : fallback
-            break
-          default:
-            if (unset) {
-              throw new DockerfileSyntaxError(`${name}: ${fallback}`, line)
-            }
-            out += value
-        }
-      }
-      if (stop !== undefined) {
-        throw new DockerfileSyntaxError("syntax error: missing '}'", line)
-      }
-      return out
-    }
-    return scan()
-  }
-
-  private recordVar(key: string, value: string, line: number) {
-    try {
-      this.vars.set(key, this.resolveVars(value, line))
-    } catch (err) {
-      if (!(err instanceof DockerfileSyntaxError)) {
-        throw err
-      }
-      this.vars.set(key, value)
-    }
+    )
   }
 
   private expandSingle(instruction: DockerfileInstruction): string {
@@ -592,12 +524,9 @@ class DockerfileConverter {
     let mode: number | undefined
     if (flags.chmod !== undefined) {
       const chmod = this.expand(instruction, flags.chmod)
-      const resolved = this.resolveVars(chmod, instruction.startLine)
+      const resolved = this.resolveVars(chmod)
       if (!/^[0-7]{3,4}$/.test(resolved)) {
-        const detail =
-          resolved === chmod
-            ? ''
-            : ` (resolves to "${resolved}"; only values set by an earlier ARG or ENV instruction are known)`
+        const detail = resolved === chmod ? '' : ` (resolves to "${resolved}")`
         throw new DockerfileSyntaxError(
           `invalid chmod value "${chmod}"${detail}, expected an octal mode such as 0755`,
           instruction.startLine
@@ -657,17 +586,7 @@ class DockerfileConverter {
       ? chompHeredocContent(heredoc.content)
       : heredoc.content
     if (heredoc.expand) {
-      try {
-        content = expandableHeredocBody(content, line)
-      } catch (err) {
-        if (err instanceof DockerfileSyntaxError) {
-          throw err
-        }
-        throw new DockerfileSyntaxError(
-          err instanceof Error ? err.message : String(err),
-          line
-        )
-      }
+      content = expandableHeredocBody(content, line)
     }
     const plainTerminator = heredocTerminator(heredoc.name, content)
     const terminator = heredoc.expand ? plainTerminator : `'${plainTerminator}'`
@@ -711,7 +630,7 @@ class DockerfileConverter {
         )
       }
       envs[key] = this.expand(instruction, args[i + 1])
-      this.recordVar(key, envs[key], instruction.startLine)
+      this.vars.set(key, this.resolveVars(envs[key]))
     }
     this.templateBuilder.setEnvs(envs)
   }
@@ -736,7 +655,7 @@ class DockerfileConverter {
         )
       }
       envs[key] = eq === -1 ? '' : this.expand(instruction, arg.slice(eq + 1))
-      this.recordVar(key, envs[key], instruction.startLine)
+      this.vars.set(key, this.resolveVars(envs[key]))
     }
     this.templateBuilder.setEnvs(envs)
   }
