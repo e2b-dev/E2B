@@ -1,5 +1,12 @@
 # @e2b/python-sdk
 
+## 2.52.1
+
+### Patch Changes
+
+- cc29617: Match BuildKit when filtering the template build context with `.dockerignore`: a leading `**` followed by literal characters (e.g. `**.txt`) now matches at any depth, a negated pattern matching only a parent directory (e.g. `src/app.ts` then `!src`) no longer re-includes the path, and in the JS SDK `?` and bracket expressions match characters outside the BMP (e.g. emoji) as a single character.
+- 3ba1d05: Retry a `502` response only for operations that are safe to replay: a gateway may answer `502` after the API already processed the request, so a `502` from sandbox creation, fork, snapshot or another resource-creating `POST` is returned instead of being retried (which could create a duplicate). `503` is still retried for every operation. Secret updates (`POST /secrets/{id}`) are no longer replayed after a `502` or a dropped connection, as each update appends a new version.
+
 ## 2.52.0
 
 ### Minor Changes

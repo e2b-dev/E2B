@@ -1,5 +1,11 @@
 # @e2b/desktop-python
 
+## 2.6.1
+
+### Patch Changes
+
+- 4065e93: Require `urllib3>=2.8.0` so installs pick up the fixes for CVE-2026-97687 (HTTPS proxy TLS configuration ignored) and CVE-2026-97689 (unbounded chunk-size line buffering).
+
 ## 2.6.0
 
 ### Minor Changes

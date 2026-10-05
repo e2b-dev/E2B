@@ -1,5 +1,16 @@
 # @e2b/cli
 
+## 2.21.1
+
+### Patch Changes
+
+- 4813482: Bump dependency floors: `undici` `^7.29.1 → ^7.30.0` and optional `undici8` `8.10.2 → 8.11.2` (backported HTTP/2 WebSocket, decompression backpressure and aborted-request fixes), `compare-versions` `^6.1.0 → ^6.1.1` in `e2b`, and `inquirer` `^12.10.0 → ^12.11.1` in `@e2b/cli`.
+- Updated dependencies [cc29617]
+- Updated dependencies [3ba1d05]
+- Updated dependencies [4813482]
+- Updated dependencies [d0ed5c1]
+  - e2b@2.52.1
+
 ## 2.21.0
 
 ### Minor Changes

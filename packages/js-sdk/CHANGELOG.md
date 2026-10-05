@@ -1,5 +1,14 @@
 # e2b
 
+## 2.52.1
+
+### Patch Changes
+
+- cc29617: Match BuildKit when filtering the template build context with `.dockerignore`: a leading `**` followed by literal characters (e.g. `**.txt`) now matches at any depth, a negated pattern matching only a parent directory (e.g. `src/app.ts` then `!src`) no longer re-includes the path, and in the JS SDK `?` and bracket expressions match characters outside the BMP (e.g. emoji) as a single character.
+- 3ba1d05: Retry a `502` response only for operations that are safe to replay: a gateway may answer `502` after the API already processed the request, so a `502` from sandbox creation, fork, snapshot or another resource-creating `POST` is returned instead of being retried (which could create a duplicate). `503` is still retried for every operation. Secret updates (`POST /secrets/{id}`) are no longer replayed after a `502` or a dropped connection, as each update appends a new version.
+- 4813482: Bump dependency floors: `undici` `^7.29.1 → ^7.30.0` and optional `undici8` `8.10.2 → 8.11.2` (backported HTTP/2 WebSocket, decompression backpressure and aborted-request fixes), `compare-versions` `^6.1.0 → ^6.1.1` in `e2b`, and `inquirer` `^12.10.0 → ^12.11.1` in `@e2b/cli`.
+- d0ed5c1: fix(js-sdk): treat `WatchHandle.stop()` as a clean watch end - `onExit` now fires with no error instead of a `TimeoutError` blaming `requestTimeoutMs`, matching the Python SDK behavior.
+
 ## 2.52.0
 
 ### Minor Changes
