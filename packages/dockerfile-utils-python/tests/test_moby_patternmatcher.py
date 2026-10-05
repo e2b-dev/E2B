@@ -300,6 +300,7 @@ def test_ignorefile_read_all():
         "",
         "lastfile",
         "# this is a comment",
+        " # not a comment",
         "! /inverted/abs/path",
     ]
     assert PatternMatcher(content).patterns == [
@@ -307,6 +308,7 @@ def test_ignorefile_read_all():
         "test2",
         "a/file/here",
         "lastfile",
+        "# not a comment",
         "!inverted/abs/path",
     ]
     # Upstream `ReadAll` keeps `!` and `! ` as `!`, which `New` then rejects

@@ -293,8 +293,11 @@ export class PatternMatcher {
     const backslashIsSeparator = options.backslashIsSeparator ?? false
     this.backslashIsSeparator = backslashIsSeparator
     for (const original of patterns) {
+      if (original.startsWith('#')) {
+        continue
+      }
       let pattern = original.trim()
-      if (!pattern || pattern.startsWith('#')) {
+      if (!pattern) {
         continue
       }
       const exclusion = pattern.startsWith('!')

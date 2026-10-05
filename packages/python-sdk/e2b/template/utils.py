@@ -122,7 +122,7 @@ def read_dockerignore(context_path: str) -> List[str]:
     return [
         line.strip()
         for line in content.split("\n")
-        if line.strip() and not line.strip().startswith("#")
+        if not line.startswith("#") and line.strip()
     ]
 
 

@@ -118,8 +118,9 @@ export function readDockerignore(contextPath: string): string[] {
     .replace(/^\uFEFF/, '')
   return content
     .split('\n')
+    .filter((line) => !line.startsWith('#'))
     .map((line) => line.trim())
-    .filter((line) => line && !line.startsWith('#'))
+    .filter((line) => line)
 }
 
 /**

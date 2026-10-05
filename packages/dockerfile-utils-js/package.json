@@ -4,7 +4,7 @@
   "packageManager": "pnpm@10.34.5",
   "description": "E2B Dockerfile utils - Dockerfile parser, shell lexer and .dockerignore matcher ported from BuildKit and Moby",
   "homepage": "https://e2b.dev/?utm_source=npm&utm_medium=referral&utm_campaign=package_homepage&utm_content=e2b-dockerfile-utils",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "author": {
     "name": "FoundryLabs, Inc.",
     "email": "hello@e2b.dev",
@@ -42,6 +42,8 @@
   "files": [
     "dist",
     "README.md",
+    "LICENSE",
+    "NOTICE",
     "package.json"
   ],
   "keywords": [

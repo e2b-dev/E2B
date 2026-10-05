@@ -312,6 +312,7 @@ describe('moby/patternmatcher', () => {
       '',
       'lastfile',
       '# this is a comment',
+      ' # not a comment',
       '! /inverted/abs/path',
     ]
     assert.deepEqual(new PatternMatcher(content).patterns, [
@@ -319,6 +320,7 @@ describe('moby/patternmatcher', () => {
       'test2',
       'a/file/here',
       'lastfile',
+      '# not a comment',
       '!inverted/abs/path',
     ])
     // Upstream `ReadAll` keeps `!` and `! ` as `!`, which `New` then rejects

@@ -176,8 +176,10 @@ class PatternMatcher:
         self._cleaned: List[str] = []
         self._backslash_is_separator = backslash_is_separator
         for original in patterns:
+            if original.startswith("#"):
+                continue
             pattern = original.strip()
-            if not pattern or pattern.startswith("#"):
+            if not pattern:
                 continue
             exclusion = pattern.startswith("!")
             if exclusion:
