@@ -65,6 +65,7 @@ export function isConnectionClosedError(error: unknown): boolean {
 
 export async function* readLines(stream: ReadableStream<Uint8Array>) {
   const reader = stream.getReader()
+  const decoder = new TextDecoder()
   let buffer = ''
 
   try {
@@ -72,10 +73,11 @@ export async function* readLines(stream: ReadableStream<Uint8Array>) {
       const { done, value } = await reader.read()
 
       if (value !== undefined) {
-        buffer += new TextDecoder().decode(value)
+        buffer += decoder.decode(value, { stream: true })
       }
 
       if (done) {
+        buffer += decoder.decode()
         if (buffer.length > 0) {
           yield buffer
         }
