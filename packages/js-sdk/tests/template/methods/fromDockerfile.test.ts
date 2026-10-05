@@ -432,6 +432,50 @@ EOF`
 )
 
 buildTemplateTest(
+  'fromDockerfile COPY --chmod resolves ARG and ENV values',
+  () => {
+    const dockerfile = `FROM node:24
+ARG MODE=440
+ENV FULL=0\${MODE}
+COPY --chmod=$MODE a /a
+COPY --chmod=\${FULL} b /b
+COPY --chmod=\${UNSET:-755} c /c`
+
+    const template = Template().fromDockerfile(dockerfile)
+    const copies = instructionsOf(template)
+      .filter((i) => i.type === InstructionType.COPY)
+      .map((i) => i.args)
+
+    assert.deepEqual(copies, [
+      ['a', '/a', '', '0440'],
+      ['b', '/b', '', '0440'],
+      ['c', '/c', '', '0755'],
+    ])
+  }
+)
+
+buildTemplateTest(
+  'fromDockerfile COPY heredoc with a shell-unsafe name',
+  () => {
+    const dockerfile = `FROM node:24
+COPY <<FOO;BAR /etc/
+hi
+FOO;BAR`
+
+    const template = Template().fromDockerfile(dockerfile)
+    const runs = instructionsOf(template)
+      .filter((i) => i.type === InstructionType.RUN)
+      .map((i) => i.args[0])
+
+    assert.deepEqual(runs, [
+      "E2B_HEREDOC_DEST='/etc/FOO;BAR'\n" +
+        'mkdir -p "$(dirname "$E2B_HEREDOC_DEST")" && cat <<E2B_HEREDOC_FOO_BAR >"$E2B_HEREDOC_DEST"\n' +
+        'hi\nE2B_HEREDOC_FOO_BAR',
+    ])
+  }
+)
+
+buildTemplateTest(
   'fromDockerfile COPY with literal paths and zero mode',
   () => {
     const dockerfile = `FROM node:24
@@ -499,6 +543,14 @@ buildTemplateTest('fromDockerfile rejects invalid Dockerfiles', () => {
     ['FROM a\nCOPY <<EOF /x\n${HOME:-\nEOF', /missing '}'/],
     ['FROM a\nCOPY <<EOF /x\n${X/a\nEOF', /missing '\/' in \${}/],
     ['FROM a\nCOPY <<EOF /x\n${X:/a/b}\nEOF', /unsupported modifier \(:\/\)/],
+    [
+      'FROM a\nCOPY --chmod=$NOPE a b',
+      /invalid chmod value "\$NOPE" \(resolves to ""\)/,
+    ],
+    [
+      `FROM a\nCOPY <<EOF /x\n${'${A:-'.repeat(200000)}${'}'.repeat(200000)}\nEOF`,
+      /call stack|recursion/i,
+    ],
     ['FROM a\nBOGUS instruction', /unknown instruction: BOGUS/],
     ['FROM a\nCOPY --unknown=1 a b', /unknown flag: unknown/],
     ['FROM a\nCOPY --from=builder a b', /--from is not supported/],

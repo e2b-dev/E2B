@@ -88,7 +88,7 @@ const IGNORED_INSTRUCTIONS = new Set([
 
 /** A heredoc delimiter that does not occur in the content it wraps. */
 function heredocTerminator(name: string, content: string): string {
-  const base = `E2B_HEREDOC_${name}`
+  const base = `E2B_HEREDOC_${name.replace(/[^A-Za-z0-9_]/g, '_')}`
   let underscores = 0
   for (let i = content.indexOf(base); i !== -1; i = content.indexOf(base, i)) {
     const start = i + base.length
@@ -106,6 +106,8 @@ function withTrailingNewline(content: string): string {
 }
 
 const VARIABLE_NAME = /\p{Nd}+|[@*#?\-$!0]|[\p{L}\p{Nd}_]+/uy
+const BUILD_VARIABLE =
+  /\$(?:([A-Za-z_][A-Za-z0-9_]*)|\{([A-Za-z_][A-Za-z0-9_]*)(?:(:?-)([^}]*))?\})/g
 
 function shellLiteral(ch: string, stopChar?: string): string {
   return ch === '\\' || ch === '`' || ch === '$' || ch === stopChar
@@ -220,6 +222,7 @@ interface StartCommand {
 
 class DockerfileConverter {
   private readonly lex: ShellLex
+  private readonly vars = new Map<string, string>()
   private userChanged = false
   private workdirChanged = false
   private cmd?: StartCommand
@@ -332,6 +335,32 @@ class DockerfileConverter {
         instruction.startLine
       )
     }
+  }
+
+  /**
+   * Substitute `ARG` / `ENV` values declared earlier in the Dockerfile, for
+   * the few places where the converter itself needs the concrete value.
+   */
+  private resolveVars(word: string): string {
+    return word.replace(
+      BUILD_VARIABLE,
+      (
+        _match: string,
+        bare: string | undefined,
+        braced: string | undefined,
+        op: string | undefined,
+        fallback: string | undefined
+      ) => {
+        const value = this.vars.get(bare ?? braced ?? '')
+        if (
+          op !== undefined &&
+          (value === undefined || (op === ':-' && value === ''))
+        ) {
+          return fallback ?? ''
+        }
+        return value ?? ''
+      }
+    )
   }
 
   private expandSingle(instruction: DockerfileInstruction): string {
@@ -501,13 +530,15 @@ class DockerfileConverter {
     let mode: number | undefined
     if (flags.chmod !== undefined) {
       const chmod = this.expand(instruction, flags.chmod)
-      if (!/^[0-7]{3,4}$/.test(chmod)) {
+      const resolved = this.resolveVars(chmod)
+      if (!/^[0-7]{3,4}$/.test(resolved)) {
+        const detail = resolved === chmod ? '' : ` (resolves to "${resolved}")`
         throw new DockerfileSyntaxError(
-          `invalid chmod value "${chmod}", expected an octal mode such as 0755`,
+          `invalid chmod value "${chmod}"${detail}, expected an octal mode such as 0755`,
           instruction.startLine
         )
       }
-      mode = parseInt(chmod, 8)
+      mode = parseInt(resolved, 8)
     }
 
     // Heredoc markers are recognized on the raw tokens, like the AST does:
@@ -561,7 +592,17 @@ class DockerfileConverter {
       ? chompHeredocContent(heredoc.content)
       : heredoc.content
     if (heredoc.expand) {
-      content = expandableHeredocBody(content, line)
+      try {
+        content = expandableHeredocBody(content, line)
+      } catch (err) {
+        if (err instanceof DockerfileSyntaxError) {
+          throw err
+        }
+        throw new DockerfileSyntaxError(
+          err instanceof Error ? err.message : String(err),
+          line
+        )
+      }
     }
     const plainTerminator = heredocTerminator(heredoc.name, content)
     const terminator = heredoc.expand ? plainTerminator : `'${plainTerminator}'`
@@ -605,6 +646,7 @@ class DockerfileConverter {
         )
       }
       envs[key] = this.expand(instruction, args[i + 1])
+      this.vars.set(key, this.resolveVars(envs[key]))
     }
     this.templateBuilder.setEnvs(envs)
   }
@@ -629,6 +671,7 @@ class DockerfileConverter {
         )
       }
       envs[key] = eq === -1 ? '' : this.expand(instruction, arg.slice(eq + 1))
+      this.vars.set(key, this.resolveVars(envs[key]))
     }
     this.templateBuilder.setEnvs(envs)
   }

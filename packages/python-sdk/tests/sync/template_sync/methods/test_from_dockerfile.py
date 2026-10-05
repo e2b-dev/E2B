@@ -336,6 +336,48 @@ EOF"""
 
 
 @pytest.mark.skip_debug()
+def test_from_dockerfile_copy_chmod_resolves_arg_and_env_values():
+    dockerfile = """FROM node:24
+ARG MODE=440
+ENV FULL=0${MODE}
+COPY --chmod=$MODE a /a
+COPY --chmod=${FULL} b /b
+COPY --chmod=${UNSET:-755} c /c"""
+
+    template = Template().from_dockerfile(dockerfile)
+    copies = [
+        i["args"] for i in _instructions(template) if i["type"] == InstructionType.COPY
+    ]
+
+    assert copies == [
+        ["a", "/a", "", "0440"],
+        ["b", "/b", "", "0440"],
+        ["c", "/c", "", "0755"],
+    ]
+
+
+@pytest.mark.skip_debug()
+def test_from_dockerfile_copy_heredoc_with_shell_unsafe_name():
+    dockerfile = """FROM node:24
+COPY <<FOO;BAR /etc/
+hi
+FOO;BAR"""
+
+    template = Template().from_dockerfile(dockerfile)
+    runs = [
+        i["args"][0]
+        for i in _instructions(template)
+        if i["type"] == InstructionType.RUN
+    ]
+
+    assert runs == [
+        "E2B_HEREDOC_DEST='/etc/FOO;BAR'\n"
+        'mkdir -p "$(dirname "$E2B_HEREDOC_DEST")" && cat <<E2B_HEREDOC_FOO_BAR >"$E2B_HEREDOC_DEST"\n'
+        "hi\nE2B_HEREDOC_FOO_BAR",
+    ]
+
+
+@pytest.mark.skip_debug()
 def test_from_dockerfile_copy_heredoc_into_directory_expands_only_variables():
     dockerfile = """FROM node:24
 COPY <<EOF /etc/
@@ -427,6 +469,14 @@ def test_from_dockerfile_rejects_invalid_dockerfiles():
         ("FROM a\nCOPY <<EOF /x\n${HOME:-\nEOF", "missing '}'"),
         ("FROM a\nCOPY <<EOF /x\n${X/a\nEOF", r"missing '/' in \$\{\}"),
         ("FROM a\nCOPY <<EOF /x\n${X:/a/b}\nEOF", r"unsupported modifier \(:/\)"),
+        (
+            "FROM a\nCOPY --chmod=$NOPE a b",
+            r'invalid chmod value "\$NOPE" \(resolves to ""\)',
+        ),
+        (
+            "FROM a\nCOPY <<EOF /x\n" + "${A:-" * 5000 + "}" * 5000 + "\nEOF",
+            "recursion",
+        ),
         ("FROM a\nBOGUS instruction", "unknown instruction: BOGUS"),
         ("FROM a\nCOPY --unknown=1 a b", "unknown flag: unknown"),
         ("FROM a\nCOPY --from=builder a b", "--from is not supported"),
