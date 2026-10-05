@@ -185,7 +185,5 @@ def test_shared_pool_retries_connects():
     assert isinstance(apool, api_client_async.ConnectionRetryTransport)
     assert pool._max_retries == connection_retries
     assert apool._max_retries == connection_retries
-    # The retries sit above the balancer, so a failed connect is retried on
-    # whichever pool is least loaded then rather than pinned to one.
-    assert isinstance(pool._transport, api_client_sync.BalancingTransport)
-    assert isinstance(apool._transport, api_client_async.BalancingTransport)
+    assert isinstance(pool._transport, api_client_sync.SyncHTTPTransport)
+    assert isinstance(apool._transport, api_client_async.HTTPTransport)
