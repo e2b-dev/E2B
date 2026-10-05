@@ -65,18 +65,6 @@ class Sandbox(BaseSandbox):
             return sandbox_url
         return f"{'http' if self.connection_config.debug else 'https'}://{self.get_host(JUPYTER_PORT)}"
 
-    def _jupyter_request_url(self, path: str) -> str:
-        url = f"{self._jupyter_url}{path}"
-        source = getattr(self.connection_config, "request_source", None)
-        if not source:
-            return url
-        separator = "&" if "?" in url else "?"
-        return f"{url}{separator}source={source}"
-
-    @property
-    def _include_diagnostics(self) -> bool:
-        return getattr(self.connection_config, "request_source", None) == "ci"
-
     @property
     def _client(self) -> Client:
         # TODO: Remove later
@@ -220,7 +208,7 @@ class Sandbox(BaseSandbox):
 
             with self._client.stream(
                 "POST",
-                self._jupyter_request_url("/execute"),
+                f"{self._jupyter_url}/execute",
                 json={
                     "code": code,
                     "context_id": context_id,
@@ -245,7 +233,7 @@ class Sandbox(BaseSandbox):
                     else httpx.Timeout(None)
                 ),
             ) as response:
-                err = extract_exception(response, self._include_diagnostics)
+                err = extract_exception(response)
                 if err:
                     raise err
 
@@ -303,13 +291,13 @@ class Sandbox(BaseSandbox):
                 headers["E2B-Traffic-Access-Token"] = self.traffic_access_token
 
             response = self._client.post(
-                self._jupyter_request_url("/contexts"),
+                f"{self._jupyter_url}/contexts",
                 json=data,
                 headers=headers,
                 timeout=request_timeout or self.connection_config.request_timeout,
             )
 
-            err = extract_exception(response, self._include_diagnostics)
+            err = extract_exception(response)
             if err:
                 raise err
 
@@ -344,12 +332,12 @@ class Sandbox(BaseSandbox):
                 headers["E2B-Traffic-Access-Token"] = self.traffic_access_token
 
             response = self._client.delete(
-                self._jupyter_request_url(f"/contexts/{context_id}"),
+                f"{self._jupyter_url}/contexts/{context_id}",
                 headers=headers,
                 timeout=self.connection_config.request_timeout,
             )
 
-            err = extract_exception(response, self._include_diagnostics)
+            err = extract_exception(response)
             if err:
                 raise err
         except httpx.TimeoutException:
@@ -374,12 +362,12 @@ class Sandbox(BaseSandbox):
                 headers["E2B-Traffic-Access-Token"] = self.traffic_access_token
 
             response = self._client.get(
-                self._jupyter_request_url("/contexts"),
+                f"{self._jupyter_url}/contexts",
                 headers=headers,
                 timeout=self.connection_config.request_timeout,
             )
 
-            err = extract_exception(response, self._include_diagnostics)
+            err = extract_exception(response)
             if err:
                 raise err
 
@@ -414,12 +402,12 @@ class Sandbox(BaseSandbox):
                 headers["E2B-Traffic-Access-Token"] = self.traffic_access_token
 
             response = self._client.post(
-                self._jupyter_request_url(f"/contexts/{context_id}/restart"),
+                f"{self._jupyter_url}/contexts/{context_id}/restart",
                 headers=headers,
                 timeout=self.connection_config.request_timeout,
             )
 
-            err = extract_exception(response, self._include_diagnostics)
+            err = extract_exception(response)
             if err:
                 raise err
         except httpx.TimeoutException:

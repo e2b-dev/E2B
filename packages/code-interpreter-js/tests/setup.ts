@@ -78,9 +78,7 @@ export async function waitForKernel(sandbox: Sandbox, language: 'java' | 'r') {
       // readiness failure; the test's actual execution still runs once.
       const isReadinessError =
         error instanceof SandboxError &&
-        /^500 Internal Server Error(?: \(trace_id=[^)]+\))?$/.test(
-          error.message
-        )
+        error.message === '500 Internal Server Error'
 
       if (!isReadinessError || attempt === KERNEL_READINESS_ATTEMPTS) {
         throw error

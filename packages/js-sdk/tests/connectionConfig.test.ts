@@ -18,7 +18,6 @@ beforeEach(() => {
     E2B_SANDBOX_URL: process.env.E2B_SANDBOX_URL,
     E2B_HTTP_VERSION: process.env.E2B_HTTP_VERSION,
     E2B_DEBUG: process.env.E2B_DEBUG,
-    E2B_USER_AGENT_SOURCE: process.env.E2B_USER_AGENT_SOURCE,
   }
 })
 
@@ -225,23 +224,10 @@ test('setIntegration appends the integration to the user agent', () => {
   const config = new ConnectionConfig()
 
   assert.equal(config.headers?.['User-Agent']?.startsWith('e2b-js-sdk/'), true)
-  assert.include(config.headers?.['User-Agent']?.split(' '), 'testing/version')
-})
-
-test('user agent includes the configured traffic source', () => {
-  process.env.E2B_USER_AGENT_SOURCE = 'ci'
-
-  const config = new ConnectionConfig()
-
-  assert.equal(config.headers?.['User-Agent']?.endsWith(' source/ci'), true)
-})
-
-test('user agent ignores an unsafe traffic source', () => {
-  process.env.E2B_USER_AGENT_SOURCE = 'ci bad\nheader'
-
-  const config = new ConnectionConfig()
-
-  assert.equal(config.headers?.['User-Agent']?.includes('source/'), false)
+  assert.equal(
+    config.headers?.['User-Agent']?.endsWith(' testing/version'),
+    true
+  )
 })
 
 test('integration survives config rebuilds', () => {
@@ -249,9 +235,9 @@ test('integration survives config rebuilds', () => {
   const config = new ConnectionConfig()
   const rebuiltConfig = new ConnectionConfig({ ...config })
 
-  assert.include(
-    rebuiltConfig.headers?.['User-Agent']?.split(' '),
-    'testing/version'
+  assert.equal(
+    rebuiltConfig.headers?.['User-Agent']?.endsWith(' testing/version'),
+    true
   )
 })
 
@@ -261,7 +247,10 @@ test('setIntegration does not retro-tag configs built earlier', () => {
   const after = new ConnectionConfig()
 
   assert.equal(before.headers?.['User-Agent']?.includes('testing'), false)
-  assert.include(after.headers?.['User-Agent']?.split(' '), 'testing/version')
+  assert.equal(
+    after.headers?.['User-Agent']?.endsWith(' testing/version'),
+    true
+  )
 })
 
 test('clearing the integration restores the plain user agent', () => {

@@ -1,26 +1,13 @@
 from unittest.mock import AsyncMock, Mock
 
 import pytest
-from httpx import Response
 
 from e2b import SandboxException
-from e2b_code_interpreter.models import format_exception
 from tests.conftest import _wait_for_kernel, _wait_for_kernel_async
 
 
 def java_not_ready_error() -> SandboxException:
-    return SandboxException("500:")
-
-
-def traced_not_ready_error() -> SandboxException:
-    return format_exception(
-        Response(
-            500,
-            text="",
-            headers={"X-E2B-Trace-ID": "trace-123"},
-        ),
-        include_diagnostics=True,
-    )
+    return SandboxException("500 Internal Server Error")
 
 
 @pytest.mark.parametrize("language", ["java", "r"])
@@ -119,12 +106,3 @@ async def test_async_does_not_retry_an_unrelated_java_error():
 
     assert raised.value is error
     run_code.assert_awaited_once_with("1", language="java")
-
-
-def test_retries_an_empty_readiness_500_with_trace_id():
-    run_code = Mock(side_effect=[traced_not_ready_error(), None])
-    sandbox = Mock(run_code=run_code)
-
-    _wait_for_kernel(sandbox, "r")
-
-    assert run_code.call_count == 2

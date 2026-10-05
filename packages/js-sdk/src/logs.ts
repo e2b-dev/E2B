@@ -58,28 +58,20 @@ export function createRpcLogger(logger: Logger): Interceptor {
   }
 }
 
-export function createApiLogger(
-  logger: Logger,
-  includeDiagnostics = false
-): Middleware {
+export function createApiLogger(logger: Logger): Middleware {
   return {
     async onRequest({ request }) {
       logger.info?.(`Request ${request.method} ${request.url}`)
+      return request
     },
     async onResponse({ response }) {
       if (response.status >= 400) {
-        const traceId = includeDiagnostics
-          ? response.headers.get('X-E2B-Trace-ID')
-          : null
-        logger.error?.(
-          'Response:',
-          response.status,
-          response.statusText,
-          ...(traceId ? [`trace_id=${traceId}`] : [])
-        )
+        logger.error?.('Response:', response.status, response.statusText)
       } else {
         logger.info?.('Response:', response.status, response.statusText)
       }
+
+      return response
     },
   }
 }
