@@ -1,0 +1,341 @@
+[
+  {
+    "input": "x",
+    "env": {
+      "DUMMY": "dummy"
+    },
+    "word": "x"
+  },
+  {
+    "input": "x ${UNUSED}",
+    "env": {
+      "DUMMY": "dummy"
+    },
+    "word": "x "
+  },
+  {
+    "input": "x ${FOO}",
+    "env": {
+      "FOO": "y"
+    },
+    "word": "x y"
+  },
+  {
+    "input": "${FOO-aaa} ${BAR-bbb} ${BAZ-ccc}",
+    "env": {
+      "FOO": "xxx",
+      "BAR": ""
+    },
+    "word": "xxx  ccc"
+  },
+  {
+    "input": "${FOO:-aaa} ${BAR:-bbb} ${BAZ:-ccc}",
+    "env": {
+      "FOO": "xxx",
+      "BAR": ""
+    },
+    "word": "xxx bbb ccc"
+  },
+  {
+    "input": "${FOO:-}",
+    "env": {
+      "FOO": "xxx",
+      "BAR": ""
+    },
+    "word": "xxx"
+  },
+  {
+    "input": "${FOO:-}",
+    "env": {},
+    "word": ""
+  },
+  {
+    "input": "${FOO+aaa} ${BAR+bbb} ${BAZ+ccc}",
+    "env": {
+      "FOO": "xxx",
+      "BAR": ""
+    },
+    "word": "aaa bbb "
+  },
+  {
+    "input": "${FOO:+aaa} ${BAR:+bbb} ${BAZ:+ccc}",
+    "env": {
+      "FOO": "xxx",
+      "BAR": ""
+    },
+    "word": "aaa  "
+  },
+  {
+    "input": "${FOO?aaa}",
+    "env": {
+      "FOO": "xxx",
+      "BAR": ""
+    },
+    "word": "xxx"
+  },
+  {
+    "input": "${BAR?bbb}",
+    "env": {
+      "FOO": "xxx",
+      "BAR": ""
+    },
+    "word": ""
+  },
+  {
+    "input": "${BAZ?ccc}",
+    "env": {
+      "FOO": "xxx",
+      "BAR": ""
+    },
+    "error": true
+  },
+  {
+    "input": "${FOO:?aaa}",
+    "env": {
+      "FOO": "xxx",
+      "BAR": ""
+    },
+    "word": "xxx"
+  },
+  {
+    "input": "${BAR:?bbb}",
+    "env": {
+      "FOO": "xxx",
+      "BAR": ""
+    },
+    "error": true
+  },
+  {
+    "input": "${BAZ:?ccc}",
+    "env": {
+      "FOO": "xxx",
+      "BAR": ""
+    },
+    "error": true
+  },
+  {
+    "input": "${BAZ:?}",
+    "env": {
+      "FOO": "xxx",
+      "BAR": ""
+    },
+    "error": true
+  },
+  {
+    "input": "${FOO=aaa}",
+    "env": {
+      "FOO": "xxx",
+      "BAR": ""
+    },
+    "error": true
+  },
+  {
+    "input": "${FOO=:aaa}",
+    "env": {
+      "FOO": "xxx",
+      "BAR": ""
+    },
+    "error": true
+  },
+  {
+    "input": "${FOO=}",
+    "env": {},
+    "error": true
+  },
+  {
+    "input": "${FOO#()[]{\\}^$.\\*\\?|\\\\}",
+    "env": {
+      "FOO": "()[]{}^$.*?|\\x"
+    },
+    "word": "x"
+  },
+  {
+    "input": "${FOO%%\\**}",
+    "env": {
+      "FOO": "xx**"
+    },
+    "word": "xx"
+  },
+  {
+    "input": "${FOO#*x*y}",
+    "env": {
+      "FOO": "xxyy"
+    },
+    "word": "y"
+  },
+  {
+    "input": "${FOO#*}",
+    "env": {
+      "FOO": "xxyy"
+    },
+    "word": "xxyy"
+  },
+  {
+    "input": "${FOO#$BAR}",
+    "env": {
+      "FOO": "xxyy",
+      "BAR": "x"
+    },
+    "word": "xyy"
+  },
+  {
+    "input": "${FOO#$BAR}",
+    "env": {
+      "FOO": "xxyy",
+      "BAR": ""
+    },
+    "word": "xxyy"
+  },
+  {
+    "input": "${FOO#}",
+    "env": {
+      "FOO": "xxyy"
+    },
+    "word": "xxyy"
+  },
+  {
+    "input": "${FOO##*x}",
+    "env": {
+      "FOO": "xxyy"
+    },
+    "word": "yy"
+  },
+  {
+    "input": "${FOO##}",
+    "env": {
+      "FOO": "xxyy"
+    },
+    "word": "xxyy"
+  },
+  {
+    "input": "${FOO#?\\?}",
+    "env": {
+      "FOO": "???y"
+    },
+    "word": "?y"
+  },
+  {
+    "input": "${ABC:-.}${FOO%x}${ABC:-.}",
+    "env": {
+      "FOO": "xxyy"
+    },
+    "word": ".xxyy."
+  },
+  {
+    "input": "${FOO%%\\**\\*}",
+    "env": {
+      "FOO": "a***yy*"
+    },
+    "word": "a"
+  },
+  {
+    "input": "${FOO%}",
+    "env": {
+      "FOO": "xxyy"
+    },
+    "word": "xxyy"
+  },
+  {
+    "input": "${FOO%%$BAR}",
+    "env": {
+      "FOO": "xxyy",
+      "BAR": ""
+    },
+    "word": "xxyy"
+  },
+  {
+    "input": "${FOO:#}",
+    "env": {},
+    "error": true
+  },
+  {
+    "input": "${FOO:##}",
+    "env": {},
+    "error": true
+  },
+  {
+    "input": "${FOO:%}",
+    "env": {},
+    "error": true
+  },
+  {
+    "input": "${FOO:%%}",
+    "env": {},
+    "error": true
+  },
+  {
+    "input": "${FOO/$NEEDLE/.} - ${FOO//$NEEDLE/.}",
+    "env": {
+      "FOO": "/foo*/*/*.txt",
+      "NEEDLE": "\\*/"
+    },
+    "word": "/foo.*/*.txt - /foo..*.txt"
+  },
+  {
+    "input": "${FOO/$NEEDLE/} - ${FOO//$NEEDLE/}",
+    "env": {
+      "FOO": "/tmp/tmp/bar.txt",
+      "NEEDLE": "/tmp"
+    },
+    "word": "/tmp/bar.txt - /bar.txt"
+  },
+  {
+    "input": "${FOO/$NEEDLE/$REPLACEMENT} - ${FOO//$NEEDLE/$REPLACEMENT}",
+    "env": {
+      "FOO": "/a/foo/b/c.txt",
+      "NEEDLE": "/?/",
+      "REPLACEMENT": "/"
+    },
+    "word": "/foo/b/c.txt - /foo/c.txt"
+  },
+  {
+    "input": "${FOO/$NEEDLE/$REPLACEMENT}",
+    "env": {
+      "FOO": "http://google.de",
+      "NEEDLE": "http://",
+      "REPLACEMENT": "https://"
+    },
+    "word": "https://google.de"
+  },
+  {
+    "input": "${FOO//\\//\\/}",
+    "env": {
+      "FOO": "/tmp/foo.txt"
+    },
+    "word": "\\/tmp\\/foo.txt"
+  },
+  {
+    "input": "${FOO/$BAR/ww}",
+    "env": {
+      "FOO": "xxyy",
+      "BAR": ""
+    },
+    "word": "wwxxyy"
+  },
+  {
+    "input": "${FOO//ww}",
+    "env": {
+      "FOO": "xxyy"
+    },
+    "error": true
+  },
+  {
+    "input": "${FOO//}",
+    "env": {
+      "FOO": "xxyy"
+    },
+    "error": true
+  },
+  {
+    "input": "${FOO///}",
+    "env": {
+      "FOO": "xxyy"
+    },
+    "word": "xxyy"
+  },
+  {
+    "input": "${FOO///}",
+    "env": {},
+    "word": ""
+  }
+]
