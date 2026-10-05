@@ -30,6 +30,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxNetworkUpdate,
     SandboxOnResume,
     SnapshotInfo,
+    normalize_mcp_config,
 )
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_sync.commands.command import Commands
@@ -238,8 +239,9 @@ class Sandbox(SandboxApi):
             sandbox._mcp_token = token
 
             try:
+                gateway_config = normalize_mcp_config(mcp)
                 sandbox.commands.run(
-                    f"mcp-gateway --config {shlex.quote(json.dumps(mcp))}",
+                    f"mcp-gateway --config {shlex.quote(json.dumps(gateway_config))}",
                     user="root",
                     envs={"GATEWAY_ACCESS_TOKEN": token},
                 )
