@@ -57,7 +57,7 @@
     "@typescript/native": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "json2md": "^2.0.3",
-    "knip": "^5.43.6",
+    "knip": "^5.88.1",
     "tsdown": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
@@ -82,7 +82,7 @@
     "commander": "^11.1.0",
     "e2b": "workspace:^",
     "handlebars": "^4.7.9",
-    "inquirer": "^12.10.0",
+    "inquirer": "^12.11.1",
     "simple-update-notifier": "^2.0.0",
     "simple-wcswidth": "^1.1.2",
     "statuses": "^2.0.2",
