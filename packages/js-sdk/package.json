@@ -89,7 +89,7 @@
     "@bufbuild/protobuf": "^2.15.0",
     "@connectrpc/connect": "^2.2.0",
     "@connectrpc/connect-web": "^2.2.0",
-    "@e2b/docker-utils": "workspace:^",
+    "@e2b/dockerfile-utils": "workspace:^",
     "chalk": "^5.6.2",
     "compare-versions": "^6.1.1",
     "glob": "^13.0.6",

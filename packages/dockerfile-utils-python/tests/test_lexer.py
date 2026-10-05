@@ -1,6 +1,6 @@
 import pytest
 
-from e2b_docker_utils import ShellLex, is_space
+from e2b_dockerfile_utils import ShellLex, is_space
 
 lex = ShellLex("\\")
 

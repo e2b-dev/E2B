@@ -1,4 +1,4 @@
-name: Test Docker Utils JS
+name: Test Dockerfile Utils JS
 
 on:
   workflow_call: {}
@@ -10,9 +10,9 @@ jobs:
   test:
     defaults:
       run:
-        working-directory: ./packages/docker-utils-js
+        working-directory: ./packages/dockerfile-utils-js
         shell: bash
-    name: Docker Utils JS - Build and test
+    name: Dockerfile Utils JS - Build and test
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository

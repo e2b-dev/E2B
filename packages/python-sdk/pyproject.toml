@@ -20,7 +20,7 @@ dependencies = [
     "rich>=14.0.0",
     "connectrpc>=0.11.1,<0.12",
     "pyqwest>=0.10.0,<0.11",
-    "e2b-docker-utils>=0.1.0,<0.2",
+    "e2b-dockerfile-utils>=0.1.0,<0.2",
 ]
 
 [project.urls]
@@ -62,7 +62,7 @@ module-name = ["e2b"]
 module-root = ""
 
 [tool.uv.sources]
-e2b-docker-utils = { path = "../docker-utils-python", editable = true }
+e2b-dockerfile-utils = { path = "../dockerfile-utils-python", editable = true }
 
 [tool.basedpyright]
 reportInconsistentOverload = false

@@ -1,5 +1,5 @@
 {
-  "name": "@e2b/docker-utils-python",
+  "name": "@e2b/dockerfile-utils-python",
   "private": true,
   "version": "0.0.0",
   "scripts": {

@@ -1,9 +1,9 @@
 {
-  "name": "@e2b/docker-utils",
+  "name": "@e2b/dockerfile-utils",
   "version": "0.0.0",
   "packageManager": "pnpm@10.34.5",
-  "description": "E2B Docker utils - Dockerfile parser and shell lexer ported from BuildKit",
-  "homepage": "https://e2b.dev/?utm_source=npm&utm_medium=referral&utm_campaign=package_homepage&utm_content=e2b-docker-utils",
+  "description": "E2B Dockerfile utils - Dockerfile parser, shell lexer and .dockerignore matcher ported from BuildKit and Moby",
+  "homepage": "https://e2b.dev/?utm_source=npm&utm_medium=referral&utm_campaign=package_homepage&utm_content=e2b-dockerfile-utils",
   "license": "MIT",
   "author": {
     "name": "FoundryLabs, Inc.",
@@ -14,7 +14,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/e2b-dev/e2b",
-    "directory": "packages/docker-utils-js"
+    "directory": "packages/dockerfile-utils-js"
   },
   "publishConfig": {
     "access": "public"

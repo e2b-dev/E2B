@@ -11,7 +11,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
-from e2b_docker_utils.lexer import ShellLex, is_space
+from e2b_dockerfile_utils.lexer import ShellLex, is_space
 
 
 @dataclass

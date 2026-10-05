@@ -1,7 +1,7 @@
 [project]
-name = "e2b-docker-utils"
+name = "e2b-dockerfile-utils"
 version = "0.0.0"
-description = "E2B Docker utils - Dockerfile parser and shell lexer ported from BuildKit"
+description = "E2B Dockerfile utils - Dockerfile parser, shell lexer and .dockerignore matcher ported from BuildKit and Moby"
 authors = [{ name = "e2b", email = "hello@e2b.dev" }]
 license = "MIT"
 readme = "README.md"
@@ -9,8 +9,8 @@ requires-python = ">=3.10"
 dependencies = []
 
 [project.urls]
-Homepage = "https://e2b.dev/?utm_source=pypi&utm_medium=referral&utm_campaign=package_homepage&utm_content=e2b-docker-utils"
-Repository = "https://github.com/e2b-dev/e2b/tree/main/packages/docker-utils-python"
+Homepage = "https://e2b.dev/?utm_source=pypi&utm_medium=referral&utm_campaign=package_homepage&utm_content=e2b-dockerfile-utils"
+Repository = "https://github.com/e2b-dev/e2b/tree/main/packages/dockerfile-utils-python"
 "Bug Tracker" = "https://github.com/e2b-dev/e2b/issues"
 
 [dependency-groups]
@@ -25,5 +25,5 @@ requires = ["uv_build>=0.10.0,<0.11.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
-module-name = ["e2b_docker_utils"]
+module-name = ["e2b_dockerfile_utils"]
 module-root = ""

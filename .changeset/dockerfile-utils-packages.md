@@ -1,6 +1,6 @@
 ---
-'@e2b/docker-utils': minor
-'@e2b/docker-utils-python': minor
+'@e2b/dockerfile-utils': minor
+'@e2b/dockerfile-utils-python': minor
 ---
 
-Initial release: the Dockerfile parser and BuildKit-style shell lexer behind `Template.fromDockerfile` / `Template.from_dockerfile`, published as standalone dependency-free packages (`@e2b/docker-utils` on npm, `e2b-docker-utils` on PyPI).
+Initial release: the Dockerfile parser and BuildKit-style shell lexer behind `Template.fromDockerfile` / `Template.from_dockerfile`, and the `.dockerignore` `PatternMatcher` used to filter the build context, published as standalone dependency-free packages (`@e2b/dockerfile-utils` on npm, `e2b-dockerfile-utils` on PyPI).

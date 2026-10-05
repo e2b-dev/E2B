@@ -1,6 +1,6 @@
 import pytest
 
-from e2b_docker_utils import (
+from e2b_dockerfile_utils import (
     DockerfileHeredoc,
     DockerfileSyntaxError,
     chomp_heredoc_content,

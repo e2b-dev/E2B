@@ -13,7 +13,7 @@ from typing import IO, List, Optional, Union
 
 from e2b.exceptions import TemplateException
 from e2b.template.consts import BASE_STEP_NAME, FINALIZE_STEP_NAME
-from e2b.template.dockerignore import PatternMatcher
+from e2b_dockerfile_utils import PatternMatcher
 
 
 def make_traceback(caller_frame: Optional[FrameType]) -> Optional[TracebackType]:
@@ -188,9 +188,13 @@ def get_all_files_in_path(
     files = set()
 
     abs_context_path = os.path.abspath(context_path)
-    matcher = PatternMatcher(
-        [_normalize_ignore_pattern(p, abs_context_path) for p in ignore_patterns]
-    )
+    try:
+        matcher = PatternMatcher(
+            [_normalize_ignore_pattern(p, abs_context_path) for p in ignore_patterns],
+            backslash_is_separator=os.sep == "\\",
+        )
+    except ValueError as e:
+        raise TemplateException(str(e)) from e
 
     def walk(dir_path: str, dir_relative_path: str) -> None:
         with os.scandir(dir_path) as entries:

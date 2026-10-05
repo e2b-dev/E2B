@@ -12,7 +12,7 @@ wheels = [
 ]
 
 [[package]]
-name = "e2b-docker-utils"
+name = "e2b-dockerfile-utils"
 version = "0.0.0"
 source = { editable = "." }
 

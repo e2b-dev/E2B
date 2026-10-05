@@ -1,5 +1,6 @@
-from e2b_docker_utils.lexer import ShellLex, is_space
-from e2b_docker_utils.syntax import (
+from e2b_dockerfile_utils.dockerignore import PatternMatcher
+from e2b_dockerfile_utils.lexer import ShellLex, is_space
+from e2b_dockerfile_utils.syntax import (
     DockerfileAst,
     DockerfileHeredoc,
     DockerfileInstruction,
@@ -17,6 +18,7 @@ __all__ = [
     "DockerfileInstruction",
     "DockerfileSyntaxError",
     "DockerfileWarning",
+    "PatternMatcher",
     "ShellLex",
     "chomp_heredoc_content",
     "is_space",

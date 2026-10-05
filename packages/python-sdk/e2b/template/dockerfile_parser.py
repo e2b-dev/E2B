@@ -3,7 +3,7 @@ import re
 import shlex
 from typing import Dict, List, Literal, Mapping, Optional, Protocol, Union
 
-from e2b_docker_utils import (
+from e2b_dockerfile_utils import (
     DockerfileHeredoc,
     DockerfileInstruction,
     DockerfileSyntaxError,

@@ -13,3 +13,5 @@ export type {
   DockerfileInstruction,
   DockerfileWarning,
 } from './syntax'
+export { PatternMatcher } from './dockerignore'
+export type { PatternMatcherOptions } from './dockerignore'

@@ -1,4 +1,4 @@
-name: Test Docker Utils Python
+name: Test Dockerfile Utils Python
 
 on:
   workflow_call: {}
@@ -10,9 +10,9 @@ jobs:
   test:
     defaults:
       run:
-        working-directory: ./packages/docker-utils-python
+        working-directory: ./packages/dockerfile-utils-python
         shell: bash
-    name: Docker Utils Python - Build and test
+    name: Dockerfile Utils Python - Build and test
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository

@@ -9,7 +9,7 @@ import {
   chompHeredocContent,
   parseDockerfileAst,
   parseHeredoc,
-} from '@e2b/docker-utils'
+} from '@e2b/dockerfile-utils'
 
 export { DockerfileSyntaxError }
 
