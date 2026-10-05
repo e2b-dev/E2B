@@ -108,7 +108,83 @@ def _shell_join(words: List[str]) -> str:
     return " ".join(shlex.quote(word) for word in words)
 
 
-_COMMAND_SUBSTITUTION = re.compile(r"`|\$\(")
+_VARIABLE_NAME = re.compile(r"\d+|[@*#?\-$!0]|\w+")
+
+
+def _shell_literal(ch: str) -> str:
+    return "\\" + ch if ch in "\\`$" else ch
+
+
+def _expandable_heredoc_body(content: str, line: int) -> str:
+    """Rewrite an expandable heredoc body so that a POSIX shell applies Docker's
+    rules: ``$VAR`` / ``${VAR...}`` are substituted, a backslash escapes the next
+    character, and everything else - ``$(...)`` and backticks included - is literal.
+    """
+    pos = 0
+
+    def missing_brace() -> DockerfileSyntaxError:
+        return DockerfileSyntaxError("syntax error: missing '}'", line)
+
+    def name() -> str:
+        nonlocal pos
+        match = _VARIABLE_NAME.match(content, pos)
+        if match is None:
+            return ""
+        pos = match.end()
+        return match.group(0)
+
+    def variable() -> str:
+        nonlocal pos
+        if pos >= len(content) or content[pos] != "{":
+            var_name = name()
+            return "\\$" if var_name == "" else "$" + var_name
+        pos += 1
+        if pos >= len(content):
+            raise missing_brace()
+        if content[pos] in "{}:":
+            raise DockerfileSyntaxError("syntax error: bad substitution", line)
+        var_name = name()
+        if pos >= len(content):
+            raise missing_brace()
+        modifier = content[pos]
+        pos += 1
+        if modifier == "}":
+            return "${" + var_name + "}"
+        if modifier == ":":
+            if pos >= len(content):
+                raise missing_brace()
+            modifier += content[pos]
+            pos += 1
+        op = modifier[-1]
+        if op not in "+-?#%" or (len(modifier) == 2 and op in "#%"):
+            raise DockerfileSyntaxError(
+                f"unsupported modifier ({modifier}) in substitution", line
+            )
+        return "${" + var_name + modifier + scan("}") + "}"
+
+    def scan(stop_char: Optional[str]) -> str:
+        nonlocal pos
+        out: List[str] = []
+        while pos < len(content):
+            ch = content[pos]
+            pos += 1
+            if ch == stop_char:
+                return "".join(out)
+            if ch == "\\":
+                if pos < len(content):
+                    out.append(_shell_literal(content[pos]))
+                    pos += 1
+            elif ch == "$":
+                out.append(variable())
+            elif ch == "`":
+                out.append("\\`")
+            else:
+                out.append(ch)
+        if stop_char is not None:
+            raise missing_brace()
+        return "".join(out)
+
+    return scan(None)
 
 
 def _heredoc_terminator(name: str, content: str) -> str:
@@ -386,7 +462,7 @@ class _DockerfileConverter:
                         f"missing heredoc content for {heredoc.name}",
                         instruction.start_line,
                     )
-                self._copy_heredoc(content, dest, user, mode)
+                self._copy_heredoc(content, dest, user, mode, instruction.start_line)
                 continue
             src = self._expand(instruction, raw_src)
             if instruction.name == "ADD" and _REMOTE_URL.match(src):
@@ -402,15 +478,14 @@ class _DockerfileConverter:
         dest: str,
         user: Optional[str],
         mode: Optional[int],
+        line: int,
     ) -> None:
         """``COPY <<EOF /path`` writes the heredoc body to a file inside the sandbox."""
         content = (
             chomp_heredoc_content(heredoc.content) if heredoc.chomp else heredoc.content
         )
         if heredoc.expand:
-            # Docker only substitutes variables; keep the shell from also running
-            # command substitutions.
-            content = _COMMAND_SUBSTITUTION.sub(r"\\\g<0>", content)
+            content = _expandable_heredoc_body(content, line)
         plain_terminator = _heredoc_terminator(heredoc.name, content)
         terminator = plain_terminator if heredoc.expand else f"'{plain_terminator}'"
         target = '"$E2B_HEREDOC_DEST"'

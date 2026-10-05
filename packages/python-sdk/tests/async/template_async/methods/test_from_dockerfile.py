@@ -317,7 +317,7 @@ EOF"""
 async def test_from_dockerfile_copy_heredoc_into_directory_expands_only_variables():
     dockerfile = """FROM node:24
 COPY <<EOF /etc/
-run `npm start` and $(id) for $USER
+run `npm start` and $(id) for $USER, \\$(literal) and ${HOME:-$(x)}
 EOF
 COPY <<EOF .
 x
@@ -333,7 +333,7 @@ EOF"""
     assert runs == [
         "E2B_HEREDOC_DEST=/etc/EOF\n"
         'mkdir -p "$(dirname "$E2B_HEREDOC_DEST")" && cat <<E2B_HEREDOC_EOF >"$E2B_HEREDOC_DEST"\n'
-        "run \\`npm start\\` and \\$(id) for $USER\nE2B_HEREDOC_EOF",
+        "run \\`npm start\\` and \\$(id) for $USER, \\$(literal) and ${HOME:-\\$(x)}\nE2B_HEREDOC_EOF",
         "E2B_HEREDOC_DEST=.\n"
         'if [ -d "$E2B_HEREDOC_DEST" ]; then E2B_HEREDOC_DEST="$E2B_HEREDOC_DEST"/EOF; fi\n'
         'mkdir -p "$(dirname "$E2B_HEREDOC_DEST")" && cat <<E2B_HEREDOC_EOF >"$E2B_HEREDOC_DEST"\n'
@@ -401,6 +401,8 @@ async def test_from_dockerfile_rejects_invalid_dockerfiles():
         ("RUN echo hi", "must contain a FROM"),
         ("FROM a\nFROM b", "Multi-stage"),
         ("FROM a\nRUN <<EOF\nnever closed", "unterminated heredoc"),
+        ("FROM a\nCOPY <<EOF /x\n${}\nEOF", "bad substitution"),
+        ("FROM a\nCOPY <<EOF /x\n${HOME:-\nEOF", "missing '}'"),
         ("FROM a\nBOGUS instruction", "unknown instruction: BOGUS"),
         ("FROM a\nCOPY --unknown=1 a b", "unknown flag: unknown"),
         ("FROM a\nCOPY --from=builder a b", "--from is not supported"),

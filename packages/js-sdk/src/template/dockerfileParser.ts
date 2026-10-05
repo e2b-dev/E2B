@@ -105,6 +105,100 @@ function withTrailingNewline(content: string): string {
   return content === '' || content.endsWith('\n') ? content : content + '\n'
 }
 
+const VARIABLE_NAME = /\p{Nd}+|[@*#?\-$!0]|[\p{L}\p{Nd}_]+/uy
+
+function shellLiteral(ch: string): string {
+  return ch === '\\' || ch === '`' || ch === '$' ? '\\' + ch : ch
+}
+
+/**
+ * Rewrite an expandable heredoc body so that a POSIX shell applies Docker's
+ * rules: `$VAR` / `${VAR...}` are substituted, a backslash escapes the next
+ * character, and everything else - `$(...)` and backticks included - is
+ * literal.
+ */
+function expandableHeredocBody(content: string, line: number): string {
+  let i = 0
+
+  function missingBrace(): never {
+    throw new DockerfileSyntaxError("syntax error: missing '}'", line)
+  }
+
+  function name(): string {
+    VARIABLE_NAME.lastIndex = i
+    const match = VARIABLE_NAME.exec(content)
+    if (!match) {
+      return ''
+    }
+    i += match[0].length
+    return match[0]
+  }
+
+  function variable(): string {
+    if (content[i] !== '{') {
+      const varName = name()
+      return varName === '' ? '\\$' : '$' + varName
+    }
+    i++
+    if (i >= content.length) {
+      missingBrace()
+    }
+    if (content[i] === '{' || content[i] === '}' || content[i] === ':') {
+      throw new DockerfileSyntaxError('syntax error: bad substitution', line)
+    }
+    const varName = name()
+    if (i >= content.length) {
+      missingBrace()
+    }
+    let modifier = content[i++]
+    if (modifier === '}') {
+      return `\${${varName}}`
+    }
+    if (modifier === ':') {
+      if (i >= content.length) {
+        missingBrace()
+      }
+      modifier += content[i++]
+    }
+    const op = modifier[modifier.length - 1]
+    if (
+      !'+-?#%'.includes(op) ||
+      (modifier.length === 2 && (op === '#' || op === '%'))
+    ) {
+      throw new DockerfileSyntaxError(
+        `unsupported modifier (${modifier}) in substitution`,
+        line
+      )
+    }
+    return `\${${varName}${modifier}${scan('}')}}`
+  }
+
+  function scan(stopChar?: string): string {
+    let out = ''
+    while (i < content.length) {
+      const ch = content[i++]
+      if (ch === stopChar) {
+        return out
+      }
+      if (ch === '\\') {
+        if (i < content.length) {
+          out += shellLiteral(content[i++])
+        }
+      } else if (ch === '$') {
+        out += variable()
+      } else {
+        out += ch === '`' ? '\\`' : ch
+      }
+    }
+    if (stopChar !== undefined) {
+      missingBrace()
+    }
+    return out
+  }
+
+  return scan()
+}
+
 function shellJoin(words: string[]): string {
   return words.map(shellQuote).join(' ')
 }
@@ -431,7 +525,7 @@ class DockerfileConverter {
             instruction.startLine
           )
         }
-        this.copyHeredoc(content, dest, user, mode)
+        this.copyHeredoc(content, dest, user, mode, instruction.startLine)
         continue
       }
       const src = this.expand(instruction, rawSrc)
@@ -450,15 +544,14 @@ class DockerfileConverter {
     heredoc: DockerfileHeredoc,
     dest: string,
     user: string | undefined,
-    mode: number | undefined
+    mode: number | undefined,
+    line: number
   ) {
     let content = heredoc.chomp
       ? chompHeredocContent(heredoc.content)
       : heredoc.content
     if (heredoc.expand) {
-      // Docker only substitutes variables; keep the shell from also running
-      // command substitutions.
-      content = content.replace(/`|\$\(/g, (match) => `\\${match}`)
+      content = expandableHeredocBody(content, line)
     }
     const plainTerminator = heredocTerminator(heredoc.name, content)
     const terminator = heredoc.expand ? plainTerminator : `'${plainTerminator}'`
