@@ -101,8 +101,8 @@ _FROM_FLAGS: FlagSpecs = {
 _IGNORED_INSTRUCTIONS = {"EXPOSE", "VOLUME", "LABEL", "MAINTAINER"}
 
 _CHMOD = re.compile(r"^[0-7]{3,4}$")
-_BUILD_VARIABLE = re.compile(
-    r"\$(?:([A-Za-z_][A-Za-z0-9_]*)|\{([A-Za-z_][A-Za-z0-9_]*)(?:(:?-)([^}]*))?\})"
+_VAR_NAME_CHARS = frozenset(
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_"
 )
 _REMOTE_URL = re.compile(r"^[a-z][a-z0-9+.-]*://", re.IGNORECASE)
 
@@ -313,19 +313,79 @@ class _DockerfileConverter:
         except (ValueError, RecursionError) as err:
             raise DockerfileSyntaxError(str(err), instruction.start_line) from None
 
-    def _resolve_vars(self, word: str) -> str:
-        """Substitute ``ARG`` / ``ENV`` values declared earlier in the Dockerfile,
-        for the few places where the converter itself needs the concrete value.
+    def _resolve_vars(self, word: str, line: int) -> str:
+        """Expand ``$VAR`` references against the ``ARG`` / ``ENV`` values declared
+        earlier in the Dockerfile, with BuildKit's ``-``, ``+`` and ``?`` modifier
+        semantics. Only used where the converter itself needs the concrete value.
         """
+        pos = 0
 
-        def substitute(match: "re.Match[str]") -> str:
-            bare, braced, op, fallback = match.groups()
-            value = self._vars.get(bare or braced or "")
-            if op is not None and (value is None or (op == ":-" and value == "")):
-                return fallback or ""
-            return value or ""
+        def read_name() -> str:
+            nonlocal pos
+            start = pos
+            while pos < len(word) and word[pos] in _VAR_NAME_CHARS:
+                pos += 1
+            return word[start:pos]
 
-        return _BUILD_VARIABLE.sub(substitute, word)
+        def scan(stop: Optional[str] = None) -> str:
+            nonlocal pos
+            out = ""
+            while pos < len(word):
+                ch = word[pos]
+                if ch == stop:
+                    return out
+                if ch != "$":
+                    out += ch
+                    pos += 1
+                    continue
+                pos += 1
+                if pos >= len(word) or word[pos] != "{":
+                    name = read_name()
+                    out += "$" if name == "" else self._vars.get(name, "")
+                    continue
+                pos += 1
+                name = read_name()
+                value = self._vars.get(name)
+                if pos < len(word) and word[pos] == "}":
+                    pos += 1
+                    out += value or ""
+                    continue
+                modifier = word[pos : pos + 1]
+                pos += 1
+                null_is_unset = modifier == ":"
+                if null_is_unset:
+                    modifier += word[pos : pos + 1]
+                    pos += 1
+                if pos > len(word):
+                    raise DockerfileSyntaxError("syntax error: missing '}'", line)
+                if modifier[-1] not in "-+?":
+                    raise DockerfileSyntaxError(
+                        f"unsupported modifier ({modifier}) in substitution "
+                        f"when resolving {word!r}",
+                        line,
+                    )
+                fallback = scan("}")
+                pos += 1
+                unset = value is None or (null_is_unset and value == "")
+                if modifier[-1] == "-":
+                    out += fallback if unset else (value or "")
+                elif modifier[-1] == "+":
+                    out += "" if unset else fallback
+                else:
+                    if unset:
+                        raise DockerfileSyntaxError(f"{name}: {fallback}", line)
+                    out += value or ""
+            if stop is not None:
+                raise DockerfileSyntaxError("syntax error: missing '}'", line)
+            return out
+
+        return scan()
+
+    def _record_var(self, key: str, value: str, line: int) -> None:
+        try:
+            self._vars[key] = self._resolve_vars(value, line)
+        except DockerfileSyntaxError:
+            self._vars[key] = value
 
     def _expand_single(self, instruction: DockerfileInstruction) -> str:
         self._parse_flags(instruction, {})
@@ -465,9 +525,14 @@ class _DockerfileConverter:
         mode: Optional[int] = None
         if "chmod" in flags:
             chmod = self._expand(instruction, flags["chmod"])
-            resolved = self._resolve_vars(chmod)
+            resolved = self._resolve_vars(chmod, instruction.start_line)
             if not _CHMOD.match(resolved):
-                detail = "" if resolved == chmod else f' (resolves to "{resolved}")'
+                detail = (
+                    ""
+                    if resolved == chmod
+                    else f' (resolves to "{resolved}"; only values set by an earlier '
+                    "ARG or ENV instruction are known)"
+                )
                 raise DockerfileSyntaxError(
                     f'invalid chmod value "{chmod}"{detail}, '
                     "expected an octal mode such as 0755",
@@ -562,7 +627,7 @@ class _DockerfileConverter:
                     "ENV names can not be blank", instruction.start_line
                 )
             envs[key] = self._expand(instruction, args[i + 1])
-            self._vars[key] = self._resolve_vars(envs[key])
+            self._record_var(key, envs[key], instruction.start_line)
         self._template_builder.set_envs(envs)
 
     def _handle_arg(self, instruction: DockerfileInstruction) -> None:
@@ -581,7 +646,7 @@ class _DockerfileConverter:
                     "ARG names can not be blank", instruction.start_line
                 )
             envs[key] = self._expand(instruction, value) if sep else ""
-            self._vars[key] = self._resolve_vars(envs[key])
+            self._record_var(key, envs[key], instruction.start_line)
         self._template_builder.set_envs(envs)
 
     def _apply_start_cmd(self) -> None:

@@ -342,7 +342,10 @@ ARG MODE=440
 ENV FULL=0${MODE}
 COPY --chmod=$MODE a /a
 COPY --chmod=${FULL} b /b
-COPY --chmod=${UNSET:-755} c /c"""
+COPY --chmod=${UNSET:-755} c /c
+COPY --chmod=${MODE:+755} d /d
+COPY --chmod=${UNSET:-0${MODE}} e /e
+COPY --chmod=${MODE:?mode_required} f /f"""
 
     template = Template().from_dockerfile(dockerfile)
     copies = [
@@ -353,6 +356,9 @@ COPY --chmod=${UNSET:-755} c /c"""
         ["a", "/a", "", "0440"],
         ["b", "/b", "", "0440"],
         ["c", "/c", "", "0755"],
+        ["d", "/d", "", "0755"],
+        ["e", "/e", "", "0440"],
+        ["f", "/f", "", "0440"],
     ]
 
 
@@ -471,8 +477,13 @@ def test_from_dockerfile_rejects_invalid_dockerfiles():
         ("FROM a\nCOPY <<EOF /x\n${X:/a/b}\nEOF", r"unsupported modifier \(:/\)"),
         (
             "FROM a\nCOPY --chmod=$NOPE a b",
-            r'invalid chmod value "\$NOPE" \(resolves to ""\)',
+            r'invalid chmod value "\$NOPE" \(resolves to ""; only values set by an earlier ARG or ENV',
         ),
+        (
+            "FROM a\nCOPY --chmod=${NOPE:?mode_required} a b",
+            "NOPE: mode_required",
+        ),
+        ("FROM a\nCOPY --chmod=${NOPE:-7 a b", "missing '}'"),
         (
             "FROM a\nCOPY <<EOF /x\n" + "${A:-" * 5000 + "}" * 5000 + "\nEOF",
             "recursion",
