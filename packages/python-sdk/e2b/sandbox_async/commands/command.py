@@ -1,4 +1,4 @@
-from typing import Dict, List, Literal, Optional, Union, overload
+from typing import Any, AsyncGenerator, Dict, List, Literal, Optional, Union, overload
 
 import httpx
 from connectrpc.code import Code
@@ -315,32 +315,9 @@ class Commands:
             )
         )
 
-        try:
-            start_event = await first_event(
-                events, self._connection_config.get_request_timeout(request_timeout)
-            )
-
-            pid = extract_start_pid(start_event, "start process")
-            return AsyncCommandHandle(
-                pid=pid,
-                handle_kill=lambda: self.kill(pid),
-                events=events,
-                on_stdout=on_stdout,
-                on_stderr=on_stderr,
-                handle_send_stdin=lambda data, request_timeout=None: self.send_stdin(
-                    pid, data, request_timeout
-                ),
-                handle_close_stdin=lambda request_timeout=None: self.close_stdin(
-                    pid, request_timeout
-                ),
-                check_health=self._check_health,
-            )
-        except Exception as e:
-            try:
-                await events.aclose()
-            except Exception:
-                pass
-            raise await ahandle_rpc_exception_with_health(e, self._check_health)
+        return await self._create_handle(
+            events, "start process", request_timeout, on_stdout, on_stderr
+        )
 
     async def connect(
         self,
@@ -374,12 +351,26 @@ class Commands:
             )
         )
 
+        return await self._create_handle(
+            events, "connect to process", request_timeout, on_stdout, on_stderr
+        )
+
+    async def _create_handle(
+        self,
+        events: AsyncGenerator[
+            Union[process_pb.StartResponse, process_pb.ConnectResponse], Any
+        ],
+        action: str,
+        request_timeout: Optional[float],
+        on_stdout: Optional[OutputHandler[Stdout]],
+        on_stderr: Optional[OutputHandler[Stderr]],
+    ) -> AsyncCommandHandle:
         try:
             start_event = await first_event(
                 events, self._connection_config.get_request_timeout(request_timeout)
             )
 
-            pid = extract_start_pid(start_event, "connect to process")
+            pid = extract_start_pid(start_event, action)
             return AsyncCommandHandle(
                 pid=pid,
                 handle_kill=lambda: self.kill(pid),
