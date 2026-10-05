@@ -111,19 +111,22 @@ def _shell_join(words: List[str]) -> str:
 _VARIABLE_NAME = re.compile(r"\d+|[@*#?\-$!0]|\w+")
 
 
-def _shell_literal(ch: str) -> str:
-    return "\\" + ch if ch in "\\`$" else ch
+def _shell_literal(ch: str, stop_char: Optional[str] = None) -> str:
+    return "\\" + ch if ch in "\\`$" or ch == stop_char else ch
 
 
 def _expandable_heredoc_body(content: str, line: int) -> str:
-    """Rewrite an expandable heredoc body so that a POSIX shell applies Docker's
+    """Rewrite an expandable heredoc body so that the shell applies Docker's
     rules: ``$VAR`` / ``${VAR...}`` are substituted, a backslash escapes the next
     character, and everything else - ``$(...)`` and backticks included - is literal.
+    Backslashes inside ``#``, ``%`` and ``/`` patterns stay significant to the
+    shell's pattern matching, as they do for Docker.
     """
     pos = 0
 
-    def missing_brace() -> DockerfileSyntaxError:
-        return DockerfileSyntaxError("syntax error: missing '}'", line)
+    def missing(stop_char: str) -> DockerfileSyntaxError:
+        what = "'/' in ${}" if stop_char == "/" else "'}'"
+        return DockerfileSyntaxError(f"syntax error: missing {what}", line)
 
     def name() -> str:
         nonlocal pos
@@ -140,29 +143,36 @@ def _expandable_heredoc_body(content: str, line: int) -> str:
             return "\\$" if var_name == "" else "$" + var_name
         pos += 1
         if pos >= len(content):
-            raise missing_brace()
+            raise missing("}")
         if content[pos] in "{}:":
             raise DockerfileSyntaxError("syntax error: bad substitution", line)
         var_name = name()
         if pos >= len(content):
-            raise missing_brace()
+            raise missing("}")
         modifier = content[pos]
         pos += 1
         if modifier == "}":
             return "${" + var_name + "}"
+        if modifier == "/":
+            if pos < len(content) and content[pos] == "/":
+                modifier += "/"
+                pos += 1
+            pattern = scan("/", True)
+            return "${" + var_name + modifier + pattern + "/" + scan("}", True) + "}"
         if modifier == ":":
             if pos >= len(content):
-                raise missing_brace()
+                raise missing("}")
             modifier += content[pos]
             pos += 1
         op = modifier[-1]
-        if op not in "+-?#%" or (len(modifier) == 2 and op in "#%"):
+        is_pattern = op in "#%"
+        if op not in "+-?#%" or (len(modifier) == 2 and is_pattern):
             raise DockerfileSyntaxError(
                 f"unsupported modifier ({modifier}) in substitution", line
             )
-        return "${" + var_name + modifier + scan("}") + "}"
+        return "${" + var_name + modifier + scan("}", is_pattern) + "}"
 
-    def scan(stop_char: Optional[str]) -> str:
+    def scan(stop_char: Optional[str], raw_escapes: bool = False) -> str:
         nonlocal pos
         out: List[str] = []
         while pos < len(content):
@@ -172,8 +182,11 @@ def _expandable_heredoc_body(content: str, line: int) -> str:
                 return "".join(out)
             if ch == "\\":
                 if pos < len(content):
-                    out.append(_shell_literal(content[pos]))
+                    nxt = content[pos]
                     pos += 1
+                    out.append(
+                        "\\" + nxt if raw_escapes else _shell_literal(nxt, stop_char)
+                    )
             elif ch == "$":
                 out.append(variable())
             elif ch == "`":
@@ -181,7 +194,7 @@ def _expandable_heredoc_body(content: str, line: int) -> str:
             else:
                 out.append(ch)
         if stop_char is not None:
-            raise missing_brace()
+            raise missing(stop_char)
         return "".join(out)
 
     return scan(None)

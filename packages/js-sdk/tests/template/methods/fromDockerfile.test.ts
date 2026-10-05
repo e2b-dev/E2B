@@ -410,6 +410,28 @@ EOF`
 )
 
 buildTemplateTest(
+  'fromDockerfile COPY heredoc keeps Docker substitution patterns',
+  () => {
+    const dockerfile = `FROM node:24
+COPY <<EOF /etc/app.conf
+\${X/old/new} \${X//o/0} \${X/a\\/b/c} \${X/\`/x} \${Y#\\*} \${Y%%\\}} \${Z:-foo\\}bar} \${Z:-a\\\\b}
+EOF`
+
+    const template = Template().fromDockerfile(dockerfile)
+    const runs = instructionsOf(template)
+      .filter((i) => i.type === InstructionType.RUN)
+      .map((i) => i.args[0])
+
+    assert.deepEqual(runs, [
+      'E2B_HEREDOC_DEST=/etc/app.conf\n' +
+        'if [ -d "$E2B_HEREDOC_DEST" ]; then E2B_HEREDOC_DEST="$E2B_HEREDOC_DEST"/EOF; fi\n' +
+        'mkdir -p "$(dirname "$E2B_HEREDOC_DEST")" && cat <<E2B_HEREDOC_EOF >"$E2B_HEREDOC_DEST"\n' +
+        '${X/old/new} ${X//o/0} ${X/a\\/b/c} ${X/\\`/x} ${Y#\\*} ${Y%%\\}} ${Z:-foo\\}bar} ${Z:-a\\\\b}\nE2B_HEREDOC_EOF',
+    ])
+  }
+)
+
+buildTemplateTest(
   'fromDockerfile COPY with literal paths and zero mode',
   () => {
     const dockerfile = `FROM node:24
@@ -475,6 +497,8 @@ buildTemplateTest('fromDockerfile rejects invalid Dockerfiles', () => {
     ['FROM a\nRUN <<EOF\nnever closed', /unterminated heredoc/],
     ['FROM a\nCOPY <<EOF /x\n${}\nEOF', /bad substitution/],
     ['FROM a\nCOPY <<EOF /x\n${HOME:-\nEOF', /missing '}'/],
+    ['FROM a\nCOPY <<EOF /x\n${X/a\nEOF', /missing '\/' in \${}/],
+    ['FROM a\nCOPY <<EOF /x\n${X:/a/b}\nEOF', /unsupported modifier \(:\/\)/],
     ['FROM a\nBOGUS instruction', /unknown instruction: BOGUS/],
     ['FROM a\nCOPY --unknown=1 a b', /unknown flag: unknown/],
     ['FROM a\nCOPY --from=builder a b', /--from is not supported/],

@@ -314,6 +314,28 @@ EOF"""
 
 
 @pytest.mark.skip_debug()
+def test_from_dockerfile_copy_heredoc_keeps_docker_substitution_patterns():
+    dockerfile = """FROM node:24
+COPY <<EOF /etc/app.conf
+${X/old/new} ${X//o/0} ${X/a\\/b/c} ${X/`/x} ${Y#\\*} ${Y%%\\}} ${Z:-foo\\}bar} ${Z:-a\\\\b}
+EOF"""
+
+    template = Template().from_dockerfile(dockerfile)
+    runs = [
+        i["args"][0]
+        for i in _instructions(template)
+        if i["type"] == InstructionType.RUN
+    ]
+
+    assert runs == [
+        "E2B_HEREDOC_DEST=/etc/app.conf\n"
+        'if [ -d "$E2B_HEREDOC_DEST" ]; then E2B_HEREDOC_DEST="$E2B_HEREDOC_DEST"/EOF; fi\n'
+        'mkdir -p "$(dirname "$E2B_HEREDOC_DEST")" && cat <<E2B_HEREDOC_EOF >"$E2B_HEREDOC_DEST"\n'
+        "${X/old/new} ${X//o/0} ${X/a\\/b/c} ${X/\\`/x} ${Y#\\*} ${Y%%\\}} ${Z:-foo\\}bar} ${Z:-a\\\\b}\nE2B_HEREDOC_EOF",
+    ]
+
+
+@pytest.mark.skip_debug()
 def test_from_dockerfile_copy_heredoc_into_directory_expands_only_variables():
     dockerfile = """FROM node:24
 COPY <<EOF /etc/
@@ -403,6 +425,8 @@ def test_from_dockerfile_rejects_invalid_dockerfiles():
         ("FROM a\nRUN <<EOF\nnever closed", "unterminated heredoc"),
         ("FROM a\nCOPY <<EOF /x\n${}\nEOF", "bad substitution"),
         ("FROM a\nCOPY <<EOF /x\n${HOME:-\nEOF", "missing '}'"),
+        ("FROM a\nCOPY <<EOF /x\n${X/a\nEOF", r"missing '/' in \$\{\}"),
+        ("FROM a\nCOPY <<EOF /x\n${X:/a/b}\nEOF", r"unsupported modifier \(:/\)"),
         ("FROM a\nBOGUS instruction", "unknown instruction: BOGUS"),
         ("FROM a\nCOPY --unknown=1 a b", "unknown flag: unknown"),
         ("FROM a\nCOPY --from=builder a b", "--from is not supported"),

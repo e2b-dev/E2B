@@ -107,21 +107,25 @@ function withTrailingNewline(content: string): string {
 
 const VARIABLE_NAME = /\p{Nd}+|[@*#?\-$!0]|[\p{L}\p{Nd}_]+/uy
 
-function shellLiteral(ch: string): string {
-  return ch === '\\' || ch === '`' || ch === '$' ? '\\' + ch : ch
+function shellLiteral(ch: string, stopChar?: string): string {
+  return ch === '\\' || ch === '`' || ch === '$' || ch === stopChar
+    ? '\\' + ch
+    : ch
 }
 
 /**
- * Rewrite an expandable heredoc body so that a POSIX shell applies Docker's
+ * Rewrite an expandable heredoc body so that the shell applies Docker's
  * rules: `$VAR` / `${VAR...}` are substituted, a backslash escapes the next
  * character, and everything else - `$(...)` and backticks included - is
- * literal.
+ * literal. Backslashes inside `#`, `%` and `/` patterns stay significant to
+ * the shell's pattern matching, as they do for Docker.
  */
 function expandableHeredocBody(content: string, line: number): string {
   let i = 0
 
-  function missingBrace(): never {
-    throw new DockerfileSyntaxError("syntax error: missing '}'", line)
+  function missing(stopChar: string): never {
+    const what = stopChar === '/' ? "'/' in ${}" : "'}'"
+    throw new DockerfileSyntaxError(`syntax error: missing ${what}`, line)
   }
 
   function name(): string {
@@ -141,39 +145,44 @@ function expandableHeredocBody(content: string, line: number): string {
     }
     i++
     if (i >= content.length) {
-      missingBrace()
+      missing('}')
     }
     if (content[i] === '{' || content[i] === '}' || content[i] === ':') {
       throw new DockerfileSyntaxError('syntax error: bad substitution', line)
     }
     const varName = name()
     if (i >= content.length) {
-      missingBrace()
+      missing('}')
     }
     let modifier = content[i++]
     if (modifier === '}') {
       return `\${${varName}}`
     }
+    if (modifier === '/') {
+      if (content[i] === '/') {
+        modifier += content[i++]
+      }
+      const pattern = scan('/', true)
+      return `\${${varName}${modifier}${pattern}/${scan('}', true)}}`
+    }
     if (modifier === ':') {
       if (i >= content.length) {
-        missingBrace()
+        missing('}')
       }
       modifier += content[i++]
     }
     const op = modifier[modifier.length - 1]
-    if (
-      !'+-?#%'.includes(op) ||
-      (modifier.length === 2 && (op === '#' || op === '%'))
-    ) {
+    const isPattern = op === '#' || op === '%'
+    if (!'+-?#%'.includes(op) || (modifier.length === 2 && isPattern)) {
       throw new DockerfileSyntaxError(
         `unsupported modifier (${modifier}) in substitution`,
         line
       )
     }
-    return `\${${varName}${modifier}${scan('}')}}`
+    return `\${${varName}${modifier}${scan('}', isPattern)}}`
   }
 
-  function scan(stopChar?: string): string {
+  function scan(stopChar?: string, rawEscapes = false): string {
     let out = ''
     while (i < content.length) {
       const ch = content[i++]
@@ -182,7 +191,8 @@ function expandableHeredocBody(content: string, line: number): string {
       }
       if (ch === '\\') {
         if (i < content.length) {
-          out += shellLiteral(content[i++])
+          const next = content[i++]
+          out += rawEscapes ? '\\' + next : shellLiteral(next, stopChar)
         }
       } else if (ch === '$') {
         out += variable()
@@ -191,7 +201,7 @@ function expandableHeredocBody(content: string, line: number): string {
       }
     }
     if (stopChar !== undefined) {
-      missingBrace()
+      missing(stopChar)
     }
     return out
   }
