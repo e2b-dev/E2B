@@ -61,6 +61,8 @@ from e2b.api.client.models import (
 from e2b.api.client.models import (
     SandboxNetworkUpdateConfigRules,
 )
+from e2b.api import SandboxCreateResponse
+from e2b.api.client.models.sandbox import Sandbox as CreatedSandbox
 from e2b.api.client.types import UNSET, Unset
 from e2b.connection_config import ApiParams
 from e2b.exceptions import InvalidArgumentException
@@ -74,6 +76,25 @@ from e2b.paginator import PaginatorBase
 
 
 MAX_FORK_COUNT = 20
+
+
+def to_sandbox_create_response(sandbox: CreatedSandbox) -> SandboxCreateResponse:
+    """Map a created, connected or forked sandbox from the API response."""
+    return SandboxCreateResponse(
+        sandbox_id=sandbox.sandbox_id,
+        sandbox_domain=sandbox.domain if isinstance(sandbox.domain, str) else None,
+        envd_version=sandbox.envd_version,
+        envd_access_token=(
+            sandbox.envd_access_token
+            if isinstance(sandbox.envd_access_token, str)
+            else None
+        ),
+        traffic_access_token=(
+            sandbox.traffic_access_token
+            if isinstance(sandbox.traffic_access_token, str)
+            else None
+        ),
+    )
 
 
 def validate_fork_count(count: Any) -> None:

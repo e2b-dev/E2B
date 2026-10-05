@@ -61,6 +61,7 @@ from e2b.sandbox.sandbox_api import (
     build_iam_config,
     build_lifecycle_config,
     build_network_config,
+    to_sandbox_create_response,
     validate_fork_count,
 )
 from e2b.sandbox_sync.paginator import SandboxPaginator, get_api_client
@@ -268,25 +269,7 @@ class SandboxApi(SandboxBase):
                 "You need to update the template to use the new SDK."
             )
 
-        domain = res.parsed.domain if isinstance(res.parsed.domain, str) else None
-        envd_token = (
-            res.parsed.envd_access_token
-            if isinstance(res.parsed.envd_access_token, str)
-            else None
-        )
-        traffic_token = (
-            res.parsed.traffic_access_token
-            if isinstance(res.parsed.traffic_access_token, str)
-            else None
-        )
-
-        return SandboxCreateResponse(
-            sandbox_id=res.parsed.sandbox_id,
-            sandbox_domain=domain,
-            envd_version=res.parsed.envd_version,
-            envd_access_token=envd_token,
-            traffic_access_token=traffic_token,
-        )
+        return to_sandbox_create_response(res.parsed)
 
     @classmethod
     def _cls_get_metrics(
@@ -371,25 +354,7 @@ class SandboxApi(SandboxBase):
         if res.parsed is None:
             raise Exception("Body of the request is None")
 
-        domain = res.parsed.domain if isinstance(res.parsed.domain, str) else None
-        envd_token = (
-            res.parsed.envd_access_token
-            if isinstance(res.parsed.envd_access_token, str)
-            else None
-        )
-        traffic_token = (
-            res.parsed.traffic_access_token
-            if isinstance(res.parsed.traffic_access_token, str)
-            else None
-        )
-
-        return SandboxCreateResponse(
-            sandbox_id=res.parsed.sandbox_id,
-            sandbox_domain=domain,
-            envd_version=res.parsed.envd_version,
-            envd_access_token=envd_token,
-            traffic_access_token=traffic_token,
-        )
+        return to_sandbox_create_response(res.parsed)
 
     @classmethod
     def _cls_fork(
@@ -450,27 +415,7 @@ class SandboxApi(SandboxBase):
                 results.append(exception)
                 continue
 
-            domain = sandbox.domain if isinstance(sandbox.domain, str) else None
-            envd_token = (
-                sandbox.envd_access_token
-                if isinstance(sandbox.envd_access_token, str)
-                else None
-            )
-            traffic_token = (
-                sandbox.traffic_access_token
-                if isinstance(sandbox.traffic_access_token, str)
-                else None
-            )
-
-            results.append(
-                SandboxCreateResponse(
-                    sandbox_id=sandbox.sandbox_id,
-                    sandbox_domain=domain,
-                    envd_version=sandbox.envd_version,
-                    envd_access_token=envd_token,
-                    traffic_access_token=traffic_token,
-                )
-            )
+            results.append(to_sandbox_create_response(sandbox))
 
         return results
 
