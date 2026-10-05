@@ -2,13 +2,14 @@
 Shell-style word lexer for Dockerfile instruction arguments.
 
 This is a port of BuildKit's ``frontend/dockerfile/shell`` lexer
-(https://github.com/moby/buildkit) with one difference: variable
-references (``$VAR``, ``${VAR:-default}``, ...) are never expanded and are
-kept verbatim, so they can be evaluated later inside the sandbox.
+(https://github.com/moby/buildkit). Variable references (``$VAR``,
+``${VAR:-default}``, ...) are expanded from the ``env`` mapping; without it
+they are kept verbatim, so they can be evaluated later inside the sandbox.
 """
 
+import re
 import unicodedata
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, List, Mapping, Optional, Tuple
 
 _SPECIAL_PARAMS = "@*#?-$!0"
 _ASCII_SPACES = " \t\n\v\f\r\x85\xa0"
@@ -87,17 +88,24 @@ class ShellLex:
         raw_quotes: bool = False,
         raw_escapes: bool = False,
         skip_process_quotes: bool = False,
+        env: Optional[Mapping[str, str]] = None,
+        skip_unset_env: bool = True,
     ) -> None:
         """
         :param escape_token: Escape character (``\\`` or `````)
         :param raw_quotes: Keep quote characters in the output instead of removing them
         :param raw_escapes: Keep escape characters in the output instead of removing them
         :param skip_process_quotes: Do not treat quote characters specially at all
+        :param env: Variables to expand. Defaults to no variables
+        :param skip_unset_env: Keep references to variables missing from ``env``
+            verbatim instead of expanding them to an empty string
         """
         self._escape_token = escape_token
         self._raw_quotes = raw_quotes
         self._raw_escapes = raw_escapes
         self._skip_process_quotes = skip_process_quotes
+        self._env: Mapping[str, str] = env if env is not None else {}
+        self._skip_unset_env = skip_unset_env
 
     def process_word(self, word: str) -> str:
         """Process a single word: remove quotes/escapes, keep whitespace."""
@@ -114,6 +122,8 @@ class ShellLex:
             self._raw_quotes,
             self._raw_escapes,
             self._skip_process_quotes,
+            self._env,
+            self._skip_unset_env,
         )
         try:
             return sw.process_stop_on(None, self._raw_escapes)
@@ -129,12 +139,16 @@ class _ShellWord:
         raw_quotes: bool,
         raw_escapes: bool,
         skip_process_quotes: bool,
+        env: Mapping[str, str],
+        skip_unset_env: bool,
     ) -> None:
         self._scanner = scanner
         self._escape_token = escape_token
         self._raw_quotes = raw_quotes
         self._raw_escapes = raw_escapes
         self._skip_process_quotes = skip_process_quotes
+        self._env = env
+        self._skip_unset_env = skip_unset_env
 
     def process_stop_on(
         self, stop_char: Optional[str], raw_escapes: bool
@@ -261,17 +275,16 @@ class _ShellWord:
             result.append(ch)
 
     def _process_dollar(self) -> str:
-        """
-        Variable references are preserved verbatim (BuildKit's ``SkipUnsetEnv``
-        behaviour with an empty environment), but their syntax is validated.
-        """
         self._scanner.next()  # '$'
 
         if self._scanner.peek() != "{":
             name = self._process_name()
             if name == "":
                 return "$"
-            return "$" + name
+            value = self._env.get(name)
+            if value is None and self._skip_unset_env:
+                return "$" + name
+            return value or ""
 
         self._scanner.next()  # '{'
         first = self._scanner.peek()
@@ -285,9 +298,12 @@ class _ShellWord:
         if ch is None:
             raise ValueError("syntax error: missing '}'")
         chs = ch
+        value = self._env.get(name)
 
         if ch == "}":
-            return "${" + name + "}"
+            if value is None and self._skip_unset_env:
+                return "${" + name + "}"
+            return value or ""
 
         null_is_unset = False
         if ch == ":":
@@ -308,7 +324,28 @@ class _ShellWord:
         if null_is_unset and raw_escapes:
             raise ValueError(f"unsupported modifier ({chs}) in substitution")
         word = self._process_stop_on_or_missing_brace("}", raw_escapes)
-        return "${" + name + chs + word + "}"
+        if value is None and self._skip_unset_env:
+            return "${" + name + chs + word + "}"
+
+        unset = value is None or (null_is_unset and value == "")
+        if ch == "-":
+            return word if unset else (value or "")
+        if ch == "+":
+            return "" if unset else word
+        if ch == "?":
+            if value is None:
+                raise ValueError(f"{name}: {word or 'is not allowed to be unset'}")
+            if unset:
+                raise ValueError(f"{name}: {word or 'is not allowed to be empty'}")
+            return value
+        if ch in ("#", "%"):
+            # `#`/`%` remove the shortest match, `##`/`%%` the longest
+            greedy = word.startswith(ch)
+            pattern = word[1:] if greedy else word
+            if ch == "%":
+                return _trim_suffix(pattern, value or "", greedy)
+            return _trim_prefix(pattern, value or "", greedy)
+        raise ValueError(f"unsupported modifier ({chs}) in substitution")
 
     def _process_dollar_replace(self, name: str) -> str:
         op = "/"
@@ -322,7 +359,14 @@ class _ShellWord:
                 raise ValueError("syntax error: missing '/' in ${}") from None
             raise
         replacement = self._process_stop_on_or_missing_brace("}", True)
-        return "${" + name + op + pattern + "/" + replacement + "}"
+
+        value = self._env.get(name)
+        if value is None and self._skip_unset_env:
+            return "${" + name + op + pattern + "/" + replacement + "}"
+        regex = _shell_pattern_to_regex(pattern, greedy=True, anchored=False)
+        return regex.sub(
+            lambda _: replacement, value or "", count=0 if op == "//" else 1
+        )
 
     def _process_stop_on_or_missing_brace(
         self, stop_char: str, raw_escapes: bool
@@ -375,3 +419,65 @@ class _ShellWord:
             space.append(ch)
             self._scanner.next()
         return "<<" + "".join(space)
+
+
+def _shell_pattern_to_regex(
+    pattern: str, greedy: bool, anchored: bool
+) -> "re.Pattern[str]":
+    """Convert a shell wildcard pattern (``?`` one character, ``*`` the shortest
+    or, when greedy, the longest run) to a regular expression. Bracket
+    expressions are not supported, like in BuildKit.
+    """
+    out = "^" if anchored else ""
+    star = ".*" if greedy else ".*?"
+    i = 0
+    while i < len(pattern):
+        ch = pattern[i]
+        i += 1
+        if ch == "*":
+            out += star
+            continue
+        if ch == "?":
+            out += "."
+            continue
+        if ch == "\\":
+            # `}` and `/` are escaped to be part of the `${}` word, the escape
+            # itself is not part of the pattern
+            nxt = pattern[i] if i < len(pattern) else ""
+            if nxt in ("}", "/"):
+                continue
+            i += 1
+            if nxt not in ("*", "?", "\\"):
+                raise ValueError(
+                    f"invalid pattern ({pattern}) in substitution: "
+                    f"invalid escape '\\{nxt}'"
+                )
+            ch = nxt
+        if ch in "[]{}.+()|^$*?\\":
+            out += "\\"
+        out += ch
+    return re.compile(out)
+
+
+def _trim_prefix(pattern: str, value: str, greedy: bool) -> str:
+    return _shell_pattern_to_regex(pattern, greedy, anchored=True).sub("", value, 1)
+
+
+def _reverse_pattern(pattern: str) -> str:
+    """Reverse a pattern without turning ``a\\*c`` into ``c*\\a``."""
+    out: List[str] = []
+    i = 0
+    while i < len(pattern):
+        if pattern[i] == "\\" and i + 1 < len(pattern):
+            out[0:0] = [pattern[i], pattern[i + 1]]
+            i += 2
+        else:
+            out.insert(0, pattern[i])
+            i += 1
+    return "".join(out)
+
+
+def _trim_suffix(pattern: str, value: str, greedy: bool) -> str:
+    # regular expressions cannot find the shortest rightmost match, so both
+    # the pattern and the value are reversed to turn it into a leftmost search
+    return _trim_prefix(_reverse_pattern(pattern), value[::-1], greedy)[::-1]

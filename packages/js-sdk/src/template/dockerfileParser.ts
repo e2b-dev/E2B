@@ -100,8 +100,6 @@ function withTrailingNewline(content: string): string {
 }
 
 const VARIABLE_NAME = /\p{Nd}+|[@*#?\-$!0]|[\p{L}\p{Nd}_]+/uy
-const BUILD_VARIABLE =
-  /\$(?:([A-Za-z_][A-Za-z0-9_]*)|\{([A-Za-z_][A-Za-z0-9_]*)(?:(:?-)([^}]*))?\})/g
 
 function shellLiteral(ch: string, stopChar?: string): string {
   return ch === '\\' || ch === '`' || ch === '$' || ch === stopChar
@@ -216,6 +214,8 @@ interface StartCommand {
 
 class DockerfileConverter {
   private readonly lex: ShellLex
+  /** Expands the `ARG` / `ENV` values declared earlier in the Dockerfile. */
+  private readonly envLex: ShellLex
   private readonly vars = new Map<string, string>()
   private userChanged = false
   private workdirChanged = false
@@ -227,6 +227,10 @@ class DockerfileConverter {
     escapeToken: string
   ) {
     this.lex = new ShellLex(escapeToken)
+    this.envLex = new ShellLex(escapeToken, {
+      env: this.vars,
+      skipUnsetEnv: false,
+    })
   }
 
   convert(instructions: DockerfileInstruction[]): DockerfileParseResult {
@@ -320,41 +324,19 @@ class DockerfileConverter {
   }
 
   /** Resolve quotes and escapes in a word, keeping `$VAR` references. */
-  private expand(instruction: DockerfileInstruction, word: string): string {
+  private expand(
+    instruction: DockerfileInstruction,
+    word: string,
+    lex = this.lex
+  ): string {
     try {
-      return this.lex.processWord(word)
+      return lex.processWord(word)
     } catch (err) {
       throw new DockerfileSyntaxError(
         err instanceof Error ? err.message : String(err),
         instruction.startLine
       )
     }
-  }
-
-  /**
-   * Substitute `ARG` / `ENV` values declared earlier in the Dockerfile, for
-   * the few places where the converter itself needs the concrete value.
-   */
-  private resolveVars(word: string): string {
-    return word.replace(
-      BUILD_VARIABLE,
-      (
-        _match: string,
-        bare: string | undefined,
-        braced: string | undefined,
-        op: string | undefined,
-        fallback: string | undefined
-      ) => {
-        const value = this.vars.get(bare ?? braced ?? '')
-        if (
-          op !== undefined &&
-          (value === undefined || (op === ':-' && value === ''))
-        ) {
-          return fallback ?? ''
-        }
-        return value ?? ''
-      }
-    )
   }
 
   private expandSingle(instruction: DockerfileInstruction): string {
@@ -524,7 +506,7 @@ class DockerfileConverter {
     let mode: number | undefined
     if (flags.chmod !== undefined) {
       const chmod = this.expand(instruction, flags.chmod)
-      const resolved = this.resolveVars(chmod)
+      const resolved = this.expand(instruction, flags.chmod, this.envLex)
       if (!/^[0-7]{3,4}$/.test(resolved)) {
         const detail = resolved === chmod ? '' : ` (resolves to "${resolved}")`
         throw new DockerfileSyntaxError(
@@ -630,7 +612,7 @@ class DockerfileConverter {
         )
       }
       envs[key] = this.expand(instruction, args[i + 1])
-      this.vars.set(key, this.resolveVars(envs[key]))
+      this.vars.set(key, this.expand(instruction, args[i + 1], this.envLex))
     }
     this.templateBuilder.setEnvs(envs)
   }
@@ -654,8 +636,12 @@ class DockerfileConverter {
           instruction.startLine
         )
       }
-      envs[key] = eq === -1 ? '' : this.expand(instruction, arg.slice(eq + 1))
-      this.vars.set(key, this.resolveVars(envs[key]))
+      const value = arg.slice(eq + 1)
+      envs[key] = eq === -1 ? '' : this.expand(instruction, value)
+      this.vars.set(
+        key,
+        eq === -1 ? '' : this.expand(instruction, value, this.envLex)
+      )
     }
     this.templateBuilder.setEnvs(envs)
   }

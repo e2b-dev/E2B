@@ -50,3 +50,16 @@ def test_words_raw_quotes(case: LexCase):
 @pytest.mark.parametrize("case", load_cases("envVarTest"), ids=lambda c: c["input"])
 def test_env_var(case: LexCase):
     check(case, raw_quotes=False)
+
+
+_ENV = {"PWD": "/home", "SHELL": "bash", "KOREAN": "한국어", "NULL": ""}
+
+
+@pytest.mark.parametrize("case", load_cases("envVarTest.env"), ids=lambda c: c["input"])
+def test_env_var_expanded(case: LexCase):
+    lex = ShellLex("\\", env=_ENV, skip_unset_env=False)
+    if case.get("error"):
+        with pytest.raises(ValueError):
+            lex.process_word(case["input"])
+        return
+    assert lex.process_word(case["input"]) == case["word"]

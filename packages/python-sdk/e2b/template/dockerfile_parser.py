@@ -101,9 +101,6 @@ _FROM_FLAGS: FlagSpecs = {
 _IGNORED_INSTRUCTIONS = {"EXPOSE", "VOLUME", "LABEL", "MAINTAINER"}
 
 _CHMOD = re.compile(r"^[0-7]{3,4}$")
-_BUILD_VARIABLE = re.compile(
-    r"\$(?:([A-Za-z_][A-Za-z0-9_]*)|\{([A-Za-z_][A-Za-z0-9_]*)(?:(:?-)([^}]*))?\})"
-)
 _REMOTE_URL = re.compile(r"^[a-z][a-z0-9+.-]*://", re.IGNORECASE)
 
 
@@ -230,6 +227,8 @@ class _DockerfileConverter:
         self._template_builder = template_builder
         self._lex = ShellLex(escape_token)
         self._vars: Dict[str, str] = {}
+        # Expands the ARG / ENV values declared earlier in the Dockerfile.
+        self._env_lex = ShellLex(escape_token, env=self._vars, skip_unset_env=False)
         self._user_changed = False
         self._workdir_changed = False
         self._cmd: Optional[_StartCommand] = None
@@ -299,26 +298,17 @@ class _DockerfileConverter:
         elif name not in _IGNORED_INSTRUCTIONS:
             print(f"Unsupported instruction: {name}")
 
-    def _expand(self, instruction: DockerfileInstruction, word: str) -> str:
+    def _expand(
+        self,
+        instruction: DockerfileInstruction,
+        word: str,
+        lex: Optional[ShellLex] = None,
+    ) -> str:
         """Resolve quotes and escapes in a word, keeping ``$VAR`` references."""
         try:
-            return self._lex.process_word(word)
+            return (lex or self._lex).process_word(word)
         except ValueError as err:
             raise DockerfileSyntaxError(str(err), instruction.start_line) from None
-
-    def _resolve_vars(self, word: str) -> str:
-        """Substitute ``ARG`` / ``ENV`` values declared earlier in the Dockerfile,
-        for the few places where the converter itself needs the concrete value.
-        """
-
-        def substitute(match: "re.Match[str]") -> str:
-            bare, braced, op, fallback = match.groups()
-            value = self._vars.get(bare or braced or "")
-            if op is not None and (value is None or (op == ":-" and value == "")):
-                return fallback or ""
-            return value or ""
-
-        return _BUILD_VARIABLE.sub(substitute, word)
 
     def _expand_single(self, instruction: DockerfileInstruction) -> str:
         self._parse_flags(instruction, {})
@@ -458,7 +448,7 @@ class _DockerfileConverter:
         mode: Optional[int] = None
         if "chmod" in flags:
             chmod = self._expand(instruction, flags["chmod"])
-            resolved = self._resolve_vars(chmod)
+            resolved = self._expand(instruction, flags["chmod"], self._env_lex)
             if not _CHMOD.match(resolved):
                 detail = "" if resolved == chmod else f' (resolves to "{resolved}")'
                 raise DockerfileSyntaxError(
@@ -552,7 +542,7 @@ class _DockerfileConverter:
                     "ENV names can not be blank", instruction.start_line
                 )
             envs[key] = self._expand(instruction, args[i + 1])
-            self._vars[key] = self._resolve_vars(envs[key])
+            self._vars[key] = self._expand(instruction, args[i + 1], self._env_lex)
         self._template_builder.set_envs(envs)
 
     def _handle_arg(self, instruction: DockerfileInstruction) -> None:
@@ -571,7 +561,9 @@ class _DockerfileConverter:
                     "ARG names can not be blank", instruction.start_line
                 )
             envs[key] = self._expand(instruction, value) if sep else ""
-            self._vars[key] = self._resolve_vars(envs[key])
+            self._vars[key] = (
+                self._expand(instruction, value, self._env_lex) if sep else ""
+            )
         self._template_builder.set_envs(envs)
 
     def _apply_start_cmd(self) -> None:

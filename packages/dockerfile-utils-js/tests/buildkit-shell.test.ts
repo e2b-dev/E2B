@@ -43,4 +43,24 @@ describe('BuildKit shell lexer tables', () => {
   describe('envVarTest', () => {
     check(loadCases('envVarTest'), false)
   })
+
+  describe('envVarTest (expanded)', () => {
+    const env = new Map([
+      ['PWD', '/home'],
+      ['SHELL', 'bash'],
+      ['KOREAN', '한국어'],
+      ['NULL', ''],
+    ])
+    const lex = new ShellLex('\\', { env, skipUnsetEnv: false })
+    test.each(loadCases('envVarTest.env'))(
+      '$input',
+      ({ input, word, error }) => {
+        if (error) {
+          assert.throws(() => lex.processWord(input))
+          return
+        }
+        assert.strictEqual(lex.processWord(input), word)
+      }
+    )
+  })
 })

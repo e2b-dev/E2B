@@ -2,9 +2,9 @@
  * Shell-style word lexer for Dockerfile instruction arguments.
  *
  * This is a port of BuildKit's `frontend/dockerfile/shell` lexer
- * (https://github.com/moby/buildkit) with one difference: variable
- * references (`$VAR`, `${VAR:-default}`, ...) are never expanded and are
- * kept verbatim, so they can be evaluated later inside the sandbox.
+ * (https://github.com/moby/buildkit). Variable references (`$VAR`,
+ * `${VAR:-default}`, ...) are expanded from the `env` option; without it
+ * they are kept verbatim, so they can be evaluated later inside the sandbox.
  */
 
 const EOF = null
@@ -93,6 +93,13 @@ export interface ShellLexOptions {
   rawEscapes?: boolean
   /** Do not treat quote characters specially at all. */
   skipProcessQuotes?: boolean
+  /** Variables to expand. Defaults to no variables. */
+  env?: ReadonlyMap<string, string>
+  /**
+   * Keep references to variables missing from `env` verbatim instead of
+   * expanding them to an empty string. Defaults to `true`.
+   */
+  skipUnsetEnv?: boolean
 }
 
 export class ShellLex {
@@ -100,12 +107,16 @@ export class ShellLex {
   private readonly rawQuotes: boolean
   private readonly rawEscapes: boolean
   private readonly skipProcessQuotes: boolean
+  private readonly env: ReadonlyMap<string, string>
+  private readonly skipUnsetEnv: boolean
 
   constructor(escapeToken: string, options: ShellLexOptions = {}) {
     this.escapeToken = escapeToken
     this.rawQuotes = options.rawQuotes ?? false
     this.rawEscapes = options.rawEscapes ?? false
     this.skipProcessQuotes = options.skipProcessQuotes ?? false
+    this.env = options.env ?? new Map()
+    this.skipUnsetEnv = options.skipUnsetEnv ?? true
   }
 
   /** Process a single word: remove quotes/escapes, keep whitespace. */
@@ -124,7 +135,9 @@ export class ShellLex {
       this.escapeToken,
       this.rawQuotes,
       this.rawEscapes,
-      this.skipProcessQuotes
+      this.skipProcessQuotes,
+      this.env,
+      this.skipUnsetEnv
     )
     try {
       return sw.processStopOn(EOF, this.rawEscapes)
@@ -141,7 +154,9 @@ class ShellWord {
     private readonly escapeToken: string,
     private readonly rawQuotes: boolean,
     private rawEscapes: boolean,
-    private readonly skipProcessQuotes: boolean
+    private readonly skipProcessQuotes: boolean,
+    private readonly env: ReadonlyMap<string, string>,
+    private readonly skipUnsetEnv: boolean
   ) {}
 
   processStopOn(
@@ -297,10 +312,6 @@ class ShellWord {
     }
   }
 
-  /**
-   * Variable references are preserved verbatim (BuildKit's `SkipUnsetEnv`
-   * behaviour with an empty environment), but their syntax is validated.
-   */
   private processDollar(): string {
     this.scanner.next() // '$'
 
@@ -309,7 +320,11 @@ class ShellWord {
       if (name === '') {
         return '$'
       }
-      return '$' + name
+      const value = this.env.get(name)
+      if (value === undefined && this.skipUnsetEnv) {
+        return '$' + name
+      }
+      return value ?? ''
     }
 
     this.scanner.next() // '{'
@@ -327,9 +342,13 @@ class ShellWord {
       throw new Error("syntax error: missing '}'")
     }
     let chs = ch
+    const value = this.env.get(name)
 
     if (ch === '}') {
-      return `\${${name}}`
+      if (value === undefined && this.skipUnsetEnv) {
+        return `\${${name}}`
+      }
+      return value ?? ''
     }
 
     let nullIsUnset = false
@@ -357,7 +376,36 @@ class ShellWord {
       throw new Error(`unsupported modifier (${chs}) in substitution`)
     }
     const word = this.processStopOnOrMissingBrace('}', rawEscapes)
-    return `\${${name}${chs}${word}}`
+    if (value === undefined && this.skipUnsetEnv) {
+      return `\${${name}${chs}${word}}`
+    }
+
+    const unset = value === undefined || (nullIsUnset && value === '')
+    switch (ch) {
+      case '-':
+        return unset ? word : (value as string)
+      case '+':
+        return unset ? '' : word
+      case '?':
+        if (value === undefined) {
+          throw new Error(`${name}: ${word || 'is not allowed to be unset'}`)
+        }
+        if (unset) {
+          throw new Error(`${name}: ${word || 'is not allowed to be empty'}`)
+        }
+        return value
+      case '#':
+      case '%': {
+        // `#`/`%` remove the shortest match, `##`/`%%` the longest
+        const greedy = word.startsWith(ch)
+        const pattern = greedy ? word.slice(1) : word
+        return ch === '%'
+          ? trimSuffix(pattern, value ?? '', greedy)
+          : trimPrefix(pattern, value ?? '', greedy)
+      }
+      default:
+        throw new Error(`unsupported modifier (${chs}) in substitution`)
+    }
   }
 
   private processDollarReplace(name: string): string {
@@ -376,7 +424,13 @@ class ShellWord {
       throw err
     }
     const replacement = this.processStopOnOrMissingBrace('}', true)
-    return `\${${name}${op}${pattern}/${replacement}}`
+
+    const value = this.env.get(name)
+    if (value === undefined && this.skipUnsetEnv) {
+      return `\${${name}${op}${pattern}/${replacement}}`
+    }
+    const re = shellPatternToRegex(pattern, true, false, op === '//')
+    return (value ?? '').replace(re, () => replacement)
   }
 
   private processStopOnOrMissingBrace(
@@ -442,4 +496,82 @@ class ShellWord {
     }
     return '<<' + space
   }
+}
+
+/**
+ * Convert a shell wildcard pattern (`?` one character, `*` the shortest or,
+ * when greedy, the longest run) to a regular expression. Bracket
+ * expressions are not supported, like in BuildKit.
+ */
+function shellPatternToRegex(
+  pattern: string,
+  greedy: boolean,
+  anchored: boolean,
+  global = false
+): RegExp {
+  const chars = Array.from(pattern)
+  let out = anchored ? '^' : ''
+  const star = greedy ? '.*' : '.*?'
+  for (let i = 0; i < chars.length; i++) {
+    let ch = chars[i]
+    if (ch === '*') {
+      out += star
+      continue
+    }
+    if (ch === '?') {
+      out += '.'
+      continue
+    }
+    if (ch === '\\') {
+      // `}` and `/` are escaped to be part of the `${}` word, the escape
+      // itself is not part of the pattern
+      const next = chars[i + 1]
+      if (next === '}' || next === '/') {
+        continue
+      }
+      i++
+      if (next !== '*' && next !== '?' && next !== '\\') {
+        throw new Error(
+          `invalid pattern (${pattern}) in substitution: invalid escape '\\${next ?? ''}'`
+        )
+      }
+      ch = next
+    }
+    if ('[]{}.+()|^$*?\\'.includes(ch)) {
+      out += '\\'
+    }
+    out += ch
+  }
+  return new RegExp(out, global ? 'gu' : 'u')
+}
+
+function trimPrefix(pattern: string, value: string, greedy: boolean): string {
+  return value.replace(shellPatternToRegex(pattern, greedy, true), '')
+}
+
+/** Reverse a pattern without turning `a\*c` into `c*\a`. */
+function reversePattern(pattern: string): string {
+  const chars = Array.from(pattern)
+  const out: string[] = []
+  for (let i = 0; i < chars.length; i++) {
+    if (chars[i] === '\\' && i + 1 < chars.length) {
+      out.unshift(chars[i], chars[i + 1])
+      i++
+    } else {
+      out.unshift(chars[i])
+    }
+  }
+  return out.join('')
+}
+
+function reverseString(str: string): string {
+  return Array.from(str).reverse().join('')
+}
+
+function trimSuffix(pattern: string, value: string, greedy: boolean): string {
+  // regular expressions cannot find the shortest rightmost match, so both
+  // the pattern and the value are reversed to turn it into a leftmost search
+  return reverseString(
+    trimPrefix(reversePattern(pattern), reverseString(value), greedy)
+  )
 }
