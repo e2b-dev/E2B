@@ -1368,7 +1368,7 @@ async def test_async_balancing_transport_frees_the_slot_when_the_response_is_dro
     assert connection.in_flight(ENVD_HEALTH) == 0
 
 
-def refused(code=StreamErrorCode.NO_ERROR):
+def refused(code=StreamErrorCode.REFUSED_STREAM):
     return StreamError("stream refused", code)
 
 
@@ -1426,18 +1426,12 @@ async def async_chunks():
     yield b"load"
 
 
-@pytest.mark.parametrize(
-    "code", [StreamErrorCode.NO_ERROR, StreamErrorCode.REFUSED_STREAM]
-)
-@pytest.mark.parametrize("content", [b"payload", sync_chunks])
-def test_sync_balancing_transport_replays_a_refused_stream(code, content):
-    pool = RefusingSyncPool([refused(code)])
+def test_sync_balancing_transport_replays_a_refused_stream():
+    pool = RefusingSyncPool([refused()])
     transport, connection = sync_balancing_transport(pool)
-    if callable(content):
-        content = content()
 
     response = transport.execute_sync(
-        SyncRequest("POST", ENVD_HEALTH + "/rpc", content=content)
+        SyncRequest("POST", ENVD_HEALTH + "/rpc", content=sync_chunks())
     )
 
     assert list(response.content) == [b"payload"]
@@ -1448,6 +1442,7 @@ def test_sync_balancing_transport_replays_a_refused_stream(code, content):
 @pytest.mark.parametrize(
     "error",
     [
+        refused(StreamErrorCode.NO_ERROR),
         refused(StreamErrorCode.INTERNAL_ERROR),
         refused(StreamErrorCode.CANCEL),
         WriteError("connection closed"),
@@ -1459,7 +1454,7 @@ def test_sync_balancing_transport_does_not_replay_other_failures(error):
 
     with pytest.raises(type(error)):
         transport.execute_sync(
-            SyncRequest("POST", ENVD_HEALTH + "/rpc", content=b"payload")
+            SyncRequest("POST", ENVD_HEALTH + "/rpc", content=sync_chunks())
         )
 
     assert len(pool.bodies) == 1
@@ -1472,10 +1467,23 @@ def test_sync_balancing_transport_bounds_replays_of_refused_streams():
 
     with pytest.raises(StreamError):
         transport.execute_sync(
-            SyncRequest("POST", ENVD_HEALTH + "/rpc", content=b"payload")
+            SyncRequest("POST", ENVD_HEALTH + "/rpc", content=sync_chunks())
         )
 
     assert len(pool.bodies) == api_client_sync.connection_retries + 1
+    assert connection.in_flight(ENVD_HEALTH) == 0
+
+
+def test_sync_balancing_transport_leaves_refused_bytes_bodies_to_pyqwest():
+    pool = RefusingSyncPool([refused()])
+    transport, connection = sync_balancing_transport(pool)
+
+    with pytest.raises(StreamError):
+        transport.execute_sync(
+            SyncRequest("POST", ENVD_HEALTH + "/rpc", content=b"payload")
+        )
+
+    assert pool.bodies == [b"payload"]
     assert connection.in_flight(ENVD_HEALTH) == 0
 
 
@@ -1495,18 +1503,12 @@ def test_sync_balancing_transport_does_not_replay_a_body_too_large_to_mirror(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "code", [StreamErrorCode.NO_ERROR, StreamErrorCode.REFUSED_STREAM]
-)
-@pytest.mark.parametrize("content", [b"payload", async_chunks])
-async def test_async_balancing_transport_replays_a_refused_stream(code, content):
-    pool = RefusingAsyncPool([refused(code)])
+async def test_async_balancing_transport_replays_a_refused_stream():
+    pool = RefusingAsyncPool([refused()])
     transport, connection = async_balancing_transport(pool)
-    if callable(content):
-        content = content()
 
     response = await transport.execute(
-        Request("POST", ENVD_HEALTH + "/rpc", content=content)
+        Request("POST", ENVD_HEALTH + "/rpc", content=async_chunks())
     )
 
     assert [chunk async for chunk in response.content] == [b"payload"]
@@ -1518,6 +1520,7 @@ async def test_async_balancing_transport_replays_a_refused_stream(code, content)
 @pytest.mark.parametrize(
     "error",
     [
+        refused(StreamErrorCode.NO_ERROR),
         refused(StreamErrorCode.INTERNAL_ERROR),
         refused(StreamErrorCode.CANCEL),
         WriteError("connection closed"),
@@ -1529,7 +1532,7 @@ async def test_async_balancing_transport_does_not_replay_other_failures(error):
 
     with pytest.raises(type(error)):
         await transport.execute(
-            Request("POST", ENVD_HEALTH + "/rpc", content=b"payload")
+            Request("POST", ENVD_HEALTH + "/rpc", content=async_chunks())
         )
 
     assert len(pool.bodies) == 1
@@ -1543,10 +1546,24 @@ async def test_async_balancing_transport_bounds_replays_of_refused_streams():
 
     with pytest.raises(StreamError):
         await transport.execute(
-            Request("POST", ENVD_HEALTH + "/rpc", content=b"payload")
+            Request("POST", ENVD_HEALTH + "/rpc", content=async_chunks())
         )
 
     assert len(pool.bodies) == api_client_async.connection_retries + 1
+    assert connection.in_flight(ENVD_HEALTH) == 0
+
+
+@pytest.mark.asyncio
+async def test_async_balancing_transport_leaves_refused_bytes_bodies_to_pyqwest():
+    pool = RefusingAsyncPool([refused()])
+    transport, connection = async_balancing_transport(pool)
+
+    with pytest.raises(StreamError):
+        await transport.execute(
+            Request("POST", ENVD_HEALTH + "/rpc", content=b"payload")
+        )
+
+    assert pool.bodies == [b"payload"]
     assert connection.in_flight(ENVD_HEALTH) == 0
 
 

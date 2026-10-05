@@ -185,10 +185,11 @@ class BalancingTransport(Transport):
     eagerly, the rest as load requires — so they share every construction
     knob.
 
-    A request whose HTTP/2 stream the server refused (see
-    :func:`e2b.api.is_refused_stream`) — typically one that crossed a
+    A request with a streamed body whose HTTP/2 stream the server refused
+    (see :func:`e2b.api.is_refused_stream`) — typically one that crossed a
     ``GOAWAY`` retiring its connection — is sent again, up to
-    ``connection_retries`` times, as the server never processed it."""
+    ``connection_retries`` times, as the server never processed it. pyqwest
+    already resends refused requests with a ``bytes`` body itself."""
 
     def __init__(self, build: Callable[[], HTTPTransport]) -> None:
         self.balancer: ConnectionBalancer[HTTPTransport] = ConnectionBalancer(build)
@@ -208,8 +209,12 @@ class BalancingTransport(Transport):
             except BaseException as e:
                 self.balancer.release(connection, origin)
                 replay: Union[bytes, AsyncIterator[bytes], None] = None
-                if retries < connection_retries and is_refused_stream(e):
-                    replay = content if replayable is None else replayable.replay()
+                if (
+                    replayable is not None
+                    and retries < connection_retries
+                    and is_refused_stream(e)
+                ):
+                    replay = replayable.replay()
                 if replay is None:
                     if replayable is not None:
                         await replayable.abandon()
