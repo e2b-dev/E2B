@@ -68,6 +68,8 @@ class DockerfileSyntaxError(ValueError):
 
 _DEFAULT_ESCAPE_TOKEN = "\\"
 _WHITESPACE = re.compile(r"[\t\v\f\r ]+")
+_ASCII_DIGITS = "0123456789"
+_ASCII_SPACES = "\t\n\f\r "
 _DIRECTIVE = re.compile(r"^#\s*([a-zA-Z][a-zA-Z0-9]*)\s*=\s*(.+?)\s*$")
 _VALID_DIRECTIVES = {"syntax", "escape", "check"}
 _HEREDOC_INSTRUCTIONS = {"ADD", "COPY", "RUN"}
@@ -439,7 +441,7 @@ def _split_command(line: str, escape_token: str) -> Tuple[str, List[str], str]:
 def _match_heredoc_marker(word: str) -> Optional[Tuple[str, bool, str]]:
     """Split ``[fd]<<[-]name`` into its parts without a backtracking regex."""
     i = 0
-    while i < len(word) and word[i].isdigit():
+    while i < len(word) and word[i] in _ASCII_DIGITS:
         i += 1
     if not word.startswith("<<", i):
         return None
@@ -448,7 +450,7 @@ def _match_heredoc_marker(word: str) -> Optional[Tuple[str, bool, str]]:
     chomp = i < len(word) and word[i] == "-"
     if chomp:
         i += 1
-    while i < len(word) and word[i].isspace():
+    while i < len(word) and word[i] in _ASCII_SPACES:
         i += 1
     rest = word[i:]
     if "<" in rest:

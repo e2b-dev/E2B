@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import { shellQuote } from '../utils'
 import { CopyItem } from './types'
 import { ReadyCmd, waitForTimeout } from './readycmd'
 import {
@@ -85,19 +86,6 @@ const IGNORED_INSTRUCTIONS = new Set([
   'MAINTAINER',
 ])
 
-const SHELL_SAFE = /^[A-Za-z0-9_@%+=:,./-]+$/
-
-/** Quote a word for POSIX shells (same rules as Python's `shlex.quote`). */
-export function shellQuote(word: string): string {
-  if (word === '') {
-    return "''"
-  }
-  if (SHELL_SAFE.test(word)) {
-    return word
-  }
-  return "'" + word.replace(/'/g, `'"'"'`) + "'"
-}
-
 /** A heredoc delimiter that does not occur in the content it wraps. */
 function heredocTerminator(name: string, content: string): string {
   const base = `E2B_HEREDOC_${name}`
@@ -143,10 +131,14 @@ class DockerfileConverter {
   convert(instructions: DockerfileInstruction[]): DockerfileParseResult {
     const fromInstructions = instructions.filter((i) => i.name === 'FROM')
     if (fromInstructions.length > 1) {
-      throw new Error('Multi-stage Dockerfiles are not supported')
+      throw new DockerfileSyntaxError(
+        'Multi-stage Dockerfiles are not supported'
+      )
     }
     if (fromInstructions.length === 0) {
-      throw new Error('Dockerfile must contain a FROM instruction')
+      throw new DockerfileSyntaxError(
+        'Dockerfile must contain a FROM instruction'
+      )
     }
 
     const fromInstruction = fromInstructions[0]
@@ -353,11 +345,7 @@ class DockerfileConverter {
       heredoc.chomp ? chompHeredocContent(heredoc.content) : heredoc.content
 
     // `RUN <<EOF` on its own: the heredoc body is the script itself.
-    if (
-      heredocs.length === 1 &&
-      heredocs[0].fileDescriptor === 0 &&
-      parseHeredoc(line.trim())
-    ) {
+    if (heredocs.length === 1 && parseHeredoc(line.trim())) {
       const heredoc = heredocs[0]
       const content = heredocContent(heredoc)
       if (!content.startsWith('#!')) {
@@ -464,23 +452,32 @@ class DockerfileConverter {
     user: string | undefined,
     mode: number | undefined
   ) {
-    const target = dest.endsWith('/') ? dest + heredoc.name : dest
-    const content = heredoc.chomp
+    let content = heredoc.chomp
       ? chompHeredocContent(heredoc.content)
       : heredoc.content
+    if (heredoc.expand) {
+      // Docker only substitutes variables; keep the shell from also running
+      // command substitutions.
+      content = content.replace(/`|\$\(/g, (match) => `\\${match}`)
+    }
     const plainTerminator = heredocTerminator(heredoc.name, content)
     const terminator = heredoc.expand ? plainTerminator : `'${plainTerminator}'`
-    const quotedTarget = shellQuote(target)
+    const target = '"$E2B_HEREDOC_DEST"'
 
-    let command =
-      `mkdir -p "$(dirname ${quotedTarget})" && cat <<${terminator} >${quotedTarget}\n` +
+    // Like Docker, a dest that is a directory receives a file named after the heredoc.
+    let command = dest.endsWith('/')
+      ? `E2B_HEREDOC_DEST=${shellQuote(dest + heredoc.name)}\n`
+      : `E2B_HEREDOC_DEST=${shellQuote(dest)}\n` +
+        `if [ -d ${target} ]; then E2B_HEREDOC_DEST=${target}/${shellQuote(heredoc.name)}; fi\n`
+    command +=
+      `mkdir -p "$(dirname ${target})" && cat <<${terminator} >${target}\n` +
       withTrailingNewline(content) +
       plainTerminator
     if (user !== undefined) {
-      command += `\nchown ${shellQuote(user)} ${quotedTarget}`
+      command += `\nchown ${shellQuote(user)} ${target}`
     }
     if (mode !== undefined) {
-      command += `\nchmod ${mode.toString(8)} ${quotedTarget}`
+      command += `\nchmod ${mode.toString(8)} ${target}`
     }
     // COPY writes as the builder (root), independent of the current USER.
     this.templateBuilder.runCmd(command, { user: 'root' })

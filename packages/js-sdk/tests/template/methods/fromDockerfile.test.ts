@@ -1,5 +1,5 @@
 import { buildTemplateTest } from '../../setup'
-import { Template } from '../../../src'
+import { DockerfileSyntaxError, Template } from '../../../src'
 import { InstructionType } from '../../../src/template/types'
 import { assert } from 'vitest'
 
@@ -320,7 +320,7 @@ RUN python3 - <<PY
 print("hi")
 PY
 RUN 3<<FD
-touch /tmp/never-run
+touch /tmp/fd
 FD
 COPY <<'CONF' /etc/app.conf
 key=$VALUE
@@ -335,8 +335,8 @@ CONF`
     'npm install\nnpm run build\n',
     'echo tabbed\n',
     'python3 - <<PY\nprint("hi")\nPY',
-    '3<<FD\ntouch /tmp/never-run\nFD',
-    `mkdir -p "$(dirname /etc/app.conf)" && cat <<'E2B_HEREDOC_CONF' >/etc/app.conf\nkey=$VALUE\nE2B_HEREDOC_CONF`,
+    'touch /tmp/fd\n',
+    `E2B_HEREDOC_DEST=/etc/app.conf\nif [ -d "$E2B_HEREDOC_DEST" ]; then E2B_HEREDOC_DEST="$E2B_HEREDOC_DEST"/CONF; fi\nmkdir -p "$(dirname "$E2B_HEREDOC_DEST")" && cat <<'E2B_HEREDOC_CONF' >"$E2B_HEREDOC_DEST"\nkey=$VALUE\nE2B_HEREDOC_CONF`,
   ])
 })
 
@@ -355,7 +355,7 @@ EOF`
 
   assert.deepEqual(runs, [
     [
-      `mkdir -p "$(dirname /etc/app.conf)" && cat <<E2B_HEREDOC_EOF_ >/etc/app.conf\nE2B_HEREDOC_EOF\nx=1\nE2B_HEREDOC_EOF_`,
+      `E2B_HEREDOC_DEST=/etc/app.conf\nif [ -d "$E2B_HEREDOC_DEST" ]; then E2B_HEREDOC_DEST="$E2B_HEREDOC_DEST"/EOF; fi\nmkdir -p "$(dirname "$E2B_HEREDOC_DEST")" && cat <<E2B_HEREDOC_EOF_ >"$E2B_HEREDOC_DEST"\nE2B_HEREDOC_EOF\nx=1\nE2B_HEREDOC_EOF_`,
       'root',
     ],
   ])
@@ -376,7 +376,35 @@ EOF`
       .map((i) => i.args[0])
 
     assert.deepEqual(runs, [
-      `mkdir -p "$(dirname /etc/app.conf)" && cat <<E2B_HEREDOC_EOF____ >/etc/app.conf\nE2B_HEREDOC_EOF___ E2B_HEREDOC_EOF_\nE2B_HEREDOC_EOF\nE2B_HEREDOC_EOF____`,
+      `E2B_HEREDOC_DEST=/etc/app.conf\nif [ -d "$E2B_HEREDOC_DEST" ]; then E2B_HEREDOC_DEST="$E2B_HEREDOC_DEST"/EOF; fi\nmkdir -p "$(dirname "$E2B_HEREDOC_DEST")" && cat <<E2B_HEREDOC_EOF____ >"$E2B_HEREDOC_DEST"\nE2B_HEREDOC_EOF___ E2B_HEREDOC_EOF_\nE2B_HEREDOC_EOF\nE2B_HEREDOC_EOF____`,
+    ])
+  }
+)
+
+buildTemplateTest(
+  'fromDockerfile COPY heredoc into a directory expands only variables',
+  () => {
+    const dockerfile = `FROM node:24
+COPY <<EOF /etc/
+run \`npm start\` and $(id) for $USER
+EOF
+COPY <<EOF .
+x
+EOF`
+
+    const template = Template().fromDockerfile(dockerfile)
+    const runs = instructionsOf(template)
+      .filter((i) => i.type === InstructionType.RUN)
+      .map((i) => i.args[0])
+
+    assert.deepEqual(runs, [
+      'E2B_HEREDOC_DEST=/etc/EOF\n' +
+        'mkdir -p "$(dirname "$E2B_HEREDOC_DEST")" && cat <<E2B_HEREDOC_EOF >"$E2B_HEREDOC_DEST"\n' +
+        'run \\`npm start\\` and \\$(id) for $USER\nE2B_HEREDOC_EOF',
+      'E2B_HEREDOC_DEST=.\n' +
+        'if [ -d "$E2B_HEREDOC_DEST" ]; then E2B_HEREDOC_DEST="$E2B_HEREDOC_DEST"/EOF; fi\n' +
+        'mkdir -p "$(dirname "$E2B_HEREDOC_DEST")" && cat <<E2B_HEREDOC_EOF >"$E2B_HEREDOC_DEST"\n' +
+        'x\nE2B_HEREDOC_EOF',
     ])
   }
 )
@@ -455,8 +483,8 @@ buildTemplateTest('fromDockerfile rejects invalid Dockerfiles', () => {
   for (const [dockerfile, expected] of cases) {
     assert.throws(
       () => Template().fromDockerfile(dockerfile),
+      DockerfileSyntaxError,
       expected,
-      undefined,
       dockerfile
     )
   }

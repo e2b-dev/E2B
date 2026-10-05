@@ -108,6 +108,9 @@ def _shell_join(words: List[str]) -> str:
     return " ".join(shlex.quote(word) for word in words)
 
 
+_COMMAND_SUBSTITUTION = re.compile(r"`|\$\(")
+
+
 def _heredoc_terminator(name: str, content: str) -> str:
     """A heredoc delimiter that does not occur in the content it wraps."""
     base = f"E2B_HEREDOC_{name}"
@@ -149,9 +152,9 @@ class _DockerfileConverter:
     def convert(self, instructions: List[DockerfileInstruction]) -> str:
         from_instructions = [i for i in instructions if i.name == "FROM"]
         if len(from_instructions) > 1:
-            raise ValueError("Multi-stage Dockerfiles are not supported")
+            raise DockerfileSyntaxError("Multi-stage Dockerfiles are not supported")
         if not from_instructions:
-            raise ValueError("Dockerfile must contain a FROM instruction")
+            raise DockerfileSyntaxError("Dockerfile must contain a FROM instruction")
 
         from_instruction = from_instructions[0]
         base_image = self._handle_from(from_instruction)
@@ -312,11 +315,7 @@ class _DockerfileConverter:
             return heredoc.content
 
         # `RUN <<EOF` on its own: the heredoc body is the script itself.
-        if (
-            len(heredocs) == 1
-            and heredocs[0].file_descriptor == 0
-            and parse_heredoc(line.strip()) is not None
-        ):
+        if len(heredocs) == 1 and parse_heredoc(line.strip()) is not None:
             heredoc = heredocs[0]
             content = heredoc_content(heredoc)
             if not content.startswith("#!"):
@@ -405,23 +404,34 @@ class _DockerfileConverter:
         mode: Optional[int],
     ) -> None:
         """``COPY <<EOF /path`` writes the heredoc body to a file inside the sandbox."""
-        target = dest + heredoc.name if dest.endswith("/") else dest
         content = (
             chomp_heredoc_content(heredoc.content) if heredoc.chomp else heredoc.content
         )
+        if heredoc.expand:
+            # Docker only substitutes variables; keep the shell from also running
+            # command substitutions.
+            content = _COMMAND_SUBSTITUTION.sub(r"\\\g<0>", content)
         plain_terminator = _heredoc_terminator(heredoc.name, content)
         terminator = plain_terminator if heredoc.expand else f"'{plain_terminator}'"
-        quoted_target = shlex.quote(target)
+        target = '"$E2B_HEREDOC_DEST"'
 
-        command = (
-            f'mkdir -p "$(dirname {quoted_target})" && cat <<{terminator} >{quoted_target}\n'
+        # Like Docker, a dest that is a directory receives a file named after the heredoc.
+        if dest.endswith("/"):
+            command = f"E2B_HEREDOC_DEST={shlex.quote(dest + heredoc.name)}\n"
+        else:
+            command = (
+                f"E2B_HEREDOC_DEST={shlex.quote(dest)}\n"
+                f"if [ -d {target} ]; then E2B_HEREDOC_DEST={target}/{shlex.quote(heredoc.name)}; fi\n"
+            )
+        command += (
+            f'mkdir -p "$(dirname {target})" && cat <<{terminator} >{target}\n'
             + _with_trailing_newline(content)
             + plain_terminator
         )
         if user is not None:
-            command += f"\nchown {shlex.quote(user)} {quoted_target}"
+            command += f"\nchown {shlex.quote(user)} {target}"
         if mode is not None:
-            command += f"\nchmod {mode:o} {quoted_target}"
+            command += f"\nchmod {mode:o} {target}"
         # COPY writes as the builder (root), independent of the current USER.
         self._template_builder.run_cmd(command, user="root")
 

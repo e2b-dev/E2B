@@ -133,6 +133,7 @@ from .template.logger import (
     LogEntryStart,
     default_build_logger,
 )
+from .template.dockerfile_parser import DockerfileSyntaxError
 from .template.main import TemplateBase, TemplateClass
 from .template.readycmd import (
     ReadyCmd,
@@ -194,6 +195,7 @@ __all__ = [
     "InvalidArgumentException",
     "NotEnoughSpaceException",
     "TemplateException",
+    "DockerfileSyntaxError",
     "BuildException",
     "FileUploadException",
     "RateLimitException",

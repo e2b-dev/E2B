@@ -1,6 +1,6 @@
 import pytest
 
-from e2b import AsyncTemplate
+from e2b import DockerfileSyntaxError, AsyncTemplate
 from e2b.template.types import InstructionType
 
 
@@ -247,7 +247,7 @@ RUN python3 - <<PY
 print("hi")
 PY
 RUN 3<<FD
-touch /tmp/never-run
+touch /tmp/fd
 FD
 COPY <<'CONF' /etc/app.conf
 key=$VALUE
@@ -264,8 +264,8 @@ CONF"""
         "npm install\nnpm run build\n",
         "echo tabbed\n",
         'python3 - <<PY\nprint("hi")\nPY',
-        "3<<FD\ntouch /tmp/never-run\nFD",
-        """mkdir -p "$(dirname /etc/app.conf)" && cat <<'E2B_HEREDOC_CONF' >/etc/app.conf\nkey=$VALUE\nE2B_HEREDOC_CONF""",
+        "touch /tmp/fd\n",
+        """E2B_HEREDOC_DEST=/etc/app.conf\nif [ -d "$E2B_HEREDOC_DEST" ]; then E2B_HEREDOC_DEST="$E2B_HEREDOC_DEST"/CONF; fi\nmkdir -p "$(dirname "$E2B_HEREDOC_DEST")" && cat <<'E2B_HEREDOC_CONF' >"$E2B_HEREDOC_DEST"\nkey=$VALUE\nE2B_HEREDOC_CONF""",
     ]
 
 
@@ -285,7 +285,7 @@ EOF"""
 
     assert runs == [
         [
-            'mkdir -p "$(dirname /etc/app.conf)" && cat <<E2B_HEREDOC_EOF_ >/etc/app.conf\n'
+            'E2B_HEREDOC_DEST=/etc/app.conf\nif [ -d "$E2B_HEREDOC_DEST" ]; then E2B_HEREDOC_DEST="$E2B_HEREDOC_DEST"/EOF; fi\nmkdir -p "$(dirname "$E2B_HEREDOC_DEST")" && cat <<E2B_HEREDOC_EOF_ >"$E2B_HEREDOC_DEST"\n'
             "E2B_HEREDOC_EOF\nx=1\nE2B_HEREDOC_EOF_",
             "root",
         ],
@@ -308,8 +308,36 @@ EOF"""
     ]
 
     assert runs == [
-        'mkdir -p "$(dirname /etc/app.conf)" && cat <<E2B_HEREDOC_EOF____ >/etc/app.conf\n'
+        'E2B_HEREDOC_DEST=/etc/app.conf\nif [ -d "$E2B_HEREDOC_DEST" ]; then E2B_HEREDOC_DEST="$E2B_HEREDOC_DEST"/EOF; fi\nmkdir -p "$(dirname "$E2B_HEREDOC_DEST")" && cat <<E2B_HEREDOC_EOF____ >"$E2B_HEREDOC_DEST"\n'
         "E2B_HEREDOC_EOF___ E2B_HEREDOC_EOF_\nE2B_HEREDOC_EOF\nE2B_HEREDOC_EOF____",
+    ]
+
+
+@pytest.mark.skip_debug()
+async def test_from_dockerfile_copy_heredoc_into_directory_expands_only_variables():
+    dockerfile = """FROM node:24
+COPY <<EOF /etc/
+run `npm start` and $(id) for $USER
+EOF
+COPY <<EOF .
+x
+EOF"""
+
+    template = AsyncTemplate().from_dockerfile(dockerfile)
+    runs = [
+        i["args"][0]
+        for i in _instructions(template)
+        if i["type"] == InstructionType.RUN
+    ]
+
+    assert runs == [
+        "E2B_HEREDOC_DEST=/etc/EOF\n"
+        'mkdir -p "$(dirname "$E2B_HEREDOC_DEST")" && cat <<E2B_HEREDOC_EOF >"$E2B_HEREDOC_DEST"\n'
+        "run \\`npm start\\` and \\$(id) for $USER\nE2B_HEREDOC_EOF",
+        "E2B_HEREDOC_DEST=.\n"
+        'if [ -d "$E2B_HEREDOC_DEST" ]; then E2B_HEREDOC_DEST="$E2B_HEREDOC_DEST"/EOF; fi\n'
+        'mkdir -p "$(dirname "$E2B_HEREDOC_DEST")" && cat <<E2B_HEREDOC_EOF >"$E2B_HEREDOC_DEST"\n'
+        "x\nE2B_HEREDOC_EOF",
     ]
 
 
@@ -381,5 +409,5 @@ async def test_from_dockerfile_rejects_invalid_dockerfiles():
         ('FROM a\nRUN ["not", 1]', "Only strings are supported"),
     ]
     for dockerfile, expected in cases:
-        with pytest.raises(ValueError, match=expected):
+        with pytest.raises(DockerfileSyntaxError, match=expected):
             AsyncTemplate().from_dockerfile(dockerfile)

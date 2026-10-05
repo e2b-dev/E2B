@@ -24,6 +24,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "prepublishOnly": "pnpm build",
+    "prebuild": "pnpm --dir ../dockerfile-utils-js build",
     "build": "tsc --noEmit && tsdown",
     "dev": "tsdown --watch",
     "test": "vitest run",

@@ -506,6 +506,8 @@ function splitCommand(
 
 // Matches `^(\d*)<<(-?)\s*([^<]*)$` without a regex, whose adjacent `\s*`
 // and `[^<]*` are ambiguous on whitespace runs (polynomial backtracking).
+const HEREDOC_SPACES = '\t\n\f\r '
+
 function matchHeredocMarker(
   word: string
 ): { fileDescriptor: string; chomp: boolean; rest: string } | undefined {
@@ -522,7 +524,7 @@ function matchHeredocMarker(
   if (chomp) {
     i++
   }
-  while (i < word.length && /\s/.test(word[i])) {
+  while (i < word.length && HEREDOC_SPACES.includes(word[i])) {
     i++
   }
   const rest = word.slice(i)

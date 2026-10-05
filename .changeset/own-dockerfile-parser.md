@@ -3,4 +3,4 @@
 '@e2b/python-sdk': minor
 ---
 
-Replace the third-party Dockerfile parsers (`dockerfile-ast`, `dockerfile-parse`) used by `Template.fromDockerfile` / `Template.from_dockerfile` with a built-in parser ported from BuildKit. Quoted and escaped values in `ENV`/`ARG`/`COPY`, whitespace inside `RUN`/`CMD` arguments, mixed-case `AS` aliases, comments in line continuations, the `# escape=` directive, `COPY --chmod`, heredocs and `ENTRYPOINT` + `CMD` combination are now handled consistently in both SDKs.
+Replace the third-party Dockerfile parsers (`dockerfile-ast`, `dockerfile-parse`) used by `Template.fromDockerfile` / `Template.from_dockerfile` with a built-in parser ported from BuildKit. Quoted and escaped values in `ENV`/`ARG`/`COPY`, whitespace inside `RUN`/`CMD` arguments, mixed-case `AS` aliases, comments in line continuations, the `# escape=` directive, `COPY --chmod`, heredocs and `ENTRYPOINT` + `CMD` combination are now handled consistently in both SDKs. A `.dockerignore` line consisting of a lone `!` is now rejected, as Docker does, instead of being skipped.

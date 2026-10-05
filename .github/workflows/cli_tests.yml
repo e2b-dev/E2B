@@ -56,10 +56,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build Dockerfile Utils JS (pre-requisite for the SDK)
-        run: pnpm build
-        working-directory: ./packages/dockerfile-utils-js
-
       - name: Build the SDK (pre-requisite for the tests)
         run: pnpm build
         working-directory: ./packages/js-sdk

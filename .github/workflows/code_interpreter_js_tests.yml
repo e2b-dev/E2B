@@ -77,9 +77,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build Dockerfile Utils JS
-        run: pnpm --dir ../dockerfile-utils-js build
-
       - name: Build base JS SDK
         run: pnpm --dir ../js-sdk build
 
