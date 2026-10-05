@@ -271,6 +271,7 @@ export class Result {
       json: this.json,
       javascript: this.javascript,
       ...(this.data ? { data: this.data } : {}),
+      ...(this.chart ? { chart: this.chart } : {}),
       ...(Object.keys(this.extra).length > 0 ? { extra: this.extra } : {}),
     }
   }
