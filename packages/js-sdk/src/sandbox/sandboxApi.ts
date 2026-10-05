@@ -572,15 +572,27 @@ function validateForkCount(count: number | undefined) {
   }
 }
 
-type SandboxForkResponse =
-  | {
-      sandboxId: string
-      sandboxDomain?: string
-      envdVersion: string
-      envdAccessToken?: string
-      trafficAccessToken?: string
-    }
-  | Error
+type SandboxCreateResponse = {
+  sandboxId: string
+  sandboxDomain?: string
+  envdVersion: string
+  envdAccessToken?: string
+  trafficAccessToken?: string
+}
+
+type SandboxForkResponse = SandboxCreateResponse | Error
+
+function toSandboxCreateResponse(
+  sandbox: components['schemas']['Sandbox']
+): SandboxCreateResponse {
+  return {
+    sandboxId: sandbox.sandboxID,
+    sandboxDomain: sandbox.domain || undefined,
+    envdVersion: sandbox.envdVersion,
+    envdAccessToken: sandbox.envdAccessToken,
+    trafficAccessToken: sandbox.trafficAccessToken || undefined,
+  }
+}
 
 /**
  * Options for creating a new Sandbox.
@@ -1761,13 +1773,7 @@ export class SandboxApi extends ClientFactory {
       )
     }
 
-    return {
-      sandboxId: res.data!.sandboxID,
-      sandboxDomain: res.data!.domain || undefined,
-      envdVersion: res.data!.envdVersion,
-      envdAccessToken: res.data!.envdAccessToken,
-      trafficAccessToken: res.data!.trafficAccessToken || undefined,
-    }
+    return toSandboxCreateResponse(res.data!)
   }
 
   protected static async forkSandbox(
@@ -1827,13 +1833,7 @@ export class SandboxApi extends ClientFactory {
           return apiErrorFromCode(result.error.code, result.error.message)
         }
 
-        return {
-          sandboxId: result.sandbox.sandboxID,
-          sandboxDomain: result.sandbox.domain || undefined,
-          envdVersion: result.sandbox.envdVersion,
-          envdAccessToken: result.sandbox.envdAccessToken,
-          trafficAccessToken: result.sandbox.trafficAccessToken || undefined,
-        }
+        return toSandboxCreateResponse(result.sandbox)
       }
     )
   }
@@ -1883,13 +1883,7 @@ export class SandboxApi extends ClientFactory {
       throw err
     }
 
-    return {
-      sandboxId: res.data!.sandboxID,
-      sandboxDomain: res.data!.domain || undefined,
-      envdVersion: res.data!.envdVersion,
-      envdAccessToken: res.data!.envdAccessToken,
-      trafficAccessToken: res.data!.trafficAccessToken || undefined,
-    }
+    return toSandboxCreateResponse(res.data!)
   }
 }
 
