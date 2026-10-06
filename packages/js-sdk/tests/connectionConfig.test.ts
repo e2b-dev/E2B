@@ -200,8 +200,14 @@ test('connectionRetries defaults to 3 and reads E2B_CONNECTION_RETRIES', () => {
   process.env.E2B_CONNECTION_RETRIES = '-1'
   assert.throws(() => new ConnectionConfig(), InvalidArgumentError)
   assert.throws(() => new ConnectionConfig(), /E2B_CONNECTION_RETRIES/)
-  process.env.E2B_CONNECTION_RETRIES = 'many'
-  assert.throws(() => new ConnectionConfig(), /E2B_CONNECTION_RETRIES/)
+  for (const value of ['many', '0.5', '3foo', '1e3', ' ']) {
+    process.env.E2B_CONNECTION_RETRIES = value
+    assert.throws(
+      () => new ConnectionConfig(),
+      /E2B_CONNECTION_RETRIES/,
+      `E2B_CONNECTION_RETRIES=${JSON.stringify(value)}`
+    )
+  }
 })
 
 test('httpVersion rejects values other than 1.1 and 2', () => {

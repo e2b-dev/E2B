@@ -36,8 +36,9 @@ const OPAQUE_NETWORK_ERROR =
 // client-supplied idempotency key (sandbox/fork/snapshot/API-key/volume/secret/
 // webhook creation) or append to one (secret update) must stay off the list —
 // a replay could create a duplicate — and so does any new POST until it is
-// reviewed. Connection-establishment failures
-// are retried for every operation regardless: the request never left.
+// reviewed. Connection-establishment failures are retried for every operation
+// regardless: the request never left — unless the transport already retries
+// them (`connectionRetries`), as the Python SDK's connection layer does.
 const REPLAYABLE_METHODS = new Set(['GET', 'PUT', 'PATCH', 'DELETE'])
 const REPLAYABLE_OPERATIONS: [method: string, path: RegExp][] = [
   ['POST', /^\/sandboxes\/[^/]+\/(pause|resume|timeout|refreshes)$/],
@@ -117,21 +118,32 @@ export function isReplayable(request: Request): boolean {
 
 /**
  * Whether a `fetch` rejection may be retried. Connection-establishment
- * failures are always retried: the request never left. For a replayable
- * request any other network error is retried as well — a connection dropped
- * mid-request, or the opaque `TypeError` browsers and Cloudflare Workers raise
- * for every network failure. Aborts are never retried.
+ * failures are retried for any request — the request never left — except when
+ * `connectionRetried` says the transport already retried the connection
+ * itself (undici connector retries, see `buildDispatchedFetch`): the failure
+ * is then final, as in the Python SDK whose request-level retry excludes
+ * `ConnectError`. For a replayable request any other network error is retried
+ * as well — a connection dropped mid-request, or the opaque `TypeError`
+ * browsers and Cloudflare Workers raise for every network failure. Aborts are
+ * never retried.
  */
 export function isRetryableFetchError(
   error: unknown,
-  replayable: boolean
+  replayable: boolean,
+  connectionRetried = false
 ): boolean {
   if (error instanceof DOMException) return false
-  if (isConnectionError(error)) return true
+  if (isConnectionError(error)) return !connectionRetried
   return replayable && error instanceof Error
 }
 
-type RetryDependencies = {
+type RetryOptions = {
+  /**
+   * Connection attempts, after the first, the transport makes on its own for a
+   * connection that cannot be established. When > 0 a connection failure has
+   * already been retried and is not retried again here.
+   */
+  connectionRetries?: number
   monotonic?: () => number
   sleep?: (delayMs: number, signal: AbortSignal) => Promise<void>
   random?: () => number
@@ -187,17 +199,19 @@ function retryDelayMs(
  * Retry requests after a 429 carrying `Retry-After`, a 503 or — for replayable
  * requests ({@link isReplayable}) — a 502 (using `Retry-After` when present,
  * exponential backoff otherwise), or a network failure (exponential backoff;
- * see {@link isRetryableFetchError}).
+ * see {@link isRetryableFetchError}). Connection failures are left to the
+ * transport when it retries them itself (`options.connectionRetries`).
  */
 export function withRetry(
   fetchImpl: typeof fetch,
   retries: number,
   requestTimeoutMs: number,
-  dependencies: RetryDependencies = {}
+  options: RetryOptions = {}
 ): typeof fetch {
-  const monotonic = dependencies.monotonic ?? (() => performance.now())
-  const sleep = dependencies.sleep ?? wait
-  const random = dependencies.random ?? Math.random
+  const monotonic = options.monotonic ?? (() => performance.now())
+  const sleep = options.sleep ?? wait
+  const random = options.random ?? Math.random
+  const connectionRetried = (options.connectionRetries ?? 0) > 0
 
   return (async (input, init) => {
     // Streaming bodies would be consumed by the first attempt and cannot be
@@ -228,7 +242,7 @@ export function withRetry(
         if (
           attempt === retries ||
           request.signal.aborted ||
-          !isRetryableFetchError(error, replayable)
+          !isRetryableFetchError(error, replayable, connectionRetried)
         ) {
           throw error
         }

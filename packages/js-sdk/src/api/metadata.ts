@@ -37,8 +37,12 @@ export function parseIntEnv(name: string, defaultValue: number): number {
   const raw = getEnvVar(name)
   if (!raw) return defaultValue
 
-  const parsed = Number.parseInt(raw, 10)
-  if (!Number.isFinite(parsed)) {
+  // `Number.parseInt` would accept `3foo` or `0.5` as 3 / 0, silently
+  // changing the setting; require the whole value to be a decimal integer.
+  const parsed = /^[+-]?\d+$/.test(raw.trim())
+    ? Number.parseInt(raw, 10)
+    : Number.NaN
+  if (!Number.isSafeInteger(parsed)) {
     throw new Error(
       `Invalid ${name}=${JSON.stringify(raw)}: expected an integer.`
     )

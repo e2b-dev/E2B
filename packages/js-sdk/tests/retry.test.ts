@@ -587,6 +587,22 @@ describe('isRetryableFetchError', () => {
       expect(isRetryableFetchError(error, false)).toBe(false)
     }
   )
+
+  test.each(Object.entries(connectFailures))(
+    'does not retry %s again when the transport retried the connection',
+    (_, error) => {
+      expect(isRetryableFetchError(error, true, true)).toBe(false)
+      expect(isRetryableFetchError(error, false, true)).toBe(false)
+    }
+  )
+
+  test.each([...Object.entries(terminated), ...Object.entries(opaque)])(
+    'still retries %s for a replayable operation when the transport retried the connection',
+    (_, error) => {
+      expect(isRetryableFetchError(error, true, true)).toBe(true)
+      expect(isRetryableFetchError(error, false, true)).toBe(false)
+    }
+  )
 })
 
 const nonReplayable = [
@@ -684,6 +700,25 @@ test('rethrows the connection failure after exhausting retries', async () => {
     error
   )
   expect(fetchImpl).toHaveBeenCalledTimes(3)
+})
+
+test('does not retry a connection failure the transport already retried', async () => {
+  const error = connectError('ECONNREFUSED')
+  const fetchImpl = vi.fn(async () => {
+    throw error
+  }) as typeof fetch
+  const sleep = vi.fn(async () => {})
+  const fetchWithRetry = withRetry(fetchImpl, 3, 10_000, {
+    connectionRetries: 3,
+    monotonic: () => 0,
+    sleep,
+  })
+
+  await expect(fetchWithRetry('https://api.e2b.test/resource')).rejects.toBe(
+    error
+  )
+  expect(fetchImpl).toHaveBeenCalledTimes(1)
+  expect(sleep).not.toHaveBeenCalled()
 })
 
 test('rethrows a connection failure when the backoff would exceed the request timeout', async () => {
