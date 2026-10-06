@@ -4,7 +4,7 @@ import {
   resolveConnectionRetries,
   type HttpVersion,
 } from '../connectionConfig'
-import { fetcherKey, type FetchOpts } from '../api/http2'
+import type { FetchOpts } from '../api/http2'
 import { parseInflightLimitEnv, parsePositiveIntEnv } from '../api/metadata'
 import {
   buildDispatchedFetch,
@@ -47,6 +47,16 @@ export function createEnvdFetchForRuntime(
 }
 
 export type EnvdFetchOpts = FetchOpts
+
+// Kept local (same format as the API fetchers' key) so that tests mocking
+// `../api/http2` for `createApiFetch` do not have to provide it.
+function fetcherKey(
+  proxy: string | undefined,
+  httpVersion: HttpVersion,
+  retries: number
+): string {
+  return `${httpVersion}:${retries}:${proxy ?? ''}`
+}
 
 export function createEnvdFetch({
   proxy,

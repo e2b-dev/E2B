@@ -33,7 +33,7 @@ export interface FetchOpts {
   connectionRetries?: number
 }
 
-export function fetcherKey(
+function fetcherKey(
   proxy: string | undefined,
   httpVersion: HttpVersion,
   retries: number
