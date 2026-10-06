@@ -1,5 +1,5 @@
 import asyncio
-from typing import IO, Dict, List, Literal, Optional, Union, overload
+from typing import IO, Callable, Dict, List, Literal, Optional, Union, overload
 
 
 import httpx
@@ -59,8 +59,12 @@ from e2b.sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from e2b.sandbox_async.utils import OutputHandler
 
 _FILESYSTEM_RPC_ERROR_MAP = {
-    **START_RPC_ERROR_MAP,
     Code.NOT_FOUND: FileNotFoundException,
+}
+
+_WATCH_DIR_START_RPC_ERROR_MAP = {
+    **_FILESYSTEM_RPC_ERROR_MAP,
+    **START_RPC_ERROR_MAP,
 }
 
 _FILESYSTEM_HTTP_ERROR_MAP = {
@@ -69,10 +73,12 @@ _FILESYSTEM_HTTP_ERROR_MAP = {
 
 
 async def _ahandle_filesystem_rpc_exception(
-    e: Exception, envd_api: httpx.AsyncClient
+    e: Exception,
+    envd_api: httpx.AsyncClient,
+    error_map: dict[Code, Callable[[str], Exception]] = _FILESYSTEM_RPC_ERROR_MAP,
 ) -> Exception:
     return await ahandle_rpc_exception_with_health(
-        e, lambda: acheck_sandbox_health(envd_api), _FILESYSTEM_RPC_ERROR_MAP
+        e, lambda: acheck_sandbox_health(envd_api), error_map
     )
 
 
@@ -757,4 +763,6 @@ class Filesystem:
                 await events.aclose()
             except Exception:
                 pass
-            raise await _ahandle_filesystem_rpc_exception(e, self._envd_api)
+            raise await _ahandle_filesystem_rpc_exception(
+                e, self._envd_api, _WATCH_DIR_START_RPC_ERROR_MAP
+            )

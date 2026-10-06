@@ -1,4 +1,4 @@
-from typing import IO, Dict, List, Literal, Optional, Union, overload
+from typing import IO, Callable, Dict, List, Literal, Optional, Union, overload
 
 import httpx
 from connectrpc.code import Code
@@ -55,8 +55,12 @@ from e2b.sandbox_sync.filesystem.watch_handle import WatchHandle
 
 
 _FILESYSTEM_RPC_ERROR_MAP = {
-    **START_RPC_ERROR_MAP,
     Code.NOT_FOUND: FileNotFoundException,
+}
+
+_WATCH_DIR_START_RPC_ERROR_MAP = {
+    **_FILESYSTEM_RPC_ERROR_MAP,
+    **START_RPC_ERROR_MAP,
 }
 
 _FILESYSTEM_HTTP_ERROR_MAP = {
@@ -64,9 +68,13 @@ _FILESYSTEM_HTTP_ERROR_MAP = {
 }
 
 
-def _handle_filesystem_rpc_exception(e: Exception, envd_api: httpx.Client) -> Exception:
+def _handle_filesystem_rpc_exception(
+    e: Exception,
+    envd_api: httpx.Client,
+    error_map: dict[Code, Callable[[str], Exception]] = _FILESYSTEM_RPC_ERROR_MAP,
+) -> Exception:
     return handle_rpc_exception_with_health(
-        e, lambda: check_sandbox_health(envd_api), _FILESYSTEM_RPC_ERROR_MAP
+        e, lambda: check_sandbox_health(envd_api), error_map
     )
 
 
@@ -686,7 +694,9 @@ class Filesystem:
                 },
             )
         except Exception as e:
-            raise _handle_filesystem_rpc_exception(e, self._envd_api)
+            raise _handle_filesystem_rpc_exception(
+                e, self._envd_api, _WATCH_DIR_START_RPC_ERROR_MAP
+            )
 
         return WatchHandle(
             self._rpc,

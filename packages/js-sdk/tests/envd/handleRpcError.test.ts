@@ -133,14 +133,19 @@ describe('handleRpcErrorWithHealthCheck', () => {
     Browser: 'network error',
   }
 
-  test('probes health on an Unavailable with an unknown message and returns SandboxUnreachableError when the sandbox is gone', async () => {
+  test('returns SandboxUnreachableError for an Unavailable stream termination without probing health', async () => {
+    let probed = false
     const err = await handleRpcErrorWithHealthCheck(
       new ConnectError(
         'the connection to sandbox ended before the stream completed',
         Code.Unavailable
       ),
-      async () => false
+      async () => {
+        probed = true
+        return false
+      }
     )
+    assert.isFalse(probed)
     assert.instanceOf(err, SandboxUnreachableError)
     assert.include(err.message, 'ended before the stream completed')
   })

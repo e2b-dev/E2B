@@ -63,19 +63,22 @@ const FILESYSTEM_HTTP_ERROR_MAP: Record<number, (message: string) => Error> = {
 const FILESYSTEM_RPC_ERROR_MAP: Partial<
   Record<Code, (message: string) => Error>
 > = {
-  ...START_RPC_ERROR_MAP,
   [Code.NotFound]: (message: string) => new FileNotFoundError(message),
+}
+
+const WATCH_DIR_START_RPC_ERROR_MAP: Partial<
+  Record<Code, (message: string) => Error>
+> = {
+  ...FILESYSTEM_RPC_ERROR_MAP,
+  ...START_RPC_ERROR_MAP,
 }
 
 async function handleFilesystemRpcError(
   err: unknown,
-  checkHealth?: SandboxHealthCheck
+  checkHealth?: SandboxHealthCheck,
+  errorMap = FILESYSTEM_RPC_ERROR_MAP
 ): Promise<Error> {
-  return handleRpcErrorWithHealthCheck(
-    err,
-    checkHealth,
-    FILESYSTEM_RPC_ERROR_MAP
-  )
+  return handleRpcErrorWithHealthCheck(err, checkHealth, errorMap)
 }
 
 function handleFilesystemEnvdApiError(res: {
@@ -1113,7 +1116,11 @@ export class Filesystem {
       )
     } catch (err) {
       cleanup()
-      throw await handleFilesystemRpcError(err, this.checkHealth)
+      throw await handleFilesystemRpcError(
+        err,
+        this.checkHealth,
+        WATCH_DIR_START_RPC_ERROR_MAP
+      )
     }
   }
 }
