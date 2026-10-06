@@ -1,6 +1,9 @@
 import { expect, test, vi } from 'vitest'
 
-import { limitConcurrency } from '../../src/api/inflight'
+import {
+  createConcurrencyLimiter,
+  limitConcurrency,
+} from '../../src/api/inflight'
 import { foreignRequestClasses } from '../foreignPlatformObjects'
 
 function deferred<T>() {
@@ -98,4 +101,34 @@ test('limitConcurrency honors the signal of a Request the global class disowns',
   }
 
   expect(inner).not.toHaveBeenCalled()
+})
+
+test('createConcurrencyLimiter shares one cap across several fetchers', async () => {
+  let release!: () => void
+  const first = vi.fn(
+    () =>
+      new Promise<Response>((resolve) => {
+        release = () => resolve(new Response('first'))
+      })
+  ) as unknown as typeof fetch
+  const second = vi.fn(async () => new Response('second')) as typeof fetch
+  const limit = createConcurrencyLimiter(1)
+  const limitedFirst = limit(first)
+  const limitedSecond = limit(second)
+
+  const firstCall = limitedFirst('https://sandbox.test/files')
+  const secondCall = limitedSecond('https://sandbox.test/health')
+  await Promise.resolve()
+  expect(first).toHaveBeenCalledTimes(1)
+  expect(second).not.toHaveBeenCalled()
+
+  release()
+  await firstCall
+  await secondCall
+  expect(second).toHaveBeenCalledTimes(1)
+})
+
+test('createConcurrencyLimiter is the identity when the cap is disabled', () => {
+  const fetcher = vi.fn() as unknown as typeof fetch
+  expect(createConcurrencyLimiter(0)(fetcher)).toBe(fetcher)
 })

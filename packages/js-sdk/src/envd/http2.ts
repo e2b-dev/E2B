@@ -6,6 +6,7 @@ import {
 } from '../connectionConfig'
 import type { FetchOpts } from '../api/http2'
 import { parseInflightLimitEnv, parsePositiveIntEnv } from '../api/metadata'
+import { createConcurrencyLimiter } from '../api/inflight'
 import {
   buildDispatchedFetch,
   createRuntimeFetch,
@@ -25,6 +26,11 @@ type EnvdFetchOptions = {
 // keep sharing a single dispatcher while each distinct proxy URL gets its own.
 const envdFetchers = new Map<string, typeof fetch>()
 const envdRpcFetchers = new Map<string, typeof fetch>()
+// One in-flight cap per family across every fetcher variant (proxy, HTTP
+// version, connection retries — the health probe uses 0), so the limits
+// documented as process-wide stay process-wide.
+let envdLimiter: ((fetcher: typeof fetch) => typeof fetch) | undefined
+let envdRpcLimiter: ((fetcher: typeof fetch) => typeof fetch) | undefined
 const DEFAULT_ENVD_CONNECTION_LIMIT = 10
 const DEFAULT_ENVD_RPC_CONNECTION_LIMIT = 200
 const DEFAULT_ENVD_INFLIGHT_LIMIT = 2000
@@ -72,12 +78,15 @@ export function createEnvdFetch({
 
   // Keep one origin connection for short envd REST calls. If ALPN falls back
   // to h1, this favors connection pressure over per-sandbox throughput.
-  const envdFetch = createEnvdFetchForRuntime(runtime, {
-    inflightLimit: getEnvdInflightLimit(),
-    proxy,
-    httpVersion,
-    connectRetries: connectionRetries,
-  })
+  envdLimiter ??= createConcurrencyLimiter(getEnvdInflightLimit())
+  const envdFetch = envdLimiter(
+    createEnvdFetchForRuntime(runtime, {
+      inflightLimit: 0,
+      proxy,
+      httpVersion,
+      connectRetries: connectionRetries,
+    })
+  )
   envdFetchers.set(key, envdFetch)
 
   return envdFetch
@@ -95,13 +104,16 @@ export function createEnvdRpcFetch({
     return cached
   }
 
-  const envdRpcFetch = createEnvdFetchForRuntime(runtime, {
-    connectionLimit: getEnvdRpcConnectionLimit(),
-    inflightLimit: getEnvdRpcInflightLimit(),
-    proxy,
-    httpVersion,
-    connectRetries: connectionRetries,
-  })
+  envdRpcLimiter ??= createConcurrencyLimiter(getEnvdRpcInflightLimit())
+  const envdRpcFetch = envdRpcLimiter(
+    createEnvdFetchForRuntime(runtime, {
+      connectionLimit: getEnvdRpcConnectionLimit(),
+      inflightLimit: 0,
+      proxy,
+      httpVersion,
+      connectRetries: connectionRetries,
+    })
+  )
   envdRpcFetchers.set(key, envdRpcFetch)
 
   return envdRpcFetch
