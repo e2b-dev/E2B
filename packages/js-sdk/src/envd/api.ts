@@ -84,7 +84,7 @@ export function isFetchTransportFailure(err: unknown): err is Error {
  *
  * @param err - The caught error, expected to be a fetch transport failure.
  * @param checkHealth - Probe resolving to whether the sandbox is running (`undefined` when unknown) and rejecting when it cannot be reached.
- * @returns A `TimeoutError` when the sandbox is confirmed gone, a `SandboxUnreachableError` when the probe got no answer either, or the original error otherwise.
+ * @returns A `SandboxNotFoundError` when the sandbox is confirmed gone, a `SandboxUnreachableError` when the probe got no answer either, or the original error otherwise.
  */
 export async function handleEnvdApiFetchError(
   err: unknown,

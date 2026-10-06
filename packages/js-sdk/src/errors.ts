@@ -6,6 +6,20 @@ export function isSandboxPortClosedMessage(message: string): boolean {
   return message.includes(SANDBOX_PORT_CLOSED_MESSAGE)
 }
 
+// Message of the 502 the proxy in front of envd answers with when the sandbox
+// does not exist anymore — it was killed or reached its end of life.
+const SANDBOX_NOT_FOUND_MESSAGE = 'was not found'
+
+export function isSandboxNotFoundMessage(message: string): boolean {
+  return message.includes(SANDBOX_NOT_FOUND_MESSAGE)
+}
+
+export function formatSandboxNotFoundError(message: string) {
+  return new SandboxNotFoundError(
+    `${message}: The sandbox was killed or reached its end of life. You can modify the sandbox timeout by passing 'timeoutMs' when starting the sandbox or calling '.setTimeout' on the sandbox with the desired timeout.`
+  )
+}
+
 // This is the message for the sandbox timeout error when the response code is 502/Unavailable
 export function formatSandboxTimeoutError(message: string) {
   return new TimeoutError(
@@ -14,11 +28,15 @@ export function formatSandboxTimeoutError(message: string) {
 }
 
 /**
- * Maps a 502/Unavailable answered by the proxy in front of envd: the sandbox is
- * gone (killed or timed out) unless the proxy reports it running with envd's port
- * not open, in which case the sandbox is unreachable.
+ * Maps a 502/Unavailable answered by the proxy in front of envd: the sandbox was
+ * not found (killed or timed out) → `SandboxNotFoundError`; the sandbox is running
+ * but envd's port is not open (e.g. its network is down) → `SandboxUnreachableError`;
+ * anything else → the sandbox-timeout `TimeoutError`.
  */
 export function formatSandboxUnavailableError(message: string): Error {
+  if (isSandboxNotFoundMessage(message)) {
+    return formatSandboxNotFoundError(message)
+  }
   if (isSandboxPortClosedMessage(message)) {
     return new SandboxUnreachableError(
       `${message}: envd inside the sandbox could not be reached although the sandbox is running — e.g. its network is down. Check the sandbox state with 'Sandbox.getInfo()' and retry the request.`

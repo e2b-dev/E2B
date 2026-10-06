@@ -17,6 +17,7 @@ import {
   RateLimitError,
   SandboxError,
   SandboxUnreachableError,
+  SandboxNotFoundError,
   TimeoutError,
 } from '../../src/errors'
 
@@ -69,6 +70,14 @@ describe('handleRpcError', () => {
     assert.include(err.message, 'envd inside the sandbox could not be reached')
   })
 
+  test('returns SandboxNotFoundError for Unavailable with the sandbox not found', () => {
+    const err = handleRpcError(
+      new ConnectError('The sandbox was not found', Code.Unavailable)
+    )
+    assert.instanceOf(err, SandboxNotFoundError)
+    assert.include(err.message, 'The sandbox was not found')
+  })
+
   test('returns TimeoutError for Unavailable', () => {
     const err = handleRpcError(new ConnectError('gone', Code.Unavailable))
     assert.instanceOf(err, TimeoutError)
@@ -105,12 +114,12 @@ describe('handleRpcErrorWithHealthCheck', () => {
     Browser: 'network error',
   }
 
-  test('returns a TimeoutError when the health check says the sandbox is not running', async () => {
+  test('returns a SandboxNotFoundError when the health check says the sandbox is not running', async () => {
     const err = await handleRpcErrorWithHealthCheck(
       terminated(),
       async () => false
     )
-    assert.instanceOf(err, TimeoutError)
+    assert.instanceOf(err, SandboxNotFoundError)
     assert.include(err.message, 'sandbox was killed or reached its end of life')
   })
 
@@ -120,7 +129,7 @@ describe('handleRpcErrorWithHealthCheck', () => {
         new ConnectError(message, Code.Unknown),
         async () => false
       )
-      assert.instanceOf(err, TimeoutError)
+      assert.instanceOf(err, SandboxNotFoundError)
       assert.include(
         err.message,
         'sandbox was killed or reached its end of life'
@@ -222,12 +231,12 @@ describe('handleRpcErrorWithHealthCheck', () => {
     assert.notInstanceOf(err, SandboxUnreachableError)
   })
 
-  test('returns a TimeoutError for a refused connection when the sandbox is gone', async () => {
+  test('returns a SandboxNotFoundError for a refused connection when the sandbox is gone', async () => {
     const err = await handleRpcErrorWithHealthCheck(
       connectRefused(),
       async () => false
     )
-    assert.instanceOf(err, TimeoutError)
+    assert.instanceOf(err, SandboxNotFoundError)
   })
 
   test('returns a SandboxUnreachableError for a refused connection when the probe gets no answer', async () => {

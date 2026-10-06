@@ -10,6 +10,7 @@ import {
   NotFoundError,
   RateLimitError,
   SandboxError,
+  SandboxNotFoundError,
   SandboxUnreachableError,
   TimeoutError,
 } from '../errors'
@@ -129,7 +130,7 @@ export async function resolveTransportFailure(
   }
 
   if (running === false) {
-    return new TimeoutError(
+    return new SandboxNotFoundError(
       `${err.message}: The sandbox was killed or reached its end of life while the request was in flight.`
     )
   }

@@ -17,6 +17,7 @@ from e2b.exceptions import (
     RateLimitException,
     SandboxException,
     SandboxUnreachableException,
+    SandboxNotFoundException,
     TimeoutException,
 )
 
@@ -179,9 +180,17 @@ def test_returns_raw_transport_failure_without_health_result():
     assert err is original
 
 
+def test_unavailable_sandbox_not_found_returns_not_found():
+    err = handle_rpc_exception(
+        ConnectError(Code.UNAVAILABLE, "The sandbox was not found")
+    )
+    assert isinstance(err, SandboxNotFoundException)
+    assert "The sandbox was not found" in str(err)
+
+
 def test_health_check_confirms_sandbox_killed():
     err = handle_rpc_exception_with_health(_stream_reset(), lambda: False)
-    assert isinstance(err, TimeoutException)
+    assert isinstance(err, SandboxNotFoundException)
     assert "sandbox was killed or reached its end of life" in str(err)
 
 
@@ -238,9 +247,9 @@ def test_connect_failure_runs_health_check():
     assert err is original
 
 
-def test_connect_failure_with_sandbox_killed_returns_timeout():
+def test_connect_failure_with_sandbox_killed_returns_not_found():
     err = handle_rpc_exception_with_health(_connect_refused(), lambda: False)
-    assert isinstance(err, TimeoutException)
+    assert isinstance(err, SandboxNotFoundException)
 
 
 def test_connect_failure_with_unreachable_health_returns_unreachable():
@@ -266,7 +275,7 @@ async def test_async_health_check_confirms_sandbox_killed():
         return False
 
     err = await ahandle_rpc_exception_with_health(_stream_reset(), check)
-    assert isinstance(err, TimeoutException)
+    assert isinstance(err, SandboxNotFoundException)
     assert "sandbox was killed or reached its end of life" in str(err)
 
 

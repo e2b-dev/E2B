@@ -12,6 +12,7 @@ import {
   RateLimitError,
   SandboxError,
   SandboxUnreachableError,
+  SandboxNotFoundError,
   TimeoutError,
 } from '../../src/errors'
 
@@ -113,6 +114,15 @@ describe('handleEnvdApiError', () => {
     assert.include(err!.message, 'envd inside the sandbox could not be reached')
   })
 
+  test('returns SandboxNotFoundError for 502 with the sandbox not found', async () => {
+    const res = createMockResponse(502, {
+      message: 'The sandbox was not found',
+    })
+    const err = await handleEnvdApiError(res)
+    assert.instanceOf(err, SandboxNotFoundError)
+    assert.include(err!.message, 'The sandbox was not found')
+  })
+
   test('returns TimeoutError for 502', async () => {
     const res = createMockResponse(502, { message: 'Bad gateway' })
     const err = await handleEnvdApiError(res)
@@ -156,12 +166,12 @@ describe('handleEnvdApiFetchError', () => {
     assert.strictEqual(err, original)
   })
 
-  test('returns a TimeoutError when the health check says the sandbox is not running', async () => {
+  test('returns a SandboxNotFoundError when the health check says the sandbox is not running', async () => {
     const err = await handleEnvdApiFetchError(
       new TypeError('terminated'),
       async () => false
     )
-    assert.instanceOf(err, TimeoutError)
+    assert.instanceOf(err, SandboxNotFoundError)
     assert.include(err.message, 'sandbox was killed or reached its end of life')
   })
 
@@ -178,7 +188,7 @@ describe('handleEnvdApiFetchError', () => {
   for (const [runtime, error] of Object.entries(runtimeTerminatedErrors)) {
     test(`treats the ${runtime} dropped-connection error as terminated`, async () => {
       const err = await handleEnvdApiFetchError(error, async () => false)
-      assert.instanceOf(err, TimeoutError)
+      assert.instanceOf(err, SandboxNotFoundError)
       assert.include(
         err.message,
         'sandbox was killed or reached its end of life'
@@ -219,12 +229,12 @@ describe('handleEnvdApiFetchError', () => {
     assert.strictEqual(err, original)
   })
 
-  test('returns a TimeoutError for a refused connection when the sandbox is gone', async () => {
+  test('returns a SandboxNotFoundError for a refused connection when the sandbox is gone', async () => {
     const err = await handleEnvdApiFetchError(
       connectRefused(),
       async () => false
     )
-    assert.instanceOf(err, TimeoutError)
+    assert.instanceOf(err, SandboxNotFoundError)
   })
 
   test('returns a SandboxUnreachableError for a refused connection when the probe gets no answer', async () => {

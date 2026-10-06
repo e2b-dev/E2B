@@ -9,6 +9,21 @@ def is_sandbox_port_closed_message(message: str) -> bool:
     return SANDBOX_PORT_CLOSED_MESSAGE in message
 
 
+# Message of the 502 the proxy in front of envd answers with when the sandbox
+# does not exist anymore — it was killed or reached its end of life.
+SANDBOX_NOT_FOUND_MESSAGE = "was not found"
+
+
+def is_sandbox_not_found_message(message: str) -> bool:
+    return SANDBOX_NOT_FOUND_MESSAGE in message
+
+
+def format_sandbox_not_found_exception(message: str):
+    return SandboxNotFoundException(
+        f"{message}: The sandbox was killed or reached its end of life. You can modify the sandbox timeout by passing 'timeout' when starting the sandbox or calling '.set_timeout' on the sandbox with the desired timeout."
+    )
+
+
 def format_sandbox_timeout_exception(message: str):
     return TimeoutException(
         f"{message}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeout' when starting the sandbox or calling '.set_timeout' on the sandbox with the desired timeout."
@@ -16,9 +31,13 @@ def format_sandbox_timeout_exception(message: str):
 
 
 def format_sandbox_unavailable_exception(message: str) -> Exception:
-    """Map a 502/UNAVAILABLE answered by the proxy in front of envd: the sandbox is
-    gone (killed or timed out) unless the proxy reports it running with envd's port
-    not open, in which case the sandbox is unreachable."""
+    """Map a 502/UNAVAILABLE answered by the proxy in front of envd: the sandbox was
+    not found (killed or timed out) -> ``SandboxNotFoundException``; the sandbox is
+    running but envd's port is not open (e.g. its network is down) ->
+    ``SandboxUnreachableException``; anything else -> the sandbox-timeout
+    ``TimeoutException``."""
+    if is_sandbox_not_found_message(message):
+        return format_sandbox_not_found_exception(message)
     if is_sandbox_port_closed_message(message):
         return SandboxUnreachableException(
             f"{message}: envd inside the sandbox could not be reached although the sandbox is running — e.g. its network is down. Check the sandbox state with 'Sandbox.get_info()' and retry the request."

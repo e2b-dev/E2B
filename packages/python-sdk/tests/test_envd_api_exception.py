@@ -16,6 +16,7 @@ from e2b.exceptions import (
     RateLimitException,
     SandboxException,
     SandboxUnreachableException,
+    SandboxNotFoundException,
     TimeoutException,
 )
 
@@ -91,11 +92,17 @@ def test_returns_original_when_not_transport_error():
     assert err is original
 
 
+def test_502_sandbox_not_found_returns_not_found():
+    err = format_envd_api_exception(502, "The sandbox was not found")
+    assert isinstance(err, SandboxNotFoundException)
+    assert "The sandbox was not found" in str(err)
+
+
 def test_health_result_confirms_sandbox_killed():
     err = handle_envd_api_transport_exception(
         httpx.RemoteProtocolError("peer closed connection"), sandbox_running=False
     )
-    assert isinstance(err, TimeoutException)
+    assert isinstance(err, SandboxNotFoundException)
     assert "sandbox was killed or reached its end of life" in str(err)
 
 
@@ -165,12 +172,12 @@ def test_health_check_raises_when_sandbox_unreachable():
             raise AssertionError("expected the probe to raise")
 
 
-def test_connect_failure_with_sandbox_killed_returns_timeout():
+def test_connect_failure_with_sandbox_killed_returns_not_found():
     with _health_client(lambda request: httpx.Response(502)) as client:
         err = handle_envd_api_transport_exception_with_health(
             httpx.ConnectError("connection refused"), client
         )
-    assert isinstance(err, TimeoutException)
+    assert isinstance(err, SandboxNotFoundException)
 
 
 def test_connect_failure_with_running_sandbox_returns_raw_error():
@@ -224,12 +231,12 @@ async def test_async_connect_failure_with_unreachable_health_returns_unreachable
     assert err.__cause__ is original
 
 
-async def test_async_connect_failure_with_sandbox_killed_returns_timeout():
+async def test_async_connect_failure_with_sandbox_killed_returns_not_found():
     async with _ahealth_client(lambda request: httpx.Response(502)) as client:
         err = await ahandle_envd_api_transport_exception_with_health(
             httpx.ConnectError("connection refused"), client
         )
-    assert isinstance(err, TimeoutException)
+    assert isinstance(err, SandboxNotFoundException)
 
 
 async def test_async_health_check_raises_unreachable_when_port_closed():

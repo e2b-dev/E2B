@@ -9,6 +9,7 @@ from e2b.exceptions import (
     SandboxException,
     InvalidArgumentException,
     NotFoundException,
+    SandboxNotFoundException,
     SandboxUnreachableException,
     TimeoutException,
     format_sandbox_unavailable_exception,
@@ -66,9 +67,9 @@ def format_terminated_exception(
 ) -> Exception:
     """Handle an exception for a request that failed at the connection level: when a
     sandbox health probe confirmed the sandbox is gone (``sandbox_running is False``),
-    return a ``TimeoutException``; otherwise return the original error unchanged."""
+    return a ``SandboxNotFoundException``; otherwise return the original error unchanged."""
     if sandbox_running is False:
-        return TimeoutException(
+        return SandboxNotFoundException(
             f"{e}: The sandbox was killed or reached its end of life while the request was in flight."
         )
     return e
