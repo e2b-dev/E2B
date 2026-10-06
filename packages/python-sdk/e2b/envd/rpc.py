@@ -13,6 +13,8 @@ from e2b.exceptions import (
     SandboxUnreachableException,
     TimeoutException,
     format_sandbox_unavailable_exception,
+    is_sandbox_not_found_message,
+    is_sandbox_port_not_open_message,
     AuthenticationException,
     RateLimitException,
 )
@@ -61,6 +63,20 @@ def is_transport_failure(e: Exception) -> bool:
     )
 
 
+def is_ambiguous_unavailable(e: Exception) -> bool:
+    """Whether the error is an ``UNAVAILABLE`` whose message the proxy's answers do
+    not explain -- neither the sandbox not found nor its port not open -- e.g. envd
+    ending a stream with "the connection to sandbox ... ended before the stream
+    completed" when the sandbox is killed mid-command. Whether the sandbox is gone
+    can only be told by probing it."""
+    return (
+        isinstance(e, ConnectError)
+        and e.code is Code.UNAVAILABLE
+        and not is_sandbox_not_found_message(e.message)
+        and not is_sandbox_port_not_open_message(e.message)
+    )
+
+
 def format_terminated_exception(
     e: Exception,
     sandbox_running: Optional[bool],
@@ -105,8 +121,8 @@ def handle_rpc_exception(
 
     :param e: The caught exception, expected to be a ``ConnectError``.
     :param error_map: Optional map of gRPC codes to exception factories that override the defaults.
-    :param sandbox_running: Result of a sandbox health probe (``None`` when unknown), used to disambiguate a connection dropped mid-request.
-    :return: The corresponding exception. A connection dropped mid-request with the sandbox confirmed gone becomes a ``SandboxNotRunningException``; non-``ConnectError`` errors are otherwise returned as-is.
+    :param sandbox_running: Result of a sandbox health probe (``None`` when unknown), used to disambiguate a connection dropped mid-request or an ambiguous ``UNAVAILABLE``.
+    :return: The corresponding exception. A connection dropped mid-request, or an ambiguous ``UNAVAILABLE``, with the sandbox confirmed gone becomes a ``SandboxNotRunningException``; non-``ConnectError`` errors are otherwise returned as-is.
     """
     if isinstance(e, ConnectError):
         # connectrpc converts asyncio cancellation into a ConnectError with
@@ -120,7 +136,9 @@ def handle_rpc_exception(
         # connection to the sandbox was dropped mid-request — either the
         # sandbox died or the network failed — so the code mapping below,
         # which describes envd responses, doesn't apply.
-        if is_transport_failure(e):
+        if is_transport_failure(e) or (
+            sandbox_running is False and is_ambiguous_unavailable(e)
+        ):
             return format_terminated_exception(e, sandbox_running)
 
         # Everything else maps by code; classifiable client-side failures
@@ -145,14 +163,20 @@ def handle_rpc_exception_with_health(
 ):
     """Like :func:`handle_rpc_exception`, but when the request failed at the connection
     level (the connection to the sandbox could not be established or was dropped
-    mid-request) it probes the sandbox health to tell apart the sandbox being killed
-    from the sandbox being unreachable or a transient network failure (e.g. a load
-    balancer dropping the connection). When the probe confirms the sandbox is gone, a
-    ``SandboxUnreachableException`` is returned; when the probe gets no answer either (the health
-    check raises), a ``SandboxUnreachableException``.
+    mid-request), or envd/the proxy answered an ``UNAVAILABLE`` that does not say
+    whether the sandbox is gone (:func:`is_ambiguous_unavailable`), it probes the
+    sandbox health to tell apart the sandbox being killed from the sandbox being
+    unreachable or a transient network failure (e.g. a load balancer dropping the
+    connection). When the probe confirms the sandbox is gone, a
+    ``SandboxNotRunningException`` is returned; when the probe gets no answer either
+    (the health check raises), a ``SandboxUnreachableException``; otherwise the error
+    maps as usual (an ambiguous ``UNAVAILABLE`` to a ``SandboxUnreachableException``
+    with the sandbox state unknown).
     """
     sandbox_running = None
-    if check_health is not None and is_transport_failure(e):
+    if check_health is not None and (
+        is_transport_failure(e) or is_ambiguous_unavailable(e)
+    ):
         try:
             sandbox_running = check_health()
         except Exception as probe_error:
@@ -167,7 +191,9 @@ async def ahandle_rpc_exception_with_health(
 ):
     """Async version of :func:`handle_rpc_exception_with_health`."""
     sandbox_running = None
-    if check_health is not None and is_transport_failure(e):
+    if check_health is not None and (
+        is_transport_failure(e) or is_ambiguous_unavailable(e)
+    ):
         try:
             sandbox_running = await check_health()
         except Exception as probe_error:

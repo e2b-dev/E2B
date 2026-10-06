@@ -3,8 +3,10 @@ import { Code, ConnectError } from '@connectrpc/connect'
 import {
   handleRpcError,
   handleRpcErrorWithHealthCheck,
+  isAmbiguousUnavailable,
   isTransportFailure,
   rejectProxyUnavailableResponse,
+  START_RPC_ERROR_MAP,
 } from '../../src/envd/rpc'
 import {
   handleProcessStartEvent,
@@ -16,6 +18,7 @@ import {
   NotFoundError,
   RateLimitError,
   SandboxError,
+  SandboxNotFoundError,
   SandboxNotRunningError,
   SandboxUnreachableError,
   TimeoutError,
@@ -39,6 +42,107 @@ function connectRefused(): ConnectError {
 
 // Body of the proxy's 502 when the sandbox is running but nothing listens on envd's port
 const PORT_CLOSED = 'The sandbox is running but port is not open'
+// envd ends a stream with this Unavailable when the sandbox is killed mid-command
+const STREAM_ENDED =
+  'the connection to sandbox ended before the stream completed'
+
+function neverProbe(): Promise<boolean | undefined> {
+  throw new Error('health check should not run')
+}
+
+describe('START_RPC_ERROR_MAP', () => {
+  test('returns SandboxNotFoundError for Unavailable with the sandbox not found', () => {
+    const err = handleRpcError(
+      new ConnectError('The sandbox was not found', Code.Unavailable),
+      START_RPC_ERROR_MAP
+    )
+    assert.instanceOf(err, SandboxNotFoundError)
+    assert.include(err.message, 'The sandbox was not found')
+  })
+
+  test('maps any other Unavailable like every other request', () => {
+    const portClosed = handleRpcError(
+      new ConnectError(PORT_CLOSED, Code.Unavailable),
+      START_RPC_ERROR_MAP
+    )
+    assert.instanceOf(portClosed, SandboxUnreachableError)
+    const ambiguous = handleRpcError(
+      new ConnectError(STREAM_ENDED, Code.Unavailable),
+      START_RPC_ERROR_MAP
+    )
+    assert.instanceOf(ambiguous, SandboxUnreachableError)
+  })
+
+  test('still returns SandboxNotRunningError without the start map', () => {
+    const err = handleRpcError(
+      new ConnectError('The sandbox was not found', Code.Unavailable)
+    )
+    assert.instanceOf(err, SandboxNotRunningError)
+    assert.notInstanceOf(err, SandboxNotFoundError)
+  })
+})
+
+describe('ambiguous Unavailable', () => {
+  test('is an Unavailable that says neither not found nor port not open', () => {
+    assert.isTrue(
+      isAmbiguousUnavailable(new ConnectError(STREAM_ENDED, Code.Unavailable))
+    )
+    assert.isFalse(
+      isAmbiguousUnavailable(
+        new ConnectError('The sandbox was not found', Code.Unavailable)
+      )
+    )
+    assert.isFalse(
+      isAmbiguousUnavailable(new ConnectError(PORT_CLOSED, Code.Unavailable))
+    )
+    assert.isFalse(
+      isAmbiguousUnavailable(new ConnectError(STREAM_ENDED, Code.Unknown))
+    )
+  })
+
+  test('is probed and returns SandboxNotRunningError when the sandbox is gone', async () => {
+    const original = new ConnectError(STREAM_ENDED, Code.Unavailable)
+    const err = await handleRpcErrorWithHealthCheck(original, async () => false)
+    assert.instanceOf(err, SandboxNotRunningError)
+    assert.notInstanceOf(err, SandboxUnreachableError)
+    assert.strictEqual(err.cause, original)
+  })
+
+  test('returns SandboxUnreachableError with the state unknown when the sandbox is running', async () => {
+    const err = await handleRpcErrorWithHealthCheck(
+      new ConnectError(STREAM_ENDED, Code.Unavailable),
+      async () => true
+    )
+    assert.instanceOf(err, SandboxUnreachableError)
+    assert.notInstanceOf(err, SandboxNotRunningError)
+    assert.include(err.message, 'state is unknown')
+    assert.notInclude(err.message, 'is running but')
+  })
+
+  test('returns SandboxUnreachableError when the probe itself fails', async () => {
+    const original = new ConnectError(STREAM_ENDED, Code.Unavailable)
+    const err = await handleRpcErrorWithHealthCheck(original, async () => {
+      throw new Error('health check failed')
+    })
+    assert.instanceOf(err, SandboxUnreachableError)
+    assert.include(err.message, 'health check failed')
+    assert.strictEqual(err.cause, original)
+  })
+
+  test('is not probed for the sandbox not found or its port not open', async () => {
+    const notFound = await handleRpcErrorWithHealthCheck(
+      new ConnectError('The sandbox was not found', Code.Unavailable),
+      neverProbe
+    )
+    assert.instanceOf(notFound, SandboxNotRunningError)
+    const portClosed = await handleRpcErrorWithHealthCheck(
+      new ConnectError(PORT_CLOSED, Code.Unavailable),
+      neverProbe
+    )
+    assert.instanceOf(portClosed, SandboxUnreachableError)
+    assert.include(portClosed.message, 'is running but')
+  })
+})
 
 describe('handleRpcError', () => {
   test('returns InvalidArgumentError for InvalidArgument', () => {
@@ -121,23 +225,6 @@ describe('handleRpcErrorWithHealthCheck', () => {
     'Cloudflare Workers': 'Network connection lost.',
     Browser: 'network error',
   }
-
-  test('returns SandboxUnreachableError for an Unavailable stream termination without probing health', async () => {
-    let probed = false
-    const err = await handleRpcErrorWithHealthCheck(
-      new ConnectError(
-        'the connection to sandbox ended before the stream completed',
-        Code.Unavailable
-      ),
-      async () => {
-        probed = true
-        return false
-      }
-    )
-    assert.isFalse(probed)
-    assert.instanceOf(err, SandboxUnreachableError)
-    assert.include(err.message, 'ended before the stream completed')
-  })
 
   test('does not probe health on an Unavailable for the sandbox not found', async () => {
     let probed = false

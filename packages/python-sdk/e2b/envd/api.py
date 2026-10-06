@@ -53,6 +53,8 @@ ENVD_API_TRANSPORT_ERRORS = (
 def check_sandbox_health(envd_api: httpx.Client) -> Optional[bool]:
     """Probe the sandbox's envd health endpoint.
 
+    :param envd_api: The sandbox's envd HTTP client -- the one built with ``retry_connect=False`` when probing after a failed request, so a sandbox that cannot be reached is not tried all over again.
+
     :return: ``True`` if the sandbox is running, ``False`` if it is not, ``None`` if it answered but its state could not be determined.
     :raises httpx.TransportError: When the sandbox could not be reached (no answer within the probe timeout).
     :raises SandboxUnreachableException: When the proxy reports the sandbox running but envd's port not open -- the exception a request would get.

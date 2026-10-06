@@ -8,9 +8,12 @@ import {
   AuthenticationError,
   formatSandboxUnavailableError,
   InvalidArgumentError,
+  isSandboxNotFoundMessage,
+  isSandboxPortNotOpenMessage,
   NotFoundError,
   RateLimitError,
   SandboxError,
+  SandboxNotFoundError,
   SandboxNotRunningError,
   SandboxUnreachableError,
   TimeoutError,
@@ -93,6 +96,22 @@ export function isTransportFailure(err: unknown): boolean {
 }
 
 /**
+ * Checks whether the error is an `Unavailable` whose message the proxy's answers do
+ * not explain — neither the sandbox not found nor its port not open — e.g. envd
+ * ending a stream with "the connection to sandbox ... ended before the stream
+ * completed" when the sandbox is killed mid-command. Whether the sandbox is gone
+ * can only be told by probing it.
+ */
+export function isAmbiguousUnavailable(err: unknown): boolean {
+  return (
+    err instanceof ConnectError &&
+    err.code === Code.Unavailable &&
+    !isSandboxNotFoundMessage(err.rawMessage) &&
+    !isSandboxPortNotOpenMessage(err.rawMessage)
+  )
+}
+
+/**
  * Builds the error for a request that failed at the connection level when the
  * follow-up health probe failed too. A probe answered by the proxy with the sandbox
  * running but envd's port not open is already a `SandboxUnreachableError` and is
@@ -141,6 +160,22 @@ export async function resolveTransportFailure(
   }
 
   return undefined
+}
+
+/**
+ * Error map for starting a command, PTY or directory watch: an `Unavailable` from
+ * the proxy with the sandbox not found is a `SandboxNotFoundError` (as it always
+ * was for these calls); any other `Unavailable` maps as for every other request.
+ */
+export const START_RPC_ERROR_MAP: Partial<
+  Record<Code, (message: string) => Error>
+> = {
+  [Code.Unavailable]: (message) =>
+    isSandboxNotFoundMessage(message)
+      ? new SandboxNotFoundError(
+          `${message}: Sandbox is probably not running anymore`
+        )
+      : formatSandboxUnavailableError(message),
 }
 
 const DEFAULT_ERROR_MAP: Partial<Record<Code, (message: string) => Error>> = {
@@ -194,12 +229,15 @@ export function handleRpcError(
 /**
  * Like {@link handleRpcError}, but when the request failed at the connection level
  * (the connection to the sandbox could not be established or was dropped
- * mid-request) it probes the sandbox health to tell apart the sandbox being killed
- * from the sandbox being unreachable or a transient network failure (e.g. a load
- * balancer dropping the connection). When the probe confirms the sandbox is gone, a
+ * mid-request), or envd/the proxy answered an `Unavailable` that does not say
+ * whether the sandbox is gone ({@link isAmbiguousUnavailable}), it probes the
+ * sandbox health to tell apart the sandbox being killed from the sandbox being
+ * unreachable or a transient network failure (e.g. a load balancer dropping the
+ * connection). When the probe confirms the sandbox is gone, a
  * `SandboxNotRunningError` is returned — the same error a request answered by the
  * proxy with the sandbox not found gets; when the probe gets no answer either, a
- * `SandboxUnreachableError`.
+ * `SandboxUnreachableError`; otherwise the error maps as usual (an ambiguous
+ * `Unavailable` to a `SandboxUnreachableError` with the sandbox state unknown).
  *
  * @param err - The caught error, expected to be a `ConnectError` from the gRPC transport.
  * @param checkHealth - Probe resolving to whether the sandbox is running (`undefined` when unknown) and rejecting when it cannot be reached.
@@ -211,7 +249,7 @@ export async function handleRpcErrorWithHealthCheck(
   checkHealth?: SandboxHealthCheck,
   errorMap?: Partial<Record<Code, (message: string) => Error>>
 ): Promise<Error> {
-  if (checkHealth && isTransportFailure(err)) {
+  if (checkHealth && (isTransportFailure(err) || isAmbiguousUnavailable(err))) {
     const resolved = await resolveTransportFailure(
       err as ConnectError,
       checkHealth
@@ -286,7 +324,11 @@ export async function rejectProxyUnavailableResponse(
     ) {
       // Connect-encoded error (declared string `code`, e.g. "permission_denied") —
       // let the transport decode it with that code.
-      return new Response(message, res)
+      return new Response(message, {
+        status: res.status,
+        statusText: res.statusText,
+        headers: res.headers,
+      })
     }
     if (typeof body?.message === 'string') {
       message = body.message
