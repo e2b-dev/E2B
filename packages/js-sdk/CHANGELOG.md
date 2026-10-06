@@ -1,5 +1,24 @@
 # e2b
 
+## 2.53.0
+
+### Minor Changes
+
+- 1de92fc: Add `SandboxNotRunningError` / `SandboxNotRunningException` and `SandboxUnreachableError` / `SandboxUnreachableException` for envd requests that fail because the sandbox cannot be reached. Both extend `TimeoutError` / `TimeoutException`, which these cases raised before, so existing `instanceof TimeoutError` / `except TimeoutException` handling keeps working.
+
+  - `SandboxNotRunning*` — the proxy answered `502 "The sandbox was not found"` (killed, paused or timed out), either directly or from the health probe the SDK runs after a dropped connection or an unexplained `Unavailable` (e.g. the sandbox was killed mid-command). Retrying will not help.
+  - `SandboxUnreachable*` — the sandbox is not confirmed stopped but cannot be reached: `502 "port is not open"`, other `502`s, or a connection failure whose health probe got no answer. The original error is the `cause` / `__cause__`.
+  - A connection failure whose health probe finds the sandbox running still raises the original transport error. The probe itself runs without connection retries.
+
+  **Breaking (JS):** `commands.run` / `connect`, `pty.create` / `connect` and `files.watchDir` on a gone sandbox now throw `SandboxNotRunningError` instead of `SandboxNotFoundError`, like every other call. `SandboxNotFoundError` is only raised by the control plane API.
+
+### Patch Changes
+
+- 8f51c9f: Share the sandbox create/connect/fork response mapping (JS and Python) and the Python `Commands.run` / `Commands.connect` handle setup
+- b3bb653: Remove the `E2B_USER_AGENT_SOURCE` environment variable. The SDKs no longer add a `source/<value>` User-Agent token, append `?source=` to Code Interpreter requests, or log trace IDs and add `(trace_id=…)` to error messages when it is set to `ci`, so SDK behavior no longer depends on that variable.
+
+  Code Interpreter errors for statuses other than 404 and 502 now use the same `<status> <reason>[: <body>]` message in JS and Python: JS includes the response body, and Python falls back to the reason phrase when the body is empty.
+
 ## 2.52.1
 
 ### Patch Changes

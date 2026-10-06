@@ -1,7 +1,7 @@
 {
   "name": "@e2b/code-interpreter-python",
   "private": true,
-  "version": "2.10.1",
+  "version": "2.10.2",
   "scripts": {
     "test": "uv run pytest -n 4 --verbose -x",
     "postVersion": "uv version --frozen $(pnpm pkg get version --workspaces=false | tr -d \\\") && uv add --frozen \"$(node -p \"const v = require('../python-sdk/package.json').version; 'e2b>=' + v + ',<' + (Number(v.split('.')[0]) + 1) + '.0.0'\")\"",

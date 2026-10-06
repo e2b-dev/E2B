@@ -1,6 +1,6 @@
 [project]
 name = "e2b-code-interpreter"
-version = "2.10.1"
+version = "2.10.2"
 description = "E2B Code Interpreter - Stateful code execution"
 authors = [{ name = "e2b", email = "hello@e2b.dev" }]
 license = "MIT"
@@ -9,7 +9,7 @@ requires-python = ">=3.10"
 dependencies = [
     "httpx>=0.20.0,<1.0.0",
     "attrs>=21.3.0",
-    "e2b>=2.52.0,<3.0.0",
+    "e2b>=2.53.0,<3.0.0",
 ]
 
 [project.urls]
