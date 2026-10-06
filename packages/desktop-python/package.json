@@ -4,7 +4,7 @@
   "version": "2.6.1",
   "scripts": {
     "test": "uv run pytest -n 4 --verbose -x",
-    "postVersion": "v=$(pnpm pkg get version --workspaces=false | tr -d \\\"); [ \"$(uv version --short)\" = \"$v\" ] || { uv version --frozen \"$v\" && uv add --frozen \"$(node -p \"const v = require('../python-sdk/package.json').version; 'e2b>=' + v + ',<' + (Number(v.split('.')[0]) + 1) + '.0.0'\")\"; }",
+    "postVersion": "uv version --frozen $(pnpm pkg get version --workspaces=false | tr -d \\\")",
     "lock": "uv lock",
     "postPublish": "uv build && uv publish --trusted-publishing always --check-url https://pypi.org/simple/",
     "typecheck": "uv run make typecheck",
