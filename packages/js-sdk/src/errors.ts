@@ -135,10 +135,8 @@ export class SandboxNotFoundError extends NotFoundError {
  *
  * The split from `SandboxUnreachableError` is only as good as the proxy's answer
  * and the health probe: a sandbox that is gone but could not be asked about is a
- * `SandboxUnreachableError`. Starting a command, PTY or directory watch on a
- * sandbox that is gone throws `SandboxNotFoundError` instead (as it always did), so
- * handlers that want every "sandbox is gone" case have to catch both this class
- * and `SandboxNotFoundError` until the next major version.
+ * `SandboxUnreachableError`. `SandboxNotFoundError` is only raised by the control
+ * plane API (e.g. `Sandbox.connect()` to a sandbox that does not exist).
  *
  * Subclass of `TimeoutError`, which this case surfaced as before.
  */

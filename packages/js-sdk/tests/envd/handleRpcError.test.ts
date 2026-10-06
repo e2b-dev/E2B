@@ -6,7 +6,6 @@ import {
   isAmbiguousUnavailable,
   isTransportFailure,
   rejectProxyUnavailableResponse,
-  START_RPC_ERROR_MAP,
 } from '../../src/envd/rpc'
 import {
   handleProcessStartEvent,
@@ -50,30 +49,8 @@ function neverProbe(): Promise<boolean | undefined> {
   throw new Error('health check should not run')
 }
 
-describe('START_RPC_ERROR_MAP', () => {
-  test('returns SandboxNotFoundError for Unavailable with the sandbox not found', () => {
-    const err = handleRpcError(
-      new ConnectError('The sandbox was not found', Code.Unavailable),
-      START_RPC_ERROR_MAP
-    )
-    assert.instanceOf(err, SandboxNotFoundError)
-    assert.include(err.message, 'The sandbox was not found')
-  })
-
-  test('maps any other Unavailable like every other request', () => {
-    const portClosed = handleRpcError(
-      new ConnectError(PORT_CLOSED, Code.Unavailable),
-      START_RPC_ERROR_MAP
-    )
-    assert.instanceOf(portClosed, SandboxUnreachableError)
-    const ambiguous = handleRpcError(
-      new ConnectError(STREAM_ENDED, Code.Unavailable),
-      START_RPC_ERROR_MAP
-    )
-    assert.instanceOf(ambiguous, SandboxUnreachableError)
-  })
-
-  test('still returns SandboxNotRunningError without the start map', () => {
+describe('Unavailable with the sandbox not found', () => {
+  test('returns SandboxNotRunningError, not SandboxNotFoundError, from every call', () => {
     const err = handleRpcError(
       new ConnectError('The sandbox was not found', Code.Unavailable)
     )

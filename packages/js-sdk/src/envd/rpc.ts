@@ -13,7 +13,6 @@ import {
   NotFoundError,
   RateLimitError,
   SandboxError,
-  SandboxNotFoundError,
   SandboxNotRunningError,
   SandboxUnreachableError,
   TimeoutError,
@@ -160,22 +159,6 @@ export async function resolveTransportFailure(
   }
 
   return undefined
-}
-
-/**
- * Error map for starting a command, PTY or directory watch: an `Unavailable` from
- * the proxy with the sandbox not found is a `SandboxNotFoundError` (as it always
- * was for these calls); any other `Unavailable` maps as for every other request.
- */
-export const START_RPC_ERROR_MAP: Partial<
-  Record<Code, (message: string) => Error>
-> = {
-  [Code.Unavailable]: (message) =>
-    isSandboxNotFoundMessage(message)
-      ? new SandboxNotFoundError(
-          `${message}: Sandbox is probably not running anymore`
-        )
-      : formatSandboxUnavailableError(message),
 }
 
 const DEFAULT_ERROR_MAP: Partial<Record<Code, (message: string) => Error>> = {

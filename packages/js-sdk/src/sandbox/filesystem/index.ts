@@ -25,7 +25,6 @@ import {
 import {
   authenticationHeader,
   handleRpcErrorWithHealthCheck,
-  START_RPC_ERROR_MAP,
   SandboxHealthCheck,
 } from '../../envd/rpc'
 
@@ -64,13 +63,6 @@ const FILESYSTEM_RPC_ERROR_MAP: Partial<
   Record<Code, (message: string) => Error>
 > = {
   [Code.NotFound]: (message: string) => new FileNotFoundError(message),
-}
-
-const WATCH_DIR_START_RPC_ERROR_MAP: Partial<
-  Record<Code, (message: string) => Error>
-> = {
-  ...FILESYSTEM_RPC_ERROR_MAP,
-  ...START_RPC_ERROR_MAP,
 }
 
 async function handleFilesystemRpcError(
@@ -1119,11 +1111,7 @@ export class Filesystem {
       )
     } catch (err) {
       cleanup()
-      throw await handleRpcErrorWithHealthCheck(
-        err,
-        this.checkHealth,
-        WATCH_DIR_START_RPC_ERROR_MAP
-      )
+      throw await handleFilesystemRpcError(err, this.checkHealth)
     }
   }
 }

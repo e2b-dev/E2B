@@ -29,7 +29,6 @@ import {
 import {
   authenticationHeader,
   handleRpcErrorWithHealthCheck,
-  START_RPC_ERROR_MAP,
   SandboxHealthCheck,
 } from '../../envd/rpc'
 import { ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE } from '../../envd/versions'
@@ -476,11 +475,7 @@ export class Commands {
       )
     } catch (err) {
       cleanup()
-      throw await handleRpcErrorWithHealthCheck(
-        err,
-        this.checkHealth,
-        START_RPC_ERROR_MAP
-      )
+      throw await handleRpcErrorWithHealthCheck(err, this.checkHealth)
     }
   }
 }
