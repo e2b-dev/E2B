@@ -6,6 +6,10 @@ import {
   isTransportFailure,
 } from '../../src/envd/rpc'
 import {
+  handleProcessStartEvent,
+  handleWatchDirStartEvent,
+} from '../../src/envd/api'
+import {
   AuthenticationError,
   InvalidArgumentError,
   NotFoundError,
@@ -202,5 +206,33 @@ describe('handleRpcErrorWithHealthCheck', () => {
     )
     assert.instanceOf(err, NotFoundError)
     assert.isFalse(called)
+  })
+})
+
+describe('start event handlers', () => {
+  async function* failing(): AsyncGenerator<never> {
+    throw new ConnectError('port is not open', Code.Unavailable)
+  }
+
+  test('handleProcessStartEvent rethrows the ConnectError so the caller maps it', async () => {
+    await handleProcessStartEvent(failing()).then(
+      () => assert.fail('expected rejection'),
+      (err) => {
+        assert.instanceOf(err, ConnectError)
+        assert.equal(err.code, Code.Unavailable)
+        assert.instanceOf(handleRpcError(err), TimeoutError)
+      }
+    )
+  })
+
+  test('handleWatchDirStartEvent rethrows the ConnectError so the caller maps it', async () => {
+    await handleWatchDirStartEvent(failing()).then(
+      () => assert.fail('expected rejection'),
+      (err) => {
+        assert.instanceOf(err, ConnectError)
+        assert.equal(err.code, Code.Unavailable)
+        assert.instanceOf(handleRpcError(err), TimeoutError)
+      }
+    )
   })
 })
