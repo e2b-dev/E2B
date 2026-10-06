@@ -1,5 +1,11 @@
 # @e2b/python-sdk
 
+## 2.53.1
+
+### Patch Changes
+
+- cd4c62b: Publish the changes from the previous release, which was versioned but failed to publish to npm and PyPI.
+
 ## 2.53.0
 
 ### Minor Changes

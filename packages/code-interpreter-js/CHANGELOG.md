@@ -1,5 +1,13 @@
 # @e2b/code-interpreter
 
+## 2.8.2
+
+### Patch Changes
+
+- cd4c62b: Publish the changes from the previous release, which was versioned but failed to publish to npm and PyPI.
+- Updated dependencies [cd4c62b]
+  - e2b@2.53.1
+
 ## 2.8.1
 
 ### Patch Changes
