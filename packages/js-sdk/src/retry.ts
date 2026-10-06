@@ -153,7 +153,7 @@ function wait(delayMs: number, signal: AbortSignal): Promise<void> {
   })
 }
 
-function backoffMs(attempt: number, random: () => number): number {
+export function backoffMs(attempt: number, random: () => number): number {
   const backoff = Math.min(BACKOFF_BASE_MS * 2 ** attempt, BACKOFF_MAX_MS)
   return Math.floor(
     backoff * (BACKOFF_JITTER_MIN + random() * (1 - BACKOFF_JITTER_MIN))
@@ -183,8 +183,6 @@ function retryDelayMs(
   return backoffMs(attempt, random)
 }
 
-type RetryPolicy = 'api' | 'connect'
-
 /**
  * Retry requests after a 429 carrying `Retry-After`, a 503 or — for replayable
  * requests ({@link isReplayable}) — a 502 (using `Retry-After` when present,
@@ -196,44 +194,6 @@ export function withRetry(
   retries: number,
   requestTimeoutMs: number,
   dependencies: RetryDependencies = {}
-): typeof fetch {
-  return withRetryPolicy(
-    'api',
-    fetchImpl,
-    retries,
-    requestTimeoutMs,
-    dependencies
-  )
-}
-
-/**
- * Retry only failures to establish the connection ({@link isConnectionError}),
- * with exponential backoff; the request never left, so any operation — unary or
- * streaming — can be sent again. Responses and other network errors are never
- * retried. Used for envd (sandbox) traffic, matching the Python SDK's
- * `ConnectionRetryTransport`.
- */
-export function withConnectRetry(
-  fetchImpl: typeof fetch,
-  retries: number,
-  requestTimeoutMs: number,
-  dependencies: RetryDependencies = {}
-): typeof fetch {
-  return withRetryPolicy(
-    'connect',
-    fetchImpl,
-    retries,
-    requestTimeoutMs,
-    dependencies
-  )
-}
-
-function withRetryPolicy(
-  policy: RetryPolicy,
-  fetchImpl: typeof fetch,
-  retries: number,
-  requestTimeoutMs: number,
-  dependencies: RetryDependencies
 ): typeof fetch {
   const monotonic = dependencies.monotonic ?? (() => performance.now())
   const sleep = dependencies.sleep ?? wait
@@ -256,7 +216,7 @@ function withRetryPolicy(
         : new Request(input, init)
     const deadline =
       monotonic() + (requestTimeoutMs || MAX_RETRY_WAIT_WITHOUT_TIMEOUT_MS)
-    const replayable = policy === 'api' && isReplayable(request)
+    const replayable = isReplayable(request)
 
     for (let attempt = 0; ; attempt++) {
       let response: Response
@@ -265,11 +225,11 @@ function withRetryPolicy(
           attempt === retries ? request : request.clone()
         )
       } catch (error) {
-        const retryable =
-          policy === 'connect'
-            ? isConnectionError(error)
-            : isRetryableFetchError(error, replayable)
-        if (attempt === retries || request.signal.aborted || !retryable) {
+        if (
+          attempt === retries ||
+          request.signal.aborted ||
+          !isRetryableFetchError(error, replayable)
+        ) {
           throw error
         }
 
@@ -279,7 +239,7 @@ function withRetryPolicy(
         await sleep(delayMs, request.signal)
         continue
       }
-      if (attempt === retries || policy === 'connect') return response
+      if (attempt === retries) return response
 
       const delayMs = retryDelayMs(response, attempt, replayable, random)
       if (delayMs === undefined || monotonic() + delayMs >= deadline) {

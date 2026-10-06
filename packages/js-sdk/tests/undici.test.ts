@@ -1,10 +1,12 @@
-import { expect, test, vi } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 
 import {
   buildDispatchedFetch,
   createRuntimeFetch,
   getUndiciPackageCandidates,
   loadUndici,
+  withConnectRetries,
+  type UndiciConnector,
   type UndiciModule,
 } from '../src/undici'
 import { runtime } from '../src/utils'
@@ -217,3 +219,124 @@ test.skipIf(runtime !== 'node')(
     }
   }
 )
+
+function connectError(code: string): Error {
+  return Object.assign(new Error(code), { code })
+}
+
+function connectorFailingTimes(
+  failures: number,
+  code: string
+): UndiciConnector & { attempts: number } {
+  const connector = ((_options, callback) => {
+    connector.attempts++
+    if (connector.attempts <= failures) {
+      callback(connectError(code))
+      return
+    }
+    callback(null, 'socket')
+  }) as UndiciConnector & { attempts: number }
+  connector.attempts = 0
+  return connector
+}
+
+function connectOnce(connector: UndiciConnector) {
+  return new Promise<{ err: Error | null; socket?: unknown }>((resolve) =>
+    connector({}, (err, socket) => resolve({ err, socket }))
+  )
+}
+
+describe('withConnectRetries', () => {
+  const noSleep = { sleep: () => Promise.resolve(), random: () => 1 }
+
+  test('retries a socket that cannot be established and passes the socket through', async () => {
+    const connector = connectorFailingTimes(2, 'ECONNREFUSED')
+    const sleeps: number[] = []
+    const { err, socket } = await connectOnce(
+      withConnectRetries(connector, 3, {
+        sleep: (ms) => {
+          sleeps.push(ms)
+          return Promise.resolve()
+        },
+        random: () => 1,
+      })
+    )
+
+    expect(err).toBeNull()
+    expect(socket).toBe('socket')
+    expect(connector.attempts).toBe(3)
+    expect(sleeps).toEqual([100, 200])
+  })
+
+  test('gives up after the configured number of retries', async () => {
+    const connector = connectorFailingTimes(10, 'ENOTFOUND')
+    const { err } = await connectOnce(withConnectRetries(connector, 2, noSleep))
+
+    expect((err as { code?: string } | null)?.code).toBe('ENOTFOUND')
+    expect(connector.attempts).toBe(3)
+  })
+
+  test('does not retry errors that are not connection failures', async () => {
+    const connector = connectorFailingTimes(10, 'ECONNRESET')
+    const { err } = await connectOnce(withConnectRetries(connector, 3, noSleep))
+
+    expect((err as { code?: string } | null)?.code).toBe('ECONNRESET')
+    expect(connector.attempts).toBe(1)
+  })
+
+  test('returns the connector untouched when retries is 0', () => {
+    const connector = connectorFailingTimes(0, 'ECONNREFUSED')
+    expect(withConnectRetries(connector, 0)).toBe(connector)
+  })
+})
+
+describe('buildDispatchedFetch connect retries', () => {
+  function fakeUndici(withBuildConnector: boolean) {
+    const agents: Array<{ connect?: UndiciConnector }> = []
+    const buildConnector = vi.fn(() => connectorFailingTimes(0, 'ECONNREFUSED'))
+    const undici = {
+      Agent: class {
+        constructor(options: { connect?: UndiciConnector }) {
+          agents.push(options)
+        }
+      },
+      ProxyAgent: class {},
+      ...(withBuildConnector ? { buildConnector } : {}),
+      fetch: async () => new Response('ok'),
+    } as unknown as UndiciModule
+    return { undici, agents, buildConnector }
+  }
+
+  test('wraps the Agent connector when connectRetries > 0', async () => {
+    const { undici, agents, buildConnector } = fakeUndici(true)
+    await buildDispatchedFetch({
+      connections: 1,
+      inflightLimit: 0,
+      connectRetries: 3,
+      loadUndici: () => Promise.resolve(undici),
+    })
+
+    expect(buildConnector).toHaveBeenCalledWith({ allowH2: true })
+    expect(typeof agents[0].connect).toBe('function')
+  })
+
+  test('leaves the Agent connector alone when connectRetries is 0 or buildConnector is missing', async () => {
+    const withoutRetries = fakeUndici(true)
+    await buildDispatchedFetch({
+      connections: 1,
+      inflightLimit: 0,
+      connectRetries: 0,
+      loadUndici: () => Promise.resolve(withoutRetries.undici),
+    })
+    expect(withoutRetries.agents[0].connect).toBeUndefined()
+
+    const withoutBuildConnector = fakeUndici(false)
+    await buildDispatchedFetch({
+      connections: 1,
+      inflightLimit: 0,
+      connectRetries: 3,
+      loadUndici: () => Promise.resolve(withoutBuildConnector.undici),
+    })
+    expect(withoutBuildConnector.agents[0].connect).toBeUndefined()
+  })
+})

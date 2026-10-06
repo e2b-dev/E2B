@@ -1,5 +1,9 @@
 import { runtime } from '../utils'
-import { DEFAULT_HTTP_VERSION, type HttpVersion } from '../connectionConfig'
+import {
+  DEFAULT_HTTP_VERSION,
+  DEFAULT_RETRIES,
+  type HttpVersion,
+} from '../connectionConfig'
 import type { FetchOpts } from '../api/http2'
 import { parseInflightLimitEnv, parsePositiveIntEnv } from '../api/metadata'
 import {
@@ -13,6 +17,7 @@ type EnvdFetchOptions = {
   inflightLimit?: number
   proxy?: string
   httpVersion?: HttpVersion
+  connectRetries?: number
   loadUndici?: () => Promise<UndiciModule | undefined>
 }
 
@@ -35,23 +40,33 @@ export function createEnvdFetchForRuntime(
       inflightLimit: options.inflightLimit ?? 0,
       proxy: options.proxy,
       httpVersion: options.httpVersion,
+      connectRetries: options.connectRetries,
       loadUndici: options.loadUndici,
     })
   )
 }
 
+/**
+ * Options of the envd fetchers: `retries` is the number of connection
+ * attempts after the first for sockets that cannot be established (Node only;
+ * see `buildDispatchedFetch`), taken from `ConnectionConfig.retries`.
+ */
+export type EnvdFetchOpts = FetchOpts & { retries?: number }
+
 function fetcherKey(
   proxy: string | undefined,
-  httpVersion: HttpVersion
+  httpVersion: HttpVersion,
+  retries: number
 ): string {
-  return `${httpVersion}:${proxy ?? ''}`
+  return `${httpVersion}:${retries}:${proxy ?? ''}`
 }
 
 export function createEnvdFetch({
   proxy,
   httpVersion = DEFAULT_HTTP_VERSION,
-}: FetchOpts = {}): typeof fetch {
-  const key = fetcherKey(proxy, httpVersion)
+  retries = DEFAULT_RETRIES,
+}: EnvdFetchOpts = {}): typeof fetch {
+  const key = fetcherKey(proxy, httpVersion, retries)
 
   const cached = envdFetchers.get(key)
   if (cached) {
@@ -64,6 +79,7 @@ export function createEnvdFetch({
     inflightLimit: getEnvdInflightLimit(),
     proxy,
     httpVersion,
+    connectRetries: retries,
   })
   envdFetchers.set(key, envdFetch)
 
@@ -73,8 +89,9 @@ export function createEnvdFetch({
 export function createEnvdRpcFetch({
   proxy,
   httpVersion = DEFAULT_HTTP_VERSION,
-}: FetchOpts = {}): typeof fetch {
-  const key = fetcherKey(proxy, httpVersion)
+  retries = DEFAULT_RETRIES,
+}: EnvdFetchOpts = {}): typeof fetch {
+  const key = fetcherKey(proxy, httpVersion, retries)
 
   const cached = envdRpcFetchers.get(key)
   if (cached) {
@@ -86,6 +103,7 @@ export function createEnvdRpcFetch({
     inflightLimit: getEnvdRpcInflightLimit(),
     proxy,
     httpVersion,
+    connectRetries: retries,
   })
   envdRpcFetchers.set(key, envdRpcFetch)
 

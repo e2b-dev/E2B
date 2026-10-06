@@ -3,6 +3,7 @@ import { compareVersions } from 'compare-versions'
 import { limitConcurrency } from './api/inflight'
 import { isReadableStreamLike, isRequestLike } from './is'
 import { dynamicImport, toDispatchableStream } from './utils'
+import { backoffMs, isConnectionError } from './retry'
 import { DEFAULT_HTTP_VERSION, type HttpVersion } from './connectionConfig'
 
 type UndiciRequestInit = RequestInit & {
@@ -10,8 +11,21 @@ type UndiciRequestInit = RequestInit & {
   duplex?: 'half'
 }
 
+/**
+ * undici connector: establishes the TCP/TLS socket for a new origin connection.
+ */
+export type UndiciConnector = (
+  options: Record<string, unknown>,
+  callback: (err: Error | null, socket?: unknown) => void
+) => void
+
 export type UndiciModule = {
-  Agent: new (options: { allowH2: boolean; connections?: number }) => unknown
+  Agent: new (options: {
+    allowH2: boolean
+    connections?: number
+    connect?: UndiciConnector
+  }) => unknown
+  buildConnector?: (options: { allowH2: boolean }) => UndiciConnector
   ProxyAgent: new (options: {
     uri: string
     allowH2: boolean
@@ -87,18 +101,70 @@ export function createRuntimeFetch(
   }) as typeof fetch
 }
 
+export type ConnectRetryDependencies = {
+  sleep?: (delayMs: number) => Promise<void>
+  random?: () => number
+}
+
+/**
+ * Wrap an undici connector so that a socket that cannot be established
+ * ({@link isConnectionError}: connection refused, DNS failure, unreachable
+ * host, connect timeout) is attempted again up to `retries` times with
+ * exponential backoff. Only the TCP/TLS connect is repeated — undici
+ * dispatches the request once, after a socket exists — so this is safe for
+ * every request, unary or streaming. Matches the Python SDK's
+ * `ConnectionRetryTransport`.
+ */
+export function withConnectRetries(
+  connect: UndiciConnector,
+  retries: number,
+  dependencies: ConnectRetryDependencies = {}
+): UndiciConnector {
+  if (retries === 0) {
+    return connect
+  }
+
+  const sleep =
+    dependencies.sleep ??
+    ((delayMs: number) =>
+      new Promise<void>((resolve) => setTimeout(resolve, delayMs)))
+  const random = dependencies.random ?? Math.random
+
+  return (options, callback) => {
+    let attempt = 0
+
+    const attemptConnect = () =>
+      connect(options, (err, socket) => {
+        if (err && attempt < retries && isConnectionError(err)) {
+          sleep(backoffMs(attempt++, random)).then(attemptConnect)
+          return
+        }
+
+        callback(err, socket)
+      })
+
+    attemptConnect()
+  }
+}
+
 /**
  * Build a fetch bound to a bounded undici dispatcher (HTTP/2 enabled unless
  * `httpVersion` is `'1.1'`, `connections` origin connections, optional proxy
  * tunnel), capped at `inflightLimit` in-flight requests (`0` disables the
  * cap). Falls back to the global fetch — still capped — when undici cannot be
  * loaded.
+ *
+ * With `connectRetries > 0`, sockets that cannot be established are retried
+ * at the connector level ({@link withConnectRetries}). `ProxyAgent` builds its
+ * own connectors for the proxy and the tunnel, so proxied traffic is not
+ * retried.
  */
 export async function buildDispatchedFetch(options: {
   connections: number
   inflightLimit: number
   proxy?: string
   httpVersion?: HttpVersion
+  connectRetries?: number
   loadUndici?: () => Promise<UndiciModule | undefined>
 }): Promise<typeof fetch> {
   const undici = await (options.loadUndici ?? loadUndici)()
@@ -107,8 +173,13 @@ export async function buildDispatchedFetch(options: {
     return limitConcurrency(lateBoundGlobalFetch(), options.inflightLimit)
   }
 
-  const { Agent, ProxyAgent, fetch: undiciFetch } = undici
+  const { Agent, ProxyAgent, buildConnector, fetch: undiciFetch } = undici
   const allowH2 = (options.httpVersion ?? DEFAULT_HTTP_VERSION) === '2'
+  const connectRetries = options.connectRetries ?? 0
+  const connect =
+    connectRetries > 0 && buildConnector
+      ? withConnectRetries(buildConnector({ allowH2 }), connectRetries)
+      : undefined
   const dispatcher = options.proxy
     ? new ProxyAgent({
         uri: options.proxy,
@@ -119,6 +190,7 @@ export async function buildDispatchedFetch(options: {
     : new Agent({
         allowH2,
         connections: options.connections,
+        ...(connect ? { connect } : {}),
       })
   const fetchWithDispatcher = undiciFetch as unknown as (
     input: RequestInfo | URL,

@@ -99,9 +99,10 @@ export interface ConnectionOpts {
    * 100 ms (capped at 10 s).
    * Retry waits use a 60-second total limit when request timeouts are disabled.
    *
-   * Requests to the sandbox (envd) use the same count and backoff but retry
-   * only failures to establish the connection, never responses or errors
-   * after the request was sent.
+   * In Node, connections to the sandbox (envd) that cannot be established
+   * (connection refused, DNS failure, unreachable host) are retried with the
+   * same count and backoff at the socket level; the request itself is sent
+   * once. Other runtimes do not retry sandbox connections.
    *
    * @default 3
    */

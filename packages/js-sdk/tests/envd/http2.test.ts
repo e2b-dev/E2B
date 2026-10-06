@@ -151,6 +151,8 @@ test('caches envd fetchers per proxy and HTTP version', async () => {
   expect(createEnvdFetch({ httpVersion: '1.1' })).toBe(noProxyH1)
   expect(proxyA).not.toBe(noProxy)
   expect(noProxyH1).not.toBe(noProxy)
+  expect(createEnvdFetch({ retries: 3 })).toBe(noProxy)
+  expect(createEnvdFetch({ retries: 0 })).not.toBe(noProxy)
 
   const rpcNoProxy = createEnvdRpcFetch()
   const rpcProxyA = createEnvdRpcFetch({ proxy: 'http://127.0.0.1:8080' })

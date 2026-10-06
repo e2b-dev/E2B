@@ -9,7 +9,6 @@ import {
 import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 import { rejectProxyUnavailableResponse } from '../envd/rpc'
 import { createEnvdFetch, createEnvdRpcFetch } from '../envd/http2'
-import { withConnectRetry } from '../retry'
 import { createRpcLogger } from '../logs'
 import { Commands, Pty } from './commands'
 import { CommandExitError } from './commands/commandHandle'
@@ -163,16 +162,8 @@ export class Sandbox extends SandboxApi {
       'E2b-Sandbox-Id': this.sandboxId,
       'E2b-Sandbox-Port': this.envdPort.toString(),
     }
-    const envdFetch = withConnectRetry(
-      createEnvdFetch(this.connectionConfig),
-      this.connectionConfig.retries,
-      this.connectionConfig.requestTimeoutMs
-    )
-    const envdRpcFetch = withConnectRetry(
-      createEnvdRpcFetch(this.connectionConfig),
-      this.connectionConfig.retries,
-      this.connectionConfig.requestTimeoutMs
-    )
+    const envdFetch = createEnvdFetch(this.connectionConfig)
+    const envdRpcFetch = createEnvdRpcFetch(this.connectionConfig)
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
