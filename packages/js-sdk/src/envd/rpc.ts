@@ -1,22 +1,29 @@
 import { Code, ConnectError } from '@connectrpc/connect'
+import { codeFromString } from '@connectrpc/connect/protocol-connect'
 import { runtime } from '../utils'
 
 import { compareVersions } from 'compare-versions'
 import { defaultUsername } from '../connectionConfig'
 import {
   AuthenticationError,
-  formatSandboxTimeoutError,
+  formatSandboxUnavailableError,
   InvalidArgumentError,
+  isSandboxNotFoundMessage,
+  isSandboxPortNotOpenMessage,
   NotFoundError,
   RateLimitError,
   SandboxError,
+  SandboxNotRunningError,
+  SandboxUnreachableError,
   TimeoutError,
 } from '../errors'
+import { isNetworkError } from '../retry'
 import { ENVD_DEFAULT_USER } from './versions'
 
 /**
- * Result of a sandbox health probe: `true` if the sandbox is running, `false` if it is not,
- * `undefined` if its state could not be determined.
+ * Sandbox health probe: resolves to `true` if the sandbox is running, `false` if it
+ * is not, `undefined` if it answered but its state could not be determined, and
+ * rejects when the sandbox could not be reached at all (no answer).
  */
 export type SandboxHealthCheck = () => Promise<boolean | undefined>
 
@@ -68,6 +75,92 @@ function isConnectionTerminatedError(err: unknown): boolean {
   )
 }
 
+/**
+ * Checks whether the error is a transport-level failure of the request to the sandbox:
+ * the connection could not be established or failed with a browser's opaque network
+ * error (connect wraps the `fetch` rejection as `Code.Unknown` with the failure as
+ * `cause`) or was dropped mid-request. Errors
+ * envd responded with are never transport failures.
+ */
+export function isTransportFailure(err: unknown): boolean {
+  if (isConnectionTerminatedError(err)) {
+    return true
+  }
+
+  return (
+    err instanceof ConnectError &&
+    err.code === Code.Unknown &&
+    isNetworkError(err.cause)
+  )
+}
+
+/**
+ * Checks whether the error is an `Unavailable` whose message the proxy's answers do
+ * not explain — neither the sandbox not found nor its port not open — e.g. envd
+ * ending a stream with "the connection to sandbox ... ended before the stream
+ * completed" when the sandbox is killed mid-command. Whether the sandbox is gone
+ * can only be told by probing it.
+ */
+export function isAmbiguousUnavailable(err: unknown): boolean {
+  return (
+    err instanceof ConnectError &&
+    err.code === Code.Unavailable &&
+    !isSandboxNotFoundMessage(err.rawMessage) &&
+    !isSandboxPortNotOpenMessage(err.rawMessage)
+  )
+}
+
+/**
+ * Builds the error for a request that failed at the connection level when the
+ * follow-up health probe failed too. A probe answered by the proxy with the sandbox
+ * running but envd's port not open is already a `SandboxUnreachableError` and is
+ * kept, with the failed request as its cause; otherwise the probe's failure is
+ * reported alongside the request's, which becomes the cause.
+ */
+export function formatSandboxUnreachableError(
+  err: Error,
+  probeErr: unknown
+): Error {
+  if (probeErr instanceof SandboxUnreachableError) {
+    probeErr.cause = err
+    return probeErr
+  }
+  const probeMessage =
+    probeErr instanceof Error ? probeErr.message : String(probeErr)
+  return new SandboxUnreachableError(
+    `${err.message}: The sandbox could not be reached and its health probe failed too (${probeMessage}). It was not confirmed to be stopped — this is likely a network issue or envd inside the sandbox not being up yet; check the sandbox state with 'Sandbox.getInfo()'.`,
+    { cause: err }
+  )
+}
+
+/**
+ * Runs the health probe for a request that failed at the connection level and
+ * returns the typed error for the outcome: a `SandboxNotRunningError` when the
+ * sandbox is confirmed gone, a `SandboxUnreachableError` when the probe got no
+ * answer either, or `undefined` when the sandbox answered (the failure was
+ * transient and the original error applies).
+ */
+export async function resolveTransportFailure(
+  err: Error,
+  checkHealth: SandboxHealthCheck
+): Promise<Error | undefined> {
+  let running: boolean | undefined
+  try {
+    running = await checkHealth()
+  } catch (probeErr) {
+    return formatSandboxUnreachableError(err, probeErr)
+  }
+
+  if (running === false) {
+    return new SandboxNotRunningError(
+      `${err.message}: The sandbox was killed or reached its end of life while the request was in flight.`,
+      { cause: err }
+    )
+  }
+
+  return undefined
+}
+
 const DEFAULT_ERROR_MAP: Partial<Record<Code, (message: string) => Error>> = {
   [Code.InvalidArgument]: (message) => new InvalidArgumentError(message),
   [Code.Unauthenticated]: (message) => new AuthenticationError(message),
@@ -76,7 +169,7 @@ const DEFAULT_ERROR_MAP: Partial<Record<Code, (message: string) => Error>> = {
     new RateLimitError(
       `${message}: Rate limit exceeded, please try again later.`
     ),
-  [Code.Unavailable]: formatSandboxTimeoutError,
+  [Code.Unavailable]: formatSandboxUnavailableError,
   [Code.Canceled]: (message) =>
     new TimeoutError(
       `${message}: This error is likely due to exceeding 'requestTimeoutMs'. You can pass the request timeout value as an option when making the request.`
@@ -117,14 +210,20 @@ export function handleRpcError(
 }
 
 /**
- * Like {@link handleRpcError}, but when the connection to the sandbox was dropped
- * mid-request it probes the sandbox health to tell apart the sandbox being killed
- * from a transient network failure (e.g. a load balancer dropping the connection).
- * When the probe confirms the sandbox is gone, a `TimeoutError` is returned —
- * consistent with how requests to an already-dead sandbox surface.
+ * Like {@link handleRpcError}, but when the request failed at the connection level
+ * (the connection to the sandbox could not be established or was dropped
+ * mid-request), or envd/the proxy answered an `Unavailable` that does not say
+ * whether the sandbox is gone ({@link isAmbiguousUnavailable}), it probes the
+ * sandbox health to tell apart the sandbox being killed from the sandbox being
+ * unreachable or a transient network failure (e.g. a load balancer dropping the
+ * connection). When the probe confirms the sandbox is gone, a
+ * `SandboxNotRunningError` is returned — the same error a request answered by the
+ * proxy with the sandbox not found gets; when the probe gets no answer either, a
+ * `SandboxUnreachableError`; otherwise the error maps as usual (an ambiguous
+ * `Unavailable` to a `SandboxUnreachableError` with the sandbox state unknown).
  *
  * @param err - The caught error, expected to be a `ConnectError` from the gRPC transport.
- * @param checkHealth - Probe returning whether the sandbox is running, or `undefined` when unknown.
+ * @param checkHealth - Probe resolving to whether the sandbox is running (`undefined` when unknown) and rejecting when it cannot be reached.
  * @param errorMap - Optional map of gRPC `Code` values to error factory functions that override the defaults.
  * @returns The corresponding `Error` instance.
  */
@@ -133,13 +232,13 @@ export async function handleRpcErrorWithHealthCheck(
   checkHealth?: SandboxHealthCheck,
   errorMap?: Partial<Record<Code, (message: string) => Error>>
 ): Promise<Error> {
-  if (isConnectionTerminatedError(err) && checkHealth) {
-    const running = await checkHealth().catch(() => undefined)
-
-    if (running === false) {
-      return new TimeoutError(
-        `${(err as ConnectError).message}: The sandbox was killed or reached its end of life while the request was in flight.`
-      )
+  if (checkHealth && (isTransportFailure(err) || isAmbiguousUnavailable(err))) {
+    const resolved = await resolveTransportFailure(
+      err as ConnectError,
+      checkHealth
+    )
+    if (resolved) {
+      return resolved
     }
   }
 
@@ -179,4 +278,47 @@ export function authenticationHeader(
   const encoded = encode64(value)
 
   return { Authorization: `Basic ${encoded}` }
+}
+
+/**
+ * Rejects a plain (non-Connect-encoded) 502 answered by the proxy in front of envd —
+ * the sandbox is gone or envd's port is not open — as a `ConnectError` carrying the
+ * proxy's message. connect reads that message for unary RPCs only; a streaming RPC
+ * would otherwise surface it as a bare `HTTP 502`.
+ */
+export async function rejectProxyUnavailableResponse(
+  res: Response
+): Promise<Response> {
+  if (res.status !== 502) {
+    return res
+  }
+
+  let message = ''
+  try {
+    message = await res.text()
+  } catch {
+    // unreadable body
+  }
+  try {
+    const body = JSON.parse(message)
+    if (
+      typeof body?.code === 'string' &&
+      codeFromString(body.code) !== undefined
+    ) {
+      // Connect-encoded error (declared string `code`, e.g. "permission_denied") —
+      // let the transport decode it with that code.
+      return new Response(message, {
+        status: res.status,
+        statusText: res.statusText,
+        headers: res.headers,
+      })
+    }
+    if (typeof body?.message === 'string') {
+      message = body.message
+    }
+  } catch {
+    // not a JSON body: keep the proxy's plain-text message
+  }
+
+  throw new ConnectError(message || `HTTP ${res.status}`, Code.Unavailable)
 }

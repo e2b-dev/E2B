@@ -153,8 +153,11 @@ _transport_lock = threading.Lock()
 # they replaced, the transports are not bound to an event loop and the caches
 # are process-global rather than per-loop.
 _transports: Dict[_TransportKey, ConnectionRetryTransport] = {}
+# The balancing transport under each retrying one, for callers that must not
+# retry connecting (the health probe run after a request failed).
+_pools: Dict[_TransportKey, BalancingTransport] = {}
 # The httpx adapter over each transport, shared by every httpx client on it.
-_httpx_transports: Dict[_TransportKey, AsyncPyqwestTransport] = {}
+_httpx_transports: Dict[Tuple[_TransportKey, bool], AsyncPyqwestTransport] = {}
 
 
 def get_pyqwest_transport(
@@ -162,7 +165,8 @@ def get_pyqwest_transport(
     read_timeout: Optional[float] = None,
     *,
     http_version: HttpVersion = DEFAULT_HTTP_VERSION,
-) -> ConnectionRetryTransport:
+    retry_connect: bool = True,
+) -> Transport:
     """The shared pyqwest transport with the SDK's tuning — system CA certs
     (without which TLS through an intercepting proxy fails) and the
     httpx-equivalent pool limits — behind connect-only retries. It balances
@@ -187,7 +191,10 @@ def get_pyqwest_transport(
     Requests are logged by pyqwest itself on the ``pyqwest.access`` and
     ``pyqwest`` loggers at ``DEBUG`` (off unless enabled) — the transport-level
     diagnostics httpcore used to provide. The SDK's own ``logger`` option is
-    separate and sits above this, on the httpx client."""
+    separate and sits above this, on the httpx client.
+
+    ``retry_connect=False`` returns the balancing transport under the retrying
+    one — the same pools, without the connection retries."""
     key = (proxy, read_timeout, http_version)
 
     def build() -> HTTPTransport:
@@ -209,11 +216,11 @@ def get_pyqwest_transport(
     with _transport_lock:
         transport = _transports.get(key)
         if transport is None:
-            transport = ConnectionRetryTransport(
-                BalancingTransport(build), max_retries=connection_retries
-            )
+            pool = BalancingTransport(build)
+            transport = ConnectionRetryTransport(pool, max_retries=connection_retries)
+            _pools[key] = pool
             _transports[key] = transport
-        return transport
+        return transport if retry_connect else _pools[key]
 
 
 def get_httpx_transport(
@@ -221,15 +228,19 @@ def get_httpx_transport(
     read_timeout: Optional[float] = None,
     *,
     http_version: HttpVersion = DEFAULT_HTTP_VERSION,
+    retry_connect: bool = True,
 ) -> AsyncPyqwestTransport:
     """The httpx adapter over the shared transport of
     :func:`get_pyqwest_transport`, for the generated httpx clients (control
     plane, envd HTTP API, volume content). The adapter holds no state of its
     own and does not close the pools, so closing an httpx client leaves them
-    intact for the other clients on it."""
-    key = (proxy, read_timeout, http_version)
+    intact for the other clients on it. ``retry_connect=False`` adapts the
+    same pools without the connection retries."""
+    key = ((proxy, read_timeout, http_version), retry_connect)
     # Resolve the pool before taking the lock: it takes the same one.
-    pool = get_pyqwest_transport(proxy, read_timeout, http_version=http_version)
+    pool = get_pyqwest_transport(
+        proxy, read_timeout, http_version=http_version, retry_connect=retry_connect
+    )
     with _transport_lock:
         transport = _httpx_transports.get(key)
         if transport is None:
@@ -243,6 +254,7 @@ def get_transport(
     *,
     http_version: Optional[HttpVersion] = None,
     for_streaming: bool = False,
+    retry_connect: bool = True,
 ) -> AsyncPyqwestTransport:
     """The shared httpx transport factory for the control-plane REST API and
     envd HTTP API (file transfers, health checks). For TLS connections ALPN
@@ -264,16 +276,26 @@ def get_transport(
     whole-request deadlines rather than idle bounds — so only streamed
     downloads take it, and they get their own pool
     (see :func:`get_pyqwest_transport`).
+
+    ``retry_connect=False`` returns the adapter over the same pool without the
+    connection retries (``E2B_CONNECTION_RETRIES``): for the health probe run
+    after a request failed, so a sandbox that cannot be reached is not tried
+    all over again.
     """
     return get_httpx_transport(
         proxy_to_config(config.proxy),
         READ_TIMEOUT if for_streaming else None,
         http_version=(config.http_version if http_version is None else http_version),
+        retry_connect=retry_connect,
     )
 
 
 def get_envd_api(
-    config: ConnectionConfig, base_url: str, *, for_streaming: bool = False
+    config: ConnectionConfig,
+    base_url: str,
+    *,
+    for_streaming: bool = False,
+    retry_connect: bool = True,
 ) -> httpx.AsyncClient:
     """An httpx client for a sandbox's envd HTTP API (file transfers, health
     checks) on the shared transports. The client itself is a cheap stateless
@@ -281,7 +303,9 @@ def get_envd_api(
     is shared and loop-independent."""
     return httpx.AsyncClient(
         base_url=base_url,
-        transport=get_transport(config, for_streaming=for_streaming),
+        transport=get_transport(
+            config, for_streaming=for_streaming, retry_connect=retry_connect
+        ),
         headers=config.sandbox_headers,
         event_hooks=make_async_logging_event_hooks(config.logger),
     )

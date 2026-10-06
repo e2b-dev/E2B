@@ -110,6 +110,43 @@ def test_sync_pool_is_cached_per_proxy():
     assert pool_a is not pool_c
 
 
+def test_sync_retry_connect_false_returns_the_pool_under_the_retrying_transport():
+    key = (None, None, api_client_sync.DEFAULT_HTTP_VERSION)
+    retrying = api_client_sync.get_pyqwest_transport(None)
+    plain = api_client_sync.get_pyqwest_transport(None, retry_connect=False)
+
+    assert isinstance(retrying, api_client_sync.ConnectionRetryTransport)
+    assert isinstance(plain, api_client_sync.BalancingTransport)
+    assert plain is api_client_sync._pools[key]
+    assert plain is api_client_sync.get_pyqwest_transport(None, retry_connect=False)
+
+    # The httpx adapters are cached per flag, each over its own transport.
+    adapter = api_client_sync.get_httpx_transport(None)
+    plain_adapter = api_client_sync.get_httpx_transport(None, retry_connect=False)
+    assert adapter is api_client_sync.get_httpx_transport(None)
+    assert plain_adapter is api_client_sync.get_httpx_transport(
+        None, retry_connect=False
+    )
+    assert adapter is not plain_adapter
+
+
+def test_async_retry_connect_false_returns_the_pool_under_the_retrying_transport():
+    key = (None, None, api_client_async.DEFAULT_HTTP_VERSION)
+    retrying = api_client_async.get_pyqwest_transport(None)
+    plain = api_client_async.get_pyqwest_transport(None, retry_connect=False)
+
+    assert isinstance(retrying, api_client_async.ConnectionRetryTransport)
+    assert isinstance(plain, api_client_async.BalancingTransport)
+    assert plain is api_client_async._pools[key]
+
+    adapter = api_client_async.get_httpx_transport(None)
+    plain_adapter = api_client_async.get_httpx_transport(None, retry_connect=False)
+    assert plain_adapter is api_client_async.get_httpx_transport(
+        None, retry_connect=False
+    )
+    assert adapter is not plain_adapter
+
+
 def test_sync_pool_is_not_shared_across_proxy_credentials():
     # Same proxy URL, different credentials or headers: separate pools, since
     # the proxy configuration is fixed per transport.

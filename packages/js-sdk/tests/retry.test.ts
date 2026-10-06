@@ -7,6 +7,7 @@ import {
   parseRetryAfter,
   resolveRetries,
   withRetry,
+  isNetworkError,
 } from '../src/retry'
 import { EnvdApiClient } from '../src/envd/api'
 import { InvalidArgumentError } from '../src/errors'
@@ -486,6 +487,26 @@ const aborts = {
   abort: new DOMException('aborted', 'AbortError'),
   timeout: new DOMException('timed out', 'TimeoutError'),
 }
+
+describe('isNetworkError', () => {
+  test.each([
+    ...Object.entries(connectFailures),
+    ['Chrome', opaque.Chrome],
+    ['Firefox', opaque.Firefox],
+    ['Safari', opaque.Safari],
+  ])('recognizes %s', (_, error) => {
+    expect(isNetworkError(error)).toBe(true)
+  })
+
+  test.each([
+    ...Object.entries(terminated),
+    ...Object.entries(aborts),
+    ['other TypeError', new TypeError('Failed to parse URL')],
+    ['non-error', 'Failed to fetch'],
+  ])('rejects %s', (_, error) => {
+    expect(isNetworkError(error)).toBe(false)
+  })
+})
 
 describe('isConnectionError', () => {
   test.each(Object.entries(connectFailures))('recognizes %s', (_, error) => {
