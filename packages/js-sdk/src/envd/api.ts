@@ -39,14 +39,14 @@ const HEALTH_CHECK_TIMEOUT_MS = 5_000
 /**
  * Probes the sandbox's envd health endpoint.
  *
- * @param envdApi - The envd API client of the sandbox.
+ * @param envdApi - The envd API client of the sandbox; the probe goes through its `health` client, which runs without connection retries so a sandbox that cannot be reached is not tried all over again.
  * @returns `true` if the sandbox is running, `false` if it is not, `undefined` if it answered but its state could not be determined.
  * @throws The `fetch` failure when the sandbox could not be reached (no answer within the probe timeout), or the `SandboxUnreachableError` a request would get when the proxy reports the sandbox running but envd's port not open.
  */
 export async function checkSandboxHealth(
   envdApi: EnvdApiClient
 ): Promise<boolean | undefined> {
-  const res = await envdApi.api.GET('/health', {
+  const res = await envdApi.health.GET('/health', {
     signal: AbortSignal.timeout(HEALTH_CHECK_TIMEOUT_MS),
   })
 
@@ -189,6 +189,11 @@ export async function handleWatchDirStartEvent(
 
 class EnvdApiClient {
   readonly api: ReturnType<typeof createClient<paths>>
+  /**
+   * Client for the health probe run after a request failed: the same API over
+   * `healthFetch` (no connection retries), or `api` itself when not given.
+   */
+  readonly health: ReturnType<typeof createClient<paths>>
   readonly version: string
 
   constructor(
@@ -198,28 +203,40 @@ class EnvdApiClient {
        */
       envdAccessToken?: string
       fetch?: (request: Request) => ReturnType<typeof fetch>
+      /**
+       * `fetch` for the health probe, without connection retries.
+       */
+      healthFetch?: (request: Request) => ReturnType<typeof fetch>
       headers?: Record<string, string>
     },
     metadata: {
       version: string
     }
   ) {
-    this.api = createClient({
-      baseUrl: config.apiUrl,
-      fetch: config?.fetch,
-      headers: {
-        ...config?.headers,
-        ...(config.envdAccessToken && {
-          'X-Access-Token': config.envdAccessToken,
-        }),
-      },
-      // In HTTP 1.1, all connections are considered persistent unless declared otherwise
-      // keepalive: true,
-    })
+    const build = (
+      fetchImpl?: (request: Request) => ReturnType<typeof fetch>
+    ) =>
+      createClient<paths>({
+        baseUrl: config.apiUrl,
+        fetch: fetchImpl,
+        headers: {
+          ...config?.headers,
+          ...(config.envdAccessToken && {
+            'X-Access-Token': config.envdAccessToken,
+          }),
+        },
+        // In HTTP 1.1, all connections are considered persistent unless declared otherwise
+        // keepalive: true,
+      })
+    this.api = build(config?.fetch)
+    this.health = config.healthFetch ? build(config.healthFetch) : this.api
     this.version = metadata.version
 
     if (config.logger) {
       this.api.use(createApiLogger(config.logger))
+      if (this.health !== this.api) {
+        this.health.use(createApiLogger(config.logger))
+      }
     }
   }
 }

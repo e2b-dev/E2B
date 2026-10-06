@@ -9,7 +9,7 @@ import {
   withRetry,
   isNetworkError,
 } from '../src/retry'
-import { EnvdApiClient } from '../src/envd/api'
+import { checkSandboxHealth, EnvdApiClient } from '../src/envd/api'
 import { InvalidArgumentError } from '../src/errors'
 
 describe('resolveRetries', () => {
@@ -411,6 +411,46 @@ test('envd clients do not retry rate-limited requests', async () => {
   const response = await client.api.GET('/health')
 
   expect(response.response.status).toBe(429)
+  expect(fetchImpl).toHaveBeenCalledOnce()
+})
+
+test('the health probe goes through healthFetch, not the retrying fetch', async () => {
+  const fetchImpl = vi.fn(async () => {
+    throw new Error('retrying fetch must not be used by the probe')
+  }) as typeof fetch
+  const healthFetch = vi.fn(
+    async () => new Response('{}', { status: 200 })
+  ) as typeof fetch
+  const client = new EnvdApiClient(
+    {
+      apiUrl: 'https://envd.e2b.test',
+      logger: undefined,
+      fetch: fetchImpl,
+      healthFetch,
+    },
+    { version: '0.0.0' }
+  )
+
+  expect(await checkSandboxHealth(client)).toBe(true)
+  expect(healthFetch).toHaveBeenCalledOnce()
+  expect(fetchImpl).not.toHaveBeenCalled()
+})
+
+test('the health probe falls back to fetch without healthFetch', async () => {
+  const fetchImpl = vi.fn(
+    async () => new Response('{}', { status: 200 })
+  ) as typeof fetch
+  const client = new EnvdApiClient(
+    {
+      apiUrl: 'https://envd.e2b.test',
+      logger: undefined,
+      fetch: fetchImpl,
+    },
+    { version: '0.0.0' }
+  )
+
+  expect(client.health).toBe(client.api)
+  expect(await checkSandboxHealth(client)).toBe(true)
   expect(fetchImpl).toHaveBeenCalledOnce()
 })
 
