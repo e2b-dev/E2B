@@ -9,20 +9,13 @@ from e2b.exceptions import (
     SandboxException,
     InvalidArgumentException,
     NotFoundException,
+    SandboxNotRunningException,
     SandboxUnreachableException,
     TimeoutException,
-    format_sandbox_start_unavailable_exception,
     format_sandbox_unavailable_exception,
     AuthenticationException,
     RateLimitException,
 )
-
-# Error map for starting a command/PTY/watch: a 502 "sandbox was not found" from the
-# proxy is a ``SandboxNotFoundException``, every other ``UNAVAILABLE`` a
-# ``SandboxUnreachableException``.
-START_RPC_ERROR_MAP: dict[Code, Callable[[str], Exception]] = {
-    Code.UNAVAILABLE: format_sandbox_start_unavailable_exception,
-}
 
 _DEFAULT_RPC_ERROR_MAP: dict[Code, Callable[[str], Exception]] = {
     Code.INVALID_ARGUMENT: InvalidArgumentException,
@@ -74,27 +67,30 @@ def format_terminated_exception(
 ) -> Exception:
     """Handle an exception for a request that failed at the connection level: when a
     sandbox health probe confirmed the sandbox is gone (``sandbox_running is False``),
-    return a ``SandboxUnreachableException``; otherwise return the original error unchanged."""
+    return a ``SandboxNotRunningException``; otherwise return the original error unchanged."""
     if sandbox_running is False:
-        return SandboxUnreachableException(
+        err = SandboxNotRunningException(
             f"{e}: The sandbox was killed or reached its end of life while the request was in flight."
         )
+        err.__cause__ = e
+        return err
     return e
 
 
 def format_sandbox_unreachable_exception(
-    e: Exception, probe_error: Optional[Exception] = None
+    e: Exception, probe_error: Exception
 ) -> Exception:
     """Build the exception for a request that failed at the connection level when the
-    follow-up sandbox health probe got no answer from the sandbox either. A probe
-    answered by the proxy with the sandbox running but envd's port not open is
-    already a ``SandboxUnreachableException`` and is kept, with the failed request
-    as its cause."""
+    follow-up sandbox health probe failed too. A probe answered by the proxy with the
+    sandbox running but envd's port not open is already a
+    ``SandboxUnreachableException`` and is kept, with the failed request as its
+    cause; otherwise the probe's failure is reported alongside the request's, which
+    becomes the cause."""
     if isinstance(probe_error, SandboxUnreachableException):
         probe_error.__cause__ = e
         return probe_error
     err = SandboxUnreachableException(
-        f"{e}: The sandbox could not be reached. It was not confirmed to be stopped, so this is likely a transient network issue or envd inside the sandbox not being up yet — check the sandbox state with 'Sandbox.get_info()' and retry the request."
+        f"{e}: The sandbox could not be reached and its health probe failed too ({probe_error}). It was not confirmed to be stopped — this is likely a network issue or envd inside the sandbox not being up yet; check the sandbox state with 'Sandbox.get_info()'."
     )
     err.__cause__ = e
     return err
@@ -110,7 +106,7 @@ def handle_rpc_exception(
     :param e: The caught exception, expected to be a ``ConnectError``.
     :param error_map: Optional map of gRPC codes to exception factories that override the defaults.
     :param sandbox_running: Result of a sandbox health probe (``None`` when unknown), used to disambiguate a connection dropped mid-request.
-    :return: The corresponding exception. A connection dropped mid-request with the sandbox confirmed gone becomes a ``TimeoutException``; non-``ConnectError`` errors are otherwise returned as-is.
+    :return: The corresponding exception. A connection dropped mid-request with the sandbox confirmed gone becomes a ``SandboxNotRunningException``; non-``ConnectError`` errors are otherwise returned as-is.
     """
     if isinstance(e, ConnectError):
         # connectrpc converts asyncio cancellation into a ConnectError with

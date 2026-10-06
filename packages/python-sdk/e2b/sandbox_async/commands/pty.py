@@ -15,7 +15,7 @@ from e2b.connection_config import (
     KEEPALIVE_PING_INTERVAL_SEC,
 )
 from e2b.envd.api import acheck_sandbox_health
-from e2b.envd.rpc import START_RPC_ERROR_MAP, ahandle_rpc_exception_with_health
+from e2b.envd.rpc import ahandle_rpc_exception_with_health
 from e2b.envd.utils import (
     authentication_header,
     extract_start_pid,
@@ -178,9 +178,7 @@ class Pty:
                 await events.aclose()
             except Exception:
                 pass
-            raise await ahandle_rpc_exception_with_health(
-                e, self._check_health, START_RPC_ERROR_MAP
-            )
+            raise await ahandle_rpc_exception_with_health(e, self._check_health)
 
     async def connect(
         self,
@@ -229,9 +227,7 @@ class Pty:
                 await events.aclose()
             except Exception:
                 pass
-            raise await ahandle_rpc_exception_with_health(
-                e, self._check_health, START_RPC_ERROR_MAP
-            )
+            raise await ahandle_rpc_exception_with_health(e, self._check_health)
 
     async def resize(
         self,

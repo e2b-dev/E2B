@@ -3,45 +3,28 @@ from typing import Optional
 
 # Message of the 502 the proxy in front of envd answers with when the sandbox
 # is running but nothing listens on envd's port — e.g. its network is down.
-def format_sandbox_timeout_exception(message: str):
-    return TimeoutException(
-        f"{message}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeout' when starting the sandbox or calling '.set_timeout' on the sandbox with the desired timeout."
-    )
-
-
 # Messages of the 502 the proxy in front of envd answers with when the sandbox does
 # not exist anymore (killed or reached its timeout) or when it is running but envd's
 # port is not open (e.g. its network is down).
 SANDBOX_NOT_FOUND_MESSAGE = "was not found"
-SANDBOX_PORT_CLOSED_MESSAGE = "port is not open"
 
 
 def is_sandbox_not_found_message(message: str) -> bool:
     return SANDBOX_NOT_FOUND_MESSAGE in message
 
 
-def is_sandbox_port_closed_message(message: str) -> bool:
-    return SANDBOX_PORT_CLOSED_MESSAGE in message
-
-
 def format_sandbox_unavailable_exception(message: str) -> Exception:
-    """Map a 502/UNAVAILABLE answered by the proxy in front of envd -- the sandbox was
-    not found (killed or reached its timeout), or it is running but envd's port is
-    not open (e.g. its network is down) -- to a ``SandboxUnreachableException``."""
-    return SandboxUnreachableException(
-        f"{message}: The sandbox could not be reached -- it was killed, reached its timeout, or envd inside it is not reachable (e.g. its network is down). Check the sandbox state with 'Sandbox.get_info()'; you can modify the sandbox timeout by passing 'timeout' when starting the sandbox or calling '.set_timeout' on the sandbox with the desired timeout."
-    )
-
-
-def format_sandbox_start_unavailable_exception(message: str) -> Exception:
-    """Like :func:`format_sandbox_unavailable_exception`, for starting a command/PTY/
-    watch: when the proxy reports the sandbox was not found, a
-    ``SandboxNotFoundException`` is returned."""
+    """Map a 502/UNAVAILABLE answered by the proxy in front of envd: the sandbox was
+    not found (killed or reached its timeout) is a ``SandboxNotRunningException``;
+    the sandbox running but envd's port not open (e.g. its network is down), or any
+    other message, a ``SandboxUnreachableException``."""
     if is_sandbox_not_found_message(message):
-        return SandboxNotFoundException(
+        return SandboxNotRunningException(
             f"{message}: The sandbox was killed or reached its timeout. You can modify the sandbox timeout by passing 'timeout' when starting the sandbox or calling '.set_timeout' on the sandbox with the desired timeout."
         )
-    return format_sandbox_unavailable_exception(message)
+    return SandboxUnreachableException(
+        f"{message}: The sandbox is running but envd inside it could not be reached (e.g. its network is down). Check the sandbox state with 'Sandbox.get_info()'."
+    )
 
 
 def format_request_timeout_error() -> Exception:
@@ -125,18 +108,31 @@ class SandboxNotFoundException(NotFoundException):
     pass
 
 
+class SandboxNotRunningException(TimeoutException):
+    """
+    Raised when the sandbox is not running anymore: the proxy in front of it
+    answered a request (or the health probe run after a request failed at the
+    connection level) with the sandbox not found -- it was killed or reached its
+    timeout. Retrying the request will not help; create or resume a sandbox.
+
+    Subclass of ``TimeoutException``, which this case surfaced as before.
+    """
+
+    pass
+
+
 class SandboxUnreachableException(TimeoutException):
     """
-    Raised when the sandbox could not be reached while not confirmed to be
+    Raised when the sandbox could not be reached while it is not confirmed to be
     stopped: either the proxy in front of the sandbox reports it running but
     envd's port not open (e.g. the sandbox's network is down), or a request
     failed at the connection level (the connection could not be established or
-    was dropped mid-request) and a follow-up health probe got no answer from the
-    sandbox either.
+    was dropped mid-request) and the follow-up health probe got no answer from the
+    sandbox either. A sandbox confirmed stopped is a ``SandboxNotRunningException``.
 
     This usually means the sandbox's network is down, envd inside it is not up
-    (yet), or a transient network issue between the client and the sandbox.
-    Check the sandbox state with ``Sandbox.get_info()`` and retry the request.
+    (yet), or a network issue between the client and the sandbox. Check the
+    sandbox state with ``Sandbox.get_info()``.
 
     Subclass of ``TimeoutException``, which these cases surfaced as before.
     """

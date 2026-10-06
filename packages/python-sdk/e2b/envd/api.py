@@ -1,5 +1,4 @@
 import httpx
-import json
 
 from typing import Callable, Optional
 
@@ -14,8 +13,8 @@ from e2b.exceptions import (
     InvalidArgumentException,
     NotEnoughSpaceException,
     RateLimitException,
+    SandboxNotRunningException,
     format_sandbox_unavailable_exception,
-    is_sandbox_port_closed_message,
 )
 
 
@@ -56,6 +55,7 @@ def check_sandbox_health(envd_api: httpx.Client) -> Optional[bool]:
 
     :return: ``True`` if the sandbox is running, ``False`` if it is not, ``None`` if it answered but its state could not be determined.
     :raises httpx.TransportError: When the sandbox could not be reached (no answer within the probe timeout).
+    :raises SandboxUnreachableException: When the proxy reports the sandbox running but envd's port not open -- the exception a request would get.
     """
     try:
         r = envd_api.get(ENVD_API_HEALTH_ROUTE, timeout=HEALTH_CHECK_TIMEOUT)
@@ -79,10 +79,10 @@ async def acheck_sandbox_health(envd_api: httpx.AsyncClient) -> Optional[bool]:
 
 def _health_status(r: httpx.Response) -> Optional[bool]:
     if r.status_code == 502:
-        message = get_message(r)
-        if is_sandbox_port_closed_message(message):
-            raise format_sandbox_unavailable_exception(message)
-        return False
+        err = format_sandbox_unavailable_exception(get_message(r))
+        if isinstance(err, SandboxNotRunningException):
+            return False
+        raise err
     if r.is_success:
         return True
     return None
@@ -96,7 +96,7 @@ def handle_envd_api_transport_exception(
 
     :param e: The caught exception, expected to be a transport-level ``httpx`` error.
     :param sandbox_running: Result of a sandbox health probe (``None`` when unknown), used to disambiguate a request that failed at the connection level.
-    :return: A ``TimeoutException`` when the request failed at the connection level and the sandbox is confirmed gone, or the original exception unchanged otherwise.
+    :return: A ``SandboxNotRunningException`` when the request failed at the connection level and the sandbox is confirmed gone, or the original exception unchanged otherwise.
     """
     if isinstance(e, ENVD_API_TRANSPORT_ERRORS):
         return format_terminated_exception(e, sandbox_running)
@@ -139,12 +139,15 @@ async def ahandle_envd_api_transport_exception_with_health(
 
 
 def get_message(e: httpx.Response) -> str:
+    """The error message of a response: the string ``message`` of its JSON object
+    body, else its text."""
     try:
-        message = e.json().get("message", e.text)
-    except json.JSONDecodeError:
-        message = e.text
-
-    return message
+        body = e.json()
+    except ValueError:
+        return e.text
+    if isinstance(body, dict) and isinstance(body.get("message"), str):
+        return body["message"]
+    return e.text
 
 
 def handle_envd_api_exception(

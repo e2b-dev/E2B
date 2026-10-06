@@ -24,7 +24,7 @@ from protobuf import Oneof
 
 from e2b.envd.process import process_connect, process_pb
 from e2b.envd.api import check_sandbox_health
-from e2b.envd.rpc import START_RPC_ERROR_MAP, handle_rpc_exception_with_health
+from e2b.envd.rpc import handle_rpc_exception_with_health
 from e2b.envd.utils import (
     authentication_header,
     extract_start_pid,
@@ -385,6 +385,4 @@ class Commands:
                 events.close()
             except Exception:
                 pass
-            raise handle_rpc_exception_with_health(
-                e, self._check_health, START_RPC_ERROR_MAP
-            )
+            raise handle_rpc_exception_with_health(e, self._check_health)

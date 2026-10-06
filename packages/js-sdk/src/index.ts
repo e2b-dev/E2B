@@ -18,6 +18,7 @@ export {
   NotFoundError,
   SandboxError,
   SandboxNotFoundError,
+  SandboxNotRunningError,
   SandboxUnreachableError,
   TemplateError,
   TimeoutError,

@@ -1,48 +1,27 @@
-// Message of the 502 the proxy in front of envd answers with when the sandbox
-// is running but nothing listens on envd's port — e.g. its network is down.
-// This is the message for the sandbox timeout error when the response code is 502/Unavailable
-export function formatSandboxTimeoutError(message: string) {
-  return new TimeoutError(
-    `${message}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeoutMs' when starting the sandbox or calling '.setTimeout' on the sandbox with the desired timeout.`
-  )
-}
-
 // Messages of the 502 the proxy in front of envd answers with when the sandbox does
 // not exist anymore (killed or reached its timeout) or when it is running but envd's
 // port is not open (e.g. its network is down).
 const SANDBOX_NOT_FOUND_MESSAGE = 'was not found'
-const SANDBOX_PORT_CLOSED_MESSAGE = 'port is not open'
 
 export function isSandboxNotFoundMessage(message: string): boolean {
   return message.includes(SANDBOX_NOT_FOUND_MESSAGE)
 }
 
-export function isSandboxPortClosedMessage(message: string): boolean {
-  return message.includes(SANDBOX_PORT_CLOSED_MESSAGE)
-}
-
 /**
- * Maps a 502/Unavailable answered by the proxy in front of envd — the sandbox was
- * not found (killed or reached its timeout), or it is running but envd's port is not
- * open (e.g. its network is down) — to a `SandboxUnreachableError`.
+ * Maps a 502/Unavailable answered by the proxy in front of envd: the sandbox was not
+ * found (killed or reached its timeout) is a `SandboxNotRunningError`; the sandbox
+ * running but envd's port not open (e.g. its network is down), or any other message,
+ * a `SandboxUnreachableError`.
  */
 export function formatSandboxUnavailableError(message: string): Error {
-  return new SandboxUnreachableError(
-    `${message}: The sandbox could not be reached — it was killed, reached its timeout, or envd inside it is not reachable (e.g. its network is down). Check the sandbox state with 'Sandbox.getInfo()'; you can modify the sandbox timeout by passing 'timeoutMs' when starting the sandbox or calling '.setTimeout' on the sandbox with the desired timeout.`
-  )
-}
-
-/**
- * Like `formatSandboxUnavailableError`, for starting a command/PTY/watch: when the
- * proxy reports the sandbox was not found, a `SandboxNotFoundError` is returned.
- */
-export function formatSandboxStartUnavailableError(message: string): Error {
   if (isSandboxNotFoundMessage(message)) {
-    return new SandboxNotFoundError(
+    return new SandboxNotRunningError(
       `${message}: The sandbox was killed or reached its timeout. You can modify the sandbox timeout by passing 'timeoutMs' when starting the sandbox or calling '.setTimeout' on the sandbox with the desired timeout.`
     )
   }
-  return formatSandboxUnavailableError(message)
+  return new SandboxUnreachableError(
+    `${message}: The sandbox is running but envd inside it could not be reached (e.g. its network is down). Check the sandbox state with 'Sandbox.getInfo()'.`
+  )
 }
 
 /**
@@ -136,16 +115,34 @@ export class SandboxNotFoundError extends NotFoundError {
 }
 
 /**
- * Thrown when the sandbox could not be reached while not confirmed to be
+ * Thrown when the sandbox is not running anymore: the proxy in front of it
+ * answered a request (or the health probe run after a request failed at the
+ * connection level) with the sandbox not found — it was killed or reached its
+ * timeout. Retrying the request will not help; create or resume a sandbox.
+ *
+ * Subclass of `TimeoutError`, which this case surfaced as before.
+ */
+export class SandboxNotRunningError extends TimeoutError {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message)
+    this.name = 'SandboxNotRunningError'
+    if (options?.cause !== undefined) {
+      this.cause = options.cause
+    }
+  }
+}
+
+/**
+ * Thrown when the sandbox could not be reached while it is not confirmed to be
  * stopped: either the proxy in front of the sandbox reports it running but
  * envd's port not open (e.g. the sandbox's network is down), or a request
  * failed at the connection level (the connection could not be established or
- * was dropped mid-request) and a follow-up health probe got no answer from the
- * sandbox either.
+ * was dropped mid-request) and the follow-up health probe got no answer from the
+ * sandbox either. A sandbox confirmed stopped is a `SandboxNotRunningError`.
  *
  * This usually means the sandbox's network is down, envd inside it is not up
- * (yet), or a transient network issue between the client and the sandbox.
- * Check the sandbox state with `Sandbox.getInfo()` and retry the request.
+ * (yet), or a network issue between the client and the sandbox. Check the
+ * sandbox state with `Sandbox.getInfo()`.
  *
  * Subclass of `TimeoutError`, which these cases surfaced as before.
  */

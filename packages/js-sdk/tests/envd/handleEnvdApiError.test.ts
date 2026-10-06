@@ -11,6 +11,7 @@ import {
   NotFoundError,
   RateLimitError,
   SandboxError,
+  SandboxNotRunningError,
   SandboxUnreachableError,
   TimeoutError,
 } from '../../src/errors'
@@ -110,16 +111,24 @@ describe('handleEnvdApiError', () => {
     const res = createMockResponse(502, { message: PORT_CLOSED })
     const err = await handleEnvdApiError(res)
     assert.instanceOf(err, SandboxUnreachableError)
-    assert.include(err!.message, 'The sandbox could not be reached')
+    assert.include(err!.message, 'could not be reached')
   })
 
-  test('returns SandboxUnreachableError for 502 for the sandbox not found', async () => {
+  test('returns SandboxNotRunningError for 502 for the sandbox not found', async () => {
     const res = createMockResponse(502, {
       message: 'The sandbox was not found',
     })
     const err = await handleEnvdApiError(res)
-    assert.instanceOf(err, SandboxUnreachableError)
+    assert.instanceOf(err, SandboxNotRunningError)
+    assert.instanceOf(err, TimeoutError)
+    assert.notInstanceOf(err, SandboxUnreachableError)
     assert.include(err!.message, 'The sandbox was not found')
+  })
+
+  test('returns SandboxNotRunningError for a plain-text 502 for the sandbox not found', async () => {
+    const res = createMockResponse(502, 'The sandbox was not found')
+    const err = await handleEnvdApiError(res)
+    assert.instanceOf(err, SandboxNotRunningError)
   })
 
   test('returns TimeoutError for 502', async () => {
@@ -165,13 +174,13 @@ describe('handleEnvdApiFetchError', () => {
     assert.strictEqual(err, original)
   })
 
-  test('returns a SandboxUnreachableError when the health check says the sandbox is not running', async () => {
-    const err = await handleEnvdApiFetchError(
-      new TypeError('terminated'),
-      async () => false
-    )
-    assert.instanceOf(err, SandboxUnreachableError)
+  test('returns a SandboxNotRunningError when the health check says the sandbox is not running', async () => {
+    const original = new TypeError('terminated')
+    const err = await handleEnvdApiFetchError(original, async () => false)
+    assert.instanceOf(err, SandboxNotRunningError)
+    assert.notInstanceOf(err, SandboxUnreachableError)
     assert.include(err.message, 'sandbox was killed or reached its end of life')
+    assert.strictEqual(err.cause, original)
   })
 
   // Each JS runtime surfaces a dropped connection with different wording, and not
@@ -187,7 +196,7 @@ describe('handleEnvdApiFetchError', () => {
   for (const [runtime, error] of Object.entries(runtimeTerminatedErrors)) {
     test(`treats the ${runtime} dropped-connection error as terminated`, async () => {
       const err = await handleEnvdApiFetchError(error, async () => false)
-      assert.instanceOf(err, SandboxUnreachableError)
+      assert.instanceOf(err, SandboxNotRunningError)
       assert.include(
         err.message,
         'sandbox was killed or reached its end of life'
@@ -214,6 +223,7 @@ describe('handleEnvdApiFetchError', () => {
     })
     assert.instanceOf(err, SandboxUnreachableError)
     assert.include(err.message, 'could not be reached')
+    assert.include(err.message, 'fetch failed')
     assert.strictEqual(err.cause, original)
   })
 
@@ -228,12 +238,12 @@ describe('handleEnvdApiFetchError', () => {
     assert.strictEqual(err, original)
   })
 
-  test('returns a SandboxUnreachableError for a refused connection when the sandbox is gone', async () => {
+  test('returns a SandboxNotRunningError for a refused connection when the sandbox is gone', async () => {
     const err = await handleEnvdApiFetchError(
       connectRefused(),
       async () => false
     )
-    assert.instanceOf(err, SandboxUnreachableError)
+    assert.instanceOf(err, SandboxNotRunningError)
   })
 
   test('returns a SandboxUnreachableError for a refused connection when the probe gets no answer', async () => {
@@ -262,8 +272,23 @@ describe('checkSandboxHealth', () => {
     assert.strictEqual(await checkSandboxHealth(api), false)
   })
 
+  test('reports the sandbox gone for a plain-text 502', async () => {
+    const api = healthApi(502, 'The sandbox was not found')
+    assert.strictEqual(await checkSandboxHealth(api), false)
+  })
+
   test('is inconclusive for other statuses', async () => {
     assert.strictEqual(await checkSandboxHealth(healthApi(500)), undefined)
+  })
+
+  test('throws SandboxUnreachableError for a 502 with an unrecognized message', async () => {
+    try {
+      await checkSandboxHealth(healthApi(502, { message: 'Bad gateway' }))
+      assert.fail('expected the probe to throw')
+    } catch (err) {
+      assert.instanceOf(err, SandboxUnreachableError)
+      assert.notInstanceOf(err, SandboxNotRunningError)
+    }
   })
 
   test('throws SandboxUnreachableError for 502 with the sandbox running but its port closed', async () => {

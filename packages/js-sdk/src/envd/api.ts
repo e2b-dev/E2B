@@ -9,7 +9,7 @@ import {
   NotFoundError,
   NotEnoughSpaceError,
   formatSandboxUnavailableError,
-  isSandboxPortClosedMessage,
+  SandboxNotRunningError,
   AuthenticationError,
   RateLimitError,
 } from '../errors'
@@ -41,7 +41,7 @@ const HEALTH_CHECK_TIMEOUT_MS = 5_000
  *
  * @param envdApi - The envd API client of the sandbox.
  * @returns `true` if the sandbox is running, `false` if it is not, `undefined` if it answered but its state could not be determined.
- * @throws The `fetch` failure when the sandbox could not be reached (no answer within the probe timeout), or a `SandboxUnreachableError` when the proxy reports the sandbox running but envd's port not open.
+ * @throws The `fetch` failure when the sandbox could not be reached (no answer within the probe timeout), or the `SandboxUnreachableError` a request would get when the proxy reports the sandbox running but envd's port not open.
  */
 export async function checkSandboxHealth(
   envdApi: EnvdApiClient
@@ -51,11 +51,11 @@ export async function checkSandboxHealth(
   })
 
   if (res.response.status === 502) {
-    const message = await getEnvdApiErrorMessage(res)
-    if (isSandboxPortClosedMessage(message)) {
-      throw formatSandboxUnavailableError(message)
+    const err = formatSandboxUnavailableError(await getEnvdApiErrorMessage(res))
+    if (err instanceof SandboxNotRunningError) {
+      return false
     }
-    return false
+    throw err
   }
   if (res.response.ok) {
     return true
@@ -84,7 +84,7 @@ export function isFetchTransportFailure(err: unknown): err is Error {
  *
  * @param err - The caught error, expected to be a fetch transport failure.
  * @param checkHealth - Probe resolving to whether the sandbox is running (`undefined` when unknown) and rejecting when it cannot be reached.
- * @returns A `SandboxUnreachableError` when the sandbox is confirmed gone, a `SandboxUnreachableError` when the probe got no answer either, or the original error otherwise.
+ * @returns A `SandboxNotRunningError` when the sandbox is confirmed gone, a `SandboxUnreachableError` when the probe got no answer either, or the original error otherwise.
  */
 export async function handleEnvdApiFetchError(
   err: unknown,

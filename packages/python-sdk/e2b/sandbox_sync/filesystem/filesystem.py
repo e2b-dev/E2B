@@ -21,7 +21,7 @@ from e2b.envd.api import (
     handle_envd_api_transport_exception_with_health,
 )
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb
-from e2b.envd.rpc import START_RPC_ERROR_MAP, handle_rpc_exception_with_health
+from e2b.envd.rpc import handle_rpc_exception_with_health
 from e2b.envd.utils import authentication_header, timeout_to_ms
 from e2b.envd.client_sync import create_rpc_client
 from e2b.envd.versions import (
@@ -56,11 +56,6 @@ from e2b.sandbox_sync.filesystem.watch_handle import WatchHandle
 
 _FILESYSTEM_RPC_ERROR_MAP = {
     Code.NOT_FOUND: FileNotFoundException,
-}
-
-_WATCH_DIR_START_RPC_ERROR_MAP = {
-    **_FILESYSTEM_RPC_ERROR_MAP,
-    **START_RPC_ERROR_MAP,
 }
 
 _FILESYSTEM_HTTP_ERROR_MAP = {
@@ -694,9 +689,7 @@ class Filesystem:
                 },
             )
         except Exception as e:
-            raise _handle_filesystem_rpc_exception(
-                e, self._envd_api, _WATCH_DIR_START_RPC_ERROR_MAP
-            )
+            raise _handle_filesystem_rpc_exception(e, self._envd_api)
 
         return WatchHandle(
             self._rpc,
