@@ -3,7 +3,7 @@ import { compareVersions } from 'compare-versions'
 import { limitConcurrency } from './api/inflight'
 import { isReadableStreamLike, isRequestLike } from './is'
 import { dynamicImport, toDispatchableStream } from './utils'
-import { backoffMs, isConnectionError } from './retry'
+import { backoffMs, isConnectionError, markConnectionRetried } from './retry'
 import { DEFAULT_HTTP_VERSION, type HttpVersion } from './connectionConfig'
 
 type UndiciRequestInit = RequestInit & {
@@ -149,9 +149,12 @@ export function withConnectRetries(
 
     const attemptConnect = () =>
       connect(options, (err, socket) => {
-        if (err && attempt < retries && isConnectionError(err)) {
-          sleep(backoffMs(attempt++, random)).then(attemptConnect)
-          return
+        if (err && isConnectionError(err)) {
+          if (attempt < retries) {
+            sleep(backoffMs(attempt++, random)).then(attemptConnect)
+            return
+          }
+          markConnectionRetried(err)
         }
 
         callback(err, socket)

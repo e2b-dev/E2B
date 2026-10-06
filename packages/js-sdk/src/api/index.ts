@@ -12,7 +12,6 @@ import {
 } from '../errors'
 import { createApiLogger } from '../logs'
 import { withRetry } from '../retry'
-import { runtime } from '../utils'
 
 /**
  * Map an API error code and message to the matching error class — the same
@@ -110,10 +109,7 @@ class ApiClient {
       fetch: withRetry(
         createApiFetch(config),
         config.retries,
-        config.requestTimeoutMs,
-        // On Node the connector retries the connection itself; elsewhere the
-        // global fetch has no such hook and `withRetry` covers it.
-        { connectionRetries: runtime === 'node' ? config.connectionRetries : 0 }
+        config.requestTimeoutMs
       ),
       // In HTTP 1.1, all connections are considered persistent unless declared otherwise
       // keepalive: true,

@@ -8,6 +8,8 @@ import {
   resolveRetries,
   withRetry,
   isNetworkError,
+  isConnectionRetried,
+  markConnectionRetried,
 } from '../src/retry'
 import { checkSandboxHealth, EnvdApiClient } from '../src/envd/api'
 import { InvalidArgumentError } from '../src/errors'
@@ -589,20 +591,37 @@ describe('isRetryableFetchError', () => {
   )
 
   test.each(Object.entries(connectFailures))(
-    'does not retry %s again when the transport retried the connection',
+    'does not retry %s again once the connector retried it',
     (_, error) => {
-      expect(isRetryableFetchError(error, true, true)).toBe(false)
-      expect(isRetryableFetchError(error, false, true)).toBe(false)
+      // undici tags the socket error, which surfaces as the fetch error's cause
+      const retried = markConnectionRetried(
+        (error.cause as Error | undefined) ?? error
+      )
+      expect(isConnectionRetried(error)).toBe(true)
+      expect(isRetryableFetchError(error, true)).toBe(false)
+      expect(isRetryableFetchError(error, false)).toBe(false)
+      expect(retried).toBe(error.cause ?? error)
     }
   )
 
-  test.each([...Object.entries(terminated), ...Object.entries(opaque)])(
-    'still retries %s for a replayable operation when the transport retried the connection',
-    (_, error) => {
-      expect(isRetryableFetchError(error, true, true)).toBe(true)
-      expect(isRetryableFetchError(error, false, true)).toBe(false)
-    }
-  )
+  test('finds the connector tag inside a happy-eyeballs AggregateError', () => {
+    const member = connectError('ECONNREFUSED').cause as Error
+    const error = Object.assign(new Error('fetch failed'), {
+      cause: new AggregateError([markConnectionRetried(member)]),
+    })
+    expect(isConnectionRetried(error)).toBe(true)
+    expect(isRetryableFetchError(error, true)).toBe(false)
+  })
+
+  test.each([
+    ['non-error', 'ECONNREFUSED'],
+    ['no cause', new Error('x')],
+  ])('isConnectionRetried is false for %s', (_, error) => {
+    expect(isConnectionRetried(markConnectionRetried(error) && error)).toBe(
+      error instanceof Error
+    )
+    expect(isConnectionRetried(new TypeError('fetch failed'))).toBe(false)
+  })
 })
 
 const nonReplayable = [
@@ -702,14 +721,14 @@ test('rethrows the connection failure after exhausting retries', async () => {
   expect(fetchImpl).toHaveBeenCalledTimes(3)
 })
 
-test('does not retry a connection failure the transport already retried', async () => {
+test('does not retry a connection failure the connector already retried', async () => {
   const error = connectError('ECONNREFUSED')
+  markConnectionRetried(error.cause)
   const fetchImpl = vi.fn(async () => {
     throw error
   }) as typeof fetch
   const sleep = vi.fn(async () => {})
   const fetchWithRetry = withRetry(fetchImpl, 3, 10_000, {
-    connectionRetries: 3,
     monotonic: () => 0,
     sleep,
   })

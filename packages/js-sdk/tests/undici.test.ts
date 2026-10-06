@@ -1,3 +1,4 @@
+import { isConnectionRetried } from '../src/retry'
 import { describe, expect, test, vi } from 'vitest'
 
 import {
@@ -275,6 +276,8 @@ describe('withConnectRetries', () => {
 
     expect((err as { code?: string } | null)?.code).toBe('ENOTFOUND')
     expect(connector.attempts).toBe(3)
+    // request-level retries must not repeat the exhausted connection attempts
+    expect(isConnectionRetried(err)).toBe(true)
   })
 
   test('does not retry errors that are not connection failures', async () => {
@@ -283,6 +286,7 @@ describe('withConnectRetries', () => {
 
     expect((err as { code?: string } | null)?.code).toBe('ECONNRESET')
     expect(connector.attempts).toBe(1)
+    expect(isConnectionRetried(err)).toBe(false)
   })
 
   test('returns the connector untouched when retries is 0', () => {
