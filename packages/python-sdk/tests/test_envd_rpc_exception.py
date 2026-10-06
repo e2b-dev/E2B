@@ -16,6 +16,7 @@ from e2b.exceptions import (
     NotFoundException,
     RateLimitException,
     SandboxException,
+    SandboxUnreachableException,
     TimeoutException,
 )
 
@@ -39,6 +40,16 @@ def test_maps_resource_exhausted_to_rate_limit():
     err = handle_rpc_exception(ConnectError(Code.RESOURCE_EXHAUSTED, "too many"))
     assert isinstance(err, RateLimitException)
     assert "Rate limit" in str(err)
+
+
+# Body of the proxy's 502 when the sandbox is running but nothing listens on envd's port
+PORT_CLOSED = "The sandbox is running but port is not open"
+
+
+def test_maps_unavailable_with_port_closed_to_unreachable():
+    err = handle_rpc_exception(ConnectError(Code.UNAVAILABLE, PORT_CLOSED))
+    assert isinstance(err, SandboxUnreachableException)
+    assert "envd inside the sandbox could not be reached" in str(err)
 
 
 def test_maps_unavailable_to_timeout():
@@ -74,6 +85,12 @@ def _stream_reset() -> ConnectError:
         )
     except ConnectError as e:
         return e
+
+
+def _connect_refused() -> ConnectError:
+    err = ConnectError(Code.UNKNOWN, "connection refused")
+    err.__cause__ = ConnectionError("connection refused")
+    return err
 
 
 def _cancelled() -> ConnectError:
@@ -180,13 +197,58 @@ def test_health_check_unknown_returns_raw_error():
     assert err is original
 
 
-def test_health_check_failure_returns_raw_error():
+def test_health_check_port_closed_keeps_probe_exception():
+    probe_error = SandboxUnreachableException(PORT_CLOSED)
+
+    def check():
+        raise probe_error
+
+    original = _stream_reset()
+    err = handle_rpc_exception_with_health(original, check)
+    assert err is probe_error
+    assert err.__cause__ is original
+
+
+def test_health_check_failure_returns_unreachable():
     def check():
         raise RuntimeError("health check failed")
 
     original = _stream_reset()
     err = handle_rpc_exception_with_health(original, check)
+    assert isinstance(err, SandboxUnreachableException)
+    assert "could not be reached" in str(err)
+    assert err.__cause__ is original
+
+
+def test_connect_failure_is_transport_failure():
+    assert is_transport_failure(_connect_refused())
+
+
+def test_connect_failure_runs_health_check():
+    called = False
+
+    def check():
+        nonlocal called
+        called = True
+        return True
+
+    original = _connect_refused()
+    err = handle_rpc_exception_with_health(original, check)
+    assert called
     assert err is original
+
+
+def test_connect_failure_with_sandbox_killed_returns_timeout():
+    err = handle_rpc_exception_with_health(_connect_refused(), lambda: False)
+    assert isinstance(err, TimeoutException)
+
+
+def test_connect_failure_with_unreachable_health_returns_unreachable():
+    def check():
+        raise ConnectionError("connection refused")
+
+    err = handle_rpc_exception_with_health(_connect_refused(), check)
+    assert isinstance(err, SandboxUnreachableException)
 
 
 def test_health_check_not_run_for_other_exceptions():
@@ -208,10 +270,19 @@ async def test_async_health_check_confirms_sandbox_killed():
     assert "sandbox was killed or reached its end of life" in str(err)
 
 
-async def test_async_health_check_failure_returns_raw_error():
+async def test_async_health_check_failure_returns_unreachable():
     async def check():
         raise RuntimeError("health check failed")
 
     original = _stream_reset()
     err = await ahandle_rpc_exception_with_health(original, check)
-    assert err is original
+    assert isinstance(err, SandboxUnreachableException)
+    assert err.__cause__ is original
+
+
+async def test_async_connect_failure_with_unreachable_health_returns_unreachable():
+    async def check():
+        raise ConnectionError("connection refused")
+
+    err = await ahandle_rpc_exception_with_health(_connect_refused(), check)
+    assert isinstance(err, SandboxUnreachableException)

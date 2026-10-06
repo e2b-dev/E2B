@@ -6,7 +6,12 @@ import {
   defaultUsername,
   Username,
 } from '../connectionConfig'
-import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
+import {
+  EnvdApiClient,
+  getEnvdApiErrorMessage,
+  handleEnvdApiError,
+} from '../envd/api'
+import { rejectProxyUnavailableResponse } from '../envd/rpc'
 import { createEnvdFetch, createEnvdRpcFetch } from '../envd/http2'
 import { createRpcLogger } from '../logs'
 import { Commands, Pty } from './commands'
@@ -30,7 +35,13 @@ import {
 } from './sandboxApi'
 import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
-import { InvalidArgumentError, SandboxError, TemplateError } from '../errors'
+import {
+  InvalidArgumentError,
+  SandboxError,
+  TemplateError,
+  formatSandboxUnavailableError,
+  isSandboxPortClosedMessage,
+} from '../errors'
 import { ENVD_DEBUG_FALLBACK, ENVD_DEFAULT_USER } from '../envd/versions'
 import { shellQuote } from '../utils'
 
@@ -194,7 +205,7 @@ export class Sandbox extends SandboxApi {
           redirect: 'follow',
         }
 
-        return envdRpcFetch(url, options)
+        return envdRpcFetch(url, options).then(rejectProxyUnavailableResponse)
       },
     })
 
@@ -561,6 +572,10 @@ export class Sandbox extends SandboxApi {
     })
 
     if (res.response.status == 502) {
+      const message = await getEnvdApiErrorMessage(res)
+      if (isSandboxPortClosedMessage(message)) {
+        throw formatSandboxUnavailableError(message)
+      }
       return false
     }
 

@@ -1,5 +1,9 @@
 import { assert, test, describe } from 'vitest'
-import { handleEnvdApiError, handleEnvdApiFetchError } from '../../src/envd/api'
+import {
+  checkSandboxHealth,
+  handleEnvdApiError,
+  handleEnvdApiFetchError,
+} from '../../src/envd/api'
 import {
   AuthenticationError,
   InvalidArgumentError,
@@ -7,8 +11,27 @@ import {
   NotFoundError,
   RateLimitError,
   SandboxError,
+  SandboxUnreachableError,
   TimeoutError,
 } from '../../src/errors'
+
+// undici surfaces a refused connection as `fetch failed` with the syscall error as `cause`
+function connectRefused(): TypeError {
+  return Object.assign(new TypeError('fetch failed'), {
+    cause: Object.assign(new Error('connect ECONNREFUSED'), {
+      code: 'ECONNREFUSED',
+    }),
+  })
+}
+
+// Body of the proxy's 502 when the sandbox is running but nothing listens on envd's port
+const PORT_CLOSED = 'The sandbox is running but port is not open'
+
+function healthApi(status: number, error?: { message?: string } | string) {
+  return {
+    api: { GET: async () => createMockResponse(status, error) },
+  } as unknown as Parameters<typeof checkSandboxHealth>[0]
+}
 
 function createMockResponse(
   status: number,
@@ -83,6 +106,13 @@ describe('handleEnvdApiError', () => {
     assert.include(err?.message, 'rate limited')
   })
 
+  test('returns SandboxUnreachableError for 502 with the sandbox running but its port closed', async () => {
+    const res = createMockResponse(502, { message: PORT_CLOSED })
+    const err = await handleEnvdApiError(res)
+    assert.instanceOf(err, SandboxUnreachableError)
+    assert.include(err!.message, 'envd inside the sandbox could not be reached')
+  })
+
   test('returns TimeoutError for 502', async () => {
     const res = createMockResponse(502, { message: 'Bad gateway' })
     const err = await handleEnvdApiError(res)
@@ -150,5 +180,85 @@ describe('handleEnvdApiFetchError', () => {
     const original = new TypeError('fetch failed')
     const err = await handleEnvdApiFetchError(original)
     assert.strictEqual(err, original)
+  })
+
+  test('returns a SandboxUnreachableError when the health check itself fails', async () => {
+    const original = new TypeError('terminated')
+    const err = await handleEnvdApiFetchError(original, async () => {
+      throw new TypeError('fetch failed')
+    })
+    assert.instanceOf(err, SandboxUnreachableError)
+    assert.include(err.message, 'could not be reached')
+    assert.strictEqual(err.cause, original)
+  })
+
+  test('runs the health check when the connection could not be established', async () => {
+    let called = false
+    const original = connectRefused()
+    const err = await handleEnvdApiFetchError(original, async () => {
+      called = true
+      return true
+    })
+    assert.isTrue(called)
+    assert.strictEqual(err, original)
+  })
+
+  test('returns a TimeoutError for a refused connection when the sandbox is gone', async () => {
+    const err = await handleEnvdApiFetchError(
+      connectRefused(),
+      async () => false
+    )
+    assert.instanceOf(err, TimeoutError)
+  })
+
+  test('returns a SandboxUnreachableError for a refused connection when the probe gets no answer', async () => {
+    const err = await handleEnvdApiFetchError(connectRefused(), async () => {
+      throw new TypeError('fetch failed')
+    })
+    assert.instanceOf(err, SandboxUnreachableError)
+  })
+
+  test('does not run the health check for a non-connection fetch failure', async () => {
+    const original = new TypeError('fetch failed')
+    const err = await handleEnvdApiFetchError(original, async () => {
+      throw new Error('health check should not run')
+    })
+    assert.strictEqual(err, original)
+  })
+})
+
+describe('checkSandboxHealth', () => {
+  test('reports the sandbox running', async () => {
+    assert.strictEqual(await checkSandboxHealth(healthApi(204)), true)
+  })
+
+  test('reports the sandbox gone for 502', async () => {
+    const api = healthApi(502, { message: 'The sandbox was not found' })
+    assert.strictEqual(await checkSandboxHealth(api), false)
+  })
+
+  test('is inconclusive for other statuses', async () => {
+    assert.strictEqual(await checkSandboxHealth(healthApi(500)), undefined)
+  })
+
+  test('throws SandboxUnreachableError for 502 with the sandbox running but its port closed', async () => {
+    const api = healthApi(502, { message: PORT_CLOSED })
+    try {
+      await checkSandboxHealth(api)
+      assert.fail('expected the probe to throw')
+    } catch (err) {
+      assert.instanceOf(err, SandboxUnreachableError)
+      assert.include((err as Error).message, PORT_CLOSED)
+    }
+  })
+
+  test('keeps the probe SandboxUnreachableError with the failed request as cause', async () => {
+    const original = connectRefused()
+    const err = await handleEnvdApiFetchError(original, () =>
+      checkSandboxHealth(healthApi(502, { message: PORT_CLOSED }))
+    )
+    assert.instanceOf(err, SandboxUnreachableError)
+    assert.include(err.message, PORT_CLOSED)
+    assert.strictEqual(err.cause, original)
   })
 })

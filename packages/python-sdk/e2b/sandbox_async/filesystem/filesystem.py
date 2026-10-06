@@ -244,7 +244,7 @@ class Filesystem:
                     )
                 else:
                     r = await client.send(request, stream=True)
-            except httpx.RemoteProtocolError as e:
+            except httpx.TransportError as e:
                 raise await ahandle_envd_api_transport_exception_with_health(
                     e, self._envd_api
                 )
@@ -267,7 +267,7 @@ class Filesystem:
                 headers=headers,
                 timeout=timeout,
             )
-        except httpx.RemoteProtocolError as e:
+        except httpx.TransportError as e:
             raise await ahandle_envd_api_transport_exception_with_health(
                 e, self._envd_api
             )
@@ -412,7 +412,7 @@ class Filesystem:
                         params=params,
                         timeout=None if is_streamed else upload_timeout,
                     )
-                except httpx.RemoteProtocolError as e:
+                except httpx.TransportError as e:
                     raise await ahandle_envd_api_transport_exception_with_health(
                         e, self._envd_api
                     )
@@ -461,7 +461,7 @@ class Filesystem:
                         None if multipart_body_is_streamed(files) else upload_timeout
                     ),
                 )
-            except httpx.RemoteProtocolError as e:
+            except httpx.TransportError as e:
                 raise await ahandle_envd_api_transport_exception_with_health(
                     e, self._envd_api
                 )
