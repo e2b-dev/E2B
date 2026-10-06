@@ -24,9 +24,6 @@ function connectRefused(): TypeError {
   })
 }
 
-// Body of the proxy's 502 when the sandbox is running but nothing listens on envd's port
-const PORT_CLOSED = 'The sandbox is running but port is not open'
-
 function healthApi(status: number, error?: { message?: string } | string) {
   return {
     api: { GET: async () => createMockResponse(status, error) },
@@ -104,13 +101,6 @@ describe('handleEnvdApiError', () => {
     const err = await handleEnvdApiError(res)
     assert.instanceOf(err, RateLimitError)
     assert.include(err?.message, 'rate limited')
-  })
-
-  test('returns SandboxUnreachableError for 502 with the sandbox running but its port closed', async () => {
-    const res = createMockResponse(502, { message: PORT_CLOSED })
-    const err = await handleEnvdApiError(res)
-    assert.instanceOf(err, SandboxUnreachableError)
-    assert.include(err!.message, 'envd inside the sandbox could not be reached')
   })
 
   test('returns TimeoutError for 502', async () => {
@@ -233,32 +223,10 @@ describe('checkSandboxHealth', () => {
   })
 
   test('reports the sandbox gone for 502', async () => {
-    const api = healthApi(502, { message: 'The sandbox was not found' })
-    assert.strictEqual(await checkSandboxHealth(api), false)
+    assert.strictEqual(await checkSandboxHealth(healthApi(502)), false)
   })
 
   test('is inconclusive for other statuses', async () => {
     assert.strictEqual(await checkSandboxHealth(healthApi(500)), undefined)
-  })
-
-  test('throws SandboxUnreachableError for 502 with the sandbox running but its port closed', async () => {
-    const api = healthApi(502, { message: PORT_CLOSED })
-    try {
-      await checkSandboxHealth(api)
-      assert.fail('expected the probe to throw')
-    } catch (err) {
-      assert.instanceOf(err, SandboxUnreachableError)
-      assert.include((err as Error).message, PORT_CLOSED)
-    }
-  })
-
-  test('keeps the probe SandboxUnreachableError with the failed request as cause', async () => {
-    const original = connectRefused()
-    const err = await handleEnvdApiFetchError(original, () =>
-      checkSandboxHealth(healthApi(502, { message: PORT_CLOSED }))
-    )
-    assert.instanceOf(err, SandboxUnreachableError)
-    assert.include(err.message, PORT_CLOSED)
-    assert.strictEqual(err.cause, original)
   })
 })

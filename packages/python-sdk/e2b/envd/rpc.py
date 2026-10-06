@@ -11,7 +11,7 @@ from e2b.exceptions import (
     NotFoundException,
     SandboxUnreachableException,
     TimeoutException,
-    format_sandbox_unavailable_exception,
+    format_sandbox_timeout_exception,
     AuthenticationException,
     RateLimitException,
 )
@@ -20,7 +20,7 @@ _DEFAULT_RPC_ERROR_MAP: dict[Code, Callable[[str], Exception]] = {
     Code.INVALID_ARGUMENT: InvalidArgumentException,
     Code.UNAUTHENTICATED: AuthenticationException,
     Code.NOT_FOUND: NotFoundException,
-    Code.UNAVAILABLE: format_sandbox_unavailable_exception,
+    Code.UNAVAILABLE: format_sandbox_timeout_exception,
     Code.RESOURCE_EXHAUSTED: lambda message: RateLimitException(
         f"{message}: Rate limit exceeded, please try again later."
     ),
@@ -74,17 +74,9 @@ def format_terminated_exception(
     return e
 
 
-def format_sandbox_unreachable_exception(
-    e: Exception, probe_error: Optional[Exception] = None
-) -> Exception:
+def format_sandbox_unreachable_exception(e: Exception) -> Exception:
     """Build the exception for a request that failed at the connection level when the
-    follow-up sandbox health probe got no answer from the sandbox either. A probe
-    answered by the proxy with the sandbox running but envd's port not open is
-    already a ``SandboxUnreachableException`` and is kept, with the failed request
-    as its cause."""
-    if isinstance(probe_error, SandboxUnreachableException):
-        probe_error.__cause__ = e
-        return probe_error
+    follow-up sandbox health probe got no answer from the sandbox either."""
     err = SandboxUnreachableException(
         f"{e}: The sandbox could not be reached. It was not confirmed to be stopped, so this is likely a transient network issue or envd inside the sandbox not being up yet — check the sandbox state with 'Sandbox.get_info()' and retry the request."
     )
@@ -151,8 +143,8 @@ def handle_rpc_exception_with_health(
     if check_health is not None and is_transport_failure(e):
         try:
             sandbox_running = check_health()
-        except Exception as probe_error:
-            return format_sandbox_unreachable_exception(e, probe_error)
+        except Exception:
+            return format_sandbox_unreachable_exception(e)
     return handle_rpc_exception(e, error_map, sandbox_running)
 
 
@@ -166,6 +158,6 @@ async def ahandle_rpc_exception_with_health(
     if check_health is not None and is_transport_failure(e):
         try:
             sandbox_running = await check_health()
-        except Exception as probe_error:
-            return format_sandbox_unreachable_exception(e, probe_error)
+        except Exception:
+            return format_sandbox_unreachable_exception(e)
     return handle_rpc_exception(e, error_map, sandbox_running)

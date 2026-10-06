@@ -14,8 +14,7 @@ from e2b.exceptions import (
     InvalidArgumentException,
     NotEnoughSpaceException,
     RateLimitException,
-    format_sandbox_unavailable_exception,
-    is_sandbox_port_closed_message,
+    format_sandbox_timeout_exception,
 )
 
 
@@ -29,7 +28,7 @@ _DEFAULT_API_ERROR_MAP: dict[int, Callable[[str], Exception]] = {
     429: lambda message: RateLimitException(
         f"{message}: The requests are being rate limited."
     ),
-    502: format_sandbox_unavailable_exception,
+    502: format_sandbox_timeout_exception,
     507: NotEnoughSpaceException,
 }
 
@@ -79,9 +78,6 @@ async def acheck_sandbox_health(envd_api: httpx.AsyncClient) -> Optional[bool]:
 
 def _health_status(r: httpx.Response) -> Optional[bool]:
     if r.status_code == 502:
-        message = get_message(r)
-        if is_sandbox_port_closed_message(message):
-            raise format_sandbox_unavailable_exception(message)
         return False
     if r.is_success:
         return True
@@ -119,8 +115,8 @@ def handle_envd_api_transport_exception_with_health(
         return e
     try:
         sandbox_running = check_sandbox_health(envd_api)
-    except Exception as probe_error:
-        return format_sandbox_unreachable_exception(e, probe_error)
+    except Exception:
+        return format_sandbox_unreachable_exception(e)
     return handle_envd_api_transport_exception(e, sandbox_running)
 
 
@@ -133,8 +129,8 @@ async def ahandle_envd_api_transport_exception_with_health(
         return e
     try:
         sandbox_running = await acheck_sandbox_health(envd_api)
-    except Exception as probe_error:
-        return format_sandbox_unreachable_exception(e, probe_error)
+    except Exception:
+        return format_sandbox_unreachable_exception(e)
     return handle_envd_api_transport_exception(e, sandbox_running)
 
 

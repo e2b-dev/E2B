@@ -42,16 +42,6 @@ def test_maps_resource_exhausted_to_rate_limit():
     assert "Rate limit" in str(err)
 
 
-# Body of the proxy's 502 when the sandbox is running but nothing listens on envd's port
-PORT_CLOSED = "The sandbox is running but port is not open"
-
-
-def test_maps_unavailable_with_port_closed_to_unreachable():
-    err = handle_rpc_exception(ConnectError(Code.UNAVAILABLE, PORT_CLOSED))
-    assert isinstance(err, SandboxUnreachableException)
-    assert "envd inside the sandbox could not be reached" in str(err)
-
-
 def test_maps_unavailable_to_timeout():
     err = handle_rpc_exception(ConnectError(Code.UNAVAILABLE, "gone"))
     assert isinstance(err, TimeoutException)
@@ -195,18 +185,6 @@ def test_health_check_unknown_returns_raw_error():
     original = _stream_reset()
     err = handle_rpc_exception_with_health(original, lambda: None)
     assert err is original
-
-
-def test_health_check_port_closed_keeps_probe_exception():
-    probe_error = SandboxUnreachableException(PORT_CLOSED)
-
-    def check():
-        raise probe_error
-
-    original = _stream_reset()
-    err = handle_rpc_exception_with_health(original, check)
-    assert err is probe_error
-    assert err.__cause__ is original
 
 
 def test_health_check_failure_returns_unreachable():

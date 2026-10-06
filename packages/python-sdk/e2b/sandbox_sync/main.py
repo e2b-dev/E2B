@@ -12,14 +12,12 @@ from typing_extensions import Self, Unpack
 from e2b.api.client.types import Unset
 from e2b.api.client_sync import get_envd_api
 from e2b.connection_config import ApiParams, ConnectionConfig
-from e2b.envd.api import ENVD_API_HEALTH_ROUTE, get_message, handle_envd_api_exception
+from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
 from e2b.exceptions import (
     SandboxException,
     TemplateException,
     format_request_timeout_error,
-    format_sandbox_unavailable_exception,
-    is_sandbox_port_closed_message,
 )
 from e2b.sandbox.commands.command_handle import CommandExitException
 from e2b.sandbox.main import SandboxOpts
@@ -154,9 +152,6 @@ class Sandbox(SandboxApi):
             )
 
             if r.status_code == 502:
-                message = get_message(r)
-                if is_sandbox_port_closed_message(message):
-                    raise format_sandbox_unavailable_exception(message)
                 return False
 
             err = handle_envd_api_exception(r)

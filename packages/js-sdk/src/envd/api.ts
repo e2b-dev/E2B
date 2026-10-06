@@ -9,8 +9,7 @@ import {
   NotFoundError,
   NotEnoughSpaceError,
   SandboxNotFoundError,
-  formatSandboxUnavailableError,
-  isSandboxPortClosedMessage,
+  formatSandboxTimeoutError,
   AuthenticationError,
   RateLimitError,
 } from '../errors'
@@ -32,7 +31,7 @@ const DEFAULT_ERROR_MAP: Record<number, (message: string) => Error> = {
   404: (message) => new NotFoundError(message),
   429: (message) =>
     new RateLimitError(`${message}: The requests are being rate limited.`),
-  502: formatSandboxUnavailableError,
+  502: formatSandboxTimeoutError,
   507: (message) => new NotEnoughSpaceError(message),
 }
 
@@ -43,7 +42,7 @@ const HEALTH_CHECK_TIMEOUT_MS = 5_000
  *
  * @param envdApi - The envd API client of the sandbox.
  * @returns `true` if the sandbox is running, `false` if it is not, `undefined` if it answered but its state could not be determined.
- * @throws The `fetch` failure when the sandbox could not be reached (no answer within the probe timeout), or a `SandboxUnreachableError` when the proxy reports the sandbox running but envd's port not open.
+ * @throws The `fetch` failure when the sandbox could not be reached (no answer within the probe timeout).
  */
 export async function checkSandboxHealth(
   envdApi: EnvdApiClient
@@ -53,10 +52,6 @@ export async function checkSandboxHealth(
   })
 
   if (res.response.status === 502) {
-    const message = await getEnvdApiErrorMessage(res)
-    if (isSandboxPortClosedMessage(message)) {
-      throw formatSandboxUnavailableError(message)
-    }
     return false
   }
   if (res.response.ok) {
@@ -103,30 +98,6 @@ export async function handleEnvdApiFetchError(
 }
 
 /**
- * Extracts the error message of a non-2xx envd API response: the `message` of its
- * JSON body, else its text body, else its status text.
- */
-export async function getEnvdApiErrorMessage(res: {
-  error?: ApiError
-  response: Response
-}): Promise<string> {
-  let message =
-    (typeof res.error === 'string' ? res.error : res.error?.message) ?? ''
-
-  // openapi-fetch consumes the body when parsing the error, except for
-  // responses without content
-  if (!message && !res.response.bodyUsed) {
-    try {
-      message = await res.response.text()
-    } catch {
-      // ignore unreadable bodies
-    }
-  }
-
-  return message || res.response.statusText
-}
-
-/**
  * Handles errors from envd API responses by mapping HTTP status codes to specific error types.
  *
  * @param res - The API response object containing an optional error and the raw `Response`.
@@ -147,7 +118,20 @@ export async function handleEnvdApiError(
     return
   }
 
-  const message = await getEnvdApiErrorMessage(res)
+  let message =
+    (typeof res.error === 'string' ? res.error : res.error?.message) ?? ''
+
+  // openapi-fetch consumes the body when parsing the error, except for
+  // responses without content
+  if (!message && !res.response.bodyUsed) {
+    try {
+      message = await res.response.text()
+    } catch {
+      // ignore unreadable bodies
+    }
+  }
+
+  message = message || res.response.statusText
 
   // Check if a custom error mapping is provided for this error code
   if (errorMap && res.response.status in errorMap) {
@@ -173,9 +157,6 @@ export async function handleProcessStartEvent(
   } catch (err) {
     if (err instanceof ConnectError) {
       if (err.code === Code.Unavailable) {
-        if (isSandboxPortClosedMessage(err.rawMessage)) {
-          throw formatSandboxUnavailableError(err.rawMessage)
-        }
         throw new SandboxNotFoundError(
           'Sandbox is probably not running anymore'
         )
@@ -201,9 +182,6 @@ export async function handleWatchDirStartEvent(
   } catch (err) {
     if (err instanceof ConnectError) {
       if (err.code === Code.Unavailable) {
-        if (isSandboxPortClosedMessage(err.rawMessage)) {
-          throw formatSandboxUnavailableError(err.rawMessage)
-        }
         throw new SandboxNotFoundError(
           'Sandbox is probably not running anymore'
         )
