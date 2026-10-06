@@ -8,6 +8,7 @@ import {
   withConnectRetries,
   type UndiciConnector,
   type UndiciModule,
+  type UndiciProxyClientFactory,
 } from '../src/undici'
 import { runtime } from '../src/utils'
 import {
@@ -293,6 +294,8 @@ describe('withConnectRetries', () => {
 describe('buildDispatchedFetch connect retries', () => {
   function fakeUndici(withBuildConnector: boolean) {
     const agents: Array<{ connect?: UndiciConnector }> = []
+    const proxyAgents: Array<{ clientFactory?: UndiciProxyClientFactory }> = []
+    const pools: Array<{ origin: string | URL; connect?: UndiciConnector }> = []
     const buildConnector = vi.fn(() => connectorFailingTimes(0, 'ECONNREFUSED'))
     const undici = {
       Agent: class {
@@ -300,11 +303,23 @@ describe('buildDispatchedFetch connect retries', () => {
           agents.push(options)
         }
       },
-      ProxyAgent: class {},
+      Pool: class {
+        constructor(
+          origin: string | URL,
+          options: { connect?: UndiciConnector }
+        ) {
+          pools.push({ origin, ...options })
+        }
+      },
+      ProxyAgent: class {
+        constructor(options: { clientFactory?: UndiciProxyClientFactory }) {
+          proxyAgents.push(options)
+        }
+      },
       ...(withBuildConnector ? { buildConnector } : {}),
       fetch: async () => new Response('ok'),
     } as unknown as UndiciModule
-    return { undici, agents, buildConnector }
+    return { undici, agents, proxyAgents, pools, buildConnector }
   }
 
   test('wraps the Agent connector when connectRetries > 0', async () => {
@@ -318,6 +333,41 @@ describe('buildDispatchedFetch connect retries', () => {
 
     expect(buildConnector).toHaveBeenCalledWith({ allowH2: true })
     expect(typeof agents[0].connect).toBe('function')
+  })
+
+  test('retries the connect to the proxy through the ProxyAgent client', async () => {
+    const { undici, proxyAgents, pools } = fakeUndici(true)
+    await buildDispatchedFetch({
+      connections: 1,
+      inflightLimit: 0,
+      proxy: 'http://127.0.0.1:8080',
+      connectRetries: 3,
+      loadUndici: () => Promise.resolve(undici),
+    })
+
+    const proxyConnector = connectorFailingTimes(1, 'ECONNREFUSED')
+    proxyAgents[0].clientFactory!('http://127.0.0.1:8080', {
+      connect: proxyConnector,
+    })
+    expect(pools[0].origin).toBe('http://127.0.0.1:8080')
+    expect(pools[0].connect).not.toBe(proxyConnector)
+
+    const { err, socket } = await connectOnce(pools[0].connect!)
+    expect(err).toBeNull()
+    expect(socket).toBe('socket')
+    expect(proxyConnector.attempts).toBe(2)
+  })
+
+  test('leaves the proxy client alone when connectRetries is 0', async () => {
+    const { undici, proxyAgents } = fakeUndici(true)
+    await buildDispatchedFetch({
+      connections: 1,
+      inflightLimit: 0,
+      proxy: 'http://127.0.0.1:8080',
+      connectRetries: 0,
+      loadUndici: () => Promise.resolve(undici),
+    })
+    expect(proxyAgents[0].clientFactory).toBeUndefined()
   })
 
   test('leaves the Agent connector alone when connectRetries is 0 or buildConnector is missing', async () => {

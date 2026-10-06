@@ -19,6 +19,15 @@ export type UndiciConnector = (
   callback: (err: Error | null, socket?: unknown) => void
 ) => void
 
+/**
+ * `ProxyAgent`'s factory for the client that talks to the proxy; undici hands
+ * it the connector it built for the proxy.
+ */
+export type UndiciProxyClientFactory = (
+  origin: string | URL,
+  options: { connect: UndiciConnector }
+) => unknown
+
 export type UndiciModule = {
   Agent: new (options: {
     allowH2: boolean
@@ -26,11 +35,16 @@ export type UndiciModule = {
     connect?: UndiciConnector
   }) => unknown
   buildConnector?: (options: { allowH2: boolean }) => UndiciConnector
+  Pool?: new (
+    origin: string | URL,
+    options: { connect?: UndiciConnector }
+  ) => unknown
   ProxyAgent: new (options: {
     uri: string
     allowH2: boolean
     connections?: number
     proxyTunnel: true
+    clientFactory?: UndiciProxyClientFactory
   }) => unknown
   fetch: unknown
 }
@@ -155,9 +169,10 @@ export function withConnectRetries(
  * loaded.
  *
  * With `connectRetries > 0`, sockets that cannot be established are retried
- * at the connector level ({@link withConnectRetries}). `ProxyAgent` builds its
- * own connectors for the proxy and the tunnel, so proxied traffic is not
- * retried.
+ * at the connector level ({@link withConnectRetries}). Through a proxy it is
+ * the connect to the proxy that is retried, via `ProxyAgent`'s
+ * `clientFactory`; the tunnel to the sandbox is a CONNECT request over that
+ * client, not a socket.
  */
 export async function buildDispatchedFetch(options: {
   connections: number
@@ -173,12 +188,20 @@ export async function buildDispatchedFetch(options: {
     return limitConcurrency(lateBoundGlobalFetch(), options.inflightLimit)
   }
 
-  const { Agent, ProxyAgent, buildConnector, fetch: undiciFetch } = undici
+  const { Agent, Pool, ProxyAgent, buildConnector, fetch: undiciFetch } = undici
   const allowH2 = (options.httpVersion ?? DEFAULT_HTTP_VERSION) === '2'
   const connectRetries = options.connectRetries ?? 0
   const connect =
     connectRetries > 0 && buildConnector
       ? withConnectRetries(buildConnector({ allowH2 }), connectRetries)
+      : undefined
+  const clientFactory: UndiciProxyClientFactory | undefined =
+    connectRetries > 0 && Pool
+      ? (origin, opts) =>
+          new Pool(origin, {
+            ...opts,
+            connect: withConnectRetries(opts.connect, connectRetries),
+          })
       : undefined
   const dispatcher = options.proxy
     ? new ProxyAgent({
@@ -186,6 +209,7 @@ export async function buildDispatchedFetch(options: {
         allowH2,
         connections: options.connections,
         proxyTunnel: true,
+        ...(clientFactory ? { clientFactory } : {}),
       })
     : new Agent({
         allowH2,
