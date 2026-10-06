@@ -5,14 +5,12 @@ import { compareVersions } from 'compare-versions'
 import { defaultUsername } from '../connectionConfig'
 import {
   AuthenticationError,
+  formatSandboxStartUnavailableError,
   formatSandboxUnavailableError,
   InvalidArgumentError,
   NotFoundError,
   RateLimitError,
   SandboxError,
-  SandboxNotFoundError,
-  isSandboxPortClosedMessage,
-  isSandboxNotFoundMessage,
   SandboxUnreachableError,
   TimeoutError,
 } from '../errors'
@@ -132,12 +130,23 @@ export async function resolveTransportFailure(
   }
 
   if (running === false) {
-    return new SandboxNotFoundError(
-      `${err.message}: The sandbox was killed or reached its end of life while the request was in flight.`
+    return new SandboxUnreachableError(
+      `${err.message}: The sandbox was killed or reached its end of life while the request was in flight.`,
+      { cause: err }
     )
   }
 
   return undefined
+}
+
+/**
+ * Error map for starting a command/PTY/watch: a 502 "sandbox was not found" from the
+ * proxy is a `SandboxNotFoundError`, every other `Unavailable` a `SandboxUnreachableError`.
+ */
+export const START_RPC_ERROR_MAP: Partial<
+  Record<Code, (message: string) => Error>
+> = {
+  [Code.Unavailable]: formatSandboxStartUnavailableError,
 }
 
 const DEFAULT_ERROR_MAP: Partial<Record<Code, (message: string) => Error>> = {
@@ -202,26 +211,12 @@ export function handleRpcError(
  * @param errorMap - Optional map of gRPC `Code` values to error factory functions that override the defaults.
  * @returns The corresponding `Error` instance.
  */
-/**
- * An `Unavailable` whose message is neither the proxy's "sandbox was not found" nor
- * "port is not open" — e.g. envd ending a stream while the sandbox is being killed —
- * does not tell whether the sandbox is gone; the health probe does.
- */
-function isAmbiguousUnavailable(err: unknown): boolean {
-  return (
-    err instanceof ConnectError &&
-    err.code === Code.Unavailable &&
-    !isSandboxNotFoundMessage(err.rawMessage) &&
-    !isSandboxPortClosedMessage(err.rawMessage)
-  )
-}
-
 export async function handleRpcErrorWithHealthCheck(
   err: unknown,
   checkHealth?: SandboxHealthCheck,
   errorMap?: Partial<Record<Code, (message: string) => Error>>
 ): Promise<Error> {
-  if (checkHealth && (isTransportFailure(err) || isAmbiguousUnavailable(err))) {
+  if (checkHealth && isTransportFailure(err)) {
     const resolved = await resolveTransportFailure(
       err as ConnectError,
       checkHealth

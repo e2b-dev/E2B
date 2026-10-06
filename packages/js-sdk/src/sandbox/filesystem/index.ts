@@ -25,6 +25,7 @@ import {
 import {
   authenticationHeader,
   handleRpcErrorWithHealthCheck,
+  START_RPC_ERROR_MAP,
   SandboxHealthCheck,
 } from '../../envd/rpc'
 
@@ -62,6 +63,7 @@ const FILESYSTEM_HTTP_ERROR_MAP: Record<number, (message: string) => Error> = {
 const FILESYSTEM_RPC_ERROR_MAP: Partial<
   Record<Code, (message: string) => Error>
 > = {
+  ...START_RPC_ERROR_MAP,
   [Code.NotFound]: (message: string) => new FileNotFoundError(message),
 }
 

@@ -16,7 +16,6 @@ from e2b.exceptions import (
     RateLimitException,
     SandboxException,
     SandboxUnreachableException,
-    SandboxNotFoundException,
     TimeoutException,
 )
 
@@ -55,7 +54,7 @@ def _port_closed(request: httpx.Request):
 def test_maps_502_with_port_closed_to_unreachable():
     err = format_envd_api_exception(502, PORT_CLOSED)
     assert isinstance(err, SandboxUnreachableException)
-    assert "envd inside the sandbox could not be reached" in str(err)
+    assert "The sandbox could not be reached" in str(err)
 
 
 def test_maps_502_to_timeout():
@@ -92,9 +91,9 @@ def test_returns_original_when_not_transport_error():
     assert err is original
 
 
-def test_502_sandbox_not_found_returns_not_found():
+def test_502_sandbox_not_found_returns_unreachable():
     err = format_envd_api_exception(502, "The sandbox was not found")
-    assert isinstance(err, SandboxNotFoundException)
+    assert isinstance(err, SandboxUnreachableException)
     assert "The sandbox was not found" in str(err)
 
 
@@ -102,7 +101,7 @@ def test_health_result_confirms_sandbox_killed():
     err = handle_envd_api_transport_exception(
         httpx.RemoteProtocolError("peer closed connection"), sandbox_running=False
     )
-    assert isinstance(err, SandboxNotFoundException)
+    assert isinstance(err, SandboxUnreachableException)
     assert "sandbox was killed or reached its end of life" in str(err)
 
 
@@ -172,12 +171,12 @@ def test_health_check_raises_when_sandbox_unreachable():
             raise AssertionError("expected the probe to raise")
 
 
-def test_connect_failure_with_sandbox_killed_returns_not_found():
+def test_connect_failure_with_sandbox_killed_returns_unreachable():
     with _health_client(lambda request: httpx.Response(502)) as client:
         err = handle_envd_api_transport_exception_with_health(
             httpx.ConnectError("connection refused"), client
         )
-    assert isinstance(err, SandboxNotFoundException)
+    assert isinstance(err, SandboxUnreachableException)
 
 
 def test_connect_failure_with_running_sandbox_returns_raw_error():
@@ -231,12 +230,12 @@ async def test_async_connect_failure_with_unreachable_health_returns_unreachable
     assert err.__cause__ is original
 
 
-async def test_async_connect_failure_with_sandbox_killed_returns_not_found():
+async def test_async_connect_failure_with_sandbox_killed_returns_unreachable():
     async with _ahealth_client(lambda request: httpx.Response(502)) as client:
         err = await ahandle_envd_api_transport_exception_with_health(
             httpx.ConnectError("connection refused"), client
         )
-    assert isinstance(err, SandboxNotFoundException)
+    assert isinstance(err, SandboxUnreachableException)
 
 
 async def test_async_health_check_raises_unreachable_when_port_closed():

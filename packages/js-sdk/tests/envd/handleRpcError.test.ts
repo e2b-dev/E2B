@@ -3,6 +3,7 @@ import { Code, ConnectError } from '@connectrpc/connect'
 import {
   handleRpcError,
   handleRpcErrorWithHealthCheck,
+  START_RPC_ERROR_MAP,
   isTransportFailure,
   rejectProxyUnavailableResponse,
 } from '../../src/envd/rpc'
@@ -16,8 +17,8 @@ import {
   NotFoundError,
   RateLimitError,
   SandboxError,
-  SandboxUnreachableError,
   SandboxNotFoundError,
+  SandboxUnreachableError,
   TimeoutError,
 } from '../../src/errors'
 
@@ -67,14 +68,32 @@ describe('handleRpcError', () => {
   test('returns SandboxUnreachableError for Unavailable with the sandbox running but its port closed', () => {
     const err = handleRpcError(new ConnectError(PORT_CLOSED, Code.Unavailable))
     assert.instanceOf(err, SandboxUnreachableError)
-    assert.include(err.message, 'envd inside the sandbox could not be reached')
+    assert.include(err.message, 'The sandbox could not be reached')
   })
 
-  test('returns SandboxNotFoundError for Unavailable with the sandbox not found', () => {
+  test('START_RPC_ERROR_MAP maps Unavailable with the sandbox not found to SandboxNotFoundError', () => {
+    const err = handleRpcError(
+      new ConnectError('The sandbox was not found', Code.Unavailable),
+      START_RPC_ERROR_MAP
+    )
+    assert.instanceOf(err, SandboxNotFoundError)
+    assert.include(err.message, 'The sandbox was not found')
+  })
+
+  test('START_RPC_ERROR_MAP maps Unavailable with the port closed to SandboxUnreachableError', () => {
+    const err = handleRpcError(
+      new ConnectError(PORT_CLOSED, Code.Unavailable),
+      START_RPC_ERROR_MAP
+    )
+    assert.instanceOf(err, SandboxUnreachableError)
+    assert.notInstanceOf(err, SandboxNotFoundError)
+  })
+
+  test('returns SandboxUnreachableError for Unavailable for the sandbox not found', () => {
     const err = handleRpcError(
       new ConnectError('The sandbox was not found', Code.Unavailable)
     )
-    assert.instanceOf(err, SandboxNotFoundError)
+    assert.instanceOf(err, SandboxUnreachableError)
     assert.include(err.message, 'The sandbox was not found')
   })
 
@@ -114,7 +133,7 @@ describe('handleRpcErrorWithHealthCheck', () => {
     Browser: 'network error',
   }
 
-  test('probes health on an Unavailable with an unknown message and returns SandboxNotFoundError when the sandbox is gone', async () => {
+  test('probes health on an Unavailable with an unknown message and returns SandboxUnreachableError when the sandbox is gone', async () => {
     const err = await handleRpcErrorWithHealthCheck(
       new ConnectError(
         'the connection to sandbox ended before the stream completed',
@@ -122,20 +141,11 @@ describe('handleRpcErrorWithHealthCheck', () => {
       ),
       async () => false
     )
-    assert.instanceOf(err, SandboxNotFoundError)
+    assert.instanceOf(err, SandboxUnreachableError)
     assert.include(err.message, 'ended before the stream completed')
   })
 
-  test('keeps the TimeoutError for an Unavailable with an unknown message when the sandbox is running', async () => {
-    const err = await handleRpcErrorWithHealthCheck(
-      new ConnectError('stream ended', Code.Unavailable),
-      async () => true
-    )
-    assert.instanceOf(err, TimeoutError)
-    assert.notInstanceOf(err, SandboxNotFoundError)
-  })
-
-  test('does not probe health on an Unavailable with the sandbox not found', async () => {
+  test('does not probe health on an Unavailable for the sandbox not found', async () => {
     let probed = false
     const err = await handleRpcErrorWithHealthCheck(
       new ConnectError('The sandbox was not found', Code.Unavailable),
@@ -145,15 +155,15 @@ describe('handleRpcErrorWithHealthCheck', () => {
       }
     )
     assert.isFalse(probed)
-    assert.instanceOf(err, SandboxNotFoundError)
+    assert.instanceOf(err, SandboxUnreachableError)
   })
 
-  test('returns a SandboxNotFoundError when the health check says the sandbox is not running', async () => {
+  test('returns a SandboxUnreachableError when the health check says the sandbox is not running', async () => {
     const err = await handleRpcErrorWithHealthCheck(
       terminated(),
       async () => false
     )
-    assert.instanceOf(err, SandboxNotFoundError)
+    assert.instanceOf(err, SandboxUnreachableError)
     assert.include(err.message, 'sandbox was killed or reached its end of life')
   })
 
@@ -163,7 +173,7 @@ describe('handleRpcErrorWithHealthCheck', () => {
         new ConnectError(message, Code.Unknown),
         async () => false
       )
-      assert.instanceOf(err, SandboxNotFoundError)
+      assert.instanceOf(err, SandboxUnreachableError)
       assert.include(
         err.message,
         'sandbox was killed or reached its end of life'
@@ -265,12 +275,12 @@ describe('handleRpcErrorWithHealthCheck', () => {
     assert.notInstanceOf(err, SandboxUnreachableError)
   })
 
-  test('returns a SandboxNotFoundError for a refused connection when the sandbox is gone', async () => {
+  test('returns a SandboxUnreachableError for a refused connection when the sandbox is gone', async () => {
     const err = await handleRpcErrorWithHealthCheck(
       connectRefused(),
       async () => false
     )
-    assert.instanceOf(err, SandboxNotFoundError)
+    assert.instanceOf(err, SandboxUnreachableError)
   })
 
   test('returns a SandboxUnreachableError for a refused connection when the probe gets no answer', async () => {

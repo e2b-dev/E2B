@@ -22,6 +22,7 @@ import { CommandHandle } from './commandHandle'
 import {
   authenticationHeader,
   handleRpcErrorWithHealthCheck,
+  START_RPC_ERROR_MAP,
   SandboxHealthCheck,
 } from '../../envd/rpc'
 import {
@@ -161,7 +162,11 @@ export class Pty {
       )
     } catch (err) {
       cleanup()
-      throw await handleRpcErrorWithHealthCheck(err, this.checkHealth)
+      throw await handleRpcErrorWithHealthCheck(
+        err,
+        this.checkHealth,
+        START_RPC_ERROR_MAP
+      )
     }
   }
 
@@ -218,7 +223,11 @@ export class Pty {
       )
     } catch (err) {
       cleanup()
-      throw await handleRpcErrorWithHealthCheck(err, this.checkHealth)
+      throw await handleRpcErrorWithHealthCheck(
+        err,
+        this.checkHealth,
+        START_RPC_ERROR_MAP
+      )
     }
   }
 

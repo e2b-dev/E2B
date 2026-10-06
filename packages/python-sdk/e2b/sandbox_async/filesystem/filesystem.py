@@ -24,7 +24,7 @@ from e2b.envd.api import (
 from protobuf import Oneof
 
 from e2b.envd.filesystem import filesystem_connect, filesystem_pb
-from e2b.envd.rpc import ahandle_rpc_exception_with_health
+from e2b.envd.rpc import START_RPC_ERROR_MAP, ahandle_rpc_exception_with_health
 from e2b.envd.utils import authentication_header, timeout_to_ms
 from e2b.envd.client_async import as_stream, create_rpc_client, first_event
 from e2b.envd.versions import (
@@ -59,6 +59,7 @@ from e2b.sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from e2b.sandbox_async.utils import OutputHandler
 
 _FILESYSTEM_RPC_ERROR_MAP = {
+    **START_RPC_ERROR_MAP,
     Code.NOT_FOUND: FileNotFoundException,
 }
 

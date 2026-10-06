@@ -5,6 +5,7 @@ from connectrpc.errors import ConnectError
 from pyqwest import StreamError, StreamErrorCode
 
 from e2b.envd.rpc import (
+    START_RPC_ERROR_MAP,
     ahandle_rpc_exception_with_health,
     handle_rpc_exception,
     handle_rpc_exception_with_health,
@@ -16,8 +17,8 @@ from e2b.exceptions import (
     NotFoundException,
     RateLimitException,
     SandboxException,
-    SandboxUnreachableException,
     SandboxNotFoundException,
+    SandboxUnreachableException,
     TimeoutException,
 )
 
@@ -50,7 +51,7 @@ PORT_CLOSED = "The sandbox is running but port is not open"
 def test_maps_unavailable_with_port_closed_to_unreachable():
     err = handle_rpc_exception(ConnectError(Code.UNAVAILABLE, PORT_CLOSED))
     assert isinstance(err, SandboxUnreachableException)
-    assert "envd inside the sandbox could not be reached" in str(err)
+    assert "The sandbox could not be reached" in str(err)
 
 
 def test_maps_unavailable_to_timeout():
@@ -180,32 +181,12 @@ def test_returns_raw_transport_failure_without_health_result():
     assert err is original
 
 
-def test_unavailable_sandbox_not_found_returns_not_found():
+def test_unavailable_sandbox_not_found_returns_unreachable():
     err = handle_rpc_exception(
         ConnectError(Code.UNAVAILABLE, "The sandbox was not found")
     )
-    assert isinstance(err, SandboxNotFoundException)
+    assert isinstance(err, SandboxUnreachableException)
     assert "The sandbox was not found" in str(err)
-
-
-def test_ambiguous_unavailable_probes_health_and_returns_not_found():
-    err = handle_rpc_exception_with_health(
-        ConnectError(
-            Code.UNAVAILABLE,
-            "the connection to sandbox ended before the stream completed",
-        ),
-        lambda: False,
-    )
-    assert isinstance(err, SandboxNotFoundException)
-    assert "ended before the stream completed" in str(err)
-
-
-def test_ambiguous_unavailable_keeps_timeout_when_running():
-    err = handle_rpc_exception_with_health(
-        ConnectError(Code.UNAVAILABLE, "stream ended"), lambda: True
-    )
-    assert isinstance(err, TimeoutException)
-    assert not isinstance(err, SandboxNotFoundException)
 
 
 def test_unavailable_sandbox_not_found_does_not_probe():
@@ -219,22 +200,51 @@ def test_unavailable_sandbox_not_found_does_not_probe():
         ConnectError(Code.UNAVAILABLE, "The sandbox was not found"), check
     )
     assert not probed
-    assert isinstance(err, SandboxNotFoundException)
+    assert isinstance(err, SandboxUnreachableException)
 
 
-async def test_async_ambiguous_unavailable_probes_health_and_returns_not_found():
+async def test_async_ambiguous_unavailable_probes_health_and_returns_unreachable():
     async def check():
         return False
 
     err = await ahandle_rpc_exception_with_health(
         ConnectError(Code.UNAVAILABLE, "stream ended"), check
     )
+    assert isinstance(err, SandboxUnreachableException)
+
+
+def test_start_error_map_sandbox_not_found_returns_not_found():
+    err = handle_rpc_exception(
+        ConnectError(Code.UNAVAILABLE, "The sandbox was not found"),
+        START_RPC_ERROR_MAP,
+    )
+    assert isinstance(err, SandboxNotFoundException)
+    assert "The sandbox was not found" in str(err)
+
+
+def test_start_error_map_port_closed_returns_unreachable():
+    err = handle_rpc_exception(
+        ConnectError(Code.UNAVAILABLE, PORT_CLOSED), START_RPC_ERROR_MAP
+    )
+    assert isinstance(err, SandboxUnreachableException)
+    assert not isinstance(err, SandboxNotFoundException)
+
+
+async def test_async_start_error_map_sandbox_not_found_returns_not_found():
+    async def check():
+        return True
+
+    err = await ahandle_rpc_exception_with_health(
+        ConnectError(Code.UNAVAILABLE, "The sandbox was not found"),
+        check,
+        START_RPC_ERROR_MAP,
+    )
     assert isinstance(err, SandboxNotFoundException)
 
 
 def test_health_check_confirms_sandbox_killed():
     err = handle_rpc_exception_with_health(_stream_reset(), lambda: False)
-    assert isinstance(err, SandboxNotFoundException)
+    assert isinstance(err, SandboxUnreachableException)
     assert "sandbox was killed or reached its end of life" in str(err)
 
 
@@ -291,9 +301,9 @@ def test_connect_failure_runs_health_check():
     assert err is original
 
 
-def test_connect_failure_with_sandbox_killed_returns_not_found():
+def test_connect_failure_with_sandbox_killed_returns_unreachable():
     err = handle_rpc_exception_with_health(_connect_refused(), lambda: False)
-    assert isinstance(err, SandboxNotFoundException)
+    assert isinstance(err, SandboxUnreachableException)
 
 
 def test_connect_failure_with_unreachable_health_returns_unreachable():
@@ -319,7 +329,7 @@ async def test_async_health_check_confirms_sandbox_killed():
         return False
 
     err = await ahandle_rpc_exception_with_health(_stream_reset(), check)
-    assert isinstance(err, SandboxNotFoundException)
+    assert isinstance(err, SandboxUnreachableException)
     assert "sandbox was killed or reached its end of life" in str(err)
 
 
