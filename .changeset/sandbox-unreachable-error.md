@@ -1,6 +1,6 @@
 ---
-'@e2b/python-sdk': patch
-'e2b': patch
+'@e2b/python-sdk': minor
+'e2b': minor
 ---
 
 Classify requests that fail because the sandbox cannot be reached. Two new error classes, both subclasses of the sandbox-timeout `TimeoutError` (JS) / `TimeoutException` (Python) these cases surfaced as before, so existing `instanceof TimeoutError` / `except TimeoutException` handling keeps working:
