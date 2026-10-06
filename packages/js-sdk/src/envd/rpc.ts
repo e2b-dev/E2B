@@ -11,6 +11,8 @@ import {
   RateLimitError,
   SandboxError,
   SandboxNotFoundError,
+  isSandboxPortClosedMessage,
+  isSandboxNotFoundMessage,
   SandboxUnreachableError,
   TimeoutError,
 } from '../errors'
@@ -200,12 +202,26 @@ export function handleRpcError(
  * @param errorMap - Optional map of gRPC `Code` values to error factory functions that override the defaults.
  * @returns The corresponding `Error` instance.
  */
+/**
+ * An `Unavailable` whose message is neither the proxy's "sandbox was not found" nor
+ * "port is not open" — e.g. envd ending a stream while the sandbox is being killed —
+ * does not tell whether the sandbox is gone; the health probe does.
+ */
+function isAmbiguousUnavailable(err: unknown): boolean {
+  return (
+    err instanceof ConnectError &&
+    err.code === Code.Unavailable &&
+    !isSandboxNotFoundMessage(err.rawMessage) &&
+    !isSandboxPortClosedMessage(err.rawMessage)
+  )
+}
+
 export async function handleRpcErrorWithHealthCheck(
   err: unknown,
   checkHealth?: SandboxHealthCheck,
   errorMap?: Partial<Record<Code, (message: string) => Error>>
 ): Promise<Error> {
-  if (checkHealth && isTransportFailure(err)) {
+  if (checkHealth && (isTransportFailure(err) || isAmbiguousUnavailable(err))) {
     const resolved = await resolveTransportFailure(
       err as ConnectError,
       checkHealth

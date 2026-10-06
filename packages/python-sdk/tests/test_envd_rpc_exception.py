@@ -188,6 +188,50 @@ def test_unavailable_sandbox_not_found_returns_not_found():
     assert "The sandbox was not found" in str(err)
 
 
+def test_ambiguous_unavailable_probes_health_and_returns_not_found():
+    err = handle_rpc_exception_with_health(
+        ConnectError(
+            Code.UNAVAILABLE,
+            "the connection to sandbox ended before the stream completed",
+        ),
+        lambda: False,
+    )
+    assert isinstance(err, SandboxNotFoundException)
+    assert "ended before the stream completed" in str(err)
+
+
+def test_ambiguous_unavailable_keeps_timeout_when_running():
+    err = handle_rpc_exception_with_health(
+        ConnectError(Code.UNAVAILABLE, "stream ended"), lambda: True
+    )
+    assert isinstance(err, TimeoutException)
+    assert not isinstance(err, SandboxNotFoundException)
+
+
+def test_unavailable_sandbox_not_found_does_not_probe():
+    probed = []
+
+    def check():
+        probed.append(True)
+        return True
+
+    err = handle_rpc_exception_with_health(
+        ConnectError(Code.UNAVAILABLE, "The sandbox was not found"), check
+    )
+    assert not probed
+    assert isinstance(err, SandboxNotFoundException)
+
+
+async def test_async_ambiguous_unavailable_probes_health_and_returns_not_found():
+    async def check():
+        return False
+
+    err = await ahandle_rpc_exception_with_health(
+        ConnectError(Code.UNAVAILABLE, "stream ended"), check
+    )
+    assert isinstance(err, SandboxNotFoundException)
+
+
 def test_health_check_confirms_sandbox_killed():
     err = handle_rpc_exception_with_health(_stream_reset(), lambda: False)
     assert isinstance(err, SandboxNotFoundException)

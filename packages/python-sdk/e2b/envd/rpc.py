@@ -13,6 +13,8 @@ from e2b.exceptions import (
     SandboxUnreachableException,
     TimeoutException,
     format_sandbox_unavailable_exception,
+    is_sandbox_port_closed_message,
+    is_sandbox_not_found_message,
     AuthenticationException,
     RateLimitException,
 )
@@ -135,6 +137,18 @@ def handle_rpc_exception(
     return e
 
 
+def is_ambiguous_unavailable(e: Exception) -> bool:
+    """An ``UNAVAILABLE`` whose message is neither the proxy's "sandbox was not found"
+    nor "port is not open" — e.g. envd ending a stream while the sandbox is being
+    killed — does not tell whether the sandbox is gone; the health probe does."""
+    return (
+        isinstance(e, ConnectError)
+        and e.code == Code.UNAVAILABLE
+        and not is_sandbox_not_found_message(e.message)
+        and not is_sandbox_port_closed_message(e.message)
+    )
+
+
 def handle_rpc_exception_with_health(
     e: Exception,
     check_health: Optional[Callable[[], Optional[bool]]] = None,
@@ -149,11 +163,15 @@ def handle_rpc_exception_with_health(
     check raises), a ``SandboxUnreachableException``.
     """
     sandbox_running = None
-    if check_health is not None and is_transport_failure(e):
+    if check_health is not None and (
+        is_transport_failure(e) or is_ambiguous_unavailable(e)
+    ):
         try:
             sandbox_running = check_health()
         except Exception as probe_error:
             return format_sandbox_unreachable_exception(e, probe_error)
+    if sandbox_running is False and is_ambiguous_unavailable(e):
+        return format_terminated_exception(e, sandbox_running)
     return handle_rpc_exception(e, error_map, sandbox_running)
 
 
@@ -164,9 +182,13 @@ async def ahandle_rpc_exception_with_health(
 ):
     """Async version of :func:`handle_rpc_exception_with_health`."""
     sandbox_running = None
-    if check_health is not None and is_transport_failure(e):
+    if check_health is not None and (
+        is_transport_failure(e) or is_ambiguous_unavailable(e)
+    ):
         try:
             sandbox_running = await check_health()
         except Exception as probe_error:
             return format_sandbox_unreachable_exception(e, probe_error)
+    if sandbox_running is False and is_ambiguous_unavailable(e):
+        return format_terminated_exception(e, sandbox_running)
     return handle_rpc_exception(e, error_map, sandbox_running)

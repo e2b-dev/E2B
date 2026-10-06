@@ -114,6 +114,40 @@ describe('handleRpcErrorWithHealthCheck', () => {
     Browser: 'network error',
   }
 
+  test('probes health on an Unavailable with an unknown message and returns SandboxNotFoundError when the sandbox is gone', async () => {
+    const err = await handleRpcErrorWithHealthCheck(
+      new ConnectError(
+        'the connection to sandbox ended before the stream completed',
+        Code.Unavailable
+      ),
+      async () => false
+    )
+    assert.instanceOf(err, SandboxNotFoundError)
+    assert.include(err.message, 'ended before the stream completed')
+  })
+
+  test('keeps the TimeoutError for an Unavailable with an unknown message when the sandbox is running', async () => {
+    const err = await handleRpcErrorWithHealthCheck(
+      new ConnectError('stream ended', Code.Unavailable),
+      async () => true
+    )
+    assert.instanceOf(err, TimeoutError)
+    assert.notInstanceOf(err, SandboxNotFoundError)
+  })
+
+  test('does not probe health on an Unavailable with the sandbox not found', async () => {
+    let probed = false
+    const err = await handleRpcErrorWithHealthCheck(
+      new ConnectError('The sandbox was not found', Code.Unavailable),
+      async () => {
+        probed = true
+        return true
+      }
+    )
+    assert.isFalse(probed)
+    assert.instanceOf(err, SandboxNotFoundError)
+  })
+
   test('returns a SandboxNotFoundError when the health check says the sandbox is not running', async () => {
     const err = await handleRpcErrorWithHealthCheck(
       terminated(),
