@@ -41,10 +41,11 @@ export function resolveHttpVersion(httpVersion?: string): HttpVersion {
  * Connection options for requests to the API.
  */
 /**
- * Number of attempts, after the first, to establish a connection to the
- * sandbox (envd) when it cannot be established: `E2B_CONNECTION_RETRIES`, else
- * 3 — the same variable the Python SDK reads. Node only; not a connection
- * option, so that `retries` keeps meaning control-plane retries in both SDKs.
+ * Number of attempts, after the first, to establish a connection to the E2B
+ * API or to the sandbox (envd) when it cannot be established:
+ * `E2B_CONNECTION_RETRIES`, else 3 — the same variable the Python SDK reads.
+ * Node only; not a connection option, so that `retries` keeps meaning
+ * control-plane request retries in both SDKs.
  */
 export function resolveConnectionRetries(): number {
   const retries = parseIntEnv('E2B_CONNECTION_RETRIES', DEFAULT_RETRIES)
@@ -466,12 +467,12 @@ export class ConnectionConfig {
   readonly requestTimeoutMs: number
   readonly retries: number
   /**
-   * Number of attempts, after the first, to establish a connection to the
-   * sandbox (envd) when it cannot be established (connection refused, DNS
-   * failure, unreachable host, connect timeout): `E2B_CONNECTION_RETRIES`,
-   * default 3, as in the Python SDK. Node only — the retry happens at the
-   * socket level and the request itself is sent once; other runtimes do not
-   * retry sandbox connections.
+   * Number of attempts, after the first, to establish a connection to the E2B
+   * API or to the sandbox (envd) when it cannot be established (connection
+   * refused, DNS failure, unreachable host, connect timeout):
+   * `E2B_CONNECTION_RETRIES`, default 3, as in the Python SDK. Node only — the
+   * retry happens at the socket level and the request itself is sent once;
+   * other runtimes do not retry connections.
    */
   readonly connectionRetries: number
 

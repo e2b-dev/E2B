@@ -4,7 +4,7 @@ import {
   resolveConnectionRetries,
   type HttpVersion,
 } from '../connectionConfig'
-import type { FetchOpts } from '../api/http2'
+import { fetcherKey, type FetchOpts } from '../api/http2'
 import { parseInflightLimitEnv, parsePositiveIntEnv } from '../api/metadata'
 import {
   buildDispatchedFetch,
@@ -46,21 +46,7 @@ export function createEnvdFetchForRuntime(
   )
 }
 
-/**
- * Options of the envd fetchers: `connectionRetries` is the number of
- * connection attempts after the first for sockets that cannot be established
- * (Node only; see `buildDispatchedFetch`), `ConnectionConfig.connectionRetries`
- * i.e. `E2B_CONNECTION_RETRIES`.
- */
-export type EnvdFetchOpts = FetchOpts & { connectionRetries?: number }
-
-function fetcherKey(
-  proxy: string | undefined,
-  httpVersion: HttpVersion,
-  retries: number
-): string {
-  return `${httpVersion}:${retries}:${proxy ?? ''}`
-}
+export type EnvdFetchOpts = FetchOpts
 
 export function createEnvdFetch({
   proxy,
