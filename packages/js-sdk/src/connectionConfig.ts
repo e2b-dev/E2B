@@ -99,6 +99,10 @@ export interface ConnectionOpts {
    * 100 ms (capped at 10 s).
    * Retry waits use a 60-second total limit when request timeouts are disabled.
    *
+   * Requests to the sandbox (envd) use the same count and backoff but retry
+   * only failures to establish the connection, never responses or errors
+   * after the request was sent.
+   *
    * @default 3
    */
   retries?: number
