@@ -1,8 +1,30 @@
+// Message of the 502 the proxy in front of envd answers with when the sandbox
+// is running but nothing listens on envd's port — e.g. its network is down.
+const SANDBOX_PORT_CLOSED_MESSAGE = 'port is not open'
+
+export function isSandboxPortClosedMessage(message: string): boolean {
+  return message.includes(SANDBOX_PORT_CLOSED_MESSAGE)
+}
+
 // This is the message for the sandbox timeout error when the response code is 502/Unavailable
 export function formatSandboxTimeoutError(message: string) {
   return new TimeoutError(
     `${message}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeoutMs' when starting the sandbox or calling '.setTimeout' on the sandbox with the desired timeout.`
   )
+}
+
+/**
+ * Maps a 502/Unavailable answered by the proxy in front of envd: the sandbox is
+ * gone (killed or timed out) unless the proxy reports it running with envd's port
+ * not open, in which case the sandbox is unreachable.
+ */
+export function formatSandboxUnavailableError(message: string): Error {
+  if (isSandboxPortClosedMessage(message)) {
+    return new SandboxUnreachableError(
+      `${message}: envd inside the sandbox could not be reached although the sandbox is running — e.g. its network is down. Check the sandbox state with 'Sandbox.getInfo()' and retry the request.`
+    )
+  }
+  return formatSandboxTimeoutError(message)
 }
 
 /**
@@ -96,16 +118,20 @@ export class SandboxNotFoundError extends NotFoundError {
 }
 
 /**
- * Thrown when a request to the sandbox failed at the connection level (the
- * connection could not be established or was dropped mid-request) and the
- * follow-up health probe got no answer from the sandbox either, so it is not
- * confirmed to be stopped.
+ * Thrown when the sandbox could not be reached while not confirmed to be
+ * stopped: either the proxy in front of the sandbox reports it running but
+ * envd's port not open (e.g. the sandbox's network is down), or a request
+ * failed at the connection level (the connection could not be established or
+ * was dropped mid-request) and a follow-up health probe got no answer from the
+ * sandbox either.
  *
- * This usually means a transient network issue between the client and the
- * sandbox, or envd inside the sandbox not being up (yet). Check the sandbox
- * state with `Sandbox.getInfo()` and retry the request.
+ * This usually means the sandbox's network is down, envd inside it is not up
+ * (yet), or a transient network issue between the client and the sandbox.
+ * Check the sandbox state with `Sandbox.getInfo()` and retry the request.
+ *
+ * Subclass of `TimeoutError`, which these cases surfaced as before.
  */
-export class SandboxUnreachableError extends SandboxError {
+export class SandboxUnreachableError extends TimeoutError {
   constructor(message: string, options?: ErrorOptions) {
     super(message)
     this.name = 'SandboxUnreachableError'

@@ -41,6 +41,22 @@ def test_maps_429_to_rate_limit():
     assert "rate limited" in str(err)
 
 
+# Body of the proxy's 502 when the sandbox is running but nothing listens on envd's port
+PORT_CLOSED = "The sandbox is running but port is not open"
+
+
+def _port_closed(request: httpx.Request):
+    return httpx.Response(
+        502, json={"message": PORT_CLOSED, "port": 49983, "code": 502}
+    )
+
+
+def test_maps_502_with_port_closed_to_unreachable():
+    err = format_envd_api_exception(502, PORT_CLOSED)
+    assert isinstance(err, SandboxUnreachableException)
+    assert "envd inside the sandbox could not be reached" in str(err)
+
+
 def test_maps_502_to_timeout():
     err = format_envd_api_exception(502, "Bad gateway")
     assert isinstance(err, TimeoutException)
@@ -113,6 +129,25 @@ def test_health_check_reports_running():
 def test_health_check_reports_sandbox_gone():
     with _health_client(lambda request: httpx.Response(502)) as client:
         assert check_sandbox_health(client) is False
+
+
+def test_health_check_raises_unreachable_when_port_closed():
+    with _health_client(_port_closed) as client:
+        try:
+            check_sandbox_health(client)
+        except SandboxUnreachableException as e:
+            assert PORT_CLOSED in str(e)
+        else:
+            raise AssertionError("expected the probe to raise")
+
+
+def test_connect_failure_with_port_closed_returns_unreachable():
+    original = httpx.ConnectError("connection refused")
+    with _health_client(_port_closed) as client:
+        err = handle_envd_api_transport_exception_with_health(original, client)
+    assert isinstance(err, SandboxUnreachableException)
+    assert PORT_CLOSED in str(err)
+    assert err.__cause__ is original
 
 
 def test_health_check_unknown_status_is_inconclusive():
@@ -195,3 +230,22 @@ async def test_async_connect_failure_with_sandbox_killed_returns_timeout():
             httpx.ConnectError("connection refused"), client
         )
     assert isinstance(err, TimeoutException)
+
+
+async def test_async_health_check_raises_unreachable_when_port_closed():
+    async with _ahealth_client(_port_closed) as client:
+        try:
+            await acheck_sandbox_health(client)
+        except SandboxUnreachableException as e:
+            assert PORT_CLOSED in str(e)
+        else:
+            raise AssertionError("expected the probe to raise")
+
+
+async def test_async_connect_failure_with_port_closed_returns_unreachable():
+    original = httpx.ConnectError("connection refused")
+    async with _ahealth_client(_port_closed) as client:
+        err = await ahandle_envd_api_transport_exception_with_health(original, client)
+    assert isinstance(err, SandboxUnreachableException)
+    assert PORT_CLOSED in str(err)
+    assert err.__cause__ is original

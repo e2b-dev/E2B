@@ -7,6 +7,7 @@ import {
   Username,
 } from '../connectionConfig'
 import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
+import { rejectProxyUnavailableResponse } from '../envd/rpc'
 import { createEnvdFetch, createEnvdRpcFetch } from '../envd/http2'
 import { createRpcLogger } from '../logs'
 import { Commands, Pty } from './commands'
@@ -194,7 +195,7 @@ export class Sandbox extends SandboxApi {
           redirect: 'follow',
         }
 
-        return envdRpcFetch(url, options)
+        return envdRpcFetch(url, options).then(rejectProxyUnavailableResponse)
       },
     })
 

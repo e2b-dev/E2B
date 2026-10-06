@@ -4,6 +4,7 @@ import {
   handleRpcError,
   handleRpcErrorWithHealthCheck,
   isTransportFailure,
+  rejectProxyUnavailableResponse,
 } from '../../src/envd/rpc'
 import {
   handleProcessStartEvent,
@@ -35,6 +36,9 @@ function connectRefused(): ConnectError {
   )
 }
 
+// Body of the proxy's 502 when the sandbox is running but nothing listens on envd's port
+const PORT_CLOSED = 'The sandbox is running but port is not open'
+
 describe('handleRpcError', () => {
   test('returns InvalidArgumentError for InvalidArgument', () => {
     const err = handleRpcError(new ConnectError('bad', Code.InvalidArgument))
@@ -57,6 +61,12 @@ describe('handleRpcError', () => {
     )
     assert.instanceOf(err, RateLimitError)
     assert.include(err.message, 'Rate limit')
+  })
+
+  test('returns SandboxUnreachableError for Unavailable with the sandbox running but its port closed', () => {
+    const err = handleRpcError(new ConnectError(PORT_CLOSED, Code.Unavailable))
+    assert.instanceOf(err, SandboxUnreachableError)
+    assert.include(err.message, 'envd inside the sandbox could not be reached')
   })
 
   test('returns TimeoutError for Unavailable', () => {
@@ -136,6 +146,16 @@ describe('handleRpcErrorWithHealthCheck', () => {
     assert.instanceOf(err, SandboxError)
     assert.notInstanceOf(err, TimeoutError)
     assert.notInclude(err.message, 'killed')
+  })
+
+  test('keeps the probe SandboxUnreachableError with the failed request as cause', async () => {
+    const original = terminated()
+    const probeErr = new SandboxUnreachableError(PORT_CLOSED)
+    const err = await handleRpcErrorWithHealthCheck(original, async () => {
+      throw probeErr
+    })
+    assert.strictEqual(err, probeErr)
+    assert.strictEqual(err.cause, original)
   })
 
   test('returns a SandboxUnreachableError when the health check itself fails', async () => {
@@ -259,5 +279,38 @@ describe('start event handlers', () => {
         assert.instanceOf(handleRpcError(err), TimeoutError)
       }
     )
+  })
+})
+
+describe('rejectProxyUnavailableResponse', () => {
+  test('passes other responses through', async () => {
+    const res = new Response('ok', { status: 200 })
+    assert.strictEqual(await rejectProxyUnavailableResponse(res), res)
+  })
+
+  test('rejects a proxy 502 as Unavailable with the body message', async () => {
+    const res = new Response(
+      JSON.stringify({ message: PORT_CLOSED, port: 49983, code: 502 }),
+      { status: 502, headers: { 'Content-Type': 'application/json' } }
+    )
+    try {
+      await rejectProxyUnavailableResponse(res)
+      assert.fail('expected a rejection')
+    } catch (err) {
+      assert.instanceOf(err, ConnectError)
+      assert.strictEqual((err as ConnectError).code, Code.Unavailable)
+      assert.strictEqual((err as ConnectError).rawMessage, PORT_CLOSED)
+    }
+  })
+
+  test('falls back to the status for a 502 without a JSON body', async () => {
+    const res = new Response('bad gateway', { status: 502 })
+    try {
+      await rejectProxyUnavailableResponse(res)
+      assert.fail('expected a rejection')
+    } catch (err) {
+      assert.instanceOf(err, ConnectError)
+      assert.strictEqual((err as ConnectError).rawMessage, 'HTTP 502')
+    }
   })
 })

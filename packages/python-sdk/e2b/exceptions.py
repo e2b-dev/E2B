@@ -1,10 +1,29 @@
 from typing import Optional
 
+# Message of the 502 the proxy in front of envd answers with when the sandbox
+# is running but nothing listens on envd's port — e.g. its network is down.
+SANDBOX_PORT_CLOSED_MESSAGE = "port is not open"
+
+
+def is_sandbox_port_closed_message(message: str) -> bool:
+    return SANDBOX_PORT_CLOSED_MESSAGE in message
+
 
 def format_sandbox_timeout_exception(message: str):
     return TimeoutException(
         f"{message}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeout' when starting the sandbox or calling '.set_timeout' on the sandbox with the desired timeout."
     )
+
+
+def format_sandbox_unavailable_exception(message: str) -> Exception:
+    """Map a 502/UNAVAILABLE answered by the proxy in front of envd: the sandbox is
+    gone (killed or timed out) unless the proxy reports it running with envd's port
+    not open, in which case the sandbox is unreachable."""
+    if is_sandbox_port_closed_message(message):
+        return SandboxUnreachableException(
+            f"{message}: envd inside the sandbox could not be reached although the sandbox is running — e.g. its network is down. Check the sandbox state with 'Sandbox.get_info()' and retry the request."
+        )
+    return format_sandbox_timeout_exception(message)
 
 
 def format_request_timeout_error() -> Exception:
@@ -88,16 +107,20 @@ class SandboxNotFoundException(NotFoundException):
     pass
 
 
-class SandboxUnreachableException(SandboxException):
+class SandboxUnreachableException(TimeoutException):
     """
-    Raised when a request to the sandbox failed at the connection level (the
-    connection could not be established or was dropped mid-request) and the
-    follow-up health probe got no answer from the sandbox either, so it is not
-    confirmed to be stopped.
+    Raised when the sandbox could not be reached while not confirmed to be
+    stopped: either the proxy in front of the sandbox reports it running but
+    envd's port not open (e.g. the sandbox's network is down), or a request
+    failed at the connection level (the connection could not be established or
+    was dropped mid-request) and a follow-up health probe got no answer from the
+    sandbox either.
 
-    This usually means a transient network issue between the client and the
-    sandbox, or envd inside the sandbox not being up (yet). Check the sandbox
-    state with ``Sandbox.get_info()`` and retry the request.
+    This usually means the sandbox's network is down, envd inside it is not up
+    (yet), or a transient network issue between the client and the sandbox.
+    Check the sandbox state with ``Sandbox.get_info()`` and retry the request.
+
+    Subclass of ``TimeoutException``, which these cases surfaced as before.
     """
 
     pass

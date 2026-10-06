@@ -5,7 +5,7 @@ import { compareVersions } from 'compare-versions'
 import { defaultUsername } from '../connectionConfig'
 import {
   AuthenticationError,
-  formatSandboxTimeoutError,
+  formatSandboxUnavailableError,
   InvalidArgumentError,
   NotFoundError,
   RateLimitError,
@@ -92,9 +92,18 @@ export function isTransportFailure(err: unknown): boolean {
 
 /**
  * Builds the error for a request that failed at the connection level when the
- * follow-up sandbox health probe got no answer from the sandbox either.
+ * follow-up health probe got no answer from the sandbox either. A probe answered
+ * by the proxy with the sandbox running but envd's port not open is already a
+ * `SandboxUnreachableError` and is kept, with the failed request as its cause.
  */
-export function formatSandboxUnreachableError(err: Error): Error {
+export function formatSandboxUnreachableError(
+  err: Error,
+  probeErr?: unknown
+): Error {
+  if (probeErr instanceof SandboxUnreachableError) {
+    probeErr.cause = err
+    return probeErr
+  }
   return new SandboxUnreachableError(
     `${err.message}: The sandbox could not be reached. It was not confirmed to be stopped, so this is likely a transient network issue or envd inside the sandbox not being up yet — check the sandbox state with 'Sandbox.getInfo()' and retry the request.`,
     { cause: err }
@@ -115,8 +124,8 @@ export async function resolveTransportFailure(
   let running: boolean | undefined
   try {
     running = await checkHealth()
-  } catch {
-    return formatSandboxUnreachableError(err)
+  } catch (probeErr) {
+    return formatSandboxUnreachableError(err, probeErr)
   }
 
   if (running === false) {
@@ -136,7 +145,7 @@ const DEFAULT_ERROR_MAP: Partial<Record<Code, (message: string) => Error>> = {
     new RateLimitError(
       `${message}: Rate limit exceeded, please try again later.`
     ),
-  [Code.Unavailable]: formatSandboxTimeoutError,
+  [Code.Unavailable]: formatSandboxUnavailableError,
   [Code.Canceled]: (message) =>
     new TimeoutError(
       `${message}: This error is likely due to exceeding 'requestTimeoutMs'. You can pass the request timeout value as an option when making the request.`
@@ -241,4 +250,30 @@ export function authenticationHeader(
   const encoded = encode64(value)
 
   return { Authorization: `Basic ${encoded}` }
+}
+
+/**
+ * Rejects a plain (non-Connect-encoded) 502 answered by the proxy in front of envd —
+ * the sandbox is gone or envd's port is not open — as a `ConnectError` carrying the
+ * proxy's message. connect reads that message for unary RPCs only; a streaming RPC
+ * would otherwise surface it as a bare `HTTP 502`.
+ */
+export async function rejectProxyUnavailableResponse(
+  res: Response
+): Promise<Response> {
+  if (res.status !== 502) {
+    return res
+  }
+
+  let message = ''
+  try {
+    const body = await res.json()
+    if (typeof body?.message === 'string') {
+      message = body.message
+    }
+  } catch {
+    // not a JSON body
+  }
+
+  throw new ConnectError(message || `HTTP ${res.status}`, Code.Unavailable)
 }
