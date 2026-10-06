@@ -148,6 +148,31 @@ describe('handleRpcErrorWithHealthCheck', () => {
     assert.strictEqual(err.cause, original)
   })
 
+  test.each([
+    ['Chrome', 'Failed to fetch'],
+    ['Firefox', 'NetworkError when attempting to fetch resource.'],
+    ['Safari', 'Load failed'],
+  ])(
+    "treats %s's opaque network error as a transport failure",
+    async (_, message) => {
+      const cause = new TypeError(message)
+      const err = new ConnectError(
+        message,
+        Code.Unknown,
+        undefined,
+        undefined,
+        cause
+      )
+      assert.isTrue(isTransportFailure(err))
+
+      const resolved = await handleRpcErrorWithHealthCheck(err, async () => {
+        throw new TypeError(message)
+      })
+      assert.instanceOf(resolved, SandboxUnreachableError)
+      assert.strictEqual(resolved.cause, err)
+    }
+  )
+
   test('treats a refused connection as a transport failure', () => {
     assert.isTrue(isTransportFailure(connectRefused()))
     assert.isFalse(isTransportFailure(new ConnectError('nope', Code.NotFound)))

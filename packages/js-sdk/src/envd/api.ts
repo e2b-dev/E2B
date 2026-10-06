@@ -19,7 +19,7 @@ import {
   resolveTransportFailure,
   SandboxHealthCheck,
 } from './rpc'
-import { isConnectionError } from '../retry'
+import { isNetworkError } from '../retry'
 
 type ApiError = { message?: string } | string
 
@@ -67,7 +67,7 @@ export async function checkSandboxHealth(
 export function isFetchTransportFailure(err: unknown): err is Error {
   return (
     err instanceof Error &&
-    (isConnectionTerminatedMessage(err.message) || isConnectionError(err))
+    (isConnectionTerminatedMessage(err.message) || isNetworkError(err))
   )
 }
 

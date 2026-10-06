@@ -25,6 +25,10 @@ const CONNECTION_ERROR_CODES = new Set([
 const CONNECTION_ERROR_SYSCALLS = new Set(['connect', 'getaddrinfo'])
 // Deno reports hyper's connect-phase failures as `client error (Connect)`.
 const DENO_CONNECTION_ERROR = /client error \(Connect\)/
+// Browsers reject every network failure with an opaque `TypeError`:
+// Chrome `Failed to fetch`, Firefox `NetworkError when attempting to fetch resource.`, Safari `Load failed`
+const OPAQUE_NETWORK_ERROR =
+  /^(Failed to fetch|Load failed|NetworkError when attempting to fetch resource\.?)$/
 // GET/PUT/PATCH/DELETE are idempotent by HTTP semantics. A POST is retried
 // after a 502 or a network error that may have occurred once the request was
 // written only if it is listed here: a replay is a no-op or fails with a
@@ -87,6 +91,16 @@ export function isConnectionError(error: unknown, depth = 0): boolean {
     return error.errors.some((member) => isConnectionError(member, depth + 1))
   }
   return isConnectionError(error.cause, depth + 1)
+}
+
+/**
+ * Whether `error` (thrown by `fetch`) is a network failure: a connection error
+ * (see {@link isConnectionError}) or the opaque `TypeError` browsers raise for any
+ * network failure, which carries no code or syscall.
+ */
+export function isNetworkError(error: unknown): boolean {
+  if (isConnectionError(error)) return true
+  return error instanceof Error && OPAQUE_NETWORK_ERROR.test(error.message)
 }
 
 /**

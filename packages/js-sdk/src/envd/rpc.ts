@@ -13,7 +13,7 @@ import {
   SandboxUnreachableError,
   TimeoutError,
 } from '../errors'
-import { isConnectionError } from '../retry'
+import { isNetworkError } from '../retry'
 import { ENVD_DEFAULT_USER } from './versions'
 
 /**
@@ -73,8 +73,9 @@ function isConnectionTerminatedError(err: unknown): boolean {
 
 /**
  * Checks whether the error is a transport-level failure of the request to the sandbox:
- * the connection could not be established (connect wraps the `fetch` rejection as
- * `Code.Unknown` with the failure as `cause`) or was dropped mid-request. Errors
+ * the connection could not be established or failed with a browser's opaque network
+ * error (connect wraps the `fetch` rejection as `Code.Unknown` with the failure as
+ * `cause`) or was dropped mid-request. Errors
  * envd responded with are never transport failures.
  */
 export function isTransportFailure(err: unknown): boolean {
@@ -85,7 +86,7 @@ export function isTransportFailure(err: unknown): boolean {
   return (
     err instanceof ConnectError &&
     err.code === Code.Unknown &&
-    isConnectionError(err.cause)
+    isNetworkError(err.cause)
   )
 }
 

@@ -124,6 +124,22 @@ describe('handleEnvdApiError', () => {
 })
 
 describe('handleEnvdApiFetchError', () => {
+  test.each([
+    ['Chrome', 'Failed to fetch'],
+    ['Firefox', 'NetworkError when attempting to fetch resource.'],
+    ['Safari', 'Load failed'],
+  ])(
+    "returns a SandboxUnreachableError for %s's opaque network error when the probe gets no answer",
+    async (_, message) => {
+      const original = new TypeError(message)
+      const err = await handleEnvdApiFetchError(original, async () => {
+        throw new TypeError(message)
+      })
+      assert.instanceOf(err, SandboxUnreachableError)
+      assert.strictEqual(err.cause, original)
+    }
+  )
+
   test('returns the original error for terminated fetch without a health check', async () => {
     const original = new TypeError('terminated')
     const err = await handleEnvdApiFetchError(original)
