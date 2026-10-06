@@ -356,6 +356,21 @@ describe('rejectProxyUnavailableResponse', () => {
     }
   })
 
+  test('passes a Connect-encoded 502 error through for the transport to decode', async () => {
+    const body = JSON.stringify({
+      code: 'permission_denied',
+      message: 'access denied',
+    })
+    const res = new Response(body, {
+      status: 502,
+      headers: { 'Content-Type': 'application/json' },
+    })
+    const out = await rejectProxyUnavailableResponse(res)
+    assert.strictEqual(out.status, 502)
+    assert.strictEqual(out.headers.get('Content-Type'), 'application/json')
+    assert.deepEqual(await out.json(), JSON.parse(body))
+  })
+
   test('falls back to the status for a 502 without a JSON body', async () => {
     const res = new Response('bad gateway', { status: 502 })
     try {

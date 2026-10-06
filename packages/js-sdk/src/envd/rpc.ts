@@ -279,7 +279,13 @@ export async function rejectProxyUnavailableResponse(
 
   let message = ''
   try {
-    const body = await res.json()
+    const text = await res.text()
+    const body = JSON.parse(text)
+    if (typeof body?.code === 'string') {
+      // Connect-encoded error (string `code`, e.g. "permission_denied") — let the
+      // transport decode it with its declared code.
+      return new Response(text, res)
+    }
     if (typeof body?.message === 'string') {
       message = body.message
     }
