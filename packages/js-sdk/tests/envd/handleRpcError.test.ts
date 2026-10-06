@@ -371,6 +371,27 @@ describe('rejectProxyUnavailableResponse', () => {
     assert.deepEqual(await out.json(), JSON.parse(body))
   })
 
+  test('rejects a 502 whose string code is not a Connect code as Unavailable with the body message', async () => {
+    const res = new Response(
+      JSON.stringify({
+        code: 'BAD_GATEWAY',
+        message: 'The sandbox was not found',
+      }),
+      { status: 502, headers: { 'Content-Type': 'application/json' } }
+    )
+    try {
+      await rejectProxyUnavailableResponse(res)
+      assert.fail('expected a rejection')
+    } catch (err) {
+      assert.instanceOf(err, ConnectError)
+      assert.strictEqual((err as ConnectError).code, Code.Unavailable)
+      assert.strictEqual(
+        (err as ConnectError).rawMessage,
+        'The sandbox was not found'
+      )
+    }
+  })
+
   test('falls back to the status for a 502 without a JSON body', async () => {
     const res = new Response('bad gateway', { status: 502 })
     try {

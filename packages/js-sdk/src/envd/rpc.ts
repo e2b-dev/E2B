@@ -264,6 +264,25 @@ export function authenticationHeader(
   return { Authorization: `Basic ${encoded}` }
 }
 
+const CONNECT_CODE_NAMES = new Set([
+  'canceled',
+  'unknown',
+  'invalid_argument',
+  'deadline_exceeded',
+  'not_found',
+  'already_exists',
+  'permission_denied',
+  'resource_exhausted',
+  'failed_precondition',
+  'aborted',
+  'out_of_range',
+  'unimplemented',
+  'internal',
+  'unavailable',
+  'data_loss',
+  'unauthenticated',
+])
+
 /**
  * Rejects a plain (non-Connect-encoded) 502 answered by the proxy in front of envd —
  * the sandbox is gone or envd's port is not open — as a `ConnectError` carrying the
@@ -281,9 +300,9 @@ export async function rejectProxyUnavailableResponse(
   try {
     const text = await res.text()
     const body = JSON.parse(text)
-    if (typeof body?.code === 'string') {
-      // Connect-encoded error (string `code`, e.g. "permission_denied") — let the
-      // transport decode it with its declared code.
+    if (typeof body?.code === 'string' && CONNECT_CODE_NAMES.has(body.code)) {
+      // Connect-encoded error (declared string `code`, e.g. "permission_denied") —
+      // let the transport decode it with that code.
       return new Response(text, res)
     }
     if (typeof body?.message === 'string') {
