@@ -1,6 +1,6 @@
 [project]
 name = "e2b-dockerfile-utils"
-version = "0.0.0"
+version = "0.1.0"
 description = "E2B Dockerfile utils - Dockerfile parser, shell lexer and .dockerignore matcher ported from BuildKit and Moby"
 authors = [{ name = "e2b", email = "hello@e2b.dev" }]
 license = "Apache-2.0"

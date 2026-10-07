@@ -1,5 +1,16 @@
 # @e2b/python-sdk
 
+## 2.54.0
+
+### Minor Changes
+
+- cc85f69: Replace the third-party Dockerfile parsers (`dockerfile-ast`, `dockerfile-parse`) used by `Template.fromDockerfile` / `Template.from_dockerfile` with a built-in parser ported from BuildKit. Quoted and escaped values in `ENV`/`ARG`/`COPY`, whitespace inside `RUN`/`CMD` arguments, mixed-case `AS` aliases, comments in line continuations, the `# escape=` directive, `COPY --chmod`, heredocs and `ENTRYPOINT` + `CMD` combination are now handled consistently in both SDKs. A `.dockerignore` line consisting of a lone `!` is now rejected, as Docker does, instead of being skipped.
+
+### Patch Changes
+
+- Updated dependencies [cc85f69]
+  - @e2b/dockerfile-utils-python@0.1.0
+
 ## 2.53.1
 
 ### Patch Changes

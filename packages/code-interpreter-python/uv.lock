@@ -349,7 +349,7 @@ wheels = [
 
 [[package]]
 name = "e2b"
-version = "2.53.1"
+version = "2.54.0"
 source = { editable = "../python-sdk" }
 dependencies = [
     { name = "attrs" },
@@ -464,7 +464,7 @@ dev = [
 
 [[package]]
 name = "e2b-dockerfile-utils"
-version = "0.0.0"
+version = "0.1.0"
 source = { editable = "../dockerfile-utils-python" }
 
 [package.metadata]

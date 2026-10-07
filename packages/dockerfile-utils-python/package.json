@@ -1,7 +1,7 @@
 {
   "name": "@e2b/dockerfile-utils-python",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "scripts": {
     "test": "uv run pytest --verbose",
     "postVersion": "uv version --frozen $(pnpm pkg get version --workspaces=false | tr -d \\\")",
