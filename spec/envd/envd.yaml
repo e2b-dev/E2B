@@ -77,6 +77,13 @@ paths:
                 caBundle:
                   type: string
                   description: PEM-encoded CA certificates to install into the system trust store (may contain multiple concatenated PEM blocks)
+                cpuCount:
+                  type: integer
+                  minimum: 1
+                  description: >-
+                    Number of guest CPUs that should be online. envd attempts to bring
+                    the set of requested CPUs online asynchronously; the outcome is
+                    reported on the X-Envd-Cpus header and on /metrics.
 
       responses:
         "204":
@@ -521,7 +528,22 @@ components:
           description: Unix timestamp in UTC for current sandbox time
         cpu_count:
           type: integer
-          description: Number of CPU cores
+          description: Number of CPU cores online
+        cpu_possible:
+          type: integer
+          description: Number of CPUs the guest can bring online
+        cpu_target:
+          type: integer
+          description: Online count last requested, 0 when none was
+        cpu_target_attempts:
+          type: integer
+          description: Attempts at reaching cpu_target since it was set
+        cpu_write_pending_ms:
+          type: integer
+          format: int64
+          description: >-
+            How long a CPU online or offline write has been running in the guest kernel,
+            0 when none is. A value that keeps growing means CPU hotplug is stuck.
         cpu_used_pct:
           type: number
           format: float
