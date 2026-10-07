@@ -143,6 +143,46 @@ GitHubMcpServer = Dict[str, Union[GitHubMcpServerConfig, Any]]
 McpServer = Union[BaseMcpServer, GitHubMcpServer]
 
 
+_GITHUB_MCP_KEY_MAP = {
+    "install_cmd": "installCmd",
+    "run_cmd": "runCmd",
+}
+
+
+def normalize_mcp_config(mcp: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Translate the Python-style snake_case keys in GitHub MCP server configs to the camelCase
+    names the mcp-gateway accepts.
+
+    ``GitHubMcpServerConfig`` documents ``install_cmd`` / ``run_cmd``, but the gateway (which
+    receives the dict verbatim via ``mcp-gateway --config``) only recognises ``installCmd`` /
+    ``runCmd``. Without this normalization the documented Python form is silently ignored and the
+    GitHub server never starts. A GitHub entry is detected by the ``github/owner/repo`` key form.
+
+    The input is not mutated. Already-camelCase keys are preserved; if both snake and camel forms
+    appear in the same entry, the camelCase value wins so an explicit override is never overwritten
+    by an unmapped field.
+    """
+    if not mcp:
+        return mcp
+    normalized: Dict[str, Any] = {}
+    for server_name, raw_config in mcp.items():
+        if (
+            isinstance(server_name, str)
+            and server_name.startswith("github/")
+            and isinstance(raw_config, dict)
+        ):
+            normalized_config = dict(raw_config)
+            for snake_key, camel_key in _GITHUB_MCP_KEY_MAP.items():
+                if snake_key in normalized_config and camel_key not in normalized_config:
+                    normalized_config[camel_key] = normalized_config.pop(snake_key)
+                elif snake_key in normalized_config:
+                    normalized_config.pop(snake_key)
+            normalized[server_name] = normalized_config
+        else:
+            normalized[server_name] = raw_config
+    return normalized
+
+
 class SandboxNetworkTransform(TypedDict):
     """
     Transform applied to egress requests matching a :class:`SandboxNetworkRule`.
