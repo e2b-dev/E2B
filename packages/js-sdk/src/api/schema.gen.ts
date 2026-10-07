@@ -2525,8 +2525,18 @@ export interface components {
             address: string;
             /** @description Optional SOCKS5 password (RFC 1929), max 255 bytes. */
             password?: string;
+            tls?: components["schemas"]["SandboxEgressProxyTLSConfig"];
             /** @description Optional SOCKS5 username (RFC 1929), max 255 bytes. */
             username?: string;
+        } | null;
+        /** @description TLS for the connection to the SOCKS5 proxy. The SOCKS5 negotiation and the tunneled traffic both run inside the TLS session, so the proxy credentials are not sent in the clear. This secures only the hop to the proxy; what the proxy does onward is its own concern. A half-close from the sandbox reaches the proxy as a TLS close_notify, not a TCP FIN, and a proxy that treats close_notify as a full close cuts the reply short. */
+        SandboxEgressProxyTLSConfig: {
+            /** @description One or more PEM-encoded certificates to verify the proxy against, for a proxy fronted by a private CA. These replace the system trust store, which is what is used when this is omitted. The system trust store depends on the host the orchestrator runs on, so set this to get the same verification everywhere. */
+            caCert?: string;
+            /** @description Connect to the proxy over TLS. When false, no other field in this object may be set. */
+            enabled: boolean;
+            /** @description Name to verify the proxy certificate against, and to send as SNI. Defaults to the host part of address. Set this only when the certificate does not match the address the proxy is reached at. */
+            serverName?: string;
         } | null;
         SandboxesWithMetrics: {
             sandboxes: {
@@ -3015,7 +3025,7 @@ export interface components {
              * @default []
              */
             args?: string[];
-            /** @description Hash of the files used in the step */
+            /** @description Hash of the files used in the step (lowercase hex SHA-256) */
             filesHash?: string;
             /**
              * @description Whether the step should be forced to run regardless of the cache
