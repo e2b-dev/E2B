@@ -251,7 +251,9 @@ export type SandboxEgressProxyInfo = {
  * returned by the API.
  */
 export type SandboxEgressProxyTLSInfo = {
+  /** See {@link SandboxEgressProxyTLSOpts.enabled}. */
   enabled: boolean
+  /** See {@link SandboxEgressProxyTLSOpts.serverName}. */
   serverName?: string
 }
 
