@@ -75,6 +75,7 @@ components:
       name: teamID
       in: path
       required: true
+      description: Identifier of the team, as its UUID or its public project ID (prj_)
       schema:
         type: string
     nodeID:
@@ -591,6 +592,43 @@ components:
           maxLength: 255
           description: >-
             Optional SOCKS5 password (RFC 1929), max 255 bytes.
+        tls:
+          $ref: "#/components/schemas/SandboxEgressProxyTLSConfig"
+
+    SandboxEgressProxyTLSConfig:
+      type: object
+      nullable: true
+      description: >-
+        TLS for the connection to the SOCKS5 proxy. The SOCKS5 negotiation and
+        the tunneled traffic both run inside the TLS session, so the proxy
+        credentials are not sent in the clear. This secures only the hop to the
+        proxy; what the proxy does onward is its own concern. A half-close from
+        the sandbox reaches the proxy as a TLS close_notify, not a TCP FIN, and
+        a proxy that treats close_notify as a full close cuts the reply short.
+      required:
+        - enabled
+      properties:
+        enabled:
+          type: boolean
+          description: >-
+            Connect to the proxy over TLS. When false, no other field in this
+            object may be set.
+        serverName:
+          type: string
+          maxLength: 253
+          description: >-
+            Name to verify the proxy certificate against, and to send as SNI.
+            Defaults to the host part of address. Set this only when the
+            certificate does not match the address the proxy is reached at.
+        caCert:
+          type: string
+          maxLength: 8192
+          description: >-
+            One or more PEM-encoded certificates to verify the proxy against,
+            for a proxy fronted by a private CA. These replace the system trust
+            store, which is what is used when this is omitted. The system trust
+            store depends on the host the orchestrator runs on, so set this to
+            get the same verification everywhere.
 
     SandboxAutoResumeEnabled:
       type: boolean
@@ -1133,6 +1171,15 @@ components:
         name:
           type: string
           description: Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one.
+        memory:
+          type: boolean
+          description: >-
+            Whether to capture a full memory snapshot. When false, only the
+            filesystem is persisted: the snapshot is smaller and faster to take,
+            and sandboxes created from it cold-boot (start fresh from disk)
+            instead of restoring memory, so they begin without the source
+            sandbox's running processes, in-memory state, and open connections.
+            The source sandbox keeps running in both cases. Defaults to true.
 
     SandboxPauseRequest:
       type: object
@@ -1496,7 +1543,8 @@ components:
             type: string
         filesHash:
           type: string
-          description: Hash of the files used in the step
+          pattern: "^[0-9a-f]{64}$"
+          description: Hash of the files used in the step (lowercase hex SHA-256)
         force:
           default: false
           type: boolean
@@ -1521,7 +1569,7 @@ components:
         teamID:
           deprecated: true
           type: string
-          description: Identifier of the team
+          description: Identifier of the team, as its UUID or its public project ID (prj_)
         cpuCount:
           $ref: "#/components/schemas/CPUCount"
         memoryMB:
@@ -1904,6 +1952,8 @@ components:
         - status
         - statusChangedAt
         - sandboxCount
+        - outstandingWork
+        - maxSandboxes
         - metrics
         - createSuccesses
         - createFails
@@ -1942,12 +1992,12 @@ components:
         maxSandboxes:
           type: integer
           format: int64
-          description: Node-scoped configured sandbox admission limit. Nonpositive values reject creation. Omitted when unknown or not an orchestrator.
+          description: Cached node-scoped sandbox admission limit. Nonpositive values reject creation.
         outstandingWork:
           type: integer
           format: uint64
           minimum: 0
-          description: Observed work holds on the node. Omitted when unknown; zero does not authorize deletion.
+          description: Cached count of work holds on the node. Zero means idle or not yet reported; it does not by itself authorize deletion.
         metrics:
           $ref: "#/components/schemas/NodeMetrics"
         createSuccesses:
@@ -1971,6 +2021,8 @@ components:
         - status
         - statusChangedAt
         - sandboxCount
+        - outstandingWork
+        - maxSandboxes
         - createSuccesses
         - createFails
         - version
@@ -2008,12 +2060,12 @@ components:
         maxSandboxes:
           type: integer
           format: int64
-          description: Node-scoped configured sandbox admission limit. Nonpositive values reject creation. Omitted when unknown or not an orchestrator.
+          description: Cached node-scoped sandbox admission limit. Nonpositive values reject creation.
         outstandingWork:
           type: integer
           format: uint64
           minimum: 0
-          description: Observed work holds on the node. Omitted when unknown; zero does not authorize deletion.
+          description: Cached count of work holds on the node. Zero means idle or not yet reported; it does not by itself authorize deletion.
         metrics:
           $ref: "#/components/schemas/NodeMetrics"
         createSuccesses:
@@ -2180,7 +2232,8 @@ components:
           description: >-
             Machine-readable semantic error code. Not a closed set; initial values:
             sandbox_capacity_unavailable, sandbox_placement_timeout,
-            sandbox_no_compatible_node, sandbox_create_failed, internal_server_error.
+            sandbox_no_compatible_node, sandbox_create_failed, internal_server_error,
+            secret_limit_reached.
         message:
           type: string
           description: Error
@@ -3755,7 +3808,7 @@ paths:
           name: teamID
           schema:
             type: string
-            description: Identifier of the team
+            description: Identifier of the team, as its UUID or its public project ID (prj_)
         - $ref: "#/components/parameters/paginationNextToken"
         - $ref: "#/components/parameters/paginationLimit"
       responses:
@@ -3801,7 +3854,8 @@ paths:
           required: true
           schema:
             type: string
-            description: Hash of the files
+            pattern: "^[0-9a-f]{64}$"
+            description: Hash of the files (lowercase hex SHA-256)
 
       responses:
         "201":
@@ -3842,7 +3896,7 @@ paths:
           name: teamID
           schema:
             type: string
-            description: Identifier of the team
+            description: Identifier of the team, as its UUID or its public project ID (prj_)
       responses:
         "200":
           description: Successfully returned all templates
@@ -4843,7 +4897,20 @@ paths:
         "404":
           $ref: "#/components/responses/404"
         "409":
-          $ref: "#/components/responses/409"
+          description: >-
+            Secret name conflict or project live-secret limit reached. A quota
+            response has error_code secret_limit_reached and, when reported by
+            the backend, the effective cap in message.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                secretLimitReached:
+                  value:
+                    code: 409
+                    message: Project has reached its limit of 50 live secrets
+                    error_code: secret_limit_reached
         "429":
           $ref: "#/components/responses/429"
         "500":

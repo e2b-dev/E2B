@@ -167,6 +167,7 @@ export type SandboxNetworkSelector =
  *       address: 'proxy.example.com:1080',
  *       username: 'proxy-user',
  *       password: 'proxy-password',
+ *       tls: { enabled: true },
  *     },
  *   },
  * })
@@ -198,18 +199,62 @@ export type SandboxEgressProxyOpts = {
    * {@link SandboxEgressProxyOpts.username}.
    */
   password?: string
+
+  /** TLS settings for the connection to the SOCKS5 proxy. */
+  tls?: SandboxEgressProxyTLSOpts
+}
+
+/**
+ * TLS settings for the connection to a BYOP SOCKS5 proxy.
+ */
+export type SandboxEgressProxyTLSOpts = {
+  /**
+   * Connect to the proxy over TLS. The SOCKS5 handshake, credentials, and
+   * tunneled traffic run inside the TLS session; TLS protects only the hop to
+   * the proxy. The certificate is always verified, TLS 1.2 or newer is
+   * required, and failures never fall back to plaintext.
+   *
+   * When `false`, `serverName` and `caCert` must not be set.
+   */
+  enabled: boolean
+
+  /**
+   * Name to verify the proxy certificate against and send as SNI, up to 253
+   * characters. Defaults to the host part of `address`; set this only when the
+   * certificate does not match the address.
+   */
+  serverName?: string
+
+  /**
+   * One or more PEM CA certificates, up to 8192 bytes. This replaces the
+   * system trust store rather than adding to it.
+   */
+  caCert?: string
 }
 
 /**
  * Egress proxy as returned by the sandbox info endpoint. Mirrors
- * {@link SandboxEgressProxyOpts} without `password` — the API never returns
- * it.
+ * {@link SandboxEgressProxyOpts} without `password` or `caCert` — the API
+ * never returns them.
  */
 export type SandboxEgressProxyInfo = {
   /** See {@link SandboxEgressProxyOpts.address}. */
   address: string
   /** See {@link SandboxEgressProxyOpts.username}. */
   username?: string
+  /** TLS status for the connection to the proxy. */
+  tls?: SandboxEgressProxyTLSInfo
+}
+
+/**
+ * TLS status for the egress proxy connection. The CA certificate is never
+ * returned by the API.
+ */
+export type SandboxEgressProxyTLSInfo = {
+  /** See {@link SandboxEgressProxyTLSOpts.enabled}. */
+  enabled: boolean
+  /** See {@link SandboxEgressProxyTLSOpts.serverName}. */
+  serverName?: string
 }
 
 export type SandboxNetworkOpts = {
@@ -377,6 +422,9 @@ export type SandboxNetworkUpdate = {
    * traffic out directly — even when the update was only meant to change the
    * allow and deny lists. Repeat it in every update that should keep
    * tunneling.
+   *
+   * The same replace semantics apply to `tls`: an update that repeats
+   * `address` but omits `tls` keeps tunneling without TLS.
    */
   egressProxy?: SandboxEgressProxyOpts
   /**
@@ -1090,6 +1138,16 @@ function buildEgressProxyBody(
     )
   }
 
+  const tls = egressProxy.tls
+  if (
+    tls != null &&
+    (!isPlainObject(tls) || typeof tls.enabled !== 'boolean')
+  ) {
+    throw new InvalidArgumentError(
+      "network egressProxy tls must be an object with a boolean 'enabled'."
+    )
+  }
+
   // `!= null` also skips a `null` credential, which is what reading one out of
   // an unset environment variable yields and what "this proxy takes no
   // credentials" means; the API only accepts a string.
@@ -1097,6 +1155,15 @@ function buildEgressProxyBody(
     address: egressProxy.address,
     ...(egressProxy.username != null ? { username: egressProxy.username } : {}),
     ...(egressProxy.password != null ? { password: egressProxy.password } : {}),
+    ...(tls != null
+      ? {
+          tls: {
+            enabled: tls.enabled,
+            ...(tls.serverName != null ? { serverName: tls.serverName } : {}),
+            ...(tls.caCert != null ? { caCert: tls.caCert } : {}),
+          },
+        }
+      : {}),
   }
 }
 
@@ -1154,6 +1221,16 @@ function fromApiEgressProxy(
     address: egressProxy.address,
     ...(egressProxy.username !== undefined
       ? { username: egressProxy.username }
+      : {}),
+    ...(egressProxy.tls != null
+      ? {
+          tls: {
+            enabled: egressProxy.tls.enabled,
+            ...(egressProxy.tls.serverName !== undefined
+              ? { serverName: egressProxy.tls.serverName }
+              : {}),
+          },
+        }
       : {}),
   }
 }

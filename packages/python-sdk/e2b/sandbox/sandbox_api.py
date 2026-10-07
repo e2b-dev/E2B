@@ -32,6 +32,9 @@ from e2b.api.client.models import (
     SandboxEgressProxyConfigType0 as ClientSandboxEgressProxyConfig,
 )
 from e2b.api.client.models import (
+    SandboxEgressProxyTLSConfigType0 as ClientSandboxEgressProxyTLSConfig,
+)
+from e2b.api.client.models import (
     SandboxNetworkConfig as ClientSandboxNetworkConfig,
 )
 from e2b.api.client.models import (
@@ -260,6 +263,35 @@ and returns the same.
 """
 
 
+class SandboxEgressProxyTLSOpts(TypedDict):
+    """
+    TLS settings for the connection to a BYOP SOCKS5 proxy.
+    """
+
+    enabled: bool
+    """
+    Connect to the proxy over TLS. The SOCKS5 handshake, credentials, and
+    tunneled traffic run inside the TLS session; TLS protects only the hop to
+    the proxy. The certificate is always verified, TLS 1.2 or newer is
+    required, and failures never fall back to plaintext.
+
+    When ``False``, ``server_name`` and ``ca_cert`` must not be set.
+    """
+
+    server_name: NotRequired[str]
+    """
+    Name to verify the proxy certificate against and send as SNI, up to 253
+    characters. Defaults to the host part of ``address``; set this only when
+    the certificate does not match the address.
+    """
+
+    ca_cert: NotRequired[str]
+    """
+    One or more PEM CA certificates, up to 8192 bytes. This replaces the
+    system trust store rather than adding to it.
+    """
+
+
 class SandboxEgressProxyOpts(TypedDict):
     """
     SOCKS5 proxy the sandbox's outbound TCP is tunneled through — "bring your
@@ -286,6 +318,8 @@ class SandboxEgressProxyOpts(TypedDict):
                 },
             },
         )
+
+    Enable TLS to the proxy with ``"tls": {"enabled": True}``.
     """
 
     address: str
@@ -313,12 +347,28 @@ class SandboxEgressProxyOpts(TypedDict):
     :attr:`username`.
     """
 
+    tls: NotRequired[SandboxEgressProxyTLSOpts]
+    """TLS settings for the connection to the SOCKS5 proxy."""
+
+
+class SandboxEgressProxyTLSInfo(TypedDict):
+    """
+    TLS status for the egress proxy connection. The CA certificate is never
+    returned by the API.
+    """
+
+    enabled: bool
+    """See :attr:`SandboxEgressProxyTLSOpts.enabled`."""
+
+    server_name: NotRequired[str]
+    """See :attr:`SandboxEgressProxyTLSOpts.server_name`."""
+
 
 class SandboxEgressProxyInfo(TypedDict):
     """
     Egress proxy as returned by the sandbox info endpoint. Mirrors
-    :class:`SandboxEgressProxyOpts` without ``password`` — the API never
-    returns it.
+    :class:`SandboxEgressProxyOpts` without ``password`` or ``ca_cert`` — the
+    API never returns them.
     """
 
     address: str
@@ -326,6 +376,9 @@ class SandboxEgressProxyInfo(TypedDict):
 
     username: NotRequired[str]
     """See :attr:`SandboxEgressProxyOpts.username`."""
+
+    tls: NotRequired[SandboxEgressProxyTLSInfo]
+    """TLS status for the connection to the proxy."""
 
 
 class SandboxNetworkOpts(TypedDict):
@@ -469,6 +522,9 @@ class SandboxNetworkUpdate(TypedDict, total=False):
     an update that leaves this out stops tunneling and sends the sandbox's
     traffic out directly — even when the update was only meant to change the
     allow and deny lists. Repeat it in every update that should keep tunneling.
+
+    The same replace semantics apply to ``tls``: an update that repeats
+    ``address`` but omits ``tls`` keeps tunneling without TLS.
     """
 
     allow_internet_access: bool
@@ -767,6 +823,19 @@ def _build_egress_proxy(
         body.username = egress_proxy["username"]
     if egress_proxy.get("password") is not None:
         body.password = egress_proxy["password"]
+    tls = egress_proxy.get("tls")
+    if tls is not None:
+        if not isinstance(tls, Mapping) or not isinstance(tls.get("enabled"), bool):
+            raise InvalidArgumentException(
+                "network egress_proxy tls must be a dict with a boolean 'enabled'."
+            )
+
+        client_tls = ClientSandboxEgressProxyTLSConfig(enabled=tls["enabled"])
+        if tls.get("server_name") is not None:
+            client_tls.server_name = tls["server_name"]
+        if tls.get("ca_cert") is not None:
+            client_tls.ca_cert = tls["ca_cert"]
+        body.tls = client_tls
 
     return body
 
@@ -1014,6 +1083,11 @@ def _from_client_egress_proxy(
     result: SandboxEgressProxyInfo = {"address": egress_proxy.address}
     if not isinstance(egress_proxy.username, Unset):
         result["username"] = egress_proxy.username
+    if isinstance(egress_proxy.tls, ClientSandboxEgressProxyTLSConfig):
+        tls: SandboxEgressProxyTLSInfo = {"enabled": egress_proxy.tls.enabled}
+        if not isinstance(egress_proxy.tls.server_name, Unset):
+            tls["server_name"] = egress_proxy.tls.server_name
+        result["tls"] = tls
 
     return result
 

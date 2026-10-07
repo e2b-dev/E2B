@@ -77,6 +77,13 @@ paths:
                 caBundle:
                   type: string
                   description: PEM-encoded CA certificates to install into the system trust store (may contain multiple concatenated PEM blocks)
+                cpuCount:
+                  type: integer
+                  minimum: 1
+                  description: >-
+                    Number of guest CPUs that should be online. envd attempts to bring
+                    the set of requested CPUs online asynchronously; the outcome is
+                    reported on the X-Envd-Cpus header and on /metrics.
 
       responses:
         "204":
@@ -521,7 +528,22 @@ components:
           description: Unix timestamp in UTC for current sandbox time
         cpu_count:
           type: integer
-          description: Number of CPU cores
+          description: Number of CPU cores online
+        cpu_possible:
+          type: integer
+          description: Number of CPUs the guest can bring online
+        cpu_target:
+          type: integer
+          description: Online count last requested, 0 when none was
+        cpu_target_attempts:
+          type: integer
+          description: Attempts at reaching cpu_target since it was set
+        cpu_write_pending_ms:
+          type: integer
+          format: int64
+          description: >-
+            How long a CPU online or offline write has been running in the guest kernel,
+            0 when none is. A value that keeps growing means CPU hotplug is stuck.
         cpu_used_pct:
           type: number
           format: float
@@ -535,18 +557,32 @@ components:
         mem_cache:
           type: integer
           description: Cached memory (page cache) in bytes
-        mem_total_mib:
-          type: integer
-          description: Total virtual memory in MiB
-        mem_used_mib:
-          type: integer
-          description: Used virtual memory in MiB
         disk_used:
           type: integer
           description: Used disk space in bytes
         disk_total:
           type: integer
           description: Total disk space in bytes
+        oom_kills:
+          type: array
+          description: The latest 32 out-of-memory kills since the guest booted, oldest first. Reading does not consume them. Empty when there are none. Omitted when not known (while envd is still reading the kernel log, when it can't be read or envd stopped reading it, and outside Firecracker).
+          x-go-type-skip-optional-pointer: false
+          items:
+            $ref: "#/components/schemas/OOMKill"
+    OOMKill:
+      type: object
+      description: A process the guest kernel killed for running out of memory
+      required:
+        - seq
+        - process
+      properties:
+        seq:
+          type: integer
+          format: int64
+          description: Kernel log sequence number of the kill record. It only grows, across pauses and envd restarts.
+        process:
+          type: string
+          description: Name of the killed process, or Unknown if the record doesn't show it
     FreezeResult:
       type: object
       description: Per-call statistics from a pre-pause workload freeze
