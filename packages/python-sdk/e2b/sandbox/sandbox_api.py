@@ -358,7 +358,10 @@ class SandboxEgressProxyTLSInfo(TypedDict):
     """
 
     enabled: bool
+    """See :attr:`SandboxEgressProxyTLSOpts.enabled`."""
+
     server_name: NotRequired[str]
+    """See :attr:`SandboxEgressProxyTLSOpts.server_name`."""
 
 
 class SandboxEgressProxyInfo(TypedDict):
