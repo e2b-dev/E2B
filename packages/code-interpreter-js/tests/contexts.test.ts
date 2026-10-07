@@ -62,6 +62,13 @@ sandboxTest('restart context', async ({ sandbox }) => {
   expect(execution.error?.value).toBe("name 'x' is not defined")
 })
 
+sandboxTest('pass context and language', async ({ sandbox }) => {
+  const context = await sandbox.createCodeContext()
+  await expect(
+    sandbox.runCode({ context, language: 'python' })
+  ).rejects.toThrowError()
+})
+
 secureSandboxTest.skipIf(isDebug)(
   'create context (secure traffic)',
   async ({ sandbox }) => {

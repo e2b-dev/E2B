@@ -1,4 +1,5 @@
 import pytest
+from e2b import InvalidArgumentException
 
 from e2b_code_interpreter.code_interpreter_sync import Sandbox
 
@@ -62,6 +63,12 @@ def test_restart_context(sandbox: Sandbox):
     assert execution.error is not None
     assert execution.error.name == "NameError"
     assert execution.error.value == "name 'x' is not defined"
+
+
+def test_pass_context_and_language(sandbox: Sandbox):
+    context = sandbox.create_code_context(language="python")
+    with pytest.raises(InvalidArgumentException):
+        sandbox.run_code("console.log('Hello, World!')", language="js", context=context)
 
 
 # Secure traffic tests (public traffic disabled)

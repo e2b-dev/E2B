@@ -4,7 +4,6 @@ import uuid
 
 import pytest
 
-from e2b import SandboxException
 from e2b_code_interpreter import (
     AsyncSandbox,
     Sandbox,
@@ -12,7 +11,6 @@ from e2b_code_interpreter import (
 
 
 DEFAULT_TEST_SANDBOX_TIMEOUT = 180
-KERNEL_READINESS_ATTEMPTS = 4
 
 
 @pytest.fixture(scope="session")
@@ -71,53 +69,6 @@ async def async_sandbox_factory(template, sandbox_test_id):
 @pytest.fixture
 async def async_sandbox(async_sandbox_factory):
     return await async_sandbox_factory()
-
-
-def _wait_for_kernel(sandbox: Sandbox, language: str) -> None:
-    for attempt in range(KERNEL_READINESS_ATTEMPTS):
-        try:
-            sandbox.run_code("1", language=language)
-            return
-        except SandboxException as error:
-            # A newly running sandbox can briefly return this response while
-            # Foxtrot initializes a lazy language context. Retry only that known
-            # readiness failure; the test's actual execution still runs once.
-            is_readiness_error = str(error) == "500 Internal Server Error"
-            if not is_readiness_error or attempt == KERNEL_READINESS_ATTEMPTS - 1:
-                raise
-
-
-async def _wait_for_kernel_async(sandbox: AsyncSandbox, language: str) -> None:
-    for attempt in range(KERNEL_READINESS_ATTEMPTS):
-        try:
-            await sandbox.run_code("1", language=language)
-            return
-        except SandboxException as error:
-            is_readiness_error = str(error) == "500 Internal Server Error"
-            if not is_readiness_error or attempt == KERNEL_READINESS_ATTEMPTS - 1:
-                raise
-
-
-@pytest.fixture()
-def wait_for_kernel():
-    return _wait_for_kernel
-
-
-@pytest.fixture()
-def wait_for_kernel_async():
-    return _wait_for_kernel_async
-
-
-@pytest.fixture()
-def java_sandbox(sandbox: Sandbox):
-    _wait_for_kernel(sandbox, "java")
-    return sandbox
-
-
-@pytest.fixture()
-async def async_java_sandbox(async_sandbox: AsyncSandbox):
-    await _wait_for_kernel_async(async_sandbox, "java")
-    return async_sandbox
 
 
 @pytest.fixture
