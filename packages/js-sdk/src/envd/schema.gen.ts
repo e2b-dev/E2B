@@ -283,13 +283,24 @@ export interface components {
         };
         /** @description Resource usage metrics */
         Metrics: {
-            /** @description Number of CPU cores */
+            /** @description Number of CPU cores online */
             cpu_count?: number;
+            /** @description Number of CPUs the guest can bring online */
+            cpu_possible?: number;
+            /** @description Online count last requested, 0 when none was */
+            cpu_target?: number;
+            /** @description Attempts at reaching cpu_target since it was set */
+            cpu_target_attempts?: number;
             /**
              * Format: float
              * @description CPU usage percentage
              */
             cpu_used_pct?: number;
+            /**
+             * Format: int64
+             * @description How long a CPU online or offline write has been running in the guest kernel, 0 when none is. A value that keeps growing means CPU hotplug is stuck.
+             */
+            cpu_write_pending_ms?: number;
             /** @description Total disk space in bytes */
             disk_total?: number;
             /** @description Used disk space in bytes */
@@ -298,17 +309,25 @@ export interface components {
             mem_cache?: number;
             /** @description Total virtual memory in bytes */
             mem_total?: number;
-            /** @description Total virtual memory in MiB */
-            mem_total_mib?: number;
             /** @description Used virtual memory in bytes */
             mem_used?: number;
-            /** @description Used virtual memory in MiB */
-            mem_used_mib?: number;
+            /** @description The latest 32 out-of-memory kills since the guest booted, oldest first. Reading does not consume them. Empty when there are none. Omitted when not known (while envd is still reading the kernel log, when it can't be read or envd stopped reading it, and outside Firecracker). */
+            oom_kills?: components["schemas"]["OOMKill"][];
             /**
              * Format: int64
              * @description Unix timestamp in UTC for current sandbox time
              */
             ts?: number;
+        };
+        /** @description A process the guest kernel killed for running out of memory */
+        OOMKill: {
+            /** @description Name of the killed process, or Unknown if the record doesn't show it */
+            process: string;
+            /**
+             * Format: int64
+             * @description Kernel log sequence number of the kill record. It only grows, across pauses and envd restarts.
+             */
+            seq: number;
         };
     };
     responses: {
