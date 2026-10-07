@@ -84,7 +84,7 @@ class TemplateBuilder:
                 src_string,
                 str(dest),
                 user or "",
-                pad_octal(mode) if mode else "",
+                pad_octal(mode) if mode is not None else "",
             ]
 
             instruction: Instruction = {
@@ -232,7 +232,7 @@ class TemplateBuilder:
         """
         path_list = [path] if isinstance(path, (str, Path)) else path
         args = ["mkdir", "-p"]
-        if mode:
+        if mode is not None:
             args.append(f"-m {pad_octal(mode)}")
         args.extend([shlex.quote(str(p)) for p in path_list])
 

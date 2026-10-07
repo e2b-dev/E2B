@@ -167,6 +167,7 @@ export { E2B, type E2BClientOpts } from './client'
 export default Sandbox
 
 export * from './template'
+export { DockerfileSyntaxError } from './template/dockerfileParser'
 
 export {
   ReadyCmd,

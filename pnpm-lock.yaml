@@ -243,6 +243,26 @@ importers:
 
   packages/desktop-python: {}
 
+  packages/dockerfile-utils-js:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.19.43
+      '@typescript/native':
+        specifier: 'catalog:'
+        version: typescript@7.0.2
+      tsdown:
+        specifier: 'catalog:'
+        version: 0.22.14(@typescript/typescript6@6.0.2)(oxc-resolver@11.24.2)(tsx@4.23.12)
+      typescript:
+        specifier: 'catalog:'
+        version: '@typescript/typescript6@6.0.2'
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.11(@types/node@20.19.43)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
+
+  packages/dockerfile-utils-python: {}
+
   packages/js-sdk:
     dependencies:
       '@bufbuild/protobuf':
@@ -254,15 +274,15 @@ importers:
       '@connectrpc/connect-web':
         specifier: ^2.2.0
         version: 2.2.0(@bufbuild/protobuf@2.15.0)(@connectrpc/connect@2.2.0(@bufbuild/protobuf@2.15.0))
+      '@e2b/dockerfile-utils':
+        specifier: workspace:^
+        version: link:../dockerfile-utils-js
       chalk:
         specifier: ^5.6.2
         version: 5.6.2
       compare-versions:
         specifier: ^6.1.1
         version: 6.1.1
-      dockerfile-ast:
-        specifier: ^0.7.1
-        version: 0.7.1
       glob:
         specifier: ^13.0.6
         version: 13.0.6
@@ -341,7 +361,11 @@ importers:
         specifier: npm:undici@8.11.2
         version: undici@8.11.2
 
-  packages/python-sdk: {}
+  packages/python-sdk:
+    dependencies:
+      '@e2b/dockerfile-utils-python':
+        specifier: workspace:*
+        version: link:../dockerfile-utils-python
 
 packages:
 
@@ -2807,9 +2831,6 @@ packages:
     resolution: {integrity: sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA==}
     engines: {node: '>=8'}
 
-  dockerfile-ast@0.7.1:
-    resolution: {integrity: sha512-oX/A4I0EhSkGqrFv0YuvPkBUSYp1XiY8O8zAKc8Djglx8ocz+JfOr8gP0ryRMC2myqvDLagmnZaU9ot1vG2ijw==}
-
   dotenv@16.4.5:
     resolution: {integrity: sha512-ZmdL2rui+eB2YwhsWzjInR8LldtZHGDoQ1ugH85ppHKwpUHL7j7rN0Ti9NCnGiQbhaZ11FpR+7ao1dNsmduNUg==}
     engines: {node: '>=12'}
@@ -3513,10 +3534,6 @@ packages:
     resolution: {integrity: sha512-nK28WOo+QIjBkDduTINE4JkF/UJJKyf2EJxvJKfblDpyg0Q+pkOHNTL0Qwy6NP6FhE/EnzV73BxxqcJaXY9anw==}
     engines: {node: '>= 0.4'}
 
-  obug@2.1.4:
-    resolution: {integrity: sha512-4a+OsYv9UktOJKE+l1A4OufDgdRF9PifWj+tJnHURo/P+WOxpG4GzUFL9qCalmWauao6ogiG+QvnCovwPoyAWA==}
-    engines: {node: '>=12.20.0'}
-
   obug@2.2.1:
     resolution: {integrity: sha512-XrsrhT5sybtKI6wakr2SPOlGZWWYbUXZ7a0jT8/QOeAPau+1X/bSegNe5YR75oJmEZQbKningirmGOEJCIk61Q==}
     engines: {node: '>=12.20.0'}
@@ -3638,10 +3655,6 @@ packages:
   picomatch@2.3.2:
     resolution: {integrity: sha512-V7+vQEJ06Z+c5tSye8S+nHUfI51xoXIXjHQ99cQtKUkQqqO1kO/KCJUfZXuB47h/YBlDhah2H3hdUGXn8ie0oA==}
     engines: {node: '>=8.6'}
-
-  picomatch@4.0.5:
-    resolution: {integrity: sha512-RvwwcruNjI1ncT5xRakeyS9Lf8lcItv34KD+aif+VH9kduAyfYBipGh12274xtenIPZ119/R9BdTBa8gAwSh0A==}
-    engines: {node: '>=12'}
 
   picomatch@4.0.7:
     resolution: {integrity: sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA==}
@@ -3954,9 +3967,6 @@ packages:
   statuses@2.0.2:
     resolution: {integrity: sha512-DvEy55V3DB7uknRo+4iOGT5fP1slR8wQohVdknigZPMpMstaKJQWhwiYBACJE3Ul2pTnATihhBYnRhZQHGBiRw==}
     engines: {node: '>= 0.8'}
-
-  std-env@4.1.0:
-    resolution: {integrity: sha512-Rq7ybcX2RuC55r9oaPVEW7/xu3tj8u4GeBYHBWCychFtzMIr86A7e3PPEBPT37sHStKX3+TiX/Fr/ACmJLVlLQ==}
 
   std-env@4.3.0:
     resolution: {integrity: sha512-OtU/EgQ1kIm5KwqQpBC6ZEMXrZRui11w8zgfTWp8cdO9B8OaPsbA8bTHO2P+HNo1VlUTGMVBwPhydu6poeXiag==}
@@ -4311,12 +4321,6 @@ packages:
         optional: true
       jsdom:
         optional: true
-
-  vscode-languageserver-textdocument@1.0.15:
-    resolution: {integrity: sha512-Gsfr9S8LU3S6885cS+NaleasJ0n3V5y/SOTqHCifQiXWFw3G9w9/YItDfwHrlCz+dSZWWZ8ilYVMcJe7Sz7Sxw==}
-
-  vscode-languageserver-types@3.18.4:
-    resolution: {integrity: sha512-nQsacoiijvl0fRf2q28uFDrAVwRhdCa3QveiF7/CX0r18mLR5FU/1WskSsCKOjmEbtteKUnY8x8Yzxop+k0zwg==}
 
   walk-up-path@4.0.0:
     resolution: {integrity: sha512-3hu+tD8YzSLGuFYtPRb48vdhKMi0KQV5sn+uWr8+7dMEq/2G/dtLrdDinkLjqq5TIbIBjYJ4Ax/n3YiaW7QM8A==}
@@ -5988,7 +5992,7 @@ snapshots:
       '@vitest/spy': 4.1.11
       '@vitest/utils': 4.1.11
       chai: 6.2.2
-      tinyrainbow: 3.1.0
+      tinyrainbow: 3.2.0
 
   '@vitest/mocker@4.1.11(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))':
     dependencies:
@@ -6001,7 +6005,7 @@ snapshots:
 
   '@vitest/pretty-format@4.1.11':
     dependencies:
-      tinyrainbow: 3.1.0
+      tinyrainbow: 3.2.0
 
   '@vitest/runner@4.1.11':
     dependencies:
@@ -6367,11 +6371,6 @@ snapshots:
     dependencies:
       path-type: 4.0.0
 
-  dockerfile-ast@0.7.1:
-    dependencies:
-      vscode-languageserver-textdocument: 1.0.15
-      vscode-languageserver-types: 3.18.4
-
   dotenv@16.4.5: {}
 
   dotenv@16.6.1: {}
@@ -6626,10 +6625,6 @@ snapshots:
   fd-package-json@2.0.0:
     dependencies:
       walk-up-path: 4.0.0
-
-  fdir@6.5.0(picomatch@4.0.5):
-    optionalDependencies:
-      picomatch: 4.0.5
 
   fdir@6.5.0(picomatch@4.0.7):
     optionalDependencies:
@@ -7247,8 +7242,6 @@ snapshots:
       has-symbols: 1.1.0
       object-keys: 1.1.1
 
-  obug@2.1.4: {}
-
   obug@2.2.1: {}
 
   openapi-fetch@0.17.0:
@@ -7388,8 +7381,6 @@ snapshots:
 
   picomatch@2.3.2: {}
 
-  picomatch@4.0.5: {}
-
   picomatch@4.0.7: {}
 
   pidtree@0.3.1: {}
@@ -7488,7 +7479,7 @@ snapshots:
     dependencies:
       dts-resolver: 3.0.0(oxc-resolver@11.24.2)
       get-tsconfig: 5.0.0-beta.5
-      obug: 2.1.4
+      obug: 2.2.1
       rolldown: 1.2.5
       yuku-ast: 0.8.7
       yuku-codegen: 0.8.7
@@ -7778,8 +7769,6 @@ snapshots:
 
   statuses@2.0.2: {}
 
-  std-env@4.1.0: {}
-
   std-env@4.3.0: {}
 
   stop-iteration-iterator@1.1.0:
@@ -7892,8 +7881,8 @@ snapshots:
 
   tinyglobby@0.2.17:
     dependencies:
-      fdir: 6.5.0(picomatch@4.0.5)
-      picomatch: 4.0.5
+      fdir: 6.5.0(picomatch@4.0.7)
+      picomatch: 4.0.7
 
   tinyrainbow@3.1.0: {}
 
@@ -7927,8 +7916,8 @@ snapshots:
       empathic: 2.0.1
       hookable: 6.1.1
       import-without-cache: 0.4.0
-      obug: 2.1.4
-      picomatch: 4.0.5
+      obug: 2.2.1
+      picomatch: 4.0.7
       rolldown: 1.2.5
       rolldown-plugin-dts: 0.27.14(@typescript/typescript6@6.0.2)(oxc-resolver@11.24.2)(rolldown@1.2.5)
       tinyexec: 1.2.4
@@ -8095,14 +8084,14 @@ snapshots:
       es-module-lexer: 2.1.0
       expect-type: 1.3.0
       magic-string: 0.30.21
-      obug: 2.1.4
+      obug: 2.2.1
       pathe: 2.0.3
-      picomatch: 4.0.5
-      std-env: 4.1.0
+      picomatch: 4.0.7
+      std-env: 4.3.0
       tinybench: 2.9.0
       tinyexec: 1.2.4
       tinyglobby: 0.2.17
-      tinyrainbow: 3.1.0
+      tinyrainbow: 3.2.0
       vite: 6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1)
       why-is-node-running: 2.3.0
     optionalDependencies:
@@ -8111,10 +8100,6 @@ snapshots:
       '@vitest/coverage-v8': 4.1.11(@vitest/browser@4.1.11)(vitest@4.1.11)
     transitivePeerDependencies:
       - msw
-
-  vscode-languageserver-textdocument@1.0.15: {}
-
-  vscode-languageserver-types@3.18.4: {}
 
   walk-up-path@4.0.0: {}
 

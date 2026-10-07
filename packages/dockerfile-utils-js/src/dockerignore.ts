@@ -5,8 +5,6 @@
  * Port of the pattern matcher from moby/patternmatcher (Apache-2.0):
  * https://github.com/moby/patternmatcher
  */
-import path from 'node:path'
-import { TemplateError } from '../errors'
 
 // Characters that have a meaning in a regex but not in a Docker pattern
 const LITERAL_REGEX_CHARS = new Set([
@@ -21,8 +19,6 @@ const LITERAL_REGEX_CHARS = new Set([
   '^',
 ])
 const WILDCARD_CHARS = /[*?[\\]/
-// Evaluated lazily, as `node:path` is not available when loaded in the browser
-const backslashIsSeparator = () => path.sep === '\\'
 
 function escapeRegex(ch: string): string {
   return ch.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
@@ -85,15 +81,79 @@ function translateClass(body: string, backslashIsEscape: boolean): string {
   return cls
 }
 
-// Equivalent of Go's filepath.Clean followed by filepath.ToSlash
-function clean(pattern: string): string {
-  if (backslashIsSeparator()) {
-    pattern = pattern.replace(/\\/g, '/')
+// Equivalent of Go's filepath.Clean on a slash-separated path
+function cleanPath(p: string): string {
+  const rooted = p.startsWith('/')
+  const out: string[] = []
+  for (const segment of p.split('/')) {
+    if (segment === '' || segment === '.') {
+      continue
+    }
+    if (segment === '..') {
+      if (out.length > 0 && out[out.length - 1] !== '..') {
+        out.pop()
+      } else if (!rooted) {
+        out.push('..')
+      }
+      continue
+    }
+    out.push(segment)
   }
-  return path.posix.normalize(pattern).replace(/(.)\/$/, '$1')
+  const cleaned = (rooted ? '/' : '') + out.join('/')
+  return cleaned === '' ? '.' : cleaned
 }
 
 type Matcher = (p: string) => boolean
+
+const BAD_PATTERN = 'syntax error in pattern'
+
+// Advances over one (possibly escaped) character of a bracket expression
+function classChar(pattern: string, i: number, backslashIsEscape: boolean) {
+  const n = pattern.length
+  if (i >= n || pattern[i] === '-' || pattern[i] === ']') {
+    throw new Error(BAD_PATTERN)
+  }
+  if (pattern[i] === '\\' && backslashIsEscape) {
+    i++
+    if (i >= n) {
+      throw new Error(BAD_PATTERN)
+    }
+  }
+  i += (pattern.codePointAt(i) as number) > 0xffff ? 2 : 1
+  if (i >= n) {
+    throw new Error(BAD_PATTERN)
+  }
+  return i
+}
+
+// Rejects what Go's filepath.Match rejects (Docker validates patterns with
+// it), as regex engines are more lenient about bracket expressions
+function validatePattern(pattern: string, backslashIsEscape: boolean): void {
+  const n = pattern.length
+  let i = 0
+  while (i < n) {
+    const ch = pattern[i++]
+    if (ch === '\\' && backslashIsEscape) {
+      if (i >= n) {
+        throw new Error(BAD_PATTERN)
+      }
+      i++
+    } else if (ch === '[') {
+      if (pattern[i] === '^') {
+        i++
+      }
+      let ranges = 0
+      while (!(ranges > 0 && pattern[i] === ']')) {
+        i = classChar(pattern, i, backslashIsEscape)
+        if (pattern[i] === '-') {
+          i = classChar(pattern, i + 1, backslashIsEscape)
+        }
+        ranges++
+      }
+      i++
+    }
+  }
+}
 
 enum MatchType {
   Exact = 'exact',
@@ -104,11 +164,11 @@ enum MatchType {
 
 // Like moby, use plain string checks for patterns without wildcards and only
 // fall back to a regex otherwise
-function compile(pattern: string): Matcher {
+function compile(pattern: string, backslashIsEscape: boolean): Matcher {
+  validatePattern(pattern, backslashIsEscape)
   let regex = '^'
   let matchType = MatchType.Exact
   const n = pattern.length
-  const backslashIsEscape = !backslashIsSeparator()
   let i = 0
   while (i < n) {
     const first = i === 0
@@ -200,43 +260,77 @@ interface Pattern {
   match: Matcher
 }
 
+export interface PatternMatcherOptions {
+  /**
+   * Whether `\` separates path segments (as on Windows) instead of escaping
+   * the next character in a pattern.
+   *
+   * @default false
+   */
+  backslashIsSeparator?: boolean
+}
+
 /**
  * Match paths relative to the context root against `.dockerignore` patterns.
  *
  * A pattern that matches a directory excludes everything under it, a leading
  * `/` is ignored, and `!` patterns re-include paths (the last matching
  * pattern wins).
+ *
+ * @throws {Error} If a pattern is invalid, such as an unterminated `[`
  */
 export class PatternMatcher {
-  private readonly patterns: Pattern[] = []
+  private readonly compiled: Pattern[] = []
+  private readonly backslashIsSeparator: boolean
 
-  constructor(patterns: string[]) {
+  /**
+   * The cleaned patterns, `!` prefixed for exclusions. Empty lines and
+   * comments are dropped.
+   */
+  readonly patterns: string[] = []
+
+  constructor(patterns: string[], options: PatternMatcherOptions = {}) {
+    const backslashIsSeparator = options.backslashIsSeparator ?? false
+    this.backslashIsSeparator = backslashIsSeparator
     for (const original of patterns) {
+      if (original.startsWith('#')) {
+        continue
+      }
       let pattern = original.trim()
-      if (!pattern || pattern.startsWith('#')) {
+      if (!pattern) {
         continue
       }
       const exclusion = pattern.startsWith('!')
       if (exclusion) {
         pattern = pattern.slice(1).trim()
         if (!pattern) {
-          continue
+          throw new Error(
+            `Invalid ignore pattern '${original}': illegal exclusion pattern`
+          )
         }
       }
-      pattern = clean(pattern)
+      if (backslashIsSeparator) {
+        pattern = pattern.replace(/\\/g, '/')
+      }
+      pattern = cleanPath(pattern)
       if (pattern.length > 1 && pattern.startsWith('/')) {
         pattern = pattern.slice(1)
       }
       let match: Matcher
       try {
-        match = compile(pattern)
+        match = compile(pattern, !backslashIsSeparator)
       } catch (err) {
-        throw new TemplateError(
+        throw new Error(
           `Invalid ignore pattern '${original}': ${(err as Error).message}`
         )
       }
-      this.patterns.push({ exclusion, dirs: pattern.split('/'), match })
+      this.compiled.push({ exclusion, dirs: pattern.split('/'), match })
+      this.patterns.push((exclusion ? '!' : '') + pattern)
     }
+  }
+
+  private toSlash(p: string): string {
+    return this.backslashIsSeparator ? p.replace(/\\/g, '/') : p
   }
 
   /**
@@ -248,13 +342,13 @@ export class PatternMatcher {
    * @returns True if the path is excluded
    */
   matches(p: string): boolean {
-    const segments = p.split('/')
+    const segments = this.toSlash(p).split('/')
     let parentMatched: boolean[] = []
     let matched = false
     for (let depth = 1; depth <= segments.length; depth++) {
       const current = segments.slice(0, depth).join('/')
       matched = false
-      parentMatched = this.patterns.map((pattern, i) => {
+      parentMatched = this.compiled.map((pattern, i) => {
         let match = parentMatched[i] ?? false
         if (!match) {
           // An inclusion can't change an already matched path, and an
@@ -281,8 +375,8 @@ export class PatternMatcher {
    * @returns True if a path under the directory could be re-included
    */
   mayMatchUnder(dirPath: string): boolean {
-    const dirSegments = dirPath.split('/')
-    return this.patterns.some(
+    const dirSegments = this.toSlash(dirPath).split('/')
+    return this.compiled.some(
       (pattern) =>
         pattern.exclusion && patternMayMatchUnder(pattern, dirSegments)
     )

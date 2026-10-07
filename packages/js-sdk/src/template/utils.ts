@@ -7,7 +7,7 @@ import { parse, type StackFrame } from 'error-stack-parser-es'
 import { dynamicImport } from '../utils'
 import { TemplateError } from '../errors'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
-import { PatternMatcher } from './dockerignore'
+import { PatternMatcher } from '@e2b/dockerfile-utils'
 import type { IgnoreLike, Path } from 'glob'
 import type { BuildOptions } from './types'
 
@@ -118,8 +118,9 @@ export function readDockerignore(contextPath: string): string[] {
     .replace(/^\uFEFF/, '')
   return content
     .split('\n')
+    .filter((line) => !line.startsWith('#'))
     .map((line) => line.trim())
-    .filter((line) => line && !line.startsWith('#'))
+    .filter((line) => line)
 }
 
 /**
@@ -168,11 +169,17 @@ function createIgnoreMatcher(
   contextPath: string
 ): IgnoreLike {
   const absoluteContextPath = path.resolve(contextPath)
-  const matcher = new PatternMatcher(
-    ignorePatterns.map((pattern) =>
-      normalizeIgnorePattern(pattern, absoluteContextPath)
+  let matcher: PatternMatcher
+  try {
+    matcher = new PatternMatcher(
+      ignorePatterns.map((pattern) =>
+        normalizeIgnorePattern(pattern, absoluteContextPath)
+      ),
+      { backslashIsSeparator: path.sep === '\\' }
     )
-  )
+  } catch (err) {
+    throw new TemplateError((err as Error).message)
+  }
 
   const ignored = (p: Path) => {
     const relativePath = p.relativePosix()

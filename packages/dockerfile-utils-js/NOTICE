@@ -1,0 +1,11 @@
+E2B Dockerfile utils
+Copyright 2025 FoundryLabs, Inc.
+
+This product includes software derived from moby/buildkit
+(https://github.com/moby/buildkit), licensed under the Apache License 2.0:
+the Dockerfile parser and shell lexer are ported from frontend/dockerfile.
+
+This product includes software derived from moby/patternmatcher
+(https://github.com/moby/patternmatcher), licensed under the Apache License 2.0.
+Copyright 2012-2017 Docker, Inc.
+This product includes software developed at Docker, Inc. (https://www.docker.com).

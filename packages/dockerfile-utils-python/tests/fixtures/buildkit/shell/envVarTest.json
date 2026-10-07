@@ -1,0 +1,1692 @@
+[
+  {
+    "input": "hello",
+    "word": "hello",
+    "words": [
+      "hello"
+    ]
+  },
+  {
+    "input": "he'll'o",
+    "word": "hello",
+    "words": [
+      "hello"
+    ]
+  },
+  {
+    "input": "he'llo",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "he\\'llo",
+    "word": "he'llo",
+    "words": [
+      "he'llo"
+    ]
+  },
+  {
+    "input": "he\\\\'llo",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "abc\\tdef",
+    "word": "abctdef",
+    "words": [
+      "abctdef"
+    ]
+  },
+  {
+    "input": "\"abc\\tdef\"",
+    "word": "abc\\tdef",
+    "words": [
+      "abc\\tdef"
+    ]
+  },
+  {
+    "input": "\"abc\\\\tdef\"",
+    "word": "abc\\tdef",
+    "words": [
+      "abc\\tdef"
+    ]
+  },
+  {
+    "input": "'abc\\tdef'",
+    "word": "abc\\tdef",
+    "words": [
+      "abc\\tdef"
+    ]
+  },
+  {
+    "input": "hello\\",
+    "word": "hello",
+    "words": [
+      "hello"
+    ]
+  },
+  {
+    "input": "hello\\\\",
+    "word": "hello\\",
+    "words": [
+      "hello\\"
+    ]
+  },
+  {
+    "input": "\"hello",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "\"hello\\\"",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "\"hel'lo\"",
+    "word": "hel'lo",
+    "words": [
+      "hel'lo"
+    ]
+  },
+  {
+    "input": "'hello",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "'hello\\'",
+    "word": "hello\\",
+    "words": [
+      "hello\\"
+    ]
+  },
+  {
+    "input": "'hello\\there'",
+    "word": "hello\\there",
+    "words": [
+      "hello\\there"
+    ]
+  },
+  {
+    "input": "'hello\\\\there'",
+    "word": "hello\\\\there",
+    "words": [
+      "hello\\\\there"
+    ]
+  },
+  {
+    "input": "\"''\"",
+    "word": "''",
+    "words": [
+      "''"
+    ]
+  },
+  {
+    "input": "$.",
+    "word": "$.",
+    "words": [
+      "$."
+    ]
+  },
+  {
+    "input": "he$1x",
+    "word": "he$1x",
+    "words": [
+      "he$1x"
+    ]
+  },
+  {
+    "input": "he$.x",
+    "word": "he$.x",
+    "words": [
+      "he$.x"
+    ]
+  },
+  {
+    "input": "he$pwd.",
+    "word": "he$pwd.",
+    "words": [
+      "he$pwd."
+    ]
+  },
+  {
+    "input": "he$pwd.",
+    "word": "he$pwd.",
+    "words": [
+      "he$pwd."
+    ]
+  },
+  {
+    "input": "he$PWD",
+    "word": "he$PWD",
+    "words": [
+      "he$PWD"
+    ]
+  },
+  {
+    "input": "he\\$PWD",
+    "word": "he$PWD",
+    "words": [
+      "he$PWD"
+    ]
+  },
+  {
+    "input": "he\\\\$PWD",
+    "word": "he\\$PWD",
+    "words": [
+      "he\\$PWD"
+    ]
+  },
+  {
+    "input": "\"he\\$PWD\"",
+    "word": "he$PWD",
+    "words": [
+      "he$PWD"
+    ]
+  },
+  {
+    "input": "\"he\\\\$PWD\"",
+    "word": "he\\$PWD",
+    "words": [
+      "he\\$PWD"
+    ]
+  },
+  {
+    "input": "\\${}",
+    "word": "${}",
+    "words": [
+      "${}"
+    ]
+  },
+  {
+    "input": "\\${}aaa",
+    "word": "${}aaa",
+    "words": [
+      "${}aaa"
+    ]
+  },
+  {
+    "input": "he\\${}",
+    "word": "he${}",
+    "words": [
+      "he${}"
+    ]
+  },
+  {
+    "input": "he\\${}xx",
+    "word": "he${}xx",
+    "words": [
+      "he${}xx"
+    ]
+  },
+  {
+    "input": "${}",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "${}aaa",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "he${}",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "he${}xx",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "he${hi}",
+    "word": "he${hi}",
+    "words": [
+      "he${hi}"
+    ]
+  },
+  {
+    "input": "he${hi}xx",
+    "word": "he${hi}xx",
+    "words": [
+      "he${hi}xx"
+    ]
+  },
+  {
+    "input": "he${PWD}",
+    "word": "he${PWD}",
+    "words": [
+      "he${PWD}"
+    ]
+  },
+  {
+    "input": "he${.}",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "he${XXX:-000}xx",
+    "word": "he${XXX:-000}xx",
+    "words": [
+      "he${XXX:-000}xx"
+    ],
+    "buildkitWords": [
+      "${XXX:-000}xx"
+    ]
+  },
+  {
+    "input": "he${PWD:-000}xx",
+    "word": "he${PWD:-000}xx",
+    "words": [
+      "he${PWD:-000}xx"
+    ],
+    "buildkitWords": [
+      "${PWD:-000}xx"
+    ]
+  },
+  {
+    "input": "he${XXX:-$PWD}xx",
+    "word": "he${XXX:-$PWD}xx",
+    "words": [
+      "he${XXX:-$PWD}xx"
+    ],
+    "buildkitWords": [
+      "${XXX:-$PWD}xx"
+    ]
+  },
+  {
+    "input": "he${XXX:-${PWD:-yyy}}xx",
+    "word": "he${XXX:-${PWD:-yyy}}xx",
+    "words": [
+      "he${XXX:-${PWD:-yyy}}xx"
+    ],
+    "buildkitWords": [
+      "${XXX:-${PWD:-yyy}}xx"
+    ]
+  },
+  {
+    "input": "he${XXX:-${YYY:-yyy}}xx",
+    "word": "he${XXX:-${YYY:-yyy}}xx",
+    "words": [
+      "he${XXX:-${YYY:-yyy}}xx"
+    ],
+    "buildkitWords": [
+      "${XXX:-${YYY:-yyy}}xx"
+    ]
+  },
+  {
+    "input": "he${XXX:YYY}",
+    "word": "he${XXX:YYY}",
+    "words": [
+      "he${XXX:YYY}"
+    ],
+    "buildkitWords": [
+      "${XXX:YYY}"
+    ]
+  },
+  {
+    "input": "he${XXX?}",
+    "word": "he${XXX?}",
+    "words": [
+      "he${XXX?}"
+    ],
+    "buildkitWords": [
+      "${XXX?}"
+    ]
+  },
+  {
+    "input": "he${XXX:?}",
+    "word": "he${XXX:?}",
+    "words": [
+      "he${XXX:?}"
+    ],
+    "buildkitWords": [
+      "${XXX:?}"
+    ]
+  },
+  {
+    "input": "he${PWD?}",
+    "word": "he${PWD?}",
+    "words": [
+      "he${PWD?}"
+    ],
+    "buildkitWords": [
+      "${PWD?}"
+    ]
+  },
+  {
+    "input": "he${PWD:?}",
+    "word": "he${PWD:?}",
+    "words": [
+      "he${PWD:?}"
+    ],
+    "buildkitWords": [
+      "${PWD:?}"
+    ]
+  },
+  {
+    "input": "he${NULL?}",
+    "word": "he${NULL?}",
+    "words": [
+      "he${NULL?}"
+    ],
+    "buildkitWords": [
+      "${NULL?}"
+    ]
+  },
+  {
+    "input": "he${NULL:?}",
+    "word": "he${NULL:?}",
+    "words": [
+      "he${NULL:?}"
+    ],
+    "buildkitWords": [
+      "${NULL:?}"
+    ]
+  },
+  {
+    "input": "he${XXX:+${PWD}}xx",
+    "word": "he${XXX:+${PWD}}xx",
+    "words": [
+      "he${XXX:+${PWD}}xx"
+    ],
+    "buildkitWords": [
+      "${XXX:+${PWD}}xx"
+    ]
+  },
+  {
+    "input": "he${PWD:+${XXX}}xx",
+    "word": "he${PWD:+${XXX}}xx",
+    "words": [
+      "he${PWD:+${XXX}}xx"
+    ],
+    "buildkitWords": [
+      "${PWD:+${XXX}}xx"
+    ]
+  },
+  {
+    "input": "he${PWD:+${SHELL}}xx",
+    "word": "he${PWD:+${SHELL}}xx",
+    "words": [
+      "he${PWD:+${SHELL}}xx"
+    ],
+    "buildkitWords": [
+      "${PWD:+${SHELL}}xx"
+    ]
+  },
+  {
+    "input": "he${XXX:+000}xx",
+    "word": "he${XXX:+000}xx",
+    "words": [
+      "he${XXX:+000}xx"
+    ],
+    "buildkitWords": [
+      "${XXX:+000}xx"
+    ]
+  },
+  {
+    "input": "he${PWD:+000}xx",
+    "word": "he${PWD:+000}xx",
+    "words": [
+      "he${PWD:+000}xx"
+    ],
+    "buildkitWords": [
+      "${PWD:+000}xx"
+    ]
+  },
+  {
+    "input": "'he${XX}'",
+    "word": "he${XX}",
+    "words": [
+      "he${XX}"
+    ]
+  },
+  {
+    "input": "\"he${PWD}\"",
+    "word": "he${PWD}",
+    "words": [
+      "he${PWD}"
+    ]
+  },
+  {
+    "input": "\"he'$PWD'\"",
+    "word": "he'$PWD'",
+    "words": [
+      "he'$PWD'"
+    ]
+  },
+  {
+    "input": "\"$PWD\"",
+    "word": "$PWD",
+    "words": [
+      "$PWD"
+    ]
+  },
+  {
+    "input": "'$PWD'",
+    "word": "$PWD",
+    "words": [
+      "$PWD"
+    ]
+  },
+  {
+    "input": "'\\$PWD'",
+    "word": "\\$PWD",
+    "words": [
+      "\\$PWD"
+    ]
+  },
+  {
+    "input": "'\"hello\"'",
+    "word": "\"hello\"",
+    "words": [
+      "\"hello\""
+    ]
+  },
+  {
+    "input": "he\\$PWD",
+    "word": "he$PWD",
+    "words": [
+      "he$PWD"
+    ]
+  },
+  {
+    "input": "\"he\\$PWD\"",
+    "word": "he$PWD",
+    "words": [
+      "he$PWD"
+    ]
+  },
+  {
+    "input": "'he\\$PWD'",
+    "word": "he\\$PWD",
+    "words": [
+      "he\\$PWD"
+    ]
+  },
+  {
+    "input": "he${PWD",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "he${PWD:=000}xx",
+    "word": "he${PWD:=000}xx",
+    "words": [
+      "he${PWD:=000}xx"
+    ],
+    "buildkitWords": [
+      "${PWD:=000}xx"
+    ]
+  },
+  {
+    "input": "he${PWD:+${PWD}:}xx",
+    "word": "he${PWD:+${PWD}:}xx",
+    "words": [
+      "he${PWD:+${PWD}:}xx"
+    ],
+    "buildkitWords": [
+      "${PWD:+${PWD}:}xx"
+    ]
+  },
+  {
+    "input": "he${XXX:-\\$PWD:}xx",
+    "word": "he${XXX:-$PWD:}xx",
+    "words": [
+      "he${XXX:-$PWD:}xx"
+    ],
+    "buildkitWords": [
+      "${XXX:-$PWD:}xx"
+    ]
+  },
+  {
+    "input": "he${XXX:-\\${PWD}z}xx",
+    "word": "he${XXX:-${PWD}z}xx",
+    "words": [
+      "he${XXX:-${PWD}z}xx"
+    ],
+    "buildkitWords": [
+      "${XXX:-${PWD}z}xx"
+    ]
+  },
+  {
+    "input": "안녕하세요",
+    "word": "안녕하세요",
+    "words": [
+      "안녕하세요"
+    ]
+  },
+  {
+    "input": "안'녕'하세요",
+    "word": "안녕하세요",
+    "words": [
+      "안녕하세요"
+    ]
+  },
+  {
+    "input": "안'녕하세요",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "안녕\\'하세요",
+    "word": "안녕'하세요",
+    "words": [
+      "안녕'하세요"
+    ]
+  },
+  {
+    "input": "안\\\\'녕하세요",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "안녕\\t하세요",
+    "word": "안녕t하세요",
+    "words": [
+      "안녕t하세요"
+    ]
+  },
+  {
+    "input": "\"안녕\\t하세요\"",
+    "word": "안녕\\t하세요",
+    "words": [
+      "안녕\\t하세요"
+    ]
+  },
+  {
+    "input": "'안녕\\t하세요",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "안녕하세요\\",
+    "word": "안녕하세요",
+    "words": [
+      "안녕하세요"
+    ]
+  },
+  {
+    "input": "안녕하세요\\\\",
+    "word": "안녕하세요\\",
+    "words": [
+      "안녕하세요\\"
+    ]
+  },
+  {
+    "input": "\"안녕하세요",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "\"안녕하세요\\\"",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "\"안녕'하세요\"",
+    "word": "안녕'하세요",
+    "words": [
+      "안녕'하세요"
+    ]
+  },
+  {
+    "input": "'안녕하세요",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "'안녕하세요\\'",
+    "word": "안녕하세요\\",
+    "words": [
+      "안녕하세요\\"
+    ]
+  },
+  {
+    "input": "안녕$1x",
+    "word": "안녕$1x",
+    "words": [
+      "안녕$1x"
+    ]
+  },
+  {
+    "input": "안녕$.x",
+    "word": "안녕$.x",
+    "words": [
+      "안녕$.x"
+    ]
+  },
+  {
+    "input": "안녕$pwd.",
+    "word": "안녕$pwd.",
+    "words": [
+      "안녕$pwd."
+    ]
+  },
+  {
+    "input": "안녕$pwd.",
+    "word": "안녕$pwd.",
+    "words": [
+      "안녕$pwd."
+    ]
+  },
+  {
+    "input": "안녕$PWD",
+    "word": "안녕$PWD",
+    "words": [
+      "안녕$PWD"
+    ]
+  },
+  {
+    "input": "안녕\\$PWD",
+    "word": "안녕$PWD",
+    "words": [
+      "안녕$PWD"
+    ]
+  },
+  {
+    "input": "안녕\\\\$PWD",
+    "word": "안녕\\$PWD",
+    "words": [
+      "안녕\\$PWD"
+    ]
+  },
+  {
+    "input": "안녕\\${}",
+    "word": "안녕${}",
+    "words": [
+      "안녕${}"
+    ]
+  },
+  {
+    "input": "안녕\\${}xx",
+    "word": "안녕${}xx",
+    "words": [
+      "안녕${}xx"
+    ]
+  },
+  {
+    "input": "안녕${}",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "안녕${}xx",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "안녕${hi}",
+    "word": "안녕${hi}",
+    "words": [
+      "안녕${hi}"
+    ]
+  },
+  {
+    "input": "안녕${hi}xx",
+    "word": "안녕${hi}xx",
+    "words": [
+      "안녕${hi}xx"
+    ]
+  },
+  {
+    "input": "안녕${PWD}",
+    "word": "안녕${PWD}",
+    "words": [
+      "안녕${PWD}"
+    ]
+  },
+  {
+    "input": "안녕${.}",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "안녕${XXX:-000}xx",
+    "word": "안녕${XXX:-000}xx",
+    "words": [
+      "안녕${XXX:-000}xx"
+    ],
+    "buildkitWords": [
+      "${XXX:-000}xx"
+    ]
+  },
+  {
+    "input": "안녕${PWD:-000}xx",
+    "word": "안녕${PWD:-000}xx",
+    "words": [
+      "안녕${PWD:-000}xx"
+    ],
+    "buildkitWords": [
+      "${PWD:-000}xx"
+    ]
+  },
+  {
+    "input": "안녕${XXX:-$PWD}xx",
+    "word": "안녕${XXX:-$PWD}xx",
+    "words": [
+      "안녕${XXX:-$PWD}xx"
+    ],
+    "buildkitWords": [
+      "${XXX:-$PWD}xx"
+    ]
+  },
+  {
+    "input": "안녕${XXX:-${PWD:-yyy}}xx",
+    "word": "안녕${XXX:-${PWD:-yyy}}xx",
+    "words": [
+      "안녕${XXX:-${PWD:-yyy}}xx"
+    ],
+    "buildkitWords": [
+      "${XXX:-${PWD:-yyy}}xx"
+    ]
+  },
+  {
+    "input": "안녕${XXX:-${YYY:-yyy}}xx",
+    "word": "안녕${XXX:-${YYY:-yyy}}xx",
+    "words": [
+      "안녕${XXX:-${YYY:-yyy}}xx"
+    ],
+    "buildkitWords": [
+      "${XXX:-${YYY:-yyy}}xx"
+    ]
+  },
+  {
+    "input": "안녕${XXX:YYY}",
+    "word": "안녕${XXX:YYY}",
+    "words": [
+      "안녕${XXX:YYY}"
+    ],
+    "buildkitWords": [
+      "${XXX:YYY}"
+    ]
+  },
+  {
+    "input": "안녕${XXX:+${PWD}}xx",
+    "word": "안녕${XXX:+${PWD}}xx",
+    "words": [
+      "안녕${XXX:+${PWD}}xx"
+    ],
+    "buildkitWords": [
+      "${XXX:+${PWD}}xx"
+    ]
+  },
+  {
+    "input": "안녕${PWD:+${XXX}}xx",
+    "word": "안녕${PWD:+${XXX}}xx",
+    "words": [
+      "안녕${PWD:+${XXX}}xx"
+    ],
+    "buildkitWords": [
+      "${PWD:+${XXX}}xx"
+    ]
+  },
+  {
+    "input": "안녕${PWD:+${SHELL}}xx",
+    "word": "안녕${PWD:+${SHELL}}xx",
+    "words": [
+      "안녕${PWD:+${SHELL}}xx"
+    ],
+    "buildkitWords": [
+      "${PWD:+${SHELL}}xx"
+    ]
+  },
+  {
+    "input": "안녕${XXX:+000}xx",
+    "word": "안녕${XXX:+000}xx",
+    "words": [
+      "안녕${XXX:+000}xx"
+    ],
+    "buildkitWords": [
+      "${XXX:+000}xx"
+    ]
+  },
+  {
+    "input": "안녕${PWD:+000}xx",
+    "word": "안녕${PWD:+000}xx",
+    "words": [
+      "안녕${PWD:+000}xx"
+    ],
+    "buildkitWords": [
+      "${PWD:+000}xx"
+    ]
+  },
+  {
+    "input": "'안녕${XX}'",
+    "word": "안녕${XX}",
+    "words": [
+      "안녕${XX}"
+    ]
+  },
+  {
+    "input": "\"안녕${PWD}\"",
+    "word": "안녕${PWD}",
+    "words": [
+      "안녕${PWD}"
+    ]
+  },
+  {
+    "input": "\"안녕'$PWD'\"",
+    "word": "안녕'$PWD'",
+    "words": [
+      "안녕'$PWD'"
+    ]
+  },
+  {
+    "input": "'\"안녕\"'",
+    "word": "\"안녕\"",
+    "words": [
+      "\"안녕\""
+    ]
+  },
+  {
+    "input": "안녕\\$PWD",
+    "word": "안녕$PWD",
+    "words": [
+      "안녕$PWD"
+    ]
+  },
+  {
+    "input": "\"안녕\\$PWD\"",
+    "word": "안녕$PWD",
+    "words": [
+      "안녕$PWD"
+    ]
+  },
+  {
+    "input": "'안녕\\$PWD'",
+    "word": "안녕\\$PWD",
+    "words": [
+      "안녕\\$PWD"
+    ]
+  },
+  {
+    "input": "안녕${PWD",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "안녕${PWD:=000}xx",
+    "word": "안녕${PWD:=000}xx",
+    "words": [
+      "안녕${PWD:=000}xx"
+    ],
+    "buildkitWords": [
+      "${PWD:=000}xx"
+    ]
+  },
+  {
+    "input": "안녕${PWD:+${PWD}:}xx",
+    "word": "안녕${PWD:+${PWD}:}xx",
+    "words": [
+      "안녕${PWD:+${PWD}:}xx"
+    ],
+    "buildkitWords": [
+      "${PWD:+${PWD}:}xx"
+    ]
+  },
+  {
+    "input": "안녕${XXX:-\\$PWD:}xx",
+    "word": "안녕${XXX:-$PWD:}xx",
+    "words": [
+      "안녕${XXX:-$PWD:}xx"
+    ],
+    "buildkitWords": [
+      "${XXX:-$PWD:}xx"
+    ]
+  },
+  {
+    "input": "안녕${XXX:-\\${PWD}z}xx",
+    "word": "안녕${XXX:-${PWD}z}xx",
+    "words": [
+      "안녕${XXX:-${PWD}z}xx"
+    ],
+    "buildkitWords": [
+      "${XXX:-${PWD}z}xx"
+    ]
+  },
+  {
+    "input": "$KOREAN",
+    "word": "$KOREAN",
+    "words": [
+      "$KOREAN"
+    ]
+  },
+  {
+    "input": "안녕$KOREAN",
+    "word": "안녕$KOREAN",
+    "words": [
+      "안녕$KOREAN"
+    ]
+  },
+  {
+    "input": "${{aaa}",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "${aaa}}",
+    "word": "${aaa}}",
+    "words": [
+      "${aaa}}"
+    ]
+  },
+  {
+    "input": "${aaa",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "${{aaa:-bbb}",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "${aaa:-bbb}}",
+    "word": "${aaa:-bbb}}",
+    "words": [
+      "${aaa:-bbb}}"
+    ]
+  },
+  {
+    "input": "${aaa:-bbb",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "${aaa:-bbb}",
+    "word": "${aaa:-bbb}",
+    "words": [
+      "${aaa:-bbb}"
+    ]
+  },
+  {
+    "input": "${aaa:-${bbb:-ccc}}",
+    "word": "${aaa:-${bbb:-ccc}}",
+    "words": [
+      "${aaa:-${bbb:-ccc}}"
+    ]
+  },
+  {
+    "input": "${aaa:-bbb ${foo}",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "${aaa:-bbb {foo}",
+    "word": "${aaa:-bbb {foo}",
+    "words": [
+      "${aaa:-bbb",
+      "{foo}"
+    ]
+  },
+  {
+    "input": "${:}",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "${:-bbb}",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "${:+bbb}",
+    "word": null,
+    "words": [],
+    "error": true
+  },
+  {
+    "input": "$1",
+    "word": "$1",
+    "words": [
+      "$1"
+    ]
+  },
+  {
+    "input": "${1}",
+    "word": "${1}",
+    "words": [
+      "${1}"
+    ]
+  },
+  {
+    "input": "${1:+bbb}",
+    "word": "${1:+bbb}",
+    "words": [
+      "${1:+bbb}"
+    ]
+  },
+  {
+    "input": "${1:-bbb}",
+    "word": "${1:-bbb}",
+    "words": [
+      "${1:-bbb}"
+    ]
+  },
+  {
+    "input": "$2",
+    "word": "$2",
+    "words": [
+      "$2"
+    ]
+  },
+  {
+    "input": "${2}",
+    "word": "${2}",
+    "words": [
+      "${2}"
+    ]
+  },
+  {
+    "input": "${2:+bbb}",
+    "word": "${2:+bbb}",
+    "words": [
+      "${2:+bbb}"
+    ]
+  },
+  {
+    "input": "${2:-bbb}",
+    "word": "${2:-bbb}",
+    "words": [
+      "${2:-bbb}"
+    ]
+  },
+  {
+    "input": "$3",
+    "word": "$3",
+    "words": [
+      "$3"
+    ]
+  },
+  {
+    "input": "${3}",
+    "word": "${3}",
+    "words": [
+      "${3}"
+    ]
+  },
+  {
+    "input": "${3:+bbb}",
+    "word": "${3:+bbb}",
+    "words": [
+      "${3:+bbb}"
+    ]
+  },
+  {
+    "input": "${3:-bbb}",
+    "word": "${3:-bbb}",
+    "words": [
+      "${3:-bbb}"
+    ]
+  },
+  {
+    "input": "$4",
+    "word": "$4",
+    "words": [
+      "$4"
+    ]
+  },
+  {
+    "input": "${4}",
+    "word": "${4}",
+    "words": [
+      "${4}"
+    ]
+  },
+  {
+    "input": "${4:+bbb}",
+    "word": "${4:+bbb}",
+    "words": [
+      "${4:+bbb}"
+    ]
+  },
+  {
+    "input": "${4:-bbb}",
+    "word": "${4:-bbb}",
+    "words": [
+      "${4:-bbb}"
+    ]
+  },
+  {
+    "input": "$5",
+    "word": "$5",
+    "words": [
+      "$5"
+    ]
+  },
+  {
+    "input": "${5}",
+    "word": "${5}",
+    "words": [
+      "${5}"
+    ]
+  },
+  {
+    "input": "${5:+bbb}",
+    "word": "${5:+bbb}",
+    "words": [
+      "${5:+bbb}"
+    ]
+  },
+  {
+    "input": "${5:-bbb}",
+    "word": "${5:-bbb}",
+    "words": [
+      "${5:-bbb}"
+    ]
+  },
+  {
+    "input": "$6",
+    "word": "$6",
+    "words": [
+      "$6"
+    ]
+  },
+  {
+    "input": "${6}",
+    "word": "${6}",
+    "words": [
+      "${6}"
+    ]
+  },
+  {
+    "input": "${6:+bbb}",
+    "word": "${6:+bbb}",
+    "words": [
+      "${6:+bbb}"
+    ]
+  },
+  {
+    "input": "${6:-bbb}",
+    "word": "${6:-bbb}",
+    "words": [
+      "${6:-bbb}"
+    ]
+  },
+  {
+    "input": "$7",
+    "word": "$7",
+    "words": [
+      "$7"
+    ]
+  },
+  {
+    "input": "${7}",
+    "word": "${7}",
+    "words": [
+      "${7}"
+    ]
+  },
+  {
+    "input": "${7:+bbb}",
+    "word": "${7:+bbb}",
+    "words": [
+      "${7:+bbb}"
+    ]
+  },
+  {
+    "input": "${7:-bbb}",
+    "word": "${7:-bbb}",
+    "words": [
+      "${7:-bbb}"
+    ]
+  },
+  {
+    "input": "$8",
+    "word": "$8",
+    "words": [
+      "$8"
+    ]
+  },
+  {
+    "input": "${8}",
+    "word": "${8}",
+    "words": [
+      "${8}"
+    ]
+  },
+  {
+    "input": "${8:+bbb}",
+    "word": "${8:+bbb}",
+    "words": [
+      "${8:+bbb}"
+    ]
+  },
+  {
+    "input": "${8:-bbb}",
+    "word": "${8:-bbb}",
+    "words": [
+      "${8:-bbb}"
+    ]
+  },
+  {
+    "input": "$9",
+    "word": "$9",
+    "words": [
+      "$9"
+    ]
+  },
+  {
+    "input": "${9}",
+    "word": "${9}",
+    "words": [
+      "${9}"
+    ]
+  },
+  {
+    "input": "${9:+bbb}",
+    "word": "${9:+bbb}",
+    "words": [
+      "${9:+bbb}"
+    ]
+  },
+  {
+    "input": "${9:-bbb}",
+    "word": "${9:-bbb}",
+    "words": [
+      "${9:-bbb}"
+    ]
+  },
+  {
+    "input": "$999",
+    "word": "$999",
+    "words": [
+      "$999"
+    ]
+  },
+  {
+    "input": "${999}",
+    "word": "${999}",
+    "words": [
+      "${999}"
+    ]
+  },
+  {
+    "input": "${999:+bbb}",
+    "word": "${999:+bbb}",
+    "words": [
+      "${999:+bbb}"
+    ]
+  },
+  {
+    "input": "${999:-bbb}",
+    "word": "${999:-bbb}",
+    "words": [
+      "${999:-bbb}"
+    ]
+  },
+  {
+    "input": "$999aaa",
+    "word": "$999aaa",
+    "words": [
+      "$999aaa"
+    ]
+  },
+  {
+    "input": "${999}aaa",
+    "word": "${999}aaa",
+    "words": [
+      "${999}aaa"
+    ]
+  },
+  {
+    "input": "${999:+bbb}aaa",
+    "word": "${999:+bbb}aaa",
+    "words": [
+      "${999:+bbb}aaa"
+    ]
+  },
+  {
+    "input": "${999:-bbb}aaa",
+    "word": "${999:-bbb}aaa",
+    "words": [
+      "${999:-bbb}aaa"
+    ]
+  },
+  {
+    "input": "$001",
+    "word": "$001",
+    "words": [
+      "$001"
+    ]
+  },
+  {
+    "input": "${001}",
+    "word": "${001}",
+    "words": [
+      "${001}"
+    ]
+  },
+  {
+    "input": "${001:+bbb}",
+    "word": "${001:+bbb}",
+    "words": [
+      "${001:+bbb}"
+    ]
+  },
+  {
+    "input": "${001:-bbb}",
+    "word": "${001:-bbb}",
+    "words": [
+      "${001:-bbb}"
+    ]
+  },
+  {
+    "input": "$001aaa",
+    "word": "$001aaa",
+    "words": [
+      "$001aaa"
+    ]
+  },
+  {
+    "input": "${001}aaa",
+    "word": "${001}aaa",
+    "words": [
+      "${001}aaa"
+    ]
+  },
+  {
+    "input": "${001:+bbb}aaa",
+    "word": "${001:+bbb}aaa",
+    "words": [
+      "${001:+bbb}aaa"
+    ]
+  },
+  {
+    "input": "${001:-bbb}aaa",
+    "word": "${001:-bbb}aaa",
+    "words": [
+      "${001:-bbb}aaa"
+    ]
+  },
+  {
+    "input": "$@",
+    "word": "$@",
+    "words": [
+      "$@"
+    ]
+  },
+  {
+    "input": "${@}",
+    "word": "${@}",
+    "words": [
+      "${@}"
+    ]
+  },
+  {
+    "input": "${@:+bbb}",
+    "word": "${@:+bbb}",
+    "words": [
+      "${@:+bbb}"
+    ]
+  },
+  {
+    "input": "${@:-bbb}",
+    "word": "${@:-bbb}",
+    "words": [
+      "${@:-bbb}"
+    ]
+  },
+  {
+    "input": "$@@@",
+    "word": "$@@@",
+    "words": [
+      "$@@@"
+    ]
+  },
+  {
+    "input": "$@aaa",
+    "word": "$@aaa",
+    "words": [
+      "$@aaa"
+    ]
+  },
+  {
+    "input": "${@}aaa",
+    "word": "${@}aaa",
+    "words": [
+      "${@}aaa"
+    ]
+  },
+  {
+    "input": "${@:+bbb}aaa",
+    "word": "${@:+bbb}aaa",
+    "words": [
+      "${@:+bbb}aaa"
+    ]
+  },
+  {
+    "input": "${@:-bbb}aaa",
+    "word": "${@:-bbb}aaa",
+    "words": [
+      "${@:-bbb}aaa"
+    ]
+  },
+  {
+    "input": "$*",
+    "word": "$*",
+    "words": [
+      "$*"
+    ]
+  },
+  {
+    "input": "${*}",
+    "word": "${*}",
+    "words": [
+      "${*}"
+    ]
+  },
+  {
+    "input": "${*:+bbb}",
+    "word": "${*:+bbb}",
+    "words": [
+      "${*:+bbb}"
+    ]
+  },
+  {
+    "input": "${*:-bbb}",
+    "word": "${*:-bbb}",
+    "words": [
+      "${*:-bbb}"
+    ]
+  },
+  {
+    "input": "$#",
+    "word": "$#",
+    "words": [
+      "$#"
+    ]
+  },
+  {
+    "input": "${#}",
+    "word": "${#}",
+    "words": [
+      "${#}"
+    ]
+  },
+  {
+    "input": "${#:+bbb}",
+    "word": "${#:+bbb}",
+    "words": [
+      "${#:+bbb}"
+    ]
+  },
+  {
+    "input": "${#:-bbb}",
+    "word": "${#:-bbb}",
+    "words": [
+      "${#:-bbb}"
+    ]
+  },
+  {
+    "input": "$?",
+    "word": "$?",
+    "words": [
+      "$?"
+    ]
+  },
+  {
+    "input": "${?}",
+    "word": "${?}",
+    "words": [
+      "${?}"
+    ]
+  },
+  {
+    "input": "${?:+bbb}",
+    "word": "${?:+bbb}",
+    "words": [
+      "${?:+bbb}"
+    ]
+  },
+  {
+    "input": "${?:-bbb}",
+    "word": "${?:-bbb}",
+    "words": [
+      "${?:-bbb}"
+    ]
+  },
+  {
+    "input": "$-",
+    "word": "$-",
+    "words": [
+      "$-"
+    ]
+  },
+  {
+    "input": "${-}",
+    "word": "${-}",
+    "words": [
+      "${-}"
+    ]
+  },
+  {
+    "input": "${-:+bbb}",
+    "word": "${-:+bbb}",
+    "words": [
+      "${-:+bbb}"
+    ]
+  },
+  {
+    "input": "${-:-bbb}",
+    "word": "${-:-bbb}",
+    "words": [
+      "${-:-bbb}"
+    ]
+  },
+  {
+    "input": "$$",
+    "word": "$$",
+    "words": [
+      "$$"
+    ]
+  },
+  {
+    "input": "${$}",
+    "word": "${$}",
+    "words": [
+      "${$}"
+    ]
+  },
+  {
+    "input": "${$:+bbb}",
+    "word": "${$:+bbb}",
+    "words": [
+      "${$:+bbb}"
+    ]
+  },
+  {
+    "input": "${$:-bbb}",
+    "word": "${$:-bbb}",
+    "words": [
+      "${$:-bbb}"
+    ]
+  },
+  {
+    "input": "$!",
+    "word": "$!",
+    "words": [
+      "$!"
+    ]
+  },
+  {
+    "input": "${!}",
+    "word": "${!}",
+    "words": [
+      "${!}"
+    ]
+  },
+  {
+    "input": "${!:+bbb}",
+    "word": "${!:+bbb}",
+    "words": [
+      "${!:+bbb}"
+    ]
+  },
+  {
+    "input": "${!:-bbb}",
+    "word": "${!:-bbb}",
+    "words": [
+      "${!:-bbb}"
+    ]
+  },
+  {
+    "input": "$0",
+    "word": "$0",
+    "words": [
+      "$0"
+    ]
+  },
+  {
+    "input": "${0}",
+    "word": "${0}",
+    "words": [
+      "${0}"
+    ]
+  },
+  {
+    "input": "${0:+bbb}",
+    "word": "${0:+bbb}",
+    "words": [
+      "${0:+bbb}"
+    ]
+  },
+  {
+    "input": "${0:-bbb}",
+    "word": "${0:-bbb}",
+    "words": [
+      "${0:-bbb}"
+    ]
+  }
+]
