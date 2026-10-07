@@ -1,6 +1,7 @@
 import { expect } from 'vitest'
 
 import { isDebug, sandboxTest, secureSandboxTest } from './setup'
+import { InvalidArgumentError } from '../src'
 
 sandboxTest('create context with no options', async ({ sandbox }) => {
   const context = await sandbox.createCodeContext()
@@ -60,6 +61,14 @@ sandboxTest('restart context', async ({ sandbox }) => {
   expect(execution.error).toBeDefined()
   expect(execution.error?.name).toBe('NameError')
   expect(execution.error?.value).toBe("name 'x' is not defined")
+})
+
+sandboxTest('pass context and language', async ({ sandbox }) => {
+  const context = await sandbox.createCodeContext({ language: 'python' })
+  await expect(
+    // @ts-expect-error context and language are mutually exclusive
+    sandbox.runCode("console.log('Hello, World!')", { context, language: 'js' })
+  ).rejects.toThrowError(InvalidArgumentError)
 })
 
 secureSandboxTest.skipIf(isDebug)(
