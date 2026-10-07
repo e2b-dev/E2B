@@ -17,7 +17,7 @@ class TemplateBuildRequestV3:
             "my-template:v1"). If tag is included, it will be treated as if the tag was provided in the tags array.
         tags (Union[Unset, list[str]]): Tags to assign to the template build
         alias (Union[Unset, str]): Alias of the template. Deprecated, use name instead.
-        team_id (Union[Unset, str]): Identifier of the team
+        team_id (Union[Unset, str]): Identifier of the team, as its UUID or its public project ID (prj_)
         cpu_count (Union[Unset, int]): CPU cores for the sandbox
         memory_mb (Union[Unset, int]): Memory for the sandbox in MiB
         min_free_disk_mb (Union[Unset, int]): Requested minimum free space after the template's build steps, in MiB.
