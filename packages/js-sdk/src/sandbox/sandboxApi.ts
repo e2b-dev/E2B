@@ -3,7 +3,6 @@ import {
   ClientFactory,
   ConnectionConfig,
   ConnectionOpts,
-  DEFAULT_SANDBOX_TIMEOUT_MS,
 } from '../connectionConfig'
 import { compareVersions } from 'compare-versions'
 import { ALL_TRAFFIC } from './network'
@@ -286,7 +285,7 @@ export type SandboxNetworkOpts = {
    * connection is dialed. Omit it to send the sandbox's traffic out directly.
    *
    * Available on E2B Cloud and in BYOC deployments; a sandbox that names a
-   * proxy on a deployment built from the open source `e2b-dev/infra`
+   * proxy on a deployment built from the open source `e2b-dev/runtime`
    * repository is rejected as unsupported.
    *
    * @example
@@ -315,6 +314,21 @@ export type SandboxNetworkOpts = {
    * @default ${PORT}-sandboxid.e2b.app
    */
   maskRequestHost?: string
+
+  /**
+   * Ports whose public URLs should connect to the sandbox using HTTPS.
+   *
+   * Use this when the service listening on the port serves HTTPS (TLS)
+   * itself. This is not TLS passthrough — traffic is still terminated at the
+   * E2B proxy and re-encrypted on the hop to the sandbox. The backend
+   * certificate is not verified, so self-signed certificates work.
+   *
+   * @example
+   * ```ts
+   * await Sandbox.create({ network: { httpsPorts: [3000] } })
+   * ```
+   */
+  httpsPorts?: number[]
 }
 
 /**
@@ -334,6 +348,7 @@ export type SandboxNetworkInfo = {
   egressProxy?: SandboxEgressProxyInfo
   allowPublicTraffic?: boolean
   maskRequestHost?: string
+  httpsPorts?: number[]
 }
 
 /**
@@ -456,6 +471,8 @@ export type SandboxLifecycle = {
    * `'kill'`, or `{ action, keepMemory }` to also control the pause snapshot kind.
    * Omitted from the create request when unset, leaving the API's default
    * (currently `kill`) in effect.
+   *
+   * @throws {@link InvalidArgumentError} if the action is outside the two literals.
    */
   onTimeout: SandboxOnTimeout
 
@@ -496,6 +513,7 @@ export interface SandboxApiOpts extends Partial<
     | 'debug'
     | 'domain'
     | 'requestTimeoutMs'
+    | 'retries'
     | 'signal'
   >
 > {}
@@ -510,8 +528,6 @@ export interface SandboxPauseOpts extends SandboxApiOpts {
    * When `false`, the in-memory state is dropped and only the filesystem is
    * persisted (a filesystem-only snapshot); resuming such a sandbox cold-boots
    * (reboots) it from disk, losing running processes and open connections.
-   *
-   * @default true
    */
   keepMemory?: boolean
 }
@@ -521,21 +537,18 @@ export interface SandboxPauseOpts extends SandboxApiOpts {
  */
 export interface SandboxForkOpts extends ConnectionOpts {
   /**
-   * Number of forked sandboxes to create.
+   * Number of forked sandboxes to create. Must be an integer between 1 and 20.
+   * When omitted, the field is left off the request and the API default applies.
    *
    * All forks boot from the same snapshot — the snapshot is captured once
    * regardless of count. Each fork succeeds or fails independently; the
    * outcome of each is reported in its entry of the returned array.
-   *
-   * @default 1
    */
   count?: number
 
   /**
    * Timeout for the forked sandboxes in **milliseconds**.
    * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
-   *
-   * @default 300_000 // 5 minutes
    */
   timeoutMs?: number
 }
@@ -546,15 +559,40 @@ export interface SandboxForkOpts extends ConnectionOpts {
  * from starting. Per-fork error codes map to the same error classes as other
  * API errors (e.g. 429 to `RateLimitError`).
  */
-type SandboxForkResponse =
-  | {
-      sandboxId: string
-      sandboxDomain?: string
-      envdVersion: string
-      envdAccessToken?: string
-      trafficAccessToken?: string
-    }
-  | Error
+const MAX_FORK_COUNT = 20
+
+function validateForkCount(count: number | undefined) {
+  if (count === undefined) {
+    return
+  }
+  if (!Number.isInteger(count) || count < 1 || count > MAX_FORK_COUNT) {
+    throw new InvalidArgumentError(
+      `count must be an integer between 1 and ${MAX_FORK_COUNT}`
+    )
+  }
+}
+
+type SandboxCreateResponse = {
+  sandboxId: string
+  sandboxDomain?: string
+  envdVersion: string
+  envdAccessToken?: string
+  trafficAccessToken?: string
+}
+
+type SandboxForkResponse = SandboxCreateResponse | Error
+
+function toSandboxCreateResponse(
+  sandbox: components['schemas']['Sandbox']
+): SandboxCreateResponse {
+  return {
+    sandboxId: sandbox.sandboxID,
+    sandboxDomain: sandbox.domain || undefined,
+    envdVersion: sandbox.envdVersion,
+    envdAccessToken: sandbox.envdAccessToken,
+    trafficAccessToken: sandbox.trafficAccessToken || undefined,
+  }
+}
 
 /**
  * Options for creating a new Sandbox.
@@ -587,22 +625,16 @@ export interface SandboxOpts extends ConnectionOpts {
   /**
    * Timeout for the sandbox in **milliseconds**.
    * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
-   *
-   * @default 300_000 // 5 minutes
    */
   timeoutMs?: number
 
   /**
-   * Secure all traffic coming to the sandbox controller with auth token
-   *
-   * @default true
+   * @deprecated Every sandbox secures envd access; this option is accepted for backward compatibility and ignored.
    */
   secure?: boolean
 
   /**
    * Allow sandbox to access the internet. If set to `False`, it works the same as setting network `denyOut` to `[0.0.0.0/0]`.
-   *
-   * @default true
    */
   allowInternetAccess?: boolean
 
@@ -680,8 +712,6 @@ export type SandboxConnectOpts = ConnectionOpts & {
    * Timeout for the sandbox in **milliseconds**.
    * For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
    * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
-   *
-   * @default 300_000 // 5 minutes
    */
   timeoutMs?: number
 
@@ -692,7 +722,14 @@ export type SandboxConnectOpts = ConnectionOpts & {
    * is not enabled; a no-op for a snapshot without memory or a sandbox that is
    * already running.
    *
+   * Needs a control plane that knows this option: E2B Cloud, or a self-hosted
+   * or BYOC deployment built from `e2b-dev/runtime` at or after the commit that
+   * added the `memory` field to connect/resume (2026-08-20). An older control
+   * plane drops the field and restores memory while answering as if the
+   * request had succeeded.
+   *
    * @default 'restore'
+   * @throws {@link InvalidArgumentError} if the value is outside the two literals.
    */
   onResume?: SandboxOnResume
 }
@@ -732,8 +769,6 @@ export interface SandboxListOpts extends Omit<SandboxApiOpts, 'signal'> {
   /**
    * Sort order of the list of sandboxes by start time, applied across the
    * whole result set before pagination (not within a page).
-   *
-   * @default 'desc'
    */
   order?: SandboxListOrder
 
@@ -1142,6 +1177,9 @@ function buildNetworkBody(
     ...(network.maskRequestHost !== undefined
       ? { maskRequestHost: network.maskRequestHost }
       : {}),
+    ...(network.httpsPorts !== undefined
+      ? { httpsPorts: network.httpsPorts }
+      : {}),
   }
 }
 
@@ -1304,6 +1342,7 @@ export class SandboxApi extends ClientFactory {
             egressProxy: fromApiEgressProxy(res.data.network.egressProxy),
             allowPublicTraffic: res.data.network.allowPublicTraffic,
             maskRequestHost: res.data.network.maskRequestHost,
+            httpsPorts: res.data.network.httpsPorts,
           }
         : undefined,
       lifecycle: res.data.lifecycle
@@ -1502,7 +1541,7 @@ export class SandboxApi extends ClientFactory {
         },
       },
       body: {
-        memory: apiOpts?.keepMemory ?? true,
+        memory: apiOpts?.keepMemory,
       },
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
@@ -1629,12 +1668,9 @@ export class SandboxApi extends ClientFactory {
 
   protected static async createSandbox(
     template: string,
-    timeoutMs: number,
+    timeoutMs?: number,
     opts?: SandboxOpts
   ) {
-    const apiOpts = this.resolveOpts(opts)
-    const config = new ConnectionConfig(apiOpts)
-    const client = new ApiClient(config)
     // onTimeout accepts a bare action (`'pause'` / `'kill'`) or the object form
     // `{ action, keepMemory }`. The discriminated union type forbids `keepMemory`
     // on `action: 'kill'`; re-check at runtime for untyped callers.
@@ -1645,6 +1681,19 @@ export class SandboxApi extends ClientFactory {
     const onTimeoutConfigured = requestedOnTimeout != null
     const onTimeout = requestedOnTimeout ?? 'kill'
     const action = typeof onTimeout === 'string' ? onTimeout : onTimeout.action
+    const allowedActions = ['pause', 'kill']
+    if (onTimeoutConfigured && !allowedActions.includes(action)) {
+      // Name the field the caller wrote: the object form's bad value is on
+      // `.action`, not on `onTimeout` itself.
+      const field =
+        typeof onTimeout === 'string' ? 'onTimeout' : 'onTimeout.action'
+      throw new InvalidArgumentError(
+        `${field} must be one of: ${allowedActions.join(', ')} (got ${JSON.stringify(action)}).`
+      )
+    }
+    // The action never reaches the API — it is resolved here into the boolean
+    // autoPause — so an unrecognized value cannot be rejected server-side, and
+    // resolving it to kill would delete the sandbox a caller asked to preserve.
     const hasKeepMemory =
       typeof onTimeout !== 'string' && 'keepMemory' in onTimeout
     const keepMemory =
@@ -1678,14 +1727,14 @@ export class SandboxApi extends ClientFactory {
     // against the workload tokens this request registers.
     const iam = buildIamBody(opts?.iam)
 
-    const body: components['schemas']['NewSandbox'] = {
+    const body: components['schemas']['NewSandboxV2'] = {
       templateID: template,
       metadata: opts?.metadata,
       mcp: opts?.mcp as Record<string, unknown> | undefined,
       envVars: opts?.envs,
-      timeout: timeoutToSeconds(timeoutMs),
-      secure: opts?.secure ?? true,
-      allow_internet_access: opts?.allowInternetAccess ?? true,
+      timeout:
+        timeoutMs === undefined ? undefined : timeoutToSeconds(timeoutMs),
+      allow_internet_access: opts?.allowInternetAccess,
       network: buildNetworkBody(opts?.network, iam),
       iam,
       autoPause: onTimeoutConfigured ? action === 'pause' : undefined,
@@ -1704,7 +1753,10 @@ export class SandboxApi extends ClientFactory {
       )
     }
 
-    const res = await client.api.POST('/sandboxes', {
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
+    const client = new ApiClient(config)
+    const res = await client.api.POST('/v2/sandboxes', {
       body,
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
@@ -1721,24 +1773,16 @@ export class SandboxApi extends ClientFactory {
       )
     }
 
-    return {
-      sandboxId: res.data!.sandboxID,
-      sandboxDomain: res.data!.domain || undefined,
-      envdVersion: res.data!.envdVersion,
-      envdAccessToken: res.data!.envdAccessToken,
-      trafficAccessToken: res.data!.trafficAccessToken || undefined,
-    }
+    return toSandboxCreateResponse(res.data!)
   }
 
   protected static async forkSandbox(
     sandboxId: string,
-    timeoutMs: number,
-    count: number,
+    timeoutMs?: number,
+    count?: number,
     opts?: SandboxApiOpts
   ): Promise<SandboxForkResponse[]> {
-    if (count < 1) {
-      throw new InvalidArgumentError('count must be at least 1')
-    }
+    validateForkCount(count)
 
     const apiOpts = this.resolveOpts(opts)
     const config = new ConnectionConfig(apiOpts)
@@ -1751,7 +1795,8 @@ export class SandboxApi extends ClientFactory {
         },
       },
       body: {
-        timeout: timeoutToSeconds(timeoutMs),
+        timeout:
+          timeoutMs === undefined ? undefined : timeoutToSeconds(timeoutMs),
         count,
       },
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
@@ -1788,13 +1833,7 @@ export class SandboxApi extends ClientFactory {
           return apiErrorFromCode(result.error.code, result.error.message)
         }
 
-        return {
-          sandboxId: result.sandbox.sandboxID,
-          sandboxDomain: result.sandbox.domain || undefined,
-          envdVersion: result.sandbox.envdVersion,
-          envdAccessToken: result.sandbox.envdAccessToken,
-          trafficAccessToken: result.sandbox.trafficAccessToken || undefined,
-        }
+        return toSandboxCreateResponse(result.sandbox)
       }
     )
   }
@@ -1804,20 +1843,33 @@ export class SandboxApi extends ClientFactory {
     opts?: SandboxConnectOpts
   ) {
     const apiOpts = this.resolveOpts(opts)
-    const timeoutMs = apiOpts?.timeoutMs ?? DEFAULT_SANDBOX_TIMEOUT_MS
+    const timeoutMs = apiOpts?.timeoutMs
+
+    // A nullish value is not a choice of restore, matching every other nullish
+    // option. Any other value outside the union never reaches the API — it is
+    // resolved here into the boolean memory field — so it cannot be rejected
+    // server-side, and resolving it to restore would silently skip the reboot.
+    const onResume = apiOpts?.onResume ?? undefined
+    const allowedOnResume = ['restore', 'reboot']
+    if (onResume !== undefined && !allowedOnResume.includes(onResume)) {
+      throw new InvalidArgumentError(
+        `onResume must be one of: ${allowedOnResume.join(', ')} (got ${JSON.stringify(onResume)}).`
+      )
+    }
 
     const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
-    const res = await client.api.POST('/sandboxes/{sandboxID}/connect', {
+    const res = await client.api.POST('/v2/sandboxes/{sandboxID}/connect', {
       params: {
         path: {
           sandboxID: sandboxId,
         },
       },
       body: {
-        timeout: timeoutToSeconds(timeoutMs),
-        memory: apiOpts?.onResume === 'reboot' ? false : undefined,
+        timeout:
+          timeoutMs === undefined ? undefined : timeoutToSeconds(timeoutMs),
+        memory: onResume === 'reboot' ? false : undefined,
       },
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
@@ -1831,13 +1883,7 @@ export class SandboxApi extends ClientFactory {
       throw err
     }
 
-    return {
-      sandboxId: res.data!.sandboxID,
-      sandboxDomain: res.data!.domain || undefined,
-      envdVersion: res.data!.envdVersion,
-      envdAccessToken: res.data!.envdAccessToken,
-      trafficAccessToken: res.data!.trafficAccessToken || undefined,
-    }
+    return toSandboxCreateResponse(res.data!)
   }
 }
 

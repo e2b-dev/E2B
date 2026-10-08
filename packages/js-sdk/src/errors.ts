@@ -1,7 +1,38 @@
-// This is the message for the sandbox timeout error when the response code is 502/Unavailable
-export function formatSandboxTimeoutError(message: string) {
-  return new TimeoutError(
-    `${message}: This error is likely due to sandbox timeout. You can modify the sandbox timeout by passing 'timeoutMs' when starting the sandbox or calling '.setTimeout' on the sandbox with the desired timeout.`
+// Messages of the 502 the proxy in front of envd answers with when the sandbox does
+// not exist anymore (killed or reached its timeout) or when it is running but envd's
+// port is not open (e.g. its network is down).
+const SANDBOX_NOT_FOUND_MESSAGE = 'was not found'
+const SANDBOX_PORT_NOT_OPEN_MESSAGE = 'port is not open'
+
+export function isSandboxNotFoundMessage(message: string): boolean {
+  return message.includes(SANDBOX_NOT_FOUND_MESSAGE)
+}
+
+export function isSandboxPortNotOpenMessage(message: string): boolean {
+  return message.includes(SANDBOX_PORT_NOT_OPEN_MESSAGE)
+}
+
+/**
+ * Maps a 502/Unavailable answered by the proxy in front of envd: the sandbox was not
+ * found (killed or reached its timeout) is a `SandboxNotRunningError`; the sandbox
+ * running but envd's port not open (e.g. its network is down) a
+ * `SandboxUnreachableError`; any other message (e.g. envd ending a stream because
+ * the connection to the sandbox was lost) a `SandboxUnreachableError` too, with the
+ * sandbox state reported as unknown.
+ */
+export function formatSandboxUnavailableError(message: string): Error {
+  if (isSandboxNotFoundMessage(message)) {
+    return new SandboxNotRunningError(
+      `${message}: The sandbox was killed or reached its timeout. You can modify the sandbox timeout by passing 'timeoutMs' when starting the sandbox or calling '.setTimeout' on the sandbox with the desired timeout.`
+    )
+  }
+  if (isSandboxPortNotOpenMessage(message)) {
+    return new SandboxUnreachableError(
+      `${message}: The sandbox is running but envd inside it could not be reached (e.g. its network is down). Check the sandbox state with 'Sandbox.getInfo()'.`
+    )
+  }
+  return new SandboxUnreachableError(
+    `${message}: The sandbox could not be reached and its state is unknown — it may have been killed or reached its timeout, or the connection to it was lost. Check the sandbox state with 'Sandbox.getInfo()'.`
   )
 }
 
@@ -11,6 +42,11 @@ export function formatSandboxTimeoutError(message: string) {
  * Thrown when general sandbox errors occur.
  */
 export class SandboxError extends Error {
+  /**
+   * HTTP status of the API response that produced this error, when there was one.
+   */
+  statusCode?: number
+
   constructor(message?: string) {
     super(message)
     this.name = 'SandboxError'
@@ -91,6 +127,58 @@ export class SandboxNotFoundError extends NotFoundError {
 }
 
 /**
+ * Thrown when the sandbox is not running anymore: the proxy in front of it
+ * answered a request (or the health probe run after a request failed at the
+ * connection level) with the sandbox not found — it was killed, paused or
+ * reached its timeout. Retrying the request will not help; create or resume a
+ * sandbox.
+ *
+ * The split from `SandboxUnreachableError` is only as good as the proxy's answer
+ * and the health probe: a sandbox that is gone but could not be asked about is a
+ * `SandboxUnreachableError`. `SandboxNotFoundError` is only raised by the control
+ * plane API (e.g. `Sandbox.connect()` to a sandbox that does not exist).
+ *
+ * Subclass of `TimeoutError`, which this case surfaced as before.
+ */
+export class SandboxNotRunningError extends TimeoutError {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message)
+    this.name = 'SandboxNotRunningError'
+    if (options?.cause !== undefined) {
+      this.cause = options.cause
+    }
+  }
+}
+
+/**
+ * Thrown when the sandbox could not be reached while it is not confirmed to be
+ * stopped: the proxy in front of the sandbox reports it running but envd's port
+ * not open (e.g. the sandbox's network is down), the proxy or envd answered
+ * with an unavailability the health probe could not resolve (e.g. the connection
+ * to the sandbox was lost mid-stream while the probe found it running), or a
+ * request failed at the connection level (the connection could not be
+ * established or was dropped mid-request) and the follow-up health probe got
+ * no answer from the sandbox either. A sandbox confirmed stopped (or paused) is
+ * a `SandboxNotRunningError` — but only as far as the probe can tell: a sandbox
+ * that is gone and could not be asked about surfaces here.
+ *
+ * This usually means the sandbox's network is down, envd inside it is not up
+ * (yet), or a network issue between the client and the sandbox. Check the
+ * sandbox state with `Sandbox.getInfo()`.
+ *
+ * Subclass of `TimeoutError`, which these cases surfaced as before.
+ */
+export class SandboxUnreachableError extends TimeoutError {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message)
+    this.name = 'SandboxUnreachableError'
+    if (options?.cause !== undefined) {
+      this.cause = options.cause
+    }
+  }
+}
+
+/**
  * Thrown when authentication fails.
  */
 export class AuthenticationError extends Error {
@@ -144,6 +232,32 @@ export class RateLimitError extends SandboxError {
   constructor(message: string) {
     super(message)
     this.name = 'RateLimitError'
+    this.statusCode = 429
+  }
+}
+
+/**
+ * Thrown when the API refused the operation because the service is
+ * temporarily busy (HTTP 503): no capacity to place a sandbox right now, or
+ * the node running the sandbox declined a request it cannot serve yet.
+ *
+ * Nothing was changed by the refused call: for example a refused pause
+ * leaves the sandbox running with its state intact, so the same call can be
+ * retried after a short wait.
+ *
+ * Like {@link AuthenticationError} and unlike the other API errors, this is
+ * not a {@link SandboxError}: it is raised for every 503 whatever the
+ * operation, so catch it explicitly.
+ */
+export class ServiceBusyError extends Error {
+  /**
+   * HTTP status of the API response: always 503.
+   */
+  readonly statusCode = 503
+
+  constructor(message: string) {
+    super(message)
+    this.name = 'ServiceBusyError'
   }
 }
 

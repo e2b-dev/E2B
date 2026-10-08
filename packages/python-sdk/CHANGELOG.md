@@ -1,5 +1,124 @@
 # @e2b/python-sdk
 
+## 2.54.0
+
+### Minor Changes
+
+- cc85f69: Replace the third-party Dockerfile parsers (`dockerfile-ast`, `dockerfile-parse`) used by `Template.fromDockerfile` / `Template.from_dockerfile` with a built-in parser ported from BuildKit. Quoted and escaped values in `ENV`/`ARG`/`COPY`, whitespace inside `RUN`/`CMD` arguments, mixed-case `AS` aliases, comments in line continuations, the `# escape=` directive, `COPY --chmod`, heredocs and `ENTRYPOINT` + `CMD` combination are now handled consistently in both SDKs. A `.dockerignore` line consisting of a lone `!` is now rejected, as Docker does, instead of being skipped.
+
+### Patch Changes
+
+- Updated dependencies [cc85f69]
+  - @e2b/dockerfile-utils-python@0.1.0
+
+## 2.53.1
+
+### Patch Changes
+
+- cd4c62b: Publish the changes from the previous release, which was versioned but failed to publish to npm and PyPI.
+
+## 2.53.0
+
+### Minor Changes
+
+- 1de92fc: Add `SandboxNotRunningError` / `SandboxNotRunningException` and `SandboxUnreachableError` / `SandboxUnreachableException` for envd requests that fail because the sandbox cannot be reached. Both extend `TimeoutError` / `TimeoutException`, which these cases raised before, so existing `instanceof TimeoutError` / `except TimeoutException` handling keeps working.
+
+  - `SandboxNotRunning*` — the proxy answered `502 "The sandbox was not found"` (killed, paused or timed out), either directly or from the health probe the SDK runs after a dropped connection or an unexplained `Unavailable` (e.g. the sandbox was killed mid-command). Retrying will not help.
+  - `SandboxUnreachable*` — the sandbox is not confirmed stopped but cannot be reached: `502 "port is not open"`, other `502`s, or a connection failure whose health probe got no answer. The original error is the `cause` / `__cause__`.
+  - A connection failure whose health probe finds the sandbox running still raises the original transport error. The probe itself runs without connection retries.
+
+  **Breaking (JS):** `commands.run` / `connect`, `pty.create` / `connect` and `files.watchDir` on a gone sandbox now throw `SandboxNotRunningError` instead of `SandboxNotFoundError`, like every other call. `SandboxNotFoundError` is only raised by the control plane API.
+
+### Patch Changes
+
+- 8f51c9f: Share the sandbox create/connect/fork response mapping (JS and Python) and the Python `Commands.run` / `Commands.connect` handle setup
+- b3bb653: Remove the `E2B_USER_AGENT_SOURCE` environment variable. The SDKs no longer add a `source/<value>` User-Agent token, append `?source=` to Code Interpreter requests, or log trace IDs and add `(trace_id=…)` to error messages when it is set to `ci`, so SDK behavior no longer depends on that variable.
+
+  Code Interpreter errors for statuses other than 404 and 502 now use the same `<status> <reason>[: <body>]` message in JS and Python: JS includes the response body, and Python falls back to the reason phrase when the body is empty.
+
+## 2.52.1
+
+### Patch Changes
+
+- cc29617: Match BuildKit when filtering the template build context with `.dockerignore`: a leading `**` followed by literal characters (e.g. `**.txt`) now matches at any depth, a negated pattern matching only a parent directory (e.g. `src/app.ts` then `!src`) no longer re-includes the path, and in the JS SDK `?` and bracket expressions match characters outside the BMP (e.g. emoji) as a single character.
+- 3ba1d05: Retry a `502` response only for operations that are safe to replay: a gateway may answer `502` after the API already processed the request, so a `502` from sandbox creation, fork, snapshot or another resource-creating `POST` is returned instead of being retried (which could create a duplicate). `503` is still retried for every operation. Secret updates (`POST /secrets/{id}`) are no longer replayed after a `502` or a dropped connection, as each update appends a new version.
+
+## 2.52.0
+
+### Minor Changes
+
+- 2de0cc3: Cap sandbox fork count at 20. `e2b sandbox fork --count`, JavaScript `Sandbox.fork({ count })`, and Python `Sandbox.fork(count=...)` reject a count outside 1–20 before the API call. Counts from 21 through 100 used to reach the API. Omitting count still leaves the field off the request so the API default applies.
+- 03887ad: Apply `.dockerignore` and `fileIgnorePatterns` / `file_ignore_patterns` the way Docker does when copying files into a template, so ignored files are no longer uploaded or included in the files hash:
+
+  - A pattern that matches a directory (`node_modules`, `.git`, `dist/`) now excludes everything under it, and a leading `/` is ignored.
+  - `!` patterns re-include paths; the last matching pattern wins.
+  - In Python, patterns now also apply when the copied path contains `.` or `..` segments (for example `copy(".")`).
+  - `fileIgnorePatterns` / `file_ignore_patterns` are applied after the `.dockerignore` lines, so they take precedence.
+  - Absolute patterns pointing into the context directory are treated as relative to it.
+  - Brace expansion (`{a,b}`) is not supported, as in Docker. In JS, `fileIgnorePatterns` such as `**/*.{env,pem}` previously expanded and now match `{env,pem}` literally; list each pattern separately instead (`**/*.env`, `**/*.pem`).
+  - In Python, copying a symlink to a directory copies the link itself instead of the directory's contents, as in JS.
+  - Copying a path inside an ignored directory now fails with "No files found", as in Docker. An invalid pattern (such as an unterminated `[`) now raises an error.
+
+  Directory sizes are no longer part of the files hash, since they depend on the filesystem rather than on the copied files. The files hash of `copy()` steps that copy directories or are affected by ignore patterns changes once, so those steps are rebuilt on the next build.
+
+- 2f92cc3: Add an `http_version` (Python) / `httpVersion` (JS) connection option, `"1.1"` or `"2"` (default), also settable with the `E2B_HTTP_VERSION` environment variable, to pin requests to the E2B API, to sandboxes (commands, filesystem, PTY) and to volume content to HTTP/1.1. It can also be bound once on a client: `E2B(http_version="1.1")` / `new E2B({ httpVersion: '1.1' })`.
+
+### Patch Changes
+
+- 97522f8: Retry control-plane HTTP requests after `502` and `503` responses, in addition to `429`, and after a network error once the request was written (dropped connection) — except for `POST` operations not known to be safe to replay (sandbox creation, fork, snapshot, volume/secret/API-key/webhook creation), which the server may already have processed. Failures to establish the connection keep being retried for every operation (`E2B_CONNECTION_RETRIES`). `Retry-After` is honored when the server sends one; otherwise retries back off exponentially with jitter, starting at 0.1 seconds and capped at 10 seconds. The existing `retries` option (default 3, `0` to disable) and request-timeout budget apply to all of them.
+- f713914: Sandbox `commands`/`files` traffic is now balanced across HTTP/2 connections the way the JS SDK's undici agent does it, instead of being sharded into a fixed number of pools by sandbox ID. Every request goes to the connection with the fewest streams in flight to its host; a new connection is dialed only when all existing ones already carry `E2B_STREAMS_PER_CONNECTION` streams to that host (default `100`), up to `E2B_MAX_CONNECTIONS` (default `200`). Envd RPC and HTTP calls share the same connections. `E2B_ENVD_POOL_SHARDS` and the `pool_shard` argument of the internal transport factories (`get_transport`, `get_httpx_transport`, `get_pyqwest_transport`, `get_envd_transport`) are removed.
+- 4975149: Remove unused internal constants and attributes, and share the command handle setup between `Commands.run` and `Commands.connect`
+
+## 2.51.0
+
+### Minor Changes
+
+- 5c0f6eb: Remove SDK-side defaults from API request payloads so the API defaults apply when options are omitted. Sandbox create/fork/connect no longer preset a 5-minute timeout, fork no longer presets `count: 1`, create no longer presets `allow_internet_access`, pause no longer presets keeping memory, and template builds no longer preset CPU/memory. Explicitly provided values are still sent unchanged.
+
+  Sandbox create and connect now use the v2 API endpoints (`POST /v2/sandboxes`, `POST /v2/sandboxes/{id}/connect`), which default `timeout` to 5 minutes and always secure envd access. The `secure` option on `Sandbox.create` is deprecated: every sandbox is secured, so the option is still accepted but ignored.
+
+### Patch Changes
+
+- 5c0f6eb: Remove client-side validation of the fork `count` argument. The API validates the requested fork count and rejects invalid values.
+
+## 2.50.0
+
+### Minor Changes
+
+- 5b015ad: Removed the V1 template build operations and schemas from the generated API clients. The API no longer serves them (runtime `87968fc1e1fa`); control planes carrying that change answer `410 Gone`. Template builds go through the Template SDK.
+
+  Visible removal, classified minor: the JS `paths` namespace loses `POST /templates`, `POST /templates/{templateID}`, `POST /templates/{templateID}/builds/{buildID}` and `POST /v2/templates`, and `components['schemas']` loses `TemplateLegacy`, `TemplateBuildRequest` and `TemplateBuildRequestV2`; the Python `e2b.api.client.models` package loses `TemplateLegacy`, `TemplateBuildRequest` and `TemplateBuildRequestV2`, and `e2b.api.client.api.templates` loses the `post_templates`, `post_templates_template_id`, `post_templates_template_id_builds_build_id` and `post_v2_templates` modules. No SDK method accepted or returned them; code that imported these names directly must drop the import.
+
+  The regenerated clients also pick up a documented `429` on most operations, a `409` on template create (v3), the upload-request `headers` on the build file-upload link, `minLength: 1` on the v2 build source fields, and a deprecation marker on the always-empty `logs` field of the build status.
+
+### Patch Changes
+
+- 956e3ab: Apply the request headers the API returns with a template layer-file upload link. Azure Blob Storage requires `x-ms-blob-type` on the upload request, which its signed URL cannot carry, so `COPY` instructions failed on Azure-backed clusters. GCS- and S3-backed clusters return no headers and are unaffected.
+
+## 2.49.1
+
+### Patch Changes
+
+- 5e418dc: Document that `onResume` / `on_resume` needs a control plane that knows the option: an older self-hosted or BYOC control plane drops the `memory` field and restores memory while reporting success, instead of rejecting the request.
+- 9136603: Retry control-plane HTTP requests up to three times after `429` responses using the server's delta-seconds `Retry-After` delay. Retries can be configured or disabled with `retries`, and stop when waiting would exhaust the request timeout. Envd requests, including filesystem operations, and volume-content requests are not retried.
+
+## 2.49.0
+
+### Minor Changes
+
+- f842aa8: Expose a configurable minimum free-disk target with `minFreeDiskMb` in JavaScript, `min_free_disk_mb` in Python, and `--min-free-disk-mb` in `template create`. Omission uses the team default, while explicit zero requests no minimum growth. Growth is best effort and never shrinks an existing filesystem.
+
+## 2.48.0
+
+### Minor Changes
+
+- 08efa36: Add `httpsPorts` (JS) / `https_ports` (Python) to the sandbox network config. Ports listed there have their public URLs proxied to the sandbox over HTTPS — use it when the service listening on the port serves TLS itself. This is not TLS passthrough: traffic is still terminated at the E2B proxy and re-encrypted on the hop to the sandbox, and the backend certificate is not verified, so self-signed certificates work. The configured ports are also returned in the sandbox info network config.
+- 6b759bf: Add `ServiceBusyError` (JavaScript) / `ServiceBusyException` (Python) for HTTP 503 responses: the API refused the operation because the service or the node running the sandbox is temporarily busy, the sandbox is unchanged, and the call can be retried. A refused `pause()` is the first case. The base `SandboxError` / `SandboxException` also carries the HTTP status as `statusCode` / `status_code` when the error came from an API response, so callers can branch on the status without parsing the message. Like `AuthenticationError` / `AuthenticationException`, the new class does not subclass the sandbox base error: it is raised for every 503 whatever the operation, so catch it explicitly.
+
+### Patch Changes
+
+- 58c81f1: `onTimeout` / `on_timeout` and `onResume` / `on_resume` now raise `InvalidArgumentError` / `InvalidArgumentException` for a value outside their two literals, instead of silently resolving it to the other one. Both are resolved into a boolean before the request is built, so the value never reaches the API and a typo cannot be rejected server-side: `on_timeout="Pause"` previously resolved to `kill` and deleted the sandbox and its snapshot at timeout, and `on_resume="Reboot"` previously restored the memory the caller asked to skip. A nullish value still means "not configured" and leaves the choice to the API.
+
 ## 2.47.0
 
 ### Minor Changes

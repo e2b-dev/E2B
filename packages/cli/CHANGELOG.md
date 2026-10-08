@@ -1,5 +1,74 @@
 # @e2b/cli
 
+## 2.21.1
+
+### Patch Changes
+
+- 4813482: Bump dependency floors: `undici` `^7.29.1 → ^7.30.0` and optional `undici8` `8.10.2 → 8.11.2` (backported HTTP/2 WebSocket, decompression backpressure and aborted-request fixes), `compare-versions` `^6.1.0 → ^6.1.1` in `e2b`, and `inquirer` `^12.10.0 → ^12.11.1` in `@e2b/cli`.
+- Updated dependencies [cc29617]
+- Updated dependencies [3ba1d05]
+- Updated dependencies [4813482]
+- Updated dependencies [d0ed5c1]
+  - e2b@2.52.1
+
+## 2.21.0
+
+### Minor Changes
+
+- 2de0cc3: Cap sandbox fork count at 20. `e2b sandbox fork --count`, JavaScript `Sandbox.fork({ count })`, and Python `Sandbox.fork(count=...)` reject a count outside 1–20 before the API call. Counts from 21 through 100 used to reach the API. Omitting count still leaves the field off the request so the API default applies.
+
+### Patch Changes
+
+- 8c7e5cb: Update the protobuf and OpenAPI clients, terminal styling, and interactive prompts to compatible minor releases.
+- Updated dependencies [2de0cc3]
+- Updated dependencies [03887ad]
+- Updated dependencies [2f92cc3]
+- Updated dependencies [8c7e5cb]
+- Updated dependencies [97522f8]
+- Updated dependencies [8c7e5cb]
+- Updated dependencies [4975149]
+  - e2b@2.52.0
+
+## 2.20.0
+
+### Minor Changes
+
+- 6a608ef: Add `e2b sandbox fork` command to fork a running sandbox into one or more new sandboxes
+
+## 2.19.1
+
+### Patch Changes
+
+- 5b015ad: Removed the hidden `e2b template build` command (alias `bd`). It printed a V1 deprecation notice and exited 1; the V1 build system it fronted is gone from the API. A script still calling it now gets commander's unknown-command error with the same exit code. Build templates with `e2b template create` or the Template SDK; `e2b template migrate` still converts a V1 project (see https://e2b.dev/docs/template/migration-v2).
+- Updated dependencies [956e3ab]
+- Updated dependencies [e1fbe86]
+- Updated dependencies [80496c0]
+- Updated dependencies [5b015ad]
+- Updated dependencies [80496c0]
+- Updated dependencies [e1fbe86]
+  - e2b@2.50.0
+
+## 2.19.0
+
+### Minor Changes
+
+- f842aa8: Expose a configurable minimum free-disk target with `minFreeDiskMb` in JavaScript, `min_free_disk_mb` in Python, and `--min-free-disk-mb` in `template create`. Omission uses the team default, while explicit zero requests no minimum growth. Growth is best effort and never shrinks an existing filesystem.
+
+### Patch Changes
+
+- Updated dependencies [f842aa8]
+  - e2b@2.49.0
+
+## 2.18.2
+
+### Patch Changes
+
+- b8b4323: Skip the update check when the `NO_UPDATE_NOTIFIER` environment variable is set, so system package managers (for example Nix) can install the CLI without it suggesting updates they cannot apply. Help output now always names the program `e2b` instead of echoing the entrypoint file name.
+- Updated dependencies [08efa36]
+- Updated dependencies [6b759bf]
+- Updated dependencies [58c81f1]
+  - e2b@2.48.0
+
 ## 2.18.1
 
 ### Patch Changes

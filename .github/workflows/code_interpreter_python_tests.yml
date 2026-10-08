@@ -18,9 +18,6 @@ on:
 permissions:
   contents: read
 
-env:
-  E2B_USER_AGENT_SOURCE: ci
-
 jobs:
   test:
     defaults:
@@ -60,9 +57,7 @@ jobs:
           else
             uv run pytest --verbose --numprocesses=1 \
               --ignore=tests/async/test_async_interrupt.py \
-              --ignore=tests/async/test_async_systemd.py \
-              --ignore=tests/sync/test_interrupt.py \
-              --ignore=tests/sync/test_systemd.py
+              --ignore=tests/sync/test_interrupt.py
           fi
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}

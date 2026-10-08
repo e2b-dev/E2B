@@ -110,6 +110,43 @@ def test_sync_pool_is_cached_per_proxy():
     assert pool_a is not pool_c
 
 
+def test_sync_retry_connect_false_returns_the_pool_under_the_retrying_transport():
+    key = (None, None, api_client_sync.DEFAULT_HTTP_VERSION)
+    retrying = api_client_sync.get_pyqwest_transport(None)
+    plain = api_client_sync.get_pyqwest_transport(None, retry_connect=False)
+
+    assert isinstance(retrying, api_client_sync.ConnectionRetryTransport)
+    assert isinstance(plain, api_client_sync.BalancingTransport)
+    assert plain is api_client_sync._pools[key]
+    assert plain is api_client_sync.get_pyqwest_transport(None, retry_connect=False)
+
+    # The httpx adapters are cached per flag, each over its own transport.
+    adapter = api_client_sync.get_httpx_transport(None)
+    plain_adapter = api_client_sync.get_httpx_transport(None, retry_connect=False)
+    assert adapter is api_client_sync.get_httpx_transport(None)
+    assert plain_adapter is api_client_sync.get_httpx_transport(
+        None, retry_connect=False
+    )
+    assert adapter is not plain_adapter
+
+
+def test_async_retry_connect_false_returns_the_pool_under_the_retrying_transport():
+    key = (None, None, api_client_async.DEFAULT_HTTP_VERSION)
+    retrying = api_client_async.get_pyqwest_transport(None)
+    plain = api_client_async.get_pyqwest_transport(None, retry_connect=False)
+
+    assert isinstance(retrying, api_client_async.ConnectionRetryTransport)
+    assert isinstance(plain, api_client_async.BalancingTransport)
+    assert plain is api_client_async._pools[key]
+
+    adapter = api_client_async.get_httpx_transport(None)
+    plain_adapter = api_client_async.get_httpx_transport(None, retry_connect=False)
+    assert plain_adapter is api_client_async.get_httpx_transport(
+        None, retry_connect=False
+    )
+    assert adapter is not plain_adapter
+
+
 def test_sync_pool_is_not_shared_across_proxy_credentials():
     # Same proxy URL, different credentials or headers: separate pools, since
     # the proxy configuration is fixed per transport.
@@ -140,17 +177,22 @@ def test_async_pool_is_cached_per_proxy():
     assert api_client_sync.get_pyqwest_transport(None) is not pool_a
 
 
-def test_rpc_clients_run_on_the_shared_pool(test_api_key, monkeypatch):
+@pytest.mark.parametrize("http_version", ["2", "1.1"])
+def test_rpc_clients_run_on_the_shared_pool(test_api_key, monkeypatch, http_version):
     # The RPC stack is the plain-HTTP-error normalization wrapping the very
     # pool the httpx clients use, so an envd RPC and an envd HTTP call to the
     # same sandbox share one HTTP/2 connection. `pyqwest.SyncClient` doesn't
     # hand its transport back, so record what the normalization is given.
-    config = ConnectionConfig(api_key=test_api_key)
-    pool = api_client_sync.get_pyqwest_transport(None)
-    async_pool = api_client_async.get_pyqwest_transport(None)
+    other_version = "1.1" if http_version == "2" else "2"
+    config = ConnectionConfig(api_key=test_api_key, http_version=http_version)
+    pool = api_client_sync.get_pyqwest_transport(None, http_version=http_version)
+    async_pool = api_client_async.get_pyqwest_transport(None, http_version=http_version)
+    assert pool is not api_client_sync.get_pyqwest_transport(
+        None, http_version=other_version
+    )
     # The httpx adapters every REST client uses sit on those same pools.
-    assert api_client_sync.get_httpx_transport(None)._transport is pool
-    assert api_client_async.get_httpx_transport(None)._transport is async_pool
+    assert api_client_sync.get_transport(config)._transport is pool
+    assert api_client_async.get_transport(config)._transport is async_pool
 
     wrapped = []
     for module in (client_sync, client_async):
@@ -180,3 +222,7 @@ def test_shared_pool_retries_connects():
     assert isinstance(apool, api_client_async.ConnectionRetryTransport)
     assert pool._max_retries == connection_retries
     assert apool._max_retries == connection_retries
+    # The retries sit above the balancer, so a failed connect is retried on
+    # whichever pool is least loaded then rather than pinned to one.
+    assert isinstance(pool._transport, api_client_sync.BalancingTransport)
+    assert isinstance(apool._transport, api_client_async.BalancingTransport)

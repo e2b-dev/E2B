@@ -7,6 +7,7 @@ from .aws_registry_type import AWSRegistryType
 from .build_log_entry import BuildLogEntry
 from .build_status_reason import BuildStatusReason
 from .connect_sandbox import ConnectSandbox
+from .connect_sandbox_v2 import ConnectSandboxV2
 from .delete_template_tags_request import DeleteTemplateTagsRequest
 from .error import Error
 from .gcp_registry import GCPRegistry
@@ -19,6 +20,7 @@ from .logs_direction import LogsDirection
 from .logs_source import LogsSource
 from .mcp_type_0 import McpType0
 from .new_sandbox import NewSandbox
+from .new_sandbox_v2 import NewSandboxV2
 from .new_secret import NewSecret
 from .new_volume import NewVolume
 from .order_direction import OrderDirection
@@ -63,14 +65,12 @@ from .template import Template
 from .template_alias_response import TemplateAliasResponse
 from .template_build import TemplateBuild
 from .template_build_file_upload import TemplateBuildFileUpload
+from .template_build_file_upload_headers import TemplateBuildFileUploadHeaders
 from .template_build_info import TemplateBuildInfo
 from .template_build_logs_response import TemplateBuildLogsResponse
-from .template_build_request import TemplateBuildRequest
-from .template_build_request_v2 import TemplateBuildRequestV2
 from .template_build_request_v3 import TemplateBuildRequestV3
 from .template_build_start_v2 import TemplateBuildStartV2
 from .template_build_status import TemplateBuildStatus
-from .template_legacy import TemplateLegacy
 from .template_request_response_v3 import TemplateRequestResponseV3
 from .template_step import TemplateStep
 from .template_tag import TemplateTag
@@ -88,6 +88,7 @@ __all__ = (
     "BuildLogEntry",
     "BuildStatusReason",
     "ConnectSandbox",
+    "ConnectSandboxV2",
     "DeleteTemplateTagsRequest",
     "Error",
     "GCPRegistry",
@@ -100,6 +101,7 @@ __all__ = (
     "LogsSource",
     "McpType0",
     "NewSandbox",
+    "NewSandboxV2",
     "NewSecret",
     "NewVolume",
     "OrderDirection",
@@ -144,14 +146,12 @@ __all__ = (
     "TemplateAliasResponse",
     "TemplateBuild",
     "TemplateBuildFileUpload",
+    "TemplateBuildFileUploadHeaders",
     "TemplateBuildInfo",
     "TemplateBuildLogsResponse",
-    "TemplateBuildRequest",
-    "TemplateBuildRequestV2",
     "TemplateBuildRequestV3",
     "TemplateBuildStartV2",
     "TemplateBuildStatus",
-    "TemplateLegacy",
     "TemplateRequestResponseV3",
     "TemplateStep",
     "TemplateTag",

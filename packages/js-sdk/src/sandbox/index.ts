@@ -3,11 +3,11 @@ import { createConnectTransport } from '@connectrpc/connect-web'
 import {
   ConnectionConfig,
   ConnectionOpts,
-  DEFAULT_SANDBOX_TIMEOUT_MS,
   defaultUsername,
   Username,
 } from '../connectionConfig'
 import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
+import { rejectProxyUnavailableResponse } from '../envd/rpc'
 import { createEnvdFetch, createEnvdRpcFetch } from '../envd/http2'
 import { createRpcLogger } from '../logs'
 import { Commands, Pty } from './commands'
@@ -75,7 +75,6 @@ export interface SandboxUrlOpts {
 export class Sandbox extends SandboxApi {
   protected static readonly defaultTemplate: string = 'base'
   protected static readonly defaultMcpTemplate: string = 'mcp-gateway'
-  protected static readonly defaultSandboxTimeoutMs = DEFAULT_SANDBOX_TIMEOUT_MS
 
   /**
    * Module for interacting with the sandbox filesystem
@@ -163,8 +162,8 @@ export class Sandbox extends SandboxApi {
       'E2b-Sandbox-Id': this.sandboxId,
       'E2b-Sandbox-Port': this.envdPort.toString(),
     }
-    const envdFetch = createEnvdFetch(this.connectionConfig.proxy)
-    const envdRpcFetch = createEnvdRpcFetch(this.connectionConfig.proxy)
+    const envdFetch = createEnvdFetch(this.connectionConfig)
+    const envdRpcFetch = createEnvdRpcFetch(this.connectionConfig)
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
@@ -196,7 +195,7 @@ export class Sandbox extends SandboxApi {
           redirect: 'follow',
         }
 
-        return envdRpcFetch(url, options)
+        return envdRpcFetch(url, options).then(rejectProxyUnavailableResponse)
       },
     })
 
@@ -318,7 +317,7 @@ export class Sandbox extends SandboxApi {
 
     const sandboxInfo = await this.createSandbox(
       template,
-      apiOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
+      apiOpts?.timeoutMs,
       apiOpts
     )
 
@@ -434,8 +433,8 @@ export class Sandbox extends SandboxApi {
 
     const results = await this.forkSandbox(
       sandboxId,
-      apiOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
-      apiOpts?.count ?? 1,
+      apiOpts?.timeoutMs,
+      apiOpts?.count,
       apiOpts
     )
 

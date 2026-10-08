@@ -18,7 +18,8 @@ T = TypeVar("T", bound="TemplateBuildStartV2")
 
 @_attrs_define
 class TemplateBuildStartV2:
-    """
+    """Exactly one of fromImage or fromTemplate must be given and non-empty.
+
     Attributes:
         from_image (Union[Unset, str]): Image to use as a base for the template build
         from_template (Union[Unset, str]): Template to use as a base for the template build

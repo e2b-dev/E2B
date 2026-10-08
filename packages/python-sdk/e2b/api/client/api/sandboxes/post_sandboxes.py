@@ -45,6 +45,10 @@ def _parse_response(
         response_401 = Error.from_dict(response.json())
 
         return response_401
+    if response.status_code == 429:
+        response_429 = Error.from_dict(response.json())
+
+        return response_429
     if response.status_code == 500:
         response_500 = Error.from_dict(response.json())
 
@@ -81,7 +85,7 @@ def sync_detailed(
 ) -> Response[Union[Error, Sandbox]]:
     """Create sandbox
 
-     Create a sandbox from the template
+     Create a sandbox from the template. Use POST /v2/sandboxes instead.
 
     Args:
         body (NewSandbox):
@@ -112,7 +116,7 @@ def sync(
 ) -> Optional[Union[Error, Sandbox]]:
     """Create sandbox
 
-     Create a sandbox from the template
+     Create a sandbox from the template. Use POST /v2/sandboxes instead.
 
     Args:
         body (NewSandbox):
@@ -138,7 +142,7 @@ async def asyncio_detailed(
 ) -> Response[Union[Error, Sandbox]]:
     """Create sandbox
 
-     Create a sandbox from the template
+     Create a sandbox from the template. Use POST /v2/sandboxes instead.
 
     Args:
         body (NewSandbox):
@@ -167,7 +171,7 @@ async def asyncio(
 ) -> Optional[Union[Error, Sandbox]]:
     """Create sandbox
 
-     Create a sandbox from the template
+     Create a sandbox from the template. Use POST /v2/sandboxes instead.
 
     Args:
         body (NewSandbox):

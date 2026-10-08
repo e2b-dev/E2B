@@ -7,7 +7,8 @@ import { parse, type StackFrame } from 'error-stack-parser-es'
 import { dynamicImport } from '../utils'
 import { TemplateError } from '../errors'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
-import type { Path } from 'glob'
+import { PatternMatcher } from '@e2b/dockerfile-utils'
+import type { IgnoreLike, Path } from 'glob'
 import type { BuildOptions } from './types'
 
 /**
@@ -112,11 +113,14 @@ export function readDockerignore(contextPath: string): string[] {
     return []
   }
 
-  const content = fs.readFileSync(dockerignorePath, 'utf-8')
+  const content = fs
+    .readFileSync(dockerignorePath, 'utf-8')
+    .replace(/^\uFEFF/, '')
   return content
     .split('\n')
+    .filter((line) => !line.startsWith('#'))
     .map((line) => line.trim())
-    .filter((line) => line && !line.startsWith('#'))
+    .filter((line) => line)
 }
 
 /**
@@ -128,12 +132,73 @@ function normalizePath(path: string): string {
   return path.replace(/\\/g, '/')
 }
 
+function normalizeIgnorePattern(pattern: string, contextPath: string): string {
+  let trimmed = pattern.trim()
+  const negated = trimmed.startsWith('!')
+  if (negated) {
+    trimmed = trimmed.slice(1).trim()
+  }
+  // Absolute patterns pointing into the context are made relative to it.
+  // Other patterns are anchored at the context root, a leading `/` is ignored.
+  if (path.isAbsolute(trimmed)) {
+    const relative = path.relative(contextPath, trimmed)
+    if (
+      relative !== '' &&
+      relative !== '..' &&
+      !relative.startsWith(`..${path.sep}`) &&
+      !path.isAbsolute(relative)
+    ) {
+      trimmed = relative
+    }
+  }
+  return (negated ? '!' : '') + trimmed
+}
+
+/**
+ * Create a glob `ignore` matcher that follows `.dockerignore` semantics:
+ * patterns are relative to the context root, a pattern matching a directory
+ * excludes everything under it, and `!` patterns re-include paths
+ * (the last matching pattern wins). The context root is never excluded.
+ *
+ * @param ignorePatterns Ignore patterns in `.dockerignore` syntax
+ * @param contextPath Base directory the patterns are relative to
+ * @returns Matcher to pass as the glob `ignore` option
+ */
+function createIgnoreMatcher(
+  ignorePatterns: string[],
+  contextPath: string
+): IgnoreLike {
+  const absoluteContextPath = path.resolve(contextPath)
+  let matcher: PatternMatcher
+  try {
+    matcher = new PatternMatcher(
+      ignorePatterns.map((pattern) =>
+        normalizeIgnorePattern(pattern, absoluteContextPath)
+      ),
+      { backslashIsSeparator: path.sep === '\\' }
+    )
+  } catch (err) {
+    throw new TemplateError((err as Error).message)
+  }
+
+  const ignored = (p: Path) => {
+    const relativePath = p.relativePosix()
+    return relativePath !== '' && matcher.matches(relativePath)
+  }
+
+  return {
+    ignored,
+    childrenIgnored: (p) =>
+      ignored(p) && !matcher.mayMatchUnder(p.relativePosix()),
+  }
+}
+
 /**
  * Get all files for a given path and ignore patterns.
  *
  * @param src Path to the source directory
  * @param contextPath Base directory for resolving relative paths
- * @param ignorePatterns Ignore patterns
+ * @param ignorePatterns Ignore patterns in `.dockerignore` syntax
  * @returns Array of files
  */
 export async function getAllFilesInPath(
@@ -144,17 +209,45 @@ export async function getAllFilesInPath(
 ) {
   const { glob } = await dynamicImport<typeof import('glob')>('glob')
   const files = new Map<string, Path>()
+  const ignore = createIgnoreMatcher(ignorePatterns, contextPath)
 
   const globFiles = await glob(src, {
-    ignore: ignorePatterns,
+    ignore,
     withFileTypes: true,
     dot: true,
-    // this is required so that the ignore pattern is relative to the file path
     cwd: contextPath,
   })
 
+  // Visit parents before their children, so paths under an already walked
+  // directory are not walked again
+  const depth = (p: Path) => {
+    const relativePath = p.relativePosix()
+    return relativePath === '' ? 0 : relativePath.split('/').length
+  }
+  globFiles.sort((a, b) => depth(a) - depth(b))
+  const walkedDirs = new Set<string>()
+  const isUnderWalkedDir = (relativePath: string) => {
+    if (walkedDirs.has('')) {
+      return true
+    }
+    for (
+      let parent = path.posix.dirname(relativePath);
+      parent !== '.' && parent !== '/';
+      parent = path.posix.dirname(parent)
+    ) {
+      if (walkedDirs.has(parent)) {
+        return true
+      }
+    }
+    return false
+  }
+
   for (const file of globFiles) {
+    if (isUnderWalkedDir(file.relativePosix())) {
+      continue
+    }
     if (file.isDirectory()) {
+      walkedDirs.add(file.relativePosix())
       // For directories, add the directory itself and all files inside it
       if (includeDirectories) {
         files.set(file.fullpath(), file)
@@ -166,7 +259,7 @@ export async function getAllFilesInPath(
         path.join(file.relative() || '.', '**/*')
       )
       const dirFiles = await glob(dirPattern, {
-        ignore: ignorePatterns,
+        ignore,
         withFileTypes: true,
         dot: true,
         cwd: contextPath,
@@ -194,7 +287,7 @@ export async function getAllFilesInPath(
  * @param src Source path pattern for files to copy
  * @param dest Destination path where files will be copied
  * @param contextPath Base directory for resolving relative paths
- * @param ignorePatterns Glob patterns to ignore
+ * @param ignorePatterns Ignore patterns in `.dockerignore` syntax
  * @param resolveSymlinks Whether to resolve symbolic links when hashing
  * @param stackTrace Optional stack trace for error reporting
  * @returns Hex string hash of all files
@@ -228,7 +321,10 @@ export async function calculateFilesHash(
   // Exclude uid, gid, and mtime to ensure consistent hashes across environments
   const hashStats = (stats: fs.Stats) => {
     hash.update(stats.mode.toString())
-    hash.update(stats.size.toString())
+    // A directory's size depends on the filesystem, not on the copied files
+    if (!stats.isDirectory()) {
+      hash.update(stats.size.toString())
+    }
   }
 
   // Process files recursively

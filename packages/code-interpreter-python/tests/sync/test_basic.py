@@ -10,7 +10,7 @@ def test_basic(sandbox: Sandbox):
 
 @pytest.mark.skip_debug
 def test_secure_access(sandbox_factory):
-    sandbox = sandbox_factory(secure=True, network={"allow_public_traffic": False})
+    sandbox = sandbox_factory(network={"allow_public_traffic": False})
     # Create sandbox with public traffic disabled (secure access)
     result = sandbox.run_code("x =1; x")
     assert result.text == "1"

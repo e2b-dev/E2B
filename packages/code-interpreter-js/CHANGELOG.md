@@ -1,5 +1,27 @@
 # @e2b/code-interpreter
 
+## 2.8.2
+
+### Patch Changes
+
+- cd4c62b: Publish the changes from the previous release, which was versioned but failed to publish to npm and PyPI.
+- Updated dependencies [cd4c62b]
+  - e2b@2.53.1
+
+## 2.8.1
+
+### Patch Changes
+
+- af8d7a5: Preserve Unicode characters split across response chunks in code execution output.
+- b3bb653: Remove the `E2B_USER_AGENT_SOURCE` environment variable. The SDKs no longer add a `source/<value>` User-Agent token, append `?source=` to Code Interpreter requests, or log trace IDs and add `(trace_id=…)` to error messages when it is set to `ci`, so SDK behavior no longer depends on that variable.
+
+  Code Interpreter errors for statuses other than 404 and 502 now use the same `<status> <reason>[: <body>]` message in JS and Python: JS includes the response body, and Python falls back to the reason phrase when the body is empty.
+
+- Updated dependencies [8f51c9f]
+- Updated dependencies [b3bb653]
+- Updated dependencies [1de92fc]
+  - e2b@2.53.0
+
 ## 2.8.0
 
 ### Minor Changes

@@ -10,6 +10,7 @@ import {
   ClientFactory,
   ConnectionConfig,
   ConnectionOpts,
+  HttpVersion,
   setupRequestController,
   wrapStreamWithConnectionCleanup,
 } from '../connectionConfig'
@@ -83,6 +84,11 @@ export class Volume extends ClientFactory {
   readonly proxy?: string
 
   /**
+   * HTTP version used for requests to the volume content API.
+   */
+  readonly httpVersion?: HttpVersion
+
+  /**
    * Create a local Volume instance with no API call.
    *
    * @param volumeId volume ID.
@@ -91,6 +97,7 @@ export class Volume extends ClientFactory {
    * @param domain domain for the volume API.
    * @param debug whether to use debug mode.
    * @param proxy proxy URL for the volume content API.
+   * @param opts connection options kept for the volume content API.
    */
   constructor(
     volumeId: string,
@@ -98,7 +105,8 @@ export class Volume extends ClientFactory {
     token: string,
     domain?: string,
     debug?: boolean,
-    proxy?: string
+    proxy?: string,
+    opts?: Pick<ConnectionOpts, 'httpVersion'>
   ) {
     super()
     this.volumeId = volumeId
@@ -107,6 +115,7 @@ export class Volume extends ClientFactory {
     this.domain = domain
     this.debug = debug
     this.proxy = proxy
+    this.httpVersion = opts?.httpVersion
   }
 
   /**
@@ -148,7 +157,8 @@ export class Volume extends ClientFactory {
       res.data.token,
       res.data.domain || config.domain,
       config.debug,
-      config.proxy
+      config.proxy,
+      { httpVersion: config.httpVersion }
     ) as InstanceType<V>
   }
 
@@ -174,7 +184,8 @@ export class Volume extends ClientFactory {
       token,
       domain ?? config.domain,
       config.debug,
-      config.proxy
+      config.proxy,
+      { httpVersion: config.httpVersion }
     ) as InstanceType<V>
   }
 

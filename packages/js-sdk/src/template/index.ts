@@ -266,7 +266,7 @@ export class TemplateBase
    *
    * @example
    * ```ts
-   * const status = await Template.getBuildStatus(data, { logsOffset: 0 })
+   * const status = await Template.getBuildStatus(data)
    * ```
    */
   static async getBuildStatus(
@@ -281,7 +281,7 @@ export class TemplateBase
       {
         templateID: data.templateId,
         buildID: data.buildId,
-        logsOffset: options?.logsOffset ?? 0,
+        logsOffset: options?.logsOffset,
       },
       config.getSignal(undefined, options?.signal)
     )
@@ -613,7 +613,7 @@ export class TemplateBase
         srcString,
         dest.toString(),
         options?.user ?? '',
-        options?.mode ? padOctal(options.mode) : '',
+        options?.mode !== undefined ? padOctal(options.mode) : '',
       ]
 
       this.instructions.push({
@@ -694,7 +694,7 @@ export class TemplateBase
   ): TemplateBuilder {
     const paths = Array.isArray(path) ? path : [path]
     const args = ['mkdir', '-p']
-    if (options?.mode) {
+    if (options?.mode !== undefined) {
       args.push(`-m ${padOctal(options.mode)}`)
     }
     args.push(...paths.map((p) => shellQuote(p.toString())))
@@ -1076,8 +1076,9 @@ export class TemplateBase
       {
         name,
         tags: options.tags,
-        cpuCount: options.cpuCount ?? 2,
-        memoryMB: options.memoryMB ?? 1024,
+        cpuCount: options.cpuCount,
+        memoryMB: options.memoryMB,
+        minFreeDiskMb: options.minFreeDiskMb,
       },
       config.getSignal(undefined, options.signal)
     )
@@ -1111,7 +1112,7 @@ export class TemplateBase
           stackTrace = this.stackTraces[index + 1]
         }
 
-        const { present, url } = await getFileUploadLink(
+        const { present, url, headers } = await getFileUploadLink(
           client,
           {
             templateID,
@@ -1130,9 +1131,10 @@ export class TemplateBase
               fileName: src,
               fileContextPath: this.fileContextPath.toString(),
               url,
+              headers,
               ignorePatterns: [
-                ...this.fileIgnorePatterns,
                 ...readDockerignore(this.fileContextPath.toString()),
+                ...this.fileIgnorePatterns,
               ],
               resolveSymlinks: instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
               gzip: instruction.gzip ?? GZIP,
@@ -1222,10 +1224,10 @@ export class TemplateBase
             dest,
             this.fileContextPath.toString(),
             [
-              ...this.fileIgnorePatterns,
               ...(runtime === 'browser'
                 ? []
                 : readDockerignore(this.fileContextPath.toString())),
+              ...this.fileIgnorePatterns,
             ],
             instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
             stackTrace

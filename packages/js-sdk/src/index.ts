@@ -5,6 +5,7 @@ export { ConnectionConfig } from './connectionConfig'
 export type {
   ConnectionConfigOpts,
   ConnectionOpts,
+  HttpVersion,
   Username,
 } from './connectionConfig'
 export {
@@ -17,9 +18,12 @@ export {
   NotFoundError,
   SandboxError,
   SandboxNotFoundError,
+  SandboxNotRunningError,
+  SandboxUnreachableError,
   TemplateError,
   TimeoutError,
   RateLimitError,
+  ServiceBusyError,
   BuildError,
   FileUploadError,
   VolumeError,
@@ -163,6 +167,7 @@ export { E2B, type E2BClientOpts } from './client'
 export default Sandbox
 
 export * from './template'
+export { DockerfileSyntaxError } from './template/dockerfileParser'
 
 export {
   ReadyCmd,

@@ -55,7 +55,9 @@ class TemplateBuildStatusResponse:
     """Build log entries."""
 
     logs: List[str]
-    """Build logs (raw strings). Deprecated: use log_entries instead."""
+    """Build logs (raw strings). Always empty since the V1 build path was removed.
+    :deprecated: Use `log_entries` instead. Will be removed in the next major version.
+    """
 
     reason: Optional[BuildStatusReason] = None
     """Reason for the current status (typically for errors)."""

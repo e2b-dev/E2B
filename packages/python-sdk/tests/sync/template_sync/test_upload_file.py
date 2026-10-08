@@ -236,3 +236,88 @@ def test_upload_file_ignores_post_upload_close_failure(tmp_path):
         thread.join(timeout=5)
 
     assert state["headers"] is not None
+
+
+def test_upload_file_sends_the_headers_the_api_returned(tmp_path):
+    # Azure's Put Blob needs a request header a SAS cannot carry, so the API hands it back with the upload link.
+    (tmp_path / "hello.txt").write_text("hello world")
+
+    server, thread, state = _make_server()
+    host, port = server.server_address
+
+    try:
+        client = AuthenticatedClient(base_url="http://test", token="test")
+        upload_file(
+            api_client=client,
+            file_name="*.txt",
+            context_path=str(tmp_path),
+            url=f"http://{host}:{port}/upload",
+            ignore_patterns=[],
+            resolve_symlinks=False,
+            gzip=True,
+            stack_trace=None,
+            headers={"x-ms-blob-type": "BlockBlob"},
+        )
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+    assert state["headers"]["x-ms-blob-type"] == "BlockBlob"
+
+
+def test_upload_file_adds_no_headers_when_the_api_returns_none(tmp_path):
+    # S3/GCS presigned PUTs sign the header set — the upload must add nothing the API did not ask for.
+    (tmp_path / "hello.txt").write_text("hello world")
+
+    server, thread, state = _make_server()
+    host, port = server.server_address
+
+    try:
+        client = AuthenticatedClient(base_url="http://test", token="test")
+        upload_file(
+            api_client=client,
+            file_name="*.txt",
+            context_path=str(tmp_path),
+            url=f"http://{host}:{port}/upload",
+            ignore_patterns=[],
+            resolve_symlinks=False,
+            gzip=True,
+            stack_trace=None,
+        )
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+    assert "x-ms-blob-type" not in state["headers"]
+
+
+def test_upload_file_keeps_its_own_content_length(tmp_path):
+    # An API-returned Content-Length must never override the real archive size.
+    (tmp_path / "hello.txt").write_text("hello world")
+
+    server, thread, state = _make_server()
+    host, port = server.server_address
+
+    try:
+        client = AuthenticatedClient(base_url="http://test", token="test")
+        upload_file(
+            api_client=client,
+            file_name="*.txt",
+            context_path=str(tmp_path),
+            url=f"http://{host}:{port}/upload",
+            ignore_patterns=[],
+            resolve_symlinks=False,
+            gzip=True,
+            stack_trace=None,
+            # lowercase on purpose: header names are case-insensitive, dict keys are not
+            headers={"x-ms-blob-type": "BlockBlob", "content-length": "1"},
+        )
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+    assert state["body_length"] > 1
+    assert int(state["headers"]["content-length"]) == state["body_length"]

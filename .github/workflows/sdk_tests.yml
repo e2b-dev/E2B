@@ -9,6 +9,15 @@ on:
 permissions:
   contents: read
 
+# A new push to a PR supersedes its in-flight run, so cancel it instead of
+# letting both runs build the same test templates in parallel. Only first
+# attempts of PR runs share the per-PR group: a rerun of an older commit must
+# not cancel the current head's run, and manual dispatches must not replace
+# each other in the group's single pending slot, so both get their own group.
+concurrency:
+  group: ${{ github.workflow }}-${{ (github.event_name == 'pull_request' && github.run_attempt == '1') && format('pr-{0}', github.event.pull_request.number) || format('run-{0}', github.run_id) }}
+  cancel-in-progress: true
+
 jobs:
   changes:
     name: Detect changes
@@ -24,6 +33,8 @@ jobs:
       code_interpreter_python: ${{ steps.filter.outputs.code_interpreter_python }}
       desktop_js: ${{ steps.filter.outputs.desktop_js }}
       desktop_python: ${{ steps.filter.outputs.desktop_python }}
+      dockerfile_utils_js: ${{ steps.filter.outputs.dockerfile_utils_js }}
+      dockerfile_utils_python: ${{ steps.filter.outputs.dockerfile_utils_python }}
     steps:
       - name: Filter changed paths
         # On workflow_dispatch there is no PR diff and paths-filter would fall
@@ -48,15 +59,18 @@ jobs:
               - 'tsconfig.sdk.json'
               - 'tsdown.sdk.config.mts'
               - 'packages/js-sdk/**/!(*.md)'
+              - 'packages/dockerfile-utils-js/**/!(*.md)'
             python:
               - *shared
               - '.github/workflows/python_sdk_tests.yml'
               - 'packages/python-sdk/**/!(*.md)'
+              - 'packages/dockerfile-utils-python/**/!(*.md)'
             cli:
               - *shared
               - '.github/workflows/cli_tests.yml'
               - 'packages/cli/**/!(*.md)'
               - 'packages/js-sdk/**/!(*.md)'
+              - 'packages/dockerfile-utils-js/**/!(*.md)'
             code_interpreter_js:
               - *shared
               - '.github/workflows/code_interpreter_js_tests.yml'
@@ -65,11 +79,13 @@ jobs:
               - 'vitest.sdk.config.mts'
               - 'packages/code-interpreter-js/**/!(*.md)'
               - 'packages/js-sdk/**/!(*.md)'
+              - 'packages/dockerfile-utils-js/**/!(*.md)'
             code_interpreter_python:
               - *shared
               - '.github/workflows/code_interpreter_python_tests.yml'
               - 'packages/code-interpreter-python/**/!(*.md)'
               - 'packages/python-sdk/**/!(*.md)'
+              - 'packages/dockerfile-utils-python/**/!(*.md)'
             desktop_js:
               - *shared
               - '.github/workflows/desktop_js_tests.yml'
@@ -78,11 +94,23 @@ jobs:
               - 'vitest.sdk.config.mts'
               - 'packages/desktop-js/**/!(*.md)'
               - 'packages/js-sdk/**/!(*.md)'
+              - 'packages/dockerfile-utils-js/**/!(*.md)'
             desktop_python:
               - *shared
               - '.github/workflows/desktop_python_tests.yml'
               - 'packages/desktop-python/**/!(*.md)'
               - 'packages/python-sdk/**/!(*.md)'
+              - 'packages/dockerfile-utils-python/**/!(*.md)'
+            dockerfile_utils_js:
+              - *shared
+              - '.github/workflows/dockerfile_utils_js_tests.yml'
+              - 'tsconfig.sdk.json'
+              - 'tsdown.sdk.config.mts'
+              - 'packages/dockerfile-utils-js/**/!(*.md)'
+            dockerfile_utils_python:
+              - *shared
+              - '.github/workflows/dockerfile_utils_python_tests.yml'
+              - 'packages/dockerfile-utils-python/**/!(*.md)'
 
   js-tests:
     name: Production / JS SDK Tests
@@ -220,6 +248,18 @@ jobs:
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY_STAGING }}
 
+  dockerfile-utils-js-tests:
+    name: Dockerfile Utils JS Tests
+    needs: changes
+    if: ${{ needs.changes.outputs.dockerfile_utils_js == 'true' || github.event_name == 'workflow_dispatch' }}
+    uses: ./.github/workflows/dockerfile_utils_js_tests.yml
+
+  dockerfile-utils-python-tests:
+    name: Dockerfile Utils Python Tests
+    needs: changes
+    if: ${{ needs.changes.outputs.dockerfile_utils_python == 'true' || github.event_name == 'workflow_dispatch' }}
+    uses: ./.github/workflows/dockerfile_utils_python_tests.yml
+
   status:
     name: SDK Tests Status
     # `changes` is included so a failure in change-detection (which would skip the
@@ -233,6 +273,8 @@ jobs:
       - code-interpreter-python-tests
       - desktop-js-tests
       - desktop-python-tests
+      - dockerfile-utils-js-tests
+      - dockerfile-utils-python-tests
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:

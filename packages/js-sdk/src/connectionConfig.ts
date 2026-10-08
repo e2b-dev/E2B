@@ -1,15 +1,41 @@
 import { Logger } from './logs'
 import { getEnvVar, version } from './api/metadata'
 import { runtime } from './utils'
+import { resolveRetries } from './retry'
+import { InvalidArgumentError } from './errors'
 
 // Remove once all deployments support sandbox subdomains
 const supportedDomains = ['e2b.app', 'e2b.dev', 'e2b.pro', 'e2b-staging.dev']
 
 export const REQUEST_TIMEOUT_MS = 60_000 // 60 seconds
-export const DEFAULT_SANDBOX_TIMEOUT_MS = 300_000 // 300 seconds
+export const DEFAULT_RETRIES = 3
 export const KEEPALIVE_PING_INTERVAL_SEC = 50 // 50 seconds
 
 export const KEEPALIVE_PING_HEADER = 'Keepalive-Ping-Interval'
+
+/**
+ * HTTP version the SDK speaks to the E2B API and to sandboxes.
+ */
+export type HttpVersion = '1.1' | '2'
+export const DEFAULT_HTTP_VERSION: HttpVersion = '2'
+
+/**
+ * The HTTP version to use: the explicit value, else `E2B_HTTP_VERSION`, else
+ * {@link DEFAULT_HTTP_VERSION}. Rejects anything but `'1.1'` or `'2'`.
+ */
+export function resolveHttpVersion(httpVersion?: string): HttpVersion {
+  let source = 'httpVersion'
+  if (httpVersion === undefined) {
+    source = 'E2B_HTTP_VERSION'
+    httpVersion = getEnvVar('E2B_HTTP_VERSION') || DEFAULT_HTTP_VERSION
+  }
+  if (httpVersion !== '1.1' && httpVersion !== '2') {
+    throw new InvalidArgumentError(
+      `${source} must be '1.1' or '2', got '${httpVersion}'`
+    )
+  }
+  return httpVersion
+}
 
 /**
  * Connection options for requests to the API.
@@ -59,6 +85,24 @@ export interface ConnectionOpts {
    */
   requestTimeoutMs?: number
   /**
+   * Number of control-plane API retries after a 429, 502 or 503 response or
+   * a failure to establish the connection (refused, DNS, unreachable host).
+   * Any other network error (dropped connection, opaque browser/Workers
+   * `TypeError`) is retried too. A 502 and those network errors are not
+   * retried for operations that create a resource (e.g. sandbox creation) or
+   * append to one (secret update), as the server may already have processed
+   * them.
+   * A 429 is retried only with a valid, non-negative integer delta-seconds
+   * `Retry-After` header (HTTP-date and malformed values are not retried).
+   * 502 and 503 honor such a `Retry-After` when present; otherwise they and
+   * connection failures use exponential backoff with jitter starting at
+   * 100 ms (capped at 10 s).
+   * Retry waits use a 60-second total limit when request timeouts are disabled.
+   *
+   * @default 3
+   */
+  retries?: number
+  /**
    * Logger to use for logging messages. It can accept any object that implements `Logger` interface—for example, {@link console}.
    */
   logger?: Logger
@@ -77,6 +121,16 @@ export interface ConnectionOpts {
    * @example 'http://user:pass@127.0.0.1:8080'
    */
   proxy?: string
+  /**
+   * HTTP version for requests to the E2B API and to sandboxes (commands,
+   * filesystem, PTY). `'2'` multiplexes streams over shared connections;
+   * `'1.1'` pins them to HTTP/1.1 with one connection per concurrent
+   * request — for example when an intermediary on the path retires or
+   * mishandles long-lived HTTP/2 connections. Only applies in Node.
+   *
+   * @default E2B_HTTP_VERSION // environment variable or `'2'`
+   */
+  httpVersion?: HttpVersion
 
   /**
    * Additional headers to send with E2B API requests.
@@ -340,22 +394,11 @@ export class ConnectionConfig {
 
   private static readonly sdkUserAgentPrefix = 'e2b-js-sdk/'
 
-  private static getRequestSource() {
-    const source = getEnvVar('E2B_USER_AGENT_SOURCE')
-    return source && /^[A-Za-z0-9][A-Za-z0-9._-]{0,31}$/.test(source)
-      ? source
-      : undefined
-  }
-
-  private static buildUserAgent(requestSource?: string) {
+  private static buildUserAgent() {
     const userAgentParts = [`${ConnectionConfig.sdkUserAgentPrefix}${version}`]
 
     if (ConnectionConfig.integration) {
       userAgentParts.push(ConnectionConfig.integration)
-    }
-
-    if (requestSource) {
-      userAgentParts.push(`source/${requestSource}`)
     }
 
     return userAgentParts.join(' ')
@@ -369,10 +412,7 @@ export class ConnectionConfig {
    * rebuilt via `new ConnectionConfig({ ...config })`) is recognized by its
    * prefix and rebuilt, so it stays in sync with the current integration.
    */
-  private static applyUserAgent(
-    headers: Record<string, string>,
-    requestSource?: string
-  ) {
+  private static applyUserAgent(headers: Record<string, string>) {
     const userAgent = headers['User-Agent']
 
     if (
@@ -382,7 +422,7 @@ export class ConnectionConfig {
       return
     }
 
-    headers['User-Agent'] = ConnectionConfig.buildUserAgent(requestSource)
+    headers['User-Agent'] = ConnectionConfig.buildUserAgent()
   }
 
   /**
@@ -408,6 +448,7 @@ export class ConnectionConfig {
   readonly logger?: Logger
 
   readonly requestTimeoutMs: number
+  readonly retries: number
 
   readonly apiKey?: string
   /**
@@ -418,16 +459,8 @@ export class ConnectionConfig {
 
   readonly headers?: Record<string, string>
 
-  /**
-   * Validated traffic source used for request correlation.
-   *
-   * @internal
-   * @hidden
-   * @hide
-   */
-  readonly requestSource?: string
-
   readonly proxy?: string
+  readonly httpVersion: HttpVersion
 
   constructor(opts?: ConnectionOpts) {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
@@ -435,11 +468,12 @@ export class ConnectionConfig {
     this.debug = opts?.debug ?? ConnectionConfig.debug
     this.domain = opts?.domain || ConnectionConfig.domain
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
+    this.retries = resolveRetries(opts?.retries ?? DEFAULT_RETRIES)
     this.logger = opts?.logger
-    this.requestSource = ConnectionConfig.getRequestSource()
     this.headers = { ...(opts?.headers ?? {}), ...(opts?.apiHeaders ?? {}) }
-    ConnectionConfig.applyUserAgent(this.headers, this.requestSource)
+    ConnectionConfig.applyUserAgent(this.headers)
     this.proxy = opts?.proxy
+    this.httpVersion = resolveHttpVersion(opts?.httpVersion)
 
     this.apiUrl =
       opts?.apiUrl ||

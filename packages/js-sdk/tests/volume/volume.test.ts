@@ -1,7 +1,5 @@
 import { describe, it, expect, afterAll, afterEach, beforeAll } from 'vitest'
 import { http, HttpResponse } from 'msw'
-import { setupServer } from 'msw/node'
-import { randomUUID } from 'node:crypto'
 
 import {
   Volume,
@@ -12,6 +10,7 @@ import {
 import { VolumeConnectionConfig } from '../../src/volume/client'
 import { runtime } from '../../src/utils'
 import { apiUrl } from '../setup'
+import { setupMockApi } from '../mockApi'
 
 // In-memory store for mock volumes
 const volumes = new Map<
@@ -26,8 +25,8 @@ const restHandlers = [
   // POST /volumes - create (returns VolumeAndToken)
   http.post(apiUrl('/volumes'), async ({ request }) => {
     const { name } = (await request.clone().json()) as { name: string }
-    const volumeID = randomUUID()
-    const token = `vol-token-${randomUUID()}`
+    const volumeID = crypto.randomUUID()
+    const token = `vol-token-${crypto.randomUUID()}`
     volumes.set(volumeID, { volumeID, name, token })
     return HttpResponse.json({ volumeID, name, token }, { status: 201 })
   }),
@@ -85,7 +84,7 @@ const restHandlers = [
   }),
 ]
 
-const server = setupServer(...restHandlers)
+const server = setupMockApi(...restHandlers)
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 afterAll(() => server.close())
@@ -190,6 +189,18 @@ describe('Volume CRUD', () => {
     expect(config.proxy).toBe('http://127.0.0.1:9090')
   })
 
+  it('should keep the httpVersion on the instance so content calls reuse it', async () => {
+    const vol = await Volume.create('http1-volume', { httpVersion: '1.1' })
+    expect(vol.httpVersion).toBe('1.1')
+    expect(new VolumeConnectionConfig(vol).httpVersion).toBe('1.1')
+    expect(
+      new VolumeConnectionConfig(vol, { httpVersion: '2' }).httpVersion
+    ).toBe('2')
+
+    const connected = await Volume.connect(vol.volumeId, { httpVersion: '1.1' })
+    expect(connected.httpVersion).toBe('1.1')
+  })
+
   it('should handle full lifecycle: create, get, list, destroy', async () => {
     // Create
     const vol = await Volume.create('lifecycle-vol')
@@ -222,8 +233,8 @@ describe('Volume BYOC domain', () => {
     server.use(
       http.post(apiUrl('/volumes'), async ({ request }) => {
         const { name } = (await request.clone().json()) as { name: string }
-        const volumeID = randomUUID()
-        const token = `vol-token-${randomUUID()}`
+        const volumeID = crypto.randomUUID()
+        const token = `vol-token-${crypto.randomUUID()}`
         return HttpResponse.json(
           { volumeID, name, token, domain: byocDomain },
           { status: 201 }

@@ -1,5 +1,6 @@
-import { test, expect } from 'vitest'
+import { test as base, expect } from 'vitest'
 
+import { isGitTestsEnabled } from '../../setup.js'
 import { Git } from '../../../src/sandbox/git'
 import type { Commands } from '../../../src/sandbox/commands'
 import { InvalidArgumentError } from '../../../src/errors'
@@ -11,6 +12,8 @@ const failingCommands = {
     throw new Error('commands.run should not be called')
   },
 } as unknown as Commands
+
+const test = base.skipIf(!isGitTestsEnabled)
 
 test('git.reset throws InvalidArgumentError on an invalid mode', async () => {
   const git = new Git(failingCommands)

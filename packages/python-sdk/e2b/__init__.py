@@ -32,6 +32,7 @@ from .api import (
 from .connection_config import (
     ApiParams,
     ConnectionConfig,
+    HttpVersion,
     ProxyTypes,
     Username,
 )
@@ -47,8 +48,11 @@ from .exceptions import (
     NotEnoughSpaceException,
     NotFoundException,
     RateLimitException,
+    ServiceBusyException,
     SandboxException,
     SandboxNotFoundException,
+    SandboxNotRunningException,
+    SandboxUnreachableException,
     TemplateException,
     TimeoutException,
     VolumeException,
@@ -129,6 +133,7 @@ from .template.logger import (
     LogEntryStart,
     default_build_logger,
 )
+from .template.dockerfile_parser import DockerfileSyntaxError
 from .template.main import TemplateBase, TemplateClass
 from .template.readycmd import (
     ReadyCmd,
@@ -170,22 +175,27 @@ __all__ = [
     # Connection config
     "ConnectionConfig",
     "VolumeConnectionConfig",
+    "HttpVersion",
     "ProxyTypes",
     "ApiParams",
     "VolumeApiParams",
     "Username",
     # Exceptions
     "SandboxException",
+    "ServiceBusyException",
     "TimeoutException",
     "NotFoundException",
     "FileNotFoundException",
     "SandboxNotFoundException",
+    "SandboxNotRunningException",
+    "SandboxUnreachableException",
     "AuthenticationException",
     "GitAuthException",
     "GitUpstreamException",
     "InvalidArgumentException",
     "NotEnoughSpaceException",
     "TemplateException",
+    "DockerfileSyntaxError",
     "BuildException",
     "FileUploadException",
     "RateLimitException",

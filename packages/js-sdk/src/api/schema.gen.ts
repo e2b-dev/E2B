@@ -39,13 +39,15 @@ export interface paths {
                 };
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
         put?: never;
         /**
          * Create sandbox
-         * @description Create a sandbox from the template
+         * @deprecated
+         * @description Create a sandbox from the template. Use POST /v2/sandboxes instead.
          */
         post: {
             parameters: {
@@ -71,6 +73,7 @@ export interface paths {
                 };
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
                 503: components["responses"]["503"];
                 504: components["responses"]["504"];
@@ -115,6 +118,7 @@ export interface paths {
                 };
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -144,6 +148,7 @@ export interface paths {
                 };
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -163,7 +168,8 @@ export interface paths {
         put?: never;
         /**
          * Connect sandbox
-         * @description Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended.
+         * @deprecated
+         * @description Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. Use POST /v2/sandboxes/{sandboxID}/connect instead.
          */
         post: {
             parameters: {
@@ -202,6 +208,7 @@ export interface paths {
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
                 409: components["responses"]["409"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
                 503: components["responses"]["503"];
                 504: components["responses"]["504"];
@@ -253,6 +260,7 @@ export interface paths {
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
                 409: components["responses"]["409"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
                 503: components["responses"]["503"];
             };
@@ -302,6 +310,7 @@ export interface paths {
                 };
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -351,6 +360,7 @@ export interface paths {
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -399,6 +409,7 @@ export interface paths {
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
                 409: components["responses"]["409"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -447,7 +458,9 @@ export interface paths {
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
                 409: components["responses"]["409"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
+                503: components["responses"]["503"];
             };
         };
         delete?: never;
@@ -493,6 +506,7 @@ export interface paths {
                 };
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
             };
         };
         delete?: never;
@@ -543,6 +557,7 @@ export interface paths {
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
                 409: components["responses"]["409"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
                 503: components["responses"]["503"];
                 504: components["responses"]["504"];
@@ -594,6 +609,7 @@ export interface paths {
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -640,6 +656,7 @@ export interface paths {
                 };
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -683,6 +700,7 @@ export interface paths {
                 };
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -943,6 +961,7 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -984,6 +1003,7 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1033,6 +1053,7 @@ export interface paths {
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 403: components["responses"]["403"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1084,6 +1105,7 @@ export interface paths {
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 403: components["responses"]["403"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1128,42 +1150,12 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
         put?: never;
-        /**
-         * Create template
-         * @deprecated
-         * @description Create a new template
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["TemplateBuildRequest"];
-                };
-            };
-            responses: {
-                /** @description The build was accepted */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TemplateLegacy"];
-                    };
-                };
-                400: components["responses"]["400"];
-                401: components["responses"]["401"];
-                500: components["responses"]["500"];
-            };
-        };
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1208,43 +1200,12 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
         put?: never;
-        /**
-         * Rebuild template
-         * @deprecated
-         * @description Rebuild an template
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    templateID: components["parameters"]["templateID"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["TemplateBuildRequest"];
-                };
-            };
-            responses: {
-                /** @description The build was accepted */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TemplateLegacy"];
-                    };
-                };
-                401: components["responses"]["401"];
-                500: components["responses"]["500"];
-            };
-        };
+        post?: never;
         /**
          * Delete template
          * @description Delete a template
@@ -1268,6 +1229,7 @@ export interface paths {
                     content?: never;
                 };
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1302,52 +1264,10 @@ export interface paths {
                 };
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
-        trace?: never;
-    };
-    "/templates/{templateID}/builds/{buildID}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Start template build
-         * @deprecated
-         * @description Start the build
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    buildID: components["parameters"]["buildID"];
-                    templateID: components["parameters"]["templateID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The build has started */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["401"];
-                500: components["responses"]["500"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/templates/{templateID}/builds/{buildID}/logs": {
@@ -1393,6 +1313,7 @@ export interface paths {
                 };
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1444,6 +1365,7 @@ export interface paths {
                 };
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1490,6 +1412,7 @@ export interface paths {
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1535,6 +1458,7 @@ export interface paths {
                 401: components["responses"]["401"];
                 403: components["responses"]["403"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1580,6 +1504,7 @@ export interface paths {
                 400: components["responses"]["400"];
                 403: components["responses"]["403"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1629,6 +1554,7 @@ export interface paths {
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1659,6 +1585,7 @@ export interface paths {
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1715,11 +1642,107 @@ export interface paths {
                 };
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
         put?: never;
-        post?: never;
+        /**
+         * Create sandbox (v2)
+         * @description Create a sandbox from the template. All system communication with the sandbox is secured.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["NewSandboxV2"];
+                };
+            };
+            responses: {
+                /** @description The sandbox was created successfully */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Sandbox"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                429: components["responses"]["429"];
+                500: components["responses"]["500"];
+                503: components["responses"]["503"];
+                504: components["responses"]["504"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v2/sandboxes/{sandboxID}/connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Connect sandbox (v2)
+         * @description Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. The request body is optional; an omitted timeout defaults to 300 seconds.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    sandboxID: components["parameters"]["sandboxID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ConnectSandboxV2"];
+                };
+            };
+            responses: {
+                /** @description The sandbox was already running */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Sandbox"];
+                    };
+                };
+                /** @description The sandbox was resumed successfully */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Sandbox"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                409: components["responses"]["409"];
+                429: components["responses"]["429"];
+                500: components["responses"]["500"];
+                503: components["responses"]["503"];
+                504: components["responses"]["504"];
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -1770,6 +1793,7 @@ export interface paths {
                 };
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1820,42 +1844,12 @@ export interface paths {
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 403: components["responses"]["403"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
         put?: never;
-        /**
-         * Create template (v2)
-         * @deprecated
-         * @description Create a new template
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["TemplateBuildRequestV2"];
-                };
-            };
-            responses: {
-                /** @description The build was requested successfully */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TemplateLegacy"];
-                    };
-                };
-                400: components["responses"]["400"];
-                401: components["responses"]["401"];
-                500: components["responses"]["500"];
-            };
-        };
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1905,6 +1899,7 @@ export interface paths {
                 };
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1946,7 +1941,9 @@ export interface paths {
                     };
                     content?: never;
                 };
+                400: components["responses"]["400"];
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -1994,6 +1991,8 @@ export interface paths {
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 403: components["responses"]["403"];
+                409: components["responses"]["409"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -2033,6 +2032,7 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -2065,6 +2065,7 @@ export interface paths {
                 };
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -2107,6 +2108,7 @@ export interface paths {
                 };
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -2136,6 +2138,7 @@ export interface paths {
                 };
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
         };
@@ -2207,6 +2210,16 @@ export interface components {
              * @description Timeout in seconds from the current time after which the sandbox should expire
              */
             timeout: number;
+        };
+        ConnectSandboxV2: {
+            /** @description Defaults to true. When false and the sandbox is paused, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. */
+            memory?: boolean;
+            /**
+             * Format: int32
+             * @description Timeout in seconds from the current time after which the sandbox should expire
+             * @default 300
+             */
+            timeout?: number;
         };
         /**
          * Format: int32
@@ -2331,6 +2344,11 @@ export interface components {
          * @description Memory for the sandbox in MiB
          */
         MemoryMB: number;
+        /**
+         * Format: int32
+         * @description Requested minimum free space after the template's build steps, in MiB. Omit to use the team's default. Set to 0 to request no minimum free-disk growth. The filesystem is never shrunk, including inherited or already-larger filesystems. Growth is best effort, so filesystem metadata can leave the available space slightly below the requested minimum.
+         */
+        MinFreeDiskMb: number;
         NewSandbox: {
             /** @description Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut to 0.0.0.0/0 in the network config. */
             allow_internet_access?: boolean;
@@ -2358,6 +2376,36 @@ export interface components {
              * Format: int32
              * @description Time to live for the sandbox in seconds.
              * @default 15
+             */
+            timeout?: number;
+            volumeMounts?: components["schemas"]["SandboxVolumeMount"][];
+        };
+        /** @description Sandbox creation request. All system communication with the sandbox is always secured; the template's envd version must support secured access. */
+        NewSandboxV2: {
+            /** @description Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut to 0.0.0.0/0 in the network config. */
+            allow_internet_access?: boolean;
+            /**
+             * @description Automatically pauses the sandbox after the timeout
+             * @default false
+             */
+            autoPause?: boolean;
+            /**
+             * @description Controls the snapshot kind taken when the sandbox auto-pauses on timeout (only relevant when autoPause is true). When false, the auto-pause drops the in-memory state and persists only the filesystem (a filesystem-only snapshot); resuming it cold-boots (reboots) the sandbox from disk. Such a snapshot cannot be auto-resumed by traffic and must be resumed explicitly, so it cannot be combined with autoResume. Defaults to true (full memory snapshot).
+             * @default true
+             */
+            autoPauseMemory?: boolean;
+            autoResume?: components["schemas"]["SandboxAutoResumeConfig"];
+            envVars?: components["schemas"]["EnvVars"];
+            iam?: components["schemas"]["SandboxIam"];
+            mcp?: components["schemas"]["Mcp"];
+            metadata?: components["schemas"]["SandboxMetadata"];
+            network?: components["schemas"]["SandboxNetworkConfig"];
+            /** @description Identifier of the required template */
+            templateID: string;
+            /**
+             * Format: int32
+             * @description Time to live for the sandbox in seconds.
+             * @default 300
              */
             timeout?: number;
             volumeMounts?: components["schemas"]["SandboxVolumeMount"][];
@@ -2850,6 +2898,10 @@ export interface components {
             updatedAt: string;
         };
         TemplateBuildFileUpload: {
+            /** @description Request headers that must be sent with the upload request */
+            headers?: {
+                [key: string]: string;
+            };
             /** @description Whether the file is already present in the cache */
             present: boolean;
             /** @description Url where the file should be uploaded to */
@@ -2864,7 +2916,8 @@ export interface components {
              */
             logEntries: components["schemas"]["BuildLogEntry"][];
             /**
-             * @description Build logs
+             * @deprecated
+             * @description Build logs (always empty since the V1 build path was removed, use logEntries)
              * @default []
              */
             logs: string[];
@@ -2880,31 +2933,6 @@ export interface components {
              */
             logs: components["schemas"]["BuildLogEntry"][];
         };
-        TemplateBuildRequest: {
-            /** @description Alias of the template */
-            alias?: string;
-            cpuCount?: components["schemas"]["CPUCount"];
-            /** @description Dockerfile for the template */
-            dockerfile: string;
-            memoryMB?: components["schemas"]["MemoryMB"];
-            /** @description Ready check command to execute in the template after the build */
-            readyCmd?: string;
-            /** @description Start command to execute in the template after the build */
-            startCmd?: string;
-            /** @description Identifier of the team */
-            teamID?: string;
-        };
-        TemplateBuildRequestV2: {
-            /** @description Alias of the template */
-            alias: string;
-            cpuCount?: components["schemas"]["CPUCount"];
-            memoryMB?: components["schemas"]["MemoryMB"];
-            /**
-             * @deprecated
-             * @description Identifier of the team
-             */
-            teamID?: string;
-        };
         TemplateBuildRequestV3: {
             /**
              * @deprecated
@@ -2913,6 +2941,7 @@ export interface components {
             alias?: string;
             cpuCount?: components["schemas"]["CPUCount"];
             memoryMB?: components["schemas"]["MemoryMB"];
+            minFreeDiskMb?: components["schemas"]["MinFreeDiskMb"];
             /** @description Name of the template. Can include a tag with colon separator (e.g. "my-template" or "my-template:v1"). If tag is included, it will be treated as if the tag was provided in the tags array. */
             name?: string;
             /** @description Tags to assign to the template build */
@@ -2923,6 +2952,7 @@ export interface components {
              */
             teamID?: string;
         };
+        /** @description Exactly one of fromImage or fromTemplate must be given and non-empty. */
         TemplateBuildStartV2: {
             /**
              * @description Whether the whole build should be forced to run regardless of the cache
@@ -2949,46 +2979,6 @@ export interface components {
          * @enum {string}
          */
         TemplateBuildStatus: "building" | "waiting" | "ready" | "error";
-        TemplateLegacy: {
-            /** @description Aliases of the template */
-            aliases: string[];
-            /**
-             * Format: int32
-             * @description Number of times the template was built
-             */
-            buildCount: number;
-            /** @description Identifier of the last successful build for given template */
-            buildID: string;
-            cpuCount: components["schemas"]["CPUCount"];
-            /**
-             * Format: date-time
-             * @description Time when the template was created
-             */
-            createdAt: string;
-            createdBy: components["schemas"]["TeamUser"] | null;
-            diskSizeMB: components["schemas"]["DiskSizeMB"];
-            envdVersion: components["schemas"]["EnvdVersion"];
-            /**
-             * Format: date-time
-             * @description Time when the template was last used
-             */
-            lastSpawnedAt: string | null;
-            memoryMB: components["schemas"]["MemoryMB"];
-            /** @description Whether the template is public or only accessible by the team */
-            public: boolean;
-            /**
-             * Format: int64
-             * @description Number of times the template was used
-             */
-            spawnCount: number;
-            /** @description Identifier of the template */
-            templateID: string;
-            /**
-             * Format: date-time
-             * @description Time when the template was last updated
-             */
-            updatedAt: string;
-        };
         TemplateRequestResponseV3: {
             /**
              * @deprecated
@@ -3151,6 +3141,11 @@ export interface components {
         /** @description Too many requests */
         429: {
             headers: {
+                /**
+                 * @description When present, the number of seconds to wait before retrying the request.
+                 * @example 30
+                 */
+                "Retry-After"?: number;
                 [name: string]: unknown;
             };
             content: {

@@ -10,6 +10,27 @@ const domain = process.env.E2B_DOMAIN || 'e2b.app'
 const cliPath = path.join(process.cwd(), 'dist', 'index.js')
 const templateName = `cli-create-api-key-test-${Date.now()}`
 
+test('rejects the retired disk flag without a stack trace', () => {
+  const result = spawnSync(
+    'node',
+    [
+      cliPath,
+      'template',
+      'create',
+      'retired-disk-flag-test',
+      '--min-free-disk-mb',
+      '0',
+      '--free-disk-space-mb',
+      '1024',
+    ],
+    { encoding: 'utf8', timeout: 10_000 }
+  )
+
+  expect(result.status).toBe(1)
+  expect(result.stderr).toContain("unknown option '--free-disk-space-mb'")
+  expect(result.stderr).not.toMatch(/InvalidArgumentError|\n\s+at /)
+})
+
 describe('template create cli backend integration', () => {
   let testDir: string
 

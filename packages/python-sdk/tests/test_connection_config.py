@@ -1,4 +1,8 @@
+import pytest
+
 from e2b import ConnectionConfig
+from e2b.connection_config import DEFAULT_RETRIES
+from e2b.exceptions import InvalidArgumentException
 
 
 def test_api_url_defaults_correctly(monkeypatch):
@@ -116,28 +120,12 @@ def test_set_integration_appends_to_user_agent():
         config = ConnectionConfig()
 
         assert config.headers["User-Agent"].startswith("e2b-python-sdk/")
-        assert "testing/version" in config.headers["User-Agent"].split()
+        assert config.headers["User-Agent"].endswith(" testing/version")
     finally:
         ConnectionConfig.set_integration(None)
 
     config = ConnectionConfig()
     assert "testing" not in config.headers["User-Agent"]
-
-
-def test_user_agent_includes_configured_traffic_source(monkeypatch):
-    monkeypatch.setenv("E2B_USER_AGENT_SOURCE", "ci")
-
-    config = ConnectionConfig()
-
-    assert config.headers["User-Agent"].endswith(" source/ci")
-
-
-def test_user_agent_ignores_unsafe_traffic_source(monkeypatch):
-    monkeypatch.setenv("E2B_USER_AGENT_SOURCE", "ci bad\nheader")
-
-    config = ConnectionConfig()
-
-    assert "source/" not in config.headers["User-Agent"]
 
 
 def test_custom_user_agent_is_preserved_without_integration():
@@ -160,11 +148,10 @@ def test_integration_survives_api_param_rebuilds(monkeypatch):
     config = ConnectionConfig()
     rebuilt_config = ConnectionConfig(**config.get_api_params())
 
-    assert "testing/version" in rebuilt_config.headers["User-Agent"].split()
-    rebuilt_user_agent = rebuilt_config.get_api_params(api_headers={"X-Test": "1"})[
-        "headers"
-    ]["User-Agent"]
-    assert "testing/version" in rebuilt_user_agent.split()
+    assert rebuilt_config.headers["User-Agent"].endswith(" testing/version")
+    assert rebuilt_config.get_api_params(api_headers={"X-Test": "1"})["headers"][
+        "User-Agent"
+    ].endswith(" testing/version")
 
 
 def test_cleared_integration_does_not_leak_into_api_param_rebuilds():
@@ -230,3 +217,63 @@ def test_get_api_params_includes_sandbox_url():
     # Per-call override takes priority.
     overridden = config.get_api_params(sandbox_url="https://sandbox.override.com")
     assert overridden["sandbox_url"] == "https://sandbox.override.com"
+
+
+def test_retries_default_to_three_and_propagate():
+    config = ConnectionConfig(retries=5)
+
+    assert ConnectionConfig().retries == DEFAULT_RETRIES
+    assert config.retries == 5
+    assert config.get_api_params()["retries"] == 5
+    assert config.get_api_params(retries=0)["retries"] == 0
+
+
+@pytest.mark.parametrize("retries", [-1, 1.5, True])
+def test_retries_reject_invalid_values(retries):
+    with pytest.raises(InvalidArgumentException):
+        ConnectionConfig(retries=retries)
+
+
+def test_http_version_defaults_to_http2_and_propagates(monkeypatch):
+    monkeypatch.delenv("E2B_HTTP_VERSION", raising=False)
+
+    assert ConnectionConfig().http_version == "2"
+    assert ConnectionConfig().get_api_params()["http_version"] == "2"
+
+    config = ConnectionConfig(http_version="1.1")
+    assert config.http_version == "1.1"
+    # Reconstructed configs (a sandbox's sub-clients) keep the setting, and a
+    # per-call value overrides it.
+    assert config.get_api_params()["http_version"] == "1.1"
+    assert ConnectionConfig(**config.get_api_params()).http_version == "1.1"
+    assert config.get_api_params(http_version="2")["http_version"] == "2"
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [("1.1", "1.1"), ("2", "2"), ("", "2")],
+)
+def test_http_version_reads_env_var(monkeypatch, value, expected):
+    monkeypatch.setenv("E2B_HTTP_VERSION", value)
+
+    assert ConnectionConfig().http_version == expected
+    # The explicit argument wins over the environment.
+    other = "2" if expected == "1.1" else "1.1"
+    assert ConnectionConfig(http_version=other).http_version == other
+
+
+def test_http_version_rejects_unknown_env_value(monkeypatch):
+    monkeypatch.setenv("E2B_HTTP_VERSION", "http3")
+
+    with pytest.raises(InvalidArgumentException, match="E2B_HTTP_VERSION"):
+        ConnectionConfig()
+    # An explicit option never consults the environment.
+    assert ConnectionConfig(http_version="1.1").http_version == "1.1"
+
+
+@pytest.mark.parametrize("value", ["http1", "http2", "1", "2.0", "HTTP/1.1", ""])
+def test_http_version_rejects_unknown_explicit_value(monkeypatch, value):
+    monkeypatch.delenv("E2B_HTTP_VERSION", raising=False)
+
+    with pytest.raises(InvalidArgumentException, match="http_version"):
+        ConnectionConfig(http_version=value)

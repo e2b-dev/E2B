@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 
 from e2b import AsyncSandbox, Sandbox
-from e2b.api.client.api.sandboxes import post_sandboxes
+from e2b.api.client.api.sandboxes import post_v2_sandboxes
 from e2b.api.client.models import Sandbox as SandboxModel
 from e2b.exceptions import InvalidArgumentException
 
@@ -24,7 +24,7 @@ def _created_sandbox():
 
 def _sync_request_body(monkeypatch, api_key: str, lifecycle) -> Dict[str, Any]:
     request = Mock(return_value=_created_sandbox())
-    monkeypatch.setattr(post_sandboxes, "sync_detailed", request)
+    monkeypatch.setattr(post_v2_sandboxes, "sync_detailed", request)
 
     Sandbox.create(api_key=api_key, lifecycle=lifecycle)
 
@@ -33,7 +33,7 @@ def _sync_request_body(monkeypatch, api_key: str, lifecycle) -> Dict[str, Any]:
 
 async def _async_request_body(monkeypatch, api_key: str, lifecycle) -> Dict[str, Any]:
     request = AsyncMock(return_value=_created_sandbox())
-    monkeypatch.setattr(post_sandboxes, "asyncio_detailed", request)
+    monkeypatch.setattr(post_v2_sandboxes, "asyncio_detailed", request)
 
     await AsyncSandbox.create(api_key=api_key, lifecycle=lifecycle)
 
@@ -147,6 +147,45 @@ async def test_async_create_rejects_auto_resume_without_a_timeout_action(
         await AsyncSandbox.create(api_key=test_api_key, lifecycle=lifecycle)
 
 
+INVALID_LIFECYCLES = [
+    # A filesystem-only auto-pause snapshot can only be resumed explicitly.
+    pytest.param(
+        {"on_timeout": {"action": "pause", "keep_memory": False}, "auto_resume": True},
+        id="filesystem-only-pause-with-auto-resume",
+    ),
+    # The discriminated union forbids this at type-check time; the runtime
+    # guard covers callers that bypass the type.
+    pytest.param(
+        cast(Any, {"on_timeout": {"action": "kill", "keep_memory": False}}),
+        id="keep-memory-with-kill",
+    ),
+]
+
+
+@pytest.mark.parametrize("lifecycle", INVALID_LIFECYCLES)
+def test_create_rejects_an_invalid_lifecycle(monkeypatch, test_api_key, lifecycle):
+    request = Mock(return_value=_created_sandbox())
+    monkeypatch.setattr(post_v2_sandboxes, "sync_detailed", request)
+
+    with pytest.raises(InvalidArgumentException):
+        Sandbox.create(api_key=test_api_key, lifecycle=lifecycle)
+
+    request.assert_not_called()
+
+
+@pytest.mark.parametrize("lifecycle", INVALID_LIFECYCLES)
+async def test_async_create_rejects_an_invalid_lifecycle(
+    monkeypatch, test_api_key, lifecycle
+):
+    request = AsyncMock(return_value=_created_sandbox())
+    monkeypatch.setattr(post_v2_sandboxes, "asyncio_detailed", request)
+
+    with pytest.raises(InvalidArgumentException):
+        await AsyncSandbox.create(api_key=test_api_key, lifecycle=lifecycle)
+
+    request.assert_not_called()
+
+
 # `None` expects autoResume to be absent from the payload: an unconfigured
 # preference is not an explicit opt-out, so the API keeps ownership of the
 # default instead of receiving {"enabled": False}.
@@ -193,3 +232,69 @@ async def test_async_create_sends_auto_resume_only_when_configured(
         assert "autoResume" not in body
     else:
         assert body["autoResume"] == auto_resume
+
+
+# on_timeout is resolved into the boolean autoPause before the request is built,
+# so the API never sees the action and cannot reject a typo. Resolving it to
+# kill would delete a sandbox the caller asked to preserve.
+UNRECOGNIZED_ON_TIMEOUT = [
+    "Pause",
+    "PAUSE",
+    "pause\n",
+    "paused",
+    True,
+    {"action": "Pause"},
+    {},
+]
+
+
+@pytest.mark.parametrize("on_timeout", UNRECOGNIZED_ON_TIMEOUT)
+def test_create_rejects_an_unrecognized_on_timeout(
+    monkeypatch, test_api_key, on_timeout
+):
+    request = Mock(return_value=_created_sandbox())
+    monkeypatch.setattr(post_v2_sandboxes, "sync_detailed", request)
+
+    with pytest.raises(InvalidArgumentException):
+        Sandbox.create(
+            api_key=test_api_key, lifecycle=cast(Any, {"on_timeout": on_timeout})
+        )
+
+    request.assert_not_called()
+
+
+@pytest.mark.parametrize("on_timeout", UNRECOGNIZED_ON_TIMEOUT)
+async def test_async_create_rejects_an_unrecognized_on_timeout(
+    monkeypatch, test_api_key, on_timeout
+):
+    request = AsyncMock(return_value=_created_sandbox())
+    monkeypatch.setattr(post_v2_sandboxes, "asyncio_detailed", request)
+
+    with pytest.raises(InvalidArgumentException):
+        await AsyncSandbox.create(
+            api_key=test_api_key, lifecycle=cast(Any, {"on_timeout": on_timeout})
+        )
+
+    request.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "on_timeout,expected_field",
+    [
+        ("Pause", "on_timeout"),
+        ({"action": "Pause"}, 'on_timeout["action"]'),
+        ({}, 'on_timeout["action"]'),
+    ],
+)
+def test_the_error_names_the_field_the_caller_wrote(
+    monkeypatch, test_api_key, on_timeout, expected_field
+):
+    request = Mock(return_value=_created_sandbox())
+    monkeypatch.setattr(post_v2_sandboxes, "sync_detailed", request)
+
+    with pytest.raises(InvalidArgumentException) as excinfo:
+        Sandbox.create(
+            api_key=test_api_key, lifecycle=cast(Any, {"on_timeout": on_timeout})
+        )
+
+    assert str(excinfo.value).startswith(f"{expected_field} must be one of")

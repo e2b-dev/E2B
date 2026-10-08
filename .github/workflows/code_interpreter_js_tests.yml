@@ -23,9 +23,6 @@ on:
 permissions:
   contents: read
 
-env:
-  E2B_USER_AGENT_SOURCE: ci
-
 jobs:
   test:
     defaults:
@@ -98,8 +95,8 @@ jobs:
         with:
           deno-version: 'v${{ env.TOOL_VERSION_DENO }}'
 
-      # The recovery suites (interrupt, systemd) exercise sandbox recovery
-      # paths that staging cannot serve, so callers can opt out of them.
+      # The interrupt suite exercises sandbox recovery paths that staging
+      # cannot serve, so callers can opt out of it.
       - name: Run test suite under ${{ matrix.runtime }}
         run: |
           case "${{ matrix.runtime }}" in
@@ -110,7 +107,7 @@ jobs:
           if [[ "${{ inputs.run_recovery_tests }}" == "true" ]]; then
             pnpm "$script"
           else
-            pnpm "$script" --exclude tests/interrupt.test.ts --exclude tests/systemd.test.ts
+            pnpm "$script" --exclude tests/interrupt.test.ts
           fi
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}

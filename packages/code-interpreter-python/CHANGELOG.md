@@ -1,5 +1,25 @@
 # @e2b/code-interpreter-python
 
+## 2.10.3
+
+### Patch Changes
+
+- cd4c62b: Publish the changes from the previous release, which was versioned but failed to publish to npm and PyPI.
+
+## 2.10.2
+
+### Patch Changes
+
+- b3bb653: Remove the `E2B_USER_AGENT_SOURCE` environment variable. The SDKs no longer add a `source/<value>` User-Agent token, append `?source=` to Code Interpreter requests, or log trace IDs and add `(trace_id=…)` to error messages when it is set to `ci`, so SDK behavior no longer depends on that variable.
+
+  Code Interpreter errors for statuses other than 404 and 502 now use the same `<status> <reason>[: <body>]` message in JS and Python: JS includes the response body, and Python falls back to the reason phrase when the body is empty.
+
+## 2.10.1
+
+### Patch Changes
+
+- 2f92cc3: Pin the Jupyter transport to HTTP/1.1 with `get_transport(config, http_version="1.1")`, following the renamed argument in `e2b` 2.52.0 (now the minimum supported version).
+
 ## 2.10.0
 
 ### Minor Changes

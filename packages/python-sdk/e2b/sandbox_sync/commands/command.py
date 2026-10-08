@@ -1,6 +1,18 @@
-from typing import Callable, Dict, List, Literal, Optional, Union, overload
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    List,
+    Literal,
+    Optional,
+    Union,
+    overload,
+)
 
 import httpx
+
+from e2b.api.client_sync import get_envd_api
 from connectrpc.code import Code
 from connectrpc.errors import ConnectError
 from packaging.version import Version
@@ -48,9 +60,15 @@ class Commands:
             connection_config,
         )
         self._envd_api = envd_api
+        # The health probe run after a request failed goes without the
+        # connection retries, so a sandbox that cannot be reached is not tried
+        # all over again (see `get_transport`).
+        self._envd_health_api = get_envd_api(
+            connection_config, envd_api_url, retry_connect=False
+        )
 
     def _check_health(self) -> Optional[bool]:
-        return check_sandbox_health(self._envd_api)
+        return check_sandbox_health(self._envd_health_api)
 
     def list(
         self,
@@ -315,28 +333,7 @@ class Commands:
             )
         )
 
-        try:
-            start_event = events.__next__()
-
-            pid = extract_start_pid(start_event, "start process")
-            return CommandHandle(
-                pid=pid,
-                handle_kill=lambda: self.kill(pid),
-                events=events,
-                handle_send_stdin=lambda data, request_timeout=None: self.send_stdin(
-                    pid, data, request_timeout
-                ),
-                handle_close_stdin=lambda request_timeout=None: self.close_stdin(
-                    pid, request_timeout
-                ),
-                check_health=self._check_health,
-            )
-        except Exception as e:
-            try:
-                events.close()
-            except Exception:
-                pass
-            raise handle_rpc_exception_with_health(e, self._check_health)
+        return self._create_handle(events, "start process")
 
     def connect(
         self,
@@ -366,10 +363,19 @@ class Commands:
             )
         )
 
+        return self._create_handle(events, "connect to process")
+
+    def _create_handle(
+        self,
+        events: Generator[
+            Union[process_pb.StartResponse, process_pb.ConnectResponse], Any, None
+        ],
+        action: str,
+    ) -> CommandHandle:
         try:
             start_event = events.__next__()
 
-            pid = extract_start_pid(start_event, "connect to process")
+            pid = extract_start_pid(start_event, action)
             return CommandHandle(
                 pid=pid,
                 handle_kill=lambda: self.kill(pid),

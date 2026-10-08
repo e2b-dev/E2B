@@ -51,7 +51,7 @@ async function handler(req: IncomingMessage, res: ServerResponse) {
   }
 
   const path = req.url ?? ''
-  if (path.startsWith('/sandboxes')) {
+  if (path.startsWith('/v2/sandboxes')) {
     respond(201, {
       sandboxID: 'test-sandbox-id',
       templateID: 'desktop',

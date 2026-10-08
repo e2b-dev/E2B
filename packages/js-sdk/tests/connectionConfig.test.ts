@@ -1,9 +1,12 @@
 import { assert, test, beforeEach, afterEach } from 'vitest'
 import {
   ConnectionConfig,
+  DEFAULT_RETRIES,
   setupRequestController,
   wrapStreamWithConnectionCleanup,
 } from '../src/connectionConfig'
+import { runtime } from '../src/utils'
+import { InvalidArgumentError } from '../src/errors'
 
 // Store original env vars to restore after tests
 let originalEnv: { [key: string]: string | undefined }
@@ -13,8 +16,8 @@ beforeEach(() => {
     E2B_API_URL: process.env.E2B_API_URL,
     E2B_DOMAIN: process.env.E2B_DOMAIN,
     E2B_SANDBOX_URL: process.env.E2B_SANDBOX_URL,
+    E2B_HTTP_VERSION: process.env.E2B_HTTP_VERSION,
     E2B_DEBUG: process.env.E2B_DEBUG,
-    E2B_USER_AGENT_SOURCE: process.env.E2B_USER_AGENT_SOURCE,
   }
 })
 
@@ -42,6 +45,12 @@ test('api_url defaults correctly', () => {
   assert.equal(config.apiUrl, 'https://api.e2b.app')
 })
 
+test('retries default to three and accept a non-negative integer', () => {
+  assert.equal(new ConnectionConfig().retries, DEFAULT_RETRIES)
+  assert.equal(new ConnectionConfig({ retries: 2 }).retries, 2)
+  assert.throws(() => new ConnectionConfig({ retries: -1 }))
+})
+
 test('api_url in args', () => {
   const config = new ConnectionConfig({ apiUrl: 'http://localhost:8080' })
   assert.equal(config.apiUrl, 'http://localhost:8080')
@@ -61,21 +70,26 @@ test('api_url has correct priority', () => {
   assert.equal(config.apiUrl, 'http://localhost:8080')
 })
 
-test('sandbox_url defaults to stable sandbox host in production', () => {
-  delete process.env.E2B_SANDBOX_URL
-  delete process.env.E2B_DOMAIN
-  delete process.env.E2B_DEBUG
+// The stable host is deliberately not used in a browser (CORS); the browser
+// side of this branch is asserted in connectionConfig.browser.test.ts.
+test.skipIf(runtime === 'browser')(
+  'sandbox_url defaults to stable sandbox host in production',
+  () => {
+    delete process.env.E2B_SANDBOX_URL
+    delete process.env.E2B_DOMAIN
+    delete process.env.E2B_DEBUG
 
-  const config = new ConnectionConfig()
+    const config = new ConnectionConfig()
 
-  assert.equal(
-    config.getSandboxUrl('sbx-test', {
-      sandboxDomain: 'e2b.app',
-      envdPort: 49983,
-    }),
-    'https://sandbox.e2b.app'
-  )
-})
+    assert.equal(
+      config.getSandboxUrl('sbx-test', {
+        sandboxDomain: 'e2b.app',
+        envdPort: 49983,
+      }),
+      'https://sandbox.e2b.app'
+    )
+  }
+)
 
 test('sandbox_direct_url keeps per-sandbox host in production', () => {
   delete process.env.E2B_SANDBOX_URL
@@ -151,6 +165,46 @@ test('sandbox_url stays localhost in debug mode', () => {
   )
 })
 
+test('httpVersion defaults to http2 and reads E2B_HTTP_VERSION', () => {
+  delete process.env.E2B_HTTP_VERSION
+  assert.equal(new ConnectionConfig().httpVersion, '2')
+  assert.equal(new ConnectionConfig({ httpVersion: '1.1' }).httpVersion, '1.1')
+
+  process.env.E2B_HTTP_VERSION = '1.1'
+  assert.equal(new ConnectionConfig().httpVersion, '1.1')
+  process.env.E2B_HTTP_VERSION = '2'
+  assert.equal(new ConnectionConfig().httpVersion, '2')
+
+  process.env.E2B_HTTP_VERSION = 'http3'
+  assert.throws(() => new ConnectionConfig(), InvalidArgumentError)
+  assert.throws(() => new ConnectionConfig(), /E2B_HTTP_VERSION/)
+  // An explicit option never consults the environment.
+  assert.equal(new ConnectionConfig({ httpVersion: '1.1' }).httpVersion, '1.1')
+})
+
+test('httpVersion rejects values other than 1.1 and 2', () => {
+  delete process.env.E2B_HTTP_VERSION
+  for (const value of ['http1', 'http2', '1', '2.0', 'HTTP/1.1', '']) {
+    assert.throws(
+      () => new ConnectionConfig({ httpVersion: value as HttpVersion }),
+      InvalidArgumentError
+    )
+    assert.throws(
+      () => new ConnectionConfig({ httpVersion: value as HttpVersion }),
+      /httpVersion must be '1.1' or '2'/
+    )
+  }
+})
+
+test('httpVersion in args has priority over env var', () => {
+  process.env.E2B_HTTP_VERSION = '1.1'
+  assert.equal(new ConnectionConfig({ httpVersion: '2' }).httpVersion, '2')
+
+  // Per-call options and bound options keep the option when merged.
+  const merged = ConnectionConfig.mergeOpts({ httpVersion: '1.1' }, {})
+  assert.equal(new ConnectionConfig(merged).httpVersion, '1.1')
+})
+
 test('debug false in args overrides E2B_DEBUG env var', () => {
   process.env.E2B_DEBUG = 'true'
 
@@ -170,23 +224,10 @@ test('setIntegration appends the integration to the user agent', () => {
   const config = new ConnectionConfig()
 
   assert.equal(config.headers?.['User-Agent']?.startsWith('e2b-js-sdk/'), true)
-  assert.include(config.headers?.['User-Agent']?.split(' '), 'testing/version')
-})
-
-test('user agent includes the configured traffic source', () => {
-  process.env.E2B_USER_AGENT_SOURCE = 'ci'
-
-  const config = new ConnectionConfig()
-
-  assert.equal(config.headers?.['User-Agent']?.endsWith(' source/ci'), true)
-})
-
-test('user agent ignores an unsafe traffic source', () => {
-  process.env.E2B_USER_AGENT_SOURCE = 'ci bad\nheader'
-
-  const config = new ConnectionConfig()
-
-  assert.equal(config.headers?.['User-Agent']?.includes('source/'), false)
+  assert.equal(
+    config.headers?.['User-Agent']?.endsWith(' testing/version'),
+    true
+  )
 })
 
 test('integration survives config rebuilds', () => {
@@ -194,9 +235,9 @@ test('integration survives config rebuilds', () => {
   const config = new ConnectionConfig()
   const rebuiltConfig = new ConnectionConfig({ ...config })
 
-  assert.include(
-    rebuiltConfig.headers?.['User-Agent']?.split(' '),
-    'testing/version'
+  assert.equal(
+    rebuiltConfig.headers?.['User-Agent']?.endsWith(' testing/version'),
+    true
   )
 })
 
@@ -206,7 +247,10 @@ test('setIntegration does not retro-tag configs built earlier', () => {
   const after = new ConnectionConfig()
 
   assert.equal(before.headers?.['User-Agent']?.includes('testing'), false)
-  assert.include(after.headers?.['User-Agent']?.split(' '), 'testing/version')
+  assert.equal(
+    after.headers?.['User-Agent']?.endsWith(' testing/version'),
+    true
+  )
 })
 
 test('clearing the integration restores the plain user agent', () => {

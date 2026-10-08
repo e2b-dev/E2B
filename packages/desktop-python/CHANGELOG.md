@@ -1,5 +1,17 @@
 # @e2b/desktop-python
 
+## 2.6.1
+
+### Patch Changes
+
+- 4065e93: Require `urllib3>=2.8.0` so installs pick up the fixes for CVE-2026-97687 (HTTPS proxy TLS configuration ignored) and CVE-2026-97689 (unbounded chunk-size line buffering).
+
+## 2.6.0
+
+### Minor Changes
+
+- 5c0f6eb: Deprecate the `secure` option of `Sandbox.create` (still accepted, now ignored): every sandbox is created through the v2 API, which always secures envd access. `allow_internet_access` is no longer preset to `True`; when omitted, the API default applies.
+
 ## 2.5.0
 
 ### Minor Changes

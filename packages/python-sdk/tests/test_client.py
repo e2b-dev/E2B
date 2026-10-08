@@ -65,7 +65,7 @@ class _Handler(BaseHTTPRequestHandler):
         if length:
             self.rfile.read(length)
 
-        if self.path.startswith("/sandboxes"):
+        if self.path.startswith("/v2/sandboxes"):
             self._record_and_respond(201, SANDBOX_RESPONSE)
         elif self.path.startswith("/volumes"):
             self._record_and_respond(
@@ -226,6 +226,23 @@ def test_async_client_volume_uses_client_config(api_server):
     assert issubclass(client.AsyncVolume, AsyncVolume)
     assert isinstance(volume, client.AsyncVolume)
     assert api_keys() == [API_KEY_A, API_KEY_A]
+
+
+def test_client_http_version_is_bound_and_carried_by_volumes(api_server):
+    client = E2B(
+        api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server, http_version="1.1"
+    )
+
+    volume = client.Volume.create("vol")
+    assert volume._get_volume_config().http_version == "1.1"
+    # A per-call value overrides the bound one, on the class and the instance.
+    volume = client.Volume.create("vol", http_version="2")
+    assert volume._get_volume_config().http_version == "2"
+    assert volume._get_volume_config(http_version="1.1").http_version == "1.1"
+    assert (
+        asyncio.run(client.AsyncVolume.create("vol"))._get_volume_config().http_version
+        == "1.1"
+    )
 
 
 def test_client_template_uses_client_config(api_server):

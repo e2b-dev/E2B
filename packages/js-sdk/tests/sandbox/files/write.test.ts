@@ -1,4 +1,3 @@
-import path from 'path'
 import { assert } from 'vitest'
 
 import { WriteEntry } from '../../../src/sandbox/filesystem'
@@ -111,7 +110,7 @@ sandboxTest('write multiple files', async ({ sandbox }) => {
     const file = files[i]
     const info = infos[i]
 
-    assert.equal(info.name, path.basename(file.path))
+    assert.equal(info.name, file.path.split('/').pop())
     assert.equal(info.path, file.path)
     assert.equal(info.type, 'file')
 
@@ -206,7 +205,7 @@ sandboxTest('writeFiles with multiple files', async ({ sandbox }) => {
     const file = files[i]
     const info = infos[i]
 
-    assert.equal(info.name, path.basename(file.path))
+    assert.equal(info.name, file.path.split('/').pop())
     assert.equal(info.path, `/home/user/${file.path}`)
     assert.equal(info.type, 'file')
 

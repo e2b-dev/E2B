@@ -51,7 +51,12 @@ failure_map: dict[str, Optional[int]] = {
 @pytest.fixture(autouse=True)
 def mock_template_build(monkeypatch):
     def mock_request_build(
-        client, name: str, tags: Optional[List[str]], cpu_count: int, memory_mb: int
+        client,
+        name: str,
+        tags: Optional[List[str]],
+        cpu_count: int,
+        memory_mb: int,
+        min_free_disk_mb: Optional[int],
     ):
         return SimpleNamespace(template_id=name, build_id=str(uuid4()), tags=tags or [])
 

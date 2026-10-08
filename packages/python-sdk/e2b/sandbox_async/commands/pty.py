@@ -2,6 +2,8 @@ from typing import Dict, Optional
 
 import httpx
 
+from e2b.api.client_async import get_envd_api
+
 from connectrpc.code import Code
 from connectrpc.errors import ConnectError
 from packaging.version import Version
@@ -50,9 +52,15 @@ class Pty:
             connection_config,
         )
         self._envd_api = envd_api
+        # The health probe run after a request failed goes without the
+        # connection retries, so a sandbox that cannot be reached is not tried
+        # all over again (see `get_transport`).
+        self._envd_health_api = get_envd_api(
+            connection_config, envd_api_url, retry_connect=False
+        )
 
     async def _check_health(self) -> Optional[bool]:
-        return await acheck_sandbox_health(self._envd_api)
+        return await acheck_sandbox_health(self._envd_health_api)
 
     async def kill(
         self,

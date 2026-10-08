@@ -1,5 +1,6 @@
 import hashlib
 import os
+import posixpath
 import tarfile
 import tempfile
 import json
@@ -12,6 +13,7 @@ from typing import IO, List, Optional, Union
 
 from e2b.exceptions import TemplateException
 from e2b.template.consts import BASE_STEP_NAME, FINALIZE_STEP_NAME
+from e2b_dockerfile_utils import PatternMatcher
 
 
 def make_traceback(caller_frame: Optional[FrameType]) -> Optional[TracebackType]:
@@ -114,13 +116,13 @@ def read_dockerignore(context_path: str) -> List[str]:
     if not os.path.exists(dockerignore_path):
         return []
 
-    with open(dockerignore_path, "r", encoding="utf-8") as f:
+    with open(dockerignore_path, "r", encoding="utf-8-sig") as f:
         content = f.read()
 
     return [
         line.strip()
         for line in content.split("\n")
-        if line.strip() and not line.strip().startswith("#")
+        if not line.startswith("#") and line.strip()
     ]
 
 
@@ -134,6 +136,35 @@ def normalize_path(path: str) -> str:
     return path.replace(os.sep, "/")
 
 
+def _normalize_ignore_pattern(pattern: str, context_path: str) -> str:
+    """
+    Make an absolute ignore pattern that points into the context relative to it.
+    Other patterns are anchored at the context root, a leading `/` is ignored.
+
+    :param pattern: Ignore pattern
+    :param context_path: Absolute path of the context directory
+    :return: The normalized pattern
+    """
+    pattern = pattern.strip()
+    negated = pattern.startswith("!")
+    if negated:
+        pattern = pattern[1:].strip()
+    if os.path.isabs(pattern):
+        try:
+            relative = os.path.relpath(pattern, context_path)
+        except ValueError:
+            # Different drive on Windows
+            relative = None
+        if (
+            relative is not None
+            and relative != "."
+            and relative != ".."
+            and not relative.startswith(".." + os.sep)
+        ):
+            pattern = normalize_path(relative)
+    return ("!" if negated else "") + pattern
+
+
 def get_all_files_in_path(
     src: str,
     context_path: str,
@@ -143,40 +174,87 @@ def get_all_files_in_path(
     """
     Get all files for a given path and ignore patterns.
 
+    Ignore patterns follow `.dockerignore` semantics: they are relative to the
+    context root, a pattern matching a directory excludes everything under it,
+    and `!` patterns re-include paths (the last matching pattern wins).
+    The context root is never excluded.
+
     :param src: Path to the source directory
     :param context_path: Base directory for resolving relative paths
-    :param ignore_patterns: Ignore patterns
+    :param ignore_patterns: Ignore patterns in `.dockerignore` syntax
     :param include_directories: Whether to include directories
     :return: Array of files
     """
     files = set()
 
-    # Use glob to find all files/directories matching the pattern under context_path
     abs_context_path = os.path.abspath(context_path)
+    try:
+        matcher = PatternMatcher(
+            [_normalize_ignore_pattern(p, abs_context_path) for p in ignore_patterns],
+            backslash_is_separator=os.sep == "\\",
+        )
+    except ValueError as e:
+        raise TemplateException(str(e)) from e
+
+    def walk(dir_path: str, dir_relative_path: str) -> None:
+        with os.scandir(dir_path) as entries:
+            for entry in entries:
+                relative_path = (
+                    entry.name
+                    if dir_relative_path == "."
+                    else f"{dir_relative_path}/{entry.name}"
+                )
+                ignored = matcher.matches(relative_path)
+                if not ignored:
+                    files.add(entry.path)
+                if entry.is_dir(follow_symlinks=False) and (
+                    not ignored or matcher.may_match_under(relative_path)
+                ):
+                    walk(entry.path, relative_path)
+
+    # Use glob to find all files/directories matching the pattern under context_path
     files_glob = glob.glob(
         src,
         flags=glob.GLOBSTAR | glob.DOTMATCH,
         root_dir=abs_context_path,
-        exclude=ignore_patterns,
     )
 
+    matches = []
     for file in files_glob:
-        # Join it with abs_context_path to get the absolute path
-        file_path = os.path.join(abs_context_path, file)
+        # Join it with abs_context_path to get the absolute path, dropping
+        # any "." and ".." segments from src
+        file_path = os.path.normpath(os.path.join(abs_context_path, file))
+        relative_path = normalize_path(os.path.relpath(file_path, abs_context_path))
+        matches.append((file_path, relative_path))
 
-        if os.path.isdir(file_path):
+    # Visit parents before their children, so paths under an already walked
+    # directory are not walked again
+    matches.sort(key=lambda m: 0 if m[1] == "." else m[1].count("/") + 1)
+    walked_dirs = set()
+
+    def is_under_walked_dir(relative_path: str) -> bool:
+        if "." in walked_dirs:
+            return True
+        parent = posixpath.dirname(relative_path)
+        while parent:
+            if parent in walked_dirs:
+                return True
+            parent = posixpath.dirname(parent)
+        return False
+
+    for file_path, relative_path in matches:
+        if is_under_walked_dir(relative_path):
+            continue
+        if relative_path != "." and matcher.matches(relative_path):
+            continue
+
+        # Symlinks are not followed, the link itself is copied
+        if os.path.isdir(file_path) and not os.path.islink(file_path):
             # If it's a directory, add the directory and all entries recursively
             if include_directories:
                 files.add(file_path)
-            dir_files = glob.glob(
-                normalize_path(file) + "/**/*",
-                flags=glob.GLOBSTAR | glob.DOTMATCH,
-                root_dir=abs_context_path,
-                exclude=ignore_patterns,
-            )
-            for dir_file in dir_files:
-                dir_file_path = os.path.join(abs_context_path, dir_file)
-                files.add(dir_file_path)
+            walk(file_path, relative_path)
+            walked_dirs.add(relative_path)
         else:
             files.add(file_path)
 
@@ -200,7 +278,7 @@ def calculate_files_hash(
     :param src: Source path pattern for files to copy
     :param dest: Destination path where files will be copied
     :param context_path: Base directory for resolving relative paths
-    :param ignore_patterns: Glob patterns to ignore
+    :param ignore_patterns: Ignore patterns in `.dockerignore` syntax
     :param resolve_symlinks: Whether to resolve symbolic links when hashing
     :param stack_trace: Optional stack trace for error reporting
 
@@ -223,7 +301,9 @@ def calculate_files_hash(
         # Only include stable metadata (mode, size)
         # Exclude uid, gid, and mtime to ensure consistent hashes across environments
         hash_obj.update(str(stat_info.st_mode).encode())
-        hash_obj.update(str(stat_info.st_size).encode())
+        # A directory's size depends on the filesystem, not on the copied files
+        if not stat.S_ISDIR(stat_info.st_mode):
+            hash_obj.update(str(stat_info.st_size).encode())
 
     for file in files:
         # Hash the relative path
