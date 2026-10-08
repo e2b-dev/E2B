@@ -1,0 +1,13 @@
+{
+  "name": "@e2b/charts-python",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "test": "uv run pytest --verbose -x",
+    "postVersion": "uv version --frozen $(pnpm pkg get version --workspaces=false | tr -d \\\")",
+    "lock": "uv lock",
+    "postPublish": "uv build && uv publish --trusted-publishing always --check-url https://pypi.org/simple/",
+    "lint": "uv run ruff check .",
+    "format": "uv run ruff format ."
+  }
+}

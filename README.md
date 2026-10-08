@@ -70,6 +70,10 @@ npm i @e2b/code-interpreter  # JavaScript/TypeScript
 pip install e2b-code-interpreter  # Python
 ```
 
+The [`@e2b/code-interpreter-template`](./packages/code-interpreter-template)
+and [`@e2b/charts-python`](./packages/charts-python) packages provide the
+Code Interpreter sandbox template and Python chart extraction package.
+
 ```ts
 import { Sandbox } from '@e2b/code-interpreter'
 

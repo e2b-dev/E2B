@@ -1,0 +1,9 @@
+{
+  "name": "@e2b/code-interpreter-template",
+  "private": true,
+  "version": "0.4.6",
+  "scripts": {
+    "lint": "uvx ruff@0.11.12 check .",
+    "format": "uvx ruff@0.11.12 format ."
+  }
+}

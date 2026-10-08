@@ -1,0 +1,6 @@
+fastapi==0.111.0
+httpx==0.28.1
+websockets==12.0
+uvicorn[standard]==0.30.1
+requests==2.33.0
+pydantic==2.9.1

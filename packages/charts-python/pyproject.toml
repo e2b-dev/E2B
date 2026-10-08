@@ -1,0 +1,38 @@
+[project]
+name = "e2b-charts"
+version = "1.0.0"
+description = "Package for extracting data for E2B Code Interpreter"
+authors = [{ name = "e2b", email = "hello@e2b.dev" }]
+requires-python = ">=3.10"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+dependencies = [
+    "numpy>=2.2.6,<3",
+    "matplotlib>=3.10.3,<4",
+    "pydantic>=2.9.1,<3",
+]
+
+[project.urls]
+Homepage = "https://e2b.dev/"
+Repository = "https://github.com/e2b-dev/E2B/tree/main/packages/charts-python"
+"Bug Tracker" = "https://github.com/e2b-dev/E2B/issues"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3,<10",
+    "python-dotenv>=1.2.1,<2",
+    "pytest-dotenv>=0.5.2,<0.6",
+    "ruff>=0.11.12,<0.12",
+]
+
+[tool.uv.build-backend]
+module-name = ["e2b_charts"]
+module-root = ""
+
+[build-system]
+requires = ["uv_build>=0.10.0,<0.11.0"]
+build-backend = "uv_build"
+
+[tool.ruff.lint]
+ignore = ["F401", "F403"]
