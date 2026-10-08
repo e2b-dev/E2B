@@ -156,17 +156,17 @@ class AsyncCommandHandle:
                 match oneof:
                     case Oneof(field="data", value=data):
                         match data.output:
-                            case Oneof(field="stdout", value=chunk) if chunk:
+                            case Oneof(field="stdout", value=chunk):
                                 out = self._stdout_decoder.decode(chunk)
                                 if out:
                                     self._stdout_chunks.append(out)
                                     yield out, None, None
-                            case Oneof(field="stderr", value=chunk) if chunk:
+                            case Oneof(field="stderr", value=chunk):
                                 out = self._stderr_decoder.decode(chunk)
                                 if out:
                                     self._stderr_chunks.append(out)
                                     yield None, out, None
-                            case Oneof(field="pty", value=chunk) if chunk:
+                            case Oneof(field="pty", value=chunk):
                                 yield None, None, chunk
                     case Oneof(field="end", value=end):
                         # Flush trailing decoder bytes into the accumulators and
