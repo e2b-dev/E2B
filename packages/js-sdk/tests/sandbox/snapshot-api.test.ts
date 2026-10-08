@@ -1,7 +1,7 @@
 import { assert } from 'vitest'
 
 import { sandboxTest, isDebug } from '../setup.js'
-import { Sandbox } from '../../src'
+import { Sandbox, SandboxError } from '../../src'
 
 const SNAPSHOT_CREATE_REQUEST_TIMEOUT_MS = 120_000
 
@@ -237,6 +237,73 @@ sandboxTest.skipIf(isDebug)(
 
         assert.equal(config, configContent)
         assert.equal(data, dataContent)
+      } finally {
+        await newSandbox.kill()
+      }
+    } finally {
+      await Sandbox.deleteSnapshot(snapshot.snapshotId)
+    }
+  },
+  180_000
+)
+
+sandboxTest.skipIf(isDebug)(
+  'create a filesystem-only snapshot',
+  async ({ sandbox, sandboxTestId, skip }) => {
+    const testContent = 'filesystem-only snapshot content'
+    await sandbox.files.write('/home/user/fs-only.txt', testContent)
+
+    // Kernel boot id: it changes only across a real (cold) boot. Read via a
+    // command, not files.read: envd serves procfs files as an empty 200
+    // because it sizes them by stat.
+    const bootId = async (sbx: Sandbox) =>
+      (
+        await sbx.commands.run('cat /proc/sys/kernel/random/boot_id')
+      ).stdout.trim()
+    const sourceBoot = await bootId(sandbox)
+    assert.isTrue(sourceBoot.length > 0)
+
+    let snapshot
+    try {
+      snapshot = await sandbox.createSnapshot({ mode: 'filesystem' })
+    } catch (error) {
+      // The API answers 400 while filesystem-only snapshots are not enabled
+      // for the team; there is nothing to prove in that environment.
+      if (
+        error instanceof SandboxError &&
+        error.statusCode === 400 &&
+        error.message.includes('not enabled for this team')
+      ) {
+        skip('filesystem-only snapshots are not enabled for this team')
+      }
+      throw error
+    }
+    assert.isString(snapshot.snapshotId)
+    assert.isTrue(snapshot.snapshotId.length > 0)
+
+    try {
+      // The source sandbox keeps running and was not rebooted.
+      assert.isTrue(await sandbox.isRunning())
+      assert.equal(
+        await sandbox.files.read('/home/user/fs-only.txt'),
+        testContent
+      )
+      assert.equal(await bootId(sandbox), sourceBoot)
+
+      // A sandbox created from it has the files and a fresh boot id: it
+      // cold-booted instead of restoring memory. A memory snapshot would
+      // carry the source's boot id over, so this is what tells them apart.
+      const newSandbox = await Sandbox.create(snapshot.snapshotId, {
+        metadata: { sandboxTestId: `${sandboxTestId}-fs-only` },
+        requestTimeoutMs: SNAPSHOT_CREATE_REQUEST_TIMEOUT_MS,
+      })
+
+      try {
+        const content = await newSandbox.files.read('/home/user/fs-only.txt')
+        assert.equal(content, testContent)
+        const newBoot = await bootId(newSandbox)
+        assert.isTrue(newBoot.length > 0)
+        assert.notEqual(newBoot, sourceBoot)
       } finally {
         await newSandbox.kill()
       }

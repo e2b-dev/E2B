@@ -1,5 +1,11 @@
 # @e2b/code-interpreter-python
 
+## 2.10.3
+
+### Patch Changes
+
+- cd4c62b: Publish the changes from the previous release, which was versioned but failed to publish to npm and PyPI.
+
 ## 2.10.2
 
 ### Patch Changes

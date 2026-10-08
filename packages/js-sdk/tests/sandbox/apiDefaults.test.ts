@@ -8,6 +8,7 @@ import { setupMockApi } from '../mockApi'
 let lastCreateBody: Record<string, unknown> | undefined
 let lastForkBody: Record<string, unknown> | undefined
 let lastPauseBody: Record<string, unknown> | undefined
+let lastSnapshotBody: Record<string, unknown> | undefined
 let lastConnectBody: Record<string, unknown> | undefined
 
 const server = setupMockApi(
@@ -42,6 +43,13 @@ const server = setupMockApi(
   http.post(apiUrl('/sandboxes/:sandboxID/pause'), async ({ request }) => {
     lastPauseBody = (await request.json()) as Record<string, unknown>
     return new HttpResponse(null, { status: 204 })
+  }),
+  http.post(apiUrl('/sandboxes/:sandboxID/snapshots'), async ({ request }) => {
+    lastSnapshotBody = (await request.json()) as Record<string, unknown>
+    return HttpResponse.json(
+      { snapshotID: 'test-snapshot-id', names: [] },
+      { status: 201 }
+    )
   })
 )
 
@@ -53,6 +61,7 @@ afterEach(() => {
   lastCreateBody = undefined
   lastForkBody = undefined
   lastPauseBody = undefined
+  lastSnapshotBody = undefined
   lastConnectBody = undefined
   server.resetHandlers()
 })
@@ -124,14 +133,23 @@ test.each([0, -1, 21, 101, 1.5])(
   }
 )
 
-test('Sandbox.pause omits memory when keepMemory is unset', async () => {
+test('Sandbox.pause omits memory when mode is unset', async () => {
   await Sandbox.pause('test-sandbox-id', { apiKey: TEST_API_KEY })
 
   expect(lastPauseBody).toBeDefined()
   expect(lastPauseBody).not.toHaveProperty('memory')
 })
 
-test('Sandbox.pause sends an explicit keepMemory', async () => {
+test.each([
+  ['filesystem', false],
+  ['full', true],
+] as const)('Sandbox.pause maps mode %s to memory %s', async (mode, memory) => {
+  await Sandbox.pause('test-sandbox-id', { apiKey: TEST_API_KEY, mode })
+
+  expect(lastPauseBody?.memory).toBe(memory)
+})
+
+test('Sandbox.pause still sends the deprecated keepMemory', async () => {
   await Sandbox.pause('test-sandbox-id', {
     apiKey: TEST_API_KEY,
     keepMemory: false,
@@ -139,6 +157,53 @@ test('Sandbox.pause sends an explicit keepMemory', async () => {
 
   expect(lastPauseBody?.memory).toBe(false)
 })
+
+test('Sandbox.pause rejects mode together with keepMemory', async () => {
+  await expect(
+    Sandbox.pause('test-sandbox-id', {
+      apiKey: TEST_API_KEY,
+      mode: 'full',
+      keepMemory: true,
+    })
+  ).rejects.toThrowError(InvalidArgumentError)
+  expect(lastPauseBody).toBeUndefined()
+})
+
+test('Sandbox.pause rejects an unknown mode', async () => {
+  await expect(
+    Sandbox.pause('test-sandbox-id', {
+      apiKey: TEST_API_KEY,
+      mode: 'memory' as never,
+    })
+  ).rejects.toThrow(
+    new InvalidArgumentError(
+      'mode must be one of: full, filesystem (got "memory").'
+    )
+  )
+  expect(lastPauseBody).toBeUndefined()
+})
+
+test('Sandbox.createSnapshot omits memory when mode is unset', async () => {
+  await Sandbox.createSnapshot('test-sandbox-id', { apiKey: TEST_API_KEY })
+
+  expect(lastSnapshotBody).toBeDefined()
+  expect(lastSnapshotBody).not.toHaveProperty('memory')
+})
+
+test.each([
+  ['filesystem', false],
+  ['full', true],
+] as const)(
+  'Sandbox.createSnapshot maps mode %s to memory %s',
+  async (mode, memory) => {
+    await Sandbox.createSnapshot('test-sandbox-id', {
+      apiKey: TEST_API_KEY,
+      mode,
+    })
+
+    expect(lastSnapshotBody?.memory).toBe(memory)
+  }
+)
 
 test('Sandbox.connect omits timeout when unset', async () => {
   await Sandbox.connect('test-sandbox-id', { apiKey: TEST_API_KEY })

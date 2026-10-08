@@ -96,7 +96,8 @@ def sync_detailed(
      List all templates
 
     Args:
-        team_id (Union[Unset, str]): Identifier of the team
+        team_id (Union[Unset, str]): Identifier of the team, as its UUID or its public project ID
+            (prj_)
         next_token (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 100.
 
@@ -133,7 +134,8 @@ def sync(
      List all templates
 
     Args:
-        team_id (Union[Unset, str]): Identifier of the team
+        team_id (Union[Unset, str]): Identifier of the team, as its UUID or its public project ID
+            (prj_)
         next_token (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 100.
 
@@ -165,7 +167,8 @@ async def asyncio_detailed(
      List all templates
 
     Args:
-        team_id (Union[Unset, str]): Identifier of the team
+        team_id (Union[Unset, str]): Identifier of the team, as its UUID or its public project ID
+            (prj_)
         next_token (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 100.
 
@@ -200,7 +203,8 @@ async def asyncio(
      List all templates
 
     Args:
-        team_id (Union[Unset, str]): Identifier of the team
+        team_id (Union[Unset, str]): Identifier of the team, as its UUID or its public project ID
+            (prj_)
         next_token (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 100.
 

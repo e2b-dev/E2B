@@ -240,7 +240,9 @@ function metadataHeaders(
 export function mapEntryInfo(entry: FsEntryInfo): EntryInfo {
   return {
     name: entry.name,
-    type: mapFileType(entry.type),
+    // Newer envd reports a symlink's target type in `type` and marks the link
+    // itself with `isSymlink`; older envd reports FILE_TYPE_SYMLINK in `type`.
+    type: entry.isSymlink ? FileType.SYMLINK : mapFileType(entry.type),
     path: entry.path,
     size: Number(entry.size),
     mode: entry.mode,

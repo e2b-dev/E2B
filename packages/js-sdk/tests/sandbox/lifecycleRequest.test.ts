@@ -61,7 +61,7 @@ test('Sandbox.create sends autoPause: true for an explicit pause', async () => {
   expect(lastCreateBody).not.toHaveProperty('autoResume')
 })
 
-test('Sandbox.create omits autoPauseMemory when pause omits keepMemory', async () => {
+test('Sandbox.create omits autoPauseMemory when pause omits mode', async () => {
   await Sandbox.create('base', {
     apiKey: TEST_API_KEY,
     lifecycle: { onTimeout: { action: 'pause' } },
@@ -75,7 +75,7 @@ test('Sandbox.create omits autoPauseMemory when pause omits keepMemory', async (
 test('Sandbox.create sends the pause snapshot kind alongside autoPause', async () => {
   await Sandbox.create('base', {
     apiKey: TEST_API_KEY,
-    lifecycle: { onTimeout: { action: 'pause', keepMemory: false } },
+    lifecycle: { onTimeout: { action: 'pause', mode: 'filesystem' } },
   })
 
   expect(lastCreateBody?.autoPause).toBe(true)
@@ -84,12 +84,22 @@ test('Sandbox.create sends the pause snapshot kind alongside autoPause', async (
 
   await Sandbox.create('base', {
     apiKey: TEST_API_KEY,
-    lifecycle: { onTimeout: { action: 'pause', keepMemory: true } },
+    lifecycle: { onTimeout: { action: 'pause', mode: 'full' } },
   })
 
   expect(lastCreateBody?.autoPause).toBe(true)
   expect(lastCreateBody?.autoPauseMemory).toBe(true)
   expect(lastCreateBody).not.toHaveProperty('autoResume')
+})
+
+test('Sandbox.create still sends the deprecated keepMemory', async () => {
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    lifecycle: { onTimeout: { action: 'pause', keepMemory: false } },
+  })
+
+  expect(lastCreateBody?.autoPause).toBe(true)
+  expect(lastCreateBody?.autoPauseMemory).toBe(false)
 })
 
 test('Sandbox.create omits autoPause for a lifecycle without onTimeout', async () => {
@@ -148,15 +158,32 @@ async function expectInvalidLifecycleWithoutApiKey(
 
 test('filesystem-only auto-pause with auto-resume is InvalidArgumentError without an API key', async () => {
   await expectInvalidLifecycleWithoutApiKey({
+    onTimeout: { action: 'pause', mode: 'filesystem' },
+    autoResume: true,
+  })
+  await expectInvalidLifecycleWithoutApiKey({
     onTimeout: { action: 'pause', keepMemory: false },
     autoResume: true,
   })
 })
 
-test('keepMemory on kill is InvalidArgumentError without an API key', async () => {
+test('mode on kill is InvalidArgumentError without an API key', async () => {
+  await expectInvalidLifecycleWithoutApiKey({
+    // @ts-expect-error mode is not allowed with action: 'kill'
+    onTimeout: { action: 'kill', mode: 'filesystem' },
+  })
   await expectInvalidLifecycleWithoutApiKey({
     // @ts-expect-error keepMemory is not allowed with action: 'kill'
     onTimeout: { action: 'kill', keepMemory: false },
+  })
+})
+
+test('an unknown or doubled pause mode is InvalidArgumentError without an API key', async () => {
+  await expectInvalidLifecycleWithoutApiKey({
+    onTimeout: { action: 'pause', mode: 'memory' as never },
+  })
+  await expectInvalidLifecycleWithoutApiKey({
+    onTimeout: { action: 'pause', mode: 'full', keepMemory: true },
   })
 })
 

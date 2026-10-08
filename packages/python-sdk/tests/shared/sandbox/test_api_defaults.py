@@ -10,6 +10,7 @@ from e2b.api.client.api.sandboxes import (
     post_v_2_sandboxes_sandbox_id_connect,
     post_sandboxes_sandbox_id_fork,
     post_sandboxes_sandbox_id_pause,
+    post_sandboxes_sandbox_id_snapshots,
 )
 from e2b.api.client.models import Sandbox as SandboxModel
 
@@ -204,30 +205,104 @@ async def _async_pause_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, An
     return request.call_args.kwargs["body"].to_dict()
 
 
-def test_pause_omits_memory_when_keep_memory_unset(monkeypatch, test_api_key):
+MODE_MEMORY = [("filesystem", False), ("full", True)]
+
+
+def test_pause_omits_memory_when_mode_unset(monkeypatch, test_api_key):
     body = _sync_pause_body(monkeypatch, test_api_key)
 
     assert "memory" not in body
 
 
-def test_pause_sends_explicit_keep_memory(monkeypatch, test_api_key):
+@pytest.mark.parametrize("mode, memory", MODE_MEMORY)
+def test_pause_maps_mode_to_memory(monkeypatch, test_api_key, mode, memory):
+    body = _sync_pause_body(monkeypatch, test_api_key, mode=mode)
+
+    assert body["memory"] is memory
+
+
+def test_pause_still_sends_the_deprecated_keep_memory(monkeypatch, test_api_key):
     body = _sync_pause_body(monkeypatch, test_api_key, keep_memory=False)
 
     assert body["memory"] is False
 
 
-async def test_async_pause_omits_memory_when_keep_memory_unset(
-    monkeypatch, test_api_key
-):
+@pytest.mark.parametrize(
+    "kwargs, match",
+    [
+        ({"mode": "full", "keep_memory": True}, "not both"),
+        ({"mode": "memory"}, "mode must be one of: full, filesystem"),
+    ],
+)
+def test_pause_rejects_an_invalid_mode(monkeypatch, test_api_key, kwargs, match):
+    request = Mock()
+    monkeypatch.setattr(post_sandboxes_sandbox_id_pause, "sync_detailed", request)
+
+    with pytest.raises(InvalidArgumentException, match=match):
+        Sandbox.pause("sbx-test", api_key=test_api_key, **kwargs)
+
+    request.assert_not_called()
+
+
+async def test_async_pause_omits_memory_when_mode_unset(monkeypatch, test_api_key):
     body = await _async_pause_body(monkeypatch, test_api_key)
 
     assert "memory" not in body
 
 
-async def test_async_pause_sends_explicit_keep_memory(monkeypatch, test_api_key):
+@pytest.mark.parametrize("mode, memory", MODE_MEMORY)
+async def test_async_pause_maps_mode_to_memory(monkeypatch, test_api_key, mode, memory):
+    body = await _async_pause_body(monkeypatch, test_api_key, mode=mode)
+
+    assert body["memory"] is memory
+
+
+async def test_async_pause_still_sends_the_deprecated_keep_memory(
+    monkeypatch, test_api_key
+):
     body = await _async_pause_body(monkeypatch, test_api_key, keep_memory=False)
 
     assert body["memory"] is False
+
+
+def _snapshot_response():
+    return SimpleNamespace(
+        status_code=201,
+        parsed=SimpleNamespace(snapshot_id="snap-test", names=[]),
+    )
+
+
+def test_create_snapshot_omits_memory_when_mode_unset(monkeypatch, test_api_key):
+    request = Mock(return_value=_snapshot_response())
+    monkeypatch.setattr(post_sandboxes_sandbox_id_snapshots, "sync_detailed", request)
+
+    Sandbox.create_snapshot("sbx-test", api_key=test_api_key)
+
+    assert "memory" not in request.call_args.kwargs["body"].to_dict()
+
+
+@pytest.mark.parametrize("mode, memory", MODE_MEMORY)
+def test_create_snapshot_maps_mode_to_memory(monkeypatch, test_api_key, mode, memory):
+    request = Mock(return_value=_snapshot_response())
+    monkeypatch.setattr(post_sandboxes_sandbox_id_snapshots, "sync_detailed", request)
+
+    Sandbox.create_snapshot("sbx-test", mode=mode, api_key=test_api_key)
+
+    assert request.call_args.kwargs["body"].to_dict()["memory"] is memory
+
+
+@pytest.mark.parametrize("mode, memory", MODE_MEMORY)
+async def test_async_create_snapshot_maps_mode_to_memory(
+    monkeypatch, test_api_key, mode, memory
+):
+    request = AsyncMock(return_value=_snapshot_response())
+    monkeypatch.setattr(
+        post_sandboxes_sandbox_id_snapshots, "asyncio_detailed", request
+    )
+
+    await AsyncSandbox.create_snapshot("sbx-test", mode=mode, api_key=test_api_key)
+
+    assert request.call_args.kwargs["body"].to_dict()["memory"] is memory
 
 
 def _sync_connect_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, Any]:

@@ -109,6 +109,7 @@ from .sandbox.sandbox_api import (
     SandboxQuery,
     SandboxState,
     SnapshotInfo,
+    SnapshotMode,
 )
 from .sandbox_async.commands.command_handle import AsyncCommandHandle
 from .sandbox_async.filesystem.watch_handle import AsyncWatchHandle
@@ -133,6 +134,7 @@ from .template.logger import (
     LogEntryStart,
     default_build_logger,
 )
+from .template.dockerfile_parser import DockerfileSyntaxError
 from .template.main import TemplateBase, TemplateClass
 from .template.readycmd import (
     ReadyCmd,
@@ -194,6 +196,7 @@ __all__ = [
     "InvalidArgumentException",
     "NotEnoughSpaceException",
     "TemplateException",
+    "DockerfileSyntaxError",
     "BuildException",
     "FileUploadException",
     "RateLimitException",
@@ -257,6 +260,7 @@ __all__ = [
     "SecretNotFoundException",
     # Snapshot
     "SnapshotInfo",
+    "SnapshotMode",
     "SnapshotPaginator",
     "AsyncSnapshotPaginator",
     # Signature

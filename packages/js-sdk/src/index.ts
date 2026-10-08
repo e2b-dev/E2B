@@ -95,6 +95,7 @@ export type {
   SnapshotListOpts,
   SnapshotPaginator,
   CreateSnapshotOpts,
+  SnapshotMode,
 } from './sandbox/sandboxApi'
 
 export type { McpServer } from './sandbox/mcp'
@@ -167,6 +168,7 @@ export { E2B, type E2BClientOpts } from './client'
 export default Sandbox
 
 export * from './template'
+export { DockerfileSyntaxError } from './template/dockerfileParser'
 
 export {
   ReadyCmd,

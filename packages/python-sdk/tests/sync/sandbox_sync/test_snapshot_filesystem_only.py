@@ -11,7 +11,7 @@ def test_pause_filesystem_only(sandbox: Sandbox):
     boot_before = sandbox.files.read("/proc/sys/kernel/random/boot_id").strip()
 
     # Filesystem-only pause: only the rootfs is persisted, no memory snapshot.
-    assert sandbox.pause(keep_memory=False, request_timeout=120)
+    assert sandbox.pause(mode="filesystem", request_timeout=120)
     assert not sandbox.is_running()
 
     # Resuming a filesystem-only snapshot cold-boots (reboots) from the rootfs.
