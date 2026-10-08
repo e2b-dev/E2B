@@ -339,7 +339,7 @@ class SandboxApi(SandboxBase):
         sandbox_id: str,
         name: Optional[str] = None,
         *,
-        kind: Optional[SnapshotMode] = None,
+        mode: Optional[SnapshotMode] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotInfo:
         config = ConnectionConfig(**cls._resolve_api_params(**opts))
@@ -350,7 +350,7 @@ class SandboxApi(SandboxBase):
             client=api_client,
             body=SandboxSnapshotRequest(
                 name=name if name else UNSET,
-                memory=resolve_snapshot_memory("kind", kind),
+                memory=resolve_snapshot_memory("mode", mode),
             ),
         )
 

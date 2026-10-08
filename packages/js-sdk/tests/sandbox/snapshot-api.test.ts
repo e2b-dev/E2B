@@ -265,7 +265,7 @@ sandboxTest.skipIf(isDebug)(
 
     let snapshot
     try {
-      snapshot = await sandbox.createSnapshot({ kind: 'filesystem' })
+      snapshot = await sandbox.createSnapshot({ mode: 'filesystem' })
     } catch (error) {
       // The API answers 400 while filesystem-only snapshots are not enabled
       // for the team; there is nothing to prove in that environment.

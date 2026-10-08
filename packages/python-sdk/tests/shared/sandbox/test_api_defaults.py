@@ -272,7 +272,7 @@ def _snapshot_response():
     )
 
 
-def test_create_snapshot_omits_memory_when_kind_unset(monkeypatch, test_api_key):
+def test_create_snapshot_omits_memory_when_mode_unset(monkeypatch, test_api_key):
     request = Mock(return_value=_snapshot_response())
     monkeypatch.setattr(post_sandboxes_sandbox_id_snapshots, "sync_detailed", request)
 
@@ -281,26 +281,26 @@ def test_create_snapshot_omits_memory_when_kind_unset(monkeypatch, test_api_key)
     assert "memory" not in request.call_args.kwargs["body"].to_dict()
 
 
-@pytest.mark.parametrize("kind, memory", MODE_MEMORY)
-def test_create_snapshot_maps_kind_to_memory(monkeypatch, test_api_key, kind, memory):
+@pytest.mark.parametrize("mode, memory", MODE_MEMORY)
+def test_create_snapshot_maps_mode_to_memory(monkeypatch, test_api_key, mode, memory):
     request = Mock(return_value=_snapshot_response())
     monkeypatch.setattr(post_sandboxes_sandbox_id_snapshots, "sync_detailed", request)
 
-    Sandbox.create_snapshot("sbx-test", kind=kind, api_key=test_api_key)
+    Sandbox.create_snapshot("sbx-test", mode=mode, api_key=test_api_key)
 
     assert request.call_args.kwargs["body"].to_dict()["memory"] is memory
 
 
-@pytest.mark.parametrize("kind, memory", MODE_MEMORY)
-async def test_async_create_snapshot_maps_kind_to_memory(
-    monkeypatch, test_api_key, kind, memory
+@pytest.mark.parametrize("mode, memory", MODE_MEMORY)
+async def test_async_create_snapshot_maps_mode_to_memory(
+    monkeypatch, test_api_key, mode, memory
 ):
     request = AsyncMock(return_value=_snapshot_response())
     monkeypatch.setattr(
         post_sandboxes_sandbox_id_snapshots, "asyncio_detailed", request
     )
 
-    await AsyncSandbox.create_snapshot("sbx-test", kind=kind, api_key=test_api_key)
+    await AsyncSandbox.create_snapshot("sbx-test", mode=mode, api_key=test_api_key)
 
     assert request.call_args.kwargs["body"].to_dict()["memory"] is memory
 
