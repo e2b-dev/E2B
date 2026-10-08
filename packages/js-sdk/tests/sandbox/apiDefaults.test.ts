@@ -183,7 +183,7 @@ test('Sandbox.pause rejects an unknown mode', async () => {
   expect(lastPauseBody).toBeUndefined()
 })
 
-test('Sandbox.createSnapshot omits memory when mode is unset', async () => {
+test('Sandbox.createSnapshot omits memory when kind is unset', async () => {
   await Sandbox.createSnapshot('test-sandbox-id', { apiKey: TEST_API_KEY })
 
   expect(lastSnapshotBody).toBeDefined()
@@ -194,11 +194,11 @@ test.each([
   ['filesystem', false],
   ['full', true],
 ] as const)(
-  'Sandbox.createSnapshot maps mode %s to memory %s',
-  async (mode, memory) => {
+  'Sandbox.createSnapshot maps kind %s to memory %s',
+  async (kind, memory) => {
     await Sandbox.createSnapshot('test-sandbox-id', {
       apiKey: TEST_API_KEY,
-      mode,
+      kind,
     })
 
     expect(lastSnapshotBody?.memory).toBe(memory)

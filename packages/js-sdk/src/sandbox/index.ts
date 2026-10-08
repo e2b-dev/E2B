@@ -676,13 +676,13 @@ export class Sandbox extends SandboxApi {
    *
    * Use the returned `snapshotId` with `Sandbox.create(snapshotId)` to create a new sandbox from the snapshot.
    *
-   * @param opts snapshot creation options including optional name, `mode`
+   * @param opts snapshot creation options including optional name, `kind`
    * (`'filesystem'` takes a filesystem-only snapshot; sandboxes created from it
    * cold-boot instead of restoring memory), and connection options.
    *
    * @returns snapshot information including the snapshot ID.
    *
-   * @throws {@link SandboxError} with `statusCode` 400 when `mode: 'filesystem'`
+   * @throws {@link SandboxError} with `statusCode` 400 when `kind: 'filesystem'`
    * is requested but the feature is not enabled for the team
    * (`snapshot_filesystem_only_disabled`), and with `statusCode` 409 when the
    * sandbox's node runs an orchestrator that predates the option
@@ -701,14 +701,14 @@ export class Sandbox extends SandboxApi {
    * const newSandbox = await Sandbox.create(snapshot.snapshotId)
    *
    * // Filesystem-only snapshot: sandboxes created from it start fresh from disk
-   * const fsSnapshot = await sandbox.createSnapshot({ mode: 'filesystem' })
+   * const fsSnapshot = await sandbox.createSnapshot({ kind: 'filesystem' })
    * ```
    */
   async createSnapshot(opts?: CreateSnapshotOpts): Promise<SnapshotInfo> {
     return await SandboxApi.createSnapshot(this.sandboxId, {
       ...this.resolveApiOpts(opts),
       name: opts?.name,
-      mode: opts?.mode,
+      kind: opts?.kind,
     })
   }
 

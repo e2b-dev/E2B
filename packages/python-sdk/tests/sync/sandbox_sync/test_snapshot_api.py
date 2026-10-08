@@ -208,7 +208,7 @@ def test_create_filesystem_only_snapshot(sandbox: Sandbox):
     assert source_boot
 
     try:
-        snapshot = sandbox.create_snapshot(mode="filesystem")
+        snapshot = sandbox.create_snapshot(kind="filesystem")
     except SandboxException as error:
         # The API answers 400 while filesystem-only snapshots are not enabled
         # for the team; there is nothing to prove in that environment.

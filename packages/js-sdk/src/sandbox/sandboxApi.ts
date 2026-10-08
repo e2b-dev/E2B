@@ -916,7 +916,7 @@ export interface CreateSnapshotOpts extends SandboxApiOpts {
    *
    * @default 'full'
    */
-  mode?: SnapshotMode
+  kind?: SnapshotMode
 }
 
 /**
@@ -1648,10 +1648,10 @@ export class SandboxApi extends ClientFactory {
    * The snapshot is a persistent image that survives sandbox deletion.
    *
    * @param sandboxId sandbox ID to create snapshot from.
-   * @param opts snapshot creation options including optional name, `mode`
+   * @param opts snapshot creation options including optional name, `kind`
    * (`'filesystem'` takes a filesystem-only snapshot), and connection options.
    *
-   * @throws {@link SandboxError} with `statusCode` 400 when `mode: 'filesystem'`
+   * @throws {@link SandboxError} with `statusCode` 400 when `kind: 'filesystem'`
    * is requested but the feature is not enabled for the team
    * (`snapshot_filesystem_only_disabled`), and with `statusCode` 409 when the
    * sandbox's node runs an orchestrator that predates the option
@@ -1676,7 +1676,7 @@ export class SandboxApi extends ClientFactory {
       },
       body: {
         ...(apiOpts?.name ? { name: apiOpts.name } : {}),
-        memory: snapshotMemory('mode', apiOpts?.mode),
+        memory: snapshotMemory('kind', apiOpts?.kind),
       },
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
