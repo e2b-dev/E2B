@@ -321,7 +321,6 @@ export class CommandHandle
             break
           }
         }
-        // TODO: Handle empty events like in python SDK
       }
     } catch (e) {
       // The stream raised before an `end` event (e.g. disconnect or RPC
