@@ -1,0 +1,7 @@
+{
+  "policies": {
+    "DisableFirstRunPage": true,
+    "OverrideFirstRunPage": "",
+    "OverridePostUpdatePage": ""
+  }
+}

@@ -266,4 +266,4 @@ await desktop.wait(1000) // Wait for 1 second
 ## Under the hood
 
 The desktop-like environment is based on Linux and [Xfce](https://www.xfce.org/) at the moment. We chose Xfce because it's a fast and lightweight environment that's also popular and actively supported. However, this Sandbox template is fully customizable and you can create your own desktop environment.
-Check out the sandbox template's code [here](https://github.com/e2b-dev/desktop/tree/main/template).
+Check out the sandbox template's code [here](https://github.com/e2b-dev/E2B/tree/main/templates/desktop).

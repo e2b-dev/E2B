@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Name=Google Chrome
+Exec=/usr/bin/google-chrome-stable --no-first-run --no-default-browser-check --password-store=basic --disable-extensions --disable-default-apps --disable-sync --disable-spell-check --disable-breakpad --metrics-recording-only --no-pings --mute-audio --disable-features=Autofill,AutofillEnableUpi,PasswordManager,FederatedCredentialsManagement,InterestFeedContentSuggestions,PromotionalTabsEnabled,Translate,TranslateUI,ReadAnything,DistilledPageContent,PictureInPicture,Notifications,WebUSB,WebHID,WebMIDI,WebBluetooth,WebSerial,WebXR,MediaRouter,PaymentRequest,Payments,GlobalMediaControls,MediaSession,WebRTC,WebRtcHWEncoding,BackgroundSync,BackgroundFetch,Push,Prerender2
+Terminal=false
+Icon=google-chrome
+Type=Application
+Categories=Network;WebBrowser;
+MimeType=text/html;text/xml;application/xhtml_xml;x-scheme-handler/http;x-scheme-handler/https;
+StartupWMClass=Google-chrome
