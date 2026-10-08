@@ -78,9 +78,9 @@ jobs:
           prefix: 'tool_version_'
 
       - name: Set package version
-        working-directory: ./packages/code-interpreter-template
+        working-directory: ./templates/code-interpreter
         run: |
-          VERSION=$(cat ../charts-python/pyproject.toml | grep version | cut -d '"' -f 2)
+          VERSION=$(cat ../../packages/charts-python/pyproject.toml | grep version | cut -d '"' -f 2)
           echo "Version: $VERSION"
           sed -i "s/e2b_charts/e2b_charts==${VERSION}/g" requirements.txt
 
@@ -101,11 +101,11 @@ jobs:
           activate-environment: true
 
       - name: Install development dependencies
-        working-directory: ./packages/code-interpreter-template
+        working-directory: ./templates/code-interpreter
         run: uv pip install -r requirements-dev.txt
 
       - name: Build and push to DockerHub
-        working-directory: ./packages/code-interpreter-template
+        working-directory: ./templates/code-interpreter
         run: |
           python build_docker.py | docker buildx build \
             --platform linux/amd64 \
@@ -131,9 +131,9 @@ jobs:
           prefix: 'tool_version_'
 
       - name: Set package version
-        working-directory: ./packages/code-interpreter-template
+        working-directory: ./templates/code-interpreter
         run: |
-          VERSION=$(cat ../charts-python/pyproject.toml | grep version | cut -d '"' -f 2)
+          VERSION=$(cat ../../packages/charts-python/pyproject.toml | grep version | cut -d '"' -f 2)
           echo "Version: $VERSION"
           sed -i "s/e2b_charts/e2b_charts==${VERSION}/g" requirements.txt
 
@@ -145,7 +145,7 @@ jobs:
           activate-environment: true
 
       - name: Install development dependencies
-        working-directory: ./packages/code-interpreter-template
+        working-directory: ./templates/code-interpreter
         run: uv pip install -r requirements-dev.txt
 
       - name: Resolve target environment
@@ -203,7 +203,7 @@ jobs:
 
       - name: Build E2B template
         id: build-template
-        working-directory: ./packages/code-interpreter-template
+        working-directory: ./templates/code-interpreter
         run: python build_prod.py
         env:
           SKIP_CACHE: ${{ inputs.skip_cache }}

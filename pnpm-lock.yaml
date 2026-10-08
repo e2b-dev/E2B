@@ -215,8 +215,6 @@ importers:
 
   packages/code-interpreter-python: {}
 
-  packages/code-interpreter-template: {}
-
   packages/desktop-js:
     dependencies:
       e2b:
@@ -370,6 +368,8 @@ importers:
       '@e2b/dockerfile-utils-python':
         specifier: workspace:*
         version: link:../dockerfile-utils-python
+
+  templates/code-interpreter: {}
 
 packages:
 

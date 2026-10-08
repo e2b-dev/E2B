@@ -1,6 +1,6 @@
 # Code Interpreter HTTP tests
 
-Run the commands below from `packages/code-interpreter-template/tests`.
+Run the commands below from `templates/code-interpreter/tests`.
 
 End-to-end tests for the Code Interpreter template. Sandboxes are created with
 the `e2b` SDK from `E2B_TESTS_TEMPLATE` (defaults to `code-interpreter-v1`);

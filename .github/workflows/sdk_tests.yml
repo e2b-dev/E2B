@@ -92,7 +92,7 @@ jobs:
               - '.github/workflows/sdk_tests.yml'
               - '.github/workflows/code_interpreter_template_tests.yml'
               - '.tool-versions'
-              - 'packages/code-interpreter-template/**/!(*.md)'
+              - 'templates/code-interpreter/**/!(*.md)'
               - 'packages/charts-python/pyproject.toml'
             charts_python:
               - '.github/workflows/sdk_tests.yml'

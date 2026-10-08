@@ -1,6 +1,6 @@
 # Code Interpreter
 
-Run the commands below from `packages/code-interpreter-template`.
+Run the commands below from `templates/code-interpreter`.
 
 ## Building the production template
 
