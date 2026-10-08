@@ -215,7 +215,7 @@ async def test_create_filesystem_only_snapshot(async_sandbox: AsyncSandbox):
     assert source_boot
 
     try:
-        snapshot = await async_sandbox.create_snapshot(keep_memory=False)
+        snapshot = await async_sandbox.create_snapshot(mode="filesystem")
     except SandboxException as error:
         # The API answers 400 while filesystem-only snapshots are not enabled
         # for the team; there is nothing to prove in that environment.

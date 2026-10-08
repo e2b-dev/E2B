@@ -80,7 +80,7 @@ async def test_async_create_sends_auto_pause_only_when_configured(
     assert "autoPauseMemory" not in body
 
 
-def test_create_omits_auto_pause_memory_when_pause_omits_keep_memory(
+def test_create_omits_auto_pause_memory_when_pause_omits_mode(
     monkeypatch, test_api_key
 ):
     body = _sync_request_body(
@@ -99,7 +99,7 @@ def test_create_sends_the_pause_snapshot_kind_alongside_auto_pause(
     body = _sync_request_body(
         monkeypatch,
         test_api_key,
-        {"on_timeout": {"action": "pause", "keep_memory": False}},
+        {"on_timeout": {"action": "pause", "mode": "filesystem"}},
     )
 
     assert body["autoPause"] is True
@@ -108,11 +108,22 @@ def test_create_sends_the_pause_snapshot_kind_alongside_auto_pause(
     body = _sync_request_body(
         monkeypatch,
         test_api_key,
-        {"on_timeout": {"action": "pause", "keep_memory": True}},
+        {"on_timeout": {"action": "pause", "mode": "full"}},
     )
 
     assert body["autoPause"] is True
     assert body["autoPauseMemory"] is True
+
+
+def test_create_still_sends_the_deprecated_keep_memory(monkeypatch, test_api_key):
+    body = _sync_request_body(
+        monkeypatch,
+        test_api_key,
+        {"on_timeout": {"action": "pause", "keep_memory": False}},
+    )
+
+    assert body["autoPause"] is True
+    assert body["autoPauseMemory"] is False
 
 
 @pytest.mark.parametrize(
@@ -150,14 +161,30 @@ async def test_async_create_rejects_auto_resume_without_a_timeout_action(
 INVALID_LIFECYCLES = [
     # A filesystem-only auto-pause snapshot can only be resumed explicitly.
     pytest.param(
-        {"on_timeout": {"action": "pause", "keep_memory": False}, "auto_resume": True},
+        {"on_timeout": {"action": "pause", "mode": "filesystem"}, "auto_resume": True},
         id="filesystem-only-pause-with-auto-resume",
+    ),
+    pytest.param(
+        {"on_timeout": {"action": "pause", "keep_memory": False}, "auto_resume": True},
+        id="keep-memory-false-pause-with-auto-resume",
     ),
     # The discriminated union forbids this at type-check time; the runtime
     # guard covers callers that bypass the type.
     pytest.param(
+        cast(Any, {"on_timeout": {"action": "kill", "mode": "filesystem"}}),
+        id="mode-with-kill",
+    ),
+    pytest.param(
         cast(Any, {"on_timeout": {"action": "kill", "keep_memory": False}}),
         id="keep-memory-with-kill",
+    ),
+    pytest.param(
+        cast(Any, {"on_timeout": {"action": "pause", "mode": "memory"}}),
+        id="unknown-mode",
+    ),
+    pytest.param(
+        {"on_timeout": {"action": "pause", "mode": "full", "keep_memory": True}},
+        id="mode-with-keep-memory",
     ),
 ]
 

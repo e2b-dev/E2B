@@ -56,7 +56,9 @@ from e2b.sandbox.sandbox_api import (
     SandboxNetworkOpts,
     SandboxNetworkUpdate,
     SandboxOnResume,
+    SnapshotMode,
     resolve_connect_memory,
+    resolve_snapshot_memory,
     SandboxQuery,
     SnapshotInfo,
     build_iam_config,
@@ -337,7 +339,7 @@ class SandboxApi(SandboxBase):
         sandbox_id: str,
         name: Optional[str] = None,
         *,
-        keep_memory: Optional[bool] = None,
+        mode: Optional[SnapshotMode] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotInfo:
         config = ConnectionConfig(**cls._resolve_api_params(**opts))
@@ -348,7 +350,7 @@ class SandboxApi(SandboxBase):
             client=api_client,
             body=SandboxSnapshotRequest(
                 name=name if name else UNSET,
-                memory=keep_memory if keep_memory is not None else UNSET,
+                memory=resolve_snapshot_memory("mode", mode),
             ),
         )
 
@@ -396,6 +398,8 @@ class SandboxApi(SandboxBase):
         cls,
         sandbox_id: str,
         keep_memory: Optional[bool] = None,
+        *,
+        mode: Optional[SnapshotMode] = None,
         **opts: Unpack[ApiParams],
     ) -> bool:
         config = ConnectionConfig(**cls._resolve_api_params(**opts))
@@ -405,7 +409,7 @@ class SandboxApi(SandboxBase):
             sandbox_id,
             client=api_client,
             body=SandboxPauseRequest(
-                memory=keep_memory if keep_memory is not None else UNSET
+                memory=resolve_snapshot_memory("mode", mode, keep_memory)
             ),
         )
 

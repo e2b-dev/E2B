@@ -95,6 +95,7 @@ export type {
   SnapshotListOpts,
   SnapshotPaginator,
   CreateSnapshotOpts,
+  SnapshotMode,
 } from './sandbox/sandboxApi'
 
 export type { McpServer } from './sandbox/mcp'

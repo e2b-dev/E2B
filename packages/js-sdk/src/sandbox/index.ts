@@ -639,11 +639,11 @@ export class Sandbox extends SandboxApi {
   /**
    * Pause a sandbox by its ID.
    *
-   * @param opts connection options, plus `keepMemory` to control the snapshot
-   * kind. When `opts.keepMemory` is `false`, the in-memory state is dropped and
-   * only the filesystem is persisted (a filesystem-only snapshot); resuming such
-   * a sandbox cold-boots (reboots) it from disk, losing running processes and
-   * open connections. Defaults to `true` (full memory snapshot).
+   * @param opts connection options, plus `mode` to control the snapshot kind.
+   * With `mode: 'filesystem'`, the in-memory state is dropped and only the
+   * filesystem is persisted; resuming such a sandbox cold-boots (reboots) it
+   * from disk, losing running processes and open connections. Defaults to
+   * `'full'` (memory and filesystem).
    *
    * @returns `true` if the sandbox got paused, `false` if the sandbox was already paused.
    *
@@ -653,7 +653,7 @@ export class Sandbox extends SandboxApi {
    * await sandbox.pause()
    *
    * // filesystem-only snapshot (resume reboots the sandbox)
-   * await sandbox.pause({ keepMemory: false })
+   * await sandbox.pause({ mode: 'filesystem' })
    * ```
    */
   async pause(opts?: SandboxPauseOpts): Promise<boolean> {
@@ -676,13 +676,13 @@ export class Sandbox extends SandboxApi {
    *
    * Use the returned `snapshotId` with `Sandbox.create(snapshotId)` to create a new sandbox from the snapshot.
    *
-   * @param opts snapshot creation options including optional name, `keepMemory`
-   * to take a filesystem-only snapshot (sandboxes created from it cold-boot
-   * instead of restoring memory), and connection options.
+   * @param opts snapshot creation options including optional name, `mode`
+   * (`'filesystem'` takes a filesystem-only snapshot; sandboxes created from it
+   * cold-boot instead of restoring memory), and connection options.
    *
    * @returns snapshot information including the snapshot ID.
    *
-   * @throws {@link SandboxError} with `statusCode` 400 when `keepMemory: false`
+   * @throws {@link SandboxError} with `statusCode` 400 when `mode: 'filesystem'`
    * is requested but the feature is not enabled for the team
    * (`snapshot_filesystem_only_disabled`), and with `statusCode` 409 when the
    * sandbox's node runs an orchestrator that predates the option
@@ -701,14 +701,14 @@ export class Sandbox extends SandboxApi {
    * const newSandbox = await Sandbox.create(snapshot.snapshotId)
    *
    * // Filesystem-only snapshot: sandboxes created from it start fresh from disk
-   * const fsSnapshot = await sandbox.createSnapshot({ keepMemory: false })
+   * const fsSnapshot = await sandbox.createSnapshot({ mode: 'filesystem' })
    * ```
    */
   async createSnapshot(opts?: CreateSnapshotOpts): Promise<SnapshotInfo> {
     return await SandboxApi.createSnapshot(this.sandboxId, {
       ...this.resolveApiOpts(opts),
       name: opts?.name,
-      keepMemory: opts?.keepMemory,
+      mode: opts?.mode,
     })
   }
 

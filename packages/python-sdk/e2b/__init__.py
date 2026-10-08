@@ -109,6 +109,7 @@ from .sandbox.sandbox_api import (
     SandboxQuery,
     SandboxState,
     SnapshotInfo,
+    SnapshotMode,
 )
 from .sandbox_async.commands.command_handle import AsyncCommandHandle
 from .sandbox_async.filesystem.watch_handle import AsyncWatchHandle
@@ -259,6 +260,7 @@ __all__ = [
     "SecretNotFoundException",
     # Snapshot
     "SnapshotInfo",
+    "SnapshotMode",
     "SnapshotPaginator",
     "AsyncSnapshotPaginator",
     # Signature
