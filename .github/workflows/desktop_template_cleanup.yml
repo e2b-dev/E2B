@@ -1,0 +1,35 @@
+name: Delete Desktop Test Template
+
+on:
+  workflow_call:
+    inputs:
+      E2B_DOMAIN:
+        required: false
+        type: string
+        default: ''
+      template:
+        required: true
+        type: string
+    secrets:
+      E2B_API_KEY:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup:
+    name: Desktop Template - Delete
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Build and install E2B CLI
+        uses: ./.github/actions/build-cli
+
+      - name: Delete E2B template
+        run: e2b template delete -y "${{ inputs.template }}"
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}

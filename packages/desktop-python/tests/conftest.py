@@ -11,7 +11,9 @@ logger = logging.getLogger(__name__)
 @pytest.fixture(scope="function")
 def sandbox(debug):
     # Create a new sandbox instance for each test
-    sandbox = Sandbox.create(timeout=timeout)
+    sandbox = Sandbox.create(
+        template=os.getenv("E2B_TESTS_TEMPLATE") or None, timeout=timeout
+    )
 
     try:
         yield sandbox

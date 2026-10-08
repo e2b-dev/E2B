@@ -2,7 +2,7 @@ import { Sandbox } from '../src'
 import { test as base } from 'vitest'
 
 const timeoutMs = 180_000
-const template = 'desktop'
+const template = process.env.E2B_TESTS_TEMPLATE || 'desktop'
 
 interface SandboxFixture {
   sandbox: Sandbox

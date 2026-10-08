@@ -1,4 +1,4 @@
-name: Test Desktop Python SDK
+name: Build Desktop Test Template
 
 on:
   workflow_call:
@@ -7,30 +7,26 @@ on:
         required: false
         type: string
         default: ''
-      run_tests:
-        required: false
-        type: boolean
-        default: true
-      # Template to run the tests against; empty = the SDK default (`desktop`).
-      E2B_TESTS_TEMPLATE:
-        required: false
-        type: string
-        default: ''
     secrets:
       E2B_API_KEY:
         required: true
+    outputs:
+      template:
+        description: 'Name of the built test template'
+        value: ${{ jobs.build.outputs.template }}
 
 permissions:
   contents: read
 
 jobs:
-  test:
+  build:
     defaults:
       run:
-        working-directory: ./packages/desktop-python
-        shell: bash
-    name: Desktop Python SDK - Build and test
+        working-directory: ./templates/desktop
+    name: Desktop Template - Build
     runs-on: ubuntu-22.04
+    outputs:
+      template: ${{ steps.name.outputs.template }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -50,15 +46,17 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --locked --package e2b-desktop
+        run: uv sync --locked --project ../../packages/python-sdk
 
-      - name: Test build
-        run: uv build
+      # Unique per run attempt; exposed before the build so a failed build can
+      # still be cleaned up by name.
+      - name: Generate template name
+        id: name
+        run: echo "template=desktop-ci-${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_OUTPUT"
 
-      - name: Run tests
-        if: inputs.run_tests
-        run: uv run pytest --verbose --numprocesses=4
+      - name: Build E2B template
+        run: uv run --project ../../packages/python-sdk python build_ci.py
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
-          E2B_TESTS_TEMPLATE: ${{ inputs.E2B_TESTS_TEMPLATE }}
+          E2B_TESTS_TEMPLATE: ${{ steps.name.outputs.template }}
