@@ -1,11 +1,10 @@
 import logging
 import httpx
 
-from typing import cast, Optional, Dict, overload, Union, List
+from typing import Optional, Dict, overload, Union, List
 from httpx import Client
 from e2b import Sandbox as BaseSandbox, InvalidArgumentException
 from e2b.api.client_sync import get_transport
-from e2b.sandbox_domains import is_supported_sandbox_domain
 
 from e2b_code_interpreter.constants import (
     DEFAULT_TEMPLATE,
@@ -28,6 +27,7 @@ from e2b_code_interpreter.exceptions import (
     format_request_timeout_error,
     format_sandbox_killed_error,
 )
+from e2b_code_interpreter.urls import get_jupyter_url
 
 logger = logging.getLogger(__name__)
 
@@ -59,16 +59,9 @@ class Sandbox(BaseSandbox):
 
     @property
     def _jupyter_url(self) -> str:
-        # Mirrors ConnectionConfig.get_sandbox_url for the Jupyter port.
-        sandbox_url = cast(Optional[str], self.connection_config._sandbox_url)
-        if sandbox_url:
-            return sandbox_url
-        if self.connection_config.debug:
-            return f"http://{self.get_host(JUPYTER_PORT)}"
-        sandbox_domain = self.sandbox_domain or self.connection_config.domain
-        if is_supported_sandbox_domain(sandbox_domain):
-            return f"https://sandbox.{sandbox_domain}"
-        return f"https://{self.connection_config.get_host(self.sandbox_id, sandbox_domain, JUPYTER_PORT)}"
+        return get_jupyter_url(
+            self.connection_config, self.sandbox_id, self.sandbox_domain
+        )
 
     @property
     def _client(self) -> Client:
