@@ -53,11 +53,11 @@ test.skipIf(isDebug)(
 test.skipIf(isDebug)(
   'filesystem-only auto-pause reboots on connect',
   async () => {
-    // keepMemory:false makes the timeout auto-pause filesystem-only, so resuming
+    // mode: 'filesystem' makes the timeout auto-pause filesystem-only, so resuming
     // cold-boots the sandbox from disk.
     const sandbox = await Sandbox.create(template, {
       timeoutMs: 3_000,
-      lifecycle: { onTimeout: { action: 'pause', keepMemory: false } },
+      lifecycle: { onTimeout: { action: 'pause', mode: 'filesystem' } },
     })
 
     try {

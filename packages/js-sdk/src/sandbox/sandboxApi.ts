@@ -425,13 +425,55 @@ export interface SandboxIamOpts {
 }
 
 /**
+ * What a pause or snapshot persists.
+ *
+ * - `'full'`: the filesystem and the memory (running processes, in-memory
+ *   state and open connections); resuming restores the sandbox exactly where
+ *   it left off.
+ * - `'filesystem'`: only the filesystem. Smaller and faster to take; resuming
+ *   (or creating a sandbox from the snapshot) cold-boots it from disk, without
+ *   the running processes, in-memory state and open connections.
+ */
+export type SnapshotMode = 'full' | 'filesystem'
+
+const SNAPSHOT_MODES: readonly SnapshotMode[] = ['full', 'filesystem']
+
+/**
+ * Resolve `mode` (or the deprecated `keepMemory`) into the API's `memory`
+ * flag. Unset, it stays `undefined` so the API default (currently a full
+ * snapshot) applies. `field` names the option in error messages.
+ */
+function snapshotMemory(
+  field: string,
+  mode: SnapshotMode | undefined,
+  keepMemory?: boolean
+): boolean | undefined {
+  // `!= null` also skips an explicit `null` from untyped callers.
+  if (mode != null && keepMemory != null) {
+    throw new InvalidArgumentError(
+      `Pass either ${field} or the deprecated keepMemory, not both.`
+    )
+  }
+  if (mode == null) {
+    return keepMemory ?? undefined
+  }
+  // Re-check at runtime for callers that bypass the type.
+  if (!SNAPSHOT_MODES.includes(mode)) {
+    throw new InvalidArgumentError(
+      `${field} must be one of: ${SNAPSHOT_MODES.join(', ')} (got ${JSON.stringify(mode)}).`
+    )
+  }
+  return mode === 'full'
+}
+
+/**
  * What happens when the sandbox timeout is reached. Either the bare action
  * (`'pause'` / `'kill'`), or an object form that also controls the pause
- * snapshot kind via `keepMemory`.
+ * snapshot kind via `mode`.
  *
- * The object form is a discriminated union on `action`: `keepMemory` is only
- * accepted alongside `action: 'pause'`. Passing `keepMemory` with
- * `action: 'kill'` is a compile-time type error.
+ * The object form is a discriminated union on `action`: `mode` is only
+ * accepted alongside `action: 'pause'`. Passing `mode` with `action: 'kill'`
+ * is a compile-time type error.
  */
 export type SandboxOnTimeout =
   | 'pause'
@@ -441,22 +483,27 @@ export type SandboxOnTimeout =
       action: 'pause'
 
       /**
-       * Whether the timeout auto-pause keeps a full memory snapshot.
+       * What the timeout auto-pause persists.
        *
-       * When `false`, the auto-pause drops the in-memory state and persists only
-       * the filesystem (a filesystem-only snapshot); resuming such a sandbox
-       * cold-boots (reboots) it from disk, losing running processes and open
-       * connections.
+       * With `'filesystem'`, the auto-pause drops the in-memory state and
+       * persists only the filesystem; resuming such a sandbox cold-boots
+       * (reboots) it from disk, losing running processes and open connections.
        *
-       * Cannot be combined with `autoResume`: auto-resume wakes a paused sandbox
-       * on inbound traffic by restoring its memory snapshot in place, so the
-       * request that woke it hits an already-running process. A filesystem-only
-       * snapshot has no memory to restore — resuming cold-boots it — so it can't
-       * be woken transparently by traffic and must be resumed explicitly via
-       * `connect()`.
+       * `'filesystem'` cannot be combined with `autoResume`: auto-resume wakes a
+       * paused sandbox on inbound traffic by restoring its memory snapshot in
+       * place, so the request that woke it hits an already-running process. A
+       * filesystem-only snapshot has no memory to restore — resuming cold-boots
+       * it — so it can't be woken transparently by traffic and must be resumed
+       * explicitly via `connect()`.
        *
-       * Left unset, the flag is omitted from the create request and the API's own
-       * default (currently enabled) applies.
+       * Left unset, the mode is omitted from the create request and the API's
+       * own default (currently `'full'`) applies.
+       */
+      mode?: SnapshotMode
+
+      /**
+       * @deprecated Use `mode` instead: `keepMemory: false` is
+       * `mode: 'filesystem'`, `keepMemory: true` is `mode: 'full'`.
        */
       keepMemory?: boolean
     }
@@ -468,7 +515,7 @@ export type SandboxOnTimeout =
 export type SandboxLifecycle = {
   /**
    * Action to take when sandbox timeout is reached. Accepts either `'pause'` /
-   * `'kill'`, or `{ action, keepMemory }` to also control the pause snapshot kind.
+   * `'kill'`, or `{ action, mode }` to also control the pause snapshot kind.
    * Omitted from the create request when unset, leaving the API's default
    * (currently `kill`) in effect.
    *
@@ -481,8 +528,8 @@ export type SandboxLifecycle = {
    *
    * Leave unset to let the API pick the behavior. Set `false` to opt out
    * explicitly and keep auto-resume off even if the API's default changes.
-   * Can be `true` only when `onTimeout` is `pause`. Not supported when
-   * `keepMemory` is `false` (a filesystem-only snapshot must be resumed
+   * Can be `true` only when `onTimeout` is `pause`. Not supported with
+   * `mode: 'filesystem'` (a filesystem-only snapshot must be resumed
    * explicitly via `connect()`).
    */
   autoResume?: boolean
@@ -523,11 +570,19 @@ export interface SandboxApiOpts extends Partial<
  */
 export interface SandboxPauseOpts extends SandboxApiOpts {
   /**
-   * Whether to keep a full memory snapshot.
+   * What the pause persists.
    *
-   * When `false`, the in-memory state is dropped and only the filesystem is
-   * persisted (a filesystem-only snapshot); resuming such a sandbox cold-boots
-   * (reboots) it from disk, losing running processes and open connections.
+   * With `'filesystem'`, the in-memory state is dropped and only the
+   * filesystem is persisted; resuming such a sandbox cold-boots (reboots) it
+   * from disk, losing running processes and open connections.
+   *
+   * @default 'full'
+   */
+  mode?: SnapshotMode
+
+  /**
+   * @deprecated Use `mode` instead: `keepMemory: false` is
+   * `mode: 'filesystem'`, `keepMemory: true` is `mode: 'full'`.
    */
   keepMemory?: boolean
 }
@@ -850,6 +905,18 @@ export interface CreateSnapshotOpts extends SandboxApiOpts {
    * to the existing template instead of creating a new one.
    */
   name?: string
+  /**
+   * What the snapshot persists.
+   *
+   * With `'filesystem'`, only the filesystem is persisted: the snapshot is
+   * smaller and faster to take, and sandboxes created from it cold-boot (start
+   * fresh from disk) instead of restoring memory, so they begin without the
+   * running processes, in-memory state and open connections of the source
+   * sandbox. The source sandbox keeps running either way.
+   *
+   * @default 'full'
+   */
+  mode?: SnapshotMode
 }
 
 /**
@@ -1522,7 +1589,7 @@ export class SandboxApi extends ClientFactory {
    * Pause the sandbox specified by sandbox ID.
    *
    * @param sandboxId sandbox ID.
-   * @param opts pause options, including `keepMemory` and connection options.
+   * @param opts pause options, including `mode` and connection options.
    *
    * @returns `true` if the sandbox got paused, `false` if the sandbox was already paused.
    */
@@ -1541,7 +1608,7 @@ export class SandboxApi extends ClientFactory {
         },
       },
       body: {
-        memory: apiOpts?.keepMemory,
+        memory: snapshotMemory('mode', apiOpts?.mode, apiOpts?.keepMemory),
       },
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
@@ -1581,7 +1648,15 @@ export class SandboxApi extends ClientFactory {
    * The snapshot is a persistent image that survives sandbox deletion.
    *
    * @param sandboxId sandbox ID to create snapshot from.
-   * @param opts snapshot creation options including optional name and connection options.
+   * @param opts snapshot creation options including optional name, `mode`
+   * (`'filesystem'` takes a filesystem-only snapshot), and connection options.
+   *
+   * @throws {@link SandboxError} with `statusCode` 400 when `mode: 'filesystem'`
+   * is requested but the feature is not enabled for the team
+   * (`snapshot_filesystem_only_disabled`), and with `statusCode` 409 when the
+   * sandbox's node runs an orchestrator that predates the option
+   * (`snapshot_filesystem_only_unsupported_node`). A full memory snapshot
+   * still works in both cases; for 409, pause and resume the sandbox and retry.
    *
    * @returns snapshot information including the snapshot name that can be used with Sandbox.create().
    */
@@ -1599,7 +1674,10 @@ export class SandboxApi extends ClientFactory {
           sandboxID: sandboxId,
         },
       },
-      body: apiOpts?.name ? { name: apiOpts.name } : {},
+      body: {
+        ...(apiOpts?.name ? { name: apiOpts.name } : {}),
+        memory: snapshotMemory('mode', apiOpts?.mode),
+      },
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
@@ -1672,8 +1750,9 @@ export class SandboxApi extends ClientFactory {
     opts?: SandboxOpts
   ) {
     // onTimeout accepts a bare action (`'pause'` / `'kill'`) or the object form
-    // `{ action, keepMemory }`. The discriminated union type forbids `keepMemory`
-    // on `action: 'kill'`; re-check at runtime for untyped callers.
+    // `{ action, mode }`. The discriminated union type forbids `mode` (and the
+    // deprecated `keepMemory`) on `action: 'kill'`; re-check at runtime for
+    // untyped callers.
     const requestedOnTimeout = opts?.lifecycle?.onTimeout
     // A missing (or explicitly nullish, for untyped callers) onTimeout is not a
     // choice of `kill` — it leaves the timeout action to the API. Locally it
@@ -1694,22 +1773,26 @@ export class SandboxApi extends ClientFactory {
     // The action never reaches the API — it is resolved here into the boolean
     // autoPause — so an unrecognized value cannot be rejected server-side, and
     // resolving it to kill would delete the sandbox a caller asked to preserve.
-    const hasKeepMemory =
-      typeof onTimeout !== 'string' && 'keepMemory' in onTimeout
-    const keepMemory =
-      typeof onTimeout !== 'string' && 'keepMemory' in onTimeout
-        ? (onTimeout.keepMemory ?? true)
-        : true
+    const pauseOpts =
+      typeof onTimeout === 'string'
+        ? {}
+        : (onTimeout as { mode?: SnapshotMode; keepMemory?: boolean })
+    const hasMode = 'mode' in pauseOpts || 'keepMemory' in pauseOpts
     // A missing autoResume (or an explicit null from an untyped caller) is left
     // out of the request entirely, so the API keeps ownership of the default
     // instead of receiving the SDK's local one as an explicit opt-out.
     const autoResume = opts?.lifecycle?.autoResume ?? undefined
 
-    if (hasKeepMemory && action !== 'pause') {
+    if (hasMode && action !== 'pause') {
       throw new InvalidArgumentError(
-        "onTimeout.keepMemory is only allowed when action is 'pause'."
+        "onTimeout.mode is only allowed when action is 'pause'."
       )
     }
+    const memory = snapshotMemory(
+      'onTimeout.mode',
+      pauseOpts.mode,
+      pauseOpts.keepMemory
+    )
 
     if (autoResume && action !== 'pause') {
       throw new InvalidArgumentError(
@@ -1717,9 +1800,9 @@ export class SandboxApi extends ClientFactory {
       )
     }
 
-    if (!keepMemory && autoResume) {
+    if (memory === false && autoResume) {
       throw new InvalidArgumentError(
-        'autoResume: true is not a valid value when keepMemory: false - a filesystem-only snapshot cannot be auto-resumed by traffic and must be resumed explicitly using Sandbox.connect().'
+        "autoResume: true is not a valid value with mode: 'filesystem' - a filesystem-only snapshot cannot be auto-resumed by traffic and must be resumed explicitly using Sandbox.connect()."
       )
     }
 
@@ -1738,8 +1821,7 @@ export class SandboxApi extends ClientFactory {
       network: buildNetworkBody(opts?.network, iam),
       iam,
       autoPause: onTimeoutConfigured ? action === 'pause' : undefined,
-      autoPauseMemory:
-        action === 'pause' && hasKeepMemory ? keepMemory : undefined,
+      autoPauseMemory: action === 'pause' ? memory : undefined,
       autoResume:
         autoResume === undefined ? undefined : { enabled: autoResume },
     }

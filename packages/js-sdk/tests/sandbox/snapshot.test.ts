@@ -186,7 +186,7 @@ sandboxTest.skipIf(isDebug)(
 
     // Filesystem-only snapshot: no memory is captured, so resuming cold-boots.
     await sandbox.pause({
-      keepMemory: false,
+      mode: 'filesystem',
       requestTimeoutMs: 120_000,
     })
     assert.isFalse(await sandbox.isRunning())

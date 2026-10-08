@@ -149,3 +149,33 @@ def test_multipart_body_is_streamed_only_for_binary_file_like_entries():
             {"path": "b.bin", "data": io.BytesIO(b"bytes")},
         ]
     )
+
+
+def test_map_entry_info_reports_symlink_when_envd_marks_the_entry():
+    # Newer envd puts the target's type in `type` and marks the link with `is_symlink`.
+    def entry(file_type, is_symlink: bool):
+        return filesystem_pb.EntryInfo(
+            name="link",
+            type=file_type,
+            path="/home/user/link",
+            size=0,
+            mode=0o777,
+            permissions="lrwxrwxrwx",
+            owner="user",
+            group="user",
+            symlink_target="/home/user/releases/v1",
+            is_symlink=is_symlink,
+        )
+
+    to_dir = map_entry_info(entry(filesystem_pb.FileType.DIRECTORY, True))
+    assert to_dir.type is FileType.SYMLINK
+    assert to_dir.symlink_target == "/home/user/releases/v1"
+    assert (
+        map_entry_info(entry(filesystem_pb.FileType.FILE, True)).type
+        is FileType.SYMLINK
+    )
+    # Without the flag the target type stands, as for a plain directory.
+    assert (
+        map_entry_info(entry(filesystem_pb.FileType.DIRECTORY, False)).type
+        is FileType.DIR
+    )

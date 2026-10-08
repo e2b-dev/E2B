@@ -30,6 +30,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxNetworkUpdate,
     SandboxOnResume,
     SnapshotInfo,
+    SnapshotMode,
 )
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_sync.commands.command import Commands
@@ -195,7 +196,7 @@ class Sandbox(SandboxApi):
         :param mcp: MCP server to enable in the sandbox
         :param network: Sandbox network configuration. ``allow_out``/``deny_out`` may also be a callable receiving a :class:`SandboxNetworkSelectorContext` (``ctx.all_traffic``, ``ctx.rules``) and returning a list of strings. Per-host transform rules are nested under ``network.rules``; a rule's ``transform`` may be a callable receiving a :class:`SandboxNetworkTransformContext` of placeholder strings (``ctx.iam.tokens[name]``).
         :param iam: Sandbox workload identity configuration. A non-empty ``tokens`` map enables workload identity for the sandbox; token definitions can be created with :meth:`Secret.iam_token`. Example: ``{"tokens": {"aws": Secret.iam_token(audience="sts.amazonaws.com", token_type="JWT-SVID")}}``. Registered tokens are exposed to ``network.rules`` ``transform`` callables as ``ctx.iam.tokens[name]`` placeholders, which the egress proxy resolves per request
-        :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` or ``"pause"`` (omitted from the request when unset, leaving the API's default, currently ``"kill"``, in effect), or an object ``{"action": "pause"|"kill", "keep_memory": bool}`` where ``keep_memory`` set to ``False`` makes a timeout auto-pause filesystem-only (cold-boots on resume; cannot be combined with ``auto_resume``); an omitted ``keep_memory`` leaves the snapshot kind to the API; ``auto_resume``: leave unset to let the API pick the behavior, set ``False`` to opt out explicitly, or ``True`` (only when ``on_timeout`` action is ``"pause"``). Example: ``{"on_timeout": {"action": "pause", "keep_memory": False}}``
+        :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` or ``"pause"`` (omitted from the request when unset, leaving the API's default, currently ``"kill"``, in effect), or an object ``{"action": "pause"|"kill", "mode": "full"|"filesystem"}`` where ``mode`` set to ``"filesystem"`` makes a timeout auto-pause filesystem-only (cold-boots on resume; cannot be combined with ``auto_resume``); an omitted ``mode`` leaves the snapshot kind to the API (``keep_memory`` is a deprecated alias); ``auto_resume``: leave unset to let the API pick the behavior, set ``False`` to opt out explicitly, or ``True`` (only when ``on_timeout`` action is ``"pause"``). Example: ``{"on_timeout": {"action": "pause", "mode": "filesystem"}}``
         :param volume_mounts: Dictionary mapping mount paths to Volume instances or volume names
         :param logger: Logger used for request and response logging for this sandbox. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
 
@@ -784,12 +785,15 @@ class Sandbox(SandboxApi):
     def pause(
         self,
         keep_memory: Optional[bool] = None,
+        *,
+        mode: Optional[SnapshotMode] = None,
         **opts: Unpack[ApiParams],
     ) -> bool:
         """
         Pause the sandbox.
 
-        :param keep_memory: When `False`, the in-memory state is dropped and only the filesystem is persisted (no memory snapshot); resuming such a sandbox cold-boots (reboots) it from disk.
+        :param keep_memory: :deprecated: Use `mode` instead: `keep_memory=False` is `mode="filesystem"`, `keep_memory=True` is `mode="full"`.
+        :param mode: What the pause persists. With `"filesystem"`, the in-memory state is dropped and only the filesystem is persisted; resuming such a sandbox cold-boots (reboots) it from disk, losing running processes and open connections. Defaults to `"full"` (memory and filesystem).
 
         :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
@@ -800,13 +804,16 @@ class Sandbox(SandboxApi):
     def pause(
         sandbox_id: str,
         keep_memory: Optional[bool] = None,
+        *,
+        mode: Optional[SnapshotMode] = None,
         **opts: Unpack[ApiParams],
     ) -> bool:
         """
         Pause the sandbox specified by sandbox ID.
 
         :param sandbox_id: Sandbox ID
-        :param keep_memory: When `False`, the in-memory state is dropped and only the filesystem is persisted (no memory snapshot); resuming such a sandbox cold-boots (reboots) it from disk.
+        :param keep_memory: :deprecated: Use `mode` instead: `keep_memory=False` is `mode="filesystem"`, `keep_memory=True` is `mode="full"`.
+        :param mode: What the pause persists. With `"filesystem"`, the in-memory state is dropped and only the filesystem is persisted; resuming such a sandbox cold-boots (reboots) it from disk, losing running processes and open connections. Defaults to `"full"` (memory and filesystem).
 
         :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
@@ -816,12 +823,15 @@ class Sandbox(SandboxApi):
     def pause(
         self,
         keep_memory: Optional[bool] = None,
+        *,
+        mode: Optional[SnapshotMode] = None,
         **opts: Unpack[ApiParams],
     ) -> bool:
         """
         Pause the sandbox.
 
-        :param keep_memory: When `False`, the in-memory state is dropped and only the filesystem is persisted (no memory snapshot); resuming such a sandbox cold-boots (reboots) it from disk, losing running processes and open connections.
+        :param keep_memory: :deprecated: Use `mode` instead: `keep_memory=False` is `mode="filesystem"`, `keep_memory=True` is `mode="full"`.
+        :param mode: What the pause persists. With `"filesystem"`, the in-memory state is dropped and only the filesystem is persisted; resuming such a sandbox cold-boots (reboots) it from disk, losing running processes and open connections. Defaults to `"full"` (memory and filesystem).
 
         :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
@@ -829,6 +839,7 @@ class Sandbox(SandboxApi):
         return SandboxApi._cls_pause(
             sandbox_id=self.sandbox_id,
             keep_memory=keep_memory,
+            mode=mode,
             **self.connection_config.get_api_params(**opts),
         )
 
@@ -836,6 +847,8 @@ class Sandbox(SandboxApi):
     def beta_pause(
         self,
         keep_memory: Optional[bool] = None,
+        *,
+        mode: Optional[SnapshotMode] = None,
         **opts: Unpack[ApiParams],
     ) -> bool: ...
 
@@ -844,6 +857,8 @@ class Sandbox(SandboxApi):
     def beta_pause(
         sandbox_id: str,
         keep_memory: Optional[bool] = None,
+        *,
+        mode: Optional[SnapshotMode] = None,
         **opts: Unpack[ApiParams],
     ) -> bool: ...
 
@@ -851,6 +866,8 @@ class Sandbox(SandboxApi):
     def beta_pause(
         self,
         keep_memory: Optional[bool] = None,
+        *,
+        mode: Optional[SnapshotMode] = None,
         **opts: Unpack[ApiParams],
     ) -> bool:
         """
@@ -858,12 +875,14 @@ class Sandbox(SandboxApi):
 
         :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
-        return self.pause(keep_memory=keep_memory, **opts)
+        return self.pause(keep_memory=keep_memory, mode=mode, **opts)
 
     @overload
     def create_snapshot(
         self,
         name: Optional[str] = None,
+        *,
+        mode: Optional[SnapshotMode] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotInfo:
         """
@@ -876,6 +895,8 @@ class Sandbox(SandboxApi):
         Use the returned `snapshot_id` with `Sandbox.create(snapshot_id)` to create a new sandbox from the snapshot.
 
         :param name: Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one.
+        :param mode: What the snapshot persists. With `"filesystem"`, only the filesystem is persisted: the snapshot is smaller and faster to take, and sandboxes created from it cold-boot (start fresh from disk) instead of restoring memory, so they begin without the running processes, in-memory state and open connections of the source sandbox. The source sandbox keeps running either way. Defaults to `"full"` (memory and filesystem).
+        :raises SandboxException: when the API refuses a filesystem-only snapshot (``mode="filesystem"``). ``status_code`` 400 means the feature is not enabled for the team (``snapshot_filesystem_only_disabled``); 409 means the sandbox's node runs an orchestrator that predates the option (``snapshot_filesystem_only_unsupported_node``). A full memory snapshot still works in both cases; for 409, pause and resume the sandbox and retry.
 
         :return: Snapshot information including the snapshot ID and names
         """
@@ -886,6 +907,8 @@ class Sandbox(SandboxApi):
     def create_snapshot(
         sandbox_id: str,
         name: Optional[str] = None,
+        *,
+        mode: Optional[SnapshotMode] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotInfo:
         """
@@ -895,6 +918,8 @@ class Sandbox(SandboxApi):
 
         :param sandbox_id: Sandbox ID
         :param name: Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one.
+        :param mode: What the snapshot persists. With `"filesystem"`, only the filesystem is persisted: the snapshot is smaller and faster to take, and sandboxes created from it cold-boot (start fresh from disk) instead of restoring memory, so they begin without the running processes, in-memory state and open connections of the source sandbox. The source sandbox keeps running either way. Defaults to `"full"` (memory and filesystem).
+        :raises SandboxException: when the API refuses a filesystem-only snapshot (``mode="filesystem"``). ``status_code`` 400 means the feature is not enabled for the team (``snapshot_filesystem_only_disabled``); 409 means the sandbox's node runs an orchestrator that predates the option (``snapshot_filesystem_only_unsupported_node``). A full memory snapshot still works in both cases; for 409, pause and resume the sandbox and retry.
 
         :return: Snapshot information including the snapshot ID and names
         """
@@ -904,6 +929,8 @@ class Sandbox(SandboxApi):
     def create_snapshot(
         self,
         name: Optional[str] = None,
+        *,
+        mode: Optional[SnapshotMode] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotInfo:
         """
@@ -916,12 +943,15 @@ class Sandbox(SandboxApi):
         Use the returned `snapshot_id` with `Sandbox.create(snapshot_id)` to create a new sandbox from the snapshot.
 
         :param name: Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one.
+        :param mode: What the snapshot persists. With `"filesystem"`, only the filesystem is persisted: the snapshot is smaller and faster to take, and sandboxes created from it cold-boot (start fresh from disk) instead of restoring memory, so they begin without the running processes, in-memory state and open connections of the source sandbox. The source sandbox keeps running either way. Defaults to `"full"` (memory and filesystem).
+        :raises SandboxException: when the API refuses a filesystem-only snapshot (``mode="filesystem"``). ``status_code`` 400 means the feature is not enabled for the team (``snapshot_filesystem_only_disabled``); 409 means the sandbox's node runs an orchestrator that predates the option (``snapshot_filesystem_only_unsupported_node``). A full memory snapshot still works in both cases; for 409, pause and resume the sandbox and retry.
 
         :return: Snapshot information including the snapshot ID and names
         """
         return SandboxApi._cls_create_snapshot(
             sandbox_id=self.sandbox_id,
             name=name,
+            mode=mode,
             **self.connection_config.get_api_params(**opts),
         )
 

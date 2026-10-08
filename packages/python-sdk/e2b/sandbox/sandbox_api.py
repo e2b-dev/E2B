@@ -535,29 +535,73 @@ class SandboxNetworkInfo(TypedDict, total=False):
     https_ports: List[int]
 
 
+SnapshotMode = Literal["full", "filesystem"]
+"""
+What a pause or snapshot persists.
+
+``"full"`` persists the filesystem and the memory (running processes, in-memory
+state and open connections); resuming restores the sandbox exactly where it left
+off. ``"filesystem"`` persists only the filesystem: smaller and faster to take,
+and resuming (or creating a sandbox from the snapshot) cold-boots it from disk,
+without the running processes, in-memory state and open connections.
+"""
+
+
+def resolve_snapshot_memory(
+    field: str,
+    mode: Optional[SnapshotMode],
+    keep_memory: Optional[bool] = None,
+) -> Union[Unset, bool]:
+    """Resolve ``mode`` (or the deprecated ``keep_memory``) into the API's
+    ``memory`` flag.
+
+    Unset, it stays ``UNSET`` so the API default (currently a full snapshot)
+    applies. ``field`` names the option in error messages.
+    """
+    if mode is not None and keep_memory is not None:
+        raise InvalidArgumentException(
+            f"Pass either {field} or the deprecated keep_memory, not both."
+        )
+    if mode is None:
+        return keep_memory if keep_memory is not None else UNSET
+    # Re-check at runtime for callers that bypass the type.
+    allowed = ("full", "filesystem")
+    if mode not in allowed:
+        raise InvalidArgumentException(
+            f"{field} must be one of: {', '.join(allowed)} (got {mode!r})."
+        )
+    return mode == "full"
+
+
 class SandboxOnTimeoutPause(TypedDict):
     """
     Object form of `on_timeout` that auto-pauses the sandbox when the timeout is
-    reached, optionally controlling the pause snapshot kind via `keep_memory`.
+    reached, optionally controlling the pause snapshot kind via `mode`.
     """
 
     action: Literal["pause"]
     """Auto-pause the sandbox when the timeout is reached."""
 
+    mode: NotRequired[SnapshotMode]
+    """
+    What the timeout auto-pause persists. Left unset, it is omitted from the
+    create request and the API's own default (currently `"full"`) applies. With
+    `"filesystem"`, the auto-pause drops the in-memory state and persists only
+    the filesystem; resuming such a sandbox cold-boots (reboots) it from disk,
+    losing running processes and open connections.
+
+    `"filesystem"` cannot be combined with `auto_resume`: auto-resume wakes a
+    paused sandbox on inbound traffic by restoring its memory snapshot in place,
+    so the request that woke it hits an already-running process. A
+    filesystem-only snapshot has no memory to restore — resuming cold-boots it —
+    so it can't be woken transparently by traffic and must be resumed explicitly
+    via `connect()`.
+    """
+
     keep_memory: NotRequired[bool]
     """
-    Whether the timeout auto-pause keeps a full memory snapshot. Left unset, it is
-    omitted from the create request and the API's own default (currently enabled)
-    applies. When `False`, the auto-pause drops the in-memory state and persists
-    only the filesystem (a filesystem-only snapshot); resuming such a sandbox
-    cold-boots (reboots) it from disk, losing running processes and open
-    connections.
-
-    Cannot be combined with `auto_resume`: auto-resume wakes a paused sandbox on
-    inbound traffic by restoring its memory snapshot in place, so the request that
-    woke it hits an already-running process. A filesystem-only snapshot has no
-    memory to restore — resuming cold-boots it — so it can't be woken transparently
-    by traffic and must be resumed explicitly via `connect()`.
+    :deprecated: Use `mode` instead: `keep_memory: False` is
+    `mode: "filesystem"`, `keep_memory: True` is `mode: "full"`.
     """
 
 
@@ -576,9 +620,8 @@ SandboxOnTimeout = Union[
 """
 What should happen to the sandbox when the timeout is reached. Either the bare
 action (`"pause"` / `"kill"`) or the object form. The object form is a
-discriminated union on `action`: `keep_memory` is only accepted alongside
-`action: "pause"`. Passing `keep_memory` with `action: "kill"` is a static type
-error.
+discriminated union on `action`: `mode` is only accepted alongside
+`action: "pause"`. Passing `mode` with `action: "kill"` is a static type error.
 """
 
 
@@ -593,7 +636,7 @@ class SandboxLifecycle(TypedDict):
     """
     What should happen to the sandbox when timeout is reached. `"kill"` terminates
     the sandbox; `"pause"` pauses it for later resume. Accepts either the bare
-    action or an object `{"action": "pause", "keep_memory": ...}` /
+    action or an object `{"action": "pause", "mode": ...}` /
     `{"action": "kill"}` to also control the pause snapshot kind. A value outside
     the two actions raises `InvalidArgumentException`. Omitted from the
     create request when unset, leaving the API's default (currently `"kill"`) in
@@ -605,8 +648,8 @@ class SandboxLifecycle(TypedDict):
     Whether activity should cause the sandbox to resume when paused. Leave unset
     to let the API pick the behavior. Set `False` to opt out explicitly and keep
     auto-resume off even if the API's default changes. Can be `True` only when
-    `on_timeout` is `pause`. Not supported when `keep_memory` is `False`
-    (a filesystem-only snapshot must be resumed explicitly via `connect()`).
+    `on_timeout` is `pause`. Not supported with `mode: "filesystem"` (a
+    filesystem-only snapshot must be resumed explicitly via `connect()`).
     """
 
 
@@ -901,25 +944,23 @@ def build_lifecycle_config(
     ``auto_pause`` is left unset when no ``on_timeout`` was configured: sending
     ``False`` would be indistinguishable from an explicit ``"kill"`` and would
     override the default the API owns. ``auto_pause_memory`` is likewise left
-    unset unless the caller chose ``keep_memory``.
+    unset unless the caller chose ``mode``.
     """
-    # on_timeout accepts a bare action or {"action", "keep_memory"}; normalize.
-    # Only the object form carries keep_memory.
+    # on_timeout accepts a bare action or {"action", "mode"}; normalize.
+    # Only the object form carries mode (or the deprecated keep_memory).
     on_timeout_raw = lifecycle.get("on_timeout") if lifecycle else None
     # A missing on_timeout — or an explicit None from an untyped caller — is not
     # a choice of kill. It only resolves to kill semantics locally, for the
-    # validation below and for keep_memory.
+    # validation below.
     on_timeout_configured = on_timeout_raw is not None
     if isinstance(on_timeout_raw, dict):
         on_timeout = on_timeout_raw.get("action")
-        keep_memory_provided = "keep_memory" in on_timeout_raw
-        keep_memory = on_timeout_raw.get("keep_memory")
+        pause_opts = cast(Dict[str, Any], on_timeout_raw)
     else:
         # Only fall back when unconfigured, not on other falsy-but-present
         # values an untyped caller might pass.
         on_timeout = on_timeout_raw if on_timeout_configured else "kill"
-        keep_memory = None
-        keep_memory_provided = False
+        pause_opts = {}
 
     allowed_actions = ("pause", "kill")
     if on_timeout_configured and on_timeout not in allowed_actions:
@@ -935,19 +976,15 @@ def build_lifecycle_config(
     # auto_pause — so an unrecognized value cannot be rejected server-side, and
     # resolving it to kill would delete the sandbox a caller asked to preserve.
 
-    # keep_memory only governs a pause action. The discriminated union type
-    # forbids it on action="kill"; re-check at runtime for callers that
-    # bypass the type.
-    if keep_memory_provided and on_timeout != "pause":
+    # mode only governs a pause action. The discriminated union type forbids it
+    # on action="kill"; re-check at runtime for callers that bypass the type.
+    if ("mode" in pause_opts or "keep_memory" in pause_opts) and on_timeout != "pause":
         raise InvalidArgumentException(
-            "keep_memory is only allowed when on_timeout action is 'pause'."
+            "mode is only allowed when on_timeout action is 'pause'."
         )
-
-    # A missing or explicit None keep_memory defaults to True (full memory) for
-    # local validation below. The wire field is omitted unless keep_memory was
-    # actually provided.
-    if keep_memory is None:
-        keep_memory = True
+    memory = resolve_snapshot_memory(
+        'on_timeout["mode"]', pause_opts.get("mode"), pause_opts.get("keep_memory")
+    )
     auto_resume = lifecycle.get("auto_resume") if lifecycle else None
 
     if auto_resume and on_timeout != "pause":
@@ -955,18 +992,16 @@ def build_lifecycle_config(
             "auto_resume can only be True when on_timeout action is 'pause'."
         )
 
-    if not keep_memory and auto_resume:
+    if memory is False and auto_resume:
         raise InvalidArgumentException(
-            "auto_resume: True is not a valid value when keep_memory: False - "
+            "auto_resume: True is not a valid value with mode: 'filesystem' - "
             "a filesystem-only snapshot cannot be auto-resumed by traffic and "
             "must be resumed explicitly using Sandbox.connect()."
         )
 
     return SandboxLifecycleBody(
         auto_pause=(on_timeout == "pause") if on_timeout_configured else UNSET,
-        auto_pause_memory=(
-            keep_memory if on_timeout == "pause" and keep_memory_provided else UNSET
-        ),
+        auto_pause_memory=memory if on_timeout == "pause" else UNSET,
         auto_resume=(
             ClientSandboxAutoResumeConfig(enabled=auto_resume)
             if auto_resume is not None

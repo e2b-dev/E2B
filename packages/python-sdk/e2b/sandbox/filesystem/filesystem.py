@@ -130,7 +130,9 @@ class EntryInfo(WriteInfo):
 def map_entry_info(entry: filesystem_pb.EntryInfo) -> EntryInfo:
     return EntryInfo(
         name=entry.name,
-        type=map_file_type(entry.type),
+        # Newer envd reports a symlink's target type in `type` and marks the
+        # link itself with `is_symlink`; older envd reports SYMLINK in `type`.
+        type=FileType.SYMLINK if entry.is_symlink else map_file_type(entry.type),
         path=entry.path,
         size=entry.size,
         mode=entry.mode,

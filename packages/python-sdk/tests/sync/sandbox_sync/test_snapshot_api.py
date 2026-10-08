@@ -191,3 +191,48 @@ def test_create_snapshot_class_method(sandbox: Sandbox):
     assert len(snapshot.snapshot_id) > 0
 
     Sandbox.delete_snapshot(snapshot.snapshot_id)
+
+
+def _boot_id(sandbox: Sandbox) -> str:
+    # Kernel boot id: it changes only across a real (cold) boot. Read via a
+    # command, not files.read: envd serves procfs files as an empty 200
+    # because it sizes them by stat.
+    return sandbox.commands.run("cat /proc/sys/kernel/random/boot_id").stdout.strip()
+
+
+@pytest.mark.skip_debug()
+def test_create_filesystem_only_snapshot(sandbox: Sandbox):
+    test_content = "filesystem-only snapshot content"
+    sandbox.files.write("/home/user/fs-only.txt", test_content)
+    source_boot = _boot_id(sandbox)
+    assert source_boot
+
+    try:
+        snapshot = sandbox.create_snapshot(mode="filesystem")
+    except SandboxException as error:
+        # The API answers 400 while filesystem-only snapshots are not enabled
+        # for the team; there is nothing to prove in that environment.
+        if error.status_code == 400 and "not enabled for this team" in str(error):
+            pytest.skip("filesystem-only snapshots are not enabled for this team")
+        raise
+    assert snapshot.snapshot_id
+
+    try:
+        # The source sandbox keeps running and was not rebooted.
+        assert sandbox.is_running()
+        assert sandbox.files.read("/home/user/fs-only.txt") == test_content
+        assert _boot_id(sandbox) == source_boot
+
+        # A sandbox created from it has the files and a fresh boot id: it
+        # cold-booted instead of restoring memory. A memory snapshot would
+        # carry the source's boot id over, so this is what tells them apart.
+        new_sandbox = Sandbox.create(snapshot.snapshot_id)
+        try:
+            assert new_sandbox.files.read("/home/user/fs-only.txt") == test_content
+            new_boot = _boot_id(new_sandbox)
+            assert new_boot
+            assert new_boot != source_boot
+        finally:
+            new_sandbox.kill()
+    finally:
+        Sandbox.delete_snapshot(snapshot.snapshot_id)
