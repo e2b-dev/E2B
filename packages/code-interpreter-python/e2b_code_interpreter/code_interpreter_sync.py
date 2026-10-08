@@ -27,7 +27,6 @@ from e2b_code_interpreter.exceptions import (
     format_request_timeout_error,
     format_sandbox_killed_error,
 )
-from e2b_code_interpreter.urls import get_jupyter_url
 
 logger = logging.getLogger(__name__)
 
@@ -59,8 +58,8 @@ class Sandbox(BaseSandbox):
 
     @property
     def _jupyter_url(self) -> str:
-        return get_jupyter_url(
-            self.connection_config, self.sandbox_id, self.sandbox_domain
+        return self.connection_config.get_sandbox_url(
+            self.sandbox_id, self.sandbox_domain, port=JUPYTER_PORT
         )
 
     @property

@@ -91,6 +91,51 @@ def test_sandbox_direct_url_keeps_per_sandbox_host_for_supported_domain():
     )
 
 
+def test_sandbox_url_with_port_uses_stable_host_for_supported_domain():
+    config = ConnectionConfig(domain="e2b.app")
+
+    assert (
+        config.get_sandbox_url("sandbox-id", "e2b.app", port=49999)
+        == "https://sandbox.e2b.app"
+    )
+
+
+def test_sandbox_url_with_port_uses_per_sandbox_host_for_unsupported_domain():
+    config = ConnectionConfig(domain="example.dev")
+
+    assert (
+        config.get_sandbox_url("sandbox-id", "example.dev", port=49999)
+        == "https://49999-sandbox-id.example.dev"
+    )
+
+
+def test_sandbox_url_with_port_debug_uses_localhost():
+    config = ConnectionConfig(debug=True)
+
+    assert (
+        config.get_sandbox_url("sandbox-id", "e2b.app", port=49999)
+        == "http://localhost:49999"
+    )
+
+
+def test_sandbox_direct_url_with_port_uses_per_sandbox_host():
+    config = ConnectionConfig(domain="e2b.app")
+
+    assert (
+        config.get_sandbox_direct_url("sandbox-id", "e2b.app", port=49999)
+        == "https://49999-sandbox-id.e2b.app"
+    )
+
+
+def test_sandbox_url_without_port_uses_envd_port():
+    config = ConnectionConfig(domain="example.dev")
+
+    assert (
+        config.get_sandbox_url("sandbox-id", "example.dev")
+        == "https://49983-sandbox-id.example.dev"
+    )
+
+
 def test_sandbox_direct_url_uses_explicit_url_first():
     config = ConnectionConfig(sandbox_url="https://sandbox.example.com")
 
