@@ -42,7 +42,7 @@ you can do that by creating a [custom sandbox template](https://e2b.dev/docs/tem
 1. Install E2B SDK
 
 ```bash
-pip install e2b dotenv
+pip install e2b python-dotenv
 ```
 
 2. Create a custom sandbox template:
@@ -68,7 +68,7 @@ load_dotenv()
 
 Template.build(
     template,
-    alias="desktop-custom",
+    "desktop-custom",
     cpu_count=8,
     memory_mb=8192,
     on_build_logs=default_build_logger(),
