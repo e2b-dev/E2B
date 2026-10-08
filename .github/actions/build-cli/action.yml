@@ -30,6 +30,13 @@ runs:
       shell: bash
       run: pnpm install --frozen-lockfile
 
+    # The CLI typechecks against the SDK sources, which import the workspace-only
+    # `@e2b/dockerfile-utils`; the SDK build builds it first (`prebuild`).
+    - name: Build the SDK
+      shell: bash
+      run: pnpm build
+      working-directory: ./packages/js-sdk
+
     - name: Build the CLI
       shell: bash
       run: pnpm build
