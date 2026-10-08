@@ -297,7 +297,12 @@ export class CommandHandle
                 }
                 break
               case 'pty':
-                yield [null, null, e.value.output.value as PtyOutput]
+                // Skip empty pty chunks to match the Python SDK, which guards
+                // every output case with `if chunk`. An empty Uint8Array is
+                // truthy, so check the length explicitly rather than truthiness.
+                if (e.value.output.value.length > 0) {
+                  yield [null, null, e.value.output.value as PtyOutput]
+                }
                 break
             }
             break
@@ -321,7 +326,6 @@ export class CommandHandle
             break
           }
         }
-        // TODO: Handle empty events like in python SDK
       }
     } catch (e) {
       // The stream raised before an `end` event (e.g. disconnect or RPC

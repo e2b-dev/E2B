@@ -52,7 +52,7 @@ function createEvents(kind: EventKind): AsyncIterable<any> {
   return events()
 }
 
-function dataEvent(kind: 'stdout' | 'stderr', value: Uint8Array) {
+function dataEvent(kind: EventKind, value: Uint8Array) {
   return {
     event: {
       event: {
@@ -473,5 +473,33 @@ describe('CommandHandle', () => {
     )
 
     await expect(handle.wait()).rejects.toThrow('callback failed')
+  })
+
+  it('skips empty pty chunks but yields non-empty ones (matches Python SDK)', async () => {
+    const onPty = vi.fn()
+
+    async function* events() {
+      yield dataEvent('pty', new Uint8Array(0))
+      yield dataEvent('pty', new Uint8Array([1, 2, 3]))
+      yield endEvent()
+    }
+
+    const handle = new CommandHandle(
+      1,
+      () => {},
+      async () => true,
+      events(),
+      undefined,
+      undefined,
+      onPty
+    )
+
+    await handle.wait()
+
+    // The empty chunk is skipped — the Python SDK guards every output case
+    // with `if chunk`, and an empty Uint8Array is truthy so the length is
+    // checked explicitly. Only the non-empty chunk reaches the callback.
+    expect(onPty).toHaveBeenCalledTimes(1)
+    expect(onPty).toHaveBeenCalledWith(new Uint8Array([1, 2, 3]))
   })
 })
