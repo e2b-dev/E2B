@@ -1,7 +1,7 @@
 {
   "name": "@e2b/python-sdk",
   "private": true,
-  "version": "2.54.0",
+  "version": "2.55.0",
   "dependencies": {
     "@e2b/dockerfile-utils-python": "workspace:*"
   },
