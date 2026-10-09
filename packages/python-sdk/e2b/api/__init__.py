@@ -20,7 +20,7 @@ from urllib.parse import quote, urlsplit
 
 import httpx
 from httpx import AsyncBaseTransport, BaseTransport, Timeout
-from pyqwest import Proxy
+from pyqwest import Proxy, StreamError, StreamErrorCode
 
 from e2b.api.client.client import AuthenticatedClient
 from e2b.api.client.types import Response
@@ -107,7 +107,20 @@ pool_max_idle_per_host = int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20")
 streams_per_connection = max(1, int(os.getenv("E2B_STREAMS_PER_CONNECTION") or "100"))
 max_connections = max(1, int(os.getenv("E2B_MAX_CONNECTIONS") or "200"))
 
+# Request content mirrored for a replay after a refused stream (see
+# `is_refused_stream`); a streamed body larger than this is not replayed.
+replay_buffer_limit = 64 * 1024
+
 T = TypeVar("T")
+
+
+def is_refused_stream(e: BaseException) -> bool:
+    """Whether the server refused the request's HTTP/2 stream before
+    processing it, so sending it again cannot repeat it: an ``RST_STREAM``
+    with ``REFUSED_STREAM``, or a stream above the last one a graceful
+    ``GOAWAY`` accepted — a connection the server is retiring (e.g. on reaching
+    its maximum age) — which pyqwest reports with the same code."""
+    return isinstance(e, StreamError) and e.code == StreamErrorCode.REFUSED_STREAM
 
 
 def request_origin(url: str) -> str:
