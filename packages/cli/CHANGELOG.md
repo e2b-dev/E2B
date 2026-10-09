@@ -1,5 +1,14 @@
 # @e2b/cli
 
+## 2.21.2
+
+### Patch Changes
+
+- 001406c: Bump `handlebars` to 4.7.10 to fix CVE-2026-106446 and CVE-2026-106445 (critical) and CVE-2026-106444 (moderate).
+- Updated dependencies [b52cd30]
+- Updated dependencies [0894595]
+  - e2b@2.55.0
+
 ## 2.21.1
 
 ### Patch Changes
