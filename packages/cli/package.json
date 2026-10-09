@@ -81,7 +81,7 @@
     "cli-highlight": "^2.1.11",
     "commander": "^11.1.0",
     "e2b": "workspace:^",
-    "handlebars": "^4.7.9",
+    "handlebars": "^4.7.10",
     "inquirer": "^12.11.1",
     "simple-update-notifier": "^2.0.0",
     "simple-wcswidth": "^1.1.2",
