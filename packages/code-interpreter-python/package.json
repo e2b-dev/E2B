@@ -2,6 +2,9 @@
   "name": "@e2b/code-interpreter-python",
   "private": true,
   "version": "2.10.4",
+  "dependencies": {
+    "@e2b/python-sdk": "workspace:*"
+  },
   "scripts": {
     "test": "uv run pytest -n 4 --verbose -x",
     "postVersion": "uv version --frozen $(pnpm pkg get version --workspaces=false | tr -d \\\")",
