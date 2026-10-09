@@ -1,5 +1,5 @@
 import { Logger } from './logs'
-import { getEnvVar, version } from './api/metadata'
+import { getEnvVar, parseIntEnv, version } from './api/metadata'
 import { runtime } from './utils'
 import { resolveRetries } from './retry'
 import { InvalidArgumentError } from './errors'
@@ -40,6 +40,23 @@ export function resolveHttpVersion(httpVersion?: string): HttpVersion {
 /**
  * Connection options for requests to the API.
  */
+/**
+ * Number of attempts, after the first, to establish a connection to the E2B
+ * API or to the sandbox (envd) when it cannot be established:
+ * `E2B_CONNECTION_RETRIES`, else 3 — the same variable the Python SDK reads.
+ * Node only; not a connection option, so that `retries` keeps meaning
+ * control-plane request retries in both SDKs.
+ */
+export function resolveConnectionRetries(): number {
+  const retries = parseIntEnv('E2B_CONNECTION_RETRIES', DEFAULT_RETRIES)
+  if (retries < 0) {
+    throw new InvalidArgumentError(
+      `Invalid E2B_CONNECTION_RETRIES=${retries}: expected a non-negative integer.`
+    )
+  }
+  return retries
+}
+
 export interface ConnectionOpts {
   /**
    * E2B API key to use for authentication.
@@ -449,6 +466,15 @@ export class ConnectionConfig {
 
   readonly requestTimeoutMs: number
   readonly retries: number
+  /**
+   * Number of attempts, after the first, to establish a connection to the E2B
+   * API or to the sandbox (envd) when it cannot be established (connection
+   * refused, DNS failure, unreachable host, connect timeout):
+   * `E2B_CONNECTION_RETRIES`, default 3, as in the Python SDK. Node only — the
+   * retry happens at the socket level and the request itself is sent once;
+   * other runtimes do not retry connections.
+   */
+  readonly connectionRetries: number
 
   readonly apiKey?: string
   /**
@@ -469,6 +495,7 @@ export class ConnectionConfig {
     this.domain = opts?.domain || ConnectionConfig.domain
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.retries = resolveRetries(opts?.retries ?? DEFAULT_RETRIES)
+    this.connectionRetries = resolveConnectionRetries()
     this.logger = opts?.logger
     this.headers = { ...(opts?.headers ?? {}), ...(opts?.apiHeaders ?? {}) }
     ConnectionConfig.applyUserAgent(this.headers)

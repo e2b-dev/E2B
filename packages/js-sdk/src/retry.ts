@@ -36,8 +36,9 @@ const OPAQUE_NETWORK_ERROR =
 // client-supplied idempotency key (sandbox/fork/snapshot/API-key/volume/secret/
 // webhook creation) or append to one (secret update) must stay off the list —
 // a replay could create a duplicate — and so does any new POST until it is
-// reviewed. Connection-establishment failures
-// are retried for every operation regardless: the request never left.
+// reviewed. Connection-establishment failures are retried for every operation
+// regardless: the request never left — unless the connector already retried
+// them ({@link markConnectionRetried}), as the Python SDK's connection layer does.
 const REPLAYABLE_METHODS = new Set(['GET', 'PUT', 'PATCH', 'DELETE'])
 const REPLAYABLE_OPERATIONS: [method: string, path: RegExp][] = [
   ['POST', /^\/sandboxes\/[^/]+\/(pause|resume|timeout|refreshes)$/],
@@ -115,19 +116,49 @@ export function isReplayable(request: Request): boolean {
   )
 }
 
+const CONNECTION_RETRIED = Symbol.for('e2b.connectionRetried')
+
+/**
+ * Tag a connection error that the connector already retried
+ * (`withConnectRetries` in `undici.ts`), so that request-level retries do not
+ * repeat the exhausted connection attempts. undici surfaces the connector's
+ * error as the `cause` of its `TypeError('fetch failed')`, which is where
+ * {@link isConnectionRetried} finds the tag.
+ */
+export function markConnectionRetried<T>(error: T): T {
+  if (error instanceof Error) {
+    Object.defineProperty(error, CONNECTION_RETRIED, { value: true })
+  }
+  return error
+}
+
+export function isConnectionRetried(error: unknown, depth = 0): boolean {
+  if (!(error instanceof Error) || depth > 4) return false
+  if ((error as { [CONNECTION_RETRIED]?: boolean })[CONNECTION_RETRIED]) {
+    return true
+  }
+  if (error instanceof AggregateError) {
+    return error.errors.some((member) => isConnectionRetried(member, depth + 1))
+  }
+  return isConnectionRetried(error.cause, depth + 1)
+}
+
 /**
  * Whether a `fetch` rejection may be retried. Connection-establishment
- * failures are always retried: the request never left. For a replayable
- * request any other network error is retried as well — a connection dropped
- * mid-request, or the opaque `TypeError` browsers and Cloudflare Workers raise
- * for every network failure. Aborts are never retried.
+ * failures are retried for any request — the request never left — unless the
+ * connector already retried the connection itself ({@link isConnectionRetried}):
+ * the failure is then final, as in the Python SDK whose request-level retry
+ * excludes `ConnectError`. For a replayable request any other network error
+ * is retried as well — a connection dropped mid-request, or the opaque
+ * `TypeError` browsers and Cloudflare Workers raise for every network failure.
+ * Aborts are never retried.
  */
 export function isRetryableFetchError(
   error: unknown,
   replayable: boolean
 ): boolean {
   if (error instanceof DOMException) return false
-  if (isConnectionError(error)) return true
+  if (isConnectionError(error)) return !isConnectionRetried(error)
   return replayable && error instanceof Error
 }
 
@@ -153,7 +184,7 @@ function wait(delayMs: number, signal: AbortSignal): Promise<void> {
   })
 }
 
-function backoffMs(attempt: number, random: () => number): number {
+export function backoffMs(attempt: number, random: () => number): number {
   const backoff = Math.min(BACKOFF_BASE_MS * 2 ** attempt, BACKOFF_MAX_MS)
   return Math.floor(
     backoff * (BACKOFF_JITTER_MIN + random() * (1 - BACKOFF_JITTER_MIN))
@@ -187,7 +218,8 @@ function retryDelayMs(
  * Retry requests after a 429 carrying `Retry-After`, a 503 or — for replayable
  * requests ({@link isReplayable}) — a 502 (using `Retry-After` when present,
  * exponential backoff otherwise), or a network failure (exponential backoff;
- * see {@link isRetryableFetchError}).
+ * see {@link isRetryableFetchError}); a connection failure the connector
+ * already retried is not retried again.
  */
 export function withRetry(
   fetchImpl: typeof fetch,

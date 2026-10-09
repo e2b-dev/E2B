@@ -1,7 +1,12 @@
 import { runtime } from '../utils'
-import { DEFAULT_HTTP_VERSION, type HttpVersion } from '../connectionConfig'
+import {
+  DEFAULT_HTTP_VERSION,
+  resolveConnectionRetries,
+  type HttpVersion,
+} from '../connectionConfig'
 import type { FetchOpts } from '../api/http2'
 import { parseInflightLimitEnv, parsePositiveIntEnv } from '../api/metadata'
+import { createConcurrencyLimiter } from '../api/inflight'
 import {
   buildDispatchedFetch,
   createRuntimeFetch,
@@ -13,6 +18,7 @@ type EnvdFetchOptions = {
   inflightLimit?: number
   proxy?: string
   httpVersion?: HttpVersion
+  connectRetries?: number
   loadUndici?: () => Promise<UndiciModule | undefined>
 }
 
@@ -20,6 +26,11 @@ type EnvdFetchOptions = {
 // keep sharing a single dispatcher while each distinct proxy URL gets its own.
 const envdFetchers = new Map<string, typeof fetch>()
 const envdRpcFetchers = new Map<string, typeof fetch>()
+// One in-flight cap per family across every fetcher variant (proxy, HTTP
+// version, connection retries — the health probe uses 0), so the limits
+// documented as process-wide stay process-wide.
+let envdLimiter: ((fetcher: typeof fetch) => typeof fetch) | undefined
+let envdRpcLimiter: ((fetcher: typeof fetch) => typeof fetch) | undefined
 const DEFAULT_ENVD_CONNECTION_LIMIT = 10
 const DEFAULT_ENVD_RPC_CONNECTION_LIMIT = 200
 const DEFAULT_ENVD_INFLIGHT_LIMIT = 2000
@@ -35,23 +46,30 @@ export function createEnvdFetchForRuntime(
       inflightLimit: options.inflightLimit ?? 0,
       proxy: options.proxy,
       httpVersion: options.httpVersion,
+      connectRetries: options.connectRetries,
       loadUndici: options.loadUndici,
     })
   )
 }
 
+export type EnvdFetchOpts = FetchOpts
+
+// Kept local (same format as the API fetchers' key) so that tests mocking
+// `../api/http2` for `createApiFetch` do not have to provide it.
 function fetcherKey(
   proxy: string | undefined,
-  httpVersion: HttpVersion
+  httpVersion: HttpVersion,
+  retries: number
 ): string {
-  return `${httpVersion}:${proxy ?? ''}`
+  return `${httpVersion}:${retries}:${proxy ?? ''}`
 }
 
 export function createEnvdFetch({
   proxy,
   httpVersion = DEFAULT_HTTP_VERSION,
-}: FetchOpts = {}): typeof fetch {
-  const key = fetcherKey(proxy, httpVersion)
+  connectionRetries = resolveConnectionRetries(),
+}: EnvdFetchOpts = {}): typeof fetch {
+  const key = fetcherKey(proxy, httpVersion, connectionRetries)
 
   const cached = envdFetchers.get(key)
   if (cached) {
@@ -60,11 +78,15 @@ export function createEnvdFetch({
 
   // Keep one origin connection for short envd REST calls. If ALPN falls back
   // to h1, this favors connection pressure over per-sandbox throughput.
-  const envdFetch = createEnvdFetchForRuntime(runtime, {
-    inflightLimit: getEnvdInflightLimit(),
-    proxy,
-    httpVersion,
-  })
+  envdLimiter ??= createConcurrencyLimiter(getEnvdInflightLimit())
+  const envdFetch = envdLimiter(
+    createEnvdFetchForRuntime(runtime, {
+      inflightLimit: 0,
+      proxy,
+      httpVersion,
+      connectRetries: connectionRetries,
+    })
+  )
   envdFetchers.set(key, envdFetch)
 
   return envdFetch
@@ -73,20 +95,25 @@ export function createEnvdFetch({
 export function createEnvdRpcFetch({
   proxy,
   httpVersion = DEFAULT_HTTP_VERSION,
-}: FetchOpts = {}): typeof fetch {
-  const key = fetcherKey(proxy, httpVersion)
+  connectionRetries = resolveConnectionRetries(),
+}: EnvdFetchOpts = {}): typeof fetch {
+  const key = fetcherKey(proxy, httpVersion, connectionRetries)
 
   const cached = envdRpcFetchers.get(key)
   if (cached) {
     return cached
   }
 
-  const envdRpcFetch = createEnvdFetchForRuntime(runtime, {
-    connectionLimit: getEnvdRpcConnectionLimit(),
-    inflightLimit: getEnvdRpcInflightLimit(),
-    proxy,
-    httpVersion,
-  })
+  envdRpcLimiter ??= createConcurrencyLimiter(getEnvdRpcInflightLimit())
+  const envdRpcFetch = envdRpcLimiter(
+    createEnvdFetchForRuntime(runtime, {
+      connectionLimit: getEnvdRpcConnectionLimit(),
+      inflightLimit: 0,
+      proxy,
+      httpVersion,
+      connectRetries: connectionRetries,
+    })
+  )
   envdRpcFetchers.set(key, envdRpcFetch)
 
   return envdRpcFetch
