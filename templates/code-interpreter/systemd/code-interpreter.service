@@ -1,0 +1,17 @@
+[Unit]
+Description=Code Interpreter Server
+Documentation=https://github.com/e2b-dev/code-interpreter
+Requires=jupyter.service
+After=jupyter.service
+PartOf=jupyter.service
+StartLimitBurst=0
+
+[Service]
+Type=simple
+WorkingDirectory=/root/.server
+ExecStartPre=/root/.jupyter/jupyter-healthcheck.sh
+ExecStart=/root/.server/.venv/bin/uvicorn main:app --host 0.0.0.0 --port 49999 --workers 1 --no-access-log --no-use-colors --timeout-keep-alive 640
+Restart=on-failure
+RestartSec=1
+StandardOutput=journal
+StandardError=journal

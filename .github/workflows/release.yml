@@ -24,6 +24,8 @@ jobs:
       desktop_python: ${{ steps.desktop_python.outputs.release }}
       dockerfile_utils_js: ${{ steps.dockerfile_utils_js.outputs.release }}
       dockerfile_utils_python: ${{ steps.dockerfile_utils_python.outputs.release }}
+      code_interpreter_template: ${{ steps.code_interpreter_template.outputs.release }}
+      charts_python: ${{ steps.charts_python.outputs.release }}
       itinerary: ${{ steps.itinerary.outputs.itinerary }}
     steps:
       - name: Check the ref
@@ -138,6 +140,20 @@ jobs:
           IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/dockerfile-utils-python")
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
+      - name: Check Code Interpreter Template Release
+        id: code_interpreter_template
+        if: steps.version.outputs.release == 'true'
+        run: |
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/code-interpreter-template")
+          echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Check Charts Python Release
+        id: charts_python
+        if: steps.version.outputs.release == 'true'
+        run: |
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/charts-python")
+          echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
+
       - name: Build release itinerary
         id: itinerary
         if: steps.version.outputs.release == 'true'
@@ -215,6 +231,19 @@ jobs:
     if: needs.preflight.outputs.dockerfile_utils_python == 'true'
     uses: ./.github/workflows/dockerfile_utils_python_tests.yml
 
+  code-interpreter-template-tests:
+    name: Code Interpreter Template Tests
+    needs: [preflight]
+    if: needs.preflight.outputs.code_interpreter_template == 'true'
+    uses: ./.github/workflows/code_interpreter_template_tests.yml
+    secrets: inherit
+
+  charts-python-tests:
+    name: Charts Python Tests
+    needs: [preflight]
+    if: needs.preflight.outputs.charts_python == 'true'
+    uses: ./.github/workflows/charts_python_tests.yml
+
   publish:
     name: Publish
     needs:
@@ -228,8 +257,21 @@ jobs:
       - desktop-python-tests
       - dockerfile-utils-js-tests
       - dockerfile-utils-python-tests
+      - code-interpreter-template-tests
+      - charts-python-tests
     if: (!cancelled()) && !contains(needs.*.result, 'failure') && needs.preflight.outputs.release == 'true'
     uses: ./.github/workflows/publish_packages.yml
+    secrets: inherit
+
+  code-interpreter-template-build:
+    name: Build Code Interpreter Template
+    needs: [preflight, publish]
+    if: (!cancelled()) && needs.publish.result == 'success' && (needs.preflight.outputs.code_interpreter_template == 'true' || needs.preflight.outputs.charts_python == 'true')
+    uses: ./.github/workflows/code_interpreter_template_build.yml
+    with:
+      target_environment: foxtrot
+      push_docker_image: true
+      ref: ${{ needs.publish.outputs.released_sha }}
     secrets: inherit
 
   report-start:
@@ -265,7 +307,10 @@ jobs:
       - desktop-python-tests
       - dockerfile-utils-js-tests
       - dockerfile-utils-python-tests
+      - code-interpreter-template-tests
+      - charts-python-tests
       - publish
+      - code-interpreter-template-build
     if: failure()
     name: Release Failed - Slack Notification
     runs-on: ubuntu-latest

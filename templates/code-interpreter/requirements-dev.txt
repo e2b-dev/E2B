@@ -1,0 +1,2 @@
+e2b==2.32.0
+python-dotenv==1.2.2

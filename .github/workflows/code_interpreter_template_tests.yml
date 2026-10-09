@@ -1,0 +1,133 @@
+name: Test Code Interpreter Template
+
+on:
+  workflow_call:
+    inputs:
+      E2B_DOMAIN:
+        required: false
+        type: string
+        default: ''
+      run_recovery_tests:
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      E2B_API_KEY:
+        required: true
+    outputs:
+      template_id:
+        description: The ID of the built template
+        value: ${{ jobs.build.outputs.template_id }}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build E2B Template
+    runs-on: ubuntu-latest
+    outputs:
+      template_id: ${{ steps.build-template.outputs.template_id }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Parse .tool-versions
+        uses: wistia/parse-tool-versions@32f568a4ffd4bfa7720ebf93f171597d1ebc979a # v2.1.1
+        with:
+          filename: '.tool-versions'
+          uppercase: 'true'
+          prefix: 'tool_version_'
+
+      - name: Set package version
+        working-directory: ./templates/code-interpreter
+        run: |
+          VERSION=$(cat ../../packages/charts-python/pyproject.toml | grep version | cut -d '"' -f 2)
+          echo "Version: $VERSION"
+          sed -i "s/e2b_charts/e2b_charts==${VERSION}/g" requirements.txt
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+        with:
+          version: '${{ env.TOOL_VERSION_UV }}'
+          python-version: '${{ env.TOOL_VERSION_PYTHON }}'
+          activate-environment: true
+
+      - name: Install development dependencies
+        working-directory: ./templates/code-interpreter
+        run: uv pip install -r requirements-dev.txt
+
+      - name: Generate Template Name
+        id: generate-template-id
+        run: |
+          E2B_TESTS_TEMPLATE=e2b-code-interpreter-ci-$(uuidgen)
+          echo "Generated Template Name: $E2B_TESTS_TEMPLATE"
+          echo "template_name=$E2B_TESTS_TEMPLATE" >> "$GITHUB_OUTPUT"
+
+      - name: Build E2B template
+        id: build-template
+        working-directory: ./templates/code-interpreter
+        run: python build_ci.py
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
+          E2B_TESTS_TEMPLATE: ${{ steps.generate-template-id.outputs.template_name }}
+
+  test:
+    needs: [build]
+    defaults:
+      run:
+        working-directory: ./templates/code-interpreter/tests
+        shell: bash
+    name: Code Interpreter - HTTP tests
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Parse .tool-versions
+        uses: wistia/parse-tool-versions@32f568a4ffd4bfa7720ebf93f171597d1ebc979a # v2.1.1
+        with:
+          filename: '.tool-versions'
+          uppercase: 'true'
+          prefix: 'tool_version_'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+        with:
+          version: '${{ env.TOOL_VERSION_UV }}'
+          python-version: '${{ env.TOOL_VERSION_PYTHON }}'
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Run tests
+        run: |
+          if [[ "${{ inputs.run_recovery_tests }}" == "true" ]]; then
+            uv run pytest --verbose --numprocesses=1
+          else
+            uv run pytest --verbose --numprocesses=1 \
+              --ignore=test_interrupt.py \
+              --ignore=test_systemd.py \
+              --deselect=test_async.py::test_async_interrupt
+          fi
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
+          E2B_TESTS_TEMPLATE: ${{ needs.build.outputs.template_id }}
+
+  cleanup:
+    needs: [build, test]
+    if: always() && needs.build.result == 'success'
+    name: Cleanup Build Template
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install E2B CLI
+        run: npm install -g @e2b/cli
+
+      - name: Cleanup E2B template
+        run: e2b template delete -y "${{ needs.build.outputs.template_id }}"
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}

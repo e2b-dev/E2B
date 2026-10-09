@@ -31,6 +31,8 @@ jobs:
       cli: ${{ steps.filter.outputs.cli }}
       code_interpreter_js: ${{ steps.filter.outputs.code_interpreter_js }}
       code_interpreter_python: ${{ steps.filter.outputs.code_interpreter_python }}
+      code_interpreter_template: ${{ steps.filter.outputs.code_interpreter_template }}
+      charts_python: ${{ steps.filter.outputs.charts_python }}
       desktop_js: ${{ steps.filter.outputs.desktop_js }}
       desktop_python: ${{ steps.filter.outputs.desktop_python }}
       dockerfile_utils_js: ${{ steps.filter.outputs.dockerfile_utils_js }}
@@ -86,6 +88,17 @@ jobs:
               - 'packages/code-interpreter-python/**/!(*.md)'
               - 'packages/python-sdk/**/!(*.md)'
               - 'packages/dockerfile-utils-python/**/!(*.md)'
+            code_interpreter_template:
+              - '.github/workflows/sdk_tests.yml'
+              - '.github/workflows/code_interpreter_template_tests.yml'
+              - '.tool-versions'
+              - 'templates/code-interpreter/**/!(*.md)'
+              - 'packages/charts-python/pyproject.toml'
+            charts_python:
+              - '.github/workflows/sdk_tests.yml'
+              - '.github/workflows/charts_python_tests.yml'
+              - '.tool-versions'
+              - 'packages/charts-python/**/!(*.md)'
             desktop_js:
               - *shared
               - '.github/workflows/desktop_js_tests.yml'
@@ -151,6 +164,20 @@ jobs:
     uses: ./.github/workflows/code_interpreter_python_tests.yml
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+
+  code-interpreter-template-tests:
+    name: Production / Code Interpreter Template Tests
+    needs: changes
+    if: ${{ needs.changes.outputs.code_interpreter_template == 'true' || github.event_name == 'workflow_dispatch' }}
+    uses: ./.github/workflows/code_interpreter_template_tests.yml
+    secrets:
+      E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+
+  charts-python-tests:
+    name: Charts Python Tests
+    needs: changes
+    if: ${{ needs.changes.outputs.charts_python == 'true' || github.event_name == 'workflow_dispatch' }}
+    uses: ./.github/workflows/charts_python_tests.yml
 
   desktop-js-tests:
     name: Production / Desktop JS SDK Tests
@@ -271,6 +298,8 @@ jobs:
       - cli-tests
       - code-interpreter-js-tests
       - code-interpreter-python-tests
+      - code-interpreter-template-tests
+      - charts-python-tests
       - desktop-js-tests
       - desktop-python-tests
       - dockerfile-utils-js-tests

@@ -1,0 +1,209 @@
+name: Build Code Interpreter Template
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_environment:
+        description: Target environment
+        required: true
+        type: choice
+        default: foxtrot
+        options:
+          - foxtrot
+          - staging
+          - juliett
+      skip_cache:
+        description: Skip build cache
+        required: false
+        type: boolean
+        default: false
+      push_docker_image:
+        description: Build and push the Docker image
+        required: false
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      target_environment:
+        required: false
+        type: string
+        default: foxtrot
+      skip_cache:
+        required: false
+        type: boolean
+        default: false
+      push_docker_image:
+        required: false
+        type: boolean
+        default: false
+      ref:
+        required: false
+        type: string
+        default: ''
+    secrets:
+      E2B_PROD_API_KEY:
+        required: false
+      E2B_STAGING_API_KEY:
+        required: false
+      E2B_JULIETT_API_KEY:
+        required: false
+      DOCKERHUB_USERNAME:
+        required: false
+      DOCKERHUB_TOKEN:
+        required: false
+
+concurrency:
+  group: Release-${{ github.ref }}-${{ inputs.target_environment }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build-docker-image:
+    name: Build Docker Image
+    if: ${{ inputs.push_docker_image }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Parse .tool-versions
+        uses: wistia/parse-tool-versions@32f568a4ffd4bfa7720ebf93f171597d1ebc979a # v2.1.1
+        with:
+          filename: '.tool-versions'
+          uppercase: 'true'
+          prefix: 'tool_version_'
+
+      - name: Set package version
+        working-directory: ./templates/code-interpreter
+        run: |
+          VERSION=$(cat ../../packages/charts-python/pyproject.toml | grep version | cut -d '"' -f 2)
+          echo "Version: $VERSION"
+          sed -i "s/e2b_charts/e2b_charts==${VERSION}/g" requirements.txt
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Log in to DockerHub
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+        with:
+          version: '${{ env.TOOL_VERSION_UV }}'
+          python-version: '${{ env.TOOL_VERSION_PYTHON }}'
+          activate-environment: true
+
+      - name: Install development dependencies
+        working-directory: ./templates/code-interpreter
+        run: uv pip install -r requirements-dev.txt
+
+      - name: Build and push to DockerHub
+        working-directory: ./templates/code-interpreter
+        run: |
+          python build_docker.py | docker buildx build \
+            --platform linux/amd64 \
+            --push \
+            --tag ${{ secrets.DOCKERHUB_USERNAME }}/code-interpreter:latest -f - .
+
+  build-template:
+    name: Build E2B template
+    needs: [build-docker-image]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Parse .tool-versions
+        uses: wistia/parse-tool-versions@32f568a4ffd4bfa7720ebf93f171597d1ebc979a # v2.1.1
+        with:
+          filename: '.tool-versions'
+          uppercase: 'true'
+          prefix: 'tool_version_'
+
+      - name: Set package version
+        working-directory: ./templates/code-interpreter
+        run: |
+          VERSION=$(cat ../../packages/charts-python/pyproject.toml | grep version | cut -d '"' -f 2)
+          echo "Version: $VERSION"
+          sed -i "s/e2b_charts/e2b_charts==${VERSION}/g" requirements.txt
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+        with:
+          version: '${{ env.TOOL_VERSION_UV }}'
+          python-version: '${{ env.TOOL_VERSION_PYTHON }}'
+          activate-environment: true
+
+      - name: Install development dependencies
+        working-directory: ./templates/code-interpreter
+        run: uv pip install -r requirements-dev.txt
+
+      - name: Resolve target environment
+        env:
+          TARGET_ENVIRONMENT: ${{ inputs.target_environment }}
+          FOXTROT_DOMAIN: ${{ vars.E2B_DOMAIN }}
+          FOXTROT_API_KEY: ${{ secrets.E2B_PROD_API_KEY }}
+          STAGING_API_KEY: ${{ secrets.E2B_STAGING_API_KEY }}
+          JULIETT_API_KEY: ${{ secrets.E2B_JULIETT_API_KEY }}
+        run: |
+          set -eu
+
+          case "$TARGET_ENVIRONMENT" in
+            foxtrot)
+              E2B_DOMAIN="$FOXTROT_DOMAIN"
+              E2B_API_KEY="$FOXTROT_API_KEY"
+              ;;
+            staging)
+              E2B_DOMAIN="e2b-staging.dev"
+              E2B_API_KEY="$STAGING_API_KEY"
+              ;;
+            juliett)
+              E2B_DOMAIN="e2b-juliett.dev"
+              E2B_API_KEY="$JULIETT_API_KEY"
+              ;;
+            *)
+              echo "Unknown target environment: $TARGET_ENVIRONMENT" >&2
+              exit 1
+              ;;
+          esac
+
+          if [ -z "$E2B_DOMAIN" ]; then
+            echo "Missing E2B domain for target environment: $TARGET_ENVIRONMENT" >&2
+            exit 1
+          fi
+
+          if [ -z "$E2B_API_KEY" ]; then
+            echo "Missing API key secret for target environment: $TARGET_ENVIRONMENT" >&2
+            exit 1
+          fi
+
+          echo "::add-mask::$E2B_API_KEY"
+
+          {
+            echo "E2B_DOMAIN=$E2B_DOMAIN"
+            echo "E2B_API_KEY=$E2B_API_KEY"
+          } >> "$GITHUB_ENV"
+
+          {
+            echo "### Build target"
+            echo
+            echo "Target: $TARGET_ENVIRONMENT"
+            echo "Domain: $E2B_DOMAIN"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Build E2B template
+        id: build-template
+        working-directory: ./templates/code-interpreter
+        run: python build_prod.py
+        env:
+          SKIP_CACHE: ${{ inputs.skip_cache }}
