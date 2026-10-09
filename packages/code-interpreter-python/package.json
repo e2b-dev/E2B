@@ -1,7 +1,7 @@
 {
   "name": "@e2b/code-interpreter-python",
   "private": true,
-  "version": "2.10.4",
+  "version": "2.10.5",
   "dependencies": {
     "@e2b/python-sdk": "workspace:*"
   },

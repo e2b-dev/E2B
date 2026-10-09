@@ -1,5 +1,13 @@
 # @e2b/code-interpreter-python
 
+## 2.10.5
+
+### Patch Changes
+
+- 29064bc: Require `e2b>=2.55.1`, the first release with `get_sandbox_url(..., port=)`. 2.10.4 failed with `TypeError: ... unexpected keyword argument 'port'` when installed with e2b 2.55.0.
+- Updated dependencies [29064bc]
+  - @e2b/python-sdk@2.55.1
+
 ## 2.10.4
 
 ### Patch Changes

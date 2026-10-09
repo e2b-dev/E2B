@@ -1,5 +1,11 @@
 # @e2b/python-sdk
 
+## 2.55.1
+
+### Patch Changes
+
+- 29064bc: `ConnectionConfig.get_sandbox_url` / `get_sandbox_direct_url` take an optional `port` (defaults to the envd port).
+
 ## 2.55.0
 
 ### Minor Changes
