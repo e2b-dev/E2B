@@ -422,7 +422,7 @@ dev = [
 
 [[package]]
 name = "e2b-code-interpreter"
-version = "2.10.3"
+version = "2.10.4"
 source = { editable = "." }
 dependencies = [
     { name = "attrs" },

@@ -1,5 +1,11 @@
 # @e2b/code-interpreter-python
 
+## 2.10.4
+
+### Patch Changes
+
+- 0ad4ec1: Send Code Interpreter requests through the unified sandbox endpoint (`sandbox.<domain>`) on supported domains, like the rest of the SDK. Browsers (JS) and other domains keep using the per-port sandbox host.
+
 ## 2.10.3
 
 ### Patch Changes
