@@ -298,6 +298,9 @@ export class Sandbox extends BaseSandbox {
       if (this.trafficAccessToken) {
         headers['E2B-Traffic-Access-Token'] = this.trafficAccessToken
       }
+      if (this.envdAccessToken) {
+        headers['X-Access-Token'] = this.envdAccessToken
+      }
 
       const res = await fetch(`${this.jupyterUrl}/contexts`, {
         method: 'POST',
@@ -340,6 +343,9 @@ export class Sandbox extends BaseSandbox {
       if (this.trafficAccessToken) {
         headers['E2B-Traffic-Access-Token'] = this.trafficAccessToken
       }
+      if (this.envdAccessToken) {
+        headers['X-Access-Token'] = this.envdAccessToken
+      }
 
       const res = await fetch(`${this.jupyterUrl}/contexts/${id}`, {
         method: 'DELETE',
@@ -374,6 +380,9 @@ export class Sandbox extends BaseSandbox {
 
       if (this.trafficAccessToken) {
         headers['E2B-Traffic-Access-Token'] = this.trafficAccessToken
+      }
+      if (this.envdAccessToken) {
+        headers['X-Access-Token'] = this.envdAccessToken
       }
 
       const res = await fetch(`${this.jupyterUrl}/contexts`, {
@@ -414,6 +423,9 @@ export class Sandbox extends BaseSandbox {
 
       if (this.trafficAccessToken) {
         headers['E2B-Traffic-Access-Token'] = this.trafficAccessToken
+      }
+      if (this.envdAccessToken) {
+        headers['X-Access-Token'] = this.envdAccessToken
       }
 
       const res = await fetch(`${this.jupyterUrl}/contexts/${id}/restart`, {
