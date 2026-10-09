@@ -17,7 +17,7 @@ function createSandbox(opts: object = {}) {
 const savedEnv: Record<string, string | undefined> = {}
 
 beforeEach(() => {
-  for (const key of ['E2B_SANDBOX_URL', 'E2B_DEBUG']) {
+  for (const key of ['E2B_SANDBOX_URL', 'E2B_DEBUG', 'E2B_DOMAIN']) {
     savedEnv[key] = process.env[key]
     delete process.env[key]
   }
@@ -33,9 +33,27 @@ afterEach(() => {
   }
 })
 
-test('jupyterUrl points directly to the sandbox host by default', () => {
+test('jupyterUrl uses the unified sandbox endpoint on supported domains', () => {
+  const sandbox = createSandbox({ domain: 'e2b.app' })
+  expect(sandbox.jupyterUrl).toBe('https://sandbox.e2b.app')
+})
+
+test('jupyterUrl prefers the sandbox domain over the config domain', () => {
+  const sandbox = createSandbox({
+    domain: 'e2b.app',
+    sandboxDomain: 'e2b.dev',
+  })
+  expect(sandbox.jupyterUrl).toBe('https://sandbox.e2b.dev')
+})
+
+test('jupyterUrl points to the per-port sandbox host on unsupported domains', () => {
   const sandbox = createSandbox({ domain: 'example.dev' })
   expect(sandbox.jupyterUrl).toBe('https://49999-test-sandbox-id.example.dev')
+})
+
+test('jupyterUrl points to localhost in debug mode', () => {
+  const sandbox = createSandbox({ debug: true })
+  expect(sandbox.jupyterUrl).toBe('http://localhost:49999')
 })
 
 test('jupyterUrl honors the sandboxUrl option', () => {
