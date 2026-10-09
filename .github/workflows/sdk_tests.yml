@@ -33,6 +33,7 @@ jobs:
       code_interpreter_python: ${{ steps.filter.outputs.code_interpreter_python }}
       desktop_js: ${{ steps.filter.outputs.desktop_js }}
       desktop_python: ${{ steps.filter.outputs.desktop_python }}
+      desktop_template: ${{ steps.filter.outputs.desktop_template }}
       dockerfile_utils_js: ${{ steps.filter.outputs.dockerfile_utils_js }}
       dockerfile_utils_python: ${{ steps.filter.outputs.dockerfile_utils_python }}
     steps:
@@ -93,14 +94,24 @@ jobs:
               - 'tsdown.sdk.config.mts'
               - 'vitest.sdk.config.mts'
               - 'packages/desktop-js/**/!(*.md)'
+              - 'templates/desktop/**/!(*.md)'
+              - '.github/workflows/desktop_template_*.yml'
               - 'packages/js-sdk/**/!(*.md)'
               - 'packages/dockerfile-utils-js/**/!(*.md)'
             desktop_python:
               - *shared
               - '.github/workflows/desktop_python_tests.yml'
               - 'packages/desktop-python/**/!(*.md)'
+              - 'templates/desktop/**/!(*.md)'
+              - '.github/workflows/desktop_template_*.yml'
               - 'packages/python-sdk/**/!(*.md)'
               - 'packages/dockerfile-utils-python/**/!(*.md)'
+            # The Desktop SDK suites run against a fresh build of the
+            # template when it changes, instead of the published one.
+            desktop_template:
+              - '.github/workflows/sdk_tests.yml'
+              - '.github/workflows/desktop_template_*.yml'
+              - 'templates/desktop/**/!(*.md)'
             dockerfile_utils_js:
               - *shared
               - '.github/workflows/dockerfile_utils_js_tests.yml'
@@ -152,19 +163,43 @@ jobs:
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
+  desktop-template:
+    name: Production / Desktop Test Template
+    needs: changes
+    if: ${{ needs.changes.outputs.desktop_template == 'true' || github.event_name == 'workflow_dispatch' }}
+    uses: ./.github/workflows/desktop_template_build.yml
+    secrets:
+      E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+
+  # `!cancelled()` so the suites still run when `desktop-template` is skipped
+  # (template unchanged); they then fall back to the published `desktop`.
   desktop-js-tests:
     name: Production / Desktop JS SDK Tests
-    needs: changes
-    if: ${{ needs.changes.outputs.desktop_js == 'true' || github.event_name == 'workflow_dispatch' }}
+    needs: [changes, desktop-template]
+    if: ${{ !cancelled() && needs.changes.result == 'success' && needs.desktop-template.result != 'failure' && (needs.changes.outputs.desktop_js == 'true' || github.event_name == 'workflow_dispatch') }}
     uses: ./.github/workflows/desktop_js_tests.yml
+    with:
+      E2B_TESTS_TEMPLATE: ${{ needs.desktop-template.outputs.template }}
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
   desktop-python-tests:
     name: Production / Desktop Python SDK Tests
-    needs: changes
-    if: ${{ needs.changes.outputs.desktop_python == 'true' || github.event_name == 'workflow_dispatch' }}
+    needs: [changes, desktop-template]
+    if: ${{ !cancelled() && needs.changes.result == 'success' && needs.desktop-template.result != 'failure' && (needs.changes.outputs.desktop_python == 'true' || github.event_name == 'workflow_dispatch') }}
     uses: ./.github/workflows/desktop_python_tests.yml
+    with:
+      E2B_TESTS_TEMPLATE: ${{ needs.desktop-template.outputs.template }}
+    secrets:
+      E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+
+  desktop-template-cleanup:
+    name: Production / Delete Desktop Test Template
+    needs: [desktop-template, desktop-js-tests, desktop-python-tests]
+    if: ${{ always() && needs.desktop-template.result != 'skipped' && needs.desktop-template.outputs.template != '' }}
+    uses: ./.github/workflows/desktop_template_cleanup.yml
+    with:
+      template: ${{ needs.desktop-template.outputs.template }}
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
@@ -271,6 +306,7 @@ jobs:
       - cli-tests
       - code-interpreter-js-tests
       - code-interpreter-python-tests
+      - desktop-template
       - desktop-js-tests
       - desktop-python-tests
       - dockerfile-utils-js-tests

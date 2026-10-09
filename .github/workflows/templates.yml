@@ -12,6 +12,14 @@ on:
           - all
           - base
           - httpbin
+          - desktop
+  # The desktop template is rebuilt whenever its sources change on main.
+  push:
+    branches:
+      - main
+    paths:
+      - 'templates/desktop/**'
+      - '.github/workflows/templates.yml'
 
 permissions:
   contents: read
@@ -48,6 +56,7 @@ jobs:
             --tag ${{ secrets.DOCKERHUB_USERNAME }}/base:latest .
 
   buildTemplate:
+    if: ${{ contains(fromJSON('["all", "base", "httpbin"]'), inputs.template) }}
     name: Build and Publish E2B Template
     runs-on: ubuntu-22.04
     steps:
@@ -78,3 +87,54 @@ jobs:
           e2b template create httpbin --memory-mb 512 \
             --cmd 'go-httpbin -host 0.0.0.0 -port 8080' \
             --ready-cmd 'curl -fsS http://localhost:8080/status/200 > /dev/null'
+
+  buildDesktopTemplate:
+    if: ${{ github.event_name == 'push' || inputs.template == 'all' || inputs.template == 'desktop' }}
+    defaults:
+      run:
+        working-directory: ./templates/desktop
+
+    name: Build and Publish Desktop Template
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Parse .tool-versions
+        uses: wistia/parse-tool-versions@32f568a4ffd4bfa7720ebf93f171597d1ebc979a # v2.1.1
+        with:
+          filename: '.tool-versions'
+          uppercase: 'true'
+          prefix: 'tool_version_'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+        with:
+          version: '${{ env.TOOL_VERSION_UV }}'
+          python-version: '${{ env.TOOL_VERSION_PYTHON }}'
+          enable-cache: true
+
+      # The build scripts run on the Python SDK from this repo.
+      - name: Install dependencies
+        run: uv sync --locked --project ../../packages/python-sdk
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Log in to DockerHub
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push to DockerHub
+        run: |
+          uv run --project ../../packages/python-sdk python build_docker.py | docker buildx build \
+            --platform linux/amd64 \
+            --push \
+            --tag ${{ secrets.DOCKERHUB_USERNAME }}/desktop:latest -f - files
+
+      - name: Build E2B template
+        run: uv run --project ../../packages/python-sdk python build_prod.py
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
