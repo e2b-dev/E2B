@@ -7,6 +7,7 @@ from typing import List
 import httpx
 import pytest
 from pyqwest.httpx import AsyncPyqwestTransport, PyqwestTransport
+from pyqwest.httpx._transport import convert_timeout
 
 from transport_caches import reset_transport_caches
 
@@ -50,14 +51,19 @@ def test_async_client_requires_volume_token(monkeypatch):
         get_async_api_client(VolumeConnectionConfig())
 
 
+def _deadline(timeout: httpx.Timeout):
+    # The whole-request deadline the pyqwest adapter derives from the timeout.
+    return convert_timeout({"timeout": timeout.as_dict()})
+
+
 def test_sync_client_uses_config_request_timeout():
     client = get_sync_api_client(VolumeConnectionConfig(token="vol-token"))
-    assert client.get_httpx_client().timeout == httpx.Timeout(60.0)
+    assert _deadline(client.get_httpx_client().timeout) == 60.0
 
     client = get_sync_api_client(
         VolumeConnectionConfig(token="vol-token", request_timeout=10.0)
     )
-    assert client.get_httpx_client().timeout == httpx.Timeout(10.0)
+    assert _deadline(client.get_httpx_client().timeout) == 10.0
 
     client = get_sync_api_client(
         VolumeConnectionConfig(token="vol-token", request_timeout=0)
@@ -68,7 +74,7 @@ def test_sync_client_uses_config_request_timeout():
 def test_async_client_uses_config_request_timeout():
     async def run():
         client = get_async_api_client(VolumeConnectionConfig(token="vol-token"))
-        assert client.get_async_httpx_client().timeout == httpx.Timeout(60.0)
+        assert _deadline(client.get_async_httpx_client().timeout) == 60.0
 
         client = get_async_api_client(
             VolumeConnectionConfig(token="vol-token", request_timeout=0)

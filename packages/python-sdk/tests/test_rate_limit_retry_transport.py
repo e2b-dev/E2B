@@ -402,6 +402,38 @@ def test_retry_preserves_remaining_budget_for_each_timeout_phase():
     }
 
 
+def test_retry_budget_ignores_a_zero_write_phase():
+    # The SDK puts a request's whole deadline on `read` and leaves `write` at
+    # zero, because the pyqwest adapter adds the two phases up (see
+    # `whole_request_timeout`). The zero must not count as an exhausted budget.
+    clock = FakeClock()
+    inner = FakeTransport([503, 200], retry_after="")
+    request = httpx.Request(
+        "GET",
+        "https://api.test",
+        extensions={
+            "timeout": {"connect": 3.0, "read": 3.0, "write": 0.0, "pool": 3.0}
+        },
+    )
+
+    response = RetryableTransport(
+        inner,
+        retries=1,
+        sleep=clock.sleep,
+        monotonic=clock.monotonic,
+        random_=lambda: 1.0,
+    ).handle_request(request)
+
+    assert response.status_code == 200
+    assert clock.sleeps == [0.1]
+    assert inner.requests[1].extensions["timeout"] == {
+        "connect": pytest.approx(2.9),
+        "read": pytest.approx(2.9),
+        "write": 0.0,
+        "pool": pytest.approx(2.9),
+    }
+
+
 def test_zero_retries_passes_the_original_request_through():
     inner = FakeTransport([429], retry_after="0")
     request = httpx.Request("GET", "https://api.test")
@@ -848,6 +880,40 @@ async def test_async_retry_preserves_remaining_budget_for_each_timeout_phase():
         "read": 1.0,
         "write": 1.0,
         "pool": 1.0,
+    }
+
+
+@pytest.mark.asyncio
+async def test_async_retry_budget_ignores_a_zero_write_phase():
+    clock = FakeClock()
+    inner = FakeAsyncTransport([503, 200], retry_after="")
+
+    async def sleep(delay):
+        clock.sleep(delay)
+
+    response = await AsyncRetryableTransport(
+        inner,
+        retries=1,
+        sleep=sleep,
+        monotonic=clock.monotonic,
+        random_=lambda: 1.0,
+    ).handle_async_request(
+        httpx.Request(
+            "GET",
+            "https://api.test",
+            extensions={
+                "timeout": {"connect": 3.0, "read": 3.0, "write": 0.0, "pool": 3.0}
+            },
+        )
+    )
+
+    assert response.status_code == 200
+    assert clock.sleeps == [0.1]
+    assert inner.requests[1].extensions["timeout"] == {
+        "connect": pytest.approx(2.9),
+        "read": pytest.approx(2.9),
+        "write": 0.0,
+        "pool": pytest.approx(2.9),
     }
 
 
