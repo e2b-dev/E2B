@@ -25,10 +25,14 @@ from e2b.connection_config import (
     READ_TIMEOUT,
     ConnectionConfig,
     HttpVersion,
+    whole_request_timeout,
 )
 
 
 def get_api_client(config: ConnectionConfig, **kwargs) -> AsyncApiClient:
+    # The transport is pyqwest-backed: it bounds the whole request at
+    # `request_timeout` only in the shape `whole_request_timeout` builds.
+    kwargs.setdefault("timeout", whole_request_timeout(config.request_timeout))
     return AsyncApiClient(
         config,
         transport=AsyncRetryableTransport(get_transport(config), config.retries),

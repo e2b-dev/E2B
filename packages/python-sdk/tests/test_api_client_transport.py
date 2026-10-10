@@ -12,6 +12,7 @@ import httpx
 import pytest
 from pyqwest import Headers, HTTPVersion, Request, Response, SyncRequest, SyncResponse
 from pyqwest.httpx import AsyncPyqwestTransport, PyqwestTransport
+from pyqwest.httpx._transport import convert_timeout
 from transport_caches import reset_transport_caches
 
 import e2b.api as api
@@ -332,7 +333,8 @@ def test_sync_api_client_applies_request_timeout(test_api_key):
     httpx_client = api_client.get_httpx_client()
 
     try:
-        assert httpx_client.timeout == httpx.Timeout(1.5)
+        # The whole-request deadline the pyqwest adapter derives.
+        assert convert_timeout({"timeout": httpx_client.timeout.as_dict()}) == 1.5
     finally:
         httpx_client.close()
         reset_transport_caches()
@@ -350,6 +352,21 @@ def test_sync_api_client_request_timeout_zero_disables_timeout(test_api_key):
     finally:
         httpx_client.close()
         reset_transport_caches()
+
+
+def test_api_client_with_another_transport_keeps_per_phase_timeouts(test_api_key):
+    # Only the SDK's factories, whose transport is pyqwest-backed, use the
+    # whole-request shape; httpx's own transport enforces every phase, so a
+    # zero `write` would fail its writes.
+    config = ConnectionConfig(api_key=test_api_key, request_timeout=1.5)
+    httpx_client = api.ApiClient(
+        config, transport=httpx.HTTPTransport()
+    ).get_httpx_client()
+
+    try:
+        assert httpx_client.timeout == httpx.Timeout(1.5)
+    finally:
+        httpx_client.close()
 
 
 def test_sync_generic_transport_separates_streaming_read_timeout(test_api_key):

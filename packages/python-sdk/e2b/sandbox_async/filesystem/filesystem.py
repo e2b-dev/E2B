@@ -14,6 +14,7 @@ from e2b.connection_config import (
     ConnectionConfig,
     Username,
     default_username,
+    whole_request_timeout,
 )
 from e2b.envd.api import (
     ENVD_API_FILES_ROUTE,
@@ -242,7 +243,7 @@ class Filesystem:
                 ENVD_API_FILES_ROUTE,
                 params=params,
                 headers=headers,
-                timeout=stream_timeout,
+                timeout=whole_request_timeout(stream_timeout),
             )
             try:
                 if stream_idle_timeout:
@@ -272,7 +273,7 @@ class Filesystem:
                 ENVD_API_FILES_ROUTE,
                 params=params,
                 headers=headers,
-                timeout=timeout,
+                timeout=whole_request_timeout(timeout),
             )
         except httpx.TransportError as e:
             raise await ahandle_envd_api_transport_exception_with_health(
@@ -417,7 +418,9 @@ class Filesystem:
                         content=to_upload_body_async(file_data, gzip),
                         headers=headers,
                         params=params,
-                        timeout=None if is_streamed else upload_timeout,
+                        timeout=whole_request_timeout(
+                            None if is_streamed else upload_timeout
+                        ),
                     )
                 except httpx.TransportError as e:
                     raise await ahandle_envd_api_transport_exception_with_health(
@@ -465,7 +468,11 @@ class Filesystem:
                     # file-like data was buffered by `_to_httpx_file` (httpx
                     # rejects text-mode objects in multipart).
                     timeout=(
-                        None if multipart_body_is_streamed(files) else upload_timeout
+                        whole_request_timeout(
+                            None
+                            if multipart_body_is_streamed(files)
+                            else upload_timeout
+                        )
                     ),
                 )
             except httpx.TransportError as e:

@@ -1,4 +1,3 @@
-import httpx
 from pyqwest.httpx import PyqwestTransport
 
 from e2b.api import (
@@ -7,6 +6,7 @@ from e2b.api import (
 )
 from e2b.api.client_sync import get_httpx_transport
 from e2b.api.metadata import default_headers
+from e2b.connection_config import whole_request_timeout
 from e2b.exceptions import AuthenticationException
 from e2b.volume.client.client import AuthenticatedClient as VolumeApiClient
 from e2b.volume.connection_config import READ_TIMEOUT, VolumeConnectionConfig
@@ -48,9 +48,7 @@ def _api_client(
         auth_header_name="Authorization",
         prefix="Bearer",
         headers=headers,
-        timeout=(
-            httpx.Timeout(request_timeout) if request_timeout is not None else None
-        ),
+        timeout=whole_request_timeout(request_timeout),
         httpx_args={
             # The proxy lives in the cached transport; passing `proxy` here too
             # would mount a fresh, never-closed proxy transport per client.
