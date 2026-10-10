@@ -19,6 +19,7 @@ from protobuf import Oneof
 from e2b.envd.process import process_pb
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.command_handle import (
+    DISCONNECTED_BEFORE_END_MESSAGE,
     CommandExitException,
     CommandResult,
     Stderr,
@@ -26,6 +27,13 @@ from e2b.sandbox.commands.command_handle import (
     PtyOutput,
 )
 from e2b.sandbox_async.utils import OutputHandler
+
+
+def _current_task_cancelling() -> bool:
+    """Whether the running task has a pending cancellation. Python 3.10 has no
+    ``Task.cancelling()``, so there it is treated as not cancelling."""
+    cancelling = getattr(asyncio.current_task(), "cancelling", None)
+    return cancelling is not None and cancelling() > 0
 
 
 class AsyncCommandHandle:
@@ -115,6 +123,7 @@ class AsyncCommandHandle:
 
         self._result: Optional[CommandResult] = None
         self._iteration_exception: Optional[Exception] = None
+        self._disconnected = False
 
         self._wait = asyncio.create_task(self._handle_events())
 
@@ -185,11 +194,18 @@ class AsyncCommandHandle:
                         for f in flushed:
                             yield f
         except Exception:
-            # The stream raised before an end event (e.g. disconnect or RPC
-            # failure). Flush any bytes still buffered in the decoders so
-            # incomplete trailing sequences surface as replacement characters
-            # instead of being silently dropped, then re-raise so the error is
-            # still surfaced by the consumer.
+            # `disconnect()` cancels the stream, so a stream error after it is a
+            # clean end. Bytes still buffered in the decoders go into
+            # `stdout`/`stderr` but no longer reach the callbacks.
+            if self._disconnected:
+                self._flush_decoders()
+                return
+
+            # The stream raised before an end event (e.g. an RPC failure).
+            # Flush any bytes still buffered in the decoders so incomplete
+            # trailing sequences surface as replacement characters instead of
+            # being silently dropped, then re-raise so the error is still
+            # surfaced by the consumer.
             for flushed in self._flush_decoders():
                 yield flushed
             raise
@@ -208,7 +224,10 @@ class AsyncCommandHandle:
 
         The command is not killed, but SDK stops receiving events from the command.
         You can reconnect to the command using `sandbox.commands.connect` method.
+
+        Unless the command already finished, `wait()` then raises a `SandboxException`, as the result is unknown to this handle.
         """
+        self._disconnected = True
         self._wait.cancel()
         await asyncio.wait([self._wait])
         try:
@@ -245,11 +264,24 @@ class AsyncCommandHandle:
 
         :return: `CommandResult` result of command execution
         """
-        await self._wait
+        try:
+            await self._wait
+        except asyncio.CancelledError:
+            # `disconnect()` cancels the event task. That is no cancellation of
+            # the caller, which gets the disconnect reported below instead; a
+            # cancellation of the caller itself still propagates.
+            if not self._disconnected or _current_task_cancelling():
+                raise
         if self._iteration_exception:
             raise self._iteration_exception
 
         if self._result is None:
+            if self._disconnected:
+                # A cancellation of the caller arriving together with the
+                # disconnect can be absorbed by the event task; it still wins.
+                if _current_task_cancelling():
+                    raise asyncio.CancelledError()
+                raise SandboxException(DISCONNECTED_BEFORE_END_MESSAGE)
             raise Exception("Command ended without an end event")
 
         if self._result.exit_code != 0:

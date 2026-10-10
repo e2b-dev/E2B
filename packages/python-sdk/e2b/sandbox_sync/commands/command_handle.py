@@ -8,6 +8,7 @@ from protobuf import Oneof
 from e2b.envd.process import process_pb
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.command_handle import (
+    DISCONNECTED_BEFORE_END_MESSAGE,
     CommandExitException,
     CommandResult,
     Stderr,
@@ -58,6 +59,7 @@ class CommandHandle:
 
         self._result: Optional[CommandResult] = None
         self._iteration_exception: Optional[Exception] = None
+        self._disconnected = False
 
     def __iter__(self):
         """
@@ -154,8 +156,11 @@ class CommandHandle:
 
         The command is not killed, but SDK stops receiving events from the command.
         You can reconnect to the command using `sandbox.commands.connect` method.
+
+        Unless the command already finished, `wait()` then raises a `SandboxException`, as the result is unknown to this handle.
         """
         self._events.close()
+        self._disconnected = True
 
     def wait(
         self,
@@ -193,6 +198,8 @@ class CommandHandle:
             raise self._iteration_exception
 
         if self._result is None:
+            if self._disconnected:
+                raise SandboxException(DISCONNECTED_BEFORE_END_MESSAGE)
             raise Exception("Command ended without an end event")
 
         if self._result.exit_code != 0:

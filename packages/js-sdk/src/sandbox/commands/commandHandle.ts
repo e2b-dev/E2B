@@ -14,6 +14,9 @@ export type Stdout = Branded<string, 'stdout'>
 export type Stderr = Branded<string, 'stderr'>
 export type PtyOutput = Branded<Uint8Array, 'pty'>
 
+const DISCONNECTED_BEFORE_END_MESSAGE =
+  'Disconnected before the command finished; reconnect with `commands.connect()` or `pty.connect()` to wait for its result.'
+
 /**
  * Command execution result.
  */
@@ -171,7 +174,11 @@ export class CommandHandle
     }
 
     if (!this.result) {
-      throw new SandboxError('Process exited without a result')
+      throw new SandboxError(
+        this.disconnected
+          ? DISCONNECTED_BEFORE_END_MESSAGE
+          : 'Process exited without a result'
+      )
     }
 
     if (this.result.exitCode !== 0) {
@@ -191,6 +198,9 @@ export class CommandHandle
    * not to fire for output produced after this call. It does not wait for the
    * event handler to drain, so it returns promptly even for an idle command
    * whose stream produces no further output.
+   *
+   * Unless the command already finished, {@link CommandHandle.wait} then rejects
+   * with a `SandboxError`, as the result is unknown to this handle.
    */
   async disconnect() {
     this.disconnected = true
@@ -323,10 +333,18 @@ export class CommandHandle
         }
       }
     } catch (e) {
-      // The stream raised before an `end` event (e.g. disconnect or RPC
-      // failure). Flush any bytes still buffered in the decoders so incomplete
-      // trailing sequences surface as replacement characters instead of being
-      // silently dropped, then re-raise so the error is still surfaced.
+      // `disconnect()` aborts the stream, so a stream error after it is a clean
+      // end. Bytes still buffered in the decoders go into `stdout`/`stderr`; the
+      // callbacks have stopped.
+      if (this.disconnected) {
+        Array.from(this.flushDecoders())
+        return
+      }
+
+      // The stream raised before an `end` event (e.g. an RPC failure). Flush
+      // any bytes still buffered in the decoders so incomplete trailing
+      // sequences surface as replacement characters instead of being silently
+      // dropped, then re-raise so the error is still surfaced.
       yield* this.flushDecoders()
       throw e
     }

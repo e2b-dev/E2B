@@ -16,6 +16,11 @@ PtyOutput = bytes
 Pty output.
 """
 
+DISCONNECTED_BEFORE_END_MESSAGE = (
+    "Disconnected before the command finished; reconnect with "
+    "`commands.connect()` or `pty.connect()` to wait for its result."
+)
+
 
 @dataclass
 class PtySize:

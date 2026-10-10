@@ -1,11 +1,20 @@
 import asyncio
+import sys
 from typing import Any, cast
 
 import pytest
+from connectrpc.code import Code
+from connectrpc.errors import ConnectError
+from envd_frame_server import (
+    frame_recording_server,
+    make_async_client,
+    make_sync_client,
+)
 
 from protobuf import Oneof
 
 from e2b.envd.process import process_pb
+from e2b.exceptions import SandboxException
 from e2b.sandbox_async.commands.command_handle import AsyncCommandHandle
 from e2b.sandbox_sync.commands.command_handle import CommandHandle
 
@@ -288,3 +297,178 @@ async def test_async_flushes_incomplete_trailing_utf8_on_stream_error():
     # be flushed to the stdout callback as a replacement character.
     assert "".join(chunks) == "a�"
     assert isinstance(handle._iteration_exception, RuntimeError)
+
+
+async def _raised(awaitable) -> BaseException:
+    try:
+        await awaitable
+    except BaseException as e:
+        return e
+    raise AssertionError("expected the awaitable to raise")
+
+
+# The disconnect tests run the handle on a real envd-style server stream (see
+# `envd_frame_server`): one stdout event, then the stream stays open the way a
+# still-running process does.
+
+
+async def test_async_wait_raises_sandbox_exception_after_disconnect():
+    with frame_recording_server(server_ends_stream=False) as server:
+        got_stdout = asyncio.Event()
+        handle = AsyncCommandHandle(
+            pid=1,
+            handle_kill=_kill,
+            events=make_async_client(server.port).connect(process_pb.ConnectRequest()),
+            on_stdout=lambda _: got_stdout.set(),
+        )
+        await got_stdout.wait()
+
+        waiting = asyncio.create_task(handle.wait())
+        await asyncio.sleep(0)
+        await handle.disconnect()
+
+        # Both a wait() pending at the disconnect and a later one get a
+        # catchable SandboxException instead of a CancelledError leaking into
+        # a task nobody cancelled.
+        for err in (await _raised(waiting), await _raised(handle.wait())):
+            assert isinstance(err, SandboxException), repr(err)
+            assert "disconnected before the command finished" in str(err).lower()
+        assert not waiting.cancelled()
+
+
+async def test_async_wait_raises_sandbox_exception_after_disconnect_in_callback():
+    # Here disconnect() cancels the event task while it awaits the callback,
+    # not the stream read.
+    with frame_recording_server(server_ends_stream=False) as server:
+        in_callback = asyncio.Event()
+
+        async def on_stdout(_):
+            in_callback.set()
+            await asyncio.Event().wait()
+
+        handle = AsyncCommandHandle(
+            pid=1,
+            handle_kill=_kill,
+            events=make_async_client(server.port).connect(process_pb.ConnectRequest()),
+            on_stdout=on_stdout,
+        )
+        await in_callback.wait()
+        await handle.disconnect()
+
+        err = await _raised(handle.wait())
+        assert isinstance(err, SandboxException), repr(err)
+
+
+async def test_async_cancelling_the_waiter_still_cancels_it():
+    with frame_recording_server(server_ends_stream=False) as server:
+        got_stdout = asyncio.Event()
+        handle = AsyncCommandHandle(
+            pid=1,
+            handle_kill=_kill,
+            events=make_async_client(server.port).connect(process_pb.ConnectRequest()),
+            on_stdout=lambda _: got_stdout.set(),
+        )
+        await got_stdout.wait()
+
+        waiting = asyncio.create_task(handle.wait())
+        await asyncio.sleep(0)
+        waiting.cancel()
+
+        assert isinstance(await _raised(waiting), asyncio.CancelledError)
+        await handle.disconnect()
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 11), reason="needs Task.cancelling() (Python 3.11+)"
+)
+async def test_async_cancelling_the_waiter_together_with_disconnect_still_cancels_it():
+    with frame_recording_server(server_ends_stream=False) as server:
+        got_stdout = asyncio.Event()
+        handle = AsyncCommandHandle(
+            pid=1,
+            handle_kill=_kill,
+            events=make_async_client(server.port).connect(process_pb.ConnectRequest()),
+            on_stdout=lambda _: got_stdout.set(),
+        )
+        await got_stdout.wait()
+
+        waiting = asyncio.create_task(handle.wait())
+        await asyncio.sleep(0)
+        waiting.cancel()
+        await handle.disconnect()
+
+        assert isinstance(await _raised(waiting), asyncio.CancelledError)
+        assert waiting.cancelled()
+
+
+def test_sync_wait_raises_sandbox_exception_after_disconnect():
+    with frame_recording_server(server_ends_stream=False) as server:
+        handle = CommandHandle(
+            pid=1,
+            handle_kill=lambda: True,
+            events=make_sync_client(server.port).connect(process_pb.ConnectRequest()),
+        )
+        assert next(iter(handle)) == ("hi", None, None)
+        handle.disconnect()
+
+        with pytest.raises(
+            SandboxException, match="(?i)disconnected before the command finished"
+        ):
+            handle.wait()
+
+
+def test_sync_disconnect_from_a_callback_makes_wait_raise_sandbox_exception():
+    with frame_recording_server(server_ends_stream=False) as server:
+        handle = CommandHandle(
+            pid=1,
+            handle_kill=lambda: True,
+            events=make_sync_client(server.port).connect(process_pb.ConnectRequest()),
+        )
+
+        with pytest.raises(
+            SandboxException, match="(?i)disconnected before the command finished"
+        ):
+            handle.wait(on_stdout=lambda _: handle.disconnect())
+
+
+def test_sync_failed_disconnect_leaves_the_handle_connected():
+    # close() fails while the stream generator is executing (e.g. disconnect()
+    # from another thread during a read), so the handle stays connected and a
+    # stream ending without an end event is not reported as a disconnect.
+    handle: CommandHandle
+
+    def events():
+        with pytest.raises(ValueError):
+            handle.disconnect()
+        yield _stdout_event(b"a")
+
+    handle = CommandHandle(pid=1, handle_kill=lambda: True, events=events())
+
+    with pytest.raises(Exception, match="Command ended without an end event"):
+        handle.wait()
+
+
+async def test_async_disconnect_keeps_buffered_bytes_in_stdout_without_a_callback():
+    async def events():
+        yield _stdout_event(b"a" + EMOJI_BYTES[:2])
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError as e:
+            # What connectrpc does with a cancelled read.
+            raise ConnectError(Code.CANCELED, "cancelled") from e
+
+    chunks = []
+    got_stdout = asyncio.Event()
+
+    def on_stdout(out):
+        chunks.append(out)
+        got_stdout.set()
+
+    handle = AsyncCommandHandle(
+        pid=1, handle_kill=_kill, events=events(), on_stdout=on_stdout
+    )
+    await got_stdout.wait()
+    await handle.disconnect()
+
+    assert handle.stdout == "a�"
+    assert chunks == ["a"]
