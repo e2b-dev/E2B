@@ -1,5 +1,7 @@
+import { Code, ConnectError } from '@connectrpc/connect'
 import { describe, expect, it, vi } from 'vitest'
 
+import { SandboxError, TimeoutError } from '../../../src/errors'
 import { CommandHandle } from '../../../src/sandbox/commands/commandHandle'
 
 type EventKind = 'stdout' | 'stderr' | 'pty'
@@ -471,6 +473,148 @@ describe('CommandHandle', () => {
         throw new Error('callback failed')
       }
     )
+
+    await expect(handle.wait()).rejects.toThrow('callback failed')
+  })
+})
+
+// An event stream that delivers `initial`, then stays idle until it is aborted
+// and fails the pending read with the `Canceled` error Connect raises for an
+// aborted request — what the real transport does when the handle's
+// `handleDisconnect` aborts it.
+function createAbortableEvents(initial: any[] = []) {
+  const controller = new AbortController()
+
+  async function* events() {
+    yield* initial
+    await new Promise<never>((_, reject) => {
+      const fail = () =>
+        reject(new ConnectError('This operation was aborted', Code.Canceled))
+      // The stream may already be aborted by the time the read starts.
+      if (controller.signal.aborted) {
+        fail()
+        return
+      }
+      controller.signal.addEventListener('abort', fail, { once: true })
+    })
+  }
+
+  return { events: events(), abort: () => controller.abort() }
+}
+
+describe('CommandHandle.disconnect()', () => {
+  it.each<'stdout' | 'pty'>(['stdout', 'pty'])(
+    'makes a pending wait() reject with a SandboxError, not a TimeoutError (%s)',
+    async (kind) => {
+      const abortable = createAbortableEvents()
+      const handle = new CommandHandle(
+        1,
+        abortable.abort,
+        async () => true,
+        abortable.events,
+        kind === 'stdout' ? () => {} : undefined,
+        undefined,
+        kind === 'pty' ? () => {} : undefined
+      )
+
+      const waiting = handle.wait()
+      await handle.disconnect()
+
+      const err = await waiting.catch((e) => e)
+      expect(err).toBeInstanceOf(SandboxError)
+      expect(err).not.toBeInstanceOf(TimeoutError)
+      expect(err.message).toMatch(/disconnected before the command finished/i)
+    }
+  )
+
+  it('makes a later wait() reject with the same SandboxError', async () => {
+    const abortable = createAbortableEvents()
+    const handle = new CommandHandle(
+      1,
+      abortable.abort,
+      async () => true,
+      abortable.events
+    )
+
+    await handle.disconnect()
+
+    const err = await handle.wait().catch((e) => e)
+    expect(err).toBeInstanceOf(SandboxError)
+    expect(err).not.toBeInstanceOf(TimeoutError)
+    expect(err.message).toMatch(/disconnected before the command finished/i)
+  })
+
+  it('keeps bytes buffered in the decoder in stdout, without a callback', async () => {
+    const emojiBytes = new TextEncoder().encode('😀')
+    const abortable = createAbortableEvents([
+      dataEvent(
+        'stdout',
+        new Uint8Array([
+          ...new TextEncoder().encode('a'),
+          ...emojiBytes.slice(0, 2),
+        ])
+      ),
+    ])
+    const chunks: string[] = []
+    const handle = new CommandHandle(
+      1,
+      abortable.abort,
+      async () => true,
+      abortable.events,
+      (out) => {
+        chunks.push(out)
+      }
+    )
+    await vi.waitFor(() => {
+      expect(chunks).toEqual(['a'])
+    })
+
+    await handle.disconnect()
+    await handle.wait().catch(() => {})
+
+    expect(handle.stdout).toBe('a�')
+    expect(chunks).toEqual(['a'])
+  })
+
+  it('leaves stream errors on a handle that was not disconnected unchanged', async () => {
+    const abortable = createAbortableEvents()
+    const handle = new CommandHandle(
+      1,
+      () => {},
+      async () => true,
+      abortable.events
+    )
+
+    const waiting = handle.wait()
+    abortable.abort()
+
+    await expect(waiting).rejects.toBeInstanceOf(TimeoutError)
+  })
+
+  it('still reports a callback error raised after disconnect()', async () => {
+    const controllable = createControllableEvents()
+    let failCallback: ((err: Error) => void) | undefined
+
+    const handle = new CommandHandle(
+      1,
+      () => {},
+      async () => true,
+      controllable.events,
+      () =>
+        new Promise<void>((_, reject) => {
+          failCallback = reject
+        })
+    )
+
+    controllable.push(dataEvent('stdout', new TextEncoder().encode('a')))
+    await vi.waitFor(() => {
+      expect(failCallback).toBeDefined()
+    })
+
+    // The callback was already running when the handle disconnected, so its
+    // failure is still the error wait() reports.
+    await handle.disconnect()
+    failCallback?.(new Error('callback failed'))
 
     await expect(handle.wait()).rejects.toThrow('callback failed')
   })
