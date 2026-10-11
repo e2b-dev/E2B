@@ -401,6 +401,46 @@ async def test_async_cancelling_the_waiter_together_with_disconnect_still_cancel
         assert waiting.cancelled()
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 11), reason="needs Task.cancelling() (Python 3.11+)"
+)
+@pytest.mark.parametrize("disconnect_during", ["stream read", "callback"])
+async def test_async_an_earlier_handled_cancel_is_not_a_new_one(disconnect_during):
+    # A task that caught a cancellation without `uncancel()` keeps a nonzero
+    # `cancelling()`. That earlier cancel must not turn a later disconnect into
+    # a CancelledError: wait() only counts cancellations requested during it.
+    with frame_recording_server(server_ends_stream=False) as server:
+        got_stdout = asyncio.Event()
+
+        async def on_stdout(_):
+            got_stdout.set()
+            if disconnect_during == "callback":
+                await asyncio.Event().wait()
+
+        handle = AsyncCommandHandle(
+            pid=1,
+            handle_kill=_kill,
+            events=make_async_client(server.port).connect(process_pb.ConnectRequest()),
+            on_stdout=on_stdout,
+        )
+        await got_stdout.wait()
+
+        async def caller():
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                pass  # handled, without uncancel()
+            await handle.disconnect()
+            return await _raised(handle.wait())
+
+        task = asyncio.create_task(caller())
+        await asyncio.sleep(0)
+        task.cancel()
+
+        err = await task
+        assert isinstance(err, SandboxException), repr(err)
+
+
 def test_sync_wait_raises_sandbox_exception_after_disconnect():
     with frame_recording_server(server_ends_stream=False) as server:
         handle = CommandHandle(

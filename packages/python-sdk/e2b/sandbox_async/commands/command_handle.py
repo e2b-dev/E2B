@@ -29,11 +29,11 @@ from e2b.sandbox.commands.command_handle import (
 from e2b.sandbox_async.utils import OutputHandler
 
 
-def _current_task_cancelling() -> bool:
-    """Whether the running task has a pending cancellation. Python 3.10 has no
-    ``Task.cancelling()``, so there it is treated as not cancelling."""
+def _cancel_requests() -> int:
+    """The running task's count of cancellation requests, ``Task.cancelling()``.
+    Python 3.10 has no ``Task.cancelling()``, so there it is always 0."""
     cancelling = getattr(asyncio.current_task(), "cancelling", None)
-    return cancelling is not None and cancelling() > 0
+    return cancelling() if cancelling is not None else 0
 
 
 class AsyncCommandHandle:
@@ -264,13 +264,17 @@ class AsyncCommandHandle:
 
         :return: `CommandResult` result of command execution
         """
+        # Only cancellations of the caller requested during this call count: a
+        # task that handled an earlier one without `uncancel()` keeps a nonzero
+        # count (the same comparison `asyncio.timeout()` makes).
+        cancel_requests = _cancel_requests()
         try:
             await self._wait
         except asyncio.CancelledError:
             # `disconnect()` cancels the event task. That is no cancellation of
             # the caller, which gets the disconnect reported below instead; a
             # cancellation of the caller itself still propagates.
-            if not self._disconnected or _current_task_cancelling():
+            if not self._disconnected or _cancel_requests() > cancel_requests:
                 raise
         if self._iteration_exception:
             raise self._iteration_exception
@@ -279,7 +283,7 @@ class AsyncCommandHandle:
             if self._disconnected:
                 # A cancellation of the caller arriving together with the
                 # disconnect can be absorbed by the event task; it still wins.
-                if _current_task_cancelling():
+                if _cancel_requests() > cancel_requests:
                     raise asyncio.CancelledError()
                 raise SandboxException(DISCONNECTED_BEFORE_END_MESSAGE)
             raise Exception("Command ended without an end event")
