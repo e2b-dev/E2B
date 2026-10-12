@@ -19,7 +19,7 @@ dependencies = [
     "typing-extensions>=4.10.0",
     "rich>=14.0.0",
     "connectrpc>=0.11.1,<0.12",
-    "pyqwest>=0.11.0,<0.12",
+    "pyqwest>=0.12.0,<0.13",
     "e2b-dockerfile-utils>=0.1.0,<0.2",
 ]
 
@@ -63,9 +63,6 @@ module-root = ""
 
 [tool.uv.sources]
 e2b-dockerfile-utils = { path = "../dockerfile-utils-python", editable = true }
-# TODO: drop once pyqwest publishes client-side load balancing
-# (curioswitch/pyqwest#246) and raise the floor above to that release.
-pyqwest = { git = "https://github.com/curioswitch/pyqwest", rev = "c4aae51ac47ed3d7b8edf734b1aeeaec154e3e1c" }
 
 [tool.basedpyright]
 reportInconsistentOverload = false
