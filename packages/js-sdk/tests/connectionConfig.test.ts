@@ -17,6 +17,7 @@ beforeEach(() => {
     E2B_DOMAIN: process.env.E2B_DOMAIN,
     E2B_SANDBOX_URL: process.env.E2B_SANDBOX_URL,
     E2B_HTTP_VERSION: process.env.E2B_HTTP_VERSION,
+    E2B_CONNECTION_RETRIES: process.env.E2B_CONNECTION_RETRIES,
     E2B_DEBUG: process.env.E2B_DEBUG,
   }
 })
@@ -180,6 +181,33 @@ test('httpVersion defaults to http2 and reads E2B_HTTP_VERSION', () => {
   assert.throws(() => new ConnectionConfig(), /E2B_HTTP_VERSION/)
   // An explicit option never consults the environment.
   assert.equal(new ConnectionConfig({ httpVersion: '1.1' }).httpVersion, '1.1')
+})
+
+test('connectionRetries defaults to 3 and reads E2B_CONNECTION_RETRIES', () => {
+  delete process.env.E2B_CONNECTION_RETRIES
+  assert.equal(new ConnectionConfig().connectionRetries, DEFAULT_RETRIES)
+  // `retries` is the control-plane count and does not drive it, as in Python.
+  assert.equal(
+    new ConnectionConfig({ retries: 0 }).connectionRetries,
+    DEFAULT_RETRIES
+  )
+
+  process.env.E2B_CONNECTION_RETRIES = '0'
+  assert.equal(new ConnectionConfig().connectionRetries, 0)
+  process.env.E2B_CONNECTION_RETRIES = '5'
+  assert.equal(new ConnectionConfig().connectionRetries, 5)
+
+  process.env.E2B_CONNECTION_RETRIES = '-1'
+  assert.throws(() => new ConnectionConfig(), InvalidArgumentError)
+  assert.throws(() => new ConnectionConfig(), /E2B_CONNECTION_RETRIES/)
+  for (const value of ['many', '0.5', '3foo', '1e3', ' ']) {
+    process.env.E2B_CONNECTION_RETRIES = value
+    assert.throws(
+      () => new ConnectionConfig(),
+      /E2B_CONNECTION_RETRIES/,
+      `E2B_CONNECTION_RETRIES=${JSON.stringify(value)}`
+    )
+  }
 })
 
 test('httpVersion rejects values other than 1.1 and 2', () => {

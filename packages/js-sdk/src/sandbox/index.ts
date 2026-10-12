@@ -164,6 +164,13 @@ export class Sandbox extends SandboxApi {
     }
     const envdFetch = createEnvdFetch(this.connectionConfig)
     const envdRpcFetch = createEnvdRpcFetch(this.connectionConfig)
+    // The health probe run after a request failed goes without the connection
+    // retries, so a sandbox that cannot be reached is not tried all over again.
+    const envdHealthFetch = createEnvdFetch({
+      proxy: this.connectionConfig.proxy,
+      httpVersion: this.connectionConfig.httpVersion,
+      connectionRetries: 0,
+    })
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
@@ -209,6 +216,7 @@ export class Sandbox extends SandboxApi {
           ...sandboxHeaders,
         },
         fetch: (request) => envdFetch(request),
+        healthFetch: (request) => envdHealthFetch(request),
       },
       {
         version: opts.envdVersion,

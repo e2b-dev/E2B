@@ -8,8 +8,10 @@ import {
   resolveRetries,
   withRetry,
   isNetworkError,
+  isConnectionRetried,
+  markConnectionRetried,
 } from '../src/retry'
-import { EnvdApiClient } from '../src/envd/api'
+import { checkSandboxHealth, EnvdApiClient } from '../src/envd/api'
 import { InvalidArgumentError } from '../src/errors'
 
 describe('resolveRetries', () => {
@@ -414,6 +416,46 @@ test('envd clients do not retry rate-limited requests', async () => {
   expect(fetchImpl).toHaveBeenCalledOnce()
 })
 
+test('the health probe goes through healthFetch, not the retrying fetch', async () => {
+  const fetchImpl = vi.fn(async () => {
+    throw new Error('retrying fetch must not be used by the probe')
+  }) as typeof fetch
+  const healthFetch = vi.fn(
+    async () => new Response('{}', { status: 200 })
+  ) as typeof fetch
+  const client = new EnvdApiClient(
+    {
+      apiUrl: 'https://envd.e2b.test',
+      logger: undefined,
+      fetch: fetchImpl,
+      healthFetch,
+    },
+    { version: '0.0.0' }
+  )
+
+  expect(await checkSandboxHealth(client)).toBe(true)
+  expect(healthFetch).toHaveBeenCalledOnce()
+  expect(fetchImpl).not.toHaveBeenCalled()
+})
+
+test('the health probe falls back to fetch without healthFetch', async () => {
+  const fetchImpl = vi.fn(
+    async () => new Response('{}', { status: 200 })
+  ) as typeof fetch
+  const client = new EnvdApiClient(
+    {
+      apiUrl: 'https://envd.e2b.test',
+      logger: undefined,
+      fetch: fetchImpl,
+    },
+    { version: '0.0.0' }
+  )
+
+  expect(client.health).toBe(client.api)
+  expect(await checkSandboxHealth(client)).toBe(true)
+  expect(fetchImpl).toHaveBeenCalledOnce()
+})
+
 function connectError(code: string, syscall = 'connect'): TypeError {
   return new TypeError('fetch failed', {
     cause: Object.assign(new Error(`${syscall} ${code}`), { code, syscall }),
@@ -547,6 +589,39 @@ describe('isRetryableFetchError', () => {
       expect(isRetryableFetchError(error, false)).toBe(false)
     }
   )
+
+  test.each(Object.entries(connectFailures))(
+    'does not retry %s again once the connector retried it',
+    (_, error) => {
+      // undici tags the socket error, which surfaces as the fetch error's cause
+      const retried = markConnectionRetried(
+        (error.cause as Error | undefined) ?? error
+      )
+      expect(isConnectionRetried(error)).toBe(true)
+      expect(isRetryableFetchError(error, true)).toBe(false)
+      expect(isRetryableFetchError(error, false)).toBe(false)
+      expect(retried).toBe(error.cause ?? error)
+    }
+  )
+
+  test('finds the connector tag inside a happy-eyeballs AggregateError', () => {
+    const member = connectError('ECONNREFUSED').cause as Error
+    const error = Object.assign(new Error('fetch failed'), {
+      cause: new AggregateError([markConnectionRetried(member)]),
+    })
+    expect(isConnectionRetried(error)).toBe(true)
+    expect(isRetryableFetchError(error, true)).toBe(false)
+  })
+
+  test.each([
+    ['non-error', 'ECONNREFUSED'],
+    ['no cause', new Error('x')],
+  ])('isConnectionRetried is false for %s', (_, error) => {
+    expect(isConnectionRetried(markConnectionRetried(error) && error)).toBe(
+      error instanceof Error
+    )
+    expect(isConnectionRetried(new TypeError('fetch failed'))).toBe(false)
+  })
 })
 
 const nonReplayable = [
@@ -644,6 +719,25 @@ test('rethrows the connection failure after exhausting retries', async () => {
     error
   )
   expect(fetchImpl).toHaveBeenCalledTimes(3)
+})
+
+test('does not retry a connection failure the connector already retried', async () => {
+  const error = connectError('ECONNREFUSED')
+  markConnectionRetried(error.cause)
+  const fetchImpl = vi.fn(async () => {
+    throw error
+  }) as typeof fetch
+  const sleep = vi.fn(async () => {})
+  const fetchWithRetry = withRetry(fetchImpl, 3, 10_000, {
+    monotonic: () => 0,
+    sleep,
+  })
+
+  await expect(fetchWithRetry('https://api.e2b.test/resource')).rejects.toBe(
+    error
+  )
+  expect(fetchImpl).toHaveBeenCalledTimes(1)
+  expect(sleep).not.toHaveBeenCalled()
 })
 
 test('rethrows a connection failure when the backoff would exceed the request timeout', async () => {

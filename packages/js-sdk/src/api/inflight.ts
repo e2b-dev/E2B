@@ -61,22 +61,35 @@ export function limitConcurrency(
   fetcher: typeof fetch,
   max: number
 ): typeof fetch {
+  return createConcurrencyLimiter(max)(fetcher)
+}
+
+/**
+ * A reusable {@link limitConcurrency}: every fetcher passed through the
+ * returned function shares one semaphore of `max` slots, so a cap can span
+ * several fetchers (e.g. the envd REST fetcher and its no-retry health-probe
+ * variant). Identity when `max` is not a positive number.
+ */
+export function createConcurrencyLimiter(
+  max: number
+): (fetcher: typeof fetch) => typeof fetch {
   if (!Number.isFinite(max) || max <= 0) {
-    return fetcher
+    return (fetcher) => fetcher
   }
 
   const sem = new Semaphore(max)
 
-  return (async (input, init) => {
-    // A Request the current global class disowns still carries the signal we
-    // have to honor while it waits for a slot.
-    const signal =
-      init?.signal ?? (isRequestLike(input) ? input.signal : undefined)
-    const release = await sem.acquire(signal)
-    try {
-      return await fetcher(input, init)
-    } finally {
-      release()
-    }
-  }) as typeof fetch
+  return (fetcher) =>
+    (async (input, init) => {
+      // A Request the current global class disowns still carries the signal we
+      // have to honor while it waits for a slot.
+      const signal =
+        init?.signal ?? (isRequestLike(input) ? input.signal : undefined)
+      const release = await sem.acquire(signal)
+      try {
+        return await fetcher(input, init)
+      } finally {
+        release()
+      }
+    }) as typeof fetch
 }

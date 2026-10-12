@@ -30,7 +30,7 @@ const PORT_CLOSED = 'The sandbox is running but port is not open'
 
 function healthApi(status: number, error?: { message?: string } | string) {
   return {
-    api: { GET: async () => createMockResponse(status, error) },
+    health: { GET: async () => createMockResponse(status, error) },
   } as unknown as Parameters<typeof checkSandboxHealth>[0]
 }
 

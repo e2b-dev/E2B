@@ -1,5 +1,9 @@
 import { runtime } from '../utils'
-import { DEFAULT_HTTP_VERSION, type HttpVersion } from '../connectionConfig'
+import {
+  DEFAULT_HTTP_VERSION,
+  resolveConnectionRetries,
+  type HttpVersion,
+} from '../connectionConfig'
 import { parseInflightLimitEnv, parsePositiveIntEnv } from './metadata'
 import {
   buildDispatchedFetch,
@@ -12,27 +16,48 @@ const DEFAULT_API_CONNECTION_LIMIT = 100
 // Override via env if your workload needs different.
 const DEFAULT_API_INFLIGHT_LIMIT = 1000
 
-// Fetchers are cached per proxy and HTTP version so requests without a proxy
-// keep sharing a single dispatcher while each distinct proxy URL gets its own.
+// Fetchers are cached per proxy, HTTP version and connection retry count so
+// requests without a proxy keep sharing a single dispatcher while each
+// distinct proxy URL gets its own.
 const apiFetchers = new Map<string, typeof fetch>()
 
+/**
+ * Options of the shared fetchers: `connectionRetries` is the number of
+ * connection attempts after the first for sockets that cannot be established
+ * (Node only; see `buildDispatchedFetch`), `ConnectionConfig.connectionRetries`
+ * i.e. `E2B_CONNECTION_RETRIES`.
+ */
 export interface FetchOpts {
   proxy?: string
   httpVersion?: HttpVersion
+  connectionRetries?: number
+}
+
+function fetcherKey(
+  proxy: string | undefined,
+  httpVersion: HttpVersion,
+  retries: number
+): string {
+  return `${httpVersion}:${retries}:${proxy ?? ''}`
 }
 
 export function createApiFetch({
   proxy,
   httpVersion = DEFAULT_HTTP_VERSION,
+  connectionRetries = resolveConnectionRetries(),
 }: FetchOpts = {}): typeof fetch {
-  const key = `${httpVersion}:${proxy ?? ''}`
+  const key = fetcherKey(proxy, httpVersion, connectionRetries)
 
   const cached = apiFetchers.get(key)
   if (cached) {
     return cached
   }
 
-  const apiFetch = createApiFetchForRuntime(runtime, { proxy, httpVersion })
+  const apiFetch = createApiFetchForRuntime(runtime, {
+    proxy,
+    httpVersion,
+    connectRetries: connectionRetries,
+  })
   apiFetchers.set(key, apiFetch)
 
   return apiFetch
@@ -45,6 +70,7 @@ export function createApiFetchForRuntime(
     inflightLimit?: number
     proxy?: string
     httpVersion?: HttpVersion
+    connectRetries?: number
     loadUndici?: () => Promise<UndiciModule | undefined>
   } = {}
 ): typeof fetch {
@@ -56,6 +82,7 @@ export function createApiFetchForRuntime(
       inflightLimit: options.inflightLimit ?? getApiInflightLimit(),
       proxy: options.proxy,
       httpVersion: options.httpVersion,
+      connectRetries: options.connectRetries,
       loadUndici: options.loadUndici,
     })
   )

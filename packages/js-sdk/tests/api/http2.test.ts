@@ -167,7 +167,42 @@ test('pins the API dispatcher to HTTP/1.1 when httpVersion is http1', async () =
   expect(agents).toEqual([{ allowH2: false, connections: 3 }])
 })
 
-test('caches API fetchers per proxy and HTTP version', async () => {
+test('retries API connections at the connector level when connectRetries > 0', async () => {
+  const agents: Array<{ connect?: unknown }> = []
+  const connector = vi.fn()
+
+  class Agent {
+    constructor(options: { connect?: unknown }) {
+      agents.push(options)
+    }
+  }
+
+  const undiciFetch = vi.fn(() => Promise.resolve(new Response('ok')))
+  const buildConnector = vi.fn(() => connector)
+  const loadUndici = () =>
+    Promise.resolve({ Agent, buildConnector, fetch: undiciFetch })
+
+  const { createApiFetchForRuntime } = await import('../../src/api/http2')
+
+  const withRetries = createApiFetchForRuntime('node', {
+    connectRetries: 3,
+    loadUndici,
+  })
+  await withRetries('https://example.com/sandboxes')
+
+  const withoutRetries = createApiFetchForRuntime('node', {
+    connectRetries: 0,
+    loadUndici,
+  })
+  await withoutRetries('https://example.com/sandboxes')
+
+  expect(buildConnector).toHaveBeenCalledWith({ allowH2: true })
+  expect(typeof agents[0].connect).toBe('function')
+  expect(agents[0].connect).not.toBe(connector)
+  expect(agents[1].connect).toBeUndefined()
+})
+
+test('caches API fetchers per proxy, HTTP version and connection retries', async () => {
   const { createApiFetch } = await import('../../src/api/http2')
 
   const noProxy = createApiFetch()
@@ -179,6 +214,8 @@ test('caches API fetchers per proxy and HTTP version', async () => {
   expect(createApiFetch({ httpVersion: '2' })).toBe(noProxy)
   expect(createApiFetch({ proxy: 'http://127.0.0.1:8080' })).toBe(proxyA)
   expect(createApiFetch({ httpVersion: '1.1' })).toBe(noProxyH1)
+  expect(createApiFetch({ connectionRetries: 3 })).toBe(noProxy)
+  expect(createApiFetch({ connectionRetries: 0 })).not.toBe(noProxy)
   expect(proxyA).not.toBe(noProxy)
   expect(proxyA).not.toBe(proxyB)
   expect(noProxyH1).not.toBe(noProxy)
