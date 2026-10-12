@@ -19,7 +19,7 @@ dependencies = [
     "typing-extensions>=4.10.0",
     "rich>=14.0.0",
     "connectrpc>=0.11.1,<0.12",
-    "pyqwest>=0.10.0,<0.11",
+    "pyqwest>=0.12.0,<0.13",
     "e2b-dockerfile-utils>=0.1.0,<0.2",
 ]
 

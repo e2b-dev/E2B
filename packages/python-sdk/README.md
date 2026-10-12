@@ -68,12 +68,12 @@ Per-call params still take precedence over the client's params, and clients are 
 
 ### High-concurrency sandbox streams
 
-Sandbox `commands` and `files` traffic from all sandboxes in a process shares one set of HTTP/2 connections. Each request goes to the connection with the fewest streams in flight to its host, and a new connection is dialed only when every existing one already carries `E2B_STREAMS_PER_CONNECTION` streams to that host (default `100`, the usual server limit), up to `E2B_MAX_CONNECTIONS` (default `200`). Long-running streams therefore never queue behind one connection's concurrent-stream limit, and idle processes keep a single connection.
+Sandbox `commands` and `files` traffic from all sandboxes in a process shares one HTTP/2 connection pool. Requests are spread over the pooled connections by free stream capacity, and a new connection is dialed only once every existing one is at the server's concurrent-stream limit (`100` for `sandbox.e2b.app`), up to `E2B_MAX_CONNECTIONS` connections per resolved address (default `200`). Past that cap, a request waits for a stream to free up. Long-running streams therefore never queue behind one connection's concurrent-stream limit, and idle processes keep a single connection.
 
-Both variables are read when `e2b` is imported:
+`E2B_MAX_CONNECTIONS` is read when `e2b` is imported:
 
 ```sh
-E2B_STREAMS_PER_CONNECTION=50 E2B_MAX_CONNECTIONS=400 python eval.py
+E2B_MAX_CONNECTIONS=400 python eval.py
 ```
 
 ### 5. Code execution with Code Interpreter
