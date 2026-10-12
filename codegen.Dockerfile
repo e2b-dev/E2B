@@ -6,7 +6,7 @@ RUN go install github.com/bufbuild/buf/cmd/buf@v1.50.1 && \
     go install connectrpc.com/connect/cmd/protoc-gen-connect-go@v1.18.1
 
 
-FROM python:3.10
+FROM python:3.11
 
 # Set working directory
 WORKDIR /workspace

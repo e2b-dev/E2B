@@ -5,7 +5,7 @@ description = "E2B SDK that give agents cloud environments"
 authors = [{ name = "e2b", email = "hello@e2b.dev" }]
 license = "MIT"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "python-dateutil>=2.8.2",
     "wcmatch>=10.1,<12",

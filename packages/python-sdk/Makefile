@@ -47,7 +47,7 @@ generate-mcp:
 			--input-file-type jsonschema \
 			--output e2b/sandbox/mcp.py \
 			--output-model-type typing.TypedDict \
-			--target-python-version 3.10 \
+			--target-python-version 3.11 \
 			--class-name McpServer \
 			--use-field-description \
 			--disable-timestamp \
