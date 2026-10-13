@@ -1,7 +1,9 @@
 import asyncio
+import json
 import random
 import re
 import time
+import uuid
 from typing import Awaitable, Callable, List, Optional, Tuple
 
 import httpx
@@ -18,14 +20,14 @@ RETRYABLE_STATUSES = frozenset({429, 502, 503})
 # GET/PUT/PATCH/DELETE are idempotent by HTTP semantics. A POST is retried
 # after a 502 or a network error that may have occurred once the request was
 # written only if it is listed here: a replay is a no-op or fails with a
-# 404/409 the SDK already tolerates. POSTs that mint a resource without a
-# client-supplied idempotency key (sandbox/fork/snapshot/API-key/volume/secret/
-# webhook creation) or append to one (secret update) must stay off the list —
-# a replay could create a duplicate — and so does any new POST until it is
-# reviewed. (Connection-establishment
-# failures are retried for every operation by ``ConnectionRetryTransport``
-# underneath: the request never left.)
+# 404/409 the SDK already tolerates. POSTs carrying a client-supplied
+# Idempotency-Key are replayable because the server deduplicates them. Other
+# POSTs that mint a resource or append to one must stay off the list — a replay
+# could create a duplicate — and so does any new POST until reviewed.
+# Connection-establishment failures are retried for every operation by
+# ``ConnectionRetryTransport`` underneath: the request never left.
 REPLAYABLE_METHODS = frozenset({"GET", "PUT", "PATCH", "DELETE"})
+IDEMPOTENCY_KEY_HEADER = "Idempotency-Key"
 REPLAYABLE_OPERATIONS: List[Tuple[str, re.Pattern[str]]] = [
     ("POST", re.compile(r"^/sandboxes/[^/]+/(pause|resume|timeout|refreshes)$")),
     ("POST", re.compile(r"^/(v2/)?sandboxes/[^/]+/connect$")),
@@ -41,6 +43,10 @@ REPLAYABLE_OPERATIONS: List[Tuple[str, re.Pattern[str]]] = [
 # ``httpx.ConnectError``/``ConnectTimeout`` are excluded — the connection layer
 # already retries those — as are timeouts, which exhaust the request's budget.
 NETWORK_ERRORS = (httpx.ReadError, httpx.WriteError, httpx.RemoteProtocolError)
+
+
+def new_idempotency_key() -> str:
+    return uuid.uuid4().hex
 
 
 def resolve_max_retries(retries: int) -> int:
@@ -64,7 +70,10 @@ def parse_retry_after(value: Optional[str]) -> Optional[int]:
 
 def is_replayable(request: httpx.Request) -> bool:
     """Whether ``request`` may be sent again after a 502 or a network error
-    that may have occurred once it was written (see ``REPLAYABLE_OPERATIONS``)."""
+    that may have occurred once it was written. Keyed requests and operations
+    in ``REPLAYABLE_OPERATIONS`` are safe to replay."""
+    if IDEMPOTENCY_KEY_HEADER in request.headers:
+        return True
     if request.method in REPLAYABLE_METHODS:
         return True
     path = request.url.path
@@ -84,13 +93,18 @@ def _retry_delay(
     attempt: int,
     replayable: bool,
     random_: Callable[[], float],
+    idempotency_in_progress: bool = False,
 ) -> Optional[float]:
     """Delay before the next attempt, or ``None`` when the response is not
     retried: ``Retry-After`` when the server sends a usable one, otherwise
-    exponential backoff with jitter for 502/503. A 429 without ``Retry-After``
-    is not retried, nor is a 502 for a non-replayable request: a gateway may
-    answer 502 after the backend already processed it."""
-    if response.status_code not in RETRYABLE_STATUSES:
+    exponential backoff with jitter for 502/503 or an idempotency-in-progress
+    409. A 429 without ``Retry-After`` is not retried, nor is a 502 for a
+    non-replayable request: a gateway may answer 502 after the backend already
+    processed it."""
+    if response.status_code == 409:
+        if not idempotency_in_progress:
+            return None
+    elif response.status_code not in RETRYABLE_STATUSES:
         return None
     if response.status_code == 502 and not replayable:
         return None
@@ -102,6 +116,16 @@ def _retry_delay(
         return None
 
     return _backoff_delay(attempt, random_)
+
+
+def _is_idempotency_in_progress(response: httpx.Response) -> bool:
+    try:
+        body = response.json()
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return False
+    return (
+        isinstance(body, dict) and body.get("error_code") == "idempotency_in_progress"
+    )
 
 
 def _copy_request(
@@ -139,10 +163,10 @@ def _request_deadline(request: httpx.Request, monotonic: Callable[[], float]) ->
 
 
 class RetryableTransport(httpx.BaseTransport):
-    """Retry requests after a 429 carrying ``Retry-After`` or a 503, and — for
-    replayable operations (``is_replayable``) — after a 502 (using
-    ``Retry-After`` when present, exponential backoff otherwise) or a network
-    error once the request was written."""
+    """Retry requests after a 429 carrying ``Retry-After`` or a 503, after an
+    idempotency-in-progress 409 for keyed requests, and — for replayable
+    operations (``is_replayable``) — after a 502 or a network error once the
+    request was written."""
 
     def __init__(
         self,
@@ -193,7 +217,20 @@ class RetryableTransport(httpx.BaseTransport):
             if attempt == self.retries:
                 return response
 
-            delay = _retry_delay(response, attempt, replayable, self._random)
+            idempotency_in_progress = False
+            if (
+                response.status_code == 409
+                and IDEMPOTENCY_KEY_HEADER in request.headers
+            ):
+                response.read()
+                idempotency_in_progress = _is_idempotency_in_progress(response)
+            delay = _retry_delay(
+                response,
+                attempt,
+                replayable,
+                self._random,
+                idempotency_in_progress,
+            )
             if delay is None or self._monotonic() + delay >= deadline:
                 return response
 
@@ -259,7 +296,20 @@ class AsyncRetryableTransport(httpx.AsyncBaseTransport):
             if attempt == self.retries:
                 return response
 
-            delay = _retry_delay(response, attempt, replayable, self._random)
+            idempotency_in_progress = False
+            if (
+                response.status_code == 409
+                and IDEMPOTENCY_KEY_HEADER in request.headers
+            ):
+                await response.aread()
+                idempotency_in_progress = _is_idempotency_in_progress(response)
+            delay = _retry_delay(
+                response,
+                attempt,
+                replayable,
+                self._random,
+                idempotency_in_progress,
+            )
             if delay is None or self._monotonic() + delay >= deadline:
                 return response
 
