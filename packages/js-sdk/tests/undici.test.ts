@@ -3,7 +3,6 @@ import { expect, test, vi } from 'vitest'
 import {
   buildDispatchedFetch,
   createRuntimeFetch,
-  getUndiciPackageCandidates,
   loadUndici,
   type UndiciModule,
 } from '../src/undici'
@@ -13,14 +12,10 @@ import {
   foreignRequestClasses,
 } from './foreignPlatformObjects'
 
-test.each([
-  ['20.20.2', ['undici']],
-  ['22.18.0', ['undici']],
-  ['22.19.0', ['undici8', 'undici']],
-  ['24.0.0', ['undici8', 'undici']],
-])('selects the packages supported by Node %s', (version, expected) => {
-  expect(getUndiciPackageCandidates(version as string)).toEqual(expected)
-})
+test.each(['20.20.2', '22.18.0'])(
+  'does not load undici on Node %s',
+  async (v) => expect(await loadUndici(v)).toBeUndefined()
+)
 
 test('a stale awaiter of a failed build does not clobber a newer successful build', async () => {
   let rejectFirstBuild: ((err: Error) => void) | undefined
@@ -83,7 +78,6 @@ test('takes apart a Request the current global Request class disowns', async () 
 
     const fetcher = await buildDispatchedFetch({
       connections: 1,
-      inflightLimit: 0,
       loadUndici: async () => fakeUndici,
     })
     await fetcher(request)
@@ -128,7 +122,6 @@ test('adopts the body of a Request from another fetch implementation', async () 
 
   const fetcher = await buildDispatchedFetch({
     connections: 1,
-    inflightLimit: 0,
     loadUndici: async () => fakeUndici,
   })
   await fetcher(foreignRequest as unknown as Request)
@@ -195,7 +188,6 @@ test.skipIf(runtime !== 'node')(
     try {
       const fetcher = await buildDispatchedFetch({
         connections: 1,
-        inflightLimit: 0,
         loadUndici: async () => ({
           ...undici,
           // buildDispatchedFetch builds its own dispatcher; hand it the mock.

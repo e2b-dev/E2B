@@ -1,6 +1,5 @@
 import { compareVersions } from 'compare-versions'
 
-import { limitConcurrency } from './api/inflight'
 import { isReadableStreamLike, isRequestLike } from './is'
 import { dynamicImport, toDispatchableStream } from './utils'
 import { DEFAULT_HTTP_VERSION, type HttpVersion } from './connectionConfig'
@@ -21,26 +20,21 @@ export type UndiciModule = {
   fetch: unknown
 }
 
-const UNDICI_8_MIN_NODE = '22.19.0'
+const UNDICI_MIN_NODE = '22.19.0'
 
-export function getUndiciPackageCandidates(nodeVersion: string): string[] {
-  if (compareVersions(nodeVersion, UNDICI_8_MIN_NODE) >= 0) {
-    return ['undici8', 'undici']
+export async function loadUndici(
+  nodeVersion = globalThis.process?.versions?.node
+): Promise<UndiciModule | undefined> {
+  if (!nodeVersion || compareVersions(nodeVersion, UNDICI_MIN_NODE) < 0) {
+    return undefined
   }
 
-  return ['undici']
-}
-
-export async function loadUndici(): Promise<UndiciModule | undefined> {
-  for (const packageName of getUndiciPackageCandidates(process.versions.node)) {
-    try {
-      return await dynamicImport<UndiciModule>(packageName)
-    } catch {
-      // Try the next package supported by this Node version.
-    }
+  try {
+    return await dynamicImport<UndiciModule>('undici')
+  } catch {
+    // Fall back to the global fetch when undici cannot load (e.g. bundled apps).
+    return undefined
   }
-
-  return undefined
 }
 
 /**
@@ -90,13 +84,10 @@ export function createRuntimeFetch(
 /**
  * Build a fetch bound to a bounded undici dispatcher (HTTP/2 enabled unless
  * `httpVersion` is `'1.1'`, `connections` origin connections, optional proxy
- * tunnel), capped at `inflightLimit` in-flight requests (`0` disables the
- * cap). Falls back to the global fetch — still capped — when undici cannot be
- * loaded.
+ * tunnel). Falls back to the global fetch when undici cannot be loaded.
  */
 export async function buildDispatchedFetch(options: {
   connections: number
-  inflightLimit: number
   proxy?: string
   httpVersion?: HttpVersion
   loadUndici?: () => Promise<UndiciModule | undefined>
@@ -104,7 +95,7 @@ export async function buildDispatchedFetch(options: {
   const undici = await (options.loadUndici ?? loadUndici)()
 
   if (!undici) {
-    return limitConcurrency(lateBoundGlobalFetch(), options.inflightLimit)
+    return lateBoundGlobalFetch()
   }
 
   const { Agent, ProxyAgent, fetch: undiciFetch } = undici
@@ -125,7 +116,7 @@ export async function buildDispatchedFetch(options: {
     init?: UndiciRequestInit
   ) => Promise<Response>
 
-  const wrapped: typeof fetch = ((input, init) => {
+  return ((input, init) => {
     const request = toUndiciRequestInput(input, init)
 
     return fetchWithDispatcher(request.input, {
@@ -133,8 +124,6 @@ export async function buildDispatchedFetch(options: {
       dispatcher,
     })
   }) as typeof fetch
-
-  return limitConcurrency(wrapped, options.inflightLimit)
 }
 
 function toUndiciRequestInput(
