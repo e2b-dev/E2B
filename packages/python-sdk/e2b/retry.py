@@ -6,6 +6,7 @@ from typing import Awaitable, Callable, List, Optional, Tuple
 
 import httpx
 
+from e2b.deadline import request_deadline
 from e2b.exceptions import InvalidArgumentException
 
 MAX_RETRY_AFTER_SECONDS = 2_147_483_647
@@ -126,16 +127,14 @@ def _copy_request(
 
 
 def _request_deadline(request: httpx.Request, monotonic: Callable[[], float]) -> float:
-    timeout = request.extensions.get("timeout")
-    if not isinstance(timeout, dict):
-        return monotonic() + MAX_RETRY_WAIT_WITHOUT_TIMEOUT_SECONDS
-
-    values = [value for value in timeout.values() if value is not None]
+    # The same whole-request deadline the transport enforces, so retries never
+    # outlive the request they belong to.
+    deadline = request_deadline(request.extensions)
+    if deadline is None:
+        deadline = MAX_RETRY_WAIT_WITHOUT_TIMEOUT_SECONDS
     # A monotonic clock cannot jump when the system wall clock is adjusted,
     # keeping elapsed timeout calculations stable across retries.
-    return monotonic() + (
-        min(values) if values else MAX_RETRY_WAIT_WITHOUT_TIMEOUT_SECONDS
-    )
+    return monotonic() + deadline
 
 
 class RetryableTransport(httpx.BaseTransport):
