@@ -60,7 +60,8 @@ def template():
 
 @pytest.fixture()
 def httpbin_template():
-    """Template that serves go-httpbin on port 8080 — see `templates/httpbin`.
+    """Template that serves go-httpbin on port 8080 — see `templates/httpbin` in
+    e2b-dev/customer-starter-templates.
 
     Used as a sidecar by tests that need a publicly reachable echo server.
     """
