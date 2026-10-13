@@ -39,12 +39,16 @@ class _CapturingClient:
         self._captured.update(kwargs)
         raise _Stop
 
+    def post(self, *args, **kwargs):
+        self._captured.update(kwargs)
+        raise _Stop
+
 
 def _sandbox(cls, captured=None, connection_config=None, url="http://127.0.0.1:9"):
     class _Fake(cls):
         @property
         def connection_config(self):
-            return ConnectionConfig(
+            return connection_config or ConnectionConfig(
                 api_key="x", domain="e2b.app", request_timeout=REQUEST_TIMEOUT
             )
 
@@ -234,3 +238,37 @@ async def test_async_context_request_is_aborted_after_request_timeout_seconds():
         elapsed = time.monotonic() - started
 
     assert elapsed < 1.5, f"list_code_contexts() was aborted after {elapsed:.2f}s"
+
+
+@pytest.mark.parametrize(
+    "request_timeout, expected_read",
+    [(0, None), (7, 7), (None, REQUEST_TIMEOUT)],
+)
+def test_context_request_timeout_resolution(request_timeout, expected_read):
+    captured: dict = {}
+    with pytest.raises(_Stop):
+        _sandbox(Sandbox, captured).create_code_context(request_timeout=request_timeout)
+
+    tmo = _captured_timeout(captured)
+    # An explicit `request_timeout=0` disables the deadline — it must not
+    # fall back to the configured default — while `None` keeps the default.
+    assert tmo.read == expected_read
+    assert tmo.write == 0
+    assert _derived_deadline(tmo) == expected_read
+
+
+@pytest.mark.parametrize(
+    "request_timeout, expected_read",
+    [(0, None), (7, 7), (None, REQUEST_TIMEOUT)],
+)
+async def test_async_context_request_timeout_resolution(request_timeout, expected_read):
+    captured: dict = {}
+    with pytest.raises(_Stop):
+        await _sandbox(AsyncSandbox, captured).create_code_context(
+            request_timeout=request_timeout
+        )
+
+    tmo = _captured_timeout(captured)
+    assert tmo.read == expected_read
+    assert tmo.write == 0
+    assert _derived_deadline(tmo) == expected_read

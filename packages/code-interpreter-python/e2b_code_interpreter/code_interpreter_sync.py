@@ -291,7 +291,8 @@ class Sandbox(BaseSandbox):
                 json=data,
                 headers=headers,
                 timeout=httpx.Timeout(
-                    request_timeout or self.connection_config.request_timeout, write=0
+                    self.connection_config.get_request_timeout(request_timeout),
+                    write=0,
                 ),
             )
 
