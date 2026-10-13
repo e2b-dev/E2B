@@ -39,6 +39,24 @@ READ_TIMEOUT: float = 60.0  # 60 seconds
 KEEPALIVE_PING_INTERVAL_SEC = 50  # 50 seconds
 KEEPALIVE_PING_HEADER = "Keepalive-Ping-Interval"
 
+
+def whole_request_timeout(timeout: Optional[float]) -> httpx.Timeout:
+    """The ``httpx.Timeout`` that bounds a whole request at ``timeout`` seconds
+    on the SDK's pyqwest-backed httpx transports (``None``: no deadline).
+
+    pyqwest's httpx adapter has no per-phase timeouts: it derives a single
+    whole-request deadline by adding up the ``read`` and ``write`` phases and
+    ignores ``connect`` and ``pool`` (the transport bounds connecting on its
+    own). ``httpx.Timeout(timeout)`` sets both phases, which makes the deadline
+    twice the timeout, so the whole budget goes on ``read`` and ``write`` stays
+    at zero. Only for those transports: with httpx's own, a zero ``write``
+    fails writes (every write on the async client).
+    """
+    if timeout is None:
+        return httpx.Timeout(None)
+    return httpx.Timeout(timeout, write=0)
+
+
 HttpVersion = Literal["1.1", "2"]
 DEFAULT_HTTP_VERSION: HttpVersion = "2"
 HTTP_VERSIONS: Tuple[HttpVersion, ...] = ("1.1", "2")

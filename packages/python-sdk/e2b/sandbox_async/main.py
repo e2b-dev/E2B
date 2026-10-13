@@ -12,7 +12,7 @@ from typing_extensions import Self, Unpack
 
 from e2b.api.client.types import Unset
 from e2b.api.client_async import get_envd_api
-from e2b.connection_config import ApiParams, ConnectionConfig
+from e2b.connection_config import ApiParams, ConnectionConfig, whole_request_timeout
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
 from e2b.exceptions import (
@@ -153,7 +153,9 @@ class AsyncSandbox(SandboxApi):
         try:
             r = await self._envd_api.get(
                 ENVD_API_HEALTH_ROUTE,
-                timeout=self.connection_config.get_request_timeout(request_timeout),
+                timeout=whole_request_timeout(
+                    self.connection_config.get_request_timeout(request_timeout)
+                ),
             )
 
             if r.status_code == 502:
