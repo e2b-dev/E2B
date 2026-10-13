@@ -103,7 +103,7 @@
     "undici8": "npm:undici@8.11.2"
   },
   "engines": {
-    "node": ">=20.18.1 <21 || >=22"
+    "node": ">=22"
   },
   "browserslist": [
     "defaults"

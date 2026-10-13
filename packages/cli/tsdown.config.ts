@@ -12,7 +12,7 @@ const excludedPackages = ['inquirer']
 export default defineConfig({
   entry: ['src/index.ts'],
   shims: true, // Needed for "open" package, as it uses import.meta.url and we are building for cjs
-  target: 'node20',
+  target: 'node22',
   platform: 'node',
   format: 'cjs',
   // Emit the bin as dist/index.js (matches the package.json "bin" entry)

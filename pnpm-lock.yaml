@@ -7,8 +7,8 @@ settings:
 catalogs:
   default:
     '@types/node':
-      specifier: ^20.19.19
-      version: 20.19.43
+      specifier: ^22.20.4
+      version: 22.20.5
     '@typescript/native':
       specifier: npm:typescript@^7.0.2
       version: 7.0.2
@@ -69,13 +69,13 @@ importers:
     devDependencies:
       '@changesets/cli':
         specifier: 2.31.1
-        version: 2.31.1(@types/node@20.19.43)
+        version: 2.31.1(@types/node@22.20.5)
       '@cloudflare/vitest-pool-workers':
         specifier: ^0.18.8
-        version: 0.18.8(@types/node@20.19.43)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(bufferutil@4.0.8)(utf-8-validate@6.0.3)(vitest@4.1.11)
+        version: 0.18.8(@types/node@22.20.5)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(bufferutil@4.0.8)(utf-8-validate@6.0.3)(vitest@4.1.11)
       '@types/node':
         specifier: 'catalog:'
-        version: 20.19.43
+        version: 22.20.5
       dotenv:
         specifier: ^16.4.5
         version: 16.6.1
@@ -93,7 +93,7 @@ importers:
         version: '@typescript/typescript6@6.0.2'
       vitest:
         specifier: 'catalog:'
-        version: 4.1.11(@types/node@20.19.43)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
+        version: 4.1.11(@types/node@22.20.5)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@22.20.5)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@22.20.5)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
 
   packages/cli:
     dependencies:
@@ -102,7 +102,7 @@ importers:
         version: 2.2.5
       '@inquirer/prompts':
         specifier: ^7.10.1
-        version: 7.10.1(@types/node@20.19.43)
+        version: 7.10.1(@types/node@22.20.5)
       '@npmcli/package-json':
         specifier: ^7.0.5
         version: 7.0.5
@@ -129,7 +129,7 @@ importers:
         version: 4.7.10
       inquirer:
         specifier: ^12.11.1
-        version: 12.11.1(@types/node@20.19.43)
+        version: 12.11.1(@types/node@22.20.5)
       simple-update-notifier:
         specifier: ^2.0.0
         version: 2.0.0
@@ -154,7 +154,7 @@ importers:
         version: 1.5.4
       '@types/node':
         specifier: 'catalog:'
-        version: 20.19.43
+        version: 22.20.5
       '@types/npmcli__package-json':
         specifier: ^4.0.4
         version: 4.0.4
@@ -172,7 +172,7 @@ importers:
         version: 2.0.3
       knip:
         specifier: ^5.88.1
-        version: 5.88.1(@types/node@20.19.43)(@typescript/typescript6@6.0.2)
+        version: 5.88.1(@types/node@22.20.5)(@typescript/typescript6@6.0.2)
       tsdown:
         specifier: 'catalog:'
         version: 0.22.14(@typescript/typescript6@6.0.2)(oxc-resolver@11.24.2)(tsx@4.23.12)
@@ -181,7 +181,7 @@ importers:
         version: '@typescript/typescript6@6.0.2'
       vitest:
         specifier: 'catalog:'
-        version: 4.1.11(@types/node@20.19.43)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
+        version: 4.1.11(@types/node@22.20.5)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@22.20.5)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@22.20.5)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
 
   packages/code-interpreter-js:
     dependencies:
@@ -191,10 +191,10 @@ importers:
     devDependencies:
       '@cloudflare/vitest-pool-workers':
         specifier: ^0.18.7
-        version: 0.18.7(@types/node@20.19.43)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(bufferutil@4.0.8)(utf-8-validate@6.0.3)(vitest@4.1.11)
+        version: 0.18.7(@types/node@22.20.5)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(bufferutil@4.0.8)(utf-8-validate@6.0.3)(vitest@4.1.11)
       '@types/node':
         specifier: 'catalog:'
-        version: 20.19.43
+        version: 22.20.5
       '@typescript/native':
         specifier: 'catalog:'
         version: typescript@7.0.2
@@ -209,7 +209,7 @@ importers:
         version: '@typescript/typescript6@6.0.2'
       vitest:
         specifier: 'catalog:'
-        version: 4.1.11(@types/node@20.19.43)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
+        version: 4.1.11(@types/node@22.20.5)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@22.20.5)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@22.20.5)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
 
   packages/code-interpreter-python:
     dependencies:
@@ -225,10 +225,10 @@ importers:
     devDependencies:
       '@cloudflare/vitest-pool-workers':
         specifier: ^0.18.7
-        version: 0.18.7(@types/node@20.19.43)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(bufferutil@4.0.8)(utf-8-validate@6.0.3)(vitest@4.1.11)
+        version: 0.18.7(@types/node@22.20.5)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(bufferutil@4.0.8)(utf-8-validate@6.0.3)(vitest@4.1.11)
       '@types/node':
         specifier: 'catalog:'
-        version: 20.19.43
+        version: 22.20.5
       '@typescript/native':
         specifier: 'catalog:'
         version: typescript@7.0.2
@@ -243,7 +243,7 @@ importers:
         version: '@typescript/typescript6@6.0.2'
       vitest:
         specifier: 'catalog:'
-        version: 4.1.11(@types/node@20.19.43)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
+        version: 4.1.11(@types/node@22.20.5)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@22.20.5)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@22.20.5)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
 
   packages/desktop-python: {}
 
@@ -251,7 +251,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
-        version: 20.19.43
+        version: 22.20.5
       '@typescript/native':
         specifier: 'catalog:'
         version: typescript@7.0.2
@@ -263,7 +263,7 @@ importers:
         version: '@typescript/typescript6@6.0.2'
       vitest:
         specifier: 'catalog:'
-        version: 4.1.11(@types/node@20.19.43)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
+        version: 4.1.11(@types/node@22.20.5)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@22.20.5)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@22.20.5)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
 
   packages/dockerfile-utils-python: {}
 
@@ -305,13 +305,13 @@ importers:
     devDependencies:
       '@cloudflare/vitest-pool-workers':
         specifier: ^0.18.8
-        version: 0.18.8(@types/node@20.19.43)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(bufferutil@4.0.8)(utf-8-validate@6.0.3)(vitest@4.1.11)
+        version: 0.18.8(@types/node@22.20.5)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(bufferutil@4.0.8)(utf-8-validate@6.0.3)(vitest@4.1.11)
       '@redocly/cli':
         specifier: 2.54.3
         version: 2.54.3
       '@types/node':
         specifier: 'catalog:'
-        version: 20.19.43
+        version: 22.20.5
       '@types/platform':
         specifier: ^1.3.6
         version: 1.3.6
@@ -320,10 +320,10 @@ importers:
         version: typescript@7.0.2
       '@vitest/browser':
         specifier: 'catalog:'
-        version: 4.1.11(bufferutil@4.0.8)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))(vitest@4.1.11)
+        version: 4.1.11(bufferutil@4.0.8)(msw@2.15.0(@types/node@22.20.5)(@typescript/typescript6@6.0.2))(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@22.20.5)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))(vitest@4.1.11)
       '@vitest/browser-playwright':
         specifier: 'catalog:'
-        version: 4.1.11(bufferutil@4.0.8)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(playwright@1.63.0)(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))(vitest@4.1.11)
+        version: 4.1.11(bufferutil@4.0.8)(msw@2.15.0(@types/node@22.20.5)(@typescript/typescript6@6.0.2))(playwright@1.63.0)(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@22.20.5)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))(vitest@4.1.11)
       dotenv:
         specifier: ^16.6.1
         version: 16.6.1
@@ -335,10 +335,10 @@ importers:
         version: 15.0.4
       knip:
         specifier: ^5.88.1
-        version: 5.88.1(@types/node@20.19.43)(@typescript/typescript6@6.0.2)
+        version: 5.88.1(@types/node@22.20.5)(@typescript/typescript6@6.0.2)
       msw:
         specifier: ^2.15.0
-        version: 2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2)
+        version: 2.15.0(@types/node@22.20.5)(@typescript/typescript6@6.0.2)
       npm-run-all:
         specifier: ^4.1.5
         version: 4.1.5
@@ -356,10 +356,10 @@ importers:
         version: '@typescript/typescript6@6.0.2'
       vitest:
         specifier: 'catalog:'
-        version: 4.1.11(@types/node@20.19.43)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
+        version: 4.1.11(@types/node@22.20.5)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@22.20.5)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@22.20.5)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
       wrangler:
         specifier: ^4.142.0
-        version: 4.142.0(@types/node@20.19.43)(bufferutil@4.0.8)(utf-8-validate@6.0.3)
+        version: 4.142.0(@types/node@22.20.5)(bufferutil@4.0.8)(utf-8-validate@6.0.3)
     optionalDependencies:
       undici8:
         specifier: npm:undici@8.11.2
@@ -2209,8 +2209,8 @@ packages:
   '@types/node@12.20.55':
     resolution: {integrity: sha512-J8xLz7q2OFulZ2cyGTLE1TbbZcjpno7FaN6zdJNrgAdrJ+DZzh/uFR6YrTb4C+nXakvud8Q4+rbhoIWlYQbUFQ==}
 
-  '@types/node@20.19.43':
-    resolution: {integrity: sha512-6oYBAi5ikg4Pl+kGsoYtawUMBT2zZMCvPNF7pVLnHZfd1zf38DRiWn/gT01RYCdUqkv7Fhr+C9ot4/tb+2sVvA==}
+  '@types/node@22.20.5':
+    resolution: {integrity: sha512-U2+DNr+wSjpsTS/wZGYHq7GcwfuSmKiKvoPvK22zwTlRhU91yOniN4qRR5KhIjvif7ysw/dz/hKmfDH0Ris4aA==}
 
   '@types/npmcli__package-json@4.0.4':
     resolution: {integrity: sha512-6QjlFUSHBmZJWuC08bz1ZCx6tm4t+7+OJXAdvM6tL2pI7n6Bh5SIp/YxQvnOLFf8MzCXs2ijyFgrzaiu1UFBGA==}
@@ -4577,7 +4577,7 @@ snapshots:
     dependencies:
       '@changesets/types': 6.1.0
 
-  '@changesets/cli@2.31.1(@types/node@20.19.43)':
+  '@changesets/cli@2.31.1(@types/node@22.20.5)':
     dependencies:
       '@changesets/apply-release-plan': 7.1.1
       '@changesets/assemble-release-plan': 6.0.10
@@ -4593,7 +4593,7 @@ snapshots:
       '@changesets/should-skip-package': 0.1.2
       '@changesets/types': 6.1.0
       '@changesets/write': 0.4.0
-      '@inquirer/external-editor': 1.0.3(@types/node@20.19.43)
+      '@inquirer/external-editor': 1.0.3(@types/node@22.20.5)
       '@manypkg/get-packages': 1.1.3
       ansi-colors: 4.1.3
       enquirer: 2.4.1
@@ -4711,15 +4711,15 @@ snapshots:
     optionalDependencies:
       workerd: 1.20260926.1
 
-  '@cloudflare/vitest-pool-workers@0.18.7(@types/node@20.19.43)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(bufferutil@4.0.8)(utf-8-validate@6.0.3)(vitest@4.1.11)':
+  '@cloudflare/vitest-pool-workers@0.18.7(@types/node@22.20.5)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(bufferutil@4.0.8)(utf-8-validate@6.0.3)(vitest@4.1.11)':
     dependencies:
       '@vitest/runner': 4.1.11
       '@vitest/snapshot': 4.1.11
       cjs-module-lexer: 1.2.3
       esbuild: 0.28.1
-      miniflare: 4.20260721.0(@types/node@20.19.43)(bufferutil@4.0.8)(utf-8-validate@6.0.3)
-      vitest: 4.1.11(@types/node@20.19.43)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
-      wrangler: 4.113.0(@types/node@20.19.43)(bufferutil@4.0.8)(utf-8-validate@6.0.3)
+      miniflare: 4.20260721.0(@types/node@22.20.5)(bufferutil@4.0.8)(utf-8-validate@6.0.3)
+      vitest: 4.1.11(@types/node@22.20.5)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@22.20.5)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@22.20.5)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
+      wrangler: 4.113.0(@types/node@22.20.5)(bufferutil@4.0.8)(utf-8-validate@6.0.3)
       zod: 3.25.76
     transitivePeerDependencies:
       - '@cloudflare/workers-types'
@@ -4727,15 +4727,15 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@cloudflare/vitest-pool-workers@0.18.8(@types/node@20.19.43)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(bufferutil@4.0.8)(utf-8-validate@6.0.3)(vitest@4.1.11)':
+  '@cloudflare/vitest-pool-workers@0.18.8(@types/node@22.20.5)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(bufferutil@4.0.8)(utf-8-validate@6.0.3)(vitest@4.1.11)':
     dependencies:
       '@vitest/runner': 4.1.11
       '@vitest/snapshot': 4.1.11
       cjs-module-lexer: 1.2.3
       esbuild: 0.28.1
-      miniflare: 4.20260722.0(@types/node@20.19.43)(bufferutil@4.0.8)(utf-8-validate@6.0.3)
-      vitest: 4.1.11(@types/node@20.19.43)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
-      wrangler: 4.114.0(@types/node@20.19.43)(bufferutil@4.0.8)(utf-8-validate@6.0.3)
+      miniflare: 4.20260722.0(@types/node@22.20.5)(bufferutil@4.0.8)(utf-8-validate@6.0.3)
+      vitest: 4.1.11(@types/node@22.20.5)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@22.20.5)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@22.20.5)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
+      wrangler: 4.114.0(@types/node@22.20.5)(bufferutil@4.0.8)(utf-8-validate@6.0.3)
       zod: 3.25.76
     transitivePeerDependencies:
       - '@cloudflare/workers-types'
@@ -5274,153 +5274,153 @@ snapshots:
 
   '@inquirer/ansi@2.0.8': {}
 
-  '@inquirer/checkbox@4.3.2(@types/node@20.19.43)':
+  '@inquirer/checkbox@4.3.2(@types/node@22.20.5)':
     dependencies:
       '@inquirer/ansi': 1.0.2
-      '@inquirer/core': 10.3.2(@types/node@20.19.43)
+      '@inquirer/core': 10.3.2(@types/node@22.20.5)
       '@inquirer/figures': 1.0.15
-      '@inquirer/type': 3.0.10(@types/node@20.19.43)
+      '@inquirer/type': 3.0.10(@types/node@22.20.5)
       yoctocolors-cjs: 2.1.3
     optionalDependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.5
 
-  '@inquirer/confirm@5.1.21(@types/node@20.19.43)':
+  '@inquirer/confirm@5.1.21(@types/node@22.20.5)':
     dependencies:
-      '@inquirer/core': 10.3.2(@types/node@20.19.43)
-      '@inquirer/type': 3.0.10(@types/node@20.19.43)
+      '@inquirer/core': 10.3.2(@types/node@22.20.5)
+      '@inquirer/type': 3.0.10(@types/node@22.20.5)
     optionalDependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.5
 
-  '@inquirer/confirm@6.3.2(@types/node@20.19.43)':
+  '@inquirer/confirm@6.3.2(@types/node@22.20.5)':
     dependencies:
-      '@inquirer/core': 12.0.3(@types/node@20.19.43)
-      '@inquirer/type': 4.1.1(@types/node@20.19.43)
+      '@inquirer/core': 12.0.3(@types/node@22.20.5)
+      '@inquirer/type': 4.1.1(@types/node@22.20.5)
     optionalDependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.5
 
-  '@inquirer/core@10.3.2(@types/node@20.19.43)':
+  '@inquirer/core@10.3.2(@types/node@22.20.5)':
     dependencies:
       '@inquirer/ansi': 1.0.2
       '@inquirer/figures': 1.0.15
-      '@inquirer/type': 3.0.10(@types/node@20.19.43)
+      '@inquirer/type': 3.0.10(@types/node@22.20.5)
       cli-width: 4.1.0
       mute-stream: 2.0.0
       signal-exit: 4.1.0
       wrap-ansi: 6.2.0
       yoctocolors-cjs: 2.1.3
     optionalDependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.5
 
-  '@inquirer/core@12.0.3(@types/node@20.19.43)':
+  '@inquirer/core@12.0.3(@types/node@22.20.5)':
     dependencies:
       '@inquirer/ansi': 2.0.8
       '@inquirer/figures': 2.0.9
-      '@inquirer/type': 4.1.1(@types/node@20.19.43)
+      '@inquirer/type': 4.1.1(@types/node@22.20.5)
       cli-width: 4.1.0
       fast-wrap-ansi: 0.2.2
       mute-stream: 3.0.0
       signal-exit: 4.1.0
     optionalDependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.5
 
-  '@inquirer/editor@4.2.23(@types/node@20.19.43)':
+  '@inquirer/editor@4.2.23(@types/node@22.20.5)':
     dependencies:
-      '@inquirer/core': 10.3.2(@types/node@20.19.43)
-      '@inquirer/external-editor': 1.0.3(@types/node@20.19.43)
-      '@inquirer/type': 3.0.10(@types/node@20.19.43)
+      '@inquirer/core': 10.3.2(@types/node@22.20.5)
+      '@inquirer/external-editor': 1.0.3(@types/node@22.20.5)
+      '@inquirer/type': 3.0.10(@types/node@22.20.5)
     optionalDependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.5
 
-  '@inquirer/expand@4.0.23(@types/node@20.19.43)':
+  '@inquirer/expand@4.0.23(@types/node@22.20.5)':
     dependencies:
-      '@inquirer/core': 10.3.2(@types/node@20.19.43)
-      '@inquirer/type': 3.0.10(@types/node@20.19.43)
+      '@inquirer/core': 10.3.2(@types/node@22.20.5)
+      '@inquirer/type': 3.0.10(@types/node@22.20.5)
       yoctocolors-cjs: 2.1.3
     optionalDependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.5
 
-  '@inquirer/external-editor@1.0.3(@types/node@20.19.43)':
+  '@inquirer/external-editor@1.0.3(@types/node@22.20.5)':
     dependencies:
       chardet: 2.2.0
       iconv-lite: 0.7.3
     optionalDependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.5
 
   '@inquirer/figures@1.0.15': {}
 
   '@inquirer/figures@2.0.9': {}
 
-  '@inquirer/input@4.3.1(@types/node@20.19.43)':
+  '@inquirer/input@4.3.1(@types/node@22.20.5)':
     dependencies:
-      '@inquirer/core': 10.3.2(@types/node@20.19.43)
-      '@inquirer/type': 3.0.10(@types/node@20.19.43)
+      '@inquirer/core': 10.3.2(@types/node@22.20.5)
+      '@inquirer/type': 3.0.10(@types/node@22.20.5)
     optionalDependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.5
 
-  '@inquirer/number@3.0.23(@types/node@20.19.43)':
+  '@inquirer/number@3.0.23(@types/node@22.20.5)':
     dependencies:
-      '@inquirer/core': 10.3.2(@types/node@20.19.43)
-      '@inquirer/type': 3.0.10(@types/node@20.19.43)
+      '@inquirer/core': 10.3.2(@types/node@22.20.5)
+      '@inquirer/type': 3.0.10(@types/node@22.20.5)
     optionalDependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.5
 
-  '@inquirer/password@4.0.23(@types/node@20.19.43)':
-    dependencies:
-      '@inquirer/ansi': 1.0.2
-      '@inquirer/core': 10.3.2(@types/node@20.19.43)
-      '@inquirer/type': 3.0.10(@types/node@20.19.43)
-    optionalDependencies:
-      '@types/node': 20.19.43
-
-  '@inquirer/prompts@7.10.1(@types/node@20.19.43)':
-    dependencies:
-      '@inquirer/checkbox': 4.3.2(@types/node@20.19.43)
-      '@inquirer/confirm': 5.1.21(@types/node@20.19.43)
-      '@inquirer/editor': 4.2.23(@types/node@20.19.43)
-      '@inquirer/expand': 4.0.23(@types/node@20.19.43)
-      '@inquirer/input': 4.3.1(@types/node@20.19.43)
-      '@inquirer/number': 3.0.23(@types/node@20.19.43)
-      '@inquirer/password': 4.0.23(@types/node@20.19.43)
-      '@inquirer/rawlist': 4.1.11(@types/node@20.19.43)
-      '@inquirer/search': 3.2.2(@types/node@20.19.43)
-      '@inquirer/select': 4.4.2(@types/node@20.19.43)
-    optionalDependencies:
-      '@types/node': 20.19.43
-
-  '@inquirer/rawlist@4.1.11(@types/node@20.19.43)':
-    dependencies:
-      '@inquirer/core': 10.3.2(@types/node@20.19.43)
-      '@inquirer/type': 3.0.10(@types/node@20.19.43)
-      yoctocolors-cjs: 2.1.3
-    optionalDependencies:
-      '@types/node': 20.19.43
-
-  '@inquirer/search@3.2.2(@types/node@20.19.43)':
-    dependencies:
-      '@inquirer/core': 10.3.2(@types/node@20.19.43)
-      '@inquirer/figures': 1.0.15
-      '@inquirer/type': 3.0.10(@types/node@20.19.43)
-      yoctocolors-cjs: 2.1.3
-    optionalDependencies:
-      '@types/node': 20.19.43
-
-  '@inquirer/select@4.4.2(@types/node@20.19.43)':
+  '@inquirer/password@4.0.23(@types/node@22.20.5)':
     dependencies:
       '@inquirer/ansi': 1.0.2
-      '@inquirer/core': 10.3.2(@types/node@20.19.43)
-      '@inquirer/figures': 1.0.15
-      '@inquirer/type': 3.0.10(@types/node@20.19.43)
+      '@inquirer/core': 10.3.2(@types/node@22.20.5)
+      '@inquirer/type': 3.0.10(@types/node@22.20.5)
+    optionalDependencies:
+      '@types/node': 22.20.5
+
+  '@inquirer/prompts@7.10.1(@types/node@22.20.5)':
+    dependencies:
+      '@inquirer/checkbox': 4.3.2(@types/node@22.20.5)
+      '@inquirer/confirm': 5.1.21(@types/node@22.20.5)
+      '@inquirer/editor': 4.2.23(@types/node@22.20.5)
+      '@inquirer/expand': 4.0.23(@types/node@22.20.5)
+      '@inquirer/input': 4.3.1(@types/node@22.20.5)
+      '@inquirer/number': 3.0.23(@types/node@22.20.5)
+      '@inquirer/password': 4.0.23(@types/node@22.20.5)
+      '@inquirer/rawlist': 4.1.11(@types/node@22.20.5)
+      '@inquirer/search': 3.2.2(@types/node@22.20.5)
+      '@inquirer/select': 4.4.2(@types/node@22.20.5)
+    optionalDependencies:
+      '@types/node': 22.20.5
+
+  '@inquirer/rawlist@4.1.11(@types/node@22.20.5)':
+    dependencies:
+      '@inquirer/core': 10.3.2(@types/node@22.20.5)
+      '@inquirer/type': 3.0.10(@types/node@22.20.5)
       yoctocolors-cjs: 2.1.3
     optionalDependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.5
 
-  '@inquirer/type@3.0.10(@types/node@20.19.43)':
+  '@inquirer/search@3.2.2(@types/node@22.20.5)':
+    dependencies:
+      '@inquirer/core': 10.3.2(@types/node@22.20.5)
+      '@inquirer/figures': 1.0.15
+      '@inquirer/type': 3.0.10(@types/node@22.20.5)
+      yoctocolors-cjs: 2.1.3
     optionalDependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.5
 
-  '@inquirer/type@4.1.1(@types/node@20.19.43)':
+  '@inquirer/select@4.4.2(@types/node@22.20.5)':
+    dependencies:
+      '@inquirer/ansi': 1.0.2
+      '@inquirer/core': 10.3.2(@types/node@22.20.5)
+      '@inquirer/figures': 1.0.15
+      '@inquirer/type': 3.0.10(@types/node@22.20.5)
+      yoctocolors-cjs: 2.1.3
     optionalDependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.5
+
+  '@inquirer/type@3.0.10(@types/node@22.20.5)':
+    optionalDependencies:
+      '@types/node': 22.20.5
+
+  '@inquirer/type@4.1.1(@types/node@22.20.5)':
+    optionalDependencies:
+      '@types/node': 22.20.5
 
   '@isaacs/fs-minipass@4.0.1':
     dependencies:
@@ -5861,7 +5861,7 @@ snapshots:
 
   '@types/node@12.20.55': {}
 
-  '@types/node@20.19.43':
+  '@types/node@22.20.5':
     dependencies:
       undici-types: 6.21.0
 
@@ -5871,13 +5871,13 @@ snapshots:
 
   '@types/set-cookie-parser@2.4.10':
     dependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.5
 
   '@types/statuses@2.0.6': {}
 
   '@types/through@0.0.33':
     dependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.5
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     optional: true
@@ -5943,29 +5943,29 @@ snapshots:
     dependencies:
       '@typescript/old': typescript@6.0.3
 
-  '@vitest/browser-playwright@4.1.11(bufferutil@4.0.8)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(playwright@1.63.0)(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))(vitest@4.1.11)':
+  '@vitest/browser-playwright@4.1.11(bufferutil@4.0.8)(msw@2.15.0(@types/node@22.20.5)(@typescript/typescript6@6.0.2))(playwright@1.63.0)(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@22.20.5)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))(vitest@4.1.11)':
     dependencies:
-      '@vitest/browser': 4.1.11(bufferutil@4.0.8)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))(vitest@4.1.11)
-      '@vitest/mocker': 4.1.11(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
+      '@vitest/browser': 4.1.11(bufferutil@4.0.8)(msw@2.15.0(@types/node@22.20.5)(@typescript/typescript6@6.0.2))(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@22.20.5)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))(vitest@4.1.11)
+      '@vitest/mocker': 4.1.11(msw@2.15.0(@types/node@22.20.5)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@22.20.5)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
       playwright: 1.63.0
       tinyrainbow: 3.2.0
-      vitest: 4.1.11(@types/node@20.19.43)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
+      vitest: 4.1.11(@types/node@22.20.5)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@22.20.5)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@22.20.5)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
     transitivePeerDependencies:
       - bufferutil
       - msw
       - utf-8-validate
       - vite
 
-  '@vitest/browser@4.1.11(bufferutil@4.0.8)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))(vitest@4.1.11)':
+  '@vitest/browser@4.1.11(bufferutil@4.0.8)(msw@2.15.0(@types/node@22.20.5)(@typescript/typescript6@6.0.2))(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@22.20.5)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))(vitest@4.1.11)':
     dependencies:
       '@blazediff/core': 1.9.1
-      '@vitest/mocker': 4.1.11(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
+      '@vitest/mocker': 4.1.11(msw@2.15.0(@types/node@22.20.5)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@22.20.5)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
       '@vitest/utils': 4.1.11
       magic-string: 0.30.21
       pngjs: 7.0.0
       sirv: 3.0.2
       tinyrainbow: 3.2.0
-      vitest: 4.1.11(@types/node@20.19.43)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
+      vitest: 4.1.11(@types/node@22.20.5)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@22.20.5)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@22.20.5)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
       ws: 8.22.0(bufferutil@4.0.8)(utf-8-validate@6.0.3)
     transitivePeerDependencies:
       - bufferutil
@@ -5985,9 +5985,9 @@ snapshots:
       obug: 2.2.1
       std-env: 4.3.0
       tinyrainbow: 3.2.0
-      vitest: 4.1.11(@types/node@20.19.43)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
+      vitest: 4.1.11(@types/node@22.20.5)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@22.20.5)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@22.20.5)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
     optionalDependencies:
-      '@vitest/browser': 4.1.11(bufferutil@4.0.8)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))(vitest@4.1.11)
+      '@vitest/browser': 4.1.11(bufferutil@4.0.8)(msw@2.15.0(@types/node@22.20.5)(@typescript/typescript6@6.0.2))(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@22.20.5)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))(vitest@4.1.11)
 
   '@vitest/expect@4.1.11':
     dependencies:
@@ -5998,14 +5998,14 @@ snapshots:
       chai: 6.2.2
       tinyrainbow: 3.2.0
 
-  '@vitest/mocker@4.1.11(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))':
+  '@vitest/mocker@4.1.11(msw@2.15.0(@types/node@22.20.5)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@22.20.5)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))':
     dependencies:
       '@vitest/spy': 4.1.11
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      msw: 2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2)
-      vite: 6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1)
+      msw: 2.15.0(@types/node@22.20.5)(@typescript/typescript6@6.0.2)
+      vite: 6.4.3(@types/node@22.20.5)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1)
 
   '@vitest/pretty-format@4.1.11':
     dependencies:
@@ -6817,17 +6817,17 @@ snapshots:
 
   ini@6.0.0: {}
 
-  inquirer@12.11.1(@types/node@20.19.43):
+  inquirer@12.11.1(@types/node@22.20.5):
     dependencies:
       '@inquirer/ansi': 1.0.2
-      '@inquirer/core': 10.3.2(@types/node@20.19.43)
-      '@inquirer/prompts': 7.10.1(@types/node@20.19.43)
-      '@inquirer/type': 3.0.10(@types/node@20.19.43)
+      '@inquirer/core': 10.3.2(@types/node@22.20.5)
+      '@inquirer/prompts': 7.10.1(@types/node@22.20.5)
+      '@inquirer/type': 3.0.10(@types/node@22.20.5)
       mute-stream: 2.0.0
       run-async: 4.0.6
       rxjs: 7.8.2
     optionalDependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.5
 
   internal-slot@1.1.0:
     dependencies:
@@ -7023,10 +7023,10 @@ snapshots:
 
   kleur@4.1.5: {}
 
-  knip@5.88.1(@types/node@20.19.43)(@typescript/typescript6@6.0.2):
+  knip@5.88.1(@types/node@22.20.5)(@typescript/typescript6@6.0.2):
     dependencies:
       '@nodelib/fs.walk': 1.2.8
-      '@types/node': 20.19.43
+      '@types/node': 22.20.5
       fast-glob: 3.3.3
       formatly: 0.3.0
       jiti: 2.7.0
@@ -7083,10 +7083,10 @@ snapshots:
       braces: 3.0.3
       picomatch: 2.3.2
 
-  miniflare@4.20260721.0(@types/node@20.19.43)(bufferutil@4.0.8)(utf-8-validate@6.0.3):
+  miniflare@4.20260721.0(@types/node@22.20.5)(bufferutil@4.0.8)(utf-8-validate@6.0.3):
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
-      sharp: 0.35.5(@types/node@20.19.43)
+      sharp: 0.35.5(@types/node@22.20.5)
       undici: 7.30.0
       workerd: 1.20260721.1
       ws: 8.21.0(bufferutil@4.0.8)(utf-8-validate@6.0.3)
@@ -7096,10 +7096,10 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  miniflare@4.20260722.0(@types/node@20.19.43)(bufferutil@4.0.8)(utf-8-validate@6.0.3):
+  miniflare@4.20260722.0(@types/node@22.20.5)(bufferutil@4.0.8)(utf-8-validate@6.0.3):
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
-      sharp: 0.35.5(@types/node@20.19.43)
+      sharp: 0.35.5(@types/node@22.20.5)
       undici: 7.30.0
       workerd: 1.20260722.1
       ws: 8.21.0(bufferutil@4.0.8)(utf-8-validate@6.0.3)
@@ -7109,10 +7109,10 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  miniflare@5.20260926.0-alpha(@types/node@20.19.43)(bufferutil@4.0.8)(utf-8-validate@6.0.3):
+  miniflare@5.20260926.0-alpha(@types/node@22.20.5)(bufferutil@4.0.8)(utf-8-validate@6.0.3):
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
-      sharp: 0.35.4(@types/node@20.19.43)
+      sharp: 0.35.4(@types/node@22.20.5)
       undici: 7.30.0
       workerd: 1.20260926.1
       ws: 8.21.0(bufferutil@4.0.8)(utf-8-validate@6.0.3)
@@ -7148,9 +7148,9 @@ snapshots:
 
   ms@2.1.3: {}
 
-  msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2):
+  msw@2.15.0(@types/node@22.20.5)(@typescript/typescript6@6.0.2):
     dependencies:
-      '@inquirer/confirm': 6.3.2(@types/node@20.19.43)
+      '@inquirer/confirm': 6.3.2(@types/node@22.20.5)
       '@mswjs/interceptors': 0.41.9
       '@open-draft/deferred-promise': 3.0.0
       '@types/statuses': 2.0.6
@@ -7605,7 +7605,7 @@ snapshots:
       es-errors: 1.3.0
       es-object-atoms: 1.1.2
 
-  sharp@0.35.4(@types/node@20.19.43):
+  sharp@0.35.4(@types/node@22.20.5):
     dependencies:
       '@img/colour': 1.1.0
       detect-libc: 2.1.2
@@ -7636,9 +7636,9 @@ snapshots:
       '@img/sharp-win32-arm64': 0.35.4
       '@img/sharp-win32-ia32': 0.35.4
       '@img/sharp-win32-x64': 0.35.4
-      '@types/node': 20.19.43
+      '@types/node': 22.20.5
 
-  sharp@0.35.5(@types/node@20.19.43):
+  sharp@0.35.5(@types/node@22.20.5):
     dependencies:
       '@img/colour': 1.1.0
       detect-libc: 2.1.2
@@ -7669,7 +7669,7 @@ snapshots:
       '@img/sharp-win32-arm64': 0.35.5
       '@img/sharp-win32-ia32': 0.35.5
       '@img/sharp-win32-x64': 0.35.5
-      '@types/node': 20.19.43
+      '@types/node': 22.20.5
 
   shebang-command@1.2.0:
     dependencies:
@@ -8060,7 +8060,7 @@ snapshots:
 
   verkit@0.3.2: {}
 
-  vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1):
+  vite@6.4.3(@types/node@22.20.5)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1):
     dependencies:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.7)
@@ -8069,17 +8069,17 @@ snapshots:
       rollup: 4.63.6
       tinyglobby: 0.2.17
     optionalDependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.5
       fsevents: 2.3.3
       jiti: 2.7.0
       terser: 5.46.0
       tsx: 4.23.12
       yaml: 2.9.1
 
-  vitest@4.1.11(@types/node@20.19.43)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1)):
+  vitest@4.1.11(@types/node@22.20.5)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(msw@2.15.0(@types/node@22.20.5)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@22.20.5)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1)):
     dependencies:
       '@vitest/expect': 4.1.11
-      '@vitest/mocker': 4.1.11(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
+      '@vitest/mocker': 4.1.11(msw@2.15.0(@types/node@22.20.5)(@typescript/typescript6@6.0.2))(vite@6.4.3(@types/node@22.20.5)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))
       '@vitest/pretty-format': 4.1.11
       '@vitest/runner': 4.1.11
       '@vitest/snapshot': 4.1.11
@@ -8096,11 +8096,11 @@ snapshots:
       tinyexec: 1.2.4
       tinyglobby: 0.2.17
       tinyrainbow: 3.2.0
-      vite: 6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1)
+      vite: 6.4.3(@types/node@22.20.5)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1)
       why-is-node-running: 2.3.0
     optionalDependencies:
-      '@types/node': 20.19.43
-      '@vitest/browser-playwright': 4.1.11(bufferutil@4.0.8)(msw@2.15.0(@types/node@20.19.43)(@typescript/typescript6@6.0.2))(playwright@1.63.0)(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))(vitest@4.1.11)
+      '@types/node': 22.20.5
+      '@vitest/browser-playwright': 4.1.11(bufferutil@4.0.8)(msw@2.15.0(@types/node@22.20.5)(@typescript/typescript6@6.0.2))(playwright@1.63.0)(utf-8-validate@6.0.3)(vite@6.4.3(@types/node@22.20.5)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.1))(vitest@4.1.11)
       '@vitest/coverage-v8': 4.1.11(@vitest/browser@4.1.11)(vitest@4.1.11)
     transitivePeerDependencies:
       - msw
@@ -8195,13 +8195,13 @@ snapshots:
       '@cloudflare/workerd-linux-arm64': 1.20260926.1
       '@cloudflare/workerd-windows-64': 1.20260926.1
 
-  wrangler@4.113.0(@types/node@20.19.43)(bufferutil@4.0.8)(utf-8-validate@6.0.3):
+  wrangler@4.113.0(@types/node@22.20.5)(bufferutil@4.0.8)(utf-8-validate@6.0.3):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.5.0
       '@cloudflare/unenv-preset': 2.16.1(unenv@2.0.0-rc.24)(workerd@1.20260721.1)
       blake3-wasm: 2.1.5
       esbuild: 0.28.1
-      miniflare: 4.20260721.0(@types/node@20.19.43)(bufferutil@4.0.8)(utf-8-validate@6.0.3)
+      miniflare: 4.20260721.0(@types/node@22.20.5)(bufferutil@4.0.8)(utf-8-validate@6.0.3)
       path-to-regexp: 6.3.0
       unenv: 2.0.0-rc.24
       workerd: 1.20260721.1
@@ -8212,13 +8212,13 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  wrangler@4.114.0(@types/node@20.19.43)(bufferutil@4.0.8)(utf-8-validate@6.0.3):
+  wrangler@4.114.0(@types/node@22.20.5)(bufferutil@4.0.8)(utf-8-validate@6.0.3):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.5.0
       '@cloudflare/unenv-preset': 2.16.1(unenv@2.0.0-rc.24)(workerd@1.20260722.1)
       blake3-wasm: 2.1.5
       esbuild: 0.28.1
-      miniflare: 4.20260722.0(@types/node@20.19.43)(bufferutil@4.0.8)(utf-8-validate@6.0.3)
+      miniflare: 4.20260722.0(@types/node@22.20.5)(bufferutil@4.0.8)(utf-8-validate@6.0.3)
       path-to-regexp: 6.3.0
       unenv: 2.0.0-rc.24
       workerd: 1.20260722.1
@@ -8229,13 +8229,13 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  wrangler@4.142.0(@types/node@20.19.43)(bufferutil@4.0.8)(utf-8-validate@6.0.3):
+  wrangler@4.142.0(@types/node@22.20.5)(bufferutil@4.0.8)(utf-8-validate@6.0.3):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.5.0
       '@cloudflare/unenv-preset': 2.16.2(unenv@2.0.0-rc.24)(workerd@1.20260926.1)
       blake3-wasm: 2.1.5
       esbuild: 0.28.1
-      miniflare: 5.20260926.0-alpha(@types/node@20.19.43)(bufferutil@4.0.8)(utf-8-validate@6.0.3)
+      miniflare: 5.20260926.0-alpha(@types/node@22.20.5)(bufferutil@4.0.8)(utf-8-validate@6.0.3)
       path-to-regexp: 6.3.0
       unenv: 2.0.0-rc.24
       workerd: 1.20260926.1

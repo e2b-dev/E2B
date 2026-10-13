@@ -52,7 +52,7 @@ function getRuntime(): { runtime: Runtime; version: string } {
 export const { runtime, version: runtimeVersion } = getRuntime()
 
 export async function sha256(data: string): Promise<string> {
-  // WebCrypto is available in all supported runtimes (Node >= 20, browsers, edge)
+  // WebCrypto is available in all supported runtimes (Node >= 22, browsers, edge)
   const encoder = new TextEncoder()
   const dataBuffer = encoder.encode(data)
   const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer)

@@ -54,7 +54,7 @@
     "buildkit"
   ],
   "engines": {
-    "node": ">=20.18.1 <21 || >=22"
+    "node": ">=22"
   },
   "browserslist": [
     "defaults"
