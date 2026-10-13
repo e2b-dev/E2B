@@ -1,5 +1,17 @@
 # @e2b/code-interpreter-python
 
+## 2.11.0
+
+### Minor Changes
+
+- 547decc: Require Python 3.11 or newer (Python 3.10 is no longer supported).
+
+### Patch Changes
+
+- Updated dependencies [547decc]
+- Updated dependencies [775f017]
+  - @e2b/python-sdk@2.56.0
+
 ## 2.10.5
 
 ### Patch Changes

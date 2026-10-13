@@ -1,5 +1,11 @@
 # @e2b/dockerfile-utils-python
 
+## 0.1.1
+
+### Patch Changes
+
+- 547decc: Require Python 3.11 or newer (Python 3.10 is no longer supported).
+
 ## 0.1.0
 
 ### Minor Changes

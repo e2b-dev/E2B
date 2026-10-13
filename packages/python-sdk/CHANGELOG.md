@@ -1,5 +1,17 @@
 # @e2b/python-sdk
 
+## 2.56.0
+
+### Minor Changes
+
+- 547decc: Require Python 3.11 or newer (Python 3.10 is no longer supported).
+- 775f017: Balance HTTP/2 streams with pyqwest's native connection pool instead of a Python-side balancer over multiple transports. The pool dials a new connection once every existing one is at the server-advertised concurrent-stream limit, capped at `E2B_MAX_CONNECTIONS` (default `200`) connections per resolved address. `E2B_STREAMS_PER_CONNECTION` is removed — the limit now comes from the server's `SETTINGS_MAX_CONCURRENT_STREAMS`.
+
+### Patch Changes
+
+- Updated dependencies [547decc]
+  - @e2b/dockerfile-utils-python@0.1.1
+
 ## 2.55.1
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @e2b/desktop-python
 
+## 2.7.0
+
+### Minor Changes
+
+- 547decc: Require Python 3.11 or newer (Python 3.10 is no longer supported).
+
 ## 2.6.1
 
 ### Patch Changes
