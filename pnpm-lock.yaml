@@ -300,8 +300,8 @@ importers:
         specifier: ^7.5.22
         version: 7.5.22
       undici:
-        specifier: ^7.30.0
-        version: 7.30.0
+        specifier: ^8.11.2
+        version: 8.11.2
     devDependencies:
       '@cloudflare/vitest-pool-workers':
         specifier: ^0.18.8
@@ -360,10 +360,6 @@ importers:
       wrangler:
         specifier: ^4.142.0
         version: 4.142.0(@types/node@22.20.5)(bufferutil@4.0.8)(utf-8-validate@6.0.3)
-    optionalDependencies:
-      undici8:
-        specifier: npm:undici@8.11.2
-        version: undici@8.11.2
 
   packages/python-sdk:
     dependencies:
@@ -8033,8 +8029,7 @@ snapshots:
 
   undici@7.30.0: {}
 
-  undici@8.11.2:
-    optional: true
+  undici@8.11.2: {}
 
   unenv@2.0.0-rc.24:
     dependencies:

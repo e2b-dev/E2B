@@ -81,7 +81,7 @@ export default defineConfig({
       // Inspects the host-built dist/index.mjs via node:fs, which the browser
       // can never see; the Node unit project keeps running it.
       'tests/bundle/**',
-      // Resolves the `undici`/`undici8` packages off `process.versions.node`.
+      // Resolves the `undici` package off `process.versions.node`.
       // The browser never takes that path — `createRuntimeFetch` late-binds
       // the global fetch outside Node — so there is nothing to cover here.
       'tests/undici.test.ts',
