@@ -3,7 +3,6 @@ import { expect, test, vi } from 'vitest'
 import {
   buildDispatchedFetch,
   createRuntimeFetch,
-  getUndiciPackageCandidates,
   loadUndici,
   type UndiciModule,
 } from '../src/undici'
@@ -13,14 +12,10 @@ import {
   foreignRequestClasses,
 } from './foreignPlatformObjects'
 
-test.each([
-  ['20.20.2', []],
-  ['22.18.0', []],
-  ['22.19.0', ['undici']],
-  ['24.0.0', ['undici']],
-])('selects the packages supported by Node %s', (version, expected) => {
-  expect(getUndiciPackageCandidates(version as string)).toEqual(expected)
-})
+test.each(['20.20.2', '22.18.0'])(
+  'does not load undici on Node %s',
+  async (v) => expect(await loadUndici(v)).toBeUndefined()
+)
 
 test('a stale awaiter of a failed build does not clobber a newer successful build', async () => {
   let rejectFirstBuild: ((err: Error) => void) | undefined

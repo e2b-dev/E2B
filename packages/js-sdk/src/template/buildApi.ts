@@ -183,10 +183,9 @@ async function putFileStream(
 ): Promise<{ ok: boolean; statusText: string }> {
   // Prefer undici's fetch: it honors the explicit Content-Length on stream
   // bodies on every runtime, while Deno's native fetch ignores the header and
-  // falls back to chunked. Where undici isn't resolvable (e.g. bundled apps),
-  // fall back to the global fetch — Node's and Bun's native fetch also honor
-  // Content-Length on stream bodies. loadUndici tries undici 8 first and
-  // falls back to undici 7 where 8 doesn't import (Bun).
+  // falls back to chunked. Where undici doesn't load (e.g. bundled apps),
+  // the global fetch is used — Node's and Bun's native fetch also honor
+  // Content-Length on stream bodies.
   const undici = await loadUndici()
   const fetchImpl = (undici?.fetch as typeof fetch | undefined) ?? fetch
 
