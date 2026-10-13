@@ -32,12 +32,12 @@ const OPAQUE_NETWORK_ERROR =
 // GET/PUT/PATCH/DELETE are idempotent by HTTP semantics. A POST is retried
 // after a 502 or a network error that may have occurred once the request was
 // written only if it is listed here: a replay is a no-op or fails with a
-// 404/409 the SDK already tolerates. POSTs that mint a resource without a
-// client-supplied idempotency key (sandbox/fork/snapshot/API-key/volume/secret/
-// webhook creation) or append to one (secret update) must stay off the list —
-// a replay could create a duplicate — and so does any new POST until it is
-// reviewed. Connection-establishment failures
-// are retried for every operation regardless: the request never left.
+// 404/409 the SDK already tolerates. POSTs carrying a client-supplied
+// Idempotency-Key are replayable because the server deduplicates them. Other
+// POSTs that mint a resource or append to one must stay off the list — a replay
+// could create a duplicate — and so does any new POST until reviewed.
+// Connection-establishment failures are retried for every operation regardless:
+// the request never left.
 const REPLAYABLE_METHODS = new Set(['GET', 'PUT', 'PATCH', 'DELETE'])
 const REPLAYABLE_OPERATIONS: [method: string, path: RegExp][] = [
   ['POST', /^\/sandboxes\/[^/]+\/(pause|resume|timeout|refreshes)$/],
@@ -48,6 +48,12 @@ const REPLAYABLE_OPERATIONS: [method: string, path: RegExp][] = [
   ['POST', /^\/nodes\/[^/]+$/],
   ['POST', /^\/admin\/teams\/[^/]+\/(sandboxes\/kill|builds\/cancel)$/],
 ]
+
+export const IDEMPOTENCY_KEY_HEADER = 'Idempotency-Key'
+
+export function newIdempotencyKey(): string {
+  return crypto.randomUUID().replaceAll('-', '')
+}
 
 export function resolveRetries(retries: number): number {
   if (!Number.isInteger(retries) || retries < 0) {
@@ -105,9 +111,11 @@ export function isNetworkError(error: unknown): boolean {
 
 /**
  * Whether `request` may be sent again after a 502 or a network error that may
- * have occurred once the request was written (see `REPLAYABLE_OPERATIONS`).
+ * have occurred once the request was written. Keyed requests and operations in
+ * `REPLAYABLE_OPERATIONS` are safe to replay.
  */
 export function isReplayable(request: Request): boolean {
+  if (request.headers.has(IDEMPOTENCY_KEY_HEADER)) return true
   if (REPLAYABLE_METHODS.has(request.method)) return true
   const { pathname } = new URL(request.url)
   return REPLAYABLE_OPERATIONS.some(
@@ -163,17 +171,37 @@ function backoffMs(attempt: number, random: () => number): number {
 /**
  * Delay before the next attempt, or `undefined` when the response is not
  * retried: `Retry-After` when the server sends a usable one, otherwise
- * exponential backoff with jitter for 502/503. A 429 without `Retry-After`
- * is not retried, nor is a 502 for a non-replayable request: a gateway may
- * answer 502 after the backend already processed it.
+ * exponential backoff with jitter for 502/503 or an idempotency-in-progress
+ * 409. A 429 without `Retry-After` is not retried, nor is a 502 for a
+ * non-replayable request: a gateway may answer 502 after the backend already
+ * processed it.
  */
-function retryDelayMs(
+async function retryDelayMs(
   response: Response,
   attempt: number,
   replayable: boolean,
+  hasIdempotencyKey: boolean,
   random: () => number
-): number | undefined {
-  if (!RETRYABLE_STATUSES.has(response.status)) return undefined
+): Promise<number | undefined> {
+  if (!RETRYABLE_STATUSES.has(response.status) && response.status !== 409) {
+    return undefined
+  }
+  if (response.status === 409) {
+    if (!hasIdempotencyKey) return undefined
+    try {
+      const body: unknown = await response.clone().json()
+      if (
+        typeof body !== 'object' ||
+        body === null ||
+        !('error_code' in body) ||
+        body.error_code !== 'idempotency_in_progress'
+      ) {
+        return undefined
+      }
+    } catch {
+      return undefined
+    }
+  }
   if (response.status === 502 && !replayable) return undefined
 
   const retryAfter = parseRetryAfter(response.headers.get('Retry-After'))
@@ -184,8 +212,9 @@ function retryDelayMs(
 }
 
 /**
- * Retry requests after a 429 carrying `Retry-After`, a 503 or — for replayable
- * requests ({@link isReplayable}) — a 502 (using `Retry-After` when present,
+ * Retry requests after a 429 carrying `Retry-After`, a 503, an idempotency
+ * in-progress 409 for a keyed request, or — for replayable requests
+ * ({@link isReplayable}) — a 502 (using `Retry-After` when present,
  * exponential backoff otherwise), or a network failure (exponential backoff;
  * see {@link isRetryableFetchError}).
  */
@@ -241,7 +270,13 @@ export function withRetry(
       }
       if (attempt === retries) return response
 
-      const delayMs = retryDelayMs(response, attempt, replayable, random)
+      const delayMs = await retryDelayMs(
+        response,
+        attempt,
+        replayable,
+        request.headers.has(IDEMPOTENCY_KEY_HEADER),
+        random
+      )
       if (delayMs === undefined || monotonic() + delayMs >= deadline) {
         return response
       }

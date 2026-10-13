@@ -1,8 +1,11 @@
+import asyncio
+
 import httpx
 import pytest
 
 from e2b.retry import (
     AsyncRetryableTransport,
+    IDEMPOTENCY_KEY_HEADER,
     RetryableTransport,
     is_replayable,
     parse_retry_after,
@@ -10,9 +13,10 @@ from e2b.retry import (
 
 
 class FakeTransport(httpx.BaseTransport):
-    def __init__(self, outcomes, retry_after="0"):
+    def __init__(self, outcomes, retry_after="0", response_bodies=None):
         self.outcomes = iter(outcomes)
         self.retry_after = retry_after
+        self.response_bodies = iter(response_bodies or [])
         self.requests = []
         self.responses = []
         self.closed = False
@@ -25,7 +29,7 @@ class FakeTransport(httpx.BaseTransport):
         response = httpx.Response(
             outcome,
             headers={"Retry-After": self.retry_after} if self.retry_after else {},
-            content=b"response",
+            content=next(self.response_bodies, b"response"),
             request=request,
         )
         self.responses.append(response)
@@ -36,9 +40,10 @@ class FakeTransport(httpx.BaseTransport):
 
 
 class FakeAsyncTransport(httpx.AsyncBaseTransport):
-    def __init__(self, outcomes, retry_after="0"):
+    def __init__(self, outcomes, retry_after="0", response_bodies=None):
         self.outcomes = iter(outcomes)
         self.retry_after = retry_after
+        self.response_bodies = iter(response_bodies or [])
         self.requests = []
         self.responses = []
         self.closed = False
@@ -51,7 +56,7 @@ class FakeAsyncTransport(httpx.AsyncBaseTransport):
         response = httpx.Response(
             outcome,
             headers={"Retry-After": self.retry_after} if self.retry_after else {},
-            content=b"response",
+            content=next(self.response_bodies, b"response"),
             request=request,
         )
         self.responses.append(response)
@@ -492,6 +497,108 @@ def test_other_operations_are_replayable(method, path):
     assert is_replayable(httpx.Request(method, f"https://api.test{path}?x=1"))
 
 
+def test_post_with_idempotency_key_is_replayable():
+    request = httpx.Request(
+        "POST",
+        "https://api.test/v2/sandboxes",
+        headers={IDEMPOTENCY_KEY_HEADER: "key-1"},
+    )
+
+    assert is_replayable(request)
+    assert not is_replayable(httpx.Request("POST", "https://api.test/v2/sandboxes"))
+
+
+def test_retries_502_for_keyed_post():
+    inner = FakeTransport([502, 201], retry_after=None)
+    request = httpx.Request(
+        "POST",
+        "https://api.test/v2/sandboxes",
+        headers={IDEMPOTENCY_KEY_HEADER: "key-1"},
+        content=b"payload",
+    )
+
+    response = RetryableTransport(
+        inner, retries=1, sleep=lambda _: None, monotonic=lambda: 0.0
+    ).handle_request(request)
+
+    assert response.status_code == 201
+    assert len(inner.requests) == 2
+    assert [item.headers[IDEMPOTENCY_KEY_HEADER] for item in inner.requests] == [
+        "key-1",
+        "key-1",
+    ]
+
+
+def test_retries_post_write_network_error_for_keyed_post():
+    inner = FakeTransport([httpx.ReadError("connection reset"), 201])
+    request = httpx.Request(
+        "POST",
+        "https://api.test/v2/sandboxes",
+        headers={IDEMPOTENCY_KEY_HEADER: "key-1"},
+        content=b"payload",
+    )
+
+    response = RetryableTransport(
+        inner, retries=1, sleep=lambda _: None, monotonic=lambda: 0.0
+    ).handle_request(request)
+
+    assert response.status_code == 201
+    assert len(inner.requests) == 2
+    assert [item.headers[IDEMPOTENCY_KEY_HEADER] for item in inner.requests] == [
+        "key-1",
+        "key-1",
+    ]
+
+
+def test_retries_idempotency_in_progress_and_reuses_key():
+    inner = FakeTransport(
+        [409, 201],
+        retry_after="2",
+        response_bodies=[b'{"error_code":"idempotency_in_progress"}', b"created"],
+    )
+    sleeps = []
+    request = httpx.Request(
+        "POST",
+        "https://api.test/v2/sandboxes",
+        headers={IDEMPOTENCY_KEY_HEADER: "key-1"},
+        content=b"payload",
+    )
+
+    response = RetryableTransport(
+        inner, retries=1, sleep=sleeps.append, monotonic=lambda: 0.0
+    ).handle_request(request)
+
+    assert response.status_code == 201
+    assert sleeps == [2]
+    assert [item.headers[IDEMPOTENCY_KEY_HEADER] for item in inner.requests] == [
+        "key-1",
+        "key-1",
+    ]
+
+
+@pytest.mark.parametrize(
+    ("status", "body", "has_key"),
+    [
+        (409, b'{"error_code":"idempotency_request_mismatch"}', True),
+        (409, b'{"error_code":"idempotency_in_progress"}', False),
+        (422, b'{"error_code":"idempotency_outcome_unknown"}', True),
+    ],
+)
+def test_does_not_retry_terminal_or_unkeyed_idempotency_responses(
+    status, body, has_key
+):
+    inner = FakeTransport([status, 201], response_bodies=[body])
+    headers = {IDEMPOTENCY_KEY_HEADER: "key-1"} if has_key else {}
+    request = httpx.Request("POST", "https://api.test/v2/sandboxes", headers=headers)
+
+    response = RetryableTransport(
+        inner, retries=3, sleep=lambda _: None
+    ).handle_request(request)
+
+    assert response.status_code == status
+    assert len(inner.requests) == 1
+
+
 @pytest.mark.parametrize(("method", "path"), REPLAYABLE[:5])
 def test_retries_network_error_for_replayable_operation(method, path):
     inner = FakeTransport([NETWORK_ERRORS[0], NETWORK_ERRORS[2], 200])
@@ -899,6 +1006,158 @@ async def test_async_retries_network_error_for_replayable_operation(method, path
     assert response.status_code == 200
     assert sleeps == pytest.approx([0.1, 0.2])
     assert [item.content for item in inner.requests] == [b"p"] * 3
+
+
+@pytest.mark.asyncio
+async def test_async_retries_502_for_keyed_post():
+    inner = FakeAsyncTransport([502, 201], retry_after=None)
+    request = httpx.Request(
+        "POST",
+        "https://api.test/v2/sandboxes",
+        headers={IDEMPOTENCY_KEY_HEADER: "key-1"},
+        content=b"payload",
+    )
+
+    response = await AsyncRetryableTransport(
+        inner, retries=1, sleep=lambda _: asyncio.sleep(0), monotonic=lambda: 0.0
+    ).handle_async_request(request)
+
+    assert response.status_code == 201
+    assert len(inner.requests) == 2
+    assert [item.headers[IDEMPOTENCY_KEY_HEADER] for item in inner.requests] == [
+        "key-1",
+        "key-1",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_async_retries_post_write_network_error_for_keyed_post():
+    inner = FakeAsyncTransport([httpx.ReadError("connection reset"), 201])
+    request = httpx.Request(
+        "POST",
+        "https://api.test/v2/sandboxes",
+        headers={IDEMPOTENCY_KEY_HEADER: "key-1"},
+        content=b"payload",
+    )
+
+    response = await AsyncRetryableTransport(
+        inner, retries=1, sleep=lambda _: asyncio.sleep(0), monotonic=lambda: 0.0
+    ).handle_async_request(request)
+
+    assert response.status_code == 201
+    assert len(inner.requests) == 2
+    assert [item.headers[IDEMPOTENCY_KEY_HEADER] for item in inner.requests] == [
+        "key-1",
+        "key-1",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_async_retries_idempotency_in_progress_and_reuses_key():
+    inner = FakeAsyncTransport(
+        [409, 201],
+        retry_after="2",
+        response_bodies=[b'{"error_code":"idempotency_in_progress"}', b"created"],
+    )
+    sleeps = []
+    request = httpx.Request(
+        "POST",
+        "https://api.test/v2/sandboxes",
+        headers={IDEMPOTENCY_KEY_HEADER: "key-1"},
+        content=b"payload",
+    )
+
+    async def sleep(delay):
+        sleeps.append(delay)
+
+    response = await AsyncRetryableTransport(
+        inner, retries=1, sleep=sleep, monotonic=lambda: 0.0
+    ).handle_async_request(request)
+
+    assert response.status_code == 201
+    assert sleeps == [2]
+    assert [item.headers[IDEMPOTENCY_KEY_HEADER] for item in inner.requests] == [
+        "key-1",
+        "key-1",
+    ]
+
+
+def test_idempotency_in_progress_without_retry_after_uses_backoff():
+    inner = FakeTransport(
+        [409, 201],
+        retry_after=None,
+        response_bodies=[b'{"error_code":"idempotency_in_progress"}', b"created"],
+    )
+    sleeps = []
+    request = httpx.Request(
+        "POST",
+        "https://api.test/v2/sandboxes",
+        headers={IDEMPOTENCY_KEY_HEADER: "key-1"},
+    )
+
+    response = RetryableTransport(
+        inner,
+        retries=1,
+        sleep=sleeps.append,
+        monotonic=lambda: 0.0,
+        random_=lambda: 1.0,
+    ).handle_request(request)
+
+    assert response.status_code == 201
+    assert sleeps == [0.1]
+
+
+@pytest.mark.asyncio
+async def test_async_idempotency_in_progress_without_retry_after_uses_backoff():
+    inner = FakeAsyncTransport(
+        [409, 201],
+        retry_after=None,
+        response_bodies=[b'{"error_code":"idempotency_in_progress"}', b"created"],
+    )
+    sleeps = []
+    request = httpx.Request(
+        "POST",
+        "https://api.test/v2/sandboxes",
+        headers={IDEMPOTENCY_KEY_HEADER: "key-1"},
+    )
+
+    async def sleep(delay):
+        sleeps.append(delay)
+
+    response = await AsyncRetryableTransport(
+        inner,
+        retries=1,
+        sleep=sleep,
+        monotonic=lambda: 0.0,
+        random_=lambda: 1.0,
+    ).handle_async_request(request)
+
+    assert response.status_code == 201
+    assert sleeps == [0.1]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("status", "body", "has_key"),
+    [
+        (409, b'{"error_code":"idempotency_request_mismatch"}', True),
+        (409, b'{"error_code":"idempotency_in_progress"}', False),
+        (422, b'{"error_code":"idempotency_outcome_unknown"}', True),
+    ],
+)
+async def test_async_does_not_retry_terminal_or_unkeyed_idempotency_responses(
+    status, body, has_key
+):
+    inner = FakeAsyncTransport([status, 201], response_bodies=[body])
+    headers = {IDEMPOTENCY_KEY_HEADER: "key-1"} if has_key else {}
+    request = httpx.Request("POST", "https://api.test/v2/sandboxes", headers=headers)
+
+    response = await AsyncRetryableTransport(
+        inner, retries=3, sleep=lambda _: asyncio.sleep(0)
+    ).handle_async_request(request)
+
+    assert response.status_code == status
+    assert len(inner.requests) == 1
 
 
 @pytest.mark.asyncio

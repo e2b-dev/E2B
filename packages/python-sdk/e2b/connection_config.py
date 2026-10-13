@@ -69,13 +69,12 @@ class ApiParams(TypedDict, total=False):
     """Timeout for the request in **seconds**, defaults to 60 seconds."""
 
     retries: Optional[int]
-    """Number of control-plane HTTP retries after a 429, 502 or 503 response or
-    a network error once the request was written (dropped connection). A 502
-    and such network errors are not retried for operations that create a
-    resource (e.g. sandbox creation) or append to one (secret update), as the
-    server may already have processed them; failures to
-    establish the connection are retried separately for every operation, see
-    ``E2B_CONNECTION_RETRIES``.
+    """Number of control-plane HTTP retries after a 429, 502 or 503 response,
+    an idempotency-in-progress 409 for a keyed request, or a network error once
+    the request was written (dropped connection). A 502 and such network errors
+    are retried for replayable operations, including POSTs carrying a
+    client-supplied ``Idempotency-Key``; failures to establish the connection
+    are retried separately for every operation, see ``E2B_CONNECTION_RETRIES``.
     A 429 is retried only with a valid, non-negative integer delta-seconds
     ``Retry-After`` header (HTTP-date and malformed values are not retried).
     502 and 503 honor such a ``Retry-After`` when present; otherwise they and

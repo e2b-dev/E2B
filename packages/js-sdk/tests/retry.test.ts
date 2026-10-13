@@ -2,6 +2,7 @@ import { describe, expect, test, vi } from 'vitest'
 
 import {
   isConnectionError,
+  IDEMPOTENCY_KEY_HEADER,
   isReplayable,
   isRetryableFetchError,
   parseRetryAfter,
@@ -600,6 +601,146 @@ describe('isReplayable', () => {
     const request = new Request(`https://api.e2b.test${path}?x=1`, { method })
     expect(isReplayable(request)).toBe(true)
   })
+
+  test('a POST with an Idempotency-Key is replayable', () => {
+    const request = new Request('https://api.e2b.test/v2/sandboxes', {
+      method: 'POST',
+      headers: { [IDEMPOTENCY_KEY_HEADER]: 'abc123' },
+    })
+    expect(isReplayable(request)).toBe(true)
+  })
+
+  test('a POST without an Idempotency-Key is not replayable', () => {
+    const request = new Request('https://api.e2b.test/v2/sandboxes', {
+      method: 'POST',
+    })
+    expect(isReplayable(request)).toBe(false)
+  })
+})
+
+test('retries a 502 for a keyed POST', async () => {
+  const statuses = [502, 201]
+  const fetchImpl = vi.fn(
+    async () => new Response(null, { status: statuses.shift() })
+  ) as typeof fetch
+  const fetchWithRetry = withRetry(fetchImpl, 1, 10_000, {
+    monotonic: () => 0,
+    sleep: async () => {},
+  })
+
+  const response = await fetchWithRetry('https://api.e2b.test/v2/sandboxes', {
+    method: 'POST',
+    headers: { [IDEMPOTENCY_KEY_HEADER]: 'key-1' },
+  })
+
+  expect(response.status).toBe(201)
+  expect(fetchImpl).toHaveBeenCalledTimes(2)
+})
+
+test('retries a post-write network error for a keyed POST', async () => {
+  const reset = Object.assign(new Error('connection reset'), {
+    code: 'ECONNRESET',
+  })
+  const error = new TypeError('fetch failed', { cause: reset })
+  const outcomes = [
+    () => Promise.reject(error),
+    () => Promise.resolve(new Response(null, { status: 201 })),
+  ]
+  const fetchImpl = vi.fn(() => outcomes.shift()!()) as typeof fetch
+  const fetchWithRetry = withRetry(fetchImpl, 1, 10_000, {
+    monotonic: () => 0,
+    sleep: async () => {},
+  })
+
+  const response = await fetchWithRetry('https://api.e2b.test/v2/sandboxes', {
+    method: 'POST',
+    headers: { [IDEMPOTENCY_KEY_HEADER]: 'key-1' },
+  })
+
+  expect(response.status).toBe(201)
+  expect(fetchImpl).toHaveBeenCalledTimes(2)
+})
+
+test('retries idempotency-in-progress for a keyed POST with the same key', async () => {
+  const key = 'a'.repeat(32)
+  const outcomes = [
+    new Response(JSON.stringify({ error_code: 'idempotency_in_progress' }), {
+      status: 409,
+      headers: { 'Retry-After': '2' },
+    }),
+    new Response(null, { status: 201 }),
+  ]
+  const sentKeys: string[] = []
+  const fetchImpl = vi.fn(async (input: RequestInfo | URL) => {
+    sentKeys.push((input as Request).headers.get(IDEMPOTENCY_KEY_HEADER) ?? '')
+    return outcomes.shift()!
+  }) as typeof fetch
+  const sleep = vi.fn(async () => {})
+  const fetchWithRetry = withRetry(fetchImpl, 1, 10_000, {
+    monotonic: () => 0,
+    sleep,
+  })
+
+  const response = await fetchWithRetry('https://api.e2b.test/v2/sandboxes', {
+    method: 'POST',
+    headers: { [IDEMPOTENCY_KEY_HEADER]: key },
+  })
+
+  expect(response.status).toBe(201)
+  expect(fetchImpl).toHaveBeenCalledTimes(2)
+  expect(sentKeys).toEqual([key, key])
+  expect(sleep).toHaveBeenCalledWith(2_000, expect.any(AbortSignal))
+})
+
+test('backs off when an idempotency-in-progress response has no Retry-After', async () => {
+  const outcomes = [
+    new Response(JSON.stringify({ error_code: 'idempotency_in_progress' }), {
+      status: 409,
+    }),
+    new Response(null, { status: 201 }),
+  ]
+  const fetchImpl = vi.fn(async () => outcomes.shift()!) as typeof fetch
+  const sleep = vi.fn(async () => {})
+  const fetchWithRetry = withRetry(fetchImpl, 1, 10_000, {
+    monotonic: () => 0,
+    sleep,
+    random: () => 1,
+  })
+
+  const response = await fetchWithRetry('https://api.e2b.test/v2/sandboxes', {
+    method: 'POST',
+    headers: { [IDEMPOTENCY_KEY_HEADER]: 'key-1' },
+  })
+
+  expect(response.status).toBe(201)
+  expect(sleep).toHaveBeenCalledWith(100, expect.any(AbortSignal))
+})
+
+test.each([
+  ['mismatched key', 409, { error_code: 'idempotency_request_mismatch' }, true],
+  [
+    'in-progress without key',
+    409,
+    { error_code: 'idempotency_in_progress' },
+    false,
+  ],
+  ['unknown outcome', 422, { error_code: 'idempotency_outcome_unknown' }, true],
+])('does not retry %s', async (_, status, body, hasKey) => {
+  const fetchImpl = vi.fn(
+    async () => new Response(JSON.stringify(body), { status })
+  ) as typeof fetch
+  const fetchWithRetry = withRetry(fetchImpl, 3, 10_000, {
+    monotonic: () => 0,
+    sleep: async () => {},
+  })
+
+  const response = await fetchWithRetry('https://api.e2b.test/v2/sandboxes', {
+    method: 'POST',
+    ...(hasKey ? { headers: { [IDEMPOTENCY_KEY_HEADER]: 'key-1' } } : {}),
+  })
+
+  expect(response.status).toBe(status)
+  expect(fetchImpl).toHaveBeenCalledOnce()
 })
 
 test('retries a connection failure with exponential backoff', async () => {
