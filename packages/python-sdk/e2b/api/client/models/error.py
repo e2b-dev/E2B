@@ -17,6 +17,8 @@ class Error:
         message (str): Error
         error_code (Union[Unset, str]): Machine-readable semantic error code. Not a closed set; initial values:
             sandbox_capacity_unavailable, sandbox_placement_timeout, sandbox_no_compatible_node, sandbox_create_failed,
+            sandbox_pause_refused (the node refused the pause and the sandbox keeps running: the guest agent did not answer
+            the health check, or the node was busy; retry, or pause with force when the guest agent is unresponsive),
             internal_server_error, secret_limit_reached.
     """
 
