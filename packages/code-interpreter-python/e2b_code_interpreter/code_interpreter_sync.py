@@ -6,6 +6,7 @@ from httpx import Client
 from e2b import Sandbox as BaseSandbox, InvalidArgumentException
 from e2b.api.client_sync import get_transport
 
+from e2b_code_interpreter._jupyter_timeout import _jupyter_timeout
 from e2b_code_interpreter.constants import (
     DEFAULT_TEMPLATE,
     JUPYTER_PORT,
@@ -214,20 +215,8 @@ class Sandbox(BaseSandbox):
                 },
                 headers=headers,
                 # `timeout` bounds the execution, `request_timeout` only the
-                # connect. The SDK's pyqwest-backed transport has no per-phase
-                # timeouts: it collapses them into a single whole-request
-                # deadline, derived as the sum of the `read` and `write` phases
-                # (`connect` and `pool` are ignored). The whole budget therefore
-                # goes on `read` and `write` stays at zero, which makes the
-                # deadline `timeout` and not `2 * timeout`. This matches the JS
-                # SDK, which aborts the execution on a `timeout`-long timer.
-                # `timeout=0` disables the deadline entirely; the transport
-                # still bounds connect on its own.
-                timeout=(
-                    httpx.Timeout(timeout, write=0, connect=request_timeout)
-                    if timeout is not None
-                    else httpx.Timeout(None)
-                ),
+                # connect; `_jupyter_timeout` holds the transport details.
+                timeout=_jupyter_timeout(timeout, connect=request_timeout),
             ) as response:
                 err = extract_exception(response)
                 if err:
@@ -290,9 +279,8 @@ class Sandbox(BaseSandbox):
                 f"{self._jupyter_url}/contexts",
                 json=data,
                 headers=headers,
-                timeout=httpx.Timeout(
-                    self.connection_config.get_request_timeout(request_timeout),
-                    write=0,
+                timeout=_jupyter_timeout(
+                    self.connection_config.get_request_timeout(request_timeout)
                 ),
             )
 
@@ -333,7 +321,7 @@ class Sandbox(BaseSandbox):
             response = self._client.delete(
                 f"{self._jupyter_url}/contexts/{context_id}",
                 headers=headers,
-                timeout=httpx.Timeout(self.connection_config.request_timeout, write=0),
+                timeout=_jupyter_timeout(self.connection_config.request_timeout),
             )
 
             err = extract_exception(response)
@@ -363,7 +351,7 @@ class Sandbox(BaseSandbox):
             response = self._client.get(
                 f"{self._jupyter_url}/contexts",
                 headers=headers,
-                timeout=httpx.Timeout(self.connection_config.request_timeout, write=0),
+                timeout=_jupyter_timeout(self.connection_config.request_timeout),
             )
 
             err = extract_exception(response)
@@ -403,7 +391,7 @@ class Sandbox(BaseSandbox):
             response = self._client.post(
                 f"{self._jupyter_url}/contexts/{context_id}/restart",
                 headers=headers,
-                timeout=httpx.Timeout(self.connection_config.request_timeout, write=0),
+                timeout=_jupyter_timeout(self.connection_config.request_timeout),
             )
 
             err = extract_exception(response)

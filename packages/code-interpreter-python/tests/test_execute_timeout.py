@@ -241,10 +241,12 @@ async def test_async_context_request_is_aborted_after_request_timeout_seconds():
 
 
 @pytest.mark.parametrize(
-    "request_timeout, expected_read",
-    [(0, None), (7, 7), (None, REQUEST_TIMEOUT)],
+    "request_timeout, expected_read, expected_write",
+    [(0, None, None), (7, 7, 0), (None, REQUEST_TIMEOUT, 0)],
 )
-def test_context_request_timeout_resolution(request_timeout, expected_read):
+def test_context_request_timeout_resolution(
+    request_timeout, expected_read, expected_write
+):
     captured: dict = {}
     with pytest.raises(_Stop):
         _sandbox(Sandbox, captured).create_code_context(request_timeout=request_timeout)
@@ -252,16 +254,19 @@ def test_context_request_timeout_resolution(request_timeout, expected_read):
     tmo = _captured_timeout(captured)
     # An explicit `request_timeout=0` disables the deadline — it must not
     # fall back to the configured default — while `None` keeps the default.
+    # A disabled deadline sets no phase at all, matching the execution path.
     assert tmo.read == expected_read
-    assert tmo.write == 0
+    assert tmo.write == expected_write
     assert _derived_deadline(tmo) == expected_read
 
 
 @pytest.mark.parametrize(
-    "request_timeout, expected_read",
-    [(0, None), (7, 7), (None, REQUEST_TIMEOUT)],
+    "request_timeout, expected_read, expected_write",
+    [(0, None, None), (7, 7, 0), (None, REQUEST_TIMEOUT, 0)],
 )
-async def test_async_context_request_timeout_resolution(request_timeout, expected_read):
+async def test_async_context_request_timeout_resolution(
+    request_timeout, expected_read, expected_write
+):
     captured: dict = {}
     with pytest.raises(_Stop):
         await _sandbox(AsyncSandbox, captured).create_code_context(
@@ -270,5 +275,5 @@ async def test_async_context_request_timeout_resolution(request_timeout, expecte
 
     tmo = _captured_timeout(captured)
     assert tmo.read == expected_read
-    assert tmo.write == 0
+    assert tmo.write == expected_write
     assert _derived_deadline(tmo) == expected_read
