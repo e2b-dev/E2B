@@ -33,6 +33,7 @@ from e2b.api.client.models import (
     SandboxForkRequest,
     SandboxNetworkConfig,
     SandboxPauseRequest,
+    SandboxPauseResult as SandboxPauseResultAPI,
     SandboxVolumeMount as SandboxVolumeMountAPI,
 )
 from e2b.api.client.types import UNSET, Unset
@@ -55,6 +56,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxNetworkOpts,
     SandboxNetworkUpdate,
     SandboxOnResume,
+    SandboxPauseResult,
     SnapshotMode,
     resolve_connect_memory,
     resolve_snapshot_memory,
@@ -413,7 +415,15 @@ class SandboxApi(SandboxBase):
                     # would have failed the whole request — so stay generic.
                     exception = NotFoundException(f"{error.code}: {error.message}")
                 else:
-                    exception = api_exception_from_code(error.code, error.message)
+                    exception = api_exception_from_code(
+                        error.code,
+                        error.message,
+                        error_code=(
+                            error.error_code
+                            if isinstance(error.error_code, str)
+                            else None
+                        ),
+                    )
                 results.append(exception)
                 continue
 
@@ -488,8 +498,9 @@ class SandboxApi(SandboxBase):
         keep_memory: Optional[bool] = None,
         *,
         mode: Optional[SnapshotMode] = None,
+        force: Optional[bool] = None,
         **opts: Unpack[ApiParams],
-    ) -> bool:
+    ) -> SandboxPauseResult:
         config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
         api_client = get_api_client(config)
@@ -497,7 +508,8 @@ class SandboxApi(SandboxBase):
             sandbox_id,
             client=api_client,
             body=SandboxPauseRequest(
-                memory=resolve_snapshot_memory("mode", mode, keep_memory)
+                memory=resolve_snapshot_memory("mode", mode, keep_memory),
+                force=UNSET if force is None else force,
             ),
         )
 
@@ -506,7 +518,7 @@ class SandboxApi(SandboxBase):
 
         if res.status_code == 409:
             # Sandbox is already paused
-            return False
+            return SandboxPauseResult(paused=False, forced=False)
 
         if res.status_code >= 300:
             raise handle_api_exception(res)
@@ -515,4 +527,10 @@ class SandboxApi(SandboxBase):
         if isinstance(res.parsed, Error):
             raise SandboxException(f"{res.parsed.message}: Request failed")
 
-        return True
+        # An older API answers 204 without a body.
+        forced = (
+            res.parsed.forced
+            if isinstance(res.parsed, SandboxPauseResultAPI)
+            else False
+        )
+        return SandboxPauseResult(paused=True, forced=forced)

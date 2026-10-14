@@ -31,6 +31,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxNetworkUpdate,
     SandboxOnResume,
     SnapshotInfo,
+    SandboxPauseResult,
     SnapshotMode,
 )
 from e2b.sandbox.utils import class_method_variant
@@ -789,15 +790,19 @@ class AsyncSandbox(SandboxApi):
         keep_memory: Optional[bool] = None,
         *,
         mode: Optional[SnapshotMode] = None,
+        force: Optional[bool] = None,
         **opts: Unpack[ApiParams],
-    ) -> bool:
+    ) -> SandboxPauseResult:
         """
         Pause the sandbox.
 
         :param keep_memory: :deprecated: Use `mode` instead: `keep_memory=False` is `mode="filesystem"`, `keep_memory=True` is `mode="full"`.
         :param mode: What the pause persists. With `"filesystem"`, the in-memory state is dropped and only the filesystem is persisted; resuming such a sandbox cold-boots (reboots) it from disk, losing running processes and open connections. Defaults to `"full"` (memory and filesystem).
+        :param force: Take the pause even when the sandbox guest agent is unresponsive. A memory pause first checks that the guest agent answers; when it does not, the node refuses the pause (`SandboxPauseRefusedException`, whose message carries the reason) and the sandbox keeps running. With `force=True` the snapshot is taken without that check. Its memory may then not resume: if restoring it fails, resume with `on_resume="reboot"` to recover the disk state. A refusal for another reason is not lifted by `force`. Applies to memory pauses only; the API rejects it together with `mode="filesystem"`. Defaults to `False`.
 
-        :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
+        :return: The pause result: `paused` is `True` if this call paused the sandbox and `False` if it was already paused; `forced` whether the snapshot was taken without the guest agent health check (reported by the API, so a forced request that joined a normal pause already in flight comes back with `forced=False`)
+
+        :raises SandboxPauseRefusedException: if the node refused the pause; the message carries the reason
         """
         ...
 
@@ -808,16 +813,20 @@ class AsyncSandbox(SandboxApi):
         keep_memory: Optional[bool] = None,
         *,
         mode: Optional[SnapshotMode] = None,
+        force: Optional[bool] = None,
         **opts: Unpack[ApiParams],
-    ) -> bool:
+    ) -> SandboxPauseResult:
         """
         Pause the sandbox specified by sandbox ID.
 
         :param sandbox_id: Sandbox ID
         :param keep_memory: :deprecated: Use `mode` instead: `keep_memory=False` is `mode="filesystem"`, `keep_memory=True` is `mode="full"`.
         :param mode: What the pause persists. With `"filesystem"`, the in-memory state is dropped and only the filesystem is persisted; resuming such a sandbox cold-boots (reboots) it from disk, losing running processes and open connections. Defaults to `"full"` (memory and filesystem).
+        :param force: Take the pause even when the sandbox guest agent is unresponsive. A memory pause first checks that the guest agent answers; when it does not, the node refuses the pause (`SandboxPauseRefusedException`, whose message carries the reason) and the sandbox keeps running. With `force=True` the snapshot is taken without that check. Its memory may then not resume: if restoring it fails, resume with `on_resume="reboot"` to recover the disk state. A refusal for another reason is not lifted by `force`. Applies to memory pauses only; the API rejects it together with `mode="filesystem"`. Defaults to `False`.
 
-        :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
+        :return: The pause result: `paused` is `True` if this call paused the sandbox and `False` if it was already paused; `forced` whether the snapshot was taken without the guest agent health check (reported by the API, so a forced request that joined a normal pause already in flight comes back with `forced=False`)
+
+        :raises SandboxPauseRefusedException: if the node refused the pause; the message carries the reason
         """
         ...
 
@@ -827,21 +836,26 @@ class AsyncSandbox(SandboxApi):
         keep_memory: Optional[bool] = None,
         *,
         mode: Optional[SnapshotMode] = None,
+        force: Optional[bool] = None,
         **opts: Unpack[ApiParams],
-    ) -> bool:
+    ) -> SandboxPauseResult:
         """
         Pause the sandbox.
 
         :param keep_memory: :deprecated: Use `mode` instead: `keep_memory=False` is `mode="filesystem"`, `keep_memory=True` is `mode="full"`.
         :param mode: What the pause persists. With `"filesystem"`, the in-memory state is dropped and only the filesystem is persisted; resuming such a sandbox cold-boots (reboots) it from disk, losing running processes and open connections. Defaults to `"full"` (memory and filesystem).
+        :param force: Take the pause even when the sandbox guest agent is unresponsive. A memory pause first checks that the guest agent answers; when it does not, the node refuses the pause (`SandboxPauseRefusedException`, whose message carries the reason) and the sandbox keeps running. With `force=True` the snapshot is taken without that check. Its memory may then not resume: if restoring it fails, resume with `on_resume="reboot"` to recover the disk state. A refusal for another reason is not lifted by `force`. Applies to memory pauses only; the API rejects it together with `mode="filesystem"`. Defaults to `False`.
 
-        :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
+        :return: The pause result: `paused` is `True` if this call paused the sandbox and `False` if it was already paused; `forced` whether the snapshot was taken without the guest agent health check (reported by the API, so a forced request that joined a normal pause already in flight comes back with `forced=False`)
+
+        :raises SandboxPauseRefusedException: if the node refused the pause; the message carries the reason
         """
 
         return await SandboxApi._cls_pause(
             sandbox_id=self.sandbox_id,
             keep_memory=keep_memory,
             mode=mode,
+            force=force,
             **self.connection_config.get_api_params(**opts),
         )
 
@@ -851,8 +865,9 @@ class AsyncSandbox(SandboxApi):
         keep_memory: Optional[bool] = None,
         *,
         mode: Optional[SnapshotMode] = None,
+        force: Optional[bool] = None,
         **opts: Unpack[ApiParams],
-    ) -> bool: ...
+    ) -> SandboxPauseResult: ...
 
     @overload
     @staticmethod
@@ -861,8 +876,9 @@ class AsyncSandbox(SandboxApi):
         keep_memory: Optional[bool] = None,
         *,
         mode: Optional[SnapshotMode] = None,
+        force: Optional[bool] = None,
         **opts: Unpack[ApiParams],
-    ) -> bool: ...
+    ) -> SandboxPauseResult: ...
 
     @class_method_variant("_cls_pause")
     async def beta_pause(
@@ -870,14 +886,15 @@ class AsyncSandbox(SandboxApi):
         keep_memory: Optional[bool] = None,
         *,
         mode: Optional[SnapshotMode] = None,
+        force: Optional[bool] = None,
         **opts: Unpack[ApiParams],
-    ) -> bool:
+    ) -> SandboxPauseResult:
         """
         :deprecated: Use `pause()` instead.
 
-        :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
+        :return: The pause result: `paused` is `True` if this call paused the sandbox and `False` if it was already paused; `forced` whether the snapshot was taken without the guest agent health check (reported by the API, so a forced request that joined a normal pause already in flight comes back with `forced=False`)
         """
-        return await self.pause(keep_memory=keep_memory, mode=mode, **opts)
+        return await self.pause(keep_memory=keep_memory, mode=mode, force=force, **opts)
 
     @overload
     async def create_snapshot(

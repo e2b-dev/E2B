@@ -223,6 +223,37 @@ class ServiceBusyException(Exception):
     status_code = 503
 
 
+# ``error_code`` of the 503 the API answers a pause with when the node refused
+# it. Any endpoint answering this code is mapped to
+# ``SandboxPauseRefusedException``.
+SANDBOX_PAUSE_REFUSED_ERROR_CODE = "sandbox_pause_refused"
+
+
+class SandboxPauseRefusedException(ServiceBusyException):
+    """
+    Raised when the node refused a pause (HTTP 503 with
+    ``error_code: "sandbox_pause_refused"``). The sandbox keeps running with its
+    state intact; the message is the API's, and names the reason and what to
+    do about it. In general: retry, and when the reason is an unresponsive
+    sandbox guest agent, pause with ``force=True`` to take the snapshot without
+    the health check -- its memory may then not resume, and a resume with
+    ``on_resume="reboot"`` recovers the disk state.
+
+    Unlike other 503s, a refusal carrying this code is not replayed by the
+    SDK's transport retries: it is a decision, not transient capacity, so it
+    surfaces after a single request and the caller decides what to do.
+
+    Subclass of `ServiceBusyException`, which a refused pause surfaced as
+    before, so existing handlers keep working. Unlike the generic 503 mapping,
+    the message carries no ``503: `` prefix: it is the API's message verbatim.
+
+    The ``error_code`` attribute is the semantic error code of the API
+    response, always ``sandbox_pause_refused``.
+    """
+
+    error_code = SANDBOX_PAUSE_REFUSED_ERROR_CODE
+
+
 class BuildException(Exception):
     """
     Raised when the build fails.

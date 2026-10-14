@@ -187,8 +187,12 @@ async def test_async_fork_rejects_count_outside_1_to_20(
     request.assert_not_called()
 
 
+def _paused():
+    return SimpleNamespace(status_code=200, parsed=SimpleNamespace(forced=False))
+
+
 def _sync_pause_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, Any]:
-    request = Mock(return_value=SimpleNamespace(status_code=204, parsed=None))
+    request = Mock(return_value=_paused())
     monkeypatch.setattr(post_sandboxes_sandbox_id_pause, "sync_detailed", request)
 
     Sandbox.pause("sbx-test", api_key=api_key, **kwargs)
@@ -197,7 +201,7 @@ def _sync_pause_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, Any]:
 
 
 async def _async_pause_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, Any]:
-    request = AsyncMock(return_value=SimpleNamespace(status_code=204, parsed=None))
+    request = AsyncMock(return_value=_paused())
     monkeypatch.setattr(post_sandboxes_sandbox_id_pause, "asyncio_detailed", request)
 
     await AsyncSandbox.pause("sbx-test", api_key=api_key, **kwargs)
@@ -225,6 +229,26 @@ def test_pause_still_sends_the_deprecated_keep_memory(monkeypatch, test_api_key)
     body = _sync_pause_body(monkeypatch, test_api_key, keep_memory=False)
 
     assert body["memory"] is False
+
+
+def test_pause_omits_force_when_unset(monkeypatch, test_api_key):
+    body = _sync_pause_body(monkeypatch, test_api_key)
+
+    assert "force" not in body
+
+
+@pytest.mark.parametrize("force", [True, False])
+def test_pause_sends_an_explicit_force(monkeypatch, test_api_key, force):
+    body = _sync_pause_body(monkeypatch, test_api_key, force=force)
+
+    assert body["force"] is force
+
+
+def test_pause_sends_force_alongside_mode(monkeypatch, test_api_key):
+    body = _sync_pause_body(monkeypatch, test_api_key, mode="full", force=True)
+
+    assert body["memory"] is True
+    assert body["force"] is True
 
 
 @pytest.mark.parametrize(
@@ -263,6 +287,19 @@ async def test_async_pause_still_sends_the_deprecated_keep_memory(
     body = await _async_pause_body(monkeypatch, test_api_key, keep_memory=False)
 
     assert body["memory"] is False
+
+
+async def test_async_pause_omits_force_when_unset(monkeypatch, test_api_key):
+    body = await _async_pause_body(monkeypatch, test_api_key)
+
+    assert "force" not in body
+
+
+@pytest.mark.parametrize("force", [True, False])
+async def test_async_pause_sends_an_explicit_force(monkeypatch, test_api_key, force):
+    body = await _async_pause_body(monkeypatch, test_api_key, force=force)
+
+    assert body["force"] is force
 
 
 def _snapshot_response():

@@ -17,19 +17,27 @@ class SandboxPauseRequest:
             persisted and resuming the sandbox cold-boots (reboots) it from disk, losing in-memory state, running processes,
             and open connections. Resume it with an explicit request (connect or resume); auto-resume, which can be
             triggered by arbitrary traffic, refuses such a sandbox. Defaults to true. Default: True.
+        force (Union[Unset, bool]): Take the pause even when the sandbox guest agent is unresponsive. Applies to memory
+            pauses only. The memory snapshot may not resume; a reboot resume recovers the disk state. Defaults to false.
+            Default: False.
     """
 
     memory: Union[Unset, bool] = True
+    force: Union[Unset, bool] = False
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         memory = self.memory
+
+        force = self.force
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
         if memory is not UNSET:
             field_dict["memory"] = memory
+        if force is not UNSET:
+            field_dict["force"] = force
 
         return field_dict
 
@@ -38,8 +46,11 @@ class SandboxPauseRequest:
         d = dict(src_dict)
         memory = d.pop("memory", UNSET)
 
+        force = d.pop("force", UNSET)
+
         sandbox_pause_request = cls(
             memory=memory,
+            force=force,
         )
 
         sandbox_pause_request.additional_properties = d

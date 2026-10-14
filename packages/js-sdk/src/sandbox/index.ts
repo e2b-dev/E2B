@@ -28,6 +28,7 @@ import {
   SnapshotPaginator,
   CreateSnapshotOpts,
   SandboxPauseOpts,
+  SandboxPauseResult,
 } from './sandboxApi'
 import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
@@ -639,31 +640,47 @@ export class Sandbox extends SandboxApi {
   /**
    * Pause a sandbox by its ID.
    *
-   * @param opts connection options, plus `mode` to control the snapshot kind.
+   * The node may refuse the pause ({@link SandboxPauseRefusedError}): the
+   * sandbox keeps running and the message carries the reason. When the reason
+   * is an unresponsive sandbox guest agent, `force: true` takes the snapshot
+   * without the health check, in which case the memory snapshot may not
+   * resume and a resume with `onResume: 'reboot'` recovers the disk state.
+   *
+   * @param opts connection options, plus `mode` to control the snapshot kind
+   * and `force` to skip the guest agent health check.
    * With `mode: 'filesystem'`, the in-memory state is dropped and only the
    * filesystem is persisted; resuming such a sandbox cold-boots (reboots) it
    * from disk, losing running processes and open connections. Defaults to
    * `'full'` (memory and filesystem).
    *
-   * @returns `true` if the sandbox got paused, `false` if the sandbox was already paused.
+   * @returns the {@link SandboxPauseResult}: `paused` is `true` if this call
+   * paused the sandbox and `false` if it was already paused; `forced` whether
+   * the snapshot was taken without the guest agent health check (reported by
+   * the API, so a forced request that joined a normal pause already in
+   * flight comes back with `forced: false`).
+   *
+   * @throws {@link SandboxPauseRefusedError} if the node refused the pause; the message carries the reason.
    *
    * @example
    * ```ts
    * const sandbox = await Sandbox.create()
-   * await sandbox.pause()
+   * const { paused } = await sandbox.pause()
    *
    * // filesystem-only snapshot (resume reboots the sandbox)
    * await sandbox.pause({ mode: 'filesystem' })
+   *
+   * // snapshot an unresponsive sandbox anyway; its memory may not resume
+   * const { forced } = await sandbox.pause({ force: true })
    * ```
    */
-  async pause(opts?: SandboxPauseOpts): Promise<boolean> {
+  async pause(opts?: SandboxPauseOpts): Promise<SandboxPauseResult> {
     return await SandboxApi.pause(this.sandboxId, this.resolveApiOpts(opts))
   }
 
   /**
    * @deprecated Use {@link Sandbox.pause} instead.
    */
-  async betaPause(opts?: SandboxPauseOpts): Promise<boolean> {
+  async betaPause(opts?: SandboxPauseOpts): Promise<SandboxPauseResult> {
     return await SandboxApi.betaPause(this.sandboxId, this.resolveApiOpts(opts))
   }
 

@@ -262,6 +262,41 @@ export class ServiceBusyError extends Error {
 }
 
 /**
+ * `error_code` of the 503 the API answers a pause with when the node refused
+ * it. Any endpoint answering this code is mapped to
+ * {@link SandboxPauseRefusedError}.
+ */
+export const SANDBOX_PAUSE_REFUSED_ERROR_CODE = 'sandbox_pause_refused'
+
+/**
+ * Thrown when the node refused a pause (HTTP 503 with
+ * `error_code: "sandbox_pause_refused"`). The sandbox keeps running with its
+ * state intact; the message is the API's, and names the reason and what to
+ * do about it. In general: retry, and when the reason is an unresponsive
+ * sandbox guest agent, pause with `force: true` to take the snapshot without
+ * the health check — its memory may then not resume, and a resume with
+ * `onResume: 'reboot'` recovers the disk state.
+ *
+ * Unlike other 503s, a refusal carrying this code is not replayed by the
+ * SDK's transport retries: it is a decision, not transient capacity, so it
+ * surfaces after a single request and the caller decides what to do.
+ *
+ * Subclass of {@link ServiceBusyError}, which a refused pause surfaced as
+ * before, so existing handlers keep working.
+ */
+export class SandboxPauseRefusedError extends ServiceBusyError {
+  /**
+   * Semantic error code of the API response: always `sandbox_pause_refused`.
+   */
+  readonly errorCode = SANDBOX_PAUSE_REFUSED_ERROR_CODE
+
+  constructor(message: string) {
+    super(message)
+    this.name = 'SandboxPauseRefusedError'
+  }
+}
+
+/**
  * Thrown when the build fails.
  */
 export class BuildError extends Error {
