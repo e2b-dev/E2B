@@ -585,6 +585,42 @@ export interface SandboxPauseOpts extends SandboxApiOpts {
    * `mode: 'filesystem'`, `keepMemory: true` is `mode: 'full'`.
    */
   keepMemory?: boolean
+
+  /**
+   * Take the pause even when the sandbox guest agent is unresponsive.
+   *
+   * A memory pause first checks that the guest agent answers. When it does
+   * not, the node refuses the pause ({@link SandboxPauseRefusedError}, whose
+   * message carries the reason) and the sandbox keeps running. With
+   * `force: true` the snapshot is taken without that check. Its memory may
+   * then not resume: if restoring it fails, resume with `onResume: 'reboot'`
+   * to recover the disk state. A refusal for another reason is not lifted
+   * by `force`.
+   *
+   * Applies to memory pauses only; the API rejects it together with
+   * `mode: 'filesystem'`.
+   *
+   * @default false
+   */
+  force?: boolean
+}
+
+/**
+ * Result of a pause.
+ */
+export interface SandboxPauseResult {
+  /**
+   * `true` if this call paused the sandbox, `false` if it was already paused.
+   */
+  paused: boolean
+
+  /**
+   * Whether the snapshot was taken with the `force` override, without the
+   * guest agent health check. Reports what happened rather than echoing the
+   * option: `false` when the sandbox was already paused, and also when a
+   * forced request joined a normal pause that was already in flight.
+   */
+  forced: boolean
 }
 
 /**
@@ -1588,15 +1624,25 @@ export class SandboxApi extends ClientFactory {
   /**
    * Pause the sandbox specified by sandbox ID.
    *
-   * @param sandboxId sandbox ID.
-   * @param opts pause options, including `mode` and connection options.
+   * The node may refuse the pause ({@link SandboxPauseRefusedError}): the
+   * sandbox keeps running and the message carries the reason. When the reason
+   * is an unresponsive sandbox guest agent, `force: true` takes the snapshot
+   * without the health check, in which case the memory snapshot may not
+   * resume and a resume with `onResume: 'reboot'` recovers the disk state.
    *
-   * @returns `true` if the sandbox got paused, `false` if the sandbox was already paused.
+   * @param sandboxId sandbox ID.
+   * @param opts pause options, including `mode`, `force` and connection options.
+   *
+   * @returns the {@link SandboxPauseResult}: `paused` is `true` if this call
+   * paused the sandbox and `false` if it was already paused; `forced` whether
+   * the snapshot was taken without the guest agent health check.
+   *
+   * @throws {@link SandboxPauseRefusedError} if the node refused the pause; the message carries the reason.
    */
   static async pause(
     sandboxId: string,
     opts?: SandboxPauseOpts
-  ): Promise<boolean> {
+  ): Promise<SandboxPauseResult> {
     const apiOpts = this.resolveOpts(opts)
     const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
@@ -1609,6 +1655,7 @@ export class SandboxApi extends ClientFactory {
       },
       body: {
         memory: snapshotMemory('mode', apiOpts?.mode, apiOpts?.keepMemory),
+        force: apiOpts?.force,
       },
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
@@ -1619,7 +1666,7 @@ export class SandboxApi extends ClientFactory {
 
     if (res.error?.code === 409) {
       // Sandbox is already paused
-      return false
+      return { paused: false, forced: false }
     }
 
     const err = handleApiError(res)
@@ -1627,7 +1674,8 @@ export class SandboxApi extends ClientFactory {
       throw err
     }
 
-    return true
+    // An older API answers 204 without a body.
+    return { paused: true, forced: res.data?.forced ?? false }
   }
 
   /**
@@ -1636,7 +1684,7 @@ export class SandboxApi extends ClientFactory {
   static async betaPause(
     sandboxId: string,
     opts?: SandboxPauseOpts
-  ): Promise<boolean> {
+  ): Promise<SandboxPauseResult> {
     return this.pause(sandboxId, opts)
   }
 
@@ -1912,7 +1960,13 @@ export class SandboxApi extends ClientFactory {
               `${result.error.code}: ${result.error.message}`
             )
           }
-          return apiErrorFromCode(result.error.code, result.error.message)
+          return apiErrorFromCode(
+            result.error.code,
+            result.error.message,
+            undefined,
+            undefined,
+            result.error.error_code
+          )
         }
 
         return toSandboxCreateResponse(result.sandbox)

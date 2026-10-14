@@ -42,7 +42,7 @@ const server = setupMockApi(
   }),
   http.post(apiUrl('/sandboxes/:sandboxID/pause'), async ({ request }) => {
     lastPauseBody = (await request.json()) as Record<string, unknown>
-    return new HttpResponse(null, { status: 204 })
+    return HttpResponse.json({ forced: lastPauseBody.force === true })
   }),
   http.post(apiUrl('/sandboxes/:sandboxID/snapshots'), async ({ request }) => {
     lastSnapshotBody = (await request.json()) as Record<string, unknown>
@@ -138,6 +138,33 @@ test('Sandbox.pause omits memory when mode is unset', async () => {
 
   expect(lastPauseBody).toBeDefined()
   expect(lastPauseBody).not.toHaveProperty('memory')
+})
+
+test('Sandbox.pause omits force when unset', async () => {
+  await Sandbox.pause('test-sandbox-id', { apiKey: TEST_API_KEY })
+
+  expect(lastPauseBody).toBeDefined()
+  expect(lastPauseBody).not.toHaveProperty('force')
+})
+
+test.each([true, false])(
+  'Sandbox.pause sends an explicit force %s',
+  async (force) => {
+    await Sandbox.pause('test-sandbox-id', { apiKey: TEST_API_KEY, force })
+
+    expect(lastPauseBody?.force).toBe(force)
+  }
+)
+
+test('Sandbox.pause sends force alongside mode', async () => {
+  await Sandbox.pause('test-sandbox-id', {
+    apiKey: TEST_API_KEY,
+    mode: 'full',
+    force: true,
+  })
+
+  expect(lastPauseBody?.memory).toBe(true)
+  expect(lastPauseBody?.force).toBe(true)
 })
 
 test.each([

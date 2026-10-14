@@ -1,4 +1,7 @@
-import { InvalidArgumentError } from './errors'
+import {
+  InvalidArgumentError,
+  SANDBOX_PAUSE_REFUSED_ERROR_CODE,
+} from './errors'
 import { isReadableStreamLike } from './is'
 
 const MAX_RETRY_AFTER_SECONDS = 2_147_483
@@ -7,6 +10,9 @@ const BACKOFF_BASE_MS = 100
 const BACKOFF_MAX_MS = 10_000
 const BACKOFF_JITTER_MIN = 0.5
 const RETRYABLE_STATUSES = new Set([429, 502, 503])
+// A 503 whose body carries one of these `error_code`s is a decision by the
+// server, not transient capacity, and is answered after a single request.
+const NON_RETRYABLE_ERROR_CODES = new Set([SANDBOX_PAUSE_REFUSED_ERROR_CODE])
 // Error codes raised while establishing the connection, before any request
 // bytes are written: Node/undici (`ECONNREFUSED`, `ENOTFOUND`, ...), Bun
 // (`ConnectionRefused`). Post-write failures such as `ECONNRESET` are
@@ -160,6 +166,113 @@ function backoffMs(attempt: number, random: () => number): number {
   )
 }
 
+const BODY_READ_TIMED_OUT = Symbol('body read timed out')
+
+/** The media type of a `Content-Type` value: lower-cased, parameters dropped. */
+function mediaType(contentType: string | null): string {
+  return (contentType ?? '').split(';', 1)[0].trim().toLowerCase()
+}
+// An error body larger than this cannot carry a code worth parsing; the read
+// stops there and the 503 is retried as a plain one.
+const MAX_ERROR_BODY_BYTES = 8 * 1024
+// Time a 503 body is peeked at for a non-retryable code, independent of the
+// jittered backoff: a slow refusal body within this still short-circuits, and
+// a trickling non-refusal body costs at most this per attempt.
+const PEEK_BUDGET_MS = 1_000
+
+/**
+ * Reads `reader` to the end into one buffer, or returns `undefined` once more
+ * than `limit` bytes arrived.
+ */
+async function readUpTo(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  limit: number
+): Promise<Uint8Array | undefined> {
+  const chunks: Uint8Array[] = []
+  let size = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    size += value.byteLength
+    if (size > limit) return undefined
+    chunks.push(value)
+  }
+  const out = new Uint8Array(size)
+  let offset = 0
+  for (const chunk of chunks) {
+    out.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return out
+}
+
+/**
+ * Whether a 503 carries a non-retryable `error_code` (see
+ * `NON_RETRYABLE_ERROR_CODES`). Reads a clone through a reader this function
+ * owns, capped at `MAX_ERROR_BODY_BYTES` and bounded by `budgetMs` (the
+ * inspection budget, which overlaps the retry wait instead of adding to it;
+ * waited through `sleep` so the injected clock governs it) and the request
+ * signal;
+ * when it stops early the reader is cancelled so the abandoned read does not
+ * keep consuming the stream, and the answer is "not a refusal" so the 503 is
+ * retried as before. A body that cannot be peeked at (none, not JSON,
+ * consumed, locked) or a request already aborted is not a refusal either. The original body
+ * stays untouched for the caller.
+ */
+async function isNonRetryableRefusal(
+  response: Response,
+  budgetMs: number,
+  signal: AbortSignal,
+  sleep: (delayMs: number, signal: AbortSignal) => Promise<void>
+): Promise<boolean> {
+  if (response.status !== 503 || signal.aborted) return false
+  // Only a JSON body can carry the code; a proxy's HTML page is not peeked at.
+  if (mediaType(response.headers.get('Content-Type')) !== 'application/json') {
+    return false
+  }
+  const { body } = response
+  if (!body || response.bodyUsed || body.locked) return false
+  let reader: ReadableStreamDefaultReader<Uint8Array> | undefined
+  const timer = new AbortController()
+  const onAbort = () => timer.abort(signal.reason)
+  signal.addEventListener('abort', onAbort, { once: true })
+  // Clamped so a huge budget cannot overflow setTimeout into a 1 ms timer.
+  const bounded = Math.min(
+    Math.max(0, budgetMs),
+    MAX_RETRY_AFTER_SECONDS * 1000
+  )
+  try {
+    const cloned = response.clone().body
+    if (!cloned) return false
+    reader = cloned.getReader()
+    const bytes = await Promise.race([
+      readUpTo(reader, MAX_ERROR_BODY_BYTES).catch(() => undefined),
+      sleep(bounded, timer.signal).then(
+        () => BODY_READ_TIMED_OUT,
+        () => BODY_READ_TIMED_OUT
+      ),
+    ])
+    if (typeof bytes === 'symbol' || bytes === undefined) {
+      // Settles the pending read with done, so readUpTo ends too.
+      void reader.cancel().catch(() => {})
+      return false
+    }
+    const parsed = JSON.parse(new TextDecoder().decode(bytes)) as {
+      error_code?: unknown
+    }
+    return (
+      typeof parsed?.error_code === 'string' &&
+      NON_RETRYABLE_ERROR_CODES.has(parsed.error_code)
+    )
+  } catch {
+    void reader?.cancel().catch(() => {})
+    return false
+  } finally {
+    timer.abort()
+    signal.removeEventListener('abort', onAbort)
+  }
+}
+
 /**
  * Delay before the next attempt, or `undefined` when the response is not
  * retried: `Retry-After` when the server sends a usable one, otherwise
@@ -187,7 +300,10 @@ function retryDelayMs(
  * Retry requests after a 429 carrying `Retry-After`, a 503 or — for replayable
  * requests ({@link isReplayable}) — a 502 (using `Retry-After` when present,
  * exponential backoff otherwise), or a network failure (exponential backoff;
- * see {@link isRetryableFetchError}).
+ * see {@link isRetryableFetchError}). A 503 whose body carries a
+ * non-retryable `error_code` (a refused pause) is returned after one request;
+ * the body is peeked at for an inspection budget of max(retry delay, 1 s)
+ * within the remaining request budget.
  */
 export function withRetry(
   fetchImpl: typeof fetch,
@@ -246,10 +362,27 @@ export function withRetry(
         return response
       }
 
+      // Peek at a 503 body for a non-retryable code for its own inspection
+      // budget (at least the retry delay, within the remaining request
+      // budget); the time spent peeking counts towards the delay.
+      const peekStart = monotonic()
+      if (
+        await isNonRetryableRefusal(
+          response,
+          Math.min(Math.max(delayMs, PEEK_BUDGET_MS), deadline - peekStart),
+          request.signal,
+          sleep
+        )
+      ) {
+        return response
+      }
+      const remainingDelayMs = Math.max(0, delayMs - (monotonic() - peekStart))
+      if (monotonic() + remainingDelayMs >= deadline) return response
+
       // Not awaited: some fetch interceptors never settle `cancel()`, and the
       // retry does not depend on the discarded body having been released.
       void response.body?.cancel().catch(() => {})
-      await sleep(delayMs, request.signal)
+      await sleep(remainingDelayMs, request.signal)
     }
   }) as typeof fetch
 }
