@@ -206,6 +206,9 @@ export class Result {
    */
   formats(): string[] {
     const formats = []
+    if (this.text) {
+      formats.push('text')
+    }
     if (this.html) {
       formats.push('html')
     }
@@ -235,6 +238,9 @@ export class Result {
     }
     if (this.data) {
       formats.push('data')
+    }
+    if (this.chart) {
+      formats.push('chart')
     }
 
     for (const key of Object.keys(this.extra)) {
