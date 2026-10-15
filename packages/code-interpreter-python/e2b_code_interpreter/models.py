@@ -167,7 +167,14 @@ class Result:
                     f"Error deserializing chart, check if you are using the latest version of the library: {e}"
                 )
         self.is_main_result = is_main_result
-        self.extra = extra
+        # Collect non-standard MIME types (e.g. application/vnd.plotly.v1+json)
+        # into `extra`, matching the JS SDK's Result constructor, which sweeps
+        # every key outside its known set into `extra`. Without this the
+        # kernel's non-standard representations are silently dropped.
+        if kwargs:
+            self.extra = {**(extra or {}), **kwargs}
+        else:
+            self.extra = extra
 
     def formats(self) -> Iterable[str]:
         """
@@ -337,6 +344,8 @@ def serialize_results(results: List[Result]) -> List[Dict[str, str]]:
                 chart = result.chart
                 if chart is not None:
                     serialized_dict[key] = chart.to_dict()
+            elif result.extra is not None and key in result.extra:
+                serialized_dict[key] = result.extra[key]
             else:
                 serialized_dict[key] = result[key]
 
