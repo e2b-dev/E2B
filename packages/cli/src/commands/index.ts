@@ -4,6 +4,8 @@ import { asPrimary } from 'src/utils/format'
 import { templateCommand } from './template'
 import { sandboxCommand } from './sandbox'
 import { authCommand } from './auth'
+import { volumeCommand } from './volume'
+import { secretCommand } from './secret'
 
 export const program = new commander.Command()
   // Fixed so help reads `e2b` however the entrypoint is invoked (npm bin
@@ -23,3 +25,5 @@ Visit ${asPrimary(
   .addCommand(authCommand)
   .addCommand(templateCommand)
   .addCommand(sandboxCommand)
+  .addCommand(volumeCommand)
+  .addCommand(secretCommand)
