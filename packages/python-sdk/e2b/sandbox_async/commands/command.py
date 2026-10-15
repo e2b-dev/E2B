@@ -316,6 +316,7 @@ class Commands:
         request_timeout: Optional[float],
         on_stdout: Optional[OutputHandler[Stdout]],
         on_stderr: Optional[OutputHandler[Stderr]],
+        retain_output: bool = True,
     ) -> AsyncCommandHandle:
         events = as_stream(
             self._rpc.start(
@@ -340,7 +341,12 @@ class Commands:
         )
 
         return await self._create_handle(
-            events, "start process", request_timeout, on_stdout, on_stderr
+            events,
+            "start process",
+            request_timeout,
+            on_stdout,
+            on_stderr,
+            retain_output,
         )
 
     async def connect(
@@ -388,6 +394,7 @@ class Commands:
         request_timeout: Optional[float],
         on_stdout: Optional[OutputHandler[Stdout]],
         on_stderr: Optional[OutputHandler[Stderr]],
+        retain_output: bool = True,
     ) -> AsyncCommandHandle:
         try:
             start_event = await first_event(
@@ -408,6 +415,7 @@ class Commands:
                     pid, request_timeout
                 ),
                 check_health=self._check_health,
+                retain_output=retain_output,
             )
         except Exception as e:
             try:

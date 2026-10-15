@@ -42,6 +42,7 @@ class CommandHandle:
         ] = None,
         handle_close_stdin: Optional[Callable[[Optional[float]], None]] = None,
         check_health: Optional[Callable[[], Optional[bool]]] = None,
+        retain_output: bool = True,
     ):
         self._pid = pid
         self._handle_kill = handle_kill
@@ -50,6 +51,7 @@ class CommandHandle:
         self._check_health = check_health
         self._events = events
 
+        self._retain_output = retain_output
         self._stdout_chunks: List[str] = []
         self._stderr_chunks: List[str] = []
 
@@ -79,11 +81,13 @@ class CommandHandle:
         events: List[Union[Tuple[Stdout, None, None], Tuple[None, Stderr, None]]] = []
         out = self._stdout_decoder.decode(b"", final=True)
         if out:
-            self._stdout_chunks.append(out)
+            if self._retain_output:
+                self._stdout_chunks.append(out)
             events.append((out, None, None))
         err = self._stderr_decoder.decode(b"", final=True)
         if err:
-            self._stderr_chunks.append(err)
+            if self._retain_output:
+                self._stderr_chunks.append(err)
             events.append((None, err, None))
         return events
 
@@ -109,12 +113,14 @@ class CommandHandle:
                             case Oneof(field="stdout", value=chunk):
                                 out = self._stdout_decoder.decode(chunk)
                                 if out:
-                                    self._stdout_chunks.append(out)
+                                    if self._retain_output:
+                                        self._stdout_chunks.append(out)
                                     yield out, None, None
                             case Oneof(field="stderr", value=chunk):
                                 out = self._stderr_decoder.decode(chunk)
                                 if out:
-                                    self._stderr_chunks.append(out)
+                                    if self._retain_output:
+                                        self._stderr_chunks.append(out)
                                     yield None, out, None
                             case Oneof(field="pty", value=chunk):
                                 yield None, None, chunk
