@@ -25,8 +25,6 @@ for line in sys.stdin:
         continue
     if method == "initialize":
         send({"jsonrpc": "2.0", "id": id, "result": {"protocolVersion": 1, "received": params}})
-    elif method == "test/echo":
-        send({"jsonrpc": "2.0", "id": id, "result": params})
     elif method == "test/client_call":
         # Ask the client to run something on its machine.
         pending["call-" + str(id)] = id
@@ -47,23 +45,10 @@ for line in sys.stdin:
         send({"jsonrpc": "2.0", "id": id, "result": errors})
     elif method == "test/big":
         send({"jsonrpc": "2.0", "id": id, "result": "x" * params["size"]})
-    elif method == "test/stderr_then_sleep":
-        sys.stderr.write("log line\n")
-        sys.stderr.flush()
-        send({"jsonrpc": "2.0", "id": id, "result": "sleeping"})
-        time.sleep(600)
     elif method == "test/exit":
         sys.stderr.write(params.get("stderr", ""))
         sys.stderr.flush()
         sys.exit(params["code"])
-    elif method == "test/flood":
-        for i in range(params["count"]):
-            send({"jsonrpc": "2.0", "method": "session/update", "params": {"i": i}})
-        send({"jsonrpc": "2.0", "id": id, "result": "flooded"})
-    elif method == "test/ignore_eof":
-        os.close(0)
-        send({"jsonrpc": "2.0", "id": id, "result": "ignoring"})
-        time.sleep(600)
 `
 
 export const FAKE_AGENT_PATH = '/tmp/fake_acp_agent.py'
