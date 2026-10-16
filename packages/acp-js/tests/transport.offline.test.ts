@@ -125,6 +125,16 @@ test('close timeout covers a hung EOF and then kills', async () => {
   expect(agent.handle.kill).toHaveBeenCalledOnce()
 })
 
+test('close rejects when the agent could not be killed', async () => {
+  const agent = fakeAgent({ closeStdin: () => new Promise(() => {}) })
+  agent.handle.kill.mockRejectedValueOnce(new Error('kill failed'))
+  const transport = await startAcpTransport(agent.sandbox, 'agent')
+
+  await expect(transport.close({ timeoutMs: 50 })).rejects.toThrow(
+    'kill failed'
+  )
+})
+
 test('close keeps buffered messages and drops later ones', async () => {
   const agent = fakeAgent()
   const transport = await startAcpTransport(agent.sandbox, 'agent')

@@ -106,6 +106,8 @@ export class AcpTransport {
    * Close the agent: send EOF to its stdin and kill it if it has not exited
    * within `timeoutMs` of this call. Messages the agent sends after this call
    * are not delivered.
+   *
+   * It rejects if the agent could not be killed.
    */
   async close(opts?: AcpCloseOpts): Promise<void> {
     // Only a known exit status means the process is gone. A failed output
@@ -129,7 +131,7 @@ export class AcpTransport {
     clearTimeout(timer)
 
     if (!exited && !this.exitStatus()) {
-      await this.kill().catch(() => false)
+      await this.kill()
     }
   }
 
@@ -292,7 +294,8 @@ export async function startAcpTransport(
           complete = lines.push(data)
         } catch (err) {
           end(err)
-          void closeTransport()
+          // The stream already failed with the real error.
+          closeTransport().catch(() => {})
           return
         }
         for (const line of complete) {
