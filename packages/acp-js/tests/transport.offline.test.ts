@@ -51,8 +51,10 @@ function fakeAgent(opts: { closeStdin?: () => Promise<void> } = {}) {
     handle,
     writes,
     maxActive: () => maxActive,
-    emit: (message: unknown) =>
-      callbacks.onStdout!(JSON.stringify(message) + '\n'),
+    emit: (...messages: unknown[]) =>
+      callbacks.onStdout!(
+        messages.map((m) => JSON.stringify(m) + '\n').join('')
+      ),
     exitWith,
     fail: (err: unknown) => settle.reject(err),
   }
@@ -152,6 +154,31 @@ test('close keeps buffered messages and drops later ones', async () => {
     'before'
   )
   assert.isTrue((await reader.read()).done)
+})
+
+test('close drops later lines of an output chunk already being read', async () => {
+  const agent = fakeAgent()
+  const transport = await startAcpTransport(agent.sandbox, 'agent')
+
+  for (let i = 0; i < 63; i++) {
+    await agent.emit({ jsonrpc: '2.0', method: 'before' })
+  }
+  // The read queue fills on the first line, so the chunk waits for the client.
+  const reading = agent.emit(
+    { jsonrpc: '2.0', method: 'before' },
+    { jsonrpc: '2.0', method: 'after' }
+  )
+  await sleep(0)
+  await transport.close({ timeoutMs: 10 })
+  await reading
+
+  const methods: string[] = []
+  const reader = transport.stream.readable.getReader()
+  for (let r = await reader.read(); !r.done; r = await reader.read()) {
+    methods.push((r.value as { method: string }).method)
+  }
+  assert.lengthOf(methods, 64)
+  assert.notInclude(methods, 'after')
 })
 
 test('connect kills the agent when the client factory throws', async () => {
