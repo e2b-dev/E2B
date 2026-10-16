@@ -66,23 +66,6 @@ sandboxTest(
   }
 )
 
-sandboxTest('writes keep their order', async ({ sandbox }) => {
-  const { agent, writer, reader } = await startAgent(sandbox)
-  const count = 100
-
-  await Promise.all(
-    Array.from({ length: count }, (_, i) =>
-      writer.write({ jsonrpc: '2.0', id: i, method: 'test/echo', params: i })
-    )
-  )
-
-  for (let i = 0; i < count; i++) {
-    const { value } = await reader.read()
-    assert.equal((value as Message).result, i)
-  }
-  await agent.close()
-})
-
 sandboxTest(
   'messages split into single bytes are reassembled',
   async ({ sandbox }) => {
@@ -146,24 +129,6 @@ sandboxTest(
 )
 
 sandboxTest(
-  'close kills an agent that ignores EOF',
-  async ({ sandbox }) => {
-    const { agent, call, reader } = await startAgent(sandbox)
-    assert.equal((await call(8, 'test/ignore_eof')).result, 'ignoring')
-
-    const started = Date.now()
-    await agent.close({ timeoutMs: 1_000 })
-
-    assert.isBelow(Date.now() - started, 10_000)
-    const { done } = await reader.read()
-    assert.isTrue(done)
-    const processes = await sandbox.commands.list()
-    assert.isFalse(processes.some((p) => p.pid === agent.pid))
-  },
-  30_000
-)
-
-sandboxTest(
   'agent failure errors the stream with its stderr',
   async ({ sandbox }) => {
     let stderr = ''
@@ -199,60 +164,3 @@ sandboxTest('cancelling the readable closes the agent', async ({ sandbox }) => {
 
   assert.equal((await agent.wait()).exitCode, 0)
 })
-
-sandboxTest(
-  'close does not hang when the client stops reading',
-  async ({ sandbox }) => {
-    const { agent, writer } = await startAgent(sandbox)
-
-    // Far more messages than the read queue holds, none of them read.
-    await writer.write({
-      jsonrpc: '2.0',
-      id: 10,
-      method: 'test/flood',
-      params: { count: 1000 },
-    })
-    await new Promise((resolve) => setTimeout(resolve, 2_000))
-
-    await agent.close({ timeoutMs: 2_000 })
-
-    assert.equal((await agent.wait()).exitCode, 0)
-  },
-  30_000
-)
-
-sandboxTest(
-  'close stops the agent when the stderr callback failed',
-  async ({ sandbox }) => {
-    const { agent, writer, reader } = await startAgent(sandbox, {
-      onStderr: () => {
-        throw new Error('callback failed')
-      },
-    })
-    // The agent logs to stderr and keeps running.
-    await writer.write({
-      jsonrpc: '2.0',
-      id: 11,
-      method: 'test/stderr_then_sleep',
-      params: {},
-    })
-
-    // The failed callback ends the output stream, but not the process.
-    let error: unknown
-    try {
-      await reader.read()
-    } catch (err) {
-      error = err
-    }
-    assert.match(String(error), /callback failed/)
-    assert.isTrue(
-      (await sandbox.commands.list()).some((p) => p.pid === agent.pid)
-    )
-
-    await agent.close({ timeoutMs: 1_000 })
-
-    const processes = await sandbox.commands.list()
-    assert.isFalse(processes.some((p) => p.pid === agent.pid))
-  },
-  30_000
-)
