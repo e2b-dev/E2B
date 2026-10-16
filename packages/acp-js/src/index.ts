@@ -119,8 +119,12 @@ export async function connectAcpAgent(
   const { command, client, ...startOpts } = opts
   const transport = await startAcpTransport(sandbox, command, startOpts)
   const toClient = typeof client === 'function' ? client : () => client
-  return new AcpAgent(
-    transport,
-    new ClientSideConnection(toClient, transport.stream)
-  )
+  let connection: ClientSideConnection
+  try {
+    connection = new ClientSideConnection(toClient, transport.stream)
+  } catch (err) {
+    await transport.kill().catch(() => false)
+    throw err
+  }
+  return new AcpAgent(transport, connection)
 }
