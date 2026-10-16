@@ -49,7 +49,8 @@ class AcpAgent:
         """
         Close the agent: send EOF to its stdin and kill it if it has not
         exited within `timeout` of this call. Messages the agent sends after
-        this call are not delivered.
+        this call are not delivered. It raises if the agent could not be
+        killed.
 
         :param timeout: Time for the agent to exit in **seconds**
         """
