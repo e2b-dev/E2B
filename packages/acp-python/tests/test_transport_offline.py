@@ -3,6 +3,7 @@ import json
 import time
 from types import SimpleNamespace
 
+import pytest
 from packaging.version import Version
 
 from e2b import CommandExitException
@@ -138,6 +139,19 @@ async def test_close_timeout_covers_a_hung_eof_and_then_kills():
 
     assert time.monotonic() - started < 1
     assert agent.killed == 1
+
+
+async def test_close_raises_when_the_agent_could_not_be_killed():
+    agent = FakeAgent(close_stdin=hang)
+
+    async def fail():
+        raise RuntimeError("kill failed")
+
+    agent.handle.kill = fail
+    transport = await start(agent)
+
+    with pytest.raises(RuntimeError, match="kill failed"):
+        await transport.close(timeout=0.05)
 
 
 async def test_close_keeps_buffered_messages_and_drops_later_ones():
