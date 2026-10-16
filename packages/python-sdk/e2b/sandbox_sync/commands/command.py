@@ -310,6 +310,7 @@ class Commands:
         stdin: bool,
         timeout: Optional[float],
         request_timeout: Optional[float],
+        retain_output: bool = True,
     ):
         events = as_stream(
             self._rpc.start(
@@ -333,7 +334,7 @@ class Commands:
             )
         )
 
-        return self._create_handle(events, "start process")
+        return self._create_handle(events, "start process", retain_output)
 
     def connect(
         self,
@@ -371,6 +372,7 @@ class Commands:
             Union[process_pb.StartResponse, process_pb.ConnectResponse], Any, None
         ],
         action: str,
+        retain_output: bool = True,
     ) -> CommandHandle:
         try:
             start_event = events.__next__()
@@ -387,6 +389,7 @@ class Commands:
                     pid, request_timeout
                 ),
                 check_health=self._check_health,
+                retain_output=retain_output,
             )
         except Exception as e:
             try:
