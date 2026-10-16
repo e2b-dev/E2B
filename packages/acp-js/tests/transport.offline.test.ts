@@ -1,5 +1,6 @@
-import { CommandExitError, type CommandStartOpts } from 'e2b'
+import { CommandExitError, type CommandStartOpts, type Sandbox } from 'e2b'
 import { assert, expect, test, vi } from 'vitest'
+import { connectAcpAgent } from '../src'
 import { startAcpTransport, type AcpSandbox } from '../src/transport'
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
@@ -151,4 +152,18 @@ test('close keeps buffered messages and drops later ones', async () => {
     'before'
   )
   assert.isTrue((await reader.read()).done)
+})
+
+test('connect kills the agent when the client factory throws', async () => {
+  const agent = fakeAgent()
+
+  await expect(
+    connectAcpAgent(agent.sandbox as Sandbox, {
+      command: 'agent',
+      client: () => {
+        throw new Error('no client')
+      },
+    })
+  ).rejects.toThrow('no client')
+  expect(agent.handle.kill).toHaveBeenCalledOnce()
 })
