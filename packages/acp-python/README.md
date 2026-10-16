@@ -73,5 +73,5 @@ The agent talks ACP over its stdin and stdout. `connect_acp_agent` turns off the
 
 - `agent.close()` sends EOF to the agent and kills it if it has not exited within `timeout` (5 seconds by default) of the call. Messages the agent sends after that are not delivered.
 - `agent.wait()` returns the exit code once the agent exits.
-- If the agent exits with an error, the connection fails with the exit code and the end of the agent's stderr. Pass `on_stderr` to receive its logs.
+- If the agent exits, pending requests on the connection fail with a connection error. Use `agent.wait()` for the exit code and pass `on_stderr` to receive the agent's logs.
 - The agent runs as long as the sandbox does, so set the sandbox timeout for the longest task you expect.
