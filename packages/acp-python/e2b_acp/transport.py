@@ -116,10 +116,7 @@ class AcpTransport:
         except Exception:
             exit = None
         if exit is None and self._exit is None:
-            try:
-                await self.kill()
-            except Exception:
-                pass
+            await self.kill()
 
     async def kill(self) -> bool:
         assert self._handle is not None
@@ -160,6 +157,13 @@ class AcpTransport:
         self._handle = handle
         self._handle_ready.set_result(handle)
         self._exit_task = asyncio.create_task(self._watch_exit(handle))
+
+    async def _close_quietly(self) -> None:
+        # The stream already failed with the real error.
+        try:
+            await self.close()
+        except Exception:
+            pass
 
     async def _stop_and_wait(self) -> Optional[AcpAgentExit]:
         await self._end_input()
@@ -218,7 +222,7 @@ class AcpTransport:
             lines = self._lines.push(data)
         except SandboxException as e:
             self._end(e)
-            asyncio.ensure_future(self.close())
+            asyncio.ensure_future(self._close_quietly())
             return
         for line in lines:
             await self._deliver(line)
