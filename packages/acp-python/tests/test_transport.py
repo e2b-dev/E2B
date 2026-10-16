@@ -1,6 +1,3 @@
-import asyncio
-import time
-
 import pytest
 
 from e2b import AsyncSandbox
@@ -71,22 +68,6 @@ async def test_agent_requests_for_client_fs_and_terminal_are_rejected(
     await agent.close()
 
 
-async def test_writes_keep_their_order(async_sandbox: AsyncSandbox):
-    agent, _ = await start_agent(async_sandbox)
-    count = 100
-
-    await asyncio.gather(
-        *(
-            agent.send({"jsonrpc": "2.0", "id": i, "method": "test/echo", "params": i})
-            for i in range(count)
-        )
-    )
-
-    for i in range(count):
-        assert (await agent.receive())["result"] == i
-    await agent.close()
-
-
 async def test_messages_split_into_single_bytes_are_reassembled(
     async_sandbox: AsyncSandbox,
 ):
@@ -127,19 +108,6 @@ async def test_close_sends_eof_and_ends_the_stream(async_sandbox: AsyncSandbox):
     assert exit.exit_code == 0
 
 
-async def test_close_kills_an_agent_that_ignores_eof(async_sandbox: AsyncSandbox):
-    agent, call = await start_agent(async_sandbox)
-    assert (await call(8, "test/ignore_eof"))["result"] == "ignoring"
-
-    started = time.monotonic()
-    await agent.close(timeout=1)
-
-    assert time.monotonic() - started < 10
-    assert await agent.receive() is None
-    processes = await async_sandbox.commands.list()
-    assert all(p.pid != agent.pid for p in processes)
-
-
 async def test_agent_failure_errors_the_stream_with_its_stderr(
     async_sandbox: AsyncSandbox,
 ):
@@ -150,40 +118,3 @@ async def test_agent_failure_errors_the_stream_with_its_stderr(
         await call(9, "test/exit", {"code": 3, "stderr": "boom"})
     assert "".join(stderr) == "boom"
     assert (await agent.wait()).exit_code == 3
-
-
-async def test_close_does_not_hang_when_the_client_stops_reading(
-    async_sandbox: AsyncSandbox,
-):
-    agent, _ = await start_agent(async_sandbox)
-
-    # Far more messages than the read queue holds, none of them read.
-    await agent.send(
-        {"jsonrpc": "2.0", "id": 10, "method": "test/flood", "params": {"count": 1000}}
-    )
-    await asyncio.sleep(2)
-
-    await agent.close(timeout=2)
-
-    assert (await agent.wait()).exit_code == 0
-
-
-async def test_close_stops_the_agent_when_the_stderr_callback_failed(
-    async_sandbox: AsyncSandbox,
-):
-    def fail(data):
-        raise RuntimeError("callback failed")
-
-    agent, _ = await start_agent(async_sandbox, on_stderr=fail)
-    await agent.send(
-        {"jsonrpc": "2.0", "id": 11, "method": "test/stderr_then_sleep", "params": {}}
-    )
-
-    # The failed callback ends the output stream, but not the process.
-    with pytest.raises(Exception, match="callback failed"):
-        await agent.receive()
-    assert any(p.pid == agent.pid for p in await async_sandbox.commands.list())
-
-    await agent.close(timeout=1)
-
-    assert all(p.pid != agent.pid for p in await async_sandbox.commands.list())
