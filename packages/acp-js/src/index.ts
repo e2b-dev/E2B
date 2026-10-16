@@ -66,7 +66,7 @@ export class AcpAgent {
   /**
    * Close the agent: send EOF to its stdin and kill it if it has not exited
    * within `timeoutMs` of this call. Messages the agent sends after this call
-   * are not delivered.
+   * are not delivered. It rejects if the agent could not be killed.
    *
    * @param opts options for closing the agent.
    */
