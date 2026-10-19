@@ -16,6 +16,11 @@ from .utils import (
     restrict_client_capabilities,
 )
 
+DEFAULT_STOP_TIMEOUT = 5
+"""
+Default time for an ACP agent to exit after `stop()`, in **seconds**.
+"""
+
 STDERR_TAIL_CHARS = 4096
 READ_QUEUE_MESSAGES = 64
 
@@ -101,7 +106,7 @@ class AcpTransport:
             self._readable.clear()
             await self._readable.wait()
 
-    async def close(self, timeout: float = 5) -> None:
+    async def close(self, timeout: float = DEFAULT_STOP_TIMEOUT) -> None:
         # Only a known exit status means the process is gone. A failed output
         # stream can leave it running.
         if self._exit is not None or self._exit_task is None:
