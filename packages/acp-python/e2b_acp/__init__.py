@@ -8,7 +8,7 @@ import acp
 from e2b import AsyncSandbox
 from e2b.connection_config import Username
 
-from .transport import AcpAgentExit, AcpTransport, StderrHandler
+from .transport import DEFAULT_STOP_TIMEOUT, AcpAgentExit, AcpTransport, StderrHandler
 from .utils import DEFAULT_MAX_MESSAGE_BYTES
 
 
@@ -45,14 +45,15 @@ class AcpAgent:
         """
         return await self._transport.wait()
 
-    async def close(self, timeout: float = 5) -> None:
+    async def stop(self, *, timeout: float = DEFAULT_STOP_TIMEOUT) -> None:
         """
-        Close the agent: send EOF to its stdin and kill it if it has not
+        Stop the agent: send EOF to its stdin and kill it if it has not
         exited within `timeout` of this call. Messages the agent sends after
-        this call are not delivered. It raises if the agent could not be
-        killed.
+        this call are not delivered.
 
         :param timeout: Time for the agent to exit in **seconds**
+
+        :raises SandboxException: If the agent could not be killed
         """
         await self._transport.close(timeout)
 
@@ -69,6 +70,7 @@ async def connect_acp_agent(
     sandbox: AsyncSandbox,
     command: str,
     client: acp.Client,
+    *,
     cwd: Optional[str] = None,
     envs: Optional[Dict[str, str]] = None,
     user: Optional[Username] = None,
@@ -95,7 +97,7 @@ async def connect_acp_agent(
     agent = await connect_acp_agent(sandbox, "goose acp", client)
     await agent.connection.initialize(protocol_version=acp.PROTOCOL_VERSION)
     # ...
-    await agent.close()
+    await agent.stop()
     ```
 
     :param sandbox: Sandbox with the agent installed
@@ -109,10 +111,13 @@ async def connect_acp_agent(
     :param request_timeout: Timeout for starting the agent in **seconds**
 
     :return: `AcpAgent` with the ACP connection
+
+    :raises InvalidArgumentException: If `max_message_bytes` is not a positive integer
+    :raises SandboxException: If the agent could not be started
     """
     transport = AcpTransport(sandbox, max_message_bytes, on_stderr)
     await transport.start(command, envs, user, cwd, request_timeout)
     return AcpAgent(transport, acp.connect_to_agent(client, transport))
 
 
-__all__ = ["AcpAgent", "AcpAgentExit", "connect_acp_agent"]
+__all__ = ["DEFAULT_STOP_TIMEOUT", "AcpAgent", "AcpAgentExit", "connect_acp_agent"]
