@@ -90,7 +90,8 @@ export class AcpTransport {
     private readonly handle: CommandHandle,
     private readonly exit: Promise<AcpAgentExit>,
     private readonly exitStatus: () => AcpAgentExit | undefined,
-    private readonly stop: () => Promise<void>
+    private readonly stopReading: () => void,
+    private readonly endInput: () => Promise<unknown>
   ) {}
 
   /**
@@ -116,9 +117,10 @@ export class AcpTransport {
       return
     }
 
+    this.stopReading()
     let timer: ReturnType<typeof setTimeout> | undefined
     const exited = await Promise.race([
-      this.stop()
+      this.endInput()
         .then(() => this.exit)
         .then(
           () => true,
@@ -141,6 +143,9 @@ export class AcpTransport {
    * @returns `true` if the agent was killed, `false` if it was not found.
    */
   async kill(): Promise<boolean> {
+    // Output waiting for the client would otherwise keep the handle from
+    // seeing the exit.
+    this.stopReading()
     return this.handle.kill()
   }
 }
@@ -241,7 +246,8 @@ export async function startAcpTransport(
   }
 
   let transport: AcpTransport | undefined
-  const closeTransport = () => transport?.close() ?? Promise.resolve()
+  // Output can arrive before startStreaming() returns, so wait for the transport.
+  const closeTransport = () => handleReady.then(() => transport!.close())
 
   const readable = new ReadableStream<AnyMessage>(
     {
@@ -269,11 +275,10 @@ export async function startAcpTransport(
     abort: () => closeTransport(),
   })
 
-  const stop = () => {
+  const stopReading = () => {
     closing = true
     resumeReading?.()
     resumeReading = undefined
-    return endInput()
   }
 
   let handle: CommandHandle
@@ -351,7 +356,8 @@ export async function startAcpTransport(
     handle,
     exit,
     () => exitStatus,
-    stop
+    stopReading,
+    endInput
   )
   return transport
 }
