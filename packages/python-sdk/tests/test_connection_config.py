@@ -5,6 +5,42 @@ from e2b.connection_config import DEFAULT_RETRIES
 from e2b.exceptions import InvalidArgumentException
 
 
+def test_idempotency_key_accepts_255_characters():
+    key = "a" * 255
+
+    assert ConnectionConfig(idempotency_key=key).idempotency_key == key
+
+
+@pytest.mark.parametrize(
+    ("key", "length"),
+    [("", 0), ("a" * 256, 256)],
+    ids=["empty", "too-long"],
+)
+def test_idempotency_key_rejects_invalid_lengths(key, length):
+    with pytest.raises(
+        InvalidArgumentException,
+        match=f"Invalid idempotency_key: expected 1-255 characters, got {length}.",
+    ):
+        ConnectionConfig(idempotency_key=key)
+
+
+def test_idempotency_key_rejects_non_strings():
+    with pytest.raises(
+        InvalidArgumentException,
+        match="Invalid idempotency_key: expected a string, got int.",
+    ):
+        ConnectionConfig(idempotency_key=123)
+
+
+def test_idempotency_key_is_stored_and_propagates():
+    config = ConnectionConfig(idempotency_key="abc123")
+
+    assert config.idempotency_key == "abc123"
+    assert config.get_api_params()["idempotency_key"] == "abc123"
+    assert ConnectionConfig(**config.get_api_params()).idempotency_key == "abc123"
+    assert config.get_api_params(idempotency_key="other")["idempotency_key"] == "other"
+
+
 def test_api_url_defaults_correctly(monkeypatch):
     monkeypatch.setenv("E2B_DOMAIN", "")
     monkeypatch.delenv("E2B_API_URL", raising=False)

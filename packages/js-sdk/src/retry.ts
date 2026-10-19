@@ -1,6 +1,8 @@
 import { InvalidArgumentError } from './errors'
 import { isReadableStreamLike } from './is'
 
+export const IDEMPOTENCY_KEY_HEADER = 'Idempotency-Key'
+
 // Retries API responses marked `Should-Retry: true`, or selected statuses
 // when the header is absent.
 const MAX_RETRY_AFTER_SECONDS = 2_147_483
@@ -39,6 +41,18 @@ export function resolveRetries(retries: number): number {
     )
   }
   return retries
+}
+
+export function resolveIdempotencyKey(
+  key: string | undefined
+): string | undefined {
+  if (key === undefined) return undefined
+  if (key.length < 1 || key.length > 255) {
+    throw new InvalidArgumentError(
+      `Invalid idempotencyKey: expected 1-255 characters, got ${key.length}.`
+    )
+  }
+  return key
 }
 
 export function parseRetryAfter(

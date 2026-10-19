@@ -16,6 +16,7 @@ import {
 } from '../errors'
 import { Paginator } from '../paginator'
 import { timeoutToSeconds } from '../utils'
+import { IDEMPOTENCY_KEY_HEADER } from '../retry'
 import type { Volume } from '../volume'
 import type { McpServer as BaseMcpServer } from './mcp'
 
@@ -1976,6 +1977,10 @@ export class SandboxApi extends ClientFactory {
     const client = new ApiClient(config)
     const res = await client.api.POST('/v2/sandboxes', {
       body,
+      headers:
+        config.idempotencyKey !== undefined
+          ? { [IDEMPOTENCY_KEY_HEADER]: config.idempotencyKey }
+          : undefined,
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 

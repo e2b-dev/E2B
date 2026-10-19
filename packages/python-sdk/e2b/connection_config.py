@@ -15,7 +15,7 @@ from typing import (
 
 import httpx
 from e2b.exceptions import InvalidArgumentException
-from e2b.retry import resolve_max_retries
+from e2b.retry import resolve_idempotency_key, resolve_max_retries
 from e2b.api.metadata import package_version
 from e2b.sandbox_domains import is_supported_sandbox_domain
 
@@ -98,6 +98,11 @@ class ApiParams(TypedDict, total=False):
 
     api_key: Optional[str]
     """E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable."""
+
+    idempotency_key: Optional[str]
+    """Idempotency key sent as the ``Idempotency-Key`` header when creating a
+    sandbox. Retries reuse the key. Keys outside 1–255 characters raise
+    ``InvalidArgumentException``."""
 
     validate_api_key: Optional[bool]
     """Deprecated: the API key format is no longer validated on the client side;
@@ -284,11 +289,13 @@ class ConnectionConfig:
         *,
         retries: Optional[int] = None,
         http_version: Optional[HttpVersion] = None,
+        idempotency_key: Optional[str] = None,
     ):
         self.logger = logger
         self.domain = domain or ConnectionConfig._domain()
         self.debug = debug if debug is not None else ConnectionConfig._debug()
         self.api_key = api_key or ConnectionConfig._api_key()
+        self.idempotency_key = resolve_idempotency_key(idempotency_key)
         self.validate_api_key = validate_api_key
         self.headers = {**(headers or {}), **(api_headers or {})}
         self._user_agent_is_sdk_built = self._apply_user_agent(
@@ -405,6 +412,7 @@ class ConnectionConfig:
         sandbox_url = opts.get("sandbox_url")
         http_version = opts.get("http_version")
         retries = opts.get("retries")
+        idempotency_key = opts.get("idempotency_key")
 
         req_headers = self.headers.copy()
         if headers is not None:
@@ -448,6 +456,11 @@ class ConnectionConfig:
                 ),
                 logger=self.logger,
                 retries=retries if retries is not None else self.retries,
+                idempotency_key=(
+                    idempotency_key
+                    if idempotency_key is not None
+                    else self.idempotency_key
+                ),
             )
         )
 

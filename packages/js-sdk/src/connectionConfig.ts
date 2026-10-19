@@ -1,7 +1,7 @@
 import { Logger } from './logs'
 import { getEnvVar, version } from './api/metadata'
 import { runtime } from './utils'
-import { resolveRetries } from './retry'
+import { resolveIdempotencyKey, resolveRetries } from './retry'
 import { InvalidArgumentError } from './errors'
 
 // Remove once all deployments support sandbox subdomains
@@ -56,6 +56,12 @@ export interface ConnectionOpts {
    * @default E2B_API_KEY // environment variable
    */
   apiKey?: string
+  /**
+   * Idempotency key sent as the `Idempotency-Key` header when creating a
+   * sandbox. Retries reuse the key. Keys outside 1–255 characters throw
+   * `InvalidArgumentError`.
+   */
+  idempotencyKey?: string
   /**
    * Whether to validate the format of the E2B API key on the client side.
    *
@@ -462,6 +468,7 @@ export class ConnectionConfig {
   readonly requestTimeoutMs: number
   readonly retries: number
 
+  readonly idempotencyKey?: string
   readonly apiKey?: string
   /**
    * @deprecated The API key format is no longer validated on the client side;
@@ -476,6 +483,7 @@ export class ConnectionConfig {
 
   constructor(opts?: ConnectionOpts) {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
+    this.idempotencyKey = resolveIdempotencyKey(opts?.idempotencyKey)
     this.validateApiKey = opts?.validateApiKey
     this.debug = opts?.debug ?? ConnectionConfig.debug
     this.domain = opts?.domain || ConnectionConfig.domain

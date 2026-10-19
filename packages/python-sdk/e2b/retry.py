@@ -15,6 +15,7 @@ BACKOFF_BASE_SECONDS = 0.1
 BACKOFF_MAX_SECONDS = 10.0
 BACKOFF_JITTER_MIN = 0.5
 RETRYABLE_STATUSES = frozenset({429, 502, 503, 504})
+IDEMPOTENCY_KEY_HEADER = "Idempotency-Key"
 
 
 def resolve_max_retries(retries: int) -> int:
@@ -23,6 +24,20 @@ def resolve_max_retries(retries: int) -> int:
             f"Invalid retries={retries!r}: expected a non-negative integer."
         )
     return retries
+
+
+def resolve_idempotency_key(key: Optional[str]) -> Optional[str]:
+    if key is None:
+        return None
+    if not isinstance(key, str):
+        raise InvalidArgumentException(
+            f"Invalid idempotency_key: expected a string, got {type(key).__name__}."
+        )
+    if len(key) < 1 or len(key) > 255:
+        raise InvalidArgumentException(
+            f"Invalid idempotency_key: expected 1-255 characters, got {len(key)}."
+        )
+    return key
 
 
 def parse_retry_after(value: Optional[str]) -> Optional[int]:

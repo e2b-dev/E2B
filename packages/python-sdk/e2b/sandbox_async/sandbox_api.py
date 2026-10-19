@@ -42,6 +42,7 @@ from e2b.exceptions import (
     SandboxNotFoundException,
     TemplateException,
 )
+from e2b.retry import IDEMPOTENCY_KEY_HEADER
 from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
     build_network_update_body,
@@ -249,7 +250,14 @@ class SandboxApi(SandboxBase):
             volume_mounts=volume_mounts if volume_mounts else UNSET,
         )
 
-        api_client = get_api_client(config)
+        api_client = get_api_client(
+            config,
+            headers=(
+                {IDEMPOTENCY_KEY_HEADER: config.idempotency_key}
+                if config.idempotency_key is not None
+                else None
+            ),
+        )
         res = await post_v2_sandboxes.asyncio_detailed(
             body=body,
             client=api_client,
