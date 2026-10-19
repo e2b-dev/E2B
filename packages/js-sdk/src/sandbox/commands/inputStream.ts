@@ -20,9 +20,9 @@ const CLOSE = Symbol('close')
 export interface CommandInputStreamOpts {
   /**
    * Maximum duration of the input stream in milliseconds.
+   * `0` disables the timeout.
    *
    * @default 60_000
-   * `0` disables the timeout.
    */
   timeoutMs?: number
   /**
