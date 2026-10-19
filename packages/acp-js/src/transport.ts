@@ -19,7 +19,7 @@ import {
  */
 export interface AcpStartOpts extends Pick<
   CommandStartOpts,
-  'cwd' | 'envs' | 'user' | 'requestTimeoutMs'
+  'cwd' | 'envs' | 'user' | 'requestTimeoutMs' | 'signal'
 > {
   /**
    * Callback for the agent's stderr output (logs). The agent's stdout is reserved for the protocol.
@@ -34,14 +34,19 @@ export interface AcpStartOpts extends Pick<
 }
 
 /**
- * Options for closing an ACP agent.
+ * Default time for an ACP agent to exit after `stop()`, in **milliseconds**.
  */
-export interface AcpCloseOpts {
+export const DEFAULT_STOP_TIMEOUT_MS = 5_000
+
+/**
+ * Options for stopping an ACP agent.
+ */
+export interface AcpStopOpts {
   /**
-   * Time for the agent to exit after `close()` is called, in **milliseconds**.
+   * Time for the agent to exit after `stop()` is called, in **milliseconds**.
    * It covers sending EOF to the agent's stdin; after it the agent is killed.
    *
-   * @default 5_000 // 5 seconds
+   * @default DEFAULT_STOP_TIMEOUT_MS // 5 seconds
    */
   timeoutMs?: number
 }
@@ -110,7 +115,7 @@ export class AcpTransport {
    *
    * It rejects if the agent could not be killed.
    */
-  async close(opts?: AcpCloseOpts): Promise<void> {
+  async close(opts?: AcpStopOpts): Promise<void> {
     // Only a known exit status means the process is gone. A failed output
     // stream can leave it running.
     if (this.exitStatus()) {
@@ -127,7 +132,10 @@ export class AcpTransport {
           () => false
         ),
       new Promise<boolean>((resolve) => {
-        timer = setTimeout(() => resolve(false), opts?.timeoutMs ?? 5_000)
+        timer = setTimeout(
+          () => resolve(false),
+          opts?.timeoutMs ?? DEFAULT_STOP_TIMEOUT_MS
+        )
       }),
     ])
     clearTimeout(timer)
@@ -290,6 +298,7 @@ export async function startAcpTransport(
       envs: opts?.envs,
       user: opts?.user,
       requestTimeoutMs: opts?.requestTimeoutMs,
+      signal: opts?.signal,
       onStdout: async (data) => {
         if (ended || closing) {
           return

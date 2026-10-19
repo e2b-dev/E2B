@@ -35,9 +35,7 @@ const client: Client = {
 
 const sandbox = await Sandbox.create('goose', { timeoutMs: 10 * 60_000 })
 try {
-  const agent = await connectAcpAgent(sandbox, {
-    command: 'goose acp --with-builtin developer',
-    client,
+  const agent = await connectAcpAgent(sandbox, 'goose acp --with-builtin developer', client, {
     envs: {
       GOOSE_PROVIDER: 'openai',
       GOOSE_MODEL: 'gpt-5.6-luna',
@@ -52,7 +50,7 @@ try {
     prompt: [{ type: 'text', text: 'Create fizzbuzz.py for 1 to 15 and run it.' }],
   })
 
-  await agent.close()
+  await agent.stop()
 } finally {
   await sandbox.kill()
 }
@@ -64,7 +62,7 @@ The agent talks ACP over its stdin and stdout. `connectAcpAgent` turns off the c
 
 ## Lifecycle
 
-- `agent.close()` sends EOF to the agent and kills it if it has not exited within `timeoutMs` (5 seconds by default) of the call. Messages the agent sends after that are not delivered.
+- `agent.stop()` sends EOF to the agent and kills it if it has not exited within `timeoutMs` (5 seconds by default) of the call. Messages the agent sends after that are not delivered.
 - `agent.wait()` resolves with the exit code once the agent exits.
 - If the agent exits with an error, the connection fails with the exit code and the end of the agent's stderr. Pass `onStderr` to receive its logs.
 - The agent runs as long as the sandbox does, so set the sandbox timeout for the longest task you expect.
