@@ -39,26 +39,42 @@ class LineSplitter:
                 f"max_message_bytes must be a positive integer, got {max_line_bytes}"
             )
         self._max_line_bytes = int(max_line_bytes)
-        self._pending = ""
+        # Text after the last newline. Chunks are joined once, when the line
+        # ends, so a long message is not rescanned on every chunk.
+        self._pending: List[str] = []
+        self._pending_bytes = 0
 
     def push(self, chunk: str) -> List[str]:
-        parts = (self._pending + chunk).split("\n")
-        self._pending = parts.pop()
-        # Characters never outnumber UTF-8 bytes, so the cheap length check
-        # only lets through lines that might be too large.
-        for line in [*parts, self._pending]:
-            if (
-                len(line) > self._max_line_bytes / 4
-                and len(line.encode()) > self._max_line_bytes
-            ):
-                raise SandboxException(
-                    f"ACP message exceeds the limit of {self._max_line_bytes} bytes"
-                )
-        return parts
+        lines = chunk.split("\n")
+        rest = lines.pop()
+        if lines:
+            self._append(lines[0])
+            lines[0] = self.flush()
+            for line in lines[1:]:
+                # Characters never outnumber UTF-8 bytes, so the cheap length
+                # check only lets through lines that might be too large.
+                if len(line) > self._max_line_bytes / 4:
+                    self._check(len(line.encode()))
+        self._append(rest)
+        return lines
 
     def flush(self) -> str:
-        rest, self._pending = self._pending, ""
+        rest = "".join(self._pending)
+        self._pending = []
+        self._pending_bytes = 0
         return rest
+
+    def _append(self, text: str) -> None:
+        if text:
+            self._pending.append(text)
+            self._pending_bytes += len(text.encode())
+            self._check(self._pending_bytes)
+
+    def _check(self, size: int) -> None:
+        if size > self._max_line_bytes:
+            raise SandboxException(
+                f"ACP message exceeds the limit of {self._max_line_bytes} bytes"
+            )
 
 
 def encode_message(message: Any) -> str:
