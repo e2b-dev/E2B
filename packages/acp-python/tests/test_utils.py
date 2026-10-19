@@ -1,3 +1,5 @@
+import time
+
 import pytest
 
 from e2b import InvalidArgumentException, SandboxException
@@ -24,6 +26,17 @@ def test_line_splitter_keeps_trailing_partial_line_for_flush():
 
     assert lines.push('{"a":1}\n{"b":2}') == ['{"a":1}']
     assert lines.flush() == '{"b":2}'
+
+
+def test_line_splitter_handles_a_long_message_in_small_chunks_quickly():
+    lines = LineSplitter(32 * 1024 * 1024)
+    chunk = "x" * 1024
+
+    started = time.monotonic()
+    for _ in range(8 * 1024):
+        assert lines.push(chunk) == []
+    assert len(lines.push("\n")[0]) == 8 * 1024 * 1024
+    assert time.monotonic() - started < 1
 
 
 def test_line_splitter_rejects_messages_over_the_limit_in_bytes():
