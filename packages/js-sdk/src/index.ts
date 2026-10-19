@@ -51,6 +51,8 @@ export type {
 } from './sandbox/filesystem/watchHandle'
 
 export { CommandExitError } from './sandbox/commands/commandHandle'
+export { CommandInputStream } from './sandbox/commands/inputStream'
+export type { CommandInputStreamOpts } from './sandbox/commands/inputStream'
 export type {
   CommandResult,
   Stdout,

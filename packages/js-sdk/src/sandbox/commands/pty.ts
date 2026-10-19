@@ -10,6 +10,7 @@ import {
   setupRequestController,
 } from '../../connectionConfig'
 import { CommandHandle } from './commandHandle'
+import { CommandInputStream, CommandInputStreamOpts } from './inputStream'
 import {
   authenticationHeader,
   handleRpcErrorWithHealthCheck,
@@ -83,7 +84,8 @@ export class Pty {
   constructor(
     private readonly transport: Transport,
     private readonly envdApi: EnvdApiClient,
-    private readonly connectionConfig: ConnectionConfig
+    private readonly connectionConfig: ConnectionConfig,
+    private readonly streamingTransport: Transport
   ) {
     this.rpc = createClient(ProcessService, this.transport)
     this.envdVersion = envdApi.version
@@ -252,6 +254,33 @@ export class Pty {
     } catch (err) {
       throw await handleRpcErrorWithHealthCheck(err, this.checkHealth)
     }
+  }
+
+  /**
+   * Open a persistent input stream to a PTY.
+   *
+   * Input sent through this stream is ordered relative to other `send` calls.
+   * Use this instead of {@link Pty.sendInput} when ordering matters; each
+   * `sendInput` call is a separate request. The stream sends keepalive messages
+   * while idle.
+   *
+   * In browsers, this requires fetch request-body streaming support (Chromium
+   * over HTTP/2).
+   *
+   * @param pid process ID of the PTY.
+   * @param opts stream timeout and abort signal.
+   */
+  streamInput(
+    pid: number,
+    opts: CommandInputStreamOpts = {}
+  ): CommandInputStream {
+    return new CommandInputStream(
+      createClient(ProcessService, this.streamingTransport),
+      pid,
+      'pty',
+      opts,
+      this.checkHealth
+    )
   }
 
   /**

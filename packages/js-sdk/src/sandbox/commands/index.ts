@@ -28,7 +28,10 @@ import {
 import { ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE } from '../../envd/versions'
 import { SandboxError } from '../../errors'
 import { CommandHandle, CommandResult } from './commandHandle'
+import { CommandInputStream, CommandInputStreamOpts } from './inputStream'
 export { Pty } from './pty'
+export { CommandInputStream }
+export type { CommandInputStreamOpts }
 
 /**
  * Options for sending a command request.
@@ -139,7 +142,8 @@ export class Commands {
   constructor(
     transport: Transport,
     private readonly envdApi: EnvdApiClient,
-    private readonly connectionConfig: ConnectionConfig
+    private readonly connectionConfig: ConnectionConfig,
+    private readonly streamingTransport: Transport
   ) {
     this.rpc = createClient(ProcessService, transport)
     this.envdVersion = envdApi.version
@@ -227,6 +231,33 @@ export class Commands {
     } catch (err) {
       throw await handleRpcErrorWithHealthCheck(err, this.checkHealth)
     }
+  }
+
+  /**
+   * Open a persistent input stream to a command.
+   *
+   * Input sent through this stream is ordered relative to other `send` calls.
+   * Use this instead of {@link Commands.sendStdin} when ordering matters; each
+   * `sendStdin` call is a separate request. The stream sends keepalive messages
+   * while idle.
+   *
+   * In browsers, this requires fetch request-body streaming support (Chromium
+   * over HTTP/2).
+   *
+   * @param pid process ID of the command.
+   * @param opts stream timeout and abort signal.
+   */
+  streamInput(
+    pid: number,
+    opts: CommandInputStreamOpts = {}
+  ): CommandInputStream {
+    return new CommandInputStream(
+      createClient(ProcessService, this.streamingTransport),
+      pid,
+      'stdin',
+      opts,
+      this.checkHealth
+    )
   }
 
   /**

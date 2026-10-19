@@ -23,6 +23,7 @@ from e2b.envd.utils import (
 )
 from e2b.envd.client_async import as_stream, create_rpc_client, first_event
 from e2b.sandbox.commands.command_handle import PtySize
+from e2b.sandbox_async.commands.command_input_stream import AsyncCommandInputStream
 from e2b.sandbox_async.commands.command_handle import (
     AsyncCommandHandle,
     OutputHandler,
@@ -107,6 +108,24 @@ class Pty:
             )
         except Exception as e:
             raise await ahandle_rpc_exception_with_health(e, self._check_health)
+
+    def stream_input(
+        self,
+        pid: int,
+        timeout: Optional[float] = 60,
+    ) -> AsyncCommandInputStream:
+        """Open an ordered input stream to a PTY.
+
+        :param pid: Process ID of the PTY
+        :param timeout: Timeout for the input stream in seconds; 0 disables it
+        """
+        return AsyncCommandInputStream(
+            self._rpc,
+            pid,
+            "pty",
+            timeout,
+            self._check_health,
+        )
 
     async def create(
         self,

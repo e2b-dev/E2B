@@ -25,6 +25,7 @@ from e2b.envd.versions import ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.main import ProcessInfo
 from e2b.sandbox.commands.command_handle import CommandResult
+from e2b.sandbox_async.commands.command_input_stream import AsyncCommandInputStream
 from e2b.sandbox_async.commands.command_handle import AsyncCommandHandle, Stderr, Stdout
 from e2b.sandbox_async.utils import OutputHandler
 
@@ -144,6 +145,24 @@ class Commands:
             )
         except Exception as e:
             raise await ahandle_rpc_exception_with_health(e, self._check_health)
+
+    def stream_input(
+        self,
+        pid: int,
+        timeout: Optional[float] = 60,
+    ) -> AsyncCommandInputStream:
+        """Open an ordered input stream to command stdin.
+
+        :param pid: Process ID of the command
+        :param timeout: Timeout for the input stream in seconds; 0 disables it
+        """
+        return AsyncCommandInputStream(
+            self._rpc,
+            pid,
+            "stdin",
+            timeout,
+            self._check_health,
+        )
 
     async def close_stdin(
         self,

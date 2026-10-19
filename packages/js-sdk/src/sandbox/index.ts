@@ -10,6 +10,7 @@ import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 import { rejectProxyUnavailableResponse } from '../envd/rpc'
 import { createEnvdFetch, createEnvdRpcFetch } from '../envd/http2'
 import { createRpcLogger } from '../logs'
+import { createClientStreamingTransport } from '../envd/streamingTransport'
 import { Commands, Pty } from './commands'
 import { CommandExitError } from './commands/commandHandle'
 import { Filesystem } from './filesystem'
@@ -164,39 +165,63 @@ export class Sandbox extends SandboxApi {
     }
     const envdFetch = createEnvdFetch(this.connectionConfig)
     const envdRpcFetch = createEnvdRpcFetch(this.connectionConfig)
+    const interceptors = opts?.logger
+      ? [createRpcLogger(opts.logger)]
+      : undefined
+
+    const rpcFetch: typeof fetch = (input, options) => {
+      const request = input instanceof Request ? input : undefined
+      const url = request?.url ?? input.toString()
+      options = {
+        ...(request
+          ? {
+              method: request.method,
+              headers: request.headers,
+              body: request.body,
+              signal: request.signal,
+            }
+          : {}),
+        ...(options ?? {}),
+      }
+
+      // Patch fetch to always use redirect: "follow"
+      // connect-web doesn't allow to configure redirect option - https://github.com/connectrpc/connect-es/pull/1082
+      // connect-web package uses redirect: "error" which is not supported in edge runtimes
+      // E2B endpoints should be safe to use with redirect: "follow" https://github.com/e2b-dev/E2B/issues/531#issuecomment-2779492867
+
+      const headers = new Headers({
+        'User-Agent': this.connectionConfig.headers?.['User-Agent'] ?? '',
+      })
+      new Headers(options?.headers).forEach((value, key) =>
+        headers.append(key, value)
+      )
+      new Headers(sandboxHeaders).forEach((value, key) =>
+        headers.append(key, value)
+      )
+
+      if (this.envdAccessToken) {
+        headers.append('X-Access-Token', this.envdAccessToken)
+      }
+
+      options = {
+        ...(options ?? {}),
+        headers: headers,
+        redirect: 'follow',
+      }
+
+      return envdRpcFetch(url, options).then(rejectProxyUnavailableResponse)
+    }
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
       useBinaryFormat: false,
-      interceptors: opts?.logger ? [createRpcLogger(opts.logger)] : undefined,
-      fetch: (url, options) => {
-        // Patch fetch to always use redirect: "follow"
-        // connect-web doesn't allow to configure redirect option - https://github.com/connectrpc/connect-es/pull/1082
-        // connect-web package uses redirect: "error" which is not supported in edge runtimes
-        // E2B endpoints should be safe to use with redirect: "follow" https://github.com/e2b-dev/E2B/issues/531#issuecomment-2779492867
-
-        const headers = new Headers({
-          'User-Agent': this.connectionConfig.headers?.['User-Agent'] ?? '',
-        })
-        new Headers(options?.headers).forEach((value, key) =>
-          headers.append(key, value)
-        )
-        new Headers(sandboxHeaders).forEach((value, key) =>
-          headers.append(key, value)
-        )
-
-        if (this.envdAccessToken) {
-          headers.append('X-Access-Token', this.envdAccessToken)
-        }
-
-        options = {
-          ...(options ?? {}),
-          headers: headers,
-          redirect: 'follow',
-        }
-
-        return envdRpcFetch(url, options).then(rejectProxyUnavailableResponse)
-      },
+      interceptors,
+      fetch: rpcFetch,
+    })
+    const rpcStreamingTransport = createClientStreamingTransport({
+      baseUrl: this.envdApiUrl,
+      fetch: rpcFetch,
+      interceptors,
     })
 
     this.envdApi = new EnvdApiClient(
@@ -222,9 +247,15 @@ export class Sandbox extends SandboxApi {
     this.commands = new Commands(
       rpcTransport,
       this.envdApi,
-      this.connectionConfig
+      this.connectionConfig,
+      rpcStreamingTransport
     )
-    this.pty = new Pty(rpcTransport, this.envdApi, this.connectionConfig)
+    this.pty = new Pty(
+      rpcTransport,
+      this.envdApi,
+      this.connectionConfig,
+      rpcStreamingTransport
+    )
     this.git = new Git(this.commands)
   }
 
