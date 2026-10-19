@@ -9,7 +9,12 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 function fakeAgent(opts: { closeStdin?: () => Promise<void> } = {}) {
   let callbacks!: Pick<CommandStartOpts, 'onStdout' | 'onStderr'>
   let settle!: { resolve: (r: unknown) => void; reject: (e: unknown) => void }
-  const exit = new Promise((resolve, reject) => (settle = { resolve, reject }))
+  const settled = new Promise(
+    (resolve, reject) => (settle = { resolve, reject })
+  )
+  // Like the SDK handle, the exit is seen only after output callbacks return.
+  let output: Promise<unknown> = Promise.resolve()
+  const exit = settled.finally(() => output)
   exit.catch(() => {})
 
   const writes: string[] = []
@@ -52,9 +57,11 @@ function fakeAgent(opts: { closeStdin?: () => Promise<void> } = {}) {
     writes,
     maxActive: () => maxActive,
     emit: (...messages: unknown[]) =>
-      callbacks.onStdout!(
-        messages.map((m) => JSON.stringify(m) + '\n').join('')
-      ),
+      (output = Promise.resolve(
+        callbacks.onStdout!(
+          messages.map((m) => JSON.stringify(m) + '\n').join('')
+        )
+      )),
     exitWith,
     fail: (err: unknown) => settle.reject(err),
   }
@@ -193,4 +200,43 @@ test('connect kills the agent when the client factory throws', async () => {
     })
   ).rejects.toThrow('no client')
   expect(agent.handle.kill).toHaveBeenCalledOnce()
+})
+
+test('kill lets wait() see the exit while output waits for the client', async () => {
+  const agent = fakeAgent()
+  const transport = await startAcpTransport(agent.sandbox, 'agent')
+
+  for (let i = 0; i < 63; i++) {
+    await agent.emit({ jsonrpc: '2.0', method: 'update' })
+  }
+  // The read queue is full, so this callback waits for the client.
+  agent.emit({ jsonrpc: '2.0', method: 'update' })
+  await sleep(0)
+  await transport.kill()
+
+  const exited = await Promise.race([
+    transport.wait().then(() => true),
+    sleep(500).then(() => false),
+  ])
+  assert.isTrue(exited)
+})
+
+test('output over the limit before start returns still closes the agent', async () => {
+  const closeStdin = vi.fn(async () => {})
+  const agent = fakeAgent({ closeStdin })
+  const startStreaming = agent.sandbox.commands.startStreaming
+  agent.sandbox.commands.startStreaming = async (cmd, opts) => {
+    const handle = await startStreaming(cmd, opts)
+    opts!.onStdout!('x'.repeat(100))
+    return handle
+  }
+  const transport = await startAcpTransport(agent.sandbox, 'agent', {
+    maxMessageBytes: 10,
+  })
+
+  await expect(transport.stream.readable.getReader().read()).rejects.toThrow(
+    /exceeds the limit/
+  )
+  await sleep(0)
+  expect(closeStdin).toHaveBeenCalledOnce()
 })
