@@ -41,7 +41,6 @@ class AsyncCommandInputStream:
         self._closing = False
         self._stopped = False
         self._failure: Optional[Exception] = None
-        self._close_task: Optional[asyncio.Task[None]] = None
         self._task = asyncio.create_task(self._run())
 
     async def send(self, data: Union[str, bytes]) -> None:
@@ -54,13 +53,9 @@ class AsyncCommandInputStream:
 
     async def close(self) -> None:
         """Finish the input stream and wait for envd to acknowledge it."""
-        if self._close_task is None:
+        if not self._closing:
             self._closing = True
             self._queue.put_nowait(_CLOSE)
-            self._close_task = asyncio.create_task(self._finish_close())
-        await self._close_task
-
-    async def _finish_close(self) -> None:
         await self._task
         if self._failure is not None:
             raise self._failure

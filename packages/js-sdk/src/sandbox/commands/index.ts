@@ -134,6 +134,7 @@ export interface ProcessInfo {
  */
 export class Commands {
   protected readonly rpc: Client<typeof ProcessService>
+  private readonly streamingRpc: Client<typeof ProcessService>
 
   private readonly defaultProcessConnectionTimeout = 60_000 // 60 seconds
   private readonly envdVersion: string
@@ -143,9 +144,10 @@ export class Commands {
     transport: Transport,
     private readonly envdApi: EnvdApiClient,
     private readonly connectionConfig: ConnectionConfig,
-    private readonly streamingTransport: Transport
+    streamingTransport: Transport
   ) {
     this.rpc = createClient(ProcessService, transport)
+    this.streamingRpc = createClient(ProcessService, streamingTransport)
     this.envdVersion = envdApi.version
     this.checkHealth = () => checkSandboxHealth(this.envdApi)
   }
@@ -252,7 +254,7 @@ export class Commands {
     opts: CommandInputStreamOpts = {}
   ): CommandInputStream {
     return new CommandInputStream(
-      createClient(ProcessService, this.streamingTransport),
+      this.streamingRpc,
       pid,
       'stdin',
       opts,

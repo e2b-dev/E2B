@@ -22,6 +22,7 @@ export interface CommandInputStreamOpts {
    * Maximum duration of the input stream in milliseconds.
    *
    * @default 60_000
+   * `0` disables the timeout.
    */
   timeoutMs?: number
   /**
@@ -35,9 +36,6 @@ type QueuedInput = string | Uint8Array | typeof CLOSE
 
 /**
  * An ordered, long-lived input stream for a command or PTY.
- *
- * @hidden
- * @internal
  */
 export class CommandInputStream {
   private readonly queue: QueuedInput[] = []
@@ -49,6 +47,10 @@ export class CommandInputStream {
   private failure?: Error
   private closePromise?: Promise<void>
 
+  /**
+   * @hidden
+   * @internal
+   */
   constructor(
     private readonly rpc: Client<typeof ProcessService>,
     private readonly pid: number,

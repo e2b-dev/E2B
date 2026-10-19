@@ -169,21 +169,7 @@ export class Sandbox extends SandboxApi {
       ? [createRpcLogger(opts.logger)]
       : undefined
 
-    const rpcFetch: typeof fetch = (input, options) => {
-      const request = input instanceof Request ? input : undefined
-      const url = request?.url ?? input.toString()
-      options = {
-        ...(request
-          ? {
-              method: request.method,
-              headers: request.headers,
-              body: request.body,
-              signal: request.signal,
-            }
-          : {}),
-        ...(options ?? {}),
-      }
-
+    const rpcFetch: typeof fetch = (url, options) => {
       // Patch fetch to always use redirect: "follow"
       // connect-web doesn't allow to configure redirect option - https://github.com/connectrpc/connect-es/pull/1082
       // connect-web package uses redirect: "error" which is not supported in edge runtimes

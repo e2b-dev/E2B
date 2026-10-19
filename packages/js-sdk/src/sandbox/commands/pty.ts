@@ -76,6 +76,7 @@ export type PtyConnectOpts = Pick<PtyCreateOpts, 'onData' | 'timeoutMs'> &
  */
 export class Pty {
   private readonly rpc: Client<typeof ProcessService>
+  private readonly streamingRpc: Client<typeof ProcessService>
   private readonly envdVersion: string
   private readonly checkHealth: SandboxHealthCheck
 
@@ -85,9 +86,10 @@ export class Pty {
     private readonly transport: Transport,
     private readonly envdApi: EnvdApiClient,
     private readonly connectionConfig: ConnectionConfig,
-    private readonly streamingTransport: Transport
+    streamingTransport: Transport
   ) {
     this.rpc = createClient(ProcessService, this.transport)
+    this.streamingRpc = createClient(ProcessService, streamingTransport)
     this.envdVersion = envdApi.version
     this.checkHealth = () => checkSandboxHealth(this.envdApi)
   }
@@ -275,7 +277,7 @@ export class Pty {
     opts: CommandInputStreamOpts = {}
   ): CommandInputStream {
     return new CommandInputStream(
-      createClient(ProcessService, this.streamingTransport),
+      this.streamingRpc,
       pid,
       'pty',
       opts,
