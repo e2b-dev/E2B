@@ -1,4 +1,4 @@
-import { Code, ConnectError } from '@connectrpc/connect'
+import { Client, Code, ConnectError } from '@connectrpc/connect'
 import { codeFromString } from '@connectrpc/connect/protocol-connect'
 import { runtime } from '../utils'
 
@@ -19,6 +19,7 @@ import {
 } from '../errors'
 import { isNetworkError } from '../retry'
 import { ENVD_DEFAULT_USER } from './versions'
+import { Process as ProcessService, Signal } from './process/process_pb'
 
 /**
  * Sandbox health probe: resolves to `true` if the sandbox is running, `false` if it
@@ -117,10 +118,7 @@ export function isAmbiguousUnavailable(err: unknown): boolean {
  * kept, with the failed request as its cause; otherwise the probe's failure is
  * reported alongside the request's, which becomes the cause.
  */
-export function formatSandboxUnreachableError(
-  err: Error,
-  probeErr: unknown
-): Error {
+function formatSandboxUnreachableError(err: Error, probeErr: unknown): Error {
   if (probeErr instanceof SandboxUnreachableError) {
     probeErr.cause = err
     return probeErr
@@ -243,6 +241,41 @@ export async function handleRpcErrorWithHealthCheck(
   }
 
   return handleRpcError(err, errorMap)
+}
+
+/**
+ * Kills the process with the given PID with `SIGKILL`.
+ *
+ * @returns `true` if the process was killed, `false` if it was not found.
+ */
+export async function killProcess(
+  rpc: Client<typeof ProcessService>,
+  pid: number,
+  signal: AbortSignal | undefined,
+  checkHealth: SandboxHealthCheck
+): Promise<boolean> {
+  try {
+    await rpc.sendSignal(
+      {
+        process: {
+          selector: {
+            case: 'pid',
+            value: pid,
+          },
+        },
+        signal: Signal.SIGKILL,
+      },
+      { signal }
+    )
+
+    return true
+  } catch (err) {
+    if (err instanceof ConnectError && err.code === Code.NotFound) {
+      return false
+    }
+
+    throw await handleRpcErrorWithHealthCheck(err, checkHealth)
+  }
 }
 
 function encode64(value: string): string {

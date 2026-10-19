@@ -14,6 +14,7 @@ import {
   generateAndWriteTemplateFiles,
   Language,
   languageDisplay,
+  parseLanguage,
 } from './generators'
 
 /**
@@ -129,16 +130,7 @@ export const migrateCommand = new commander.Command('migrate')
   .option(
     '-l, --language <language>',
     `specify target language: ${Object.values(Language).join(', ')}`,
-    (value) => {
-      if (!Object.values(Language).includes(value as Language)) {
-        throw new commander.InvalidArgumentError(
-          `Invalid language. Must be one of: ${Object.values(Language).join(
-            ', '
-          )}`
-        )
-      }
-      return value as Language
-    }
+    parseLanguage
   )
   .addOption(pathOption)
   .action(

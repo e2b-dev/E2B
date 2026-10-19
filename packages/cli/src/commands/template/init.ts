@@ -13,6 +13,7 @@ import {
   GeneratedFiles,
   Language,
   languageDisplay,
+  parseLanguage,
 } from './generators'
 import { generateReadmeContent } from './generators/handlebars'
 
@@ -153,16 +154,7 @@ export const initCommand = new commander.Command('init')
   .option(
     '-l, --language <language>',
     `target language: ${Object.values(Language).join(', ')}`,
-    (value) => {
-      if (!Object.values(Language).includes(value as Language)) {
-        throw new commander.InvalidArgumentError(
-          `Invalid language. Must be one of: ${Object.values(Language).join(
-            ', '
-          )}`
-        )
-      }
-      return value as Language
-    }
+    parseLanguage
   )
   .alias('it')
   .action(

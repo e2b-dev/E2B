@@ -13,8 +13,6 @@ from typing import (
 import httpx
 
 from e2b.api.client_sync import get_envd_api
-from connectrpc.code import Code
-from connectrpc.errors import ConnectError
 from packaging.version import Version
 from e2b.connection_config import (
     ConnectionConfig,
@@ -26,7 +24,7 @@ from protobuf import Oneof
 
 from e2b.envd.process import process_connect, process_pb
 from e2b.envd.api import check_sandbox_health
-from e2b.envd.rpc import handle_rpc_exception_with_health
+from e2b.envd.rpc import handle_rpc_exception_with_health, kill_process
 from e2b.envd.utils import (
     authentication_header,
     extract_start_pid,
@@ -119,22 +117,12 @@ class Commands:
 
         :return: `True` if the command was killed, `False` if the command was not found
         """
-        try:
-            self._rpc.send_signal(
-                process_pb.SendSignalRequest(
-                    process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
-                    signal=process_pb.Signal.SIGKILL,
-                ),
-                timeout_ms=timeout_to_ms(
-                    self._connection_config.get_request_timeout(request_timeout)
-                ),
-            )
-            return True
-        except Exception as e:
-            if isinstance(e, ConnectError):
-                if e.code == Code.NOT_FOUND:
-                    return False
-            raise handle_rpc_exception_with_health(e, self._check_health)
+        return kill_process(
+            self._rpc,
+            pid,
+            self._connection_config.get_request_timeout(request_timeout),
+            self._check_health,
+        )
 
     def send_stdin(
         self,

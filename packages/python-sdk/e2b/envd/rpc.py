@@ -3,7 +3,11 @@ import asyncio
 from typing import Awaitable, Callable, Optional
 from connectrpc.code import Code
 from connectrpc.errors import ConnectError
+from protobuf import Oneof
 from pyqwest import ReadError, StreamError, WriteError
+
+from e2b.envd.process import process_connect, process_pb
+from e2b.envd.utils import timeout_to_ms
 
 from e2b.exceptions import (
     SandboxException,
@@ -199,3 +203,45 @@ async def ahandle_rpc_exception_with_health(
         except Exception as probe_error:
             return format_sandbox_unreachable_exception(e, probe_error)
     return handle_rpc_exception(e, error_map, sandbox_running)
+
+
+def _kill_request(pid: int) -> process_pb.SendSignalRequest:
+    return process_pb.SendSignalRequest(
+        process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
+        signal=process_pb.Signal.SIGKILL,
+    )
+
+
+def kill_process(
+    rpc: process_connect.ProcessClientSync,
+    pid: int,
+    timeout: Optional[float],
+    check_health: Callable[[], Optional[bool]],
+) -> bool:
+    """Kill the process with the given PID with ``SIGKILL``.
+
+    :return: ``True`` if the process was killed, ``False`` if it was not found
+    """
+    try:
+        rpc.send_signal(_kill_request(pid), timeout_ms=timeout_to_ms(timeout))
+        return True
+    except Exception as e:
+        if isinstance(e, ConnectError) and e.code == Code.NOT_FOUND:
+            return False
+        raise handle_rpc_exception_with_health(e, check_health)
+
+
+async def akill_process(
+    rpc: process_connect.ProcessClient,
+    pid: int,
+    timeout: Optional[float],
+    check_health: Callable[[], Awaitable[Optional[bool]]],
+) -> bool:
+    """Async version of :func:`kill_process`."""
+    try:
+        await rpc.send_signal(_kill_request(pid), timeout_ms=timeout_to_ms(timeout))
+        return True
+    except Exception as e:
+        if isinstance(e, ConnectError) and e.code == Code.NOT_FOUND:
+            return False
+        raise await ahandle_rpc_exception_with_health(e, check_health)
