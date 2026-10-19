@@ -192,11 +192,8 @@ test('connect kills the agent when the client factory throws', async () => {
   const agent = fakeAgent()
 
   await expect(
-    connectAcpAgent(agent.sandbox as Sandbox, {
-      command: 'agent',
-      client: () => {
-        throw new Error('no client')
-      },
+    connectAcpAgent(agent.sandbox as Sandbox, 'agent', () => {
+      throw new Error('no client')
     })
   ).rejects.toThrow('no client')
   expect(agent.handle.kill).toHaveBeenCalledOnce()

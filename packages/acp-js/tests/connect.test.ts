@@ -13,10 +13,7 @@ const client: Client = {
 
 sandboxTest('connectAcpAgent connects an ACP client', async ({ sandbox }) => {
   await uploadFakeAgent(sandbox)
-  const agent = await connectAcpAgent(sandbox, {
-    command: FAKE_AGENT_CMD,
-    client,
-  })
+  const agent = await connectAcpAgent(sandbox, FAKE_AGENT_CMD, client)
 
   const response = await agent.connection.initialize({
     protocolVersion: PROTOCOL_VERSION,
@@ -24,6 +21,6 @@ sandboxTest('connectAcpAgent connects an ACP client', async ({ sandbox }) => {
   })
 
   assert.equal(response.protocolVersion, 1)
-  await agent.close()
+  await agent.stop()
   assert.equal((await agent.wait()).exitCode, 0)
 })
