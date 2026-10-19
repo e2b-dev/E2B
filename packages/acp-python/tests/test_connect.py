@@ -26,5 +26,5 @@ async def test_connect_acp_agent_connects_an_acp_client(async_sandbox: AsyncSand
     )
 
     assert response.protocol_version == 1
-    await agent.close()
+    await agent.stop()
     assert (await agent.wait()).exit_code == 0
