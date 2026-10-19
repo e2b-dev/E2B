@@ -1,10 +1,4 @@
-import {
-  Client,
-  Code,
-  ConnectError,
-  Transport,
-  createClient,
-} from '@connectrpc/connect'
+import { Client, Transport, createClient } from '@connectrpc/connect'
 
 import { compareVersions } from 'compare-versions'
 import {
@@ -23,12 +17,12 @@ import {
 import {
   ConnectResponse,
   Process as ProcessService,
-  Signal,
   StartResponse,
 } from '../../envd/process/process_pb'
 import {
   authenticationHeader,
   handleRpcErrorWithHealthCheck,
+  killProcess,
   SandboxHealthCheck,
 } from '../../envd/rpc'
 import { ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE } from '../../envd/versions'
@@ -282,35 +276,12 @@ export class Commands {
    * @returns `true` if the command was killed, `false` if the command was not found.
    */
   async kill(pid: number, opts?: CommandRequestOpts): Promise<boolean> {
-    try {
-      await this.rpc.sendSignal(
-        {
-          process: {
-            selector: {
-              case: 'pid',
-              value: pid,
-            },
-          },
-          signal: Signal.SIGKILL,
-        },
-        {
-          signal: this.connectionConfig.getSignal(
-            opts?.requestTimeoutMs,
-            opts?.signal
-          ),
-        }
-      )
-
-      return true
-    } catch (err) {
-      if (err instanceof ConnectError) {
-        if (err.code === Code.NotFound) {
-          return false
-        }
-      }
-
-      throw await handleRpcErrorWithHealthCheck(err, this.checkHealth)
-    }
+    return killProcess(
+      this.rpc,
+      pid,
+      this.connectionConfig.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      this.checkHealth
+    )
   }
 
   /**
