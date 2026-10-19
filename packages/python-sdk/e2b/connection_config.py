@@ -81,7 +81,8 @@ class ApiParams(TypedDict, total=False):
     """Number of control-plane retries for responses marked ``Should-Retry: true``.
     Waits for valid ``Retry-After`` delta-seconds, otherwise exponential backoff
     with jitter from 0.1 to 10 seconds. Connection failures are retried
-    separately; see ``E2B_CONNECTION_RETRIES``.
+    separately; see ``E2B_CONNECTION_RETRIES``. Network errors after the
+    request is sent (e.g. a dropped connection) are not retried.
     A retry is skipped when its wait would exhaust the request timeout.
     Retry waits use a 60-second total limit when request timeouts are disabled.
     Set to ``0`` to disable retries. Defaults to 3 retries.
