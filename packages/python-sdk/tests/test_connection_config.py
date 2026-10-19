@@ -1,3 +1,5 @@
+from typing import cast
+
 import pytest
 
 from e2b import ConnectionConfig
@@ -29,7 +31,7 @@ def test_idempotency_key_rejects_non_strings():
         InvalidArgumentException,
         match="Invalid idempotency_key: expected a string, got int.",
     ):
-        ConnectionConfig(idempotency_key=123)
+        ConnectionConfig(idempotency_key=cast(str, 123))
 
 
 def test_idempotency_key_is_stored_and_propagates():
