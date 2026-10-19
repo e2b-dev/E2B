@@ -12,7 +12,10 @@ const encoder = new TextEncoder()
  * Splits newline-delimited text chunks into complete lines.
  */
 export class LineSplitter {
-  private pending = ''
+  // Text after the last newline. Chunks are joined once, when the line ends,
+  // so a long message is not rescanned on every chunk.
+  private pending: string[] = []
+  private pendingBytes = 0
 
   constructor(private readonly maxLineBytes: number) {
     if (!Number.isSafeInteger(maxLineBytes) || maxLineBytes <= 0) {
@@ -23,27 +26,44 @@ export class LineSplitter {
   }
 
   push(chunk: string): string[] {
-    const parts = (this.pending + chunk).split('\n')
-    this.pending = parts.pop() ?? ''
-    // Characters never outnumber UTF-8 bytes, so the cheap length check only
-    // lets through lines that might be too large.
-    for (const line of [...parts, this.pending]) {
-      if (
-        line.length > this.maxLineBytes / 4 &&
-        encoder.encode(line).length > this.maxLineBytes
-      ) {
-        throw new SandboxError(
-          `ACP message exceeds the limit of ${this.maxLineBytes} bytes`
-        )
+    const lines = chunk.split('\n')
+    const rest = lines.pop() ?? ''
+    if (lines.length > 0) {
+      this.append(lines[0])
+      lines[0] = this.flush()
+      for (const line of lines.slice(1)) {
+        // Characters never outnumber UTF-8 bytes, so the cheap length check
+        // only lets through lines that might be too large.
+        if (line.length > this.maxLineBytes / 4) {
+          this.check(encoder.encode(line).length)
+        }
       }
     }
-    return parts
+    this.append(rest)
+    return lines
   }
 
   flush(): string {
-    const rest = this.pending
-    this.pending = ''
+    const rest = this.pending.join('')
+    this.pending = []
+    this.pendingBytes = 0
     return rest
+  }
+
+  private append(text: string) {
+    if (text) {
+      this.pending.push(text)
+      this.pendingBytes += encoder.encode(text).length
+      this.check(this.pendingBytes)
+    }
+  }
+
+  private check(bytes: number) {
+    if (bytes > this.maxLineBytes) {
+      throw new SandboxError(
+        `ACP message exceeds the limit of ${this.maxLineBytes} bytes`
+      )
+    }
   }
 }
 

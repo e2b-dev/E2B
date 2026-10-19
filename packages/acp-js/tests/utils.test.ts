@@ -29,6 +29,18 @@ test('line splitter rejects messages over the limit in bytes', () => {
   expect(() => lines.push('€€€€')).toThrow(/exceeds the limit of 8 bytes/)
 })
 
+test('line splitter handles a long message in small chunks quickly', () => {
+  const lines = new LineSplitter(32 * 1024 * 1024)
+  const chunk = 'x'.repeat(1024)
+
+  const started = Date.now()
+  for (let i = 0; i < 8 * 1024; i++) {
+    assert.deepEqual(lines.push(chunk), [])
+  }
+  assert.lengthOf(lines.push('\n')[0], 8 * 1024 * 1024)
+  assert.isBelow(Date.now() - started, 1_000)
+})
+
 test('initialize turns off client filesystem and terminal', () => {
   const message = {
     jsonrpc: '2.0',
