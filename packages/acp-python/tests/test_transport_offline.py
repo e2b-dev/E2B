@@ -19,6 +19,8 @@ class FakeAgent:
         self.max_active = 0
         self.killed = 0
         self.exit = asyncio.get_running_loop().create_future()
+        # Like the SDK handle, the exit is seen only after output callbacks return.
+        self._output = asyncio.Lock()
         self._close_stdin = close_stdin
         self.handle = SimpleNamespace(
             pid=42,
@@ -52,7 +54,11 @@ class FakeAgent:
         return True
 
     async def _wait(self):
-        return await asyncio.shield(self.exit)
+        try:
+            return await asyncio.shield(self.exit)
+        finally:
+            async with self._output:
+                pass
 
     def exit_with(self, code):
         if self.exit.done():
@@ -64,8 +70,9 @@ class FakeAgent:
                 CommandExitException(stdout="", stderr="", exit_code=code, error=None)
             )
 
-    def emit(self, message):
-        return self.on_stdout(json.dumps(message) + "\n")
+    async def emit(self, message):
+        async with self._output:
+            await self.on_stdout(json.dumps(message) + "\n")
 
 
 async def start(agent):
@@ -190,3 +197,18 @@ async def test_close_releases_a_reader_blocked_on_a_full_queue():
         received.append(message["method"])
     assert "late" not in received
     assert len(received) == READ_QUEUE_MESSAGES
+
+
+async def test_kill_lets_wait_see_the_exit_while_output_waits_for_the_client():
+    agent = FakeAgent()
+    transport = await start(agent)
+    for i in range(READ_QUEUE_MESSAGES):
+        await agent.emit({"jsonrpc": "2.0", "method": "update", "params": i})
+
+    # The read queue is full, so this callback waits for the client.
+    asyncio.create_task(agent.emit({"jsonrpc": "2.0", "method": "late"}))
+    await asyncio.sleep(0.01)
+    await transport.kill()
+
+    exit = await asyncio.wait_for(transport.wait(), 1)
+    assert exit.exit_code == -1
