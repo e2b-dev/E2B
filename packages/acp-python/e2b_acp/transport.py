@@ -120,6 +120,10 @@ class AcpTransport:
 
     async def kill(self) -> bool:
         assert self._handle is not None
+        # Output waiting for the client would otherwise keep the handle from
+        # seeing the exit.
+        self._closing = True
+        self._space.set()
         return await self._handle.kill()
 
     async def wait(self) -> AcpAgentExit:
