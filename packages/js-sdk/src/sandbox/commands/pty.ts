@@ -1,15 +1,6 @@
-import {
-  Code,
-  ConnectError,
-  createClient,
-  Client,
-  Transport,
-} from '@connectrpc/connect'
+import { createClient, Client, Transport } from '@connectrpc/connect'
 
-import {
-  Signal,
-  Process as ProcessService,
-} from '../../envd/process/process_pb'
+import { Process as ProcessService } from '../../envd/process/process_pb'
 import {
   ConnectionConfig,
   ConnectionOpts,
@@ -22,6 +13,7 @@ import { CommandHandle } from './commandHandle'
 import {
   authenticationHeader,
   handleRpcErrorWithHealthCheck,
+  killProcess,
   SandboxHealthCheck,
 } from '../../envd/rpc'
 import {
@@ -316,34 +308,11 @@ export class Pty {
     pid: number,
     opts?: Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>
   ): Promise<boolean> {
-    try {
-      await this.rpc.sendSignal(
-        {
-          process: {
-            selector: {
-              case: 'pid',
-              value: pid,
-            },
-          },
-          signal: Signal.SIGKILL,
-        },
-        {
-          signal: this.connectionConfig.getSignal(
-            opts?.requestTimeoutMs,
-            opts?.signal
-          ),
-        }
-      )
-
-      return true
-    } catch (err) {
-      if (err instanceof ConnectError) {
-        if (err.code === Code.NotFound) {
-          return false
-        }
-      }
-
-      throw await handleRpcErrorWithHealthCheck(err, this.checkHealth)
-    }
+    return killProcess(
+      this.rpc,
+      pid,
+      this.connectionConfig.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      this.checkHealth
+    )
   }
 }

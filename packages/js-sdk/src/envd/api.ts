@@ -69,7 +69,7 @@ export async function checkSandboxHealth(
  * the sandbox: the connection could not be established or was dropped mid-request
  * (the latter surfaces with runtime-specific wording, e.g. undici's `terminated`).
  */
-export function isFetchTransportFailure(err: unknown): err is Error {
+function isFetchTransportFailure(err: unknown): err is Error {
   return (
     err instanceof Error &&
     (isConnectionTerminatedMessage(err.message) || isNetworkError(err))
@@ -104,7 +104,7 @@ export async function handleEnvdApiFetchError(
  * Extracts the error message of a non-2xx envd API response: the `message` of its
  * JSON body, else its text body, else its status text.
  */
-export async function getEnvdApiErrorMessage(res: {
+async function getEnvdApiErrorMessage(res: {
   error?: ApiError
   response: Response
 }): Promise<string> {

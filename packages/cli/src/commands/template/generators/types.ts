@@ -1,3 +1,5 @@
+import * as commander from 'commander'
+
 export enum Language {
   TypeScript = 'typescript',
   PythonSync = 'python-sync',
@@ -8,6 +10,18 @@ export const languageDisplay = {
   [Language.TypeScript]: 'TypeScript',
   [Language.PythonSync]: 'Python (sync)',
   [Language.PythonAsync]: 'Python (async)',
+}
+
+/**
+ * Parses the `--language` option value, rejecting unknown languages.
+ */
+export function parseLanguage(value: string): Language {
+  if (!Object.values(Language).includes(value as Language)) {
+    throw new commander.InvalidArgumentError(
+      `Invalid language. Must be one of: ${Object.values(Language).join(', ')}`
+    )
+  }
+  return value as Language
 }
 
 export interface TemplateJSON {
