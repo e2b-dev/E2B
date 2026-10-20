@@ -34,20 +34,33 @@ export async function spawnConnectedTerminal(
     ...(opts.envs !== undefined ? { envs: opts.envs } : {}),
   })
 
-  const input = sandbox.pty.streamInput(terminalSession.pid, { timeoutMs: 0 })
+  const openInput = () =>
+    sandbox.pty.streamInput(terminalSession.pid, { timeoutMs: 0 })
+  let input = openInput()
+  let closed = false
   let inputErrorReported = false
 
   const resizeListener = () =>
     sandbox.pty.resize(terminalSession.pid, getStdoutSize())
-  const stdinListener = (data: Buffer) => {
-    input.send(data).catch((err) => {
-      if (inputErrorReported) {
-        return
+  const sendInput = (data: Buffer, retried = false): void => {
+    const handle = input
+    handle.send(data).then(
+      () => {
+        inputErrorReported = false
+      },
+      (err) => {
+        if (closed) return
+        if (input === handle) input = openInput()
+        if (!retried) return sendInput(data, true)
+        if (inputErrorReported) {
+          return
+        }
+        inputErrorReported = true
+        console.error('Error sending input:', err)
       }
-      inputErrorReported = true
-      console.error('Error sending input:', err)
-    })
+    )
   }
+  const stdinListener = (data: Buffer) => sendInput(data)
   process.stdout.on('resize', resizeListener)
   process.stdin.on('data', stdinListener)
 
@@ -67,6 +80,7 @@ export async function spawnConnectedTerminal(
     throw err
   } finally {
     // Cleanup
+    closed = true
     process.stdout.write('\n')
     process.stdout.off('resize', resizeListener)
     process.stdin.off('data', stdinListener)
