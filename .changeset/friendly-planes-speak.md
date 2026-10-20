@@ -3,5 +3,6 @@
 '@e2b/python-sdk': minor
 ---
 
-- Switch later API requests to the control-plane domain from `X-E2B-Alt-Used`.
-- Keep sandbox-domain fallbacks aligned with the resolved control plane.
+- Discover the control-plane domain from the `X-E2B-Alt-Used` header the global API proxy returns and use it for later API calls in the process (cached per domain + API key).
+- The sandbox domain falls back to the discovered domain, so envd traffic reaches the right plane.
+- No switching with a custom `apiUrl`/`E2B_API_URL` or in debug mode.

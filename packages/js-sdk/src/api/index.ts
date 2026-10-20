@@ -120,19 +120,21 @@ class ApiClient {
       config.requestTimeoutMs
     )
 
+    const apiFetch: typeof fetch = async (input, init) => {
+      const response = await fetchWithRetry(input, init)
+      if (shouldRecordDomain) {
+        recordResolvedDomain(
+          config.domain,
+          config.apiKey,
+          response.headers.get(ALT_USED_HEADER)
+        )
+      }
+      return response
+    }
+
     this.api = createClient<paths>({
       baseUrl: config.apiUrl,
-      fetch: async (input) => {
-        const response = await fetchWithRetry(input)
-        if (shouldRecordDomain) {
-          recordResolvedDomain(
-            config.domain,
-            config.apiKey,
-            response.headers.get(ALT_USED_HEADER)
-          )
-        }
-        return response
-      },
+      fetch: apiFetch,
       // In HTTP 1.1, all connections are considered persistent unless declared otherwise
       // keepalive: true,
       headers: {

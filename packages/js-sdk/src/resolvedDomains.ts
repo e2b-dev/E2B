@@ -1,4 +1,7 @@
-// X-E2B-Alt-Used identifies a key's control plane; apiUrl eligibility preserves rebuilt custom-proxy configs.
+// The global API proxy names the domain of the control plane that owns the API
+// key in X-E2B-Alt-Used; later configs for that key and domain use it directly.
+// Eligibility compares apiUrl rather than checking whether it was set because
+// configs are rebuilt from resolved ones, which always carry apiUrl.
 export const ALT_USED_HEADER = 'X-E2B-Alt-Used'
 
 const resolvedDomains = new Map<string, string>()

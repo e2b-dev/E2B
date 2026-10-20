@@ -1,4 +1,9 @@
-"""X-E2B-Alt-Used identifies the key's control plane; api_url eligibility preserves rebuilt custom-proxy configs."""
+"""
+The global API proxy names the domain of the control plane that owns the API
+key in ``X-E2B-Alt-Used``; later configs for that key and domain use it
+directly. Eligibility compares ``api_url`` rather than checking whether it was
+set because configs are rebuilt from resolved ones, which always carry it.
+"""
 
 import re
 from threading import Lock
