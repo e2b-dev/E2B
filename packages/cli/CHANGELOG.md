@@ -1,5 +1,15 @@
 # @e2b/cli
 
+## 2.22.1
+
+### Patch Changes
+
+- 999782e: Share the process kill implementation between commands and PTY, share the CLI `--language` option parser between `template init` and `template migrate`, and drop unused internal exports
+- Updated dependencies [a1ad326]
+- Updated dependencies [9f4a9ef]
+- Updated dependencies [999782e]
+  - e2b@2.57.0
+
 ## 2.22.0
 
 ### Minor Changes

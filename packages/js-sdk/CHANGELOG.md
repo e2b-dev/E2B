@@ -1,5 +1,16 @@
 # e2b
 
+## 2.57.0
+
+### Minor Changes
+
+- a1ad326: Add `tls` to the egress proxy options as `true` or `{ serverName?, caCert? }` (`server_name`/`ca_cert` in Python); `getInfo`/`get_info` reports it without the CA.
+
+### Patch Changes
+
+- 9f4a9ef: Bump `@bufbuild/protobuf` to ^2.16.0
+- 999782e: Share the process kill implementation between commands and PTY, share the CLI `--language` option parser between `template init` and `template migrate`, and drop unused internal exports
+
 ## 2.56.0
 
 ### Minor Changes
