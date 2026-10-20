@@ -21,9 +21,11 @@ from e2b.api.client.types import Response
 from e2b.api.metadata import default_headers
 from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.exceptions import (
+    SANDBOX_PAUSE_REFUSED_ERROR_CODE,
     AuthenticationException,
     InvalidArgumentException,
     RateLimitException,
+    SandboxPauseRefusedException,
     ServiceBusyException,
     SandboxException,
 )
@@ -157,10 +159,13 @@ def api_exception_from_code(
     message: Optional[str] = None,
     default_exception_class: type[Exception] = SandboxException,
     stack_trace: Optional[TracebackType] = None,
+    error_code: Optional[str] = None,
 ) -> Exception:
     """Map an API error code and message to the matching exception class — the
     same mapping :func:`handle_api_exception` applies to HTTP responses, usable
-    for error objects embedded in response bodies (e.g. per-fork results)."""
+    for error objects embedded in response bodies (e.g. per-fork results).
+    ``error_code`` is the body's semantic error code, which refines the status
+    for the codes the SDK types (a refused pause)."""
     if status_code == 401:
         text = f"{status_code}: Unauthorized, please check your credentials."
         if message:
@@ -174,6 +179,11 @@ def api_exception_from_code(
         return RateLimitException(text)
 
     if status_code == 503:
+        if error_code == SANDBOX_PAUSE_REFUSED_ERROR_CODE:
+            # The API's message already says what to do for its reason.
+            return SandboxPauseRefusedException(
+                message or "The node refused the pause, please retry"
+            )
         text = f"{status_code}: Service temporarily unavailable, please retry."
         if message:
             text += f" - {message}"
@@ -197,8 +207,12 @@ def handle_api_exception(
         body = json.loads(e.content) if e.content else {}
     except json.JSONDecodeError:
         body = {}
+    # A non-object body (e.g. a JSON list) carries neither field.
+    if not isinstance(body, dict):
+        body = {}
 
     message = body["message"] if "message" in body else None
+    error_code = body.get("error_code")
     if message is None and e.status_code not in (401, 429, 503):
         err = default_exception_class(f"{e.status_code}: {e.content}").with_traceback(
             stack_trace
@@ -209,7 +223,11 @@ def handle_api_exception(
         return err
 
     return api_exception_from_code(
-        e.status_code, message, default_exception_class, stack_trace
+        e.status_code,
+        message,
+        default_exception_class,
+        stack_trace,
+        error_code if isinstance(error_code, str) else None,
     )
 
 

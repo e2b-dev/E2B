@@ -449,12 +449,15 @@ export interface paths {
             };
             responses: {
                 /** @description The sandbox was paused successfully and can be resumed */
-                204: {
+                200: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": components["schemas"]["SandboxPauseResult"];
+                    };
                 };
+                400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
                 409: components["responses"]["409"];
@@ -2258,7 +2261,7 @@ export interface components {
              * @description Error code
              */
             code: number;
-            /** @description Machine-readable semantic error code. Not a closed set; initial values: sandbox_capacity_unavailable, sandbox_placement_timeout, sandbox_no_compatible_node, sandbox_create_failed, internal_server_error, secret_limit_reached. */
+            /** @description Machine-readable semantic error code. Not a closed set; initial values: sandbox_capacity_unavailable, sandbox_placement_timeout, sandbox_no_compatible_node, sandbox_create_failed, sandbox_pause_refused (the node refused the pause and the sandbox keeps running: the guest agent did not answer the health check, or the node was busy; retry, or pause with force when the guest agent is unresponsive), internal_server_error, secret_limit_reached. */
             error_code?: string;
             /** @description Error */
             message: string;
@@ -2722,10 +2725,19 @@ export interface components {
         SandboxOnTimeout: "kill" | "pause";
         SandboxPauseRequest: {
             /**
+             * @description Take the pause even when the sandbox guest agent is unresponsive. Applies to memory pauses only. The memory snapshot may not resume; a reboot resume recovers the disk state. Defaults to false.
+             * @default false
+             */
+            force?: boolean;
+            /**
              * @description Whether to capture a full memory snapshot. When false, only the filesystem is persisted and resuming the sandbox cold-boots (reboots) it from disk, losing in-memory state, running processes, and open connections. Resume it with an explicit request (connect or resume); auto-resume, which can be triggered by arbitrary traffic, refuses such a sandbox. Defaults to true.
              * @default true
              */
             memory?: boolean;
+        };
+        SandboxPauseResult: {
+            /** @description Whether the pause was taken with the force override, skipping the guest agent health check. */
+            forced: boolean;
         };
         SandboxRefreshRequest: {
             /** @description Duration for which the sandbox should be kept alive in seconds */

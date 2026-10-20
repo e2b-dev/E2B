@@ -626,6 +626,24 @@ def resolve_snapshot_memory(
     return mode == "full"
 
 
+@dataclass
+class SandboxPauseResult:
+    """
+    Result of a pause.
+    """
+
+    paused: bool
+    """`True` if this call paused the sandbox, `False` if it was already paused."""
+
+    forced: bool
+    """
+    Whether the snapshot was taken with the `force` override, without the guest
+    agent health check. Reports what happened rather than echoing the option:
+    `False` when the sandbox was already paused, and also when a forced request
+    joined a normal pause that was already in flight.
+    """
+
+
 class SandboxOnTimeoutPause(TypedDict):
     """
     Object form of `on_timeout` that auto-pauses the sandbox when the timeout is

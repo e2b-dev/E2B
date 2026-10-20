@@ -38,6 +38,7 @@ from .connection_config import (
 )
 from .volume.connection_config import VolumeApiParams, VolumeConnectionConfig
 from .exceptions import (
+    SANDBOX_PAUSE_REFUSED_ERROR_CODE,
     AuthenticationException,
     FileNotFoundException,
     GitAuthException,
@@ -50,6 +51,7 @@ from .exceptions import (
     RateLimitException,
     ServiceBusyException,
     SandboxException,
+    SandboxPauseRefusedException,
     SandboxNotFoundException,
     SandboxNotRunningException,
     SandboxUnreachableException,
@@ -95,6 +97,7 @@ from .sandbox.sandbox_api import (
     SandboxMetrics,
     SandboxLifecycle,
     SandboxOnTimeout,
+    SandboxPauseResult,
     SandboxNetworkInfo,
     SandboxNetworkOpts,
     SandboxNetworkRule,
@@ -187,6 +190,8 @@ __all__ = [
     # Exceptions
     "SandboxException",
     "ServiceBusyException",
+    "SandboxPauseRefusedException",
+    "SANDBOX_PAUSE_REFUSED_ERROR_CODE",
     "TimeoutException",
     "NotFoundException",
     "FileNotFoundException",
@@ -263,6 +268,8 @@ __all__ = [
     "AsyncSecretPaginator",
     "SecretException",
     "SecretNotFoundException",
+    # Pause
+    "SandboxPauseResult",
     # Snapshot
     "SnapshotInfo",
     "SnapshotMode",

@@ -7,6 +7,8 @@ import { ConnectionConfig } from '../connectionConfig'
 import {
   AuthenticationError,
   RateLimitError,
+  SANDBOX_PAUSE_REFUSED_ERROR_CODE,
+  SandboxPauseRefusedError,
   ServiceBusyError,
   SandboxError,
 } from '../errors'
@@ -16,7 +18,9 @@ import { withRetry } from '../retry'
 /**
  * Map an API error code and message to the matching error class — the same
  * mapping {@link handleApiError} applies to HTTP responses, usable for error
- * objects embedded in response bodies (e.g. per-fork results).
+ * objects embedded in response bodies (e.g. per-fork results). `errorCode` is
+ * the body's semantic `error_code`, which refines the status for the codes
+ * the SDK types (a refused pause).
  */
 export function apiErrorFromCode(
   code: number,
@@ -25,7 +29,8 @@ export function apiErrorFromCode(
     message: string,
     stackTrace?: string
   ) => Error = SandboxError,
-  stackTrace?: string
+  stackTrace?: string,
+  errorCode?: string
 ): Error {
   if (code === 401) {
     const message = 'Unauthorized, please check your credentials.'
@@ -40,6 +45,12 @@ export function apiErrorFromCode(
   }
 
   if (code === 503) {
+    if (errorCode === SANDBOX_PAUSE_REFUSED_ERROR_CODE) {
+      // The API's message already says what to do for its reason.
+      return new SandboxPauseRefusedError(
+        content ? `${content}` : 'The node refused the pause, please retry'
+      )
+    }
     const message = 'Service temporarily unavailable, please retry'
     return new ServiceBusyError(content ? `${message} - ${content}` : message)
   }
@@ -72,7 +83,8 @@ export function handleApiError(
       status,
       response.error?.message ?? response.error,
       errorClass,
-      stackTrace
+      stackTrace,
+      response.error?.error_code
     )
   }
 

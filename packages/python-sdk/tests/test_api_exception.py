@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from e2b.api import api_exception_from_code, handle_api_exception
 from e2b.exceptions import (
     RateLimitException,
+    SandboxPauseRefusedException,
     ServiceBusyException,
     SandboxException,
 )
@@ -20,6 +21,43 @@ def test_refused_pause_is_a_busy_exception_with_the_status_and_message():
     assert isinstance(err, ServiceBusyException)
     assert err.status_code == 503
     assert "node is busy persisting sandbox" in str(err)
+
+
+def test_503_with_the_refused_code_is_a_pause_refused_exception_whatever_the_endpoint():
+    reason = "Sandbox 'sbx' cannot be paused right now because its node is busy, please retry"
+    err = handle_api_exception(
+        response(
+            503,
+            (
+                '{"code":503,"error_code":"sandbox_pause_refused","message":"'
+                + reason
+                + '"}'
+            ).encode(),
+        )
+    )
+
+    assert isinstance(err, SandboxPauseRefusedException)
+    assert isinstance(err, ServiceBusyException)
+    assert err.status_code == 503
+    assert err.error_code == "sandbox_pause_refused"
+    assert str(err) == reason
+
+
+def test_503_with_another_code_stays_a_busy_exception():
+    err = api_exception_from_code(
+        503, "no capacity", error_code="sandbox_capacity_unavailable"
+    )
+
+    assert isinstance(err, ServiceBusyException)
+    assert not isinstance(err, SandboxPauseRefusedException)
+
+
+def test_503_with_a_json_list_body_is_still_a_busy_exception():
+    err = handle_api_exception(response(503, b'["not", "an", "object"]'))
+
+    assert isinstance(err, ServiceBusyException)
+    assert not isinstance(err, SandboxPauseRefusedException)
+    assert err.status_code == 503
 
 
 def test_503_without_a_body_is_still_a_busy_exception():

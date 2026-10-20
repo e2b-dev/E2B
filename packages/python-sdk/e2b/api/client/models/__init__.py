@@ -51,6 +51,7 @@ from .sandbox_network_update_config import SandboxNetworkUpdateConfig
 from .sandbox_network_update_config_rules import SandboxNetworkUpdateConfigRules
 from .sandbox_on_timeout import SandboxOnTimeout
 from .sandbox_pause_request import SandboxPauseRequest
+from .sandbox_pause_result import SandboxPauseResult
 from .sandbox_refresh_request import SandboxRefreshRequest
 from .sandbox_snapshot_request import SandboxSnapshotRequest
 from .sandbox_state import SandboxState
@@ -134,6 +135,7 @@ __all__ = (
     "SandboxNetworkUpdateConfigRules",
     "SandboxOnTimeout",
     "SandboxPauseRequest",
+    "SandboxPauseResult",
     "SandboxRefreshRequest",
     "SandboxSnapshotRequest",
     "SandboxState",

@@ -1194,6 +1194,24 @@ components:
             and open connections. Resume it with an explicit request (connect or
             resume); auto-resume, which can be triggered by arbitrary traffic,
             refuses such a sandbox. Defaults to true.
+        force:
+          type: boolean
+          default: false
+          description: >-
+            Take the pause even when the sandbox guest agent is unresponsive.
+            Applies to memory pauses only. The memory snapshot may not resume;
+            a reboot resume recovers the disk state. Defaults to false.
+
+    SandboxPauseResult:
+      type: object
+      required:
+        - forced
+      properties:
+        forced:
+          type: boolean
+          description: >-
+            Whether the pause was taken with the force override, skipping the
+            guest agent health check.
 
     SandboxForkRequest:
       type: object
@@ -2232,8 +2250,11 @@ components:
           description: >-
             Machine-readable semantic error code. Not a closed set; initial values:
             sandbox_capacity_unavailable, sandbox_placement_timeout,
-            sandbox_no_compatible_node, sandbox_create_failed, internal_server_error,
-            secret_limit_reached.
+            sandbox_no_compatible_node, sandbox_create_failed, sandbox_pause_refused
+            (the node refused the pause and the sandbox keeps running: the guest
+            agent did not answer the health check, or the node was busy; retry, or
+            pause with force when the guest agent is unresponsive),
+            internal_server_error, secret_limit_reached.
         message:
           type: string
           description: Error
@@ -3345,8 +3366,14 @@ paths:
             schema:
               $ref: "#/components/schemas/SandboxPauseRequest"
       responses:
-        "204":
+        "200":
           description: The sandbox was paused successfully and can be resumed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SandboxPauseResult"
+        "400":
+          $ref: "#/components/responses/400"
         "409":
           $ref: "#/components/responses/409"
         "404":

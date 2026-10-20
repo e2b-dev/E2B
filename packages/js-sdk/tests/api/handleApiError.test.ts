@@ -3,6 +3,7 @@ import { handleApiError } from '../../src/api'
 import {
   AuthenticationError,
   RateLimitError,
+  SandboxPauseRefusedError,
   ServiceBusyError,
   SandboxError,
 } from '../../src/errors'
@@ -65,6 +66,35 @@ describe('handleApiError', () => {
       assert.instanceOf(err, ServiceBusyError)
       assert.equal(err.statusCode, 503)
       assert.include(err.message, 'node is busy persisting sandbox')
+    })
+
+    test('a 503 carrying error_code sandbox_pause_refused is a SandboxPauseRefusedError with the API message, whatever the endpoint', () => {
+      const res = createMockResponse(503, {
+        code: 503,
+        error_code: 'sandbox_pause_refused',
+        message:
+          "Sandbox 'sbx' cannot be paused right now because its node is busy, please retry",
+      })
+      const err = handleApiError(res as any) as SandboxPauseRefusedError
+      assert.instanceOf(err, SandboxPauseRefusedError)
+      assert.instanceOf(err, ServiceBusyError)
+      assert.equal(err.statusCode, 503)
+      assert.equal(err.errorCode, 'sandbox_pause_refused')
+      assert.equal(
+        err.message,
+        "Sandbox 'sbx' cannot be paused right now because its node is busy, please retry"
+      )
+    })
+
+    test('a 503 carrying another error_code stays a ServiceBusyError', () => {
+      const res = createMockResponse(503, {
+        code: 503,
+        error_code: 'sandbox_capacity_unavailable',
+        message: 'no capacity',
+      })
+      const err = handleApiError(res as any)
+      assert.instanceOf(err, ServiceBusyError)
+      assert.notInstanceOf(err, SandboxPauseRefusedError)
     })
 
     test('a generic failure keeps SandboxError and carries its status', () => {

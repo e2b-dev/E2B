@@ -237,6 +237,346 @@ test.each([
   expect(fetchImpl).toHaveBeenCalledTimes(calls)
 })
 
+function refusal(errorCode: string): Response {
+  return new Response(
+    JSON.stringify({ code: 503, error_code: errorCode, message: 'refused' }),
+    { status: 503, headers: { 'Content-Type': 'application/json' } }
+  )
+}
+
+// The peek at a 503 body waits through the injected sleep too, so a sleep that
+// resolves at once ends every peek before an in-memory body can be read; the
+// peek tests use a real, short timer instead.
+const realSleep = (delayMs: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, Math.min(delayMs, 100)))
+
+test('returns a 503 carrying a non-retryable error_code after one request, body intact', async () => {
+  const fetchImpl = vi.fn(async () =>
+    refusal('sandbox_pause_refused')
+  ) as typeof fetch
+  const fetchWithRetry = withRetry(fetchImpl, 3, 60_000, {
+    monotonic: () => 0,
+    sleep: realSleep,
+  })
+
+  const response = await fetchWithRetry(
+    'https://api.e2b.test/sandboxes/sbx-1/pause',
+    { method: 'POST' }
+  )
+
+  expect(response.status).toBe(503)
+  expect(fetchImpl).toHaveBeenCalledTimes(1)
+  expect((await response.json()).error_code).toBe('sandbox_pause_refused')
+})
+
+test('a 503 whose body was already consumed is not peeked at and is retried', async () => {
+  const consumed = refusal('sandbox_pause_refused')
+  await consumed.text()
+  const responses = [consumed, new Response('ok')]
+  const fetchImpl = vi.fn(async () => responses.shift()!) as typeof fetch
+  const fetchWithRetry = withRetry(fetchImpl, 3, 60_000, {
+    monotonic: () => 0,
+    sleep: realSleep,
+  })
+
+  const response = await fetchWithRetry(
+    'https://api.e2b.test/sandboxes/sbx-1/pause',
+    { method: 'POST' }
+  )
+
+  expect(response.status).toBe(200)
+  expect(fetchImpl).toHaveBeenCalledTimes(2)
+})
+
+test('a 503 whose body is locked is not peeked at and is retried', async () => {
+  const locked = refusal('sandbox_pause_refused')
+  const reader = locked.body!.getReader()
+  const responses = [locked, new Response('ok')]
+  const fetchImpl = vi.fn(async () => responses.shift()!) as typeof fetch
+  const fetchWithRetry = withRetry(fetchImpl, 3, 60_000, {
+    monotonic: () => 0,
+    sleep: realSleep,
+  })
+
+  const response = await fetchWithRetry(
+    'https://api.e2b.test/sandboxes/sbx-1/pause',
+    { method: 'POST' }
+  )
+
+  expect(response.status).toBe(200)
+  expect(fetchImpl).toHaveBeenCalledTimes(2)
+  reader.releaseLock()
+})
+
+test('a 503 is not peeked at when the request was already aborted', async () => {
+  const controller = new AbortController()
+  const responses = [refusal('sandbox_pause_refused'), new Response('ok')]
+  const fetchImpl = vi.fn(async () => {
+    controller.abort()
+    return responses.shift()!
+  }) as typeof fetch
+  // A sleep that ignores the signal, so the loop is observed past the peek.
+  const sleep = vi.fn(async () => {})
+  const fetchWithRetry = withRetry(fetchImpl, 3, 60_000, {
+    monotonic: () => 0,
+    sleep,
+  })
+
+  await fetchWithRetry('https://api.e2b.test/sandboxes/sbx-1/pause', {
+    method: 'POST',
+    signal: controller.signal,
+  })
+
+  // Not short-circuited although the body carried the code, and not peeked
+  // at: the only sleep is the retry delay (a peek would have added one).
+  expect(fetchImpl).toHaveBeenCalledTimes(2)
+  expect(sleep).toHaveBeenCalledTimes(1)
+})
+
+test('a 503 whose body stalls is retried after its inspection budget (max(delay, 1 s)), not held for the whole request budget', async () => {
+  const fetchImpl = vi.fn(
+    async () =>
+      new Response(new ReadableStream({ start() {} }), {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' },
+      })
+  ) as typeof fetch
+  const sleep = vi.fn(async () => {})
+  const fetchWithRetry = withRetry(fetchImpl, 3, 60_000, {
+    monotonic: () => 0,
+    sleep,
+    random: () => 0,
+  })
+
+  const startedAt = performance.now()
+  const response = await fetchWithRetry(
+    'https://api.e2b.test/sandboxes/sbx-1/pause',
+    { method: 'POST' }
+  )
+
+  // Every attempt peeks for the inspection budget (1 s, above the 50, 100,
+  // 200 ms backoffs) through the injected sleep, then sleeps its backoff
+  // (the stub clock never advances, so nothing is subtracted), and retries.
+  expect(response.status).toBe(503)
+  expect(fetchImpl).toHaveBeenCalledTimes(4)
+  expect(sleep.mock.calls.map(([delayMs]) => delayMs)).toEqual([
+    1000, 50, 1000, 100, 1000, 200,
+  ])
+  expect(performance.now() - startedAt).toBeLessThan(1_000)
+})
+
+test('a refusal that arrives within the delay still short-circuits', async () => {
+  const fetchImpl = vi.fn(
+    async () =>
+      new Response(
+        new ReadableStream({
+          start(controller) {
+            setTimeout(() => {
+              controller.enqueue(
+                new TextEncoder().encode(
+                  '{"code":503,"error_code":"sandbox_pause_refused","message":"refused"}'
+                )
+              )
+              controller.close()
+            }, 20)
+          },
+        }),
+        { status: 503, headers: { 'Content-Type': 'application/json' } }
+      )
+  ) as typeof fetch
+  const fetchWithRetry = withRetry(fetchImpl, 3, 60_000, {
+    monotonic: () => 0,
+    sleep: realSleep,
+    random: () => 1,
+  })
+
+  const response = await fetchWithRetry(
+    'https://api.e2b.test/sandboxes/sbx-1/pause',
+    { method: 'POST' }
+  )
+
+  expect(response.status).toBe(503)
+  expect(fetchImpl).toHaveBeenCalledTimes(1)
+  // Peeked at and returned: the caller's body is untouched and still readable.
+  expect(response.bodyUsed).toBe(false)
+  expect(response.body?.locked).toBe(false)
+  expect((await response.json()).error_code).toBe('sandbox_pause_refused')
+})
+
+test('a refusal body arriving after the first backoff but within the inspection budget still short-circuits', async () => {
+  const fetchImpl = vi.fn(
+    async () =>
+      new Response(
+        new ReadableStream({
+          start(controller) {
+            setTimeout(() => {
+              controller.enqueue(
+                new TextEncoder().encode(
+                  '{"code":503,"error_code":"sandbox_pause_refused","message":"refused"}'
+                )
+              )
+              controller.close()
+            }, 120)
+          },
+        }),
+        { status: 503, headers: { 'Content-Type': 'application/json' } }
+      )
+  ) as typeof fetch
+  const fetchWithRetry = withRetry(fetchImpl, 3, 60_000, {
+    monotonic: () => 0,
+    sleep: (delayMs) =>
+      new Promise((resolve) => setTimeout(resolve, Math.min(delayMs, 500))),
+    // First backoff 50 ms: shorter than the body's 120 ms.
+    random: () => 0,
+  })
+
+  const response = await fetchWithRetry(
+    'https://api.e2b.test/sandboxes/sbx-1/pause',
+    { method: 'POST' }
+  )
+
+  expect(response.status).toBe(503)
+  expect(fetchImpl).toHaveBeenCalledTimes(1)
+  expect((await response.json()).error_code).toBe('sandbox_pause_refused')
+})
+
+test('the content type is matched by media type, whatever its case and parameters', async () => {
+  const fetchImpl = vi.fn(
+    async () =>
+      new Response(
+        JSON.stringify({ code: 503, error_code: 'sandbox_pause_refused' }),
+        {
+          status: 503,
+          headers: { 'Content-Type': 'Application/JSON; charset=UTF-8' },
+        }
+      )
+  ) as typeof fetch
+  const fetchWithRetry = withRetry(fetchImpl, 3, 60_000, {
+    monotonic: () => 0,
+    sleep: realSleep,
+  })
+
+  const response = await fetchWithRetry(
+    'https://api.e2b.test/sandboxes/sbx-1/pause',
+    { method: 'POST' }
+  )
+
+  expect(response.status).toBe(503)
+  expect(fetchImpl).toHaveBeenCalledTimes(1)
+})
+
+test('a 503 whose body keeps dripping past the inspection budget is retried and the clone read is cancelled', async () => {
+  let served = 0
+  let cancelled = 0
+  const drip = () => {
+    let stopped = false
+    let pending: ReturnType<typeof setTimeout> | undefined
+    return new ReadableStream<Uint8Array>({
+      pull(controller) {
+        return new Promise((resolve) => {
+          pending = setTimeout(() => {
+            // The source is only told about one cancel; after it the
+            // controller is closed and must not be enqueued into.
+            if (!stopped) {
+              served++
+              controller.enqueue(new TextEncoder().encode('{"error_code":"x'))
+            }
+            resolve()
+          }, 5)
+        })
+      },
+      cancel() {
+        stopped = true
+        cancelled++
+        clearTimeout(pending)
+      },
+    })
+  }
+  const fetchImpl = vi.fn(
+    async () =>
+      new Response(drip(), {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' },
+      })
+  ) as typeof fetch
+  const sleep = vi.fn(async () => {})
+  const fetchWithRetry = withRetry(fetchImpl, 3, 60_000, {
+    monotonic: () => 0,
+    sleep,
+    random: () => 0,
+  })
+
+  const startedAt = performance.now()
+  const response = await fetchWithRetry(
+    'https://api.e2b.test/sandboxes/sbx-1/pause',
+    { method: 'POST' }
+  )
+  const servedAtReturn = served
+
+  // The last response is returned without a peek (no retry left), so the
+  // untouched-body assertions live in the refusal-within-the-delay test.
+  expect(response.status).toBe(503)
+  expect(fetchImpl).toHaveBeenCalledTimes(4)
+  expect(sleep).toHaveBeenCalledTimes(6)
+  expect(performance.now() - startedAt).toBeLessThan(1_000)
+
+  // The three retried responses had both tee branches cancelled (the peek's
+  // reader and the discarded body), so their sources were cancelled; the
+  // returned one keeps the caller's branch alive. With the peek's reader
+  // cancelled nothing keeps pulling it: at most the tee's one-chunk
+  // high-water mark can still be served for the caller's branch.
+  await new Promise((resolve) => setTimeout(resolve, 150))
+  expect(cancelled).toBe(3)
+  expect(served - servedAtReturn).toBeLessThanOrEqual(2)
+})
+
+test('a 503 whose body exceeds the size cap is a plain 503 and is retried', async () => {
+  const large = JSON.stringify({
+    code: 503,
+    error_code: 'sandbox_pause_refused',
+    message: 'x'.repeat(9 * 1024),
+  })
+  const responses = [
+    new Response(large, {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' },
+    }),
+    new Response('ok'),
+  ]
+  const fetchImpl = vi.fn(async () => responses.shift()!) as typeof fetch
+  const fetchWithRetry = withRetry(fetchImpl, 3, 60_000, {
+    monotonic: () => 0,
+    sleep: realSleep,
+  })
+
+  const response = await fetchWithRetry(
+    'https://api.e2b.test/sandboxes/sbx-1/pause',
+    { method: 'POST' }
+  )
+
+  expect(response.status).toBe(200)
+  expect(fetchImpl).toHaveBeenCalledTimes(2)
+})
+
+test('retries a 503 carrying another error_code', async () => {
+  const responses = [
+    refusal('sandbox_capacity_unavailable'),
+    new Response('ok'),
+  ]
+  const fetchImpl = vi.fn(async () => responses.shift()!) as typeof fetch
+  const fetchWithRetry = withRetry(fetchImpl, 3, 60_000, {
+    monotonic: () => 0,
+    sleep: realSleep,
+  })
+
+  const response = await fetchWithRetry('https://api.e2b.test/sandboxes', {
+    method: 'POST',
+  })
+
+  expect(response.status).toBe(200)
+  expect(fetchImpl).toHaveBeenCalledTimes(2)
+})
+
 test('retries a 503 for a non-replayable POST', async () => {
   const statuses = [503, 200]
   const fetchImpl = vi.fn(
