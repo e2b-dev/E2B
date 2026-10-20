@@ -28,10 +28,10 @@ import {
 import { ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE } from '../../envd/versions'
 import { SandboxError } from '../../errors'
 import { CommandHandle, CommandResult } from './commandHandle'
-import { CommandInputStream, CommandInputStreamOpts } from './inputStream'
+import { CommandInputHandle, CommandStreamInputOpts } from './inputHandle'
 export { Pty } from './pty'
-export { CommandInputStream }
-export type { CommandInputStreamOpts }
+export { CommandInputHandle }
+export type { CommandStreamInputOpts }
 
 /**
  * Options for sending a command request.
@@ -246,14 +246,23 @@ export class Commands {
    * In browsers, this requires fetch request-body streaming support (Chromium
    * over HTTP/2).
    *
-   * @param pid process ID of the command.
-   * @param opts stream timeout and abort signal.
+   * @param pid Process ID of the command.
+   * @param opts Optional stream timeout and abort signal. `timeoutMs` defaults to `STREAM_INPUT_TIMEOUT_MS` (60_000 milliseconds).
+   * @returns A handle whose `send()` method queues input in order and whose `close()` method ends the stream and waits for envd.
+   * @throws {NotFoundError} If the command does not exist, surfaced from `send()` or `close()`.
+   * @throws {TimeoutError} If the stream timeout expires, surfaced from `send()` or `close()`.
+   * @example
+   * ```ts
+   * const input = sandbox.commands.streamInput(pid)
+   * await input.send('hello\n')
+   * await input.close()
+   * ```
    */
   streamInput(
     pid: number,
-    opts: CommandInputStreamOpts = {}
-  ): CommandInputStream {
-    return new CommandInputStream(
+    opts: CommandStreamInputOpts = {}
+  ): CommandInputHandle {
+    return new CommandInputHandle(
       this.streamingRpc,
       pid,
       'stdin',

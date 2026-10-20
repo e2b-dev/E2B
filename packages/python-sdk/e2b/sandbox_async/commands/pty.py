@@ -13,6 +13,7 @@ from e2b.connection_config import (
     ConnectionConfig,
     KEEPALIVE_PING_HEADER,
     KEEPALIVE_PING_INTERVAL_SEC,
+    STREAM_INPUT_TIMEOUT,
 )
 from e2b.envd.api import acheck_sandbox_health
 from e2b.envd.rpc import akill_process, ahandle_rpc_exception_with_health
@@ -23,7 +24,7 @@ from e2b.envd.utils import (
 )
 from e2b.envd.client_async import as_stream, create_rpc_client, first_event
 from e2b.sandbox.commands.command_handle import PtySize
-from e2b.sandbox_async.commands.command_input_stream import AsyncCommandInputStream
+from e2b.sandbox_async.commands.command_input_handle import AsyncCommandInputHandle
 from e2b.sandbox_async.commands.command_handle import (
     AsyncCommandHandle,
     OutputHandler,
@@ -112,14 +113,22 @@ class Pty:
     def stream_input(
         self,
         pid: int,
-        timeout: Optional[float] = 60,
-    ) -> AsyncCommandInputStream:
-        """Open an ordered input stream to a PTY.
+        *,
+        timeout: Optional[float] = STREAM_INPUT_TIMEOUT,
+    ) -> AsyncCommandInputHandle:
+        """Open an ordered input handle to a PTY.
 
-        :param pid: Process ID of the PTY
-        :param timeout: Timeout for the input stream in seconds; 0 disables it
+        :param pid: Process ID of the PTY.
+        :param timeout: Timeout in seconds; defaults to ``STREAM_INPUT_TIMEOUT``
+            (60 seconds). ``0`` or ``None`` disables the timeout.
+        :return: Handle for queuing ordered input with ``send()`` and ending the
+            stream with ``close()``.
+        :raises NotFoundException: If the PTY does not exist; surfaced by the
+            handle's ``send()`` or ``close()``.
+        :raises TimeoutException: If the stream timeout expires; surfaced by
+            the handle's ``send()`` or ``close()``.
         """
-        return AsyncCommandInputStream(
+        return AsyncCommandInputHandle(
             self._rpc,
             pid,
             "pty",

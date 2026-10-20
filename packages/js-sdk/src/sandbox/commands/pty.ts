@@ -10,7 +10,7 @@ import {
   setupRequestController,
 } from '../../connectionConfig'
 import { CommandHandle } from './commandHandle'
-import { CommandInputStream, CommandInputStreamOpts } from './inputStream'
+import { CommandInputHandle, CommandStreamInputOpts } from './inputHandle'
 import {
   authenticationHeader,
   handleRpcErrorWithHealthCheck,
@@ -269,14 +269,23 @@ export class Pty {
    * In browsers, this requires fetch request-body streaming support (Chromium
    * over HTTP/2).
    *
-   * @param pid process ID of the PTY.
-   * @param opts stream timeout and abort signal.
+   * @param pid Process ID of the PTY.
+   * @param opts Optional stream timeout and abort signal. `timeoutMs` defaults to `STREAM_INPUT_TIMEOUT_MS` (60_000 milliseconds).
+   * @returns A handle whose `send()` method queues input in order and whose `close()` method ends the stream and waits for envd.
+   * @throws {NotFoundError} If the PTY does not exist, surfaced from `send()` or `close()`.
+   * @throws {TimeoutError} If the stream timeout expires, surfaced from `send()` or `close()`.
+   * @example
+   * ```ts
+   * const input = sandbox.pty.streamInput(pid)
+   * await input.send('echo hello\n')
+   * await input.close()
+   * ```
    */
   streamInput(
     pid: number,
-    opts: CommandInputStreamOpts = {}
-  ): CommandInputStream {
-    return new CommandInputStream(
+    opts: CommandStreamInputOpts = {}
+  ): CommandInputHandle {
+    return new CommandInputHandle(
       this.streamingRpc,
       pid,
       'pty',

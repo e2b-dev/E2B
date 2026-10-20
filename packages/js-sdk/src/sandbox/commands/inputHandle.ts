@@ -1,7 +1,10 @@
 import type { Client } from '@connectrpc/connect'
 import { create } from '@bufbuild/protobuf'
 
-import { KEEPALIVE_PING_INTERVAL_SEC } from '../../connectionConfig'
+import {
+  KEEPALIVE_PING_INTERVAL_SEC,
+  STREAM_INPUT_TIMEOUT_MS,
+} from '../../connectionConfig'
 import {
   Process as ProcessService,
   StreamInputRequestSchema,
@@ -17,12 +20,12 @@ const CLOSE = Symbol('close')
 /**
  * Options for streaming input to a command or PTY.
  */
-export interface CommandInputStreamOpts {
+export interface CommandStreamInputOpts {
   /**
    * Maximum duration of the input stream in milliseconds.
    * `0` disables the timeout.
    *
-   * @default 60_000
+   * @default STREAM_INPUT_TIMEOUT_MS (60_000 milliseconds)
    */
   timeoutMs?: number
   /**
@@ -35,9 +38,9 @@ type InputKind = 'stdin' | 'pty'
 type QueuedInput = string | Uint8Array | typeof CLOSE
 
 /**
- * An ordered, long-lived input stream for a command or PTY.
+ * An ordered, long-lived input handle for a command or PTY.
  */
-export class CommandInputStream {
+export class CommandInputHandle {
   private readonly queue: QueuedInput[] = []
   private readonly completion: Promise<void>
   private readonly keepaliveIntervalMs: number
@@ -55,7 +58,7 @@ export class CommandInputStream {
     private readonly rpc: Client<typeof ProcessService>,
     private readonly pid: number,
     private readonly inputKind: InputKind,
-    opts: CommandInputStreamOpts,
+    opts: CommandStreamInputOpts,
     private readonly checkHealth: SandboxHealthCheck,
     keepaliveIntervalMs = KEEPALIVE_PING_INTERVAL_SEC * 1000
   ) {
@@ -63,7 +66,7 @@ export class CommandInputStream {
     this.completion = this.rpc
       .streamInput(this.requests(), {
         signal: opts.signal,
-        timeoutMs: opts.timeoutMs ?? 60_000,
+        timeoutMs: opts.timeoutMs ?? STREAM_INPUT_TIMEOUT_MS,
       })
       .then(() => {
         this.stopped = true
@@ -84,14 +87,20 @@ export class CommandInputStream {
   /**
    * Enqueue input for transmission in call order.
    *
-   * @param data input data to send.
+   * @param data Input data to send.
+   * @returns A promise that resolves when the input is queued for ordered transmission.
+   * @throws {NotFoundError} If the command or PTY does not exist.
+   * @throws {TimeoutError} If the input stream times out.
+   * @throws {SandboxError} If this handle is closed.
    */
   async send(data: string | Uint8Array): Promise<void> {
     if (this.failure) {
       throw this.failure
     }
     if (this.closing || this.stopped) {
-      throw new SandboxError('Cannot send input after the stream is closed.')
+      throw new SandboxError(
+        'Cannot send input after the input handle is closed. Open a new one with `sandbox.commands.streamInput(pid)` or `sandbox.pty.streamInput(pid)`.'
+      )
     }
 
     this.queue.push(data)
@@ -100,6 +109,10 @@ export class CommandInputStream {
 
   /**
    * Finish the input stream and wait for envd to acknowledge it.
+   *
+   * @returns A promise that resolves when envd acknowledges the end of the input stream.
+   * @throws {NotFoundError} If the command or PTY does not exist.
+   * @throws {TimeoutError} If the input stream times out.
    */
   close(): Promise<void> {
     if (this.closePromise) {

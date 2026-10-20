@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, AsyncGenerator, Awaitable, Callable, Literal, Optional, Union
+from typing import Any, AsyncGenerator, Awaitable, Callable, Optional, Union
 
 from protobuf import Oneof
 
@@ -8,6 +8,11 @@ from e2b.envd.process import process_pb
 from e2b.envd.rpc import ahandle_rpc_exception_with_health
 from e2b.envd.utils import timeout_to_ms
 from e2b.exceptions import SandboxException
+from e2b.sandbox.commands.stream_input import (
+    InputKind,
+    stream_input_data,
+    stream_input_start,
+)
 
 
 class _CloseSignal:
@@ -15,18 +20,17 @@ class _CloseSignal:
 
 
 _CLOSE = _CloseSignal()
-_InputKind = Literal["stdin", "pty"]
 _QueueItem = Union[str, bytes, _CloseSignal]
 
 
-class AsyncCommandInputStream:
-    """An ordered, long-lived input stream for a command or PTY."""
+class AsyncCommandInputHandle:
+    """An ordered, long-lived input handle for a command or PTY."""
 
     def __init__(
         self,
         rpc: Any,
         pid: int,
-        input_kind: _InputKind,
+        input_kind: InputKind,
         timeout: Optional[float],
         check_health: Callable[[], Awaitable[Optional[bool]]],
         _keepalive_interval: float = KEEPALIVE_PING_INTERVAL_SEC,
@@ -44,15 +48,33 @@ class AsyncCommandInputStream:
         self._task = asyncio.create_task(self._run())
 
     async def send(self, data: Union[str, bytes]) -> None:
-        """Enqueue input for transmission in call order."""
+        """Queue input for ordered transmission.
+
+        :param data: Input data to send.
+        :return: ``None`` once the input has been queued.
+        :raises NotFoundException: If the command or PTY does not exist.
+        :raises TimeoutException: If the input stream times out.
+        :raises SandboxException: If this handle is closed. Open a new one with
+            ``sandbox.commands.stream_input(pid)`` or
+            ``sandbox.pty.stream_input(pid)``.
+        """
         if self._failure is not None:
             raise self._failure
         if self._closing or self._stopped:
-            raise SandboxException("Cannot send input after the stream is closed.")
+            raise SandboxException(
+                "Cannot send input after the input handle is closed. Open a new one "
+                "with `sandbox.commands.stream_input(pid)` or "
+                "`sandbox.pty.stream_input(pid)`."
+            )
         self._queue.put_nowait(data)
 
     async def close(self) -> None:
-        """Finish the input stream and wait for envd to acknowledge it."""
+        """Finish the input stream and wait for envd to acknowledge it.
+
+        :return: ``None`` when envd acknowledges the end of the input stream.
+        :raises NotFoundException: If the command or PTY does not exist.
+        :raises TimeoutException: If the input stream times out.
+        """
         if not self._closing:
             self._closing = True
             self._queue.put_nowait(_CLOSE)
@@ -60,7 +82,7 @@ class AsyncCommandInputStream:
         if self._failure is not None:
             raise self._failure
 
-    async def __aenter__(self) -> "AsyncCommandInputStream":
+    async def __aenter__(self) -> "AsyncCommandInputHandle":
         return self
 
     async def __aexit__(self, exc_type: Any, exc_value: Any, traceback: Any) -> None:
@@ -90,14 +112,7 @@ class AsyncCommandInputStream:
         self._queue.put_nowait(_CLOSE)
 
     async def _requests(self) -> AsyncGenerator[process_pb.StreamInputRequest, None]:
-        yield process_pb.StreamInputRequest(
-            event=Oneof(
-                "start",
-                process_pb.StreamInputRequest.StartEvent(
-                    process=process_pb.ProcessSelector(selector=Oneof("pid", self._pid))
-                ),
-            )
-        )
+        yield stream_input_start(self._pid)
 
         while not self._stopped:
             try:
@@ -113,17 +128,4 @@ class AsyncCommandInputStream:
             if isinstance(data, _CloseSignal):
                 return
 
-            payload = data.encode() if isinstance(data, str) else data
-            input_value: Oneof[Literal["stdin"], bytes] | Oneof[Literal["pty"], bytes]
-            if self._input_kind == "stdin":
-                input_value = Oneof("stdin", payload)
-            else:
-                input_value = Oneof("pty", payload)
-            yield process_pb.StreamInputRequest(
-                event=Oneof(
-                    "data",
-                    process_pb.StreamInputRequest.DataEvent(
-                        input=process_pb.ProcessInput(input=input_value)
-                    ),
-                )
-            )
+            yield stream_input_data(self._input_kind, data)

@@ -3,7 +3,7 @@ import asyncio
 import pytest
 
 from e2b import AsyncSandbox, NotFoundException, SandboxException, TimeoutException
-from e2b.sandbox_async.commands.command_input_stream import AsyncCommandInputStream
+from e2b.sandbox_async.commands.command_input_handle import AsyncCommandInputHandle
 
 
 async def test_stream_input_to_command(async_sandbox: AsyncSandbox):
@@ -39,14 +39,14 @@ async def test_stream_input_timeout(async_sandbox: AsyncSandbox):
         await stream.close()
 
 
-async def test_async_command_input_stream_orders_data_and_sends_keepalives():
+async def test_async_command_input_handle_orders_data_and_sends_keepalives():
     class FakeRpc:
         async def stream_input(self, requests, timeout_ms=None):
             assert timeout_ms is None
             self.requests = [request async for request in requests]
 
     rpc = FakeRpc()
-    stream = AsyncCommandInputStream(
+    stream = AsyncCommandInputHandle(
         rpc, 42, "stdin", 0, lambda: None, _keepalive_interval=0.01
     )
     await stream.send("first")
@@ -60,5 +60,5 @@ async def test_async_command_input_stream_orders_data_and_sends_keepalives():
     data = [event.value.input.input.value for event in events if event.field == "data"]
     assert data == [b"first", b"second"]
     await stream.close()
-    with pytest.raises(SandboxException, match="after the stream is closed"):
+    with pytest.raises(SandboxException, match="sandbox.commands.stream_input"):
         await stream.send("late")

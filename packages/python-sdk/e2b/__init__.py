@@ -114,7 +114,7 @@ from .sandbox.sandbox_api import (
     SnapshotMode,
 )
 from .sandbox_async.commands.command_handle import AsyncCommandHandle
-from .sandbox_async.commands.command_input_stream import AsyncCommandInputStream
+from .sandbox_async.commands.command_input_handle import AsyncCommandInputHandle
 from .sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from .sandbox_async.main import AsyncSandbox
 from .sandbox_async.paginator import AsyncSandboxPaginator, AsyncSnapshotPaginator
@@ -127,7 +127,6 @@ from .secret import (
     SecretPaginator,
 )
 from .sandbox_sync.commands.command_handle import CommandHandle
-from .sandbox_sync.commands.command_input_stream import CommandInputStream
 from .sandbox_sync.filesystem.watch_handle import WatchHandle
 from .sandbox_sync.main import Sandbox
 from .sandbox_sync.paginator import SandboxPaginator, SnapshotPaginator
@@ -276,14 +275,13 @@ __all__ = [
     "SandboxPaginator",
     "WatchHandle",
     "CommandHandle",
-    "CommandInputStream",
     # Async sandbox
     "OutputHandler",
     "AsyncSandboxPaginator",
     "AsyncSandbox",
     "AsyncWatchHandle",
     "AsyncCommandHandle",
-    "AsyncCommandInputStream",
+    "AsyncCommandInputHandle",
     # Template
     "Template",
     "AsyncTemplate",

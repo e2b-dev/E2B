@@ -2,7 +2,7 @@ import type { Client } from '@connectrpc/connect'
 import { expect, test } from 'vitest'
 
 import { Process as ProcessService } from '../../../src/envd/process/process_pb'
-import { CommandInputStream } from '../../../src/sandbox/commands/inputStream'
+import { CommandInputHandle } from '../../../src/sandbox/commands/inputHandle'
 
 test('stream input preserves order and sends keepalives while idle', async () => {
   const messages: any[] = []
@@ -22,7 +22,7 @@ test('stream input preserves order and sends keepalives while idle', async () =>
     },
   } as unknown as Client<typeof ProcessService>
 
-  const input = new CommandInputStream(
+  const input = new CommandInputHandle(
     rpc,
     42,
     'stdin',
@@ -55,4 +55,7 @@ test('stream input preserves order and sends keepalives while idle', async () =>
   expect(keepaliveIndex).toBeGreaterThan(firstDataIndex)
   expect(keepaliveIndex).toBeLessThan(lastDataIndex)
   expect(data).toEqual(['a', 'b', 'c'])
+  await expect(input.send('late')).rejects.toThrow(
+    'sandbox.commands.streamInput(pid)` or `sandbox.pty.streamInput(pid)'
+  )
 })

@@ -3,5 +3,5 @@
 "@e2b/python-sdk": minor
 ---
 
-- Add ordered `stream_input` support for command stdin and PTY input in Python.
-- Add ordered `streamInput` support for command stdin and PTY input in JavaScript.
+- Add blocking iterable-based `stream_input` methods for sync Python command and PTY input, and handle-based methods for async Python.
+- Expose JavaScript command and PTY input streams through `CommandInputHandle` and `CommandStreamInputOpts`.

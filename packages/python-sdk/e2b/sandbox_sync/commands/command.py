@@ -3,6 +3,7 @@ from typing import (
     Callable,
     Dict,
     Generator,
+    Iterable,
     List,
     Literal,
     Optional,
@@ -19,6 +20,7 @@ from e2b.connection_config import (
     Username,
     KEEPALIVE_PING_HEADER,
     KEEPALIVE_PING_INTERVAL_SEC,
+    STREAM_INPUT_TIMEOUT,
 )
 from protobuf import Oneof
 
@@ -35,7 +37,7 @@ from e2b.envd.versions import ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE
 from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.main import ProcessInfo
 from e2b.sandbox.commands.command_handle import CommandResult
-from e2b.sandbox_sync.commands.command_input_stream import CommandInputStream
+from e2b.sandbox.commands.stream_input import stream_input_data, stream_input_start
 from e2b.sandbox_sync.commands.command_handle import CommandHandle
 
 
@@ -158,20 +160,37 @@ class Commands:
     def stream_input(
         self,
         pid: int,
-        timeout: Optional[float] = 60,
-    ) -> CommandInputStream:
-        """Open an ordered input stream to command stdin.
+        data: Iterable[Union[str, bytes]],
+        *,
+        timeout: Optional[float] = STREAM_INPUT_TIMEOUT,
+    ) -> None:
+        """Stream input to command stdin.
 
-        :param pid: Process ID of the command
-        :param timeout: Timeout for the input stream in seconds; 0 disables it
+        Blocks until ``data`` is exhausted; input is sent as the iterable
+        yields it, and no keepalives are sent while it blocks.
+
+        :param pid: Process ID of the command.
+        :param data: Iterable of strings or bytes to send in order.
+        :param timeout: Timeout in seconds; defaults to ``STREAM_INPUT_TIMEOUT``
+            (60 seconds). ``0`` or ``None`` disables the timeout.
+        :return: ``None`` after all input is sent and envd acknowledges the stream.
+        :raises NotFoundException: If the command does not exist.
+        :raises TimeoutException: If the stream timeout expires.
+        :raises SandboxException: If the streaming request fails.
         """
-        return CommandInputStream(
-            self._rpc,
-            pid,
-            "stdin",
-            timeout,
-            self._check_health,
-        )
+
+        def requests() -> Generator[process_pb.StreamInputRequest, None, None]:
+            yield stream_input_start(pid)
+            for item in data:
+                yield stream_input_data("stdin", item)
+
+        try:
+            self._rpc.stream_input(
+                requests(),
+                timeout_ms=timeout_to_ms(timeout),
+            )
+        except Exception as error:
+            raise handle_rpc_exception_with_health(error, self._check_health)
 
     def close_stdin(
         self,

@@ -4,11 +4,11 @@ from e2b.sandbox.commands.command_handle import PtySize
 
 def test_stream_input_to_pty(sandbox: Sandbox):
     terminal = sandbox.pty.create(PtySize(cols=80, rows=24))
-    stream = sandbox.pty.stream_input(terminal.pid, timeout=0)
 
-    for char in "echo hello-stream\nexit\n":
-        stream.send(char)
-    stream.close()
+    def input_chars():
+        yield from "echo hello-stream\nexit\n"
+
+    sandbox.pty.stream_input(terminal.pid, input_chars(), timeout=0)
 
     output = []
     terminal.wait(on_pty=lambda data: output.append(data.decode("utf-8")))
