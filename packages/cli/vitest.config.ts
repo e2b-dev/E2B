@@ -17,6 +17,10 @@ export default defineConfig({
       // already resolve to. Without it `e2b` resolves to the workspace package's
       // `main`, which only exists once the SDK has been built.
       e2b: path.resolve(__dirname, '../js-sdk/src'),
+      '@e2b/dockerfile-utils': path.resolve(
+        __dirname,
+        '../dockerfile-utils-js/src/index.ts'
+      ),
     },
   },
 })
