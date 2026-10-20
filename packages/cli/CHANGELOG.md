@@ -1,5 +1,13 @@
 # @e2b/cli
 
+## 2.22.3
+
+### Patch Changes
+
+- a398b08: `e2b sandbox connect`/`create` send terminal input over a single persistent stream instead of one request per 10ms batch
+- Updated dependencies [3c4c7cf]
+  - e2b@2.58.0
+
 ## 2.22.2
 
 ### Patch Changes

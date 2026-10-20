@@ -1,5 +1,11 @@
 # @e2b/desktop-python
 
+## 2.7.1
+
+### Patch Changes
+
+- d7ed073: Remove Python 3.10 compatibility shims (Python >=3.11 is already required).
+
 ## 2.7.0
 
 ### Minor Changes

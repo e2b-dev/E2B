@@ -1,5 +1,16 @@
 # @e2b/python-sdk
 
+## 2.58.0
+
+### Minor Changes
+
+- 3c4c7cf: - JS: `sandbox.commands.streamInput(pid)` / `sandbox.pty.streamInput(pid)` return a `CommandInputHandle` that sends ordered stdin/PTY input over one `StreamInput` RPC.
+  - Python async: `stream_input(pid)` returns an `AsyncCommandInputHandle`; Python sync: `stream_input(pid, data)` blocks while it sends an iterable of input.
+
+### Patch Changes
+
+- d7ed073: Remove Python 3.10 compatibility shims (Python >=3.11 is already required).
+
 ## 2.57.0
 
 ### Minor Changes

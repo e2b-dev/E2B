@@ -1,5 +1,14 @@
 # @e2b/code-interpreter-python
 
+## 2.11.2
+
+### Patch Changes
+
+- d7ed073: Remove Python 3.10 compatibility shims (Python >=3.11 is already required).
+- Updated dependencies [d7ed073]
+- Updated dependencies [3c4c7cf]
+  - @e2b/python-sdk@2.58.0
+
 ## 2.11.1
 
 ### Patch Changes
