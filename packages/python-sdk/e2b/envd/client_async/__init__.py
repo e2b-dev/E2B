@@ -124,6 +124,8 @@ async def first_event(
     """
     if not request_timeout:
         return await events.__anext__()
+    task = asyncio.current_task()
+    cancelling_before = task.cancelling() if task is not None else 0
     try:
         return await asyncio.wait_for(events.__anext__(), request_timeout)
     except TimeoutError as e:
@@ -132,15 +134,16 @@ async def first_event(
         # wait_for's expiry cancels the __anext__ task, but connectrpc
         # converts the delivered CancelledError into ConnectError(CANCELED)
         # before wait_for can turn it into TimeoutError. A caller cancelling
-        # the surrounding task surfaces identically, so tell the two apart by
-        # the pending-cancellation count: wait_for uncancels its own expiry,
-        # an external cancel stays pending.
-        task = asyncio.current_task()
+        # the surrounding task surfaces identically, so compare the pending-
+        # cancellation count with its entry value: wait_for uncancels its own
+        # expiry back to that value, while an external cancel leaves it above
+        # it. Comparing against zero would misclassify a timer expiry when the
+        # caller had an already-pending, swallowed cancellation.
         if (
             e.code is Code.CANCELED
             and isinstance(e.__cause__, asyncio.CancelledError)
             and task is not None
-            and task.cancelling() == 0
+            and task.cancelling() == cancelling_before
         ):
             raise _request_timeout_exception(request_timeout) from e
         raise
