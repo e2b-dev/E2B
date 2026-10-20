@@ -1,4 +1,5 @@
 import { createRequire } from 'node:module'
+import { fileURLToPath } from 'node:url'
 
 import { defineConfig } from 'tsdown'
 
@@ -21,6 +22,13 @@ export default defineConfig({
   dts: false,
   sourcemap: true,
   clean: true,
+  // Bundle from source rather than dist: during a release `changeset publish`
+  // rebuilds workspace packages concurrently, and their `clean` wipes dist.
+  alias: {
+    '@e2b/dockerfile-utils': fileURLToPath(
+      new URL('../dockerfile-utils-js/src/index.ts', import.meta.url)
+    ),
+  },
   deps: {
     // Bundle all runtime dependencies (except those that must stay external)
     alwaysBundle: Object.keys(packageJSON.dependencies).filter(
