@@ -78,7 +78,7 @@ def sync_detailed(
 
     Args:
         template_id (str):
-        hash_ (str): Hash of the files
+        hash_ (str): Hash of the files (lowercase hex SHA-256)
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -112,7 +112,7 @@ def sync(
 
     Args:
         template_id (str):
-        hash_ (str): Hash of the files
+        hash_ (str): Hash of the files (lowercase hex SHA-256)
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -141,7 +141,7 @@ async def asyncio_detailed(
 
     Args:
         template_id (str):
-        hash_ (str): Hash of the files
+        hash_ (str): Hash of the files (lowercase hex SHA-256)
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -173,7 +173,7 @@ async def asyncio(
 
     Args:
         template_id (str):
-        hash_ (str): Hash of the files
+        hash_ (str): Hash of the files (lowercase hex SHA-256)
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

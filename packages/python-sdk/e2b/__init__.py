@@ -85,6 +85,8 @@ from .sandbox.sandbox_api import (
     McpServer,
     SandboxEgressProxyInfo,
     SandboxEgressProxyOpts,
+    SandboxEgressProxyTLSInfo,
+    SandboxEgressProxyTLSOpts,
     SandboxIamOpts,
     SandboxIamToken,
     SandboxIamTokenType,
@@ -232,6 +234,8 @@ __all__ = [
     # Network
     "SandboxEgressProxyOpts",
     "SandboxEgressProxyInfo",
+    "SandboxEgressProxyTLSOpts",
+    "SandboxEgressProxyTLSInfo",
     "SandboxNetworkOpts",
     "SandboxNetworkInfo",
     "SandboxNetworkSelector",

@@ -283,13 +283,24 @@ export interface components {
         };
         /** @description Resource usage metrics */
         Metrics: {
-            /** @description Number of CPU cores */
+            /** @description Number of CPU cores online */
             cpu_count?: number;
+            /** @description Number of CPUs the guest can bring online */
+            cpu_possible?: number;
+            /** @description Online count last requested, 0 when none was */
+            cpu_target?: number;
+            /** @description Attempts at reaching cpu_target since it was set */
+            cpu_target_attempts?: number;
             /**
              * Format: float
              * @description CPU usage percentage
              */
             cpu_used_pct?: number;
+            /**
+             * Format: int64
+             * @description How long a CPU online or offline write has been running in the guest kernel, 0 when none is. A value that keeps growing means CPU hotplug is stuck.
+             */
+            cpu_write_pending_ms?: number;
             /** @description Total disk space in bytes */
             disk_total?: number;
             /** @description Used disk space in bytes */
