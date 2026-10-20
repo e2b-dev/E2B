@@ -1,5 +1,11 @@
 # @e2b/cli
 
+## 2.22.2
+
+### Patch Changes
+
+- b8afc34: Bundle `@e2b/dockerfile-utils` from source so the CLI build no longer races with concurrent workspace package rebuilds during release
+
 ## 2.22.1
 
 ### Patch Changes
