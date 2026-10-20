@@ -83,7 +83,6 @@
     "e2b": "workspace:^",
     "handlebars": "^4.7.10",
     "inquirer": "^12.11.1",
-    "simple-update-notifier": "^2.0.0",
     "simple-wcswidth": "^1.1.2",
     "statuses": "^2.0.2",
     "yup": "^1.7.1"
