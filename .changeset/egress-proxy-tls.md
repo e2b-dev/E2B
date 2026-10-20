@@ -3,4 +3,4 @@
 "@e2b/python-sdk": minor
 ---
 
-Add `tls` to the egress proxy options (`SandboxEgressProxyTLSOpts`) to connect to a BYOP SOCKS5 proxy over TLS, with optional `serverName`/`server_name` and `caCert`/`ca_cert`; `getInfo`/`get_info` reports it (without the CA).
+Add `tls` to the egress proxy options as `true` or `{ serverName?, caCert? }` (`server_name`/`ca_cert` in Python); `getInfo`/`get_info` reports it without the CA.

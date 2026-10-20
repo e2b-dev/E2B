@@ -85,14 +85,13 @@ test('Sandbox.create sends an address-only egress proxy without credentials', as
   })
 })
 
-test('Sandbox.create sends egress proxy TLS options', async () => {
+test('Sandbox.create sends egress proxy TLS options and strips unknown fields', async () => {
   await Sandbox.create('base', {
     apiKey: TEST_API_KEY,
     network: {
       egressProxy: {
         address: 'proxy.example.com:1080',
         tls: {
-          enabled: true,
           serverName: 'proxy.example.com',
           caCert: '-----BEGIN CERTIFICATE-----',
           ignored: 'not sent',
@@ -112,24 +111,24 @@ test('Sandbox.create sends egress proxy TLS options', async () => {
 })
 
 test.for([
-  ['enabled', { enabled: true }],
-  ['disabled', { enabled: false }],
+  ['true', true, { enabled: true }],
+  ['an empty options object', {}, { enabled: true }],
 ])(
-  'Sandbox.create sends TLS settings when %s',
-  async ([, tls]: [string, object]) => {
+  'Sandbox.create sends TLS settings when %s is passed',
+  async ([, tls, wireTls]: [string, unknown, object]) => {
     await Sandbox.create('base', {
       apiKey: TEST_API_KEY,
       network: {
         egressProxy: {
           address: 'proxy.example.com:1080',
-          tls,
+          tls: tls as never,
         },
       },
     })
 
     expect(lastCreateBody?.network.egressProxy).toEqual({
       address: 'proxy.example.com:1080',
-      tls,
+      tls: wireTls,
     })
   }
 )
@@ -141,7 +140,6 @@ test('Sandbox.create omits null TLS options', async () => {
       egressProxy: {
         address: 'proxy.example.com:1080',
         tls: {
-          enabled: true,
           serverName: null,
           caCert: null,
           ignored: 'not sent',
@@ -155,6 +153,26 @@ test('Sandbox.create omits null TLS options', async () => {
     tls: { enabled: true },
   })
 })
+
+test.for([
+  ['false', false],
+  ['null', null],
+])(
+  'Sandbox.create omits %s TLS options',
+  async ([, tls]: [string, unknown]) => {
+    await Sandbox.create('base', {
+      apiKey: TEST_API_KEY,
+      network: {
+        egressProxy: {
+          address: 'proxy.example.com:1080',
+          tls: tls as never,
+        },
+      },
+    })
+
+    expect(lastCreateBody?.network.egressProxy).not.toHaveProperty('tls')
+  }
+)
 
 test('Sandbox.create combines the egress proxy with allow and deny lists', async () => {
   await Sandbox.create('base', {
@@ -221,23 +239,56 @@ test.for([
 )
 
 test.for([
-  ['a string', 'tls'],
-  ['an empty object', {}],
-  ['a non-boolean enabled value', { enabled: 'true' }],
+  [
+    'a string',
+    'tls',
+    'network egressProxy tls must be a boolean or an object.',
+  ],
+  ['an array', [], 'network egressProxy tls must be a boolean or an object.'],
 ])(
-  'Sandbox.create rejects %s as the egress proxy TLS settings',
-  async ([, tls]: [string, unknown]) => {
-    await expect(
-      Sandbox.create('base', {
-        apiKey: TEST_API_KEY,
-        network: {
-          egressProxy: {
-            address: 'proxy.example.com:1080',
-            tls: tls as never,
-          },
+  'Sandbox.create rejects %s as egress proxy TLS settings',
+  async ([, tls, message]: [string, unknown, string]) => {
+    const error = await Sandbox.create('base', {
+      apiKey: TEST_API_KEY,
+      network: {
+        egressProxy: {
+          address: 'proxy.example.com:1080',
+          tls: tls as never,
         },
-      })
-    ).rejects.toBeInstanceOf(InvalidArgumentError)
+      },
+    }).catch((error: unknown) => error)
+
+    expect(error).toBeInstanceOf(InvalidArgumentError)
+    expect(error).toHaveProperty('message', message)
+  }
+)
+
+test.for([
+  [
+    'enabled true',
+    { enabled: true },
+    "network egressProxy tls takes no 'enabled'; pass tls: true or tls: false instead.",
+  ],
+  [
+    'enabled false',
+    { enabled: false },
+    "network egressProxy tls takes no 'enabled'; pass tls: true or tls: false instead.",
+  ],
+])(
+  'Sandbox.create rejects TLS options with %s',
+  async ([, tls, message]: [string, unknown, string]) => {
+    const error = await Sandbox.create('base', {
+      apiKey: TEST_API_KEY,
+      network: {
+        egressProxy: {
+          address: 'proxy.example.com:1080',
+          tls: tls as never,
+        },
+      },
+    }).catch((error: unknown) => error)
+
+    expect(error).toBeInstanceOf(InvalidArgumentError)
+    expect(error).toHaveProperty('message', message)
   }
 )
 
@@ -298,7 +349,11 @@ test('updateNetwork sends egress proxy TLS options', async () => {
     {
       egressProxy: {
         address: 'proxy.example.com:1080',
-        tls: { enabled: true, serverName: 'proxy.example.com' },
+        tls: {
+          serverName: 'proxy.example.com',
+          caCert: '-----BEGIN CERTIFICATE-----',
+          ignored: 'not sent',
+        } as never,
       },
     },
     { apiKey: TEST_API_KEY }
@@ -307,9 +362,65 @@ test('updateNetwork sends egress proxy TLS options', async () => {
   expect(lastUpdateBody).toEqual({
     egressProxy: {
       address: 'proxy.example.com:1080',
-      tls: { enabled: true, serverName: 'proxy.example.com' },
+      tls: {
+        enabled: true,
+        serverName: 'proxy.example.com',
+        caCert: '-----BEGIN CERTIFICATE-----',
+      },
     },
   })
+})
+
+test('updateNetwork sends true TLS settings as enabled', async () => {
+  await Sandbox.updateNetwork(
+    sandboxId,
+    {
+      egressProxy: {
+        address: 'proxy.example.com:1080',
+        tls: true,
+      },
+    },
+    { apiKey: TEST_API_KEY }
+  )
+
+  expect(lastUpdateBody?.egressProxy.tls).toEqual({ enabled: true })
+})
+
+test('updateNetwork rejects TLS options with an enabled key', async () => {
+  const error = await Sandbox.updateNetwork(
+    sandboxId,
+    {
+      egressProxy: {
+        address: 'proxy.example.com:1080',
+        tls: { enabled: false } as never,
+      },
+    },
+    { apiKey: TEST_API_KEY }
+  ).catch((error: unknown) => error)
+
+  expect(error).toBeInstanceOf(InvalidArgumentError)
+  expect(error).toHaveProperty(
+    'message',
+    "network egressProxy tls takes no 'enabled'; pass tls: true or tls: false instead."
+  )
+})
+
+test.for([
+  ['false', false],
+  ['null', null],
+])('updateNetwork omits %s TLS options', async ([, tls]: [string, unknown]) => {
+  await Sandbox.updateNetwork(
+    sandboxId,
+    {
+      egressProxy: {
+        address: 'proxy.example.com:1080',
+        tls: tls as never,
+      },
+    },
+    { apiKey: TEST_API_KEY }
+  )
+
+  expect(lastUpdateBody?.egressProxy).not.toHaveProperty('tls')
 })
 
 test('an update without the egress proxy clears it', async () => {
@@ -350,7 +461,22 @@ test('getInfo reports egress proxy TLS without the CA certificate', async () => 
 
   expect(info.network?.egressProxy).toEqual({
     address: 'proxy.example.com:1080',
-    tls: { enabled: true, serverName: 'proxy.example.com' },
+    tls: { serverName: 'proxy.example.com' },
+  })
+})
+
+test('getInfo omits egress proxy TLS when it is disabled', async () => {
+  sandboxNetwork = {
+    egressProxy: {
+      address: 'proxy.example.com:1080',
+      tls: { enabled: false, serverName: 'proxy.example.com' },
+    },
+  }
+
+  const info = await Sandbox.getInfo(sandboxId, { apiKey: TEST_API_KEY })
+
+  expect(info.network?.egressProxy).toEqual({
+    address: 'proxy.example.com:1080',
   })
 })
 

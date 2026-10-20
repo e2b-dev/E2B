@@ -167,7 +167,7 @@ export type SandboxNetworkSelector =
  *       address: 'proxy.example.com:1080',
  *       username: 'proxy-user',
  *       password: 'proxy-password',
- *       tls: { enabled: true },
+ *       tls: true,
  *     },
  *   },
  * })
@@ -200,24 +200,23 @@ export type SandboxEgressProxyOpts = {
    */
   password?: string
 
-  /** TLS settings for the connection to the SOCKS5 proxy. */
-  tls?: SandboxEgressProxyTLSOpts
-}
-
-/**
- * TLS settings for the connection to a BYOP SOCKS5 proxy.
- */
-export type SandboxEgressProxyTLSOpts = {
   /**
    * Connect to the proxy over TLS. The SOCKS5 handshake, credentials, and
    * tunneled traffic run inside the TLS session; TLS protects only the hop to
    * the proxy. The certificate is always verified, TLS 1.2 or newer is
    * required, and failures never fall back to plaintext.
    *
-   * When `false`, `serverName` and `caCert` must not be set.
+   * Set to `true` to use the system trust store and the host part of `address`
+   * for SNI. Passing an object also enables TLS, with optional custom
+   * `serverName` and `caCert`.
    */
-  enabled: boolean
+  tls?: boolean | SandboxEgressProxyTLSOpts
+}
 
+/**
+ * TLS settings for the connection to a BYOP SOCKS5 proxy.
+ */
+export type SandboxEgressProxyTLSOpts = {
   /**
    * Name to verify the proxy certificate against and send as SNI, up to 253
    * characters. Defaults to the host part of `address`; set this only when the
@@ -242,7 +241,7 @@ export type SandboxEgressProxyInfo = {
   address: string
   /** See {@link SandboxEgressProxyOpts.username}. */
   username?: string
-  /** TLS status for the connection to the proxy. */
+  /** Set when TLS to the proxy is on. */
   tls?: SandboxEgressProxyTLSInfo
 }
 
@@ -251,8 +250,6 @@ export type SandboxEgressProxyInfo = {
  * returned by the API.
  */
 export type SandboxEgressProxyTLSInfo = {
-  /** See {@link SandboxEgressProxyTLSOpts.enabled}. */
-  enabled: boolean
   /** See {@link SandboxEgressProxyTLSOpts.serverName}. */
   serverName?: string
 }
@@ -1206,14 +1203,30 @@ function buildEgressProxyBody(
   }
 
   const tls = egressProxy.tls
-  if (
-    tls != null &&
-    (!isPlainObject(tls) || typeof tls.enabled !== 'boolean')
-  ) {
+  if (tls != null && typeof tls !== 'boolean' && !isPlainObject(tls)) {
     throw new InvalidArgumentError(
-      "network egressProxy tls must be an object with a boolean 'enabled'."
+      'network egressProxy tls must be a boolean or an object.'
     )
   }
+  if (
+    isPlainObject(tls) &&
+    Object.prototype.hasOwnProperty.call(tls, 'enabled')
+  ) {
+    throw new InvalidArgumentError(
+      "network egressProxy tls takes no 'enabled'; pass tls: true or tls: false instead."
+    )
+  }
+
+  const tlsBody =
+    tls === true
+      ? { enabled: true }
+      : tls != null && typeof tls === 'object'
+        ? {
+            enabled: true,
+            ...(tls.serverName != null ? { serverName: tls.serverName } : {}),
+            ...(tls.caCert != null ? { caCert: tls.caCert } : {}),
+          }
+        : undefined
 
   // `!= null` also skips a `null` credential, which is what reading one out of
   // an unset environment variable yields and what "this proxy takes no
@@ -1222,15 +1235,7 @@ function buildEgressProxyBody(
     address: egressProxy.address,
     ...(egressProxy.username != null ? { username: egressProxy.username } : {}),
     ...(egressProxy.password != null ? { password: egressProxy.password } : {}),
-    ...(tls != null
-      ? {
-          tls: {
-            enabled: tls.enabled,
-            ...(tls.serverName != null ? { serverName: tls.serverName } : {}),
-            ...(tls.caCert != null ? { caCert: tls.caCert } : {}),
-          },
-        }
-      : {}),
+    ...(tlsBody !== undefined ? { tls: tlsBody } : {}),
   }
 }
 
@@ -1289,10 +1294,9 @@ function fromApiEgressProxy(
     ...(egressProxy.username !== undefined
       ? { username: egressProxy.username }
       : {}),
-    ...(egressProxy.tls != null
+    ...(egressProxy.tls?.enabled === true
       ? {
           tls: {
-            enabled: egressProxy.tls.enabled,
             ...(egressProxy.tls.serverName !== undefined
               ? { serverName: egressProxy.tls.serverName }
               : {}),
