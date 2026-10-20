@@ -1,7 +1,5 @@
 import urllib.parse
-from typing import Optional, List
-
-from typing_extensions import Unpack
+from typing import Optional, List, Unpack
 
 from e2b.api.client.api.sandboxes import get_v2_sandboxes
 from e2b.api.client.api.snapshots import get_snapshots

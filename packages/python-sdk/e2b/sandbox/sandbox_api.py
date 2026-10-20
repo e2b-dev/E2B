@@ -9,13 +9,13 @@ from typing import (
     List,
     Literal,
     Mapping,
+    NotRequired,
     Optional,
     TypedDict,
+    Unpack,
     Union,
     cast,
 )
-
-from typing_extensions import NotRequired, Unpack
 
 from e2b.api.client.models import (
     ListedSandbox,

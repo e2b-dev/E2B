@@ -1,6 +1,4 @@
-from typing import Dict, Type, TypeVar, cast
-
-from typing_extensions import Unpack
+from typing import Dict, Type, TypeVar, Unpack, cast
 
 from e2b.connection_config import ApiParams
 from e2b.sandbox_async.main import AsyncSandbox

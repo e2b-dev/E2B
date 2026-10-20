@@ -2,9 +2,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import List, Literal, Optional, TypedDict, Union
-
-from typing_extensions import NotRequired
+from typing import List, Literal, NotRequired, Optional, TypedDict, Union
 
 from e2b.template.logger import LogEntry
 

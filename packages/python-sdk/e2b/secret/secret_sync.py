@@ -1,6 +1,4 @@
-from typing import Dict, List, Optional
-
-from typing_extensions import Unpack
+from typing import Dict, List, Optional, Unpack
 
 from e2b.api import handle_api_exception
 from e2b.api.client.api.secrets import (

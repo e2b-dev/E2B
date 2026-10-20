@@ -1,9 +1,7 @@
-from typing import Dict, Type, TypeVar, cast
+from typing import Dict, Type, TypeVar, Unpack, cast
 
 from e2b import ApiParams, E2BClientParams
 from e2b import E2B as CoreE2B
-from typing_extensions import Unpack
-
 from e2b_desktop.main import Sandbox
 
 T = TypeVar("T")

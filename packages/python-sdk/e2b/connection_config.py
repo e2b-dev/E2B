@@ -1,11 +1,19 @@
 import logging
 import os
 
-from typing import cast, Literal, Mapping, Optional, Dict, Tuple, TypedDict, Union
+from typing import (
+    cast,
+    Literal,
+    Mapping,
+    Optional,
+    Dict,
+    Tuple,
+    TypedDict,
+    Union,
+    Unpack,
+)
 
 import httpx
-from typing_extensions import Unpack
-
 from e2b.exceptions import InvalidArgumentException
 from e2b.retry import resolve_max_retries
 from e2b.api.metadata import package_version

@@ -240,7 +240,7 @@ class AsyncFileStreamReader(AsyncIterator[bytes]):
             if self._idle_timeout:
                 return await asyncio.wait_for(read, self._idle_timeout)
             return await read
-        except asyncio.TimeoutError as e:
+        except TimeoutError as e:
             # `wait_for`'s expiry; keep the documented httpx exception. The
             # transport's own idle read timeout already arrives as one.
             await self.aclose()

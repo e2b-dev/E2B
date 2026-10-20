@@ -1,11 +1,20 @@
 import asyncio
 
-from typing import AsyncIterator, IO, List, Literal, Optional, Union, cast, overload
+from typing import (
+    AsyncIterator,
+    IO,
+    List,
+    Literal,
+    Optional,
+    Self,
+    Union,
+    Unpack,
+    cast,
+    overload,
+)
 from http import HTTPStatus
 
 import httpx
-
-from typing_extensions import Self, Unpack
 
 from e2b.api import handle_api_exception
 from e2b.api.client.api.volumes import (
@@ -583,7 +592,7 @@ class AsyncVolume(ClientFactory):
                             yield chunk
                     finally:
                         await stream_cm.__aexit__(None, None, None)
-                except asyncio.TimeoutError as e:
+                except TimeoutError as e:
                     raise httpx.ReadTimeout(str(e)) from e
 
             return stream_file()

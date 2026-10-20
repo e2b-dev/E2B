@@ -1,7 +1,5 @@
 from datetime import datetime
-from typing import Callable, List, Optional, Union
-
-from typing_extensions import Unpack
+from typing import Callable, List, Optional, Union, Unpack
 
 from e2b.api.client.client import AuthenticatedClient
 from e2b.api.client.types import Unset
