@@ -3,6 +3,7 @@ import { getEnvVar, version } from './api/metadata'
 import { runtime } from './utils'
 import { resolveRetries } from './retry'
 import { InvalidArgumentError } from './errors'
+import { getResolvedDomain, usesDomainApiUrl } from './resolvedDomains'
 
 // Remove once all deployments support sandbox subdomains
 const supportedDomains = ['e2b.app', 'e2b.dev', 'e2b.pro', 'e2b-staging.dev']
@@ -466,7 +467,7 @@ export class ConnectionConfig {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
     this.validateApiKey = opts?.validateApiKey
     this.debug = opts?.debug ?? ConnectionConfig.debug
-    this.domain = opts?.domain || ConnectionConfig.domain
+    const domain = opts?.domain || ConnectionConfig.domain
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.retries = resolveRetries(opts?.retries ?? DEFAULT_RETRIES)
     this.logger = opts?.logger
@@ -475,10 +476,15 @@ export class ConnectionConfig {
     this.proxy = opts?.proxy
     this.httpVersion = resolveHttpVersion(opts?.httpVersion)
 
-    this.apiUrl =
+    const apiUrl =
       opts?.apiUrl ||
       ConnectionConfig.apiUrl ||
-      (this.debug ? 'http://localhost:3000' : `https://api.${this.domain}`)
+      (this.debug ? 'http://localhost:3000' : `https://api.${domain}`)
+    const resolvedDomain = usesDomainApiUrl(domain, apiUrl, this.debug)
+      ? getResolvedDomain(domain, this.apiKey)
+      : undefined
+    this.domain = resolvedDomain ?? domain
+    this.apiUrl = resolvedDomain ? `https://api.${resolvedDomain}` : apiUrl
 
     this.sandboxUrl = opts?.sandboxUrl || ConnectionConfig.sandboxUrl
   }

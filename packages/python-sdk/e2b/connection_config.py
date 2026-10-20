@@ -10,6 +10,7 @@ from e2b.exceptions import InvalidArgumentException
 from e2b.retry import resolve_max_retries
 from e2b.api.metadata import package_version
 from e2b.sandbox_domains import is_supported_sandbox_domain
+from e2b.resolved_domains import get_resolved_domain, uses_domain_api_url
 
 ProxyTypes = Union[str, httpx.URL, httpx.Proxy]
 """The forms the ``proxy`` option accepts: a URL string, an ``httpx.URL``, or
@@ -279,7 +280,7 @@ class ConnectionConfig:
         http_version: Optional[HttpVersion] = None,
     ):
         self.logger = logger
-        self.domain = domain or ConnectionConfig._domain()
+        domain = domain or ConnectionConfig._domain()
         self.debug = debug if debug is not None else ConnectionConfig._debug()
         self.api_key = api_key or ConnectionConfig._api_key()
         self.validate_api_key = validate_api_key
@@ -303,8 +304,16 @@ class ConnectionConfig:
         self.api_url = (
             api_url
             or ConnectionConfig._api_url()
-            or ("http://localhost:3000" if self.debug else f"https://api.{self.domain}")
+            or ("http://localhost:3000" if self.debug else f"https://api.{domain}")
         )
+        resolved_domain = (
+            get_resolved_domain(domain, self.api_key)
+            if uses_domain_api_url(domain, self.api_url, self.debug)
+            else None
+        )
+        self.domain = resolved_domain or domain
+        if resolved_domain:
+            self.api_url = f"https://api.{resolved_domain}"
 
         self._sandbox_url: Optional[str] = (
             sandbox_url or ConnectionConfig._sandbox_url()

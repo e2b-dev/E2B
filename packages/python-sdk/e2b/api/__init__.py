@@ -27,6 +27,11 @@ from e2b.exceptions import (
     ServiceBusyException,
     SandboxException,
 )
+from e2b.resolved_domains import (
+    ALT_USED_HEADER,
+    record_resolved_domain,
+    uses_domain_api_url,
+)
 
 
 def encode_path_param(value: str) -> str:
@@ -252,6 +257,11 @@ class ApiClient(AuthenticatedClient):
         prefix = ""
 
         self._logger = config.logger
+        self._domain = config.domain
+        self._api_key = config.api_key
+        self._should_record_domain = uses_domain_api_url(
+            config.domain, config.api_url, config.debug
+        )
 
         headers = {
             **default_headers,
@@ -266,9 +276,15 @@ class ApiClient(AuthenticatedClient):
         kwargs.pop("auth_header_name", None)
         kwargs.pop("prefix", None)
 
-        httpx_args = {
-            "event_hooks": self._logging_event_hooks(),
-        }
+        event_hooks: dict = {}
+        for hooks in (
+            self._logging_event_hooks(),
+            self._resolved_domain_event_hooks(),
+        ):
+            for event, callbacks in hooks.items():
+                event_hooks.setdefault(event, []).extend(callbacks)
+
+        httpx_args = {"event_hooks": event_hooks}
         if transport is not None:
             # The proxy lives in the transport; passing `proxy` here too
             # would mount a fresh, never-closed proxy transport per client.
@@ -294,8 +310,34 @@ class ApiClient(AuthenticatedClient):
     def _logging_event_hooks(self) -> dict:
         return make_logging_event_hooks(self._logger)
 
+    def _resolved_domain_event_hooks(self) -> dict:
+        if not self._should_record_domain:
+            return {}
+
+        def on_response(response: Response) -> None:
+            record_resolved_domain(
+                self._domain,
+                self._api_key,
+                response.headers.get(ALT_USED_HEADER),
+            )
+
+        return {"response": [on_response]}
+
 
 # We need to override the logging hooks for the async usage
 class AsyncApiClient(ApiClient):
     def _logging_event_hooks(self) -> dict:
         return make_async_logging_event_hooks(self._logger)
+
+    def _resolved_domain_event_hooks(self) -> dict:
+        if not self._should_record_domain:
+            return {}
+
+        async def on_response(response: Response) -> None:
+            record_resolved_domain(
+                self._domain,
+                self._api_key,
+                response.headers.get(ALT_USED_HEADER),
+            )
+
+        return {"response": [on_response]}

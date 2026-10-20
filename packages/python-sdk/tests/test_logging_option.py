@@ -72,17 +72,14 @@ def test_api_client_uses_config_logger():
         client.get_httpx_client().close()
 
 
-def test_api_client_without_logger_emits_no_hooks():
-    # With no logger supplied, nothing should be logged (matching the JS SDK,
-    # which only attaches its logging middleware when a logger is given).
+def test_api_client_without_logger_registers_only_resolved_domain_hook():
     config = ConnectionConfig(api_key="e2b_" + "0" * 40)
     client = ApiClient(config)
     try:
         assert client._logger is None
-        assert client.get_httpx_client().event_hooks == {
-            "request": [],
-            "response": [],
-        }
+        event_hooks = client.get_httpx_client().event_hooks
+        assert event_hooks["request"] == []
+        assert len(event_hooks["response"]) == 1
     finally:
         client.get_httpx_client().close()
 
