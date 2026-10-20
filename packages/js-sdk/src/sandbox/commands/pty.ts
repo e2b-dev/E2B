@@ -10,6 +10,7 @@ import {
   setupRequestController,
 } from '../../connectionConfig'
 import { CommandHandle } from './commandHandle'
+import { CommandInputHandle, CommandStreamInputOpts } from './inputHandle'
 import {
   authenticationHeader,
   handleRpcErrorWithHealthCheck,
@@ -75,6 +76,7 @@ export type PtyConnectOpts = Pick<PtyCreateOpts, 'onData' | 'timeoutMs'> &
  */
 export class Pty {
   private readonly rpc: Client<typeof ProcessService>
+  private readonly streamingRpc: Client<typeof ProcessService>
   private readonly envdVersion: string
   private readonly checkHealth: SandboxHealthCheck
 
@@ -83,9 +85,11 @@ export class Pty {
   constructor(
     private readonly transport: Transport,
     private readonly envdApi: EnvdApiClient,
-    private readonly connectionConfig: ConnectionConfig
+    private readonly connectionConfig: ConnectionConfig,
+    streamingTransport: Transport
   ) {
     this.rpc = createClient(ProcessService, this.transport)
+    this.streamingRpc = createClient(ProcessService, streamingTransport)
     this.envdVersion = envdApi.version
     this.checkHealth = () => checkSandboxHealth(this.envdApi)
   }
@@ -252,6 +256,42 @@ export class Pty {
     } catch (err) {
       throw await handleRpcErrorWithHealthCheck(err, this.checkHealth)
     }
+  }
+
+  /**
+   * Open a persistent input stream to a PTY.
+   *
+   * Input sent through this stream is ordered relative to other `send` calls.
+   * Use this instead of {@link Pty.sendInput} when ordering matters; each
+   * `sendInput` call is a separate request. The stream sends keepalive messages
+   * while idle.
+   *
+   * In browsers, this requires fetch request-body streaming support (Chromium
+   * over HTTP/2).
+   *
+   * @param pid Process ID of the PTY.
+   * @param opts Optional stream timeout and abort signal. `timeoutMs` defaults to `STREAM_INPUT_TIMEOUT_MS` (60_000 milliseconds).
+   * @returns A handle whose `send()` method queues input in order and whose `close()` method ends the stream and waits for envd.
+   * @throws {NotFoundError} If the PTY does not exist, surfaced from `send()` or `close()`.
+   * @throws {TimeoutError} If the stream timeout expires, surfaced from `send()` or `close()`.
+   * @example
+   * ```ts
+   * const input = sandbox.pty.streamInput(pid)
+   * await input.send('echo hello\n')
+   * await input.close()
+   * ```
+   */
+  streamInput(
+    pid: number,
+    opts: CommandStreamInputOpts = {}
+  ): CommandInputHandle {
+    return new CommandInputHandle(
+      this.streamingRpc,
+      pid,
+      'pty',
+      opts,
+      this.checkHealth
+    )
   }
 
   /**

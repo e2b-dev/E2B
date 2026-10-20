@@ -28,7 +28,10 @@ import {
 import { ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE } from '../../envd/versions'
 import { SandboxError } from '../../errors'
 import { CommandHandle, CommandResult } from './commandHandle'
+import { CommandInputHandle, CommandStreamInputOpts } from './inputHandle'
 export { Pty } from './pty'
+export { CommandInputHandle }
+export type { CommandStreamInputOpts }
 
 /**
  * Options for sending a command request.
@@ -131,6 +134,7 @@ export interface ProcessInfo {
  */
 export class Commands {
   protected readonly rpc: Client<typeof ProcessService>
+  private readonly streamingRpc: Client<typeof ProcessService>
 
   private readonly defaultProcessConnectionTimeout = 60_000 // 60 seconds
   private readonly envdVersion: string
@@ -139,9 +143,11 @@ export class Commands {
   constructor(
     transport: Transport,
     private readonly envdApi: EnvdApiClient,
-    private readonly connectionConfig: ConnectionConfig
+    private readonly connectionConfig: ConnectionConfig,
+    streamingTransport: Transport
   ) {
     this.rpc = createClient(ProcessService, transport)
+    this.streamingRpc = createClient(ProcessService, streamingTransport)
     this.envdVersion = envdApi.version
     this.checkHealth = () => checkSandboxHealth(this.envdApi)
   }
@@ -227,6 +233,42 @@ export class Commands {
     } catch (err) {
       throw await handleRpcErrorWithHealthCheck(err, this.checkHealth)
     }
+  }
+
+  /**
+   * Open a persistent input stream to a command.
+   *
+   * Input sent through this stream is ordered relative to other `send` calls.
+   * Use this instead of {@link Commands.sendStdin} when ordering matters; each
+   * `sendStdin` call is a separate request. The stream sends keepalive messages
+   * while idle.
+   *
+   * In browsers, this requires fetch request-body streaming support (Chromium
+   * over HTTP/2).
+   *
+   * @param pid Process ID of the command.
+   * @param opts Optional stream timeout and abort signal. `timeoutMs` defaults to `STREAM_INPUT_TIMEOUT_MS` (60_000 milliseconds).
+   * @returns A handle whose `send()` method queues input in order and whose `close()` method ends the stream and waits for envd.
+   * @throws {NotFoundError} If the command does not exist, surfaced from `send()` or `close()`.
+   * @throws {TimeoutError} If the stream timeout expires, surfaced from `send()` or `close()`.
+   * @example
+   * ```ts
+   * const input = sandbox.commands.streamInput(pid)
+   * await input.send('hello\n')
+   * await input.close()
+   * ```
+   */
+  streamInput(
+    pid: number,
+    opts: CommandStreamInputOpts = {}
+  ): CommandInputHandle {
+    return new CommandInputHandle(
+      this.streamingRpc,
+      pid,
+      'stdin',
+      opts,
+      this.checkHealth
+    )
   }
 
   /**

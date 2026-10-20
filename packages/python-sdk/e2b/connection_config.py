@@ -30,6 +30,7 @@ narrows it to what the pyqwest REST transports take.
 """
 
 REQUEST_TIMEOUT: float = 60.0  # 60 seconds
+STREAM_INPUT_TIMEOUT: float = 60.0  # 60 seconds
 DEFAULT_RETRIES = 3
 
 # Idle bound for every read on the streaming envd file-transfer transport:
