@@ -1,4 +1,7 @@
-from typing import Optional
+from typing import TYPE_CHECKING, List, Optional, Sequence, Union
+
+if TYPE_CHECKING:
+    from .sandbox.main import SandboxBase
 
 
 # Messages of the 502 the proxy in front of envd answers with when the sandbox does
@@ -58,6 +61,25 @@ class SandboxException(Exception):
     def __init__(self, *args, status_code: Optional[int] = None):
         super().__init__(*args)
         self.status_code = status_code
+
+
+class SandboxForkException(SandboxException):
+    """
+    Raised by `Sandbox.fork` with `raise_on_exception=True` when at least one fork failed to start.
+
+    `results` holds one entry per requested fork, in request order — a running sandbox or the
+    exception that prevented that fork from starting. Successful forks keep running; kill them if you don't need them.
+    """
+
+    results: List[Union["SandboxBase", Exception]]
+
+    def __init__(self, results: Sequence[Union["SandboxBase", Exception]]):
+        failed_errors = [result for result in results if isinstance(result, Exception)]
+        super().__init__(
+            f"{len(failed_errors)} of {len(results)} forks failed to start: "
+            f"{'; '.join(str(error) for error in failed_errors)}"
+        )
+        self.results = list(results)
 
 
 class TimeoutException(SandboxException):

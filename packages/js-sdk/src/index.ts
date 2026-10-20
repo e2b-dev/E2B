@@ -17,6 +17,7 @@ export {
   NotEnoughSpaceError,
   NotFoundError,
   SandboxError,
+  SandboxForkError,
   SandboxNotFoundError,
   SandboxNotRunningError,
   SandboxUnreachableError,

@@ -1,3 +1,5 @@
+import type { Sandbox } from './sandbox'
+
 // Messages of the 502 the proxy in front of envd answers with when the sandbox does
 // not exist anymore (killed or reached its timeout) or when it is running but envd's
 // port is not open (e.g. its network is down).
@@ -50,6 +52,28 @@ export class SandboxError extends Error {
   constructor(message?: string) {
     super(message)
     this.name = 'SandboxError'
+  }
+}
+
+/**
+ * Thrown by `Sandbox.fork` with `throwOnError: true` when at least one fork failed to start.
+ * `results` holds one entry per requested fork, in request order — a running sandbox or the error
+ * that prevented that fork from starting. Successful forks keep running; kill them if you don't need them.
+ */
+export class SandboxForkError extends SandboxError {
+  readonly results: Array<Sandbox | Error>
+
+  constructor(results: Array<Sandbox | Error>) {
+    const failedErrors = results.filter(
+      (result): result is Error => result instanceof Error
+    )
+    super(
+      `${failedErrors.length} of ${results.length} forks failed to start: ${failedErrors
+        .map((error) => error.message)
+        .join('; ')}`
+    )
+    this.name = 'SandboxForkError'
+    this.results = results
   }
 }
 

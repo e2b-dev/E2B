@@ -50,6 +50,7 @@ from .exceptions import (
     RateLimitException,
     ServiceBusyException,
     SandboxException,
+    SandboxForkException,
     SandboxNotFoundException,
     SandboxNotRunningException,
     SandboxUnreachableException,
@@ -185,6 +186,7 @@ __all__ = [
     "Username",
     # Exceptions
     "SandboxException",
+    "SandboxForkException",
     "ServiceBusyException",
     "TimeoutException",
     "NotFoundException",

@@ -3,7 +3,7 @@ import json
 import logging
 import shlex
 import uuid
-from typing import Dict, List, Optional, Union, overload
+from typing import Dict, List, Literal, Optional, Union, overload
 
 import httpx
 from packaging.version import Version
@@ -16,6 +16,7 @@ from e2b.envd.api import ENVD_API_HEALTH_ROUTE, handle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
 from e2b.exceptions import (
     SandboxException,
+    SandboxForkException,
     TemplateException,
     format_request_timeout_error,
 )
@@ -392,6 +393,8 @@ class Sandbox(SandboxApi):
         self,
         timeout: Optional[int] = None,
         count: Optional[int] = None,
+        *,
+        raise_on_exception: Literal[False] = False,
         **opts: Unpack[ApiParams],
     ) -> List[Union[Self, Exception]]:
         """
@@ -411,14 +414,57 @@ class Sandbox(SandboxApi):
 
         :param timeout: Timeout for the forked sandboxes in **seconds**.
         :param count: Number of forked sandboxes to create. An integer between 1 and 20. Omitted, the API default applies.
+        :param raise_on_exception: Raise `SandboxForkException` with all results if any fork failed to start.
 
         :return: List with one entry per requested fork — a sandbox instance or an exception
+        :raises SandboxForkException: when `raise_on_exception` is `True` and at least one fork failed to start.
 
         @example
         ```python
         sandbox = Sandbox.create()
 
         fork1, fork2 = sandbox.fork(count=2)
+        forks = sandbox.fork(count=2, raise_on_exception=True)
+        ```
+        """
+        ...
+
+    @overload
+    def fork(
+        self,
+        timeout: Optional[int] = None,
+        count: Optional[int] = None,
+        *,
+        raise_on_exception: Literal[True],
+        **opts: Unpack[ApiParams],
+    ) -> List[Self]:
+        """
+        Fork the sandbox.
+
+        The sandbox is checkpointed in place (briefly paused, snapshotted with
+        its full memory state, and resumed — its ID and expiration stay
+        untouched) and `count` new sandboxes are created from that snapshot.
+        All forks boot from the same snapshot, so the snapshot is captured once
+        regardless of count.
+
+        Each fork succeeds or fails independently — the returned list contains
+        one entry per requested fork, either a running `Sandbox` instance
+        or an exception describing why that fork failed to start. Per-fork
+        error codes map to the same exception classes as other API errors
+        (e.g. 429 to `RateLimitException`).
+
+        :param timeout: Timeout for the forked sandboxes in **seconds**.
+        :param count: Number of forked sandboxes to create. An integer between 1 and 20. Omitted, the API default applies.
+        :param raise_on_exception: Raise `SandboxForkException` with all results if any fork failed to start.
+
+        :return: List of sandbox instances when all forks succeed
+        :raises SandboxForkException: when `raise_on_exception` is `True` and at least one fork failed to start.
+
+        @example
+        ```python
+        sandbox = Sandbox.create()
+
+        forks = sandbox.fork(count=2, raise_on_exception=True)
         ```
         """
         ...
@@ -430,6 +476,8 @@ class Sandbox(SandboxApi):
         timeout: Optional[int] = None,
         count: Optional[int] = None,
         logger: Optional[logging.Logger] = None,
+        *,
+        raise_on_exception: Literal[False] = False,
         **opts: Unpack[ApiParams],
     ) -> List[Union["Sandbox", Exception]]:
         """
@@ -451,14 +499,61 @@ class Sandbox(SandboxApi):
         :param timeout: Timeout for the forked sandboxes in **seconds**.
         :param count: Number of forked sandboxes to create. An integer between 1 and 20. Omitted, the API default applies.
         :param logger: Logger used for request and response logging for the forked sandboxes. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
+        :param raise_on_exception: Raise `SandboxForkException` with all results if any fork failed to start.
 
         :return: List with one entry per requested fork — a sandbox instance or an exception
+        :raises SandboxForkException: when `raise_on_exception` is `True` and at least one fork failed to start.
 
         @example
         ```python
         sandbox = Sandbox.create()
 
         fork1, fork2 = Sandbox.fork(sandbox.sandbox_id, count=2)
+        forks = Sandbox.fork(sandbox.sandbox_id, count=2, raise_on_exception=True)
+        ```
+        """
+        ...
+
+    @overload
+    @staticmethod
+    def fork(
+        sandbox_id: str,
+        timeout: Optional[int] = None,
+        count: Optional[int] = None,
+        logger: Optional[logging.Logger] = None,
+        *,
+        raise_on_exception: Literal[True],
+        **opts: Unpack[ApiParams],
+    ) -> List["Sandbox"]:
+        """
+        Fork a running sandbox specified by sandbox ID.
+
+        The sandbox is checkpointed in place (briefly paused, snapshotted with
+        its full memory state, and resumed — its ID and expiration stay
+        untouched) and `count` new sandboxes are created from that snapshot.
+        All forks boot from the same snapshot, so the snapshot is captured once
+        regardless of count.
+
+        Each fork succeeds or fails independently — the returned list contains
+        one entry per requested fork, either a running `Sandbox` instance
+        or an exception describing why that fork failed to start. Per-fork
+        error codes map to the same exception classes as other API errors
+        (e.g. 429 to `RateLimitException`).
+
+        :param sandbox_id: Sandbox ID
+        :param timeout: Timeout for the forked sandboxes in **seconds**.
+        :param count: Number of forked sandboxes to create. An integer between 1 and 20. Omitted, the API default applies.
+        :param logger: Logger used for request and response logging for the forked sandboxes. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
+        :param raise_on_exception: Raise `SandboxForkException` with all results if any fork failed to start.
+
+        :return: List of sandbox instances when all forks succeed
+        :raises SandboxForkException: when `raise_on_exception` is `True` and at least one fork failed to start.
+
+        @example
+        ```python
+        sandbox = Sandbox.create()
+
+        forks = Sandbox.fork(sandbox.sandbox_id, count=2, raise_on_exception=True)
         ```
         """
         ...
@@ -468,6 +563,8 @@ class Sandbox(SandboxApi):
         self,
         timeout: Optional[int] = None,
         count: Optional[int] = None,
+        *,
+        raise_on_exception: bool = False,
         **opts: Unpack[ApiParams],
     ) -> List[Union[Self, Exception]]:
         """
@@ -487,20 +584,24 @@ class Sandbox(SandboxApi):
 
         :param timeout: Timeout for the forked sandboxes in **seconds**.
         :param count: Number of forked sandboxes to create. An integer between 1 and 20. Omitted, the API default applies.
+        :param raise_on_exception: Raise `SandboxForkException` with all results if any fork failed to start.
 
         :return: List with one entry per requested fork — a sandbox instance or an exception
+        :raises SandboxForkException: when `raise_on_exception` is `True` and at least one fork failed to start.
 
         @example
         ```python
         sandbox = Sandbox.create()
 
         fork1, fork2 = sandbox.fork(count=2)
+        forks = sandbox.fork(count=2, raise_on_exception=True)
         ```
         """
         return type(self)._cls_fork_sandbox(
             self.sandbox_id,
             timeout=timeout,
             count=count,
+            raise_on_exception=raise_on_exception,
             **self.connection_config.get_api_params(**opts),
         )
 
@@ -1125,6 +1226,8 @@ class Sandbox(SandboxApi):
         timeout: Optional[int] = None,
         count: Optional[int] = None,
         logger: Optional[logging.Logger] = None,
+        *,
+        raise_on_exception: bool = False,
         **opts: Unpack[ApiParams],
     ) -> List[Union[Self, Exception]]:
         params = cls._resolve_api_params(**opts)
@@ -1165,6 +1268,11 @@ class Sandbox(SandboxApi):
                     connection_config=connection_config,
                 )
             )
+
+        if raise_on_exception and any(
+            isinstance(sandbox, Exception) for sandbox in sandboxes
+        ):
+            raise SandboxForkException(sandboxes)
 
         return sandboxes
 

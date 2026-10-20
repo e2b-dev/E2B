@@ -647,6 +647,15 @@ export interface SandboxForkOpts extends ConnectionOpts {
   count?: number
 
   /**
+   * When `true`, throws `SandboxForkError` with all fork results if any fork
+   * failed to start. Otherwise, when all forks succeed, resolves to only
+   * sandbox instances.
+   *
+   * @default false
+   */
+  throwOnError?: boolean
+
+  /**
    * Timeout for the forked sandboxes in **milliseconds**.
    * Maximum time a sandbox can be kept alive is 24 hours (86_400_000 milliseconds) for Pro users and 1 hour (3_600_000 milliseconds) for Hobby users.
    */
