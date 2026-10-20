@@ -78,7 +78,7 @@ class AsyncCommandInputHandle:
         if not self._closing:
             self._closing = True
             self._queue.put_nowait(_CLOSE)
-        await self._task
+        await asyncio.shield(self._task)
         if self._failure is not None:
             raise self._failure
 

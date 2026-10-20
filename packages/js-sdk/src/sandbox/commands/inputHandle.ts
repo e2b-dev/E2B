@@ -103,7 +103,7 @@ export class CommandInputHandle {
       )
     }
 
-    this.queue.push(data)
+    this.queue.push(data instanceof Uint8Array ? data.slice() : data)
     this.notify()
   }
 

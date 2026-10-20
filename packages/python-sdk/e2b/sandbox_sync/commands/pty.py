@@ -23,6 +23,7 @@ from e2b.envd.utils import (
     timeout_to_ms,
 )
 from e2b.envd.client_sync import as_stream, create_rpc_client
+from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox.commands.command_handle import PtySize
 from e2b.sandbox.commands.stream_input import stream_input_data, stream_input_start
 from e2b.sandbox_sync.commands.command_handle import CommandHandle
@@ -126,7 +127,14 @@ class Pty:
         :raises NotFoundException: If the PTY does not exist.
         :raises TimeoutException: If the stream timeout expires.
         :raises SandboxException: If the streaming request fails.
+        :raises InvalidArgumentException: If ``data`` is a single ``str`` or
+            ``bytes`` value instead of an iterable of chunks.
         """
+        if isinstance(data, (str, bytes, bytearray, memoryview)):
+            raise InvalidArgumentException(
+                "`data` must be an iterable of str or bytes chunks, not a single "
+                "chunk; wrap it in a list, e.g. `stream_input(pid, [data])`."
+            )
 
         def requests() -> Generator[process_pb.StreamInputRequest, None, None]:
             yield stream_input_start(pid)

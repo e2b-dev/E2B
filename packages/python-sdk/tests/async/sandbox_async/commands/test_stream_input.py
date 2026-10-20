@@ -62,3 +62,30 @@ async def test_async_command_input_handle_orders_data_and_sends_keepalives():
     await stream.close()
     with pytest.raises(SandboxException, match="sandbox.commands.stream_input"):
         await stream.send("late")
+
+
+async def test_async_command_input_handle_close_survives_cancelled_wait():
+    class FakeRpc:
+        def __init__(self):
+            self.gate = asyncio.Event()
+
+        async def stream_input(self, requests, timeout_ms=None):
+            await self.gate.wait()
+            self.requests = [request async for request in requests]
+
+    rpc = FakeRpc()
+    handle = AsyncCommandInputHandle(rpc, 42, "stdin", 0, lambda: None)
+    await handle.send(b"payload")
+
+    with pytest.raises(asyncio.TimeoutError):
+        await asyncio.wait_for(handle.close(), 0.01)
+
+    rpc.gate.set()
+    await handle.close()
+
+    data = [
+        request.event.value.input.input.value
+        for request in rpc.requests
+        if request.event.field == "data"
+    ]
+    assert data == [b"payload"]

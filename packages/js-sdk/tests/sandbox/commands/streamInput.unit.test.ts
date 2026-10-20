@@ -59,3 +59,42 @@ test('stream input preserves order and sends keepalives while idle', async () =>
     'sandbox.commands.streamInput(pid)` or `sandbox.pty.streamInput(pid)'
   )
 })
+
+test('stream input snapshots mutable byte arrays when enqueued', async () => {
+  const messages: any[] = []
+  let release!: () => void
+  const gate = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const rpc = {
+    async streamInput(requests: AsyncIterable<any>) {
+      await gate
+      for await (const request of requests) {
+        messages.push(request)
+      }
+      return {}
+    },
+  } as unknown as Client<typeof ProcessService>
+
+  const input = new CommandInputHandle(
+    rpc,
+    42,
+    'stdin',
+    {},
+    async () => true,
+    50
+  )
+  const buffer = new TextEncoder().encode('a')
+
+  await input.send(buffer)
+  buffer.set(new TextEncoder().encode('b'))
+  release()
+  await input.close()
+
+  const data = messages
+    .filter((message) => message.event.case === 'data')
+    .map((message) =>
+      new TextDecoder().decode(message.event.value.input.input.value)
+    )
+  expect(data).toEqual(['a'])
+})

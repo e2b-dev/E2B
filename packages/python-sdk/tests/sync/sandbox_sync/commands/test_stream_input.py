@@ -1,8 +1,9 @@
 import time
+from typing import Any, cast
 
 import pytest
 
-from e2b import NotFoundException, Sandbox, TimeoutException
+from e2b import InvalidArgumentException, NotFoundException, Sandbox, TimeoutException
 from e2b.sandbox_sync.commands.command import Commands
 
 
@@ -26,6 +27,11 @@ def test_stream_input_to_command(sandbox: Sandbox):
 def test_stream_input_reports_missing_command(sandbox: Sandbox):
     with pytest.raises(NotFoundException):
         sandbox.commands.stream_input(999999, ["data"])
+
+
+def test_stream_input_rejects_single_chunk(sandbox: Sandbox):
+    with pytest.raises(InvalidArgumentException, match=r"\[data\]"):
+        sandbox.commands.stream_input(1, cast(Any, b"ls\n"))
 
 
 def test_stream_input_timeout(sandbox: Sandbox):
