@@ -1,10 +1,8 @@
 import datetime
 import logging
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Unpack, Union, cast
 
 from packaging.version import Version
-from typing_extensions import Unpack
-
 from e2b.api import (
     SandboxCreateResponse,
     api_exception_from_code,

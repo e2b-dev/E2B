@@ -1,10 +1,19 @@
 import io
-from typing import IO, Iterator, List, Literal, Optional, Union, cast, overload
+from typing import (
+    IO,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Self,
+    Union,
+    Unpack,
+    cast,
+    overload,
+)
 from http import HTTPStatus
 
 import httpx
-
-from typing_extensions import Self, Unpack
 
 from e2b.api import handle_api_exception
 from e2b.api.client.api.volumes import (

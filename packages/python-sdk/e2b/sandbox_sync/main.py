@@ -3,12 +3,10 @@ import json
 import logging
 import shlex
 import uuid
-from typing import Dict, List, Optional, Union, overload
+from typing import Dict, List, Optional, Self, Union, Unpack, overload
 
 import httpx
 from packaging.version import Version
-from typing_extensions import Self, Unpack
-
 from e2b.api.client.types import Unset
 from e2b.api.client_sync import get_envd_api
 from e2b.connection_config import ApiParams, ConnectionConfig

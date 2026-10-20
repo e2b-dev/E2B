@@ -2,7 +2,18 @@ import logging
 import time
 from re import search as re_search
 from shlex import quote as quote_string
-from typing import Callable, Dict, Iterator, Literal, Optional, overload, Tuple, Union
+from typing import (
+    Callable,
+    Dict,
+    Iterator,
+    Literal,
+    Optional,
+    Self,
+    Unpack,
+    overload,
+    Tuple,
+    Union,
+)
 from uuid import uuid4
 
 from e2b import (
@@ -17,7 +28,6 @@ from e2b import (
     Volume,
 )
 from e2b.connection_config import ApiParams
-from typing_extensions import Self, Unpack
 
 MOUSE_BUTTONS = {"left": 1, "right": 3, "middle": 2}
 
