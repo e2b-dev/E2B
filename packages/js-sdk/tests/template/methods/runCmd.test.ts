@@ -32,7 +32,7 @@ buildTemplateTest(
       .runCmd('whoami', { user: 'root123' })
 
     await expect(buildTemplate(template)).rejects.toThrow(
-      "failed to run command 'whoami': command failed: unauthenticated: invalid username: 'root123'"
+      "failed to run command: command failed: unauthenticated: invalid username: 'root123'"
     )
   }
 )
