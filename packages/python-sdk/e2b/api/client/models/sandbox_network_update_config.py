@@ -21,14 +21,17 @@ T = TypeVar("T", bound="SandboxNetworkUpdateConfig")
 @_attrs_define
 class SandboxNetworkUpdateConfig:
     """Network configuration update for a running sandbox. Replaces the current egress rules with the provided
-    configuration. Omitting a field clears it.
+    configuration. Omitting a field clears it, except allowDefaultDns, which keeps its current value.
 
         Attributes:
             allow_out (Union[Unset, list[str]]): List of allowed destinations for egress traffic. Each entry can be a CIDR
                 block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com",
-                "*.example.com"). Allowed entries always take precedence over denied entries.
+                "*.example.com"). Allowed entries always take precedence over denied entries. When allowOut contains a domain,
+                the default nameserver 8.8.8.8 is also allowed unless allowDefaultDns is false.
             deny_out (Union[Unset, list[str]]): List of denied CIDR blocks or IP addresses for egress traffic. Domain names
                 are not supported for deny rules.
+            allow_default_dns (Union[Unset, bool]): Allow all traffic to the default nameserver 8.8.8.8 when allowOut
+                contains a domain. Keeps the current value when omitted.
             egress_proxy (Union['SandboxEgressProxyConfigType0', None, Unset]): SOCKS5 proxy for sandbox egress. Outbound
                 TCP is tunneled through the proxy after allow/deny filtering; the sandbox is unaware. Domain-matched flows use
                 remote DNS (ATYP=domain).
@@ -45,6 +48,7 @@ class SandboxNetworkUpdateConfig:
 
     allow_out: Union[Unset, list[str]] = UNSET
     deny_out: Union[Unset, list[str]] = UNSET
+    allow_default_dns: Union[Unset, bool] = UNSET
     egress_proxy: Union["SandboxEgressProxyConfigType0", None, Unset] = UNSET
     rules: Union[Unset, "SandboxNetworkUpdateConfigRules"] = UNSET
     allow_internet_access: Union[Unset, bool] = UNSET
@@ -62,6 +66,8 @@ class SandboxNetworkUpdateConfig:
         deny_out: Union[Unset, list[str]] = UNSET
         if not isinstance(self.deny_out, Unset):
             deny_out = self.deny_out
+
+        allow_default_dns = self.allow_default_dns
 
         egress_proxy: Union[None, Unset, dict[str, Any]]
         if isinstance(self.egress_proxy, Unset):
@@ -84,6 +90,8 @@ class SandboxNetworkUpdateConfig:
             field_dict["allowOut"] = allow_out
         if deny_out is not UNSET:
             field_dict["denyOut"] = deny_out
+        if allow_default_dns is not UNSET:
+            field_dict["allowDefaultDns"] = allow_default_dns
         if egress_proxy is not UNSET:
             field_dict["egressProxy"] = egress_proxy
         if rules is not UNSET:
@@ -106,6 +114,8 @@ class SandboxNetworkUpdateConfig:
         allow_out = cast(list[str], d.pop("allowOut", UNSET))
 
         deny_out = cast(list[str], d.pop("denyOut", UNSET))
+
+        allow_default_dns = d.pop("allowDefaultDns", UNSET)
 
         def _parse_egress_proxy(
             data: object,
@@ -140,6 +150,7 @@ class SandboxNetworkUpdateConfig:
         sandbox_network_update_config = cls(
             allow_out=allow_out,
             deny_out=deny_out,
+            allow_default_dns=allow_default_dns,
             egress_proxy=egress_proxy,
             rules=rules,
             allow_internet_access=allow_internet_access,
