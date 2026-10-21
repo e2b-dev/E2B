@@ -404,7 +404,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "e2b", editable = "../python-sdk" },
-    { name = "pillow", specifier = ">=12.0.0,<14" },
+    { name = "pillow", specifier = ">=13.0.0,<14" },
     { name = "requests", specifier = ">=2.32.3,<3" },
     { name = "urllib3", specifier = ">=2.8.0,<3" },
 ]
