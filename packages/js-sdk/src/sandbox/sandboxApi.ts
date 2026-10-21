@@ -345,6 +345,30 @@ export type SandboxNetworkOpts = {
   egressProxy?: SandboxEgressProxyOpts
 
   /**
+   * Allow all traffic to the default nameserver `8.8.8.8` when
+   * {@link allowOut} contains a domain, so the sandbox can resolve names.
+   *
+   * Set it to `false` to block `8.8.8.8`. Allowed domains still work, since
+   * they are matched by name, not by IP. But names no longer resolve through
+   * `8.8.8.8`, so add the ones you need to `/etc/hosts` or allow your own
+   * nameserver in {@link allowOut}.
+   *
+   * @default true
+   *
+   * @example
+   * ```ts
+   * await Sandbox.create({
+   *   network: {
+   *     allowOut: ['api.example.com'],
+   *     denyOut: ({ allTraffic }) => [allTraffic],
+   *     allowDefaultDns: false,
+   *   },
+   * })
+   * ```
+   */
+  allowDefaultDns?: boolean
+
+  /**
    * Specify if the sandbox URLs should be accessible only with authentication.
    * @default true
    */
@@ -388,6 +412,11 @@ export type SandboxNetworkInfo = {
    * is missing.
    */
   egressProxy?: SandboxEgressProxyInfo
+  /**
+   * Whether `8.8.8.8` is allowed. See {@link SandboxNetworkOpts.allowDefaultDns}.
+   * Missing means `true`.
+   */
+  allowDefaultDns?: boolean
   allowPublicTraffic?: boolean
   maskRequestHost?: string
   httpsPorts?: number[]
@@ -396,7 +425,7 @@ export type SandboxNetworkInfo = {
 /**
  * Subset of {@link SandboxNetworkOpts} accepted by {@link SandboxApi.updateNetwork}.
  * The update endpoint replaces all egress rules atomically — fields that are
- * omitted are cleared on the server.
+ * omitted are cleared on the server, except `allowDefaultDns`.
  */
 export type SandboxNetworkUpdate = {
   /** See {@link SandboxNetworkOpts.allowOut}. */
@@ -424,6 +453,11 @@ export type SandboxNetworkUpdate = {
    * `address` but omits `tls` keeps tunneling without TLS.
    */
   egressProxy?: SandboxEgressProxyOpts
+  /**
+   * See {@link SandboxNetworkOpts.allowDefaultDns}. Unlike the other fields,
+   * leaving it out keeps the sandbox's current setting.
+   */
+  allowDefaultDns?: boolean
   /**
    * Allow sandbox to access the internet. When set to `false`, it behaves the
    * same as specifying `denyOut: ['0.0.0.0/0']` in the network config.
@@ -1243,6 +1277,7 @@ type NetworkEgressBody = {
   allowOut?: string[]
   denyOut?: string[]
   egressProxy?: components['schemas']['SandboxEgressProxyConfig']
+  allowDefaultDns?: boolean
   rules?: Record<string, { transform?: SandboxNetworkTransform }[]>
 }
 
@@ -1251,6 +1286,7 @@ function buildNetworkEgress(
     allowOut?: SandboxNetworkSelector
     denyOut?: SandboxNetworkSelector
     egressProxy?: SandboxEgressProxyOpts
+    allowDefaultDns?: boolean
     rules?: SandboxNetworkRules
   },
   transformContext: SandboxNetworkTransformContext
@@ -1270,6 +1306,9 @@ function buildNetworkEgress(
     // (not truthiness — an empty object must still reach the builder).
     ...(network.egressProxy != null
       ? { egressProxy: buildEgressProxyBody(network.egressProxy) }
+      : {}),
+    ...(network.allowDefaultDns !== undefined
+      ? { allowDefaultDns: network.allowDefaultDns }
       : {}),
     ...(network.rules !== undefined
       ? { rules: resolveRulesForBody(rules, transformContext) }
@@ -1488,6 +1527,7 @@ export class SandboxApi extends ClientFactory {
             denyOut: res.data.network.denyOut,
             rules: res.data.network.rules ?? undefined,
             egressProxy: fromApiEgressProxy(res.data.network.egressProxy),
+            allowDefaultDns: res.data.network.allowDefaultDns,
             allowPublicTraffic: res.data.network.allowPublicTraffic,
             maskRequestHost: res.data.network.maskRequestHost,
             httpsPorts: res.data.network.httpsPorts,
@@ -1631,7 +1671,8 @@ export class SandboxApi extends ClientFactory {
    * Update the network configuration of a running sandbox.
    *
    * Replaces the current egress configuration atomically — fields that are
-   * omitted are cleared on the server.
+   * omitted are cleared on the server, except `allowDefaultDns`, which keeps
+   * its current value.
    *
    * @param sandboxId sandbox ID.
    * @param network new network configuration.

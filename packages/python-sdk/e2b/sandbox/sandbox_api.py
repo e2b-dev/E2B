@@ -461,6 +461,25 @@ class SandboxNetworkOpts(TypedDict):
         )
     """
 
+    allow_default_dns: NotRequired[bool]
+    """
+    Allow all traffic to the default nameserver ``8.8.8.8`` when ``allow_out``
+    contains a domain, so the sandbox can resolve names. Defaults to True.
+
+    Set it to ``False`` to block ``8.8.8.8``. Allowed domains still work, since
+    they are matched by name, not by IP. But names no longer resolve through
+    ``8.8.8.8``, so add the ones you need to ``/etc/hosts`` or allow your own
+    nameserver in ``allow_out``::
+
+        Sandbox.create(
+            network={
+                "allow_out": ["api.example.com"],
+                "deny_out": lambda ctx: [ctx.all_traffic],
+                "allow_default_dns": False,
+            },
+        )
+    """
+
     allow_public_traffic: NotRequired[bool]
     """
     Controls whether sandbox URLs should be publicly accessible or require authentication.
@@ -493,7 +512,7 @@ class SandboxNetworkUpdate(TypedDict, total=False):
     """
     Subset of :class:`SandboxNetworkOpts` accepted by ``Sandbox.update_network``.
     The update endpoint replaces all egress rules atomically — fields that are
-    omitted are cleared on the server.
+    omitted are cleared on the server, except ``allow_default_dns``.
     """
 
     allow_out: SandboxNetworkSelector
@@ -522,6 +541,12 @@ class SandboxNetworkUpdate(TypedDict, total=False):
 
     The same replace semantics apply to ``tls``: an update that repeats
     ``address`` but omits ``tls`` keeps tunneling without TLS.
+    """
+
+    allow_default_dns: bool
+    """
+    See :attr:`SandboxNetworkOpts.allow_default_dns`. Unlike the other fields,
+    leaving it out keeps the sandbox's current setting.
     """
 
     allow_internet_access: bool
@@ -582,6 +607,11 @@ class SandboxNetworkInfo(TypedDict, total=False):
     Proxy the sandbox's egress is currently tunneled through, absent when it
     goes out directly. See :class:`SandboxEgressProxyInfo` for why the password
     is missing.
+    """
+    allow_default_dns: bool
+    """
+    Whether ``8.8.8.8`` is allowed. See :attr:`SandboxNetworkOpts.allow_default_dns`.
+    Missing means True.
     """
     allow_public_traffic: bool
     mask_request_host: str
@@ -916,6 +946,8 @@ def _build_network_egress(
         body["deny_out"] = deny_out
     if egress_proxy is not None:
         body["egress_proxy"] = _build_egress_proxy(egress_proxy)
+    if network.get("allow_default_dns") is not None:
+        body["allow_default_dns"] = network["allow_default_dns"]
     if "rules" in network and network["rules"] is not None:
         body["rules"] = _build_client_rules(network["rules"], ctx).additional_properties
 
@@ -952,6 +984,8 @@ def build_network_config(
         body["mask_request_host"] = network["mask_request_host"]
     if network.get("https_ports") is not None:
         body["https_ports"] = list(network["https_ports"])
+    # The generated model defaults this to True; UNSET leaves it out of the request.
+    body.setdefault("allow_default_dns", UNSET)
 
     return body
 
@@ -1100,6 +1134,8 @@ def build_network_update_body(
         body.deny_out = egress["deny_out"]
     if "egress_proxy" in egress:
         body.egress_proxy = egress["egress_proxy"]
+    if "allow_default_dns" in egress:
+        body.allow_default_dns = egress["allow_default_dns"]
     if "rules" in egress:
         rules = SandboxNetworkUpdateConfigRules()
         rules.additional_properties = egress["rules"]
@@ -1155,6 +1191,8 @@ def from_client_network_config(
     egress_proxy = _from_client_egress_proxy(network.egress_proxy)
     if egress_proxy is not None:
         result["egress_proxy"] = egress_proxy
+    if not isinstance(network.allow_default_dns, Unset):
+        result["allow_default_dns"] = network.allow_default_dns
     if not isinstance(network.allow_public_traffic, Unset):
         result["allow_public_traffic"] = network.allow_public_traffic
     if not isinstance(network.mask_request_host, Unset):

@@ -321,6 +321,116 @@ describe('updateNetwork clears existing rules when fields are omitted', () => {
   )
 })
 
+// Sends one DNS query for example.com to 8.8.8.8 over UDP. Fails if no reply comes back.
+const dnsProbeCmd = `python3 -c "
+import socket
+q = bytes.fromhex('abcd01000001000000000000076578616d706c6503636f6d0000010001')
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.settimeout(3)
+s.sendto(q, ('8.8.8.8', 53))
+s.recv(512)
+"`
+
+describe('allowDefaultDns=false closes 8.8.8.8 for a domain allowlist', () => {
+  sandboxTest.override({
+    sandboxOpts: {
+      network: {
+        allowOut: ['example.com'],
+        denyOut: ({ allTraffic }) => [allTraffic],
+        allowDefaultDns: false,
+      },
+    },
+  })
+
+  sandboxTest.skipIf(isDebug)(
+    'blocks 8.8.8.8 and keeps the allowed domain reachable',
+    async ({ sandbox }) => {
+      await expect(sandbox.commands.run(dnsProbeCmd)).rejects.toBeInstanceOf(
+        CommandExitError
+      )
+      await expect(
+        sandbox.commands.run(
+          'curl --connect-timeout 3 --max-time 5 -Is https://8.8.8.8'
+        )
+      ).rejects.toBeInstanceOf(CommandExitError)
+
+      // Allowed domains are matched by name, not by IP, so any public IP in
+      // /etc/hosts works.
+      await sandbox.commands.run("echo '1.1.1.1 example.com' >> /etc/hosts", {
+        user: 'root',
+      })
+      const result = await sandbox.commands.run(
+        "curl -s -o /dev/null -w '%{http_code}' https://example.com"
+      )
+      assert.equal(result.stdout.trim(), '200')
+
+      const info = await sandbox.getInfo()
+      assert.equal(info.network?.allowDefaultDns, false)
+    },
+    60_000
+  )
+})
+
+describe('updateNetwork keeps allowDefaultDns when omitted', () => {
+  sandboxTest.override({
+    sandboxOpts: {
+      network: {
+        allowOut: ['example.com'],
+        denyOut: ({ allTraffic }) => [allTraffic],
+        allowDefaultDns: false,
+      },
+    },
+  })
+
+  sandboxTest.skipIf(isDebug)(
+    'reopens 8.8.8.8 only when set back to true',
+    async ({ sandbox }) => {
+      const network = {
+        allowOut: ['example.com'],
+        denyOut: ['0.0.0.0/0'],
+      }
+
+      await sandbox.updateNetwork(network)
+      await expect(sandbox.commands.run(dnsProbeCmd)).rejects.toBeInstanceOf(
+        CommandExitError
+      )
+
+      await sandbox.updateNetwork({ ...network, allowDefaultDns: true })
+      const reopened = await sandbox.commands.run(dnsProbeCmd)
+      assert.equal(reopened.exitCode, 0)
+
+      await sandbox.updateNetwork({ ...network, allowDefaultDns: false })
+      await expect(sandbox.commands.run(dnsProbeCmd)).rejects.toBeInstanceOf(
+        CommandExitError
+      )
+    },
+    60_000
+  )
+})
+
+describe('a domain allowlist allows 8.8.8.8 by default', () => {
+  sandboxTest.override({
+    sandboxOpts: {
+      network: {
+        allowOut: ['example.com'],
+        denyOut: ({ allTraffic }) => [allTraffic],
+      },
+    },
+  })
+
+  sandboxTest.skipIf(isDebug)(
+    'resolves names through 8.8.8.8',
+    async ({ sandbox }) => {
+      const result = await sandbox.commands.run(dnsProbeCmd)
+      assert.equal(result.exitCode, 0)
+
+      const info = await sandbox.getInfo()
+      // The API fills in the default, so this is true (or missing on an older API).
+      assert.notStrictEqual(info.network?.allowDefaultDns, false)
+    }
+  )
+})
+
 describe('httpsPorts option', () => {
   const port = 8443
 

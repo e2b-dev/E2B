@@ -287,6 +287,79 @@ def test_update_network_clears_existing_rules(sandbox_factory):
     assert r2.exit_code == 0
 
 
+# Sends one DNS query for example.com to 8.8.8.8 over UDP. Fails if no reply comes back.
+DNS_PROBE_CMD = """python3 -c "
+import socket
+q = bytes.fromhex('abcd01000001000000000000076578616d706c6503636f6d0000010001')
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.settimeout(3)
+s.sendto(q, ('8.8.8.8', 53))
+s.recv(512)
+"
+"""
+
+DOMAIN_ONLY = SandboxNetworkOpts(
+    allow_out=["example.com"],
+    deny_out=lambda ctx: [ctx.all_traffic],
+)
+
+
+@pytest.mark.skip_debug()
+def test_allow_default_dns_false_closes_8888(sandbox_factory):
+    """allow_default_dns=False blocks 8.8.8.8; the allowed domain stays reachable."""
+    sandbox = sandbox_factory(network={**DOMAIN_ONLY, "allow_default_dns": False})
+
+    with pytest.raises(CommandExitException):
+        sandbox.commands.run(DNS_PROBE_CMD)
+    with pytest.raises(CommandExitException):
+        sandbox.commands.run(
+            "curl --connect-timeout 3 --max-time 5 -Is https://8.8.8.8"
+        )
+
+    # Allowed domains are matched by name, not by IP, so any public IP in
+    # /etc/hosts works.
+    sandbox.commands.run("echo '1.1.1.1 example.com' >> /etc/hosts", user="root")
+    result = sandbox.commands.run(
+        "curl -s -o /dev/null -w '%{http_code}' https://example.com"
+    )
+    assert result.stdout.strip() == "200"
+
+    info = sandbox.get_info()
+    assert info.network is not None
+    assert info.network.get("allow_default_dns") is False
+
+
+@pytest.mark.skip_debug()
+def test_update_network_keeps_allow_default_dns_when_omitted(sandbox_factory):
+    """update_network keeps allow_default_dns unless it is passed."""
+    sandbox = sandbox_factory(network={**DOMAIN_ONLY, "allow_default_dns": False})
+    network = {"allow_out": ["example.com"], "deny_out": ["0.0.0.0/0"]}
+
+    sandbox.update_network(network)
+    with pytest.raises(CommandExitException):
+        sandbox.commands.run(DNS_PROBE_CMD)
+
+    sandbox.update_network({**network, "allow_default_dns": True})
+    assert sandbox.commands.run(DNS_PROBE_CMD).exit_code == 0
+
+    sandbox.update_network({**network, "allow_default_dns": False})
+    with pytest.raises(CommandExitException):
+        sandbox.commands.run(DNS_PROBE_CMD)
+
+
+@pytest.mark.skip_debug()
+def test_domain_allowlist_allows_8888_by_default(sandbox_factory):
+    """Without allow_default_dns, a domain allowlist still resolves through 8.8.8.8."""
+    sandbox = sandbox_factory(network=DOMAIN_ONLY)
+
+    assert sandbox.commands.run(DNS_PROBE_CMD).exit_code == 0
+
+    info = sandbox.get_info()
+    assert info.network is not None
+    # The API fills in the default, so this is True (or missing on an older API).
+    assert info.network.get("allow_default_dns", True) is True
+
+
 @pytest.mark.skip_debug()
 def test_https_ports(sandbox_factory):
     """Test that a port listed in https_ports proxies to an HTTPS backend."""
