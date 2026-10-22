@@ -30,7 +30,7 @@ export type E2BClientOpts = Omit<ConnectionOpts, 'signal'>
  * ```ts
  * import { E2B } from 'e2b'
  *
- * const client = new E2B({ apiKey: 'e2b_...', domain: 'e2b.dev' })
+ * const client = new E2B({ apiKey: 'e2b_...' })
  *
  * const sandbox = await client.Sandbox.create()
  * const volumes = await client.Volume.list()

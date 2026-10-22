@@ -59,18 +59,27 @@ export interface ConnectionOpts {
    * Domain to use for the API.
    *
    * @default E2B_DOMAIN // environment variable or `e2b.app`
+   *
+   * @deprecated `domain` and the `E2B_DOMAIN` environment variable will be
+   * removed in a future release.
    */
   domain?: string
   /**
    * API Url to use for the API.
    * @internal
    * @default E2B_API_URL // environment variable or `https://api.${domain}`
+   *
+   * @deprecated `apiUrl` and the `E2B_API_URL` environment variable will be
+   * removed in a future release.
    */
   apiUrl?: string
   /**
    * Sandbox Url to use for the API.
    * @internal
    * @default E2B_SANDBOX_URL // environment variable, `https://sandbox.${domain}`
+   *
+   * @deprecated `sandboxUrl` and the `E2B_SANDBOX_URL` environment variable
+   * will be removed in a future release.
    */
   sandboxUrl?: string
   /**

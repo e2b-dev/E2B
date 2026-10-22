@@ -110,10 +110,14 @@ class ApiParams(TypedDict, total=False):
     this option has no effect."""
 
     domain: Optional[str]
-    """E2B domain to use for authentication, defaults to `E2B_DOMAIN` environment variable."""
+    """E2B domain to use for authentication, defaults to `E2B_DOMAIN` environment variable.
+
+    Deprecated: `domain` and the `E2B_DOMAIN` environment variable will be removed in a future release."""
 
     api_url: Optional[str]
-    """URL to use for the API, defaults to `https://api.<domain>`. For internal use only."""
+    """URL to use for the API, defaults to `E2B_API_URL` environment variable or `https://api.<domain>`. For internal use only.
+
+    Deprecated: `api_url` and the `E2B_API_URL` environment variable will be removed in a future release."""
 
     debug: Optional[bool]
     """Whether to use debug mode, defaults to `E2B_DEBUG` environment variable."""
@@ -122,7 +126,9 @@ class ApiParams(TypedDict, total=False):
     """Proxy to use for the request. In case of a sandbox it applies to all **requests made to the returned sandbox**."""
 
     sandbox_url: Optional[str]
-    """URL to connect to sandbox, defaults to `E2B_SANDBOX_URL` environment variable."""
+    """URL to connect to sandbox, defaults to `E2B_SANDBOX_URL` environment variable.
+
+    Deprecated: `sandbox_url` and the `E2B_SANDBOX_URL` environment variable will be removed in a future release."""
 
     http_version: Optional[HttpVersion]
     """HTTP version for requests to the E2B API and to sandboxes (commands,

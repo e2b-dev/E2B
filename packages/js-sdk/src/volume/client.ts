@@ -25,6 +25,9 @@ export interface VolumeApiOpts {
    * Domain to use for the volume API.
    *
    * @default E2B_DOMAIN // environment variable or `e2b.app`
+   *
+   * @deprecated `domain` and the `E2B_DOMAIN` environment variable will be
+   * removed in a future release.
    */
   domain?: string
   /**

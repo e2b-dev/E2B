@@ -43,7 +43,7 @@ class E2B:
     ```python
     from e2b import E2B
 
-    client = E2B(api_key="e2b_...", domain="e2b.dev")
+    client = E2B(api_key="e2b_...")
 
     sandbox = client.Sandbox.create()
     volumes = client.Volume.list()
