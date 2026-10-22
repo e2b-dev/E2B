@@ -58,17 +58,18 @@ export interface ConnectionOpts {
   /**
    * Domain to use for the API.
    *
-   * @default E2B_DOMAIN // environment variable or `e2b.app`
    * When none of `E2B_DOMAIN`, `E2B_API_URL`, `E2B_SANDBOX_URL`, or `E2B_VOLUME_API_URL` are set, `apiUrl` is the default
    * `https://api.<domain>`, and debug is off, the SDK switches to the control-plane domain reported in `X-E2B-Alt-Used`.
+   *
+   * @default E2B_DOMAIN // environment variable or `e2b.app`
    */
   domain?: string
   /**
    * API Url to use for the API.
-   * @internal
-   * @default E2B_API_URL // environment variable or `https://api.${domain}`
    * When none of `E2B_DOMAIN`, `E2B_API_URL`, `E2B_SANDBOX_URL`, or `E2B_VOLUME_API_URL` are set, `apiUrl` is the default
    * `https://api.<domain>`, and debug is off, the SDK switches to the control-plane domain reported in `X-E2B-Alt-Used`.
+   * @internal
+   * @default E2B_API_URL // environment variable or `https://api.${domain}`
    */
   apiUrl?: string
   /**
