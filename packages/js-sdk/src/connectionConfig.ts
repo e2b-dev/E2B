@@ -3,7 +3,7 @@ import { getEnvVar, version } from './api/metadata'
 import { runtime } from './utils'
 import { resolveRetries } from './retry'
 import { InvalidArgumentError } from './errors'
-import { getResolvedDomain, usesDomainApiUrl } from './resolvedDomains'
+import { getResolvedDomain } from './resolvedDomains'
 
 // Remove once all deployments support sandbox subdomains
 const supportedDomains = ['e2b.app', 'e2b.dev', 'e2b.pro', 'e2b-staging.dev']
@@ -58,16 +58,13 @@ export interface ConnectionOpts {
   /**
    * Domain to use for the API.
    *
-   * When none of `E2B_DOMAIN`, `E2B_API_URL`, `E2B_SANDBOX_URL`, or `E2B_VOLUME_API_URL` are set, `apiUrl` is the default
-   * `https://api.<domain>`, and debug is off, the SDK switches to the control-plane domain reported in `X-E2B-Alt-Used`.
+   * When `domain`, `apiUrl` and `sandboxUrl` aren't set (as options or via `E2B_DOMAIN`/`E2B_API_URL`/`E2B_SANDBOX_URL`) and debug is off, the SDK switches to the control-plane domain the API reports in `X-E2B-Alt-Used`.
    *
    * @default E2B_DOMAIN // environment variable or `e2b.app`
    */
   domain?: string
   /**
    * API Url to use for the API.
-   * When none of `E2B_DOMAIN`, `E2B_API_URL`, `E2B_SANDBOX_URL`, or `E2B_VOLUME_API_URL` are set, `apiUrl` is the default
-   * `https://api.<domain>`, and debug is off, the SDK switches to the control-plane domain reported in `X-E2B-Alt-Used`.
    * @internal
    * @default E2B_API_URL // environment variable or `https://api.${domain}`
    */
@@ -448,6 +445,8 @@ export class ConnectionConfig {
   }
 
   readonly debug: boolean
+  /** @internal */
+  readonly discoverDomain: boolean
   readonly domain: string
   readonly apiUrl: string
   readonly sandboxUrl?: string
@@ -472,6 +471,16 @@ export class ConnectionConfig {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
     this.validateApiKey = opts?.validateApiKey
     this.debug = opts?.debug ?? ConnectionConfig.debug
+    this.discoverDomain =
+      !this.debug &&
+      !(
+        opts?.domain ||
+        getEnvVar('E2B_DOMAIN') ||
+        opts?.apiUrl ||
+        ConnectionConfig.apiUrl ||
+        opts?.sandboxUrl ||
+        ConnectionConfig.sandboxUrl
+      )
     const domain = opts?.domain || ConnectionConfig.domain
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.retries = resolveRetries(opts?.retries ?? DEFAULT_RETRIES)
@@ -485,8 +494,8 @@ export class ConnectionConfig {
       opts?.apiUrl ||
       ConnectionConfig.apiUrl ||
       (this.debug ? 'http://localhost:3000' : `https://api.${domain}`)
-    const resolvedDomain = usesDomainApiUrl(domain, apiUrl, this.debug)
-      ? getResolvedDomain(domain, this.apiKey)
+    const resolvedDomain = this.discoverDomain
+      ? getResolvedDomain(this.apiKey)
       : undefined
     this.domain = resolvedDomain ?? domain
     this.apiUrl = resolvedDomain ? `https://api.${resolvedDomain}` : apiUrl

@@ -12,11 +12,7 @@ import {
 } from '../errors'
 import { createApiLogger } from '../logs'
 import { withRetry } from '../retry'
-import {
-  ALT_USED_HEADER,
-  recordResolvedDomain,
-  usesDomainApiUrl,
-} from '../resolvedDomains'
+import { ALT_USED_HEADER, recordResolvedDomain } from '../resolvedDomains'
 
 /**
  * Map an API error code and message to the matching error class — the same
@@ -109,11 +105,6 @@ class ApiClient {
       )
     }
 
-    const shouldRecordDomain = usesDomainApiUrl(
-      config.domain,
-      config.apiUrl,
-      config.debug
-    )
     const fetchWithRetry = withRetry(
       createApiFetch(config),
       config.retries,
@@ -122,9 +113,8 @@ class ApiClient {
 
     const apiFetch: typeof fetch = async (input, init) => {
       const response = await fetchWithRetry(input, init)
-      if (shouldRecordDomain) {
+      if (config.discoverDomain) {
         recordResolvedDomain(
-          config.domain,
           config.apiKey,
           response.headers.get(ALT_USED_HEADER)
         )

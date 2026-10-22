@@ -10,7 +10,7 @@ from e2b.exceptions import InvalidArgumentException
 from e2b.retry import resolve_max_retries
 from e2b.api.metadata import package_version
 from e2b.sandbox_domains import is_supported_sandbox_domain
-from e2b.resolved_domains import get_resolved_domain, uses_domain_api_url
+from e2b.resolved_domains import get_resolved_domain
 
 ProxyTypes = Union[str, httpx.URL, httpx.Proxy]
 """The forms the ``proxy`` option accepts: a URL string, an ``httpx.URL``, or
@@ -104,18 +104,14 @@ class ApiParams(TypedDict, total=False):
     domain: Optional[str]
     """E2B domain to use for authentication, defaults to `E2B_DOMAIN` environment variable.
 
-    When none of ``E2B_DOMAIN``, ``E2B_API_URL``, ``E2B_SANDBOX_URL``, or
-    ``E2B_VOLUME_API_URL`` are set, ``api_url`` is the default
-    ``https://api.<domain>``, and debug is off, the SDK switches to the
-    control-plane domain reported in ``X-E2B-Alt-Used``."""
+    When ``domain``, ``api_url`` and ``sandbox_url`` aren't set (as options or
+    via ``E2B_DOMAIN``/``E2B_API_URL``/``E2B_SANDBOX_URL``) and debug is off,
+    the SDK switches to the control-plane domain the API reports in
+    ``X-E2B-Alt-Used``."""
 
     api_url: Optional[str]
     """URL to use for the API, defaults to `https://api.<domain>`. For internal use only.
-
-    When none of ``E2B_DOMAIN``, ``E2B_API_URL``, ``E2B_SANDBOX_URL``, or
-    ``E2B_VOLUME_API_URL`` are set, ``api_url`` is the default
-    ``https://api.<domain>``, and debug is off, the SDK switches to the
-    control-plane domain reported in ``X-E2B-Alt-Used``."""
+    """
 
     debug: Optional[bool]
     """Whether to use debug mode, defaults to `E2B_DEBUG` environment variable."""
@@ -290,8 +286,16 @@ class ConnectionConfig:
         http_version: Optional[HttpVersion] = None,
     ):
         self.logger = logger
-        domain = domain or ConnectionConfig._domain()
         self.debug = debug if debug is not None else ConnectionConfig._debug()
+        configured_api_url = api_url or ConnectionConfig._api_url()
+        configured_sandbox_url = sandbox_url or ConnectionConfig._sandbox_url()
+        self._discover_domain = not self.debug and not (
+            domain
+            or os.getenv("E2B_DOMAIN")
+            or configured_api_url
+            or configured_sandbox_url
+        )
+        domain = domain or ConnectionConfig._domain()
         self.api_key = api_key or ConnectionConfig._api_key()
         self.validate_api_key = validate_api_key
         self.headers = {**(headers or {}), **(api_headers or {})}
@@ -311,23 +315,17 @@ class ConnectionConfig:
             request_timeout,
         )
 
-        self.api_url = (
-            api_url
-            or ConnectionConfig._api_url()
-            or ("http://localhost:3000" if self.debug else f"https://api.{domain}")
+        self.api_url = configured_api_url or (
+            "http://localhost:3000" if self.debug else f"https://api.{domain}"
         )
         resolved_domain = (
-            get_resolved_domain(domain, self.api_key)
-            if uses_domain_api_url(domain, self.api_url, self.debug)
-            else None
+            get_resolved_domain(self.api_key) if self._discover_domain else None
         )
         self.domain = resolved_domain or domain
         if resolved_domain:
             self.api_url = f"https://api.{resolved_domain}"
 
-        self._sandbox_url: Optional[str] = (
-            sandbox_url or ConnectionConfig._sandbox_url()
-        )
+        self._sandbox_url: Optional[str] = configured_sandbox_url
         self.http_version: HttpVersion = resolve_http_version(http_version)
 
     @staticmethod

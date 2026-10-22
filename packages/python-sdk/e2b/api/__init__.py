@@ -30,7 +30,6 @@ from e2b.exceptions import (
 from e2b.resolved_domains import (
     ALT_USED_HEADER,
     record_resolved_domain,
-    uses_domain_api_url,
 )
 
 
@@ -257,11 +256,8 @@ class ApiClient(AuthenticatedClient):
         prefix = ""
 
         self._logger = config.logger
-        self._domain = config.domain
         self._api_key = config.api_key
-        self._should_record_domain = uses_domain_api_url(
-            config.domain, config.api_url, config.debug
-        )
+        self._should_record_domain = config._discover_domain
 
         headers = {
             **default_headers,
@@ -316,7 +312,6 @@ class ApiClient(AuthenticatedClient):
 
         def on_response(response: Response) -> None:
             record_resolved_domain(
-                self._domain,
                 self._api_key,
                 response.headers.get(ALT_USED_HEADER),
             )
@@ -335,7 +330,6 @@ class AsyncApiClient(ApiClient):
 
         async def on_response(response: Response) -> None:
             record_resolved_domain(
-                self._domain,
                 self._api_key,
                 response.headers.get(ALT_USED_HEADER),
             )

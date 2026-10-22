@@ -72,7 +72,12 @@ def test_api_client_uses_config_logger():
         client.get_httpx_client().close()
 
 
-def test_api_client_without_logger_registers_only_resolved_domain_hook():
+def test_api_client_without_logger_registers_only_resolved_domain_hook(
+    monkeypatch,
+):
+    for name in ("E2B_DOMAIN", "E2B_API_URL", "E2B_SANDBOX_URL", "E2B_DEBUG"):
+        monkeypatch.delenv(name, raising=False)
+
     config = ConnectionConfig(api_key="e2b_" + "0" * 40)
     client = ApiClient(config)
     try:

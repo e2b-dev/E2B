@@ -11,30 +11,51 @@ import {
 import { http, HttpResponse } from 'msw'
 
 import { ApiClient, ConnectionConfig, Sandbox } from '../src'
-import { ALT_USED_HEADER, clearResolvedDomains } from '../src/resolvedDomains'
+import type { ConnectionOpts } from '../src/connectionConfig'
+import {
+  ALT_USED_HEADER,
+  clearResolvedDomains,
+  getResolvedDomain,
+  recordResolvedDomain,
+} from '../src/resolvedDomains'
 import { setupMockApi } from './mockApi'
 
 const API_KEY_A = `e2b_${'a'.repeat(40)}`
 const API_KEY_B = `e2b_${'b'.repeat(40)}`
-const ORIGINAL_DOMAIN = 'e2b.dev'
+const DEFAULT_DOMAIN = 'e2b.app'
 const RESOLVED_DOMAIN = 'e2b-juliett.dev'
-const PINNED_ENV_VALUES = [
-  ['E2B_DOMAIN', 'e2b.dev'],
-  ['E2B_API_URL', 'https://api.e2b.dev'],
-  ['E2B_SANDBOX_URL', 'https://sandbox.example.com'],
-  ['E2B_VOLUME_API_URL', 'https://api.e2b.dev'],
-] as const
+const INELIGIBLE_CONFIGS: {
+  name: string
+  options?: ConnectionOpts
+  env?: readonly [string, string]
+}[] = [
+  { name: 'opts.domain', options: { domain: DEFAULT_DOMAIN } },
+  { name: 'opts.apiUrl', options: { apiUrl: 'https://api.custom.example' } },
+  {
+    name: 'opts.sandboxUrl',
+    options: { sandboxUrl: 'https://sandbox.example' },
+  },
+  { name: 'E2B_DOMAIN', env: ['E2B_DOMAIN', 'e2b.custom'] },
+  { name: 'E2B_API_URL', env: ['E2B_API_URL', 'https://api.custom.example'] },
+  {
+    name: 'E2B_SANDBOX_URL',
+    env: ['E2B_SANDBOX_URL', 'https://sandbox.example'],
+  },
+  { name: 'debug option', options: { debug: true } },
+  { name: 'E2B_DEBUG', env: ['E2B_DEBUG', 'true'] },
+]
 
 let responseHeader: string | null = RESOLVED_DOMAIN
 const requestedHosts: string[] = []
 
-function jsonResponse(body: unknown) {
-  return HttpResponse.json(
-    body,
-    responseHeader === null
-      ? undefined
-      : { headers: { [ALT_USED_HEADER]: responseHeader } }
-  )
+function jsonResponse(body: unknown, status = 200) {
+  return HttpResponse.json(body, {
+    status,
+    headers:
+      responseHeader === null
+        ? undefined
+        : { [ALT_USED_HEADER]: responseHeader },
+  })
 }
 
 const server = setupMockApi(
@@ -44,11 +65,15 @@ const server = setupMockApi(
   }),
   http.post(/\/v2\/sandboxes$/, ({ request }) => {
     requestedHosts.push(new URL(request.url).host)
-    return jsonResponse({
-      sandboxID: 'sandbox-id',
-      domain: null,
-      envdVersion: '0.4.0',
-    })
+    return jsonResponse(
+      {
+        sandboxID: 'sandbox-id',
+        clientID: 'client-id',
+        domain: null,
+        envdVersion: '0.4.0',
+      },
+      201
+    )
   })
 )
 
@@ -64,7 +89,12 @@ beforeEach(() => {
   clearResolvedDomains()
   requestedHosts.length = 0
   responseHeader = RESOLVED_DOMAIN
-  for (const [name] of PINNED_ENV_VALUES) {
+  for (const name of [
+    'E2B_DOMAIN',
+    'E2B_API_URL',
+    'E2B_SANDBOX_URL',
+    'E2B_DEBUG',
+  ]) {
     vi.stubEnv(name, '')
   }
   server.resetHandlers()
@@ -79,157 +109,90 @@ async function sendRequest(config: ConnectionConfig) {
 }
 
 describe('resolved domains', () => {
-  test('records the control-plane domain and uses it for later requests', async () => {
-    const original = new ConnectionConfig({
-      domain: ORIGINAL_DOMAIN,
-      apiKey: API_KEY_A,
-      debug: false,
-    })
-    await sendRequest(original)
+  test('records a resolved domain for a default config and uses it later', async () => {
+    await sendRequest(new ConnectionConfig({ apiKey: API_KEY_A }))
 
-    const resolved = new ConnectionConfig({
-      domain: ORIGINAL_DOMAIN,
-      apiKey: API_KEY_A,
-      debug: false,
-    })
+    const resolved = new ConnectionConfig({ apiKey: API_KEY_A })
     expect(resolved.domain).toBe(RESOLVED_DOMAIN)
     expect(resolved.apiUrl).toBe(`https://api.${RESOLVED_DOMAIN}`)
 
     await sendRequest(resolved)
     expect(requestedHosts).toEqual([
-      `api.${ORIGINAL_DOMAIN}`,
+      `api.${DEFAULT_DOMAIN}`,
       `api.${RESOLVED_DOMAIN}`,
     ])
   })
 
-  test('scopes the resolved domain by api key and original domain', async () => {
-    await sendRequest(
-      new ConnectionConfig({
-        domain: ORIGINAL_DOMAIN,
-        apiKey: API_KEY_A,
-        debug: false,
-      })
-    )
+  test('does not reuse a resolved domain for a different API key', async () => {
+    await sendRequest(new ConnectionConfig({ apiKey: API_KEY_A }))
 
-    expect(
-      new ConnectionConfig({
-        domain: ORIGINAL_DOMAIN,
-        apiKey: API_KEY_B,
-        debug: false,
-      }).domain
-    ).toBe(ORIGINAL_DOMAIN)
-    expect(
-      new ConnectionConfig({
-        domain: 'other.dev',
-        apiKey: API_KEY_A,
-        debug: false,
-      }).domain
-    ).toBe('other.dev')
+    const otherKey = new ConnectionConfig({ apiKey: API_KEY_B })
+    expect(otherKey.domain).toBe(DEFAULT_DOMAIN)
+    expect(otherKey.apiUrl).toBe(`https://api.${DEFAULT_DOMAIN}`)
   })
 
-  test('does not record for custom api URLs or debug configs', async () => {
-    await sendRequest(
-      new ConnectionConfig({
-        domain: ORIGINAL_DOMAIN,
+  test.each(INELIGIBLE_CONFIGS)(
+    '$name prevents recording and cache switching',
+    async ({ options, env }) => {
+      if (env) {
+        vi.stubEnv(env[0], env[1])
+      }
+
+      const ineligible = new ConnectionConfig({
         apiKey: API_KEY_A,
-        apiUrl: 'https://proxy.example',
-        debug: false,
+        ...(options ?? {}),
       })
-    )
-    await sendRequest(
-      new ConnectionConfig({
-        domain: ORIGINAL_DOMAIN,
-        apiKey: API_KEY_A,
-        debug: true,
-      })
-    )
+      expect(ineligible.discoverDomain).toBe(false)
+      await sendRequest(ineligible)
 
-    const unchanged = new ConnectionConfig({
-      domain: ORIGINAL_DOMAIN,
-      apiKey: API_KEY_A,
-      debug: false,
-    })
-    expect(unchanged.domain).toBe(ORIGINAL_DOMAIN)
-    expect(unchanged.apiUrl).toBe(`https://api.${ORIGINAL_DOMAIN}`)
-    expect(requestedHosts).toEqual(['proxy.example', 'localhost:3000'])
-  })
-
-  test('switches explicit canonical api URLs and rebuilt configs', async () => {
-    const original = new ConnectionConfig({
-      domain: ORIGINAL_DOMAIN,
-      apiKey: API_KEY_A,
-      apiUrl: `https://api.${ORIGINAL_DOMAIN}`,
-      debug: false,
-    })
-    await sendRequest(original)
-
-    const rebuilt = new ConnectionConfig({ ...original })
-    expect(rebuilt.domain).toBe(RESOLVED_DOMAIN)
-    expect(rebuilt.apiUrl).toBe(`https://api.${RESOLVED_DOMAIN}`)
-  })
-
-  test.each(PINNED_ENV_VALUES)(
-    '%s disables domain discovery',
-    async (name, value) => {
-      vi.stubEnv(name, value)
-      const apiUrl = `https://api.${ORIGINAL_DOMAIN}`
-      await sendRequest(
-        new ConnectionConfig({
-          domain: ORIGINAL_DOMAIN,
-          apiKey: API_KEY_A,
-          apiUrl,
-          debug: false,
-        })
+      if (env) {
+        vi.stubEnv(env[0], '')
+      }
+      expect(new ConnectionConfig({ apiKey: API_KEY_A }).domain).toBe(
+        DEFAULT_DOMAIN
       )
 
-      const unchanged = new ConnectionConfig({
-        domain: ORIGINAL_DOMAIN,
+      clearResolvedDomains()
+      recordResolvedDomain(API_KEY_A, RESOLVED_DOMAIN)
+      if (env) {
+        vi.stubEnv(env[0], env[1])
+      }
+      const cachedConfig = new ConnectionConfig({
         apiKey: API_KEY_A,
-        apiUrl,
-        debug: false,
+        ...(options ?? {}),
       })
-      expect(unchanged.domain).toBe(ORIGINAL_DOMAIN)
-      await sendRequest(unchanged)
-      expect(requestedHosts).toEqual([
-        `api.${ORIGINAL_DOMAIN}`,
-        `api.${ORIGINAL_DOMAIN}`,
-      ])
+      const expectedDomain =
+        options?.domain ?? (env?.[0] === 'E2B_DOMAIN' ? env[1] : DEFAULT_DOMAIN)
+      expect(cachedConfig.domain).toBe(expectedDomain)
     }
   )
 
-  test.each([
-    'https://e2b-juliett.dev',
-    'e2b-juliett.dev:443',
-    'a b',
-    '',
-    ORIGINAL_DOMAIN,
-  ])('ignores invalid or unchanged response domain %j', async (value) => {
-    clearResolvedDomains()
-    responseHeader = value
-    await sendRequest(
-      new ConnectionConfig({
-        domain: ORIGINAL_DOMAIN,
-        apiKey: API_KEY_A,
-        debug: false,
-      })
-    )
+  test.each(['https://e2b-juliett.dev', 'e2b-juliett.dev:443', 'a b', ''])(
+    'ignores malformed response domain %j',
+    async (value) => {
+      responseHeader = value
+      await sendRequest(new ConnectionConfig({ apiKey: API_KEY_A }))
 
-    const unchanged = new ConnectionConfig({
-      domain: ORIGINAL_DOMAIN,
-      apiKey: API_KEY_A,
-      debug: false,
-    })
-    expect(unchanged.domain).toBe(ORIGINAL_DOMAIN)
-    expect(unchanged.apiUrl).toBe(`https://api.${ORIGINAL_DOMAIN}`)
+      const unchanged = new ConnectionConfig({ apiKey: API_KEY_A })
+      expect(unchanged.domain).toBe(DEFAULT_DOMAIN)
+      expect(unchanged.apiUrl).toBe(`https://api.${DEFAULT_DOMAIN}`)
+    }
+  )
+
+  test('accepts a valid host matching the default domain', async () => {
+    responseHeader = DEFAULT_DOMAIN
+    await sendRequest(new ConnectionConfig({ apiKey: API_KEY_A }))
+    expect(getResolvedDomain(API_KEY_A)).toBe(DEFAULT_DOMAIN)
   })
 
-  test('uses the resolved domain as the sandbox-domain fallback', async () => {
-    const sandbox = await Sandbox.create({
-      domain: ORIGINAL_DOMAIN,
-      apiKey: API_KEY_A,
-      debug: false,
-    })
+  test('uses the cached domain for a later Sandbox.create', async () => {
+    await Sandbox.create({ apiKey: API_KEY_A })
 
+    const sandbox = await Sandbox.create({ apiKey: API_KEY_A })
     expect(sandbox.sandboxDomain).toBe(RESOLVED_DOMAIN)
+    expect(requestedHosts).toEqual([
+      `api.${DEFAULT_DOMAIN}`,
+      `api.${RESOLVED_DOMAIN}`,
+    ])
   })
 })
