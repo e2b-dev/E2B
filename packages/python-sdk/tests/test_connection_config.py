@@ -38,10 +38,14 @@ def test_sandbox_url_uses_stable_host_for_supported_domain():
     assert config.get_sandbox_url("sandbox-id", "e2b.app") == "https://sandbox.e2b.app"
 
 
-def test_sandbox_url_uses_stable_host_for_supported_non_prod_domain():
-    config = ConnectionConfig(domain="e2b.dev")
+@pytest.mark.parametrize(
+    "domain",
+    ["e2b.dev", "e2b.pro", "e2b-staging.dev", "e2b-tango.dev", "e2b-juliett.dev"],
+)
+def test_sandbox_url_uses_stable_host_for_supported_non_prod_domain(domain):
+    config = ConnectionConfig(domain=domain)
 
-    assert config.get_sandbox_url("sandbox-id", "e2b.dev") == "https://sandbox.e2b.dev"
+    assert config.get_sandbox_url("sandbox-id", domain) == f"https://sandbox.{domain}"
 
 
 def test_sandbox_url_uses_explicit_url_first():

@@ -107,6 +107,27 @@ test('sandbox_direct_url keeps per-sandbox host in production', () => {
   )
 })
 
+test.each([
+  'e2b.dev',
+  'e2b.pro',
+  'e2b-staging.dev',
+  'e2b-tango.dev',
+  'e2b-juliett.dev',
+])('sandbox_url uses stable host on %s', (domain) => {
+  delete process.env.E2B_SANDBOX_URL
+  delete process.env.E2B_DEBUG
+
+  const config = new ConnectionConfig({ domain })
+
+  assert.equal(
+    config.getSandboxUrl('sbx-test', {
+      sandboxDomain: domain,
+      envdPort: 49983,
+    }),
+    `https://sandbox.${domain}`
+  )
+})
+
 test('sandbox_url keeps per-sandbox host outside production', () => {
   delete process.env.E2B_SANDBOX_URL
   delete process.env.E2B_DEBUG
