@@ -363,3 +363,31 @@ sandboxTest(
     }
   }
 )
+
+sandboxTest('write AsyncIterable', async ({ sandbox }) => {
+  const filename = 'test_write_async_iterable.bin'
+  const content = 'Streamed async iterable upload. '.repeat(10_000)
+  const encoded = new TextEncoder().encode(content)
+  async function* chunks() {
+    for (let i = 0; i < encoded.length; i += 4096) {
+      yield encoded.subarray(i, i + 4096)
+    }
+  }
+
+  const info = await sandbox.files.write(filename, chunks())
+  assert.equal(info.path, `/home/user/${filename}`)
+  assert.equal(await sandbox.files.read(filename), content)
+
+  await sandbox.files.write(filename, chunks(), { gzip: true })
+  assert.equal(await sandbox.files.read(filename), content)
+
+  await sandbox.files.write(filename, chunks(), { useOctetStream: false })
+  assert.equal(await sandbox.files.read(filename), content)
+
+  await sandbox.files.write([{ path: filename, data: chunks() }])
+  assert.equal(await sandbox.files.read(filename), content)
+
+  if (isDebug) {
+    await sandbox.files.remove(filename)
+  }
+})

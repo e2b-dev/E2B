@@ -218,3 +218,29 @@ async def test_write_io_with_octet_stream_and_gzip(async_sandbox: AsyncSandbox, 
 
     if debug:
         await async_sandbox.files.remove(filename)
+
+
+async def test_write_async_iterable_of_bytes(async_sandbox: AsyncSandbox, debug):
+    filename = "test_write_async_iterable.bin"
+    text = "Streamed async iterable upload. " * 10_000
+
+    async def chunks():
+        data = text.encode("utf-8")
+        for i in range(0, len(data), 4096):
+            yield data[i : i + 4096]
+
+    info = await async_sandbox.files.write(filename, chunks())
+    assert info.path == f"/home/user/{filename}"
+    assert await async_sandbox.files.read(filename) == text
+
+    await async_sandbox.files.write(filename, chunks(), gzip=True)
+    assert await async_sandbox.files.read(filename) == text
+
+    await async_sandbox.files.write(filename, chunks(), use_octet_stream=False)
+    assert await async_sandbox.files.read(filename) == text
+
+    await async_sandbox.files.write(filename, iter([b"sync ", b"iterable"]))
+    assert await async_sandbox.files.read(filename) == "sync iterable"
+
+    if debug:
+        await async_sandbox.files.remove(filename)

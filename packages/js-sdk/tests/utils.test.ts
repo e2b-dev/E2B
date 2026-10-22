@@ -175,3 +175,35 @@ test.each([
   )
   expect(text).toBe('hello')
 })
+
+async function* asyncChunks(...chunks: string[]) {
+  for (const chunk of chunks) {
+    yield encode(chunk)
+  }
+}
+
+test('toBlob reads an async iterable', async () => {
+  expect(await (await toBlob(asyncChunks('hel', 'lo'))).text()).toBe('hello')
+})
+
+test('toUploadBody streams an async iterable', async () => {
+  const { body, streamed } = await toUploadBody(asyncChunks('hel', 'lo'))
+
+  expect(streamed).toBe(streams)
+  if (streamed) {
+    expect(body).toBeInstanceOf(ReadableStream)
+  }
+  expect(await readBody(body)).toBe('hello')
+})
+
+test('toUploadBody gzips an async iterable', async () => {
+  const { body, streamed } = await toUploadBody(asyncChunks('hel', 'lo'), true)
+
+  expect(streamed).toBe(streams)
+  const compressed = streamed
+    ? (body as ReadableStream)
+    : (body as Blob).stream()
+  expect(
+    await readBody(compressed.pipeThrough(new DecompressionStream('gzip')))
+  ).toBe('hello')
+})

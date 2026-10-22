@@ -1,6 +1,6 @@
 import platform from 'platform'
 
-import { isBlobLike, isReadableStreamLike } from './is'
+import { isAsyncIterable, isBlobLike, isReadableStreamLike } from './is'
 
 declare let window: any
 
@@ -154,11 +154,49 @@ export function toDispatchableStream(stream: ReadableStream): ReadableStream {
 }
 
 /**
+ * Data that can be uploaded to the sandbox: buffered (`string`, `ArrayBuffer`,
+ * `Blob`) or streamed (`ReadableStream`, or any `AsyncIterable` of byte chunks
+ * such as an async generator or a Node.js `Readable`).
+ */
+export type UploadData =
+  string | ArrayBuffer | Blob | ReadableStream | AsyncIterable<Uint8Array>
+
+/**
+ * Whether `data` is streamed rather than buffered.
+ */
+export function isStreamableData(
+  data: UploadData
+): data is ReadableStream | AsyncIterable<Uint8Array> {
+  return isReadableStreamLike(data) || isAsyncIterable(data)
+}
+
+/**
+ * Wrap an async iterable of byte chunks in a native `ReadableStream`, the one
+ * streamed body every runtime's `fetch` accepts.
+ */
+function asyncIterableToStream(
+  iterable: AsyncIterable<Uint8Array>
+): ReadableStream<Uint8Array> {
+  const iterator = iterable[Symbol.asyncIterator]()
+  return new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      const { done, value } = await iterator.next()
+      if (done) {
+        controller.close()
+        return
+      }
+      controller.enqueue(value)
+    },
+    async cancel(reason) {
+      await iterator.return?.(reason)
+    },
+  })
+}
+
+/**
  * Convert data to a Blob, avoiding unnecessary conversions when possible.
  */
-export async function toBlob(
-  data: string | ArrayBuffer | Blob | ReadableStream
-): Promise<Blob> {
+export async function toBlob(data: UploadData): Promise<Blob> {
   // Already a native Blob - use directly
   if (data instanceof Blob) {
     return data
@@ -182,6 +220,13 @@ export async function toBlob(
         break
       }
       chunks.push(value)
+    }
+    return new Blob(chunks)
+  }
+  if (isAsyncIterable(data)) {
+    const chunks: BlobPart[] = []
+    for await (const chunk of data) {
+      chunks.push(chunk as BlobPart)
     }
     return new Blob(chunks)
   }
@@ -231,7 +276,7 @@ export type UploadBody = {
  * support streaming request bodies, so data is buffered into a Blob there.
  */
 export async function toUploadBody(
-  data: string | ArrayBuffer | Blob | ReadableStream,
+  data: UploadData,
   gzip?: boolean
 ): Promise<UploadBody> {
   if (gzip) {
@@ -241,7 +286,9 @@ export async function toUploadBody(
     // a native Blob and so always streams natively.
     const stream = isReadableStreamLike(data)
       ? toNativeStream(data)
-      : (await toBlob(data)).stream()
+      : isAsyncIterable(data)
+        ? asyncIterableToStream(data)
+        : (await toBlob(data)).stream()
     const compressed = stream.pipeThrough(new CompressionStream('gzip'))
     return runtime === 'browser'
       ? { body: await new Response(compressed).blob(), streamed: false }
@@ -250,6 +297,10 @@ export async function toUploadBody(
 
   if (isReadableStreamLike(data) && runtime !== 'browser') {
     return { body: toDispatchableStream(data), streamed: true }
+  }
+
+  if (isAsyncIterable(data) && runtime !== 'browser') {
+    return { body: asyncIterableToStream(data), streamed: true }
   }
 
   return { body: await toBlob(data), streamed: false }

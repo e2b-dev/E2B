@@ -216,3 +216,26 @@ def test_write_io_with_octet_stream_and_gzip(sandbox, debug):
 
     if debug:
         sandbox.files.remove(filename)
+
+
+def test_write_iterable_of_bytes(sandbox, debug):
+    filename = "test_write_iterable.bin"
+    text = "Streamed iterable upload. " * 10_000
+
+    def chunks():
+        data = text.encode("utf-8")
+        for i in range(0, len(data), 4096):
+            yield data[i : i + 4096]
+
+    info = sandbox.files.write(filename, chunks())
+    assert info.path == f"/home/user/{filename}"
+    assert sandbox.files.read(filename) == text
+
+    sandbox.files.write(filename, chunks(), gzip=True)
+    assert sandbox.files.read(filename) == text
+
+    sandbox.files.write(filename, chunks(), use_octet_stream=False)
+    assert sandbox.files.read(filename) == text
+
+    if debug:
+        sandbox.files.remove(filename)

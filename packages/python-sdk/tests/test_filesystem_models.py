@@ -4,8 +4,17 @@ import io
 from protobuf.wkt import Timestamp
 
 from e2b.envd.filesystem import filesystem_pb
+import gzip
+
+import pytest
+
+from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox.filesystem.filesystem import (
+    _to_httpx_file,
+    abuffer_multipart_data,
     multipart_body_is_streamed,
+    to_upload_body,
+    to_upload_body_async,
     FileType,
     WriteInfo,
     map_entry_info,
@@ -179,3 +188,52 @@ def test_map_entry_info_reports_symlink_when_envd_marks_the_entry():
         map_entry_info(entry(filesystem_pb.FileType.DIRECTORY, False)).type
         is FileType.DIR
     )
+
+
+def test_to_upload_body_streams_an_iterable_of_bytes():
+    body = to_upload_body(iter([b"hel", bytearray(b"lo")]))
+    assert not isinstance(body, (bytes, io.IOBase))
+    assert b"".join(body) == b"hello"
+
+    compressed = to_upload_body((c for c in [b"hel", b"lo"]), use_gzip=True)
+    assert gzip.decompress(b"".join(compressed)) == b"hello"  # type: ignore[arg-type]
+
+
+def test_to_upload_body_rejects_non_bytes_chunks_and_async_iterables():
+    with pytest.raises(InvalidArgumentException):
+        b"".join(to_upload_body(iter(["text"])))  # type: ignore[arg-type]
+
+    async def source():
+        yield b"hello"
+
+    with pytest.raises(InvalidArgumentException, match="AsyncSandbox"):
+        to_upload_body(source())
+    # bytearray is a buffer, not an iterable of chunks
+    with pytest.raises(InvalidArgumentException):
+        to_upload_body(bytearray(b"hello"))  # type: ignore[arg-type]
+
+
+async def test_to_upload_body_async_streams_sync_and_async_iterables():
+    async def source():
+        yield b"hel"
+        yield b"lo"
+
+    for data in (source(), iter([b"hel", b"lo"])):
+        body = to_upload_body_async(data)
+        assert b"".join([c async for c in body]) == b"hello"  # type: ignore[union-attr]
+
+    compressed = to_upload_body_async(source(), use_gzip=True)
+    assert gzip.decompress(b"".join([c async for c in compressed])) == b"hello"  # type: ignore[union-attr]
+
+
+async def test_multipart_buffers_iterables():
+    async def source():
+        yield b"hel"
+        yield b"lo"
+
+    assert _to_httpx_file("a.bin", iter([b"hel", b"lo"])) == (
+        "file",
+        ("a.bin", b"hello"),
+    )
+    assert await abuffer_multipart_data(source()) == b"hello"
+    assert not multipart_body_is_streamed([{"path": "a.bin", "data": iter([b"x"])}])
