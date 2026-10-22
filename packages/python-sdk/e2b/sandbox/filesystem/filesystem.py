@@ -12,8 +12,8 @@ from typing import (
     Dict,
     Iterable,
     Iterator,
-    List,
     Optional,
+    Sequence,
     TypedDict,
     TypeGuard,
     Union,
@@ -173,8 +173,19 @@ class WriteEntry(TypedDict):
     Contains path and data of the file to be written to the filesystem.
 
     ``data`` can be a ``str``, ``bytes``, a file-like object or an iterable of
-    ``bytes`` chunks; ``AsyncSandbox`` also accepts an async iterable of
     ``bytes`` chunks.
+    """
+
+    path: str
+    data: WriteData
+
+
+class AsyncWriteEntry(TypedDict):
+    """
+    Contains path and data of the file to be written to the filesystem by ``AsyncSandbox``.
+
+    ``data`` can be anything :class:`WriteEntry` accepts, or an async iterable
+    of ``bytes`` chunks.
     """
 
     path: str
@@ -369,7 +380,9 @@ def _to_httpx_file(file_path: str, file_data: AsyncWriteData):
         raise _unsupported_data(file_data, file_path)
 
 
-def multipart_body_is_streamed(files: List[WriteEntry]) -> bool:
+def multipart_body_is_streamed(
+    files: Sequence[Union[WriteEntry, AsyncWriteEntry]],
+) -> bool:
     """Whether the multipart body built from ``files`` streams any entry.
 
     Only binary file-like data is handed to httpx as a stream:

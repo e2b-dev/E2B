@@ -1,5 +1,6 @@
 import platform from 'platform'
 
+import { InvalidArgumentError } from './errors'
 import { isAsyncIterable, isBlobLike, isReadableStreamLike } from './is'
 
 declare let window: any
@@ -170,6 +171,21 @@ export function isStreamableData(
   return isReadableStreamLike(data) || isAsyncIterable(data)
 }
 
+function checkChunk(chunk: unknown): Uint8Array {
+  if (chunk instanceof Uint8Array) {
+    return chunk
+  }
+  const kind =
+    chunk === null
+      ? 'null'
+      : typeof chunk === 'object'
+        ? (chunk.constructor?.name ?? 'object')
+        : typeof chunk
+  throw new InvalidArgumentError(
+    `AsyncIterable upload data must yield Uint8Array chunks, got ${kind}`
+  )
+}
+
 /**
  * Wrap an async iterable of byte chunks in a native `ReadableStream`, the one
  * streamed body every runtime's `fetch` accepts.
@@ -185,7 +201,7 @@ function asyncIterableToStream(
         controller.close()
         return
       }
-      controller.enqueue(value)
+      controller.enqueue(checkChunk(value))
     },
     async cancel(reason) {
       await iterator.return?.(reason)
@@ -226,7 +242,7 @@ export async function toBlob(data: UploadData): Promise<Blob> {
   if (isAsyncIterable(data)) {
     const chunks: BlobPart[] = []
     for await (const chunk of data) {
-      chunks.push(chunk as BlobPart)
+      chunks.push(checkChunk(chunk) as BlobPart)
     }
     return new Blob(chunks)
   }

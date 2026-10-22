@@ -1,5 +1,6 @@
 import { expect, test, vi } from 'vitest'
 
+import { InvalidArgumentError } from '../src/errors'
 import { runtime, sha256, toBlob, toUploadBody } from '../src/utils'
 import { ForeignBlob, foreignReadableStream } from './foreignPlatformObjects'
 
@@ -206,4 +207,19 @@ test('toUploadBody gzips an async iterable', async () => {
   expect(
     await readBody(compressed.pipeThrough(new DecompressionStream('gzip')))
   ).toBe('hello')
+})
+
+test('async iterable data rejects non-byte chunks', async () => {
+  async function* strings() {
+    yield 'hello'
+  }
+  const data = strings() as unknown as AsyncIterable<Uint8Array>
+
+  await expect(toBlob(data)).rejects.toThrow(InvalidArgumentError)
+  const { body, streamed } = await toUploadBody(strings() as never)
+  if (streamed) {
+    await expect(readBody(body)).rejects.toThrow(
+      'AsyncIterable upload data must yield Uint8Array chunks, got string'
+    )
+  }
 })

@@ -1,5 +1,5 @@
 import asyncio
-from typing import Dict, List, Literal, Optional, overload
+from typing import Dict, List, Literal, Optional, Sequence, Union, overload
 
 
 import httpx
@@ -45,6 +45,7 @@ from e2b.sandbox.filesystem.filesystem import (
     AsyncFileStreamReader,
     EntryInfo,
     AsyncWriteData,
+    AsyncWriteEntry,
     WriteEntry,
     WriteInfo,
     _to_httpx_file,
@@ -317,7 +318,7 @@ class Filesystem:
         :return: Information about the written file
         """
         result = await self.write_files(
-            [WriteEntry(path=path, data=data)],
+            [AsyncWriteEntry(path=path, data=data)],
             user=user,
             request_timeout=request_timeout,
             gzip=gzip,
@@ -332,7 +333,7 @@ class Filesystem:
 
     async def write_files(
         self,
-        files: List[WriteEntry],
+        files: Sequence[Union[WriteEntry, AsyncWriteEntry]],
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         gzip: bool = False,
@@ -347,7 +348,7 @@ class Filesystem:
         When writing to a file that already exists, the file will get overwritten.
         When writing to a file at path that doesn't exist, the necessary directories will be created.
 
-        :param files: list of files to write as `WriteEntry` objects, each containing `path` and `data`
+        :param files: list of files to write as `WriteEntry` / `AsyncWriteEntry` objects, each containing `path` and `data`
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request
         :param gzip: Use gzip compression for the upload. Implies the `application/octet-stream` upload. Requires envd 0.5.7 or later — when not supported, the upload falls back to uncompressed `multipart/form-data`.
