@@ -413,8 +413,8 @@ export type SandboxNetworkInfo = {
    */
   egressProxy?: SandboxEgressProxyInfo
   /**
-   * Whether `8.8.8.8` is allowed. See {@link SandboxNetworkOpts.allowDefaultDns}.
-   * Missing means `true`.
+   * Whether the default nameserver `8.8.8.8` is automatically allowed when
+   * `allowOut` contains a domain. See {@link SandboxNetworkOpts.allowDefaultDns}. Missing means `true`.
    */
   allowDefaultDns?: boolean
   allowPublicTraffic?: boolean
