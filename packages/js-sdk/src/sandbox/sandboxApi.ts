@@ -346,7 +346,7 @@ export type SandboxNetworkOpts = {
 
   /**
    * DNS servers the sandbox can reach when {@link allowOut} contains a
-   * domain. Each entry must be an IP address, and all traffic to it is
+   * domain. Each entry must be an IPv4 address, and all traffic to it is
    * allowed.
    *
    * Leave it out to allow the default nameserver `8.8.8.8`. Pass a list to
