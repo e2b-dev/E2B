@@ -110,9 +110,7 @@ class ApiParams(TypedDict, total=False):
     this option has no effect."""
 
     domain: Optional[str]
-    """E2B domain to use for authentication, defaults to `E2B_DOMAIN` environment variable.
-
-    Deprecated: `domain` and the `E2B_DOMAIN` environment variable will be removed in a future release."""
+    """E2B domain to use for authentication, defaults to `E2B_DOMAIN` environment variable."""
 
     api_url: Optional[str]
     """URL to use for the API, defaults to `E2B_API_URL` environment variable or `https://api.<domain>`. For internal use only.

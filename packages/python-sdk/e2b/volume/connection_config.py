@@ -31,9 +31,7 @@ class VolumeApiParams(TypedDict, total=False):
     """
 
     domain: Optional[str]
-    """Domain to use for the volume API, defaults to `E2B_DOMAIN` or `e2b.app`.
-
-    Deprecated: `domain` and the `E2B_DOMAIN` environment variable will be removed in a future release."""
+    """Domain to use for the volume API, defaults to `E2B_DOMAIN` or `e2b.app`."""
 
     debug: Optional[bool]
     """Whether to use debug mode, defaults to `E2B_DEBUG` environment variable."""

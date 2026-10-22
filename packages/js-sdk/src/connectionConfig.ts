@@ -59,9 +59,6 @@ export interface ConnectionOpts {
    * Domain to use for the API.
    *
    * @default E2B_DOMAIN // environment variable or `e2b.app`
-   *
-   * @deprecated `domain` and the `E2B_DOMAIN` environment variable will be
-   * removed in a future release.
    */
   domain?: string
   /**
