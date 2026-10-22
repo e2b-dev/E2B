@@ -345,15 +345,20 @@ export type SandboxNetworkOpts = {
   egressProxy?: SandboxEgressProxyOpts
 
   /**
-   * Allow all traffic to the default nameserver `8.8.8.8` when
-   * {@link allowOut} contains a domain, so the sandbox can resolve names.
+   * DNS servers the sandbox can reach when {@link allowOut} contains a
+   * domain. Each entry must be an IP address, and all traffic to it is
+   * allowed.
    *
-   * Set it to `false` to block `8.8.8.8`. Allowed domains still work, since
-   * they are matched by name, not by IP. But names no longer resolve through
-   * `8.8.8.8`, so add the ones you need to `/etc/hosts` or allow your own
-   * nameserver in {@link allowOut}.
+   * Leave it out to allow the default nameserver `8.8.8.8`. Pass a list to
+   * allow those servers instead, or `[]` to allow none. Allowed domains still
+   * work without a reachable server, since they are matched by name, not by
+   * IP; add the names you need to `/etc/hosts`.
    *
-   * @default true
+   * This only opens the firewall. It does not change the sandbox's
+   * `/etc/resolv.conf`, which still points at `8.8.8.8`, so write your own
+   * servers there too. With no domain in {@link allowOut} it has no effect.
+   *
+   * @default ['8.8.8.8']
    *
    * @example
    * ```ts
@@ -361,12 +366,12 @@ export type SandboxNetworkOpts = {
    *   network: {
    *     allowOut: ['api.example.com'],
    *     denyOut: ({ allTraffic }) => [allTraffic],
-   *     allowDefaultDns: false,
+   *     dnsServers: ['1.1.1.1'],
    *   },
    * })
    * ```
    */
-  allowDefaultDns?: boolean
+  dnsServers?: string[]
 
   /**
    * Specify if the sandbox URLs should be accessible only with authentication.
@@ -413,10 +418,11 @@ export type SandboxNetworkInfo = {
    */
   egressProxy?: SandboxEgressProxyInfo
   /**
-   * Whether the default nameserver `8.8.8.8` is automatically allowed when
-   * `allowOut` contains a domain. See {@link SandboxNetworkOpts.allowDefaultDns}. Missing means `true`.
+   * DNS servers the sandbox can reach when `allowOut` contains a domain. See
+   * {@link SandboxNetworkOpts.dnsServers}. Missing means the default,
+   * `8.8.8.8`.
    */
-  allowDefaultDns?: boolean
+  dnsServers?: string[]
   allowPublicTraffic?: boolean
   maskRequestHost?: string
   httpsPorts?: number[]
@@ -454,10 +460,11 @@ export type SandboxNetworkUpdate = {
    */
   egressProxy?: SandboxEgressProxyOpts
   /**
-   * See {@link SandboxNetworkOpts.allowDefaultDns}. Leaving it out resets it
-   * to `true`, like the other fields.
+   * See {@link SandboxNetworkOpts.dnsServers}. Leaving it out resets it to
+   * the default, `8.8.8.8`, like the other fields, so repeat a custom list in
+   * every update that should keep it.
    */
-  allowDefaultDns?: boolean
+  dnsServers?: string[]
   /**
    * Allow sandbox to access the internet. When set to `false`, it behaves the
    * same as specifying `denyOut: ['0.0.0.0/0']` in the network config.
@@ -1277,7 +1284,7 @@ type NetworkEgressBody = {
   allowOut?: string[]
   denyOut?: string[]
   egressProxy?: components['schemas']['SandboxEgressProxyConfig']
-  allowDefaultDns?: boolean
+  dnsServers?: string[]
   rules?: Record<string, { transform?: SandboxNetworkTransform }[]>
 }
 
@@ -1286,7 +1293,7 @@ function buildNetworkEgress(
     allowOut?: SandboxNetworkSelector
     denyOut?: SandboxNetworkSelector
     egressProxy?: SandboxEgressProxyOpts
-    allowDefaultDns?: boolean
+    dnsServers?: string[]
     rules?: SandboxNetworkRules
   },
   transformContext: SandboxNetworkTransformContext
@@ -1307,9 +1314,10 @@ function buildNetworkEgress(
     ...(network.egressProxy != null
       ? { egressProxy: buildEgressProxyBody(network.egressProxy) }
       : {}),
-    // `!= null` so an explicit null means "not set", like Python.
-    ...(network.allowDefaultDns != null
-      ? { allowDefaultDns: network.allowDefaultDns }
+    // `!= null` so an empty list is sent (it means "no DNS server") and an
+    // explicit null means "not set", like Python.
+    ...(network.dnsServers != null
+      ? { dnsServers: [...network.dnsServers] }
       : {}),
     ...(network.rules !== undefined
       ? { rules: resolveRulesForBody(rules, transformContext) }
@@ -1528,7 +1536,7 @@ export class SandboxApi extends ClientFactory {
             denyOut: res.data.network.denyOut,
             rules: res.data.network.rules ?? undefined,
             egressProxy: fromApiEgressProxy(res.data.network.egressProxy),
-            allowDefaultDns: res.data.network.allowDefaultDns,
+            dnsServers: res.data.network.dnsServers,
             allowPublicTraffic: res.data.network.allowPublicTraffic,
             maskRequestHost: res.data.network.maskRequestHost,
             httpsPorts: res.data.network.httpsPorts,

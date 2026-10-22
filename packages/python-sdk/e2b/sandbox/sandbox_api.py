@@ -461,21 +461,25 @@ class SandboxNetworkOpts(TypedDict):
         )
     """
 
-    allow_default_dns: NotRequired[bool]
+    dns_servers: NotRequired[List[str]]
     """
-    Allow all traffic to the default nameserver ``8.8.8.8`` when ``allow_out``
-    contains a domain, so the sandbox can resolve names. Defaults to True.
+    DNS servers the sandbox can reach when ``allow_out`` contains a domain.
+    Each entry must be an IP address, and all traffic to it is allowed.
 
-    Set it to ``False`` to block ``8.8.8.8``. Allowed domains still work, since
-    they are matched by name, not by IP. But names no longer resolve through
-    ``8.8.8.8``, so add the ones you need to ``/etc/hosts`` or allow your own
-    nameserver in ``allow_out``::
+    Leave it out to allow the default nameserver ``8.8.8.8``. Pass a list to
+    allow those servers instead, or ``[]`` to allow none. Allowed domains still
+    work without a reachable server, since they are matched by name, not by
+    IP; add the names you need to ``/etc/hosts``.
+
+    This only opens the firewall. It does not change the sandbox's
+    ``/etc/resolv.conf``, which still points at ``8.8.8.8``, so write your own
+    servers there too. With no domain in ``allow_out`` it has no effect::
 
         Sandbox.create(
             network={
                 "allow_out": ["api.example.com"],
                 "deny_out": lambda ctx: [ctx.all_traffic],
-                "allow_default_dns": False,
+                "dns_servers": ["1.1.1.1"],
             },
         )
     """
@@ -543,10 +547,11 @@ class SandboxNetworkUpdate(TypedDict, total=False):
     ``address`` but omits ``tls`` keeps tunneling without TLS.
     """
 
-    allow_default_dns: bool
+    dns_servers: List[str]
     """
-    See :attr:`SandboxNetworkOpts.allow_default_dns`. Leaving it out resets it
-    to True, like the other fields.
+    See :attr:`SandboxNetworkOpts.dns_servers`. Leaving it out resets it to
+    the default, ``8.8.8.8``, like the other fields, so repeat a custom list in
+    every update that should keep it.
     """
 
     allow_internet_access: bool
@@ -608,10 +613,11 @@ class SandboxNetworkInfo(TypedDict, total=False):
     goes out directly. See :class:`SandboxEgressProxyInfo` for why the password
     is missing.
     """
-    allow_default_dns: bool
+    dns_servers: List[str]
     """
-    Whether the default nameserver ``8.8.8.8`` is automatically allowed when ``allow_out``
-    contains a domain. See :attr:`SandboxNetworkOpts.allow_default_dns`. Missing means True.
+    DNS servers the sandbox can reach when ``allow_out`` contains a domain. See
+    :attr:`SandboxNetworkOpts.dns_servers`. Missing means the default,
+    ``8.8.8.8``.
     """
     allow_public_traffic: bool
     mask_request_host: str
@@ -946,8 +952,10 @@ def _build_network_egress(
         body["deny_out"] = deny_out
     if egress_proxy is not None:
         body["egress_proxy"] = _build_egress_proxy(egress_proxy)
-    if network.get("allow_default_dns") is not None:
-        body["allow_default_dns"] = network["allow_default_dns"]
+    # `is not None` so an empty list is sent (it means "no DNS server"), like
+    # the JS SDK's `!= null`.
+    if network.get("dns_servers") is not None:
+        body["dns_servers"] = list(network["dns_servers"])
     if "rules" in network and network["rules"] is not None:
         body["rules"] = _build_client_rules(network["rules"], ctx).additional_properties
 
@@ -984,10 +992,6 @@ def build_network_config(
         body["mask_request_host"] = network["mask_request_host"]
     if network.get("https_ports") is not None:
         body["https_ports"] = list(network["https_ports"])
-    # The generated model defaults this to True; UNSET leaves it out of the request.
-    # Only add it to a non-empty body, so an empty network config is still left out.
-    if body:
-        body.setdefault("allow_default_dns", UNSET)
 
     return body
 
@@ -1129,17 +1133,15 @@ def build_network_update_body(
         network, _build_transform_context([], validate=False)
     )
 
-    # The generated model defaults allow_default_dns to True; UNSET leaves it out
-    # of the request unless the caller sets it.
-    body = SandboxNetworkUpdateConfig(allow_default_dns=UNSET)
+    body = SandboxNetworkUpdateConfig()
     if "allow_out" in egress:
         body.allow_out = egress["allow_out"]
     if "deny_out" in egress:
         body.deny_out = egress["deny_out"]
     if "egress_proxy" in egress:
         body.egress_proxy = egress["egress_proxy"]
-    if "allow_default_dns" in egress:
-        body.allow_default_dns = egress["allow_default_dns"]
+    if "dns_servers" in egress:
+        body.dns_servers = egress["dns_servers"]
     if "rules" in egress:
         rules = SandboxNetworkUpdateConfigRules()
         rules.additional_properties = egress["rules"]
@@ -1195,8 +1197,8 @@ def from_client_network_config(
     egress_proxy = _from_client_egress_proxy(network.egress_proxy)
     if egress_proxy is not None:
         result["egress_proxy"] = egress_proxy
-    if not isinstance(network.allow_default_dns, Unset):
-        result["allow_default_dns"] = network.allow_default_dns
+    if not isinstance(network.dns_servers, Unset):
+        result["dns_servers"] = list(network.dns_servers)
     if not isinstance(network.allow_public_traffic, Unset):
         result["allow_public_traffic"] = network.allow_public_traffic
     if not isinstance(network.mask_request_host, Unset):
