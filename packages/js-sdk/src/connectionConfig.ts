@@ -12,6 +12,7 @@ const supportedDomains = [
   'e2b-staging.dev',
   'e2b-tango.dev',
   'e2b-juliett.dev',
+  'foxtrot-2.e2b.dev',
 ]
 
 export const REQUEST_TIMEOUT_MS = 60_000 // 60 seconds

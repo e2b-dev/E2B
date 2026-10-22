@@ -40,7 +40,14 @@ def test_sandbox_url_uses_stable_host_for_supported_domain():
 
 @pytest.mark.parametrize(
     "domain",
-    ["e2b.dev", "e2b.pro", "e2b-staging.dev", "e2b-tango.dev", "e2b-juliett.dev"],
+    [
+        "e2b.dev",
+        "e2b.pro",
+        "e2b-staging.dev",
+        "e2b-tango.dev",
+        "e2b-juliett.dev",
+        "foxtrot-2.e2b.dev",
+    ],
 )
 def test_sandbox_url_uses_stable_host_for_supported_non_prod_domain(domain):
     config = ConnectionConfig(domain=domain)

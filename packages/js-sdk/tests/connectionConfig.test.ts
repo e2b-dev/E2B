@@ -115,6 +115,7 @@ test
     'e2b-staging.dev',
     'e2b-tango.dev',
     'e2b-juliett.dev',
+    'foxtrot-2.e2b.dev',
   ])('sandbox_url uses stable host on %s', (domain) => {
   delete process.env.E2B_SANDBOX_URL
   delete process.env.E2B_DEBUG
