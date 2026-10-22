@@ -31,7 +31,7 @@ class SandboxNetworkUpdateConfig:
             deny_out (Union[Unset, list[str]]): List of denied CIDR blocks or IP addresses for egress traffic. Domain names
                 are not supported for deny rules.
             dns_servers (Union[Unset, list[str]]): DNS servers the sandbox can reach when allowOut contains a domain. Each
-                entry must be an IP address, and all traffic to it is allowed. Omit it to reset to the default nameserver
+                entry must be an IPv4 address, and all traffic to it is allowed. Omit it to reset to the default nameserver
                 8.8.8.8, or pass an empty list to allow none. This does not change the sandbox's /etc/resolv.conf.
             egress_proxy (Union['SandboxEgressProxyConfigType0', None, Unset]): SOCKS5 proxy for sandbox egress. Outbound
                 TCP is tunneled through the proxy after allow/deny filtering; the sandbox is unaware. Domain-matched flows use
