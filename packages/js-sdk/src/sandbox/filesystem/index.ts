@@ -722,6 +722,11 @@ export class Filesystem {
               }),
             })
             .catch(async (err) => {
+              // fetch reports an error raised while reading a streamed body as
+              // `TypeError: fetch failed`; surface the SDK's own validation error.
+              if (err?.cause instanceof InvalidArgumentError) {
+                throw err.cause
+              }
               throw await handleEnvdApiFetchError(err, this.checkHealth)
             })
 

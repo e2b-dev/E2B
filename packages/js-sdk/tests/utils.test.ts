@@ -223,3 +223,44 @@ test('async iterable data rejects non-byte chunks', async () => {
     )
   }
 })
+
+test('toBlob copies reused async iterable chunks', async () => {
+  async function* reused() {
+    const buf = new Uint8Array(1)
+    buf[0] = 97
+    yield buf
+    buf[0] = 98
+    yield buf
+  }
+
+  expect(await (await toBlob(reused())).text()).toBe('ab')
+})
+
+test('async iterable data accepts cross-realm Uint8Array chunks', async () => {
+  const { runInNewContext } = await import('node:vm')
+  const foreign = runInNewContext('new Uint8Array([104, 105])') as Uint8Array
+  async function* chunks() {
+    yield foreign
+  }
+
+  expect(await (await toBlob(chunks())).text()).toBe('hi')
+  const { body } = await toUploadBody(chunks())
+  expect(await readBody(body)).toBe('hi')
+})
+
+test('streamed async iterable is closed on an invalid chunk', async () => {
+  let closed = false
+  async function* strings() {
+    try {
+      yield 'hello'
+    } finally {
+      closed = true
+    }
+  }
+
+  const { body, streamed } = await toUploadBody(strings() as never)
+  if (streamed) {
+    await expect(readBody(body)).rejects.toThrow(InvalidArgumentError)
+    expect(closed).toBe(true)
+  }
+})

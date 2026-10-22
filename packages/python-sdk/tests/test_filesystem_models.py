@@ -12,6 +12,7 @@ from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox.filesystem.filesystem import (
     _to_httpx_file,
     abuffer_multipart_data,
+    aiter_chunks,
     multipart_body_is_streamed,
     to_upload_body,
     to_upload_body_async,
@@ -237,3 +238,20 @@ async def test_multipart_buffers_iterables():
     )
     assert await abuffer_multipart_data(source()) == b"hello"
     assert not multipart_body_is_streamed([{"path": "a.bin", "data": iter([b"x"])}])
+
+
+async def test_async_helpers_read_sync_iterables_off_the_loop():
+    import threading
+
+    loop_thread = threading.get_ident()
+    threads = []
+
+    def source():
+        threads.append(threading.get_ident())
+        yield b"hel"
+        threads.append(threading.get_ident())
+        yield b"lo"
+
+    assert b"".join([c async for c in aiter_chunks(source())]) == b"hello"
+    assert threads and loop_thread not in threads
+    assert await abuffer_multipart_data(source()) == b"hello"

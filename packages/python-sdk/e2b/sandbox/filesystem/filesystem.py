@@ -326,6 +326,9 @@ def iter_chunks(data: Iterable[bytes]) -> Iterator[bytes]:
         yield _check_chunk(chunk)
 
 
+_EXHAUSTED = object()
+
+
 async def aiter_chunks(
     data: Union[Iterable[bytes], AsyncIterable[bytes]],
 ) -> AsyncIterator[bytes]:
@@ -334,7 +337,13 @@ async def aiter_chunks(
         async for chunk in data:
             yield _check_chunk(chunk)
     else:
-        for chunk in cast(Iterable[bytes], data):
+        # Advanced off the event loop, like file-like data: `next()` may block
+        # on disk or network (e.g. `requests` `iter_content()`).
+        iterator = iter(cast(Iterable[bytes], data))
+        while True:
+            chunk = await asyncio.to_thread(next, iterator, _EXHAUSTED)
+            if chunk is _EXHAUSTED:
+                return
             yield _check_chunk(chunk)
 
 
@@ -354,9 +363,9 @@ async def abuffer_multipart_data(data: AsyncWriteData) -> WriteData:
     """Read async iterable data into memory for the multipart upload.
 
     httpx only takes ``str``/``bytes``/file-like objects in a multipart field,
-    so iterables are buffered there; :func:`_to_httpx_file` handles sync ones.
+    so iterables are buffered there (sync ones read off the event loop).
     """
-    if _is_async_chunk_iterable(data):
+    if _is_async_chunk_iterable(data) or _is_chunk_iterable(data):
         return b"".join([chunk async for chunk in aiter_chunks(data)])
     return cast(WriteData, data)
 

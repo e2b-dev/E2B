@@ -175,6 +175,15 @@ function checkChunk(chunk: unknown): Uint8Array {
   if (chunk instanceof Uint8Array) {
     return chunk
   }
+  // A Uint8Array from another realm (iframe, `node:vm`, worker) fails the
+  // `instanceof` above; the tag is realm-independent. Copied into this realm's
+  // class so every body consumer accepts it.
+  if (
+    ArrayBuffer.isView(chunk) &&
+    Object.prototype.toString.call(chunk) === '[object Uint8Array]'
+  ) {
+    return new Uint8Array(chunk as Uint8Array)
+  }
   const kind =
     chunk === null
       ? 'null'
@@ -201,7 +210,16 @@ function asyncIterableToStream(
         controller.close()
         return
       }
-      controller.enqueue(checkChunk(value))
+      let chunk: Uint8Array
+      try {
+        chunk = checkChunk(value)
+      } catch (err) {
+        // An error thrown from `pull` doesn't run `cancel`, so release the
+        // source here.
+        await iterator.return?.().catch(() => {})
+        throw err
+      }
+      controller.enqueue(chunk)
     },
     async cancel(reason) {
       await iterator.return?.(reason)
@@ -242,7 +260,8 @@ export async function toBlob(data: UploadData): Promise<Blob> {
   if (isAsyncIterable(data)) {
     const chunks: BlobPart[] = []
     for await (const chunk of data) {
-      chunks.push(checkChunk(chunk) as BlobPart)
+      // Copied as it arrives: a producer may reuse its buffer after yielding.
+      chunks.push(new Uint8Array(checkChunk(chunk)))
     }
     return new Blob(chunks)
   }
