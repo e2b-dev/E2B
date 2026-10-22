@@ -5,7 +5,15 @@ import { resolveRetries } from './retry'
 import { InvalidArgumentError } from './errors'
 
 // Remove once all deployments support sandbox subdomains
-const supportedDomains = ['e2b.app', 'e2b.dev', 'e2b.pro', 'e2b-staging.dev']
+const supportedDomains = [
+  'e2b.app',
+  'e2b.dev',
+  'e2b.pro',
+  'e2b-staging.dev',
+  'e2b-tango.dev',
+  'e2b-juliett.dev',
+  'foxtrot-2.e2b.dev',
+]
 
 export const REQUEST_TIMEOUT_MS = 60_000 // 60 seconds
 export const STREAM_INPUT_TIMEOUT_MS = 60_000 // 60 seconds
