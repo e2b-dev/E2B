@@ -82,14 +82,13 @@ def sync_detailed(
     """Update sandbox network
 
      Update the network configuration for a running sandbox. Replaces the current egress rules with the
-    provided configuration. Omitting a field clears it, except allowDefaultDns, which keeps its current
-    value.
+    provided configuration. Omitting field clears it.
 
     Args:
         sandbox_id (str):
         body (SandboxNetworkUpdateConfig): Network configuration update for a running sandbox.
             Replaces the current egress rules with the provided configuration. Omitting a field clears
-            it, except allowDefaultDns, which keeps its current value.
+            it.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -120,14 +119,13 @@ def sync(
     """Update sandbox network
 
      Update the network configuration for a running sandbox. Replaces the current egress rules with the
-    provided configuration. Omitting a field clears it, except allowDefaultDns, which keeps its current
-    value.
+    provided configuration. Omitting field clears it.
 
     Args:
         sandbox_id (str):
         body (SandboxNetworkUpdateConfig): Network configuration update for a running sandbox.
             Replaces the current egress rules with the provided configuration. Omitting a field clears
-            it, except allowDefaultDns, which keeps its current value.
+            it.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -153,14 +151,13 @@ async def asyncio_detailed(
     """Update sandbox network
 
      Update the network configuration for a running sandbox. Replaces the current egress rules with the
-    provided configuration. Omitting a field clears it, except allowDefaultDns, which keeps its current
-    value.
+    provided configuration. Omitting field clears it.
 
     Args:
         sandbox_id (str):
         body (SandboxNetworkUpdateConfig): Network configuration update for a running sandbox.
             Replaces the current egress rules with the provided configuration. Omitting a field clears
-            it, except allowDefaultDns, which keeps its current value.
+            it.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -189,14 +186,13 @@ async def asyncio(
     """Update sandbox network
 
      Update the network configuration for a running sandbox. Replaces the current egress rules with the
-    provided configuration. Omitting a field clears it, except allowDefaultDns, which keeps its current
-    value.
+    provided configuration. Omitting field clears it.
 
     Args:
         sandbox_id (str):
         body (SandboxNetworkUpdateConfig): Network configuration update for a running sandbox.
             Replaces the current egress rules with the provided configuration. Omitting a field clears
-            it, except allowDefaultDns, which keeps its current value.
+            it.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

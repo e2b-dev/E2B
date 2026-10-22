@@ -382,7 +382,7 @@ export interface paths {
         get?: never;
         /**
          * Update sandbox network
-         * @description Update the network configuration for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting a field clears it, except allowDefaultDns, which keeps its current value.
+         * @description Update the network configuration for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting field clears it.
          */
         put: {
             parameters: {
@@ -2706,11 +2706,14 @@ export interface components {
                 [key: string]: string;
             };
         };
-        /** @description Network configuration update for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting a field clears it, except allowDefaultDns, which keeps its current value. */
+        /** @description Network configuration update for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting a field clears it. */
         SandboxNetworkUpdateConfig: {
             /** @description Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut to 0.0.0.0/0 in the network config. */
             allow_internet_access?: boolean;
-            /** @description Allow all traffic to the default nameserver 8.8.8.8 when allowOut contains a domain. Keeps the current value when omitted. */
+            /**
+             * @description Allow all traffic to the default nameserver 8.8.8.8 when allowOut contains a domain, so the sandbox can resolve names. Set to false to block it. Omitting it resets it to true.
+             * @default true
+             */
             allowDefaultDns?: boolean;
             /** @description List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com"). Allowed entries always take precedence over denied entries. When allowOut contains a domain, the default nameserver 8.8.8.8 is also allowed unless allowDefaultDns is false. */
             allowOut?: string[];

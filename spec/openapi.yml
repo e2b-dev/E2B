@@ -517,7 +517,7 @@ components:
 
     SandboxNetworkUpdateConfig:
       type: object
-      description: Network configuration update for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting a field clears it, except allowDefaultDns, which keeps its current value.
+      description: Network configuration update for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting a field clears it.
       properties:
         allowOut:
           type: array
@@ -531,7 +531,8 @@ components:
             type: string
         allowDefaultDns:
           type: boolean
-          description: Allow all traffic to the default nameserver 8.8.8.8 when allowOut contains a domain. Keeps the current value when omitted.
+          default: true
+          description: Allow all traffic to the default nameserver 8.8.8.8 when allowOut contains a domain, so the sandbox can resolve names. Set to false to block it. Omitting it resets it to true.
         egressProxy:
           $ref: "#/components/schemas/SandboxEgressProxyConfig"
         rules:
@@ -3606,7 +3607,7 @@ paths:
   /sandboxes/{sandboxID}/network:
     put:
       summary: Update sandbox network
-      description: Update the network configuration for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting a field clears it, except allowDefaultDns, which keeps its current value.
+      description: Update the network configuration for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting field clears it.
       security:
         - ApiKeyAuth: []
         - AuthProviderBearerAuth: []
