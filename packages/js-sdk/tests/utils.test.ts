@@ -240,31 +240,33 @@ test('toBlob copies reused async iterable chunks', async () => {
 
 test.skipIf(runtime !== 'node')(
   'async iterable data accepts cross-realm Uint8Array chunks',
-  , async () => {
-  const { runInNewContext } = await import('node:vm')
-  const foreign = runInNewContext('new Uint8Array([104, 105])') as Uint8Array
-  async function* chunks() {
-    yield foreign
-  }
+  async () => {
+    const { runInNewContext } = await import('node:vm')
+    const foreign = runInNewContext('new Uint8Array([104, 105])') as Uint8Array
+    async function* chunks() {
+      yield foreign
+    }
 
-  expect(await (await toBlob(chunks())).text()).toBe('hi')
-  const { body } = await toUploadBody(chunks())
-  expect(await readBody(body)).toBe('hi')
-})
+    expect(await (await toBlob(chunks())).text()).toBe('hi')
+    const { body } = await toUploadBody(chunks())
+    expect(await readBody(body)).toBe('hi')
+  }
+)
 
 test.skipIf(!streams)(
   'streamed async iterable is closed on an invalid chunk',
   async () => {
-  let closed = false
-  async function* strings() {
-    try {
-      yield 'hello'
-    } finally {
-      closed = true
+    let closed = false
+    async function* strings() {
+      try {
+        yield 'hello'
+      } finally {
+        closed = true
+      }
     }
-  }
 
-  const { body } = await toUploadBody(strings() as never)
-  await expect(readBody(body)).rejects.toThrow(InvalidArgumentError)
-  expect(closed).toBe(true)
-})
+    const { body } = await toUploadBody(strings() as never)
+    await expect(readBody(body)).rejects.toThrow(InvalidArgumentError)
+    expect(closed).toBe(true)
+  }
+)
