@@ -110,8 +110,7 @@ class ApiParams(TypedDict, total=False):
     ``X-E2B-Alt-Used``."""
 
     api_url: Optional[str]
-    """URL to use for the API, defaults to `https://api.<domain>`. For internal use only.
-    """
+    """URL to use for the API, defaults to `https://api.<domain>`. For internal use only."""
 
     debug: Optional[bool]
     """Whether to use debug mode, defaults to `E2B_DEBUG` environment variable."""
