@@ -1536,7 +1536,10 @@ export class SandboxApi extends ClientFactory {
             denyOut: res.data.network.denyOut,
             rules: res.data.network.rules ?? undefined,
             egressProxy: fromApiEgressProxy(res.data.network.egressProxy),
-            dnsServers: res.data.network.dnsServers,
+            // Only set when the API returns it, so a missing list stays missing.
+            ...(res.data.network.dnsServers !== undefined
+              ? { dnsServers: res.data.network.dnsServers }
+              : {}),
             allowPublicTraffic: res.data.network.allowPublicTraffic,
             maskRequestHost: res.data.network.maskRequestHost,
             httpsPorts: res.data.network.httpsPorts,

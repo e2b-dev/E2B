@@ -139,5 +139,5 @@ test('getInfo leaves dnsServers unset when the API omits it', async () => {
   const info = await Sandbox.getInfo(sandboxId, { apiKey: TEST_API_KEY })
 
   expect(info.network).toBeDefined()
-  expect(info.network?.dnsServers).toBeUndefined()
+  expect(info.network).not.toHaveProperty('dnsServers')
 })
