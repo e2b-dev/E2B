@@ -27,12 +27,12 @@ class SandboxNetworkUpdateConfig:
             allow_out (Union[Unset, list[str]]): List of allowed destinations for egress traffic. Each entry can be a CIDR
                 block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com",
                 "*.example.com"). Allowed entries always take precedence over denied entries. When allowOut contains a domain,
-                the default nameserver 8.8.8.8 is also allowed unless allowDefaultDns is false.
+                the servers in dnsServers (8.8.8.8 by default) are also allowed.
             deny_out (Union[Unset, list[str]]): List of denied CIDR blocks or IP addresses for egress traffic. Domain names
                 are not supported for deny rules.
-            allow_default_dns (Union[Unset, bool]): Allow all traffic to the default nameserver 8.8.8.8 when allowOut
-                contains a domain, so the sandbox can resolve names. Set to false to block it. Omitting it resets it to true.
-                Default: True.
+            dns_servers (Union[Unset, list[str]]): DNS servers the sandbox can reach when allowOut contains a domain. Each
+                entry must be an IP address, and all traffic to it is allowed. Omit it to reset to the default nameserver
+                8.8.8.8, or pass an empty list to allow none. This does not change the sandbox's /etc/resolv.conf.
             egress_proxy (Union['SandboxEgressProxyConfigType0', None, Unset]): SOCKS5 proxy for sandbox egress. Outbound
                 TCP is tunneled through the proxy after allow/deny filtering; the sandbox is unaware. Domain-matched flows use
                 remote DNS (ATYP=domain).
@@ -49,7 +49,7 @@ class SandboxNetworkUpdateConfig:
 
     allow_out: Union[Unset, list[str]] = UNSET
     deny_out: Union[Unset, list[str]] = UNSET
-    allow_default_dns: Union[Unset, bool] = True
+    dns_servers: Union[Unset, list[str]] = UNSET
     egress_proxy: Union["SandboxEgressProxyConfigType0", None, Unset] = UNSET
     rules: Union[Unset, "SandboxNetworkUpdateConfigRules"] = UNSET
     allow_internet_access: Union[Unset, bool] = UNSET
@@ -68,7 +68,9 @@ class SandboxNetworkUpdateConfig:
         if not isinstance(self.deny_out, Unset):
             deny_out = self.deny_out
 
-        allow_default_dns = self.allow_default_dns
+        dns_servers: Union[Unset, list[str]] = UNSET
+        if not isinstance(self.dns_servers, Unset):
+            dns_servers = self.dns_servers
 
         egress_proxy: Union[None, Unset, dict[str, Any]]
         if isinstance(self.egress_proxy, Unset):
@@ -91,8 +93,8 @@ class SandboxNetworkUpdateConfig:
             field_dict["allowOut"] = allow_out
         if deny_out is not UNSET:
             field_dict["denyOut"] = deny_out
-        if allow_default_dns is not UNSET:
-            field_dict["allowDefaultDns"] = allow_default_dns
+        if dns_servers is not UNSET:
+            field_dict["dnsServers"] = dns_servers
         if egress_proxy is not UNSET:
             field_dict["egressProxy"] = egress_proxy
         if rules is not UNSET:
@@ -116,7 +118,7 @@ class SandboxNetworkUpdateConfig:
 
         deny_out = cast(list[str], d.pop("denyOut", UNSET))
 
-        allow_default_dns = d.pop("allowDefaultDns", UNSET)
+        dns_servers = cast(list[str], d.pop("dnsServers", UNSET))
 
         def _parse_egress_proxy(
             data: object,
@@ -151,7 +153,7 @@ class SandboxNetworkUpdateConfig:
         sandbox_network_update_config = cls(
             allow_out=allow_out,
             deny_out=deny_out,
-            allow_default_dns=allow_default_dns,
+            dns_servers=dns_servers,
             egress_proxy=egress_proxy,
             rules=rules,
             allow_internet_access=allow_internet_access,

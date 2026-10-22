@@ -2671,12 +2671,7 @@ export interface components {
             timestampUnix: number;
         };
         SandboxNetworkConfig: {
-            /**
-             * @description Allow all traffic to the default nameserver 8.8.8.8 when allowOut contains a domain, so the sandbox can resolve names. Set to false to block it. An explicit 8.8.8.8 entry in allowOut is still allowed.
-             * @default true
-             */
-            allowDefaultDns?: boolean;
-            /** @description List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com"). Allowed entries always take precedence over denied entries. When allowOut contains a domain, the default nameserver 8.8.8.8 is also allowed unless allowDefaultDns is false. */
+            /** @description List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com"). Allowed entries always take precedence over denied entries. When allowOut contains a domain, the servers in dnsServers (8.8.8.8 by default) are also allowed. */
             allowOut?: string[];
             /**
              * @description Specify if the sandbox URLs should be accessible only with authentication.
@@ -2685,6 +2680,8 @@ export interface components {
             allowPublicTraffic?: boolean;
             /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
             denyOut?: string[];
+            /** @description DNS servers the sandbox can reach when allowOut contains a domain. Each entry must be an IP address, and all traffic to it is allowed. Omit it to allow the default nameserver 8.8.8.8, or pass an empty list to allow none. This does not change the sandbox's /etc/resolv.conf. */
+            dnsServers?: string[];
             egressProxy?: components["schemas"]["SandboxEgressProxyConfig"];
             /** @description Sandbox ports that serve HTTPS rather than plaintext HTTP. Affects how the proxy reaches the service inside the sandbox; the public URL is HTTPS either way. Certificates are not verified, so self-signed ones work. The envd port (49983) cannot be listed. */
             httpsPorts?: number[];
@@ -2710,15 +2707,12 @@ export interface components {
         SandboxNetworkUpdateConfig: {
             /** @description Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut to 0.0.0.0/0 in the network config. */
             allow_internet_access?: boolean;
-            /**
-             * @description Allow all traffic to the default nameserver 8.8.8.8 when allowOut contains a domain, so the sandbox can resolve names. Set to false to block it. Omitting it resets it to true.
-             * @default true
-             */
-            allowDefaultDns?: boolean;
-            /** @description List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com"). Allowed entries always take precedence over denied entries. When allowOut contains a domain, the default nameserver 8.8.8.8 is also allowed unless allowDefaultDns is false. */
+            /** @description List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com"). Allowed entries always take precedence over denied entries. When allowOut contains a domain, the servers in dnsServers (8.8.8.8 by default) are also allowed. */
             allowOut?: string[];
             /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
             denyOut?: string[];
+            /** @description DNS servers the sandbox can reach when allowOut contains a domain. Each entry must be an IP address, and all traffic to it is allowed. Omit it to reset to the default nameserver 8.8.8.8, or pass an empty list to allow none. This does not change the sandbox's /etc/resolv.conf. */
+            dnsServers?: string[];
             egressProxy?: components["schemas"]["SandboxEgressProxyConfig"];
             /** @description Per-domain transform rules applied to matching outbound HTTPS requests. Replaces all existing rules when provided. Keys may be exact DNS names or a single leading wildcard (for example, "*.example.com"), and are normalized to lowercase on write. Wildcards match subdomains at any depth but not the apex domain; a bare "*" is invalid. Exact rules take precedence, followed by the longest matching wildcard suffix, and matching rule sets are not merged. Broad wildcards such as "*.com" are allowed and may expose transformed credentials to every matching destination the sandbox contacts. Rules do not grant network access; configure allowOut separately to permit the destination. */
             rules?: {
