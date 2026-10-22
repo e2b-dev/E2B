@@ -7,6 +7,7 @@ from attrs import field as _attrs_field
 from dateutil.parser import isoparse
 
 from ..models.template_build_status import TemplateBuildStatus
+from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
     from ..models.team_user import TeamUser
@@ -35,6 +36,10 @@ class Template:
         build_count (int): Number of times the template was built
         envd_version (str): Version of the envd running in the sandbox
         build_status (TemplateBuildStatus): Status of the template build
+        is_default (Union[Unset, bool]): Whether the template is one of the platform's default templates. A default
+            template owned by another team carries zero or null usage fields (`spawnCount`, `buildCount`, `lastSpawnedAt`,
+            `createdBy`).
+        description (Union[Unset, str]): Description of the template
     """
 
     template_id: str
@@ -53,6 +58,8 @@ class Template:
     build_count: int
     envd_version: str
     build_status: TemplateBuildStatus
+    is_default: Union[Unset, bool] = UNSET
+    description: Union[Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -98,6 +105,10 @@ class Template:
 
         build_status = self.build_status.value
 
+        is_default = self.is_default
+
+        description = self.description
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -120,6 +131,10 @@ class Template:
                 "buildStatus": build_status,
             }
         )
+        if is_default is not UNSET:
+            field_dict["isDefault"] = is_default
+        if description is not UNSET:
+            field_dict["description"] = description
 
         return field_dict
 
@@ -186,6 +201,10 @@ class Template:
 
         build_status = TemplateBuildStatus(d.pop("buildStatus"))
 
+        is_default = d.pop("isDefault", UNSET)
+
+        description = d.pop("description", UNSET)
+
         template = cls(
             template_id=template_id,
             build_id=build_id,
@@ -203,6 +222,8 @@ class Template:
             build_count=build_count,
             envd_version=envd_version,
             build_status=build_status,
+            is_default=is_default,
+            description=description,
         )
 
         template.additional_properties = d

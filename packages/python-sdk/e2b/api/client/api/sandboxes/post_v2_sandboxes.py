@@ -8,14 +8,17 @@ from ...client import AuthenticatedClient, Client
 from ...models.error import Error
 from ...models.new_sandbox_v2 import NewSandboxV2
 from ...models.sandbox import Sandbox
-from ...types import Response
+from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
     *,
     body: NewSandboxV2,
+    idempotency_key: Union[Unset, str] = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
+    if not isinstance(idempotency_key, Unset):
+        headers["Idempotency-Key"] = idempotency_key
 
     _kwargs: dict[str, Any] = {
         "method": "post",
@@ -45,6 +48,22 @@ def _parse_response(
         response_401 = Error.from_dict(response.json())
 
         return response_401
+    if response.status_code == 403:
+        response_403 = Error.from_dict(response.json())
+
+        return response_403
+    if response.status_code == 404:
+        response_404 = Error.from_dict(response.json())
+
+        return response_404
+    if response.status_code == 409:
+        response_409 = Error.from_dict(response.json())
+
+        return response_409
+    if response.status_code == 422:
+        response_422 = Error.from_dict(response.json())
+
+        return response_422
     if response.status_code == 429:
         response_429 = Error.from_dict(response.json())
 
@@ -82,12 +101,14 @@ def sync_detailed(
     *,
     client: AuthenticatedClient,
     body: NewSandboxV2,
+    idempotency_key: Union[Unset, str] = UNSET,
 ) -> Response[Union[Error, Sandbox]]:
     """Create sandbox (v2)
 
      Create a sandbox from the template. All system communication with the sandbox is secured.
 
     Args:
+        idempotency_key (Union[Unset, str]):
         body (NewSandboxV2): Sandbox creation request. All system communication with the sandbox
             is always secured; the template's envd version must support secured access.
 
@@ -101,6 +122,7 @@ def sync_detailed(
 
     kwargs = _get_kwargs(
         body=body,
+        idempotency_key=idempotency_key,
     )
 
     response = client.get_httpx_client().request(
@@ -114,12 +136,14 @@ def sync(
     *,
     client: AuthenticatedClient,
     body: NewSandboxV2,
+    idempotency_key: Union[Unset, str] = UNSET,
 ) -> Optional[Union[Error, Sandbox]]:
     """Create sandbox (v2)
 
      Create a sandbox from the template. All system communication with the sandbox is secured.
 
     Args:
+        idempotency_key (Union[Unset, str]):
         body (NewSandboxV2): Sandbox creation request. All system communication with the sandbox
             is always secured; the template's envd version must support secured access.
 
@@ -134,6 +158,7 @@ def sync(
     return sync_detailed(
         client=client,
         body=body,
+        idempotency_key=idempotency_key,
     ).parsed
 
 
@@ -141,12 +166,14 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
     body: NewSandboxV2,
+    idempotency_key: Union[Unset, str] = UNSET,
 ) -> Response[Union[Error, Sandbox]]:
     """Create sandbox (v2)
 
      Create a sandbox from the template. All system communication with the sandbox is secured.
 
     Args:
+        idempotency_key (Union[Unset, str]):
         body (NewSandboxV2): Sandbox creation request. All system communication with the sandbox
             is always secured; the template's envd version must support secured access.
 
@@ -160,6 +187,7 @@ async def asyncio_detailed(
 
     kwargs = _get_kwargs(
         body=body,
+        idempotency_key=idempotency_key,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -171,12 +199,14 @@ async def asyncio(
     *,
     client: AuthenticatedClient,
     body: NewSandboxV2,
+    idempotency_key: Union[Unset, str] = UNSET,
 ) -> Optional[Union[Error, Sandbox]]:
     """Create sandbox (v2)
 
      Create a sandbox from the template. All system communication with the sandbox is secured.
 
     Args:
+        idempotency_key (Union[Unset, str]):
         body (NewSandboxV2): Sandbox creation request. All system communication with the sandbox
             is always secured; the template's envd version must support secured access.
 
@@ -192,5 +222,6 @@ async def asyncio(
         await asyncio_detailed(
             client=client,
             body=body,
+            idempotency_key=idempotency_key,
         )
     ).parsed

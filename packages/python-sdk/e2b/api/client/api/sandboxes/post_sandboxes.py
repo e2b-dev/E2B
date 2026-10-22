@@ -85,7 +85,8 @@ def sync_detailed(
 ) -> Response[Union[Error, Sandbox]]:
     """Create sandbox
 
-     Create a sandbox from the template. Use POST /v2/sandboxes instead.
+     Create a sandbox from the template. All system communication with the sandbox is secured. Use POST
+    /v2/sandboxes instead.
 
     Args:
         body (NewSandbox):
@@ -116,7 +117,8 @@ def sync(
 ) -> Optional[Union[Error, Sandbox]]:
     """Create sandbox
 
-     Create a sandbox from the template. Use POST /v2/sandboxes instead.
+     Create a sandbox from the template. All system communication with the sandbox is secured. Use POST
+    /v2/sandboxes instead.
 
     Args:
         body (NewSandbox):
@@ -142,7 +144,8 @@ async def asyncio_detailed(
 ) -> Response[Union[Error, Sandbox]]:
     """Create sandbox
 
-     Create a sandbox from the template. Use POST /v2/sandboxes instead.
+     Create a sandbox from the template. All system communication with the sandbox is secured. Use POST
+    /v2/sandboxes instead.
 
     Args:
         body (NewSandbox):
@@ -171,7 +174,8 @@ async def asyncio(
 ) -> Optional[Union[Error, Sandbox]]:
     """Create sandbox
 
-     Create a sandbox from the template. Use POST /v2/sandboxes instead.
+     Create a sandbox from the template. All system communication with the sandbox is secured. Use POST
+    /v2/sandboxes instead.
 
     Args:
         body (NewSandbox):
