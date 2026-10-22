@@ -487,7 +487,7 @@ class SandboxNetworkOpts(TypedDict):
     allow_public_traffic: NotRequired[bool]
     """
     Controls whether sandbox URLs should be publicly accessible or require authentication.
-    Defaults to True.
+    When omitted, the server applies its default.
     """
 
     mask_request_host: NotRequired[str]
@@ -992,6 +992,10 @@ def build_network_config(
         body["mask_request_host"] = network["mask_request_host"]
     if network.get("https_ports") is not None:
         body["https_ports"] = list(network["https_ports"])
+
+    # Override the generated model's default while keeping an empty network omitted.
+    if body:
+        body.setdefault("allow_public_traffic", UNSET)
 
     return body
 
