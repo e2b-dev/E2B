@@ -1,5 +1,15 @@
 # @e2b/code-interpreter-python
 
+## 2.11.3
+
+### Patch Changes
+
+- Updated dependencies [5a714f0]
+- Updated dependencies [e5a9fa6]
+- Updated dependencies [61b6b55]
+- Updated dependencies [2cd2305]
+  - @e2b/python-sdk@2.59.0
+
 ## 2.11.2
 
 ### Patch Changes
