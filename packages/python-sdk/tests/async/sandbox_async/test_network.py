@@ -296,6 +296,116 @@ async def test_update_network_clears_existing_rules(async_sandbox_factory):
     assert r2.exit_code == 0
 
 
+def dns_probe_cmd(server: str) -> str:
+    """Sends one DNS query for example.com to `server` over UDP. Fails if no reply comes back."""
+    return f"""python3 -c "
+import socket
+q = bytes.fromhex('abcd01000001000000000000076578616d706c6503636f6d0000010001')
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.settimeout(3)
+s.sendto(q, ('{server}', 53))
+s.recv(512)
+"
+"""
+
+
+DOMAIN_ONLY = SandboxNetworkOpts(
+    allow_out=["example.com"],
+    deny_out=lambda ctx: [ctx.all_traffic],
+)
+
+
+async def skip_unless_dns_servers_supported(async_sandbox):
+    # These tests need an API that supports dns_servers. Call this on a sandbox
+    # created with dns_servers set: if get_info doesn't report them back, skip.
+    info = await async_sandbox.get_info()
+    if info.network is None or "dns_servers" not in info.network:
+        pytest.skip("the API doesn't report dns_servers")
+
+
+@pytest.mark.skip_debug()
+async def test_empty_dns_servers_allows_no_dns_server(async_sandbox_factory):
+    """dns_servers=[] blocks 8.8.8.8; the allowed domain stays reachable."""
+    async_sandbox = await async_sandbox_factory(
+        network={**DOMAIN_ONLY, "dns_servers": []}
+    )
+    await skip_unless_dns_servers_supported(async_sandbox)
+
+    with pytest.raises(CommandExitException):
+        await async_sandbox.commands.run(dns_probe_cmd("8.8.8.8"))
+    with pytest.raises(CommandExitException):
+        await async_sandbox.commands.run(
+            "curl --connect-timeout 3 --max-time 5 -Is https://8.8.8.8"
+        )
+
+    # Allowed domains are matched by name, not by IP, so any public IP in
+    # /etc/hosts works.
+    await async_sandbox.commands.run(
+        "echo '1.1.1.1 example.com' >> /etc/hosts", user="root"
+    )
+    result = await async_sandbox.commands.run(
+        "curl -s -o /dev/null -w '%{http_code}' https://example.com"
+    )
+    assert result.stdout.strip() == "200"
+
+    info = await async_sandbox.get_info()
+    assert info.network is not None
+    assert info.network.get("dns_servers") == []
+
+
+@pytest.mark.skip_debug()
+async def test_dns_servers_allows_listed_servers_instead_of_8888(async_sandbox_factory):
+    """dns_servers=["1.1.1.1"] opens 1.1.1.1 and closes 8.8.8.8."""
+    async_sandbox = await async_sandbox_factory(
+        network={**DOMAIN_ONLY, "dns_servers": ["1.1.1.1"]}
+    )
+    await skip_unless_dns_servers_supported(async_sandbox)
+
+    assert (await async_sandbox.commands.run(dns_probe_cmd("1.1.1.1"))).exit_code == 0
+    with pytest.raises(CommandExitException):
+        await async_sandbox.commands.run(dns_probe_cmd("8.8.8.8"))
+
+    info = await async_sandbox.get_info()
+    assert info.network is not None
+    assert info.network.get("dns_servers") == ["1.1.1.1"]
+
+
+@pytest.mark.skip_debug()
+async def test_update_network_resets_dns_servers_when_omitted(async_sandbox_factory):
+    """Leaving dns_servers out of update_network resets it to 8.8.8.8."""
+    async_sandbox = await async_sandbox_factory(
+        network={**DOMAIN_ONLY, "dns_servers": []}
+    )
+    await skip_unless_dns_servers_supported(async_sandbox)
+    network = {"allow_out": ["example.com"], "deny_out": ["0.0.0.0/0"]}
+
+    # Left out, so it goes back to the default (8.8.8.8).
+    await async_sandbox.update_network(network)
+    assert (await async_sandbox.commands.run(dns_probe_cmd("8.8.8.8"))).exit_code == 0
+    info = await async_sandbox.get_info()
+    assert info.network is not None
+    assert "dns_servers" not in info.network
+
+    await async_sandbox.update_network({**network, "dns_servers": []})
+    with pytest.raises(CommandExitException):
+        await async_sandbox.commands.run(dns_probe_cmd("8.8.8.8"))
+
+    await async_sandbox.update_network({**network, "dns_servers": ["8.8.8.8"]})
+    assert (await async_sandbox.commands.run(dns_probe_cmd("8.8.8.8"))).exit_code == 0
+
+
+@pytest.mark.skip_debug()
+async def test_domain_allowlist_allows_8888_by_default(async_sandbox_factory):
+    """Without dns_servers, a domain allowlist still resolves through 8.8.8.8."""
+    async_sandbox = await async_sandbox_factory(network=DOMAIN_ONLY)
+
+    assert (await async_sandbox.commands.run(dns_probe_cmd("8.8.8.8"))).exit_code == 0
+
+    info = await async_sandbox.get_info()
+    assert info.network is not None
+    assert "dns_servers" not in info.network
+
+
 @pytest.mark.skip_debug()
 async def test_https_ports(async_sandbox_factory):
     """Test that a port listed in https_ports proxies to an HTTPS backend."""

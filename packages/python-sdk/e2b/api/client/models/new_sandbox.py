@@ -30,7 +30,8 @@ class NewSandbox:
             snapshot cannot be auto-resumed by traffic and must be resumed explicitly, so it cannot be combined with
             autoResume. Defaults to true (full memory snapshot). Default: True.
         auto_resume (Union[Unset, SandboxAutoResumeConfig]): Auto-resume configuration for paused sandboxes.
-        secure (Union[Unset, bool]): Secure all system communication with sandbox
+        secure (Union[Unset, bool]): Ignored. All system communication with the sandbox is always secured; the
+            template's envd version must support secured access.
         allow_internet_access (Union[Unset, bool]): Allow sandbox to access the internet. When set to false, it behaves
             the same as specifying denyOut to 0.0.0.0/0 in the network config.
         network (Union[Unset, SandboxNetworkConfig]):

@@ -6,6 +6,7 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 from dateutil.parser import isoparse
 
+from ..models.sandbox_pause_mode import SandboxPauseMode
 from ..models.sandbox_state import SandboxState
 from ..types import UNSET, Unset
 
@@ -40,6 +41,10 @@ class SandboxDetail:
         metadata (Union[Unset, Any]):
         network (Union[Unset, SandboxNetworkConfig]):
         lifecycle (Union[Unset, SandboxLifecycle]): Sandbox lifecycle policy returned by sandbox info.
+        pause_mode (Union[Unset, SandboxPauseMode]): What the sandbox's latest pause saved. `full` saved the filesystem
+            and the memory, and resuming restores the sandbox where it left off. `filesystem` saved only the filesystem, and
+            resuming reboots the sandbox from disk. Returned for a paused sandbox once its pause has finished, and omitted
+            while it is still pausing.
         volume_mounts (Union[Unset, list['SandboxVolumeMount']]):
     """
 
@@ -60,6 +65,7 @@ class SandboxDetail:
     metadata: Union[Unset, Any] = UNSET
     network: Union[Unset, "SandboxNetworkConfig"] = UNSET
     lifecycle: Union[Unset, "SandboxLifecycle"] = UNSET
+    pause_mode: Union[Unset, SandboxPauseMode] = UNSET
     volume_mounts: Union[Unset, list["SandboxVolumeMount"]] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -110,6 +116,10 @@ class SandboxDetail:
         if not isinstance(self.lifecycle, Unset):
             lifecycle = self.lifecycle.to_dict()
 
+        pause_mode: Union[Unset, str] = UNSET
+        if not isinstance(self.pause_mode, Unset):
+            pause_mode = self.pause_mode.value
+
         volume_mounts: Union[Unset, list[dict[str, Any]]] = UNSET
         if not isinstance(self.volume_mounts, Unset):
             volume_mounts = []
@@ -147,6 +157,8 @@ class SandboxDetail:
             field_dict["network"] = network
         if lifecycle is not UNSET:
             field_dict["lifecycle"] = lifecycle
+        if pause_mode is not UNSET:
+            field_dict["pauseMode"] = pause_mode
         if volume_mounts is not UNSET:
             field_dict["volumeMounts"] = volume_mounts
 
@@ -219,6 +231,13 @@ class SandboxDetail:
         else:
             lifecycle = SandboxLifecycle.from_dict(_lifecycle)
 
+        _pause_mode = d.pop("pauseMode", UNSET)
+        pause_mode: Union[Unset, SandboxPauseMode]
+        if isinstance(_pause_mode, Unset):
+            pause_mode = UNSET
+        else:
+            pause_mode = SandboxPauseMode(_pause_mode)
+
         volume_mounts = []
         _volume_mounts = d.pop("volumeMounts", UNSET)
         for volume_mounts_item_data in _volume_mounts or []:
@@ -244,6 +263,7 @@ class SandboxDetail:
             metadata=metadata,
             network=network,
             lifecycle=lifecycle,
+            pause_mode=pause_mode,
             volume_mounts=volume_mounts,
         )
 

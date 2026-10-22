@@ -104,6 +104,79 @@ components:
       schema:
         type: string
         description: Tag name
+    tagQuery:
+      name: tag
+      in: query
+      required: true
+      description: Template tag name to check.
+      schema:
+        type: string
+        minLength: 1
+    tagAssignmentLimit:
+      name: assignmentLimit
+      in: query
+      required: false
+      description: Maximum number of ready assignment rows to return per tag.
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 25
+        default: 6
+    tagGroupsLimit:
+      name: tagsLimit
+      in: query
+      required: false
+      description: Maximum number of distinct tags to return per page.
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 100
+        default: 25
+    tagGroupsCursor:
+      name: tagsCursor
+      in: query
+      required: false
+      description: Cursor returned by the previous list response in `{sort}|{latest_assigned_at}|{tag}` format (sort-tagged, RFC3339Nano).
+      schema:
+        type: string
+    tagGroupsSearch:
+      name: search
+      in: query
+      required: false
+      description: Substring filter on tag name. Allowed characters are `a-z`, `0-9`, `.`, `_`, `-`.
+      schema:
+        type: string
+        maxLength: 64
+        pattern: "^[a-z0-9._-]*$"
+    tagGroupsSort:
+      name: sort
+      in: query
+      required: false
+      description: Sort order for the returned tag groups.
+      schema:
+        type: string
+        enum: [latest_desc, latest_asc, name_asc, name_desc]
+        default: latest_desc
+    tagAssignmentsLimit:
+      name: limit
+      in: query
+      required: false
+      description: Maximum number of assignment rows to return per page.
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 100
+        default: 50
+    tagAssignmentsCursor:
+      name: cursor
+      in: query
+      required: false
+      description: Cursor returned by the previous list response in `assigned_at|assignment_id` format.
+      schema:
+        type: string
     paginationLimit:
       name: limit
       in: query
@@ -146,6 +219,18 @@ components:
         type: string
         format: uuid
   headers:
+    ShouldRetry:
+      description: |
+        Whether the condition behind this error may clear, so that retrying the request could
+        succeed. true marks a transient failure such as missing capacity, a rate limit, or a
+        creation still in progress: retry after Retry-After when present, otherwise with
+        exponential backoff. false marks a failure a retry cannot fix, such as a malformed request
+        or a configuration fault, or an outcome that is unknown, where a retry could create a
+        second sandbox. Successful responses and errors without an explicit classification omit
+        the header.
+      required: false
+      schema:
+        type: boolean
     XNextToken:
       description: Cursor to fetch the next page of results, if more exist
       schema:
@@ -472,12 +557,18 @@ components:
           description: Specify if the sandbox URLs should be accessible only with authentication.
         allowOut:
           type: array
-          description: List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com"). Allowed entries always take precedence over denied entries.
+          description: List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com"). Allowed entries always take precedence over denied entries. When allowOut contains a domain, the servers in dnsServers (8.8.8.8 by default) are also allowed.
           items:
             type: string
         denyOut:
           type: array
           description: List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules.
+          items:
+            type: string
+        dnsServers:
+          type: array
+          maxItems: 10
+          description: DNS servers the sandbox can reach when allowOut contains a domain. Each entry must be an IPv4 address, and all traffic to it is allowed. Omit it to allow the default nameserver 8.8.8.8, or pass an empty list to allow none. This does not change the sandbox's /etc/resolv.conf.
           items:
             type: string
         egressProxy:
@@ -517,12 +608,18 @@ components:
       properties:
         allowOut:
           type: array
-          description: List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com"). Allowed entries always take precedence over denied entries.
+          description: List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com"). Allowed entries always take precedence over denied entries. When allowOut contains a domain, the servers in dnsServers (8.8.8.8 by default) are also allowed.
           items:
             type: string
         denyOut:
           type: array
           description: List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules.
+          items:
+            type: string
+        dnsServers:
+          type: array
+          maxItems: 10
+          description: DNS servers the sandbox can reach when allowOut contains a domain. Each entry must be an IPv4 address, and all traffic to it is allowed. Omit it to reset to the default nameserver 8.8.8.8, or pass an empty list to allow none. This does not change the sandbox's /etc/resolv.conf.
           items:
             type: string
         egressProxy:
@@ -663,6 +760,18 @@ components:
           description: Whether the sandbox can auto-resume.
         onTimeout:
           $ref: "#/components/schemas/SandboxOnTimeout"
+
+    SandboxPauseMode:
+      type: string
+      description: >-
+        What the sandbox's latest pause saved. `full` saved the filesystem and
+        the memory, and resuming restores the sandbox where it left off.
+        `filesystem` saved only the filesystem, and resuming reboots the
+        sandbox from disk. Returned for a paused sandbox once its pause has
+        finished, and omitted while it is still pausing.
+      enum:
+        - full
+        - filesystem
 
     SandboxLog:
       description: Log entry with timestamp and line
@@ -885,6 +994,8 @@ components:
           $ref: "#/components/schemas/SandboxNetworkConfig"
         lifecycle:
           $ref: "#/components/schemas/SandboxLifecycle"
+        pauseMode:
+          $ref: "#/components/schemas/SandboxPauseMode"
         volumeMounts:
           type: array
           items:
@@ -981,7 +1092,8 @@ components:
           $ref: "#/components/schemas/SandboxAutoResumeConfig"
         secure:
           type: boolean
-          description: Secure all system communication with sandbox
+          deprecated: true
+          description: "Ignored. All system communication with the sandbox is always secured; the template's envd version must support secured access."
         allow_internet_access:
           type: boolean
           description:
@@ -1274,6 +1386,90 @@ components:
           type: number
           description: The maximum value of the requested metric in the given interval
 
+    TeamStatusResponse:
+      required:
+        - isBanned
+        - isBlocked
+        - blockedReason
+      properties:
+        isBanned:
+          type: boolean
+          description: Whether the team is banned
+        isBlocked:
+          type: boolean
+          description: Whether the team is blocked
+        blockedReason:
+          type: string
+          nullable: true
+          description: Why the team is blocked, if a reason was recorded
+
+    TeamLimits:
+      description: The team's effective resource limits
+      required:
+        - maxLengthHours
+        - concurrentSandboxes
+        - concurrentTemplateBuilds
+        - maxVcpu
+        - maxRamMb
+        - diskMb
+        - eventsTtlDays
+        - defaultFreeDiskSizeMb
+        - maxFreeDiskSizeMb
+        - apiTeamRpsList
+        - apiTeamRpsDelete
+      properties:
+        maxLengthHours:
+          type: integer
+          format: int64
+          description: Maximum sandbox lifetime, in hours
+        concurrentSandboxes:
+          type: integer
+          format: int64
+          description: Maximum number of sandboxes running at once
+        concurrentTemplateBuilds:
+          type: integer
+          format: int64
+          description: Maximum number of template builds running at once
+        maxVcpu:
+          type: integer
+          format: int64
+          description: Maximum vCPUs per sandbox
+        maxRamMb:
+          type: integer
+          format: int64
+          description: Maximum memory per sandbox, in MiB
+        diskMb:
+          type: integer
+          format: int64
+          description: Disk size per sandbox, in MiB
+        eventsTtlDays:
+          type: integer
+          format: int64
+          description: Number of days sandbox events are kept
+        defaultFreeDiskSizeMb:
+          type: integer
+          format: int64
+          description: Free disk space a template build gets when it requests none, in MiB
+        maxFreeDiskSizeMb:
+          type: integer
+          format: int64
+          description: Maximum free disk space a template build may request, in MiB
+        apiTeamRpsList:
+          type: integer
+          format: int64
+          description: Requests per second the team may make to list endpoints
+        apiTeamRpsDelete:
+          type: integer
+          format: int64
+          description: Requests per second the team may make to delete endpoints
+
+    TeamLimitsResponse:
+      required:
+        - limits
+      properties:
+        limits:
+          $ref: "#/components/schemas/TeamLimits"
+
     AdminSandboxKillResult:
       required:
         - killedCount
@@ -1285,6 +1481,35 @@ components:
         failedCount:
           type: integer
           description: Number of sandboxes that failed to kill
+
+    AdminSandbox:
+      type: object
+      required:
+        - sandboxID
+        - teamID
+        - state
+      properties:
+        sandboxID:
+          type: string
+          description: Identifier of the sandbox
+        teamID:
+          type: string
+          format: uuid
+          description: Identifier of the team that owns the sandbox
+        state:
+          $ref: "#/components/schemas/AdminSandboxState"
+
+    AdminSandboxState:
+      type: string
+      description: State after the sandbox's latest create, resume, pause or kill event
+      enum:
+        - running
+        - paused
+        - killed
+      x-enum-varnames:
+        - AdminSandboxStateRunning
+        - AdminSandboxStatePaused
+        - AdminSandboxStateKilled
 
     AdminTeamRunningSandboxCounts:
       type: object
@@ -1308,6 +1533,185 @@ components:
         failedCount:
           type: integer
           description: Number of builds that failed to cancel
+
+    AdminTeamListRequest:
+      type: object
+      properties:
+        projectIds:
+          type: array
+          description: Only list these teams. An empty list matches no team; omit it to list every team.
+          items:
+            type: string
+            format: uuid
+        search:
+          type: string
+          description: A team ID, as a UUID or public project ID, matches that team exactly. Any other text matches a substring of the email, name or slug, ignoring case.
+        hideBanned:
+          type: boolean
+          default: false
+          description: Leave out banned teams
+        hideBlocked:
+          type: boolean
+          default: false
+          description: Leave out blocked teams
+        createdAfter:
+          type: string
+          format: date-time
+          description: Only list teams created at or after this time
+        createdBefore:
+          type: string
+          format: date-time
+          description: Only list teams created at or before this time
+        sortBy:
+          $ref: "#/components/schemas/AdminTeamListSortField"
+        sortOrder:
+          allOf:
+            - $ref: "#/components/schemas/OrderDirection"
+          description: Ignored when `sortBy` is omitted.
+        limit:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 100
+          default: 50
+          description: Maximum number of teams to return
+        offset:
+          type: integer
+          format: int32
+          minimum: 0
+          default: 0
+          description: Number of matching teams to skip
+
+    AdminTeamListSortField:
+      type: string
+      description: |
+        Column to order by, with newer teams first among equal values. Omit it
+        to list enterprise tiers first, then pro tiers, then the rest, each
+        newest first.
+      enum:
+        - name
+        - email
+        - createdAt
+        - runningSandboxes
+      x-enum-varnames:
+        - AdminTeamListSortFieldName
+        - AdminTeamListSortFieldEmail
+        - AdminTeamListSortFieldCreatedAt
+        - AdminTeamListSortFieldRunningSandboxes
+
+    AdminTeamList:
+      type: object
+      required:
+        - items
+        - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminTeamListItem"
+        total:
+          type: integer
+          format: int64
+          description: Number of teams matching the filters, ignoring limit and offset
+
+    AdminTeamListItem:
+      type: object
+      required:
+        - id
+        - email
+        - name
+        - tier
+        - isBanned
+        - isBlocked
+        - createdAt
+        - memberCount
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        name:
+          type: string
+        tier:
+          type: string
+        isBanned:
+          type: boolean
+        isBlocked:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        memberCount:
+          type: integer
+          format: int64
+          description: Number of users in the team
+        runningSandboxCount:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Running sandboxes from the same cached snapshot as `GET /admin/sandboxes/running-counts`. Present only when the list is sorted by `runningSandboxes`.
+
+    AdminTeam:
+      type: object
+      required:
+        - id
+        - email
+        - name
+        - slug
+        - tier
+        - createdAt
+        - isBlocked
+        - isBanned
+        - sandboxSchedulingLabels
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        tier:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        isBlocked:
+          type: boolean
+        isBanned:
+          type: boolean
+        blockedReason:
+          type: string
+          nullable: true
+        sandboxSchedulingLabels:
+          type: array
+          items:
+            type: string
+        clusterId:
+          type: string
+          format: uuid
+          nullable: true
+        clusterName:
+          type: string
+          nullable: true
+
+    AdminTeamSchedulingLabels:
+      type: object
+      required:
+        - labels
+      properties:
+        labels:
+          type: array
+          maxItems: 20
+          description: The team's full set of labels. A request's labels replace the current ones.
+          items:
+            type: string
+            minLength: 1
+            maxLength: 63
+            pattern: ^[a-z0-9]([a-z0-9-]*[a-z0-9])?$
 
     VolumeToken:
       type: object
@@ -1391,6 +1795,15 @@ components:
           $ref: "#/components/schemas/EnvdVersion"
         buildStatus:
           $ref: "#/components/schemas/TemplateBuildStatus"
+        isDefault:
+          type: boolean
+          description: >
+            Whether the template is one of the platform's default templates. A default template
+            owned by another team carries zero or null usage fields (`spawnCount`, `buildCount`,
+            `lastSpawnedAt`, `createdBy`).
+        description:
+          type: string
+          description: Description of the template
 
     TemplateRequestResponseV3:
       required:
@@ -1464,56 +1877,17 @@ components:
           $ref: "#/components/schemas/EnvdVersion"
 
     TemplateWithBuilds:
-      required:
-        - templateID
-        - public
-        - aliases
-        - names
-        - createdAt
-        - updatedAt
-        - lastSpawnedAt
-        - spawnCount
-        - builds
-      properties:
-        templateID:
-          type: string
-          description: Identifier of the template
-        public:
-          type: boolean
-          description: Whether the template is public or only accessible by the team
-        aliases:
-          type: array
-          description: Aliases of the template
-          deprecated: true
-          items:
-            type: string
-        names:
-          type: array
-          description: Names of the template (namespace/alias format when namespaced)
-          items:
-            type: string
-        createdAt:
-          type: string
-          format: date-time
-          description: Time when the template was created
-        updatedAt:
-          type: string
-          format: date-time
-          description: Time when the template was last updated
-        lastSpawnedAt:
-          type: string
-          nullable: true
-          format: date-time
-          description: Time when the template was last used
-        spawnCount:
-          type: integer
-          format: int64
-          description: Number of times the template was used
-        builds:
-          type: array
-          description: List of builds for the template
-          items:
-            $ref: "#/components/schemas/TemplateBuild"
+      allOf:
+        - $ref: "#/components/schemas/Template"
+        - type: object
+          required:
+            - builds
+          properties:
+            builds:
+              type: array
+              description: List of builds for the template
+              items:
+                $ref: "#/components/schemas/TemplateBuild"
 
     TemplateAliasResponse:
       required:
@@ -2190,6 +2564,110 @@ components:
           format: date-time
           description: Time when the tag was assigned
 
+    TemplateTagAssignment:
+      type: object
+      required:
+        - assignmentId
+        - buildId
+        - assignedAt
+        - buildCreatedAt
+        - buildFinishedAt
+      properties:
+        assignmentId:
+          type: string
+          format: uuid
+          description: Identifier of the tag assignment event.
+        buildId:
+          type: string
+          format: uuid
+          description: Identifier of the assigned build.
+        assignedAt:
+          type: string
+          format: date-time
+          description: Time when the tag was assigned to the build.
+        buildCreatedAt:
+          type: string
+          format: date-time
+          description: Time when the assigned build was created.
+        buildFinishedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Time when the assigned build finished.
+
+    TemplateTagGroup:
+      type: object
+      required:
+        - tag
+        - assignments
+        - hasMore
+      properties:
+        tag:
+          type: string
+          description: Template tag name.
+        assignments:
+          type: array
+          description: Ready assignment events for this tag, sorted latest first.
+          items:
+            $ref: "#/components/schemas/TemplateTagAssignment"
+        hasMore:
+          type: boolean
+          description: Whether more ready assignment events exist beyond the requested assignment limit.
+
+    TemplateTagGroupsResponse:
+      type: object
+      required:
+        - tags
+        - nextCursor
+      properties:
+        tags:
+          type: array
+          items:
+            $ref: "#/components/schemas/TemplateTagGroup"
+        nextCursor:
+          type: string
+          nullable: true
+          description: Cursor to pass as `tagsCursor` for the next page, or `null` if there is no next page.
+
+    TemplateTagsCountResponse:
+      type: object
+      required:
+        - total
+      properties:
+        total:
+          type: integer
+          format: int64
+          description: Total distinct ready tags for the template.
+
+    TemplateTagExistsResponse:
+      type: object
+      required:
+        - exists
+        - normalizedTag
+      properties:
+        exists:
+          type: boolean
+          description: Whether the template tag has at least one ready assignment.
+        normalizedTag:
+          type: string
+          description: Normalized template tag name.
+
+    TemplateTagAssignmentsResponse:
+      type: object
+      required:
+        - data
+        - nextCursor
+      properties:
+        data:
+          type: array
+          description: Ready assignment events for the tag, sorted latest first.
+          items:
+            $ref: "#/components/schemas/TemplateTagAssignment"
+        nextCursor:
+          type: string
+          nullable: true
+          description: Cursor to pass to the next list request, or `null` if there is no next page.
+
     AssignTemplateTagsRequest:
       required:
         - target
@@ -2232,8 +2710,13 @@ components:
           description: >-
             Machine-readable semantic error code. Not a closed set; initial values:
             sandbox_capacity_unavailable, sandbox_placement_timeout,
-            sandbox_no_compatible_node, sandbox_create_failed, internal_server_error,
-            secret_limit_reached.
+            sandbox_no_compatible_node, sandbox_create_failed (a node could not
+            create the sandbox this time; retry), sandbox_create_refused (a node
+            refused the sandbox for a reason no retry changes, such as a vcpu
+            count out of bounds in the stored build; a server error, since no
+            request field reaches that check), internal_server_error,
+            secret_limit_reached, idempotency_request_mismatch, idempotency_in_progress,
+            idempotency_outcome_unknown.
         message:
           type: string
           description: Error
@@ -2873,6 +3356,70 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
+  /teams/{teamID}/status:
+    get:
+      summary: Get team access status
+      description: Returns whether the team is banned or blocked, and why it is blocked. A team-authenticated request may read only its own team.
+      tags: [auth]
+      security:
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      parameters:
+        - $ref: "#/components/parameters/teamID"
+      responses:
+        "200":
+          description: Successfully returned the team access status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamStatusResponse"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "404":
+          $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /teams/{teamID}/limits:
+    get:
+      summary: Get team limits
+      description: Returns the team's effective resource limits. A team-authenticated request may read only its own team.
+      tags: [auth]
+      security:
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      parameters:
+        - $ref: "#/components/parameters/teamID"
+      responses:
+        "200":
+          description: Successfully returned the team limits
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamLimitsResponse"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "404":
+          $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
   /sandboxes:
     get:
       summary: List running sandboxes
@@ -2914,7 +3461,7 @@ paths:
           $ref: "#/components/responses/500"
     post:
       summary: Create sandbox
-      description: Create a sandbox from the template. Use POST /v2/sandboxes instead.
+      description: Create a sandbox from the template. All system communication with the sandbox is secured. Use POST /v2/sandboxes instead.
       deprecated: true
       tags: [sandboxes]
       security:
@@ -2955,6 +3502,23 @@ paths:
     post:
       summary: Create sandbox (v2)
       description: Create a sandbox from the template. All system communication with the sandbox is secured.
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: |
+            Optional team-scoped key for retrying sandbox creation. Use 1 to 255 lowercase ASCII
+            letters, digits, or hyphens (a-z, 0-9, -), such as a lowercase UUID. When idempotency is enabled,
+            matching retries replay the original status and body, including errors, for the retention period.
+            Different request parameters return 409 with error_code idempotency_request_mismatch.
+            An in-progress request returns 409 with error_code idempotency_in_progress; an unknown
+            outcome returns 422 with error_code idempotency_outcome_unknown. These retries do not execute the request again.
+            Retries do not extend retention. After the key expires, it can start a new creation.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 255
+            pattern: '^[a-z0-9-]+$'
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
@@ -2980,15 +3544,93 @@ paths:
         "401":
           $ref: "#/components/responses/401"
         "400":
-          $ref: "#/components/responses/400"
+          description: Bad request
+          headers:
+            Should-Retry:
+              $ref: "#/components/headers/ShouldRetry"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden
+          headers:
+            Should-Retry:
+              $ref: "#/components/headers/ShouldRetry"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not found
+          headers:
+            Should-Retry:
+              $ref: "#/components/headers/ShouldRetry"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: The Idempotency-Key conflicts with a different request (error_code idempotency_request_mismatch), or the matching original request has no recorded response yet and is within its expected response window (error_code idempotency_in_progress); this request was not executed again
+          headers:
+            Should-Retry:
+              $ref: "#/components/headers/ShouldRetry"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: The matching original request has no recorded response and its expected response deadline has passed or is unknown (error_code idempotency_outcome_unknown); this request was not executed again
+          headers:
+            Should-Retry:
+              $ref: "#/components/headers/ShouldRetry"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "429":
-          $ref: "#/components/responses/429"
+          description: Too many requests
+          headers:
+            Should-Retry:
+              $ref: "#/components/headers/ShouldRetry"
+            Retry-After:
+              description: When present, the number of seconds to wait before retrying the request.
+              required: false
+              schema:
+                type: integer
+                minimum: 0
+              example: 30
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "500":
-          $ref: "#/components/responses/500"
+          description: Server error
+          headers:
+            Should-Retry:
+              $ref: "#/components/headers/ShouldRetry"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "503":
-          $ref: "#/components/responses/503"
+          description: Service unavailable
+          headers:
+            Should-Retry:
+              $ref: "#/components/headers/ShouldRetry"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "504":
-          $ref: "#/components/responses/504"
+          description: Backend timeout
+          headers:
+            Should-Retry:
+              $ref: "#/components/headers/ShouldRetry"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
     get:
       summary: List sandboxes (v2)
       x-api-group: list
@@ -3248,6 +3890,7 @@ paths:
 
     delete:
       summary: Kill sandbox
+      x-api-group: delete
       description: Kill a sandbox
       tags: [sandboxes]
       security:
@@ -3913,6 +4556,39 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
+  /default-templates:
+    get:
+      summary: List default templates
+      description: >
+        Lists the platform's default templates, ordered by template ID. Deleted templates are left
+        out. Templates that are not public are listed only to their own team and to admin callers.
+        The build, resources and envd version are those of the newest ready build tagged
+        `default`, the one a sandbox started from the template runs, and are zero or empty when
+        there is none; `buildStatus` describes the newest build tagged `default` in any state.
+        Usage fields (`spawnCount`, `buildCount`, `lastSpawnedAt`, `createdBy`) are
+        reported only for the caller's own templates and to admin callers.
+      tags: [templates]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      responses:
+        "200":
+          description: Successfully returned the default templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Template"
+        "401":
+          $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
   /templates/{templateID}:
     get:
       summary: List template builds
@@ -3949,6 +4625,7 @@ paths:
           $ref: "#/components/responses/500"
     delete:
       summary: Delete template
+      x-api-group: delete
       description: Delete a template
       tags: [templates]
       security:
@@ -4292,6 +4969,162 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
+  /templates/{templateID}/tags/groups:
+    get:
+      summary: List template tag groups
+      description: >
+        Lists the template's tags that have at least one ready build, each with its most recent
+        ready assignments, paginated over tags with a keyset cursor. Returns 404 when the template
+        does not exist or belongs to another team.
+      tags: [tags]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/templateID"
+        - $ref: "#/components/parameters/tagAssignmentLimit"
+        - $ref: "#/components/parameters/tagGroupsLimit"
+        - $ref: "#/components/parameters/tagGroupsCursor"
+        - $ref: "#/components/parameters/tagGroupsSearch"
+        - $ref: "#/components/parameters/tagGroupsSort"
+      responses:
+        "200":
+          description: Successfully returned template tag groups
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemplateTagGroupsResponse"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "404":
+          $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /templates/{templateID}/tags/count:
+    get:
+      summary: Count template tags
+      description: >
+        Returns the number of distinct tags of the template that have at least one ready build.
+        Returns 404 when the template does not exist or belongs to another team.
+      tags: [tags]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/templateID"
+      responses:
+        "200":
+          description: Successfully returned the tag count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemplateTagsCountResponse"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "404":
+          $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /templates/{templateID}/tags/exists:
+    get:
+      summary: Check template tag
+      description: >
+        Checks whether a tag of the template has at least one ready build. Returns 404 when the
+        template does not exist or belongs to another team.
+      tags: [tags]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/templateID"
+        - $ref: "#/components/parameters/tagQuery"
+      responses:
+        "200":
+          description: Successfully checked the tag
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemplateTagExistsResponse"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "404":
+          $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /templates/{templateID}/tags/{tag}/assignments:
+    get:
+      summary: List template tag assignments
+      description: >
+        Lists the ready assignments of one tag of the template, newest first, with keyset cursor
+        pagination. Returns 404 when the template does not exist or belongs to another team.
+      tags: [tags]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/templateID"
+        - $ref: "#/components/parameters/tag"
+        - $ref: "#/components/parameters/tagAssignmentsCursor"
+        - $ref: "#/components/parameters/tagAssignmentsLimit"
+      responses:
+        "200":
+          description: Successfully returned the tag assignments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemplateTagAssignmentsResponse"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "404":
+          $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
   /templates/aliases/{alias}:
     get:
       summary: Check template alias
@@ -4478,6 +5311,37 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
+  /admin/sandboxes/{sandboxID}:
+    get:
+      summary: Get a sandbox's team and state
+      description: |
+        Reads the team and state of a sandbox from its latest lifecycle event.
+        The state lags the sandbox while that event is in flight. A sandbox
+        whose events have expired is not found.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+      responses:
+        "200":
+          description: The sandbox, its team and its state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSandbox"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
   /admin/teams/{teamID}/builds/cancel:
     post:
       summary: Cancel all builds for a team
@@ -4511,6 +5375,36 @@ paths:
           $ref: "#/components/responses/500"
 
   /admin/teams/{teamID}/api-keys:
+    get:
+      summary: List team API keys as admin
+      description: Lists a team's API keys for internal service workflows. Unlike `GET /api-keys`, it does not resolve the team, so it also answers for a banned team.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      parameters:
+        - name: teamID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Team ID
+      responses:
+        "200":
+          description: Successfully returned the team's API keys
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TeamAPIKey"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
     post:
       summary: Create team API key as admin
       description: Creates a team API key for internal service workflows.
@@ -4572,6 +5466,116 @@ paths:
       responses:
         "204":
           description: Team API key deleted successfully
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /admin/teams/query:
+    post:
+      summary: List teams as admin
+      description: |
+        Lists teams matching the filters in the request body, with each team's
+        member count, and its running sandbox count when sorted by running
+        sandboxes. A read despite the POST: the body carries a project ID list
+        too long for a query string.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminTeamListRequest"
+      responses:
+        "200":
+          description: The page of matching teams and the number of all matching teams
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTeamList"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /admin/teams/{teamID}:
+    get:
+      summary: Get a team as admin
+      description: Returns a team with its sandbox scheduling labels and cluster. It also answers for a banned or blocked team.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      parameters:
+        - name: teamID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Team ID
+      responses:
+        "200":
+          description: The team
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTeam"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /admin/teams/{teamID}/scheduling-labels:
+    put:
+      summary: Replace a team's sandbox scheduling labels
+      description: |
+        Replaces the labels that place the team's new sandboxes on matching
+        nodes. Labels are deduplicated, keeping the first occurrence of each.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      parameters:
+        - name: teamID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Team ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminTeamSchedulingLabels"
+      responses:
+        "200":
+          description: The labels as written
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTeamSchedulingLabels"
         "400":
           $ref: "#/components/responses/400"
         "401":

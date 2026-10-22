@@ -14,6 +14,9 @@ from .gcp_registry import GCPRegistry
 from .gcp_registry_type import GCPRegistryType
 from .general_registry import GeneralRegistry
 from .general_registry_type import GeneralRegistryType
+from .get_templates_template_id_tags_groups_sort import (
+    GetTemplatesTemplateIDTagsGroupsSort,
+)
 from .listed_sandbox import ListedSandbox
 from .log_level import LogLevel
 from .logs_direction import LogsDirection
@@ -50,6 +53,7 @@ from .sandbox_network_transform_headers import SandboxNetworkTransformHeaders
 from .sandbox_network_update_config import SandboxNetworkUpdateConfig
 from .sandbox_network_update_config_rules import SandboxNetworkUpdateConfigRules
 from .sandbox_on_timeout import SandboxOnTimeout
+from .sandbox_pause_mode import SandboxPauseMode
 from .sandbox_pause_request import SandboxPauseRequest
 from .sandbox_refresh_request import SandboxRefreshRequest
 from .sandbox_snapshot_request import SandboxSnapshotRequest
@@ -75,6 +79,12 @@ from .template_build_status import TemplateBuildStatus
 from .template_request_response_v3 import TemplateRequestResponseV3
 from .template_step import TemplateStep
 from .template_tag import TemplateTag
+from .template_tag_assignment import TemplateTagAssignment
+from .template_tag_assignments_response import TemplateTagAssignmentsResponse
+from .template_tag_exists_response import TemplateTagExistsResponse
+from .template_tag_group import TemplateTagGroup
+from .template_tag_groups_response import TemplateTagGroupsResponse
+from .template_tags_count_response import TemplateTagsCountResponse
 from .template_update_request import TemplateUpdateRequest
 from .template_update_response import TemplateUpdateResponse
 from .template_with_builds import TemplateWithBuilds
@@ -96,6 +106,7 @@ __all__ = (
     "GCPRegistryType",
     "GeneralRegistry",
     "GeneralRegistryType",
+    "GetTemplatesTemplateIDTagsGroupsSort",
     "ListedSandbox",
     "LogLevel",
     "LogsDirection",
@@ -133,6 +144,7 @@ __all__ = (
     "SandboxNetworkUpdateConfig",
     "SandboxNetworkUpdateConfigRules",
     "SandboxOnTimeout",
+    "SandboxPauseMode",
     "SandboxPauseRequest",
     "SandboxRefreshRequest",
     "SandboxSnapshotRequest",
@@ -157,6 +169,12 @@ __all__ = (
     "TemplateRequestResponseV3",
     "TemplateStep",
     "TemplateTag",
+    "TemplateTagAssignment",
+    "TemplateTagAssignmentsResponse",
+    "TemplateTagExistsResponse",
+    "TemplateTagGroup",
+    "TemplateTagGroupsResponse",
+    "TemplateTagsCountResponse",
     "TemplateUpdateRequest",
     "TemplateUpdateResponse",
     "TemplateWithBuilds",

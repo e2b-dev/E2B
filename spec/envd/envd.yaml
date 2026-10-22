@@ -67,7 +67,10 @@ paths:
                 timestamp:
                   type: string
                   format: date-time
-                  description: The current timestamp in RFC3339 format
+                  description: >-
+                    The current timestamp in RFC3339 format. envd adds its own time from reading
+                    the request body to its clock gates, reported on
+                    X-Envd-Init-Clock-Correction, and applies its clock rules to the result.
                 defaultUser:
                   type: string
                   description: The default user to use for operations
@@ -84,10 +87,53 @@ paths:
                     Number of guest CPUs that should be online. envd attempts to bring
                     the set of requested CPUs online asynchronously; the outcome is
                     reported on the X-Envd-Cpus header and on /metrics.
+                thaw:
+                  type: string
+                  enum: [inline, skip]
+                  description: >-
+                    Whether this call thaws the workload cgroups a pre-pause freeze left
+                    frozen. Absent or "inline": it thaws them before it answers, as every envd
+                    before this field did, unless a freeze came after the call entered, which
+                    the call then leaves in place. "skip": it thaws nothing and answers X-Envd-Thaw:
+                    skip, leaving the workload frozen; only for a resume whose VM is discarded
+                    after the call, such as one that records which pages the resume touches. A
+                    value this envd does not know reads as inline, the side on which a guest
+                    is never left frozen.
 
       responses:
         "204":
           description: Env vars set, the time and metadata is synced with the host
+          headers:
+            X-Envd-Thaw:
+              description: >-
+                Present, with the value "skip", when the call carried thaw: "skip" and so
+                thawed nothing; an authorized call that asked to skip and then failed carries
+                it on its error response too. Absent on every other call, including one
+                whose thaw a later freeze withheld, and on an envd predating the thaw field.
+              schema:
+                type: string
+                enum: [skip]
+            X-Envd-Init-Clock-Correction:
+              description: >-
+                The time, in whole milliseconds, truncated, that envd added to the request's
+                timestamp: its own time from reading the request body to its clock gates.
+                Present on every 204 to a request that carried a timestamp, whether or not the
+                clock was then stepped; absent on an envd predating it.
+              schema:
+                type: integer
+                minimum: 0
+            X-Envd-Init-Unobserved:
+              description: >-
+                How many /init handlers ran their thaw and finished with their request
+                context already done since the last 204 that carried this header or the last
+                freeze, whichever came later: thaws that ran with no caller left to observe
+                them. Present, zero included, on every 204 whose client was still connected
+                when its headers were decided; absent on an error response and on an envd
+                predating it. A handler that asked to skip the thaw, or whose thaw was
+                withheld because a freeze came after it entered, is never counted.
+              schema:
+                type: integer
+                minimum: 0
 
   /freeze:
     post:
@@ -173,7 +219,7 @@ paths:
 
   /unfreeze:
     post:
-      summary: Unfreeze user/pty cgroups. Intended ONLY for the orchestrator's pause-failure rollback path; the normal resume thaw happens via /init's deferred unfreeze, not here.
+      summary: Unfreeze user/pty cgroups. Intended for the orchestrator's pause-failure rollback path and the thaw after an in-place checkpoint; the normal resume thaw happens inside /init, not here.
       x-internal: true
       security:
         - AccessTokenAuth: []

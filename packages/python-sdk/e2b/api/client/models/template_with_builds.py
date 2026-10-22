@@ -6,7 +6,11 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 from dateutil.parser import isoparse
 
+from ..models.template_build_status import TemplateBuildStatus
+from ..types import UNSET, Unset
+
 if TYPE_CHECKING:
+    from ..models.team_user import TeamUser
     from ..models.template_build import TemplateBuild
 
 
@@ -18,29 +22,61 @@ class TemplateWithBuilds:
     """
     Attributes:
         template_id (str): Identifier of the template
+        build_id (str): Identifier of the last successful build for given template
+        cpu_count (int): CPU cores for the sandbox
+        memory_mb (int): Memory for the sandbox in MiB
+        disk_size_mb (int): Disk size for the sandbox in MiB
         public (bool): Whether the template is public or only accessible by the team
         aliases (list[str]): Aliases of the template
         names (list[str]): Names of the template (namespace/alias format when namespaced)
         created_at (datetime.datetime): Time when the template was created
         updated_at (datetime.datetime): Time when the template was last updated
+        created_by (Union['TeamUser', None]):
         last_spawned_at (Union[None, datetime.datetime]): Time when the template was last used
         spawn_count (int): Number of times the template was used
+        build_count (int): Number of times the template was built
+        envd_version (str): Version of the envd running in the sandbox
+        build_status (TemplateBuildStatus): Status of the template build
         builds (list['TemplateBuild']): List of builds for the template
+        is_default (Union[Unset, bool]): Whether the template is one of the platform's default templates. A default
+            template owned by another team carries zero or null usage fields (`spawnCount`, `buildCount`, `lastSpawnedAt`,
+            `createdBy`).
+        description (Union[Unset, str]): Description of the template
     """
 
     template_id: str
+    build_id: str
+    cpu_count: int
+    memory_mb: int
+    disk_size_mb: int
     public: bool
     aliases: list[str]
     names: list[str]
     created_at: datetime.datetime
     updated_at: datetime.datetime
+    created_by: Union["TeamUser", None]
     last_spawned_at: Union[None, datetime.datetime]
     spawn_count: int
+    build_count: int
+    envd_version: str
+    build_status: TemplateBuildStatus
     builds: list["TemplateBuild"]
+    is_default: Union[Unset, bool] = UNSET
+    description: Union[Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        from ..models.team_user import TeamUser
+
         template_id = self.template_id
+
+        build_id = self.build_id
+
+        cpu_count = self.cpu_count
+
+        memory_mb = self.memory_mb
+
+        disk_size_mb = self.disk_size_mb
 
         public = self.public
 
@@ -52,6 +88,12 @@ class TemplateWithBuilds:
 
         updated_at = self.updated_at.isoformat()
 
+        created_by: Union[None, dict[str, Any]]
+        if isinstance(self.created_by, TeamUser):
+            created_by = self.created_by.to_dict()
+        else:
+            created_by = self.created_by
+
         last_spawned_at: Union[None, str]
         if isinstance(self.last_spawned_at, datetime.datetime):
             last_spawned_at = self.last_spawned_at.isoformat()
@@ -60,35 +102,66 @@ class TemplateWithBuilds:
 
         spawn_count = self.spawn_count
 
+        build_count = self.build_count
+
+        envd_version = self.envd_version
+
+        build_status = self.build_status.value
+
         builds = []
         for builds_item_data in self.builds:
             builds_item = builds_item_data.to_dict()
             builds.append(builds_item)
+
+        is_default = self.is_default
+
+        description = self.description
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
                 "templateID": template_id,
+                "buildID": build_id,
+                "cpuCount": cpu_count,
+                "memoryMB": memory_mb,
+                "diskSizeMB": disk_size_mb,
                 "public": public,
                 "aliases": aliases,
                 "names": names,
                 "createdAt": created_at,
                 "updatedAt": updated_at,
+                "createdBy": created_by,
                 "lastSpawnedAt": last_spawned_at,
                 "spawnCount": spawn_count,
+                "buildCount": build_count,
+                "envdVersion": envd_version,
+                "buildStatus": build_status,
                 "builds": builds,
             }
         )
+        if is_default is not UNSET:
+            field_dict["isDefault"] = is_default
+        if description is not UNSET:
+            field_dict["description"] = description
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.team_user import TeamUser
         from ..models.template_build import TemplateBuild
 
         d = dict(src_dict)
         template_id = d.pop("templateID")
+
+        build_id = d.pop("buildID")
+
+        cpu_count = d.pop("cpuCount")
+
+        memory_mb = d.pop("memoryMB")
+
+        disk_size_mb = d.pop("diskSizeMB")
 
         public = d.pop("public")
 
@@ -99,6 +172,21 @@ class TemplateWithBuilds:
         created_at = isoparse(d.pop("createdAt"))
 
         updated_at = isoparse(d.pop("updatedAt"))
+
+        def _parse_created_by(data: object) -> Union["TeamUser", None]:
+            if data is None:
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                created_by_type_1 = TeamUser.from_dict(data)
+
+                return created_by_type_1
+            except:  # noqa: E722
+                pass
+            return cast(Union["TeamUser", None], data)
+
+        created_by = _parse_created_by(d.pop("createdBy"))
 
         def _parse_last_spawned_at(data: object) -> Union[None, datetime.datetime]:
             if data is None:
@@ -117,6 +205,12 @@ class TemplateWithBuilds:
 
         spawn_count = d.pop("spawnCount")
 
+        build_count = d.pop("buildCount")
+
+        envd_version = d.pop("envdVersion")
+
+        build_status = TemplateBuildStatus(d.pop("buildStatus"))
+
         builds = []
         _builds = d.pop("builds")
         for builds_item_data in _builds:
@@ -124,16 +218,30 @@ class TemplateWithBuilds:
 
             builds.append(builds_item)
 
+        is_default = d.pop("isDefault", UNSET)
+
+        description = d.pop("description", UNSET)
+
         template_with_builds = cls(
             template_id=template_id,
+            build_id=build_id,
+            cpu_count=cpu_count,
+            memory_mb=memory_mb,
+            disk_size_mb=disk_size_mb,
             public=public,
             aliases=aliases,
             names=names,
             created_at=created_at,
             updated_at=updated_at,
+            created_by=created_by,
             last_spawned_at=last_spawned_at,
             spawn_count=spawn_count,
+            build_count=build_count,
+            envd_version=envd_version,
+            build_status=build_status,
             builds=builds,
+            is_default=is_default,
+            description=description,
         )
 
         template_with_builds.additional_properties = d
