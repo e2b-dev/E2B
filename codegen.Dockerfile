@@ -24,7 +24,7 @@ ENV PATH="/go/bin:${PATH}"
 RUN pip install black==26.3.1 e2b-openapi-python-client==0.26.2 datamodel-code-generator==0.64.0 protoc-gen-connectrpc==0.12.1 protoc-gen-py==0.6.0
 
 # Install Node.js (pinned to match .tool-versions)
-ENV NODE_VERSION=22.23.3
+ENV NODE_VERSION=22.23.4
 RUN ARCH=$(uname -m) && \
     case "$ARCH" in \
         x86_64) NODE_ARCH="x64" ;; \
