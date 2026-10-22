@@ -610,8 +610,8 @@ class SandboxNetworkInfo(TypedDict, total=False):
     """
     allow_default_dns: bool
     """
-    Whether ``8.8.8.8`` is allowed. See :attr:`SandboxNetworkOpts.allow_default_dns`.
-    Missing means True.
+    Whether the default nameserver ``8.8.8.8`` is automatically allowed when ``allow_out``
+    contains a domain. See :attr:`SandboxNetworkOpts.allow_default_dns`. Missing means True.
     """
     allow_public_traffic: bool
     mask_request_host: str
