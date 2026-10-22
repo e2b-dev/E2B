@@ -425,7 +425,7 @@ export type SandboxNetworkInfo = {
 /**
  * Subset of {@link SandboxNetworkOpts} accepted by {@link SandboxApi.updateNetwork}.
  * The update endpoint replaces all egress rules atomically — fields that are
- * omitted are cleared on the server, except `allowDefaultDns`.
+ * omitted are cleared on the server.
  */
 export type SandboxNetworkUpdate = {
   /** See {@link SandboxNetworkOpts.allowOut}. */
@@ -454,8 +454,8 @@ export type SandboxNetworkUpdate = {
    */
   egressProxy?: SandboxEgressProxyOpts
   /**
-   * See {@link SandboxNetworkOpts.allowDefaultDns}. Unlike the other fields,
-   * leaving it out keeps the sandbox's current setting.
+   * See {@link SandboxNetworkOpts.allowDefaultDns}. Leaving it out resets it
+   * to `true`, like the other fields.
    */
   allowDefaultDns?: boolean
   /**
@@ -1307,7 +1307,8 @@ function buildNetworkEgress(
     ...(network.egressProxy != null
       ? { egressProxy: buildEgressProxyBody(network.egressProxy) }
       : {}),
-    ...(network.allowDefaultDns !== undefined
+    // `!= null` so an explicit null means "not set", like Python.
+    ...(network.allowDefaultDns != null
       ? { allowDefaultDns: network.allowDefaultDns }
       : {}),
     ...(network.rules !== undefined
@@ -1671,8 +1672,7 @@ export class SandboxApi extends ClientFactory {
    * Update the network configuration of a running sandbox.
    *
    * Replaces the current egress configuration atomically — fields that are
-   * omitted are cleared on the server, except `allowDefaultDns`, which keeps
-   * its current value.
+   * omitted are cleared on the server.
    *
    * @param sandboxId sandbox ID.
    * @param network new network configuration.

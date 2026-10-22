@@ -512,7 +512,7 @@ class SandboxNetworkUpdate(TypedDict, total=False):
     """
     Subset of :class:`SandboxNetworkOpts` accepted by ``Sandbox.update_network``.
     The update endpoint replaces all egress rules atomically — fields that are
-    omitted are cleared on the server, except ``allow_default_dns``.
+    omitted are cleared on the server.
     """
 
     allow_out: SandboxNetworkSelector
@@ -545,8 +545,8 @@ class SandboxNetworkUpdate(TypedDict, total=False):
 
     allow_default_dns: bool
     """
-    See :attr:`SandboxNetworkOpts.allow_default_dns`. Unlike the other fields,
-    leaving it out keeps the sandbox's current setting.
+    See :attr:`SandboxNetworkOpts.allow_default_dns`. Leaving it out resets it
+    to True, like the other fields.
     """
 
     allow_internet_access: bool
@@ -985,7 +985,9 @@ def build_network_config(
     if network.get("https_ports") is not None:
         body["https_ports"] = list(network["https_ports"])
     # The generated model defaults this to True; UNSET leaves it out of the request.
-    body.setdefault("allow_default_dns", UNSET)
+    # Only add it to a non-empty body, so an empty network config is still left out.
+    if body:
+        body.setdefault("allow_default_dns", UNSET)
 
     return body
 
@@ -1127,7 +1129,9 @@ def build_network_update_body(
         network, _build_transform_context([], validate=False)
     )
 
-    body = SandboxNetworkUpdateConfig()
+    # The generated model defaults allow_default_dns to True; UNSET leaves it out
+    # of the request unless the caller sets it.
+    body = SandboxNetworkUpdateConfig(allow_default_dns=UNSET)
     if "allow_out" in egress:
         body.allow_out = egress["allow_out"]
     if "deny_out" in egress:

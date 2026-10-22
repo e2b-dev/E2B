@@ -619,8 +619,7 @@ export class Sandbox extends SandboxApi {
    * Update the network configuration of the sandbox.
    *
    * Replaces the current egress configuration atomically — fields that are
-   * omitted are cleared on the server, except `allowDefaultDns`, which keeps
-   * its current value.
+   * omitted are cleared on the server.
    *
    * @param network new network configuration.
    * @param opts connection options.

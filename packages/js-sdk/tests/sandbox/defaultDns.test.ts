@@ -108,6 +108,21 @@ test('updateNetwork omits allowDefaultDns when not provided', async () => {
   expect(lastUpdateBody).toEqual({ allowOut: ['api.example.com'] })
 })
 
+test('a null allowDefaultDns is treated as not set', async () => {
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    network: { allowOut: ['api.example.com'], allowDefaultDns: null as any },
+  })
+  expect(lastCreateBody?.network).not.toHaveProperty('allowDefaultDns')
+
+  await Sandbox.updateNetwork(
+    sandboxId,
+    { allowOut: ['api.example.com'], allowDefaultDns: null as any },
+    { apiKey: TEST_API_KEY }
+  )
+  expect(lastUpdateBody).toEqual({ allowOut: ['api.example.com'] })
+})
+
 test('getInfo reports allowDefaultDns', async () => {
   sandboxNetwork = { allowOut: ['api.example.com'], allowDefaultDns: false }
 

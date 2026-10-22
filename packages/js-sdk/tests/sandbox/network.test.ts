@@ -331,6 +331,16 @@ s.sendto(q, ('8.8.8.8', 53))
 s.recv(512)
 "`
 
+// The API reports allowDefaultDns once it supports the option. Until then
+// these tests can't pass, so they're skipped.
+async function skipUnlessDefaultDnsSupported(
+  sandbox: Sandbox,
+  skip: () => void
+) {
+  const info = await sandbox.getInfo()
+  if (info.network?.allowDefaultDns === undefined) skip()
+}
+
 describe('allowDefaultDns=false closes 8.8.8.8 for a domain allowlist', () => {
   sandboxTest.override({
     sandboxOpts: {
@@ -344,7 +354,9 @@ describe('allowDefaultDns=false closes 8.8.8.8 for a domain allowlist', () => {
 
   sandboxTest.skipIf(isDebug)(
     'blocks 8.8.8.8 and keeps the allowed domain reachable',
-    async ({ sandbox }) => {
+    async ({ sandbox, skip }) => {
+      await skipUnlessDefaultDnsSupported(sandbox, skip)
+
       await expect(sandbox.commands.run(dnsProbeCmd)).rejects.toBeInstanceOf(
         CommandExitError
       )
@@ -371,7 +383,7 @@ describe('allowDefaultDns=false closes 8.8.8.8 for a domain allowlist', () => {
   )
 })
 
-describe('updateNetwork keeps allowDefaultDns when omitted', () => {
+describe('updateNetwork resets allowDefaultDns when omitted', () => {
   sandboxTest.override({
     sandboxOpts: {
       network: {
@@ -383,14 +395,21 @@ describe('updateNetwork keeps allowDefaultDns when omitted', () => {
   })
 
   sandboxTest.skipIf(isDebug)(
-    'reopens 8.8.8.8 only when set back to true',
-    async ({ sandbox }) => {
+    'toggles 8.8.8.8 and resets it to allowed when the field is left out',
+    async ({ sandbox, skip }) => {
+      await skipUnlessDefaultDnsSupported(sandbox, skip)
+
       const network = {
         allowOut: ['example.com'],
         denyOut: ['0.0.0.0/0'],
       }
 
+      // Left out, so it goes back to the default (true).
       await sandbox.updateNetwork(network)
+      const reset = await sandbox.commands.run(dnsProbeCmd)
+      assert.equal(reset.exitCode, 0)
+
+      await sandbox.updateNetwork({ ...network, allowDefaultDns: false })
       await expect(sandbox.commands.run(dnsProbeCmd)).rejects.toBeInstanceOf(
         CommandExitError
       )
@@ -398,11 +417,6 @@ describe('updateNetwork keeps allowDefaultDns when omitted', () => {
       await sandbox.updateNetwork({ ...network, allowDefaultDns: true })
       const reopened = await sandbox.commands.run(dnsProbeCmd)
       assert.equal(reopened.exitCode, 0)
-
-      await sandbox.updateNetwork({ ...network, allowDefaultDns: false })
-      await expect(sandbox.commands.run(dnsProbeCmd)).rejects.toBeInstanceOf(
-        CommandExitError
-      )
     },
     60_000
   )
@@ -425,7 +439,7 @@ describe('a domain allowlist allows 8.8.8.8 by default', () => {
       assert.equal(result.exitCode, 0)
 
       const info = await sandbox.getInfo()
-      // The API fills in the default, so this is true (or missing on an older API).
+      // The API fills in the default, so this is never false.
       assert.notStrictEqual(info.network?.allowDefaultDns, false)
     }
   )

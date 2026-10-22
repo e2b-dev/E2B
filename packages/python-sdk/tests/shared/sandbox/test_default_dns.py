@@ -37,6 +37,11 @@ def test_create_omits_allow_default_dns_when_not_provided():
     assert "allowDefaultDns" not in wire
 
 
+def test_create_leaves_out_an_empty_network_config():
+    # Both create paths skip the network field when this is empty.
+    assert not build_network_config({})
+
+
 @pytest.mark.parametrize("allow_default_dns", [False, True])
 def test_update_sends_allow_default_dns(allow_default_dns):
     network: SandboxNetworkUpdate = {

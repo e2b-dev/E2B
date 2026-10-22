@@ -304,10 +304,19 @@ DOMAIN_ONLY = SandboxNetworkOpts(
 )
 
 
+def skip_unless_default_dns_supported(sandbox):
+    # The API reports allow_default_dns once it supports the option. Until then
+    # these tests can't pass, so they're skipped.
+    info = sandbox.get_info()
+    if info.network is None or "allow_default_dns" not in info.network:
+        pytest.skip("the API doesn't support allow_default_dns yet")
+
+
 @pytest.mark.skip_debug()
 def test_allow_default_dns_false_closes_8888(sandbox_factory):
     """allow_default_dns=False blocks 8.8.8.8; the allowed domain stays reachable."""
     sandbox = sandbox_factory(network={**DOMAIN_ONLY, "allow_default_dns": False})
+    skip_unless_default_dns_supported(sandbox)
 
     with pytest.raises(CommandExitException):
         sandbox.commands.run(DNS_PROBE_CMD)
@@ -330,21 +339,22 @@ def test_allow_default_dns_false_closes_8888(sandbox_factory):
 
 
 @pytest.mark.skip_debug()
-def test_update_network_keeps_allow_default_dns_when_omitted(sandbox_factory):
-    """update_network keeps allow_default_dns unless it is passed."""
+def test_update_network_resets_allow_default_dns_when_omitted(sandbox_factory):
+    """update_network toggles allow_default_dns, and leaving it out resets it to True."""
     sandbox = sandbox_factory(network={**DOMAIN_ONLY, "allow_default_dns": False})
+    skip_unless_default_dns_supported(sandbox)
     network = {"allow_out": ["example.com"], "deny_out": ["0.0.0.0/0"]}
 
+    # Left out, so it goes back to the default (True).
     sandbox.update_network(network)
-    with pytest.raises(CommandExitException):
-        sandbox.commands.run(DNS_PROBE_CMD)
-
-    sandbox.update_network({**network, "allow_default_dns": True})
     assert sandbox.commands.run(DNS_PROBE_CMD).exit_code == 0
 
     sandbox.update_network({**network, "allow_default_dns": False})
     with pytest.raises(CommandExitException):
         sandbox.commands.run(DNS_PROBE_CMD)
+
+    sandbox.update_network({**network, "allow_default_dns": True})
+    assert sandbox.commands.run(DNS_PROBE_CMD).exit_code == 0
 
 
 @pytest.mark.skip_debug()
@@ -356,7 +366,7 @@ def test_domain_allowlist_allows_8888_by_default(sandbox_factory):
 
     info = sandbox.get_info()
     assert info.network is not None
-    # The API fills in the default, so this is True (or missing on an older API).
+    # The API fills in the default, so this is never False.
     assert info.network.get("allow_default_dns", True) is True
 
 

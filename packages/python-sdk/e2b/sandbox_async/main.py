@@ -623,8 +623,7 @@ class AsyncSandbox(SandboxApi):
         Update the network configuration of the sandbox.
 
         Replaces the current egress configuration atomically — fields that are
-        omitted are cleared on the server, except ``allow_default_dns``, which keeps
-        its current value.
+        omitted are cleared on the server.
 
         :param network: New network configuration.
         """
@@ -641,8 +640,7 @@ class AsyncSandbox(SandboxApi):
         Update the network configuration of the sandbox specified by sandbox ID.
 
         Replaces the current egress configuration atomically — fields that are
-        omitted are cleared on the server, except ``allow_default_dns``, which keeps
-        its current value.
+        omitted are cleared on the server.
 
         :param sandbox_id: Sandbox ID.
         :param network: New network configuration.
@@ -659,8 +657,7 @@ class AsyncSandbox(SandboxApi):
         Update the network configuration of the sandbox.
 
         Replaces the current egress configuration atomically — fields that are
-        omitted are cleared on the server, except ``allow_default_dns``, which keeps
-        its current value.
+        omitted are cleared on the server.
 
         :param network: New network configuration.
         """

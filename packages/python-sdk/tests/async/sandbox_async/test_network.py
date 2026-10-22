@@ -313,12 +313,21 @@ DOMAIN_ONLY = SandboxNetworkOpts(
 )
 
 
+async def skip_unless_default_dns_supported(async_sandbox):
+    # The API reports allow_default_dns once it supports the option. Until then
+    # these tests can't pass, so they're skipped.
+    info = await async_sandbox.get_info()
+    if info.network is None or "allow_default_dns" not in info.network:
+        pytest.skip("the API doesn't support allow_default_dns yet")
+
+
 @pytest.mark.skip_debug()
 async def test_allow_default_dns_false_closes_8888(async_sandbox_factory):
     """allow_default_dns=False blocks 8.8.8.8; the allowed domain stays reachable."""
     async_sandbox = await async_sandbox_factory(
         network={**DOMAIN_ONLY, "allow_default_dns": False}
     )
+    await skip_unless_default_dns_supported(async_sandbox)
 
     with pytest.raises(CommandExitException):
         await async_sandbox.commands.run(DNS_PROBE_CMD)
@@ -343,25 +352,26 @@ async def test_allow_default_dns_false_closes_8888(async_sandbox_factory):
 
 
 @pytest.mark.skip_debug()
-async def test_update_network_keeps_allow_default_dns_when_omitted(
+async def test_update_network_resets_allow_default_dns_when_omitted(
     async_sandbox_factory,
 ):
-    """update_network keeps allow_default_dns unless it is passed."""
+    """update_network toggles allow_default_dns, and leaving it out resets it to True."""
     async_sandbox = await async_sandbox_factory(
         network={**DOMAIN_ONLY, "allow_default_dns": False}
     )
+    await skip_unless_default_dns_supported(async_sandbox)
     network = {"allow_out": ["example.com"], "deny_out": ["0.0.0.0/0"]}
 
+    # Left out, so it goes back to the default (True).
     await async_sandbox.update_network(network)
-    with pytest.raises(CommandExitException):
-        await async_sandbox.commands.run(DNS_PROBE_CMD)
-
-    await async_sandbox.update_network({**network, "allow_default_dns": True})
     assert (await async_sandbox.commands.run(DNS_PROBE_CMD)).exit_code == 0
 
     await async_sandbox.update_network({**network, "allow_default_dns": False})
     with pytest.raises(CommandExitException):
         await async_sandbox.commands.run(DNS_PROBE_CMD)
+
+    await async_sandbox.update_network({**network, "allow_default_dns": True})
+    assert (await async_sandbox.commands.run(DNS_PROBE_CMD)).exit_code == 0
 
 
 @pytest.mark.skip_debug()
@@ -373,7 +383,7 @@ async def test_domain_allowlist_allows_8888_by_default(async_sandbox_factory):
 
     info = await async_sandbox.get_info()
     assert info.network is not None
-    # The API fills in the default, so this is True (or missing on an older API).
+    # The API fills in the default, so this is never False.
     assert info.network.get("allow_default_dns", True) is True
 
 
