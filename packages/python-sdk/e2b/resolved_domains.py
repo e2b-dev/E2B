@@ -1,10 +1,11 @@
-"""
-The global API proxy names the domain of the control plane that owns the API
-key in ``X-E2B-Alt-Used``; later configs for that key and domain use it
-directly. Eligibility compares ``api_url`` rather than checking whether it was
-set because configs are rebuilt from resolved ones, which always carry it.
+"""The proxy reports an API key's control plane in ``X-E2B-Alt-Used``.
+
+Eligibility compares ``api_url`` because rebuilt configs carry it; setting
+E2B_DOMAIN, E2B_API_URL, E2B_SANDBOX_URL, or E2B_VOLUME_API_URL disables
+discovery.
 """
 
+import os
 import re
 from threading import Lock
 from typing import Optional
@@ -13,6 +14,12 @@ ALT_USED_HEADER = "X-E2B-Alt-Used"
 
 _resolved_domains: dict[tuple[str, str], str] = {}
 _resolved_domains_lock = Lock()
+_PINNED_ENV_VARS = (
+    "E2B_DOMAIN",
+    "E2B_API_URL",
+    "E2B_SANDBOX_URL",
+    "E2B_VOLUME_API_URL",
+)
 _hostname_pattern = re.compile(
     r"^(?=.{1,253}$)[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$"
 )
@@ -42,7 +49,11 @@ def record_resolved_domain(
 
 
 def uses_domain_api_url(domain: str, api_url: str, debug: bool) -> bool:
-    return not debug and api_url == f"https://api.{domain}"
+    return (
+        not debug
+        and not any(os.getenv(name) for name in _PINNED_ENV_VARS)
+        and api_url == f"https://api.{domain}"
+    )
 
 
 def clear_resolved_domains() -> None:

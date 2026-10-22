@@ -9,10 +9,18 @@ API_KEY_A = "e2b_" + "a" * 40
 API_KEY_B = "e2b_" + "b" * 40
 ORIGINAL_DOMAIN = "e2b.dev"
 RESOLVED_DOMAIN = "e2b-juliett.dev"
+PINNED_ENV_VALUES = (
+    ("E2B_DOMAIN", "e2b.dev"),
+    ("E2B_API_URL", "https://api.e2b.dev"),
+    ("E2B_SANDBOX_URL", "https://sandbox.example.com"),
+    ("E2B_VOLUME_API_URL", "https://api.e2b.dev"),
+)
 
 
 @pytest.fixture(autouse=True)
-def reset_resolved_domains():
+def reset_resolved_domains(monkeypatch):
+    for name, _ in PINNED_ENV_VALUES:
+        monkeypatch.delenv(name, raising=False)
     clear_resolved_domains()
     yield
     clear_resolved_domains()
@@ -116,6 +124,36 @@ async def test_explicit_domain_api_url_and_rebuilt_config_are_switched(async_mod
     rebuilt = ConnectionConfig(**original.get_api_params())
     assert rebuilt.domain == RESOLVED_DOMAIN
     assert rebuilt.api_url == f"https://api.{RESOLVED_DOMAIN}"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("name", "value"), PINNED_ENV_VALUES)
+async def test_pinned_environment_disables_domain_discovery(
+    async_mode, monkeypatch, name, value
+):
+    monkeypatch.setenv(name, value)
+    requested_hosts = []
+    api_url = f"https://api.{ORIGINAL_DOMAIN}"
+    original = ConnectionConfig(
+        domain=ORIGINAL_DOMAIN,
+        api_key=API_KEY_A,
+        api_url=api_url,
+        debug=False,
+    )
+    await send_request(original, async_mode, RESOLVED_DOMAIN, requested_hosts)
+
+    unchanged = ConnectionConfig(
+        domain=ORIGINAL_DOMAIN,
+        api_key=API_KEY_A,
+        api_url=api_url,
+        debug=False,
+    )
+    assert unchanged.domain == ORIGINAL_DOMAIN
+    await send_request(unchanged, async_mode, RESOLVED_DOMAIN, requested_hosts)
+    assert requested_hosts == [
+        f"api.{ORIGINAL_DOMAIN}",
+        f"api.{ORIGINAL_DOMAIN}",
+    ]
 
 
 @pytest.mark.asyncio

@@ -102,10 +102,20 @@ class ApiParams(TypedDict, total=False):
     this option has no effect."""
 
     domain: Optional[str]
-    """E2B domain to use for authentication, defaults to `E2B_DOMAIN` environment variable."""
+    """E2B domain to use for authentication, defaults to `E2B_DOMAIN` environment variable.
+
+    When none of ``E2B_DOMAIN``, ``E2B_API_URL``, ``E2B_SANDBOX_URL``, or
+    ``E2B_VOLUME_API_URL`` are set, ``api_url`` is the default
+    ``https://api.<domain>``, and debug is off, the SDK switches to the
+    control-plane domain reported in ``X-E2B-Alt-Used``."""
 
     api_url: Optional[str]
-    """URL to use for the API, defaults to `https://api.<domain>`. For internal use only."""
+    """URL to use for the API, defaults to `https://api.<domain>`. For internal use only.
+
+    When none of ``E2B_DOMAIN``, ``E2B_API_URL``, ``E2B_SANDBOX_URL``, or
+    ``E2B_VOLUME_API_URL`` are set, ``api_url`` is the default
+    ``https://api.<domain>``, and debug is off, the SDK switches to the
+    control-plane domain reported in ``X-E2B-Alt-Used``."""
 
     debug: Optional[bool]
     """Whether to use debug mode, defaults to `E2B_DEBUG` environment variable."""

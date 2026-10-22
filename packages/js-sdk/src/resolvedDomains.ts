@@ -1,10 +1,18 @@
-// The global API proxy names the domain of the control plane that owns the API
-// key in X-E2B-Alt-Used; later configs for that key and domain use it directly.
-// Eligibility compares apiUrl rather than checking whether it was set because
-// configs are rebuilt from resolved ones, which always carry apiUrl.
+// The global API proxy names the control plane for an API key in
+// X-E2B-Alt-Used; later configs use it directly. Eligibility compares apiUrl
+// because rebuilt configs carry it, and discovery is disabled when any of
+// E2B_DOMAIN, E2B_API_URL, E2B_SANDBOX_URL, or E2B_VOLUME_API_URL is set.
+import { getEnvVar } from './api/metadata'
+
 export const ALT_USED_HEADER = 'X-E2B-Alt-Used'
 
 const resolvedDomains = new Map<string, string>()
+const PINNED_ENV_VARS = [
+  'E2B_DOMAIN',
+  'E2B_API_URL',
+  'E2B_SANDBOX_URL',
+  'E2B_VOLUME_API_URL',
+]
 const hostnamePattern =
   /^(?=.{1,253}$)[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$/
 
@@ -37,7 +45,11 @@ export function usesDomainApiUrl(
   apiUrl: string,
   debug: boolean
 ): boolean {
-  return !debug && apiUrl === `https://api.${domain}`
+  return (
+    !debug &&
+    !PINNED_ENV_VARS.some((name) => getEnvVar(name)) &&
+    apiUrl === `https://api.${domain}`
+  )
 }
 
 export function clearResolvedDomains() {

@@ -1,4 +1,13 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+  vi,
+} from 'vitest'
 import { http, HttpResponse } from 'msw'
 
 import { ApiClient, ConnectionConfig, Sandbox } from '../src'
@@ -9,6 +18,12 @@ const API_KEY_A = `e2b_${'a'.repeat(40)}`
 const API_KEY_B = `e2b_${'b'.repeat(40)}`
 const ORIGINAL_DOMAIN = 'e2b.dev'
 const RESOLVED_DOMAIN = 'e2b-juliett.dev'
+const PINNED_ENV_VALUES = [
+  ['E2B_DOMAIN', 'e2b.dev'],
+  ['E2B_API_URL', 'https://api.e2b.dev'],
+  ['E2B_SANDBOX_URL', 'https://sandbox.example.com'],
+  ['E2B_VOLUME_API_URL', 'https://api.e2b.dev'],
+] as const
 
 let responseHeader: string | null = RESOLVED_DOMAIN
 const requestedHosts: string[] = []
@@ -49,7 +64,14 @@ beforeEach(() => {
   clearResolvedDomains()
   requestedHosts.length = 0
   responseHeader = RESOLVED_DOMAIN
+  for (const [name] of PINNED_ENV_VALUES) {
+    vi.stubEnv(name, '')
+  }
   server.resetHandlers()
+})
+
+afterEach(() => {
+  vi.unstubAllEnvs()
 })
 
 async function sendRequest(config: ConnectionConfig) {
@@ -145,6 +167,35 @@ describe('resolved domains', () => {
     expect(rebuilt.domain).toBe(RESOLVED_DOMAIN)
     expect(rebuilt.apiUrl).toBe(`https://api.${RESOLVED_DOMAIN}`)
   })
+
+  test.each(PINNED_ENV_VALUES)(
+    '%s disables domain discovery',
+    async (name, value) => {
+      vi.stubEnv(name, value)
+      const apiUrl = `https://api.${ORIGINAL_DOMAIN}`
+      await sendRequest(
+        new ConnectionConfig({
+          domain: ORIGINAL_DOMAIN,
+          apiKey: API_KEY_A,
+          apiUrl,
+          debug: false,
+        })
+      )
+
+      const unchanged = new ConnectionConfig({
+        domain: ORIGINAL_DOMAIN,
+        apiKey: API_KEY_A,
+        apiUrl,
+        debug: false,
+      })
+      expect(unchanged.domain).toBe(ORIGINAL_DOMAIN)
+      await sendRequest(unchanged)
+      expect(requestedHosts).toEqual([
+        `api.${ORIGINAL_DOMAIN}`,
+        `api.${ORIGINAL_DOMAIN}`,
+      ])
+    }
+  )
 
   test.each([
     'https://e2b-juliett.dev',
