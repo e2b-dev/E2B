@@ -216,11 +216,13 @@ test('async iterable data rejects non-byte chunks', async () => {
   const data = strings() as unknown as AsyncIterable<Uint8Array>
 
   await expect(toBlob(data)).rejects.toThrow(InvalidArgumentError)
-  const { body, streamed } = await toUploadBody(strings() as never)
-  if (streamed) {
-    await expect(readBody(body)).rejects.toThrow(
-      'AsyncIterable upload data must yield Uint8Array chunks, got string'
-    )
+  const upload = toUploadBody(strings() as never)
+  const message =
+    'AsyncIterable upload data must yield Uint8Array chunks, got string'
+  if (streams) {
+    await expect(readBody((await upload).body)).rejects.toThrow(message)
+  } else {
+    await expect(upload).rejects.toThrow(message)
   }
 })
 
@@ -236,7 +238,9 @@ test('toBlob copies reused async iterable chunks', async () => {
   expect(await (await toBlob(reused())).text()).toBe('ab')
 })
 
-test('async iterable data accepts cross-realm Uint8Array chunks', async () => {
+test.skipIf(runtime !== 'node')(
+  'async iterable data accepts cross-realm Uint8Array chunks',
+  , async () => {
   const { runInNewContext } = await import('node:vm')
   const foreign = runInNewContext('new Uint8Array([104, 105])') as Uint8Array
   async function* chunks() {
@@ -248,7 +252,9 @@ test('async iterable data accepts cross-realm Uint8Array chunks', async () => {
   expect(await readBody(body)).toBe('hi')
 })
 
-test('streamed async iterable is closed on an invalid chunk', async () => {
+test.skipIf(!streams)(
+  'streamed async iterable is closed on an invalid chunk',
+  async () => {
   let closed = false
   async function* strings() {
     try {
@@ -258,9 +264,7 @@ test('streamed async iterable is closed on an invalid chunk', async () => {
     }
   }
 
-  const { body, streamed } = await toUploadBody(strings() as never)
-  if (streamed) {
-    await expect(readBody(body)).rejects.toThrow(InvalidArgumentError)
-    expect(closed).toBe(true)
-  }
+  const { body } = await toUploadBody(strings() as never)
+  await expect(readBody(body)).rejects.toThrow(InvalidArgumentError)
+  expect(closed).toBe(true)
 })
