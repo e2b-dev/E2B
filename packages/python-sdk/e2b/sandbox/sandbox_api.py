@@ -993,10 +993,6 @@ def build_network_config(
     if network.get("https_ports") is not None:
         body["https_ports"] = list(network["https_ports"])
 
-    # Override the generated model's default while keeping an empty network omitted.
-    if body:
-        body.setdefault("allow_public_traffic", UNSET)
-
     return body
 
 
@@ -1203,7 +1199,9 @@ def from_client_network_config(
         result["egress_proxy"] = egress_proxy
     if not isinstance(network.dns_servers, Unset):
         result["dns_servers"] = list(network.dns_servers)
-    if not isinstance(network.allow_public_traffic, Unset):
+    if network.allow_public_traffic is not None and not isinstance(
+        network.allow_public_traffic, Unset
+    ):
         result["allow_public_traffic"] = network.allow_public_traffic
     if not isinstance(network.mask_request_host, Unset):
         result["mask_request_host"] = network.mask_request_host

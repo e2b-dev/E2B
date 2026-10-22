@@ -458,3 +458,47 @@ test('updateNetwork resolves transform callbacks without an iam config', async (
     },
   })
 })
+
+test.each([undefined, true, false])(
+  'create preserves allowPublicTraffic=%s',
+  async (allowPublicTraffic) => {
+    await Sandbox.create('base', {
+      apiKey: TEST_API_KEY,
+      network: { allowOut: ['1.1.1.1'], allowPublicTraffic },
+    })
+
+    expect(lastCreateBody?.network).toEqual({
+      allowOut: ['1.1.1.1'],
+      ...(allowPublicTraffic !== undefined ? { allowPublicTraffic } : {}),
+    })
+  }
+)
+
+test.each([undefined, null, true, false])(
+  'getInfo reports allowPublicTraffic=%s',
+  async (allowPublicTraffic) => {
+    server.use(
+      http.get(apiUrl(`/sandboxes/${sandboxId}`), () =>
+        HttpResponse.json({
+          sandboxID: sandboxId,
+          templateID: 'base',
+          clientID: 'test-client',
+          envdVersion: '0.2.4',
+          startedAt: '2026-01-01T00:00:00Z',
+          endAt: '2026-01-01T01:00:00Z',
+          state: 'running',
+          cpuCount: 2,
+          memoryMB: 512,
+          diskSizeMB: 1024,
+          network: { allowPublicTraffic },
+        })
+      )
+    )
+
+    const info = await Sandbox.getInfo(sandboxId, { apiKey: TEST_API_KEY })
+
+    expect(info.network?.allowPublicTraffic).toBe(
+      allowPublicTraffic ?? undefined
+    )
+  }
+)

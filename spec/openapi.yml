@@ -195,6 +195,50 @@ components:
       required: false
       schema:
         type: string
+    templatesSearch:
+      name: search
+      in: query
+      required: false
+      description: Case-insensitive substring match on the template ID, its aliases and its names.
+      schema:
+        type: string
+        maxLength: 256
+    templatesSort:
+      name: sort
+      in: query
+      required: false
+      description: Sort column and direction.
+      schema:
+        type: string
+        enum: [created_at_desc, created_at_asc, updated_at_desc, updated_at_asc]
+        default: created_at_desc
+    templatesPublic:
+      name: public
+      in: query
+      required: false
+      description: Only list public (true) or only non-public (false) templates.
+      schema:
+        type: boolean
+    templatesCursor:
+      name: cursor
+      in: query
+      required: false
+      description: >
+        Cursor returned by the previous page in `{sort}|{value}|{templateID}` format. Rejected if
+        its sort does not match the request.
+      schema:
+        type: string
+    templatesLimit:
+      name: limit
+      in: query
+      required: false
+      description: Maximum number of templates to return per page.
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 100
+        default: 50
     volumeID:
       name: volumeID
       in: path
@@ -553,8 +597,11 @@ components:
       properties:
         allowPublicTraffic:
           type: boolean
-          default: true
-          description: Specify if the sandbox URLs should be accessible only with authentication.
+          nullable: true
+          description: >-
+            Whether sandbox URLs accept traffic without the sandbox's traffic access token.
+            When omitted or null on create, the project's default applies, which is true
+            unless the project changed it.
         allowOut:
           type: array
           description: List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com"). Allowed entries always take precedence over denied entries. When allowOut contains a domain, the servers in dnsServers (8.8.8.8 by default) are also allowed.
@@ -1586,8 +1633,7 @@ components:
       type: string
       description: |
         Column to order by, with newer teams first among equal values. Omit it
-        to list enterprise tiers first, then pro tiers, then the rest, each
-        newest first.
+        to list the newest teams first.
       enum:
         - name
         - email
@@ -1620,7 +1666,6 @@ components:
         - id
         - email
         - name
-        - tier
         - isBanned
         - isBlocked
         - createdAt
@@ -1632,8 +1677,6 @@ components:
         email:
           type: string
         name:
-          type: string
-        tier:
           type: string
         isBanned:
           type: boolean
@@ -1659,7 +1702,6 @@ components:
         - email
         - name
         - slug
-        - tier
         - createdAt
         - isBlocked
         - isBanned
@@ -1673,8 +1715,6 @@ components:
         name:
           type: string
         slug:
-          type: string
-        tier:
           type: string
         createdAt:
           type: string
@@ -1804,6 +1844,20 @@ components:
         description:
           type: string
           description: Description of the template
+
+    TemplateSearchResponse:
+      required:
+        - data
+        - nextCursor
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Template"
+        nextCursor:
+          type: string
+          nullable: true
+          description: Cursor of the next page, or null on the last page
 
     TemplateRequestResponseV3:
       required:
@@ -3356,9 +3410,9 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
-  /teams/{teamID}/status:
+  /unstable/teams/{teamID}/status:
     get:
-      summary: Get team access status
+      summary: Team access status
       description: Returns whether the team is banned or blocked, and why it is blocked. A team-authenticated request may read only its own team.
       tags: [auth]
       security:
@@ -3388,9 +3442,9 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
-  /teams/{teamID}/limits:
+  /unstable/teams/{teamID}/limits:
     get:
-      summary: Get team limits
+      summary: Team limits
       description: Returns the team's effective resource limits. A team-authenticated request may read only its own team.
       tags: [auth]
       security:
@@ -4589,6 +4643,48 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
+  /unstable/templates/search:
+    get:
+      summary: Search templates
+      x-api-group: list
+      description: >
+        Lists the team's templates together with the platform's public default templates, which
+        carry `isDefault: true`, with search, a visibility filter and sorts. Default templates are
+        not listed to teams on a dedicated cluster, and those owned by another team carry zero or
+        null usage fields. Results are newest first unless `sort` says otherwise; `nextCursor`
+        continues the listing and is only valid with the same `sort`. For E2B's own clients: it
+        may change or disappear without notice.
+      tags: [unstable]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/templatesSearch"
+        - $ref: "#/components/parameters/templatesSort"
+        - $ref: "#/components/parameters/templatesPublic"
+        - $ref: "#/components/parameters/templatesLimit"
+        - $ref: "#/components/parameters/templatesCursor"
+      responses:
+        "200":
+          description: Successfully returned the templates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemplateSearchResponse"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
   /templates/{templateID}:
     get:
       summary: List template builds
@@ -5477,7 +5573,7 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
-  /admin/teams/query:
+  /unstable/admin/teams/query:
     post:
       summary: List teams as admin
       description: |
@@ -5511,9 +5607,9 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
-  /admin/teams/{teamID}:
+  /unstable/admin/teams/{teamID}:
     get:
-      summary: Get a team as admin
+      summary: Team as admin
       description: Returns a team with its sandbox scheduling labels and cluster. It also answers for a banned or blocked team.
       tags: [admin]
       security:
@@ -5545,7 +5641,7 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
-  /admin/teams/{teamID}/scheduling-labels:
+  /unstable/admin/teams/{teamID}/scheduling-labels:
     put:
       summary: Replace a team's sandbox scheduling labels
       description: |

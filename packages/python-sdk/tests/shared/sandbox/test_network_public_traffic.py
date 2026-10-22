@@ -6,6 +6,8 @@ import pytest
 from e2b import AsyncSandbox, Sandbox
 from e2b.api.client.api.sandboxes import post_v2_sandboxes
 from e2b.api.client.models import Sandbox as SandboxModel
+from e2b.api.client.models import SandboxNetworkConfig
+from e2b.sandbox.sandbox_api import from_client_network_config
 
 
 NETWORK_CASES = [
@@ -61,3 +63,18 @@ async def test_async_create_network_payload(
         assert "network" not in body
     else:
         assert body["network"] == expected
+
+
+@pytest.mark.parametrize(
+    "payload, expected",
+    [
+        ({}, {}),
+        ({"allowPublicTraffic": None}, {}),
+        ({"allowPublicTraffic": True}, {"allow_public_traffic": True}),
+        ({"allowPublicTraffic": False}, {"allow_public_traffic": False}),
+    ],
+)
+def test_network_info_public_traffic(payload, expected):
+    info = from_client_network_config(SandboxNetworkConfig.from_dict(payload))
+
+    assert info == expected
