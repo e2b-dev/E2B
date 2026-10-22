@@ -785,6 +785,9 @@ export interface SandboxOpts extends ConnectionOpts {
 
   /**
    * Sandbox URL. Used for local development
+   *
+   * @deprecated `sandboxUrl` and the `E2B_SANDBOX_URL` environment variable
+   * will be removed in the next major version.
    */
   sandboxUrl?: string
 

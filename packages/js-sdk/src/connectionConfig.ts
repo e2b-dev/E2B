@@ -67,7 +67,7 @@ export interface ConnectionOpts {
    * @default E2B_API_URL // environment variable or `https://api.${domain}`
    *
    * @deprecated `apiUrl` and the `E2B_API_URL` environment variable will be
-   * removed in a future release.
+   * removed in the next major version.
    */
   apiUrl?: string
   /**
@@ -76,7 +76,7 @@ export interface ConnectionOpts {
    * @default E2B_SANDBOX_URL // environment variable, `https://sandbox.${domain}`
    *
    * @deprecated `sandboxUrl` and the `E2B_SANDBOX_URL` environment variable
-   * will be removed in a future release.
+   * will be removed in the next major version.
    */
   sandboxUrl?: string
   /**

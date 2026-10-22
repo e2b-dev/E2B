@@ -115,7 +115,7 @@ class ApiParams(TypedDict, total=False):
     api_url: Optional[str]
     """URL to use for the API, defaults to `E2B_API_URL` environment variable or `https://api.<domain>`. For internal use only.
 
-    Deprecated: `api_url` and the `E2B_API_URL` environment variable will be removed in a future release."""
+    :deprecated: `api_url` and the `E2B_API_URL` environment variable will be removed in the next major version."""
 
     debug: Optional[bool]
     """Whether to use debug mode, defaults to `E2B_DEBUG` environment variable."""
@@ -126,7 +126,7 @@ class ApiParams(TypedDict, total=False):
     sandbox_url: Optional[str]
     """URL to connect to sandbox, defaults to `E2B_SANDBOX_URL` environment variable.
 
-    Deprecated: `sandbox_url` and the `E2B_SANDBOX_URL` environment variable will be removed in a future release."""
+    :deprecated: `sandbox_url` and the `E2B_SANDBOX_URL` environment variable will be removed in the next major version."""
 
     http_version: Optional[HttpVersion]
     """HTTP version for requests to the E2B API and to sandboxes (commands,
