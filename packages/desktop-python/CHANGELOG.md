@@ -1,5 +1,11 @@
 # @e2b/desktop-python
 
+## 2.7.2
+
+### Patch Changes
+
+- 2416fdb: Require `pillow` 13 (`pillow>=13.0.0,<14`) to pick up the fixes for CVE-2026-112404 and CVE-2026-112895
+
 ## 2.7.1
 
 ### Patch Changes

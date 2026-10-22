@@ -382,7 +382,7 @@ dev = [
 
 [[package]]
 name = "e2b-desktop"
-version = "2.7.1"
+version = "2.7.2"
 source = { editable = "." }
 dependencies = [
     { name = "e2b" },
