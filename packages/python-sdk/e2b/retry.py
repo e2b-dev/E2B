@@ -2,6 +2,7 @@
 
 import asyncio
 import random
+import re
 import time
 from typing import Awaitable, Callable, Optional
 
@@ -15,7 +16,6 @@ BACKOFF_BASE_SECONDS = 0.1
 BACKOFF_MAX_SECONDS = 10.0
 BACKOFF_JITTER_MIN = 0.5
 RETRYABLE_STATUSES = frozenset({429, 502, 503, 504})
-IDEMPOTENCY_KEY_HEADER = "Idempotency-Key"
 
 
 def resolve_max_retries(retries: int) -> int:
@@ -36,6 +36,10 @@ def resolve_idempotency_key(key: Optional[str]) -> Optional[str]:
     if len(key) < 1 or len(key) > 255:
         raise InvalidArgumentException(
             f"Invalid idempotency_key: expected 1-255 characters, got {len(key)}."
+        )
+    if re.fullmatch(r"[a-z0-9-]+", key) is None:
+        raise InvalidArgumentException(
+            "Invalid idempotency_key: only lowercase letters, digits and hyphens are allowed."
         )
     return key
 

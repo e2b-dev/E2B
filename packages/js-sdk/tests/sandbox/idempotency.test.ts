@@ -50,6 +50,12 @@ test('ConnectionConfig accepts a 255-character idempotency key', () => {
   expect(new ConnectionConfig({ idempotencyKey: key }).idempotencyKey).toBe(key)
 })
 
+test('ConnectionConfig accepts a lowercase UUID idempotency key', () => {
+  const key = '123e4567-e89b-12d3-a456-426614174000'
+
+  expect(new ConnectionConfig({ idempotencyKey: key }).idempotencyKey).toBe(key)
+})
+
 test('ConnectionConfig rejects idempotency keys outside 1-255 characters', () => {
   const emptyKey = () => new ConnectionConfig({ idempotencyKey: '' })
   const longKey = () =>
@@ -64,6 +70,15 @@ test('ConnectionConfig rejects idempotency keys outside 1-255 characters', () =>
     'Invalid idempotencyKey: expected 1-255 characters, got 256.'
   )
 })
+
+test.each(['ABC', 'abc_1', ' abc ', '界'])(
+  'ConnectionConfig rejects invalid idempotency key characters: %s',
+  (key) => {
+    expect(() => new ConnectionConfig({ idempotencyKey: key })).toThrow(
+      'Invalid idempotencyKey: only lowercase letters, digits and hyphens are allowed.'
+    )
+  }
+)
 
 test('client.Sandbox.create uses the bound idempotency key', async () => {
   const client = new E2B({

@@ -4,4 +4,5 @@
 ---
 
 - Added `idempotencyKey` (JavaScript) and `idempotency_key` (Python) connection
-  options that send `Idempotency-Key` on sandbox creation (1-255 characters).
+  options that send `Idempotency-Key` on sandbox creation (1-255 lowercase
+  letters, digits or hyphens).

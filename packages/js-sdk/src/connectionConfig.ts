@@ -58,7 +58,8 @@ export interface ConnectionOpts {
   apiKey?: string
   /**
    * Idempotency key sent as the `Idempotency-Key` header when creating a
-   * sandbox. Retries reuse the key. Keys outside 1–255 characters throw
+   * sandbox. Retries reuse the key. Keys must contain 1–255 lowercase ASCII
+   * letters, digits or hyphens (e.g. a lowercase UUID); other keys throw
    * `InvalidArgumentError`.
    */
   idempotencyKey?: string
