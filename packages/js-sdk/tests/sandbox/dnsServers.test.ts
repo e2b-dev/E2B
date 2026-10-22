@@ -52,7 +52,7 @@ afterEach(() => {
   server.resetHandlers()
 })
 
-test.for([[], ['1.1.1.1'], ['1.1.1.1', '2606:4700:4700::1111']])(
+test.for([[], ['1.1.1.1'], ['1.1.1.1', '9.9.9.9']])(
   'Sandbox.create sends dnsServers: %j',
   async (dnsServers) => {
     await Sandbox.create('base', {

@@ -18,7 +18,7 @@ def _create_wire_body(network: SandboxNetworkOpts) -> dict:
 
 @pytest.mark.parametrize(
     "dns_servers",
-    [[], ["1.1.1.1"], ["1.1.1.1", "2606:4700:4700::1111"]],
+    [[], ["1.1.1.1"], ["1.1.1.1", "9.9.9.9"]],
 )
 def test_create_sends_dns_servers(dns_servers):
     wire = _create_wire_body(
