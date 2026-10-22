@@ -1,4 +1,4 @@
-"""Retry API responses marked by the server and leave connection retries below."""
+"""Retry API responses marked by the server or selected missing-header statuses."""
 
 import asyncio
 import random
@@ -14,6 +14,7 @@ MAX_RETRY_WAIT_WITHOUT_TIMEOUT_SECONDS = 60.0
 BACKOFF_BASE_SECONDS = 0.1
 BACKOFF_MAX_SECONDS = 10.0
 BACKOFF_JITTER_MIN = 0.5
+RETRYABLE_STATUSES = frozenset({429, 502, 503, 504})
 
 
 def resolve_max_retries(retries: int) -> int:
@@ -45,8 +46,15 @@ def _retry_delay(
     attempt: int,
     random_: Callable[[], float],
 ) -> Optional[float]:
-    """Return a delay only when the API marks the response ``Should-Retry``."""
-    if response.headers.get("Should-Retry", "").strip().lower() != "true":
+    """Return a delay for marked responses or retryable statuses without a header.
+
+    A present header is authoritative, including explicit ``false``.
+    """
+    should_retry = response.headers.get("Should-Retry")
+    if should_retry is None:
+        if response.status_code not in RETRYABLE_STATUSES:
+            return None
+    elif should_retry.strip().lower() != "true":
         return None
 
     retry_after = parse_retry_after(response.headers.get("Retry-After"))
@@ -91,7 +99,7 @@ def _request_deadline(request: httpx.Request, monotonic: Callable[[], float]) ->
 
 
 class RetryableTransport(httpx.BaseTransport):
-    """Retry API responses marked ``Should-Retry: true`` using server delay or backoff."""
+    """Retry marked API responses or 429/502/503/504 responses without a header."""
 
     def __init__(
         self,
@@ -147,7 +155,7 @@ class RetryableTransport(httpx.BaseTransport):
 
 
 class AsyncRetryableTransport(httpx.AsyncBaseTransport):
-    """Async counterpart of :class:`RetryableTransport`."""
+    """Async transport with the same response retry policy as RetryableTransport."""
 
     def __init__(
         self,

@@ -127,15 +127,17 @@ def test_invalid_retry_after_falls_back_to_backoff(retry_after):
     assert sleeps == pytest.approx([0.05])
 
 
-def test_429_without_retry_after_is_propagated_as_is():
-    inner = FakeTransport([429], retry_after=None)
+def test_429_without_header_or_retry_after_uses_backoff():
+    inner = FakeTransport([429, 200], retry_after=None, should_retry=None)
+    sleeps = []
 
-    response = RetryableTransport(inner, retries=3).handle_request(
-        httpx.Request("GET", "https://api.test")
-    )
+    response = RetryableTransport(
+        inner, retries=3, sleep=sleeps.append, random_=lambda: 0.0
+    ).handle_request(httpx.Request("GET", "https://api.test"))
 
-    assert response is inner.responses[0]
-    assert len(inner.requests) == 1
+    assert response.status_code == 200
+    assert len(inner.requests) == 2
+    assert sleeps == pytest.approx([0.05])
 
 
 def test_retry_after_exceeding_timeout_is_propagated_as_is():
@@ -176,17 +178,44 @@ def test_retry_wait_is_bounded_when_request_timeout_is_disabled():
     assert sleeps == []
 
 
+@pytest.mark.parametrize("status", [429, 502, 503, 504])
+def test_retries_retryable_status_when_header_is_absent(status):
+    inner = FakeTransport([status, 200], retry_after="0", should_retry=None)
+    sleeps = []
+
+    response = RetryableTransport(
+        inner, retries=1, sleep=sleeps.append, monotonic=lambda: 0.0
+    ).handle_request(httpx.Request("GET", "https://api.test"))
+
+    assert response.status_code == 200
+    assert len(inner.requests) == 2
+    assert sleeps == [0]
+
+
+def test_absent_header_429_uses_retry_after():
+    inner = FakeTransport([429, 200], retry_after="2", should_retry=None)
+    sleeps = []
+
+    response = RetryableTransport(
+        inner, retries=1, sleep=sleeps.append, monotonic=lambda: 0.0
+    ).handle_request(httpx.Request("GET", "https://api.test"))
+
+    assert response.status_code == 200
+    assert len(inner.requests) == 2
+    assert sleeps == [2]
+
+
 @pytest.mark.parametrize(
-    ("status", "retry_after", "should_retry"),
+    ("status", "should_retry"),
     [
-        (503, "0", "false"),
-        (429, "2", None),
-        (502, "0", None),
-        (503, "0", None),
+        (503, "false"),
+        (503, "maybe"),
+        (503, ""),
+        (500, None),
     ],
 )
-def test_does_not_retry_unmarked_responses(status, retry_after, should_retry):
-    inner = FakeTransport([status], retry_after=retry_after, should_retry=should_retry)
+def test_does_not_retry_explicit_denial_or_non_fallback_status(status, should_retry):
+    inner = FakeTransport([status], retry_after="0", should_retry=should_retry)
 
     response = RetryableTransport(inner, retries=3).handle_request(
         httpx.Request("GET", "https://api.test")
@@ -241,6 +270,19 @@ def test_retries_post_503_when_marked_by_server():
         inner, retries=3, sleep=lambda _: None, monotonic=lambda: 0.0
     ).handle_request(
         httpx.Request("POST", "https://api.test/v2/sandboxes", content=b"p")
+    )
+
+    assert response.status_code == 200
+    assert len(inner.requests) == 2
+
+
+def test_retries_post_502_without_should_retry_header():
+    inner = FakeTransport([502, 200], retry_after="0", should_retry=None)
+
+    response = RetryableTransport(
+        inner, retries=1, sleep=lambda _: None, monotonic=lambda: 0.0
+    ).handle_request(
+        httpx.Request("POST", "https://api.test/v2/sandboxes", content=b"payload")
     )
 
     assert response.status_code == 200
@@ -505,6 +547,44 @@ async def test_async_retries_rate_limit_and_replays_body():
 
 
 @pytest.mark.asyncio
+async def test_async_429_without_header_or_retry_after_uses_backoff():
+    inner = FakeAsyncTransport([429, 200], retry_after=None, should_retry=None)
+    sleeps = []
+
+    async def sleep(delay):
+        sleeps.append(delay)
+
+    response = await AsyncRetryableTransport(
+        inner,
+        retries=1,
+        sleep=sleep,
+        monotonic=lambda: 0.0,
+        random_=lambda: 0.0,
+    ).handle_async_request(httpx.Request("GET", "https://api.test"))
+
+    assert response.status_code == 200
+    assert len(inner.requests) == 2
+    assert sleeps == pytest.approx([0.05])
+
+
+@pytest.mark.asyncio
+async def test_async_absent_header_429_uses_retry_after():
+    inner = FakeAsyncTransport([429, 200], retry_after="2", should_retry=None)
+    sleeps = []
+
+    async def sleep(delay):
+        sleeps.append(delay)
+
+    response = await AsyncRetryableTransport(
+        inner, retries=1, sleep=sleep, monotonic=lambda: 0.0
+    ).handle_async_request(httpx.Request("GET", "https://api.test"))
+
+    assert response.status_code == 200
+    assert len(inner.requests) == 2
+    assert sleeps == [2]
+
+
+@pytest.mark.asyncio
 async def test_async_does_not_retry_when_wait_reaches_request_timeout():
     inner = FakeAsyncTransport([429], retry_after="3", should_retry="true")
     sleeps = []
@@ -553,9 +633,11 @@ async def test_async_timeout_after_retry_wait_names_configuration_options():
 
 @pytest.mark.asyncio
 async def test_async_retries_unavailable_status_with_backoff():
-    inner = FakeAsyncTransport([503, 502, 200], retry_after=None, should_retry="true")
+    inner = FakeAsyncTransport(
+        [503, 502, 504, 200], retry_after=None, should_retry=None
+    )
     sleeps = []
-    randoms = iter([0.0, 1.0])
+    randoms = iter([0.0, 1.0, 0.5])
 
     async def sleep(delay):
         sleeps.append(delay)
@@ -573,8 +655,8 @@ async def test_async_retries_unavailable_status_with_backoff():
     )
 
     assert response.status_code == 200
-    assert sleeps == pytest.approx([0.05, 0.2])
-    assert [item.content for item in inner.requests] == [b"payload"] * 3
+    assert sleeps == pytest.approx([0.05, 0.2, 0.3])
+    assert [item.content for item in inner.requests] == [b"payload"] * 4
     assert all(item.is_closed for item in inner.responses[:-1])
 
 
@@ -582,6 +664,23 @@ async def test_async_retries_unavailable_status_with_backoff():
 @pytest.mark.parametrize("status", [500, 503])
 async def test_async_retries_post_when_marked_by_server(status):
     inner = FakeAsyncTransport([status, 200], retry_after=None, should_retry="true")
+
+    async def sleep(_):
+        pass
+
+    response = await AsyncRetryableTransport(
+        inner, retries=1, sleep=sleep, monotonic=lambda: 0.0
+    ).handle_async_request(
+        httpx.Request("POST", "https://api.test/v2/sandboxes", content=b"payload")
+    )
+
+    assert response.status_code == 200
+    assert len(inner.requests) == 2
+
+
+@pytest.mark.asyncio
+async def test_async_retries_post_502_without_should_retry_header():
+    inner = FakeAsyncTransport([502, 200], retry_after="0", should_retry=None)
 
     async def sleep(_):
         pass
@@ -615,21 +714,37 @@ async def test_async_should_retry_header_is_case_and_whitespace_insensitive(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("status", [429, 502, 503, 504])
+async def test_async_retries_retryable_status_when_header_is_absent(status):
+    inner = FakeAsyncTransport([status, 200], retry_after="0", should_retry=None)
+    sleeps = []
+
+    async def sleep(delay):
+        sleeps.append(delay)
+
+    response = await AsyncRetryableTransport(
+        inner, retries=1, sleep=sleep, monotonic=lambda: 0.0
+    ).handle_async_request(httpx.Request("GET", "https://api.test"))
+
+    assert response.status_code == 200
+    assert len(inner.requests) == 2
+    assert sleeps == [0]
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("status", "retry_after", "should_retry"),
+    ("status", "should_retry"),
     [
-        (503, "0", "false"),
-        (429, "2", None),
-        (502, "0", None),
-        (503, "0", None),
+        (503, "false"),
+        (503, "maybe"),
+        (503, ""),
+        (500, None),
     ],
 )
-async def test_async_does_not_retry_unmarked_responses(
-    status, retry_after, should_retry
+async def test_async_does_not_retry_explicit_denial_or_non_fallback_status(
+    status, should_retry
 ):
-    inner = FakeAsyncTransport(
-        [status], retry_after=retry_after, should_retry=should_retry
-    )
+    inner = FakeAsyncTransport([status], retry_after="0", should_retry=should_retry)
 
     response = await AsyncRetryableTransport(inner, retries=3).handle_async_request(
         httpx.Request("GET", "https://api.test")

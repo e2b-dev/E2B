@@ -1,12 +1,14 @@
 import { InvalidArgumentError } from './errors'
 import { isReadableStreamLike } from './is'
 
-// Retries API responses only when the server marks them `Should-Retry: true`.
+// Retries API responses marked `Should-Retry: true`, or selected statuses
+// when the header is absent.
 const MAX_RETRY_AFTER_SECONDS = 2_147_483
 const MAX_RETRY_WAIT_WITHOUT_TIMEOUT_MS = 60_000
 const BACKOFF_BASE_MS = 100
 const BACKOFF_MAX_MS = 10_000
 const BACKOFF_JITTER_MIN = 0.5
+const RETRYABLE_STATUSES = new Set([429, 502, 503, 504])
 // Error codes raised while establishing the connection, before any request
 // bytes are written: Node/undici (`ECONNREFUSED`, `ENOTFOUND`, ...), Bun
 // (`ConnectionRefused`). Post-write failures such as `ECONNRESET` are
@@ -122,15 +124,22 @@ function backoffMs(attempt: number, random: () => number): number {
   )
 }
 
-/** Delay before the next attempt, or `undefined` unless `Should-Retry` is true. */
+/**
+ * Delay before the next attempt, or `undefined` unless `Should-Retry` is true
+ * or the header is absent for a retryable status. A present header is
+ * authoritative, including explicit `false`.
+ */
 function retryDelayMs(
   response: Response,
   attempt: number,
   random: () => number
 ): number | undefined {
-  if (response.headers.get('Should-Retry')?.trim().toLowerCase() !== 'true') {
-    return undefined
-  }
+  const shouldRetry = response.headers.get('Should-Retry')
+  const retryable =
+    shouldRetry === null
+      ? RETRYABLE_STATUSES.has(response.status)
+      : shouldRetry.trim().toLowerCase() === 'true'
+  if (!retryable) return undefined
 
   const retryAfter = parseRetryAfter(response.headers.get('Retry-After'))
   if (retryAfter !== undefined) return retryAfter * 1000
@@ -139,8 +148,9 @@ function retryDelayMs(
 }
 
 /**
- * Retries API responses marked `Should-Retry: true` after `Retry-After` or
- * exponential backoff, and retries connection-establishment failures.
+ * Retries API responses marked `Should-Retry: true`, or 429/502/503/504
+ * responses without the header, after `Retry-After` or exponential backoff.
+ * Also retries connection-establishment failures.
  */
 export function withRetry(
   fetchImpl: typeof fetch,

@@ -100,10 +100,12 @@ export interface ConnectionOpts {
    */
   requestTimeoutMs?: number
   /**
-   * Number of control-plane API retries for responses marked `Should-Retry: true`.
-   * Waits for a valid `Retry-After` delta-seconds value, otherwise exponential
-   * backoff with jitter from 100 ms to 10 s. Also retries failures to establish
-   * the connection; errors after the request is sent are not retried.
+   * Number of control-plane API retries for responses marked `Should-Retry: true`,
+   * or 429/502/503/504 responses without that header. `Should-Retry: false` is
+   * never retried. Waits for a valid `Retry-After` delta-seconds value, otherwise
+   * exponential backoff with jitter from 100 ms to 10 s. Also retries failures
+   * to establish the connection; network errors after the request is sent are
+   * not retried.
    * A retry is skipped when its wait would exhaust the request timeout.
    * Retry waits use a 60-second total limit when request timeouts are disabled.
    * Set to `0` to disable retries. Defaults to 3 retries.

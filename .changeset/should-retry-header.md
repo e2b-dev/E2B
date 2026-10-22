@@ -3,7 +3,7 @@
 '@e2b/python-sdk': minor
 ---
 
-Retry control-plane API errors only when the response carries `Should-Retry: true` (honoring `Retry-After`, otherwise exponential backoff)
+Retry control-plane API errors marked `Should-Retry: true`, or 429/502/503/504 responses without the header (e.g. from a load balancer); `Should-Retry: false` is never retried.
 
-- Removes the client-side retry allowlists (status codes, methods, replayable operations)
-- Responses without `Should-Retry: true` (including 429/502/503) and network errors after the request was sent are no longer retried; connection failures still are
+- Removes method and replayable-operation retry allowlists
+- Post-send network errors are no longer retried; connection failures still are
