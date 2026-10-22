@@ -464,7 +464,7 @@ class SandboxNetworkOpts(TypedDict):
     dns_servers: NotRequired[List[str]]
     """
     DNS servers the sandbox can reach when ``allow_out`` contains a domain.
-    Each entry must be an IPv4 address, and all traffic to it is allowed.
+    Each entry must be an IPv4 address (up to 10 entries), and all traffic to it is allowed.
 
     Leave it out to allow the default nameserver ``8.8.8.8``. Pass a list to
     allow those servers instead, or ``[]`` to allow none. Allowed domains still
