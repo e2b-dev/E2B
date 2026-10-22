@@ -1,6 +1,7 @@
 from typing import Dict, Type, TypeVar, Unpack, cast
 
 from e2b.connection_config import ApiParams
+from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox_async.main import AsyncSandbox
 from e2b.sandbox_sync.main import Sandbox
 from e2b.secret import AsyncSecret, Secret
@@ -14,7 +15,8 @@ T = TypeVar("T")
 
 class E2BClientParams(ApiParams, total=False):
     """Params bound to an :class:`E2B` client, used as the defaults for every
-    call made through its resource classes. Same shape as :class:`ApiParams`."""
+    call made through its resource classes. Same shape as :class:`ApiParams`,
+    except ``idempotency_key`` must be passed per sandbox creation."""
 
 
 def _bind(cls: Type[T], api_params: ApiParams) -> Type[T]:
@@ -39,6 +41,9 @@ class E2B:
     Multiple clients are fully isolated from each other and from the top-level
     env-configured exports.
 
+    ``idempotency_key`` is scoped to one sandbox creation and must be passed to
+    ``Sandbox.create`` or ``AsyncSandbox.create``, not bound to the client.
+
     Example:
     ```python
     from e2b import E2B
@@ -56,8 +61,14 @@ class E2B:
         Create a new client with the API params bound to it.
 
         :param opts: API params used as the defaults for every call made
-            through this client's resource classes.
+            through this client's resource classes. ``idempotency_key`` must
+            be passed per sandbox creation instead of bound to the client.
         """
+        if opts.get("idempotency_key") is not None:
+            raise InvalidArgumentException(
+                "idempotency_key is per sandbox create; pass it to Sandbox.create instead of the E2B client."
+            )
+
         # Params are copied so later mutations of the caller's dicts cannot
         # change the bound configuration.
         api_params = cast(ApiParams, dict(cast(Dict[str, object], opts)))

@@ -80,13 +80,24 @@ test.each(['ABC', 'abc_1', ' abc ', '界'])(
   }
 )
 
-test('client.Sandbox.create uses the bound idempotency key', async () => {
-  const client = new E2B({
-    apiKey: TEST_API_KEY,
-    idempotencyKey: 'bound123',
-  })
+test('E2B rejects a client-bound idempotency key', () => {
+  const createClientWithKey = () =>
+    new E2B({
+      apiKey: TEST_API_KEY,
+      idempotencyKey: 'bound123',
+    } as any)
 
+  expect(createClientWithKey).toThrow(InvalidArgumentError)
+  expect(createClientWithKey).toThrow(
+    'idempotencyKey is per sandbox create; pass it to Sandbox.create instead of the E2B client.'
+  )
+})
+
+test('client.Sandbox.create accepts a per-call idempotency key', async () => {
+  const client = new E2B({ apiKey: TEST_API_KEY })
+
+  await client.Sandbox.create('base', { idempotencyKey: 'abc123' })
   await client.Sandbox.create('base')
 
-  expect(idempotencyKeys).toEqual(['bound123'])
+  expect(idempotencyKeys).toEqual(['abc123', null])
 })
