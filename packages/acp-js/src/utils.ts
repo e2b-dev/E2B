@@ -61,7 +61,7 @@ export class LineSplitter {
   private check(bytes: number) {
     if (bytes > this.maxLineBytes) {
       throw new SandboxError(
-        `ACP message exceeds the limit of ${this.maxLineBytes} bytes`
+        `ACP message exceeds the limit of ${this.maxLineBytes} bytes. Pass a larger \`maxMessageBytes\` to connectAcpAgent() if the agent sends larger messages.`
       )
     }
   }

@@ -54,7 +54,7 @@ export interface AcpStopOpts {
 /**
  * Exit status of an ACP agent process.
  */
-export interface AcpAgentExit {
+export interface AcpAgentResult {
   /**
    * Exit code of the agent process.
    */
@@ -93,8 +93,8 @@ export class AcpTransport {
     readonly pid: number,
     readonly stream: AcpStream,
     private readonly handle: CommandHandle,
-    private readonly exit: Promise<AcpAgentExit>,
-    private readonly exitStatus: () => AcpAgentExit | undefined,
+    private readonly exit: Promise<AcpAgentResult>,
+    private readonly exitStatus: () => AcpAgentResult | undefined,
     private readonly stopReading: () => void,
     private readonly endInput: () => Promise<unknown>
   ) {}
@@ -104,7 +104,7 @@ export class AcpTransport {
    *
    * It rejects if the agent's output stream failed before its exit status was known.
    */
-  async wait(): Promise<AcpAgentExit> {
+  async wait(): Promise<AcpAgentResult> {
     return this.exit
   }
 
@@ -182,7 +182,7 @@ export async function startAcpTransport(
   let closing = false
   let resumeReading: (() => void) | undefined
   let controller!: ReadableStreamDefaultController<AnyMessage>
-  let exitStatus: AcpAgentExit | undefined
+  let exitStatus: AcpAgentResult | undefined
 
   let resolveHandle!: (handle: CommandHandle) => void
   let rejectHandle!: (err: unknown) => void
@@ -328,11 +328,11 @@ export async function startAcpTransport(
   resolveHandle(handle)
 
   const exit = handle.wait().then(
-    (result): AcpAgentExit => ({
+    (result): AcpAgentResult => ({
       exitCode: result.exitCode,
       error: result.error,
     }),
-    (err): AcpAgentExit => {
+    (err): AcpAgentResult => {
       if (err instanceof CommandExitError) {
         return { exitCode: err.exitCode, error: err.error }
       }
