@@ -126,14 +126,16 @@ async def test_cancelled_receive_does_not_lose_a_message():
     assert message["method"] == "update"
 
 
-async def test_close_kills_the_agent_when_its_output_stream_failed():
+async def test_a_failed_output_stream_kills_the_agent():
     agent = FakeAgent()
     transport = await start(agent)
 
     agent.exit.set_exception(RuntimeError("output stream broke"))
-    await asyncio.sleep(0)
-    await transport.close(timeout=0.05)
 
+    with pytest.raises(RuntimeError, match="output stream broke"):
+        await asyncio.wait_for(transport.receive(), 1)
+    with pytest.raises(RuntimeError, match="output stream broke"):
+        await transport.wait()
     assert agent.killed == 1
 
 
