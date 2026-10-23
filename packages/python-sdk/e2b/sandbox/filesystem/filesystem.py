@@ -363,8 +363,16 @@ def check_stream_upload(
     files: Sequence[Union[WriteEntry, AsyncWriteEntry]],
     use_octet_stream: bool,
     supports_octet_stream: bool,
+    allow_async: bool,
 ) -> None:
-    """Reject iterable data on the multipart upload, which would buffer it."""
+    """Reject iterable data on the multipart upload, which would buffer it.
+
+    Async iterables are rejected outright unless ``allow_async`` (``AsyncSandbox``).
+    """
+    if not allow_async:
+        for file in files:
+            if _is_async_chunk_iterable(file["data"]):
+                raise _unsupported_data(file["data"], file["path"])
     if not any(
         _is_chunk_iterable(file["data"]) or _is_async_chunk_iterable(file["data"])
         for file in files

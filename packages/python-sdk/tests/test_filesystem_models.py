@@ -12,6 +12,7 @@ import pytest
 
 from e2b.exceptions import InvalidArgumentException, TemplateException
 from e2b.sandbox.filesystem.filesystem import (
+    AsyncWriteEntry,
     WriteEntry,
     check_stream_upload,
     aiter_chunks,
@@ -233,13 +234,21 @@ def test_iterable_data_refuses_multipart():
     files: List[WriteEntry] = [{"path": "a.bin", "data": iter([b"x"])}]
     in_memory: List[WriteEntry] = [{"path": "a.bin", "data": b"x"}]
     file_like: List[WriteEntry] = [{"path": "a.bin", "data": io.BytesIO(b"x")}]
-    check_stream_upload(files, True, True)
-    check_stream_upload(in_memory, False, False)
-    check_stream_upload(file_like, False, True)
+    check_stream_upload(files, True, True, allow_async=False)
+    check_stream_upload(in_memory, False, False, allow_async=False)
+    check_stream_upload(file_like, False, True, allow_async=False)
     with pytest.raises(InvalidArgumentException):
-        check_stream_upload(files, False, True)
+        check_stream_upload(files, False, True, allow_async=True)
     with pytest.raises(TemplateException):
-        check_stream_upload(files, True, False)
+        check_stream_upload(files, True, False, allow_async=True)
+
+    async def source():
+        yield b"x"
+
+    async_files: List[AsyncWriteEntry] = [{"path": "a.bin", "data": source()}]
+    check_stream_upload(async_files, True, True, allow_async=True)
+    with pytest.raises(InvalidArgumentException, match="AsyncSandbox"):
+        check_stream_upload(async_files, True, False, allow_async=False)
 
 
 async def test_async_helpers_read_sync_iterables_off_the_loop():

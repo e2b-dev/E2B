@@ -357,11 +357,13 @@ class Filesystem:
             use_octet_stream = has_streamable_data
 
         supports_octet_stream = self._envd_version >= ENVD_OCTET_STREAM_UPLOAD
-        check_stream_upload(files, use_octet_stream, supports_octet_stream)
         # Gzip compression only works with the octet-stream upload (the
         # Content-Encoding header applies to the whole request body), so
         # requesting gzip implies it when envd supports it.
         use_octet_stream = (use_octet_stream or gzip) and supports_octet_stream
+        check_stream_upload(
+            files, use_octet_stream, supports_octet_stream, allow_async=False
+        )
 
         # A buffered upload is bounded by the request timeout as a
         # whole-request deadline, matching the JS SDK. A streamed (file-like)
