@@ -12,6 +12,7 @@ import {
 } from '../errors'
 import { createApiLogger } from '../logs'
 import { withRetry } from '../retry'
+import { ALT_USED_HEADER, recordResolvedDomain } from '../resolvedDomains'
 
 /**
  * Map an API error code and message to the matching error class — the same
@@ -104,13 +105,26 @@ class ApiClient {
       )
     }
 
+    const fetchWithRetry = withRetry(
+      createApiFetch(config),
+      config.retries,
+      config.requestTimeoutMs
+    )
+
+    const apiFetch: typeof fetch = async (input, init) => {
+      const response = await fetchWithRetry(input, init)
+      if (config.discoverDomain) {
+        recordResolvedDomain(
+          config.apiKey,
+          response.headers.get(ALT_USED_HEADER)
+        )
+      }
+      return response
+    }
+
     this.api = createClient<paths>({
       baseUrl: config.apiUrl,
-      fetch: withRetry(
-        createApiFetch(config),
-        config.retries,
-        config.requestTimeoutMs
-      ),
+      fetch: apiFetch,
       // In HTTP 1.1, all connections are considered persistent unless declared otherwise
       // keepalive: true,
       headers: {
