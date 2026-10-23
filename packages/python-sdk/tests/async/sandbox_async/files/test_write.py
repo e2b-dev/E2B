@@ -248,8 +248,8 @@ async def test_write_async_iterable_of_bytes(async_sandbox: AsyncSandbox, debug)
             filename, chunks(), gzip=True, use_octet_stream=False
         )
 
-    await async_sandbox.files.write(filename, iter([b"sync ", b"iterable"]))
-    assert await async_sandbox.files.read(filename) == "sync iterable"
+    with pytest.raises(InvalidArgumentException, match="only supported by `Sandbox`"):
+        await async_sandbox.files.write(filename, iter([b"sync ", b"iterable"]))
 
     if debug:
         await async_sandbox.files.remove(filename)

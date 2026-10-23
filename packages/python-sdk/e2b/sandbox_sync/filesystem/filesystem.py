@@ -369,7 +369,7 @@ class Filesystem:
         # requesting gzip implies it when envd supports it.
         use_octet_stream = (use_octet_stream or gzip) and supports_octet_stream
         check_stream_upload(
-            files, use_octet_stream, supports_octet_stream, allow_async=False
+            files, use_octet_stream, supports_octet_stream, is_async=False
         )
 
         # A buffered upload is bounded by the request timeout as a
@@ -434,7 +434,10 @@ class Filesystem:
             if len(files) == 1:
                 params["path"] = files[0]["path"]
 
-            httpx_files = [_to_httpx_file(file["path"], file["data"]) for file in files]
+            httpx_files = [
+                _to_httpx_file(file["path"], file["data"], is_async=False)
+                for file in files
+            ]
 
             if len(httpx_files) == 0:
                 return []

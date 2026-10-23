@@ -309,7 +309,7 @@ class Filesystem:
         Writing to a file at path that doesn't exist creates the necessary directories.
 
         :param path: Path to the file
-        :param data: Data to write to the file, can be a `str`, `bytes`, `IO`, an `Iterable[bytes]`, or an `AsyncIterable[bytes]`. File-like objects and (async) iterables are streamed in chunks instead of being buffered in memory.
+        :param data: Data to write to the file, can be a `str`, `bytes`, `IO`, or an `AsyncIterable[bytes]`. File-like objects and async iterables are streamed in chunks instead of being buffered in memory.
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request in **seconds**
         :param gzip: Use gzip compression for the upload. Implies the `application/octet-stream` upload, so combining it with `use_octet_stream=False` raises `InvalidArgumentException`. Requires envd 0.5.7 or later — when not supported, the upload falls back to uncompressed `multipart/form-data`.
@@ -393,7 +393,7 @@ class Filesystem:
         # requesting gzip implies it when envd supports it.
         use_octet_stream = (use_octet_stream or gzip) and supports_octet_stream
         check_stream_upload(
-            files, use_octet_stream, supports_octet_stream, allow_async=True
+            files, use_octet_stream, supports_octet_stream, is_async=True
         )
 
         # A buffered upload is bounded by the request timeout as a
@@ -465,7 +465,10 @@ class Filesystem:
             if len(files) == 1:
                 params["path"] = files[0]["path"]
 
-            httpx_files = [_to_httpx_file(file["path"], file["data"]) for file in files]
+            httpx_files = [
+                _to_httpx_file(file["path"], file["data"], is_async=True)
+                for file in files
+            ]
 
             if len(httpx_files) == 0:
                 return []

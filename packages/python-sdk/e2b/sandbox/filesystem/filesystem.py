@@ -164,7 +164,7 @@ def map_entry_info(entry: filesystem_pb.EntryInfo) -> EntryInfo:
 WriteData = Union[str, bytes, IO, Iterable[bytes]]
 """Data accepted by ``Sandbox.files.write``."""
 
-AsyncWriteData = Union[WriteData, AsyncIterable[bytes]]
+AsyncWriteData = Union[str, bytes, IO, AsyncIterable[bytes]]
 """Data accepted by ``AsyncSandbox.files.write``."""
 
 
@@ -184,8 +184,8 @@ class AsyncWriteEntry(TypedDict):
     """
     Contains path and data of the file to be written to the filesystem by ``AsyncSandbox``.
 
-    ``data`` can be anything :class:`WriteEntry` accepts, or an async iterable
-    of ``bytes`` chunks.
+    ``data`` can be a ``str``, ``bytes``, a file-like object or an async
+    iterable of ``bytes`` chunks.
     """
 
     path: str
@@ -351,33 +351,32 @@ def iter_chunks(
         yield _check_chunk(chunk, check)
 
 
-_EXHAUSTED = object()
-
-
 async def aiter_chunks(
-    data: Union[Iterable[bytes], AsyncIterable[bytes]],
-    check: Optional[ChunkCheck] = None,
+    data: AsyncIterable[bytes], check: Optional[ChunkCheck] = None
 ) -> AsyncIterator[bytes]:
-    """Iterate user-supplied upload chunks (sync or async), rejecting anything but bytes."""
-    if _is_async_chunk_iterable(data):
-        async for chunk in data:
-            yield _check_chunk(chunk, check)
-    else:
-        # Advanced off the event loop, like file-like data: `next()` may block
-        # on disk or network (e.g. `requests` `iter_content()`).
-        iterator = iter(cast(Iterable[bytes], data))
-        while True:
-            chunk = await asyncio.to_thread(next, iterator, _EXHAUSTED)
-            if chunk is _EXHAUSTED:
-                return
-            yield _check_chunk(chunk, check)
+    """Iterate user-supplied async upload chunks, rejecting anything but bytes."""
+    async for chunk in data:
+        yield _check_chunk(chunk, check)
+
+
+def _is_wrong_iterable(data, is_async: bool) -> bool:
+    """Whether ``data`` is an iterable of the kind the other SDK takes: async
+    iterables only go to ``AsyncSandbox``, sync ones only to ``Sandbox``."""
+    if is_async:
+        return _is_chunk_iterable(data) and not _is_async_chunk_iterable(data)
+    return _is_async_chunk_iterable(data) and not _is_chunk_iterable(data)
 
 
 def _unsupported_data(
-    data, file_path: Optional[str] = None
+    data, is_async: bool, file_path: Optional[str] = None
 ) -> InvalidArgumentException:
     target = f" for file {file_path}" if file_path else ""
-    if _is_async_chunk_iterable(data):
+    if _is_wrong_iterable(data, is_async):
+        if is_async:
+            return InvalidArgumentException(
+                f"Sync iterable data{target} is only supported by `Sandbox`; "
+                "pass an async iterable of bytes, a file-like object or bytes to `AsyncSandbox.files.write`."
+            )
         return InvalidArgumentException(
             f"Async iterable data{target} is only supported by `AsyncSandbox`; "
             "pass a sync iterable of bytes, a file-like object or bytes to `Sandbox.files.write`."
@@ -389,16 +388,16 @@ def check_stream_upload(
     files: Sequence[Union[WriteEntry, AsyncWriteEntry]],
     use_octet_stream: bool,
     supports_octet_stream: bool,
-    allow_async: bool,
+    is_async: bool,
 ) -> None:
     """Reject iterable data on the multipart upload, which would buffer it.
 
-    Async iterables are rejected outright unless ``allow_async`` (``AsyncSandbox``).
+    Iterables of the other SDK's kind are rejected outright: sync ones in
+    ``AsyncSandbox`` (``is_async``), async ones in ``Sandbox``.
     """
-    if not allow_async:
-        for file in files:
-            if _is_async_chunk_iterable(file["data"]):
-                raise _unsupported_data(file["data"], file["path"])
+    for file in files:
+        if _is_wrong_iterable(file["data"], is_async):
+            raise _unsupported_data(file["data"], is_async, file["path"])
     if not any(
         _is_chunk_iterable(file["data"]) or _is_async_chunk_iterable(file["data"])
         for file in files
@@ -428,7 +427,9 @@ class _BinaryReader:
         return chunk if isinstance(chunk, bytes) else chunk.encode("utf-8")
 
 
-def _to_httpx_file(file_path: str, file_data: AsyncWriteData):
+def _to_httpx_file(
+    file_path: str, file_data: Union[WriteData, AsyncWriteData], is_async: bool
+):
     """Build an httpx multipart `("file", (name, data))` tuple for the upload."""
     if isinstance(file_data, (str, bytes)):
         return ("file", (file_path, file_data))
@@ -443,7 +444,7 @@ def _to_httpx_file(file_path: str, file_data: AsyncWriteData):
     elif _is_file_like(file_data):
         return ("file", (file_path, cast(IO[bytes], _BinaryReader(file_data))))
     else:
-        raise _unsupported_data(file_data, file_path)
+        raise _unsupported_data(file_data, is_async, file_path)
 
 
 def multipart_body_is_streamed(
@@ -465,7 +466,7 @@ def multipart_body_is_streamed(
 
 
 def to_upload_body(
-    data: AsyncWriteData,
+    data: WriteData,
     use_gzip: bool = False,
     check: Optional[ChunkCheck] = None,
 ) -> Union[bytes, IO, Iterator[bytes]]:
@@ -493,7 +494,7 @@ def to_upload_body(
         chunks = iter_chunks(data, check)
         return gzip_iter(chunks) if use_gzip else chunks
     else:
-        raise _unsupported_data(data)
+        raise _unsupported_data(data, is_async=False)
 
 
 def to_upload_body_async(
@@ -503,7 +504,7 @@ def to_upload_body_async(
 ) -> Union[bytes, AsyncIterator[bytes]]:
     """Prepare file data for upload with async httpx, optionally gzip-compressed.
 
-    File-like objects and (async) iterables of bytes are streamed in chunks
+    File-like objects and async iterables of bytes are streamed in chunks
     instead of being buffered in memory. Async httpx requires an async iterable
     for streamed request bodies.
     """
@@ -513,11 +514,11 @@ def to_upload_body_async(
     elif _is_file_like(data):
         chunks = aiter_io_chunks(data)
         return agzip_iter(chunks) if use_gzip else chunks
-    elif _is_async_chunk_iterable(data) or _is_chunk_iterable(data):
+    elif _is_async_chunk_iterable(data):
         chunks = aiter_chunks(data, check)
         return agzip_iter(chunks) if use_gzip else chunks
     else:
-        raise _unsupported_data(data)
+        raise _unsupported_data(data, is_async=True)
 
 
 METADATA_HEADER_PREFIX = "X-Metadata-"

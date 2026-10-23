@@ -6,7 +6,7 @@
 `files.write` streams iterables of byte chunks to the sandbox instead of buffering them:
 
 - JS: `AsyncIterable<Uint8Array>` data (async generators, Node.js `Readable`), alongside `ReadableStream`.
-- Python: `Iterable[bytes]` in `Sandbox`, plus `AsyncIterable[bytes]` in `AsyncSandbox`.
+- Python: `Iterable[bytes]` in `Sandbox` and `AsyncIterable[bytes]` in `AsyncSandbox`; each SDK rejects the other's iterable kind with `InvalidArgumentException`.
 
 Stream data always uses the octet-stream upload, works with `gzip`, and is never buffered in memory. In browsers that can't stream a request body, JS stream data throws `InvalidArgumentError` instead (pass a `Blob`); Chromium-based browsers stream it. A chunk that isn't bytes throws `InvalidArgumentError` / `InvalidArgumentException` rather than a transport error.
 
