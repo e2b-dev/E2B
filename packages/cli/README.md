@@ -24,6 +24,12 @@ brew install e2b
 npm install -g @e2b/cli
 ```
 
+### Updating the CLI
+
+Run `e2b update` to update the CLI. When an update is available, the CLI also
+offers an interactive prompt before running your command. Set
+`NO_UPDATE_NOTIFIER=1` to opt out of update checks.
+
 ### 2. Authenticate
 
 ```bash
