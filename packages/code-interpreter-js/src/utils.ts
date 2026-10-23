@@ -66,33 +66,44 @@ export function isConnectionClosedError(error: unknown): boolean {
 export async function* readLines(stream: ReadableStream<Uint8Array>) {
   const reader = stream.getReader()
   const decoder = new TextDecoder()
-  let buffer = ''
+  // Fragments of the line currently being assembled. Kept as an array so a
+  // long line (e.g. a base64 image or a wide DataFrame with no newlines) is
+  // joined once per emitted line instead of being re-copied on every chunk,
+  // which kept this generator O(n^2) in line length.
+  const fragments: string[] = []
 
   try {
     while (true) {
       const { done, value } = await reader.read()
 
       if (value !== undefined) {
-        buffer += decoder.decode(value, { stream: true })
+        // Decode only the new chunk: TextDecoder in streaming mode already
+        // carries over incomplete multi-byte sequences across chunks.
+        const text = decoder.decode(value, { stream: true })
+        let start = 0
+        let newlineIdx = text.indexOf('\n', start)
+        while (newlineIdx !== -1) {
+          fragments.push(text.slice(start, newlineIdx))
+          yield fragments.join('')
+          fragments.length = 0
+          start = newlineIdx + 1
+          newlineIdx = text.indexOf('\n', start)
+        }
+        if (start < text.length) {
+          fragments.push(text.slice(start))
+        }
       }
 
       if (done) {
-        buffer += decoder.decode()
-        if (buffer.length > 0) {
-          yield buffer
+        const trailing = decoder.decode()
+        if (trailing.length > 0) {
+          fragments.push(trailing)
+        }
+        if (fragments.length > 0) {
+          yield fragments.join('')
         }
         break
       }
-
-      let newlineIdx = -1
-
-      do {
-        newlineIdx = buffer.indexOf('\n')
-        if (newlineIdx !== -1) {
-          yield buffer.slice(0, newlineIdx)
-          buffer = buffer.slice(newlineIdx + 1)
-        }
-      } while (newlineIdx !== -1)
     }
   } finally {
     reader.releaseLock()
