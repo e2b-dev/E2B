@@ -45,7 +45,10 @@ class Chart:
 
     def __init__(self, **kwargs):
         self._raw_data = kwargs
-        self.type = ChartType(kwargs["type"] or ChartType.UNKNOWN)
+        try:
+            self.type = ChartType(kwargs["type"] or ChartType.UNKNOWN)
+        except ValueError:
+            self.type = ChartType.UNKNOWN
         self.title = kwargs["title"]
         self.elements = kwargs["elements"]
 
