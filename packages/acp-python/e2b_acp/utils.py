@@ -73,7 +73,9 @@ class LineSplitter:
     def _check(self, size: int) -> None:
         if size > self._max_line_bytes:
             raise SandboxException(
-                f"ACP message exceeds the limit of {self._max_line_bytes} bytes"
+                f"ACP message exceeds the limit of {self._max_line_bytes} bytes. "
+                "Pass a larger `max_message_bytes` to connect_acp_agent() if the "
+                "agent sends larger messages."
             )
 
 

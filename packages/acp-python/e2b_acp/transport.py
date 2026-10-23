@@ -28,7 +28,7 @@ StderrHandler = Union[Callable[[str], None], Callable[[str], Awaitable[None]]]
 
 
 @dataclass
-class AcpAgentExit:
+class AcpAgentResult:
     """
     Exit status of an ACP agent process.
     """
@@ -74,12 +74,12 @@ class AcpTransport:
             asyncio.get_running_loop().create_future()
         )
         self._handle: Optional[AsyncCommandHandle] = None
-        self._exit_task: Optional[asyncio.Task[Optional[AcpAgentExit]]] = None
+        self._exit_task: Optional[asyncio.Task[Optional[AcpAgentResult]]] = None
 
         self._ended = False
         self._error: Optional[BaseException] = None
         # Set only once the process exit status is known.
-        self._exit: Optional[AcpAgentExit] = None
+        self._exit: Optional[AcpAgentResult] = None
         # Set by close(): the exit that follows is expected, and output after
         # it is not delivered.
         self._closing = False
@@ -131,7 +131,7 @@ class AcpTransport:
         self._space.set()
         return await self._handle.kill()
 
-    async def wait(self) -> AcpAgentExit:
+    async def wait(self) -> AcpAgentResult:
         assert self._exit_task is not None
         exit = await asyncio.shield(self._exit_task)
         if exit is None:
@@ -174,7 +174,7 @@ class AcpTransport:
         except Exception:
             pass
 
-    async def _stop_and_wait(self) -> Optional[AcpAgentExit]:
+    async def _stop_and_wait(self) -> Optional[AcpAgentResult]:
         await self._end_input()
         assert self._exit_task is not None
         return await asyncio.shield(self._exit_task)
@@ -243,12 +243,12 @@ class AcpTransport:
             if inspect.isawaitable(result):
                 await result
 
-    async def _watch_exit(self, handle: AsyncCommandHandle) -> Optional[AcpAgentExit]:
+    async def _watch_exit(self, handle: AsyncCommandHandle) -> Optional[AcpAgentResult]:
         try:
             result = await handle.wait()
-            exit = AcpAgentExit(exit_code=result.exit_code, error=result.error)
+            exit = AcpAgentResult(exit_code=result.exit_code, error=result.error)
         except CommandExitException as e:
-            exit = AcpAgentExit(exit_code=e.exit_code, error=e.error)
+            exit = AcpAgentResult(exit_code=e.exit_code, error=e.error)
         except Exception as e:
             # The output stream failed. The process may still be running, but
             # nothing can talk to it any more.
