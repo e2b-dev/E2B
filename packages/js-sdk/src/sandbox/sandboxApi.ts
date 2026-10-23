@@ -374,8 +374,8 @@ export type SandboxNetworkOpts = {
   dnsServers?: string[]
 
   /**
-   * Specify if the sandbox URLs should be accessible only with authentication.
-   * @default true
+   * Controls whether sandbox URLs are publicly accessible or require authentication.
+   * When omitted, the server applies its default.
    */
   allowPublicTraffic?: boolean
 
@@ -1543,7 +1543,8 @@ export class SandboxApi extends ClientFactory {
             ...(res.data.network.dnsServers !== undefined
               ? { dnsServers: res.data.network.dnsServers }
               : {}),
-            allowPublicTraffic: res.data.network.allowPublicTraffic,
+            allowPublicTraffic:
+              res.data.network.allowPublicTraffic ?? undefined,
             maskRequestHost: res.data.network.maskRequestHost,
             httpsPorts: res.data.network.httpsPorts,
           }

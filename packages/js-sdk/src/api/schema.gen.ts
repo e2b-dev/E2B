@@ -1065,54 +1065,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/teams/{teamID}/limits": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get team limits
-         * @description Returns the team's effective resource limits. A team-authenticated request may read only its own team.
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Identifier of the team, as its UUID or its public project ID (prj_) */
-                    teamID: components["parameters"]["teamID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully returned the team limits */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TeamLimitsResponse"];
-                    };
-                };
-                400: components["responses"]["400"];
-                401: components["responses"]["401"];
-                403: components["responses"]["403"];
-                404: components["responses"]["404"];
-                429: components["responses"]["429"];
-                500: components["responses"]["500"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/teams/{teamID}/metrics": {
         parameters: {
             query?: never;
@@ -1205,54 +1157,6 @@ export interface paths {
                 400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 403: components["responses"]["403"];
-                429: components["responses"]["429"];
-                500: components["responses"]["500"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/teams/{teamID}/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get team access status
-         * @description Returns whether the team is banned or blocked, and why it is blocked. A team-authenticated request may read only its own team.
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Identifier of the team, as its UUID or its public project ID (prj_) */
-                    teamID: components["parameters"]["teamID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully returned the team access status */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TeamStatusResponse"];
-                    };
-                };
-                400: components["responses"]["400"];
-                401: components["responses"]["401"];
-                403: components["responses"]["403"];
-                404: components["responses"]["404"];
                 429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
@@ -1944,6 +1848,102 @@ export interface paths {
                 500: components["responses"]["500"];
             };
         };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/unstable/teams/{teamID}/limits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Team limits
+         * @description Returns the team's effective resource limits. A team-authenticated request may read only its own team.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Identifier of the team, as its UUID or its public project ID (prj_) */
+                    teamID: components["parameters"]["teamID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned the team limits */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TeamLimitsResponse"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                404: components["responses"]["404"];
+                429: components["responses"]["429"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/unstable/teams/{teamID}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Team access status
+         * @description Returns whether the team is banned or blocked, and why it is blocked. A team-authenticated request may read only its own team.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Identifier of the team, as its UUID or its public project ID (prj_) */
+                    teamID: components["parameters"]["teamID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned the team access status */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TeamStatusResponse"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                404: components["responses"]["404"];
+                429: components["responses"]["429"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -3123,11 +3123,8 @@ export interface components {
         SandboxNetworkConfig: {
             /** @description List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com"). Allowed entries always take precedence over denied entries. When allowOut contains a domain, the servers in dnsServers (8.8.8.8 by default) are also allowed. */
             allowOut?: string[];
-            /**
-             * @description Specify if the sandbox URLs should be accessible only with authentication.
-             * @default true
-             */
-            allowPublicTraffic?: boolean;
+            /** @description Whether sandbox URLs accept traffic without the sandbox's traffic access token. When omitted or null on create, the project's default applies, which is true unless the project changed it. */
+            allowPublicTraffic?: boolean | null;
             /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
             denyOut?: string[];
             /** @description DNS servers the sandbox can reach when allowOut contains a domain. Each entry must be an IPv4 address, and all traffic to it is allowed. Omit it to allow the default nameserver 8.8.8.8, or pass an empty list to allow none. This does not change the sandbox's /etc/resolv.conf. */
