@@ -121,7 +121,8 @@ export class CommandHandle
     private readonly handleCloseStdin?: (
       opts?: CommandRequestOpts
     ) => Promise<void>,
-    private readonly checkHealth?: SandboxHealthCheck
+    private readonly checkHealth?: SandboxHealthCheck,
+    private readonly retainOutput = true
   ) {
     this._wait = this.handleEvents()
   }
@@ -257,12 +258,12 @@ export class CommandHandle
   > {
     const stdoutRest = this.stdoutDecoder.decode()
     if (stdoutRest) {
-      this._stdout += stdoutRest
+      if (this.retainOutput) this._stdout += stdoutRest
       yield [stdoutRest as Stdout, null, null]
     }
     const stderrRest = this.stderrDecoder.decode()
     if (stderrRest) {
-      this._stderr += stderrRest
+      if (this.retainOutput) this._stderr += stderrRest
       yield [null, stderrRest as Stderr, null]
     }
   }
@@ -283,7 +284,7 @@ export class CommandHandle
                   stream: true,
                 })
                 if (out) {
-                  this._stdout += out
+                  if (this.retainOutput) this._stdout += out
                   yield [out as Stdout, null, null]
                 }
                 break
@@ -292,7 +293,7 @@ export class CommandHandle
                   stream: true,
                 })
                 if (out) {
-                  this._stderr += out
+                  if (this.retainOutput) this._stderr += out
                   yield [null, out as Stderr, null]
                 }
                 break
