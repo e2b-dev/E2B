@@ -6,14 +6,15 @@ import {
 import type { Sandbox } from 'e2b'
 import {
   startAcpTransport,
-  type AcpAgentExit,
+  type AcpAgentResult,
   type AcpStartOpts,
   type AcpStopOpts,
   type AcpTransport,
 } from './transport'
 
 export { DEFAULT_STOP_TIMEOUT_MS } from './transport'
-export type { AcpAgentExit, AcpStartOpts, AcpStopOpts } from './transport'
+export { DEFAULT_MAX_MESSAGE_BYTES } from './utils'
+export type { AcpAgentResult, AcpStartOpts, AcpStopOpts } from './transport'
 
 /**
  * ACP agent running in a sandbox, connected to your client.
@@ -45,7 +46,7 @@ export class AcpAgent {
    *
    * @returns exit status of the agent.
    */
-  async wait(): Promise<AcpAgentExit> {
+  async wait(): Promise<AcpAgentResult> {
     return this.transport.wait()
   }
 
