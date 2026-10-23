@@ -269,3 +269,21 @@ def test_write_file_like_wrapper(sandbox, debug, use_octet_stream):
 
     if debug:
         sandbox.files.remove(filename)
+
+
+@pytest.mark.parametrize("use_octet_stream", [True, False])
+def test_write_text_file_like_wrapper(sandbox, debug, use_octet_stream):
+    import tempfile
+
+    filename = "test_write_text_wrapper.txt"
+    text = "héllo wörld " * 1000
+    # Its encoding differs from the UTF-8 upload, so the byte length changes.
+    with tempfile.NamedTemporaryFile(mode="w+", encoding="latin-1") as f:
+        f.write(text)
+        f.flush()
+        f.seek(0)
+        sandbox.files.write(filename, f, use_octet_stream=use_octet_stream)
+    assert sandbox.files.read(filename) == text
+
+    if debug:
+        sandbox.files.remove(filename)

@@ -413,6 +413,21 @@ def check_stream_upload(
         )
 
 
+class _BinaryReader:
+    """Reads a non-``IOBase`` file-like of either mode as UTF-8 bytes.
+
+    httpx sizes a multipart file by its descriptor, which miscounts text that
+    re-encodes to a different length, so this hides the descriptor and httpx
+    streams the field without a precomputed length."""
+
+    def __init__(self, data: IO) -> None:
+        self._data = data
+
+    def read(self, size: int = -1) -> bytes:
+        chunk = self._data.read(size)
+        return chunk if isinstance(chunk, bytes) else chunk.encode("utf-8")
+
+
 def _to_httpx_file(file_path: str, file_data: AsyncWriteData):
     """Build an httpx multipart `("file", (name, data))` tuple for the upload."""
     if isinstance(file_data, (str, bytes)):
@@ -423,8 +438,10 @@ def _to_httpx_file(file_path: str, file_data: AsyncWriteData):
         # at the cost of buffering. The octet-stream path streams it instead,
         # which is why a file-like entry defaults to that path.
         return ("file", (file_path, file_data.read()))
-    elif _is_file_like(file_data):
+    elif isinstance(file_data, IOBase):
         return ("file", (file_path, file_data))
+    elif _is_file_like(file_data):
+        return ("file", (file_path, cast(IO[bytes], _BinaryReader(file_data))))
     else:
         raise _unsupported_data(file_data, file_path)
 
