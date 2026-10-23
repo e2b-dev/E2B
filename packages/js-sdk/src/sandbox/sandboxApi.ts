@@ -15,6 +15,7 @@ import {
   TemplateError,
 } from '../errors'
 import { Paginator } from '../paginator'
+import { resolveIdempotencyKey } from '../retry'
 import { timeoutToSeconds } from '../utils'
 import type { Volume } from '../volume'
 import type { McpServer as BaseMcpServer } from './mcp'
@@ -739,6 +740,14 @@ function toSandboxCreateResponse(
  * Options for creating a new Sandbox.
  */
 export interface SandboxOpts extends ConnectionOpts {
+  /**
+   * Idempotency key sent as the `Idempotency-Key` header when creating a
+   * sandbox. Retries reuse the key. Keys must contain 1–255 lowercase ASCII
+   * letters, digits or hyphens (e.g. a lowercase UUID); other keys throw
+   * `InvalidArgumentError`.
+   */
+  idempotencyKey?: string
+
   /**
    * Sandbox template name or ID.
    *
@@ -1885,6 +1894,8 @@ export class SandboxApi extends ClientFactory {
     timeoutMs?: number,
     opts?: SandboxOpts
   ) {
+    const idempotencyKey = resolveIdempotencyKey(opts?.idempotencyKey)
+
     // onTimeout accepts a bare action (`'pause'` / `'kill'`) or the object form
     // `{ action, mode }`. The discriminated union type forbids `mode` (and the
     // deprecated `keepMemory`) on `action: 'kill'`; re-check at runtime for
@@ -1976,6 +1987,10 @@ export class SandboxApi extends ClientFactory {
     const client = new ApiClient(config)
     const res = await client.api.POST('/v2/sandboxes', {
       body,
+      params:
+        idempotencyKey !== undefined
+          ? { header: { 'Idempotency-Key': idempotencyKey } }
+          : undefined,
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 

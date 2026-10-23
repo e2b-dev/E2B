@@ -41,6 +41,25 @@ export function resolveRetries(retries: number): number {
   return retries
 }
 
+const IDEMPOTENCY_KEY_PATTERN = /^[a-z0-9-]{1,255}$/
+
+export function resolveIdempotencyKey(
+  key: string | undefined
+): string | undefined {
+  if (key === undefined) return undefined
+  if (key.length < 1 || key.length > 255) {
+    throw new InvalidArgumentError(
+      `Invalid idempotencyKey: expected 1-255 characters, got ${key.length}.`
+    )
+  }
+  if (!IDEMPOTENCY_KEY_PATTERN.test(key)) {
+    throw new InvalidArgumentError(
+      'Invalid idempotencyKey: only lowercase letters, digits and hyphens are allowed.'
+    )
+  }
+  return key
+}
+
 export function parseRetryAfter(
   value: string | null | undefined
 ): number | undefined {
