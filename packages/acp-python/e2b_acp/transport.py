@@ -250,8 +250,14 @@ class AcpTransport:
         except CommandExitException as e:
             exit = AcpAgentExit(exit_code=e.exit_code, error=e.error)
         except Exception as e:
-            # The output stream failed; the process may still be running.
+            # The output stream failed. The process may still be running, but
+            # nothing can talk to it any more.
             self._end(e)
+            try:
+                await self.kill()
+            except Exception:
+                # The stream already failed with the real error.
+                pass
             return None
 
         self._exit = exit
