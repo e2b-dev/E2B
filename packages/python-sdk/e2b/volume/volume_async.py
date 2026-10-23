@@ -35,6 +35,7 @@ from e2b.connection_config import (
     ConnectionConfig,
     HttpVersion,
     ProxyTypes,
+    whole_request_timeout,
 )
 from e2b.exceptions import (
     NotFoundException,
@@ -567,7 +568,7 @@ class AsyncVolume(ClientFactory):
                         method="GET",
                         url=f"/volumecontent/{self._volume_id}/file",
                         params=params,
-                        timeout=stream_timeout,
+                        timeout=whole_request_timeout(stream_timeout),
                     )
                     response = await read_bounded(stream_cm.__aenter__())
                     try:
@@ -601,7 +602,7 @@ class AsyncVolume(ClientFactory):
             method="GET",
             url=f"/volumecontent/{self._volume_id}/file",
             params=params,
-            timeout=timeout,
+            timeout=whole_request_timeout(timeout),
         )
 
         if response.status_code == 404:
@@ -653,7 +654,7 @@ class AsyncVolume(ClientFactory):
         )
         api_client = get_volume_api_client(config)
         if upload_timeout is not None:
-            api_client = api_client.with_timeout(httpx.Timeout(upload_timeout))
+            api_client = api_client.with_timeout(whole_request_timeout(upload_timeout))
 
         content: Union[bytes, AsyncIterator[bytes]]
         if isinstance(data, str):

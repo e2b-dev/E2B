@@ -130,7 +130,10 @@ def _request_deadline(request: httpx.Request, monotonic: Callable[[], float]) ->
     if not isinstance(timeout, dict):
         return monotonic() + MAX_RETRY_WAIT_WITHOUT_TIMEOUT_SECONDS
 
-    values = [value for value in timeout.values() if value is not None]
+    # A phase of zero or less holds no budget of its own: the SDK puts a
+    # request's whole deadline on `read` and leaves `write` at zero (see
+    # `whole_request_timeout`).
+    values = [value for value in timeout.values() if value is not None and value > 0]
     # A monotonic clock cannot jump when the system wall clock is adjusted,
     # keeping elapsed timeout calculations stable across retries.
     return monotonic() + (
