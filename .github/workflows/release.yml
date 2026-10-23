@@ -31,6 +31,7 @@ jobs:
       desktop_python: ${{ steps.desktop_python.outputs.release }}
       dockerfile_utils_js: ${{ steps.dockerfile_utils_js.outputs.release }}
       dockerfile_utils_python: ${{ steps.dockerfile_utils_python.outputs.release }}
+      acp_python: ${{ steps.acp_python.outputs.release }}
       itinerary: ${{ steps.itinerary.outputs.itinerary }}
     steps:
       - name: Check the ref
@@ -148,6 +149,13 @@ jobs:
           IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/dockerfile-utils-python" "$RUNNER_TEMP/release-plan.json")
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
+      - name: Check ACP Python SDK Release
+        id: acp_python
+        if: steps.version.outputs.release == 'true'
+        run: |
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/acp-python")
+          echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
+
       - name: Build release itinerary
         id: itinerary
         if: steps.version.outputs.release == 'true'
@@ -223,6 +231,13 @@ jobs:
     if: needs.preflight.outputs.dockerfile_utils_python == 'true'
     uses: ./.github/workflows/dockerfile_utils_python_tests.yml
 
+  acp-python-tests:
+    name: ACP Python SDK Tests
+    needs: [preflight]
+    if: needs.preflight.outputs.acp_python == 'true'
+    uses: ./.github/workflows/acp_python_tests.yml
+    secrets: inherit
+
   publish:
     name: Publish
     needs:
@@ -236,6 +251,7 @@ jobs:
       - desktop-python-tests
       - dockerfile-utils-js-tests
       - dockerfile-utils-python-tests
+      - acp-python-tests
     if: (!cancelled()) && !contains(needs.*.result, 'failure') && needs.preflight.outputs.release == 'true'
     uses: ./.github/workflows/publish_packages.yml
     with:
@@ -275,6 +291,7 @@ jobs:
       - desktop-python-tests
       - dockerfile-utils-js-tests
       - dockerfile-utils-python-tests
+      - acp-python-tests
       - publish
     if: failure()
     name: Release Failed - Slack Notification
