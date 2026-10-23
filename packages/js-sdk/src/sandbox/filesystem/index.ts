@@ -52,8 +52,13 @@ import {
   InvalidArgumentError,
   TemplateError,
 } from '../../errors'
-import { isReadableStreamLike } from '../../is'
-import { runtime, toBlob, toUploadBody } from '../../utils'
+import {
+  BufferedUploadData,
+  isStreamableData,
+  toBlob,
+  toUploadBody,
+  UploadData,
+} from '../../utils'
 
 const FILESYSTEM_HTTP_ERROR_MAP: Record<number, (message: string) => Error> = {
   404: (message: string) => new FileNotFoundError(message),
@@ -165,7 +170,7 @@ export enum FileType {
 
 export type WriteEntry = {
   path: string
-  data: string | ArrayBuffer | Blob | ReadableStream
+  data: UploadData
 }
 
 function mapFileType(fileType: FsFileType) {
@@ -274,7 +279,8 @@ export interface FilesystemRequestOpts extends Partial<
 export interface FilesystemWriteOpts extends FilesystemRequestOpts {
   /**
    * When true, the upload will be gzip-compressed. Implies the
-   * `application/octet-stream` upload.
+   * `application/octet-stream` upload, so combining it with
+   * `useOctetStream: false` throws an `InvalidArgumentError`.
    *
    * Requires envd 0.5.7 or later — when not supported by the sandbox's envd
    * version, the upload falls back to uncompressed `multipart/form-data`.
@@ -282,14 +288,15 @@ export interface FilesystemWriteOpts extends FilesystemRequestOpts {
   gzip?: boolean
   /**
    * When true, the upload uses `application/octet-stream` instead of `multipart/form-data`.
-   * Outside the browser, `ReadableStream` data is then streamed to the sandbox
+   * `ReadableStream` and `AsyncIterable` data is then streamed to the sandbox
    * instead of being buffered in memory.
    *
    * Defaults to `undefined`, which uses octet-stream when any entry is a
-   * `ReadableStream` (so streamed uploads aren't buffered) and
-   * `multipart/form-data` otherwise; browsers always use `multipart/form-data`
-   * since they can't stream request bodies. Requires envd 0.5.7 or later — when
-   * not supported by the sandbox's envd version, the upload falls back to
+   * `ReadableStream` or an `AsyncIterable` and `multipart/form-data` otherwise.
+   * Stream data is only uploaded with octet-stream: `false`, or an envd older
+   * than 0.5.7, throws for it. Stream data is never buffered: in a browser that
+   * can't stream request bodies it throws `InvalidArgumentError` (pass a `Blob`). Requires envd 0.5.7 or later — when
+   * not supported by the sandbox's envd version, other data falls back to
    * `multipart/form-data`.
    */
   useOctetStream?: boolean
@@ -586,14 +593,14 @@ export class Filesystem {
    * Writing to a file at path that doesn't exist creates the necessary directories.
    *
    * @param path path to file.
-   * @param data data to write to the file. Data can be a string, `ArrayBuffer`, `Blob`, or `ReadableStream`.
+   * @param data data to write to the file. Data can be a string, `ArrayBuffer`, `Blob`, `ReadableStream`, or an `AsyncIterable` of byte chunks (e.g. an async generator or a Node.js `Readable`).
    * @param opts connection options.
    *
    * @returns information about the written file
    */
   async write(
     path: string,
-    data: string | ArrayBuffer | Blob | ReadableStream,
+    data: UploadData,
     opts?: FilesystemWriteOpts
   ): Promise<WriteInfo>
   async write(
@@ -602,8 +609,7 @@ export class Filesystem {
   ): Promise<WriteInfo[]>
   async write(
     pathOrFiles: string | WriteEntry[],
-    dataOrOpts?:
-      string | ArrayBuffer | Blob | ReadableStream | FilesystemWriteOpts,
+    dataOrOpts?: UploadData | FilesystemWriteOpts,
     opts?: FilesystemWriteOpts
   ): Promise<WriteInfo | WriteInfo[]> {
     if (typeof pathOrFiles !== 'string' && !Array.isArray(pathOrFiles)) {
@@ -623,8 +629,7 @@ export class Filesystem {
             writeOpts: opts as FilesystemWriteOpts,
             writeFiles: [
               {
-                data: dataOrOpts as
-                  string | ArrayBuffer | Blob | ReadableStream,
+                data: dataOrOpts as UploadData,
               },
             ],
           }
@@ -645,21 +650,35 @@ export class Filesystem {
     }
 
     const useGzip = writeOpts?.gzip === true
+    if (useGzip && writeOpts?.useOctetStream === false) {
+      throw new InvalidArgumentError(
+        "`gzip` requires the octet-stream upload and can't be combined with `useOctetStream: false`."
+      )
+    }
 
     const supportsOctetStream =
       compareVersions(this.envdApi.version, ENVD_OCTET_STREAM_UPLOAD) >= 0
     // Streaming a request body only happens on the octet-stream path; the
-    // multipart path buffers via `toBlob`. So default to octet-stream when any
-    // entry is a `ReadableStream`, otherwise a streamed upload would be
-    // silently buffered. Browsers can't stream request bodies, so they stay on
-    // multipart. Gzip also implies octet-stream (the Content-Encoding header
-    // applies to the whole request body). An explicit `useOctetStream` wins.
-    const hasStreamableData =
-      runtime !== 'browser' &&
-      writeFiles.some((file) => isReadableStreamLike(file.data))
+    // multipart path would buffer via `toBlob`. So stream data always uses
+    // octet-stream and refuses multipart rather than being silently buffered.
+    // Gzip also implies octet-stream (the Content-Encoding header applies to
+    // the whole request body). Otherwise an explicit `useOctetStream` wins.
+    const hasStreamableData = writeFiles.some((file) =>
+      isStreamableData(file.data)
+    )
     const useOctetStream =
       ((writeOpts?.useOctetStream ?? hasStreamableData) || useGzip) &&
       supportsOctetStream
+    if (hasStreamableData && !useOctetStream) {
+      if (!supportsOctetStream) {
+        throw new TemplateError(
+          `Uploading stream data requires envd ${ENVD_OCTET_STREAM_UPLOAD} or later.`
+        )
+      }
+      throw new InvalidArgumentError(
+        'Stream data (`ReadableStream` / `AsyncIterable`) is only uploaded with octet-stream; `useOctetStream: false` is not supported for it.'
+      )
+    }
 
     const metadata = writeOpts?.metadata
     validateMetadata(metadata)
@@ -688,7 +707,10 @@ export class Filesystem {
       const uploadResults = await Promise.all(
         writeFiles.map(async (file) => {
           const filePath = path ?? (file as WriteEntry).path
-          const { body, streamed } = await toUploadBody(file.data, useGzip)
+          const { body, streamed, sourceError } = await toUploadBody(
+            file.data,
+            useGzip
+          )
           // A streamed upload carries no client-side timeout: the socket-write
           // "wire" isn't observable through fetch, and a stalled producer is
           // the caller's own code, so a stuck streamed upload is bounded
@@ -719,6 +741,12 @@ export class Filesystem {
               }),
             })
             .catch(async (err) => {
+              // fetch reports an error raised while reading a streamed body as
+              // its own `TypeError`; surface the SDK's own validation error.
+              const invalidChunk = sourceError()
+              if (invalidChunk) {
+                throw invalidChunk
+              }
               throw await handleEnvdApiFetchError(err, this.checkHealth)
             })
 
@@ -750,7 +778,7 @@ export class Filesystem {
       for (const file of writeFiles) {
         formData.append(
           'file',
-          await toBlob(file.data),
+          await toBlob(file.data as BufferedUploadData),
           (file as WriteEntry).path ?? path!
         )
       }

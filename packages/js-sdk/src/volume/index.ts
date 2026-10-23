@@ -673,7 +673,7 @@ export class Volume extends ClientFactory {
    * Writing to a file that already exists overwrites the file.
    *
    * @param path path to the file.
-   * @param data data to write to the file. Data can be a string, `ArrayBuffer`, `Blob`, or `ReadableStream`. Outside the browser, `ReadableStream` data is streamed to the API instead of being buffered in memory.
+   * @param data data to write to the file. Data can be a string, `ArrayBuffer`, `Blob`, or `ReadableStream`. `ReadableStream` data is streamed to the API instead of being buffered in memory (a browser that can't stream request bodies throws `InvalidArgumentError`; pass a `Blob`).
    * @param options file creation options.
    * @param opts connection options.
    *
@@ -690,8 +690,7 @@ export class Volume extends ClientFactory {
     })
     const client = new VolumeApiClient(config)
 
-    // `toUploadBody` streams only for non-browser stream input; otherwise it
-    // buffers into a Blob.
+    // `toUploadBody` streams stream input; other data is sent as a Blob.
     const { body, streamed } = await toUploadBody(data)
 
     // A streamed upload carries no client-side timeout: the socket-write

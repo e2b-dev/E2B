@@ -5,14 +5,27 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from io import IOBase, TextIOBase
-from typing import IO, AsyncIterator, Dict, Iterator, List, Optional, Union, TypedDict
+from typing import (
+    IO,
+    AsyncIterable,
+    AsyncIterator,
+    Dict,
+    Iterable,
+    Iterator,
+    Optional,
+    Sequence,
+    TypedDict,
+    TypeGuard,
+    Union,
+    cast,
+)
 
 import httpx
 
 from protobuf.wkt import Timestamp
 
 from e2b.envd.filesystem import filesystem_pb
-from e2b.exceptions import InvalidArgumentException
+from e2b.exceptions import InvalidArgumentException, TemplateException
 from e2b.io_utils import agzip_iter, aiter_io_chunks, gzip_iter, iter_io_chunks
 
 
@@ -148,13 +161,35 @@ def map_entry_info(entry: filesystem_pb.EntryInfo) -> EntryInfo:
     )
 
 
+WriteData = Union[str, bytes, IO, Iterable[bytes]]
+"""Data accepted by ``Sandbox.files.write``."""
+
+AsyncWriteData = Union[str, bytes, IO, AsyncIterable[bytes]]
+"""Data accepted by ``AsyncSandbox.files.write``."""
+
+
 class WriteEntry(TypedDict):
     """
     Contains path and data of the file to be written to the filesystem.
+
+    ``data`` can be a ``str``, ``bytes``, a file-like object or an iterable of
+    ``bytes`` chunks.
     """
 
     path: str
-    data: Union[str, bytes, IO]
+    data: WriteData
+
+
+class AsyncWriteEntry(TypedDict):
+    """
+    Contains path and data of the file to be written to the filesystem by ``AsyncSandbox``.
+
+    ``data`` can be a ``str``, ``bytes``, a file-like object or an async
+    iterable of ``bytes`` chunks.
+    """
+
+    path: str
+    data: AsyncWriteData
 
 
 class FileStreamReader(Iterator[bytes]):
@@ -264,7 +299,137 @@ class AsyncFileStreamReader(AsyncIterator[bytes]):
         await self.aclose()
 
 
-def _to_httpx_file(file_path: str, file_data: Union[str, bytes, IO]):
+def _is_file_like(data) -> TypeGuard[IO]:
+    """Whether ``data`` is read as a file: an ``IOBase``, or any object with a
+    ``read`` method (``tempfile`` wrappers, werkzeug ``FileStorage``, Django
+    ``File``), which would otherwise be iterated line by line."""
+    return isinstance(data, IOBase) or (
+        not isinstance(data, (str, bytes)) and callable(getattr(data, "read", None))
+    )
+
+
+def _is_chunk_iterable(data) -> TypeGuard[Iterable[bytes]]:
+    """Whether ``data`` is an iterable of ``bytes`` chunks (not a buffer or file)."""
+    return (
+        isinstance(data, Iterable)
+        and not isinstance(data, (str, bytes, bytearray, memoryview))
+        and not _is_file_like(data)
+    )
+
+
+def _is_async_chunk_iterable(data) -> TypeGuard[AsyncIterable[bytes]]:
+    return isinstance(data, AsyncIterable) and not _is_file_like(data)
+
+
+class ChunkCheck:
+    """Records a chunk validation error raised while the transport pulls the
+    upload body: the transport reports it as its own ``httpx.WriteError``, so
+    the write re-raises the recorded error instead."""
+
+    def __init__(self) -> None:
+        self.error: Optional[InvalidArgumentException] = None
+
+
+def _check_chunk(chunk, check: Optional[ChunkCheck] = None) -> bytes:
+    if isinstance(chunk, bytes):
+        return chunk
+    if isinstance(chunk, (bytearray, memoryview)):
+        return bytes(chunk)
+    err = InvalidArgumentException(
+        f"Iterable upload data must yield bytes chunks, got {type(chunk).__name__}"
+    )
+    if check is not None:
+        check.error = err
+    raise err
+
+
+def iter_chunks(
+    data: Iterable[bytes], check: Optional[ChunkCheck] = None
+) -> Iterator[bytes]:
+    """Iterate user-supplied upload chunks, rejecting anything but bytes."""
+    for chunk in data:
+        yield _check_chunk(chunk, check)
+
+
+async def aiter_chunks(
+    data: AsyncIterable[bytes], check: Optional[ChunkCheck] = None
+) -> AsyncIterator[bytes]:
+    """Iterate user-supplied async upload chunks, rejecting anything but bytes."""
+    async for chunk in data:
+        yield _check_chunk(chunk, check)
+
+
+def _is_wrong_iterable(data, is_async: bool) -> bool:
+    """Whether ``data`` is an iterable of the kind the other SDK takes: async
+    iterables only go to ``AsyncSandbox``, sync ones only to ``Sandbox``."""
+    if is_async:
+        return _is_chunk_iterable(data) and not _is_async_chunk_iterable(data)
+    return _is_async_chunk_iterable(data) and not _is_chunk_iterable(data)
+
+
+def _unsupported_data(
+    data, is_async: bool, file_path: Optional[str] = None
+) -> InvalidArgumentException:
+    target = f" for file {file_path}" if file_path else ""
+    if _is_wrong_iterable(data, is_async):
+        if is_async:
+            return InvalidArgumentException(
+                f"Sync iterable data{target} is only supported by `Sandbox`; "
+                "pass an async iterable of bytes, a file-like object or bytes to `AsyncSandbox.files.write`."
+            )
+        return InvalidArgumentException(
+            f"Async iterable data{target} is only supported by `AsyncSandbox`; "
+            "pass a sync iterable of bytes, a file-like object or bytes to `Sandbox.files.write`."
+        )
+    return InvalidArgumentException(f"Unsupported data type{target}: {type(data)}")
+
+
+def check_stream_upload(
+    files: Sequence[Union[WriteEntry, AsyncWriteEntry]],
+    use_octet_stream: bool,
+    supports_octet_stream: bool,
+    is_async: bool,
+) -> None:
+    """Reject iterable data on the multipart upload, which would buffer it.
+
+    Iterables of the other SDK's kind are rejected outright: sync ones in
+    ``AsyncSandbox`` (``is_async``), async ones in ``Sandbox``.
+    """
+    for file in files:
+        if _is_wrong_iterable(file["data"], is_async):
+            raise _unsupported_data(file["data"], is_async, file["path"])
+    if not any(
+        _is_chunk_iterable(file["data"]) or _is_async_chunk_iterable(file["data"])
+        for file in files
+    ):
+        return
+    if not supports_octet_stream:
+        raise TemplateException("Uploading iterable data requires envd 0.5.7 or later.")
+    if not use_octet_stream:
+        raise InvalidArgumentException(
+            "Iterable data is only uploaded with octet-stream; "
+            "`use_octet_stream=False` is not supported for it."
+        )
+
+
+class _BinaryReader:
+    """Reads a non-``IOBase`` file-like of either mode as UTF-8 bytes.
+
+    httpx sizes a multipart file by its descriptor, which miscounts text that
+    re-encodes to a different length, so this hides the descriptor and httpx
+    streams the field without a precomputed length."""
+
+    def __init__(self, data: IO) -> None:
+        self._data = data
+
+    def read(self, size: int = -1) -> bytes:
+        chunk = self._data.read(size)
+        return chunk if isinstance(chunk, bytes) else chunk.encode("utf-8")
+
+
+def _to_httpx_file(
+    file_path: str, file_data: Union[WriteData, AsyncWriteData], is_async: bool
+):
     """Build an httpx multipart `("file", (name, data))` tuple for the upload."""
     if isinstance(file_data, (str, bytes)):
         return ("file", (file_path, file_data))
@@ -276,11 +441,15 @@ def _to_httpx_file(file_path: str, file_data: Union[str, bytes, IO]):
         return ("file", (file_path, file_data.read()))
     elif isinstance(file_data, IOBase):
         return ("file", (file_path, file_data))
+    elif _is_file_like(file_data):
+        return ("file", (file_path, cast(IO[bytes], _BinaryReader(file_data))))
     else:
-        raise InvalidArgumentException(f"Unsupported data type for file {file_path}")
+        raise _unsupported_data(file_data, is_async, file_path)
 
 
-def multipart_body_is_streamed(files: List[WriteEntry]) -> bool:
+def multipart_body_is_streamed(
+    files: Sequence[Union[WriteEntry, AsyncWriteEntry]],
+) -> bool:
     """Whether the multipart body built from ``files`` streams any entry.
 
     Only binary file-like data is handed to httpx as a stream:
@@ -291,52 +460,65 @@ def multipart_body_is_streamed(files: List[WriteEntry]) -> bool:
     ``to_upload_body``, which streams text and binary alike on the
     octet-stream path (``iter_io_chunks`` encodes the chunks)."""
     return any(
-        isinstance(file["data"], IOBase) and not isinstance(file["data"], TextIOBase)
+        _is_file_like(file["data"]) and not isinstance(file["data"], TextIOBase)
         for file in files
     )
 
 
 def to_upload_body(
-    data: Union[str, bytes, IO],
+    data: WriteData,
     use_gzip: bool = False,
+    check: Optional[ChunkCheck] = None,
 ) -> Union[bytes, IO, Iterator[bytes]]:
     """Prepare file data for upload, optionally gzip-compressed.
 
-    File-like objects are streamed in chunks instead of being buffered in
-    memory.
+    File-like objects and iterables of bytes are streamed in chunks instead of
+    being buffered in memory.
     """
     if isinstance(data, (str, bytes)):
         raw = data.encode("utf-8") if isinstance(data, str) else data
         return gzip.compress(raw) if use_gzip else raw
-    elif isinstance(data, (TextIOBase, IOBase)):
-        if use_gzip:
-            return gzip_iter(iter_io_chunks(data))
-        if isinstance(data, TextIOBase):
-            # Text-mode IO yields str chunks—encode them while streaming.
-            return iter_io_chunks(data)
-        # httpx streams binary file-like objects in chunks without buffering.
-        return data
+    elif _is_file_like(data):
+        if (
+            isinstance(data, IOBase)
+            and not isinstance(data, TextIOBase)
+            and not use_gzip
+        ):
+            # httpx streams binary file-like objects in chunks without buffering.
+            return cast(IO, data)
+        # Text-mode IO yields str chunks—encode them while streaming. Other
+        # file-likes may be either mode, and httpx would iterate them by line.
+        chunks = iter_io_chunks(data)
+        return gzip_iter(chunks) if use_gzip else chunks
+    elif _is_chunk_iterable(data):
+        chunks = iter_chunks(data, check)
+        return gzip_iter(chunks) if use_gzip else chunks
     else:
-        raise InvalidArgumentException(f"Unsupported data type: {type(data)}")
+        raise _unsupported_data(data, is_async=False)
 
 
 def to_upload_body_async(
-    data: Union[str, bytes, IO],
+    data: AsyncWriteData,
     use_gzip: bool = False,
+    check: Optional[ChunkCheck] = None,
 ) -> Union[bytes, AsyncIterator[bytes]]:
     """Prepare file data for upload with async httpx, optionally gzip-compressed.
 
-    File-like objects are streamed in chunks instead of being buffered in
-    memory. Async httpx requires an async iterable for streamed request bodies.
+    File-like objects and async iterables of bytes are streamed in chunks
+    instead of being buffered in memory. Async httpx requires an async iterable
+    for streamed request bodies.
     """
     if isinstance(data, (str, bytes)):
         raw = data.encode("utf-8") if isinstance(data, str) else data
         return gzip.compress(raw) if use_gzip else raw
-    elif isinstance(data, (TextIOBase, IOBase)):
+    elif _is_file_like(data):
         chunks = aiter_io_chunks(data)
         return agzip_iter(chunks) if use_gzip else chunks
+    elif _is_async_chunk_iterable(data):
+        chunks = aiter_chunks(data, check)
+        return agzip_iter(chunks) if use_gzip else chunks
     else:
-        raise InvalidArgumentException(f"Unsupported data type: {type(data)}")
+        raise _unsupported_data(data, is_async=True)
 
 
 METADATA_HEADER_PREFIX = "X-Metadata-"

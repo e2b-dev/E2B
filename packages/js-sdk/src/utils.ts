@@ -1,6 +1,7 @@
 import platform from 'platform'
 
-import { isBlobLike, isReadableStreamLike } from './is'
+import { InvalidArgumentError } from './errors'
+import { isAsyncIterable, isBlobLike, isReadableStreamLike } from './is'
 
 declare let window: any
 
@@ -102,8 +103,16 @@ export function stripAnsi(text: string): string {
 }
 
 /**
+ * The platform's own `ReadableStream` class. A Blob's stream is created by the
+ * platform, so this holds even when `globalThis.ReadableStream` was replaced.
+ */
+function platformStreamClass(): typeof ReadableStream {
+  return new Blob().stream().constructor as typeof ReadableStream
+}
+
+/**
  * Adopt a stream from a polyfill, a replaced global, or another realm into the
- * current `ReadableStream` class by pumping it through a new one. Reading
+ * platform's `ReadableStream` class by pumping it through a new one. Reading
  * through the public reader is the portable part of a stream.
  *
  * Needed wherever the stream is handed to another platform primitive that
@@ -114,13 +123,14 @@ function toNativeStream(stream: ReadableStream): ReadableStream {
   // The `instanceof` is kept out of the `if` condition on purpose: as a type
   // guard it would narrow the rest of the function to `never`, and a stream
   // whose class disagrees with the type is the whole reason this exists.
-  const isNative: boolean = stream instanceof ReadableStream
+  const PlatformStream = platformStreamClass()
+  const isNative: boolean = stream instanceof PlatformStream
   if (isNative) {
     return stream
   }
 
   const reader = stream.getReader()
-  return new ReadableStream({
+  return new PlatformStream({
     async pull(controller) {
       const { done, value } = await reader.read()
       if (done) {
@@ -148,17 +158,98 @@ function toNativeStream(stream: ReadableStream): ReadableStream {
  */
 export function toDispatchableStream(stream: ReadableStream): ReadableStream {
   const isDispatchable: boolean =
-    stream instanceof ReadableStream || Symbol.asyncIterator in stream
+    stream instanceof platformStreamClass() || Symbol.asyncIterator in stream
 
   return isDispatchable ? stream : toNativeStream(stream)
 }
 
 /**
- * Convert data to a Blob, avoiding unnecessary conversions when possible.
+ * Data that can be uploaded to the sandbox: buffered (`string`, `ArrayBuffer`,
+ * `Blob`) or streamed (`ReadableStream`, or any `AsyncIterable` of byte chunks
+ * such as an async generator or a Node.js `Readable`).
  */
-export async function toBlob(
-  data: string | ArrayBuffer | Blob | ReadableStream
-): Promise<Blob> {
+export type UploadData =
+  string | ArrayBuffer | Blob | ReadableStream | AsyncIterable<Uint8Array>
+
+/**
+ * Whether `data` is streamed rather than buffered.
+ */
+export function isStreamableData(
+  data: UploadData
+): data is ReadableStream | AsyncIterable<Uint8Array> {
+  return isReadableStreamLike(data) || isAsyncIterable(data)
+}
+
+/**
+ * Validate a chunk and copy it: a producer may reuse its buffer after
+ * yielding, before the transport has sent it. The copy also adopts a
+ * `Uint8Array` from another realm (iframe, `node:vm`, worker), which fails
+ * `instanceof` but carries the realm-independent tag.
+ */
+function checkChunk(chunk: unknown): Uint8Array {
+  if (
+    chunk instanceof Uint8Array ||
+    (ArrayBuffer.isView(chunk) &&
+      Object.prototype.toString.call(chunk) === '[object Uint8Array]')
+  ) {
+    return new Uint8Array(chunk as Uint8Array)
+  }
+  const kind =
+    chunk === null
+      ? 'null'
+      : typeof chunk === 'object'
+        ? (chunk.constructor?.name ?? 'object')
+        : typeof chunk
+  throw new InvalidArgumentError(
+    `AsyncIterable upload data must yield Uint8Array chunks, got ${kind}`
+  )
+}
+
+/**
+ * Wrap an async iterable of byte chunks in a native `ReadableStream`, the one
+ * streamed body every runtime's `fetch` accepts.
+ */
+function asyncIterableToStream(
+  iterable: AsyncIterable<Uint8Array>,
+  onInvalidChunk: (err: unknown) => void
+): ReadableStream<Uint8Array> {
+  const iterator = iterable[Symbol.asyncIterator]()
+  const PlatformStream = platformStreamClass()
+  return new PlatformStream<Uint8Array>({
+    async pull(controller) {
+      const { done, value } = await iterator.next()
+      if (done) {
+        controller.close()
+        return
+      }
+      let chunk: Uint8Array
+      try {
+        chunk = checkChunk(value)
+      } catch (err) {
+        // An error thrown from `pull` doesn't run `cancel`, so release the
+        // source here.
+        await iterator.return?.().catch(() => {})
+        onInvalidChunk(err)
+        throw err
+      }
+      controller.enqueue(chunk)
+    },
+    async cancel(reason) {
+      await iterator.return?.(reason)
+    },
+  })
+}
+
+/**
+ * Upload data that is held in memory, as opposed to streamed.
+ */
+export type BufferedUploadData = string | ArrayBuffer | Blob
+
+/**
+ * Convert in-memory data to a Blob, avoiding unnecessary conversions when
+ * possible. Streams are never buffered: their final size is unknown.
+ */
+export async function toBlob(data: BufferedUploadData): Promise<Blob> {
   // Already a native Blob - use directly
   if (data instanceof Blob) {
     return data
@@ -167,23 +258,6 @@ export async function toBlob(
   // blob bodies and would stringify this one to "[object Blob]".
   if (isBlobLike(data)) {
     return new Blob([await data.arrayBuffer()], { type: data.type })
-  }
-  // ReadableStream - must consume to get Blob. Drained through the reader
-  // rather than `new Response(stream)`: the platform only accepts a body it
-  // recognizes, and what counts differs per runtime (undici takes any async
-  // iterable, a browser takes only its own stream class and stringifies the
-  // rest to "[object ReadableStream]"). The reader is the portable part.
-  if (isReadableStreamLike(data)) {
-    const reader = data.getReader()
-    const chunks: BlobPart[] = []
-    for (;;) {
-      const { done, value } = await reader.read()
-      if (done) {
-        break
-      }
-      chunks.push(value)
-    }
-    return new Blob(chunks)
   }
   // String or ArrayBuffer - create Blob. A cross-realm ArrayBuffer needs no
   // special handling: buffer sources are recognized by V8, not by brand.
@@ -221,36 +295,83 @@ export function shellQuote(s: string): string {
 export type UploadBody = {
   body: BodyInit
   streamed: boolean
+  /**
+   * The validation error that failed a streamed body, if any. `fetch` reports
+   * it as its own `TypeError` (and browsers drop the cause entirely).
+   */
+  sourceError: () => unknown
+}
+
+/**
+ * Whether `fetch` can send a `ReadableStream` request body. Browsers without
+ * support ignore `duplex` and stringify the stream, giving it a text type.
+ */
+function supportsRequestStreams(): boolean {
+  let duplexAccessed = false
+  const PlatformStream = platformStreamClass()
+  const hasContentType = new Request('https://e2b.invalid', {
+    body: new PlatformStream(),
+    method: 'POST',
+    get duplex() {
+      duplexAccessed = true
+      return 'half'
+    },
+  } as RequestInit).headers.has('Content-Type')
+  return duplexAccessed && !hasContentType
 }
 
 /**
  * Prepare data for upload, optionally gzip-compressed.
  *
- * Outside the browser, streams (and gzip-compressed data) are uploaded as a
- * `ReadableStream` so they don't have to be buffered in memory. Browsers don't
- * support streaming request bodies, so data is buffered into a Blob there.
+ * Streams are always uploaded as a `ReadableStream`, never buffered, in every
+ * runtime; a browser that can't stream request bodies throws. In-memory
+ * data is sent as a Blob, or as a gzip-compressed stream outside the browser.
  */
 export async function toUploadBody(
-  data: string | ArrayBuffer | Blob | ReadableStream,
+  data: UploadData,
   gzip?: boolean
 ): Promise<UploadBody> {
+  if (isStreamableData(data)) {
+    if (runtime === 'browser' && !supportsRequestStreams()) {
+      throw new InvalidArgumentError(
+        "This browser can't stream request bodies, and stream data is never buffered. Pass the data as a `Blob` instead, e.g. `await new Response(stream).blob()`."
+      )
+    }
+    let sourceError: unknown
+    // `pipeThrough` and browser `fetch` only take a stream of their own class,
+    // so adopt foreign streams there; undici takes any async iterable.
+    const stream =
+      isAsyncIterable(data) && !isReadableStreamLike(data)
+        ? asyncIterableToStream(data, (err) => {
+            sourceError = err
+          })
+        : gzip || runtime === 'browser'
+          ? toNativeStream(data as ReadableStream)
+          : toDispatchableStream(data as ReadableStream)
+    return {
+      body: gzip ? stream.pipeThrough(new CompressionStream('gzip')) : stream,
+      streamed: true,
+      sourceError: () => sourceError,
+    }
+  }
+
+  const noSourceError = () => undefined
   if (gzip) {
-    // `toNativeStream`, not `toDispatchableStream`: `pipeThrough` below is the
-    // stricter consumer — it only accepts a stream of its own class. Everything
-    // that isn't already a stream goes through `toBlob`, whose result is always
-    // a native Blob and so always streams natively.
-    const stream = isReadableStreamLike(data)
-      ? toNativeStream(data)
-      : (await toBlob(data)).stream()
-    const compressed = stream.pipeThrough(new CompressionStream('gzip'))
+    const compressed = (await toBlob(data))
+      .stream()
+      .pipeThrough(new CompressionStream('gzip'))
     return runtime === 'browser'
-      ? { body: await new Response(compressed).blob(), streamed: false }
-      : { body: compressed, streamed: true }
+      ? {
+          body: await new Response(compressed).blob(),
+          streamed: false,
+          sourceError: noSourceError,
+        }
+      : { body: compressed, streamed: true, sourceError: noSourceError }
   }
 
-  if (isReadableStreamLike(data) && runtime !== 'browser') {
-    return { body: toDispatchableStream(data), streamed: true }
+  return {
+    body: await toBlob(data),
+    streamed: false,
+    sourceError: noSourceError,
   }
-
-  return { body: await toBlob(data), streamed: false }
 }
