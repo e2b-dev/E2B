@@ -202,6 +202,14 @@ class Sandbox(SandboxApi):
 
         Use this method instead of using the constructor to create a new sandbox.
         """
+        # The mcp-gateway only understands camelCase keys (runCmd/installCmd);
+        # map the documented snake_case form to the wire form once, so the API
+        # payload and the gateway --config JSON agree.
+        if mcp is not None:
+            from e2b.sandbox.sandbox_api import build_mcp_wire_config
+
+            mcp = build_mcp_wire_config(mcp)
+
         if not template and mcp is not None:
             template = cls.default_mcp_template
         elif not template:
