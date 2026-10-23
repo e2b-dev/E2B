@@ -287,7 +287,7 @@ class Filesystem:
         :param data: Data to write to the file, can be a `str`, `bytes`, `IO`, or an `Iterable[bytes]`. File-like objects and iterables are streamed in chunks instead of being buffered in memory.
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request in **seconds**
-        :param gzip: Use gzip compression for the upload. Implies the `application/octet-stream` upload. Requires envd 0.5.7 or later — when not supported, the upload falls back to uncompressed `multipart/form-data`.
+        :param gzip: Use gzip compression for the upload. Implies the `application/octet-stream` upload, so combining it with `use_octet_stream=False` raises `InvalidArgumentException`. Requires envd 0.5.7 or later — when not supported, the upload falls back to uncompressed `multipart/form-data`.
         :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `None`, which uses octet-stream when `data` is a file-like object or an iterable (so streamed uploads aren't buffered) and `multipart/form-data` otherwise. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`, which reads text-mode file-like data into memory (httpx only streams binary file objects in a multipart body). Iterables are only uploaded with octet-stream: `use_octet_stream=False` or an envd without octet-stream support raises an error.
         :param metadata: User-defined metadata to persist on the uploaded file as extended attributes. Keys are lowercased by the sandbox; invalid keys or values raise an `InvalidArgumentException`. Requires envd 0.6.2 or later.
 
@@ -327,7 +327,7 @@ class Filesystem:
         :param files: list of files to write as `WriteEntry` objects, each containing `path` and `data`
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request
-        :param gzip: Use gzip compression for the upload. Implies the `application/octet-stream` upload. Requires envd 0.5.7 or later — when not supported, the upload falls back to uncompressed `multipart/form-data`.
+        :param gzip: Use gzip compression for the upload. Implies the `application/octet-stream` upload, so combining it with `use_octet_stream=False` raises `InvalidArgumentException`. Requires envd 0.5.7 or later — when not supported, the upload falls back to uncompressed `multipart/form-data`.
         :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `None`, which uses octet-stream when any entry is a file-like object or an iterable (so streamed uploads aren't buffered) and `multipart/form-data` otherwise. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`, which reads text-mode file-like data into memory (httpx only streams binary file objects in a multipart body). Iterables are only uploaded with octet-stream: `use_octet_stream=False` or an envd without octet-stream support raises an error.
         :param metadata: User-defined metadata to persist on each uploaded file as extended attributes; the same map is applied to every file. Keys are lowercased by the sandbox; invalid keys or values raise an `InvalidArgumentException`. Requires envd 0.6.2 or later.
         :return: Information about the written files
@@ -348,6 +348,12 @@ class Filesystem:
         has_streamable_data = any(
             not isinstance(file["data"], (str, bytes)) for file in files
         )
+
+        if gzip and use_octet_stream is False:
+            raise InvalidArgumentException(
+                "`gzip` requires the octet-stream upload and can't be combined "
+                "with `use_octet_stream=False`."
+            )
 
         if use_octet_stream is None:
             # Streaming an upload only happens on the octet-stream path; the

@@ -11,3 +11,5 @@
 Stream data always uses the octet-stream upload and works with `gzip`.
 
 **Breaking (JS):** `ReadableStream` / `AsyncIterable` data is no longer buffered into a multipart upload: `useOctetStream: false` throws `InvalidArgumentError`, and an envd older than 0.5.7 throws `TemplateError`. Python raises `InvalidArgumentException` / `TemplateException` for iterables in the same cases.
+
+**Breaking (both SDKs):** `gzip: true` with `useOctetStream: false` / `gzip=True, use_octet_stream=False` is now rejected as an invalid combination (`InvalidArgumentError` / `InvalidArgumentException`) instead of gzip silently overriding it.

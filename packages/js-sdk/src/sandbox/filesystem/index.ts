@@ -273,7 +273,8 @@ export interface FilesystemRequestOpts extends Partial<
 export interface FilesystemWriteOpts extends FilesystemRequestOpts {
   /**
    * When true, the upload will be gzip-compressed. Implies the
-   * `application/octet-stream` upload.
+   * `application/octet-stream` upload, so combining it with
+   * `useOctetStream: false` throws an `InvalidArgumentError`.
    *
    * Requires envd 0.5.7 or later — when not supported by the sandbox's envd
    * version, the upload falls back to uncompressed `multipart/form-data`.
@@ -643,6 +644,11 @@ export class Filesystem {
     }
 
     const useGzip = writeOpts?.gzip === true
+    if (useGzip && writeOpts?.useOctetStream === false) {
+      throw new InvalidArgumentError(
+        "`gzip` requires the octet-stream upload and can't be combined with `useOctetStream: false`."
+      )
+    }
 
     const supportsOctetStream =
       compareVersions(this.envdApi.version, ENVD_OCTET_STREAM_UPLOAD) >= 0

@@ -386,12 +386,12 @@ sandboxTest('write AsyncIterable', async ({ sandbox }) => {
     sandbox.files.write(filename, chunks(), { useOctetStream: false })
   ).rejects.toThrow(InvalidArgumentError)
 
-  // gzip implies octet-stream, so it wins over useOctetStream: false
-  await sandbox.files.write(filename, chunks(), {
-    gzip: true,
-    useOctetStream: false,
-  })
-  assert.equal(await sandbox.files.read(filename), content)
+  await expect(
+    sandbox.files.write(filename, chunks(), {
+      gzip: true,
+      useOctetStream: false,
+    })
+  ).rejects.toThrow(InvalidArgumentError)
 
   await sandbox.files.write([{ path: filename, data: chunks() }])
   assert.equal(await sandbox.files.read(filename), content)

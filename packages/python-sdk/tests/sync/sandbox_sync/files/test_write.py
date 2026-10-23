@@ -241,9 +241,8 @@ def test_write_iterable_of_bytes(sandbox, debug):
     with pytest.raises(InvalidArgumentException):
         sandbox.files.write(filename, chunks(), use_octet_stream=False)
 
-    # gzip implies octet-stream, so it wins over use_octet_stream=False
-    sandbox.files.write(filename, chunks(), gzip=True, use_octet_stream=False)
-    assert sandbox.files.read(filename) == text
+    with pytest.raises(InvalidArgumentException, match="gzip"):
+        sandbox.files.write(filename, chunks(), gzip=True, use_octet_stream=False)
 
     if debug:
         sandbox.files.remove(filename)
