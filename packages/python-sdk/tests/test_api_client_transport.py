@@ -543,6 +543,7 @@ class _EchoHandler(BaseHTTPRequestHandler):
             type(self).rate_limit_requests += 1
             if type(self).rate_limit_requests == 1:
                 self.send_response(429)
+                self.send_header("Should-Retry", "true")
                 self.send_header("Retry-After", "0")
                 self.send_header("Content-Length", "0")
                 self.end_headers()
@@ -566,6 +567,7 @@ class _EchoHandler(BaseHTTPRequestHandler):
             type(self).rate_limit_bodies.append(received)
             if len(type(self).rate_limit_bodies) == 1:
                 self.send_response(429)
+                self.send_header("Should-Retry", "true")
                 self.send_header("Retry-After", "0")
                 self.send_header("Content-Length", "0")
                 self.end_headers()

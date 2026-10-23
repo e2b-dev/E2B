@@ -2,7 +2,6 @@ import { describe, expect, test, vi } from 'vitest'
 
 import {
   isConnectionError,
-  isReplayable,
   isRetryableFetchError,
   parseRetryAfter,
   resolveRetries,
@@ -46,7 +45,7 @@ test('retries a buffered request and cancels the intermediate response', async (
   const bodies: string[] = []
   const rateLimited = new Response('rate limited', {
     status: 429,
-    headers: { 'Retry-After': '2' },
+    headers: { 'Should-Retry': 'true', 'Retry-After': '2' },
   })
   const fetchImpl = vi.fn(async (input: RequestInfo | URL) => {
     bodies.push(await (input as Request).text())
@@ -89,7 +88,7 @@ test.each(['', '{"templateID":"base"}'])(
       bodies.push(await attempt.text())
       return new Response(null, {
         status: attempts.length < 3 ? 429 : 200,
-        headers: { 'Retry-After': '0' },
+        headers: { 'Should-Retry': 'true', 'Retry-After': '0' },
       })
     }) as typeof fetch
 
@@ -115,7 +114,7 @@ test('returns the final 429 after exhausting retries', async () => {
   const fetchImpl = vi.fn(async () => {
     return new Response(null, {
       status: 429,
-      headers: { 'Retry-After': '0' },
+      headers: { 'Should-Retry': 'true', 'Retry-After': '0' },
     })
   }) as typeof fetch
   const fetchWithRetry = withRetry(fetchImpl, 2, 10_000, {
@@ -133,7 +132,7 @@ test('propagates 429 when Retry-After exceeds the request timeout', async () => 
   const fetchImpl = vi.fn(async () => {
     return new Response(null, {
       status: 429,
-      headers: { 'Retry-After': '2' },
+      headers: { 'Should-Retry': 'true', 'Retry-After': '2' },
     })
   }) as typeof fetch
   const sleep = vi.fn(async () => {})
@@ -154,7 +153,7 @@ test('bounds retry waits when the request timeout is disabled', async () => {
     async () =>
       new Response(null, {
         status: 429,
-        headers: { 'Retry-After': '60' },
+        headers: { 'Should-Retry': 'true', 'Retry-After': '60' },
       })
   ) as typeof fetch
   const sleep = vi.fn(async () => {})
@@ -170,30 +169,104 @@ test('bounds retry waits when the request timeout is disabled', async () => {
   expect(sleep).not.toHaveBeenCalled()
 })
 
-test('propagates 429 without Retry-After as is', async () => {
+test('retries 429 without Should-Retry or Retry-After with backoff', async () => {
   const rateLimited = new Response('rate limited', { status: 429 })
-  const fetchImpl = vi.fn(async () => rateLimited) as typeof fetch
+  const responses = [rateLimited, new Response('ok')]
+  const fetchImpl = vi.fn(async () => responses.shift()!) as typeof fetch
   const sleep = vi.fn(async () => {})
+  const random = vi.fn(() => 0)
   const fetchWithRetry = withRetry(fetchImpl, 2, 10_000, {
+    monotonic: () => 0,
+    sleep,
+    random,
+  })
+
+  const response = await fetchWithRetry('https://api.e2b.test/resource')
+
+  expect(response.status).toBe(200)
+  expect(rateLimited.bodyUsed).toBe(true)
+  expect(fetchImpl).toHaveBeenCalledTimes(2)
+  expect(sleep).toHaveBeenCalledWith(50, expect.any(AbortSignal))
+  expect(random).toHaveBeenCalledOnce()
+})
+
+test.each([
+  { status: 503, headers: { 'Should-Retry': 'false' } },
+  { status: 503, headers: { 'Should-Retry': 'maybe' } },
+  { status: 503, headers: { 'Should-Retry': '' } },
+  { status: 500, headers: {} },
+])(
+  'does not retry a $status response with headers $headers',
+  async ({ status, headers }) => {
+    const failed = new Response('error', { status, headers })
+    const fetchImpl = vi.fn(async () => failed) as typeof fetch
+    const sleep = vi.fn(async () => {})
+    const fetchWithRetry = withRetry(fetchImpl, 3, 10_000, {
+      monotonic: () => 0,
+      sleep,
+    })
+
+    const response = await fetchWithRetry('https://api.e2b.test/resource')
+
+    expect(response).toBe(failed)
+    expect(response.bodyUsed).toBe(false)
+    expect(fetchImpl).toHaveBeenCalledOnce()
+    expect(sleep).not.toHaveBeenCalled()
+  }
+)
+
+test.each([502, 503, 504])(
+  'retries a %s without Should-Retry',
+  async (status) => {
+    const responses = [
+      new Response(null, { status, headers: { 'Retry-After': '0' } }),
+      new Response('ok'),
+    ]
+    const fetchImpl = vi.fn(async () => responses.shift()!) as typeof fetch
+    const sleep = vi.fn(async () => {})
+    const fetchWithRetry = withRetry(fetchImpl, 1, 10_000, {
+      monotonic: () => 0,
+      sleep,
+    })
+
+    const response = await fetchWithRetry('https://api.e2b.test/resource')
+
+    expect(response.status).toBe(200)
+    expect(fetchImpl).toHaveBeenCalledTimes(2)
+    expect(sleep).toHaveBeenCalledWith(0, expect.any(AbortSignal))
+  }
+)
+
+test('uses Retry-After on an absent-header 429 fallback', async () => {
+  const responses = [
+    new Response(null, { status: 429, headers: { 'Retry-After': '2' } }),
+    new Response('ok'),
+  ]
+  const fetchImpl = vi.fn(async () => responses.shift()!) as typeof fetch
+  const sleep = vi.fn(async () => {})
+  const fetchWithRetry = withRetry(fetchImpl, 1, 10_000, {
     monotonic: () => 0,
     sleep,
   })
 
   const response = await fetchWithRetry('https://api.e2b.test/resource')
 
-  expect(response).toBe(rateLimited)
-  expect(response.bodyUsed).toBe(false)
-  expect(fetchImpl).toHaveBeenCalledOnce()
-  expect(sleep).not.toHaveBeenCalled()
+  expect(response.status).toBe(200)
+  expect(fetchImpl).toHaveBeenCalledTimes(2)
+  expect(sleep).toHaveBeenCalledWith(2_000, expect.any(AbortSignal))
 })
 
 test.each([502, 503])(
   'retries a %s with exponential backoff and jitter',
   async (status) => {
     const statuses = [status, status, status, 200]
-    const fetchImpl = vi.fn(
-      async () => new Response(null, { status: statuses.shift() })
-    ) as typeof fetch
+    const fetchImpl = vi.fn(async () => {
+      const responseStatus = statuses.shift()!
+      return new Response(null, {
+        status: responseStatus,
+        headers: responseStatus === 200 ? {} : { 'Should-Retry': 'true' },
+      })
+    }) as typeof fetch
     const sleep = vi.fn(async () => {})
     const random = vi
       .fn<() => number>()
@@ -214,34 +287,67 @@ test.each([502, 503])(
   }
 )
 
+test.each(['TRUE', ' true '])(
+  'retries a response with Should-Retry: %j',
+  async (shouldRetry) => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(null, {
+          status: 503,
+          headers: { 'Should-Retry': shouldRetry },
+        })
+      )
+      .mockResolvedValueOnce(new Response('ok')) as typeof fetch
+    const sleep = vi.fn(async () => {})
+
+    const response = await withRetry(fetchImpl, 1, 10_000, {
+      monotonic: () => 0,
+      sleep,
+    })('https://api.e2b.test/resource')
+
+    expect(response.status).toBe(200)
+    expect(fetchImpl).toHaveBeenCalledTimes(2)
+  }
+)
+
 test.each([
-  ['POST', '/sandboxes', 1],
-  ['POST', '/secrets/secret-1', 1],
-  ['POST', '/sandboxes/sbx-1/pause', 2],
-  ['GET', '/sandboxes', 2],
-])('a 502 for %s %s is attempted %i time(s)', async (method, path, calls) => {
-  const statuses = [502, 200]
-  const fetchImpl = vi.fn(
-    async () => new Response(null, { status: statuses.shift() })
-  ) as typeof fetch
-  const fetchWithRetry = withRetry(fetchImpl, 3, 60_000, {
-    monotonic: () => 0,
-    sleep: async () => {},
-  })
+  ['POST', '/v2/sandboxes', 500],
+  ['GET', '/sandboxes', 503],
+])(
+  'retries a %s for %s when marked by the server',
+  async (method, path, status) => {
+    const statuses = [status, 200]
+    const fetchImpl = vi.fn(async () => {
+      const responseStatus = statuses.shift()!
+      return new Response(null, {
+        status: responseStatus,
+        headers: responseStatus === 200 ? {} : { 'Should-Retry': 'true' },
+      })
+    }) as typeof fetch
+    const fetchWithRetry = withRetry(fetchImpl, 3, 60_000, {
+      monotonic: () => 0,
+      sleep: async () => {},
+    })
 
-  const response = await fetchWithRetry(`https://api.e2b.test${path}`, {
-    method,
-  })
+    const response = await fetchWithRetry(`https://api.e2b.test${path}`, {
+      method,
+    })
 
-  expect(response.status).toBe(calls === 1 ? 502 : 200)
-  expect(fetchImpl).toHaveBeenCalledTimes(calls)
-})
+    expect(response.status).toBe(200)
+    expect(fetchImpl).toHaveBeenCalledTimes(2)
+  }
+)
 
-test('retries a 503 for a non-replayable POST', async () => {
+test('retries a POST when the server marks a 503', async () => {
   const statuses = [503, 200]
-  const fetchImpl = vi.fn(
-    async () => new Response(null, { status: statuses.shift() })
-  ) as typeof fetch
+  const fetchImpl = vi.fn(async () => {
+    const responseStatus = statuses.shift()!
+    return new Response(null, {
+      status: responseStatus,
+      headers: responseStatus === 200 ? {} : { 'Should-Retry': 'true' },
+    })
+  }) as typeof fetch
   const fetchWithRetry = withRetry(fetchImpl, 3, 60_000, {
     monotonic: () => 0,
     sleep: async () => {},
@@ -255,9 +361,32 @@ test('retries a 503 for a non-replayable POST', async () => {
   expect(fetchImpl).toHaveBeenCalledTimes(2)
 })
 
+test('retries a POST 502 without Should-Retry', async () => {
+  const responses = [
+    new Response(null, { status: 502, headers: { 'Retry-After': '0' } }),
+    new Response('ok'),
+  ]
+  const fetchImpl = vi.fn(async () => responses.shift()!) as typeof fetch
+  const fetchWithRetry = withRetry(fetchImpl, 1, 10_000, {
+    monotonic: () => 0,
+    sleep: async () => {},
+  })
+
+  const response = await fetchWithRetry('https://api.e2b.test/v2/sandboxes', {
+    method: 'POST',
+  })
+
+  expect(response.status).toBe(200)
+  expect(fetchImpl).toHaveBeenCalledTimes(2)
+})
+
 test('caps the backoff for long retry sequences', async () => {
   const fetchImpl = vi.fn(
-    async () => new Response(null, { status: 503 })
+    async () =>
+      new Response(null, {
+        status: 503,
+        headers: { 'Should-Retry': 'true' },
+      })
   ) as typeof fetch
   const sleep = vi.fn(async () => {})
   const fetchWithRetry = withRetry(fetchImpl, 8, 0, {
@@ -279,7 +408,7 @@ test('prefers Retry-After over backoff for a 503', async () => {
     async () =>
       new Response(null, {
         status: statuses.shift(),
-        headers: { 'Retry-After': '3' },
+        headers: { 'Should-Retry': 'true', 'Retry-After': '3' },
       })
   ) as typeof fetch
   const sleep = vi.fn(async () => {})
@@ -299,7 +428,11 @@ test('prefers Retry-After over backoff for a 503', async () => {
 
 test('returns the final 503 after exhausting retries', async () => {
   const fetchImpl = vi.fn(
-    async () => new Response('busy', { status: 503 })
+    async () =>
+      new Response('busy', {
+        status: 503,
+        headers: { 'Should-Retry': 'true' },
+      })
   ) as typeof fetch
   const fetchWithRetry = withRetry(fetchImpl, 2, 10_000, {
     monotonic: () => 0,
@@ -315,7 +448,11 @@ test('returns the final 503 after exhausting retries', async () => {
 
 test('propagates 502 when the backoff would exceed the request timeout', async () => {
   const fetchImpl = vi.fn(
-    async () => new Response(null, { status: 502 })
+    async () =>
+      new Response(null, {
+        status: 502,
+        headers: { 'Should-Retry': 'true' },
+      })
   ) as typeof fetch
   const sleep = vi.fn(async () => {})
   const fetchWithRetry = withRetry(fetchImpl, 3, 80, {
@@ -331,7 +468,7 @@ test('propagates 502 when the backoff would exceed the request timeout', async (
   expect(sleep).not.toHaveBeenCalled()
 })
 
-test.each([400, 404, 500, 504])('does not retry a %s', async (status) => {
+test.each([400, 404])('does not retry a %s', async (status) => {
   const failed = new Response('error', { status })
   const fetchImpl = vi.fn(async () => failed) as typeof fetch
   const sleep = vi.fn(async () => {})
@@ -351,7 +488,7 @@ test.each([400, 404, 500, 504])('does not retry a %s', async (status) => {
 test('aborting during Retry-After sleep rejects promptly', async () => {
   const rateLimited = new Response('rate limited', {
     status: 429,
-    headers: { 'Retry-After': '1' },
+    headers: { 'Should-Retry': 'true', 'Retry-After': '1' },
   })
   const fetchImpl = vi.fn(async () => rateLimited) as typeof fetch
   const fetchWithRetry = withRetry(fetchImpl, 1, 10_000)
@@ -372,7 +509,13 @@ test('aborting during Retry-After sleep rejects promptly', async () => {
 test.each([0, 3])(
   'retries=%s passes a streaming request through unchanged',
   async (retries) => {
-    const fetchImpl = vi.fn(async () => new Response('ok')) as typeof fetch
+    const fetchImpl = vi.fn(
+      async () =>
+        new Response('unavailable', {
+          status: 503,
+          headers: { 'Should-Retry': 'true' },
+        })
+    ) as typeof fetch
     const fetchWithRetry = withRetry(fetchImpl, retries, 10_000)
     const body = new ReadableStream()
     const init = {
@@ -381,8 +524,10 @@ test.each([0, 3])(
       duplex: 'half' as const,
     }
 
-    await fetchWithRetry('https://api.e2b.test/resource', init)
+    const response = await fetchWithRetry('https://api.e2b.test/resource', init)
 
+    expect(response.status).toBe(503)
+    expect(fetchImpl).toHaveBeenCalledOnce()
     expect(fetchImpl).toHaveBeenCalledWith(
       'https://api.e2b.test/resource',
       init
@@ -444,9 +589,7 @@ const connectFailures = {
   ),
 }
 
-// Connection dropped after the request was (at least partially) written:
-// the server may have processed it, so these are replayed only for
-// operations that are safe to replay.
+// Connection dropped after the request may have been written.
 const terminated = {
   Node: new TypeError('terminated'),
   'Node reset': new TypeError('fetch failed', {
@@ -524,82 +667,23 @@ describe('isConnectionError', () => {
 })
 
 describe('isRetryableFetchError', () => {
-  test.each(Object.entries(connectFailures))(
-    'retries %s for any operation',
-    (_, error) => {
-      expect(isRetryableFetchError(error, true)).toBe(true)
-      expect(isRetryableFetchError(error, false)).toBe(true)
-    }
-  )
+  test.each(Object.entries(connectFailures))('retries %s', (_, error) => {
+    expect(isRetryableFetchError(error)).toBe(true)
+  })
 
   test.each([...Object.entries(terminated), ...Object.entries(opaque)])(
-    'retries %s only for a replayable operation',
+    'does not retry %s',
     (_, error) => {
-      expect(isRetryableFetchError(error, true)).toBe(true)
-      expect(isRetryableFetchError(error, false)).toBe(false)
+      expect(isRetryableFetchError(error)).toBe(false)
     }
   )
 
   test.each([...Object.entries(aborts), ['non-error', 'ECONNREFUSED']])(
     'never retries %s',
     (_, error) => {
-      expect(isRetryableFetchError(error, true)).toBe(false)
-      expect(isRetryableFetchError(error, false)).toBe(false)
+      expect(isRetryableFetchError(error)).toBe(false)
     }
   )
-})
-
-const nonReplayable = [
-  ['POST', '/sandboxes'],
-  ['POST', '/v2/sandboxes'],
-  ['POST', '/sandboxes/sbx-1/fork'],
-  ['POST', '/sandboxes/sbx-1/snapshots'],
-  ['POST', '/api-keys'],
-  ['POST', '/admin/teams/team-1/api-keys'],
-  ['POST', '/volumes'],
-  ['POST', '/secrets'],
-  ['POST', '/secrets/secret-1'],
-  ['POST', '/events/webhooks'],
-  // POSTs not on the allowlist: unknown and near-miss paths
-  ['POST', '/sandboxes/sbx-1/pause/extra'],
-  ['POST', '/sandboxes/a/b/pause'],
-  ['POST', '/templates/tags/extra'],
-  ['POST', '/new-resources'],
-]
-
-const replayable = [
-  ['GET', '/sandboxes'],
-  ['GET', '/sandboxes/sbx-1'],
-  ['DELETE', '/sandboxes/sbx-1'],
-  ['POST', '/sandboxes/sbx-1/pause'],
-  ['POST', '/sandboxes/sbx-1/resume'],
-  ['POST', '/sandboxes/sbx-1/connect'],
-  ['POST', '/v2/sandboxes/sbx-1/connect'],
-  ['POST', '/sandboxes/sbx-1/timeout'],
-  ['POST', '/sandboxes/sbx-1/refreshes'],
-  ['PUT', '/sandboxes/sbx-1/network'],
-  ['PATCH', '/templates/tpl-1'],
-  ['POST', '/v3/templates'],
-  ['POST', '/v2/templates/tpl-1/builds/build-1'],
-  ['POST', '/templates/tags'],
-  ['DELETE', '/templates/tags'],
-  ['POST', '/nodes/node-1'],
-  ['POST', '/admin/teams/team-1/sandboxes/kill'],
-  ['POST', '/admin/teams/team-1/builds/cancel'],
-  ['DELETE', '/volumes/vol-1'],
-  ['PATCH', '/events/webhooks/hook-1'],
-]
-
-describe('isReplayable', () => {
-  test.each(nonReplayable)('%s %s is not replayable', (method, path) => {
-    const request = new Request(`https://api.e2b.test${path}?x=1`, { method })
-    expect(isReplayable(request)).toBe(false)
-  })
-
-  test.each(replayable)('%s %s is replayable', (method, path) => {
-    const request = new Request(`https://api.e2b.test${path}?x=1`, { method })
-    expect(isReplayable(request)).toBe(true)
-  })
 })
 
 test('retries a connection failure with exponential backoff', async () => {
@@ -666,43 +750,10 @@ test('rethrows a connection failure when the backoff would exceed the request ti
 })
 
 test.each([
-  ['GET', '/sandboxes'],
-  ['POST', '/sandboxes/sbx-1/pause'],
-  ['DELETE', '/sandboxes/sbx-1'],
-])('retries an opaque network error for %s %s', async (method, path) => {
-  const outcomes = [
-    () => Promise.reject(opaque.Chrome),
-    () => Promise.reject(terminated['Node reset']),
-    () => Promise.resolve(new Response('ok')),
-  ]
-  const fetchImpl = vi.fn(() => outcomes.shift()!()) as typeof fetch
-  const sleep = vi.fn(async () => {})
-  const fetchWithRetry = withRetry(fetchImpl, 3, 60_000, {
-    monotonic: () => 0,
-    sleep,
-    random: () => 1,
-  })
-
-  const response = await fetchWithRetry(`https://api.e2b.test${path}`, {
-    method,
-  })
-
-  expect(response.status).toBe(200)
-  expect(fetchImpl).toHaveBeenCalledTimes(3)
-  expect(sleep.mock.calls.map(([delayMs]) => delayMs)).toEqual([100, 200])
-})
-
-test.each([
-  ['opaque network error', opaque.Chrome, 'POST', '/sandboxes'],
-  ['dropped connection', terminated['Node reset'], 'POST', '/v2/sandboxes'],
-  [
-    'dropped connection',
-    terminated['Cloudflare Workers'],
-    'POST',
-    '/sandboxes/sbx-1/fork',
-  ],
-  ['abort', aborts.abort, 'GET', '/sandboxes'],
-])('does not retry %s for %s %s', async (_, error, method, path) => {
+  ['opaque browser error', opaque.Chrome],
+  ['post-write connection reset', terminated['Node reset']],
+  ['abort', aborts.abort],
+])('does not retry a POST after %s', async (_, error) => {
   const fetchImpl = vi.fn(async () => {
     throw error
   }) as typeof fetch
@@ -712,7 +763,10 @@ test.each([
   })
 
   await expect(
-    fetchWithRetry(`https://api.e2b.test${path}`, { method })
+    fetchWithRetry('https://api.e2b.test/v2/sandboxes', {
+      method: 'POST',
+      body: 'payload',
+    })
   ).rejects.toBe(error)
   expect(fetchImpl).toHaveBeenCalledOnce()
 })

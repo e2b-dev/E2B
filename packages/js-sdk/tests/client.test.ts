@@ -176,7 +176,7 @@ test('client retries rate-limited control-plane requests', async () => {
       if (attempts === 1) {
         return new HttpResponse(null, {
           status: 429,
-          headers: { 'Retry-After': '0' },
+          headers: { 'Should-Retry': 'true', 'Retry-After': '0' },
         })
       }
       return HttpResponse.json([])
@@ -200,7 +200,7 @@ test('client replays serialized control-plane JSON after a rate limit', async ()
       if (bodies.length === 1) {
         return new HttpResponse(null, {
           status: 429,
-          headers: { 'Retry-After': '0' },
+          headers: { 'Should-Retry': 'true', 'Retry-After': '0' },
         })
       }
       return HttpResponse.json(sandboxResponse)
@@ -223,7 +223,10 @@ test('client retries sandbox creation after a 503', async () => {
       if (attempts === 1) {
         return HttpResponse.json(
           { code: 503, message: 'not enough capacity' },
-          { status: 503, headers: { 'Retry-After': '0' } }
+          {
+            status: 503,
+            headers: { 'Should-Retry': 'true', 'Retry-After': '0' },
+          }
         )
       }
       return HttpResponse.json(sandboxResponse)

@@ -1,8 +1,9 @@
+"""Retry API responses marked by the server or selected missing-header statuses."""
+
 import asyncio
 import random
-import re
 import time
-from typing import Awaitable, Callable, List, Optional, Tuple
+from typing import Awaitable, Callable, Optional
 
 import httpx
 
@@ -13,34 +14,7 @@ MAX_RETRY_WAIT_WITHOUT_TIMEOUT_SECONDS = 60.0
 BACKOFF_BASE_SECONDS = 0.1
 BACKOFF_MAX_SECONDS = 10.0
 BACKOFF_JITTER_MIN = 0.5
-RETRYABLE_STATUSES = frozenset({429, 502, 503})
-
-# GET/PUT/PATCH/DELETE are idempotent by HTTP semantics. A POST is retried
-# after a 502 or a network error that may have occurred once the request was
-# written only if it is listed here: a replay is a no-op or fails with a
-# 404/409 the SDK already tolerates. POSTs that mint a resource without a
-# client-supplied idempotency key (sandbox/fork/snapshot/API-key/volume/secret/
-# webhook creation) or append to one (secret update) must stay off the list —
-# a replay could create a duplicate — and so does any new POST until it is
-# reviewed. (Connection-establishment
-# failures are retried for every operation by ``ConnectionRetryTransport``
-# underneath: the request never left.)
-REPLAYABLE_METHODS = frozenset({"GET", "PUT", "PATCH", "DELETE"})
-REPLAYABLE_OPERATIONS: List[Tuple[str, re.Pattern[str]]] = [
-    ("POST", re.compile(r"^/sandboxes/[^/]+/(pause|resume|timeout|refreshes)$")),
-    ("POST", re.compile(r"^/(v2/)?sandboxes/[^/]+/connect$")),
-    ("POST", re.compile(r"^/v3/templates$")),
-    ("POST", re.compile(r"^/v2/templates/[^/]+/builds/[^/]+$")),
-    ("POST", re.compile(r"^/templates/tags$")),
-    ("POST", re.compile(r"^/nodes/[^/]+$")),
-    ("POST", re.compile(r"^/admin/teams/[^/]+/(sandboxes/kill|builds/cancel)$")),
-]
-
-# Raised by the pyqwest httpx adapter once the request was (at least partially)
-# written: the connection dropped while sending it or awaiting the response.
-# ``httpx.ConnectError``/``ConnectTimeout`` are excluded — the connection layer
-# already retries those — as are timeouts, which exhaust the request's budget.
-NETWORK_ERRORS = (httpx.ReadError, httpx.WriteError, httpx.RemoteProtocolError)
+RETRYABLE_STATUSES = frozenset({429, 502, 503, 504})
 
 
 def resolve_max_retries(retries: int) -> int:
@@ -62,18 +36,6 @@ def parse_retry_after(value: Optional[str]) -> Optional[int]:
     return delay if delay <= MAX_RETRY_AFTER_SECONDS else None
 
 
-def is_replayable(request: httpx.Request) -> bool:
-    """Whether ``request`` may be sent again after a 502 or a network error
-    that may have occurred once it was written (see ``REPLAYABLE_OPERATIONS``)."""
-    if request.method in REPLAYABLE_METHODS:
-        return True
-    path = request.url.path
-    return any(
-        request.method == method and pattern.match(path)
-        for method, pattern in REPLAYABLE_OPERATIONS
-    )
-
-
 def _backoff_delay(attempt: int, random_: Callable[[], float]) -> float:
     backoff = min(BACKOFF_BASE_SECONDS * 2**attempt, BACKOFF_MAX_SECONDS)
     return backoff * (BACKOFF_JITTER_MIN + random_() * (1 - BACKOFF_JITTER_MIN))
@@ -82,24 +44,22 @@ def _backoff_delay(attempt: int, random_: Callable[[], float]) -> float:
 def _retry_delay(
     response: httpx.Response,
     attempt: int,
-    replayable: bool,
     random_: Callable[[], float],
 ) -> Optional[float]:
-    """Delay before the next attempt, or ``None`` when the response is not
-    retried: ``Retry-After`` when the server sends a usable one, otherwise
-    exponential backoff with jitter for 502/503. A 429 without ``Retry-After``
-    is not retried, nor is a 502 for a non-replayable request: a gateway may
-    answer 502 after the backend already processed it."""
-    if response.status_code not in RETRYABLE_STATUSES:
-        return None
-    if response.status_code == 502 and not replayable:
+    """Return a delay for marked responses or retryable statuses without a header.
+
+    A present header is authoritative, including explicit ``false``.
+    """
+    should_retry = response.headers.get("Should-Retry")
+    if should_retry is None:
+        if response.status_code not in RETRYABLE_STATUSES:
+            return None
+    elif should_retry.strip().lower() != "true":
         return None
 
     retry_after = parse_retry_after(response.headers.get("Retry-After"))
     if retry_after is not None:
         return float(retry_after)
-    if response.status_code == 429:
-        return None
 
     return _backoff_delay(attempt, random_)
 
@@ -139,10 +99,7 @@ def _request_deadline(request: httpx.Request, monotonic: Callable[[], float]) ->
 
 
 class RetryableTransport(httpx.BaseTransport):
-    """Retry requests after a 429 carrying ``Retry-After`` or a 503, and — for
-    replayable operations (``is_replayable``) — after a 502 (using
-    ``Retry-After`` when present, exponential backoff otherwise) or a network
-    error once the request was written."""
+    """Retry marked API responses or 429/502/503/504 responses without a header."""
 
     def __init__(
         self,
@@ -167,7 +124,6 @@ class RetryableTransport(httpx.BaseTransport):
 
         request.read()
         deadline = _request_deadline(request, self._monotonic)
-        replayable = is_replayable(request)
         for attempt in range(self.retries + 1):
             remaining_timeout = None
             if attempt > 0:
@@ -178,22 +134,13 @@ class RetryableTransport(httpx.BaseTransport):
                         "Increase `request_timeout` or lower `retries`.",
                         request=request,
                     )
-            try:
-                response = self.transport.handle_request(
-                    _copy_request(request, remaining_timeout)
-                )
-            except NETWORK_ERRORS:
-                if attempt == self.retries or not replayable:
-                    raise
-                delay = _backoff_delay(attempt, self._random)
-                if self._monotonic() + delay >= deadline:
-                    raise
-                self._sleep(delay)
-                continue
+            response = self.transport.handle_request(
+                _copy_request(request, remaining_timeout)
+            )
             if attempt == self.retries:
                 return response
 
-            delay = _retry_delay(response, attempt, replayable, self._random)
+            delay = _retry_delay(response, attempt, self._random)
             if delay is None or self._monotonic() + delay >= deadline:
                 return response
 
@@ -208,7 +155,7 @@ class RetryableTransport(httpx.BaseTransport):
 
 
 class AsyncRetryableTransport(httpx.AsyncBaseTransport):
-    """Async counterpart of :class:`RetryableTransport`."""
+    """Async transport with the same response retry policy as RetryableTransport."""
 
     def __init__(
         self,
@@ -233,7 +180,6 @@ class AsyncRetryableTransport(httpx.AsyncBaseTransport):
 
         await request.aread()
         deadline = _request_deadline(request, self._monotonic)
-        replayable = is_replayable(request)
         for attempt in range(self.retries + 1):
             remaining_timeout = None
             if attempt > 0:
@@ -244,22 +190,13 @@ class AsyncRetryableTransport(httpx.AsyncBaseTransport):
                         "Increase `request_timeout` or lower `retries`.",
                         request=request,
                     )
-            try:
-                response = await self.transport.handle_async_request(
-                    _copy_request(request, remaining_timeout)
-                )
-            except NETWORK_ERRORS:
-                if attempt == self.retries or not replayable:
-                    raise
-                delay = _backoff_delay(attempt, self._random)
-                if self._monotonic() + delay >= deadline:
-                    raise
-                await self._sleep(delay)
-                continue
+            response = await self.transport.handle_async_request(
+                _copy_request(request, remaining_timeout)
+            )
             if attempt == self.retries:
                 return response
 
-            delay = _retry_delay(response, attempt, replayable, self._random)
+            delay = _retry_delay(response, attempt, self._random)
             if delay is None or self._monotonic() + delay >= deadline:
                 return response
 
