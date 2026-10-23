@@ -25,7 +25,7 @@ import httpx
 from protobuf.wkt import Timestamp
 
 from e2b.envd.filesystem import filesystem_pb
-from e2b.exceptions import InvalidArgumentException
+from e2b.exceptions import InvalidArgumentException, TemplateException
 from e2b.io_utils import agzip_iter, aiter_io_chunks, gzip_iter, iter_io_chunks
 
 
@@ -359,15 +359,24 @@ def _unsupported_data(
     return InvalidArgumentException(f"Unsupported data type{target}: {type(data)}")
 
 
-async def abuffer_multipart_data(data: AsyncWriteData) -> WriteData:
-    """Read async iterable data into memory for the multipart upload.
-
-    httpx only takes ``str``/``bytes``/file-like objects in a multipart field,
-    so iterables are buffered there (sync ones read off the event loop).
-    """
-    if _is_async_chunk_iterable(data) or _is_chunk_iterable(data):
-        return b"".join([chunk async for chunk in aiter_chunks(data)])
-    return cast(WriteData, data)
+def check_stream_upload(
+    files: Sequence[Union[WriteEntry, AsyncWriteEntry]],
+    use_octet_stream: bool,
+    supports_octet_stream: bool,
+) -> None:
+    """Reject iterable data on the multipart upload, which would buffer it."""
+    if not any(
+        _is_chunk_iterable(file["data"]) or _is_async_chunk_iterable(file["data"])
+        for file in files
+    ):
+        return
+    if not supports_octet_stream:
+        raise TemplateException("Uploading iterable data requires envd 0.5.7 or later.")
+    if not use_octet_stream:
+        raise InvalidArgumentException(
+            "Iterable data is only uploaded with octet-stream; "
+            "`use_octet_stream=False` is not supported for it."
+        )
 
 
 def _to_httpx_file(file_path: str, file_data: AsyncWriteData):
@@ -382,9 +391,6 @@ def _to_httpx_file(file_path: str, file_data: AsyncWriteData):
         return ("file", (file_path, file_data.read()))
     elif isinstance(file_data, IOBase):
         return ("file", (file_path, file_data))
-    elif _is_chunk_iterable(file_data):
-        # Same as text IO: httpx can't stream an iterable in a multipart field.
-        return ("file", (file_path, b"".join(iter_chunks(file_data))))
     else:
         raise _unsupported_data(file_data, file_path)
 

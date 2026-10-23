@@ -52,13 +52,7 @@ import {
   InvalidArgumentError,
   TemplateError,
 } from '../../errors'
-import {
-  isStreamableData,
-  runtime,
-  toBlob,
-  toUploadBody,
-  UploadData,
-} from '../../utils'
+import { isStreamableData, toBlob, toUploadBody, UploadData } from '../../utils'
 
 const FILESYSTEM_HTTP_ERROR_MAP: Record<number, (message: string) => Error> = {
   404: (message: string) => new FileNotFoundError(message),
@@ -291,10 +285,11 @@ export interface FilesystemWriteOpts extends FilesystemRequestOpts {
    * streamed to the sandbox instead of being buffered in memory.
    *
    * Defaults to `undefined`, which uses octet-stream when any entry is a
-   * `ReadableStream` or an `AsyncIterable` (so streamed uploads aren't buffered) and
-   * `multipart/form-data` otherwise; browsers always use `multipart/form-data`
-   * since they can't stream request bodies. Requires envd 0.5.7 or later — when
-   * not supported by the sandbox's envd version, the upload falls back to
+   * `ReadableStream` or an `AsyncIterable` and `multipart/form-data` otherwise.
+   * Stream data is only uploaded with octet-stream: `false`, or an envd older
+   * than 0.5.7, throws for it. Browsers can't stream request bodies, so they
+   * buffer stream data before sending it. Requires envd 0.5.7 or later — when
+   * not supported by the sandbox's envd version, other data falls back to
    * `multipart/form-data`.
    */
   useOctetStream?: boolean
@@ -652,17 +647,26 @@ export class Filesystem {
     const supportsOctetStream =
       compareVersions(this.envdApi.version, ENVD_OCTET_STREAM_UPLOAD) >= 0
     // Streaming a request body only happens on the octet-stream path; the
-    // multipart path buffers via `toBlob`. So default to octet-stream when any
-    // entry is a `ReadableStream` or an `AsyncIterable`, otherwise a streamed upload would be
-    // silently buffered. Browsers can't stream request bodies, so they stay on
-    // multipart. Gzip also implies octet-stream (the Content-Encoding header
-    // applies to the whole request body). An explicit `useOctetStream` wins.
-    const hasStreamableData =
-      runtime !== 'browser' &&
-      writeFiles.some((file) => isStreamableData(file.data))
+    // multipart path would buffer via `toBlob`. So stream data always uses
+    // octet-stream and refuses multipart rather than being silently buffered.
+    // Gzip also implies octet-stream (the Content-Encoding header applies to
+    // the whole request body). Otherwise an explicit `useOctetStream` wins.
+    const hasStreamableData = writeFiles.some((file) =>
+      isStreamableData(file.data)
+    )
     const useOctetStream =
       ((writeOpts?.useOctetStream ?? hasStreamableData) || useGzip) &&
       supportsOctetStream
+    if (hasStreamableData && !useOctetStream) {
+      if (!supportsOctetStream) {
+        throw new TemplateError(
+          `Uploading stream data requires envd ${ENVD_OCTET_STREAM_UPLOAD} or later.`
+        )
+      }
+      throw new InvalidArgumentError(
+        'Stream data (`ReadableStream` / `AsyncIterable`) is only uploaded with octet-stream; `useOctetStream: false` is not supported for it.'
+      )
+    }
 
     const metadata = writeOpts?.metadata
     validateMetadata(metadata)

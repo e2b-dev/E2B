@@ -1,6 +1,10 @@
 import io
 import uuid
 
+import pytest
+
+from e2b import InvalidArgumentException
+
 from e2b import AsyncSandbox
 from e2b.sandbox.filesystem.filesystem import FileType, WriteEntry
 from e2b.sandbox_async.filesystem.filesystem import WriteInfo
@@ -236,8 +240,8 @@ async def test_write_async_iterable_of_bytes(async_sandbox: AsyncSandbox, debug)
     await async_sandbox.files.write(filename, chunks(), gzip=True)
     assert await async_sandbox.files.read(filename) == text
 
-    await async_sandbox.files.write(filename, chunks(), use_octet_stream=False)
-    assert await async_sandbox.files.read(filename) == text
+    with pytest.raises(InvalidArgumentException):
+        await async_sandbox.files.write(filename, chunks(), use_octet_stream=False)
 
     await async_sandbox.files.write(filename, iter([b"sync ", b"iterable"]))
     assert await async_sandbox.files.read(filename) == "sync iterable"

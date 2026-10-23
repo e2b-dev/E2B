@@ -1,4 +1,5 @@
-import { assert } from 'vitest'
+import { assert, expect } from 'vitest'
+import { InvalidArgumentError } from '../../../src'
 
 import { WriteEntry } from '../../../src/sandbox/filesystem'
 import { isDebug, sandboxTest } from '../../setup.js'
@@ -381,8 +382,9 @@ sandboxTest('write AsyncIterable', async ({ sandbox }) => {
   await sandbox.files.write(filename, chunks(), { gzip: true })
   assert.equal(await sandbox.files.read(filename), content)
 
-  await sandbox.files.write(filename, chunks(), { useOctetStream: false })
-  assert.equal(await sandbox.files.read(filename), content)
+  await expect(
+    sandbox.files.write(filename, chunks(), { useOctetStream: false })
+  ).rejects.toThrow(InvalidArgumentError)
 
   await sandbox.files.write([{ path: filename, data: chunks() }])
   assert.equal(await sandbox.files.read(filename), content)

@@ -1,6 +1,10 @@
 import io
 import uuid
 
+import pytest
+
+from e2b import InvalidArgumentException
+
 from e2b.sandbox.filesystem.filesystem import FileType, WriteInfo, WriteEntry
 
 
@@ -234,8 +238,8 @@ def test_write_iterable_of_bytes(sandbox, debug):
     sandbox.files.write(filename, chunks(), gzip=True)
     assert sandbox.files.read(filename) == text
 
-    sandbox.files.write(filename, chunks(), use_octet_stream=False)
-    assert sandbox.files.read(filename) == text
+    with pytest.raises(InvalidArgumentException):
+        sandbox.files.write(filename, chunks(), use_octet_stream=False)
 
     if debug:
         sandbox.files.remove(filename)

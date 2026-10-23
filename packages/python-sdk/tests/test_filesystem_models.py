@@ -6,12 +6,14 @@ from protobuf.wkt import Timestamp
 from e2b.envd.filesystem import filesystem_pb
 import gzip
 
+from typing import List
+
 import pytest
 
-from e2b.exceptions import InvalidArgumentException
+from e2b.exceptions import InvalidArgumentException, TemplateException
 from e2b.sandbox.filesystem.filesystem import (
-    _to_httpx_file,
-    abuffer_multipart_data,
+    WriteEntry,
+    check_stream_upload,
     aiter_chunks,
     multipart_body_is_streamed,
     to_upload_body,
@@ -227,17 +229,17 @@ async def test_to_upload_body_async_streams_sync_and_async_iterables():
     assert gzip.decompress(b"".join([c async for c in compressed])) == b"hello"  # type: ignore[union-attr]
 
 
-async def test_multipart_buffers_iterables():
-    async def source():
-        yield b"hel"
-        yield b"lo"
-
-    assert _to_httpx_file("a.bin", iter([b"hel", b"lo"])) == (
-        "file",
-        ("a.bin", b"hello"),
-    )
-    assert await abuffer_multipart_data(source()) == b"hello"
-    assert not multipart_body_is_streamed([{"path": "a.bin", "data": iter([b"x"])}])
+def test_iterable_data_refuses_multipart():
+    files: List[WriteEntry] = [{"path": "a.bin", "data": iter([b"x"])}]
+    in_memory: List[WriteEntry] = [{"path": "a.bin", "data": b"x"}]
+    file_like: List[WriteEntry] = [{"path": "a.bin", "data": io.BytesIO(b"x")}]
+    check_stream_upload(files, True, True)
+    check_stream_upload(in_memory, False, False)
+    check_stream_upload(file_like, False, True)
+    with pytest.raises(InvalidArgumentException):
+        check_stream_upload(files, False, True)
+    with pytest.raises(TemplateException):
+        check_stream_upload(files, True, False)
 
 
 async def test_async_helpers_read_sync_iterables_off_the_loop():
@@ -254,4 +256,3 @@ async def test_async_helpers_read_sync_iterables_off_the_loop():
 
     assert b"".join([c async for c in aiter_chunks(source())]) == b"hello"
     assert threads and loop_thread not in threads
-    assert await abuffer_multipart_data(source()) == b"hello"

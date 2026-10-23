@@ -8,4 +8,6 @@
 - JS: `AsyncIterable<Uint8Array>` data (async generators, Node.js `Readable`), alongside `ReadableStream`.
 - Python: `Iterable[bytes]` in `Sandbox`, plus `AsyncIterable[bytes]` in `AsyncSandbox`.
 
-Like file-like data, they default to the octet-stream upload and work with `gzip`; the multipart fallback buffers them.
+Stream data always uses the octet-stream upload and works with `gzip`.
+
+**Breaking (JS):** `ReadableStream` / `AsyncIterable` data is no longer buffered into a multipart upload: `useOctetStream: false` throws `InvalidArgumentError`, and an envd older than 0.5.7 throws `TemplateError`. Python raises `InvalidArgumentException` / `TemplateException` for iterables in the same cases.
