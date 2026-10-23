@@ -1,5 +1,4 @@
 import { ConnectionOpts } from './connectionConfig'
-import { InvalidArgumentError } from './errors'
 import { Sandbox } from './sandbox'
 import { Secret } from './secret'
 import { Template, TemplateBase } from './template'
@@ -69,15 +68,6 @@ export class E2B {
    *   through this client's resource classes.
    */
   constructor(opts?: E2BClientOpts) {
-    if (
-      (opts as { idempotencyKey?: unknown } | undefined)?.idempotencyKey !==
-      undefined
-    ) {
-      throw new InvalidArgumentError(
-        'idempotencyKey is per sandbox create; pass it to Sandbox.create instead of the E2B client.'
-      )
-    }
-
     // Options are copied so later mutations of the caller's object cannot
     // change the bound configuration. `signal` is dropped rather than only
     // typed away, since it cancels a single request and a caller passing a

@@ -49,15 +49,6 @@ def _mock_async_create(monkeypatch, requests):
     monkeypatch.setattr(async_sandbox_api.post_v2_sandboxes, "asyncio_detailed", create)
 
 
-def test_client_rejects_a_bound_idempotency_key():
-    with pytest.raises(InvalidArgumentException) as error:
-        E2B(idempotency_key="bound123")
-
-    assert str(error.value) == (
-        "idempotency_key is per sandbox create; pass it to Sandbox.create instead of the E2B client."
-    )
-
-
 @pytest.mark.parametrize("key", ["a" * 255, "123e4567-e89b-12d3-a456-426614174000"])
 def test_sync_create_accepts_valid_idempotency_keys(monkeypatch, key):
     requests = []

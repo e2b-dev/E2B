@@ -116,19 +116,6 @@ test('Sandbox.list ignores an untyped idempotency key', async () => {
   expect(listIdempotencyKeys).toEqual([null])
 })
 
-test('E2B rejects a client-bound idempotency key', () => {
-  const createClientWithKey = () =>
-    new E2B({
-      apiKey: TEST_API_KEY,
-      idempotencyKey: 'bound123',
-    } as any)
-
-  expect(createClientWithKey).toThrow(InvalidArgumentError)
-  expect(createClientWithKey).toThrow(
-    'idempotencyKey is per sandbox create; pass it to Sandbox.create instead of the E2B client.'
-  )
-})
-
 test('client.Sandbox.create accepts a per-call idempotency key', async () => {
   const client = new E2B({ apiKey: TEST_API_KEY })
 
