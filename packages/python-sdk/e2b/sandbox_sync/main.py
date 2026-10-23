@@ -178,6 +178,7 @@ class Sandbox(SandboxApi):
         lifecycle: Optional[SandboxLifecycle] = None,
         volume_mounts: Optional[SandboxVolumeMount] = None,
         logger: Optional[logging.Logger] = None,
+        idempotency_key: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -197,6 +198,10 @@ class Sandbox(SandboxApi):
         :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` or ``"pause"`` (omitted from the request when unset, leaving the API's default, currently ``"kill"``, in effect), or an object ``{"action": "pause"|"kill", "mode": "full"|"filesystem"}`` where ``mode`` set to ``"filesystem"`` makes a timeout auto-pause filesystem-only (cold-boots on resume; cannot be combined with ``auto_resume``); an omitted ``mode`` leaves the snapshot kind to the API (``keep_memory`` is a deprecated alias); ``auto_resume``: leave unset to let the API pick the behavior, set ``False`` to opt out explicitly, or ``True`` (only when ``on_timeout`` action is ``"pause"``). Example: ``{"on_timeout": {"action": "pause", "mode": "filesystem"}}``
         :param volume_mounts: Dictionary mapping mount paths to Volume instances or volume names
         :param logger: Logger used for request and response logging for this sandbox. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
+        :param idempotency_key: Idempotency key sent as the ``Idempotency-Key``
+            header when creating a sandbox. Retries reuse it. Keys must contain
+            1–255 lowercase ASCII letters, digits or hyphens (e.g. a lowercase
+            UUID), otherwise ``InvalidArgumentException`` is raised.
 
         :return: A Sandbox instance for the new sandbox
 
@@ -229,6 +234,7 @@ class Sandbox(SandboxApi):
             lifecycle=lifecycle,
             volume_mounts=transformed_mounts,
             logger=logger,
+            idempotency_key=idempotency_key,
             **opts,
         )
 
@@ -1180,6 +1186,7 @@ class Sandbox(SandboxApi):
         lifecycle: Optional[SandboxLifecycle] = None,
         volume_mounts: Optional[list] = None,
         logger: Optional[logging.Logger] = None,
+        idempotency_key: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         params = cls._resolve_api_params(**opts)
@@ -1205,6 +1212,7 @@ class Sandbox(SandboxApi):
                 lifecycle=lifecycle,
                 volume_mounts=volume_mounts,
                 logger=logger,
+                idempotency_key=idempotency_key,
                 **params,
             )
 

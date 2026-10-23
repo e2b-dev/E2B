@@ -1,61 +1,8 @@
-from typing import cast
-
 import pytest
 
 from e2b import ConnectionConfig
 from e2b.connection_config import DEFAULT_RETRIES
 from e2b.exceptions import InvalidArgumentException
-
-
-def test_idempotency_key_accepts_255_characters():
-    key = "a" * 255
-
-    assert ConnectionConfig(idempotency_key=key).idempotency_key == key
-
-
-def test_idempotency_key_accepts_lowercase_uuid():
-    key = "123e4567-e89b-12d3-a456-426614174000"
-
-    assert ConnectionConfig(idempotency_key=key).idempotency_key == key
-
-
-@pytest.mark.parametrize(
-    ("key", "length"),
-    [("", 0), ("a" * 256, 256)],
-    ids=["empty", "too-long"],
-)
-def test_idempotency_key_rejects_invalid_lengths(key, length):
-    with pytest.raises(
-        InvalidArgumentException,
-        match=f"Invalid idempotency_key: expected 1-255 characters, got {length}.",
-    ):
-        ConnectionConfig(idempotency_key=key)
-
-
-@pytest.mark.parametrize("key", ["ABC", "abc_1", " abc ", "界"])
-def test_idempotency_key_rejects_invalid_characters(key):
-    with pytest.raises(
-        InvalidArgumentException,
-        match="Invalid idempotency_key: only lowercase letters, digits and hyphens are allowed.",
-    ):
-        ConnectionConfig(idempotency_key=key)
-
-
-def test_idempotency_key_rejects_non_strings():
-    with pytest.raises(
-        InvalidArgumentException,
-        match="Invalid idempotency_key: expected a string, got int.",
-    ):
-        ConnectionConfig(idempotency_key=cast(str, 123))
-
-
-def test_idempotency_key_is_stored_and_propagates():
-    config = ConnectionConfig(idempotency_key="abc123")
-
-    assert config.idempotency_key == "abc123"
-    assert config.get_api_params()["idempotency_key"] == "abc123"
-    assert ConnectionConfig(**config.get_api_params()).idempotency_key == "abc123"
-    assert config.get_api_params(idempotency_key="other")["idempotency_key"] == "other"
 
 
 def test_api_url_defaults_correctly(monkeypatch):

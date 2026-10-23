@@ -3,6 +3,6 @@
 '@e2b/python-sdk': minor
 ---
 
-- Added `idempotencyKey` (JavaScript) and `idempotency_key` (Python) connection
-  options that send `Idempotency-Key` on sandbox creation (1-255 lowercase
-  letters, digits or hyphens).
+- Added an `idempotencyKey` (JavaScript) and `idempotency_key` (Python) option
+  to `Sandbox.create` that sends `Idempotency-Key` on sandbox creation. Keys
+  must contain 1–255 lowercase ASCII letters, digits or hyphens.

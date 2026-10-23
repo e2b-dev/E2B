@@ -15,8 +15,7 @@ T = TypeVar("T")
 
 class E2BClientParams(ApiParams, total=False):
     """Params bound to an :class:`E2B` client, used as the defaults for every
-    call made through its resource classes. Same shape as :class:`ApiParams`,
-    except ``idempotency_key`` must be passed per sandbox creation."""
+    call made through its resource classes. Same shape as :class:`ApiParams`."""
 
 
 def _bind(cls: Type[T], api_params: ApiParams) -> Type[T]:
@@ -64,7 +63,7 @@ class E2B:
             through this client's resource classes. ``idempotency_key`` must
             be passed per sandbox creation instead of bound to the client.
         """
-        if opts.get("idempotency_key") is not None:
+        if cast(Dict[str, object], opts).get("idempotency_key") is not None:
             raise InvalidArgumentException(
                 "idempotency_key is per sandbox create; pass it to Sandbox.create instead of the E2B client."
             )

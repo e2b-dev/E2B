@@ -41,6 +41,7 @@ from e2b.exceptions import (
     SandboxNotFoundException,
     TemplateException,
 )
+from e2b.retry import resolve_idempotency_key
 from e2b.sandbox.main import SandboxBase
 from e2b.sandbox.sandbox_api import (
     build_network_update_body,
@@ -220,8 +221,10 @@ class SandboxApi(SandboxBase):
         lifecycle: Optional[SandboxLifecycle] = None,
         volume_mounts: Optional[List[SandboxVolumeMountAPI]] = None,
         logger: Optional[logging.Logger] = None,
+        idempotency_key: Optional[str] = None,
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
+        key = resolve_idempotency_key(idempotency_key)
         params = cls._resolve_api_params(**opts)
         config = ConnectionConfig(logger=logger, **params)
 
@@ -252,9 +255,7 @@ class SandboxApi(SandboxBase):
         res = post_v2_sandboxes.sync_detailed(
             body=body,
             client=api_client,
-            idempotency_key=(
-                config.idempotency_key if config.idempotency_key is not None else UNSET
-            ),
+            idempotency_key=key if key is not None else UNSET,
         )
 
         if res.status_code >= 300:

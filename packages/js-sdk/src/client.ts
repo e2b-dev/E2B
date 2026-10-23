@@ -9,11 +9,10 @@ import { Volume } from './volume'
 /**
  * Connection options bound to an {@link E2B} client.
  *
- * Same as {@link ConnectionOpts} without `signal` or `idempotencyKey`.
- * `signal` cancels a single request, and `idempotencyKey` is scoped to one
- * sandbox creation, so both must be passed per call.
+ * Same as {@link ConnectionOpts} without `signal`, which cancels a single
+ * request and therefore can only be passed per call.
  */
-export type E2BClientOpts = Omit<ConnectionOpts, 'signal' | 'idempotencyKey'>
+export type E2BClientOpts = Omit<ConnectionOpts, 'signal'>
 
 /**
  * E2B client with an explicitly bound connection configuration.
@@ -70,7 +69,10 @@ export class E2B {
    *   through this client's resource classes.
    */
   constructor(opts?: E2BClientOpts) {
-    if ((opts as ConnectionOpts | undefined)?.idempotencyKey !== undefined) {
+    if (
+      (opts as { idempotencyKey?: unknown } | undefined)?.idempotencyKey !==
+      undefined
+    ) {
       throw new InvalidArgumentError(
         'idempotencyKey is per sandbox create; pass it to Sandbox.create instead of the E2B client.'
       )
