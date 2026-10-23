@@ -114,12 +114,27 @@ export type ChartTypes =
   | PieChart
   | BoxAndWhiskerChart
   | SuperChart
+export function deserializeScale(scale: any): ScaleType {
+  if (Object.values(ScaleType).includes(scale)) {
+    return scale as ScaleType
+  }
+  return ScaleType.LINEAR
+}
+
+export function deserializePointChart(data: any): PointChart {
+  return {
+    ...data,
+    x_scale: deserializeScale(data.x_scale),
+    y_scale: deserializeScale(data.y_scale),
+  } as PointChart
+}
+
 export function deserializeChart(data: any): Chart {
   switch (data.type) {
     case ChartType.LINE:
-      return { ...data } as LineChart
+      return deserializePointChart(data) as LineChart
     case ChartType.SCATTER:
-      return { ...data } as ScatterChart
+      return deserializePointChart(data) as ScatterChart
     case ChartType.BAR:
       return { ...data } as BarChart
     case ChartType.PIE:
@@ -127,14 +142,13 @@ export function deserializeChart(data: any): Chart {
     case ChartType.BOX_AND_WHISKER:
       return { ...data } as BoxAndWhiskerChart
     case ChartType.SUPERCHART: {
-      const charts: Chart[] = data.data.map((g: any) => deserializeChart(g))
-      delete data.data
+      const charts: Chart[] = data.elements.map((g: any) => deserializeChart(g))
       return {
         ...data,
-        data: charts,
+        elements: charts,
       } as SuperChart
     }
     default:
-      return { ...data, type: ChartType.UNKNOWN } as Chart
+      return { ...data, type: ChartType.UNKNOWN, elements: data.elements || [] } as Chart
   }
 }

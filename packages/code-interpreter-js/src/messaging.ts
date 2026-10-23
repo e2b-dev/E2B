@@ -1,5 +1,5 @@
 import { NotFoundError, SandboxError, TimeoutError } from 'e2b'
-import { ChartTypes } from './charts'
+import { ChartTypes, deserializeChart } from './charts'
 
 export async function extractError(res: Response) {
   if (res.ok) {
@@ -171,7 +171,7 @@ export class Result {
     this.raw = data
 
     this.data = data['data']
-    this.chart = data['chart']
+    this.chart = data['chart'] ? deserializeChart(data['chart']) : undefined
 
     this.extra = {}
 
