@@ -420,9 +420,25 @@ export class Commands {
     return opts?.background ? proc : proc.wait()
   }
 
+  /**
+   * Start a background command whose output is only delivered to the
+   * `onStdout`/`onStderr` callbacks and never accumulated on the handle.
+   * Meant for long-lived streaming processes.
+   *
+   * @hidden
+   * @internal
+   */
+  async startStreaming(
+    cmd: string,
+    opts?: Omit<CommandStartOpts, 'background'>
+  ): Promise<CommandHandle> {
+    return this.start(cmd, opts, false)
+  }
+
   private async start(
     cmd: string,
-    opts?: CommandStartOpts
+    opts?: CommandStartOpts,
+    retainOutput = true
   ): Promise<CommandHandle> {
     if (
       opts?.stdin === false &&
@@ -461,14 +477,21 @@ export class Commands {
       }
     )
 
-    return this.createHandle(events, clearStartTimeout, cleanup, opts)
+    return this.createHandle(
+      events,
+      clearStartTimeout,
+      cleanup,
+      opts,
+      retainOutput
+    )
   }
 
   private async createHandle(
     events: AsyncIterable<StartResponse | ConnectResponse>,
     clearStartTimeout: () => void,
     cleanup: () => void,
-    opts?: Pick<CommandStartOpts, 'onStdout' | 'onStderr'>
+    opts?: Pick<CommandStartOpts, 'onStdout' | 'onStderr'>,
+    retainOutput = true
   ): Promise<CommandHandle> {
     try {
       const pid = await handleProcessStartEvent(events)
@@ -484,7 +507,8 @@ export class Commands {
         undefined,
         (data, stdinOpts) => this.sendStdin(pid, data, stdinOpts),
         (stdinOpts) => this.closeStdin(pid, stdinOpts),
-        this.checkHealth
+        this.checkHealth,
+        retainOutput
       )
     } catch (err) {
       cleanup()
