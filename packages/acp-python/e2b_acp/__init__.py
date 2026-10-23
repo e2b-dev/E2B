@@ -8,7 +8,7 @@ import acp
 from e2b import AsyncSandbox
 from e2b.connection_config import Username
 
-from .transport import DEFAULT_STOP_TIMEOUT, AcpAgentExit, AcpTransport, StderrHandler
+from .transport import DEFAULT_STOP_TIMEOUT, AcpAgentResult, AcpTransport, StderrHandler
 from .utils import DEFAULT_MAX_MESSAGE_BYTES
 
 
@@ -35,7 +35,7 @@ class AcpAgent:
         """
         return self._transport.pid
 
-    async def wait(self) -> AcpAgentExit:
+    async def wait(self) -> AcpAgentResult:
         """
         Wait for the agent process to exit.
 
@@ -51,7 +51,7 @@ class AcpAgent:
         exited within `timeout` of this call. Messages the agent sends after
         this call are not delivered.
 
-        :param timeout: Time for the agent to exit in **seconds**
+        :param timeout: Time for the agent to exit in **seconds**; defaults to ``DEFAULT_STOP_TIMEOUT`` (5 seconds)
 
         :raises SandboxException: If the agent could not be killed
         """
@@ -107,7 +107,7 @@ async def connect_acp_agent(
     :param envs: Environment variables for the agent
     :param user: User to run the agent as
     :param on_stderr: Callback for the agent's stderr output (logs). The agent's stdout is reserved for the protocol
-    :param max_message_bytes: Maximum size of a single message from the agent in **bytes**
+    :param max_message_bytes: Maximum size of a single message from the agent in **bytes**; defaults to ``DEFAULT_MAX_MESSAGE_BYTES`` (32 MiB)
     :param request_timeout: Timeout for starting the agent in **seconds**
 
     :return: `AcpAgent` with the ACP connection
@@ -120,4 +120,11 @@ async def connect_acp_agent(
     return AcpAgent(transport, acp.connect_to_agent(client, transport))
 
 
-__all__ = ["DEFAULT_STOP_TIMEOUT", "AcpAgent", "AcpAgentExit", "connect_acp_agent"]
+__all__ = [
+    "DEFAULT_MAX_MESSAGE_BYTES",
+    "DEFAULT_STOP_TIMEOUT",
+    "AcpAgent",
+    "AcpAgentResult",
+    "StderrHandler",
+    "connect_acp_agent",
+]
