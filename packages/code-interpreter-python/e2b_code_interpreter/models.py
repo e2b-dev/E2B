@@ -196,7 +196,7 @@ class Result:
             formats.append("json")
         if self.javascript:
             formats.append("javascript")
-        if self.data:
+        if self.data is not None:
             formats.append("data")
         if self.chart:
             formats.append("chart")
