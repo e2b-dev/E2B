@@ -299,31 +299,56 @@ class AsyncFileStreamReader(AsyncIterator[bytes]):
         await self.aclose()
 
 
+def _is_file_like(data) -> TypeGuard[IO]:
+    """Whether ``data`` is read as a file: an ``IOBase``, or any object with a
+    ``read`` method (``tempfile`` wrappers, werkzeug ``FileStorage``, Django
+    ``File``), which would otherwise be iterated line by line."""
+    return isinstance(data, IOBase) or (
+        not isinstance(data, (str, bytes)) and callable(getattr(data, "read", None))
+    )
+
+
 def _is_chunk_iterable(data) -> TypeGuard[Iterable[bytes]]:
     """Whether ``data`` is an iterable of ``bytes`` chunks (not a buffer or file)."""
-    return isinstance(data, Iterable) and not isinstance(
-        data, (str, bytes, bytearray, memoryview, IOBase)
+    return (
+        isinstance(data, Iterable)
+        and not isinstance(data, (str, bytes, bytearray, memoryview))
+        and not _is_file_like(data)
     )
 
 
 def _is_async_chunk_iterable(data) -> TypeGuard[AsyncIterable[bytes]]:
-    return isinstance(data, AsyncIterable) and not isinstance(data, IOBase)
+    return isinstance(data, AsyncIterable) and not _is_file_like(data)
 
 
-def _check_chunk(chunk) -> bytes:
+class ChunkCheck:
+    """Records a chunk validation error raised while the transport pulls the
+    upload body: the transport reports it as its own ``httpx.WriteError``, so
+    the write re-raises the recorded error instead."""
+
+    def __init__(self) -> None:
+        self.error: Optional[InvalidArgumentException] = None
+
+
+def _check_chunk(chunk, check: Optional[ChunkCheck] = None) -> bytes:
     if isinstance(chunk, bytes):
         return chunk
     if isinstance(chunk, (bytearray, memoryview)):
         return bytes(chunk)
-    raise InvalidArgumentException(
+    err = InvalidArgumentException(
         f"Iterable upload data must yield bytes chunks, got {type(chunk).__name__}"
     )
+    if check is not None:
+        check.error = err
+    raise err
 
 
-def iter_chunks(data: Iterable[bytes]) -> Iterator[bytes]:
+def iter_chunks(
+    data: Iterable[bytes], check: Optional[ChunkCheck] = None
+) -> Iterator[bytes]:
     """Iterate user-supplied upload chunks, rejecting anything but bytes."""
     for chunk in data:
-        yield _check_chunk(chunk)
+        yield _check_chunk(chunk, check)
 
 
 _EXHAUSTED = object()
@@ -331,11 +356,12 @@ _EXHAUSTED = object()
 
 async def aiter_chunks(
     data: Union[Iterable[bytes], AsyncIterable[bytes]],
+    check: Optional[ChunkCheck] = None,
 ) -> AsyncIterator[bytes]:
     """Iterate user-supplied upload chunks (sync or async), rejecting anything but bytes."""
     if _is_async_chunk_iterable(data):
         async for chunk in data:
-            yield _check_chunk(chunk)
+            yield _check_chunk(chunk, check)
     else:
         # Advanced off the event loop, like file-like data: `next()` may block
         # on disk or network (e.g. `requests` `iter_content()`).
@@ -344,7 +370,7 @@ async def aiter_chunks(
             chunk = await asyncio.to_thread(next, iterator, _EXHAUSTED)
             if chunk is _EXHAUSTED:
                 return
-            yield _check_chunk(chunk)
+            yield _check_chunk(chunk, check)
 
 
 def _unsupported_data(
@@ -397,7 +423,7 @@ def _to_httpx_file(file_path: str, file_data: AsyncWriteData):
         # at the cost of buffering. The octet-stream path streams it instead,
         # which is why a file-like entry defaults to that path.
         return ("file", (file_path, file_data.read()))
-    elif isinstance(file_data, IOBase):
+    elif _is_file_like(file_data):
         return ("file", (file_path, file_data))
     else:
         raise _unsupported_data(file_data, file_path)
@@ -416,7 +442,7 @@ def multipart_body_is_streamed(
     ``to_upload_body``, which streams text and binary alike on the
     octet-stream path (``iter_io_chunks`` encodes the chunks)."""
     return any(
-        isinstance(file["data"], IOBase) and not isinstance(file["data"], TextIOBase)
+        _is_file_like(file["data"]) and not isinstance(file["data"], TextIOBase)
         for file in files
     )
 
@@ -424,6 +450,7 @@ def multipart_body_is_streamed(
 def to_upload_body(
     data: AsyncWriteData,
     use_gzip: bool = False,
+    check: Optional[ChunkCheck] = None,
 ) -> Union[bytes, IO, Iterator[bytes]]:
     """Prepare file data for upload, optionally gzip-compressed.
 
@@ -433,16 +460,20 @@ def to_upload_body(
     if isinstance(data, (str, bytes)):
         raw = data.encode("utf-8") if isinstance(data, str) else data
         return gzip.compress(raw) if use_gzip else raw
-    elif isinstance(data, (TextIOBase, IOBase)):
-        if use_gzip:
-            return gzip_iter(iter_io_chunks(cast(IO, data)))
-        if isinstance(data, TextIOBase):
-            # Text-mode IO yields str chunks—encode them while streaming.
-            return iter_io_chunks(cast(IO, data))
-        # httpx streams binary file-like objects in chunks without buffering.
-        return data
+    elif _is_file_like(data):
+        if (
+            isinstance(data, IOBase)
+            and not isinstance(data, TextIOBase)
+            and not use_gzip
+        ):
+            # httpx streams binary file-like objects in chunks without buffering.
+            return cast(IO, data)
+        # Text-mode IO yields str chunks—encode them while streaming. Other
+        # file-likes may be either mode, and httpx would iterate them by line.
+        chunks = iter_io_chunks(data)
+        return gzip_iter(chunks) if use_gzip else chunks
     elif _is_chunk_iterable(data):
-        chunks = iter_chunks(data)
+        chunks = iter_chunks(data, check)
         return gzip_iter(chunks) if use_gzip else chunks
     else:
         raise _unsupported_data(data)
@@ -451,6 +482,7 @@ def to_upload_body(
 def to_upload_body_async(
     data: AsyncWriteData,
     use_gzip: bool = False,
+    check: Optional[ChunkCheck] = None,
 ) -> Union[bytes, AsyncIterator[bytes]]:
     """Prepare file data for upload with async httpx, optionally gzip-compressed.
 
@@ -461,11 +493,11 @@ def to_upload_body_async(
     if isinstance(data, (str, bytes)):
         raw = data.encode("utf-8") if isinstance(data, str) else data
         return gzip.compress(raw) if use_gzip else raw
-    elif isinstance(data, (TextIOBase, IOBase)):
-        chunks = aiter_io_chunks(cast(IO, data))
+    elif _is_file_like(data):
+        chunks = aiter_io_chunks(data)
         return agzip_iter(chunks) if use_gzip else chunks
     elif _is_async_chunk_iterable(data) or _is_chunk_iterable(data):
-        chunks = aiter_chunks(data)
+        chunks = aiter_chunks(data, check)
         return agzip_iter(chunks) if use_gzip else chunks
     else:
         raise _unsupported_data(data)

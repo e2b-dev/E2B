@@ -52,7 +52,13 @@ import {
   InvalidArgumentError,
   TemplateError,
 } from '../../errors'
-import { isStreamableData, toBlob, toUploadBody, UploadData } from '../../utils'
+import {
+  BufferedUploadData,
+  isStreamableData,
+  toBlob,
+  toUploadBody,
+  UploadData,
+} from '../../utils'
 
 const FILESYSTEM_HTTP_ERROR_MAP: Record<number, (message: string) => Error> = {
   404: (message: string) => new FileNotFoundError(message),
@@ -282,14 +288,14 @@ export interface FilesystemWriteOpts extends FilesystemRequestOpts {
   gzip?: boolean
   /**
    * When true, the upload uses `application/octet-stream` instead of `multipart/form-data`.
-   * Outside the browser, `ReadableStream` and `AsyncIterable` data is then
-   * streamed to the sandbox instead of being buffered in memory.
+   * `ReadableStream` and `AsyncIterable` data is then streamed to the sandbox
+   * instead of being buffered in memory.
    *
    * Defaults to `undefined`, which uses octet-stream when any entry is a
    * `ReadableStream` or an `AsyncIterable` and `multipart/form-data` otherwise.
    * Stream data is only uploaded with octet-stream: `false`, or an envd older
-   * than 0.5.7, throws for it. Browsers can't stream request bodies, so they
-   * buffer stream data before sending it. Requires envd 0.5.7 or later — when
+   * than 0.5.7, throws for it. Stream data is never buffered: in a browser that
+   * can't stream request bodies it throws `InvalidArgumentError` (pass a `Blob`). Requires envd 0.5.7 or later — when
    * not supported by the sandbox's envd version, other data falls back to
    * `multipart/form-data`.
    */
@@ -701,7 +707,10 @@ export class Filesystem {
       const uploadResults = await Promise.all(
         writeFiles.map(async (file) => {
           const filePath = path ?? (file as WriteEntry).path
-          const { body, streamed } = await toUploadBody(file.data, useGzip)
+          const { body, streamed, sourceError } = await toUploadBody(
+            file.data,
+            useGzip
+          )
           // A streamed upload carries no client-side timeout: the socket-write
           // "wire" isn't observable through fetch, and a stalled producer is
           // the caller's own code, so a stuck streamed upload is bounded
@@ -733,9 +742,10 @@ export class Filesystem {
             })
             .catch(async (err) => {
               // fetch reports an error raised while reading a streamed body as
-              // `TypeError: fetch failed`; surface the SDK's own validation error.
-              if (err?.cause instanceof InvalidArgumentError) {
-                throw err.cause
+              // its own `TypeError`; surface the SDK's own validation error.
+              const invalidChunk = sourceError()
+              if (invalidChunk) {
+                throw invalidChunk
               }
               throw await handleEnvdApiFetchError(err, this.checkHealth)
             })
@@ -768,7 +778,7 @@ export class Filesystem {
       for (const file of writeFiles) {
         formData.append(
           'file',
-          await toBlob(file.data),
+          await toBlob(file.data as BufferedUploadData),
           (file as WriteEntry).path ?? path!
         )
       }

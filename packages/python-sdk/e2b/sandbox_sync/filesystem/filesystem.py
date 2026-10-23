@@ -51,6 +51,7 @@ from e2b.sandbox.filesystem.filesystem import (
     map_file_type,
     metadata_to_headers,
     to_upload_body,
+    ChunkCheck,
     validate_metadata,
 )
 from e2b.sandbox_sync.filesystem.watch_handle import WatchHandle
@@ -398,15 +399,18 @@ class Filesystem:
                     headers["Content-Encoding"] = "gzip"
 
                 is_streamed = not isinstance(file_data, (str, bytes))
+                check = ChunkCheck()
                 try:
                     r = self._envd_api.post(
                         ENVD_API_FILES_ROUTE,
-                        content=to_upload_body(file_data, gzip),
+                        content=to_upload_body(file_data, gzip, check),
                         headers=headers,
                         params=params,
                         timeout=None if is_streamed else upload_timeout,
                     )
                 except httpx.TransportError as e:
+                    if check.error is not None:
+                        raise check.error from None
                     raise handle_envd_api_transport_exception_with_health(
                         e, self._envd_health_api
                     )

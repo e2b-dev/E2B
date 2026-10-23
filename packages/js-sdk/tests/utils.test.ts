@@ -6,9 +6,6 @@ import { ForeignBlob, foreignReadableStream } from './foreignPlatformObjects'
 
 const encode = (text: string) => new TextEncoder().encode(text)
 
-// Browsers can't stream request bodies, so everything is buffered there.
-const streams = runtime !== 'browser'
-
 async function readBody(body: BodyInit): Promise<string> {
   return await new Response(body).text()
 }
@@ -35,14 +32,6 @@ test('toBlob copies the bytes of a Blob from another Blob class', async () => {
   expect(blob.type).toMatch(/^text\/plain/)
 })
 
-test('toBlob reads a stream from another stream implementation', async () => {
-  const blob = await toBlob(
-    foreignReadableStream([encode('hel'), encode('lo')])
-  )
-
-  expect(await blob.text()).toBe('hello')
-})
-
 test('toBlob converts strings and buffers', async () => {
   expect(await (await toBlob('hello')).text()).toBe('hello')
   const buffer = encode('hello').buffer as ArrayBuffer
@@ -51,7 +40,10 @@ test('toBlob converts strings and buffers', async () => {
 
 test('toUploadBody buffers strings, buffers and Blobs', async () => {
   const blob = new Blob(['hello'])
-  expect(await toUploadBody(blob)).toEqual({ body: blob, streamed: false })
+  expect(await toUploadBody(blob)).toMatchObject({
+    body: blob,
+    streamed: false,
+  })
 
   const fromString = await toUploadBody('hello')
   expect(fromString.streamed).toBe(false)
@@ -61,7 +53,7 @@ test('toUploadBody buffers strings, buffers and Blobs', async () => {
 test('toUploadBody streams a native stream', async () => {
   const { body, streamed } = await toUploadBody(new Blob(['hello']).stream())
 
-  expect(streamed).toBe(streams)
+  expect(streamed).toBe(true)
   expect(await readBody(body)).toBe('hello')
 })
 
@@ -73,37 +65,35 @@ test('toUploadBody streams a stream from another stream implementation', async (
     foreignReadableStream([encode('hel'), encode('lo')])
   )
 
-  expect(streamed).toBe(streams)
+  expect(streamed).toBe(true)
   if (streamed) {
     expect(body).toBeInstanceOf(ReadableStream)
   }
   expect(await readBody(body)).toBe('hello')
 })
 
-test.skipIf(!streams)(
-  'an adopted foreign stream forwards cancellation to its source',
-  async () => {
-    const stream = foreignReadableStream([encode('hello')])
-    const { body } = await toUploadBody(stream)
+test('an adopted foreign stream forwards cancellation to its source', async () => {
+  const stream = foreignReadableStream([encode('hello')])
+  const { body } = await toUploadBody(stream)
 
-    await (body as ReadableStream).cancel('aborted upload')
+  await (body as ReadableStream).cancel('aborted upload')
 
-    expect(
-      (stream as unknown as { cancelledWith: unknown }).cancelledWith
-    ).toBe('aborted upload')
-  }
-)
+  expect((stream as unknown as { cancelledWith: unknown }).cancelledWith).toBe(
+    'aborted upload'
+  )
+})
 
 test('toUploadBody leaves an async-iterable foreign stream alone', async () => {
-  // The platform accepts any async iterable as a body, so adopting one would
-  // only add a layer.
+  // Outside the browser the platform accepts any async iterable as a body, so
+  // adopting one would only add a layer. Browser fetch takes only its own
+  // stream class.
   const stream = foreignReadableStream([encode('hel'), encode('lo')], {
     asyncIterable: true,
   })
   const { body, streamed } = await toUploadBody(stream)
 
-  expect(streamed).toBe(streams)
-  if (streamed) {
+  expect(streamed).toBe(true)
+  if (runtime !== 'browser') {
     expect(body).toBe(stream)
   }
   expect(await readBody(body)).toBe('hello')
@@ -130,7 +120,7 @@ test('toUploadBody does not re-wrap a native stream when the global class was re
     vi.unstubAllGlobals()
   }
 
-  expect(streamed).toBe(streams)
+  expect(streamed).toBe(true)
   if (streamed) {
     expect(body).toBe(nativeStream)
   }
@@ -165,9 +155,12 @@ test.each([
   // never settles, so gzip uploads hung for anything but a native stream.
   // Unlike a body, `pipeThrough` is not satisfied by async iterability, so
   // every foreign stream has to be adopted here.
-  const { body, streamed } = await toUploadBody(makeData(), true)
+  const data = makeData()
+  const { body, streamed } = await toUploadBody(data, true)
 
-  expect(streamed).toBe(streams)
+  // In-memory data is gzipped into a Blob in browsers; streams always stream.
+  const inMemory = typeof data === 'string' || data instanceof ForeignBlob
+  expect(streamed).toBe(!inMemory || runtime !== 'browser')
   const compressed = streamed
     ? (body as ReadableStream)
     : (body as Blob).stream()
@@ -183,14 +176,10 @@ async function* asyncChunks(...chunks: string[]) {
   }
 }
 
-test('toBlob reads an async iterable', async () => {
-  expect(await (await toBlob(asyncChunks('hel', 'lo'))).text()).toBe('hello')
-})
-
 test('toUploadBody streams an async iterable', async () => {
   const { body, streamed } = await toUploadBody(asyncChunks('hel', 'lo'))
 
-  expect(streamed).toBe(streams)
+  expect(streamed).toBe(true)
   if (streamed) {
     expect(body).toBeInstanceOf(ReadableStream)
   }
@@ -200,7 +189,7 @@ test('toUploadBody streams an async iterable', async () => {
 test('toUploadBody gzips an async iterable', async () => {
   const { body, streamed } = await toUploadBody(asyncChunks('hel', 'lo'), true)
 
-  expect(streamed).toBe(streams)
+  expect(streamed).toBe(true)
   const compressed = streamed
     ? (body as ReadableStream)
     : (body as Blob).stream()
@@ -215,27 +204,13 @@ test('async iterable data rejects non-byte chunks', async () => {
   }
   const data = strings() as unknown as AsyncIterable<Uint8Array>
 
-  await expect(toBlob(data)).rejects.toThrow(InvalidArgumentError)
-  const upload = toUploadBody(strings() as never)
-  const message =
+  const { body, sourceError } = await toUploadBody(data)
+  // Browsers report their own error when reading the body fails.
+  await expect(readBody(body)).rejects.toThrow()
+  expect(sourceError()).toBeInstanceOf(InvalidArgumentError)
+  expect(String(sourceError())).toContain(
     'AsyncIterable upload data must yield Uint8Array chunks, got string'
-  if (streams) {
-    await expect(readBody((await upload).body)).rejects.toThrow(message)
-  } else {
-    await expect(upload).rejects.toThrow(message)
-  }
-})
-
-test('toBlob copies reused async iterable chunks', async () => {
-  async function* reused() {
-    const buf = new Uint8Array(1)
-    buf[0] = 97
-    yield buf
-    buf[0] = 98
-    yield buf
-  }
-
-  expect(await (await toBlob(reused())).text()).toBe('ab')
+  )
 })
 
 test.skipIf(runtime !== 'node')(
@@ -247,26 +222,57 @@ test.skipIf(runtime !== 'node')(
       yield foreign
     }
 
-    expect(await (await toBlob(chunks())).text()).toBe('hi')
     const { body } = await toUploadBody(chunks())
     expect(await readBody(body)).toBe('hi')
   }
 )
 
-test.skipIf(!streams)(
-  'streamed async iterable is closed on an invalid chunk',
-  async () => {
-    let closed = false
-    async function* strings() {
-      try {
-        yield 'hello'
-      } finally {
-        closed = true
-      }
+test('streamed async iterable is closed on an invalid chunk', async () => {
+  let closed = false
+  async function* strings() {
+    try {
+      yield 'hello'
+    } finally {
+      closed = true
     }
+  }
 
-    const { body } = await toUploadBody(strings() as never)
-    await expect(readBody(body)).rejects.toThrow(InvalidArgumentError)
-    expect(closed).toBe(true)
+  const { body } = await toUploadBody(strings() as never)
+  await expect(readBody(body)).rejects.toThrow()
+  expect(closed).toBe(true)
+})
+
+test('streamed async iterable copies reused chunks', async () => {
+  async function* reused() {
+    const buf = new Uint8Array(1)
+    buf[0] = 97
+    yield buf
+    buf[0] = 98
+    yield buf
+  }
+
+  const { body } = await toUploadBody(reused())
+  expect(await readBody(body)).toBe('ab')
+})
+
+test.skipIf(runtime !== 'browser')(
+  'stream data throws instead of buffering where the browser cannot stream it',
+  async () => {
+    // A browser without streaming request bodies stringifies the stream.
+    class NoStreamsRequest {
+      headers = new Headers({ 'Content-Type': 'text/plain;charset=UTF-8' })
+    }
+    vi.stubGlobal('Request', NoStreamsRequest)
+    try {
+      await expect(toUploadBody(asyncChunks('hello'))).rejects.toThrow(
+        /pass the data as a `Blob`/i
+      )
+      await expect(toUploadBody(new Blob(['hello']).stream())).rejects.toThrow(
+        InvalidArgumentError
+      )
+      expect((await toUploadBody('hello')).streamed).toBe(false)
+    } finally {
+      vi.unstubAllGlobals()
+    }
   }
 )

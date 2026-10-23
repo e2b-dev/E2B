@@ -13,6 +13,7 @@ import pytest
 from e2b.exceptions import InvalidArgumentException, TemplateException
 from e2b.sandbox.filesystem.filesystem import (
     AsyncWriteEntry,
+    ChunkCheck,
     WriteEntry,
     check_stream_upload,
     aiter_chunks,
@@ -265,3 +266,28 @@ async def test_async_helpers_read_sync_iterables_off_the_loop():
 
     assert b"".join([c async for c in aiter_chunks(source())]) == b"hello"
     assert threads and loop_thread not in threads
+
+
+def test_file_like_wrappers_are_read_as_files():
+    import tempfile
+
+    from e2b.io_utils import IO_CHUNK_SIZE
+
+    with tempfile.NamedTemporaryFile() as f:
+        assert not isinstance(f, io.IOBase)
+        f.write(b"x" * (IO_CHUNK_SIZE + 1))
+        f.flush()
+        f.seek(0)
+        files: List[WriteEntry] = [{"path": "a.bin", "data": f}]
+        # A file, not an iterable: multipart stays allowed.
+        check_stream_upload(files, False, True, allow_async=False)
+        assert multipart_body_is_streamed(files)
+        chunks = list(to_upload_body(f))
+        assert [len(c) for c in chunks] == [IO_CHUNK_SIZE, 1]
+
+
+def test_chunk_check_records_the_validation_error():
+    check = ChunkCheck()
+    with pytest.raises(InvalidArgumentException) as raised:
+        b"".join(to_upload_body(iter([b"ok", "text"]), check=check))  # type: ignore[arg-type]
+    assert check.error is raised.value
