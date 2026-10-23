@@ -1,4 +1,4 @@
-FROM golang:1.23
+FROM golang:1.26.10
 
 # Install Golang deps
 RUN go install github.com/bufbuild/buf/cmd/buf@v1.50.1 && \
