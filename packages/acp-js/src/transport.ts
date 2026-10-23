@@ -356,7 +356,13 @@ export async function startAcpTransport(
         )
       )
     },
-    (err) => end(err)
+    (err) => {
+      end(err)
+      // The process may still be running, but nothing can talk to it any
+      // more. The stream already failed with the real error.
+      stopReading()
+      handle.kill().catch(() => {})
+    }
   )
 
   transport = new AcpTransport(

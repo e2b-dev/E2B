@@ -124,6 +124,17 @@ test('close kills the agent when its output stream failed', async () => {
   expect(agent.handle.kill).toHaveBeenCalled()
 })
 
+test('a failed output stream kills the agent', async () => {
+  const agent = fakeAgent()
+  const transport = await startAcpTransport(agent.sandbox, 'agent')
+  const reader = transport.stream.readable.getReader()
+
+  agent.fail(new Error('output stream broke'))
+
+  await expect(reader.read()).rejects.toThrow('output stream broke')
+  expect(agent.handle.kill).toHaveBeenCalledOnce()
+})
+
 test('close timeout covers a hung EOF and then kills', async () => {
   const agent = fakeAgent({ closeStdin: () => new Promise(() => {}) })
   const transport = await startAcpTransport(agent.sandbox, 'agent')
