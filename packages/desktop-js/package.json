@@ -58,7 +58,7 @@
     "format": "prettier --write src/ tests/"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.18.7",
+    "@cloudflare/vitest-pool-workers": "^0.23.0",
     "@typescript/native": "catalog:",
     "@types/node": "catalog:",
     "dotenv": "^16.4.5",
