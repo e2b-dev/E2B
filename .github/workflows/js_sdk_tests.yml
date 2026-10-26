@@ -2,16 +2,6 @@ name: Test JS SDK
 
 on:
   workflow_call:
-    inputs:
-      E2B_DOMAIN:
-        required: false
-        type: string
-        default: ''
-      node-only:
-        description: 'Run only the Node legs (skip Bun, Deno, Cloudflare, and the browser)'
-        required: false
-        type: boolean
-        default: false
     secrets:
       E2B_API_KEY:
         required: true
@@ -32,18 +22,22 @@ jobs:
       # can run together without restoring Vitest's default worker
       # multiplication.
       max-parallel: 7
-      # With node-only (set by staging callers) the matrix collapses to the
-      # Node legs: the Bun/Deno/Cloudflare/browser legs re-run suites the Node
-      # legs already cover and add sandbox/build load, so the other runtimes
-      # are exercised against production only. Note this does drop backend
-      # signal for the browser leg specifically — it's the only one that
-      # depends on the API's CORS headers — so a staging-only CORS regression
-      # surfaces on the production run rather than before merge.
       matrix:
-        include: >-
-          ${{ inputs.node-only
-            && fromJSON('[{"runtime": "node", "os": "ubuntu-22.04"}, {"runtime": "node", "os": "windows-latest"}]')
-            || fromJSON('[{"runtime": "node", "os": "ubuntu-22.04"}, {"runtime": "node", "os": "windows-latest"}, {"runtime": "bun", "os": "ubuntu-22.04"}, {"runtime": "deno", "os": "ubuntu-22.04"}, {"runtime": "cloudflare", "os": "ubuntu-22.04"}, {"runtime": "cloudflare-deploy", "os": "ubuntu-22.04"}, {"runtime": "browser", "os": "ubuntu-22.04"}]') }}
+        include:
+          - runtime: node
+            os: ubuntu-22.04
+          - runtime: node
+            os: windows-latest
+          - runtime: bun
+            os: ubuntu-22.04
+          - runtime: deno
+            os: ubuntu-22.04
+          - runtime: cloudflare
+            os: ubuntu-22.04
+          - runtime: cloudflare-deploy
+            os: ubuntu-22.04
+          - runtime: browser
+            os: ubuntu-22.04
     runs-on: ${{ matrix.os }}
     env:
       E2B_TEST_MAX_WORKERS: 1
@@ -118,7 +112,6 @@ jobs:
         run: pnpm test
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
 
       - name: Install Bun
         if: matrix.runtime == 'bun'
@@ -131,7 +124,6 @@ jobs:
         run: pnpm test:bun
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
 
       - name: Install Deno
         if: matrix.runtime == 'deno'
@@ -144,7 +136,6 @@ jobs:
         run: pnpm test:deno
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
 
       # Full unit + connectionConfig suite inside workerd (vitest-pool-workers).
       - name: Run test suite under Cloudflare workerd
@@ -152,7 +143,6 @@ jobs:
         run: pnpm test:cf
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
 
       # The suite deploys to an ephemeral Cloudflare preview account in its
       # global setup (wrangler deploy --temporary, no Cloudflare credentials
@@ -162,7 +152,6 @@ jobs:
         run: pnpm test:cf:deploy
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
 
       # Full unit + connectionConfig suite inside Chromium (vitest browser mode).
       # Chromium comes from the cached install step above; `pretest:browser`
@@ -172,4 +161,3 @@ jobs:
         run: pnpm test:browser
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}

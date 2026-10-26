@@ -2,15 +2,6 @@ name: Test Desktop JS SDK
 
 on:
   workflow_call:
-    inputs:
-      E2B_DOMAIN:
-        required: false
-        type: string
-        default: ''
-      run_tests:
-        required: false
-        type: boolean
-        default: true
     secrets:
       E2B_API_KEY:
         required: true
@@ -24,19 +15,14 @@ jobs:
       run:
         working-directory: ./packages/desktop-js
         shell: bash
-    name: Desktop JS SDK - ${{ inputs.run_tests && matrix.runtime || 'build' }}
+    name: Desktop JS SDK - ${{ matrix.runtime }}
     strategy:
       fail-fast: false
       # Each runtime keeps one live-test worker. This matrix has four legs, so
       # it naturally stays below the shared six-job cap.
       max-parallel: 6
-      # Callers that only build (staging) collapse the matrix to a single job;
-      # the runtime legs are exercised against production.
       matrix:
-        runtime: >-
-          ${{ inputs.run_tests
-            && fromJSON('["node", "bun", "deno", "cloudflare"]')
-            || fromJSON('["node"]') }}
+        runtime: [node, bun, deno, cloudflare]
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
@@ -77,13 +63,13 @@ jobs:
         run: pnpm build
 
       - name: Install Bun
-        if: inputs.run_tests && matrix.runtime == 'bun'
+        if: matrix.runtime == 'bun'
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: '${{ env.TOOL_VERSION_BUN }}'
 
       - name: Install Deno
-        if: inputs.run_tests && matrix.runtime == 'deno'
+        if: matrix.runtime == 'deno'
         uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
         with:
           deno-version: 'v${{ env.TOOL_VERSION_DENO }}'
@@ -91,7 +77,6 @@ jobs:
       # Every leg runs the same suite; the cloudflare one inside workerd
       # (vitest-pool-workers).
       - name: Run test suite under ${{ matrix.runtime }}
-        if: inputs.run_tests
         run: |
           case "${{ matrix.runtime }}" in
             node) script=test ;;
@@ -101,5 +86,4 @@ jobs:
           pnpm "$script"
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
           E2B_TEST_MAX_WORKERS: 1
