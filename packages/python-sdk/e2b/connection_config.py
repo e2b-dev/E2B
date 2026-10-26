@@ -128,7 +128,8 @@ class ApiParams(TypedDict, total=False):
     `"2"`. `"1.1"` pins them to HTTP/1.1, which
     uses one connection per concurrent request instead of multiplexing streams
     over shared connections — for example when an intermediary on the path
-    retires or mishandles long-lived HTTP/2 connections."""
+    retires or mishandles long-lived HTTP/2 connections. File downloads
+    (`files.read`) always use HTTP/1.1."""
 
 
 class ApiParamsWithLogger(ApiParams, total=False):
