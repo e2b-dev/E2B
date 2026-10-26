@@ -20,8 +20,9 @@ T = TypeVar("T", bound="SandboxNetworkConfig")
 class SandboxNetworkConfig:
     """
     Attributes:
-        allow_public_traffic (Union[Unset, bool]): Specify if the sandbox URLs should be accessible only with
-            authentication. Default: True.
+        allow_public_traffic (Union[None, Unset, bool]): Whether sandbox URLs accept traffic without the sandbox's
+            traffic access token. When omitted or null on create, the project's default applies, which is true unless the
+            project changed it.
         allow_out (Union[Unset, list[str]]): List of allowed destinations for egress traffic. Each entry can be a CIDR
             block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com",
             "*.example.com"). Allowed entries always take precedence over denied entries. When allowOut contains a domain,
@@ -47,7 +48,7 @@ class SandboxNetworkConfig:
             configure allowOut separately to permit the destination.
     """
 
-    allow_public_traffic: Union[Unset, bool] = True
+    allow_public_traffic: Union[None, Unset, bool] = UNSET
     allow_out: Union[Unset, list[str]] = UNSET
     deny_out: Union[Unset, list[str]] = UNSET
     dns_servers: Union[Unset, list[str]] = UNSET
@@ -62,7 +63,11 @@ class SandboxNetworkConfig:
             SandboxEgressProxyConfigType0,
         )
 
-        allow_public_traffic = self.allow_public_traffic
+        allow_public_traffic: Union[None, Unset, bool]
+        if isinstance(self.allow_public_traffic, Unset):
+            allow_public_traffic = UNSET
+        else:
+            allow_public_traffic = self.allow_public_traffic
 
         allow_out: Union[Unset, list[str]] = UNSET
         if not isinstance(self.allow_out, Unset):
@@ -124,7 +129,17 @@ class SandboxNetworkConfig:
         from ..models.sandbox_network_config_rules import SandboxNetworkConfigRules
 
         d = dict(src_dict)
-        allow_public_traffic = d.pop("allowPublicTraffic", UNSET)
+
+        def _parse_allow_public_traffic(data: object) -> Union[None, Unset, bool]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, bool], data)
+
+        allow_public_traffic = _parse_allow_public_traffic(
+            d.pop("allowPublicTraffic", UNSET)
+        )
 
         allow_out = cast(list[str], d.pop("allowOut", UNSET))
 
