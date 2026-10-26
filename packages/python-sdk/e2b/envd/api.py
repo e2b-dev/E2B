@@ -2,6 +2,7 @@ import httpx
 
 from typing import Callable, Optional
 
+from e2b.connection_config import whole_request_timeout
 from e2b.envd.rpc import (
     format_sandbox_unreachable_exception,
     format_terminated_exception,
@@ -60,7 +61,9 @@ def check_sandbox_health(envd_api: httpx.Client) -> Optional[bool]:
     :raises SandboxUnreachableException: When the proxy reports the sandbox running but envd's port not open -- the exception a request would get.
     """
     try:
-        r = envd_api.get(ENVD_API_HEALTH_ROUTE, timeout=HEALTH_CHECK_TIMEOUT)
+        r = envd_api.get(
+            ENVD_API_HEALTH_ROUTE, timeout=whole_request_timeout(HEALTH_CHECK_TIMEOUT)
+        )
     except httpx.TransportError:
         raise
     except Exception:
@@ -71,7 +74,9 @@ def check_sandbox_health(envd_api: httpx.Client) -> Optional[bool]:
 async def acheck_sandbox_health(envd_api: httpx.AsyncClient) -> Optional[bool]:
     """Async version of :func:`check_sandbox_health`."""
     try:
-        r = await envd_api.get(ENVD_API_HEALTH_ROUTE, timeout=HEALTH_CHECK_TIMEOUT)
+        r = await envd_api.get(
+            ENVD_API_HEALTH_ROUTE, timeout=whole_request_timeout(HEALTH_CHECK_TIMEOUT)
+        )
     except httpx.TransportError:
         raise
     except Exception:
