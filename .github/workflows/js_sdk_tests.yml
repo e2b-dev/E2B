@@ -2,6 +2,11 @@ name: Test JS SDK
 
 on:
   workflow_call:
+    inputs:
+      E2B_DOMAIN:
+        required: false
+        type: string
+        default: ''
     secrets:
       E2B_API_KEY:
         required: true
@@ -112,6 +117,7 @@ jobs:
         run: pnpm test
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
 
       - name: Install Bun
         if: matrix.runtime == 'bun'
@@ -124,6 +130,7 @@ jobs:
         run: pnpm test:bun
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
 
       - name: Install Deno
         if: matrix.runtime == 'deno'
@@ -136,6 +143,7 @@ jobs:
         run: pnpm test:deno
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
 
       # Full unit + connectionConfig suite inside workerd (vitest-pool-workers).
       - name: Run test suite under Cloudflare workerd
@@ -143,6 +151,7 @@ jobs:
         run: pnpm test:cf
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
 
       # The suite deploys to an ephemeral Cloudflare preview account in its
       # global setup (wrangler deploy --temporary, no Cloudflare credentials
@@ -152,6 +161,7 @@ jobs:
         run: pnpm test:cf:deploy
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
 
       # Full unit + connectionConfig suite inside Chromium (vitest browser mode).
       # Chromium comes from the cached install step above; `pretest:browser`
@@ -161,3 +171,4 @@ jobs:
         run: pnpm test:browser
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}

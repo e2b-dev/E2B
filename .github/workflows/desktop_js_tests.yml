@@ -2,6 +2,11 @@ name: Test Desktop JS SDK
 
 on:
   workflow_call:
+    inputs:
+      E2B_DOMAIN:
+        required: false
+        type: string
+        default: ''
     secrets:
       E2B_API_KEY:
         required: true
@@ -86,4 +91,5 @@ jobs:
           pnpm "$script"
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
           E2B_TEST_MAX_WORKERS: 1
