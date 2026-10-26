@@ -56,18 +56,23 @@ class EmptyDataFramesServer(threading.Thread):
     def serve(self, sock: socket.socket):
         sock.settimeout(10)
         try:
-            head = sock.recv(len(H2_PREFACE), socket.MSG_PEEK | socket.MSG_WAITALL)
-            if head == H2_PREFACE:
-                self.serve_h2(sock)
+            # Sniff without MSG_PEEK/MSG_WAITALL, which Windows can't combine.
+            buf = b""
+            while len(buf) < len(H2_PREFACE) and H2_PREFACE.startswith(buf):
+                data = sock.recv(65535)
+                if not data:
+                    return
+                buf += data
+            if buf.startswith(H2_PREFACE):
+                self.serve_h2(sock, buf)
             else:
-                self.serve_h1(sock)
+                self.serve_h1(sock, buf)
         except OSError:
             pass
         finally:
             sock.close()
 
-    def serve_h1(self, sock: socket.socket):
-        buf = b""
+    def serve_h1(self, sock: socket.socket, buf: bytes):
         while True:
             while b"\r\n\r\n" not in buf:
                 data = sock.recv(65535)
@@ -83,16 +88,13 @@ class EmptyDataFramesServer(threading.Thread):
                 + CONTENT
             )
 
-    def serve_h2(self, sock: socket.socket):
+    def serve_h2(self, sock: socket.socket, data: bytes):
         conn = h2.connection.H2Connection(
             config=h2.config.H2Configuration(client_side=False)
         )
         conn.initiate_connection()
         sock.sendall(conn.data_to_send())
         while True:
-            data = sock.recv(65535)
-            if not data:
-                return
             for event in conn.receive_data(data):
                 if isinstance(event, h2.events.RequestReceived):
                     self.protocols.append("HTTP/2")
@@ -113,6 +115,9 @@ class EmptyDataFramesServer(threading.Thread):
             out = conn.data_to_send()
             if out:
                 sock.sendall(out)
+            data = sock.recv(65535)
+            if not data:
+                return
 
 
 @contextlib.contextmanager
