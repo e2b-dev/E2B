@@ -1,7 +1,10 @@
+from typing import cast
+
 import pytest
 from connectrpc.code import Code
 from connectrpc.errors import ConnectError
 
+from e2b.envd.process import process_connect
 from e2b.exceptions import InvalidArgumentException, NotFoundException
 from e2b.sandbox.commands.stream_input import stream_input_sync
 
@@ -19,11 +22,15 @@ class _FakeRpc:
             raise self._error
 
 
+def _client(rpc: _FakeRpc) -> process_connect.ProcessClientSync:
+    return cast(process_connect.ProcessClientSync, rpc)
+
+
 @pytest.mark.parametrize("input_kind", ["stdin", "pty"])
 def test_sends_start_then_data_events(input_kind):
     rpc = _FakeRpc()
 
-    stream_input_sync(rpc, 42, input_kind, ["a", b"b"], 5, lambda: True)
+    stream_input_sync(_client(rpc), 42, input_kind, ["a", b"b"], 5, lambda: True)
 
     start, *data = rpc.requests
     assert start.event.field == "start"
@@ -41,7 +48,7 @@ def test_rejects_single_chunk(chunk):
     rpc = _FakeRpc()
 
     with pytest.raises(InvalidArgumentException):
-        stream_input_sync(rpc, 1, "stdin", chunk, None, lambda: True)
+        stream_input_sync(_client(rpc), 1, "stdin", chunk, None, lambda: True)
 
     assert rpc.requests == []
 
@@ -50,4 +57,4 @@ def test_maps_rpc_errors():
     rpc = _FakeRpc(error=ConnectError(Code.NOT_FOUND, "missing"))
 
     with pytest.raises(NotFoundException):
-        stream_input_sync(rpc, 1, "pty", ["x"], None, lambda: True)
+        stream_input_sync(_client(rpc), 1, "pty", ["x"], None, lambda: True)
