@@ -2,6 +2,10 @@ name: Publish Packages
 
 on:
   workflow_call:
+    inputs:
+      recovery_commit:
+        type: string
+        default: ''
     secrets:
       E2B_API_KEY:
         required: true
@@ -20,6 +24,8 @@ jobs:
     # `uses:` a reusable workflow cannot carry `environment`. The environment's
     # deployment branch policy only allows main.
     environment: deployment
+    env:
+      RECOVERY_COMMIT: ${{ inputs.recovery_commit }}
     steps:
       - uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1.12.0
         id: app-token
@@ -31,6 +37,7 @@ jobs:
         uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3.7.0
         with:
           token: ${{ steps.app-token.outputs.token }}
+          fetch-depth: 0
 
       - name: Parse .tool-versions
         uses: wistia/parse-tool-versions@32f568a4ffd4bfa7720ebf93f171597d1ebc979a # v2.1.1
@@ -73,17 +80,23 @@ jobs:
       - name: Select publisher
         id: publisher
         run: |
-          pnpm changeset status --output="$RUNNER_TEMP/release-plan.json"
+          node .github/scripts/release_plan.cjs "$RUNNER_TEMP/release-plan.json"
           COMMAND=$(node .github/scripts/publish_command.cjs "$RUNNER_TEMP/release-plan.json")
           echo "command=$COMMAND" >> "$GITHUB_OUTPUT"
 
+      - name: Restore the release source
+        if: inputs.recovery_commit != ''
+        run: git checkout --detach "$RECOVERY_COMMIT"
+
       - name: Create new versions
+        if: inputs.recovery_commit == ''
         run: pnpm run version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Commit new versions
         id: commit
+        if: inputs.recovery_commit == ''
         # Commit before publishing, because `changeset publish` tags whatever HEAD
         # it publishes from — tagging afterwards is what left every tag on the
         # commit before its own version bump (SDK-298).
