@@ -6,7 +6,7 @@ import * as boxen from 'boxen'
 import { cwdRelative } from './filesystem'
 import { UserConfig } from '../user'
 
-export const primaryColor = '#FFB766'
+const primaryColor = '#FFB766'
 
 export function asFormattedConfig(config: UserConfig) {
   const email = asBold(config.identity.email)
@@ -44,7 +44,7 @@ export function asFormattedSandboxTemplate(template: SandboxTemplateRef) {
   return `${id}${name}`.trim()
 }
 
-export function asRed(text: string) {
+function asRed(text: string) {
   return chalk.default.redBright(text)
 }
 
@@ -95,7 +95,7 @@ export function asPython(code: string) {
   return highlight.default(code, { language: 'python', ignoreIllegals: true })
 }
 
-export const borderStyle = {
+const borderStyle = {
   topLeft: '',
   topRight: '',
   bottomLeft: '',

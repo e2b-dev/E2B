@@ -153,7 +153,7 @@ type ListSandboxesResult = {
   hasMore: boolean
 }
 
-export async function listSandboxes({
+async function listSandboxes({
   limit,
   state,
   metadataRaw,
