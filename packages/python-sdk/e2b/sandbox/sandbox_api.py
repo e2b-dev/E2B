@@ -1361,6 +1361,32 @@ class SandboxMetrics:
 
 
 @dataclass
+class SandboxEvent:
+    """Sandbox event."""
+
+    id: str
+    """Event identifier."""
+    version: str
+    """Event structure version."""
+    type: str
+    """Event type."""
+    timestamp: datetime
+    """Event timestamp."""
+    sandbox_id: str
+    """Sandbox identifier."""
+    sandbox_execution_id: str
+    """Sandbox execution identifier."""
+    sandbox_template_id: str
+    """Sandbox template identifier."""
+    sandbox_build_id: str
+    """Sandbox build identifier."""
+    sandbox_team_id: str
+    """Sandbox team identifier."""
+    event_data: Optional[Dict[str, Any]] = None
+    """Optional JSON data associated with the event."""
+
+
+@dataclass
 class SnapshotInfo:
     """Information about a snapshot."""
 

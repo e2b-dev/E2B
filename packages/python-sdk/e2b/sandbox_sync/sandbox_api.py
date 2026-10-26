@@ -21,6 +21,7 @@ from e2b.api.client.api.sandboxes import (
     post_sandboxes_sandbox_id_timeout,
     put_sandboxes_sandbox_id_network,
 )
+from e2b.api.client.api.events import get_events_sandboxes_sandbox_id
 from e2b.api.client.api.templates import delete_templates_template_id
 from e2b.api.client.models import (
     ConnectSandboxV2,
@@ -32,6 +33,7 @@ from e2b.api.client.models import (
     SandboxNetworkConfig,
     SandboxPauseRequest,
     SandboxVolumeMount as SandboxVolumeMountAPI,
+    SandboxEventEventDataType0,
 )
 from e2b.api.client.types import UNSET, Unset
 from e2b.connection_config import ApiParams, ConnectionConfig
@@ -50,6 +52,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxLifecycle,
     SandboxListOrder,
     SandboxMetrics,
+    SandboxEvent,
     SandboxNetworkOpts,
     SandboxNetworkUpdate,
     SandboxOnResume,
@@ -318,6 +321,65 @@ class SandboxApi(SandboxBase):
                 timestamp=metric.timestamp,
             )
             for metric in res.parsed
+        ]
+
+    @classmethod
+    def _cls_get_events(
+        cls,
+        sandbox_id: str,
+        *,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+        order_asc: Optional[bool] = None,
+        types: Optional[List[str]] = None,
+        **opts: Unpack[ApiParams],
+    ) -> List[SandboxEvent]:
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
+
+        if config.debug:
+            return []
+
+        api_client = get_api_client(config)
+        res = get_events_sandboxes_sandbox_id.sync_detailed(
+            sandbox_id,
+            offset=offset if offset is not None else UNSET,
+            limit=limit if limit is not None else UNSET,
+            order_asc=order_asc if order_asc is not None else UNSET,
+            types=types if types is not None else UNSET,
+            client=api_client,
+        )
+
+        if res.status_code == 404:
+            # A live sandbox can return 404 until its events have been ingested.
+            return []
+
+        if res.status_code >= 300:
+            raise handle_api_exception(res)
+
+        if res.parsed is None:
+            return []
+
+        if isinstance(res.parsed, Error):
+            raise SandboxException(f"{res.parsed.message}: Request failed")
+
+        return [
+            SandboxEvent(
+                id=str(event.id),
+                version=event.version,
+                type=event.type_,
+                timestamp=event.timestamp,
+                sandbox_id=event.sandbox_id,
+                sandbox_execution_id=event.sandbox_execution_id,
+                sandbox_template_id=event.sandbox_template_id,
+                sandbox_build_id=event.sandbox_build_id,
+                sandbox_team_id=str(event.sandbox_team_id),
+                event_data=(
+                    event.event_data.to_dict()
+                    if isinstance(event.event_data, SandboxEventEventDataType0)
+                    else None
+                ),
+            )
+            for event in res.parsed
         ]
 
     @classmethod

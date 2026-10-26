@@ -25,6 +25,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxIamOpts,
     SandboxLifecycle,
     SandboxMetrics,
+    SandboxEvent,
     SandboxNetworkOpts,
     SandboxNetworkUpdate,
     SandboxOnResume,
@@ -778,6 +779,90 @@ class AsyncSandbox(SandboxApi):
             sandbox_id=self.sandbox_id,
             start=start,
             end=end,
+            **self.connection_config.get_api_params(**opts),
+        )
+
+    @overload
+    async def get_events(
+        self,
+        *,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+        order_asc: Optional[bool] = None,
+        types: Optional[List[str]] = None,
+        **opts: Unpack[ApiParams],
+    ) -> List[SandboxEvent]:
+        """
+        Get events for the current sandbox.
+
+        :param offset: Number of events to skip
+        :param limit: Maximum number of events to return
+        :param order_asc: Return the oldest events first
+        :param types: Event types to include
+
+        :return: List of sandbox events
+
+        Example:
+            events = await sbx.get_events(types=["sandbox.lifecycle.created"])
+        """
+        ...
+
+    @overload
+    @staticmethod
+    async def get_events(
+        sandbox_id: str,
+        *,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+        order_asc: Optional[bool] = None,
+        types: Optional[List[str]] = None,
+        **opts: Unpack[ApiParams],
+    ) -> List[SandboxEvent]:
+        """
+        Get events for the sandbox specified by sandbox ID.
+
+        :param sandbox_id: Sandbox ID
+        :param offset: Number of events to skip
+        :param limit: Maximum number of events to return
+        :param order_asc: Return the oldest events first
+        :param types: Event types to include
+
+        :return: List of sandbox events
+
+        Example:
+            events = await AsyncSandbox.get_events("sandbox-id", types=["sandbox.lifecycle.created"])
+        """
+        ...
+
+    @class_method_variant("_cls_get_events")
+    async def get_events(
+        self,
+        *,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+        order_asc: Optional[bool] = None,
+        types: Optional[List[str]] = None,
+        **opts: Unpack[ApiParams],
+    ) -> List[SandboxEvent]:
+        """
+        Get events for the current sandbox.
+
+        :param offset: Number of events to skip
+        :param limit: Maximum number of events to return
+        :param order_asc: Return the oldest events first
+        :param types: Event types to include
+
+        :return: List of sandbox events
+
+        Example:
+            events = await sbx.get_events(types=["sandbox.lifecycle.created"])
+        """
+        return await SandboxApi._cls_get_events(
+            sandbox_id=self.sandbox_id,
+            offset=offset,
+            limit=limit,
+            order_asc=order_asc,
+            types=types,
             **self.connection_config.get_api_params(**opts),
         )
 
