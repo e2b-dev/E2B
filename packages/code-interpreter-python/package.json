@@ -9,7 +9,7 @@
     "test": "uv run pytest -n 4 --verbose -x",
     "postVersion": "uv version --frozen $(pnpm pkg get version --workspaces=false | tr -d \\\")",
     "lock": "uv lock",
-    "postPublish": "uv build && uv publish --trusted-publishing always --check-url https://pypi.org/simple/",
+    "postPublish": "sh ../../.github/scripts/publish_python_package.sh",
     "typecheck": "uv run make typecheck",
     "lint": "uv run make lint",
     "format": "uv run make format"
