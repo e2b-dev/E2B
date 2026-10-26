@@ -48,7 +48,7 @@
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.18.8",
-    "@redocly/cli": "2.62.1",
+    "@redocly/cli": "2.64.1",
     "@types/node": "catalog:",
     "@types/platform": "^1.3.6",
     "@typescript/native": "catalog:",
@@ -65,7 +65,7 @@
     "tsdown": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
-    "wrangler": "^4.149.0"
+    "wrangler": "^4.151.1"
   },
   "files": [
     "dist",
