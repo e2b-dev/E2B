@@ -77,12 +77,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Select publisher
-        id: publisher
+      - name: Prepare publisher
         run: |
           node .github/scripts/release_plan.cjs "$RUNNER_TEMP/release-plan.json"
-          COMMAND=$(node .github/scripts/publish_command.cjs "$RUNNER_TEMP/release-plan.json")
-          echo "command=$COMMAND" >> "$GITHUB_OUTPUT"
+          # Keep the fixed publisher when recovery checks out the release commit.
+          cp .github/scripts/publish_selected.cjs .github/scripts/publish_python_sdk.sh "$RUNNER_TEMP/"
 
       - name: Restore the release source
         if: inputs.recovery_commit != ''
@@ -117,7 +116,7 @@ jobs:
         id: release
         uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
         with:
-          publish: ${{ steps.publisher.outputs.command }}
+          publish: node "${{ runner.temp }}/publish_selected.cjs" "${{ runner.temp }}/release-plan.json"
           createGithubReleases: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

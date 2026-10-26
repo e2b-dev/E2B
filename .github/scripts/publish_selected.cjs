@@ -1,4 +1,8 @@
 const fs = require('node:fs')
+const path = require('node:path')
+const { execFileSync } = require('node:child_process')
+
+const run = (command, args) => execFileSync(command, args, { stdio: 'inherit' })
 
 const { releases } = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
 if (!Array.isArray(releases) || releases.length === 0) {
@@ -6,7 +10,7 @@ if (!Array.isArray(releases) || releases.length === 0) {
 }
 
 if (releases.length === 1 && releases[0].name === '@e2b/python-sdk') {
-  console.log('pnpm run publish:python-sdk')
+  run('sh', [path.join(__dirname, 'publish_python_sdk.sh')])
 } else {
   const selected = new Set(releases.map(({ name }) => name))
   const python = fs.readdirSync('packages').flatMap((directory) => {
@@ -15,11 +19,10 @@ if (releases.length === 1 && releases[0].name === '@e2b/python-sdk') {
     )
     return selected.has(pkg.name) && pkg.scripts?.postPublish ? [pkg.name] : []
   })
-  const commands = ['pnpm --dir packages/js-sdk build']
+  run('pnpm', ['--dir', 'packages/js-sdk', 'build'])
   if (python.length) {
-    const filters = python.map((name) => `--filter '${name}'`).join(' ')
-    commands.push(`pnpm ${filters} -r run postPublish`)
+    const filters = python.flatMap((name) => ['--filter', name])
+    run('pnpm', [...filters, '-r', 'run', 'postPublish'])
   }
-  commands.push('pnpm changeset publish')
-  console.log(commands.join(' && '))
+  run('pnpm', ['changeset', 'publish'])
 }

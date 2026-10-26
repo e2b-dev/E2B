@@ -21,8 +21,14 @@ const packages = {
 }
 
 function fixture(t) {
-  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'e2b-release-test-'))
-  t.after(() => fs.rmSync(cwd, { recursive: true, force: true }))
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'e2b-release-test-'))
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }))
+  const cwd = path.join(root, 'source')
+  const publisher = path.join(root, 'saved publisher')
+  fs.mkdirSync(publisher)
+  for (const name of ['publish_selected.cjs', 'publish_python_sdk.sh']) {
+    fs.copyFileSync(script(name), path.join(publisher, name))
+  }
   const write = (file, content) => {
     fs.mkdirSync(path.dirname(path.join(cwd, file)), { recursive: true })
     fs.writeFileSync(path.join(cwd, file), content)
@@ -42,7 +48,7 @@ if (process.env.FAIL_PACKAGE === process.argv[2]) process.exit(1)
       scripts: {
         changeset: 'node record.cjs npm',
         publish: 'pnpm run -r postPublish && pnpm changeset publish',
-        'publish:python-sdk': 'pnpm --filter @e2b/python-sdk run postPublish',
+        'publish:python-sdk': 'sh .github/scripts/publish_python_sdk.sh',
       },
     })
   )
@@ -59,30 +65,50 @@ if (process.env.FAIL_PACKAGE === process.argv[2]) process.exit(1)
       })
     )
   }
-  return { cwd, write }
+  write(
+    '.github/scripts/publish_python_sdk.sh',
+    fs.readFileSync(script('publish_python_sdk.sh'))
+  )
+  const git = (...args) =>
+    execFileSync('git', args, { cwd, encoding: 'utf8' }).trim()
+  const commit = (message) => {
+    git('add', '.')
+    git('-c', 'commit.gpgsign=false', 'commit', '-qm', message)
+    return git('rev-parse', 'HEAD')
+  }
+  git('init', '-q')
+  git('config', 'user.name', 'Release test')
+  git('config', 'user.email', 'release-test@example.invalid')
+  const initial = commit('Initial packages')
+  return { cwd, write, publisher, git, commit, initial }
 }
 
-function publish(t, names, fail = '') {
-  const { cwd, write } = fixture(t)
-  write(
-    'plan.json',
-    JSON.stringify({ releases: names.map((name) => ({ name })) })
-  )
-  const command = execFileSync(
+function runPublisher({ cwd, publisher }, fail = '') {
+  const log = path.join(cwd, 'calls')
+  const result = spawnSync(
     process.execPath,
-    [script('publish_command.cjs'), 'plan.json'],
+    [path.join(publisher, 'publish_selected.cjs'), 'plan.json'],
     {
       cwd,
       encoding: 'utf8',
+      env: { ...process.env, PUBLISH_LOG: log, FAIL_PACKAGE: fail },
     }
-  ).trim()
-  const log = path.join(cwd, 'calls')
-  const result = spawnSync('sh', ['-c', command], {
-    cwd,
-    encoding: 'utf8',
-    env: { ...process.env, PUBLISH_LOG: log, FAIL_PACKAGE: fail },
-  })
-  return { ...result, calls: fs.readFileSync(log, 'utf8').trim().split('\n') }
+  )
+  return {
+    ...result,
+    calls: fs.existsSync(log)
+      ? fs.readFileSync(log, 'utf8').trim().split('\n')
+      : [],
+  }
+}
+
+function publish(t, names, fail = '') {
+  const files = fixture(t)
+  files.write(
+    'plan.json',
+    JSON.stringify({ releases: names.map((name) => ({ name })) })
+  )
+  return runPublisher(files, fail)
 }
 
 test('mixed releases publish only selected Python packages in dependency order', (t) => {
@@ -135,19 +161,38 @@ test('normal dispatch without changesets produces no release', (t) => {
   )
 })
 
+test('Python-only recovery uses the saved publisher and tags the release commit', (t) => {
+  const files = fixture(t)
+  const { cwd, write, publisher, git, commit } = files
+  const file = 'packages/python-sdk/package.json'
+  const pkg = JSON.parse(fs.readFileSync(path.join(cwd, file), 'utf8'))
+  write(file, JSON.stringify({ ...pkg, version: '1.1.0' }))
+  write('.github/scripts/publish_python_sdk.sh', '#!/bin/sh\nexit 99\n')
+  const release = commit('[skip ci] Release new versions')
+  write(
+    '.github/scripts/publish_python_sdk.sh',
+    fs.readFileSync(script('publish_python_sdk.sh'))
+  )
+  commit('Fix Python publisher')
+
+  fs.copyFileSync(
+    path.join(cwd, '.github/scripts/publish_python_sdk.sh'),
+    path.join(publisher, 'publish_python_sdk.sh')
+  )
+  execFileSync(process.execPath, [script('release_plan.cjs'), 'plan.json'], {
+    cwd,
+    env: { ...process.env, RECOVERY_COMMIT: release },
+  })
+  git('checkout', '-q', '--detach', release)
+  const result = runPublisher(files)
+  assert.equal(result.status, 0, result.stderr)
+  assert.deepEqual(result.calls, ['python-sdk'])
+  assert.match(result.stdout, /New tag: @e2b\/python-sdk@1.1.0/)
+  assert.equal(git('rev-parse', '@e2b/python-sdk@1.1.0^{}'), release)
+})
+
 test('recovery derives version changes and test gates from the release commit', (t) => {
-  const { cwd, write } = fixture(t)
-  const git = (...args) =>
-    execFileSync('git', args, { cwd, encoding: 'utf8' }).trim()
-  const commit = (message) => {
-    git('add', '.')
-    git('-c', 'commit.gpgsign=false', 'commit', '-qm', message)
-    return git('rev-parse', 'HEAD')
-  }
-  git('init', '-q')
-  git('config', 'user.name', 'Release test')
-  git('config', 'user.email', 'release-test@example.invalid')
-  const initial = commit('Initial packages')
+  const { cwd, write, git, commit, initial } = fixture(t)
   for (const directory of ['js-sdk', 'python-sdk', 'code-interpreter-python']) {
     const file = `packages/${directory}/package.json`
     const pkg = JSON.parse(fs.readFileSync(path.join(cwd, file), 'utf8'))
