@@ -1,15 +1,14 @@
 #!/bin/sh
 
-# This script checks if the specified package has changesets in the current commit.
+# This script checks if the specified package is in the release plan.
 
 set -eu
 
-if [ $# -lt 1 ]; then
-  echo "Error: Package name is required as the first argument." >&2
+if [ $# -lt 2 ]; then
+  echo "Error: Package name and release plan are required." >&2
   exit 1
 fi
 
-PACKAGE_NAME=$1
-PACKAGE_CHANGES=$(node -e "require('@changesets/read').default(process.cwd()).then(result => console.log(result.flatMap(changeset => changeset.releases.flatMap(release => release.name)).includes('${PACKAGE_NAME}')))")
+PACKAGE_CHANGES=$(node -e 'console.log(JSON.parse(require("node:fs").readFileSync(process.argv[2], "utf8")).releases.some(release => release.name === process.argv[1]))' "$1" "$2")
 
 echo "${PACKAGE_CHANGES}"
