@@ -13,6 +13,10 @@
   </a>
 </h4>
 
+<p align="center">
+  <b>English</b> · <a href="https://github.com/e2b-dev/E2B/blob/main/README.zh.md">简体中文</a>
+</p>
+
 <!---
 <img width="100%" src="/readme-assets/preview.png" alt="Cover image">
 --->
