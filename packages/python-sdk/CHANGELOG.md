@@ -1,5 +1,13 @@
 # @e2b/python-sdk
 
+## 2.61.0
+
+### Minor Changes
+
+- bea0fe6: - Added an `idempotencyKey` (JavaScript) and `idempotency_key` (Python) option
+  to `Sandbox.create` that sends `Idempotency-Key` on sandbox creation. Keys
+  must contain 1–255 lowercase ASCII letters, digits or hyphens.
+
 ## 2.60.0
 
 ### Minor Changes
