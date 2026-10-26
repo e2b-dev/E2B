@@ -1,5 +1,18 @@
 # @e2b/python-sdk
 
+## 2.60.0
+
+### Minor Changes
+
+- e514999: Retry control-plane API errors marked `Should-Retry: true`, or 429/502/503/504 responses without the header (e.g. from a load balancer); `Should-Retry: false` is never retried.
+
+  - Removes method and replayable-operation retry allowlists
+  - Post-send network errors are no longer retried; connection failures still are
+
+### Patch Changes
+
+- 451a696: Preserve omitted public-traffic options during Python sandbox creation so the server applies its default. Normalize null network responses to omitted values in Python and JavaScript. Explicit true and false values are unchanged.
+
 ## 2.59.0
 
 ### Minor Changes

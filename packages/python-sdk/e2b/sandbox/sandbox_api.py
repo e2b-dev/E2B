@@ -487,7 +487,7 @@ class SandboxNetworkOpts(TypedDict):
     allow_public_traffic: NotRequired[bool]
     """
     Controls whether sandbox URLs should be publicly accessible or require authentication.
-    Defaults to True.
+    When omitted, the server applies its default.
     """
 
     mask_request_host: NotRequired[str]
@@ -1199,7 +1199,9 @@ def from_client_network_config(
         result["egress_proxy"] = egress_proxy
     if not isinstance(network.dns_servers, Unset):
         result["dns_servers"] = list(network.dns_servers)
-    if not isinstance(network.allow_public_traffic, Unset):
+    if network.allow_public_traffic is not None and not isinstance(
+        network.allow_public_traffic, Unset
+    ):
         result["allow_public_traffic"] = network.allow_public_traffic
     if not isinstance(network.mask_request_host, Unset):
         result["mask_request_host"] = network.mask_request_host

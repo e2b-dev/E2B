@@ -1,7 +1,12 @@
 name: Release
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      recovery_commit:
+        description: 'Recover an already-bumped release (full commit SHA, otherwise leave empty)'
+        type: string
+        default: ''
 
 concurrency: release-${{ github.ref }}
 
@@ -13,6 +18,8 @@ jobs:
   preflight:
     name: Release preflight
     runs-on: ubuntu-latest
+    env:
+      RECOVERY_COMMIT: ${{ inputs.recovery_commit }}
     outputs:
       release: ${{ steps.version.outputs.release }}
       js-sdk: ${{ steps.js.outputs.release }}
@@ -39,6 +46,8 @@ jobs:
 
       - name: Checkout Repo
         uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3.7.0
+        with:
+          fetch-depth: 0
 
       - name: Parse .tool-versions
         uses: wistia/parse-tool-versions@32f568a4ffd4bfa7720ebf93f171597d1ebc979a # v2.1.1
@@ -72,70 +81,71 @@ jobs:
       - name: Check if new version
         id: version
         run: |
-          IS_RELEASE=$(./.github/scripts/is_release.sh)
+          node .github/scripts/release_plan.cjs "$RUNNER_TEMP/release-plan.json"
+          IS_RELEASE=$(./.github/scripts/is_release.sh "$RUNNER_TEMP/release-plan.json")
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
       - name: Check JavaScript SDK Release
         id: js
         if: steps.version.outputs.release == 'true'
         run: |
-          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "e2b")
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "e2b" "$RUNNER_TEMP/release-plan.json")
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
       - name: Check Python SDK Release
         id: python
         if: steps.version.outputs.release == 'true'
         run: |
-          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/python-sdk")
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/python-sdk" "$RUNNER_TEMP/release-plan.json")
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
       - name: Check CLI Release
         id: cli
         if: steps.version.outputs.release == 'true'
         run: |
-          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/cli")
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/cli" "$RUNNER_TEMP/release-plan.json")
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
       - name: Check Code Interpreter JavaScript SDK Release
         id: code_interpreter_js
         if: steps.version.outputs.release == 'true'
         run: |
-          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/code-interpreter")
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/code-interpreter" "$RUNNER_TEMP/release-plan.json")
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
       - name: Check Code Interpreter Python SDK Release
         id: code_interpreter_python
         if: steps.version.outputs.release == 'true'
         run: |
-          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/code-interpreter-python")
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/code-interpreter-python" "$RUNNER_TEMP/release-plan.json")
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
       - name: Check Desktop JavaScript SDK Release
         id: desktop_js
         if: steps.version.outputs.release == 'true'
         run: |
-          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/desktop")
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/desktop" "$RUNNER_TEMP/release-plan.json")
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
       - name: Check Desktop Python SDK Release
         id: desktop_python
         if: steps.version.outputs.release == 'true'
         run: |
-          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/desktop-python")
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/desktop-python" "$RUNNER_TEMP/release-plan.json")
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
       - name: Check Dockerfile Utils JavaScript Release
         id: dockerfile_utils_js
         if: steps.version.outputs.release == 'true'
         run: |
-          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/dockerfile-utils")
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/dockerfile-utils" "$RUNNER_TEMP/release-plan.json")
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
       - name: Check Dockerfile Utils Python Release
         id: dockerfile_utils_python
         if: steps.version.outputs.release == 'true'
         run: |
-          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/dockerfile-utils-python")
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/dockerfile-utils-python" "$RUNNER_TEMP/release-plan.json")
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
       - name: Build release itinerary
@@ -145,9 +155,7 @@ jobs:
         # that blocks a release; the messages fall back to a placeholder.
         continue-on-error: true
         run: |
-          pnpm changeset status --output=.cs-status.json
-          ITINERARY=$(node ./.github/scripts/build_release_itinerary.cjs .cs-status.json)
-          rm -f .cs-status.json
+          ITINERARY=$(node ./.github/scripts/build_release_itinerary.cjs "$RUNNER_TEMP/release-plan.json")
           {
             echo "itinerary<<EOF"
             echo "$ITINERARY"
@@ -230,6 +238,8 @@ jobs:
       - dockerfile-utils-python-tests
     if: (!cancelled()) && !contains(needs.*.result, 'failure') && needs.preflight.outputs.release == 'true'
     uses: ./.github/workflows/publish_packages.yml
+    with:
+      recovery_commit: ${{ inputs.recovery_commit }}
     secrets: inherit
 
   report-start:

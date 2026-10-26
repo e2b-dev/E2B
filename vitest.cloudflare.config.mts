@@ -42,6 +42,19 @@ export function createCloudflareVitestConfig({
 
   return {
     plugins: [
+      // workerd resolves without the `node` condition, under which msw's
+      // `msw/node` entry has no export for its
+      // `@mswjs/interceptors/ClientRequest` import. vitest-pool-workers shipped
+      // this redirect to msw's fetch-based native entry until 0.21.3.
+      {
+        name: 'e2b:msw-native',
+        enforce: 'pre',
+        load(id) {
+          if (id.endsWith('msw/lib/node/index.mjs')) {
+            return 'export * from "../native/index.mjs"'
+          }
+        },
+      },
       cloudflareTest({
         miniflare: {
           compatibilityDate: '2026-03-01',

@@ -33,6 +33,7 @@ jobs:
               - 'package.json'
               - '.tool-versions'
               - '.github/workflows/lint.yml'
+              - '.github/scripts/**'
 
   lint:
     name: Lint
@@ -84,6 +85,9 @@ jobs:
       - name: Run linting
         run: |
           pnpm run lint
+
+      - name: Test release scripts
+        run: node --test .github/scripts/release.test.cjs
 
       - name: Run formatting
         run: |
