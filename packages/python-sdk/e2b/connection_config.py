@@ -128,8 +128,10 @@ class ApiParams(TypedDict, total=False):
     `"2"`. `"1.1"` pins them to HTTP/1.1, which
     uses one connection per concurrent request instead of multiplexing streams
     over shared connections — for example when an intermediary on the path
-    retires or mishandles long-lived HTTP/2 connections. File downloads
-    (`files.read`) always use HTTP/1.1."""
+    retires or mishandles long-lived HTTP/2 connections. In the Python SDK,
+    file downloads (`files.read`) always use HTTP/1.1, overriding this
+    option, to work around an HTTP/2 empty-DATA-frame limit in the
+    underlying transport."""
 
 
 class ApiParamsWithLogger(ApiParams, total=False):
