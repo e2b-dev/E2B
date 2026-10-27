@@ -109,7 +109,7 @@ type ListSandboxTemplatesResult = {
   hasMore: boolean
 }
 
-export async function listSandboxTemplates({
+async function listSandboxTemplates({
   projectId,
   limit,
 }: {
