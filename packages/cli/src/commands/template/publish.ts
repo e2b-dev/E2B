@@ -66,7 +66,7 @@ async function templateAction(
     } else if (opts.select) {
       projectId = resolveProjectId(projectId)
 
-      const allTemplates = await listSandboxTemplates({
+      const { templates: allTemplates } = await listSandboxTemplates({
         projectId,
       })
 

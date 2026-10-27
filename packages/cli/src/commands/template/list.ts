@@ -12,20 +12,37 @@ import {
 } from '../../options'
 import { handleE2BRequestError } from '../../utils/errors'
 
+const DEFAULT_LIMIT = 1000
+const PAGE_LIMIT = 100
+
+type ListOptions = {
+  project?: string
+  team?: string
+  limit?: number
+  format: string
+}
+
 export const listCommand = new commander.Command('list')
   .description('list sandbox templates')
   .alias('ls')
   .addOption(projectOption)
   .addOption(deprecatedTeamOption)
+  .option(
+    '-l, --limit <limit>',
+    `limit the number of templates returned (default: ${DEFAULT_LIMIT}, 0 for no limit)`,
+    (value) => parseInt(value)
+  )
   .option('-f, --format <format>', 'output format, eg. json, pretty')
-  .action(async (opts: { project?: string; team?: string; format: string }) => {
+  .action(async (opts: ListOptions) => {
     try {
       const format = opts.format || 'pretty'
+      const limit = opts.limit === 0 ? undefined : (opts.limit ?? DEFAULT_LIMIT)
       ensureAPIKey()
       process.stdout.write('\n')
 
-      const templates = await listSandboxTemplates({
+      const { templates, hasMore } = await listSandboxTemplates({
         projectId: resolveProjectId(projectIdFromOptions(opts)),
+        limit,
       })
 
       for (const template of templates) {
@@ -34,6 +51,11 @@ export const listCommand = new commander.Command('list')
 
       if (format === 'pretty') {
         renderTemplateTable(templates)
+        if (hasMore) {
+          console.log(
+            `Showing first ${limit} templates. Use --limit to change.`
+          )
+        }
       } else if (format === 'json') {
         console.log(JSON.stringify(templates, null, 2))
       } else {
@@ -82,11 +104,23 @@ function renderTemplateTable(
   ])
 }
 
+type ListSandboxTemplatesResult = {
+  templates: e2b.components['schemas']['Template'][]
+  hasMore: boolean
+}
+
 export async function listSandboxTemplates({
   projectId,
+  limit,
 }: {
   projectId?: string
-}): Promise<e2b.components['schemas']['Template'][]> {
+  limit?: number
+}): Promise<ListSandboxTemplatesResult> {
+  let pageLimit = limit
+  if (!limit || limit > PAGE_LIMIT) {
+    pageLimit = PAGE_LIMIT
+  }
+
   const templates: e2b.components['schemas']['Template'][] = []
   let nextToken: string | undefined
 
@@ -94,14 +128,18 @@ export async function listSandboxTemplates({
     const res = await client.api.GET('/v2/templates', {
       params: {
         // the backend API still calls the project ID "teamID"
-        query: { teamID: projectId, nextToken },
+        query: { teamID: projectId, limit: pageLimit, nextToken },
       },
     })
 
     handleE2BRequestError(res, 'Error getting templates')
     templates.push(...res.data)
     nextToken = res.response.headers.get('x-next-token') || undefined
-  } while (nextToken)
+  } while (nextToken && (!limit || templates.length < limit))
 
-  return templates
+  return {
+    templates: limit ? templates.slice(0, limit) : templates,
+    // We can't change the page size during iteration, so we may have to check if we have more templates than the limit
+    hasMore: !!nextToken || (limit ? templates.length > limit : false),
+  }
 }
