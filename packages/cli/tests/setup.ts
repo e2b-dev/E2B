@@ -34,6 +34,7 @@ export function runCli(
     input: options.input,
     encoding: 'utf8',
     timeout: options.timeoutMs,
+    maxBuffer: 64 * 1024 * 1024,
   })
 }
 

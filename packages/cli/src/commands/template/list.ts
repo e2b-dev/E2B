@@ -87,13 +87,21 @@ export async function listSandboxTemplates({
 }: {
   projectId?: string
 }): Promise<e2b.components['schemas']['Template'][]> {
-  const templates = await client.api.GET('/templates', {
-    params: {
-      // the backend API still calls the project ID "teamID"
-      query: { teamID: projectId },
-    },
-  })
+  const templates: e2b.components['schemas']['Template'][] = []
+  let nextToken: string | undefined
 
-  handleE2BRequestError(templates, 'Error getting templates')
-  return templates.data
+  do {
+    const res = await client.api.GET('/v2/templates', {
+      params: {
+        // the backend API still calls the project ID "teamID"
+        query: { teamID: projectId, nextToken },
+      },
+    })
+
+    handleE2BRequestError(res, 'Error getting templates')
+    templates.push(...res.data)
+    nextToken = res.response.headers.get('x-next-token') || undefined
+  } while (nextToken)
+
+  return templates
 }
