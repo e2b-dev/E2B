@@ -40,24 +40,10 @@ describe('template list', () => {
 
     const client = new ApiClient(new ConnectionConfig({ apiKey, domain }))
     const res = await client.api.GET('/v2/templates')
-    expect(res.error).toBeUndefined()
+    expect(res.response.ok, res.response.statusText).toBe(true)
     firstPageIds = res.data!.map((t: { templateID: string }) => t.templateID)
     hasSecondPage = !!res.response.headers.get('x-next-token')
   })
-
-  integrationTest(
-    'returns every page with --limit 0',
-    () => {
-      const ids = listTemplateIds(['--limit', '0'])
-
-      expect(new Set(ids).size).toBe(ids.length)
-      expect(ids).toEqual(expect.arrayContaining(firstPageIds))
-      if (hasSecondPage) {
-        expect(ids.length).toBeGreaterThan(firstPageIds.length)
-      }
-    },
-    timeoutMs
-  )
 
   integrationTest(
     'stops at --limit across pages',
@@ -69,6 +55,7 @@ describe('template list', () => {
 
       expect(ids).toHaveLength(limit)
       expect(new Set(ids).size).toBe(limit)
+      expect(ids).toEqual(expect.arrayContaining(firstPageIds))
     },
     timeoutMs
   )

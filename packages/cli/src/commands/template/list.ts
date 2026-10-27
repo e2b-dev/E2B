@@ -132,7 +132,17 @@ async function listSandboxTemplates({
       },
     })
 
-    handleE2BRequestError(res, 'Error getting templates')
+    if (!res.response.ok || !res.data) {
+      handleE2BRequestError(
+        {
+          error: res.error ?? {
+            code: res.response.status,
+            message: res.response.statusText,
+          },
+        },
+        'Error getting templates'
+      )
+    }
     templates.push(...res.data)
     nextToken = res.response.headers.get('x-next-token') || undefined
   } while (nextToken && (!limit || templates.length < limit))
