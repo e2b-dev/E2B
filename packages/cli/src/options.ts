@@ -71,16 +71,11 @@ export function warnIgnoredConfigOption(opts: { config?: string }) {
   console.error(
     `The ${asBold('--config')} flag is no longer read here. Pass the template as ${asBold(
       '[template]'
-    )} or select it with ${asBold('-s')}. ${asBold(
+    )}. ${asBold(
       'e2b template migrate --config'
     )} still reads ${asLocal('e2b.toml')}.`
   )
 }
-
-export const selectMultipleOption = new commander.Option(
-  '-s, --select',
-  'select sandbox template from interactive list'
-)
 
 export const projectOption = new commander.Option(
   '-t, --project <project-id>',
