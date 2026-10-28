@@ -217,6 +217,43 @@ class Commands:
         stdin: Optional[bool] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
+        *,
+        retain_output: Literal[False],
+    ) -> CommandResult[None]:
+        """
+        Start a new command and wait until it finishes executing.
+
+        :param cmd: Command to execute
+        :param background: **`False` if the command should be executed in the foreground**, `True` if the command should be executed in the background
+        :param envs: Environment variables used for the command
+        :param user: User to run the command as
+        :param cwd: Working directory to run the command
+        :param on_stdout: Callback for command stdout output
+        :param on_stderr: Callback for command stderr output
+        :param stdin: If `True`, the command will have a stdin stream that you can send data to using `sandbox.commands.send_stdin()`
+        :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
+        :param request_timeout: Timeout for opening the stream in **seconds** — the wait until envd confirms with a start event. The running stream is bounded by `timeout`
+        :param retain_output: If `False`, stdout and stderr are not accumulated in memory and are `None` on the result. Use `on_stdout`/`on_stderr` to consume the output instead
+
+        :return: `CommandResult` result of the command execution
+        """
+        ...
+
+    @overload
+    async def run(
+        self,
+        cmd: str,
+        background: Union[Literal[False], None] = None,
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[Username] = None,
+        cwd: Optional[str] = None,
+        on_stdout: Optional[OutputHandler[Stdout]] = None,
+        on_stderr: Optional[OutputHandler[Stderr]] = None,
+        stdin: Optional[bool] = None,
+        timeout: Optional[float] = 60,
+        request_timeout: Optional[float] = None,
+        *,
+        retain_output: bool = True,
     ) -> CommandResult:
         """
         Start a new command and wait until it finishes executing.
@@ -231,6 +268,7 @@ class Commands:
         :param stdin: If `True`, the command will have a stdin stream that you can send data to using `sandbox.commands.send_stdin()`
         :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
         :param request_timeout: Timeout for opening the stream in **seconds** — the wait until envd confirms with a start event. The running stream is bounded by `timeout`
+        :param retain_output: If `False`, stdout and stderr are not accumulated in memory and are `None` on the result. Use `on_stdout`/`on_stderr` to consume the output instead
 
         :return: `CommandResult` result of the command execution
         """
@@ -249,6 +287,43 @@ class Commands:
         stdin: Optional[bool] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
+        *,
+        retain_output: Literal[False],
+    ) -> AsyncCommandHandle[None]:
+        """
+        Start a new command and return a handle to interact with it.
+
+        :param cmd: Command to execute
+        :param background: `False` if the command should be executed in the foreground, **`True` if the command should be executed in the background**
+        :param envs: Environment variables used for the command
+        :param user: User to run the command as
+        :param cwd: Working directory to run the command
+        :param on_stdout: Callback for command stdout output
+        :param on_stderr: Callback for command stderr output
+        :param stdin: If `True`, the command will have a stdin stream that you can send data to using `sandbox.commands.send_stdin()`
+        :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
+        :param request_timeout: Timeout for opening the stream in **seconds** — the wait until envd confirms with a start event. The running stream is bounded by `timeout`
+        :param retain_output: If `False`, stdout and stderr are not accumulated in memory and are `None` on the result. Use `on_stdout`/`on_stderr` to consume the output instead
+
+        :return: `AsyncCommandHandle` handle to interact with the running command
+        """
+        ...
+
+    @overload
+    async def run(
+        self,
+        cmd: str,
+        background: Literal[True],
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[Username] = None,
+        cwd: Optional[str] = None,
+        on_stdout: Optional[OutputHandler[Stdout]] = None,
+        on_stderr: Optional[OutputHandler[Stderr]] = None,
+        stdin: Optional[bool] = None,
+        timeout: Optional[float] = 60,
+        request_timeout: Optional[float] = None,
+        *,
+        retain_output: bool = True,
     ) -> AsyncCommandHandle:
         """
         Start a new command and return a handle to interact with it.
@@ -263,6 +338,7 @@ class Commands:
         :param stdin: If `True`, the command will have a stdin stream that you can send data to using `sandbox.commands.send_stdin()`
         :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
         :param request_timeout: Timeout for opening the stream in **seconds** — the wait until envd confirms with a start event. The running stream is bounded by `timeout`
+        :param retain_output: If `False`, stdout and stderr are not accumulated in memory and are `None` on the result. Use `on_stdout`/`on_stderr` to consume the output instead
 
         :return: `AsyncCommandHandle` handle to interact with the running command
         """
@@ -280,6 +356,8 @@ class Commands:
         stdin: Optional[bool] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
+        *,
+        retain_output: bool = True,
     ):
         # Check version for stdin support
         if stdin is False and self._envd_version < ENVD_COMMANDS_STDIN:
@@ -301,6 +379,7 @@ class Commands:
             request_timeout,
             on_stdout=on_stdout,
             on_stderr=on_stderr,
+            retain_output=retain_output,
         )
 
         return proc if background else await proc.wait()
@@ -316,7 +395,8 @@ class Commands:
         request_timeout: Optional[float],
         on_stdout: Optional[OutputHandler[Stdout]],
         on_stderr: Optional[OutputHandler[Stderr]],
-    ) -> AsyncCommandHandle:
+        retain_output: bool,
+    ) -> AsyncCommandHandle[Optional[str]]:
         events = as_stream(
             self._rpc.start(
                 process_pb.StartRequest(
@@ -340,8 +420,37 @@ class Commands:
         )
 
         return await self._create_handle(
-            events, "start process", request_timeout, on_stdout, on_stderr
+            events,
+            "start process",
+            request_timeout,
+            on_stdout,
+            on_stderr,
+            retain_output,
         )
+
+    @overload
+    async def connect(
+        self,
+        pid: int,
+        timeout: Optional[float] = 60,
+        request_timeout: Optional[float] = None,
+        on_stdout: Optional[OutputHandler[Stdout]] = None,
+        on_stderr: Optional[OutputHandler[Stderr]] = None,
+        *,
+        retain_output: Literal[False],
+    ) -> AsyncCommandHandle[None]: ...
+
+    @overload
+    async def connect(
+        self,
+        pid: int,
+        timeout: Optional[float] = 60,
+        request_timeout: Optional[float] = None,
+        on_stdout: Optional[OutputHandler[Stdout]] = None,
+        on_stderr: Optional[OutputHandler[Stderr]] = None,
+        *,
+        retain_output: bool = True,
+    ) -> AsyncCommandHandle: ...
 
     async def connect(
         self,
@@ -350,7 +459,9 @@ class Commands:
         request_timeout: Optional[float] = None,
         on_stdout: Optional[OutputHandler[Stdout]] = None,
         on_stderr: Optional[OutputHandler[Stderr]] = None,
-    ) -> AsyncCommandHandle:
+        *,
+        retain_output: bool = True,
+    ) -> AsyncCommandHandle[Optional[str]]:
         """
         Connects to a running command.
         You can use `AsyncCommandHandle.wait()` to wait for the command to finish and get execution results.
@@ -360,6 +471,7 @@ class Commands:
         :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
         :param on_stdout: Callback for command stdout output
         :param on_stderr: Callback for command stderr output
+        :param retain_output: If `False`, stdout and stderr are not accumulated in memory and are `None` on the result. Use `on_stdout`/`on_stderr` to consume the output instead
 
         :return: `AsyncCommandHandle` handle to interact with the running command
         """
@@ -376,7 +488,12 @@ class Commands:
         )
 
         return await self._create_handle(
-            events, "connect to process", request_timeout, on_stdout, on_stderr
+            events,
+            "connect to process",
+            request_timeout,
+            on_stdout,
+            on_stderr,
+            retain_output,
         )
 
     async def _create_handle(
@@ -388,7 +505,8 @@ class Commands:
         request_timeout: Optional[float],
         on_stdout: Optional[OutputHandler[Stdout]],
         on_stderr: Optional[OutputHandler[Stderr]],
-    ) -> AsyncCommandHandle:
+        retain_output: bool,
+    ) -> AsyncCommandHandle[Optional[str]]:
         try:
             start_event = await first_event(
                 events, self._connection_config.get_request_timeout(request_timeout)
@@ -408,6 +526,7 @@ class Commands:
                     pid, request_timeout
                 ),
                 check_health=self._check_health,
+                retain_output=retain_output,
             )
         except Exception as e:
             try:

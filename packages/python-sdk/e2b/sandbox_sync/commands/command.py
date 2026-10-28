@@ -243,6 +243,43 @@ class Commands:
         stdin: Optional[bool] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
+        *,
+        retain_output: Literal[False],
+    ) -> CommandResult[None]:
+        """
+        Start a new command and wait until it finishes executing.
+
+        :param cmd: Command to execute
+        :param background: **`False` if the command should be executed in the foreground**, `True` if the command should be executed in the background
+        :param envs: Environment variables used for the command
+        :param user: User to run the command as
+        :param cwd: Working directory to run the command
+        :param on_stdout: Callback for command stdout output
+        :param on_stderr: Callback for command stderr output
+        :param stdin: If `True`, the command will have a stdin stream that you can send data to using `sandbox.commands.send_stdin()`
+        :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
+        :param request_timeout: Not applied to this streaming call — both opening the stream and the stream itself are bounded by `timeout` (unlimited when `0`)
+        :param retain_output: If `False`, stdout and stderr are not accumulated in memory and are `None` on the result. Use `on_stdout`/`on_stderr` to consume the output instead
+
+        :return: `CommandResult` result of the command execution
+        """
+        ...
+
+    @overload
+    def run(
+        self,
+        cmd: str,
+        background: Union[Literal[False], None] = None,
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[Username] = None,
+        cwd: Optional[str] = None,
+        on_stdout: Optional[Callable[[str], None]] = None,
+        on_stderr: Optional[Callable[[str], None]] = None,
+        stdin: Optional[bool] = None,
+        timeout: Optional[float] = 60,
+        request_timeout: Optional[float] = None,
+        *,
+        retain_output: bool = True,
     ) -> CommandResult:
         """
         Start a new command and wait until it finishes executing.
@@ -257,6 +294,7 @@ class Commands:
         :param stdin: If `True`, the command will have a stdin stream that you can send data to using `sandbox.commands.send_stdin()`
         :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
         :param request_timeout: Not applied to this streaming call — both opening the stream and the stream itself are bounded by `timeout` (unlimited when `0`)
+        :param retain_output: If `False`, stdout and stderr are not accumulated in memory and are `None` on the result. Use `on_stdout`/`on_stderr` to consume the output instead
 
         :return: `CommandResult` result of the command execution
         """
@@ -275,6 +313,41 @@ class Commands:
         stdin: Optional[bool] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
+        *,
+        retain_output: Literal[False],
+    ) -> CommandHandle[None]:
+        """
+        Start a new command and return a handle to interact with it.
+
+        :param cmd: Command to execute
+        :param background: `False` if the command should be executed in the foreground, **`True` if the command should be executed in the background**
+        :param envs: Environment variables used for the command
+        :param user: User to run the command as
+        :param cwd: Working directory to run the command
+        :param stdin: If `True`, the command will have a stdin stream that you can send data to using `sandbox.commands.send_stdin()`
+        :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
+        :param request_timeout: Not applied to this streaming call — both opening the stream and the stream itself are bounded by `timeout` (unlimited when `0`)
+        :param retain_output: If `False`, stdout and stderr are not accumulated in memory and are `None` on the result. Use `on_stdout`/`on_stderr` to consume the output instead
+
+        :return: `CommandHandle` handle to interact with the running command
+        """
+        ...
+
+    @overload
+    def run(
+        self,
+        cmd: str,
+        background: Literal[True],
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[Username] = None,
+        cwd: Optional[str] = None,
+        on_stdout: None = None,
+        on_stderr: None = None,
+        stdin: Optional[bool] = None,
+        timeout: Optional[float] = 60,
+        request_timeout: Optional[float] = None,
+        *,
+        retain_output: bool = True,
     ) -> CommandHandle:
         """
         Start a new command and return a handle to interact with it.
@@ -287,6 +360,7 @@ class Commands:
         :param stdin: If `True`, the command will have a stdin stream that you can send data to using `sandbox.commands.send_stdin()`
         :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
         :param request_timeout: Not applied to this streaming call — both opening the stream and the stream itself are bounded by `timeout` (unlimited when `0`)
+        :param retain_output: If `False`, stdout and stderr are not accumulated in memory and are `None` on the result. Use `on_stdout`/`on_stderr` to consume the output instead
 
         :return: `CommandHandle` handle to interact with the running command
         """
@@ -304,6 +378,8 @@ class Commands:
         stdin: Optional[bool] = None,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
+        *,
+        retain_output: bool = True,
     ):
         # Check version for stdin support
         if stdin is False and self._envd_version < ENVD_COMMANDS_STDIN:
@@ -323,6 +399,7 @@ class Commands:
             stdin,
             timeout,
             request_timeout,
+            retain_output,
         )
 
         return (
@@ -343,6 +420,7 @@ class Commands:
         stdin: bool,
         timeout: Optional[float],
         request_timeout: Optional[float],
+        retain_output: bool,
     ):
         events = as_stream(
             self._rpc.start(
@@ -366,13 +444,35 @@ class Commands:
             )
         )
 
-        return self._create_handle(events, "start process")
+        return self._create_handle(events, "start process", retain_output)
+
+    @overload
+    def connect(
+        self,
+        pid: int,
+        timeout: Optional[float] = 60,
+        request_timeout: Optional[float] = None,
+        *,
+        retain_output: Literal[False],
+    ) -> CommandHandle[None]: ...
+
+    @overload
+    def connect(
+        self,
+        pid: int,
+        timeout: Optional[float] = 60,
+        request_timeout: Optional[float] = None,
+        *,
+        retain_output: bool = True,
+    ) -> CommandHandle: ...
 
     def connect(
         self,
         pid: int,
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
+        *,
+        retain_output: bool = True,
     ):
         """
         Connects to a running command.
@@ -381,6 +481,7 @@ class Commands:
         :param pid: Process ID of the command to connect to. You can get the list of processes using `sandbox.commands.list()`
         :param timeout: Timeout for the connection in **seconds**. Using `0` will not limit the connection time
         :param request_timeout: Not applied to this streaming call — both opening the stream and the stream itself are bounded by `timeout` (unlimited when `0`)
+        :param retain_output: If `False`, stdout and stderr are not accumulated in memory and are `None` on the result
 
         :return: `CommandHandle` handle to interact with the running command
         """
@@ -396,7 +497,7 @@ class Commands:
             )
         )
 
-        return self._create_handle(events, "connect to process")
+        return self._create_handle(events, "connect to process", retain_output)
 
     def _create_handle(
         self,
@@ -404,7 +505,8 @@ class Commands:
             Union[process_pb.StartResponse, process_pb.ConnectResponse], Any, None
         ],
         action: str,
-    ) -> CommandHandle:
+        retain_output: bool,
+    ) -> CommandHandle[Optional[str]]:
         try:
             start_event = events.__next__()
 
@@ -420,6 +522,7 @@ class Commands:
                     pid, request_timeout
                 ),
                 check_health=self._check_health,
+                retain_output=retain_output,
             )
         except Exception as e:
             try:
