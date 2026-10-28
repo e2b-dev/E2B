@@ -7,12 +7,7 @@ import {
   asFormattedSandboxTemplate,
   SandboxTemplateRef,
 } from 'src/utils/format'
-import {
-  deprecatedConfigOption,
-  deprecatedTeamOption,
-  projectOption,
-  warnIgnoredConfigOption,
-} from 'src/options'
+import { deprecatedConfigOption, warnIgnoredConfigOption } from 'src/options'
 import { confirm } from 'src/utils/confirm'
 import { client } from 'src/api'
 import { handleE2BRequestError } from '../../utils/errors'
@@ -33,8 +28,6 @@ async function deleteTemplate(templateID: string) {
 export const deleteCommand = new commander.Command('delete')
   .description('delete sandbox template')
   .argument('<template>', `specify ${asBold('<template>')} to delete it`)
-  .addOption(projectOption)
-  .addOption(deprecatedTeamOption)
   .addOption(deprecatedConfigOption)
   .alias('dl')
   .option('-y, --yes', 'skip manual delete confirmation')
@@ -43,8 +36,6 @@ export const deleteCommand = new commander.Command('delete')
       template,
       opts: {
         yes?: boolean
-        project?: string
-        team?: string
         config?: string
       }
     ) => {

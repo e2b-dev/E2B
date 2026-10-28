@@ -7,12 +7,7 @@ import {
   asFormattedSandboxTemplate,
   SandboxTemplateRef,
 } from 'src/utils/format'
-import {
-  deprecatedConfigOption,
-  deprecatedTeamOption,
-  projectOption,
-  warnIgnoredConfigOption,
-} from 'src/options'
+import { deprecatedConfigOption, warnIgnoredConfigOption } from 'src/options'
 import { confirm } from 'src/utils/confirm'
 import { client } from 'src/api'
 import { handleE2BRequestError } from '../../utils/errors'
@@ -42,8 +37,6 @@ async function templateAction(
   template: string,
   opts: {
     yes?: boolean
-    project?: string
-    team?: string
     config?: string
   }
 ) {
@@ -102,8 +95,6 @@ async function templateAction(
 export const publishCommand = new commander.Command('publish')
   .description('publish sandbox template')
   .argument('<template>', `specify ${asBold('<template>')} to publish it`)
-  .addOption(projectOption)
-  .addOption(deprecatedTeamOption)
   .addOption(deprecatedConfigOption)
   .alias('pb')
   .option('-y, --yes', 'skip manual publish confirmation')
@@ -112,8 +103,6 @@ export const publishCommand = new commander.Command('publish')
 export const unPublishCommand = new commander.Command('unpublish')
   .description('unpublish sandbox template')
   .argument('<template>', `specify ${asBold('<template>')} to unpublish it`)
-  .addOption(projectOption)
-  .addOption(deprecatedTeamOption)
   .addOption(deprecatedConfigOption)
   .alias('upb')
   .option('-y, --yes', 'skip manual unpublish confirmation')
