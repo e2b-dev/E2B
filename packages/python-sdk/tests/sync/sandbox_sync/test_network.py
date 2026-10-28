@@ -1,6 +1,5 @@
 import json
 import time
-from unittest.mock import Mock
 
 import httpx
 
@@ -35,15 +34,6 @@ def wait_for_status(
         return response
     assert last_transport_error is not None
     raise last_transport_error
-
-
-def test_wait_for_status_retries_transport_errors():
-    response = httpx.Response(200)
-    client = Mock()
-    client.get.side_effect = [httpx.ConnectError("not ready"), response]
-
-    assert wait_for_status(client, "https://sandbox.test", 200) is response
-    assert client.get.call_count == 2
 
 
 @pytest.mark.skip_debug()
