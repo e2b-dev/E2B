@@ -1,6 +1,10 @@
 import io
 import uuid
 
+import pytest
+
+from e2b import InvalidArgumentException
+
 from e2b.sandbox.filesystem.filesystem import FileType, WriteInfo, WriteEntry
 
 
@@ -213,6 +217,73 @@ def test_write_io_with_octet_stream_and_gzip(sandbox, debug):
 
     read_content = sandbox.files.read(filename)
     assert read_content == text
+
+    if debug:
+        sandbox.files.remove(filename)
+
+
+def test_write_iterable_of_bytes(sandbox, debug):
+    filename = "test_write_iterable.bin"
+    text = "Streamed iterable upload. " * 10_000
+
+    def chunks():
+        data = text.encode("utf-8")
+        for i in range(0, len(data), 4096):
+            yield data[i : i + 4096]
+
+    info = sandbox.files.write(filename, chunks())
+    assert info.path == f"/home/user/{filename}"
+    assert sandbox.files.read(filename) == text
+
+    sandbox.files.write(filename, chunks(), gzip=True)
+    assert sandbox.files.read(filename) == text
+
+    with pytest.raises(InvalidArgumentException):
+        sandbox.files.write(filename, chunks(), use_octet_stream=False)
+
+    with pytest.raises(InvalidArgumentException, match="gzip"):
+        sandbox.files.write(filename, chunks(), gzip=True, use_octet_stream=False)
+
+    if debug:
+        sandbox.files.remove(filename)
+
+
+def test_write_iterable_rejects_non_bytes_chunks(sandbox):
+    with pytest.raises(InvalidArgumentException, match="bytes chunks"):
+        sandbox.files.write("test_write_bad_chunks.bin", iter([b"ok", "text"]))
+
+
+@pytest.mark.parametrize("use_octet_stream", [True, False])
+def test_write_file_like_wrapper(sandbox, debug, use_octet_stream):
+    import tempfile
+
+    filename = "test_write_wrapper.bin"
+    data = bytes(range(256)) * 1024
+    # Not an `IOBase`, but has `read` (and `__iter__`, which yields lines).
+    with tempfile.NamedTemporaryFile() as f:
+        f.write(data)
+        f.flush()
+        f.seek(0)
+        sandbox.files.write(filename, f, use_octet_stream=use_octet_stream)
+    assert bytes(sandbox.files.read(filename, format="bytes")) == data
+
+    if debug:
+        sandbox.files.remove(filename)
+
+
+@pytest.mark.parametrize("use_octet_stream", [True, False])
+def test_write_text_file_like_wrapper(sandbox, debug, use_octet_stream):
+    import tempfile
+
+    filename = "test_write_text_wrapper.txt"
+    text = "héllo wörld " * 1000
+    # Its encoding differs from the UTF-8 upload, so the byte length changes.
+    with tempfile.NamedTemporaryFile(mode="w+", encoding="latin-1") as f:
+        f.write(text)
+        f.flush()
+        f.seek(0)
+        sandbox.files.write(filename, f, use_octet_stream=use_octet_stream)
+    assert sandbox.files.read(filename) == text
 
     if debug:
         sandbox.files.remove(filename)

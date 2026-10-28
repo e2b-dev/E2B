@@ -33,6 +33,7 @@ export {
   SecretNotFoundError,
 } from './errors'
 export type { Logger } from './logs'
+export type { UploadData } from './utils'
 
 export { getSignature } from './sandbox/signature'
 

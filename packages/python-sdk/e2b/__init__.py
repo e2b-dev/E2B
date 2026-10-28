@@ -70,7 +70,13 @@ from .sandbox.commands.command_handle import (
     Stdout,
 )
 from .sandbox.commands.main import ProcessInfo
-from .sandbox.filesystem.filesystem import EntryInfo, FileType, WriteInfo
+from .sandbox.filesystem.filesystem import (
+    AsyncWriteData,
+    EntryInfo,
+    FileType,
+    WriteData,
+    WriteInfo,
+)
 from .sandbox.filesystem.watch_handle import (
     FilesystemEvent,
     FilesystemEventType,
@@ -231,6 +237,8 @@ __all__ = [
     "FilesystemEventType",
     "EntryInfo",
     "WriteInfo",
+    "WriteData",
+    "AsyncWriteData",
     "FileType",
     # Network
     "SandboxEgressProxyOpts",

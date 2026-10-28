@@ -2,6 +2,7 @@ import { expect, test, vi } from 'vitest'
 
 import {
   isArrayBufferLike,
+  isAsyncIterable,
   isBlobLike,
   isReadableStreamLike,
   isRequestLike,
@@ -82,4 +83,15 @@ test('isArrayBufferLike accepts native and cross-realm ArrayBuffers', () => {
   expect(isArrayBufferLike(new Uint8Array(2))).toBe(false)
   expect(isArrayBufferLike(new Blob(['hi']))).toBe(false)
   expect(isArrayBufferLike('hi')).toBe(false)
+})
+
+test('isAsyncIterable accepts async generators and rejects sync iterables', async () => {
+  async function* gen() {}
+  expect(isAsyncIterable(gen())).toBe(true)
+  expect(isAsyncIterable(new Blob(['x']).stream())).toBe(
+    Symbol.asyncIterator in ReadableStream.prototype
+  )
+  expect(isAsyncIterable('text')).toBe(false)
+  expect(isAsyncIterable([new Uint8Array(1)])).toBe(false)
+  expect(isAsyncIterable(null)).toBe(false)
 })
