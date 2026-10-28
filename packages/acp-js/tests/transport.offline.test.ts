@@ -44,7 +44,7 @@ function fakeAgent(opts: { closeStdin?: () => Promise<void> } = {}) {
   const sandbox = {
     commands: {
       supportsStdinClose: true,
-      startStreaming: async (_cmd: string, o: CommandStartOpts) => {
+      run: async (_cmd: string, o: CommandStartOpts) => {
         callbacks = o
         return handle
       },
@@ -232,12 +232,15 @@ test('kill lets wait() see the exit while output waits for the client', async ()
 test('output over the limit before start returns still closes the agent', async () => {
   const closeStdin = vi.fn(async () => {})
   const agent = fakeAgent({ closeStdin })
-  const startStreaming = agent.sandbox.commands.startStreaming
-  agent.sandbox.commands.startStreaming = async (cmd, opts) => {
-    const handle = await startStreaming(cmd, opts)
+  const run = agent.sandbox.commands.run
+  agent.sandbox.commands.run = (async (
+    cmd: string,
+    opts?: CommandStartOpts
+  ) => {
+    const handle = await run(cmd, opts)
     opts!.onStdout!('x'.repeat(100))
     return handle
-  }
+  }) as typeof run
   const transport = await startAcpTransport(agent.sandbox, 'agent', {
     maxMessageBytes: 10,
   })

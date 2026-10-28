@@ -92,7 +92,7 @@ export class AcpTransport {
   constructor(
     readonly pid: number,
     readonly stream: AcpStream,
-    private readonly handle: CommandHandle,
+    private readonly handle: CommandHandle<undefined>,
     private readonly exit: Promise<AcpAgentResult>,
     private readonly exitStatus: () => AcpAgentResult | undefined,
     private readonly stopReading: () => void,
@@ -184,18 +184,22 @@ export async function startAcpTransport(
   let controller!: ReadableStreamDefaultController<AnyMessage>
   let exitStatus: AcpAgentResult | undefined
 
-  let resolveHandle!: (handle: CommandHandle) => void
+  let resolveHandle!: (handle: CommandHandle<undefined>) => void
   let rejectHandle!: (err: unknown) => void
-  const handleReady = new Promise<CommandHandle>((resolve, reject) => {
-    resolveHandle = resolve
-    rejectHandle = reject
-  })
+  const handleReady = new Promise<CommandHandle<undefined>>(
+    (resolve, reject) => {
+      resolveHandle = resolve
+      rejectHandle = reject
+    }
+  )
   handleReady.catch(() => {})
 
   // Client messages, replies to the agent and EOF share one ordered write
   // path, so concurrent writes never interleave.
   let writes: Promise<void> = Promise.resolve()
-  const enqueueWrite = (write: (handle: CommandHandle) => Promise<unknown>) => {
+  const enqueueWrite = (
+    write: (handle: CommandHandle<undefined>) => Promise<unknown>
+  ) => {
     const result = writes.then(async () => {
       await write(await handleReady)
     })
@@ -254,7 +258,7 @@ export async function startAcpTransport(
   }
 
   let transport: AcpTransport | undefined
-  // Output can arrive before startStreaming() returns, so wait for the transport.
+  // Output can arrive before run() returns, so wait for the transport.
   const closeTransport = () => handleReady.then(() => transport!.close())
 
   const readable = new ReadableStream<AnyMessage>(
@@ -289,9 +293,11 @@ export async function startAcpTransport(
     resumeReading = undefined
   }
 
-  let handle: CommandHandle
+  let handle: CommandHandle<undefined>
   try {
-    handle = await commands.startStreaming(cmd, {
+    handle = await commands.run(cmd, {
+      background: true,
+      retainOutput: false,
       stdin: true,
       timeoutMs: 0,
       cwd: opts?.cwd,
