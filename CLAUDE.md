@@ -5,6 +5,7 @@ Never edit the API, envd, or volume-content specs in spec/ by hand; they are syn
 Create or update tests covering affected codepaths and run them using `pnpm run test`.
 Generate a changeset with `pnpm changeset` in the repository root when changing the public surface of packages/cli, packages/js-sdk, or packages/python-sdk; internal scripts, devtools, and tests don't need one.
 Never use a `major` bump in a changeset unless a maintainer explicitly asks for a major release; breaking changes ship as `minor` and are called out in the changeset text.
+When changing user-facing behavior of the SDKs or CLI, document it in e2b-dev/docs where applicable by updating or adding the relevant guide pages in a separate pull request there, and link it from the SDK pull request.
 When creating a pull request, add usage examples for user-facing changes to the PR description.
 When opening a new pull request, use the Linear MCP if available to link to related issues, or create a new issue from the PR description.
 Keep PR descriptions up-to-date with changes.
