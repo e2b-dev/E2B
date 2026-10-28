@@ -30,14 +30,15 @@ export const listCommand = new commander.Command('list')
   .addOption(deprecatedTeamOption)
   .option(
     '-l, --limit <limit>',
-    `limit the number of templates returned (default: ${DEFAULT_LIMIT}, 0 for no limit)`,
+    `limit the number of templates returned (default: ${DEFAULT_LIMIT} for pretty output, no limit for json; 0 for no limit)`,
     parseNonNegativeInt('Template limit')
   )
   .option('-f, --format <format>', 'output format, eg. json, pretty')
   .action(async (opts: ListOptions) => {
     try {
       const format = opts.format || 'pretty'
-      const limit = opts.limit === 0 ? undefined : (opts.limit ?? DEFAULT_LIMIT)
+      const defaultLimit = format === 'json' ? undefined : DEFAULT_LIMIT
+      const limit = opts.limit === 0 ? undefined : (opts.limit ?? defaultLimit)
       ensureAPIKey()
       process.stdout.write('\n')
 
