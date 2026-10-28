@@ -1,6 +1,7 @@
 import { afterEach, expect, test, vi } from 'vitest'
 
 import { Volume } from '../../src'
+import { runtime } from '../../src/utils'
 
 // Volume content requests go out through undici on Node. Stand in for the
 // library at that boundary to observe which dispatcher (HTTP version, proxy)
@@ -45,12 +46,16 @@ function volume(opts?: { httpVersion?: '1.1' | '2'; proxy?: string }) {
   )
 }
 
+// Outside Node the SDK uses the runtime's own fetch, so there is no undici
+// dispatcher to observe.
+const nodeTest = test.skipIf(runtime !== 'node')
+
 function sentRequest() {
   expect(undici.requests).toHaveLength(1)
   return undici.requests[0]
 }
 
-test('volume content requests default to HTTP/2', async () => {
+nodeTest('volume content requests default to HTTP/2', async () => {
   await volume().remove('/file')
 
   const { url, dispatcher } = sentRequest()
@@ -61,20 +66,23 @@ test('volume content requests default to HTTP/2', async () => {
   expect(dispatcher).toMatchObject({ options: { allowH2: true } })
 })
 
-test('volume content requests follow the httpVersion and proxy kept on the instance', async () => {
-  await volume({
-    httpVersion: '1.1',
-    proxy: 'http://127.0.0.1:8080',
-  }).remove('/file')
+nodeTest(
+  'volume content requests follow the httpVersion and proxy kept on the instance',
+  async () => {
+    await volume({
+      httpVersion: '1.1',
+      proxy: 'http://127.0.0.1:8080',
+    }).remove('/file')
 
-  const { dispatcher } = sentRequest()
-  expect(dispatcher).toBeInstanceOf(undici.module.ProxyAgent)
-  expect(dispatcher).toMatchObject({
-    options: { uri: 'http://127.0.0.1:8080', allowH2: false },
-  })
-})
+    const { dispatcher } = sentRequest()
+    expect(dispatcher).toBeInstanceOf(undici.module.ProxyAgent)
+    expect(dispatcher).toMatchObject({
+      options: { uri: 'http://127.0.0.1:8080', allowH2: false },
+    })
+  }
+)
 
-test('a per-call httpVersion overrides the instance value', async () => {
+nodeTest('a per-call httpVersion overrides the instance value', async () => {
   await volume({ httpVersion: '1.1' }).remove('/file', { httpVersion: '2' })
 
   expect(sentRequest().dispatcher).toMatchObject({
@@ -82,12 +90,15 @@ test('a per-call httpVersion overrides the instance value', async () => {
   })
 })
 
-test('E2B_HTTP_VERSION=1.1 pins volume content requests to HTTP/1.1', async () => {
-  process.env.E2B_HTTP_VERSION = '1.1'
+nodeTest(
+  'E2B_HTTP_VERSION=1.1 pins volume content requests to HTTP/1.1',
+  async () => {
+    process.env.E2B_HTTP_VERSION = '1.1'
 
-  await volume().remove('/file')
+    await volume().remove('/file')
 
-  expect(sentRequest().dispatcher).toMatchObject({
-    options: { allowH2: false },
-  })
-})
+    expect(sentRequest().dispatcher).toMatchObject({
+      options: { allowH2: false },
+    })
+  }
+)
