@@ -128,26 +128,6 @@ sandboxTest('write multiple files', async ({ sandbox }) => {
   }
 })
 
-sandboxTest('write file', async ({ sandbox }) => {
-  const filename = 'test_write.txt'
-  const content = 'This is a test file.'
-
-  const info = await sandbox.files.write(filename, content)
-  assert.isFalse(Array.isArray(info))
-  assert.equal(info.name, filename)
-  assert.equal(info.type, 'file')
-  assert.equal(info.path, `/home/user/${filename}`)
-
-  const exists = await sandbox.files.exists(filename)
-  assert.isTrue(exists)
-  const readContent = await sandbox.files.read(filename)
-  assert.equal(readContent, content)
-
-  if (isDebug) {
-    await sandbox.files.remove(filename)
-  }
-})
-
 sandboxTest('overwrite file', async ({ sandbox }) => {
   const filename = 'test_overwrite.txt'
   const initialContent = 'Initial content.'

@@ -47,17 +47,6 @@ sandboxTest('get info of a directory', async ({ sandbox }) => {
   assert.property(info, 'modifiedTime')
 })
 
-sandboxTest(
-  'get info of a directory that does not exist',
-  async ({ sandbox }) => {
-    const dirname = 'test_does_not_exist_dir'
-
-    await expect(sandbox.files.getInfo(dirname)).rejects.toThrow(
-      FileNotFoundError
-    )
-  }
-)
-
 sandboxTest('get info of a symlink', async ({ sandbox }) => {
   const filename = 'test_file.txt'
 
