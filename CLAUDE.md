@@ -4,6 +4,7 @@ When modifying the SDK packages, ensure equivalent changes are applied to both J
 Never edit the API, envd, or volume-content specs in spec/ by hand; they are synced with Copybara from e2b-dev/runtime and e2b-dev/belt at the commits pinned in spec/runtime-ref and spec/belt-ref (see copy.bara.sky and spec/README.md). To update the specs, bump the pins and re-run `make codegen`, which re-fetches them before generating.
 Create or update tests covering affected codepaths and run them using `pnpm run test`.
 Generate a changeset with `pnpm changeset` in the repository root when changing the public surface of packages/cli, packages/js-sdk, or packages/python-sdk; internal scripts, devtools, and tests don't need one.
+Never use a `major` bump in a changeset unless a maintainer explicitly asks for a major release; breaking changes ship as `minor` and are called out in the changeset text.
 When creating a pull request, add usage examples for user-facing changes to the PR description.
 When opening a new pull request, use the Linear MCP if available to link to related issues, or create a new issue from the PR description.
 Keep PR descriptions up-to-date with changes.
