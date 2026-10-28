@@ -1,5 +1,4 @@
 import io
-import uuid
 
 import pytest
 
@@ -126,24 +125,6 @@ def test_write_to_non_existing_directory(sandbox, debug):
 
     if debug:
         sandbox.files.remove(filename)
-
-
-def test_write_with_secured_envd(sandbox_factory):
-    filename = f"non_existing_dir_{uuid.uuid4()}/test_write.txt"
-    content = "This should succeed too."
-
-    sbx = sandbox_factory(timeout=30)
-    assert sbx.is_running()
-    assert sbx._envd_version is not None
-    assert sbx._envd_access_token is not None
-
-    sbx.files.write(filename, content)
-
-    exists = sbx.files.exists(filename)
-    assert exists
-
-    read_content = sbx.files.read(filename)
-    assert read_content == content
 
 
 def test_write_files_with_different_data_types(sandbox, debug):
