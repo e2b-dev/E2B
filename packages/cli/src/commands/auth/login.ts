@@ -1,7 +1,6 @@
 import * as listen from 'async-listen'
 import * as commander from 'commander'
 import * as http from 'http'
-import * as e2b from 'e2b'
 
 import { pkg } from 'src'
 import {
@@ -14,8 +13,7 @@ import {
 } from 'src/user'
 import { asBold, asFormattedConfig, asFormattedError } from 'src/utils/format'
 import { openUrlInBrowser } from 'src/utils/openBrowser'
-import { connectionConfig, Teams } from 'src/api'
-import { handleE2BRequestError } from '../../utils/errors'
+import { createApiKey, listProjects } from 'src/projects'
 
 export const loginCommand = new commander.Command('login')
   .description('log in to CLI')
@@ -44,28 +42,18 @@ export const loginCommand = new commander.Command('login')
 
       const accessToken = signInResponse.accessToken
 
-      const signal = connectionConfig.getSignal()
-      const config = new e2b.ConnectionConfig({
-        apiHeaders: { Authorization: `Bearer ${accessToken}` },
-      })
-      const client = new e2b.ApiClient(config, { requireApiKey: false })
-      const res = await client.api.GET('/teams', {
-        signal,
-      })
-
-      handleE2BRequestError(res, 'Error getting projects')
-      const teams = res.data as Teams
-
-      const defaultTeam = teams.find((team) => team.isDefault)
-      if (!defaultTeam) {
+      const projects = await listProjects(accessToken)
+      const defaultProject = projects.find((project) => project.isDefault)
+      if (!defaultProject) {
         console.error(
           asFormattedError('No default project found, please contact support')
         )
         process.exit(1)
       }
 
+      const apiKey = await createApiKey(accessToken, defaultProject)
       userConfig = {
-        version: 2,
+        version: 3,
         identity: {
           email: signInResponse.email,
         },
@@ -79,9 +67,11 @@ export const loginCommand = new commander.Command('login')
           refresh_token: signInResponse.refreshToken,
         },
         last_refresh: getConfigRefreshTimestamp(),
-        projectName: defaultTeam.name,
-        projectId: defaultTeam.teamID,
-        projectApiKey: defaultTeam.apiKey,
+        projectName: defaultProject.name,
+        projectId: defaultProject.id,
+        projectApiKey: apiKey.key,
+        project_api_key_id: apiKey.id,
+        project_domain: defaultProject.domain,
       }
 
       writeUserConfig(USER_CONFIG_PATH, userConfig)

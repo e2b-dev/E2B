@@ -18,13 +18,13 @@ export function asFormattedConfig(config: UserConfig) {
 }
 
 export function asFormattedTeam(
-  team: e2b.components['schemas']['Team'],
+  project: { id: string; name: string },
   selected: string
 ) {
-  const name = asBold(team.name)
-  const id = asBold(team.teamID)
+  const name = asBold(project.name)
+  const id = asBold(project.id)
   const isSelected =
-    team.teamID == selected ? asPrimary(' (currently selected project)') : ''
+    project.id == selected ? asPrimary(' (currently selected project)') : ''
   return `${name} (${id})${isSelected}`
 }
 

@@ -20,8 +20,7 @@ export interface UserTokens {
   refresh_token: string
 }
 
-export interface UserConfig {
-  version: 2
+interface UserConfigFields {
   identity: UserIdentity
   oauth: UserOAuth
   tokens: UserTokens
@@ -31,6 +30,23 @@ export interface UserConfig {
   projectApiKey: string
   dockerProxySet?: boolean
 }
+
+export interface UserConfigV2 extends UserConfigFields {
+  version: 2
+}
+
+/**
+ * Records where `projectApiKey` lives. Older CLIs accept only version 2, so
+ * they can't replace the key and leave its domain behind.
+ */
+export interface UserConfigV3 extends UserConfigFields {
+  version: 3
+  project_api_key_id: string
+  /** The domain of the control plane holding `projectApiKey`. */
+  project_domain: string
+}
+
+export type UserConfig = UserConfigV2 | UserConfigV3
 
 type UnknownRecord = Record<string, unknown>
 
@@ -101,13 +117,28 @@ function hasValidAuthFields(config: UnknownRecord): boolean {
 
 function isUserConfig(config: unknown): config is UserConfig {
   if (!isObject(config)) return false
-  if (config.version !== 2) return false
+  if (config.version !== 2 && config.version !== 3) return false
   return (
     hasValidAuthFields(config) &&
     isString(config.projectName) &&
     isString(config.projectId) &&
-    isString(config.projectApiKey)
+    isString(config.projectApiKey) &&
+    (config.version === 2 ||
+      (isString(config.project_api_key_id) && isString(config.project_domain)))
   )
+}
+
+/**
+ * The domain commands use for the saved project's key: its control plane,
+ * unless the environment picks the key or the host itself.
+ */
+export function savedProjectDomain(
+  config: UserConfig | null,
+  env: Record<string, string | undefined>
+): string | undefined {
+  if (config?.version !== 3) return undefined
+  if (env.E2B_API_KEY || env.E2B_DOMAIN || env.E2B_API_URL) return undefined
+  return config.project_domain
 }
 
 /**

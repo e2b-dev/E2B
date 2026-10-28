@@ -85,6 +85,37 @@ describe('getUserConfig', () => {
     expect(getUserConfig()).toEqual(v2Config)
   })
 
+  it('returns a valid v3 config as-is', async () => {
+    const v3Config = {
+      version: 3,
+      ...v1AuthFields,
+      projectName: 'default',
+      projectId: 'project-id',
+      projectApiKey: 'project-api-key-secret',
+      project_api_key_id: 'key-id',
+      project_domain: 'e2b-tango.dev',
+    }
+    writeConfigFile(v3Config)
+
+    const { getUserConfig } = await import('../src/user')
+    expect(getUserConfig()).toEqual(v3Config)
+  })
+
+  it('treats a v3 config without the key domain as signed out', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    writeConfigFile({
+      version: 3,
+      ...v1AuthFields,
+      projectName: 'default',
+      projectId: 'project-id',
+      projectApiKey: 'project-api-key-secret',
+      project_api_key_id: 'key-id',
+    })
+
+    const { getUserConfig } = await import('../src/user')
+    expect(getUserConfig()).toBeNull()
+  })
+
   it('treats an unrecognized config as signed out without deleting it', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {
       /* silence deprecation message */
@@ -95,9 +126,8 @@ describe('getUserConfig', () => {
       // Missing team* fields — cannot be migrated.
     })
 
-    const { getUserConfig, DEPRECATED_USER_CONFIG_MESSAGE } = await import(
-      '../src/user'
-    )
+    const { getUserConfig, DEPRECATED_USER_CONFIG_MESSAGE } =
+      await import('../src/user')
     expect(getUserConfig()).toBeNull()
     expect(fs.existsSync(configPath)).toBe(true)
     expect(consoleError).toHaveBeenCalledWith(DEPRECATED_USER_CONFIG_MESSAGE)

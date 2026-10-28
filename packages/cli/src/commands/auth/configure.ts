@@ -1,6 +1,5 @@
 import * as commander from 'commander'
 import * as chalk from 'chalk'
-import * as e2b from 'e2b'
 
 import {
   USER_CONFIG_PATH,
@@ -8,10 +7,10 @@ import {
   getUserConfig,
   writeUserConfig,
 } from 'src/user'
-import { ensureUserConfig, Teams } from 'src/api'
+import { ensureUserConfig } from 'src/api'
+import { createApiKey, deleteApiKey, listProjects, Project } from 'src/projects'
 import { ensureValidAccessToken } from 'src/utils/token-refresh'
 import { asBold, asFormattedTeam } from '../../utils/format'
-import { handleE2BRequestError } from '../../utils/errors'
 
 export const configureCommand = new commander.Command('configure')
   .description('configure user')
@@ -33,38 +32,36 @@ export const configureCommand = new commander.Command('configure')
     const accessToken = await ensureValidAccessToken()
     const userConfig = ensureUserConfig()
 
-    const config = new e2b.ConnectionConfig({
-      apiHeaders: { Authorization: `Bearer ${accessToken}` },
-    })
-    const authClient = new e2b.ApiClient(config, { requireApiKey: false })
+    const projects = await listProjects(accessToken)
 
-    const res = await authClient.api.GET('/teams', {
-      signal: config.getSignal(),
-    })
-
-    handleE2BRequestError(res, 'Error getting projects')
-    const teams = res.data as Teams
-
-    const team = (
+    const project: Project = (
       await inquirer.default.prompt([
         {
           name: 'project',
           message: chalk.default.underline('Select project'),
           type: 'list',
           pageSize: 50,
-          choices: teams.map((team) => ({
-            name: asFormattedTeam(team, userConfig.projectId),
-            value: team,
+          choices: projects.map((project) => ({
+            name: asFormattedTeam(project, userConfig.projectId),
+            value: project,
           })),
         },
       ])
     )['project']
 
-    userConfig.projectName = team.name
-    userConfig.projectId = team.teamID
-    userConfig.projectApiKey = team.apiKey
-    userConfig.last_refresh = getConfigRefreshTimestamp()
-    writeUserConfig(USER_CONFIG_PATH, userConfig)
+    const apiKey = await createApiKey(accessToken, project)
+    writeUserConfig(USER_CONFIG_PATH, {
+      ...userConfig,
+      version: 3,
+      projectName: project.name,
+      projectId: project.id,
+      projectApiKey: apiKey.key,
+      project_api_key_id: apiKey.id,
+      project_domain: project.domain,
+      last_refresh: getConfigRefreshTimestamp(),
+    })
+    // Only after the new key is saved, so the CLI is never left without one.
+    if (userConfig.version === 3) await deleteApiKey(accessToken, userConfig)
 
-    console.log(`Project ${asBold(team.name)} (${team.teamID}) selected.\n`)
+    console.log(`Project ${asBold(project.name)} (${project.id}) selected.\n`)
   })

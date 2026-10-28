@@ -2,15 +2,20 @@ import * as boxen from 'boxen'
 import * as e2b from 'e2b'
 
 import * as packageJSON from '../package.json'
-import { getUserConfig, UserConfig } from './user'
+import { getUserConfig, savedProjectDomain, UserConfig } from './user'
 import { asBold, asPrimary } from './utils/format'
 
 // Must run before any ConnectionConfig is constructed (including the
 // module-level one below) — configs read the integration at construction time.
 e2b.ConnectionConfig.setIntegration(`e2b-cli/${packageJSON.version}`)
 
-export type Teams =
-  e2b.paths['/teams']['get']['responses'][200]['content']['application/json']
+const userConfig = getUserConfig()
+
+// Only the saved project's control plane accepts its key. Commands call the
+// SDK, which reads E2B_DOMAIN whenever it builds a connection, so the domain
+// is set before any connection, including the one below, is built.
+const projectDomain = savedProjectDomain(userConfig, process.env)
+if (projectDomain) process.env.E2B_DOMAIN = projectDomain
 
 export let apiKey = process.env.E2B_API_KEY
 export const projectId = process.env.E2B_PROJECT_ID || process.env.E2B_TEAM_ID
@@ -74,8 +79,6 @@ export function resolveProjectId(cliProjectId?: string): string | undefined {
   }
   return undefined
 }
-
-const userConfig = getUserConfig()
 
 export const connectionConfig = new e2b.ConnectionConfig({
   apiKey: process.env.E2B_API_KEY || userConfig?.projectApiKey,
