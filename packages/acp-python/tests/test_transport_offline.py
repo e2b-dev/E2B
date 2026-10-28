@@ -30,10 +30,10 @@ class FakeAgent:
             wait=self._wait,
         )
         self.sandbox = SimpleNamespace(
-            commands=SimpleNamespace(_envd_version=Version("0.9.0"), _start=self._start)
+            commands=SimpleNamespace(_envd_version=Version("0.9.0"), run=self._run)
         )
 
-    async def _start(self, cmd, on_stdout, **kwargs):
+    async def _run(self, cmd, on_stdout, **kwargs):
         self.on_stdout = on_stdout
         return self.handle
 

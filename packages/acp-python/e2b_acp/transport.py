@@ -70,10 +70,10 @@ class AcpTransport:
         self._space.set()
 
         self._write_lock = asyncio.Lock()
-        self._handle_ready: asyncio.Future[AsyncCommandHandle] = (
+        self._handle_ready: asyncio.Future[AsyncCommandHandle[None]] = (
             asyncio.get_running_loop().create_future()
         )
-        self._handle: Optional[AsyncCommandHandle] = None
+        self._handle: Optional[AsyncCommandHandle[None]] = None
         self._exit_task: Optional[asyncio.Task[Optional[AcpAgentResult]]] = None
 
         self._ended = False
@@ -148,16 +148,17 @@ class AcpTransport:
         request_timeout: Optional[float],
     ) -> None:
         try:
-            handle = await self._commands._start(
+            handle = await self._commands.run(
                 cmd,
+                background=True,
                 envs=envs,
                 user=user,
                 cwd=cwd,
+                on_stdout=self._handle_stdout,
+                on_stderr=self._handle_stderr,
                 stdin=True,
                 timeout=0,
                 request_timeout=request_timeout,
-                on_stdout=self._handle_stdout,
-                on_stderr=self._handle_stderr,
                 retain_output=False,
             )
         except BaseException:
@@ -243,7 +244,9 @@ class AcpTransport:
             if inspect.isawaitable(result):
                 await result
 
-    async def _watch_exit(self, handle: AsyncCommandHandle) -> Optional[AcpAgentResult]:
+    async def _watch_exit(
+        self, handle: AsyncCommandHandle[None]
+    ) -> Optional[AcpAgentResult]:
         try:
             result = await handle.wait()
             exit = AcpAgentResult(exit_code=result.exit_code, error=result.error)
