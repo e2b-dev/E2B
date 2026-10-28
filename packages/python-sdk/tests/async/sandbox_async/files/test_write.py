@@ -6,7 +6,7 @@ import pytest
 from e2b import InvalidArgumentException
 
 from e2b import AsyncSandbox
-from e2b.sandbox.filesystem.filesystem import FileType, AsyncWriteEntry
+from e2b.sandbox.filesystem.filesystem import FileType, WriteEntry
 from e2b.sandbox_async.filesystem.filesystem import WriteInfo
 
 
@@ -58,7 +58,7 @@ async def test_write_multiple_files(async_sandbox: AsyncSandbox, debug):
     # Attempt to write with one file in array
     one_file_path = "one_test_file.txt"
     info = await async_sandbox.files.write_files(
-        [AsyncWriteEntry(path=one_file_path, data="This is a test file.")]
+        [WriteEntry(path=one_file_path, data="This is a test file.")]
     )
 
     assert isinstance(info, list)
@@ -77,7 +77,7 @@ async def test_write_multiple_files(async_sandbox: AsyncSandbox, debug):
     for i in range(num_test_files):
         path = f"test_write_{i}.txt"
         content = f"This is a test file {i}."
-        files.append(AsyncWriteEntry(path=path, data=content))
+        files.append(WriteEntry(path=path, data=content))
 
     infos = await async_sandbox.files.write_files(files)
     assert isinstance(infos, list)
@@ -155,10 +155,10 @@ async def test_write_files_with_different_data_types(
     string_io_data = io.StringIO("StringIO data")
 
     files = [
-        AsyncWriteEntry(path="writefiles_text.txt", data=text_data),
-        AsyncWriteEntry(path="writefiles_bytes.bin", data=bytes_data),
-        AsyncWriteEntry(path="writefiles_bytesio.bin", data=bytes_io_data),
-        AsyncWriteEntry(path="writefiles_stringio.txt", data=string_io_data),
+        WriteEntry(path="writefiles_text.txt", data=text_data),
+        WriteEntry(path="writefiles_bytes.bin", data=bytes_data),
+        WriteEntry(path="writefiles_bytesio.bin", data=bytes_io_data),
+        WriteEntry(path="writefiles_stringio.txt", data=string_io_data),
     ]
 
     infos = await async_sandbox.files.write_files(files)

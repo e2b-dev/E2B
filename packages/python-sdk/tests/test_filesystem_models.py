@@ -13,6 +13,7 @@ import pytest
 from e2b.exceptions import InvalidArgumentException, TemplateException
 from e2b.sandbox.filesystem.filesystem import (
     AsyncWriteEntry,
+    SyncWriteEntry,
     ChunkCheck,
     WriteEntry,
     check_stream_upload,
@@ -233,7 +234,7 @@ async def test_to_upload_body_async_streams_async_iterables_only():
 
 
 def test_iterable_data_refuses_multipart():
-    files: List[WriteEntry] = [{"path": "a.bin", "data": iter([b"x"])}]
+    files: List[SyncWriteEntry] = [{"path": "a.bin", "data": iter([b"x"])}]
     in_memory: List[WriteEntry] = [{"path": "a.bin", "data": b"x"}]
     file_like: List[WriteEntry] = [{"path": "a.bin", "data": io.BytesIO(b"x")}]
     check_stream_upload(files, True, True, is_async=False)

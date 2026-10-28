@@ -1,4 +1,4 @@
-from typing import Dict, List, Literal, Optional, overload
+from typing import Dict, List, Literal, Optional, Sequence, Union, overload
 
 import httpx
 from connectrpc.code import Code
@@ -42,6 +42,7 @@ from e2b.sandbox.filesystem.filesystem import (
     EntryInfo,
     FileStreamReader,
     WriteData,
+    SyncWriteEntry,
     WriteEntry,
     WriteInfo,
     _to_httpx_file,
@@ -295,7 +296,7 @@ class Filesystem:
         :return: Information about the written file
         """
         result = self.write_files(
-            [WriteEntry(path=path, data=data)],
+            [SyncWriteEntry(path=path, data=data)],
             user=user,
             request_timeout=request_timeout,
             gzip=gzip,
@@ -310,7 +311,7 @@ class Filesystem:
 
     def write_files(
         self,
-        files: List[WriteEntry],
+        files: Sequence[Union[WriteEntry, SyncWriteEntry]],
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         gzip: bool = False,
@@ -325,7 +326,7 @@ class Filesystem:
         When writing to a file that already exists, the file will get overwritten.
         When writing to a file at path that doesn't exist, the necessary directories will be created.
 
-        :param files: list of files to write as `WriteEntry` objects, each containing `path` and `data`
+        :param files: list of files to write as `WriteEntry` / `SyncWriteEntry` objects, each containing `path` and `data` (a `str`, `bytes`, `IO` or `Iterable[bytes]`)
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request
         :param gzip: Use gzip compression for the upload. Implies the `application/octet-stream` upload, so combining it with `use_octet_stream=False` raises `InvalidArgumentException`. Requires envd 0.5.7 or later — when not supported, the upload falls back to uncompressed `multipart/form-data`.

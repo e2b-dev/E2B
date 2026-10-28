@@ -10,7 +10,7 @@
 
 Stream data always uses the octet-stream upload, works with `gzip`, and is never buffered in memory. In browsers that can't stream a request body (Firefox, Safari and every iOS browser), JS stream data throws `InvalidArgumentError` instead (pass a `Blob`, e.g. `await new Response(stream).blob()`); Chromium-based browsers stream it. A chunk that isn't bytes throws `InvalidArgumentError` / `InvalidArgumentException` rather than a transport error.
 
-Python file-like objects that aren't `io.IOBase` but have a sync `read()` (`tempfile.NamedTemporaryFile()`, werkzeug `FileStorage`, Django `File`) are uploaded as files; objects with an async `read()` (aiofiles, aiohttp `response.content`) are consumed as async iterables by `AsyncSandbox`. `AsyncSandbox.files.write_files` is typed as `Sequence[AsyncWriteEntry]`.
+Python file-like objects that aren't `io.IOBase` but have a sync `read()` (`tempfile.NamedTemporaryFile()`, werkzeug `FileStorage`, Django `File`) are uploaded as files; objects with an async `read()` (aiofiles, aiohttp `response.content`) are consumed as async iterables by `AsyncSandbox`. `WriteEntry` (`str`, `bytes` or file-like data) is accepted by both `Sandbox.files.write_files` and `AsyncSandbox.files.write_files`; the new `SyncWriteEntry` and `AsyncWriteEntry` additionally take `Iterable[bytes]` / `AsyncIterable[bytes]`.
 
 **Breaking (JS):** `ReadableStream` / `AsyncIterable` data is no longer buffered: browsers without streaming request bodies throw, and multipart is refused — `useOctetStream: false` throws `InvalidArgumentError`, and an envd older than 0.5.7 throws `TemplateError`. Python raises `InvalidArgumentException` / `TemplateException` for iterables in the same cases.
 

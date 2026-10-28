@@ -173,7 +173,20 @@ class WriteEntry(TypedDict):
     """
     Contains path and data of the file to be written to the filesystem.
 
-    ``data`` can be a ``str``, ``bytes``, a file-like object or an iterable of
+    ``data`` can be a ``str``, ``bytes`` or a file-like object; such an entry is
+    accepted by both ``Sandbox`` and ``AsyncSandbox``. Use :class:`SyncWriteEntry`
+    or :class:`AsyncWriteEntry` to stream an iterable of ``bytes`` chunks.
+    """
+
+    path: str
+    data: Union[str, bytes, IO]
+
+
+class SyncWriteEntry(TypedDict):
+    """
+    Contains path and data of the file to be written to the filesystem by ``Sandbox``.
+
+    ``data`` can be anything :class:`WriteEntry` accepts, or an iterable of
     ``bytes`` chunks.
     """
 
@@ -185,12 +198,15 @@ class AsyncWriteEntry(TypedDict):
     """
     Contains path and data of the file to be written to the filesystem by ``AsyncSandbox``.
 
-    ``data`` can be a ``str``, ``bytes``, a file-like object or an async
-    iterable of ``bytes`` chunks.
+    ``data`` can be anything :class:`WriteEntry` accepts, or an async iterable
+    of ``bytes`` chunks.
     """
 
     path: str
     data: AsyncWriteData
+
+
+AnyWriteEntry = Union[WriteEntry, SyncWriteEntry, AsyncWriteEntry]
 
 
 class FileStreamReader(Iterator[bytes]):
@@ -392,7 +408,7 @@ def _unsupported_data(
 
 
 def check_stream_upload(
-    files: Sequence[Union[WriteEntry, AsyncWriteEntry]],
+    files: Sequence[AnyWriteEntry],
     use_octet_stream: bool,
     supports_octet_stream: bool,
     is_async: bool,
@@ -455,7 +471,7 @@ def _to_httpx_file(
 
 
 def multipart_body_is_streamed(
-    files: Sequence[Union[WriteEntry, AsyncWriteEntry]],
+    files: Sequence[AnyWriteEntry],
 ) -> bool:
     """Whether the multipart body built from ``files`` streams any entry.
 
