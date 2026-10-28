@@ -1,5 +1,10 @@
+import threading
+import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from typing import Dict, List, Tuple
 from unittest.mock import Mock
 
+import httpx
 import pytest
 from packaging.version import Version
 
@@ -14,14 +19,49 @@ BASE_DEBUG = False
 BASE_HEADERS = {"X-Test": "base"}
 
 
-def create_sandbox(monkeypatch, api_key: str) -> Sandbox:
-    monkeypatch.setattr(
-        sandbox_sync_main, "Filesystem", lambda *args, **kwargs: object()
-    )
-    monkeypatch.setattr(sandbox_sync_main, "Commands", lambda *args, **kwargs: object())
-    monkeypatch.setattr(sandbox_sync_main, "Pty", lambda *args, **kwargs: object())
-    monkeypatch.setattr(sandbox_sync_main, "Git", lambda *args, **kwargs: object())
+class _FakeApiHandler(BaseHTTPRequestHandler):
+    """Answers `POST /sandboxes/{id}/pause` and records each request."""
 
+    requests: List[Tuple[str, str, Dict[str, str]]] = []
+    delay = 0.0
+
+    def log_message(self, *args):  # noqa: A003 - silence the default stderr log
+        pass
+
+    def do_POST(self):
+        self.rfile.read(int(self.headers.get("Content-Length") or 0))
+        type(self).requests.append(
+            (self.command, self.path, {k.lower(): v for k, v in self.headers.items()})
+        )
+        time.sleep(type(self).delay)
+        self.send_response(204)
+        self.end_headers()
+
+
+@pytest.fixture
+def fake_api():
+    """Starts local API servers; yields a factory returning their base URLs."""
+    _FakeApiHandler.requests = []
+    _FakeApiHandler.delay = 0.0
+    servers = []
+
+    def start() -> str:
+        server = ThreadingHTTPServer(("127.0.0.1", 0), _FakeApiHandler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        servers.append(server)
+        return f"http://127.0.0.1:{server.server_port}"
+
+    try:
+        yield start
+    finally:
+        for server in servers:
+            server.shutdown()
+            server.server_close()
+
+
+def create_sandbox(
+    api_key: str, api_url: str, request_timeout: float = BASE_REQUEST_TIMEOUT
+) -> Sandbox:
     return Sandbox(
         sandbox_id="sbx-test",
         sandbox_domain="sandbox.e2b.dev",
@@ -30,51 +70,64 @@ def create_sandbox(monkeypatch, api_key: str) -> Sandbox:
         traffic_access_token="tok",
         connection_config=ConnectionConfig(
             api_key=api_key,
+            api_url=api_url,
             domain=BASE_DOMAIN,
-            request_timeout=BASE_REQUEST_TIMEOUT,
+            request_timeout=request_timeout,
             debug=BASE_DEBUG,
             api_headers=BASE_HEADERS,
+            retries=0,
         ),
     )
 
 
-@pytest.mark.skip_debug()
-def test_pause_passes_connection_config_without_overrides(monkeypatch, test_api_key):
-    mock_pause = Mock(return_value="sbx-test")
-    monkeypatch.setattr(sandbox_sync_main.SandboxApi, "_cls_pause", mock_pause)
-
-    sandbox = create_sandbox(monkeypatch, test_api_key)
-    sandbox.pause()
-
-    mock_pause.assert_called_once()
-    assert mock_pause.call_args.kwargs["sandbox_id"] == "sbx-test"
-    assert mock_pause.call_args.kwargs["api_key"] == test_api_key
-    assert mock_pause.call_args.kwargs["domain"] == BASE_DOMAIN
-    assert mock_pause.call_args.kwargs["request_timeout"] == BASE_REQUEST_TIMEOUT
-    assert mock_pause.call_args.kwargs["debug"] == BASE_DEBUG
-    assert mock_pause.call_args.kwargs["headers"]["X-Test"] == BASE_HEADERS["X-Test"]
+def pause_requests_to(api_url: str) -> List[Dict[str, str]]:
+    port = api_url.rsplit(":", 1)[1]
+    return [
+        headers
+        for method, path, headers in _FakeApiHandler.requests
+        if method == "POST"
+        and path == "/sandboxes/sbx-test/pause"
+        and headers["host"].endswith(f":{port}")
+    ]
 
 
 @pytest.mark.skip_debug()
-def test_pause_applies_overrides(monkeypatch, test_api_key):
-    mock_pause = Mock(return_value="sbx-test")
-    monkeypatch.setattr(sandbox_sync_main.SandboxApi, "_cls_pause", mock_pause)
+def test_pause_passes_connection_config_without_overrides(fake_api, test_api_key):
+    api_url = fake_api()
+    sandbox = create_sandbox(test_api_key, api_url)
 
-    sandbox = create_sandbox(monkeypatch, test_api_key)
-    sandbox.pause(
-        domain="override.e2b.dev",
-        request_timeout=20,
-        api_headers={"X-Extra": "1"},
-    )
+    assert sandbox.pause() is True
 
-    mock_pause.assert_called_once()
-    assert mock_pause.call_args.kwargs["sandbox_id"] == "sbx-test"
-    assert mock_pause.call_args.kwargs["api_key"] == test_api_key
-    assert mock_pause.call_args.kwargs["domain"] == "override.e2b.dev"
-    assert mock_pause.call_args.kwargs["request_timeout"] == 20
-    assert mock_pause.call_args.kwargs["debug"] == BASE_DEBUG
-    assert mock_pause.call_args.kwargs["headers"]["X-Test"] == BASE_HEADERS["X-Test"]
-    assert mock_pause.call_args.kwargs["headers"]["X-Extra"] == "1"
+    [headers] = pause_requests_to(api_url)
+    assert headers["x-api-key"] == test_api_key
+    assert headers["x-test"] == BASE_HEADERS["X-Test"]
+
+
+@pytest.mark.skip_debug()
+def test_pause_applies_overrides(fake_api, test_api_key):
+    base_api_url = fake_api()
+    override_api_url = fake_api()
+    sandbox = create_sandbox(test_api_key, base_api_url)
+
+    assert sandbox.pause(api_url=override_api_url, api_headers={"X-Extra": "1"}) is True
+
+    assert pause_requests_to(base_api_url) == []
+    [headers] = pause_requests_to(override_api_url)
+    assert headers["x-api-key"] == test_api_key
+    assert headers["x-test"] == BASE_HEADERS["X-Test"]
+    assert headers["x-extra"] == "1"
+
+
+@pytest.mark.skip_debug()
+def test_pause_request_timeout_override_wins(fake_api, test_api_key):
+    _FakeApiHandler.delay = 0.5
+    sandbox = create_sandbox(test_api_key, fake_api(), request_timeout=0.1)
+
+    # The control-plane client surfaces the raw httpx timeout.
+    with pytest.raises(httpx.TimeoutException):
+        sandbox.pause()
+
+    assert sandbox.pause(request_timeout=5) is True
 
 
 @pytest.mark.skip_debug()
