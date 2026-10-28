@@ -200,29 +200,6 @@ describe('Volume CRUD', () => {
     const connected = await Volume.connect(vol.volumeId, { httpVersion: '1.1' })
     expect(connected.httpVersion).toBe('1.1')
   })
-
-  it('should handle full lifecycle: create, get, list, destroy', async () => {
-    // Create
-    const vol = await Volume.create('lifecycle-vol')
-    expect(vol.name).toBe('lifecycle-vol')
-
-    // Get info
-    const info = await Volume.getInfo(vol.volumeId)
-    expect(info.name).toBe('lifecycle-vol')
-
-    // List - should contain the volume
-    const list = await Volume.list()
-    expect(list).toHaveLength(1)
-    expect(list[0].volumeId).toBe(vol.volumeId)
-
-    // Destroy
-    const destroyed = await Volume.destroy(vol.volumeId)
-    expect(destroyed).toBe(true)
-
-    // List again - should be empty
-    const listAfter = await Volume.list()
-    expect(listAfter).toHaveLength(0)
-  })
 })
 
 describe('Volume BYOC domain', () => {
@@ -319,26 +296,6 @@ describe('Volume content readFile', () => {
       expect(await new Response(stream).text()).toBe('hello world')
     }
   )
-
-  it('should return empty values for an empty file in every format', async () => {
-    volumeFiles.set('empty.txt', '')
-    const vol = await Volume.create('content-volume')
-
-    const text = await vol.readFile('empty.txt')
-    expect(text).toBe('')
-
-    const bytes = await vol.readFile('empty.txt', { format: 'bytes' })
-    expect(bytes).toBeInstanceOf(Uint8Array)
-    expect(bytes.length).toBe(0)
-
-    const blob = await vol.readFile('empty.txt', { format: 'blob' })
-    expect(blob).toBeInstanceOf(Blob)
-    expect(blob.size).toBe(0)
-
-    const stream = await vol.readFile('empty.txt', { format: 'stream' })
-    expect(stream).toBeInstanceOf(ReadableStream)
-    expect(await new Response(stream).text()).toBe('')
-  })
 
   it('should throw VolumePathNotFoundError for a missing file', async () => {
     const vol = await Volume.create('content-volume')

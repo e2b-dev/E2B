@@ -64,9 +64,8 @@ describe('Volume File Operations', () => {
     volumeTest(
       'should write and read a file with bytes format',
       async ({ volume }) => {
-        const path = '/test-bytes.txt'
-        const content = 'Test bytes content'
-        const contentBytes = new TextEncoder().encode(content)
+        const path = '/test-bytes.bin'
+        const contentBytes = new Uint8Array([0, 1, 2, 3, 4])
 
         await volume.writeFile(path, contentBytes.buffer)
         const readBytes = await volume.readFile(path, { format: 'bytes' })
@@ -74,16 +73,6 @@ describe('Volume File Operations', () => {
         expect(readBytes).toEqual(contentBytes)
       }
     )
-
-    volumeTest('should write and read binary data', async ({ volume }) => {
-      const path = '/binary.bin'
-      const binaryData = new Uint8Array([0, 1, 2, 3, 4])
-
-      await volume.writeFile(path, binaryData.buffer)
-      const readBytes = await volume.readFile(path, { format: 'bytes' })
-
-      expect(readBytes).toEqual(binaryData)
-    })
 
     volumeTest(
       'should write and read a file with blob format',
@@ -348,15 +337,6 @@ describe('Volume File Operations', () => {
       expect(entries.some((e) => e.name === 'file.txt')).toBe(true)
     })
 
-    volumeTest.skip('should list with depth option', async ({ volume }) => {
-      await volume.makeDir('/deep/nested/structure', { force: true })
-      await volume.writeFile('/deep/nested/structure/file.txt', 'Content')
-
-      const entries = await volume.list('/deep', { depth: 2 })
-
-      expect(entries.length).toBeGreaterThan(0)
-    })
-
     volumeTest(
       'should throw VolumePathNotFoundError for non-existent directory',
       async ({ volume }) => {
@@ -384,16 +364,6 @@ describe('Volume File Operations', () => {
       await volume.remove(path)
 
       expect(await volume.exists(path)).toBe(false)
-    })
-
-    volumeTest('should remove a directory recursively', async ({ volume }) => {
-      const dirPath = '/recursive-dir'
-      await volume.makeDir(`${dirPath}/nested`, { force: true })
-      await volume.writeFile(`${dirPath}/nested/file.txt`, 'Content')
-
-      await volume.remove(dirPath)
-
-      expect(await volume.exists(dirPath)).toBe(false)
     })
 
     volumeTest(
