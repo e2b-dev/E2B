@@ -71,4 +71,16 @@ describe('template list', () => {
     },
     timeoutMs
   )
+
+  test('rejects a malformed --limit before calling the API', () => {
+    const result = runCli(['template', 'list', '--limit', 'abc'], {
+      timeoutMs,
+      env,
+    })
+
+    expect(result.status).not.toBe(0)
+    expect(String(result.stderr)).toContain(
+      'Template limit must be a non-negative integer'
+    )
+  })
 })

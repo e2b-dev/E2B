@@ -7,6 +7,7 @@ import { sortTemplatesAliases } from 'src/utils/templateSort'
 import { client, ensureAPIKey, resolveProjectId } from 'src/api'
 import {
   deprecatedTeamOption,
+  parseNonNegativeInt,
   projectIdFromOptions,
   projectOption,
 } from '../../options'
@@ -30,7 +31,7 @@ export const listCommand = new commander.Command('list')
   .option(
     '-l, --limit <limit>',
     `limit the number of templates returned (default: ${DEFAULT_LIMIT}, 0 for no limit)`,
-    (value) => parseInt(value)
+    parseNonNegativeInt('Template limit')
   )
   .option('-f, --format <format>', 'output format, eg. json, pretty')
   .action(async (opts: ListOptions) => {
