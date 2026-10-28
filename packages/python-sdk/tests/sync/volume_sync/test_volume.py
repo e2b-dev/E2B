@@ -1,10 +1,11 @@
 from http import HTTPStatus
 from uuid import uuid4
 
+import httpx
 import pytest
+from mock_volume_content import RecordingProxy
 
 from e2b import Volume
-from e2b.connection_config import ConnectionConfig
 from e2b.exceptions import NotFoundException, VolumeNotFoundException
 from e2b.api.client.models.volume_and_token import VolumeAndToken
 from e2b.api.client.types import Response
@@ -135,26 +136,41 @@ def test_get_info_nonexistent_volume():
     assert isinstance(exc_info.value, NotFoundException)
 
 
-def test_create_volume_keeps_proxy_for_content_calls():
-    vol = Volume.create("proxy-volume", proxy="http://user:pass@127.0.0.1:8080")
-
-    # The proxy is stored on the instance...
-    assert vol._proxy == "http://user:pass@127.0.0.1:8080"
-
-    # ...and instance methods (which build a VolumeConnectionConfig with no
-    # per-call proxy) pick it up rather than falling back to no proxy.
-    config = vol._get_volume_config()
-    assert config.proxy == "http://user:pass@127.0.0.1:8080"
+@pytest.fixture
+def proxy(monkeypatch):
+    # Content calls go to https://api.<domain> unless these override it.
+    for name in ("E2B_DOMAIN", "E2B_DEBUG", "E2B_VOLUME_API_URL"):
+        monkeypatch.delenv(name, raising=False)
+    recorder = RecordingProxy()
+    yield recorder
+    recorder.close()
 
 
-def test_volume_per_call_proxy_overrides_instance():
-    vol = Volume.create("proxy-volume", proxy="http://127.0.0.1:8080")
+def test_create_volume_keeps_proxy_for_content_calls(proxy):
+    vol = Volume.create("proxy-volume", proxy=proxy.url_with_auth("user", "pass"))
 
-    config = vol._get_volume_config(proxy="http://127.0.0.1:9090")
-    assert config.proxy == "http://127.0.0.1:9090"
+    # Instance methods reuse the proxy given to `create`.
+    with pytest.raises(httpx.ConnectError):
+        vol.get_info("/file")
+
+    assert set(proxy.tunnels) == {("api.e2b.app:443", "Basic dXNlcjpwYXNz")}
 
 
-def test_create_volume_uses_byoc_domain(monkeypatch):
+def test_volume_per_call_proxy_overrides_instance(proxy):
+    instance_proxy = RecordingProxy()
+    try:
+        vol = Volume.create("proxy-volume", proxy=instance_proxy.url)
+
+        with pytest.raises(httpx.ConnectError):
+            vol.get_info("/file", proxy=proxy.url)
+
+        assert set(proxy.tunnels) == {("api.e2b.app:443", None)}
+        assert instance_proxy.tunnels == []
+    finally:
+        instance_proxy.close()
+
+
+def test_create_volume_uses_byoc_domain(monkeypatch, proxy):
     byoc_domain = "cluster.example.com"
 
     def mock_post(*, client, body):
@@ -178,19 +194,23 @@ def test_create_volume_uses_byoc_domain(monkeypatch):
 
     # The BYOC domain drives the content API destination (https://api.<domain>),
     # replacing the default domain.
-    assert vol._domain == byoc_domain
-    assert vol._get_volume_config().domain == byoc_domain
-    assert vol._get_volume_config().api_url == f"https://api.{byoc_domain}"
+    with pytest.raises(httpx.ConnectError):
+        vol.get_info("/file", proxy=proxy.url)
+
+    assert {target for target, _ in proxy.tunnels} == {f"api.{byoc_domain}:443"}
 
 
-def test_create_volume_falls_back_to_default_domain():
-    vol = Volume.create("default-volume")
+def test_create_volume_falls_back_to_default_domain(proxy):
+    # No domain in the response -> fall back to the connection's domain.
+    vol = Volume.create("default-volume", domain="custom.example.com")
 
-    # No domain in the response -> fall back to the connection default.
-    assert vol._domain == ConnectionConfig().domain
+    with pytest.raises(httpx.ConnectError):
+        vol.get_info("/file", proxy=proxy.url)
+
+    assert {target for target, _ in proxy.tunnels} == {"api.custom.example.com:443"}
 
 
-def test_connect_propagates_byoc_domain():
+def test_connect_propagates_byoc_domain(proxy):
     byoc_domain = "cluster.example.com"
     created = Volume.create("connect-volume")
     _volumes[created.volume_id].domain = byoc_domain
@@ -199,5 +219,7 @@ def test_connect_propagates_byoc_domain():
     assert info.domain == byoc_domain
 
     connected = Volume.connect(created.volume_id)
-    assert connected._domain == byoc_domain
-    assert connected._get_volume_config().domain == byoc_domain
+    with pytest.raises(httpx.ConnectError):
+        connected.get_info("/file", proxy=proxy.url)
+
+    assert {target for target, _ in proxy.tunnels} == {f"api.{byoc_domain}:443"}
