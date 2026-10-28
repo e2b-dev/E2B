@@ -50,6 +50,7 @@ PORT_CLOSED = "The sandbox is running but port is not open"
 def test_maps_unavailable_with_port_closed_to_unreachable():
     err = handle_rpc_exception(ConnectError(Code.UNAVAILABLE, PORT_CLOSED))
     assert isinstance(err, SandboxUnreachableException)
+    assert not isinstance(err, SandboxNotRunningException)
     assert "could not be reached" in str(err)
 
 
@@ -188,12 +189,6 @@ def test_unavailable_sandbox_not_found_returns_not_running():
     assert isinstance(err, TimeoutException)
     assert not isinstance(err, SandboxUnreachableException)
     assert "The sandbox was not found" in str(err)
-
-
-def test_unavailable_port_closed_is_not_not_running():
-    err = handle_rpc_exception(ConnectError(Code.UNAVAILABLE, PORT_CLOSED))
-    assert isinstance(err, SandboxUnreachableException)
-    assert not isinstance(err, SandboxNotRunningException)
 
 
 def test_unavailable_sandbox_not_found_does_not_probe():
