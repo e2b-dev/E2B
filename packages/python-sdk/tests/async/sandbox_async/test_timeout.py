@@ -21,7 +21,9 @@ async def test_shorten_then_lengthen_timeout(async_sandbox: AsyncSandbox):
     sleep(1)
     await async_sandbox.set_timeout(10)
     sleep(6)
-    await async_sandbox.is_running()
+
+    is_running = await async_sandbox.is_running()
+    assert is_running is True
 
 
 @pytest.mark.skip_debug()
