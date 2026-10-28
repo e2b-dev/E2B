@@ -9,8 +9,6 @@ from e2b import AsyncSandbox, Sandbox
 from e2b.exceptions import InvalidArgumentException
 from e2b.api.client.api.sandboxes import post_v_2_sandboxes_sandbox_id_connect
 from e2b.api.client.models import Sandbox as SandboxModel
-from e2b.sandbox_async.sandbox_api import SandboxApi as AsyncSandboxApi
-from e2b.sandbox_sync.sandbox_api import SandboxApi as SyncSandboxApi
 
 SANDBOX_ID = "sbx-test"
 
@@ -27,22 +25,26 @@ def _connected_sandbox():
     )
 
 
-def _sync_request_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, Any]:
+def _sync_request_body(
+    monkeypatch, api_key: str, _positional: tuple = (), **kwargs
+) -> Dict[str, Any]:
     request = Mock(return_value=_connected_sandbox())
     monkeypatch.setattr(post_v_2_sandboxes_sandbox_id_connect, "sync_detailed", request)
 
-    Sandbox.connect(SANDBOX_ID, api_key=api_key, **kwargs)
+    Sandbox.connect(SANDBOX_ID, *_positional, api_key=api_key, **kwargs)
 
     return request.call_args.kwargs["body"].to_dict()
 
 
-async def _async_request_body(monkeypatch, api_key: str, **kwargs) -> Dict[str, Any]:
+async def _async_request_body(
+    monkeypatch, api_key: str, _positional: tuple = (), **kwargs
+) -> Dict[str, Any]:
     request = AsyncMock(return_value=_connected_sandbox())
     monkeypatch.setattr(
         post_v_2_sandboxes_sandbox_id_connect, "asyncio_detailed", request
     )
 
-    await AsyncSandbox.connect(SANDBOX_ID, api_key=api_key, **kwargs)
+    await AsyncSandbox.connect(SANDBOX_ID, *_positional, api_key=api_key, **kwargs)
 
     return request.call_args.kwargs["body"].to_dict()
 
@@ -115,36 +117,54 @@ async def test_async_instance_connect_carries_on_resume(monkeypatch, test_api_ke
     assert "memory" not in request.call_args.kwargs["body"].to_dict()
 
 
-# `class_method_variant` wraps the instance method with `functools.wraps`, so
-# `inspect.signature(Sandbox.connect)` resolves to `(self, timeout, *, on_resume)`
-# and never sees the static-by-id chain.
-KEYWORD_ONLY_FORMS = [
-    pytest.param(Sandbox, "_cls_connect_sandbox", id="sync-by-id"),
-    pytest.param(AsyncSandbox, "_cls_connect_sandbox", id="async-by-id"),
-    pytest.param(SyncSandboxApi, "_cls_connect", id="sync-api"),
-    pytest.param(AsyncSandboxApi, "_cls_connect", id="async-api"),
-]
-
-
-@pytest.mark.parametrize("owner, attr", KEYWORD_ONLY_FORMS)
-def test_on_resume_is_keyword_only(owner, attr):
-    # An optional parameter must not extend the positional chain, or
-    # `connect(sandbox_id, 300, logger, "reboot")` becomes a valid call.
-    signature = inspect.signature(getattr(owner, attr))
-
-    assert signature.parameters["on_resume"].kind is inspect.Parameter.KEYWORD_ONLY
-    for pre_existing in ("timeout", "logger"):
-        assert (
-            signature.parameters[pre_existing].kind
-            is not inspect.Parameter.KEYWORD_ONLY
-        )
+# An optional parameter must not extend the positional chain, or
+# `connect(sandbox_id, 300, logger, "reboot")` becomes a valid call.
+def test_connect_rejects_on_resume_passed_positionally(monkeypatch, test_api_key):
+    request = Mock(return_value=_connected_sandbox())
+    monkeypatch.setattr(post_v_2_sandboxes_sandbox_id_connect, "sync_detailed", request)
 
     with pytest.raises(TypeError):
-        signature.bind(SANDBOX_ID, 300, None, "reboot")
+        cast(Any, Sandbox.connect)(
+            SANDBOX_ID, 300, None, "reboot", api_key=test_api_key
+        )
 
-    assert signature.bind(SANDBOX_ID, on_resume="reboot").arguments["on_resume"] == (
-        "reboot"
+    request.assert_not_called()
+
+
+async def test_async_connect_rejects_on_resume_passed_positionally(
+    monkeypatch, test_api_key
+):
+    request = AsyncMock(return_value=_connected_sandbox())
+    monkeypatch.setattr(
+        post_v_2_sandboxes_sandbox_id_connect, "asyncio_detailed", request
     )
+
+    with pytest.raises(TypeError):
+        await cast(Any, AsyncSandbox.connect)(
+            SANDBOX_ID, 300, None, "reboot", api_key=test_api_key
+        )
+
+    request.assert_not_called()
+
+
+def test_connect_keeps_timeout_and_logger_positional(monkeypatch, test_api_key):
+    body = _sync_request_body(
+        monkeypatch, test_api_key, on_resume="reboot", _positional=(300, None)
+    )
+
+    assert body["timeout"] == 300
+    assert body["memory"] is False
+
+
+async def test_async_connect_keeps_timeout_and_logger_positional(
+    monkeypatch, test_api_key
+):
+    body = await _async_request_body(
+        monkeypatch, test_api_key, on_resume="reboot", _positional=(300, None)
+    )
+
+    assert body["timeout"] == 300
+    assert body["memory"] is False
 
 
 @pytest.mark.parametrize("sandbox", [Sandbox, AsyncSandbox], ids=["sync", "async"])
