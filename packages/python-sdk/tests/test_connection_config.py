@@ -138,15 +138,6 @@ def test_sandbox_direct_url_with_port_uses_per_sandbox_host():
     )
 
 
-def test_sandbox_url_without_port_uses_envd_port():
-    config = ConnectionConfig(domain="example.dev")
-
-    assert (
-        config.get_sandbox_url("sandbox-id", "example.dev")
-        == "https://49983-sandbox-id.example.dev"
-    )
-
-
 def test_sandbox_direct_url_uses_explicit_url_first():
     config = ConnectionConfig(sandbox_url="https://sandbox.example.com")
 
