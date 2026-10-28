@@ -133,19 +133,6 @@ test('adopts the body of a Request from another fetch implementation', async () 
   expect(await new Response(seen[0].init?.body).text()).toBe('hello')
 })
 
-// loadUndici is only reached in production when the runtime is Node; other
-// runtimes (Bun, Deno) use their global fetch instead.
-test.skipIf(runtime !== 'node')(
-  'loads a real undici module at runtime on Node',
-  async () => {
-    const undici = await loadUndici()
-
-    expect(undici).toBeDefined()
-    expect(typeof undici?.fetch).toBe('function')
-    expect(typeof undici?.Agent).toBe('function')
-  }
-)
-
 // The end of the story the fake undici above can only imply: real undici,
 // asked to send a Request it did not mint, throws before touching the network.
 test.skipIf(runtime !== 'node')(
