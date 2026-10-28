@@ -1,7 +1,7 @@
 import { expect, assert, expectTypeOf } from 'vitest'
 
 import { sandboxTest } from '../../setup.js'
-import { TimeoutError } from '../../../src/index.js'
+import { CommandStartOpts, TimeoutError } from '../../../src/index.js'
 
 sandboxTest('run', async ({ sandbox }) => {
   const text = 'Hello, World!'
@@ -99,3 +99,17 @@ sandboxTest('run retains output by default', async ({ sandbox }) => {
   expectTypeOf(cmd.stdout).toEqualTypeOf<string>()
   assert.equal(cmd.stdout, 'out\n')
 })
+
+sandboxTest(
+  'run types non-literal retainOutput as possibly undefined',
+  async ({ sandbox }) => {
+    const opts: CommandStartOpts = { retainOutput: false }
+    const cmd = await sandbox.commands.run('echo out', opts)
+
+    expectTypeOf(cmd.stdout).toEqualTypeOf<string | undefined>()
+    assert.isUndefined(cmd.stdout)
+
+    const defaults = await sandbox.commands.run('echo out', {})
+    expectTypeOf(defaults.stdout).toEqualTypeOf<string>()
+  }
+)

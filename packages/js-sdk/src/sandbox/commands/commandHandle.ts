@@ -15,17 +15,17 @@ export type Stderr = Branded<string, 'stderr'>
 export type PtyOutput = Branded<Uint8Array, 'pty'>
 
 /**
- * Type of the accumulated command output: `undefined` when the command was
- * started with `retainOutput: false`, `string` otherwise.
- *
- * Only a literal `false` maps to `undefined`, so options typed as
- * {@link CommandStartOpts} keep `string`.
+ * Type of the accumulated command output: `string` when `retainOutput` is
+ * omitted or `true`, `undefined` when it is `false`, and `string | undefined`
+ * when it is only known to be a `boolean`.
  */
 export type CommandOutput<RetainOutput extends boolean | undefined = true> = [
   RetainOutput,
-] extends [false]
-  ? undefined
-  : string
+] extends [true | undefined]
+  ? string
+  : [RetainOutput] extends [false]
+    ? undefined
+    : string | undefined
 
 /**
  * Command execution result.

@@ -279,7 +279,7 @@ class Commands:
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
         *,
-        retain_output: bool = True,
+        retain_output: Literal[True] = True,
     ) -> CommandResult:
         """
         Start a new command and wait until it finishes executing.
@@ -299,6 +299,23 @@ class Commands:
         :return: `CommandResult` result of the command execution
         """
         ...
+
+    @overload
+    def run(
+        self,
+        cmd: str,
+        background: Union[Literal[False], None] = None,
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[Username] = None,
+        cwd: Optional[str] = None,
+        on_stdout: Optional[Callable[[str], None]] = None,
+        on_stderr: Optional[Callable[[str], None]] = None,
+        stdin: Optional[bool] = None,
+        timeout: Optional[float] = 60,
+        request_timeout: Optional[float] = None,
+        *,
+        retain_output: bool,
+    ) -> CommandResult[Optional[str]]: ...
 
     @overload
     def run(
@@ -347,7 +364,7 @@ class Commands:
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
         *,
-        retain_output: bool = True,
+        retain_output: Literal[True] = True,
     ) -> CommandHandle:
         """
         Start a new command and return a handle to interact with it.
@@ -365,6 +382,23 @@ class Commands:
         :return: `CommandHandle` handle to interact with the running command
         """
         ...
+
+    @overload
+    def run(
+        self,
+        cmd: str,
+        background: Literal[True],
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[Username] = None,
+        cwd: Optional[str] = None,
+        on_stdout: None = None,
+        on_stderr: None = None,
+        stdin: Optional[bool] = None,
+        timeout: Optional[float] = 60,
+        request_timeout: Optional[float] = None,
+        *,
+        retain_output: bool,
+    ) -> CommandHandle[Optional[str]]: ...
 
     def run(
         self,
@@ -463,8 +497,18 @@ class Commands:
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
         *,
-        retain_output: bool = True,
+        retain_output: Literal[True] = True,
     ) -> CommandHandle: ...
+
+    @overload
+    def connect(
+        self,
+        pid: int,
+        timeout: Optional[float] = 60,
+        request_timeout: Optional[float] = None,
+        *,
+        retain_output: bool,
+    ) -> CommandHandle[Optional[str]]: ...
 
     def connect(
         self,
