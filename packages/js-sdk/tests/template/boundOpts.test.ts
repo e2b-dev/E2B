@@ -3,7 +3,7 @@ import { afterAll, afterEach, beforeAll, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 
-import { BuildOptions, Template, TemplateBase } from '../../src'
+import { Template, TemplateBase } from '../../src'
 import { apiUrl, TEST_API_KEY } from '../setup'
 
 const BOUND_API_KEY = `e2b_${'1'.repeat(40)}`
@@ -142,29 +142,65 @@ test('undefined per-call options do not clear bound options', async () => {
   expect(requests[0].apiKey).toBe(BOUND_API_KEY)
 })
 
-test('build options carry the bound options into the build', async () => {
-  class ProbeTemplate extends TemplateBase {
-    protected static readonly boundOpts = {
-      apiKey: BOUND_API_KEY,
-      requestTimeoutMs: 1234,
-    }
+function holdBuildStatus(ms: number) {
+  server.use(
+    http.get(
+      apiUrl('/templates/:templateID/builds/:buildID/status'),
+      async ({ request }) => {
+        recordRequest(request)
+        await new Promise((resolve) => {
+          const timer = setTimeout(resolve, ms)
+          request.signal.addEventListener('abort', () => {
+            clearTimeout(timer)
+            resolve(undefined)
+          })
+        })
+        return HttpResponse.json({
+          templateID: 'template-id',
+          buildID: '00000000-0000-0000-0000-000000000000',
+          status: 'ready',
+          logs: [],
+          logEntries: [],
+        })
+      }
+    )
+  )
+}
 
-    static probeBuildOpts(options?: BuildOptions) {
-      return this.resolveOpts(options)
-    }
+class BoundTimeoutTemplate extends TemplateBase {
+  protected static readonly boundOpts = {
+    apiKey: BOUND_API_KEY,
+    requestTimeoutMs: 100,
   }
+}
 
-  // The whole merged object is handed to the build, so file uploads and the
-  // build-log polling see the bound request timeout too.
-  expect(ProbeTemplate.probeBuildOpts({ tags: ['v1.0'] })).toEqual({
-    apiKey: BOUND_API_KEY,
-    requestTimeoutMs: 1234,
-    tags: ['v1.0'],
+test('build uses the bound api key and request timeout', async () => {
+  holdBuildStatus(2000)
+
+  await expect(
+    BoundTimeoutTemplate.build(Template().fromBaseImage(), 'my-template')
+  ).rejects.toThrow(/timed out|timeout|aborted/i)
+
+  expect(requests.map((r) => r.url)).toContainEqual(
+    expect.stringContaining(
+      '/builds/00000000-0000-0000-0000-000000000000/status'
+    )
+  )
+  for (const request of requests) {
+    expect(request.apiKey).toBe(BOUND_API_KEY)
+  }
+})
+
+test('per-call request timeout overrides the bound one in build', async () => {
+  holdBuildStatus(300)
+
+  await BoundTimeoutTemplate.build(Template().fromBaseImage(), 'my-template', {
+    requestTimeoutMs: 5000,
   })
-  expect(ProbeTemplate.probeBuildOpts({ requestTimeoutMs: 42 })).toEqual({
-    apiKey: BOUND_API_KEY,
-    requestTimeoutMs: 42,
-  })
+
+  for (const request of requests) {
+    expect(request.apiKey).toBe(BOUND_API_KEY)
+  }
 })
 
 test.each([
