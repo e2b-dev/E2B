@@ -34,27 +34,6 @@ from e2b.api.client_sync import get_transport as get_sync_transport
 from e2b.connection_config import READ_TIMEOUT, ConnectionConfig
 
 
-def test_sync_api_client_proxy_uses_explicit_transport(test_api_key):
-    reset_transport_caches()
-    config = ConnectionConfig(
-        api_key=test_api_key,
-        proxy="http://127.0.0.1:9999",
-    )
-
-    api_client = get_sync_api_client(config)
-    httpx_client = api_client.get_httpx_client()
-
-    try:
-        assert "proxy" not in api_client._httpx_args
-        assert isinstance(httpx_client._transport, RetryableTransport)
-        assert httpx_client._transport.transport is get_sync_transport(config)
-        assert isinstance(httpx_client._transport.transport, PyqwestTransport)
-        assert httpx_client._mounts == {}
-    finally:
-        httpx_client.close()
-        reset_transport_caches()
-
-
 def test_sync_get_transport_keyed_by_proxy(test_api_key):
     reset_transport_caches()
     proxied_config = ConnectionConfig(
@@ -251,28 +230,6 @@ def test_sync_envd_api_client_wiring(test_api_key):
     finally:
         client.close()
         streaming.close()
-        reset_transport_caches()
-
-
-@pytest.mark.asyncio
-async def test_async_api_client_proxy_uses_explicit_transport(test_api_key):
-    reset_transport_caches()
-    config = ConnectionConfig(
-        api_key=test_api_key,
-        proxy="http://127.0.0.1:9999",
-    )
-
-    api_client = get_async_api_client(config)
-    httpx_client = api_client.get_async_httpx_client()
-
-    try:
-        assert "proxy" not in api_client._httpx_args
-        assert isinstance(httpx_client._transport, AsyncRetryableTransport)
-        assert httpx_client._transport.transport is get_async_transport(config)
-        assert isinstance(httpx_client._transport.transport, AsyncPyqwestTransport)
-        assert httpx_client._mounts == {}
-    finally:
-        await httpx_client.aclose()
         reset_transport_caches()
 
 
@@ -544,6 +501,87 @@ def test_sync_transport_sends_proxy_credentials_and_headers(test_api_key, echo_s
         assert echoed["headers"]["x-proxy-token"] == "t"
     finally:
         client.close()
+        reset_transport_caches()
+
+
+def test_sync_api_client_sends_requests_through_the_proxy(test_api_key, echo_server):
+    # The echo server stands in for the proxy: an API request reaching it in
+    # absolute form went through the proxy rather than straight to the API.
+    reset_transport_caches()
+    config = ConnectionConfig(
+        api_key=test_api_key, api_url="http://api.proxied.invalid", proxy=echo_server
+    )
+    httpx_client = get_sync_api_client(config).get_httpx_client()
+
+    try:
+        echoed = httpx_client.request("GET", "/sandboxes").json()
+        assert echoed["path"] == "http://api.proxied.invalid/sandboxes"
+        assert echoed["headers"]["x-api-key"] == test_api_key
+    finally:
+        httpx_client.close()
+        reset_transport_caches()
+
+
+@pytest.mark.asyncio
+async def test_async_api_client_sends_requests_through_the_proxy(
+    test_api_key, echo_server
+):
+    reset_transport_caches()
+    config = ConnectionConfig(
+        api_key=test_api_key, api_url="http://api.proxied.invalid", proxy=echo_server
+    )
+    httpx_client = get_async_api_client(config).get_async_httpx_client()
+
+    try:
+        echoed = (await httpx_client.request("GET", "/sandboxes")).json()
+        assert echoed["path"] == "http://api.proxied.invalid/sandboxes"
+        assert echoed["headers"]["x-api-key"] == test_api_key
+    finally:
+        await httpx_client.aclose()
+        reset_transport_caches()
+
+
+def test_sync_transport_sends_proxy_url_credentials(test_api_key, echo_server):
+    # Credentials in a proxy URL string's userinfo reach the proxy as basic
+    # auth.
+    reset_transport_caches()
+    host = echo_server.removeprefix("http://")
+    config = ConnectionConfig(api_key=test_api_key, proxy=f"http://user:pass@{host}")
+    client = httpx.Client(transport=get_sync_transport(config))
+
+    try:
+        echoed = client.get("http://proxied.invalid/health").json()
+        assert echoed["path"] == "http://proxied.invalid/health"
+        assert echoed["headers"]["proxy-authorization"] == (
+            "Basic " + base64.b64encode(b"user:pass").decode()
+        )
+    finally:
+        client.close()
+        reset_transport_caches()
+
+
+@pytest.mark.asyncio
+async def test_async_transport_sends_proxy_credentials_and_headers(
+    test_api_key, echo_server
+):
+    reset_transport_caches()
+    config = ConnectionConfig(
+        api_key=test_api_key,
+        proxy=httpx.Proxy(
+            echo_server, auth=("user", "pass"), headers={"X-Proxy-Token": "t"}
+        ),
+    )
+    client = httpx.AsyncClient(transport=get_async_transport(config))
+
+    try:
+        echoed = (await client.get("http://proxied.invalid/health")).json()
+        assert echoed["path"] == "http://proxied.invalid/health"
+        assert echoed["headers"]["proxy-authorization"] == (
+            "Basic " + base64.b64encode(b"user:pass").decode()
+        )
+        assert echoed["headers"]["x-proxy-token"] == "t"
+    finally:
+        await client.aclose()
         reset_transport_caches()
 
 
