@@ -55,6 +55,7 @@ export { CommandExitError } from './sandbox/commands/commandHandle'
 export { CommandInputHandle } from './sandbox/commands/inputHandle'
 export type { CommandStreamInputOpts } from './sandbox/commands/inputHandle'
 export type {
+  CommandOutput,
   CommandResult,
   Stdout,
   Stderr,
