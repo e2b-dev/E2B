@@ -2,8 +2,8 @@ from types import SimpleNamespace
 from typing import cast
 
 import pytest
+from local_api_server import API_KEY, create_sandbox_reply, local_api_server
 
-from e2b.api.client.types import UNSET
 from e2b.client import E2B
 from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox_async import sandbox_api as async_sandbox_api
@@ -259,40 +259,24 @@ async def test_async_client_create_sends_per_call_idempotency_key(monkeypatch):
     assert idempotency_keys == ["abc123"]
 
 
-def test_sync_create_does_not_send_idempotency_key_when_unset(monkeypatch):
-    idempotency_keys = []
+def _create_requests(server):
+    return [r for r in server.requests if r.path.startswith("/v2/sandboxes")]
 
-    def get_api_client(config):
-        return object()
 
-    def create(**kwargs):
-        idempotency_keys.append(kwargs["idempotency_key"])
-        return _response()
+def test_sync_create_does_not_send_idempotency_key_when_unset():
+    with local_api_server(create_sandbox_reply) as server:
+        Sandbox.create("base", api_key=API_KEY, api_url=server.url, debug=False)
 
-    monkeypatch.setattr(sync_sandbox_api, "get_api_client", get_api_client)
-    monkeypatch.setattr(sync_sandbox_api.post_v2_sandboxes, "sync_detailed", create)
-
-    sync_sandbox_api.SandboxApi._create_sandbox("base", None, None, None, None, None)
-
-    assert idempotency_keys == [UNSET]
+    [request] = _create_requests(server)
+    assert "idempotency-key" not in request.headers
 
 
 @pytest.mark.asyncio
-async def test_async_create_does_not_send_idempotency_key_when_unset(monkeypatch):
-    idempotency_keys = []
+async def test_async_create_does_not_send_idempotency_key_when_unset():
+    with local_api_server(create_sandbox_reply) as server:
+        await AsyncSandbox.create(
+            "base", api_key=API_KEY, api_url=server.url, debug=False
+        )
 
-    def get_api_client(config):
-        return object()
-
-    async def create(**kwargs):
-        idempotency_keys.append(kwargs["idempotency_key"])
-        return _response()
-
-    monkeypatch.setattr(async_sandbox_api, "get_api_client", get_api_client)
-    monkeypatch.setattr(async_sandbox_api.post_v2_sandboxes, "asyncio_detailed", create)
-
-    await async_sandbox_api.SandboxApi._create_sandbox(
-        "base", None, None, None, None, None
-    )
-
-    assert idempotency_keys == [UNSET]
+    [request] = _create_requests(server)
+    assert "idempotency-key" not in request.headers
