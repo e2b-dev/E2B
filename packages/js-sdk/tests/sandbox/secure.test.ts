@@ -1,4 +1,4 @@
-import { assert, test, describe } from 'vitest'
+import { assert, test, describe, vi } from 'vitest'
 import { getSignature, Sandbox } from '../../src'
 import { sandboxTest, isDebug } from '../setup'
 
@@ -67,31 +67,26 @@ test.skipIf(isDebug)('signing generation', async () => {
 })
 
 test.skipIf(isDebug)('signing generation with expiration', async () => {
-  const operation = 'read'
-  const path = '/home/user/hello.txt'
-  const user = 'root'
-  const envdAccessToken = crypto.randomUUID()
-  const expirationInSeconds = 120
+  vi.useFakeTimers({ toFake: ['Date'] })
+  try {
+    // 2025-01-01T00:00:00Z
+    vi.setSystemTime(1_735_689_600_000)
 
-  const signatureExpiration = expirationInSeconds
-    ? Math.floor(Date.now() / 1000) + expirationInSeconds
-    : null
-  const signatureRaw = `${path}:${operation}:${user}:${envdAccessToken}:${signatureExpiration?.toString()}`
+    const signatureReceived = await getSignature({
+      path: 'hello.txt',
+      operation: 'read',
+      user: 'user',
+      envdAccessToken: '0tQG31xiMp0IOQfaz9dcwi72L1CPo8e0',
+      expirationInSeconds: 120,
+    })
 
-  const readSignatureExpected = {
-    signature: await expectedSignature(signatureRaw),
-    expiration: signatureExpiration,
+    assert.deepEqual(signatureReceived, {
+      signature: 'v1_FE/lOUMhrUNLxwaTbOgRjjkrNMpmHDKS+wJXMTAM82o',
+      expiration: 1_735_689_720,
+    })
+  } finally {
+    vi.useRealTimers()
   }
-
-  const readSignatureReceived = await getSignature({
-    path,
-    operation,
-    user,
-    envdAccessToken,
-    expirationInSeconds,
-  })
-
-  assert.deepEqual(readSignatureExpected, readSignatureReceived)
 })
 
 test.skipIf(isDebug)('static signing key comparison', async () => {
