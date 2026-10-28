@@ -105,9 +105,17 @@ export function stripAnsi(text: string): string {
 /**
  * The platform's own `ReadableStream` class. A Blob's stream is created by the
  * platform, so this holds even when `globalThis.ReadableStream` was replaced.
+ * Falls back to the global when `Blob` itself was replaced by one without
+ * `stream()` (jsdom).
  */
 function platformStreamClass(): typeof ReadableStream {
-  return new Blob().stream().constructor as typeof ReadableStream
+  try {
+    const stream = new Blob().stream?.()
+    if (stream) return stream.constructor as typeof ReadableStream
+  } catch {
+    // a replaced Blob whose stream() throws
+  }
+  return ReadableStream
 }
 
 /**

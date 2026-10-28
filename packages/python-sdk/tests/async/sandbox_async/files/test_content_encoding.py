@@ -1,5 +1,5 @@
 from e2b import AsyncSandbox
-from e2b.sandbox.filesystem.filesystem import WriteEntry
+from e2b.sandbox.filesystem.filesystem import AsyncWriteEntry
 
 
 async def test_write_and_read_with_gzip(async_sandbox: AsyncSandbox, debug):
@@ -31,9 +31,9 @@ async def test_write_gzip_read_plain(async_sandbox: AsyncSandbox, debug):
 
 async def test_write_files_with_gzip(async_sandbox: AsyncSandbox, debug):
     files = [
-        WriteEntry(path="gzip_multi_1.txt", data="File 1 content"),
-        WriteEntry(path="gzip_multi_2.txt", data="File 2 content"),
-        WriteEntry(path="gzip_multi_3.txt", data="File 3 content"),
+        AsyncWriteEntry(path="gzip_multi_1.txt", data="File 1 content"),
+        AsyncWriteEntry(path="gzip_multi_2.txt", data="File 2 content"),
+        AsyncWriteEntry(path="gzip_multi_3.txt", data="File 3 content"),
     ]
 
     infos = await async_sandbox.files.write_files(files, gzip=True)

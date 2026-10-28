@@ -282,3 +282,21 @@ def test_chunk_check_records_the_validation_error():
     with pytest.raises(InvalidArgumentException) as raised:
         b"".join(to_upload_body(iter([b"ok", "text"]), check=check))  # type: ignore[arg-type]
     assert check.error is raised.value
+
+
+async def test_async_readers_are_not_file_like():
+    class AsyncReader:
+        """Like an aiofiles file or aiohttp ``response.content``."""
+
+        async def read(self, size: int = -1) -> bytes:
+            return b""
+
+        async def __aiter__(self):
+            yield b"hel"
+            yield b"lo"
+
+    body = to_upload_body_async(AsyncReader())
+    assert b"".join([c async for c in body]) == b"hello"  # type: ignore[union-attr]
+
+    with pytest.raises(InvalidArgumentException, match="AsyncSandbox"):
+        to_upload_body(AsyncReader())  # type: ignore[arg-type]

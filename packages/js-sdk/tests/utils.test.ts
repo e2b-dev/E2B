@@ -1,7 +1,13 @@
 import { expect, test, vi } from 'vitest'
 
 import { InvalidArgumentError } from '../src/errors'
-import { runtime, sha256, toBlob, toUploadBody } from '../src/utils'
+import {
+  runtime,
+  sha256,
+  toBlob,
+  toDispatchableStream,
+  toUploadBody,
+} from '../src/utils'
 import { ForeignBlob, foreignReadableStream } from './foreignPlatformObjects'
 
 const encode = (text: string) => new TextEncoder().encode(text)
@@ -276,3 +282,15 @@ test.skipIf(runtime !== 'browser')(
     }
   }
 )
+
+test('toDispatchableStream works when the global Blob has no stream()', () => {
+  const NativeStream = ReadableStream
+  // jsdom-style environments replace the global Blob with one lacking stream().
+  vi.stubGlobal('Blob', class StreamlessBlob {})
+  try {
+    const stream = new NativeStream()
+    expect(toDispatchableStream(stream)).toBe(stream)
+  } finally {
+    vi.unstubAllGlobals()
+  }
+})

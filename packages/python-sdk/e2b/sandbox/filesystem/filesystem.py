@@ -1,5 +1,6 @@
 import asyncio
 import gzip
+import inspect
 import re
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -301,11 +302,17 @@ class AsyncFileStreamReader(AsyncIterator[bytes]):
 
 def _is_file_like(data) -> TypeGuard[IO]:
     """Whether ``data`` is read as a file: an ``IOBase``, or any object with a
-    ``read`` method (``tempfile`` wrappers, werkzeug ``FileStorage``, Django
-    ``File``), which would otherwise be iterated line by line."""
-    return isinstance(data, IOBase) or (
-        not isinstance(data, (str, bytes)) and callable(getattr(data, "read", None))
-    )
+    sync ``read`` method (``tempfile`` wrappers, werkzeug ``FileStorage``, Django
+    ``File``), which would otherwise be iterated line by line.
+
+    An async ``read`` (aiofiles files, aiohttp ``response.content``) doesn't
+    count: those are consumed as async iterables."""
+    if isinstance(data, IOBase):
+        return True
+    if isinstance(data, (str, bytes)):
+        return False
+    read = getattr(data, "read", None)
+    return callable(read) and not inspect.iscoroutinefunction(read)
 
 
 def _is_chunk_iterable(data) -> TypeGuard[Iterable[bytes]]:

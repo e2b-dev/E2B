@@ -2,7 +2,7 @@ import pytest
 
 from e2b import AsyncSandbox
 from e2b.exceptions import InvalidArgumentException
-from e2b.sandbox.filesystem.filesystem import WriteEntry
+from e2b.sandbox.filesystem.filesystem import AsyncWriteEntry
 
 
 async def test_write_file_with_metadata(async_sandbox: AsyncSandbox, debug):
@@ -59,8 +59,8 @@ async def test_write_files_applies_metadata_to_every_file(
     # The same metadata is applied to every file in the upload.
     metadata = {"source": "test-suite"}
     files = [
-        WriteEntry(path="metadata_multi_1.txt", data="File 1"),
-        WriteEntry(path="metadata_multi_2.txt", data="File 2"),
+        AsyncWriteEntry(path="metadata_multi_1.txt", data="File 1"),
+        AsyncWriteEntry(path="metadata_multi_2.txt", data="File 2"),
     ]
 
     infos = await async_sandbox.files.write_files(files, metadata=metadata)
