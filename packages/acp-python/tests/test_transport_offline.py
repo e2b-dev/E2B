@@ -266,6 +266,8 @@ async def test_start_passes_the_agent_connection_to_the_client_factory():
 
 
 def test_import_does_not_warn():
+    # Python 3.14 evaluates annotations lazily, so this catches a deprecated
+    # name in an annotation only on older Pythons, such as 3.11 in CI.
     subprocess.run(
         [sys.executable, "-W", "error::DeprecationWarning", "-c", "import e2b_acp"],
         check=True,

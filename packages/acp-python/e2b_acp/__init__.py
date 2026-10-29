@@ -61,7 +61,7 @@ class AcpAgent:
 
         :param sandbox: Sandbox with the agent installed
         :param command: Command that starts the agent in ACP mode, for example `goose acp`
-        :param client: Your ACP client, or a function that creates it from the agent connection. It answers permission requests and receives the agent's session updates
+        :param client: Your ACP client instance, or a function that takes the agent connection and returns one. It answers permission requests and receives the agent's session updates
         :param cwd: Working directory of the agent
         :param envs: Environment variables for the agent
         :param user: User to run the agent as
