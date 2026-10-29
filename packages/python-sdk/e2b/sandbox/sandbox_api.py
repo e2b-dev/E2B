@@ -713,6 +713,15 @@ discriminated union on `action`: `mode` is only accepted alongside
 `action: "pause"`. Passing `mode` with `action: "kill"` is a static type error.
 """
 
+# The timeout action the API applies when `on_timeout` is omitted. This mirrors
+# the server-side default (`AutoPauseDefault` in e2b-dev/infra, currently
+# `kill`); the SDK does NOT own it. Single source of truth so the assumption is
+# in one place — if the API default changes, update only here (and its docs).
+# The SDK never sends this to the API: an omitted `on_timeout` leaves
+# `auto_pause` unset so the server applies its own default. It is used only to
+# resolve local validation (see build_lifecycle_config).
+DEFAULT_ON_TIMEOUT: Literal["pause", "kill"] = "kill"
+
 
 class SandboxLifecycle(TypedDict):
     """
@@ -1073,8 +1082,9 @@ def build_lifecycle_config(
         pause_opts = cast(Dict[str, Any], on_timeout_raw)
     else:
         # Only fall back when unconfigured, not on other falsy-but-present
-        # values an untyped caller might pass.
-        on_timeout = on_timeout_raw if on_timeout_configured else "kill"
+        # values an untyped caller might pass. DEFAULT_ON_TIMEOUT mirrors the
+        # API's own default (it is never sent; auto_pause stays unset below).
+        on_timeout = on_timeout_raw if on_timeout_configured else DEFAULT_ON_TIMEOUT
         pause_opts = {}
 
     allowed_actions = ("pause", "kill")
@@ -1103,8 +1113,18 @@ def build_lifecycle_config(
     auto_resume = lifecycle.get("auto_resume") if lifecycle else None
 
     if auto_resume and on_timeout != "pause":
+        if not on_timeout_configured:
+            # The caller never chose an action; it defaulted to
+            # DEFAULT_ON_TIMEOUT. Say so, so the rejection does not blame an
+            # on_timeout the caller did not set.
+            raise InvalidArgumentException(
+                "auto_resume can only be True when on_timeout action is 'pause', "
+                f"but on_timeout was not set and defaults to {DEFAULT_ON_TIMEOUT!r}. "
+                'Set lifecycle on_timeout to "pause" to use auto_resume.'
+            )
         raise InvalidArgumentException(
-            "auto_resume can only be True when on_timeout action is 'pause'."
+            "auto_resume can only be True when on_timeout action is 'pause' "
+            f"(got {on_timeout!r})."
         )
 
     if memory is False and auto_resume:

@@ -562,6 +562,17 @@ function snapshotMemory(
  * accepted alongside `action: 'pause'`. Passing `mode` with `action: 'kill'`
  * is a compile-time type error.
  */
+/**
+ * The timeout action the API applies when `onTimeout` is omitted. This mirrors
+ * the server-side default (`AutoPauseDefault` in e2b-dev/infra, currently
+ * `kill`); the SDK does NOT own it. Single source of truth so the assumption
+ * lives in one place — if the API default changes, update only here (and its
+ * docs). It is never sent to the API: an omitted `onTimeout` leaves `autoPause`
+ * unset so the server applies its own default. Used only to resolve local
+ * validation in {@link SandboxApi.create}.
+ */
+export const DEFAULT_ON_TIMEOUT: 'pause' | 'kill' = 'kill'
+
 export type SandboxOnTimeout =
   | 'pause'
   | 'kill'
@@ -1906,7 +1917,9 @@ export class SandboxApi extends ClientFactory {
     // choice of `kill` — it leaves the timeout action to the API. Locally it
     // still resolves to kill semantics for the validation below.
     const onTimeoutConfigured = requestedOnTimeout != null
-    const onTimeout = requestedOnTimeout ?? 'kill'
+    // DEFAULT_ON_TIMEOUT mirrors the API's own default (it is never sent;
+    // autoPause stays undefined below when unconfigured).
+    const onTimeout = requestedOnTimeout ?? DEFAULT_ON_TIMEOUT
     const action = typeof onTimeout === 'string' ? onTimeout : onTimeout.action
     const allowedActions = ['pause', 'kill']
     if (onTimeoutConfigured && !allowedActions.includes(action)) {
@@ -1943,8 +1956,12 @@ export class SandboxApi extends ClientFactory {
     )
 
     if (autoResume && action !== 'pause') {
+      // When onTimeout was never set, say it defaulted to DEFAULT_ON_TIMEOUT so
+      // the rejection does not blame an onTimeout the caller did not set.
       throw new InvalidArgumentError(
-        "autoResume can only be true when onTimeout action is 'pause'."
+        onTimeoutConfigured
+          ? `autoResume can only be true when onTimeout action is 'pause' (got '${action}').`
+          : `autoResume can only be true when onTimeout action is 'pause', but onTimeout was not set and defaults to '${DEFAULT_ON_TIMEOUT}'. Set lifecycle onTimeout to 'pause' to use autoResume.`
       )
     }
 
