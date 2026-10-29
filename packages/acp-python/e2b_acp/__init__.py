@@ -5,6 +5,7 @@ Run [Agent Client Protocol](https://agentclientprotocol.com) agents in E2B sandb
 from typing import Dict, Optional
 
 import acp
+from acp.core import ClientSideConnection
 from e2b import AsyncSandbox
 from e2b.connection_config import Username
 
@@ -17,12 +18,67 @@ class AcpAgent:
     ACP agent running in a sandbox, connected to your client.
     """
 
-    def __init__(self, transport: AcpTransport, connection: acp.ClientSideConnection):
+    def __init__(self, transport: AcpTransport, connection: ClientSideConnection):
         self._transport = transport
         self._connection = connection
 
+    @classmethod
+    async def start(
+        cls,
+        sandbox: AsyncSandbox,
+        command: str,
+        client: acp.Client,
+        *,
+        cwd: Optional[str] = None,
+        envs: Optional[Dict[str, str]] = None,
+        user: Optional[Username] = None,
+        on_stderr: Optional[StderrHandler] = None,
+        max_message_bytes: int = DEFAULT_MAX_MESSAGE_BYTES,
+        request_timeout: Optional[float] = None,
+    ) -> "AcpAgent":
+        """
+        Start an ACP agent in the sandbox and connect your ACP client to it over
+        the agent's stdin/stdout.
+
+        The client filesystem and terminal capabilities are turned off in
+        `initialize`, and agent requests for `fs/*` or `terminal/*` are answered
+        with an error without reaching your client, so the agent edits files and
+        runs commands with its own tools in the sandbox. Network access and MCP
+        servers you pass to the agent are not restricted.
+
+        ```python
+        import acp
+        from e2b import AsyncSandbox
+        from e2b_acp import AcpAgent
+
+        sandbox = await AsyncSandbox.create("goose")
+        agent = await AcpAgent.start(sandbox, "goose acp", client)
+        await agent.connection.initialize(protocol_version=acp.PROTOCOL_VERSION)
+        # ...
+        await agent.stop()
+        ```
+
+        :param sandbox: Sandbox with the agent installed
+        :param command: Command that starts the agent in ACP mode, for example `goose acp`
+        :param client: Your ACP client. It answers permission requests and receives the agent's session updates
+        :param cwd: Working directory of the agent
+        :param envs: Environment variables for the agent
+        :param user: User to run the agent as
+        :param on_stderr: Callback for the agent's stderr output (logs). The agent's stdout is reserved for the protocol
+        :param max_message_bytes: Maximum size of a single message from the agent in **bytes**; defaults to ``DEFAULT_MAX_MESSAGE_BYTES`` (32 MiB)
+        :param request_timeout: Timeout for starting the agent in **seconds**
+
+        :return: `AcpAgent` with the ACP connection
+
+        :raises InvalidArgumentException: If `max_message_bytes` is not a positive integer
+        :raises SandboxException: If the agent could not be started
+        """
+        transport = AcpTransport(sandbox, max_message_bytes, on_stderr)
+        await transport.start(command, envs, user, cwd, request_timeout)
+        return cls(transport, acp.connect_to_agent(client, transport))
+
     @property
-    def connection(self) -> acp.ClientSideConnection:
+    def connection(self) -> ClientSideConnection:
         """
         Connection to the agent. Use it to initialize, create sessions and send prompts.
         """
@@ -66,65 +122,10 @@ class AcpAgent:
         return await self._transport.kill()
 
 
-async def connect_acp_agent(
-    sandbox: AsyncSandbox,
-    command: str,
-    client: acp.Client,
-    *,
-    cwd: Optional[str] = None,
-    envs: Optional[Dict[str, str]] = None,
-    user: Optional[Username] = None,
-    on_stderr: Optional[StderrHandler] = None,
-    max_message_bytes: int = DEFAULT_MAX_MESSAGE_BYTES,
-    request_timeout: Optional[float] = None,
-) -> AcpAgent:
-    """
-    Start an ACP agent in the sandbox and connect your ACP client to it over
-    the agent's stdin/stdout.
-
-    The client filesystem and terminal capabilities are turned off in
-    `initialize`, and agent requests for `fs/*` or `terminal/*` are answered
-    with an error without reaching your client, so the agent edits files and
-    runs commands with its own tools in the sandbox. Network access and MCP
-    servers you pass to the agent are not restricted.
-
-    ```python
-    import acp
-    from e2b import AsyncSandbox
-    from e2b_acp import connect_acp_agent
-
-    sandbox = await AsyncSandbox.create("goose")
-    agent = await connect_acp_agent(sandbox, "goose acp", client)
-    await agent.connection.initialize(protocol_version=acp.PROTOCOL_VERSION)
-    # ...
-    await agent.stop()
-    ```
-
-    :param sandbox: Sandbox with the agent installed
-    :param command: Command that starts the agent in ACP mode, for example `goose acp`
-    :param client: Your ACP client. It answers permission requests and receives the agent's session updates
-    :param cwd: Working directory of the agent
-    :param envs: Environment variables for the agent
-    :param user: User to run the agent as
-    :param on_stderr: Callback for the agent's stderr output (logs). The agent's stdout is reserved for the protocol
-    :param max_message_bytes: Maximum size of a single message from the agent in **bytes**; defaults to ``DEFAULT_MAX_MESSAGE_BYTES`` (32 MiB)
-    :param request_timeout: Timeout for starting the agent in **seconds**
-
-    :return: `AcpAgent` with the ACP connection
-
-    :raises InvalidArgumentException: If `max_message_bytes` is not a positive integer
-    :raises SandboxException: If the agent could not be started
-    """
-    transport = AcpTransport(sandbox, max_message_bytes, on_stderr)
-    await transport.start(command, envs, user, cwd, request_timeout)
-    return AcpAgent(transport, acp.connect_to_agent(client, transport))
-
-
 __all__ = [
     "DEFAULT_MAX_MESSAGE_BYTES",
     "DEFAULT_STOP_TIMEOUT",
     "AcpAgent",
     "AcpAgentResult",
     "StderrHandler",
-    "connect_acp_agent",
 ]

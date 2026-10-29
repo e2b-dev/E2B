@@ -1,5 +1,7 @@
 import asyncio
 import json
+import subprocess
+import sys
 import time
 from types import SimpleNamespace
 
@@ -214,3 +216,10 @@ async def test_kill_lets_wait_see_the_exit_while_output_waits_for_the_client():
 
     exit = await asyncio.wait_for(transport.wait(), 1)
     assert exit.exit_code == -1
+
+
+def test_import_does_not_warn():
+    subprocess.run(
+        [sys.executable, "-W", "error::DeprecationWarning", "-c", "import e2b_acp"],
+        check=True,
+    )
