@@ -18,7 +18,7 @@ Create a sandbox from a template with the agent installed, then start the agent 
 
 ```ts
 import { Sandbox } from 'e2b'
-import { connectAcpAgent } from '@e2b/acp'
+import { AcpAgent } from '@e2b/acp'
 import { PROTOCOL_VERSION, type Client } from '@agentclientprotocol/sdk'
 
 const client: Client = {
@@ -35,7 +35,7 @@ const client: Client = {
 
 const sandbox = await Sandbox.create('goose', { timeoutMs: 10 * 60_000 })
 try {
-  const agent = await connectAcpAgent(sandbox, 'goose acp --with-builtin developer', client, {
+  const agent = await AcpAgent.start(sandbox, 'goose acp --with-builtin developer', client, {
     envs: {
       GOOSE_PROVIDER: 'openai',
       GOOSE_MODEL: 'gpt-5.6-luna',
@@ -58,7 +58,7 @@ try {
 
 ## Where the agent's tools run
 
-The agent talks ACP over its stdin and stdout. `connectAcpAgent` turns off the client filesystem and terminal capabilities in `initialize` and answers agent requests for `fs/*` or `terminal/*` with an error, so the agent edits files and runs commands with its own tools inside the sandbox. It does not restrict the agent's network access or the MCP servers you pass to it.
+The agent talks ACP over its stdin and stdout. `AcpAgent.start` turns off the client filesystem and terminal capabilities in `initialize` and answers agent requests for `fs/*` or `terminal/*` with an error, so the agent edits files and runs commands with its own tools inside the sandbox. It does not restrict the agent's network access or the MCP servers you pass to it.
 
 ## Lifecycle
 

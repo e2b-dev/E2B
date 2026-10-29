@@ -15,16 +15,21 @@ import {
 } from './utils'
 
 /**
+ * Callback for the agent's stderr output.
+ */
+export type StderrHandler = (data: string) => void | Promise<void>
+
+/**
  * Options for starting an ACP agent in a sandbox.
  */
-export interface AcpStartOpts extends Pick<
+export interface AcpAgentStartOpts extends Pick<
   CommandStartOpts,
   'cwd' | 'envs' | 'user' | 'requestTimeoutMs' | 'signal'
 > {
   /**
    * Callback for the agent's stderr output (logs). The agent's stdout is reserved for the protocol.
    */
-  onStderr?: (data: string) => void | Promise<void>
+  onStderr?: StderrHandler
   /**
    * Maximum size of a single message from the agent in **bytes**.
    *
@@ -41,7 +46,7 @@ export const DEFAULT_STOP_TIMEOUT_MS = 5_000
 /**
  * Options for stopping an ACP agent.
  */
-export interface AcpStopOpts {
+export interface AcpAgentStopOpts {
   /**
    * Time for the agent to exit after `stop()` is called, in **milliseconds**.
    * It covers sending EOF to the agent's stdin; after it the agent is killed.
@@ -115,7 +120,7 @@ export class AcpTransport {
    *
    * It rejects if the agent could not be killed.
    */
-  async close(opts?: AcpStopOpts): Promise<void> {
+  async close(opts?: AcpAgentStopOpts): Promise<void> {
     // Only a known exit status means the process is gone. A failed output
     // stream can leave it running.
     if (this.exitStatus()) {
@@ -169,7 +174,7 @@ export class AcpTransport {
 export async function startAcpTransport(
   sandbox: AcpSandbox,
   cmd: string,
-  opts?: AcpStartOpts
+  opts?: AcpAgentStartOpts
 ): Promise<AcpTransport> {
   const commands = sandbox.commands
   const lines = new LineSplitter(

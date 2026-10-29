@@ -1,6 +1,6 @@
 import type { AnyMessage } from '@agentclientprotocol/sdk'
 import { assert } from 'vitest'
-import { startAcpTransport, type AcpStartOpts } from '../src/transport'
+import { startAcpTransport, type AcpAgentStartOpts } from '../src/transport'
 import { FAKE_AGENT_CMD, uploadFakeAgent } from './fakeAgent'
 import { sandboxTest } from './setup'
 
@@ -8,7 +8,7 @@ type Message = Record<string, any>
 
 async function startAgent(
   sandbox: Parameters<Parameters<typeof sandboxTest>[1]>[0]['sandbox'],
-  opts?: AcpStartOpts
+  opts?: AcpAgentStartOpts
 ) {
   await uploadFakeAgent(sandbox)
   const agent = await startAcpTransport(sandbox, FAKE_AGENT_CMD, opts)

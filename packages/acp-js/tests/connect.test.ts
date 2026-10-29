@@ -1,6 +1,6 @@
 import { PROTOCOL_VERSION, type Client } from '@agentclientprotocol/sdk'
 import { assert } from 'vitest'
-import { connectAcpAgent } from '../src'
+import { AcpAgent } from '../src'
 import { FAKE_AGENT_CMD, uploadFakeAgent } from './fakeAgent'
 import { sandboxTest } from './setup'
 
@@ -11,9 +11,9 @@ const client: Client = {
   async sessionUpdate() {},
 }
 
-sandboxTest('connectAcpAgent connects an ACP client', async ({ sandbox }) => {
+sandboxTest('AcpAgent.start connects an ACP client', async ({ sandbox }) => {
   await uploadFakeAgent(sandbox)
-  const agent = await connectAcpAgent(sandbox, FAKE_AGENT_CMD, client)
+  const agent = await AcpAgent.start(sandbox, FAKE_AGENT_CMD, client)
 
   const response = await agent.connection.initialize({
     protocolVersion: PROTOCOL_VERSION,

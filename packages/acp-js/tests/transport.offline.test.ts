@@ -1,6 +1,6 @@
 import { CommandExitError, type CommandStartOpts, type Sandbox } from 'e2b'
 import { assert, expect, test, vi } from 'vitest'
-import { connectAcpAgent } from '../src'
+import { AcpAgent } from '../src'
 import { startAcpTransport, type AcpSandbox } from '../src/transport'
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
@@ -203,7 +203,7 @@ test('connect kills the agent when the client factory throws', async () => {
   const agent = fakeAgent()
 
   await expect(
-    connectAcpAgent(agent.sandbox as Sandbox, 'agent', () => {
+    AcpAgent.start(agent.sandbox as Sandbox, 'agent', () => {
       throw new Error('no client')
     })
   ).rejects.toThrow('no client')

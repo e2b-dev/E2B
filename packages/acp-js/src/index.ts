@@ -7,14 +7,19 @@ import type { Sandbox } from 'e2b'
 import {
   startAcpTransport,
   type AcpAgentResult,
-  type AcpStartOpts,
-  type AcpStopOpts,
+  type AcpAgentStartOpts,
+  type AcpAgentStopOpts,
   type AcpTransport,
 } from './transport'
 
 export { DEFAULT_STOP_TIMEOUT_MS } from './transport'
 export { DEFAULT_MAX_MESSAGE_BYTES } from './utils'
-export type { AcpAgentResult, AcpStartOpts, AcpStopOpts } from './transport'
+export type {
+  AcpAgentResult,
+  AcpAgentStartOpts,
+  AcpAgentStopOpts,
+  StderrHandler,
+} from './transport'
 
 /**
  * ACP agent running in a sandbox, connected to your client.
@@ -31,6 +36,60 @@ export class AcpAgent {
      */
     readonly connection: ClientSideConnection
   ) {}
+
+  /**
+   * Start an [Agent Client Protocol](https://agentclientprotocol.com) agent in
+   * the sandbox and connect your ACP client to it over the agent's stdin/stdout.
+   *
+   * The client filesystem and terminal capabilities are turned off in
+   * `initialize`, and agent requests for `fs/*` or `terminal/*` are answered
+   * with an error without reaching your client, so the agent edits files and
+   * runs commands with its own tools in the sandbox. Network access and MCP
+   * servers you pass to the agent are not restricted.
+   *
+   * @param sandbox sandbox with the agent installed.
+   * @param command command that starts the agent in ACP mode, for example `goose acp`.
+   * @param client your ACP client, or a function that creates it for the agent
+   * connection. It answers permission requests and receives the agent's session updates.
+   * @param opts options for starting the agent.
+   *
+   * @returns `AcpAgent` with the ACP connection.
+   *
+   * @throws InvalidArgumentError if `maxMessageBytes` is not a positive integer.
+   * @throws SandboxError if the agent could not be started. Later, the
+   * connection fails with a `SandboxError` if the agent exits with a non-zero
+   * code or sends a message over `maxMessageBytes`.
+   *
+   * @example
+   * ```ts
+   * import { Sandbox } from 'e2b'
+   * import { AcpAgent } from '@e2b/acp'
+   * import { PROTOCOL_VERSION } from '@agentclientprotocol/sdk'
+   *
+   * const sandbox = await Sandbox.create('goose')
+   * const agent = await AcpAgent.start(sandbox, 'goose acp', client)
+   * await agent.connection.initialize({ protocolVersion: PROTOCOL_VERSION, clientCapabilities: {} })
+   * // ...
+   * await agent.stop()
+   * ```
+   */
+  static async start(
+    sandbox: Sandbox,
+    command: string,
+    client: Client | ((agent: Agent) => Client),
+    opts?: AcpAgentStartOpts
+  ): Promise<AcpAgent> {
+    const transport = await startAcpTransport(sandbox, command, opts)
+    const toClient = typeof client === 'function' ? client : () => client
+    let connection: ClientSideConnection
+    try {
+      connection = new ClientSideConnection(toClient, transport.stream)
+    } catch (err) {
+      await transport.kill().catch(() => false)
+      throw err
+    }
+    return new AcpAgent(transport, connection)
+  }
 
   /**
    * Process ID of the agent in the sandbox.
@@ -59,7 +118,7 @@ export class AcpAgent {
    *
    * @throws SandboxError if the agent could not be killed.
    */
-  async stop(opts?: AcpStopOpts): Promise<void> {
+  async stop(opts?: AcpAgentStopOpts): Promise<void> {
     return this.transport.close(opts)
   }
 
@@ -71,58 +130,4 @@ export class AcpAgent {
   async kill(): Promise<boolean> {
     return this.transport.kill()
   }
-}
-
-/**
- * Start an [Agent Client Protocol](https://agentclientprotocol.com) agent in
- * the sandbox and connect your ACP client to it over the agent's stdin/stdout.
- *
- * The client filesystem and terminal capabilities are turned off in
- * `initialize`, and agent requests for `fs/*` or `terminal/*` are answered
- * with an error without reaching your client, so the agent edits files and
- * runs commands with its own tools in the sandbox. Network access and MCP
- * servers you pass to the agent are not restricted.
- *
- * @param sandbox sandbox with the agent installed.
- * @param command command that starts the agent in ACP mode, for example `goose acp`.
- * @param client your ACP client, or a function that creates it for the agent
- * connection. It answers permission requests and receives the agent's session updates.
- * @param opts options for starting the agent.
- *
- * @returns `AcpAgent` with the ACP connection.
- *
- * @throws InvalidArgumentError if `maxMessageBytes` is not a positive integer.
- * @throws SandboxError if the agent could not be started. Later, the
- * connection fails with a `SandboxError` if the agent exits with a non-zero
- * code or sends a message over `maxMessageBytes`.
- *
- * @example
- * ```ts
- * import { Sandbox } from 'e2b'
- * import { connectAcpAgent } from '@e2b/acp'
- * import { PROTOCOL_VERSION } from '@agentclientprotocol/sdk'
- *
- * const sandbox = await Sandbox.create('goose')
- * const agent = await connectAcpAgent(sandbox, 'goose acp', client)
- * await agent.connection.initialize({ protocolVersion: PROTOCOL_VERSION, clientCapabilities: {} })
- * // ...
- * await agent.stop()
- * ```
- */
-export async function connectAcpAgent(
-  sandbox: Sandbox,
-  command: string,
-  client: Client | ((agent: Agent) => Client),
-  opts?: AcpStartOpts
-): Promise<AcpAgent> {
-  const transport = await startAcpTransport(sandbox, command, opts)
-  const toClient = typeof client === 'function' ? client : () => client
-  let connection: ClientSideConnection
-  try {
-    connection = new ClientSideConnection(toClient, transport.stream)
-  } catch (err) {
-    await transport.kill().catch(() => false)
-    throw err
-  }
-  return new AcpAgent(transport, connection)
 }
