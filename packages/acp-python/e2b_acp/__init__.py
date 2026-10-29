@@ -2,7 +2,8 @@
 Run [Agent Client Protocol](https://agentclientprotocol.com) agents in E2B sandboxes.
 """
 
-from typing import Dict, Optional
+import contextlib
+from typing import Callable, Dict, Optional, Union, cast
 
 import acp
 from acp.core import ClientSideConnection
@@ -27,7 +28,7 @@ class AcpAgent:
         cls,
         sandbox: AsyncSandbox,
         command: str,
-        client: acp.Client,
+        client: Union[acp.Client, Callable[[acp.Agent], acp.Client]],
         *,
         cwd: Optional[str] = None,
         envs: Optional[Dict[str, str]] = None,
@@ -60,7 +61,7 @@ class AcpAgent:
 
         :param sandbox: Sandbox with the agent installed
         :param command: Command that starts the agent in ACP mode, for example `goose acp`
-        :param client: Your ACP client. It answers permission requests and receives the agent's session updates
+        :param client: Your ACP client, or a function that creates it from the agent connection. It answers permission requests and receives the agent's session updates
         :param cwd: Working directory of the agent
         :param envs: Environment variables for the agent
         :param user: User to run the agent as
@@ -75,7 +76,15 @@ class AcpAgent:
         """
         transport = AcpTransport(sandbox, max_message_bytes, on_stderr)
         await transport.start(command, envs, user, cwd, request_timeout)
-        return cls(transport, acp.connect_to_agent(client, transport))
+        try:
+            # connect_to_agent passes a factory on to ClientSideConnection, which
+            # accepts it, but annotates `client` as a client only.
+            connection = acp.connect_to_agent(cast(acp.Client, client), transport)
+        except BaseException:
+            with contextlib.suppress(Exception):
+                await transport.kill()
+            raise
+        return cls(transport, connection)
 
     @property
     def connection(self) -> ClientSideConnection:

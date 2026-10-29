@@ -9,6 +9,7 @@ import pytest
 from packaging.version import Version
 
 from e2b import CommandExitException
+from e2b_acp import AcpAgent
 from e2b_acp.transport import READ_QUEUE_MESSAGES, AcpTransport
 
 
@@ -216,6 +217,52 @@ async def test_kill_lets_wait_see_the_exit_while_output_waits_for_the_client():
 
     exit = await asyncio.wait_for(transport.wait(), 1)
     assert exit.exit_code == -1
+
+
+async def test_start_kills_the_agent_when_the_client_factory_raises():
+    agent = FakeAgent()
+
+    def factory(conn):
+        raise RuntimeError("no client")
+
+    with pytest.raises(RuntimeError, match="no client"):
+        await AcpAgent.start(agent.sandbox, "agent", factory)
+    assert agent.killed == 1
+
+
+async def test_start_passes_the_agent_connection_to_the_client_factory():
+    agent = FakeAgent()
+    updates = []
+
+    class Client:
+        async def session_update(self, session_id, update, **kwargs):
+            updates.append(update)
+
+    connections = []
+
+    def factory(conn):
+        connections.append(conn)
+        return Client()
+
+    acp_agent = await AcpAgent.start(agent.sandbox, "agent", factory)
+    assert connections == [acp_agent.connection]
+
+    await agent.emit(
+        {
+            "jsonrpc": "2.0",
+            "method": "session/update",
+            "params": {
+                "sessionId": "s",
+                "update": {"sessionUpdate": "plan", "entries": []},
+            },
+        }
+    )
+    for _ in range(100):
+        if updates:
+            break
+        await asyncio.sleep(0.01)
+    assert len(updates) == 1
+    await acp_agent.kill()
 
 
 def test_import_does_not_warn():
