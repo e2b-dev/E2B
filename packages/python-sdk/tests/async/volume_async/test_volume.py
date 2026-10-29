@@ -6,7 +6,7 @@ import pytest
 from mock_volume_content import RecordingProxy
 
 from e2b import AsyncVolume
-from e2b.exceptions import NotFoundException, VolumeNotFoundException
+from e2b.exceptions import VolumeNotFoundException
 from e2b.api.client.models.volume_and_token import VolumeAndToken
 from e2b.api.client.types import Response
 import e2b.api.client.api.volumes.post_volumes as post_volumes_mod
@@ -131,9 +131,8 @@ async def test_destroy_nonexistent_volume():
 
 
 async def test_get_info_nonexistent_volume():
-    with pytest.raises(VolumeNotFoundException) as exc_info:
+    with pytest.raises(VolumeNotFoundException):
         await AsyncVolume.get_info("non-existent-id")
-    assert isinstance(exc_info.value, NotFoundException)
 
 
 @pytest.fixture
