@@ -153,7 +153,7 @@ jobs:
         id: acp_js
         if: steps.version.outputs.release == 'true'
         run: |
-          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/acp")
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/acp" "$RUNNER_TEMP/release-plan.json")
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
       - name: Build release itinerary
