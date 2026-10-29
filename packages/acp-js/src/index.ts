@@ -1,32 +1,32 @@
 import type { ClientApp, ClientConnection } from '@agentclientprotocol/sdk'
 import type { Sandbox } from 'e2b'
 import {
-  startAcpTransport,
-  type AcpAgentResult,
-  type AcpAgentStartOpts,
-  type AcpAgentStopOpts,
-  type AcpTransport,
+  startACPTransport,
+  type ACPAgentResult,
+  type ACPAgentStartOpts,
+  type ACPAgentStopOpts,
+  type ACPTransport,
 } from './transport'
 
 export { DEFAULT_STOP_TIMEOUT_MS } from './transport'
 export { DEFAULT_MAX_MESSAGE_BYTES } from './utils'
 export type {
-  AcpAgentResult,
-  AcpAgentStartOpts,
-  AcpAgentStopOpts,
+  ACPAgentResult,
+  ACPAgentStartOpts,
+  ACPAgentStopOpts,
   StderrHandler,
 } from './transport'
 
 /**
  * ACP agent running in a sandbox, connected to your client.
  */
-export class AcpAgent {
+export class ACPAgent {
   /**
    * @hidden
    * @internal
    */
   constructor(
-    private readonly transport: AcpTransport,
+    private readonly transport: ACPTransport,
     /**
      * Connection to the agent. Use `connection.agent` to initialize, create
      * sessions and send prompts. Closing it also stops the agent.
@@ -51,7 +51,7 @@ export class AcpAgent {
    * receive the agent's session updates.
    * @param opts options for starting the agent.
    *
-   * @returns `AcpAgent` with the ACP connection.
+   * @returns `ACPAgent` with the ACP connection.
    *
    * @throws InvalidArgumentError if `maxMessageBytes` is not a positive integer.
    * @throws SandboxError if the agent could not be started. Later, the
@@ -61,14 +61,14 @@ export class AcpAgent {
    * @example
    * ```ts
    * import { Sandbox } from 'e2b'
-   * import { AcpAgent } from '@e2b/acp'
+   * import { ACPAgent } from '@e2b/acp'
    * import { client, methods, PROTOCOL_VERSION } from '@agentclientprotocol/sdk'
    *
    * const app = client().onNotification(methods.client.session.update, ({ params }) => {
    *   console.log(params.update)
    * })
    * const sandbox = await Sandbox.create('goose')
-   * const agent = await AcpAgent.start(sandbox, 'goose acp', app)
+   * const agent = await ACPAgent.start(sandbox, 'goose acp', app)
    * await agent.connection.agent.request(methods.agent.initialize, {
    *   protocolVersion: PROTOCOL_VERSION,
    * })
@@ -87,9 +87,9 @@ export class AcpAgent {
     sandbox: Sandbox,
     command: string,
     client: ClientApp,
-    opts?: AcpAgentStartOpts
-  ): Promise<AcpAgent> {
-    const transport = await startAcpTransport(sandbox, command, opts)
+    opts?: ACPAgentStartOpts
+  ): Promise<ACPAgent> {
+    const transport = await startACPTransport(sandbox, command, opts)
     let connection: ClientConnection
     try {
       // Throws if an `onConnect` handler throws.
@@ -98,7 +98,7 @@ export class AcpAgent {
       await transport.kill().catch(() => false)
       throw err
     }
-    return new AcpAgent(transport, connection)
+    return new ACPAgent(transport, connection)
   }
 
   /**
@@ -115,7 +115,7 @@ export class AcpAgent {
    *
    * @returns exit status of the agent.
    */
-  async wait(): Promise<AcpAgentResult> {
+  async wait(): Promise<ACPAgentResult> {
     return this.transport.wait()
   }
 
@@ -128,7 +128,7 @@ export class AcpAgent {
    *
    * @throws SandboxError if the agent could not be killed.
    */
-  async stop(opts?: AcpAgentStopOpts): Promise<void> {
+  async stop(opts?: ACPAgentStopOpts): Promise<void> {
     return this.transport.close(opts)
   }
 

@@ -1,8 +1,8 @@
 import { CommandExitError, type CommandStartOpts, type Sandbox } from 'e2b'
 import { assert, expect, test, vi } from 'vitest'
 import { client, methods, PROTOCOL_VERSION } from '@agentclientprotocol/sdk'
-import { AcpAgent } from '../src'
-import { startAcpTransport, type AcpSandbox } from '../src/transport'
+import { ACPAgent } from '../src'
+import { startACPTransport, type ACPSandbox } from '../src/transport'
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
@@ -50,7 +50,7 @@ function fakeAgent(opts: { closeStdin?: () => Promise<void> } = {}) {
         return handle
       },
     },
-  } as unknown as AcpSandbox
+  } as unknown as ACPSandbox
 
   return {
     sandbox,
@@ -70,7 +70,7 @@ function fakeAgent(opts: { closeStdin?: () => Promise<void> } = {}) {
 
 test('client writes and transport replies never overlap', async () => {
   const agent = fakeAgent()
-  const transport = await startAcpTransport(agent.sandbox, 'agent')
+  const transport = await startACPTransport(agent.sandbox, 'agent')
   const writer = transport.stream.writable.getWriter()
 
   const pending = []
@@ -91,7 +91,7 @@ test('client writes and transport replies never overlap', async () => {
 
 test('graceful EOF still reports a failed exit', async () => {
   const agent = fakeAgent()
-  const transport = await startAcpTransport(agent.sandbox, 'agent')
+  const transport = await startACPTransport(agent.sandbox, 'agent')
   const reader = transport.stream.readable.getReader()
 
   await transport.stream.writable.getWriter().close()
@@ -106,7 +106,7 @@ test('graceful EOF surfaces a failure to close stdin', async () => {
       throw new Error('stdin gone')
     },
   })
-  const transport = await startAcpTransport(agent.sandbox, 'agent')
+  const transport = await startACPTransport(agent.sandbox, 'agent')
 
   await expect(transport.stream.writable.getWriter().close()).rejects.toThrow(
     'stdin gone'
@@ -116,7 +116,7 @@ test('graceful EOF surfaces a failure to close stdin', async () => {
 test('close kills the agent when its output stream failed', async () => {
   // EOF goes through, but the process is still running.
   const agent = fakeAgent()
-  const transport = await startAcpTransport(agent.sandbox, 'agent')
+  const transport = await startACPTransport(agent.sandbox, 'agent')
 
   agent.fail(new Error('output stream broke'))
   await expect(transport.wait()).rejects.toThrow('output stream broke')
@@ -127,7 +127,7 @@ test('close kills the agent when its output stream failed', async () => {
 
 test('a failed output stream kills the agent', async () => {
   const agent = fakeAgent()
-  const transport = await startAcpTransport(agent.sandbox, 'agent')
+  const transport = await startACPTransport(agent.sandbox, 'agent')
   const reader = transport.stream.readable.getReader()
 
   agent.fail(new Error('output stream broke'))
@@ -138,7 +138,7 @@ test('a failed output stream kills the agent', async () => {
 
 test('close timeout covers a hung EOF and then kills', async () => {
   const agent = fakeAgent({ closeStdin: () => new Promise(() => {}) })
-  const transport = await startAcpTransport(agent.sandbox, 'agent')
+  const transport = await startACPTransport(agent.sandbox, 'agent')
 
   const started = Date.now()
   await transport.close({ timeoutMs: 50 })
@@ -150,7 +150,7 @@ test('close timeout covers a hung EOF and then kills', async () => {
 test('close rejects when the agent could not be killed', async () => {
   const agent = fakeAgent({ closeStdin: () => new Promise(() => {}) })
   agent.handle.kill.mockRejectedValueOnce(new Error('kill failed'))
-  const transport = await startAcpTransport(agent.sandbox, 'agent')
+  const transport = await startACPTransport(agent.sandbox, 'agent')
 
   await expect(transport.close({ timeoutMs: 50 })).rejects.toThrow(
     'kill failed'
@@ -159,7 +159,7 @@ test('close rejects when the agent could not be killed', async () => {
 
 test('close keeps buffered messages and drops later ones', async () => {
   const agent = fakeAgent()
-  const transport = await startAcpTransport(agent.sandbox, 'agent')
+  const transport = await startACPTransport(agent.sandbox, 'agent')
   const reader = transport.stream.readable.getReader()
 
   await agent.emit({ jsonrpc: '2.0', method: 'before' })
@@ -177,7 +177,7 @@ test('close keeps buffered messages and drops later ones', async () => {
 
 test('close drops later lines of an output chunk already being read', async () => {
   const agent = fakeAgent()
-  const transport = await startAcpTransport(agent.sandbox, 'agent')
+  const transport = await startACPTransport(agent.sandbox, 'agent')
 
   for (let i = 0; i < 63; i++) {
     await agent.emit({ jsonrpc: '2.0', method: 'before' })
@@ -207,7 +207,7 @@ test('start kills the agent when an onConnect handler throws', async () => {
   })
 
   await expect(
-    AcpAgent.start(agent.sandbox as Sandbox, 'agent', app)
+    ACPAgent.start(agent.sandbox as Sandbox, 'agent', app)
   ).rejects.toThrow('no client')
   expect(agent.handle.kill).toHaveBeenCalledOnce()
 })
@@ -221,7 +221,7 @@ test('start connects the client app to the agent', async () => {
       updates.push(params.update)
     }
   )
-  const acpAgent = await AcpAgent.start(agent.sandbox as Sandbox, 'agent', app)
+  const acpAgent = await ACPAgent.start(agent.sandbox as Sandbox, 'agent', app)
 
   const response = acpAgent.connection.agent.request(methods.agent.initialize, {
     protocolVersion: PROTOCOL_VERSION,
@@ -252,7 +252,7 @@ test('start connects the client app to the agent', async () => {
 test('closing the connection stops the agent', async () => {
   const closeStdin = vi.fn(async () => {})
   const agent = fakeAgent({ closeStdin })
-  const acpAgent = await AcpAgent.start(
+  const acpAgent = await ACPAgent.start(
     agent.sandbox as Sandbox,
     'agent',
     client()
@@ -266,7 +266,7 @@ test('closing the connection stops the agent', async () => {
 
 test('kill lets wait() see the exit while output waits for the client', async () => {
   const agent = fakeAgent()
-  const transport = await startAcpTransport(agent.sandbox, 'agent')
+  const transport = await startACPTransport(agent.sandbox, 'agent')
 
   for (let i = 0; i < 63; i++) {
     await agent.emit({ jsonrpc: '2.0', method: 'update' })
@@ -295,7 +295,7 @@ test('output over the limit before start returns still closes the agent', async 
     opts!.onStdout!('x'.repeat(100))
     return handle
   }) as typeof run
-  const transport = await startAcpTransport(agent.sandbox, 'agent', {
+  const transport = await startACPTransport(agent.sandbox, 'agent', {
     maxMessageBytes: 10,
   })
 

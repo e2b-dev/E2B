@@ -3,6 +3,7 @@ import {
   CommandExitError,
   SandboxError,
   type CommandHandle,
+  type CommandRequestOpts,
   type CommandStartOpts,
   type Sandbox,
 } from 'e2b'
@@ -22,7 +23,7 @@ export type StderrHandler = (data: string) => void | Promise<void>
 /**
  * Options for starting an ACP agent in a sandbox.
  */
-export interface AcpAgentStartOpts extends Pick<
+export interface ACPAgentStartOpts extends Pick<
   CommandStartOpts,
   'cwd' | 'envs' | 'user' | 'requestTimeoutMs' | 'signal'
 > {
@@ -44,9 +45,10 @@ export interface AcpAgentStartOpts extends Pick<
 export const DEFAULT_STOP_TIMEOUT_MS = 5_000
 
 /**
- * Options for stopping an ACP agent.
+ * Options for stopping an ACP agent. `requestTimeoutMs` and `signal` apply to
+ * the request that closes the agent's stdin.
  */
-export interface AcpAgentStopOpts {
+export interface ACPAgentStopOpts extends CommandRequestOpts {
   /**
    * Time for the agent to exit after `stop()` is called, in **milliseconds**.
    * It covers sending EOF to the agent's stdin; after it the agent is killed.
@@ -59,7 +61,7 @@ export interface AcpAgentStopOpts {
 /**
  * Exit status of an ACP agent process.
  */
-export interface AcpAgentResult {
+export interface ACPAgentResult {
   /**
    * Exit code of the agent process.
    */
@@ -73,7 +75,7 @@ export interface AcpAgentResult {
 /**
  * Message stream connected to an ACP agent.
  */
-export interface AcpStream {
+export interface ACPStream {
   readable: ReadableStream<AnyMessage>
   writable: WritableStream<AnyMessage>
 }
@@ -81,7 +83,7 @@ export interface AcpStream {
 /**
  * The part of `Sandbox` the transport needs.
  */
-export type AcpSandbox = Pick<Sandbox, 'commands'>
+export type ACPSandbox = Pick<Sandbox, 'commands'>
 
 const STDERR_TAIL_CHARS = 4096
 const READ_QUEUE_MESSAGES = 64
@@ -89,19 +91,19 @@ const READ_QUEUE_MESSAGES = 64
 /**
  * ACP over the stdin/stdout of an agent process in the sandbox.
  */
-export class AcpTransport {
+export class ACPTransport {
   /**
    * @hidden
    * @internal
    */
   constructor(
     readonly pid: number,
-    readonly stream: AcpStream,
+    readonly stream: ACPStream,
     private readonly handle: CommandHandle<undefined>,
-    private readonly exit: Promise<AcpAgentResult>,
-    private readonly exitStatus: () => AcpAgentResult | undefined,
+    private readonly exit: Promise<ACPAgentResult>,
+    private readonly exitStatus: () => ACPAgentResult | undefined,
     private readonly stopReading: () => void,
-    private readonly endInput: () => Promise<unknown>
+    private readonly endInput: (opts?: CommandRequestOpts) => Promise<unknown>
   ) {}
 
   /**
@@ -109,7 +111,7 @@ export class AcpTransport {
    *
    * It rejects if the agent's output stream failed before its exit status was known.
    */
-  async wait(): Promise<AcpAgentResult> {
+  async wait(): Promise<ACPAgentResult> {
     return this.exit
   }
 
@@ -120,7 +122,7 @@ export class AcpTransport {
    *
    * It rejects if the agent could not be killed.
    */
-  async close(opts?: AcpAgentStopOpts): Promise<void> {
+  async close(opts?: ACPAgentStopOpts): Promise<void> {
     // Only a known exit status means the process is gone. A failed output
     // stream can leave it running.
     if (this.exitStatus()) {
@@ -130,7 +132,7 @@ export class AcpTransport {
     this.stopReading()
     let timer: ReturnType<typeof setTimeout> | undefined
     const exited = await Promise.race([
-      this.endInput()
+      this.endInput(opts)
         .then(() => this.exit)
         .then(
           () => true,
@@ -171,11 +173,11 @@ export class AcpTransport {
  * with an error without reaching the client, so the agent edits files and
  * runs commands with its own tools in the sandbox.
  */
-export async function startAcpTransport(
-  sandbox: AcpSandbox,
+export async function startACPTransport(
+  sandbox: ACPSandbox,
   cmd: string,
-  opts?: AcpAgentStartOpts
-): Promise<AcpTransport> {
+  opts?: ACPAgentStartOpts
+): Promise<ACPTransport> {
   const commands = sandbox.commands
   const lines = new LineSplitter(
     opts?.maxMessageBytes ?? DEFAULT_MAX_MESSAGE_BYTES
@@ -187,7 +189,7 @@ export async function startAcpTransport(
   let closing = false
   let resumeReading: (() => void) | undefined
   let controller!: ReadableStreamDefaultController<AnyMessage>
-  let exitStatus: AcpAgentResult | undefined
+  let exitStatus: ACPAgentResult | undefined
 
   let resolveHandle!: (handle: CommandHandle<undefined>) => void
   let rejectHandle!: (err: unknown) => void
@@ -215,9 +217,9 @@ export async function startAcpTransport(
     const line = JSON.stringify(message) + '\n'
     return enqueueWrite((handle) => handle.sendStdin(line))
   }
-  const endInput = () =>
+  const endInput = (opts?: CommandRequestOpts) =>
     enqueueWrite((handle) =>
-      commands.supportsStdinClose ? handle.closeStdin() : handle.kill()
+      commands.supportsStdinClose ? handle.closeStdin(opts) : handle.kill()
     )
 
   const end = (err?: unknown) => {
@@ -262,7 +264,7 @@ export async function startAcpTransport(
     }
   }
 
-  let transport: AcpTransport | undefined
+  let transport: ACPTransport | undefined
   // Output can arrive before run() returns, so wait for the transport.
   const closeTransport = () => handleReady.then(() => transport!.close())
 
@@ -339,11 +341,11 @@ export async function startAcpTransport(
   resolveHandle(handle)
 
   const exit = handle.wait().then(
-    (result): AcpAgentResult => ({
+    (result): ACPAgentResult => ({
       exitCode: result.exitCode,
       error: result.error,
     }),
-    (err): AcpAgentResult => {
+    (err): ACPAgentResult => {
       if (err instanceof CommandExitError) {
         return { exitCode: err.exitCode, error: err.error }
       }
@@ -376,7 +378,7 @@ export async function startAcpTransport(
     }
   )
 
-  transport = new AcpTransport(
+  transport = new ACPTransport(
     handle.pid,
     { readable, writable },
     handle,
