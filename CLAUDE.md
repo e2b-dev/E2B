@@ -3,6 +3,7 @@ Run `pnpm run format`, `pnpm run lint` and `pnpm run typecheck` before committin
 When modifying the SDK packages, ensure equivalent changes are applied to both JS as well as sync and async Python implementations.
 Never edit the API, envd, or volume-content specs in spec/ by hand; they are synced with Copybara from e2b-dev/runtime and e2b-dev/belt at the commits pinned in spec/runtime-ref and spec/belt-ref (see copy.bara.sky and spec/README.md). To update the specs, bump the pins and re-run `make codegen`, which re-fetches them before generating.
 Create or update tests covering affected codepaths and run them using `pnpm run test`.
+When writing or fixing tests, follow the TDD skill in `.agents/skills/tdd/SKILL.md` (also linked as `.claude/skills/tdd`).
 Generate a changeset with `pnpm changeset` in the repository root when changing the public surface of packages/cli, packages/js-sdk, or packages/python-sdk; internal scripts, devtools, and tests don't need one.
 Never use a `major` bump in a changeset unless a maintainer explicitly asks for a major release; breaking changes ship as `minor` and are called out in the changeset text.
 When changing user-facing behavior of the SDKs or CLI, document it in e2b-dev/docs where applicable by updating or adding the relevant guide pages in a separate pull request there, and link it from the SDK pull request.
