@@ -2,7 +2,7 @@ import acp
 from acp import schema
 
 from e2b import AsyncSandbox
-from e2b_acp import AcpAgent
+from e2b_acp import AsyncACPAgent
 from acp_fake_agent import FAKE_AGENT, FAKE_AGENT_CMD, FAKE_AGENT_PATH
 
 
@@ -18,7 +18,7 @@ class Client:
 
 async def test_start_connects_an_acp_client(async_sandbox: AsyncSandbox):
     await async_sandbox.files.write(FAKE_AGENT_PATH, FAKE_AGENT)
-    agent = await AcpAgent.start(async_sandbox, FAKE_AGENT_CMD, Client())
+    agent = await AsyncACPAgent.start(async_sandbox, FAKE_AGENT_CMD, Client())
 
     response = await agent.connection.initialize(
         protocol_version=acp.PROTOCOL_VERSION,

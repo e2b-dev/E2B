@@ -10,16 +10,16 @@ from acp.core import ClientSideConnection
 from e2b import AsyncSandbox
 from e2b.connection_config import Username
 
-from .transport import DEFAULT_STOP_TIMEOUT, AcpAgentResult, AcpTransport, StderrHandler
+from .transport import DEFAULT_STOP_TIMEOUT, ACPAgentResult, ACPTransport, StderrHandler
 from .utils import DEFAULT_MAX_MESSAGE_BYTES
 
 
-class AcpAgent:
+class AsyncACPAgent:
     """
     ACP agent running in a sandbox, connected to your client.
     """
 
-    def __init__(self, transport: AcpTransport, connection: ClientSideConnection):
+    def __init__(self, transport: ACPTransport, connection: ClientSideConnection):
         self._transport = transport
         self._connection = connection
 
@@ -36,7 +36,7 @@ class AcpAgent:
         on_stderr: Optional[StderrHandler] = None,
         max_message_bytes: int = DEFAULT_MAX_MESSAGE_BYTES,
         request_timeout: Optional[float] = None,
-    ) -> "AcpAgent":
+    ) -> "AsyncACPAgent":
         """
         Start an ACP agent in the sandbox and connect your ACP client to it over
         the agent's stdin/stdout.
@@ -50,10 +50,10 @@ class AcpAgent:
         ```python
         import acp
         from e2b import AsyncSandbox
-        from e2b_acp import AcpAgent
+        from e2b_acp import AsyncACPAgent
 
         sandbox = await AsyncSandbox.create("goose")
-        agent = await AcpAgent.start(sandbox, "goose acp", client)
+        agent = await AsyncACPAgent.start(sandbox, "goose acp", client)
         await agent.connection.initialize(protocol_version=acp.PROTOCOL_VERSION)
         # ...
         await agent.stop()
@@ -69,12 +69,12 @@ class AcpAgent:
         :param max_message_bytes: Maximum size of a single message from the agent in **bytes**; defaults to ``DEFAULT_MAX_MESSAGE_BYTES`` (32 MiB)
         :param request_timeout: Timeout for starting the agent in **seconds**
 
-        :return: `AcpAgent` with the ACP connection
+        :return: `AsyncACPAgent` with the ACP connection
 
         :raises InvalidArgumentException: If `max_message_bytes` is not a positive integer
         :raises SandboxException: If the agent could not be started
         """
-        transport = AcpTransport(sandbox, max_message_bytes, on_stderr)
+        transport = ACPTransport(sandbox, max_message_bytes, on_stderr)
         await transport.start(command, envs, user, cwd, request_timeout)
         try:
             # connect_to_agent passes a factory on to ClientSideConnection, which
@@ -100,13 +100,16 @@ class AcpAgent:
         """
         return self._transport.pid
 
-    async def wait(self) -> AcpAgentResult:
+    async def wait(self) -> ACPAgentResult:
         """
         Wait for the agent process to exit.
 
-        It raises if the agent's output stream failed before its exit status was known.
+        A non-zero exit is returned, not raised. If the agent's output stream
+        failed before the exit status was known (for example, a message over
+        `max_message_bytes`, or an exception raised by `on_stderr`), that
+        original error is raised instead.
 
-        :return: Exit status of the agent
+        :return: `ACPAgentResult` with the agent's `exit_code` and, if the process failed, its `error` message
         """
         return await self._transport.wait()
 
@@ -134,7 +137,7 @@ class AcpAgent:
 __all__ = [
     "DEFAULT_MAX_MESSAGE_BYTES",
     "DEFAULT_STOP_TIMEOUT",
-    "AcpAgent",
-    "AcpAgentResult",
+    "AsyncACPAgent",
+    "ACPAgentResult",
     "StderrHandler",
 ]

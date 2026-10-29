@@ -23,7 +23,7 @@ import os
 import acp
 from acp import schema
 from e2b import AsyncSandbox
-from e2b_acp import AcpAgent
+from e2b_acp import AsyncACPAgent
 
 
 class Client:
@@ -41,7 +41,7 @@ class Client:
 async def main():
     sandbox = await AsyncSandbox.create("goose", timeout=600)
     try:
-        agent = await AcpAgent.start(
+        agent = await AsyncACPAgent.start(
             sandbox,
             "goose acp --with-builtin developer",
             Client(),
@@ -67,7 +67,7 @@ asyncio.run(main())
 
 ## Where the agent's tools run
 
-The agent talks ACP over its stdin and stdout. `AcpAgent.start` turns off the client filesystem and terminal capabilities in `initialize` and answers agent requests for `fs/*` or `terminal/*` with an error, so the agent edits files and runs commands with its own tools inside the sandbox. It does not restrict the agent's network access or the MCP servers you pass to it.
+The agent talks ACP over its stdin and stdout. `AsyncACPAgent.start` turns off the client filesystem and terminal capabilities in `initialize` and answers agent requests for `fs/*` or `terminal/*` with an error, so the agent edits files and runs commands with its own tools inside the sandbox. It does not restrict the agent's network access or the MCP servers you pass to it.
 
 ## Lifecycle
 

@@ -1,7 +1,7 @@
 import pytest
 
 from e2b import AsyncSandbox
-from e2b_acp.transport import AcpTransport
+from e2b_acp.transport import ACPTransport
 from e2b_acp.utils import DEFAULT_MAX_MESSAGE_BYTES
 from acp_fake_agent import FAKE_AGENT, FAKE_AGENT_CMD, FAKE_AGENT_PATH
 
@@ -12,7 +12,7 @@ async def start_agent(
     on_stderr=None,
 ):
     await sandbox.files.write(FAKE_AGENT_PATH, FAKE_AGENT)
-    agent = AcpTransport(sandbox, max_message_bytes, on_stderr)
+    agent = ACPTransport(sandbox, max_message_bytes, on_stderr)
     await agent.start(FAKE_AGENT_CMD, None, None, None, None)
 
     async def call(id, method, params=None):

@@ -74,7 +74,7 @@ class LineSplitter:
         if size > self._max_line_bytes:
             raise SandboxException(
                 f"ACP message exceeds the limit of {self._max_line_bytes} bytes. "
-                "Pass a larger `max_message_bytes` to AcpAgent.start() if the "
+                "Pass a larger `max_message_bytes` to AsyncACPAgent.start() if the "
                 "agent sends larger messages."
             )
 

@@ -9,8 +9,8 @@ import pytest
 from packaging.version import Version
 
 from e2b import CommandExitException
-from e2b_acp import AcpAgent
-from e2b_acp.transport import READ_QUEUE_MESSAGES, AcpTransport
+from e2b_acp import AsyncACPAgent
+from e2b_acp.transport import READ_QUEUE_MESSAGES, ACPTransport
 
 
 class FakeAgent:
@@ -79,7 +79,7 @@ class FakeAgent:
 
 
 async def start(agent):
-    transport = AcpTransport(agent.sandbox, 1024, None)
+    transport = ACPTransport(agent.sandbox, 1024, None)
     await transport.start("agent", None, None, None, None)
     return transport
 
@@ -226,7 +226,7 @@ async def test_start_kills_the_agent_when_the_client_factory_raises():
         raise RuntimeError("no client")
 
     with pytest.raises(RuntimeError, match="no client"):
-        await AcpAgent.start(agent.sandbox, "agent", factory)
+        await AsyncACPAgent.start(agent.sandbox, "agent", factory)
     assert agent.killed == 1
 
 
@@ -244,7 +244,7 @@ async def test_start_passes_the_agent_connection_to_the_client_factory():
         connections.append(conn)
         return Client()
 
-    acp_agent = await AcpAgent.start(agent.sandbox, "agent", factory)
+    acp_agent = await AsyncACPAgent.start(agent.sandbox, "agent", factory)
     assert connections == [acp_agent.connection]
 
     await agent.emit(
