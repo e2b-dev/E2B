@@ -25,6 +25,7 @@ class FakeAgent:
         # Like the SDK handle, the exit is seen only after output callbacks return.
         self._output = asyncio.Lock()
         self._close_stdin = close_stdin
+        self.close_stdin_request_timeouts = []
         self.handle = SimpleNamespace(
             pid=42,
             send_stdin=self._send_stdin,
@@ -47,7 +48,8 @@ class FakeAgent:
         self.writes.append(data)
         self.active -= 1
 
-    async def _close(self):
+    async def _close(self, request_timeout=None):
+        self.close_stdin_request_timeouts.append(request_timeout)
         if self._close_stdin:
             await self._close_stdin()
 
@@ -272,3 +274,12 @@ def test_import_does_not_warn():
         [sys.executable, "-W", "error::DeprecationWarning", "-c", "import e2b_acp"],
         check=True,
     )
+
+
+async def test_stop_passes_the_request_timeout_to_close_stdin():
+    agent = FakeAgent()
+    acp_agent = await AsyncACPAgent.start(agent.sandbox, "agent", SimpleNamespace())
+
+    await acp_agent.stop(timeout=0.05, request_timeout=7)
+
+    assert agent.close_stdin_request_timeouts == [7]

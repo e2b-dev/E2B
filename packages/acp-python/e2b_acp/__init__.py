@@ -20,6 +20,9 @@ class AsyncACPAgent:
     """
 
     def __init__(self, transport: ACPTransport, connection: ClientSideConnection):
+        """
+        Internal; use ``AsyncACPAgent.start()`` to start an agent.
+        """
         self._transport = transport
         self._connection = connection
 
@@ -113,17 +116,23 @@ class AsyncACPAgent:
         """
         return await self._transport.wait()
 
-    async def stop(self, *, timeout: float = DEFAULT_STOP_TIMEOUT) -> None:
+    async def stop(
+        self,
+        *,
+        timeout: float = DEFAULT_STOP_TIMEOUT,
+        request_timeout: Optional[float] = None,
+    ) -> None:
         """
         Stop the agent: send EOF to its stdin and kill it if it has not
         exited within `timeout` of this call. Messages the agent sends after
         this call are not delivered.
 
         :param timeout: Time for the agent to exit in **seconds**; defaults to ``DEFAULT_STOP_TIMEOUT`` (5 seconds)
+        :param request_timeout: Timeout for the request that closes the agent's stdin in **seconds**
 
         :raises SandboxException: If the agent could not be killed
         """
-        await self._transport.close(timeout)
+        await self._transport.close(timeout, request_timeout)
 
     async def kill(self) -> bool:
         """

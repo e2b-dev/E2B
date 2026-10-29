@@ -106,7 +106,11 @@ class ACPTransport:
             self._readable.clear()
             await self._readable.wait()
 
-    async def close(self, timeout: float = DEFAULT_STOP_TIMEOUT) -> None:
+    async def close(
+        self,
+        timeout: float = DEFAULT_STOP_TIMEOUT,
+        request_timeout: Optional[float] = None,
+    ) -> None:
         # Only a known exit status means the process is gone. A failed output
         # stream can leave it running.
         if self._exit is not None or self._exit_task is None:
@@ -117,7 +121,7 @@ class ACPTransport:
         self._space.set()
 
         try:
-            exit = await asyncio.wait_for(self._stop_and_wait(), timeout)
+            exit = await asyncio.wait_for(self._stop_and_wait(request_timeout), timeout)
         except Exception:
             exit = None
         if exit is None and self._exit is None:
@@ -175,8 +179,10 @@ class ACPTransport:
         except Exception:
             pass
 
-    async def _stop_and_wait(self) -> Optional[ACPAgentResult]:
-        await self._end_input()
+    async def _stop_and_wait(
+        self, request_timeout: Optional[float]
+    ) -> Optional[ACPAgentResult]:
+        await self._end_input(request_timeout)
         assert self._exit_task is not None
         return await asyncio.shield(self._exit_task)
 
@@ -188,11 +194,11 @@ class ACPTransport:
         async with self._write_lock:
             await handle.send_stdin(line)
 
-    async def _end_input(self) -> None:
+    async def _end_input(self, request_timeout: Optional[float] = None) -> None:
         handle = await asyncio.shield(self._handle_ready)
         async with self._write_lock:
             if self._commands._envd_version >= ENVD_ENVD_CLOSE:
-                await handle.close_stdin()
+                await handle.close_stdin(request_timeout=request_timeout)
             else:
                 await handle.kill()
 
