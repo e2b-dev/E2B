@@ -1,3 +1,4 @@
+import json
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -6,7 +7,6 @@ from unittest.mock import Mock
 
 import httpx
 import pytest
-from packaging.version import Version
 
 from e2b import Sandbox
 from e2b.api import SandboxCreateResponse
@@ -17,10 +17,19 @@ BASE_DOMAIN = "base.e2b.dev"
 BASE_REQUEST_TIMEOUT = 11
 BASE_DEBUG = False
 BASE_HEADERS = {"X-Test": "base"}
+CONNECTED_SANDBOX = {
+    "sandboxID": "sbx-test",
+    "templateID": "tmpl-test",
+    "clientID": "client-test",
+    "envdVersion": "0.2.4",
+    "envdAccessToken": "tok",
+    "trafficAccessToken": "tok",
+    "domain": "sandbox.e2b.dev",
+}
 
 
 class _FakeApiHandler(BaseHTTPRequestHandler):
-    """Answers `POST /sandboxes/{id}/pause` and records each request."""
+    """Answers sandbox connect and pause requests and records each one."""
 
     requests: List[Tuple[str, str, Dict[str, str]]] = []
     delay = 0.0
@@ -33,6 +42,14 @@ class _FakeApiHandler(BaseHTTPRequestHandler):
         type(self).requests.append(
             (self.command, self.path, {k.lower(): v for k, v in self.headers.items()})
         )
+        if self.path.endswith("/connect"):
+            body = json.dumps(CONNECTED_SANDBOX).encode()
+            self.send_response(201)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
         time.sleep(type(self).delay)
         self.send_response(204)
         self.end_headers()
@@ -62,21 +79,15 @@ def fake_api():
 def create_sandbox(
     api_key: str, api_url: str, request_timeout: float = BASE_REQUEST_TIMEOUT
 ) -> Sandbox:
-    return Sandbox(
-        sandbox_id="sbx-test",
-        sandbox_domain="sandbox.e2b.dev",
-        envd_version=Version("0.2.4"),
-        envd_access_token="tok",
-        traffic_access_token="tok",
-        connection_config=ConnectionConfig(
-            api_key=api_key,
-            api_url=api_url,
-            domain=BASE_DOMAIN,
-            request_timeout=request_timeout,
-            debug=BASE_DEBUG,
-            api_headers=BASE_HEADERS,
-            retries=0,
-        ),
+    return Sandbox.connect(
+        "sbx-test",
+        api_key=api_key,
+        api_url=api_url,
+        domain=BASE_DOMAIN,
+        request_timeout=request_timeout,
+        debug=BASE_DEBUG,
+        api_headers=BASE_HEADERS,
+        retries=0,
     )
 
 
@@ -146,7 +157,7 @@ def test_connect_sets_stable_host_routing_headers(monkeypatch, test_api_key):
     monkeypatch.setattr(ConnectionConfig, "_integration", "testing/version")
     config = ConnectionConfig(
         api_key=test_api_key,
-        headers=BASE_HEADERS,
+        api_headers=BASE_HEADERS,
     )
     sandbox = Sandbox.connect(
         "sbx-test",
