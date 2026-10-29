@@ -7,7 +7,9 @@ import { startACPTransport, type ACPSandbox } from '../src/transport'
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 // A command handle driven by the test instead of a sandbox.
-function fakeAgent(opts: { closeStdin?: () => Promise<void> } = {}) {
+function fakeAgent(
+  opts: { closeStdin?: (opts?: unknown) => Promise<void> } = {}
+) {
   let callbacks!: Pick<CommandStartOpts, 'onStdout' | 'onStderr'>
   let settle!: { resolve: (r: unknown) => void; reject: (e: unknown) => void }
   const settled = new Promise(
@@ -134,6 +136,22 @@ test('a failed output stream kills the agent', async () => {
 
   await expect(reader.read()).rejects.toThrow('output stream broke')
   expect(agent.handle.kill).toHaveBeenCalledOnce()
+})
+
+test('close passes request options to closeStdin', async () => {
+  const closeStdin = vi.fn<(opts?: unknown) => Promise<void>>(async () => {})
+  const agent = fakeAgent({ closeStdin })
+  const transport = await startACPTransport(agent.sandbox, 'agent')
+  const signal = new AbortController().signal
+
+  const closing = transport.close({ requestTimeoutMs: 1_000, signal })
+  await vi.waitFor(() =>
+    expect(closeStdin).toHaveBeenCalledWith(
+      expect.objectContaining({ requestTimeoutMs: 1_000, signal })
+    )
+  )
+  agent.exitWith(0)
+  await closing
 })
 
 test('close timeout covers a hung EOF and then kills', async () => {
