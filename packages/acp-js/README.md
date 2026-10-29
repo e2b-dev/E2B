@@ -14,28 +14,27 @@ Set `E2B_API_KEY` to your [E2B API key](https://e2b.dev/dashboard?tab=keys), and
 
 ## Usage
 
-Create a sandbox from a template with the agent installed, then start the agent and connect your ACP client to it:
+Build your ACP client with `client()` from `@agentclientprotocol/sdk`, create a sandbox from a template with the agent installed, then start the agent and connect the client to it:
 
 ```ts
 import { Sandbox } from 'e2b'
 import { AcpAgent } from '@e2b/acp'
-import { PROTOCOL_VERSION, type Client } from '@agentclientprotocol/sdk'
+import { client, methods, PROTOCOL_VERSION } from '@agentclientprotocol/sdk'
 
-const client: Client = {
-  async requestPermission({ options }) {
-    const allow = options.find((o) => o.kind === 'allow_once') ?? options[0]
+const app = client({ name: 'my-app' })
+  .onRequest(methods.client.session.requestPermission, async ({ params }) => {
+    const allow = params.options.find((o) => o.kind === 'allow_once') ?? params.options[0]
     return { outcome: { outcome: 'selected', optionId: allow.optionId } }
-  },
-  async sessionUpdate({ update }) {
+  })
+  .onNotification(methods.client.session.update, ({ params: { update } }) => {
     if (update.sessionUpdate === 'agent_message_chunk' && update.content.type === 'text') {
       process.stdout.write(update.content.text)
     }
-  },
-}
+  })
 
 const sandbox = await Sandbox.create('goose', { timeoutMs: 10 * 60_000 })
 try {
-  const agent = await AcpAgent.start(sandbox, 'goose acp --with-builtin developer', client, {
+  const agent = await AcpAgent.start(sandbox, 'goose acp --with-builtin developer', app, {
     envs: {
       GOOSE_PROVIDER: 'openai',
       GOOSE_MODEL: 'gpt-5.6-luna',
@@ -43,12 +42,9 @@ try {
     },
   })
 
-  await agent.connection.initialize({ protocolVersion: PROTOCOL_VERSION, clientCapabilities: {} })
-  const { sessionId } = await agent.connection.newSession({ cwd: '/home/user', mcpServers: [] })
-  await agent.connection.prompt({
-    sessionId,
-    prompt: [{ type: 'text', text: 'Create fizzbuzz.py for 1 to 15 and run it.' }],
-  })
+  await agent.connection.agent.request(methods.agent.initialize, { protocolVersion: PROTOCOL_VERSION })
+  const session = await agent.connection.agent.buildSession('/home/user').start()
+  await session.prompt('Create fizzbuzz.py for 1 to 15 and run it.')
 
   await agent.stop()
 } finally {
@@ -64,5 +60,6 @@ The agent talks ACP over its stdin and stdout. `AcpAgent.start` turns off the cl
 
 - `agent.stop()` sends EOF to the agent and kills it if it has not exited within `timeoutMs` (5 seconds by default) of the call. Messages the agent sends after that are not delivered.
 - `agent.wait()` resolves with the exit code once the agent exits.
+- Closing the connection with `agent.connection.close()` stops the agent the same way.
 - If the agent exits with an error, the connection fails with the exit code and the end of the agent's stderr. Pass `onStderr` to receive its logs.
 - The agent runs as long as the sandbox does, so set the sandbox timeout for the longest task you expect.
