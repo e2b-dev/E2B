@@ -1,5 +1,6 @@
 import { CommandExitError, type CommandStartOpts, type Sandbox } from 'e2b'
 import { assert, expect, test, vi } from 'vitest'
+import { client, methods, PROTOCOL_VERSION } from '@agentclientprotocol/sdk'
 import { AcpAgent } from '../src'
 import { startAcpTransport, type AcpSandbox } from '../src/transport'
 
@@ -199,15 +200,68 @@ test('close drops later lines of an output chunk already being read', async () =
   assert.notInclude(methods, 'after')
 })
 
-test('connect kills the agent when the client factory throws', async () => {
+test('start kills the agent when an onConnect handler throws', async () => {
   const agent = fakeAgent()
+  const app = client().onConnect(() => {
+    throw new Error('no client')
+  })
 
   await expect(
-    AcpAgent.start(agent.sandbox as Sandbox, 'agent', () => {
-      throw new Error('no client')
-    })
+    AcpAgent.start(agent.sandbox as Sandbox, 'agent', app)
   ).rejects.toThrow('no client')
   expect(agent.handle.kill).toHaveBeenCalledOnce()
+})
+
+test('start connects the client app to the agent', async () => {
+  const agent = fakeAgent()
+  const updates: unknown[] = []
+  const app = client().onNotification(
+    methods.client.session.update,
+    ({ params }) => {
+      updates.push(params.update)
+    }
+  )
+  const acpAgent = await AcpAgent.start(agent.sandbox as Sandbox, 'agent', app)
+
+  const response = acpAgent.connection.agent.request(methods.agent.initialize, {
+    protocolVersion: PROTOCOL_VERSION,
+    clientCapabilities: { terminal: true },
+  })
+  await vi.waitFor(() => assert.lengthOf(agent.writes, 1))
+  const request = JSON.parse(agent.writes[0])
+  assert.deepEqual(request.params.clientCapabilities, {
+    fs: { readTextFile: false, writeTextFile: false },
+    terminal: false,
+  })
+  await agent.emit(
+    {
+      jsonrpc: '2.0',
+      method: 'session/update',
+      params: {
+        sessionId: 's',
+        update: { sessionUpdate: 'plan', entries: [] },
+      },
+    },
+    { jsonrpc: '2.0', id: request.id, result: { protocolVersion: 1 } }
+  )
+
+  assert.equal((await response).protocolVersion, 1)
+  await vi.waitFor(() => assert.lengthOf(updates, 1))
+})
+
+test('closing the connection stops the agent', async () => {
+  const closeStdin = vi.fn(async () => {})
+  const agent = fakeAgent({ closeStdin })
+  const acpAgent = await AcpAgent.start(
+    agent.sandbox as Sandbox,
+    'agent',
+    client()
+  )
+
+  acpAgent.connection.close()
+  await acpAgent.connection.closed
+
+  await vi.waitFor(() => expect(closeStdin).toHaveBeenCalledOnce())
 })
 
 test('kill lets wait() see the exit while output waits for the client', async () => {

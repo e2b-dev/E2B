@@ -1,8 +1,4 @@
-import {
-  ClientSideConnection,
-  type Agent,
-  type Client,
-} from '@agentclientprotocol/sdk'
+import type { ClientApp, ClientConnection } from '@agentclientprotocol/sdk'
 import type { Sandbox } from 'e2b'
 import {
   startAcpTransport,
@@ -32,9 +28,10 @@ export class AcpAgent {
   constructor(
     private readonly transport: AcpTransport,
     /**
-     * Connection to the agent. Use it to initialize, create sessions and send prompts.
+     * Connection to the agent. Use `connection.agent` to initialize, create
+     * sessions and send prompts.
      */
-    readonly connection: ClientSideConnection
+    readonly connection: ClientConnection
   ) {}
 
   /**
@@ -49,8 +46,9 @@ export class AcpAgent {
    *
    * @param sandbox sandbox with the agent installed.
    * @param command command that starts the agent in ACP mode, for example `goose acp`.
-   * @param client your ACP client, or a function that creates it for the agent
-   * connection. It answers permission requests and receives the agent's session updates.
+   * @param client your ACP client app, created with `client()` from
+   * `@agentclientprotocol/sdk`. Its handlers answer permission requests and
+   * receive the agent's session updates.
    * @param opts options for starting the agent.
    *
    * @returns `AcpAgent` with the ACP connection.
@@ -64,26 +62,32 @@ export class AcpAgent {
    * ```ts
    * import { Sandbox } from 'e2b'
    * import { AcpAgent } from '@e2b/acp'
-   * import { PROTOCOL_VERSION } from '@agentclientprotocol/sdk'
+   * import { client, methods, PROTOCOL_VERSION } from '@agentclientprotocol/sdk'
    *
+   * const app = client().onNotification(methods.client.session.update, ({ params }) => {
+   *   console.log(params.update)
+   * })
    * const sandbox = await Sandbox.create('goose')
-   * const agent = await AcpAgent.start(sandbox, 'goose acp', client)
-   * await agent.connection.initialize({ protocolVersion: PROTOCOL_VERSION, clientCapabilities: {} })
-   * // ...
+   * const agent = await AcpAgent.start(sandbox, 'goose acp', app)
+   * await agent.connection.agent.request(methods.agent.initialize, {
+   *   protocolVersion: PROTOCOL_VERSION,
+   * })
+   * const session = await agent.connection.agent.buildSession('/home/user').start()
+   * await session.prompt('Create hello.py and run it.')
    * await agent.stop()
    * ```
    */
   static async start(
     sandbox: Sandbox,
     command: string,
-    client: Client | ((agent: Agent) => Client),
+    client: ClientApp,
     opts?: AcpAgentStartOpts
   ): Promise<AcpAgent> {
     const transport = await startAcpTransport(sandbox, command, opts)
-    const toClient = typeof client === 'function' ? client : () => client
-    let connection: ClientSideConnection
+    let connection: ClientConnection
     try {
-      connection = new ClientSideConnection(toClient, transport.stream)
+      // Throws if an `onConnect` handler throws.
+      connection = client.connect(transport.stream)
     } catch (err) {
       await transport.kill().catch(() => false)
       throw err
