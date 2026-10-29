@@ -1114,13 +1114,14 @@ def build_lifecycle_config(
 
     if auto_resume and on_timeout != "pause":
         if not on_timeout_configured:
-            # The caller never chose an action; it defaulted to
-            # DEFAULT_ON_TIMEOUT. Say so, so the rejection does not blame an
-            # on_timeout the caller did not set.
+            # The caller never chose an action, so the rejection must not blame
+            # an on_timeout they did not set. The actionable part — set it to
+            # 'pause' — is true whatever the server's default is, so the default
+            # is left out of the message (it is owned by the API, not the SDK).
             raise InvalidArgumentException(
                 "auto_resume can only be True when on_timeout action is 'pause', "
-                f"but on_timeout was not set and defaults to {DEFAULT_ON_TIMEOUT!r}. "
-                'Set lifecycle on_timeout to "pause" to use auto_resume.'
+                "but on_timeout was not set. "
+                "Set lifecycle on_timeout to 'pause' to use auto_resume."
             )
         raise InvalidArgumentException(
             "auto_resume can only be True when on_timeout action is 'pause' "

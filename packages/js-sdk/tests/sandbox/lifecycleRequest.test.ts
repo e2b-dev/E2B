@@ -127,13 +127,14 @@ test('Sandbox.create omits autoPause for a lifecycle without onTimeout', async (
 test('Sandbox.create rejects autoResume without a timeout action', async () => {
   // An unconfigured onTimeout still resolves to kill semantics locally, so
   // autoResume has no pause to attach to. The message must say onTimeout was
-  // not set (and name the default), not blame an action the caller never chose.
-  await expect(
-    Sandbox.create('base', {
-      apiKey: TEST_API_KEY,
-      lifecycle: { autoResume: true } as never,
-    })
-  ).rejects.toThrowError(/onTimeout was not set and defaults to 'kill'/)
+  // not set, not blame an action the caller never chose.
+  const promise = Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    lifecycle: { autoResume: true } as never,
+  })
+  // Assert both the error class (T-59) and the clarified message.
+  await expect(promise).rejects.toThrowError(InvalidArgumentError)
+  await expect(promise).rejects.toThrowError(/onTimeout was not set/)
 
   expect(lastCreateBody).toBeUndefined()
 })

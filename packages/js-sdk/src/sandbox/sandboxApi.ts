@@ -562,17 +562,6 @@ function snapshotMemory(
  * accepted alongside `action: 'pause'`. Passing `mode` with `action: 'kill'`
  * is a compile-time type error.
  */
-/**
- * The timeout action the API applies when `onTimeout` is omitted. This mirrors
- * the server-side default (`AutoPauseDefault` in e2b-dev/infra, currently
- * `kill`); the SDK does NOT own it. Single source of truth so the assumption
- * lives in one place — if the API default changes, update only here (and its
- * docs). It is never sent to the API: an omitted `onTimeout` leaves `autoPause`
- * unset so the server applies its own default. Used only to resolve local
- * validation in {@link SandboxApi.create}.
- */
-export const DEFAULT_ON_TIMEOUT: 'pause' | 'kill' = 'kill'
-
 export type SandboxOnTimeout =
   | 'pause'
   | 'kill'
@@ -609,6 +598,16 @@ export type SandboxOnTimeout =
       /** Kill the sandbox when the timeout is reached. */
       action: 'kill'
     }
+
+/**
+ * The timeout action the API applies when `onTimeout` is omitted. Mirrors the
+ * server-side default (`AutoPauseDefault` in e2b-dev/infra); the SDK does NOT
+ * own it. Module-private: it is never sent to the API (an omitted `onTimeout`
+ * leaves `autoPause` unset so the server applies its own default) and only
+ * resolves local validation in {@link SandboxApi.create}. Kept in one place so
+ * the assumption lives at a single spot if it ever needs updating.
+ */
+const DEFAULT_ON_TIMEOUT: 'pause' | 'kill' = 'kill'
 
 export type SandboxLifecycle = {
   /**
@@ -1961,7 +1960,7 @@ export class SandboxApi extends ClientFactory {
       throw new InvalidArgumentError(
         onTimeoutConfigured
           ? `autoResume can only be true when onTimeout action is 'pause' (got '${action}').`
-          : `autoResume can only be true when onTimeout action is 'pause', but onTimeout was not set and defaults to '${DEFAULT_ON_TIMEOUT}'. Set lifecycle onTimeout to 'pause' to use autoResume.`
+          : "autoResume can only be true when onTimeout action is 'pause', but onTimeout was not set. Set lifecycle onTimeout to 'pause' to use autoResume."
       )
     }
 
