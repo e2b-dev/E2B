@@ -2,20 +2,6 @@ import { assert, test, describe, vi } from 'vitest'
 import { getSignature, Sandbox } from '../../src'
 import { sandboxTest, isDebug } from '../setup'
 
-/**
- * Recomputes the signature envd expects, independently of the SDK's own
- * implementation. WebCrypto rather than node:crypto so the expectation is
- * computed the same way on every runtime the suite covers.
- */
-async function expectedSignature(raw: string): Promise<string> {
-  const digest = await crypto.subtle.digest(
-    'SHA-256',
-    new TextEncoder().encode(raw)
-  )
-  const base64 = btoa(String.fromCharCode(...new Uint8Array(digest)))
-  return 'v1_' + base64.replace(/=+$/, '')
-}
-
 describe('secure sandbox', () => {
   sandboxTest.skipIf(isDebug)(
     'test access file with signing',
