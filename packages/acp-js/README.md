@@ -43,8 +43,14 @@ try {
   })
 
   await agent.connection.agent.request(methods.agent.initialize, { protocolVersion: PROTOCOL_VERSION })
-  const session = await agent.connection.agent.buildSession('/home/user').start()
-  await session.prompt('Create fizzbuzz.py for 1 to 15 and run it.')
+  const { sessionId } = await agent.connection.agent.request(methods.agent.session.new, {
+    cwd: '/home/user',
+    mcpServers: [],
+  })
+  await agent.connection.agent.request(methods.agent.session.prompt, {
+    sessionId,
+    prompt: [{ type: 'text', text: 'Create fizzbuzz.py for 1 to 15 and run it.' }],
+  })
 
   await agent.stop()
 } finally {
@@ -60,6 +66,6 @@ The agent talks ACP over its stdin and stdout. `AcpAgent.start` turns off the cl
 
 - `agent.stop()` sends EOF to the agent and kills it if it has not exited within `timeoutMs` (5 seconds by default) of the call. Messages the agent sends after that are not delivered.
 - `agent.wait()` resolves with the exit code once the agent exits.
-- Closing the connection with `agent.connection.close()` stops the agent the same way.
+- Closing the connection with `agent.connection.close()` also stops the agent, in the background. Use `agent.stop()` to wait for the agent to stop and to see kill errors.
 - If the agent exits with an error, the connection fails with the exit code and the end of the agent's stderr. Pass `onStderr` to receive its logs.
 - The agent runs as long as the sandbox does, so set the sandbox timeout for the longest task you expect.

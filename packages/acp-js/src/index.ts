@@ -29,7 +29,7 @@ export class AcpAgent {
     private readonly transport: AcpTransport,
     /**
      * Connection to the agent. Use `connection.agent` to initialize, create
-     * sessions and send prompts.
+     * sessions and send prompts. Closing it also stops the agent.
      */
     readonly connection: ClientConnection
   ) {}
@@ -72,8 +72,14 @@ export class AcpAgent {
    * await agent.connection.agent.request(methods.agent.initialize, {
    *   protocolVersion: PROTOCOL_VERSION,
    * })
-   * const session = await agent.connection.agent.buildSession('/home/user').start()
-   * await session.prompt('Create hello.py and run it.')
+   * const { sessionId } = await agent.connection.agent.request(methods.agent.session.new, {
+   *   cwd: '/home/user',
+   *   mcpServers: [],
+   * })
+   * await agent.connection.agent.request(methods.agent.session.prompt, {
+   *   sessionId,
+   *   prompt: [{ type: 'text', text: 'Create hello.py and run it.' }],
+   * })
    * await agent.stop()
    * ```
    */
