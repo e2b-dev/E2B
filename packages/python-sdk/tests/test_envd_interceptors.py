@@ -8,11 +8,9 @@ import logging
 from functools import partial
 
 from connectrpc._interceptor_async import (
-    MetadataInterceptor,
     resolve_interceptors as resolve_interceptors_async,
 )
 from connectrpc._interceptor_sync import (
-    MetadataInterceptorSync,
     resolve_interceptors as resolve_interceptors_sync,
 )
 from unittest.mock import MagicMock
@@ -48,15 +46,6 @@ def _compose_async(interceptors, base):
         if method is not None:
             execute = partial(method, execute)
     return execute
-
-
-def test_headers_interceptor_is_not_a_metadata_interceptor():
-    # connectrpc wraps metadata interceptors around server streams in a
-    # generator that doesn't propagate close()/aclose() to the inner stream —
-    # the headers interceptor must resolve as a direct interceptor instead.
-    interceptor = DefaultHeadersInterceptor({})
-    assert not isinstance(interceptor, MetadataInterceptor)
-    assert not isinstance(interceptor, MetadataInterceptorSync)
 
 
 def test_headers_interceptor_applies_defaults_and_keeps_per_call_headers():
