@@ -1,163 +1,140 @@
 import uuid
 from datetime import datetime, timezone
-from unittest.mock import Mock
 
 import pytest
 
-from e2b import TemplateTag, TemplateTagInfo, Template
+from e2b import Template
 from e2b.exceptions import TemplateException
-import e2b.template_sync.main as template_sync_main
+
+BUILD_ID = "00000000-0000-0000-0000-000000000000"
+
+
+@pytest.fixture
+def api_opts(fake_api, test_api_key):
+    return {"api_key": test_api_key, "api_url": fake_api.url}
 
 
 class TestAssignTags:
     """Tests for Template.assign_tags method."""
 
-    def test_assign_single_tag(self, monkeypatch):
-        """Test assigning a single tag to a template."""
-        mock_assign_tags = Mock(
-            return_value=TemplateTagInfo(
-                build_id="00000000-0000-0000-0000-000000000000",
-                tags=["production"],
-            )
+    def test_assign_single_tag(self, fake_api, api_opts):
+        """A single tag is sent as a one-element list and the response is parsed."""
+        fake_api.route(
+            "POST",
+            "/templates/tags",
+            201,
+            {"buildID": BUILD_ID, "tags": ["production"]},
         )
 
-        monkeypatch.setattr(
-            template_sync_main, "get_api_client", lambda *args, **kwargs: None
-        )
-        monkeypatch.setattr(template_sync_main, "assign_tags", mock_assign_tags)
+        result = Template.assign_tags("my-template:v1.0", "production", **api_opts)
 
-        result = Template.assign_tags("my-template:v1.0", "production")
+        assert fake_api.requests_to("POST", "/templates/tags") == [
+            {"target": "my-template:v1.0", "tags": ["production"]}
+        ]
+        assert result.build_id == BUILD_ID
+        assert result.tags == ["production"]
 
-        assert result.build_id == "00000000-0000-0000-0000-000000000000"
-        assert "production" in result.tags
-        mock_assign_tags.assert_called_once()
-        _, target, tags = mock_assign_tags.call_args[0]
-        assert target == "my-template:v1.0"
-        assert tags == ["production"]
-
-    def test_assign_multiple_tags(self, monkeypatch):
-        """Test assigning multiple tags to a template."""
-        mock_assign_tags = Mock(
-            return_value=TemplateTagInfo(
-                build_id="00000000-0000-0000-0000-000000000000",
-                tags=["production", "stable"],
-            )
+    def test_assign_multiple_tags(self, fake_api, api_opts):
+        """Multiple tags are sent as given and the response is parsed."""
+        fake_api.route(
+            "POST",
+            "/templates/tags",
+            201,
+            {"buildID": BUILD_ID, "tags": ["production", "stable"]},
         )
 
-        monkeypatch.setattr(
-            template_sync_main, "get_api_client", lambda *args, **kwargs: None
+        result = Template.assign_tags(
+            "my-template:v1.0", ["production", "stable"], **api_opts
         )
-        monkeypatch.setattr(template_sync_main, "assign_tags", mock_assign_tags)
 
-        result = Template.assign_tags("my-template:v1.0", ["production", "stable"])
-
-        assert result.build_id == "00000000-0000-0000-0000-000000000000"
-        assert "production" in result.tags
-        assert "stable" in result.tags
-        mock_assign_tags.assert_called_once()
-        _, _, tags = mock_assign_tags.call_args[0]
-        assert tags == ["production", "stable"]
+        assert fake_api.requests_to("POST", "/templates/tags") == [
+            {"target": "my-template:v1.0", "tags": ["production", "stable"]}
+        ]
+        assert result.build_id == BUILD_ID
+        assert result.tags == ["production", "stable"]
 
 
 class TestRemoveTags:
     """Tests for Template.remove_tags method."""
 
-    def test_remove_single_tag(self, monkeypatch):
-        """Test deleting a single tag from a template."""
-        mock_remove_tags = Mock(return_value=None)
+    def test_remove_single_tag(self, fake_api, api_opts):
+        """A single tag is sent as a one-element list."""
+        fake_api.route("DELETE", "/templates/tags", 204)
 
-        monkeypatch.setattr(
-            template_sync_main, "get_api_client", lambda *args, **kwargs: None
+        assert Template.remove_tags("my-template", "production", **api_opts) is None
+
+        assert fake_api.requests_to("DELETE", "/templates/tags") == [
+            {"name": "my-template", "tags": ["production"]}
+        ]
+
+    def test_remove_multiple_tags(self, fake_api, api_opts):
+        """Multiple tags are sent as given."""
+        fake_api.route("DELETE", "/templates/tags", 204)
+
+        Template.remove_tags("my-template", ["production", "staging"], **api_opts)
+
+        assert fake_api.requests_to("DELETE", "/templates/tags") == [
+            {"name": "my-template", "tags": ["production", "staging"]}
+        ]
+
+    def test_remove_tags_error(self, fake_api, api_opts):
+        """A 404 from the API surfaces as a TemplateException."""
+        fake_api.route(
+            "DELETE",
+            "/templates/tags",
+            404,
+            {"code": 404, "message": "Template not found"},
         )
-        monkeypatch.setattr(template_sync_main, "remove_tags", mock_remove_tags)
 
-        Template.remove_tags("my-template", "production")
-
-        mock_remove_tags.assert_called_once()
-        _, name, tags = mock_remove_tags.call_args[0]
-        assert name == "my-template"
-        assert tags == ["production"]
-
-    def test_remove_multiple_tags(self, monkeypatch):
-        """Test deleting multiple tags from a template."""
-        mock_remove_tags = Mock(return_value=None)
-
-        monkeypatch.setattr(
-            template_sync_main, "get_api_client", lambda *args, **kwargs: None
-        )
-        monkeypatch.setattr(template_sync_main, "remove_tags", mock_remove_tags)
-
-        Template.remove_tags("my-template", ["production", "staging"])
-
-        mock_remove_tags.assert_called_once()
-        _, name, tags = mock_remove_tags.call_args[0]
-        assert name == "my-template"
-        assert tags == ["production", "staging"]
-
-    def test_remove_tags_error(self, monkeypatch):
-        """Test that remove_tags raises an error for nonexistent template."""
-        mock_remove_tags = Mock(side_effect=TemplateException("Template not found"))
-
-        monkeypatch.setattr(
-            template_sync_main, "get_api_client", lambda *args, **kwargs: None
-        )
-        monkeypatch.setattr(template_sync_main, "remove_tags", mock_remove_tags)
-
-        with pytest.raises(TemplateException):
-            Template.remove_tags("nonexistent", ["tag"])
+        with pytest.raises(TemplateException, match="404: Template not found"):
+            Template.remove_tags("nonexistent", ["tag"], **api_opts)
 
 
 class TestGetTags:
     """Tests for Template.get_tags method."""
 
-    def test_get_tags(self, monkeypatch):
-        """Test getting tags for a template."""
-        mock_get_template_tags = Mock(
-            return_value=[
-                TemplateTag(
-                    tag="v1.0",
-                    build_id="00000000-0000-0000-0000-000000000000",
-                    created_at=datetime(2024, 1, 15, 10, 30, 0, tzinfo=timezone.utc),
-                ),
-                TemplateTag(
-                    tag="latest",
-                    build_id="11111111-1111-1111-1111-111111111111",
-                    created_at=datetime(2024, 1, 16, 12, 0, 0, tzinfo=timezone.utc),
-                ),
-            ]
+    def test_get_tags(self, fake_api, api_opts):
+        """The API's tag list is parsed into TemplateTag objects."""
+        fake_api.route(
+            "GET",
+            "/templates/my-template/tags",
+            200,
+            [
+                {
+                    "tag": "v1.0",
+                    "buildID": BUILD_ID,
+                    "createdAt": "2024-01-15T10:30:00Z",
+                },
+                {
+                    "tag": "latest",
+                    "buildID": "11111111-1111-1111-1111-111111111111",
+                    "createdAt": "2024-01-16T12:00:00Z",
+                },
+            ],
         )
 
-        monkeypatch.setattr(
-            template_sync_main, "get_api_client", lambda *args, **kwargs: None
-        )
-        monkeypatch.setattr(
-            template_sync_main, "get_template_tags", mock_get_template_tags
-        )
+        result = Template.get_tags("my-template", **api_opts)
 
-        result = Template.get_tags("my-template")
+        assert [(t.tag, t.build_id, t.created_at) for t in result] == [
+            ("v1.0", BUILD_ID, datetime(2024, 1, 15, 10, 30, tzinfo=timezone.utc)),
+            (
+                "latest",
+                "11111111-1111-1111-1111-111111111111",
+                datetime(2024, 1, 16, 12, 0, tzinfo=timezone.utc),
+            ),
+        ]
 
-        assert len(result) == 2
-        assert result[0].tag == "v1.0"
-        assert result[0].build_id == "00000000-0000-0000-0000-000000000000"
-        assert isinstance(result[0].created_at, datetime)
-        assert result[1].tag == "latest"
-        mock_get_template_tags.assert_called_once()
-
-    def test_get_tags_error(self, monkeypatch):
-        """Test that get_tags raises an error for nonexistent template."""
-        mock_get_template_tags = Mock(
-            side_effect=TemplateException("Template not found")
+    def test_get_tags_error(self, fake_api, api_opts):
+        """A 404 from the API surfaces as a TemplateException."""
+        fake_api.route(
+            "GET",
+            "/templates/nonexistent/tags",
+            404,
+            {"code": 404, "message": "Template not found"},
         )
 
-        monkeypatch.setattr(
-            template_sync_main, "get_api_client", lambda *args, **kwargs: None
-        )
-        monkeypatch.setattr(
-            template_sync_main, "get_template_tags", mock_get_template_tags
-        )
-
-        with pytest.raises(TemplateException):
-            Template.get_tags("nonexistent")
+        with pytest.raises(TemplateException, match="404: Template not found"):
+            Template.get_tags("nonexistent", **api_opts)
 
 
 # Integration tests

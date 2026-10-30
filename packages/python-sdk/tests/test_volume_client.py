@@ -6,6 +6,7 @@ from typing import List
 
 import httpx
 import pytest
+from pyqwest import HTTPVersion
 
 from transport_caches import reset_transport_caches
 
@@ -142,44 +143,68 @@ def test_volume_transports_are_the_shared_sdk_pools(test_api_key):
         reset_volume_transports()
 
 
-def test_volume_transports_follow_the_http_version_option(monkeypatch, test_api_key):
+@pytest.fixture
+def built_http_versions(monkeypatch):
+    """The HTTP version each new pyqwest pool is built with. Which version was
+    negotiated is only observable over TLS — the local file server is
+    plaintext, where both settings speak HTTP/1 — so record what reaches the
+    pyqwest transport (`None` leaves it to ALPN, i.e. HTTP/2 against E2B)."""
+    captured: List[object] = []
+    for module, name in (
+        (api_client_sync, "SyncHTTPTransport"),
+        (api_client_async, "HTTPTransport"),
+    ):
+
+        def record(*, _build=getattr(module, name), **kwargs):
+            captured.append(kwargs["http_version"])
+            return _build(**kwargs)
+
+        monkeypatch.setattr(module, name, record)
+    yield captured
     reset_volume_transports()
+
+
+def test_volume_content_calls_follow_the_http_version_option(
+    monkeypatch, built_http_versions
+):
     monkeypatch.delenv("E2B_HTTP_VERSION", raising=False)
-    http1 = VolumeConnectionConfig(token="vol-token", http_version="1.1")
-    api_http1 = ConnectionConfig(api_key=test_api_key, http_version="1.1")
-    default = VolumeConnectionConfig(token="vol-token")
 
-    try:
-        assert default.http_version == "2"
-        assert http1.get_api_params()["http_version"] == "1.1"
-        for get_transport, get_streaming_transport, api in (
-            (get_sync_transport, get_sync_streaming_transport, api_client_sync),
-            (get_async_transport, get_async_streaming_transport, api_client_async),
-        ):
-            assert get_transport(http1) is api.get_transport(api_http1)
-            assert get_transport(http1) is not get_transport(default)
-            assert get_streaming_transport(http1) is api.get_transport(
-                api_http1, for_streaming=True
-            )
-            assert get_streaming_transport(http1) is not get_streaming_transport(
-                default
-            )
-
-        monkeypatch.setenv("E2B_HTTP_VERSION", "1.1")
-        assert VolumeConnectionConfig(token="vol-token").http_version == "1.1"
-        assert Volume("vol-id", "vol")._get_volume_config().http_version == "1.1"
-        assert (
-            Volume("vol-id", "vol", http_version="2")._get_volume_config().http_version
-            == "2"
-        )
-        assert (
-            AsyncVolume("vol-id", "vol", http_version="2")
-            ._get_volume_config()
-            .http_version
-            == "2"
-        )
-    finally:
+    def pools_built_by(read_file) -> List[object]:
         reset_volume_transports()
+        built_http_versions.clear()
+        assert read_file(_start_volume_file_server([0.0])) == CHUNK
+        return list(built_http_versions)
+
+    def sync_read(volume: Volume, **opts):
+        return lambda api_url: volume.read_file(
+            "file.bin", format="bytes", api_url=api_url, **opts
+        )
+
+    def async_read(volume: AsyncVolume, **opts):
+        return lambda api_url: asyncio.run(
+            volume.read_file("file.bin", format="bytes", api_url=api_url, **opts)
+        )
+
+    sync_default = Volume("vol-id", "vol", token="vol-token")
+    sync_http1 = Volume("vol-id", "vol", token="vol-token", http_version="1.1")
+    async_http1 = AsyncVolume("vol-id", "vol", token="vol-token", http_version="1.1")
+
+    assert VolumeConnectionConfig(token="vol-token").http_version == "2"
+    assert pools_built_by(sync_read(sync_default)) == [None]
+    assert pools_built_by(sync_read(sync_http1)) == [HTTPVersion.HTTP1]
+    assert pools_built_by(async_read(async_http1)) == [HTTPVersion.HTTP1]
+    # A per-call value overrides the instance one.
+    assert pools_built_by(sync_read(sync_http1, http_version="2")) == [None]
+    assert pools_built_by(async_read(async_http1, http_version="2")) == [None]
+
+    monkeypatch.setenv("E2B_HTTP_VERSION", "1.1")
+    assert VolumeConnectionConfig(token="vol-token").http_version == "1.1"
+    assert pools_built_by(sync_read(sync_default)) == [HTTPVersion.HTTP1]
+    # An explicit instance value overrides the environment.
+    sync_http2 = Volume("vol-id", "vol", token="vol-token", http_version="2")
+    async_http2 = AsyncVolume("vol-id", "vol", token="vol-token", http_version="2")
+    assert pools_built_by(sync_read(sync_http2)) == [None]
+    assert pools_built_by(async_read(async_http2)) == [None]
 
 
 CHUNK = b"x" * 1024

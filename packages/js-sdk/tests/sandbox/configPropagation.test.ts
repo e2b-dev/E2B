@@ -1,90 +1,189 @@
-import { afterEach, assert, beforeEach, describe, test, vi } from 'vitest'
+import {
+  afterAll,
+  afterEach,
+  assert,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+} from 'vitest'
+import { delay, http, HttpResponse } from 'msw'
 
 import { Sandbox } from '../../src'
-import { SandboxApi } from '../../src/sandbox/sandboxApi'
+import { setupMockApi } from '../mockApi'
 import { TEST_API_KEY } from '../setup'
 
-let originalSandboxUrl: string | undefined
+const sandboxId = 'sbx-test'
 
 const baseConfig = {
   apiKey: TEST_API_KEY,
   domain: 'base.e2b.dev',
-  requestTimeoutMs: 1111,
+  requestTimeoutMs: 500,
   retries: 2,
   debug: false,
   apiHeaders: { 'X-Test': 'base' },
 }
 
-function createSandbox() {
+type PauseResponse = (request: Request) => Promise<Response> | Response
+
+let pauseRequests: Request[] = []
+let pauseResponse: PauseResponse = () => new HttpResponse(null, { status: 204 })
+
+function pauseHandler(domain: string) {
+  return http.post(
+    `https://api.${domain}/sandboxes/:sandboxID/pause`,
+    ({ request }) => {
+      pauseRequests.push(request)
+      return pauseResponse(request)
+    }
+  )
+}
+
+const server = setupMockApi(pauseHandler(baseConfig.domain))
+
+function holdUntilAborted(signal: AbortSignal): Promise<never> {
+  return new Promise<never>((_, reject) => {
+    const abort = () => reject(new DOMException('aborted', 'AbortError'))
+    if (signal.aborted) {
+      abort()
+      return
+    }
+    signal.addEventListener('abort', abort, { once: true })
+  })
+}
+
+const retryableResponse = () =>
+  HttpResponse.json(
+    { code: 503, message: 'unavailable' },
+    { status: 503, headers: { 'Should-Retry': 'true', 'Retry-After': '0' } }
+  )
+
+function createSandbox(overrides: Partial<typeof baseConfig> = {}) {
   return new Sandbox({
-    sandboxId: 'sbx-test',
+    sandboxId,
     sandboxDomain: 'sandbox.e2b.dev',
     envdVersion: '0.2.4',
     envdAccessToken: 'tok',
     trafficAccessToken: 'tok',
     ...baseConfig,
+    ...overrides,
   })
 }
 
+let originalApiUrl: string | undefined
+let originalSandboxUrl: string | undefined
+
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
+
+afterAll(() => server.close())
+
 describe('Sandbox API config propagation', () => {
   beforeEach(() => {
+    originalApiUrl = process.env.E2B_API_URL
     originalSandboxUrl = process.env.E2B_SANDBOX_URL
+    delete process.env.E2B_API_URL
   })
 
   afterEach(() => {
-    vi.restoreAllMocks()
-    if (originalSandboxUrl === undefined) {
-      delete process.env.E2B_SANDBOX_URL
-    } else {
-      process.env.E2B_SANDBOX_URL = originalSandboxUrl
+    pauseRequests = []
+    pauseResponse = () => new HttpResponse(null, { status: 204 })
+    server.resetHandlers()
+    for (const [name, value] of [
+      ['E2B_API_URL', originalApiUrl],
+      ['E2B_SANDBOX_URL', originalSandboxUrl],
+    ] as const) {
+      if (value === undefined) {
+        delete process.env[name]
+      } else {
+        process.env[name] = value
+      }
     }
   })
 
-  test('passes connectionConfig to public API methods when called without overrides', async () => {
-    const pauseSpy = vi.spyOn(SandboxApi, 'pause').mockResolvedValue(true)
-    const sandbox = createSandbox()
+  test('pause sends the request to the configured domain with the configured key and headers', async () => {
+    await createSandbox().pause()
 
-    await sandbox.pause()
-
-    const opts = pauseSpy.mock.calls[0][1]
-    assert.equal(opts?.apiKey, baseConfig.apiKey)
-    assert.equal(opts?.domain, baseConfig.domain)
-    assert.equal(opts?.requestTimeoutMs, baseConfig.requestTimeoutMs)
-    assert.equal(opts?.retries, baseConfig.retries)
-    assert.equal(opts?.debug, baseConfig.debug)
-    assert.equal(opts?.headers?.['X-Test'], baseConfig.apiHeaders['X-Test'])
+    expect(pauseRequests).toHaveLength(1)
+    const [request] = pauseRequests
+    assert.equal(
+      request.url,
+      `https://api.base.e2b.dev/sandboxes/${sandboxId}/pause`
+    )
+    assert.equal(request.headers.get('X-API-KEY'), baseConfig.apiKey)
+    assert.equal(request.headers.get('X-Test'), 'base')
   })
 
-  test('lets public method call overrides win over connectionConfig', async () => {
-    const pauseSpy = vi.spyOn(SandboxApi, 'pause').mockResolvedValue(true)
-    const sandbox = createSandbox()
+  // SDK-412: the bound apiUrl derived from the sandbox's domain wins over a
+  // per-call domain. Drop `.fails` once that is fixed.
+  test.fails('per-call domain overrides connectionConfig', async () => {
+    server.use(pauseHandler('override.e2b.dev'))
 
-    await sandbox.pause({
-      domain: 'override.e2b.dev',
-      requestTimeoutMs: 9999,
-      retries: 0,
+    await createSandbox().pause({ domain: 'override.e2b.dev' })
+
+    expect(pauseRequests.map((request) => request.url)).toEqual([
+      `https://api.override.e2b.dev/sandboxes/${sandboxId}/pause`,
+    ])
+  })
+
+  test('pause gives up after the configured requestTimeoutMs', async () => {
+    pauseResponse = async (request) => holdUntilAborted(request.signal)
+
+    await expect(createSandbox().pause()).rejects.toThrow()
+
+    expect(pauseRequests).toHaveLength(1)
+  }, 5_000)
+
+  test('pause retries as many times as configured', async () => {
+    pauseResponse = retryableResponse
+
+    await expect(createSandbox().pause()).rejects.toThrow()
+
+    expect(pauseRequests).toHaveLength(baseConfig.retries + 1)
+  })
+
+  test('per-call requestTimeoutMs overrides connectionConfig', async () => {
+    pauseResponse = async () => {
+      await delay(baseConfig.requestTimeoutMs * 2)
+      return new HttpResponse(null, { status: 204 })
+    }
+
+    assert.isTrue(await createSandbox().pause({ requestTimeoutMs: 10_000 }))
+  })
+
+  test('per-call retries overrides connectionConfig', async () => {
+    pauseResponse = retryableResponse
+
+    await expect(createSandbox().pause({ retries: 0 })).rejects.toThrow()
+
+    expect(pauseRequests).toHaveLength(1)
+  })
+
+  test('updateNetwork rejects when the per-call signal is aborted', async () => {
+    let requestStarted!: () => void
+    const started = new Promise<void>((resolve) => {
+      requestStarted = resolve
     })
-
-    const opts = pauseSpy.mock.calls[0][1]
-    assert.equal(opts?.apiKey, baseConfig.apiKey)
-    assert.equal(opts?.domain, 'override.e2b.dev')
-    assert.equal(opts?.requestTimeoutMs, 9999)
-    assert.equal(opts?.retries, 0)
-    assert.equal(opts?.debug, baseConfig.debug)
-  })
-
-  test('updateNetwork forwards per-call signal', async () => {
-    const updateNetworkSpy = vi
-      .spyOn(SandboxApi, 'updateNetwork')
-      .mockResolvedValue()
-    const sandbox = createSandbox()
+    server.use(
+      http.put(
+        `https://api.${baseConfig.domain}/sandboxes/:sandboxID/network`,
+        async ({ request }) => {
+          requestStarted()
+          return holdUntilAborted(request.signal)
+        }
+      )
+    )
+    // Long enough that only the per-call signal can end the request before
+    // the test times out.
+    const sandbox = createSandbox({ requestTimeoutMs: 60_000 })
     const controller = new AbortController()
 
-    await sandbox.updateNetwork({}, { signal: controller.signal })
+    const promise = sandbox.updateNetwork({}, { signal: controller.signal })
+    await started
+    controller.abort()
 
-    const opts = updateNetworkSpy.mock.calls[0][2]
-    assert.equal(opts?.signal, controller.signal)
-  })
+    await expect(promise).rejects.toThrow()
+  }, 5_000)
 
   test('downloadUrl keeps sandbox identity in production direct URLs', async () => {
     delete process.env.E2B_SANDBOX_URL

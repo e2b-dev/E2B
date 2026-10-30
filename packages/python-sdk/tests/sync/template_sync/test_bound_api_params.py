@@ -8,7 +8,7 @@ import e2b.template_sync.build_api as template_sync_build_api
 from e2b import Template, TemplateTagInfo
 from e2b.api.client.types import UNSET
 from e2b.connection_config import ApiParams
-from e2b.template.types import BuildInfo
+from e2b.exceptions import FileUploadException
 
 BOUND_API_KEY = "e2b_" + "1" * 40
 BOUND_DOMAIN = "bound.example.com"
@@ -105,51 +105,73 @@ def test_none_per_call_params_keep_bound_params(configs):
     assert configs[0].domain == BOUND_DOMAIN
 
 
-def test_build_resolves_build_impl_and_config_off_cls(configs, monkeypatch):
-    build_info = BuildInfo(
-        template_id="template-id",
-        build_id="build-id",
-        alias="my-template",
-        name="my-template",
-        tags=[],
+def _route_build(fake_api):
+    fake_api.route(
+        "POST",
+        "/v3/templates",
+        202,
+        {
+            "templateID": "template-id",
+            "buildID": "build-id",
+            "public": False,
+            "names": ["my-template"],
+            "tags": [],
+            "aliases": [],
+        },
     )
-    mock_build = Mock(return_value=build_info)
-    monkeypatch.setattr(BoundTemplate, "_build", staticmethod(mock_build))
+    fake_api.route("POST", "/v2/templates/template-id/builds/build-id", 202)
 
-    assert (
-        BoundTemplate.build_in_background(
-            Template().from_base_image(), "my-template", min_free_disk_mb=0
-        )
-        is build_info
+
+def test_bound_build_in_background_sends_bound_credentials_and_options(fake_api):
+    _route_build(fake_api)
+
+    build_info = BoundTemplate.build_in_background(
+        Template().from_base_image(),
+        "my-template",
+        min_free_disk_mb=0,
+        api_url=fake_api.url,
     )
 
-    mock_build.assert_called_once()
-    assert configs[0].api_key == BOUND_API_KEY
-    assert configs[0].domain == BOUND_DOMAIN
-    assert mock_build.call_args.kwargs["min_free_disk_mb"] == 0
+    assert (build_info.template_id, build_info.build_id) == ("template-id", "build-id")
+    assert [m for m, *_ in fake_api.requests] == ["POST", "POST"]
+    assert {h.get("x-api-key") for _, _, h, _ in fake_api.requests} == {BOUND_API_KEY}
+    assert fake_api.requests_to("POST", "/v3/templates") == [
+        {"name": "my-template", "minFreeDiskMb": 0}
+    ]
 
 
-def test_bound_request_timeout_reaches_the_build(configs, monkeypatch):
+def test_bound_request_timeout_bounds_the_file_upload(fake_api, tmp_path):
+    (tmp_path / "hello.txt").write_text("hello world")
+    template = (
+        Template(file_context_path=tmp_path)
+        .from_base_image()
+        .copy("hello.txt", "/app/")
+    )
+
+    _route_build(fake_api)
+    fake_api.route(
+        "GET",
+        "/templates/template-id/files/*",
+        201,
+        {"present": False, "url": f"{fake_api.url}/upload"},
+    )
+    # Storage that answers well after the bound timeout but well within the
+    # 1-hour default upload timeout.
+    fake_api.route("PUT", "/upload", 200, delay=5)
+
     class TimeoutTemplate(Template):
         _bound_api_params: ApiParams = {
             "api_key": BOUND_API_KEY,
-            "request_timeout": 12.5,
+            "api_url": fake_api.url,
+            "request_timeout": 1.0,
         }
 
-    mock_build = Mock(
-        return_value=BuildInfo(
-            template_id="template-id",
-            build_id="build-id",
-            alias="my-template",
-            name="my-template",
-            tags=[],
-        )
+    with pytest.raises(FileUploadException, match="timed out"):
+        TimeoutTemplate.build_in_background(template, "my-template")
+
+    assert (
+        fake_api.requests_to("POST", "/v2/templates/template-id/builds/build-id") == []
     )
-    monkeypatch.setattr(TimeoutTemplate, "_build", staticmethod(mock_build))
-
-    TimeoutTemplate.build_in_background(Template().from_base_image(), "my-template")
-
-    assert mock_build.call_args.kwargs["request_timeout"] == 12.5
 
 
 @pytest.mark.parametrize("method", ["build", "build_in_background"])
