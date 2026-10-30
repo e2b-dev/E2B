@@ -132,13 +132,17 @@ async def test_pause_applies_header_overrides(fake_api, test_api_key):
 @pytest.mark.xfail(
     strict=True, reason="SDK-412: per-call domain is ignored on instance methods"
 )
-async def test_pause_domain_override_wins(fake_api, test_api_key):
-    sandbox = await create_sandbox(test_api_key, fake_api())
+async def test_pause_domain_override_wins(test_api_key):
+    # A debug connect skips the API, so the instance's API URL stays the one
+    # derived from its domain (as after a real create/connect), not explicit.
+    sandbox = await AsyncSandbox.connect(
+        "sbx-test", api_key=test_api_key, domain=BASE_DOMAIN, debug=True
+    )
 
     with connect_recording_proxy() as (proxy, targets):
         # The proxy refuses the tunnel, so the call fails; only the target matters.
         with pytest.raises(Exception):
-            await sandbox.pause(domain="override.e2b.dev", proxy=proxy)
+            await sandbox.pause(domain="override.e2b.dev", debug=False, proxy=proxy)
 
     # Connection-level retries may open the tunnel more than once.
     assert targets and set(targets) == {"api.override.e2b.dev:443"}
