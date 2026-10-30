@@ -155,3 +155,30 @@ test.for(RUNTIME_PROBED_PROPS)(
     expect(String(tokens)).toBe('[object Object]')
   }
 )
+
+test.for(RUNTIME_PROBED_PROPS)(
+  'reading the unregistered token %s throws instead of resolving',
+  (prop: string) => {
+    const tokens = iamTokenPlaceholders(['aws'], { validate: true })
+
+    expect(() => `${tokens[prop]}`).toThrowError(
+      `iam token '${prop}', which is not registered`
+    )
+    expect(() => String(tokens[prop])).toThrowError(InvalidArgumentError)
+    // Assigned straight through, a header value is serialized, not coerced.
+    expect(() => JSON.stringify({ header: tokens[prop] })).toThrowError(
+      InvalidArgumentError
+    )
+  }
+)
+
+test('the runtime-probed valueOf answers with the guarded map', () => {
+  // It stays callable for `String(iam.tokens)`, so it must not hand out the
+  // unguarded record.
+  const tokens = iamTokenPlaceholders(['aws'], { validate: true })
+
+  expect(tokens.valueOf().aws).toBe('${e2b.identity.tokens.aws}')
+  expect(() => `${tokens.valueOf().gcp}`).toThrowError(
+    /iam token 'gcp'.*Registered tokens: 'aws'/s
+  )
+})
