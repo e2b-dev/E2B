@@ -125,13 +125,9 @@ from .sandbox_async.filesystem.watch_handle import AsyncWatchHandle
 from .sandbox_async.main import AsyncSandbox
 from .sandbox_async.paginator import AsyncSandboxPaginator, AsyncSnapshotPaginator
 from .sandbox_async.utils import OutputHandler
-from .secret import (
-    AsyncSecret,
-    AsyncSecretPaginator,
-    Secret,
-    SecretInfo,
-    SecretPaginator,
-)
+from .secret.types import SecretInfo
+from .secret_async.main import AsyncSecret, AsyncSecretPaginator
+from .secret_sync.main import Secret, SecretPaginator
 from .sandbox_sync.commands.command_handle import CommandHandle
 from .sandbox_sync.filesystem.watch_handle import WatchHandle
 from .sandbox_sync.main import Sandbox

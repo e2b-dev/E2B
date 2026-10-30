@@ -15,10 +15,10 @@ from e2b.api.client.models import (
     SecretUpdate as SecretUpdateModel,
 )
 from e2b.api.client.types import UNSET
-from e2b.api.client_sync import get_api_client
+from e2b.api.client_async import get_api_client
 from e2b.connection_config import ApiParams, ConnectionConfig, merge_api_params
 from e2b.exceptions import SecretException, SecretNotFoundException
-from e2b.secret.base import SecretBase, SecretPaginatorBase
+from e2b.secret.main import SecretBase, SecretPaginatorBase
 from e2b.secret.types import SecretInfo
 
 
@@ -29,21 +29,21 @@ def _metadata_model(metadata: Optional[Dict[str, str]]) -> SecretMetadataModel:
     return model
 
 
-class SecretPaginator(SecretPaginatorBase):
+class AsyncSecretPaginator(SecretPaginatorBase):
     """
     Paginator for listing secrets.
 
     Example:
     ```python
-    paginator = Secret.list()
+    paginator = AsyncSecret.list()
 
     while paginator.has_next:
-        secrets = paginator.next_items()
+        secrets = await paginator.next_items()
         print(secrets)
     ```
     """
 
-    def next_items(self, **opts: Unpack[ApiParams]) -> List[SecretInfo]:
+    async def next_items(self, **opts: Unpack[ApiParams]) -> List[SecretInfo]:
         """
         Returns the next page of secrets.
 
@@ -60,7 +60,7 @@ class SecretPaginator(SecretPaginatorBase):
 
         config = ConnectionConfig(**merge_api_params(self._opts, opts))
         api_client = get_api_client(config)
-        res = get_secrets.sync_detailed(
+        res = await get_secrets.asyncio_detailed(
             client=api_client,
             limit=self.limit if self.limit else UNSET,
             next_token=self._next_token if self._next_token else UNSET,
@@ -80,7 +80,7 @@ class SecretPaginator(SecretPaginatorBase):
         return [SecretInfo._from_model(secret) for secret in res.parsed]
 
 
-class Secret(SecretBase):
+class AsyncSecret(SecretBase):
     """
     Module for managing E2B secrets and workload identity helpers.
 
@@ -89,7 +89,7 @@ class Secret(SecretBase):
     """
 
     @classmethod
-    def create(
+    async def create(
         cls,
         name: str,
         value: str,
@@ -108,7 +108,7 @@ class Secret(SecretBase):
         """
         config = ConnectionConfig(**cls._resolve_api_params(**opts))
         api_client = get_api_client(config)
-        res = post_secrets.sync_detailed(
+        res = await post_secrets.asyncio_detailed(
             client=api_client,
             body=NewSecretModel(
                 name=name,
@@ -129,7 +129,7 @@ class Secret(SecretBase):
         return SecretInfo._from_model(res.parsed)
 
     @classmethod
-    def update(
+    async def update(
         cls,
         secret: str,
         value: str,
@@ -149,7 +149,7 @@ class Secret(SecretBase):
         """
         config = ConnectionConfig(**cls._resolve_api_params(**opts))
         api_client = get_api_client(config)
-        res = post_secrets_secret_id.sync_detailed(
+        res = await post_secrets_secret_id.asyncio_detailed(
             secret,
             client=api_client,
             body=SecretUpdateModel(
@@ -173,7 +173,7 @@ class Secret(SecretBase):
         return SecretInfo._from_model(res.parsed)
 
     @classmethod
-    def get_info(cls, secret: str, **opts: Unpack[ApiParams]) -> SecretInfo:
+    async def get_info(cls, secret: str, **opts: Unpack[ApiParams]) -> SecretInfo:
         """
         Get a secret's metadata.
 
@@ -184,7 +184,7 @@ class Secret(SecretBase):
         """
         config = ConnectionConfig(**cls._resolve_api_params(**opts))
         api_client = get_api_client(config)
-        res = get_secrets_secret_id.sync_detailed(
+        res = await get_secrets_secret_id.asyncio_detailed(
             secret,
             client=api_client,
         )
@@ -209,7 +209,7 @@ class Secret(SecretBase):
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
         **opts: Unpack[ApiParams],
-    ) -> SecretPaginator:
+    ) -> AsyncSecretPaginator:
         """
         List the project's secrets.
 
@@ -219,19 +219,19 @@ class Secret(SecretBase):
         :return: Paginator over the project's secrets. Drain it page by page:
 
             ```python
-            paginator = Secret.list(limit=50)
+            paginator = AsyncSecret.list(limit=50)
             while paginator.has_next:
-                secrets = paginator.next_items()
+                secrets = await paginator.next_items()
             ```
         """
-        return SecretPaginator(
+        return AsyncSecretPaginator(
             limit=limit,
             next_token=next_token,
             **cls._resolve_api_params(**opts),
         )
 
     @classmethod
-    def exists(cls, secret: str, **opts: Unpack[ApiParams]) -> bool:
+    async def exists(cls, secret: str, **opts: Unpack[ApiParams]) -> bool:
         """
         Check whether a secret exists.
 
@@ -240,13 +240,13 @@ class Secret(SecretBase):
         :return: `True` if the secret exists, `False` otherwise.
         """
         try:
-            cls.get_info(secret, **opts)
+            await cls.get_info(secret, **opts)
             return True
         except SecretNotFoundException:
             return False
 
     @classmethod
-    def destroy(cls, secret: str, **opts: Unpack[ApiParams]) -> bool:
+    async def destroy(cls, secret: str, **opts: Unpack[ApiParams]) -> bool:
         """
         Destroy a secret, making all its versions inaccessible.
 
@@ -256,7 +256,7 @@ class Secret(SecretBase):
         """
         config = ConnectionConfig(**cls._resolve_api_params(**opts))
         api_client = get_api_client(config)
-        res = delete_secrets_secret_id.sync_detailed(
+        res = await delete_secrets_secret_id.asyncio_detailed(
             secret,
             client=api_client,
         )

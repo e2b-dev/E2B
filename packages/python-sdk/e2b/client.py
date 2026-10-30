@@ -3,7 +3,8 @@ from typing import Dict, Type, TypeVar, Unpack, cast
 from e2b.connection_config import ApiParams
 from e2b.sandbox_async.main import AsyncSandbox
 from e2b.sandbox_sync.main import Sandbox
-from e2b.secret import AsyncSecret, Secret
+from e2b.secret_async.main import AsyncSecret
+from e2b.secret_sync.main import Secret
 from e2b.template_async.main import AsyncTemplate
 from e2b.template_sync.main import Template
 from e2b.volume.volume_async import AsyncVolume
