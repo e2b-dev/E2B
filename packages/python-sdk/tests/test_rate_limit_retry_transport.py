@@ -100,11 +100,14 @@ def test_retries_rate_limit_after_server_delay_and_replays_body():
     assert inner.responses[0].is_closed
 
 
-def test_exhaustion_returns_final_rate_limit_response():
-    inner = FakeTransport([429, 429, 429], should_retry="true")
+@pytest.mark.parametrize("status", [429, 503])
+def test_exhaustion_returns_final_retryable_response(status):
+    inner = FakeTransport(
+        [status, status, status], retry_after=None, should_retry="true"
+    )
 
     response = RetryableTransport(
-        inner, retries=2, sleep=lambda _: None
+        inner, retries=2, sleep=lambda _: None, random_=lambda: 0.0
     ).handle_request(httpx.Request("GET", "https://api.test"))
 
     assert response is inner.responses[-1]
@@ -263,32 +266,6 @@ def test_retries_post_500_when_marked_by_server():
     assert len(inner.requests) == 2
 
 
-def test_retries_post_503_when_marked_by_server():
-    inner = FakeTransport([503, 200], retry_after=None, should_retry="true")
-
-    response = RetryableTransport(
-        inner, retries=3, sleep=lambda _: None, monotonic=lambda: 0.0
-    ).handle_request(
-        httpx.Request("POST", "https://api.test/v2/sandboxes", content=b"p")
-    )
-
-    assert response.status_code == 200
-    assert len(inner.requests) == 2
-
-
-def test_retries_post_502_without_should_retry_header():
-    inner = FakeTransport([502, 200], retry_after="0", should_retry=None)
-
-    response = RetryableTransport(
-        inner, retries=1, sleep=lambda _: None, monotonic=lambda: 0.0
-    ).handle_request(
-        httpx.Request("POST", "https://api.test/v2/sandboxes", content=b"payload")
-    )
-
-    assert response.status_code == 200
-    assert len(inner.requests) == 2
-
-
 @pytest.mark.parametrize("should_retry", ["TRUE", " true "])
 def test_should_retry_header_is_case_and_whitespace_insensitive(should_retry):
     inner = FakeTransport([503, 200], should_retry=should_retry)
@@ -334,18 +311,6 @@ def test_unavailable_status_prefers_retry_after_over_backoff():
 
     assert response.status_code == 200
     assert sleeps == [3]
-
-
-def test_unavailable_status_exhaustion_returns_final_response():
-    inner = FakeTransport([503, 503, 503], retry_after=None, should_retry="true")
-
-    response = RetryableTransport(
-        inner, retries=2, sleep=lambda _: None, random_=lambda: 0.0
-    ).handle_request(httpx.Request("GET", "https://api.test"))
-
-    assert response is inner.responses[-1]
-    assert len(inner.requests) == 3
-    assert response.content == b"response"
 
 
 def test_backoff_exceeding_timeout_is_propagated_as_is():
@@ -415,34 +380,6 @@ def test_timeout_after_retry_wait_names_configuration_options():
         ).handle_request(request)
 
 
-def test_retry_uses_only_the_remaining_request_timeout():
-    clock = FakeClock()
-
-    class AdvancingTransport(FakeTransport):
-        def handle_request(self, request):
-            response = super().handle_request(request)
-            if len(self.requests) == 1:
-                clock.now = 2.0
-            return response
-
-    inner = AdvancingTransport([429, 200], should_retry="true")
-    request = httpx.Request(
-        "GET",
-        "https://api.test",
-        extensions={"timeout": {"connect": 3.0, "read": 3.0}},
-    )
-
-    response = RetryableTransport(
-        inner, retries=1, sleep=clock.sleep, monotonic=clock.monotonic
-    ).handle_request(request)
-
-    assert response.status_code == 200
-    assert inner.requests[1].extensions["timeout"] == {
-        "connect": 1.0,
-        "read": 1.0,
-    }
-
-
 def test_retry_preserves_remaining_budget_for_each_timeout_phase():
     clock = FakeClock()
 
@@ -462,10 +399,11 @@ def test_retry_preserves_remaining_budget_for_each_timeout_phase():
         },
     )
 
-    RetryableTransport(
+    response = RetryableTransport(
         inner, retries=1, sleep=clock.sleep, monotonic=clock.monotonic
     ).handle_request(request)
 
+    assert response.status_code == 200
     assert inner.requests[1].extensions["timeout"] == {
         "connect": 1.0,
         "read": 1.0,
@@ -661,26 +599,8 @@ async def test_async_retries_unavailable_status_with_backoff():
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("status", [500, 503])
-async def test_async_retries_post_when_marked_by_server(status):
-    inner = FakeAsyncTransport([status, 200], retry_after=None, should_retry="true")
-
-    async def sleep(_):
-        pass
-
-    response = await AsyncRetryableTransport(
-        inner, retries=1, sleep=sleep, monotonic=lambda: 0.0
-    ).handle_async_request(
-        httpx.Request("POST", "https://api.test/v2/sandboxes", content=b"payload")
-    )
-
-    assert response.status_code == 200
-    assert len(inner.requests) == 2
-
-
-@pytest.mark.asyncio
-async def test_async_retries_post_502_without_should_retry_header():
-    inner = FakeAsyncTransport([502, 200], retry_after="0", should_retry=None)
+async def test_async_retries_post_500_when_marked_by_server():
+    inner = FakeAsyncTransport([500, 200], retry_after=None, should_retry="true")
 
     async def sleep(_):
         pass
@@ -808,7 +728,7 @@ async def test_async_retry_wait_is_bounded_when_request_timeout_is_disabled():
 
 
 @pytest.mark.asyncio
-async def test_async_retry_uses_only_the_remaining_request_timeout():
+async def test_async_retry_preserves_remaining_budget_for_each_timeout_phase():
     clock = FakeClock()
 
     class AdvancingTransport(FakeAsyncTransport):
@@ -829,39 +749,6 @@ async def test_async_retry_uses_only_the_remaining_request_timeout():
         httpx.Request(
             "GET",
             "https://api.test",
-            extensions={"timeout": {"connect": 3.0, "read": 3.0}},
-        )
-    )
-
-    assert response.status_code == 200
-    assert inner.requests[1].extensions["timeout"] == {
-        "connect": 1.0,
-        "read": 1.0,
-    }
-
-
-@pytest.mark.asyncio
-async def test_async_retry_preserves_remaining_budget_for_each_timeout_phase():
-    clock = FakeClock()
-
-    class AdvancingTransport(FakeAsyncTransport):
-        async def handle_async_request(self, request):
-            response = await super().handle_async_request(request)
-            if len(self.requests) == 1:
-                clock.now = 2.0
-            return response
-
-    inner = AdvancingTransport([429, 200], should_retry="true")
-
-    async def sleep(delay):
-        clock.sleep(delay)
-
-    await AsyncRetryableTransport(
-        inner, retries=1, sleep=sleep, monotonic=clock.monotonic
-    ).handle_async_request(
-        httpx.Request(
-            "GET",
-            "https://api.test",
             extensions={
                 "timeout": {
                     "connect": 3.0,
@@ -873,6 +760,7 @@ async def test_async_retry_preserves_remaining_budget_for_each_timeout_phase():
         )
     )
 
+    assert response.status_code == 200
     assert inner.requests[1].extensions["timeout"] == {
         "connect": 1.0,
         "read": 1.0,

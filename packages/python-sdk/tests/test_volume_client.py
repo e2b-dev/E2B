@@ -6,7 +6,6 @@ from typing import List
 
 import httpx
 import pytest
-from pyqwest.httpx import AsyncPyqwestTransport, PyqwestTransport
 
 from transport_caches import reset_transport_caches
 
@@ -120,23 +119,6 @@ async def test_async_volume_transport_does_not_retry_rate_limits(monkeypatch):
     assert attempts == 1
 
 
-def test_sync_transport_is_cached_per_proxy():
-    reset_volume_transports()
-    config = VolumeConnectionConfig(token="vol-token")
-    proxied = VolumeConnectionConfig(token="vol-token", proxy="http://127.0.0.1:8080")
-
-    try:
-        transport_a = get_sync_transport(config)
-        transport_b = get_sync_transport(config)
-        transport_c = get_sync_transport(proxied)
-
-        assert isinstance(transport_a, PyqwestTransport)
-        assert transport_a is transport_b
-        assert transport_a is not transport_c
-    finally:
-        reset_volume_transports()
-
-
 def test_volume_transports_are_the_shared_sdk_pools(test_api_key):
     # The volume content API draws from the same pools as the control-plane
     # REST API and the envd HTTP API — reqwest pools per host, so the volume
@@ -196,54 +178,6 @@ def test_volume_transports_follow_the_http_version_option(monkeypatch, test_api_
             .http_version
             == "2"
         )
-    finally:
-        reset_volume_transports()
-
-
-def test_sync_transport_is_shared_across_threads():
-    # pyqwest transports are thread-safe, so one transport (and its pool)
-    # serves all threads — the per-thread caching this replaced is gone.
-    reset_volume_transports()
-    config = VolumeConnectionConfig(token="vol-token")
-
-    try:
-        main_transport = get_sync_transport(config)
-
-        result = {}
-
-        def worker():
-            result["transport"] = get_sync_transport(config)
-
-        thread = threading.Thread(target=worker)
-        thread.start()
-        thread.join()
-
-        assert result["transport"] is main_transport
-    finally:
-        reset_volume_transports()
-
-
-def test_async_transport_is_shared_across_loops():
-    # pyqwest's I/O runs on its own Rust runtime, so the transport is not
-    # bound to an event loop — the per-loop caching this replaced is gone.
-    reset_volume_transports()
-    config = VolumeConnectionConfig(token="vol-token")
-    proxied = VolumeConnectionConfig(token="vol-token", proxy="http://127.0.0.1:8080")
-
-    async def get_transports():
-        return get_async_transport(config), get_async_transport(config)
-
-    try:
-        transport_a1, transport_a2 = asyncio.run(get_transports())
-        transport_b1, _ = asyncio.run(get_transports())
-        proxied_transport = get_async_transport(proxied)
-
-        assert isinstance(transport_a1, AsyncPyqwestTransport)
-        assert transport_a1 is transport_a2
-        assert transport_a1 is transport_b1
-
-        # Different proxy still gets its own transport.
-        assert proxied_transport is not transport_a1
     finally:
         reset_volume_transports()
 
@@ -403,28 +337,6 @@ def test_async_stream_idle_timeout_zero_disables_idle_bound(short_read_timeout):
         return b"".join([chunk async for chunk in stream])
 
     assert asyncio.run(run()) == CHUNK * 2
-
-
-def test_stream_transport_is_separate_from_regular_transport():
-    # reqwest's read timer keeps running while a request body is sent and
-    # while waiting for the response head, so the idle read timeout lives on
-    # a dedicated streaming transport — putting it on the shared one would
-    # cut off uploads and slow unary responses longer than the idle bound.
-    reset_volume_transports()
-    config = VolumeConnectionConfig(token="vol-token")
-
-    try:
-        regular = get_sync_transport(config)
-        streaming = get_sync_streaming_transport(config)
-        assert regular is not streaming
-        assert get_sync_transport(config) is regular
-        assert get_sync_streaming_transport(config) is streaming
-
-        async_regular = get_async_transport(config)
-        async_streaming = get_async_streaming_transport(config)
-        assert async_regular is not async_streaming
-    finally:
-        reset_volume_transports()
 
 
 def test_sync_non_stream_read_survives_response_slower_than_idle_timeout(

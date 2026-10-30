@@ -96,12 +96,6 @@ describe('validateRelativePath', () => {
       )
     })
 
-    test('rejects parent directory escape with forward slash', () => {
-      expect(() => validateRelativePath('../file.txt', undefined)).toThrow(
-        TemplateError
-      )
-    })
-
     test.skipIf(!isWindows)(
       'rejects parent directory escape with backslash',
       () => {

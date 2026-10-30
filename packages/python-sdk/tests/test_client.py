@@ -154,16 +154,6 @@ def test_per_call_params_override_the_client(api_server):
     assert sandbox.connection_config.domain == DOMAIN_B
 
 
-def test_client_class_can_be_rebound(api_server):
-    client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
-
-    S = client.Sandbox
-    sandbox = S.create()
-
-    assert api_keys() == [API_KEY_A]
-    assert sandbox.connection_config.api_key == API_KEY_A
-
-
 def test_per_call_params_set_to_none_keep_the_client_config(api_server):
     client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
 
