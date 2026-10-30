@@ -7,6 +7,7 @@ from unittest.mock import Mock
 
 import httpx
 import pytest
+from local_api_server import connect_recording_proxy
 
 from e2b import Sandbox
 from e2b.api import SandboxCreateResponse
@@ -115,18 +116,32 @@ def test_pause_passes_connection_config_without_overrides(fake_api, test_api_key
 
 
 @pytest.mark.skip_debug()
-def test_pause_applies_overrides(fake_api, test_api_key):
-    base_api_url = fake_api()
-    override_api_url = fake_api()
-    sandbox = create_sandbox(test_api_key, base_api_url)
+def test_pause_applies_header_overrides(fake_api, test_api_key):
+    api_url = fake_api()
+    sandbox = create_sandbox(test_api_key, api_url)
 
-    assert sandbox.pause(api_url=override_api_url, api_headers={"X-Extra": "1"}) is True
+    assert sandbox.pause(api_headers={"X-Extra": "1"}) is True
 
-    assert pause_requests_to(base_api_url) == []
-    [headers] = pause_requests_to(override_api_url)
+    [headers] = pause_requests_to(api_url)
     assert headers["x-api-key"] == test_api_key
     assert headers["x-test"] == BASE_HEADERS["X-Test"]
     assert headers["x-extra"] == "1"
+
+
+@pytest.mark.skip_debug()
+@pytest.mark.xfail(
+    strict=True, reason="SDK-412: per-call domain is ignored on instance methods"
+)
+def test_pause_domain_override_wins(fake_api, test_api_key):
+    sandbox = create_sandbox(test_api_key, fake_api())
+
+    with connect_recording_proxy() as (proxy, targets):
+        # The proxy refuses the tunnel, so the call fails; only the target matters.
+        with pytest.raises(Exception):
+            sandbox.pause(domain="override.e2b.dev", proxy=proxy)
+
+    # Connection-level retries may open the tunnel more than once.
+    assert targets and set(targets) == {"api.override.e2b.dev:443"}
 
 
 @pytest.mark.skip_debug()

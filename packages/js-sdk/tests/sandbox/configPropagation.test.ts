@@ -114,6 +114,18 @@ describe('Sandbox API config propagation', () => {
     assert.equal(request.headers.get('X-Test'), 'base')
   })
 
+  // SDK-412: the bound apiUrl derived from the sandbox's domain wins over a
+  // per-call domain. Drop `.fails` once that is fixed.
+  test.fails('per-call domain overrides connectionConfig', async () => {
+    server.use(pauseHandler('override.e2b.dev'))
+
+    await createSandbox().pause({ domain: 'override.e2b.dev' })
+
+    expect(pauseRequests.map((request) => request.url)).toEqual([
+      `https://api.override.e2b.dev/sandboxes/${sandboxId}/pause`,
+    ])
+  })
+
   test('pause gives up after the configured requestTimeoutMs', async () => {
     pauseResponse = async (request) => holdUntilAborted(request.signal)
 

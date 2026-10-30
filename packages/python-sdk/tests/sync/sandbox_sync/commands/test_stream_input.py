@@ -7,10 +7,9 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Dict, List, Tuple, cast
 
 import pytest
-from packaging.version import Version
 
 from e2b import InvalidArgumentException, NotFoundException, Sandbox, TimeoutException
-from e2b.connection_config import ConnectionConfig
+from local_api_server import API_KEY, SANDBOX_RESPONSE, Reply, local_api_server
 
 
 def test_stream_input_to_command(sandbox: Sandbox):
@@ -103,24 +102,26 @@ class _FakeEnvdHandler(BaseHTTPRequestHandler):
         self.wfile.write(payload)
 
 
+def _connect_reply(method: str, path: str) -> Reply:
+    if method == "POST" and path == "/v2/sandboxes/sbx-test/connect":
+        return 201, {**SANDBOX_RESPONSE, "envdVersion": "0.5.0"}, None
+    return 404, {"code": 404, "message": "not found"}, None
+
+
 @pytest.fixture
-def fake_envd_sandbox(test_api_key):
+def fake_envd_sandbox():
     _FakeEnvdHandler.requests = []
     server = ThreadingHTTPServer(("127.0.0.1", 0), _FakeEnvdHandler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
-        yield Sandbox(
-            sandbox_id="sbx-test",
-            sandbox_domain="sandbox.e2b.dev",
-            envd_version=Version("0.5.0"),
-            envd_access_token="tok",
-            traffic_access_token="tok",
-            connection_config=ConnectionConfig(
-                api_key=test_api_key,
+        with local_api_server(_connect_reply) as api:
+            yield Sandbox.connect(
+                "sbx-test",
+                api_key=API_KEY,
+                api_url=api.url,
                 sandbox_url=f"http://127.0.0.1:{server.server_port}",
-            ),
-        )
+            )
     finally:
         server.shutdown()
         server.server_close()

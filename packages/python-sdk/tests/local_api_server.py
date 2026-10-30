@@ -86,3 +86,29 @@ def create_sandbox_reply(method: str, path: str) -> Reply:
     if method == "POST" and path.startswith("/v2/sandboxes"):
         return 201, SANDBOX_RESPONSE, None
     return 404, {"code": 404, "message": "not found"}, None
+
+
+@contextlib.contextmanager
+def connect_recording_proxy() -> Iterator[Tuple[str, List[str]]]:
+    """HTTP proxy that records each CONNECT target (``host:port``) and refuses
+    the tunnel with 502, so tests can see which host an HTTPS request was for."""
+    targets: List[str] = []
+
+    class Handler(BaseHTTPRequestHandler):
+        def log_message(self, *args):  # silence the default stderr log
+            pass
+
+        def do_CONNECT(self):
+            targets.append(self.path)
+            self.send_response(502)
+            self.end_headers()
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{server.server_port}", targets
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join()
