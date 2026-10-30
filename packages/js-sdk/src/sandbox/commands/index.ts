@@ -30,7 +30,6 @@ import { SandboxError } from '../../errors'
 import { CommandHandle, CommandOutput, CommandResult } from './commandHandle'
 import { CommandInputHandle, CommandStreamInputOpts } from './inputHandle'
 export { Pty } from './pty'
-export { CommandInputHandle }
 export type { CommandStreamInputOpts }
 
 /**

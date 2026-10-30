@@ -46,7 +46,7 @@ export const DOCS_BASE =
   process.env.E2B_DOCS_BASE ||
   `https://${process.env.E2B_DOMAIN || 'e2b.dev'}/docs`
 
-export const DASHBOARD_BASE =
+const DASHBOARD_BASE =
   process.env.E2B_DASHBOARD_BASE ||
   `https://${process.env.E2B_DOMAIN || 'e2b.dev'}/dashboard`
 

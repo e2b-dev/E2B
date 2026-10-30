@@ -3,7 +3,7 @@ import * as toml from '@iarna/toml'
 import * as fsPromise from 'fs/promises'
 import * as path from 'path'
 
-export const configName = 'e2b.toml'
+const configName = 'e2b.toml'
 
 export const configSchema = yup.object({
   template_id: yup.string().required(),
