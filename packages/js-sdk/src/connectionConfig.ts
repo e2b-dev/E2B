@@ -490,7 +490,7 @@ export class ConnectionConfig {
     this.apiUrl =
       opts?.apiUrl ||
       ConnectionConfig.apiUrl ||
-      (this.debug ? 'http://localhost:3000' : `https://api.${this.domain}`)
+      ConnectionConfig.defaultApiUrl(this.domain, this.debug)
 
     this.sandboxUrl = opts?.sandboxUrl || ConnectionConfig.sandboxUrl
   }
@@ -530,6 +530,28 @@ export class ConnectionConfig {
     }
 
     return merged as T
+  }
+
+  /**
+   * The options to rebuild this config from, e.g. with per-call overrides on
+   * top. `apiUrl` is left out when it was derived from `domain`, so a per-call
+   * `domain` derives its own API URL instead of reusing this one.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  toOpts(): ConnectionOpts {
+    const { apiUrl, ...opts } = this
+    if (apiUrl === ConnectionConfig.defaultApiUrl(this.domain, this.debug)) {
+      return opts
+    }
+
+    return { ...opts, apiUrl }
+  }
+
+  private static defaultApiUrl(domain: string, debug: boolean) {
+    return debug ? 'http://localhost:3000' : `https://api.${domain}`
   }
 
   private static get domain() {
