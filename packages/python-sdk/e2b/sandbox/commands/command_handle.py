@@ -83,6 +83,13 @@ class CommandExitException(SandboxException, CommandResult[OutputT]):
     Exception raised when a command exits with a non-zero exit code.
     """
 
+    def __reduce__(self):
+        return (
+            type(self),
+            (self.stderr, self.stdout, self.exit_code, self.error),
+            dict(self.__dict__, args=self.args),
+        )
+
     def __str__(self):
         if self.stderr is None:
             return f"Command exited with code {self.exit_code}"
