@@ -12,6 +12,7 @@ import { ensureUserConfig, Teams } from 'src/api'
 import { ensureValidAccessToken } from 'src/utils/token-refresh'
 import { asBold, asFormattedTeam } from '../../utils/format'
 import { handleE2BRequestError } from '../../utils/errors'
+import { whileBlocked } from 'src/utils/programStatus'
 
 export const configureCommand = new commander.Command('configure')
   .description('configure user')
@@ -46,18 +47,20 @@ export const configureCommand = new commander.Command('configure')
     const teams = res.data as Teams
 
     const team = (
-      await inquirer.default.prompt([
-        {
-          name: 'project',
-          message: chalk.default.underline('Select project'),
-          type: 'list',
-          pageSize: 50,
-          choices: teams.map((team) => ({
-            name: asFormattedTeam(team, userConfig.projectId),
-            value: team,
-          })),
-        },
-      ])
+      await whileBlocked('question', 'Select an E2B project', () =>
+        inquirer.default.prompt([
+          {
+            name: 'project',
+            message: chalk.default.underline('Select project'),
+            type: 'list',
+            pageSize: 50,
+            choices: teams.map((team) => ({
+              name: asFormattedTeam(team, userConfig.projectId),
+              value: team,
+            })),
+          },
+        ])
+      )
     )['project']
 
     userConfig.projectName = team.name

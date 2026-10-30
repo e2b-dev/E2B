@@ -19,6 +19,7 @@ import {
   withDelimiter,
 } from '../../utils/format'
 import { getDockerfile } from './dockerfile'
+import { reportProgramStatus } from 'src/utils/programStatus'
 
 export const createCommand = new commander.Command('create')
   .description(
@@ -140,6 +141,9 @@ export const createCommand = new commander.Command('create')
         const domain = connectionConfig.domain
 
         // Build the template using SDK
+        reportProgramStatus('working', {
+          msg: `Building template ${templateName}`,
+        })
         try {
           await Template.build(finalTemplate, {
             alias: templateName,
@@ -152,12 +156,19 @@ export const createCommand = new commander.Command('create')
             onBuildLogs: defaultBuildLogger(),
           })
         } catch (error) {
+          reportProgramStatus('error', {
+            msg: `Template ${templateName} build failed`,
+          })
           console.error('\n❌ Template build failed.')
           if (error instanceof Error) {
             console.error('Error:', error.message)
           }
           process.exit(1)
         }
+
+        reportProgramStatus('done', {
+          msg: `Template ${templateName} built`,
+        })
 
         // Display success message with examples
         const pythonExample = asPython(`from e2b import Sandbox, AsyncSandbox

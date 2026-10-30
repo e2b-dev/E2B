@@ -16,6 +16,7 @@ import { asBold, asFormattedConfig, asFormattedError } from 'src/utils/format'
 import { openUrlInBrowser } from 'src/utils/openBrowser'
 import { connectionConfig, Teams } from 'src/api'
 import { handleE2BRequestError } from '../../utils/errors'
+import { reportProgramStatus, whileBlocked } from 'src/utils/programStatus'
 
 export const loginCommand = new commander.Command('login')
   .description('log in to CLI')
@@ -36,7 +37,11 @@ export const loginCommand = new commander.Command('login')
       return
     } else if (!userConfig) {
       console.log('Attempting to log in...')
-      const signInResponse = await signInWithBrowser()
+      const signInResponse = await whileBlocked(
+        'auth',
+        'Log in to E2B in your browser',
+        signInWithBrowser
+      )
       if (!signInResponse) {
         console.info('Login aborted')
         return
@@ -87,6 +92,9 @@ export const loginCommand = new commander.Command('login')
       writeUserConfig(USER_CONFIG_PATH, userConfig)
     }
 
+    reportProgramStatus('done', {
+      msg: `Logged in as ${userConfig.identity.email}`,
+    })
     console.log(
       `Logged in as ${asBold(
         userConfig.identity.email
