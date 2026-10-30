@@ -64,7 +64,7 @@ sandboxTest.skipIf(isDebug)(
   async ({ sandboxTestId }) => {
     // Create and pause a sandbox
     const extraSbx = await Sandbox.create({ metadata: { sandboxTestId } })
-    await Sandbox.betaPause(extraSbx.sandboxId)
+    await Sandbox.pause(extraSbx.sandboxId)
 
     try {
       const paginator = Sandbox.list({
