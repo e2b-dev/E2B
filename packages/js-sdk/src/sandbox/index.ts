@@ -475,7 +475,7 @@ export class Sandbox extends SandboxApi {
    * @example
    * ```ts
    * const sandbox = await Sandbox.create()
-   * await sandbox.betaPause()
+   * await sandbox.pause()
    *
    * // Connect to the same sandbox.
    * const sameSandbox = await sandbox.connect()
