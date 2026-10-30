@@ -950,6 +950,20 @@ export interface SandboxMetricsOpts extends SandboxApiOpts {
 }
 
 /**
+ * Options for listing sandbox events.
+ */
+export interface SandboxEventsOpts extends SandboxApiOpts {
+  /** Number of events to skip. */
+  offset?: number
+  /** Maximum number of events to return. */
+  limit?: number
+  /** Return the oldest events first. By default the newest events are returned first. */
+  orderAsc?: boolean
+  /** Only return events of these types, e.g. `sandbox.lifecycle.created`. */
+  types?: string[]
+}
+
+/**
  * Options for listing snapshots.
  */
 export interface SnapshotListOpts extends Omit<SandboxApiOpts, 'signal'> {
@@ -1142,6 +1156,32 @@ export interface SandboxMetrics {
    * Total disk space available in bytes.
    */
   diskTotal: number
+}
+
+/**
+ * A sandbox lifecycle event.
+ */
+export interface SandboxEvent {
+  /** Event identifier. */
+  id: string
+  /** Event structure version. */
+  version: string
+  /** Event type, e.g. `sandbox.lifecycle.created`. */
+  type: string
+  /** Event timestamp. */
+  timestamp: Date
+  /** Optional JSON data associated with the event. */
+  eventData?: Record<string, unknown>
+  /** Sandbox identifier. */
+  sandboxId: string
+  /** Sandbox execution identifier. */
+  sandboxExecutionId: string
+  /** Sandbox template identifier. */
+  sandboxTemplateId: string
+  /** Sandbox build identifier. */
+  sandboxBuildId: string
+  /** Sandbox team identifier. */
+  sandboxTeamId: string
 }
 
 function resolveNetworkSelector(
@@ -1645,6 +1685,74 @@ export class SandboxApi extends ClientFactory {
         memCache: metric.memCache,
         diskUsed: metric.diskUsed,
         diskTotal: metric.diskTotal,
+      })) ?? []
+    )
+  }
+
+  /**
+   * Get events for the specified sandbox.
+   *
+   * @param sandboxId sandbox ID.
+   * @param opts event query and connection options.
+   *
+   * @returns Sandbox events.
+   *
+   * @example
+   * ```ts
+   * const events = await Sandbox.getEvents(sandboxId, {
+   *   types: ['sandbox.lifecycle.created'],
+   * })
+   * ```
+   */
+  static async getEvents(
+    sandboxId: string,
+    opts?: SandboxEventsOpts
+  ): Promise<SandboxEvent[]> {
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
+
+    if (config.debug) {
+      return []
+    }
+
+    const client = new ApiClient(config)
+    const res = await client.api.GET('/events/sandboxes/{sandboxID}', {
+      params: {
+        path: {
+          sandboxID: sandboxId,
+        },
+        query: {
+          offset: apiOpts?.offset,
+          limit: apiOpts?.limit,
+          orderAsc: apiOpts?.orderAsc,
+          types: apiOpts?.types,
+        },
+      },
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
+    })
+
+    if (res.response.status === 404) {
+      // A live sandbox can return 404 until its events have been ingested.
+      return []
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    return (
+      res.data?.map((event: components['schemas']['SandboxEvent']) => ({
+        id: event.id,
+        version: event.version,
+        type: event.type,
+        timestamp: new Date(event.timestamp),
+        ...(event.eventData != null ? { eventData: event.eventData } : {}),
+        sandboxId: event.sandboxId,
+        sandboxExecutionId: event.sandboxExecutionId,
+        sandboxTemplateId: event.sandboxTemplateId,
+        sandboxBuildId: event.sandboxBuildId,
+        sandboxTeamId: event.sandboxTeamId,
       })) ?? []
     )
   }

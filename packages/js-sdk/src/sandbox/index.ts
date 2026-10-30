@@ -20,6 +20,7 @@ import {
   SandboxConnectOpts,
   SandboxForkOpts,
   SandboxMetricsOpts,
+  SandboxEventsOpts,
   SandboxApi,
   SandboxListOpts,
   SandboxNetworkUpdate,
@@ -915,6 +916,24 @@ export class Sandbox extends SandboxApi {
       this.sandboxId,
       this.resolveApiOpts(opts)
     )
+  }
+
+  /**
+   * Get the events of the sandbox.
+   *
+   * @param opts event query and connection options.
+   *
+   * @returns List of sandbox events.
+   *
+   * @example
+   * ```ts
+   * const events = await sbx.getEvents({
+   *   types: ['sandbox.lifecycle.created'],
+   * })
+   * ```
+   */
+  async getEvents(opts?: SandboxEventsOpts) {
+    return await SandboxApi.getEvents(this.sandboxId, this.resolveApiOpts(opts))
   }
 
   private resolveApiOpts<T extends ConnectionOpts>(

@@ -46,6 +46,100 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/events/sandboxes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get all sandbox events for the team associated with the API key */
+        get: {
+            parameters: {
+                query?: {
+                    limit?: number;
+                    offset?: number;
+                    orderAsc?: boolean;
+                    /** @description Filter events to the provided event types */
+                    types?: string[];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned the sandbox events */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SandboxEvent"][];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/sandboxes/{sandboxID}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Get sandbox events */
+        get: {
+            parameters: {
+                query?: {
+                    limit?: number;
+                    offset?: number;
+                    orderAsc?: boolean;
+                    /** @description Filter events to the provided event types */
+                    types?: string[];
+                };
+                header?: never;
+                path: {
+                    sandboxID: components["parameters"]["sandboxID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned the sandbox events */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SandboxEvent"][];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sandboxes": {
         parameters: {
             query?: never;
@@ -2992,6 +3086,60 @@ export interface components {
             sandboxes: {
                 [key: string]: components["schemas"]["SandboxMetric"];
             };
+        };
+        /** @description Sandbox event */
+        SandboxEvent: {
+            /**
+             * @deprecated
+             * @description Category of the event (e.g., 'lifecycle', 'process', etc.)
+             */
+            eventCategory?: string;
+            /** @description Optional JSON data associated with the event */
+            eventData?: Record<string, never> | null;
+            /**
+             * @deprecated
+             * @description Label for the specific event type (e.g., 'sandbox_started', 'process_oom', etc.)
+             */
+            eventLabel?: string;
+            /**
+             * Format: uuid
+             * @description Event unique identifier
+             */
+            id: string;
+            /**
+             * Format: string
+             * @description Unique identifier for the sandbox build
+             */
+            sandboxBuildId: string;
+            /**
+             * Format: string
+             * @description Unique identifier for the sandbox execution
+             */
+            sandboxExecutionId: string;
+            /**
+             * Format: string
+             * @description Unique identifier for the sandbox
+             */
+            sandboxId: string;
+            /**
+             * Format: uuid
+             * @description Team identifier associated with the sandbox
+             */
+            sandboxTeamId: string;
+            /**
+             * Format: string
+             * @description Unique identifier for the sandbox template
+             */
+            sandboxTemplateId: string;
+            /**
+             * Format: date-time
+             * @description Timestamp of the event
+             */
+            timestamp: string;
+            /** @description Event name */
+            type: string;
+            /** @description Event structure version */
+            version: string;
         };
         SandboxForkRequest: {
             /**
