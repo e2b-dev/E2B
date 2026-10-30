@@ -35,6 +35,7 @@ jobs:
       desktop_python: ${{ steps.filter.outputs.desktop_python }}
       dockerfile_utils_js: ${{ steps.filter.outputs.dockerfile_utils_js }}
       dockerfile_utils_python: ${{ steps.filter.outputs.dockerfile_utils_python }}
+      acp_js: ${{ steps.filter.outputs.acp_js }}
     steps:
       - name: Filter changed paths
         # On workflow_dispatch there is no PR diff and paths-filter would fall
@@ -69,6 +70,15 @@ jobs:
               - *shared
               - '.github/workflows/cli_tests.yml'
               - 'packages/cli/**/!(*.md)'
+              - 'packages/js-sdk/**/!(*.md)'
+              - 'packages/dockerfile-utils-js/**/!(*.md)'
+            acp_js:
+              - *shared
+              - '.github/workflows/acp_js_tests.yml'
+              - 'tsconfig.sdk.json'
+              - 'tsdown.sdk.config.mts'
+              - 'vitest.sdk.config.mts'
+              - 'packages/acp-js/**/!(*.md)'
               - 'packages/js-sdk/**/!(*.md)'
               - 'packages/dockerfile-utils-js/**/!(*.md)'
             code_interpreter_js:
@@ -133,6 +143,14 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.cli == 'true' || github.event_name == 'workflow_dispatch' }}
     uses: ./.github/workflows/cli_tests.yml
+    secrets:
+      E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+
+  acp-js-tests:
+    name: Production / ACP JS SDK Tests
+    needs: changes
+    if: ${{ needs.changes.outputs.acp_js == 'true' || github.event_name == 'workflow_dispatch' }}
+    uses: ./.github/workflows/acp_js_tests.yml
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
@@ -269,6 +287,7 @@ jobs:
       - js-tests
       - python-tests
       - cli-tests
+      - acp-js-tests
       - code-interpreter-js-tests
       - code-interpreter-python-tests
       - desktop-js-tests
