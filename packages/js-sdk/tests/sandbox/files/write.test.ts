@@ -227,6 +227,7 @@ sandboxTest('writeFiles with multiple files', async ({ sandbox }) => {
 sandboxTest('writeFiles with different data types', async ({ sandbox }) => {
   const textData = 'Text string data'
   const arrayBufferData = new TextEncoder().encode('ArrayBuffer data').buffer
+  const uint8ArrayData = new TextEncoder().encode('xxhelloxx').subarray(2, 7)
   const blobData = new Blob(['Blob data'], { type: 'text/plain' })
   const streamContent = 'ReadableStream data'
   const encoder = new TextEncoder()
@@ -240,13 +241,14 @@ sandboxTest('writeFiles with different data types', async ({ sandbox }) => {
   const files: WriteEntry[] = [
     { path: 'writefiles_text.txt', data: textData },
     { path: 'writefiles_arraybuffer.txt', data: arrayBufferData },
+    { path: 'writefiles_uint8array.txt', data: uint8ArrayData },
     { path: 'writefiles_blob.txt', data: blobData },
     { path: 'writefiles_stream.txt', data: streamData },
   ]
 
   const infos = await sandbox.files.writeFiles(files)
 
-  assert.equal(infos.length, 4)
+  assert.equal(infos.length, 5)
 
   // Verify text file
   const textContent = await sandbox.files.read('writefiles_text.txt')
@@ -257,6 +259,11 @@ sandboxTest('writeFiles with different data types', async ({ sandbox }) => {
     'writefiles_arraybuffer.txt'
   )
   assert.equal(arrayBufferContent, 'ArrayBuffer data')
+
+  const uint8ArrayContent = await sandbox.files.read(
+    'writefiles_uint8array.txt'
+  )
+  assert.equal(uint8ArrayContent, 'hello')
 
   // Verify Blob file
   const blobContent = await sandbox.files.read('writefiles_blob.txt')

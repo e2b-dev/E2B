@@ -593,7 +593,7 @@ export class Filesystem {
    * Writing to a file at path that doesn't exist creates the necessary directories.
    *
    * @param path path to file.
-   * @param data data to write to the file. Data can be a string, `ArrayBuffer`, `Blob`, `ReadableStream`, or an `AsyncIterable` of byte chunks (e.g. an async generator or a Node.js `Readable`).
+   * @param data data to write to the file. Data can be a string, `ArrayBuffer`, `Uint8Array` (e.g. a Node.js `Buffer`), `Blob`, `ReadableStream`, or an `AsyncIterable` of byte chunks (e.g. an async generator or a Node.js `Readable`).
    * @param opts connection options.
    *
    * @returns information about the written file

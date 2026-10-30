@@ -42,6 +42,11 @@ test('toBlob converts strings and buffers', async () => {
   expect(await (await toBlob('hello')).text()).toBe('hello')
   const buffer = encode('hello').buffer as ArrayBuffer
   expect(await (await toBlob(buffer)).text()).toBe('hello')
+  const view = encode('xxhelloxx').subarray(2, 7)
+  expect(await (await toBlob(view)).text()).toBe('hello')
+  if (runtime === 'node') {
+    expect(await (await toBlob(Buffer.from('hello'))).text()).toBe('hello')
+  }
 })
 
 test('toUploadBody buffers strings, buffers and Blobs', async () => {
@@ -54,6 +59,10 @@ test('toUploadBody buffers strings, buffers and Blobs', async () => {
   const fromString = await toUploadBody('hello')
   expect(fromString.streamed).toBe(false)
   expect(await readBody(fromString.body)).toBe('hello')
+
+  const fromView = await toUploadBody(encode('xxhelloxx').subarray(2, 7))
+  expect(fromView.streamed).toBe(false)
+  expect(await readBody(fromView.body)).toBe('hello')
 })
 
 test('toUploadBody streams a native stream', async () => {
@@ -156,6 +165,10 @@ test.each([
   ],
   ['foreign Blob', () => new ForeignBlob(['hello'])],
   ['string', () => 'hello'],
+  ['Uint8Array subarray', () => encode('xxhelloxx').subarray(2, 7)],
+  ...(runtime === 'node'
+    ? [['Node.js Buffer', () => Buffer.from('hello')] as const]
+    : []),
 ])('toUploadBody gzips a %s', async (_name, makeData) => {
   // Regression: piping a foreign stream through a native CompressionStream
   // never settles, so gzip uploads hung for anything but a native stream.
@@ -165,7 +178,10 @@ test.each([
   const { body, streamed } = await toUploadBody(data, true)
 
   // In-memory data is gzipped into a Blob in browsers; streams always stream.
-  const inMemory = typeof data === 'string' || data instanceof ForeignBlob
+  const inMemory =
+    typeof data === 'string' ||
+    data instanceof ForeignBlob ||
+    data instanceof Uint8Array
   expect(streamed).toBe(!inMemory || runtime !== 'browser')
   const compressed = streamed
     ? (body as ReadableStream)
