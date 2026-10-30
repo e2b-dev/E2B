@@ -266,15 +266,14 @@ export class Sandbox extends SandboxBase {
   async screenshot(format: 'stream'): Promise<ReadableStream<Uint8Array>>
   async screenshot(format: 'bytes' | 'blob' | 'stream' = 'bytes') {
     const path = `/tmp/screenshot-${generateRandomString()}.png`
-    await this.commands.run(`scrot --pointer ${path}`)
-
-    // @ts-expect-error
-    const file = await this.files.read(path, { format })
-    // Cleanup of the temporary file is best-effort: it must not block the
-    // returned file (which may be an unconsumed stream) and must not reject
-    // if the sandbox is already gone.
-    void this.files.remove(path).catch(() => {})
-    return file
+    try {
+      await this.commands.run(`scrot --pointer ${path}`)
+      // @ts-expect-error
+      return await this.files.read(path, { format })
+    } finally {
+      // Cleanup is best-effort, but must finish before sandbox teardown can start.
+      await this.files.remove(path).catch(() => {})
+    }
   }
 
   /**
