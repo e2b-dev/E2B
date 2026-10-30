@@ -235,6 +235,10 @@ class ConnectionConfig:
         return os.getenv("E2B_API_URL")
 
     @staticmethod
+    def _default_api_url(domain: str, debug: bool) -> str:
+        return "http://localhost:3000" if debug else f"https://api.{domain}"
+
+    @staticmethod
     def _sandbox_url():
         return os.getenv("E2B_SANDBOX_URL")
 
@@ -310,7 +314,7 @@ class ConnectionConfig:
         self.api_url = (
             api_url
             or ConnectionConfig._api_url()
-            or ("http://localhost:3000" if self.debug else f"https://api.{self.domain}")
+            or ConnectionConfig._default_api_url(self.domain, self.debug)
         )
 
         self._sandbox_url: Optional[str] = (
@@ -406,6 +410,13 @@ class ConnectionConfig:
         http_version = opts.get("http_version")
         retries = opts.get("retries")
 
+        if api_url is None and self.api_url != self._default_api_url(
+            self.domain, self.debug
+        ):
+            # Carry over only an API URL that wasn't derived from the domain,
+            # so a per-call `domain` derives its own.
+            api_url = self.api_url
+
         req_headers = self.headers.copy()
         if headers is not None:
             req_headers.update(headers)
@@ -432,7 +443,7 @@ class ConnectionConfig:
                     if validate_api_key is not None
                     else self.validate_api_key
                 ),
-                api_url=api_url if api_url is not None else self.api_url,
+                api_url=api_url,
                 domain=domain if domain is not None else self.domain,
                 debug=debug if debug is not None else self.debug,
                 request_timeout=self.get_request_timeout(request_timeout),
