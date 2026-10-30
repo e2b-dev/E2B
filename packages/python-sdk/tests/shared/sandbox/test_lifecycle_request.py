@@ -137,9 +137,11 @@ def test_create_still_sends_the_deprecated_keep_memory(monkeypatch, test_api_key
 )
 def test_create_rejects_auto_resume_without_a_timeout_action(test_api_key, lifecycle):
     # An unconfigured on_timeout still resolves to kill semantics locally, so
-    # auto_resume has no pause to attach to.
-    with pytest.raises(InvalidArgumentException):
+    # auto_resume has no pause to attach to. The message must say on_timeout was
+    # not set, not blame an action the caller never chose.
+    with pytest.raises(InvalidArgumentException) as exc:
         Sandbox.create(api_key=test_api_key, lifecycle=lifecycle)
+    assert "not set" in str(exc.value)
 
 
 @pytest.mark.parametrize(
