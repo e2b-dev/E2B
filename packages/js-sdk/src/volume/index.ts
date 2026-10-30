@@ -673,7 +673,7 @@ export class Volume extends ClientFactory {
    * Writing to a file that already exists overwrites the file.
    *
    * @param path path to the file.
-   * @param data data to write to the file. Data can be a string, `ArrayBuffer`, `Blob`, or `ReadableStream`. `ReadableStream` data is streamed to the API instead of being buffered in memory (a browser that can't stream request bodies throws `InvalidArgumentError`; pass a `Blob`).
+   * @param data data to write to the file. Data can be a string, `ArrayBuffer`, `Uint8Array` (e.g. a Node.js `Buffer`), `Blob`, or `ReadableStream`. `ReadableStream` data is streamed to the API instead of being buffered in memory (a browser that can't stream request bodies throws `InvalidArgumentError`; pass a `Blob`).
    * @param options file creation options.
    * @param opts connection options.
    *
@@ -681,7 +681,7 @@ export class Volume extends ClientFactory {
    */
   async writeFile(
     path: string,
-    data: string | ArrayBuffer | Blob | ReadableStream<Uint8Array>,
+    data: string | ArrayBuffer | Uint8Array | Blob | ReadableStream<Uint8Array>,
     opts?: VolumeWriteOpts & VolumeApiOpts
   ): Promise<VolumeEntryStat> {
     const config = new VolumeConnectionConfig(this, {
