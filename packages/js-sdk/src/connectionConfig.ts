@@ -3,6 +3,7 @@ import { getEnvVar, version } from './api/metadata'
 import { runtime } from './utils'
 import { resolveRetries } from './retry'
 import { InvalidArgumentError } from './errors'
+import { getResolvedDomain } from './resolvedDomains'
 
 // Remove once all deployments support sandbox subdomains
 const supportedDomains = [
@@ -65,6 +66,8 @@ export interface ConnectionOpts {
   validateApiKey?: boolean
   /**
    * Domain to use for the API.
+   *
+   * When `domain`, `apiUrl` and `sandboxUrl` aren't set (as options or via `E2B_DOMAIN`/`E2B_API_URL`/`E2B_SANDBOX_URL`) and debug is off, the SDK switches to the control-plane domain the API reports in `X-E2B-Alt-Used`.
    *
    * @default E2B_DOMAIN // environment variable or `e2b.app`
    */
@@ -454,6 +457,8 @@ export class ConnectionConfig {
   }
 
   readonly debug: boolean
+  /** @internal */
+  readonly discoverDomain: boolean
   readonly domain: string
   readonly apiUrl: string
   readonly sandboxUrl?: string
@@ -478,7 +483,17 @@ export class ConnectionConfig {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
     this.validateApiKey = opts?.validateApiKey
     this.debug = opts?.debug ?? ConnectionConfig.debug
-    this.domain = opts?.domain || ConnectionConfig.domain
+    this.discoverDomain =
+      !this.debug &&
+      !(
+        opts?.domain ||
+        getEnvVar('E2B_DOMAIN') ||
+        opts?.apiUrl ||
+        ConnectionConfig.apiUrl ||
+        opts?.sandboxUrl ||
+        ConnectionConfig.sandboxUrl
+      )
+    const domain = opts?.domain || ConnectionConfig.domain
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
     this.retries = resolveRetries(opts?.retries ?? DEFAULT_RETRIES)
     this.logger = opts?.logger
@@ -487,10 +502,15 @@ export class ConnectionConfig {
     this.proxy = opts?.proxy
     this.httpVersion = resolveHttpVersion(opts?.httpVersion)
 
-    this.apiUrl =
+    const apiUrl =
       opts?.apiUrl ||
       ConnectionConfig.apiUrl ||
-      (this.debug ? 'http://localhost:3000' : `https://api.${this.domain}`)
+      (this.debug ? 'http://localhost:3000' : `https://api.${domain}`)
+    const resolvedDomain = this.discoverDomain
+      ? getResolvedDomain(this.apiKey)
+      : undefined
+    this.domain = resolvedDomain ?? domain
+    this.apiUrl = resolvedDomain ? `https://api.${resolvedDomain}` : apiUrl
 
     this.sandboxUrl = opts?.sandboxUrl || ConnectionConfig.sandboxUrl
   }
