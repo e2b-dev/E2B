@@ -16,6 +16,7 @@ from e2b.connection_config import (
     default_username,
 )
 from e2b.envd.api import (
+    ENVD_API_FILE_DOWNLOAD_HTTP_VERSION,
     ENVD_API_FILES_ROUTE,
     acheck_sandbox_health,
     ahandle_envd_api_exception,
@@ -104,10 +105,20 @@ class Filesystem:
             connection_config,
         )
         self._envd_api = envd_api
-        # Streamed downloads default to a sibling client whose transport
-        # carries the idle read timeout (see `get_transport`).
+        # Downloads go over their own HTTP/1.1 clients (see
+        # `ENVD_API_FILE_DOWNLOAD_HTTP_VERSION`). Streamed downloads default
+        # to the one whose transport carries the idle read timeout (see
+        # `get_transport`).
+        self._envd_api_download = get_envd_api(
+            connection_config,
+            envd_api_url,
+            http_version=ENVD_API_FILE_DOWNLOAD_HTTP_VERSION,
+        )
         self._envd_api_streaming = get_envd_api(
-            connection_config, envd_api_url, for_streaming=True
+            connection_config,
+            envd_api_url,
+            for_streaming=True,
+            http_version=ENVD_API_FILE_DOWNLOAD_HTTP_VERSION,
         )
         # The health probe run after a request failed goes without the
         # connection retries, so a sandbox that cannot be reached is not tried
@@ -239,7 +250,7 @@ class Filesystem:
             client = (
                 self._envd_api_streaming
                 if stream_idle_timeout is None
-                else self._envd_api
+                else self._envd_api_download
             )
             request = client.build_request(
                 "GET",
@@ -272,7 +283,7 @@ class Filesystem:
             return AsyncFileStreamReader(r, idle_timeout=stream_idle_timeout)
 
         try:
-            r = await self._envd_api.get(
+            r = await self._envd_api_download.get(
                 ENVD_API_FILES_ROUTE,
                 params=params,
                 headers=headers,
