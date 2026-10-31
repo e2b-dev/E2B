@@ -30,6 +30,7 @@ class AsyncWatchHandle:
         self._on_event = on_event
         self._on_exit = on_exit
         self._check_health = check_health
+        self._on_exit_called = False
 
         self._wait = asyncio.create_task(self._handle_events())
 
@@ -39,6 +40,14 @@ class AsyncWatchHandle:
         """
         self._wait.cancel()
         await asyncio.wait([self._wait])
+        # A task cancelled before its first step never runs the CancelledError
+        # handler in `_handle_events`, so `on_exit` would be skipped when
+        # `stop()` is called before the background task starts (e.g. right
+        # after `watch_dir` returns). Fire it here for that window;
+        # `_call_on_exit` is idempotent, so the paths where the task did run
+        # are unaffected.
+        if not self._on_exit_called:
+            await self._call_on_exit(None)
         try:
             await self._events.aclose()
         except Exception:
@@ -64,8 +73,9 @@ class AsyncWatchHandle:
             raise await ahandle_rpc_exception_with_health(e, self._check_health)
 
     async def _call_on_exit(self, error: Optional[Exception]):
-        if self._on_exit is None:
+        if self._on_exit is None or self._on_exit_called:
             return
+        self._on_exit_called = True
         try:
             cb = self._on_exit(error)
             if inspect.isawaitable(cb):
