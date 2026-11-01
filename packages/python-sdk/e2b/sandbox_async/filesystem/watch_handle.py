@@ -46,12 +46,21 @@ class AsyncWatchHandle:
         # after `watch_dir` returns). Fire it here for that window;
         # `_call_on_exit` is idempotent, so the paths where the task did run
         # are unaffected.
-        if not self._on_exit_called:
-            await self._call_on_exit(None)
         try:
-            await self._events.aclose()
-        except Exception:
-            pass
+            if not self._on_exit_called:
+                await self._call_on_exit(None)
+        finally:
+            # The stream must be closed even when the fallback `on_exit`
+            # callback raises - including a `CancelledError` from awaiting an
+            # already-cancelled task (a `BaseException`, deliberately not
+            # caught by `_call_on_exit`). `watch_dir` has already opened the
+            # stream and consumed its start event, so skipping the close would
+            # leak the RPC stream. On the normal path (the task did run) the
+            # callback has already fired and this is just the close.
+            try:
+                await self._events.aclose()
+            except Exception:
+                pass
 
     async def _iterate_events(self):
         try:
