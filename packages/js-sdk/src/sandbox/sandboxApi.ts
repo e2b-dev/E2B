@@ -1570,21 +1570,6 @@ export class SandboxApi extends ClientFactory {
   }
 
   /**
-   * @deprecated Use {@link Sandbox.getInfo} instead.
-   *
-   * @param sandboxId sandbox ID.
-   * @param opts connection options.
-   *
-   * @returns sandbox information.
-   */
-  static async getFullInfo(
-    sandboxId: string,
-    opts?: SandboxApiOpts
-  ): Promise<SandboxInfo> {
-    return await this.getInfo(sandboxId, opts)
-  }
-
-  /**
    * Get the metrics of the sandbox.
    *
    * @param sandboxId sandbox ID.
