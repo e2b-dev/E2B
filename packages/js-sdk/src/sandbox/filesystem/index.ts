@@ -18,6 +18,7 @@ import {
 
 import {
   checkSandboxHealth,
+  EnvdApiClient,
   handleEnvdApiError,
   handleEnvdApiFetchError,
   handleWatchDirStartEvent,
@@ -27,8 +28,6 @@ import {
   handleRpcErrorWithHealthCheck,
   SandboxHealthCheck,
 } from '../../envd/rpc'
-
-import { EnvdApiClient } from '../../envd/api'
 import {
   EntryInfo as FsEntryInfo,
   Filesystem as FilesystemService,

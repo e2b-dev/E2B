@@ -1,6 +1,6 @@
 import createClient from 'openapi-fetch'
 
-import type { components, paths } from './schema.gen'
+import type { paths } from './schema.gen'
 import { ConnectionConfig } from '../connectionConfig'
 import { createApiLogger } from '../logs'
 import {
@@ -224,5 +224,4 @@ class EnvdApiClient {
   }
 }
 
-export type { components, paths }
 export { EnvdApiClient }
