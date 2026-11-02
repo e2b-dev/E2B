@@ -27,7 +27,7 @@ import {
 } from '../../envd/rpc'
 import { ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE } from '../../envd/versions'
 import { SandboxError } from '../../errors'
-import { CommandHandle, CommandResult } from './commandHandle'
+import { CommandHandle, CommandOutput, CommandResult } from './commandHandle'
 import { CommandInputHandle, CommandStreamInputOpts } from './inputHandle'
 export { Pty } from './pty'
 export { CommandInputHandle }
@@ -78,6 +78,14 @@ export interface CommandStartOpts extends CommandRequestOpts {
    */
   onStderr?: (data: string) => void | Promise<void>
   /**
+   * If false, stdout and stderr are not accumulated in memory and are
+   * `undefined` on the {@link CommandHandle} and {@link CommandResult}.
+   * Use `onStdout`/`onStderr` to consume the output instead.
+   *
+   * @default true
+   */
+  retainOutput?: boolean
+  /**
    * If true, command stdin is kept open and you can send data to it using {@link Commands.sendStdin} or {@link CommandHandle.sendStdin}.
    * @default false
    */
@@ -95,7 +103,7 @@ export interface CommandStartOpts extends CommandRequestOpts {
  */
 export type CommandConnectOpts = Pick<
   CommandStartOpts,
-  'onStderr' | 'onStdout' | 'timeoutMs'
+  'onStderr' | 'onStdout' | 'retainOutput' | 'timeoutMs'
 > &
   CommandRequestOpts
 
@@ -335,10 +343,10 @@ export class Commands {
    *
    * @returns `CommandHandle` handle to interact with the running command.
    */
-  async connect(
+  async connect<RetainOutput extends boolean | undefined = undefined>(
     pid: number,
-    opts?: CommandConnectOpts
-  ): Promise<CommandHandle> {
+    opts?: CommandConnectOpts & { retainOutput?: RetainOutput }
+  ): Promise<CommandHandle<CommandOutput<RetainOutput>>> {
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
@@ -365,7 +373,12 @@ export class Commands {
       }
     )
 
-    return this.createHandle(events, clearStartTimeout, cleanup, opts)
+    return this.createHandle<CommandOutput<RetainOutput>>(
+      events,
+      clearStartTimeout,
+      cleanup,
+      opts
+    )
   }
 
   /**
@@ -376,10 +389,13 @@ export class Commands {
    *
    * @returns `CommandResult` result of the command execution.
    */
-  async run(
+  async run<RetainOutput extends boolean | undefined = undefined>(
     cmd: string,
-    opts?: CommandStartOpts & { background?: false }
-  ): Promise<CommandResult>
+    opts?: CommandStartOpts & {
+      background?: false
+      retainOutput?: RetainOutput
+    }
+  ): Promise<CommandResult<CommandOutput<RetainOutput>>>
 
   /**
    * Start a new command in the background.
@@ -390,10 +406,10 @@ export class Commands {
    *
    * @returns `CommandHandle` handle to interact with the running command.
    */
-  async run(
+  async run<RetainOutput extends boolean | undefined = undefined>(
     cmd: string,
-    opts: CommandStartOpts & { background: true }
-  ): Promise<CommandHandle>
+    opts: CommandStartOpts & { background: true; retainOutput?: RetainOutput }
+  ): Promise<CommandHandle<CommandOutput<RetainOutput>>>
 
   // NOTE - The following overload seems redundant, but it's required to make the type inference work correctly.
 
@@ -407,14 +423,22 @@ export class Commands {
    *
    * @returns Either a `CommandHandle` or a `CommandResult` (depending on `opts.background`).
    */
+  async run<RetainOutput extends boolean | undefined = undefined>(
+    cmd: string,
+    opts?: CommandStartOpts & {
+      background?: boolean
+      retainOutput?: RetainOutput
+    }
+  ): Promise<
+    | CommandHandle<CommandOutput<RetainOutput>>
+    | CommandResult<CommandOutput<RetainOutput>>
+  >
   async run(
     cmd: string,
     opts?: CommandStartOpts & { background?: boolean }
-  ): Promise<CommandHandle | CommandResult>
-  async run(
-    cmd: string,
-    opts?: CommandStartOpts & { background?: boolean }
-  ): Promise<CommandHandle | CommandResult> {
+  ): Promise<
+    CommandHandle<string | undefined> | CommandResult<string | undefined>
+  > {
     const proc = await this.start(cmd, opts)
 
     return opts?.background ? proc : proc.wait()
@@ -423,7 +447,7 @@ export class Commands {
   private async start(
     cmd: string,
     opts?: CommandStartOpts
-  ): Promise<CommandHandle> {
+  ): Promise<CommandHandle<string | undefined>> {
     if (
       opts?.stdin === false &&
       compareVersions(this.envdVersion, ENVD_COMMANDS_STDIN) < 0
@@ -461,20 +485,25 @@ export class Commands {
       }
     )
 
-    return this.createHandle(events, clearStartTimeout, cleanup, opts)
+    return this.createHandle<string | undefined>(
+      events,
+      clearStartTimeout,
+      cleanup,
+      opts
+    )
   }
 
-  private async createHandle(
+  private async createHandle<Output extends string | undefined>(
     events: AsyncIterable<StartResponse | ConnectResponse>,
     clearStartTimeout: () => void,
     cleanup: () => void,
-    opts?: Pick<CommandStartOpts, 'onStdout' | 'onStderr'>
-  ): Promise<CommandHandle> {
+    opts?: Pick<CommandStartOpts, 'onStdout' | 'onStderr' | 'retainOutput'>
+  ): Promise<CommandHandle<Output>> {
     try {
       const pid = await handleProcessStartEvent(events)
       clearStartTimeout()
 
-      return new CommandHandle(
+      return new CommandHandle<Output>(
         pid,
         cleanup,
         () => this.kill(pid),
@@ -484,7 +513,8 @@ export class Commands {
         undefined,
         (data, stdinOpts) => this.sendStdin(pid, data, stdinOpts),
         (stdinOpts) => this.closeStdin(pid, stdinOpts),
-        this.checkHealth
+        this.checkHealth,
+        opts?.retainOutput ?? true
       )
     } catch (err) {
       cleanup()

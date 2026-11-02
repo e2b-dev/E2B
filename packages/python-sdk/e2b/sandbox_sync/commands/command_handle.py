@@ -1,6 +1,6 @@
 import codecs
 
-from typing import Optional, Callable, Any, Generator, List, Union, Tuple
+from typing import Optional, Callable, Any, Generator, Generic, List, Union, Tuple, cast
 
 from e2b.envd.rpc import handle_rpc_exception_with_health
 from protobuf import Oneof
@@ -10,13 +10,15 @@ from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.command_handle import (
     CommandExitException,
     CommandResult,
+    OutputT,
+    join_output,
     Stderr,
     Stdout,
     PtyOutput,
 )
 
 
-class CommandHandle:
+class CommandHandle(Generic[OutputT]):
     """
     Command execution handle.
 
@@ -42,6 +44,7 @@ class CommandHandle:
         ] = None,
         handle_close_stdin: Optional[Callable[[Optional[float]], None]] = None,
         check_health: Optional[Callable[[], Optional[bool]]] = None,
+        retain_output: bool = True,
     ):
         self._pid = pid
         self._handle_kill = handle_kill
@@ -50,13 +53,13 @@ class CommandHandle:
         self._check_health = check_health
         self._events = events
 
-        self._stdout_chunks: List[str] = []
-        self._stderr_chunks: List[str] = []
+        self._stdout_chunks: Optional[List[str]] = [] if retain_output else None
+        self._stderr_chunks: Optional[List[str]] = [] if retain_output else None
 
         self._stdout_decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
         self._stderr_decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
 
-        self._result: Optional[CommandResult] = None
+        self._result: Optional[CommandResult[OutputT]] = None
         self._iteration_exception: Optional[Exception] = None
 
     def __iter__(self):
@@ -66,6 +69,10 @@ class CommandHandle:
         :return: Generator of command outputs
         """
         return self._handle_events()
+
+    @staticmethod
+    def _join_output(chunks: Optional[List[str]]) -> OutputT:
+        return cast(OutputT, join_output(chunks))
 
     def _flush_decoders(
         self,
@@ -79,11 +86,13 @@ class CommandHandle:
         events: List[Union[Tuple[Stdout, None, None], Tuple[None, Stderr, None]]] = []
         out = self._stdout_decoder.decode(b"", final=True)
         if out:
-            self._stdout_chunks.append(out)
+            if self._stdout_chunks is not None:
+                self._stdout_chunks.append(out)
             events.append((out, None, None))
         err = self._stderr_decoder.decode(b"", final=True)
         if err:
-            self._stderr_chunks.append(err)
+            if self._stderr_chunks is not None:
+                self._stderr_chunks.append(err)
             events.append((None, err, None))
         return events
 
@@ -109,12 +118,14 @@ class CommandHandle:
                             case Oneof(field="stdout", value=chunk):
                                 out = self._stdout_decoder.decode(chunk)
                                 if out:
-                                    self._stdout_chunks.append(out)
+                                    if self._stdout_chunks is not None:
+                                        self._stdout_chunks.append(out)
                                     yield out, None, None
                             case Oneof(field="stderr", value=chunk):
                                 out = self._stderr_decoder.decode(chunk)
                                 if out:
-                                    self._stderr_chunks.append(out)
+                                    if self._stderr_chunks is not None:
+                                        self._stderr_chunks.append(out)
                                     yield None, out, None
                             case Oneof(field="pty", value=chunk):
                                 yield None, None, chunk
@@ -125,8 +136,8 @@ class CommandHandle:
                         # still observes the exit code.
                         flushed = list(self._flush_decoders())
                         self._result = CommandResult(
-                            stdout="".join(self._stdout_chunks),
-                            stderr="".join(self._stderr_chunks),
+                            stdout=self._join_output(self._stdout_chunks),
+                            stderr=self._join_output(self._stderr_chunks),
                             exit_code=end.exit_code,
                             # Optional scalar: unset reads as "" — the presence
                             # check keeps it None, matching the JS SDK
@@ -162,7 +173,7 @@ class CommandHandle:
         on_pty: Optional[Callable[[PtyOutput], None]] = None,
         on_stdout: Optional[Callable[[str], None]] = None,
         on_stderr: Optional[Callable[[str], None]] = None,
-    ) -> CommandResult:
+    ) -> CommandResult[OutputT]:
         """
         Wait for the command to finish and returns the result.
         If the command exits with a non-zero exit code, it throws a `CommandExitException`.
@@ -197,8 +208,8 @@ class CommandHandle:
 
         if self._result.exit_code != 0:
             raise CommandExitException(
-                stdout="".join(self._stdout_chunks),
-                stderr="".join(self._stderr_chunks),
+                stdout=self._join_output(self._stdout_chunks),
+                stderr=self._join_output(self._stderr_chunks),
                 exit_code=self._result.exit_code,
                 error=self._result.error,
             )

@@ -1,5 +1,7 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Generic, List, Optional
+
+from typing_extensions import TypeVar
 
 from e2b.exceptions import SandboxException
 
@@ -15,6 +17,18 @@ PtyOutput = bytes
 """
 Pty output.
 """
+
+OutputT = TypeVar("OutputT", bound=Optional[str], default=str)
+"""
+Type of the accumulated command output: `None` when the command was started with `retain_output=False`, `str` otherwise.
+"""
+
+
+def join_output(chunks: Optional[List[str]]) -> Optional[str]:
+    """
+    Join accumulated output chunks, or return `None` when output is not retained.
+    """
+    return None if chunks is None else "".join(chunks)
 
 
 @dataclass
@@ -34,18 +48,22 @@ class PtySize:
 
 
 @dataclass
-class CommandResult:
+class CommandResult(Generic[OutputT]):
     """
     Command execution result.
     """
 
-    stderr: str
+    stderr: OutputT
     """
     Command stderr output.
+
+    `None` if the command was started with `retain_output=False`.
     """
-    stdout: str
+    stdout: OutputT
     """
     Command stdout output.
+
+    `None` if the command was started with `retain_output=False`.
     """
     exit_code: int
     """
@@ -60,10 +78,12 @@ class CommandResult:
 
 
 @dataclass
-class CommandExitException(SandboxException, CommandResult):
+class CommandExitException(SandboxException, CommandResult[OutputT]):
     """
     Exception raised when a command exits with a non-zero exit code.
     """
 
     def __str__(self):
+        if self.stderr is None:
+            return f"Command exited with code {self.exit_code}"
         return f"Command exited with code {self.exit_code} and error:\n{self.stderr}"

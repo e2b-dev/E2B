@@ -16,3 +16,16 @@ async def test_connect_to_non_existing_process(async_sandbox: AsyncSandbox):
 
     with pytest.raises(NotFoundException):
         await async_sandbox.commands.connect(non_existing_pid)
+
+
+async def test_connect_without_retaining_output(async_sandbox: AsyncSandbox):
+    cmd = await async_sandbox.commands.run("sleep 1; echo out", background=True)
+
+    stdout = []
+    handle = await async_sandbox.commands.connect(
+        cmd.pid, on_stdout=stdout.append, retain_output=False
+    )
+    result = await handle.wait()
+
+    assert result.stdout is None
+    assert "".join(stdout) == "out\n"

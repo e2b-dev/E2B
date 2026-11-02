@@ -102,6 +102,22 @@ export function isReadableStreamLike(value: unknown): value is ReadableStream {
 }
 
 /**
+ * Whether `value` is an async iterable (e.g. an async generator or a Node.js
+ * `Readable`). A `ReadableStream` is one too in most runtimes, so check
+ * `isReadableStreamLike` first.
+ */
+export function isAsyncIterable(
+  value: unknown
+): value is AsyncIterable<unknown> {
+  return (
+    isObject(value) &&
+    typeof (value as { [Symbol.asyncIterator]?: unknown })[
+      Symbol.asyncIterator
+    ] === 'function'
+  )
+}
+
+/**
  * Whether `value` should be treated as an `ArrayBuffer`.
  *
  * Unlike the others this needs no conversion afterwards: the platform detects

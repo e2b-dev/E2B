@@ -4,8 +4,22 @@ import io
 from protobuf.wkt import Timestamp
 
 from e2b.envd.filesystem import filesystem_pb
+import gzip
+
+from typing import List
+
+import pytest
+
+from e2b.exceptions import InvalidArgumentException, TemplateException
 from e2b.sandbox.filesystem.filesystem import (
+    AsyncWriteEntry,
+    SyncWriteEntry,
+    ChunkCheck,
+    WriteEntry,
+    check_stream_upload,
     multipart_body_is_streamed,
+    to_upload_body,
+    to_upload_body_async,
     FileType,
     WriteInfo,
     map_entry_info,
@@ -179,3 +193,111 @@ def test_map_entry_info_reports_symlink_when_envd_marks_the_entry():
         map_entry_info(entry(filesystem_pb.FileType.DIRECTORY, False)).type
         is FileType.DIR
     )
+
+
+def test_to_upload_body_streams_an_iterable_of_bytes():
+    body = to_upload_body(iter([b"hel", bytearray(b"lo")]))
+    assert not isinstance(body, (bytes, io.IOBase))
+    assert b"".join(body) == b"hello"
+
+    compressed = to_upload_body((c for c in [b"hel", b"lo"]), use_gzip=True)
+    assert gzip.decompress(b"".join(compressed)) == b"hello"  # type: ignore[arg-type]
+
+
+def test_to_upload_body_rejects_non_bytes_chunks_and_async_iterables():
+    with pytest.raises(InvalidArgumentException):
+        b"".join(to_upload_body(iter(["text"])))  # type: ignore[arg-type]
+
+    async def source():
+        yield b"hello"
+
+    with pytest.raises(InvalidArgumentException, match="AsyncSandbox"):
+        to_upload_body(source())
+    # bytearray is a buffer, not an iterable of chunks
+    with pytest.raises(InvalidArgumentException):
+        to_upload_body(bytearray(b"hello"))  # type: ignore[arg-type]
+
+
+async def test_to_upload_body_async_streams_async_iterables_only():
+    async def source():
+        yield b"hel"
+        yield b"lo"
+
+    body = to_upload_body_async(source())
+    assert b"".join([c async for c in body]) == b"hello"  # type: ignore[union-attr]
+
+    with pytest.raises(InvalidArgumentException, match="only supported by `Sandbox`"):
+        to_upload_body_async(iter([b"hel", b"lo"]))
+
+    compressed = to_upload_body_async(source(), use_gzip=True)
+    assert gzip.decompress(b"".join([c async for c in compressed])) == b"hello"  # type: ignore[union-attr]
+
+
+def test_iterable_data_refuses_multipart():
+    files: List[SyncWriteEntry] = [{"path": "a.bin", "data": iter([b"x"])}]
+    in_memory: List[WriteEntry] = [{"path": "a.bin", "data": b"x"}]
+    file_like: List[WriteEntry] = [{"path": "a.bin", "data": io.BytesIO(b"x")}]
+    check_stream_upload(files, True, True, is_async=False)
+    check_stream_upload(in_memory, False, False, is_async=False)
+    check_stream_upload(file_like, False, True, is_async=False)
+    check_stream_upload(file_like, False, True, is_async=True)
+    with pytest.raises(InvalidArgumentException, match="use_octet_stream"):
+        check_stream_upload(files, False, True, is_async=False)
+    with pytest.raises(TemplateException):
+        check_stream_upload(files, True, False, is_async=False)
+    # Sync iterables are rejected by `AsyncSandbox`, even on an old envd.
+    with pytest.raises(InvalidArgumentException, match="only supported by `Sandbox`"):
+        check_stream_upload(files, True, False, is_async=True)
+
+    async def source():
+        yield b"x"
+
+    async_files: List[AsyncWriteEntry] = [{"path": "a.bin", "data": source()}]
+    check_stream_upload(async_files, True, True, is_async=True)
+    with pytest.raises(InvalidArgumentException, match="use_octet_stream"):
+        check_stream_upload(async_files, False, True, is_async=True)
+    with pytest.raises(InvalidArgumentException, match="AsyncSandbox"):
+        check_stream_upload(async_files, True, False, is_async=False)
+
+
+def test_file_like_wrappers_are_read_as_files():
+    import tempfile
+
+    from e2b.io_utils import IO_CHUNK_SIZE
+
+    with tempfile.NamedTemporaryFile() as f:
+        assert not isinstance(f, io.IOBase)
+        f.write(b"x" * (IO_CHUNK_SIZE + 1))
+        f.flush()
+        f.seek(0)
+        files: List[WriteEntry] = [{"path": "a.bin", "data": f}]
+        # A file, not an iterable: multipart stays allowed.
+        check_stream_upload(files, False, True, is_async=False)
+        assert multipart_body_is_streamed(files)
+        chunks = list(to_upload_body(f))
+        assert [len(c) for c in chunks] == [IO_CHUNK_SIZE, 1]
+
+
+def test_chunk_check_records_the_validation_error():
+    check = ChunkCheck()
+    with pytest.raises(InvalidArgumentException) as raised:
+        b"".join(to_upload_body(iter([b"ok", "text"]), check=check))  # type: ignore[arg-type]
+    assert check.error is raised.value
+
+
+async def test_async_readers_are_not_file_like():
+    class AsyncReader:
+        """Like an aiofiles file or aiohttp ``response.content``."""
+
+        async def read(self, size: int = -1) -> bytes:
+            return b""
+
+        async def __aiter__(self):
+            yield b"hel"
+            yield b"lo"
+
+    body = to_upload_body_async(AsyncReader())
+    assert b"".join([c async for c in body]) == b"hello"  # type: ignore[union-attr]
+
+    with pytest.raises(InvalidArgumentException, match="AsyncSandbox"):
+        to_upload_body(AsyncReader())  # type: ignore[arg-type]

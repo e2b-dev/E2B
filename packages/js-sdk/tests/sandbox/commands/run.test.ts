@@ -1,7 +1,7 @@
-import { expect, assert } from 'vitest'
+import { expect, assert, expectTypeOf } from 'vitest'
 
 import { sandboxTest } from '../../setup.js'
-import { TimeoutError } from '../../../src/index.js'
+import { CommandStartOpts, TimeoutError } from '../../../src/index.js'
 
 sandboxTest('run', async ({ sandbox }) => {
   const text = 'Hello, World!'
@@ -52,3 +52,64 @@ sandboxTest('run with too short timeout iterating', async ({ sandbox }) => {
 
   await expect(handle.wait()).rejects.toThrowError(TimeoutError)
 })
+
+sandboxTest('run without retaining output', async ({ sandbox }) => {
+  const stdout: string[] = []
+  const stderr: string[] = []
+
+  const cmd = await sandbox.commands.run('echo out; echo err >&2', {
+    retainOutput: false,
+    onStdout: (data) => {
+      stdout.push(data)
+    },
+    onStderr: (data) => {
+      stderr.push(data)
+    },
+  })
+
+  expectTypeOf(cmd.stdout).toEqualTypeOf<undefined>()
+  assert.equal(cmd.exitCode, 0)
+  assert.isUndefined(cmd.stdout)
+  assert.isUndefined(cmd.stderr)
+  assert.equal(stdout.join(''), 'out\n')
+  assert.equal(stderr.join(''), 'err\n')
+})
+
+sandboxTest(
+  'run in background without retaining output',
+  async ({ sandbox }) => {
+    const handle = await sandbox.commands.run('echo out', {
+      background: true,
+      retainOutput: false,
+    })
+
+    expectTypeOf(handle.stdout).toEqualTypeOf<undefined>()
+    const result = await handle.wait()
+
+    assert.equal(result.exitCode, 0)
+    assert.isUndefined(handle.stdout)
+    assert.isUndefined(result.stdout)
+    assert.isUndefined(result.stderr)
+  }
+)
+
+sandboxTest('run retains output by default', async ({ sandbox }) => {
+  const cmd = await sandbox.commands.run('echo out', { retainOutput: true })
+
+  expectTypeOf(cmd.stdout).toEqualTypeOf<string>()
+  assert.equal(cmd.stdout, 'out\n')
+})
+
+sandboxTest(
+  'run types non-literal retainOutput as possibly undefined',
+  async ({ sandbox }) => {
+    const opts: CommandStartOpts = { retainOutput: false }
+    const cmd = await sandbox.commands.run('echo out', opts)
+
+    expectTypeOf(cmd.stdout).toEqualTypeOf<string | undefined>()
+    assert.isUndefined(cmd.stdout)
+
+    const defaults = await sandbox.commands.run('echo out', {})
+    expectTypeOf(defaults.stdout).toEqualTypeOf<string>()
+  }
+)

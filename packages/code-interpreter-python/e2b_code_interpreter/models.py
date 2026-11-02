@@ -45,7 +45,7 @@ class OutputMessage:
 
     line: str
     """
-    The output line.
+    Raw output chunk, not necessarily one line. Newlines are preserved.
     """
     timestamp: int
     """
@@ -114,17 +114,29 @@ class Result:
         return getattr(self, item)
 
     text: Optional[str] = None
+    """Text representation of the result."""
     html: Optional[str] = None
+    """HTML representation of the data."""
     markdown: Optional[str] = None
+    """Markdown representation of the data."""
     svg: Optional[str] = None
+    """SVG representation of the data."""
     png: Optional[str] = None
+    """Base64-encoded PNG representation of the data."""
     jpeg: Optional[str] = None
+    """Base64-encoded JPEG representation of the data."""
     pdf: Optional[str] = None
+    """Base64-encoded PDF representation of the data."""
     latex: Optional[str] = None
+    """LaTeX representation of the data."""
     json: Optional[dict] = None
+    """JSON representation of the data."""
     javascript: Optional[str] = None
+    """JavaScript representation of the data."""
     data: Optional[dict] = None
+    """DataFrame data as a dictionary."""
     chart: Optional[Chart] = None
+    """Chart data as a ``Chart`` object."""
     is_main_result: bool = False
     """Whether this data is the result of the cell. Data can be produced by display calls of which can be multiple in a cell."""
     extra: Optional[dict] = None
@@ -301,9 +313,9 @@ class Logs:
     """
 
     stdout: List[str] = field(default_factory=list)
-    """List of strings printed to stdout by prints, subprocesses, etc."""
+    """Raw stdout chunks, not lines. Newlines are preserved; use ``''.join(stdout)`` to rebuild the output."""
     stderr: List[str] = field(default_factory=list)
-    """List of strings printed to stderr by prints, subprocesses, etc."""
+    """Raw stderr chunks, not lines. Newlines are preserved; use ``''.join(stderr)`` to rebuild the output."""
 
     def __init__(
         self,

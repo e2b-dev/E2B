@@ -1,4 +1,4 @@
-from typing import IO, Dict, List, Literal, Optional, Union, overload
+from typing import Dict, List, Literal, Optional, Sequence, Union, overload
 
 import httpx
 from connectrpc.code import Code
@@ -41,14 +41,18 @@ from e2b.exceptions import (
 from e2b.sandbox.filesystem.filesystem import (
     EntryInfo,
     FileStreamReader,
+    WriteData,
+    SyncWriteEntry,
     WriteEntry,
     WriteInfo,
     _to_httpx_file,
+    check_stream_upload,
     multipart_body_is_streamed,
     map_entry_info,
     map_file_type,
     metadata_to_headers,
     to_upload_body,
+    ChunkCheck,
     validate_metadata,
 )
 from e2b.sandbox_sync.filesystem.watch_handle import WatchHandle
@@ -268,7 +272,7 @@ class Filesystem:
     def write(
         self,
         path: str,
-        data: Union[str, bytes, IO],
+        data: WriteData,
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         gzip: bool = False,
@@ -282,17 +286,17 @@ class Filesystem:
         Writing to a file at path that doesn't exist creates the necessary directories.
 
         :param path: Path to the file
-        :param data: Data to write to the file, can be a `str`, `bytes`, or `IO`. File-like objects are streamed in chunks instead of being buffered in memory.
+        :param data: Data to write to the file, can be a `str`, `bytes`, `IO`, or an `Iterable[bytes]`. File-like objects and iterables are streamed in chunks instead of being buffered in memory.
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request in **seconds**
-        :param gzip: Use gzip compression for the upload. Implies the `application/octet-stream` upload. Requires envd 0.5.7 or later — when not supported, the upload falls back to uncompressed `multipart/form-data`.
-        :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `None`, which uses octet-stream when `data` is a file-like object (so streamed uploads aren't buffered) and `multipart/form-data` otherwise. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`, which reads text-mode file-like data into memory (httpx only streams binary file objects in a multipart body).
+        :param gzip: Use gzip compression for the upload. Implies the `application/octet-stream` upload, so combining it with `use_octet_stream=False` raises `InvalidArgumentException`. Requires envd 0.5.7 or later — when not supported, the upload falls back to uncompressed `multipart/form-data`.
+        :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `None`, which uses octet-stream when `data` is a file-like object or an iterable (so streamed uploads aren't buffered) and `multipart/form-data` otherwise. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`, which reads text-mode file-like data into memory (httpx only streams binary file objects in a multipart body). Iterables are only uploaded with octet-stream: `use_octet_stream=False` or an envd without octet-stream support raises an error.
         :param metadata: User-defined metadata to persist on the uploaded file as extended attributes. Keys are lowercased by the sandbox; invalid keys or values raise an `InvalidArgumentException`. Requires envd 0.6.2 or later.
 
         :return: Information about the written file
         """
         result = self.write_files(
-            [WriteEntry(path=path, data=data)],
+            [SyncWriteEntry(path=path, data=data)],
             user=user,
             request_timeout=request_timeout,
             gzip=gzip,
@@ -307,7 +311,7 @@ class Filesystem:
 
     def write_files(
         self,
-        files: List[WriteEntry],
+        files: Sequence[Union[WriteEntry, SyncWriteEntry]],
         user: Optional[Username] = None,
         request_timeout: Optional[float] = None,
         gzip: bool = False,
@@ -322,11 +326,11 @@ class Filesystem:
         When writing to a file that already exists, the file will get overwritten.
         When writing to a file at path that doesn't exist, the necessary directories will be created.
 
-        :param files: list of files to write as `WriteEntry` objects, each containing `path` and `data`
+        :param files: list of files to write as `WriteEntry` / `SyncWriteEntry` objects, each containing `path` and `data` (a `str`, `bytes`, `IO` or `Iterable[bytes]`)
         :param user: Run the operation as this user
         :param request_timeout: Timeout for the request
-        :param gzip: Use gzip compression for the upload. Implies the `application/octet-stream` upload. Requires envd 0.5.7 or later — when not supported, the upload falls back to uncompressed `multipart/form-data`.
-        :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `None`, which uses octet-stream when any entry is a file-like object (so streamed uploads aren't buffered) and `multipart/form-data` otherwise. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`, which reads text-mode file-like data into memory (httpx only streams binary file objects in a multipart body).
+        :param gzip: Use gzip compression for the upload. Implies the `application/octet-stream` upload, so combining it with `use_octet_stream=False` raises `InvalidArgumentException`. Requires envd 0.5.7 or later — when not supported, the upload falls back to uncompressed `multipart/form-data`.
+        :param use_octet_stream: Upload using `application/octet-stream` instead of `multipart/form-data`. Defaults to `None`, which uses octet-stream when any entry is a file-like object or an iterable (so streamed uploads aren't buffered) and `multipart/form-data` otherwise. Requires envd 0.5.7 or later — when not supported, the upload falls back to `multipart/form-data`, which reads text-mode file-like data into memory (httpx only streams binary file objects in a multipart body). Iterables are only uploaded with octet-stream: `use_octet_stream=False` or an envd without octet-stream support raises an error.
         :param metadata: User-defined metadata to persist on each uploaded file as extended attributes; the same map is applied to every file. Keys are lowercased by the sandbox; invalid keys or values raise an `InvalidArgumentException`. Requires envd 0.6.2 or later.
         :return: Information about the written files
         """
@@ -342,15 +346,21 @@ class Filesystem:
         if metadata and self._envd_version < ENVD_FILE_METADATA:
             raise TemplateException("File metadata requires envd 0.6.2 or later.")
 
-        # A file-like entry is streamed; str/bytes are sent from memory.
+        # A file-like or iterable entry is streamed; str/bytes are sent from memory.
         has_streamable_data = any(
             not isinstance(file["data"], (str, bytes)) for file in files
         )
 
+        if gzip and use_octet_stream is False:
+            raise InvalidArgumentException(
+                "`gzip` requires the octet-stream upload and can't be combined "
+                "with `use_octet_stream=False`."
+            )
+
         if use_octet_stream is None:
             # Streaming an upload only happens on the octet-stream path; the
             # multipart path buffers file-like data. Default to octet-stream
-            # when any entry is a file-like object so a streamed upload isn't
+            # when any entry is a file-like object or an iterable so a streamed upload isn't
             # silently buffered.
             use_octet_stream = has_streamable_data
 
@@ -359,6 +369,9 @@ class Filesystem:
         # Content-Encoding header applies to the whole request body), so
         # requesting gzip implies it when envd supports it.
         use_octet_stream = (use_octet_stream or gzip) and supports_octet_stream
+        check_stream_upload(
+            files, use_octet_stream, supports_octet_stream, is_async=False
+        )
 
         # A buffered upload is bounded by the request timeout as a
         # whole-request deadline, matching the JS SDK. A streamed (file-like)
@@ -387,15 +400,18 @@ class Filesystem:
                     headers["Content-Encoding"] = "gzip"
 
                 is_streamed = not isinstance(file_data, (str, bytes))
+                check = ChunkCheck()
                 try:
                     r = self._envd_api.post(
                         ENVD_API_FILES_ROUTE,
-                        content=to_upload_body(file_data, gzip),
+                        content=to_upload_body(file_data, gzip, check),
                         headers=headers,
                         params=params,
                         timeout=None if is_streamed else upload_timeout,
                     )
                 except httpx.TransportError as e:
+                    if check.error is not None:
+                        raise check.error from None
                     raise handle_envd_api_transport_exception_with_health(
                         e, self._envd_health_api
                     )
@@ -419,7 +435,10 @@ class Filesystem:
             if len(files) == 1:
                 params["path"] = files[0]["path"]
 
-            httpx_files = [_to_httpx_file(file["path"], file["data"]) for file in files]
+            httpx_files = [
+                _to_httpx_file(file["path"], file["data"], is_async=False)
+                for file in files
+            ]
 
             if len(httpx_files) == 0:
                 return []

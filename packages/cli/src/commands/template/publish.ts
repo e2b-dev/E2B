@@ -7,18 +7,9 @@ import {
   asFormattedSandboxTemplate,
   SandboxTemplateRef,
 } from 'src/utils/format'
-import {
-  deprecatedConfigOption,
-  deprecatedTeamOption,
-  projectIdFromOptions,
-  projectOption,
-  selectMultipleOption,
-  warnIgnoredConfigOption,
-} from 'src/options'
-import { listSandboxTemplates } from './list'
-import { getPromptTemplates } from 'src/utils/templatePrompt'
+import { deprecatedConfigOption, warnIgnoredConfigOption } from 'src/options'
 import { confirm } from 'src/utils/confirm'
-import { client, resolveProjectId } from 'src/api'
+import { client } from 'src/api'
 import { handleE2BRequestError } from '../../utils/errors'
 
 async function publishTemplate(templateID: string, publish: boolean) {
@@ -46,68 +37,13 @@ async function templateAction(
   template: string,
   opts: {
     yes?: boolean
-    select?: boolean
-    project?: string
-    team?: string
     config?: string
   }
 ) {
   try {
     warnIgnoredConfigOption(opts)
 
-    let projectId = projectIdFromOptions(opts)
-
-    const templates: SandboxTemplateRef[] = []
-
-    if (template) {
-      templates.push({
-        templateID: template,
-      })
-    } else if (opts.select) {
-      projectId = resolveProjectId(projectId)
-
-      const allTemplates = await listSandboxTemplates({
-        projectId,
-      })
-
-      const filteredTemplates = allTemplates.filter(
-        (e) => !e.public === publish
-      )
-
-      if (filteredTemplates.length === 0) {
-        console.log(
-          `No sandbox templates available ${
-            publish ? 'to publish' : 'to unpublish'
-          } found`
-        )
-        return
-      }
-
-      const selectedTemplates = await getPromptTemplates(
-        filteredTemplates,
-        `Select sandbox templates to ${publish ? 'publish' : 'unpublish'}`
-      )
-      templates.push(
-        ...selectedTemplates.map((e) => ({
-          templateID: e.templateID,
-          aliases: e.aliases,
-        }))
-      )
-
-      if (!templates || templates.length === 0) {
-        console.log('No sandbox templates selected')
-        return
-      }
-    }
-
-    if (!templates || templates.length === 0) {
-      console.log(
-        `No sandbox templates selected. Specify sandbox template with ${asBold(
-          '[template]'
-        )} argument or use interactive mode with  ${asBold('-s')} flag.`
-      )
-      return
-    }
+    const templates: SandboxTemplateRef[] = [{ templateID: template }]
 
     console.log(
       chalk.default.underline(
@@ -158,15 +94,7 @@ async function templateAction(
 
 export const publishCommand = new commander.Command('publish')
   .description('publish sandbox template')
-  .argument(
-    '[template]',
-    `specify ${asBold(
-      '[template]'
-    )} to publish it, or select templates interactively with ${asBold('-s')}`
-  )
-  .addOption(selectMultipleOption)
-  .addOption(projectOption)
-  .addOption(deprecatedTeamOption)
+  .argument('<template>', `specify ${asBold('<template>')} to publish it`)
   .addOption(deprecatedConfigOption)
   .alias('pb')
   .option('-y, --yes', 'skip manual publish confirmation')
@@ -174,15 +102,7 @@ export const publishCommand = new commander.Command('publish')
 
 export const unPublishCommand = new commander.Command('unpublish')
   .description('unpublish sandbox template')
-  .argument(
-    '[template]',
-    `specify ${asBold(
-      '[template]'
-    )} to unpublish it, or select templates interactively with ${asBold('-s')}`
-  )
-  .addOption(selectMultipleOption)
-  .addOption(projectOption)
-  .addOption(deprecatedTeamOption)
+  .argument('<template>', `specify ${asBold('<template>')} to unpublish it`)
   .addOption(deprecatedConfigOption)
   .alias('upb')
   .option('-y, --yes', 'skip manual unpublish confirmation')
