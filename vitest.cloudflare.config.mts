@@ -1,4 +1,4 @@
-import { cloudflareTest } from '@cloudflare/vitest-pool-workers'
+import { cloudflareTest } from '@cloudflare/vitest-plugin'
 import { config } from 'dotenv'
 import type { ViteUserConfig } from 'vitest/config'
 
@@ -29,7 +29,7 @@ export interface CloudflareVitestConfigOptions {
 
 /**
  * Runs a package's Node suite inside Cloudflare's workerd via
- * vitest-pool-workers, against src — the same coverage as the bun and deno
+ * vitest-plugin, against src — the same coverage as the bun and deno
  * legs, but exercising the Workers runtime's fetch/streams implementations.
  */
 export function createCloudflareVitestConfig({
