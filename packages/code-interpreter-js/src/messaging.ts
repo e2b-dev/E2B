@@ -32,7 +32,11 @@ export class OutputMessage {
      */
     public readonly line: string,
     /**
-     * Unix epoch in nanoseconds.
+     * Unix epoch in nanoseconds, as sent by the backend.
+     *
+     * Nanosecond epoch values exceed `Number.MAX_SAFE_INTEGER`, so the value is
+     * only precise to a few hundred nanoseconds (currently multiples of 256 ns).
+     * Chunks emitted closer together than that may share the same timestamp.
      */
     public readonly timestamp: number,
     /**

@@ -32,44 +32,54 @@ test('falls back to the status text for an empty body', async () => {
 })
 
 test('stdout output carries the backend timestamp, not the client clock', async () => {
-  const backendTimestamp = 1700000000000000000
+  const backendTimestamp = '1762095600123456789'
   const execution = new Execution()
   let received: OutputMessage | undefined
 
   await parseOutput(
     execution,
-    JSON.stringify({
-      type: 'stdout',
-      text: 'hello',
-      timestamp: backendTimestamp,
-    }),
+    `{"type":"stdout","text":"hello","timestamp":${backendTimestamp}}`,
     (msg) => {
       received = msg
     }
   )
 
-  expect(received?.timestamp).toBe(backendTimestamp)
+  expect(received?.timestamp).toBe(Number(backendTimestamp))
   expect(received?.error).toBe(false)
 })
 
 test('stderr output carries the backend timestamp, not the client clock', async () => {
-  const backendTimestamp = 1700000000000000000
+  const backendTimestamp = '1762095600123456789'
   const execution = new Execution()
   let received: OutputMessage | undefined
 
   await parseOutput(
     execution,
-    JSON.stringify({
-      type: 'stderr',
-      text: 'boom',
-      timestamp: backendTimestamp,
-    }),
+    `{"type":"stderr","text":"boom","timestamp":${backendTimestamp}}`,
     undefined,
     (msg) => {
       received = msg
     }
   )
 
-  expect(received?.timestamp).toBe(backendTimestamp)
+  expect(received?.timestamp).toBe(Number(backendTimestamp))
   expect(received?.error).toBe(true)
+})
+
+test('backend nanosecond timestamps are rounded to the nearest representable number', async () => {
+  const timestamps: number[] = []
+
+  for (const ts of ['1762095600123456789', '1762095600123456790']) {
+    await parseOutput(
+      new Execution(),
+      `{"type":"stdout","text":"x","timestamp":${ts}}`,
+      (msg) => {
+        timestamps.push(msg.timestamp)
+      }
+    )
+  }
+
+  expect(timestamps[0]).toBe(timestamps[1])
+  const drift = BigInt(timestamps[0]) - 1762095600123456789n
+  expect(drift >= -128n && drift <= 128n).toBe(true)
 })
