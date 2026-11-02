@@ -51,6 +51,7 @@ generate-mcp:
 			--class-name McpServer \
 			--use-field-description \
 			--disable-timestamp \
+			--formatters builtin \
 			--extra-fields forbid
 
 .PHONY: test
