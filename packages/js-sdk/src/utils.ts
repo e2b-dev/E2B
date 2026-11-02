@@ -173,11 +173,17 @@ export function toDispatchableStream(stream: ReadableStream): ReadableStream {
 
 /**
  * Data that can be uploaded to the sandbox: buffered (`string`, `ArrayBuffer`,
- * `Blob`) or streamed (`ReadableStream`, or any `AsyncIterable` of byte chunks
- * such as an async generator or a Node.js `Readable`).
+ * `Uint8Array` such as a Node.js `Buffer`, `Blob`) or streamed (`ReadableStream`,
+ * or any `AsyncIterable` of byte chunks such as an async generator or a Node.js
+ * `Readable`).
  */
 export type UploadData =
-  string | ArrayBuffer | Blob | ReadableStream | AsyncIterable<Uint8Array>
+  | string
+  | ArrayBuffer
+  | Uint8Array
+  | Blob
+  | ReadableStream
+  | AsyncIterable<Uint8Array>
 
 /**
  * Whether `data` is streamed rather than buffered.
@@ -251,7 +257,7 @@ function asyncIterableToStream(
 /**
  * Upload data that is held in memory, as opposed to streamed.
  */
-export type BufferedUploadData = string | ArrayBuffer | Blob
+export type BufferedUploadData = string | ArrayBuffer | Uint8Array | Blob
 
 /**
  * Convert in-memory data to a Blob, avoiding unnecessary conversions when
@@ -267,9 +273,9 @@ export async function toBlob(data: BufferedUploadData): Promise<Blob> {
   if (isBlobLike(data)) {
     return new Blob([await data.arrayBuffer()], { type: data.type })
   }
-  // String or ArrayBuffer - create Blob. A cross-realm ArrayBuffer needs no
-  // special handling: buffer sources are recognized by V8, not by brand.
-  return new Blob([data])
+  // String, ArrayBuffer or Uint8Array - create Blob. Cross-realm buffers need
+  // no special handling: buffer sources are recognized by V8, not by brand.
+  return new Blob([data as BlobPart])
 }
 
 // Characters that are safe to leave unquoted in a POSIX shell, matching the
