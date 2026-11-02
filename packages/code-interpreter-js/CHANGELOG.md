@@ -1,5 +1,17 @@
 # @e2b/code-interpreter
 
+## 2.9.1
+
+### Patch Changes
+
+- 8cc9ed1: Document that `logs.stdout`, `logs.stderr` and `OutputMessage.line` hold raw chunks with newlines kept (join them with `''` to rebuild the output), and that `Result.png`, `Result.jpeg` and `Result.pdf` are base64-encoded.
+- 7d10433: Fix `readLines` quadratic line reassembly when streaming long single-line outputs (e.g. base64 images, wide DataFrames, large JSON): decode and scan only each new chunk, accumulating line fragments in an array that is joined once per emitted line, instead of appending to and re-scanning a single string buffer on every chunk.
+- ac0727b: Fix `OutputMessage.timestamp` in the JS Code Interpreter to use the backend timestamp (Unix epoch in nanoseconds) sent with each stdout/stderr message, instead of the client clock (`new Date().getTime() * 1000`). The type is unchanged (`number`); this aligns the value with the documented contract and the Python SDK. Because nanosecond epoch values exceed `Number.MAX_SAFE_INTEGER`, the JS value is precise to a few hundred nanoseconds (documented on `OutputMessage.timestamp`).
+- Updated dependencies [320f39d]
+- Updated dependencies [36258c1]
+- Updated dependencies [8e37561]
+  - e2b@2.62.1
+
 ## 2.9.0
 
 ### Minor Changes

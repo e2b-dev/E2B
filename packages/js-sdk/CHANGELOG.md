@@ -1,5 +1,13 @@
 # e2b
 
+## 2.62.1
+
+### Patch Changes
+
+- 320f39d: Update the `glob` dependency to v14.
+- 36258c1: `files.write()`, `files.writeFiles()` and `Volume.writeFile()` accept `Uint8Array`, including a Node.js `Buffer`.
+- 8e37561: Raise the minimum `undici` version to 8.12.3, which replaces HTTP/2 connections that stop responding after a stream timeout.
+
 ## 2.62.0
 
 ### Minor Changes

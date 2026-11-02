@@ -1,5 +1,11 @@
 # @e2b/code-interpreter-python
 
+## 2.11.7
+
+### Patch Changes
+
+- 8cc9ed1: Document the `Result` fields in the reference, including that `png`, `jpeg` and `pdf` are base64-encoded, and that `logs.stdout`, `logs.stderr` and `OutputMessage.line` hold raw chunks with newlines kept; use `''.join(execution.logs.stdout)` to rebuild the output.
+
 ## 2.11.6
 
 ### Patch Changes
