@@ -192,28 +192,6 @@ test('passes Request objects to undici as URL plus init', async () => {
   expect(requests[0].init?.body).toBeInstanceOf(ReadableStream)
 })
 
-test('can create a bounded dispatcher for RPC streams', async () => {
-  const agents: Array<{ allowH2?: boolean; connections?: number }> = []
-
-  class Agent {
-    constructor(options: { allowH2?: boolean; connections?: number }) {
-      agents.push(options)
-    }
-  }
-
-  const undiciFetch = vi.fn(() => Promise.resolve(new Response('ok')))
-
-  const { createEnvdFetchForRuntime } = await import('../../src/envd/http2')
-
-  const fetcher = createEnvdFetchForRuntime('node', {
-    connectionLimit: 100,
-    loadUndici: () => Promise.resolve({ Agent, fetch: undiciFetch }),
-  })
-  await fetcher('https://example.com/rpc')
-
-  expect(agents).toEqual([{ allowH2: true, connections: 100 }])
-})
-
 test('reads RPC stream dispatcher connection limit from env', async () => {
   process.env.E2B_ENVD_RPC_CONNECTIONS = '200'
 

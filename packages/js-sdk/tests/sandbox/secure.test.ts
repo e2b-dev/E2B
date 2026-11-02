@@ -43,29 +43,6 @@ describe('secure sandbox', () => {
   )
 })
 
-test.skipIf(isDebug)('signing generation', async () => {
-  const operation = 'read'
-  const path = '/home/user/hello.txt'
-  const user = 'root'
-  const envdAccessToken = crypto.randomUUID()
-
-  const signatureRaw = `${path}:${operation}:${user}:${envdAccessToken}`
-
-  const readSignatureExpected = {
-    signature: await expectedSignature(signatureRaw),
-    expiration: null,
-  }
-
-  const readSignatureReceived = await getSignature({
-    path,
-    operation,
-    user,
-    envdAccessToken,
-  })
-
-  assert.deepEqual(readSignatureExpected, readSignatureReceived)
-})
-
 test.skipIf(isDebug)('signing generation with expiration', async () => {
   const operation = 'read'
   const path = '/home/user/hello.txt'

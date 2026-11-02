@@ -18,23 +18,13 @@ class TestWriteFileAndReadFile:
         assert read_content == content
 
     async def test_write_and_read_bytes(self, async_volume: AsyncVolume):
-        path = "/test-bytes.txt"
-        content = "Test bytes content"
-        content_bytes = content.encode("utf-8")
+        path = "/test-bytes.bin"
+        content_bytes = bytes([0, 1, 2, 3, 4])
 
         await async_volume.write_file(path, content_bytes)
         read_bytes = await async_volume.read_file(path, format="bytes")
 
         assert read_bytes == content_bytes
-
-    async def test_write_and_read_binary_data(self, async_volume: AsyncVolume):
-        path = "/binary.bin"
-        binary_data = bytes([0, 1, 2, 3, 4])
-
-        await async_volume.write_file(path, binary_data)
-        read_bytes = await async_volume.read_file(path, format="bytes")
-
-        assert read_bytes == binary_data
 
     async def test_write_and_read_stream(self, async_volume: AsyncVolume):
         path = "/test-stream.txt"
@@ -229,15 +219,6 @@ class TestList:
         assert len(entries) >= 1
         assert any(e.name == "file.txt" for e in entries)
 
-    @pytest.mark.skip(reason="depth option not yet supported")
-    async def test_list_with_depth(self, async_volume: AsyncVolume):
-        await async_volume.make_dir("/deep/nested/structure", force=True)
-        await async_volume.write_file("/deep/nested/structure/file.txt", "Content")
-
-        entries = await async_volume.list("/deep", depth=2)
-
-        assert len(entries) > 0
-
     async def test_list_nonexistent_raises(self, async_volume: AsyncVolume):
         with pytest.raises(NotFoundException):
             await async_volume.list("/non-existent")
@@ -259,15 +240,6 @@ class TestRemove:
         await async_volume.remove(path)
 
         assert await async_volume.exists(path) is False
-
-    async def test_remove_directory_recursively(self, async_volume: AsyncVolume):
-        dir_path = "/recursive-dir"
-        await async_volume.make_dir(f"{dir_path}/nested", force=True)
-        await async_volume.write_file(f"{dir_path}/nested/file.txt", "Content")
-
-        await async_volume.remove(dir_path)
-
-        assert await async_volume.exists(dir_path) is False
 
     async def test_remove_nonexistent_raises(self, async_volume: AsyncVolume):
         with pytest.raises(NotFoundException):

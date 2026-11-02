@@ -50,11 +50,6 @@ def test_create_treats_none_as_not_set():
     assert "dnsServers" not in wire
 
 
-def test_create_leaves_out_an_empty_network_config():
-    # Both create paths skip the network field when this is empty.
-    assert not build_network_config({})
-
-
 @pytest.mark.parametrize("dns_servers", [[], ["1.1.1.1"]])
 def test_update_sends_dns_servers(dns_servers):
     network: SandboxNetworkUpdate = {

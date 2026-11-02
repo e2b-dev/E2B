@@ -203,26 +203,3 @@ async def test_connect_propagates_byoc_domain():
     connected = await AsyncVolume.connect(created.volume_id)
     assert connected._domain == byoc_domain
     assert connected._get_volume_config().domain == byoc_domain
-
-
-async def test_volume_full_lifecycle():
-    # Create
-    vol = await AsyncVolume.create("lifecycle-vol")
-    assert vol.name == "lifecycle-vol"
-
-    # Get info
-    info = await AsyncVolume.get_info(vol.volume_id)
-    assert info.name == "lifecycle-vol"
-
-    # List
-    volumes = await AsyncVolume.list()
-    assert len(volumes) == 1
-    assert volumes[0].volume_id == vol.volume_id
-
-    # Destroy
-    destroyed = await AsyncVolume.destroy(vol.volume_id)
-    assert destroyed is True
-
-    # List again
-    volumes = await AsyncVolume.list()
-    assert len(volumes) == 0

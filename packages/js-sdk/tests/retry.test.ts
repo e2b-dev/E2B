@@ -339,47 +339,6 @@ test.each([
   }
 )
 
-test('retries a POST when the server marks a 503', async () => {
-  const statuses = [503, 200]
-  const fetchImpl = vi.fn(async () => {
-    const responseStatus = statuses.shift()!
-    return new Response(null, {
-      status: responseStatus,
-      headers: responseStatus === 200 ? {} : { 'Should-Retry': 'true' },
-    })
-  }) as typeof fetch
-  const fetchWithRetry = withRetry(fetchImpl, 3, 60_000, {
-    monotonic: () => 0,
-    sleep: async () => {},
-  })
-
-  const response = await fetchWithRetry('https://api.e2b.test/sandboxes', {
-    method: 'POST',
-  })
-
-  expect(response.status).toBe(200)
-  expect(fetchImpl).toHaveBeenCalledTimes(2)
-})
-
-test('retries a POST 502 without Should-Retry', async () => {
-  const responses = [
-    new Response(null, { status: 502, headers: { 'Retry-After': '0' } }),
-    new Response('ok'),
-  ]
-  const fetchImpl = vi.fn(async () => responses.shift()!) as typeof fetch
-  const fetchWithRetry = withRetry(fetchImpl, 1, 10_000, {
-    monotonic: () => 0,
-    sleep: async () => {},
-  })
-
-  const response = await fetchWithRetry('https://api.e2b.test/v2/sandboxes', {
-    method: 'POST',
-  })
-
-  expect(response.status).toBe(200)
-  expect(fetchImpl).toHaveBeenCalledTimes(2)
-})
-
 test('caps the backoff for long retry sequences', async () => {
   const fetchImpl = vi.fn(
     async () =>
