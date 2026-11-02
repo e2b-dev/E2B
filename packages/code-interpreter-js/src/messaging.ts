@@ -352,7 +352,7 @@ export async function parseOutput(
         await onStdout({
           error: false,
           line: msg.text,
-          timestamp: new Date().getTime() * 1000,
+          timestamp: msg.timestamp,
         })
       }
       break
@@ -362,7 +362,7 @@ export async function parseOutput(
         await onStderr({
           error: true,
           line: msg.text,
-          timestamp: new Date().getTime() * 1000,
+          timestamp: msg.timestamp,
         })
       }
       break

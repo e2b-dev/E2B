@@ -1,7 +1,12 @@
 import { expect, test } from 'vitest'
 
 import { SandboxError } from '../src'
-import { extractError } from '../src/messaging'
+import {
+  Execution,
+  OutputMessage,
+  extractError,
+  parseOutput,
+} from '../src/messaging'
 
 test('includes the response body in server errors', async () => {
   const error = await extractError(
@@ -24,4 +29,47 @@ test('falls back to the status text for an empty body', async () => {
   )
 
   expect(error).toEqual(new SandboxError('500 Internal Server Error'))
+})
+
+test('stdout output carries the backend timestamp, not the client clock', async () => {
+  const backendTimestamp = 1700000000000000000
+  const execution = new Execution()
+  let received: OutputMessage | undefined
+
+  await parseOutput(
+    execution,
+    JSON.stringify({
+      type: 'stdout',
+      text: 'hello',
+      timestamp: backendTimestamp,
+    }),
+    (msg) => {
+      received = msg
+    }
+  )
+
+  expect(received?.timestamp).toBe(backendTimestamp)
+  expect(received?.error).toBe(false)
+})
+
+test('stderr output carries the backend timestamp, not the client clock', async () => {
+  const backendTimestamp = 1700000000000000000
+  const execution = new Execution()
+  let received: OutputMessage | undefined
+
+  await parseOutput(
+    execution,
+    JSON.stringify({
+      type: 'stderr',
+      text: 'boom',
+      timestamp: backendTimestamp,
+    }),
+    undefined,
+    (msg) => {
+      received = msg
+    }
+  )
+
+  expect(received?.timestamp).toBe(backendTimestamp)
+  expect(received?.error).toBe(true)
 })
