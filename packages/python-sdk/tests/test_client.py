@@ -298,23 +298,40 @@ def test_client_async_secret_uses_client_config(api_server):
 
 
 def test_top_level_classes_keep_using_the_env_config(api_server):
-    sandbox = Sandbox.create(api_url=api_server)
+    # Constructed (and used) first to prove clients do not leak into the
+    # env-configured top-level classes.
+    client = E2B(api_key=API_KEY_A, domain=DOMAIN_A, api_url=api_server)
 
-    assert api_keys() == [ENV_API_KEY]
+    async def use_async_client():
+        await client.AsyncSandbox.create()
+        await client.AsyncVolume.list()
+        await client.AsyncTemplate.exists("tmpl")
+        await client.AsyncSecret.exists("secret")
+
+    client.Sandbox.create()
+    client.Volume.list()
+    client.Template.exists("tmpl")
+    client.Secret.exists("secret")
+    asyncio.run(use_async_client())
+    assert api_keys() == [API_KEY_A] * 8
+
+    sandbox = Sandbox.create(api_url=api_server)
     assert sandbox.connection_config.api_key == ENV_API_KEY
     assert sandbox.connection_config.domain == ENV_DOMAIN
-    # Creating clients does not bind anything onto the top-level classes.
-    assert Sandbox._bound_api_params == {}
-    assert AsyncSandbox._bound_api_params == {}
-    assert Volume._bound_api_params == {}
-    assert AsyncVolume._bound_api_params == {}
-    assert Template._bound_api_params == {}
-    assert AsyncTemplate._bound_api_params == {}
-    assert Secret._bound_api_params == {}
-    assert AsyncSecret._bound_api_params == {}
-
+    Volume.list(api_url=api_server)
     assert Template.exists("tmpl", api_url=api_server) is True
-    assert api_keys()[-1] == ENV_API_KEY
+    assert Secret.exists("secret", api_url=api_server) is True
+
+    async def use_async_top_level():
+        sandbox = await AsyncSandbox.create(api_url=api_server)
+        assert sandbox.connection_config.api_key == ENV_API_KEY
+        assert sandbox.connection_config.domain == ENV_DOMAIN
+        await AsyncVolume.list(api_url=api_server)
+        assert await AsyncTemplate.exists("tmpl", api_url=api_server) is True
+        assert await AsyncSecret.exists("secret", api_url=api_server) is True
+
+    asyncio.run(use_async_top_level())
+    assert api_keys()[8:] == [ENV_API_KEY] * 8
 
 
 def test_client_params_are_copied(api_server):
