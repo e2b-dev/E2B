@@ -33,7 +33,7 @@ function getRuntime(): { runtime: Runtime; version: string } {
   }
 
   // Check the explicit Workers marker before the generic Node check — Node
-  // compatibility shims (workerd's nodejs_compat, vitest-pool-workers) can
+  // compatibility shims (workerd's nodejs_compat, vitest-plugin) can
   // populate process.release.name inside Workers.
   if ((globalThis as any).navigator?.userAgent === 'Cloudflare-Workers') {
     return { runtime: 'cloudflare-worker', version: 'unknown' }
