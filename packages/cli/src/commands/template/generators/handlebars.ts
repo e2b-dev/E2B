@@ -49,7 +49,7 @@ interface HandlebarStep {
 /**
  * Transform template data for Handlebars
  */
-export async function transformTemplateData(
+async function transformTemplateData(
   template: TemplateClass
 ): Promise<TemplateJSON & { steps: HandlebarStep[] }> {
   // Extract JSON structure from parsed template
