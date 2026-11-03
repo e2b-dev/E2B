@@ -1,4 +1,15 @@
-import { expect, test, describe, beforeAll, afterAll, beforeEach } from 'vitest'
+import {
+  expect,
+  test,
+  describe,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  afterEach,
+  vi,
+} from 'vitest'
+import { createHash, randomBytes } from 'crypto'
+import fs, { statSync } from 'fs'
 import { appendFile, writeFile, mkdir, mkdtemp, rm, symlink } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join, basename, relative } from 'path'
@@ -556,5 +567,46 @@ describe('getAllFilesInPath', () => {
       )
       expect(readDockerignore(testDir)).toEqual(['.env', 'src'])
     })
+  })
+})
+
+describe('calculateFilesHash', () => {
+  let testDir: string
+
+  beforeEach(async () => {
+    testDir = await mkdtemp(join(tmpdir(), 'calculateFilesHash-test-'))
+  })
+
+  afterEach(async () => {
+    vi.restoreAllMocks()
+    await rm(testDir, { recursive: true, force: true })
+  })
+
+  test('should hash file content spanning multiple read chunks', async () => {
+    const content = randomBytes(3 * 1024 * 1024 + 123)
+    const filePath = join(testDir, 'big.bin')
+    await writeFile(filePath, content)
+    const stats = statSync(filePath)
+
+    const expected = createHash('sha256')
+      .update('COPY big.bin /app')
+      .update('big.bin')
+      .update(stats.mode.toString())
+      .update(stats.size.toString())
+      .update(content)
+      .digest('hex')
+
+    expect(
+      await calculateFilesHash('big.bin', '/app', testDir, [], false, undefined)
+    ).toBe(expected)
+  })
+
+  test('should not read whole files into memory', async () => {
+    await writeFile(join(testDir, 'big.bin'), randomBytes(2 * 1024 * 1024))
+    const readFileSync = vi.spyOn(fs, 'readFileSync')
+
+    await calculateFilesHash('big.bin', '/app', testDir, [], false, undefined)
+
+    expect(readFileSync).not.toHaveBeenCalled()
   })
 })
