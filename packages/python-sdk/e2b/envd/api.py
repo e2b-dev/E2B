@@ -2,6 +2,8 @@ import httpx
 
 from typing import Callable, Optional
 
+from e2b.connection_config import HttpVersion
+
 from e2b.envd.rpc import (
     format_sandbox_unreachable_exception,
     format_terminated_exception,
@@ -20,6 +22,13 @@ from e2b.exceptions import (
 
 ENVD_API_FILES_ROUTE = "/files"
 ENVD_API_HEALTH_ROUTE = "/health"
+
+# File downloads go over HTTP/1.1 whatever the configured HTTP version: the
+# sandbox proxy pads them with an empty DATA frame every ~32 KiB, and h2 (under
+# pyqwest) closes a connection with ENHANCE_YOUR_CALM ("too_many_data_frames")
+# after 100 such frames over its lifetime — failing the download and every
+# other stream multiplexed on that connection.
+ENVD_API_FILE_DOWNLOAD_HTTP_VERSION: HttpVersion = "1.1"
 
 _DEFAULT_API_ERROR_MAP: dict[int, Callable[[str], Exception]] = {
     400: InvalidArgumentException,

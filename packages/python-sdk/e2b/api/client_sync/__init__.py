@@ -222,6 +222,7 @@ def get_envd_api(
     *,
     for_streaming: bool = False,
     retry_connect: bool = True,
+    http_version: Optional[HttpVersion] = None,
 ) -> httpx.Client:
     """An httpx client for a sandbox's envd HTTP API (file transfers, health
     checks) on the shared transports. The client itself is a cheap stateless
@@ -230,7 +231,10 @@ def get_envd_api(
     return httpx.Client(
         base_url=base_url,
         transport=get_transport(
-            config, for_streaming=for_streaming, retry_connect=retry_connect
+            config,
+            http_version=http_version,
+            for_streaming=for_streaming,
+            retry_connect=retry_connect,
         ),
         headers=config.sandbox_headers,
         event_hooks=make_logging_event_hooks(config.logger),
