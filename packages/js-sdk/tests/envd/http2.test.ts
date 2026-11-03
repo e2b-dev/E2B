@@ -298,31 +298,43 @@ test('uses global fetch outside Node', async () => {
   )
 })
 
-test('envd REST dispatchers allow one stream per HTTP/2 session, RPC ones do not', async () => {
-  const builds: Array<{ connections: number; maxConcurrentStreams?: number }> =
-    []
-  vi.doMock('../../src/undici', async (importOriginal) => {
-    const original = await importOriginal<typeof import('../../src/undici')>()
-    return {
-      ...original,
-      buildDispatchedFetch: vi.fn((options) => {
-        builds.push(options)
-        return Promise.resolve((() =>
-          Promise.resolve(new Response('ok'))) as typeof fetch)
-      }),
-    }
-  })
+test('caps envd REST dispatchers at one stream per HTTP/2 session', async () => {
+  const agents: Array<{
+    allowH2?: boolean
+    connections?: number
+    maxConcurrentStreams?: number
+  }> = []
 
-  const { createEnvdFetch, createEnvdRpcFetch, ENVD_MAX_CONCURRENT_STREAMS } =
+  class Agent {
+    constructor(options: {
+      allowH2?: boolean
+      connections?: number
+      maxConcurrentStreams?: number
+    }) {
+      agents.push(options)
+    }
+  }
+
+  const undiciFetch = vi.fn(() => Promise.resolve(new Response('ok')))
+
+  const { createEnvdFetchForRuntime, ENVD_MAX_CONCURRENT_STREAMS } =
     await import('../../src/envd/http2')
 
-  await createEnvdFetch()('https://example.com/files')
-  await createEnvdRpcFetch()('https://example.com/rpc')
-
   expect(ENVD_MAX_CONCURRENT_STREAMS).toBe(1)
-  expect(builds).toEqual([
-    expect.objectContaining({ connections: 10, maxConcurrentStreams: 1 }),
-    expect.objectContaining({ connections: 200 }),
+
+  const rest = createEnvdFetchForRuntime('node', {
+    maxConcurrentStreams: ENVD_MAX_CONCURRENT_STREAMS,
+    loadUndici: () => Promise.resolve({ Agent, fetch: undiciFetch }),
+  })
+  await rest('https://example.com/files')
+  const rpc = createEnvdFetchForRuntime('node', {
+    connectionLimit: 200,
+    loadUndici: () => Promise.resolve({ Agent, fetch: undiciFetch }),
+  })
+  await rpc('https://example.com/rpc')
+
+  expect(agents).toEqual([
+    { allowH2: true, connections: 10, maxConcurrentStreams: 1 },
+    { allowH2: true, connections: 200 },
   ])
-  expect(builds[1].maxConcurrentStreams).toBeUndefined()
 })
