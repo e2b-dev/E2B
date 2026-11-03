@@ -266,38 +266,6 @@ function fakeUndiciWithDispatchers(responses: Array<() => Promise<Response>>) {
   return { agents, dispatched, undici }
 }
 
-test('passes maxConcurrentStreams to the dispatcher', async () => {
-  const { agents, undici } = fakeUndiciWithDispatchers([
-    () => Promise.resolve(new Response('ok')),
-    () => Promise.resolve(new Response('ok')),
-  ])
-
-  const direct = await buildDispatchedFetch({
-    connections: 10,
-    maxConcurrentStreams: 1,
-    loadUndici: () => Promise.resolve(undici),
-  })
-  await direct('https://example.com/')
-  const proxied = await buildDispatchedFetch({
-    connections: 10,
-    maxConcurrentStreams: 1,
-    proxy: 'http://127.0.0.1:8080',
-    loadUndici: () => Promise.resolve(undici),
-  })
-  await proxied('https://example.com/')
-
-  expect(agents.map((a) => a.options)).toEqual([
-    { allowH2: true, connections: 10, maxConcurrentStreams: 1 },
-    {
-      uri: 'http://127.0.0.1:8080',
-      allowH2: true,
-      connections: 10,
-      maxConcurrentStreams: 1,
-      proxyTunnel: true,
-    },
-  ])
-})
-
 test('retires the dispatcher once after its HTTP/2 session is poisoned', async () => {
   const { agents, dispatched, undici } = fakeUndiciWithDispatchers([
     () => Promise.reject(poisonedSessionError()),

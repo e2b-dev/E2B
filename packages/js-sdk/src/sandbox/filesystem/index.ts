@@ -38,6 +38,7 @@ import { FilesystemEvent, WatchHandle } from './watchHandle'
 
 import type { Timestamp } from '@bufbuild/protobuf/wkt'
 import { compareVersions } from 'compare-versions'
+import { bodyByteLength, envdUploadBudget } from '../../envd/uploadBudget'
 import {
   ENVD_DEFAULT_USER,
   ENVD_FILE_METADATA,
@@ -722,32 +723,38 @@ export class Filesystem {
                 writeOpts?.signal
               )
 
-          const res = await this.envdApi.api
-            .POST('/files', {
-              params: {
-                query: {
-                  path: filePath,
-                  username: user,
-                },
-              },
-              bodySerializer: () => body,
-              headers,
-              signal,
-              body: {},
-              // Streaming request bodies require half-duplex mode.
-              ...(streamed && {
-                duplex: 'half' as const,
-              }),
-            })
-            .catch(async (err) => {
-              // fetch reports an error raised while reading a streamed body as
-              // its own `TypeError`; surface the SDK's own validation error.
-              const invalidChunk = sourceError()
-              if (invalidChunk) {
-                throw invalidChunk
-              }
-              throw await handleEnvdApiFetchError(err, this.checkHealth)
-            })
+          const res = await envdUploadBudget.run(
+            streamed ? 0 : bodyByteLength(body),
+            signal,
+            () =>
+              this.envdApi.api
+                .POST('/files', {
+                  params: {
+                    query: {
+                      path: filePath,
+                      username: user,
+                    },
+                  },
+                  bodySerializer: () => body,
+                  headers,
+                  signal,
+                  body: {},
+                  // Streaming request bodies require half-duplex mode.
+                  ...(streamed && {
+                    duplex: 'half' as const,
+                  }),
+                })
+                .catch(async (err) => {
+                  // fetch reports an error raised while reading a streamed body
+                  // as its own `TypeError`; surface the SDK's own validation
+                  // error.
+                  const invalidChunk = sourceError()
+                  if (invalidChunk) {
+                    throw invalidChunk
+                  }
+                  throw await handleEnvdApiFetchError(err, this.checkHealth)
+                })
+          )
 
           const err = await handleFilesystemEnvdApiError(res)
           if (err) {
@@ -782,25 +789,31 @@ export class Filesystem {
         )
       }
 
-      const res = await this.envdApi.api
-        .POST('/files', {
-          params: {
-            query: {
-              path,
-              username: user,
-            },
-          },
-          bodySerializer: () => formData,
-          headers: extraHeaders,
-          signal: this.connectionConfig.getSignal(
-            writeOpts?.requestTimeoutMs,
-            writeOpts?.signal
-          ),
-          body: {},
-        })
-        .catch(async (err) => {
-          throw await handleEnvdApiFetchError(err, this.checkHealth)
-        })
+      const signal = this.connectionConfig.getSignal(
+        writeOpts?.requestTimeoutMs,
+        writeOpts?.signal
+      )
+      const res = await envdUploadBudget.run(
+        bodyByteLength(formData),
+        signal,
+        () =>
+          this.envdApi.api
+            .POST('/files', {
+              params: {
+                query: {
+                  path,
+                  username: user,
+                },
+              },
+              bodySerializer: () => formData,
+              headers: extraHeaders,
+              signal,
+              body: {},
+            })
+            .catch(async (err) => {
+              throw await handleEnvdApiFetchError(err, this.checkHealth)
+            })
+      )
 
       const err = await handleFilesystemEnvdApiError(res)
       if (err) {

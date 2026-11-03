@@ -14,7 +14,6 @@ type UndiciDispatcher = { close(): Promise<void> }
 type UndiciAgentOptions = {
   allowH2: boolean
   connections?: number
-  maxConcurrentStreams?: number
 }
 
 export type UndiciModule = {
@@ -113,15 +112,13 @@ export function createRuntimeFetch(
 
 /**
  * Build a fetch bound to a bounded undici dispatcher (HTTP/2 enabled unless
- * `httpVersion` is `'1.1'`, `connections` origin connections, at most
- * `maxConcurrentStreams` streams per HTTP/2 session, optional proxy tunnel).
- * A dispatcher whose HTTP/2 session Node reports as out of memory is retired
- * and replaced, so one poisoned session does not fail every later request.
- * Falls back to the global fetch when undici cannot be loaded.
+ * `httpVersion` is `'1.1'`, `connections` origin connections, optional proxy
+ * tunnel). A dispatcher whose HTTP/2 session Node reports as out of memory is
+ * retired and replaced, so one poisoned session does not fail every later
+ * request. Falls back to the global fetch when undici cannot be loaded.
  */
 export async function buildDispatchedFetch(options: {
   connections: number
-  maxConcurrentStreams?: number
   proxy?: string
   httpVersion?: HttpVersion
   loadUndici?: () => Promise<UndiciModule | undefined>
@@ -136,9 +133,6 @@ export async function buildDispatchedFetch(options: {
   const agentOptions: UndiciAgentOptions = {
     allowH2: (options.httpVersion ?? DEFAULT_HTTP_VERSION) === '2',
     connections: options.connections,
-  }
-  if (options.maxConcurrentStreams !== undefined) {
-    agentOptions.maxConcurrentStreams = options.maxConcurrentStreams
   }
   const createDispatcher = (): UndiciDispatcher =>
     options.proxy
