@@ -15,6 +15,7 @@ import {
   Username,
   wrapStreamWithConnectionCleanup,
 } from '../../connectionConfig'
+import { createEnvdFetch } from '../../envd/http2'
 
 import {
   checkSandboxHealth,
@@ -387,11 +388,26 @@ export class Filesystem {
   private readonly defaultWatchRecursive = false
   private readonly checkHealth: SandboxHealthCheck
 
+  /**
+   * Transport for `/files` uploads. Node's HTTP/2 client queues each buffered
+   * request body in full against the session's memory budget (10 MB) and
+   * resets whichever stream's response headers arrive while it is exhausted
+   * (ENHANCE_YOUR_CALM), so uploads multiplexed with everything else on the
+   * shared envd session fail each other and the reads next to them. They go
+   * over HTTP/1.1 instead: one request per connection, no shared budget.
+   */
+  private readonly uploadFetch: (request: Request) => Promise<Response>
+
   constructor(
     transport: Transport,
     private readonly envdApi: EnvdApiClient,
     private readonly connectionConfig: ConnectionConfig
   ) {
+    const uploadFetch = createEnvdFetch({
+      proxy: connectionConfig.proxy,
+      httpVersion: '1.1',
+    })
+    this.uploadFetch = (request) => uploadFetch(request)
     this.rpc = createClient(FilesystemService, transport)
     this.checkHealth = () => checkSandboxHealth(this.envdApi)
   }
@@ -734,6 +750,7 @@ export class Filesystem {
               headers,
               signal,
               body: {},
+              fetch: this.uploadFetch,
               // Streaming request bodies require half-duplex mode.
               ...(streamed && {
                 duplex: 'half' as const,
@@ -797,6 +814,7 @@ export class Filesystem {
             writeOpts?.signal
           ),
           body: {},
+          fetch: this.uploadFetch,
         })
         .catch(async (err) => {
           throw await handleEnvdApiFetchError(err, this.checkHealth)

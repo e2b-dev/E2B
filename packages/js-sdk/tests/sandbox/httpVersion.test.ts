@@ -73,3 +73,21 @@ test('E2B_HTTP_VERSION=1.1 pins envd fetchers to HTTP/1.1', async () => {
     httpVersion: '1.1',
   })
 })
+
+test('files.write uploads use an HTTP/1.1 envd fetcher regardless of httpVersion', async () => {
+  await createSandbox({ httpVersion: '2', proxy: 'http://127.0.0.1:8080' })
+
+  const envdFetchCalls = mocks.createEnvdFetch.mock.calls.map(
+    (call) => call[0] as { proxy?: string; httpVersion?: string }
+  )
+  expect(envdFetchCalls).toContainEqual(
+    expect.objectContaining({
+      proxy: 'http://127.0.0.1:8080',
+      httpVersion: '2',
+    })
+  )
+  expect(envdFetchCalls).toContainEqual({
+    proxy: 'http://127.0.0.1:8080',
+    httpVersion: '1.1',
+  })
+})
