@@ -109,7 +109,7 @@ def test_mode_none_defaults_to_full_memory(sandbox_factory):
         timeout=60,
         lifecycle={"on_timeout": {"action": "pause", "mode": None}},
     )
-    boot_before = sbx.files.read("/proc/sys/kernel/random/boot_id").strip()
+    boot_before = sbx.files.read("/proc/sys/kernel/random/boot_id", gzip=True).strip()
 
     sbx.set_timeout(0)  # force the timeout auto-pause now
     for _ in range(150):
@@ -120,7 +120,9 @@ def test_mode_none_defaults_to_full_memory(sandbox_factory):
 
     resumed = sbx.connect()
     assert resumed.sandbox_id == sbx.sandbox_id  # same sandbox
-    boot_after = resumed.files.read("/proc/sys/kernel/random/boot_id").strip()
+    boot_after = resumed.files.read(
+        "/proc/sys/kernel/random/boot_id", gzip=True
+    ).strip()
     assert boot_after == boot_before  # memory restore in place, not a cold boot
 
 
@@ -136,7 +138,9 @@ def test_auto_pause_filesystem_only_reboots(sandbox_factory):
 
     marker = "auto-pause-fs-only"
     sandbox.files.write("/home/user/auto-pause-marker.txt", marker)
-    boot_before = sandbox.files.read("/proc/sys/kernel/random/boot_id").strip()
+    boot_before = sandbox.files.read(
+        "/proc/sys/kernel/random/boot_id", gzip=True
+    ).strip()
 
     wait_for_state(sandbox, SandboxState.PAUSED)
 
@@ -154,7 +158,9 @@ def test_auto_pause_filesystem_only_reboots(sandbox_factory):
     persisted = resumed.files.read("/home/user/auto-pause-marker.txt").strip()
     assert persisted == marker
 
-    boot_after = resumed.files.read("/proc/sys/kernel/random/boot_id").strip()
+    boot_after = resumed.files.read(
+        "/proc/sys/kernel/random/boot_id", gzip=True
+    ).strip()
     assert boot_after != boot_before
 
 

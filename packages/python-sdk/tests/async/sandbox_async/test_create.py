@@ -114,7 +114,9 @@ async def test_mode_none_defaults_to_full_memory(async_sandbox_factory):
         timeout=60,
         lifecycle={"on_timeout": {"action": "pause", "mode": None}},
     )
-    boot_before = (await sbx.files.read("/proc/sys/kernel/random/boot_id")).strip()
+    boot_before = (
+        await sbx.files.read("/proc/sys/kernel/random/boot_id", gzip=True)
+    ).strip()
 
     await sbx.set_timeout(0)  # force the timeout auto-pause now
     for _ in range(150):
@@ -125,7 +127,9 @@ async def test_mode_none_defaults_to_full_memory(async_sandbox_factory):
 
     resumed = await sbx.connect()
     assert resumed.sandbox_id == sbx.sandbox_id  # same sandbox
-    boot_after = (await resumed.files.read("/proc/sys/kernel/random/boot_id")).strip()
+    boot_after = (
+        await resumed.files.read("/proc/sys/kernel/random/boot_id", gzip=True)
+    ).strip()
     assert boot_after == boot_before  # memory restore in place, not a cold boot
 
 
@@ -141,7 +145,9 @@ async def test_auto_pause_filesystem_only_reboots(async_sandbox_factory):
 
     marker = "auto-pause-fs-only"
     await sandbox.files.write("/home/user/auto-pause-marker.txt", marker)
-    boot_before = (await sandbox.files.read("/proc/sys/kernel/random/boot_id")).strip()
+    boot_before = (
+        await sandbox.files.read("/proc/sys/kernel/random/boot_id", gzip=True)
+    ).strip()
 
     await wait_for_state(sandbox, SandboxState.PAUSED)
 
@@ -159,7 +165,9 @@ async def test_auto_pause_filesystem_only_reboots(async_sandbox_factory):
     persisted = (await resumed.files.read("/home/user/auto-pause-marker.txt")).strip()
     assert persisted == marker
 
-    boot_after = (await resumed.files.read("/proc/sys/kernel/random/boot_id")).strip()
+    boot_after = (
+        await resumed.files.read("/proc/sys/kernel/random/boot_id", gzip=True)
+    ).strip()
     assert boot_after != boot_before
 
 

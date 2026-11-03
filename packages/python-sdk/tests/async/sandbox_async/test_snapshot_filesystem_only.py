@@ -9,7 +9,7 @@ async def test_pause_filesystem_only(async_sandbox: AsyncSandbox):
     # A marker on the persisted rootfs and the kernel boot id before pausing.
     await async_sandbox.files.write("/home/user/fs-only-marker.txt", "persisted")
     boot_before = (
-        await async_sandbox.files.read("/proc/sys/kernel/random/boot_id")
+        await async_sandbox.files.read("/proc/sys/kernel/random/boot_id", gzip=True)
     ).strip()
 
     # Filesystem-only pause: only the rootfs is persisted, no memory snapshot.
@@ -36,5 +36,7 @@ async def test_pause_filesystem_only(async_sandbox: AsyncSandbox):
 
     # ...while a fresh kernel boot id proves the guest cold-booted rather than
     # being restored from a memory snapshot.
-    boot_after = (await resumed.files.read("/proc/sys/kernel/random/boot_id")).strip()
+    boot_after = (
+        await resumed.files.read("/proc/sys/kernel/random/boot_id", gzip=True)
+    ).strip()
     assert boot_after != boot_before
