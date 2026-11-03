@@ -97,11 +97,6 @@ pool_max_idle_per_host = int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20")
 # request waits on the least loaded connection for a stream to free up.
 max_connections = max(1, int(os.getenv("E2B_MAX_CONNECTIONS") or "200"))
 
-# An HTTP/1.1 pool (file downloads, or all envd traffic under
-# `http_version="1.1"`) carries one request per connection, so it gets its own,
-# larger cap: `max_http1_connections` in-flight requests per address.
-max_http1_connections = max(1, int(os.getenv("E2B_MAX_HTTP1_CONNECTIONS") or "1000"))
-
 
 class ProxyConfig(NamedTuple):
     """The ``proxy`` connection option in the shape pyqwest transports take.

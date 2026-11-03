@@ -7,5 +7,3 @@
   too_many_data_frames`. File downloads now go over HTTP/1.1 regardless of
   `http_version`, as h2 closed HTTP/2 connections after receiving 100 empty
   DATA frames, which the sandbox proxy sends throughout file responses.
-- File downloads use their own HTTP/1.1 pool, capped at
-  `E2B_MAX_HTTP1_CONNECTIONS` (default `1000`) connections per address.
