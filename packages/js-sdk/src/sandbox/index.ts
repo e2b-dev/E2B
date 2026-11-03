@@ -666,6 +666,11 @@ export class Sandbox extends SandboxApi {
    *
    * @returns `true` if the sandbox got paused, `false` if the sandbox was already paused.
    *
+   * @throws {@link ServiceBusyError} when the sandbox's guest agent does not
+   * respond and `force` is not set; the sandbox keeps running.
+   * @throws {@link InvalidArgumentError} when `force` is combined with
+   * `mode: 'filesystem'`.
+   *
    * @example
    * ```ts
    * const sandbox = await Sandbox.create()

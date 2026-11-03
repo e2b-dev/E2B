@@ -41,6 +41,7 @@ from e2b.exceptions import (
     NotFoundException,
     SandboxException,
     SandboxNotFoundException,
+    ServiceBusyException,
     TemplateException,
 )
 from e2b.retry import resolve_idempotency_key
@@ -432,7 +433,14 @@ class SandboxApi(SandboxBase):
             return False
 
         if res.status_code >= 300:
-            raise handle_api_exception(res)
+            err = handle_api_exception(res)
+            if isinstance(err, ServiceBusyException) and not force:
+                err = ServiceBusyException(
+                    f"{err} If the sandbox's guest agent (envd) is unresponsive,"
+                    " pass force=True to pause anyway; the sandbox then resumes"
+                    ' only with on_resume="reboot".'
+                )
+            raise err
 
         # Check if res.parse is Error
         if isinstance(res.parsed, Error):

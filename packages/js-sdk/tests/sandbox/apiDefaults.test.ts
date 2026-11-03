@@ -1,7 +1,7 @@
 import { afterAll, afterEach, beforeAll, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
 
-import { InvalidArgumentError, Sandbox } from '../../src'
+import { InvalidArgumentError, Sandbox, ServiceBusyError } from '../../src'
 import { TEST_API_KEY, apiUrl } from '../setup'
 import { setupMockApi } from '../mockApi'
 
@@ -246,3 +246,58 @@ test('Sandbox.connect sends an explicit timeout', async () => {
 
   expect(lastConnectBody?.timeout).toBe(60)
 })
+
+test.each([
+  [false, true],
+  [true, false],
+])(
+  'Sandbox.pause with force=%s hints force on a busy error: %s',
+  async (force, hinted) => {
+    server.use(
+      http.post(apiUrl('/sandboxes/:sandboxID/pause'), () =>
+        HttpResponse.json(
+          { code: 503, message: 'guest agent is not responding' },
+          { status: 503 }
+        )
+      )
+    )
+
+    const err = await Sandbox.pause('test-sandbox-id', {
+      apiKey: TEST_API_KEY,
+      retries: 0,
+      force,
+    }).catch((e: unknown) => e)
+
+    expect(err).toBeInstanceOf(ServiceBusyError)
+    expect((err as Error).message.includes('force: true')).toBe(hinted)
+  }
+)
+
+test.each([[true], [undefined]])(
+  'Sandbox.getInfo maps envdUnresponsiveAtPause=%s',
+  async (value) => {
+    server.use(
+      http.get(apiUrl('/sandboxes/:sandboxID'), () =>
+        HttpResponse.json({
+          templateID: 'base',
+          sandboxID: 'test-sandbox-id',
+          clientID: 'client',
+          startedAt: '2026-01-01T00:00:00Z',
+          endAt: '2026-01-01T01:00:00Z',
+          envdVersion: '0.2.4',
+          cpuCount: 2,
+          memoryMB: 512,
+          diskSizeMB: 1024,
+          state: 'paused',
+          ...(value !== undefined && { envdUnresponsiveAtPause: value }),
+        })
+      )
+    )
+
+    const info = await Sandbox.getInfo('test-sandbox-id', {
+      apiKey: TEST_API_KEY,
+    })
+
+    expect(info.envdUnresponsiveAtPause).toBe(value)
+  }
+)

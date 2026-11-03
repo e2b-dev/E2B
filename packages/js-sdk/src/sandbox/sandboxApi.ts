@@ -12,6 +12,7 @@ import {
   NotFoundError,
   SandboxError,
   SandboxNotFoundError,
+  ServiceBusyError,
   TemplateError,
 } from '../errors'
 import { Paginator } from '../paginator'
@@ -673,8 +674,8 @@ interface SandboxPauseBaseOpts extends SandboxApiOpts {
   /**
    * Pause even when the sandbox's guest agent (envd) does not respond.
    *
-   * By default the pause is refused with an error and the sandbox keeps
-   * running while the guest agent does not respond. With `force: true` the
+   * By default the pause is refused with a {@link ServiceBusyError} and the
+   * sandbox keeps running while the guest agent does not respond. With `force: true` the
    * memory snapshot is taken anyway and marked; such a sandbox can then only
    * be resumed with `onResume: 'reboot'`, which cold-boots it from disk.
    * Cannot be combined with `mode: 'filesystem'`, which always needs a
@@ -1118,6 +1119,14 @@ export interface SandboxInfo {
    * Sandbox domain.
    */
   sandboxDomain?: string
+
+  /**
+   * `true` when the paused sandbox's snapshot was taken while its guest agent
+   * (envd) did not respond, e.g. after `pause({ force: true })`. Such a
+   * sandbox resumes only with `onResume: 'reboot'`. Unset for a running
+   * sandbox and for a snapshot whose guest agent responded.
+   */
+  envdUnresponsiveAtPause?: boolean
 }
 
 /**
@@ -1587,6 +1596,7 @@ export class SandboxApi extends ClientFactory {
         : undefined,
       sandboxDomain: res.data.domain || undefined,
       volumeMounts: res.data.volumeMounts ?? [],
+      envdUnresponsiveAtPause: res.data.envdUnresponsiveAtPause,
     }
   }
 
@@ -1798,6 +1808,10 @@ export class SandboxApi extends ClientFactory {
     }
 
     const err = handleApiError(res)
+    if (err instanceof ServiceBusyError && !apiOpts?.force) {
+      err.message +=
+        " If the sandbox's guest agent (envd) is unresponsive, pass `force: true` to pause anyway; the sandbox then resumes only with `onResume: 'reboot'`."
+    }
     if (err) {
       throw err
     }
@@ -2229,6 +2243,7 @@ export class SandboxPaginator extends Paginator<SandboxInfo, SandboxApiOpts> {
         memoryMB: sandbox.memoryMB,
         envdVersion: sandbox.envdVersion,
         volumeMounts: sandbox.volumeMounts ?? [],
+        envdUnresponsiveAtPause: sandbox.envdUnresponsiveAtPause,
       })
     )
   }

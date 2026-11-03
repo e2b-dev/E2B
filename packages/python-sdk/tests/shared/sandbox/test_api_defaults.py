@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from e2b import AsyncSandbox, InvalidArgumentException, Sandbox
+from e2b import AsyncSandbox, InvalidArgumentException, Sandbox, ServiceBusyException
 from e2b.api.client.api.sandboxes import (
     post_v2_sandboxes,
     post_v_2_sandboxes_sandbox_id_connect,
@@ -12,7 +12,9 @@ from e2b.api.client.api.sandboxes import (
     post_sandboxes_sandbox_id_pause,
     post_sandboxes_sandbox_id_snapshots,
 )
+from e2b.api.client.models import ListedSandbox, SandboxDetail
 from e2b.api.client.models import Sandbox as SandboxModel
+from e2b.sandbox.sandbox_api import SandboxInfo
 
 
 def _created_sandbox():
@@ -395,3 +397,60 @@ async def test_async_connect_sends_explicit_timeout(monkeypatch, test_api_key):
     body = await _async_connect_body(monkeypatch, test_api_key, timeout=60)
 
     assert body["timeout"] == 60
+
+
+def _busy_pause_response():
+    return SimpleNamespace(
+        status_code=503,
+        content=b'{"code": 503, "message": "guest agent is not responding"}',
+        parsed=None,
+        headers={},
+    )
+
+
+@pytest.mark.parametrize("force, hinted", [(False, True), (True, False)])
+def test_pause_busy_error_suggests_force(monkeypatch, test_api_key, force, hinted):
+    request = Mock(return_value=_busy_pause_response())
+    monkeypatch.setattr(post_sandboxes_sandbox_id_pause, "sync_detailed", request)
+
+    with pytest.raises(ServiceBusyException) as exc:
+        Sandbox.pause("sbx-test", api_key=test_api_key, force=force)
+
+    assert ("force=True" in str(exc.value)) is hinted
+
+
+@pytest.mark.parametrize("force, hinted", [(False, True), (True, False)])
+async def test_async_pause_busy_error_suggests_force(
+    monkeypatch, test_api_key, force, hinted
+):
+    request = AsyncMock(return_value=_busy_pause_response())
+    monkeypatch.setattr(post_sandboxes_sandbox_id_pause, "asyncio_detailed", request)
+
+    with pytest.raises(ServiceBusyException) as exc:
+        await AsyncSandbox.pause("sbx-test", api_key=test_api_key, force=force)
+
+    assert ("force=True" in str(exc.value)) is hinted
+
+
+@pytest.mark.parametrize("value, expected", [(True, True), (None, None)])
+def test_sandbox_info_maps_envd_unresponsive_at_pause(value, expected):
+    data = {
+        "templateID": "base",
+        "sandboxID": "sbx-test",
+        "clientID": "client",
+        "startedAt": "2026-01-01T00:00:00Z",
+        "endAt": "2026-01-01T01:00:00Z",
+        "envdVersion": "0.2.4",
+        "cpuCount": 2,
+        "memoryMB": 512,
+        "diskSizeMB": 1024,
+        "state": "paused",
+    }
+    if value is not None:
+        data["envdUnresponsiveAtPause"] = value
+
+    detail = SandboxInfo._from_sandbox_detail(SandboxDetail.from_dict(data))
+    listed = SandboxInfo._from_listed_sandbox(ListedSandbox.from_dict(data))
+
+    assert detail.envd_unresponsive_at_pause is expected
+    assert listed.envd_unresponsive_at_pause is expected

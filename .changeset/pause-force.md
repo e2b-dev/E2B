@@ -3,4 +3,4 @@
 '@e2b/python-sdk': minor
 ---
 
-Add `force` to `pause()`. By default a pause is now refused while the sandbox's guest agent does not respond, and the sandbox keeps running; `force: true` / `force=True` pauses anyway (not allowed with `mode: 'filesystem'`), and the sandbox can then only be resumed with `onResume: 'reboot'` / `on_resume="reboot"`.
+Add `force` to `pause()`. By default a pause is now refused while the sandbox's guest agent does not respond, and the sandbox keeps running; `force: true` / `force=True` pauses anyway (not allowed with `mode: 'filesystem'`), and the sandbox can then only be resumed with `onResume: 'reboot'` / `on_resume="reboot"`. Sandbox info now exposes `envdUnresponsiveAtPause` / `envd_unresponsive_at_pause` for a snapshot taken that way, and the default pause refusal error now suggests `force`.
