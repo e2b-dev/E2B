@@ -1121,12 +1121,12 @@ export interface SandboxInfo {
   sandboxDomain?: string
 
   /**
-   * `true` when the paused sandbox's snapshot was taken while its guest agent
-   * (envd) did not respond, e.g. after `pause({ force: true })`. Such a
-   * sandbox resumes only with `onResume: 'reboot'`. Unset for a running
-   * sandbox and for a snapshot whose guest agent responded.
+   * Whether the sandbox's guest agent (envd) responded when it was paused.
+   * `false` when the snapshot was taken over an unresponsive guest agent,
+   * e.g. after `pause({ force: true })`; such a sandbox resumes only with
+   * `onResume: 'reboot'`. Unset for a running sandbox.
    */
-  forcePaused?: boolean
+  pauseIsHealthy?: boolean
 }
 
 /**
@@ -1596,7 +1596,10 @@ export class SandboxApi extends ClientFactory {
         : undefined,
       sandboxDomain: res.data.domain || undefined,
       volumeMounts: res.data.volumeMounts ?? [],
-      forcePaused: res.data.envdUnresponsiveAtPause,
+      pauseIsHealthy:
+        res.data.state === 'paused'
+          ? !res.data.envdUnresponsiveAtPause
+          : undefined,
     }
   }
 
@@ -2243,7 +2246,10 @@ export class SandboxPaginator extends Paginator<SandboxInfo, SandboxApiOpts> {
         memoryMB: sandbox.memoryMB,
         envdVersion: sandbox.envdVersion,
         volumeMounts: sandbox.volumeMounts ?? [],
-        forcePaused: sandbox.envdUnresponsiveAtPause,
+        pauseIsHealthy:
+          sandbox.state === 'paused'
+            ? !sandbox.envdUnresponsiveAtPause
+            : undefined,
       })
     )
   }

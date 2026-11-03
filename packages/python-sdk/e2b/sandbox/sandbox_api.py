@@ -1259,8 +1259,8 @@ class SandboxInfo:
     """Sandbox lifecycle configuration."""
     volume_mounts: List[Dict[str, str]] = field(default_factory=list)
     """Volume mounts for the sandbox."""
-    force_paused: Optional[bool] = None
-    """`True` when the paused sandbox's snapshot was taken while its guest agent (envd) did not respond, e.g. after `pause(force=True)`. Such a sandbox resumes only with `on_resume="reboot"`. `None` for a running sandbox and for a snapshot whose guest agent responded."""
+    pause_is_healthy: Optional[bool] = None
+    """Whether the sandbox's guest agent (envd) responded when it was paused. `False` when the snapshot was taken over an unresponsive guest agent, e.g. after `pause(force=True)`; such a sandbox resumes only with `on_resume="reboot"`. `None` for a running sandbox."""
 
     @classmethod
     def _from_sandbox_data(
@@ -1294,9 +1294,9 @@ class SandboxInfo:
             allow_internet_access=allow_internet_access,
             network=network,
             lifecycle=lifecycle,
-            force_paused=(
-                sandbox.envd_unresponsive_at_pause
-                if isinstance(sandbox.envd_unresponsive_at_pause, bool)
+            pause_is_healthy=(
+                sandbox.envd_unresponsive_at_pause is not True
+                if sandbox.state == SandboxState.PAUSED
                 else None
             ),
         )

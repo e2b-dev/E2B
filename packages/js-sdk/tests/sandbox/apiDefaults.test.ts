@@ -273,9 +273,13 @@ test.each([
   }
 )
 
-test.each([[true], [undefined]])(
-  'Sandbox.getInfo maps envdUnresponsiveAtPause to forcePaused=%s',
-  async (value) => {
+test.each([
+  ['paused', true, false],
+  ['paused', undefined, true],
+  ['running', undefined, undefined],
+] as const)(
+  'Sandbox.getInfo maps a %s sandbox with envdUnresponsiveAtPause=%s to pauseIsHealthy=%s',
+  async (state, value, expected) => {
     server.use(
       http.get(apiUrl('/sandboxes/:sandboxID'), () =>
         HttpResponse.json({
@@ -288,7 +292,7 @@ test.each([[true], [undefined]])(
           cpuCount: 2,
           memoryMB: 512,
           diskSizeMB: 1024,
-          state: 'paused',
+          state,
           ...(value !== undefined && { envdUnresponsiveAtPause: value }),
         })
       )
@@ -298,6 +302,6 @@ test.each([[true], [undefined]])(
       apiKey: TEST_API_KEY,
     })
 
-    expect(info.forcePaused).toBe(value)
+    expect(info.pauseIsHealthy).toBe(expected)
   }
 )

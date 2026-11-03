@@ -432,8 +432,11 @@ async def test_async_pause_busy_error_suggests_force(
     assert ("force=True" in str(exc.value)) is hinted
 
 
-@pytest.mark.parametrize("value, expected", [(True, True), (None, None)])
-def test_sandbox_info_maps_force_paused(value, expected):
+@pytest.mark.parametrize(
+    "state, value, expected",
+    [("paused", True, False), ("paused", None, True), ("running", None, None)],
+)
+def test_sandbox_info_maps_pause_is_healthy(state, value, expected):
     data = {
         "templateID": "base",
         "sandboxID": "sbx-test",
@@ -444,7 +447,7 @@ def test_sandbox_info_maps_force_paused(value, expected):
         "cpuCount": 2,
         "memoryMB": 512,
         "diskSizeMB": 1024,
-        "state": "paused",
+        "state": state,
     }
     if value is not None:
         data["envdUnresponsiveAtPause"] = value
@@ -452,5 +455,5 @@ def test_sandbox_info_maps_force_paused(value, expected):
     detail = SandboxInfo._from_sandbox_detail(SandboxDetail.from_dict(data))
     listed = SandboxInfo._from_listed_sandbox(ListedSandbox.from_dict(data))
 
-    assert detail.force_paused is expected
-    assert listed.force_paused is expected
+    assert detail.pause_is_healthy is expected
+    assert listed.pause_is_healthy is expected
