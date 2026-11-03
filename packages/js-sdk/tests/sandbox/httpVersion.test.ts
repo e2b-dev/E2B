@@ -3,6 +3,7 @@ import { afterEach, expect, test, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({
   createEnvdFetch: vi.fn(() => vi.fn()),
   createEnvdRpcFetch: vi.fn(() => vi.fn()),
+  createEnvdUploadFetch: vi.fn(() => vi.fn()),
 }))
 
 vi.mock('@connectrpc/connect-web', () => ({
@@ -12,6 +13,7 @@ vi.mock('@connectrpc/connect-web', () => ({
 vi.mock('../../src/envd/http2', () => ({
   createEnvdFetch: mocks.createEnvdFetch,
   createEnvdRpcFetch: mocks.createEnvdRpcFetch,
+  createEnvdUploadFetch: mocks.createEnvdUploadFetch,
 }))
 
 afterEach(() => {
@@ -74,20 +76,13 @@ test('E2B_HTTP_VERSION=1.1 pins envd fetchers to HTTP/1.1', async () => {
   })
 })
 
-test('files.write uploads use an HTTP/1.1 envd fetcher regardless of httpVersion', async () => {
+test('files.write uploads get the HTTP/1.1 upload fetcher for the configured proxy', async () => {
   await createSandbox({ httpVersion: '2', proxy: 'http://127.0.0.1:8080' })
 
-  const envdFetchCalls = mocks.createEnvdFetch.mock.calls.map(
-    (call) => call[0] as { proxy?: string; httpVersion?: string }
-  )
-  expect(envdFetchCalls).toContainEqual(
-    expect.objectContaining({
-      proxy: 'http://127.0.0.1:8080',
-      httpVersion: '2',
-    })
-  )
-  expect(envdFetchCalls).toContainEqual({
+  expect(mocks.createEnvdUploadFetch).toHaveBeenCalledWith({
     proxy: 'http://127.0.0.1:8080',
-    httpVersion: '1.1',
+  })
+  expect(mocks.createEnvdFetch.mock.calls[0][0]).toMatchObject({
+    httpVersion: '2',
   })
 })
