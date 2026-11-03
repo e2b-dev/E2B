@@ -314,7 +314,8 @@ export interface FilesystemWriteOpts extends FilesystemRequestOpts {
  */
 export interface FilesystemReadOpts extends FilesystemRequestOpts {
   /**
-   * When true, the download will request gzip-encoded responses.
+   * When true, the download will request gzip-encoded responses. Otherwise
+   * the download requests an uncompressed (`identity`) response.
    */
   gzip?: boolean
   /**
@@ -477,9 +478,11 @@ export class Filesystem {
       user = defaultUsername
     }
 
-    const headers: Record<string, string> = {}
-    if (opts?.gzip) {
-      headers['Accept-Encoding'] = 'gzip'
+    // Ask for identity unless gzip is requested: without a Content-Length,
+    // gzip responses reach HTTP/2 clients with an empty DATA frame every
+    // ~32 KiB, which some HTTP/2 clients treat as abusive.
+    const headers: Record<string, string> = {
+      'Accept-Encoding': opts?.gzip ? 'gzip' : 'identity',
     }
 
     if (format === 'stream') {

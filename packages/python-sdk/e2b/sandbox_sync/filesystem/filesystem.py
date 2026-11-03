@@ -210,9 +210,10 @@ class Filesystem:
         if username:
             params["username"] = username
 
-        headers = {}
-        if gzip:
-            headers["Accept-Encoding"] = "gzip"
+        # Ask for identity unless gzip is requested: without a Content-Length,
+        # gzip responses reach HTTP/2 clients with an empty DATA frame every
+        # ~32 KiB, and pyqwest's h2 closes the connection after 100 of them.
+        headers = {"Accept-Encoding": "gzip" if gzip else "identity"}
 
         timeout = self._connection_config.get_request_timeout(request_timeout)
 
