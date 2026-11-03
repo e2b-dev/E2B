@@ -8,6 +8,7 @@ from pyqwest import SyncHTTPTransport
 from pyqwest.httpx import PyqwestTransport
 
 from e2b.api import encode_path_param, handle_api_exception, proxy_to_config
+from e2b.connection_config import whole_request_timeout
 from e2b.api.client.api.templates import (
     post_v3_templates,
     get_templates_template_id_files_hash,
@@ -136,7 +137,7 @@ def upload_file(
             # whole-request deadline for the entire transfer, not a per-write
             # bound as with the httpx transport this replaced.
             with httpx.Client(
-                timeout=httpx.Timeout(upload_timeout),
+                timeout=whole_request_timeout(upload_timeout),
                 follow_redirects=api_client._follow_redirects,
                 transport=PyqwestTransport(
                     SyncHTTPTransport(

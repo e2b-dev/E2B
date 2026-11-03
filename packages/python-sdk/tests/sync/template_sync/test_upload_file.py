@@ -5,6 +5,7 @@ from unittest import mock
 
 import httpx
 import pytest
+from pyqwest.httpx._transport import convert_timeout
 
 from e2b.api.client.client import AuthenticatedClient
 from e2b.template import utils as template_utils
@@ -170,13 +171,16 @@ def test_upload_file_defaults_to_one_hour_timeout(tmp_path):
     # Uploads of large archives need far longer than the 60s general API
     # timeout, so the default upload timeout is 1 hour (matches the JS SDK).
     timeout = _capture_upload_timeout(tmp_path)
-    assert timeout == httpx.Timeout(FILE_UPLOAD_TIMEOUT_SECONDS)
+    # The whole-request deadline the pyqwest adapter derives from it.
+    assert (
+        convert_timeout({"timeout": timeout.as_dict()}) == FILE_UPLOAD_TIMEOUT_SECONDS
+    )
 
 
 def test_upload_file_honors_explicit_request_timeout(tmp_path):
     # An explicitly set request_timeout overrides the 1-hour upload default.
     timeout = _capture_upload_timeout(tmp_path, request_timeout=5.0)
-    assert timeout == httpx.Timeout(5.0)
+    assert convert_timeout({"timeout": timeout.as_dict()}) == 5.0
 
 
 def test_upload_file_ignores_post_upload_close_failure(tmp_path):
