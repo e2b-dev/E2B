@@ -19,7 +19,8 @@ class ConnectSandboxV2:
             only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk
             state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that
             contain no memory. Rejected with an error in environments where this capability is not enabled, never silently
-            downgraded to a memory restore.
+            downgraded to a memory restore. A snapshot taken while the sandbox guest agent was not responding
+            (envdUnresponsiveAtPause) can only be resumed this way, and needs no enablement.
     """
 
     timeout: Union[Unset, int] = 300

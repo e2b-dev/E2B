@@ -41,6 +41,10 @@ def _parse_response(
             response_200.append(response_200_item)
 
         return response_200
+    if response.status_code == 400:
+        response_400 = Error.from_dict(response.json())
+
+        return response_400
     if response.status_code == 401:
         response_401 = Error.from_dict(response.json())
 
@@ -77,7 +81,8 @@ def sync_detailed(
 ) -> Response[Union[Error, list["Template"]]]:
     """List templates
 
-     List all templates
+     List all templates. Returns 400 when the team has more than 5000 templates; use /v2/templates to
+    page through them.
 
     Args:
         team_id (Union[Unset, str]): Identifier of the team, as its UUID or its public project ID
@@ -109,7 +114,8 @@ def sync(
 ) -> Optional[Union[Error, list["Template"]]]:
     """List templates
 
-     List all templates
+     List all templates. Returns 400 when the team has more than 5000 templates; use /v2/templates to
+    page through them.
 
     Args:
         team_id (Union[Unset, str]): Identifier of the team, as its UUID or its public project ID
@@ -136,7 +142,8 @@ async def asyncio_detailed(
 ) -> Response[Union[Error, list["Template"]]]:
     """List templates
 
-     List all templates
+     List all templates. Returns 400 when the team has more than 5000 templates; use /v2/templates to
+    page through them.
 
     Args:
         team_id (Union[Unset, str]): Identifier of the team, as its UUID or its public project ID
@@ -166,7 +173,8 @@ async def asyncio(
 ) -> Optional[Union[Error, list["Template"]]]:
     """List templates
 
-     List all templates
+     List all templates. Returns 400 when the team has more than 5000 templates; use /v2/templates to
+    page through them.
 
     Args:
         team_id (Union[Unset, str]): Identifier of the team, as its UUID or its public project ID
