@@ -652,10 +652,7 @@ export interface SandboxApiOpts extends Partial<
   >
 > {}
 
-/**
- * Options for pausing a sandbox.
- */
-export interface SandboxPauseOpts extends SandboxApiOpts {
+interface SandboxPauseBaseOpts extends SandboxApiOpts {
   /**
    * What the pause persists.
    *
@@ -687,6 +684,16 @@ export interface SandboxPauseOpts extends SandboxApiOpts {
    */
   force?: boolean
 }
+
+/**
+ * Options for pausing a sandbox.
+ *
+ * `force` is only allowed for a memory pause, so passing it together with
+ * `mode: 'filesystem'` (or `keepMemory: false`) is a type error.
+ */
+export type SandboxPauseOpts =
+  | (SandboxPauseBaseOpts & { force?: false })
+  | (SandboxPauseBaseOpts & { mode?: 'full'; keepMemory?: true })
 
 /**
  * Options for forking a sandbox.
