@@ -3,6 +3,7 @@ import { expect, test, vi } from 'vitest'
 import {
   buildDispatchedFetch,
   createRuntimeFetch,
+  isPoisonedHttp2SessionError,
   loadUndici,
   type UndiciModule,
 } from '../src/undici'
@@ -209,3 +210,147 @@ test.skipIf(runtime !== 'node')(
     }
   }
 )
+
+function poisonedSessionError(rst = 'NGHTTP2_ENHANCE_YOUR_CALM'): TypeError {
+  return new TypeError('fetch failed', {
+    cause: Object.assign(new Error(`Stream closed with error code ${rst}`), {
+      code: 'ERR_HTTP2_STREAM_ERROR',
+    }),
+  })
+}
+
+test.each([
+  ['NGHTTP2_ENHANCE_YOUR_CALM', true],
+  ['NGHTTP2_INTERNAL_ERROR', true],
+  ['NGHTTP2_CANCEL', false],
+  ['NGHTTP2_REFUSED_STREAM', false],
+])('isPoisonedHttp2SessionError on a %s stream reset is %s', (rst, poisoned) =>
+  expect(isPoisonedHttp2SessionError(poisonedSessionError(rst))).toBe(poisoned)
+)
+
+test('isPoisonedHttp2SessionError ignores other transport failures', () => {
+  expect(
+    isPoisonedHttp2SessionError(
+      new TypeError('fetch failed', {
+        cause: Object.assign(new Error('read ECONNRESET'), {
+          code: 'ECONNRESET',
+        }),
+      })
+    )
+  ).toBe(false)
+  expect(isPoisonedHttp2SessionError(new TypeError('fetch failed'))).toBe(false)
+  expect(isPoisonedHttp2SessionError('fetch failed')).toBe(false)
+})
+
+function fakeUndiciWithDispatchers(responses: Array<() => Promise<Response>>) {
+  const agents: Array<{ options: unknown; close: ReturnType<typeof vi.fn> }> =
+    []
+  const dispatched: unknown[] = []
+
+  class Agent {
+    close = vi.fn(() => Promise.resolve())
+    constructor(options: unknown) {
+      agents.push({ options, close: this.close })
+    }
+  }
+
+  const undici = {
+    Agent,
+    ProxyAgent: class extends Agent {},
+    fetch: (_input: unknown, init?: { dispatcher?: unknown }) => {
+      dispatched.push(init?.dispatcher)
+      return responses.shift()!()
+    },
+  } as unknown as UndiciModule
+
+  return { agents, dispatched, undici }
+}
+
+test('passes maxConcurrentStreams to the dispatcher', async () => {
+  const { agents, undici } = fakeUndiciWithDispatchers([
+    () => Promise.resolve(new Response('ok')),
+    () => Promise.resolve(new Response('ok')),
+  ])
+
+  const direct = await buildDispatchedFetch({
+    connections: 10,
+    maxConcurrentStreams: 1,
+    loadUndici: () => Promise.resolve(undici),
+  })
+  await direct('https://example.com/')
+  const proxied = await buildDispatchedFetch({
+    connections: 10,
+    maxConcurrentStreams: 1,
+    proxy: 'http://127.0.0.1:8080',
+    loadUndici: () => Promise.resolve(undici),
+  })
+  await proxied('https://example.com/')
+
+  expect(agents.map((a) => a.options)).toEqual([
+    { allowH2: true, connections: 10, maxConcurrentStreams: 1 },
+    {
+      uri: 'http://127.0.0.1:8080',
+      allowH2: true,
+      connections: 10,
+      maxConcurrentStreams: 1,
+      proxyTunnel: true,
+    },
+  ])
+})
+
+test('retires the dispatcher once after its HTTP/2 session is poisoned', async () => {
+  const { agents, dispatched, undici } = fakeUndiciWithDispatchers([
+    () => Promise.reject(poisonedSessionError()),
+    () => Promise.reject(poisonedSessionError()),
+    () => Promise.resolve(new Response('ok')),
+  ])
+
+  const fetcher = await buildDispatchedFetch({
+    connections: 1,
+    loadUndici: () => Promise.resolve(undici),
+  })
+
+  // Two requests in flight on the same poisoned session: both fail, the
+  // dispatcher is replaced once, and the replacement is not closed in turn.
+  const results = await Promise.allSettled([
+    fetcher('https://example.com/a'),
+    fetcher('https://example.com/b'),
+  ])
+  expect(results.map((r) => r.status)).toEqual(['rejected', 'rejected'])
+  expect(agents).toHaveLength(2)
+  expect(agents[0].close).toHaveBeenCalledOnce()
+  expect(agents[1].close).not.toHaveBeenCalled()
+
+  const res = await fetcher('https://example.com/c')
+  expect(await res.text()).toBe('ok')
+  expect(dispatched).toEqual(
+    [agents[0], agents[0], agents[1]].map(() => expect.any(Object))
+  )
+  expect(dispatched[0]).toBe(dispatched[1])
+  expect(dispatched[2]).not.toBe(dispatched[0])
+  expect(dispatched[2]).toBeInstanceOf(undici.Agent)
+})
+
+test('keeps the dispatcher on other fetch failures', async () => {
+  const { agents, undici } = fakeUndiciWithDispatchers([
+    () =>
+      Promise.reject(
+        new TypeError('fetch failed', {
+          cause: Object.assign(new Error('read ECONNRESET'), {
+            code: 'ECONNRESET',
+          }),
+        })
+      ),
+    () => Promise.resolve(new Response('ok')),
+  ])
+
+  const fetcher = await buildDispatchedFetch({
+    connections: 1,
+    loadUndici: () => Promise.resolve(undici),
+  })
+
+  await expect(fetcher('https://example.com/')).rejects.toThrow('fetch failed')
+  await fetcher('https://example.com/')
+  expect(agents).toHaveLength(1)
+  expect(agents[0].close).not.toHaveBeenCalled()
+})

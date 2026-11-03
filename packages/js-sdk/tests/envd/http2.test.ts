@@ -297,3 +297,32 @@ test('uses global fetch outside Node', async () => {
     undefined
   )
 })
+
+test('envd REST dispatchers allow one stream per HTTP/2 session, RPC ones do not', async () => {
+  const builds: Array<{ connections: number; maxConcurrentStreams?: number }> =
+    []
+  vi.doMock('../../src/undici', async (importOriginal) => {
+    const original = await importOriginal<typeof import('../../src/undici')>()
+    return {
+      ...original,
+      buildDispatchedFetch: vi.fn((options) => {
+        builds.push(options)
+        return Promise.resolve((() =>
+          Promise.resolve(new Response('ok'))) as typeof fetch)
+      }),
+    }
+  })
+
+  const { createEnvdFetch, createEnvdRpcFetch, ENVD_MAX_CONCURRENT_STREAMS } =
+    await import('../../src/envd/http2')
+
+  await createEnvdFetch()('https://example.com/files')
+  await createEnvdRpcFetch()('https://example.com/rpc')
+
+  expect(ENVD_MAX_CONCURRENT_STREAMS).toBe(1)
+  expect(builds).toEqual([
+    expect.objectContaining({ connections: 10, maxConcurrentStreams: 1 }),
+    expect.objectContaining({ connections: 200 }),
+  ])
+  expect(builds[1].maxConcurrentStreams).toBeUndefined()
+})

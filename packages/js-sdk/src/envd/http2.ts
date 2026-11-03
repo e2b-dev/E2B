@@ -10,6 +10,7 @@ import {
 
 type EnvdFetchOptions = {
   connectionLimit?: number
+  maxConcurrentStreams?: number
   proxy?: string
   httpVersion?: HttpVersion
   loadUndici?: () => Promise<UndiciModule | undefined>
@@ -21,6 +22,12 @@ const envdFetchers = new Map<string, typeof fetch>()
 const envdRpcFetchers = new Map<string, typeof fetch>()
 const DEFAULT_ENVD_CONNECTION_LIMIT = 10
 const DEFAULT_ENVD_RPC_CONNECTION_LIMIT = 200
+// Node queues a request body in full against the HTTP/2 session's memory budget
+// (`maxSessionMemory`, 10 MB) and resets whichever stream's response headers
+// arrive while it is exhausted. envd REST carries file uploads, so streams of
+// one session must not share that budget: one request per session, spread over
+// `DEFAULT_ENVD_CONNECTION_LIMIT` sessions — the same shape undici 7 gave.
+export const ENVD_MAX_CONCURRENT_STREAMS = 1
 
 export function createEnvdFetchForRuntime(
   currentRuntime = runtime,
@@ -29,6 +36,7 @@ export function createEnvdFetchForRuntime(
   return createRuntimeFetch(currentRuntime, () =>
     buildDispatchedFetch({
       connections: options.connectionLimit ?? DEFAULT_ENVD_CONNECTION_LIMIT,
+      maxConcurrentStreams: options.maxConcurrentStreams,
       proxy: options.proxy,
       httpVersion: options.httpVersion,
       loadUndici: options.loadUndici,
@@ -54,9 +62,8 @@ export function createEnvdFetch({
     return cached
   }
 
-  // Keep one origin connection for short envd REST calls. If ALPN falls back
-  // to h1, this favors connection pressure over per-sandbox throughput.
   const envdFetch = createEnvdFetchForRuntime(runtime, {
+    maxConcurrentStreams: ENVD_MAX_CONCURRENT_STREAMS,
     proxy,
     httpVersion,
   })
