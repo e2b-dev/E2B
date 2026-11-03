@@ -38,7 +38,12 @@ import { FilesystemEvent, WatchHandle } from './watchHandle'
 
 import type { Timestamp } from '@bufbuild/protobuf/wkt'
 import { compareVersions } from 'compare-versions'
-import { bodyByteLength, envdUploadBudget } from '../../envd/uploadBudget'
+import { createEnvdSoloFetch } from '../../envd/http2'
+import {
+  bodyByteLength,
+  ENVD_MAX_INFLIGHT_BODY_BYTES,
+  envdUploadBudget,
+} from '../../envd/uploadBudget'
 import {
   ENVD_DEFAULT_USER,
   ENVD_FILE_METADATA,
@@ -398,6 +403,27 @@ export class Filesystem {
   }
 
   /**
+   * How a buffered upload of `size` bytes is kept from exhausting Node's HTTP/2
+   * session memory: paced through `envdUploadBudget` together with the other
+   * uploads, or — when it alone would crowd out the reads and small writes on
+   * the shared session — sent over a session of its own. HTTP/1.1 and streamed
+   * bodies need neither.
+   */
+  private uploadAdmission(size: number): {
+    budgeted: number
+    fetch?: (request: Request) => Promise<Response>
+  } {
+    if (size <= 0 || this.connectionConfig.httpVersion !== '2') {
+      return { budgeted: 0 }
+    }
+    if (size > ENVD_MAX_INFLIGHT_BODY_BYTES) {
+      const soloFetch = createEnvdSoloFetch(this.connectionConfig)
+      return { budgeted: 0, fetch: (request) => soloFetch(request) }
+    }
+    return { budgeted: size }
+  }
+
+  /**
    * Read file content as a `string`.
    *
    * You can pass `text`, `bytes`, `blob`, or `stream` to `opts.format` to change the return type.
@@ -723,37 +749,38 @@ export class Filesystem {
                 writeOpts?.signal
               )
 
-          const res = await envdUploadBudget.run(
-            streamed ? 0 : bodyByteLength(body),
-            signal,
-            () =>
-              this.envdApi.api
-                .POST('/files', {
-                  params: {
-                    query: {
-                      path: filePath,
-                      username: user,
-                    },
+          const upload = this.uploadAdmission(
+            streamed ? 0 : bodyByteLength(body)
+          )
+          const res = await envdUploadBudget.run(upload.budgeted, signal, () =>
+            this.envdApi.api
+              .POST('/files', {
+                params: {
+                  query: {
+                    path: filePath,
+                    username: user,
                   },
-                  bodySerializer: () => body,
-                  headers,
-                  signal,
-                  body: {},
-                  // Streaming request bodies require half-duplex mode.
-                  ...(streamed && {
-                    duplex: 'half' as const,
-                  }),
-                })
-                .catch(async (err) => {
-                  // fetch reports an error raised while reading a streamed body
-                  // as its own `TypeError`; surface the SDK's own validation
-                  // error.
-                  const invalidChunk = sourceError()
-                  if (invalidChunk) {
-                    throw invalidChunk
-                  }
-                  throw await handleEnvdApiFetchError(err, this.checkHealth)
-                })
+                },
+                bodySerializer: () => body,
+                headers,
+                signal,
+                body: {},
+                fetch: upload.fetch,
+                // Streaming request bodies require half-duplex mode.
+                ...(streamed && {
+                  duplex: 'half' as const,
+                }),
+              })
+              .catch(async (err) => {
+                // fetch reports an error raised while reading a streamed body
+                // as its own `TypeError`; surface the SDK's own validation
+                // error.
+                const invalidChunk = sourceError()
+                if (invalidChunk) {
+                  throw invalidChunk
+                }
+                throw await handleEnvdApiFetchError(err, this.checkHealth)
+              })
           )
 
           const err = await handleFilesystemEnvdApiError(res)
@@ -793,26 +820,25 @@ export class Filesystem {
         writeOpts?.requestTimeoutMs,
         writeOpts?.signal
       )
-      const res = await envdUploadBudget.run(
-        bodyByteLength(formData),
-        signal,
-        () =>
-          this.envdApi.api
-            .POST('/files', {
-              params: {
-                query: {
-                  path,
-                  username: user,
-                },
+      const upload = this.uploadAdmission(bodyByteLength(formData))
+      const res = await envdUploadBudget.run(upload.budgeted, signal, () =>
+        this.envdApi.api
+          .POST('/files', {
+            params: {
+              query: {
+                path,
+                username: user,
               },
-              bodySerializer: () => formData,
-              headers: extraHeaders,
-              signal,
-              body: {},
-            })
-            .catch(async (err) => {
-              throw await handleEnvdApiFetchError(err, this.checkHealth)
-            })
+            },
+            bodySerializer: () => formData,
+            headers: extraHeaders,
+            signal,
+            body: {},
+            fetch: upload.fetch,
+          })
+          .catch(async (err) => {
+            throw await handleEnvdApiFetchError(err, this.checkHealth)
+          })
       )
 
       const err = await handleFilesystemEnvdApiError(res)

@@ -3,10 +3,11 @@
 // 10 MB) and resets whichever stream's response headers arrive while that
 // budget is exhausted (ENHANCE_YOUR_CALM). Since undici 8 every envd REST
 // request of a process multiplexes over one session, so concurrent uploads
-// share one budget. They are admitted here so the bodies in flight together
-// stay well under it — headers and buffered response data count against it
-// too. A single larger upload still goes through on its own, and a stream
-// body is written chunk by chunk behind `drain`, so it is never queued whole.
+// share one budget — with every read and small write whose response may land
+// while it is full. Buffered uploads are admitted here so the bodies in flight
+// together stay well under it; a single body above this limit is sent on a
+// session of its own instead (see `Filesystem.write`). A stream body is
+// written chunk by chunk behind `drain`, so it is never queued whole.
 export const ENVD_MAX_INFLIGHT_BODY_BYTES = 6 * 1024 * 1024
 
 const utf8Length = (text: string): number =>

@@ -110,23 +110,27 @@ export function createRuntimeFetch(
   }) as typeof fetch
 }
 
-/**
- * Build a fetch bound to a bounded undici dispatcher (HTTP/2 enabled unless
- * `httpVersion` is `'1.1'`, `connections` origin connections, optional proxy
- * tunnel). A dispatcher whose HTTP/2 session Node reports as out of memory is
- * retired and replaced, so one poisoned session does not fail every later
- * request. Falls back to the global fetch when undici cannot be loaded.
- */
-export async function buildDispatchedFetch(options: {
-  connections: number
+type DispatcherOptions = {
   proxy?: string
   httpVersion?: HttpVersion
   loadUndici?: () => Promise<UndiciModule | undefined>
-}): Promise<typeof fetch> {
+}
+
+type UndiciFetch = (
+  input: RequestInfo | URL,
+  init?: UndiciRequestInit
+) => Promise<Response>
+
+async function loadDispatcherFactory(
+  options: DispatcherOptions & { connections: number }
+): Promise<
+  | { createDispatcher: () => UndiciDispatcher; undiciFetch: UndiciFetch }
+  | undefined
+> {
   const undici = await (options.loadUndici ?? loadUndici)()
 
   if (!undici) {
-    return lateBoundGlobalFetch()
+    return undefined
   }
 
   const { Agent, ProxyAgent, fetch: undiciFetch } = undici
@@ -134,19 +138,37 @@ export async function buildDispatchedFetch(options: {
     allowH2: (options.httpVersion ?? DEFAULT_HTTP_VERSION) === '2',
     connections: options.connections,
   }
-  const createDispatcher = (): UndiciDispatcher =>
-    options.proxy
-      ? new ProxyAgent({
-          uri: options.proxy,
-          ...agentOptions,
-          proxyTunnel: true,
-        })
-      : new Agent(agentOptions)
-  const fetchWithDispatcher = undiciFetch as unknown as (
-    input: RequestInfo | URL,
-    init?: UndiciRequestInit
-  ) => Promise<Response>
 
+  return {
+    createDispatcher: () =>
+      options.proxy
+        ? new ProxyAgent({
+            uri: options.proxy,
+            ...agentOptions,
+            proxyTunnel: true,
+          })
+        : new Agent(agentOptions),
+    undiciFetch: undiciFetch as unknown as UndiciFetch,
+  }
+}
+
+/**
+ * Build a fetch bound to a bounded undici dispatcher (HTTP/2 enabled unless
+ * `httpVersion` is `'1.1'`, `connections` origin connections, optional proxy
+ * tunnel). A dispatcher whose HTTP/2 session Node reports as out of memory is
+ * retired and replaced, so one poisoned session does not fail every later
+ * request. Falls back to the global fetch when undici cannot be loaded.
+ */
+export async function buildDispatchedFetch(
+  options: DispatcherOptions & { connections: number }
+): Promise<typeof fetch> {
+  const factory = await loadDispatcherFactory(options)
+
+  if (!factory) {
+    return lateBoundGlobalFetch()
+  }
+
+  const { createDispatcher, undiciFetch } = factory
   let dispatcher = createDispatcher()
 
   return (async (input, init) => {
@@ -154,7 +176,7 @@ export async function buildDispatchedFetch(options: {
     const used = dispatcher
 
     try {
-      return await fetchWithDispatcher(request.input, {
+      return await undiciFetch(request.input, {
         ...request.init,
         dispatcher: used,
       })
@@ -167,6 +189,40 @@ export async function buildDispatchedFetch(options: {
         void used.close().catch(() => {})
       }
       throw err
+    }
+  }) as typeof fetch
+}
+
+/**
+ * Build a fetch that gives every request its own single-connection dispatcher
+ * — on HTTP/2 a session of its own, with Node's whole per-session memory
+ * budget — and closes it once the response has been read. For requests whose
+ * buffered body would crowd out everything else on a shared session. Falls
+ * back to the global fetch when undici cannot be loaded.
+ */
+export async function buildSingleUseDispatchedFetch(
+  options: DispatcherOptions
+): Promise<typeof fetch> {
+  const factory = await loadDispatcherFactory({ ...options, connections: 1 })
+
+  if (!factory) {
+    return lateBoundGlobalFetch()
+  }
+
+  const { createDispatcher, undiciFetch } = factory
+
+  return (async (input, init) => {
+    const request = toUndiciRequestInput(input, init)
+    const dispatcher = createDispatcher()
+
+    try {
+      return await undiciFetch(request.input, {
+        ...request.init,
+        dispatcher,
+      })
+    } finally {
+      // Graceful: resolves after the response body has been consumed.
+      void dispatcher.close().catch(() => {})
     }
   }) as typeof fetch
 }

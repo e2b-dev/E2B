@@ -4,6 +4,7 @@ import type { FetchOpts } from '../api/http2'
 import { parsePositiveIntEnv } from '../api/metadata'
 import {
   buildDispatchedFetch,
+  buildSingleUseDispatchedFetch,
   createRuntimeFetch,
   type UndiciModule,
 } from '../undici'
@@ -19,6 +20,7 @@ type EnvdFetchOptions = {
 // keep sharing a single dispatcher while each distinct proxy URL gets its own.
 const envdFetchers = new Map<string, typeof fetch>()
 const envdRpcFetchers = new Map<string, typeof fetch>()
+const envdSoloFetchers = new Map<string, typeof fetch>()
 const DEFAULT_ENVD_CONNECTION_LIMIT = 10
 const DEFAULT_ENVD_RPC_CONNECTION_LIMIT = 200
 export function createEnvdFetchForRuntime(
@@ -28,6 +30,23 @@ export function createEnvdFetchForRuntime(
   return createRuntimeFetch(currentRuntime, () =>
     buildDispatchedFetch({
       connections: options.connectionLimit ?? DEFAULT_ENVD_CONNECTION_LIMIT,
+      proxy: options.proxy,
+      httpVersion: options.httpVersion,
+      loadUndici: options.loadUndici,
+    })
+  )
+}
+
+/**
+ * Fetch for envd requests that must not share an HTTP/2 session: each request
+ * runs on a dispatcher of its own that is closed afterwards.
+ */
+export function createEnvdSoloFetchForRuntime(
+  currentRuntime = runtime,
+  options: Omit<EnvdFetchOptions, 'connectionLimit'> = {}
+): typeof fetch {
+  return createRuntimeFetch(currentRuntime, () =>
+    buildSingleUseDispatchedFetch({
       proxy: options.proxy,
       httpVersion: options.httpVersion,
       loadUndici: options.loadUndici,
@@ -81,6 +100,26 @@ export function createEnvdRpcFetch({
   envdRpcFetchers.set(key, envdRpcFetch)
 
   return envdRpcFetch
+}
+
+export function createEnvdSoloFetch({
+  proxy,
+  httpVersion = DEFAULT_HTTP_VERSION,
+}: FetchOpts = {}): typeof fetch {
+  const key = fetcherKey(proxy, httpVersion)
+
+  const cached = envdSoloFetchers.get(key)
+  if (cached) {
+    return cached
+  }
+
+  const envdSoloFetch = createEnvdSoloFetchForRuntime(runtime, {
+    proxy,
+    httpVersion,
+  })
+  envdSoloFetchers.set(key, envdSoloFetch)
+
+  return envdSoloFetch
 }
 
 export function getEnvdRpcConnectionLimit(): number {

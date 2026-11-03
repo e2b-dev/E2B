@@ -2,6 +2,7 @@ import { expect, test, vi } from 'vitest'
 
 import {
   buildDispatchedFetch,
+  buildSingleUseDispatchedFetch,
   createRuntimeFetch,
   isPoisonedHTTP2SessionError,
   loadUndici,
@@ -321,4 +322,41 @@ test('keeps the dispatcher on other fetch failures', async () => {
   await fetcher('https://example.com/')
   expect(agents).toHaveLength(1)
   expect(agents[0].close).not.toHaveBeenCalled()
+})
+
+test('buildSingleUseDispatchedFetch gives each request its own dispatcher and closes it', async () => {
+  const { agents, dispatched, undici } = fakeUndiciWithDispatchers([
+    () => Promise.resolve(new Response('a')),
+    () => Promise.reject(new TypeError('fetch failed')),
+  ])
+
+  const fetcher = await buildSingleUseDispatchedFetch({
+    loadUndici: () => Promise.resolve(undici),
+  })
+
+  const res = await fetcher('https://example.com/a')
+  expect(await res.text()).toBe('a')
+  await expect(fetcher('https://example.com/b')).rejects.toThrow('fetch failed')
+
+  expect(agents).toHaveLength(2)
+  expect(agents.map((a) => a.options)).toEqual([
+    { allowH2: true, connections: 1 },
+    { allowH2: true, connections: 1 },
+  ])
+  expect(dispatched[0]).not.toBe(dispatched[1])
+  expect(agents[0].close).toHaveBeenCalledOnce()
+  expect(agents[1].close).toHaveBeenCalledOnce()
+})
+
+test('buildSingleUseDispatchedFetch falls back to the global fetch without undici', async () => {
+  const globalFetch = vi.fn(async () => new Response('global'))
+  vi.stubGlobal('fetch', globalFetch)
+
+  const fetcher = await buildSingleUseDispatchedFetch({
+    loadUndici: () => Promise.resolve(undefined),
+  })
+  const res = await fetcher('https://example.com/a')
+
+  expect(await res.text()).toBe('global')
+  expect(globalFetch).toHaveBeenCalledOnce()
 })

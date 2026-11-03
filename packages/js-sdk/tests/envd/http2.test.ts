@@ -297,3 +297,38 @@ test('uses global fetch outside Node', async () => {
     undefined
   )
 })
+
+test('solo envd fetch uses a fresh single-connection dispatcher per request', async () => {
+  const agents: Array<{ allowH2?: boolean; connections?: number }> = []
+  const closed: Array<unknown> = []
+  class Agent {
+    constructor(options: { allowH2?: boolean; connections?: number }) {
+      agents.push(options)
+    }
+    close() {
+      closed.push(this)
+      return Promise.resolve()
+    }
+  }
+  const dispatchers: unknown[] = []
+  const undiciFetch = vi.fn((_input, init) => {
+    dispatchers.push(init?.dispatcher)
+    return Promise.resolve(new Response('ok'))
+  })
+
+  const { createEnvdSoloFetchForRuntime } = await import('../../src/envd/http2')
+
+  const fetcher = createEnvdSoloFetchForRuntime('node', {
+    loadUndici: () => Promise.resolve({ Agent, fetch: undiciFetch }),
+  })
+  await fetcher('https://example.com/files')
+  await fetcher('https://example.com/files')
+
+  expect(agents).toEqual([
+    { allowH2: true, connections: 1 },
+    { allowH2: true, connections: 1 },
+  ])
+  expect(dispatchers[0]).toBeInstanceOf(Agent)
+  expect(dispatchers[0]).not.toBe(dispatchers[1])
+  expect(closed).toEqual(dispatchers)
+})
