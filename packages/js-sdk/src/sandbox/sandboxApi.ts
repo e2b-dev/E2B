@@ -1126,7 +1126,7 @@ export interface SandboxInfo {
    * sandbox resumes only with `onResume: 'reboot'`. Unset for a running
    * sandbox and for a snapshot whose guest agent responded.
    */
-  envdUnresponsiveAtPause?: boolean
+  forcePaused?: boolean
 }
 
 /**
@@ -1596,7 +1596,7 @@ export class SandboxApi extends ClientFactory {
         : undefined,
       sandboxDomain: res.data.domain || undefined,
       volumeMounts: res.data.volumeMounts ?? [],
-      envdUnresponsiveAtPause: res.data.envdUnresponsiveAtPause,
+      forcePaused: res.data.envdUnresponsiveAtPause,
     }
   }
 
@@ -2243,7 +2243,7 @@ export class SandboxPaginator extends Paginator<SandboxInfo, SandboxApiOpts> {
         memoryMB: sandbox.memoryMB,
         envdVersion: sandbox.envdVersion,
         volumeMounts: sandbox.volumeMounts ?? [],
-        envdUnresponsiveAtPause: sandbox.envdUnresponsiveAtPause,
+        forcePaused: sandbox.envdUnresponsiveAtPause,
       })
     )
   }

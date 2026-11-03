@@ -433,7 +433,7 @@ async def test_async_pause_busy_error_suggests_force(
 
 
 @pytest.mark.parametrize("value, expected", [(True, True), (None, None)])
-def test_sandbox_info_maps_envd_unresponsive_at_pause(value, expected):
+def test_sandbox_info_maps_force_paused(value, expected):
     data = {
         "templateID": "base",
         "sandboxID": "sbx-test",
@@ -452,5 +452,5 @@ def test_sandbox_info_maps_envd_unresponsive_at_pause(value, expected):
     detail = SandboxInfo._from_sandbox_detail(SandboxDetail.from_dict(data))
     listed = SandboxInfo._from_listed_sandbox(ListedSandbox.from_dict(data))
 
-    assert detail.envd_unresponsive_at_pause is expected
-    assert listed.envd_unresponsive_at_pause is expected
+    assert detail.force_paused is expected
+    assert listed.force_paused is expected

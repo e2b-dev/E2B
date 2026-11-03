@@ -274,7 +274,7 @@ test.each([
 )
 
 test.each([[true], [undefined]])(
-  'Sandbox.getInfo maps envdUnresponsiveAtPause=%s',
+  'Sandbox.getInfo maps envdUnresponsiveAtPause to forcePaused=%s',
   async (value) => {
     server.use(
       http.get(apiUrl('/sandboxes/:sandboxID'), () =>
@@ -298,6 +298,6 @@ test.each([[true], [undefined]])(
       apiKey: TEST_API_KEY,
     })
 
-    expect(info.envdUnresponsiveAtPause).toBe(value)
+    expect(info.forcePaused).toBe(value)
   }
 )

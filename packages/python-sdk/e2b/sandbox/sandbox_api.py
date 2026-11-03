@@ -1259,7 +1259,7 @@ class SandboxInfo:
     """Sandbox lifecycle configuration."""
     volume_mounts: List[Dict[str, str]] = field(default_factory=list)
     """Volume mounts for the sandbox."""
-    envd_unresponsive_at_pause: Optional[bool] = None
+    force_paused: Optional[bool] = None
     """`True` when the paused sandbox's snapshot was taken while its guest agent (envd) did not respond, e.g. after `pause(force=True)`. Such a sandbox resumes only with `on_resume="reboot"`. `None` for a running sandbox and for a snapshot whose guest agent responded."""
 
     @classmethod
@@ -1294,7 +1294,7 @@ class SandboxInfo:
             allow_internet_access=allow_internet_access,
             network=network,
             lifecycle=lifecycle,
-            envd_unresponsive_at_pause=(
+            force_paused=(
                 sandbox.envd_unresponsive_at_pause
                 if isinstance(sandbox.envd_unresponsive_at_pause, bool)
                 else None
