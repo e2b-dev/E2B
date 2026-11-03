@@ -11,6 +11,7 @@ _ENV_VARS = (
     "E2B_MAX_KEEPALIVE_CONNECTIONS",
     "E2B_CONNECTION_RETRIES",
     "E2B_MAX_CONNECTIONS",
+    "E2B_MAX_HTTP1_CONNECTIONS",
 )
 
 
@@ -27,6 +28,7 @@ def test_empty_env_vars_fall_back_to_defaults(monkeypatch):
         assert api.pool_max_idle_per_host == 20
         assert api.connection_retries == 3
         assert api.max_connections == 200
+        assert api.max_http1_connections == 1000
     finally:
         monkeypatch.undo()
         _reload()
@@ -36,11 +38,13 @@ def test_set_env_vars_are_honored(monkeypatch):
     monkeypatch.setenv("E2B_KEEPALIVE_EXPIRY", "42")
     monkeypatch.setenv("E2B_CONNECTION_RETRIES", "5")
     monkeypatch.setenv("E2B_MAX_CONNECTIONS", "8")
+    monkeypatch.setenv("E2B_MAX_HTTP1_CONNECTIONS", "16")
     try:
         api = _reload()
         assert api.pool_idle_timeout == 42
         assert api.connection_retries == 5
         assert api.max_connections == 8
+        assert api.max_http1_connections == 16
     finally:
         monkeypatch.undo()
         _reload()

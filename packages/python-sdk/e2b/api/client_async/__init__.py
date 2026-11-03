@@ -13,6 +13,7 @@ from e2b.api import (
     ProxyConfig,
     connection_retries,
     max_connections,
+    max_http1_connections,
     make_async_logging_event_hooks,
     pool_idle_timeout,
     pool_max_idle_per_host,
@@ -94,8 +95,9 @@ def get_pyqwest_transport(
     httpx-equivalent pool limits — behind connect-only retries. pyqwest
     spreads each origin's HTTP/2 streams over as many connections as the
     server's concurrent-stream limit requires, up to ``max_connections`` per
-    address, so long-running streams do not all queue behind one
-    connection.
+    address (``max_http1_connections`` for an HTTP/1.1 pool, which holds one
+    request per connection), so long-running streams do not all queue behind
+    one connection.
 
     Consumers speaking pyqwest natively (the envd RPC clients) take this;
     consumers speaking httpx take :func:`get_httpx_transport`, the adapter over
@@ -128,7 +130,9 @@ def get_pyqwest_transport(
                 proxy=proxy.to_pyqwest() if proxy is not None else None,
                 pool_idle_timeout=pool_idle_timeout,
                 pool_max_idle_per_host=pool_max_idle_per_host,
-                max_connections_per_address=max_connections,
+                max_connections_per_address=(
+                    max_http1_connections if http_version == "1.1" else max_connections
+                ),
                 read_timeout=read_timeout,
                 # `None` leaves the version to ALPN on TLS connections (HTTP/2
                 # against the E2B API and envd) and uses HTTP/1 for plaintext,
