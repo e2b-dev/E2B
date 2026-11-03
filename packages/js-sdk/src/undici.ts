@@ -39,7 +39,7 @@ const POISONED_HTTP2_SESSION_RST =
  * itself because the session's memory budget is exhausted. The session stays
  * unusable for every later request, so the dispatcher holding it must go.
  */
-export function isPoisonedHttp2SessionError(err: unknown): boolean {
+export function isPoisonedHTTP2SessionError(err: unknown): boolean {
   if (!(err instanceof Error) || !(err.cause instanceof Error)) {
     return false
   }
@@ -167,7 +167,7 @@ export async function buildDispatchedFetch(options: {
     } catch (err) {
       // Only the first failure of a dispatcher replaces it; its other in-flight
       // requests fail the same way and must not retire the replacement.
-      if (used === dispatcher && isPoisonedHttp2SessionError(err)) {
+      if (used === dispatcher && isPoisonedHTTP2SessionError(err)) {
         dispatcher = createDispatcher()
         // Graceful: requests still running on the old sessions finish first.
         void used.close().catch(() => {})

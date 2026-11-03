@@ -3,7 +3,7 @@ import { expect, test, vi } from 'vitest'
 import {
   buildDispatchedFetch,
   createRuntimeFetch,
-  isPoisonedHttp2SessionError,
+  isPoisonedHTTP2SessionError,
   loadUndici,
   type UndiciModule,
 } from '../src/undici'
@@ -224,13 +224,13 @@ test.each([
   ['NGHTTP2_INTERNAL_ERROR', true],
   ['NGHTTP2_CANCEL', false],
   ['NGHTTP2_REFUSED_STREAM', false],
-])('isPoisonedHttp2SessionError on a %s stream reset is %s', (rst, poisoned) =>
-  expect(isPoisonedHttp2SessionError(poisonedSessionError(rst))).toBe(poisoned)
+])('isPoisonedHTTP2SessionError on a %s stream reset is %s', (rst, poisoned) =>
+  expect(isPoisonedHTTP2SessionError(poisonedSessionError(rst))).toBe(poisoned)
 )
 
-test('isPoisonedHttp2SessionError ignores other transport failures', () => {
+test('isPoisonedHTTP2SessionError ignores other transport failures', () => {
   expect(
-    isPoisonedHttp2SessionError(
+    isPoisonedHTTP2SessionError(
       new TypeError('fetch failed', {
         cause: Object.assign(new Error('read ECONNRESET'), {
           code: 'ECONNRESET',
@@ -238,8 +238,8 @@ test('isPoisonedHttp2SessionError ignores other transport failures', () => {
       })
     )
   ).toBe(false)
-  expect(isPoisonedHttp2SessionError(new TypeError('fetch failed'))).toBe(false)
-  expect(isPoisonedHttp2SessionError('fetch failed')).toBe(false)
+  expect(isPoisonedHTTP2SessionError(new TypeError('fetch failed'))).toBe(false)
+  expect(isPoisonedHTTP2SessionError('fetch failed')).toBe(false)
 })
 
 function fakeUndiciWithDispatchers(responses: Array<() => Promise<Response>>) {
