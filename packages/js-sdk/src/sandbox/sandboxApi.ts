@@ -672,6 +672,20 @@ export interface SandboxPauseOpts extends SandboxApiOpts {
    * `mode: 'filesystem'`, `keepMemory: true` is `mode: 'full'`.
    */
   keepMemory?: boolean
+
+  /**
+   * Pause even when the sandbox's guest agent (envd) does not respond.
+   *
+   * By default the pause is refused with an error and the sandbox keeps
+   * running while the guest agent does not respond. With `force: true` the
+   * memory snapshot is taken anyway and marked; such a sandbox can then only
+   * be resumed with `onResume: 'reboot'`, which cold-boots it from disk. A
+   * filesystem-only pause (`mode: 'filesystem'`) is always refused while the
+   * guest agent does not respond.
+   *
+   * @default false
+   */
+  force?: boolean
 }
 
 /**
@@ -1755,6 +1769,7 @@ export class SandboxApi extends ClientFactory {
       },
       body: {
         memory: snapshotMemory('mode', apiOpts?.mode, apiOpts?.keepMemory),
+        requireHealthyGuest: !apiOpts?.force,
       },
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })

@@ -158,6 +158,18 @@ test('Sandbox.pause still sends the deprecated keepMemory', async () => {
   expect(lastPauseBody?.memory).toBe(false)
 })
 
+test('Sandbox.pause requires a healthy guest by default', async () => {
+  await Sandbox.pause('test-sandbox-id', { apiKey: TEST_API_KEY })
+
+  expect(lastPauseBody?.requireHealthyGuest).toBe(true)
+})
+
+test('Sandbox.pause with force skips the guest health requirement', async () => {
+  await Sandbox.pause('test-sandbox-id', { apiKey: TEST_API_KEY, force: true })
+
+  expect(lastPauseBody?.requireHealthyGuest).toBe(false)
+})
+
 test('Sandbox.pause rejects mode together with keepMemory', async () => {
   await expect(
     Sandbox.pause('test-sandbox-id', {

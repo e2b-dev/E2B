@@ -227,6 +227,21 @@ def test_pause_still_sends_the_deprecated_keep_memory(monkeypatch, test_api_key)
     assert body["memory"] is False
 
 
+@pytest.mark.parametrize("force, require_healthy_guest", [(False, True), (True, False)])
+def test_pause_maps_force_to_require_healthy_guest(
+    monkeypatch, test_api_key, force, require_healthy_guest
+):
+    body = _sync_pause_body(monkeypatch, test_api_key, force=force)
+
+    assert body["requireHealthyGuest"] is require_healthy_guest
+
+
+def test_pause_requires_a_healthy_guest_by_default(monkeypatch, test_api_key):
+    body = _sync_pause_body(monkeypatch, test_api_key)
+
+    assert body["requireHealthyGuest"] is True
+
+
 @pytest.mark.parametrize(
     "kwargs, match",
     [
@@ -263,6 +278,23 @@ async def test_async_pause_still_sends_the_deprecated_keep_memory(
     body = await _async_pause_body(monkeypatch, test_api_key, keep_memory=False)
 
     assert body["memory"] is False
+
+
+@pytest.mark.parametrize("force, require_healthy_guest", [(False, True), (True, False)])
+async def test_async_pause_maps_force_to_require_healthy_guest(
+    monkeypatch, test_api_key, force, require_healthy_guest
+):
+    body = await _async_pause_body(monkeypatch, test_api_key, force=force)
+
+    assert body["requireHealthyGuest"] is require_healthy_guest
+
+
+async def test_async_pause_requires_a_healthy_guest_by_default(
+    monkeypatch, test_api_key
+):
+    body = await _async_pause_body(monkeypatch, test_api_key)
+
+    assert body["requireHealthyGuest"] is True
 
 
 def _snapshot_response():

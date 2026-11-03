@@ -490,6 +490,7 @@ class SandboxApi(SandboxBase):
         keep_memory: Optional[bool] = None,
         *,
         mode: Optional[SnapshotMode] = None,
+        force: bool = False,
         **opts: Unpack[ApiParams],
     ) -> bool:
         config = ConnectionConfig(**cls._resolve_api_params(**opts))
@@ -499,7 +500,8 @@ class SandboxApi(SandboxBase):
             sandbox_id,
             client=api_client,
             body=SandboxPauseRequest(
-                memory=resolve_snapshot_memory("mode", mode, keep_memory)
+                memory=resolve_snapshot_memory("mode", mode, keep_memory),
+                require_healthy_guest=not force,
             ),
         )
 
