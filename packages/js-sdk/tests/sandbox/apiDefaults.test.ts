@@ -170,6 +170,20 @@ test('Sandbox.pause with force skips the guest health requirement', async () => 
   expect(lastPauseBody?.requireHealthyGuest).toBe(false)
 })
 
+test.each([[{ mode: 'filesystem' }], [{ keepMemory: false }]] as const)(
+  'Sandbox.pause rejects force with %o',
+  async (opts) => {
+    await expect(
+      Sandbox.pause('test-sandbox-id', {
+        apiKey: TEST_API_KEY,
+        force: true,
+        ...opts,
+      })
+    ).rejects.toThrowError(InvalidArgumentError)
+    expect(lastPauseBody).toBeUndefined()
+  }
+)
+
 test('Sandbox.pause rejects mode together with keepMemory', async () => {
   await expect(
     Sandbox.pause('test-sandbox-id', {

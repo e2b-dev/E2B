@@ -36,6 +36,7 @@ from e2b.api.client.models import (
 from e2b.api.client.types import UNSET, Unset
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.exceptions import (
+    InvalidArgumentException,
     NotFoundException,
     SandboxException,
     SandboxNotFoundException,
@@ -493,6 +494,12 @@ class SandboxApi(SandboxBase):
         force: bool = False,
         **opts: Unpack[ApiParams],
     ) -> bool:
+        memory = resolve_snapshot_memory("mode", mode, keep_memory)
+        if force and memory is False:
+            raise InvalidArgumentException(
+                'force cannot be combined with mode="filesystem".'
+            )
+
         config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
         api_client = get_api_client(config)
@@ -500,7 +507,7 @@ class SandboxApi(SandboxBase):
             sandbox_id,
             client=api_client,
             body=SandboxPauseRequest(
-                memory=resolve_snapshot_memory("mode", mode, keep_memory),
+                memory=memory,
                 require_healthy_guest=not force,
             ),
         )

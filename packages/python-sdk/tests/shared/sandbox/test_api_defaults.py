@@ -247,6 +247,8 @@ def test_pause_requires_a_healthy_guest_by_default(monkeypatch, test_api_key):
     [
         ({"mode": "full", "keep_memory": True}, "not both"),
         ({"mode": "memory"}, "mode must be one of: full, filesystem"),
+        ({"mode": "filesystem", "force": True}, "force cannot be combined"),
+        ({"keep_memory": False, "force": True}, "force cannot be combined"),
     ],
 )
 def test_pause_rejects_an_invalid_mode(monkeypatch, test_api_key, kwargs, match):
@@ -295,6 +297,20 @@ async def test_async_pause_requires_a_healthy_guest_by_default(
     body = await _async_pause_body(monkeypatch, test_api_key)
 
     assert body["requireHealthyGuest"] is True
+
+
+async def test_async_pause_rejects_force_with_filesystem_mode(
+    monkeypatch, test_api_key
+):
+    request = AsyncMock()
+    monkeypatch.setattr(post_sandboxes_sandbox_id_pause, "asyncio_detailed", request)
+
+    with pytest.raises(InvalidArgumentException, match="force cannot be combined"):
+        await AsyncSandbox.pause(
+            "sbx-test", api_key=test_api_key, mode="filesystem", force=True
+        )
+
+    request.assert_not_called()
 
 
 def _snapshot_response():

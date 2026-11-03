@@ -679,9 +679,9 @@ export interface SandboxPauseOpts extends SandboxApiOpts {
    * By default the pause is refused with an error and the sandbox keeps
    * running while the guest agent does not respond. With `force: true` the
    * memory snapshot is taken anyway and marked; such a sandbox can then only
-   * be resumed with `onResume: 'reboot'`, which cold-boots it from disk. A
-   * filesystem-only pause (`mode: 'filesystem'`) is always refused while the
-   * guest agent does not respond.
+   * be resumed with `onResume: 'reboot'`, which cold-boots it from disk.
+   * Cannot be combined with `mode: 'filesystem'`, which always needs a
+   * responding guest agent.
    *
    * @default false
    */
@@ -1758,6 +1758,13 @@ export class SandboxApi extends ClientFactory {
     opts?: SandboxPauseOpts
   ): Promise<boolean> {
     const apiOpts = this.resolveOpts(opts)
+    const memory = snapshotMemory('mode', apiOpts?.mode, apiOpts?.keepMemory)
+    if (apiOpts?.force && memory === false) {
+      throw new InvalidArgumentError(
+        "force cannot be combined with mode: 'filesystem'."
+      )
+    }
+
     const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
@@ -1768,7 +1775,7 @@ export class SandboxApi extends ClientFactory {
         },
       },
       body: {
-        memory: snapshotMemory('mode', apiOpts?.mode, apiOpts?.keepMemory),
+        memory,
         requireHealthyGuest: !apiOpts?.force,
       },
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
