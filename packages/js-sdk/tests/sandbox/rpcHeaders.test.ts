@@ -15,6 +15,7 @@ vi.mock('@connectrpc/connect-web', () => ({
 vi.mock('../../src/envd/http2', () => ({
   createEnvdFetch: vi.fn(() => vi.fn()),
   createEnvdRpcFetch: vi.fn(() => mocks.rpcFetch),
+  createEnvdSoloFetch: vi.fn(() => vi.fn()),
 }))
 
 test('does not pass custom connection headers to envd RPC requests', async () => {

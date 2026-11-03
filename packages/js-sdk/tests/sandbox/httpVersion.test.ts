@@ -12,6 +12,7 @@ vi.mock('@connectrpc/connect-web', () => ({
 vi.mock('../../src/envd/http2', () => ({
   createEnvdFetch: mocks.createEnvdFetch,
   createEnvdRpcFetch: mocks.createEnvdRpcFetch,
+  createEnvdSoloFetch: vi.fn(() => vi.fn()),
 }))
 
 afterEach(() => {
