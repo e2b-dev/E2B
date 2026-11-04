@@ -37,11 +37,9 @@ from e2b.api.client.types import UNSET, Unset
 from e2b.api.client_async import get_api_client
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.exceptions import (
-    InvalidArgumentException,
     NotFoundException,
     SandboxException,
     SandboxNotFoundException,
-    ServiceBusyException,
     TemplateException,
 )
 from e2b.retry import resolve_idempotency_key
@@ -404,14 +402,10 @@ class SandboxApi(SandboxBase):
         keep_memory: Optional[bool] = None,
         *,
         mode: Optional[SnapshotMode] = None,
-        force: bool = False,
+        strict: bool = False,
         **opts: Unpack[ApiParams],
     ) -> bool:
         memory = resolve_snapshot_memory("mode", mode, keep_memory)
-        if force and memory is False:
-            raise InvalidArgumentException(
-                'force cannot be combined with mode="filesystem".'
-            )
 
         config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
@@ -421,7 +415,7 @@ class SandboxApi(SandboxBase):
             client=api_client,
             body=SandboxPauseRequest(
                 memory=memory,
-                require_healthy_guest=not force,
+                require_healthy_guest=True if strict else UNSET,
             ),
         )
 
@@ -433,14 +427,7 @@ class SandboxApi(SandboxBase):
             return False
 
         if res.status_code >= 300:
-            err = handle_api_exception(res)
-            if isinstance(err, ServiceBusyException) and not force:
-                err = ServiceBusyException(
-                    f"{err} If the sandbox's guest agent (envd) is unresponsive,"
-                    " pass force=True to pause anyway; the sandbox then resumes"
-                    ' only with on_resume="reboot".'
-                )
-            raise err
+            raise handle_api_exception(res)
 
         # Check if res.parse is Error
         if isinstance(res.parsed, Error):

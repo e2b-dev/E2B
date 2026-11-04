@@ -203,6 +203,19 @@ class RateLimitException(SandboxException):
         super().__init__(*args, status_code=429)
 
 
+class GuestAgentUnresponsiveException(SandboxException):
+    """
+    Raised when a paused sandbox cannot be resumed with its memory because its
+    snapshot was taken while the sandbox's guest agent (envd) was not
+    responding (`envd_unresponsive_at_pause` in sandbox info). Restoring that
+    memory would bring the unresponsive agent back; resume the sandbox with
+    `on_resume="reboot"`, which cold-boots it from disk.
+    """
+
+    def __init__(self, *args):
+        super().__init__(*args, status_code=409)
+
+
 class ServiceBusyException(Exception):
     """
     Raised when the API refused the operation because the service is

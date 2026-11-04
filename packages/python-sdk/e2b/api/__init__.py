@@ -22,6 +22,7 @@ from e2b.api.metadata import default_headers
 from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.exceptions import (
     AuthenticationException,
+    GuestAgentUnresponsiveException,
     InvalidArgumentException,
     RateLimitException,
     ServiceBusyException,
@@ -188,6 +189,9 @@ def api_exception_from_code(
     return err
 
 
+GUEST_AGENT_UNRESPONSIVE_ERROR_CODE = "sandbox_snapshot_guest_agent_unresponsive"
+
+
 def handle_api_exception(
     e: "SupportsApiErrorResponse",
     default_exception_class: type[Exception] = SandboxException,
@@ -199,6 +203,11 @@ def handle_api_exception(
         body = {}
 
     message = body["message"] if "message" in body else None
+    if body.get("error_code") == GUEST_AGENT_UNRESPONSIVE_ERROR_CODE:
+        return GuestAgentUnresponsiveException(
+            f'{message}. Resume the sandbox with on_resume="reboot".'
+        ).with_traceback(stack_trace)
+
     if message is None and e.status_code not in (401, 429, 503):
         err = default_exception_class(f"{e.status_code}: {e.content}").with_traceback(
             stack_trace

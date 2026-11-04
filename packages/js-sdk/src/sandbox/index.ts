@@ -660,16 +660,13 @@ export class Sandbox extends SandboxApi {
    * With `mode: 'filesystem'`, the in-memory state is dropped and only the
    * filesystem is persisted; resuming such a sandbox cold-boots (reboots) it
    * from disk, losing running processes and open connections. Defaults to
-   * `'full'` (memory and filesystem). Pass `force: true` to pause even when
-   * the sandbox's guest agent does not respond; it then resumes only with
-   * `onResume: 'reboot'`.
+   * `'full'` (memory and filesystem). Pass `strict: true` to refuse the pause
+   * when the sandbox's guest agent does not respond.
    *
    * @returns `true` if the sandbox got paused, `false` if the sandbox was already paused.
    *
-   * @throws {@link ServiceBusyError} when the sandbox's guest agent does not
-   * respond and `force` is not set; the sandbox keeps running.
-   * @throws {@link InvalidArgumentError} when `force` is combined with
-   * `mode: 'filesystem'`.
+   * @throws {@link ServiceBusyError} when `strict` is set and the sandbox's
+   * guest agent does not respond; the sandbox keeps running.
    *
    * @example
    * ```ts
@@ -679,8 +676,8 @@ export class Sandbox extends SandboxApi {
    * // filesystem-only snapshot (resume reboots the sandbox)
    * await sandbox.pause({ mode: 'filesystem' })
    *
-   * // pause even if the guest agent is unresponsive
-   * await sandbox.pause({ force: true })
+   * // refuse the pause if the guest agent is unresponsive
+   * await sandbox.pause({ strict: true })
    * ```
    */
   async pause(opts?: SandboxPauseOpts): Promise<boolean> {

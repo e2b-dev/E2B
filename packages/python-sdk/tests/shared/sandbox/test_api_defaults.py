@@ -4,7 +4,12 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from e2b import AsyncSandbox, InvalidArgumentException, Sandbox, ServiceBusyException
+from e2b import (
+    AsyncSandbox,
+    GuestAgentUnresponsiveException,
+    InvalidArgumentException,
+    Sandbox,
+)
 from e2b.api.client.api.sandboxes import (
     post_v2_sandboxes,
     post_v_2_sandboxes_sandbox_id_connect,
@@ -229,17 +234,14 @@ def test_pause_still_sends_the_deprecated_keep_memory(monkeypatch, test_api_key)
     assert body["memory"] is False
 
 
-@pytest.mark.parametrize("force, require_healthy_guest", [(False, True), (True, False)])
-def test_pause_maps_force_to_require_healthy_guest(
-    monkeypatch, test_api_key, force, require_healthy_guest
-):
-    body = _sync_pause_body(monkeypatch, test_api_key, force=force)
-
-    assert body["requireHealthyGuest"] is require_healthy_guest
-
-
-def test_pause_requires_a_healthy_guest_by_default(monkeypatch, test_api_key):
+def test_pause_omits_require_healthy_guest_by_default(monkeypatch, test_api_key):
     body = _sync_pause_body(monkeypatch, test_api_key)
+
+    assert "requireHealthyGuest" not in body
+
+
+def test_pause_with_strict_requires_a_healthy_guest(monkeypatch, test_api_key):
+    body = _sync_pause_body(monkeypatch, test_api_key, strict=True)
 
     assert body["requireHealthyGuest"] is True
 
@@ -249,8 +251,6 @@ def test_pause_requires_a_healthy_guest_by_default(monkeypatch, test_api_key):
     [
         ({"mode": "full", "keep_memory": True}, "not both"),
         ({"mode": "memory"}, "mode must be one of: full, filesystem"),
-        ({"mode": "filesystem", "force": True}, "force cannot be combined"),
-        ({"keep_memory": False, "force": True}, "force cannot be combined"),
     ],
 )
 def test_pause_rejects_an_invalid_mode(monkeypatch, test_api_key, kwargs, match):
@@ -284,35 +284,20 @@ async def test_async_pause_still_sends_the_deprecated_keep_memory(
     assert body["memory"] is False
 
 
-@pytest.mark.parametrize("force, require_healthy_guest", [(False, True), (True, False)])
-async def test_async_pause_maps_force_to_require_healthy_guest(
-    monkeypatch, test_api_key, force, require_healthy_guest
-):
-    body = await _async_pause_body(monkeypatch, test_api_key, force=force)
-
-    assert body["requireHealthyGuest"] is require_healthy_guest
-
-
-async def test_async_pause_requires_a_healthy_guest_by_default(
+async def test_async_pause_omits_require_healthy_guest_by_default(
     monkeypatch, test_api_key
 ):
     body = await _async_pause_body(monkeypatch, test_api_key)
 
-    assert body["requireHealthyGuest"] is True
+    assert "requireHealthyGuest" not in body
 
 
-async def test_async_pause_rejects_force_with_filesystem_mode(
+async def test_async_pause_with_strict_requires_a_healthy_guest(
     monkeypatch, test_api_key
 ):
-    request = AsyncMock()
-    monkeypatch.setattr(post_sandboxes_sandbox_id_pause, "asyncio_detailed", request)
+    body = await _async_pause_body(monkeypatch, test_api_key, strict=True)
 
-    with pytest.raises(InvalidArgumentException, match="force cannot be combined"):
-        await AsyncSandbox.pause(
-            "sbx-test", api_key=test_api_key, mode="filesystem", force=True
-        )
-
-    request.assert_not_called()
+    assert body["requireHealthyGuest"] is True
 
 
 def _snapshot_response():
@@ -399,44 +384,50 @@ async def test_async_connect_sends_explicit_timeout(monkeypatch, test_api_key):
     assert body["timeout"] == 60
 
 
-def _busy_pause_response():
+def _marked_snapshot_response():
     return SimpleNamespace(
-        status_code=503,
-        content=b'{"code": 503, "message": "guest agent is not responding"}',
+        status_code=409,
+        content=(
+            b'{"code": 409, "message": "sandbox snapshot was taken while the guest'
+            b' agent was not responding", "error_code":'
+            b' "sandbox_snapshot_guest_agent_unresponsive"}'
+        ),
         parsed=None,
         headers={},
     )
 
 
-@pytest.mark.parametrize("force, hinted", [(False, True), (True, False)])
-def test_pause_busy_error_suggests_force(monkeypatch, test_api_key, force, hinted):
-    request = Mock(return_value=_busy_pause_response())
-    monkeypatch.setattr(post_sandboxes_sandbox_id_pause, "sync_detailed", request)
+def test_connect_raises_guest_agent_unresponsive(monkeypatch, test_api_key):
+    request = Mock(return_value=_marked_snapshot_response())
+    monkeypatch.setattr(post_v_2_sandboxes_sandbox_id_connect, "sync_detailed", request)
 
-    with pytest.raises(ServiceBusyException) as exc:
-        Sandbox.pause("sbx-test", api_key=test_api_key, force=force)
+    with pytest.raises(
+        GuestAgentUnresponsiveException, match='on_resume="reboot"'
+    ) as exc:
+        Sandbox.connect("sbx-test", api_key=test_api_key)
 
-    assert ("force=True" in str(exc.value)) is hinted
+    assert exc.value.status_code == 409
 
 
-@pytest.mark.parametrize("force, hinted", [(False, True), (True, False)])
-async def test_async_pause_busy_error_suggests_force(
-    monkeypatch, test_api_key, force, hinted
-):
-    request = AsyncMock(return_value=_busy_pause_response())
-    monkeypatch.setattr(post_sandboxes_sandbox_id_pause, "asyncio_detailed", request)
+async def test_async_connect_raises_guest_agent_unresponsive(monkeypatch, test_api_key):
+    request = AsyncMock(return_value=_marked_snapshot_response())
+    monkeypatch.setattr(
+        post_v_2_sandboxes_sandbox_id_connect, "asyncio_detailed", request
+    )
 
-    with pytest.raises(ServiceBusyException) as exc:
-        await AsyncSandbox.pause("sbx-test", api_key=test_api_key, force=force)
+    with pytest.raises(
+        GuestAgentUnresponsiveException, match='on_resume="reboot"'
+    ) as exc:
+        await AsyncSandbox.connect("sbx-test", api_key=test_api_key)
 
-    assert ("force=True" in str(exc.value)) is hinted
+    assert exc.value.status_code == 409
 
 
 @pytest.mark.parametrize(
     "state, value, expected",
-    [("paused", True, False), ("paused", None, True), ("running", None, None)],
+    [("paused", True, True), ("paused", None, None), ("running", None, None)],
 )
-def test_sandbox_info_maps_pause_is_healthy(state, value, expected):
+def test_sandbox_info_maps_envd_unresponsive_at_pause(state, value, expected):
     data = {
         "templateID": "base",
         "sandboxID": "sbx-test",
@@ -455,5 +446,5 @@ def test_sandbox_info_maps_pause_is_healthy(state, value, expected):
     detail = SandboxInfo._from_sandbox_detail(SandboxDetail.from_dict(data))
     listed = SandboxInfo._from_listed_sandbox(ListedSandbox.from_dict(data))
 
-    assert detail.pause_is_healthy is expected
-    assert listed.pause_is_healthy is expected
+    assert detail.envd_unresponsive_at_pause is expected
+    assert listed.envd_unresponsive_at_pause is expected

@@ -12,7 +12,6 @@ import {
   NotFoundError,
   SandboxError,
   SandboxNotFoundError,
-  ServiceBusyError,
   TemplateError,
 } from '../errors'
 import { Paginator } from '../paginator'
@@ -653,7 +652,10 @@ export interface SandboxApiOpts extends Partial<
   >
 > {}
 
-interface SandboxPauseBaseOpts extends SandboxApiOpts {
+/**
+ * Options for pausing a sandbox.
+ */
+export interface SandboxPauseOpts extends SandboxApiOpts {
   /**
    * What the pause persists.
    *
@@ -672,29 +674,19 @@ interface SandboxPauseBaseOpts extends SandboxApiOpts {
   keepMemory?: boolean
 
   /**
-   * Pause even when the sandbox's guest agent (envd) does not respond.
+   * Refuse the pause when the sandbox's guest agent (envd) does not respond.
    *
-   * By default the pause is refused with a {@link ServiceBusyError} and the
-   * sandbox keeps running while the guest agent does not respond. With `force: true` the
-   * memory snapshot is taken anyway and marked; such a sandbox can then only
-   * be resumed with `onResume: 'reboot'`, which cold-boots it from disk.
-   * Cannot be combined with `mode: 'filesystem'`, which always needs a
-   * responding guest agent.
+   * With `strict: true` such a pause is refused with a {@link ServiceBusyError}
+   * and the sandbox keeps running. Otherwise the memory snapshot is taken
+   * anyway and marked (`envdUnresponsiveAtPause` in sandbox info); such a
+   * sandbox then resumes only with `onResume: 'reboot'`, which cold-boots it
+   * from disk. A `mode: 'filesystem'` pause always requires a responding guest
+   * agent.
    *
    * @default false
    */
-  force?: boolean
+  strict?: boolean
 }
-
-/**
- * Options for pausing a sandbox.
- *
- * `force` is only allowed for a memory pause, so passing it together with
- * `mode: 'filesystem'` (or `keepMemory: false`) is a type error.
- */
-export type SandboxPauseOpts =
-  | (SandboxPauseBaseOpts & { force?: false })
-  | (SandboxPauseBaseOpts & { mode?: 'full'; keepMemory?: true })
 
 /**
  * Options for forking a sandbox.
@@ -1121,12 +1113,12 @@ export interface SandboxInfo {
   sandboxDomain?: string
 
   /**
-   * Whether the sandbox's guest agent (envd) responded when it was paused.
-   * `false` when the snapshot was taken over an unresponsive guest agent,
-   * e.g. after `pause({ force: true })`; such a sandbox resumes only with
-   * `onResume: 'reboot'`. Unset for a running sandbox.
+   * `true` when the snapshot this paused sandbox resumes from was taken while
+   * its guest agent (envd) was not responding. Such a sandbox resumes only
+   * with `onResume: 'reboot'`; a plain resume throws
+   * {@link GuestAgentUnresponsiveError}. Unset otherwise.
    */
-  pauseIsHealthy?: boolean
+  envdUnresponsiveAtPause?: boolean
 }
 
 /**
@@ -1596,10 +1588,7 @@ export class SandboxApi extends ClientFactory {
         : undefined,
       sandboxDomain: res.data.domain || undefined,
       volumeMounts: res.data.volumeMounts ?? [],
-      pauseIsHealthy:
-        res.data.state === 'paused'
-          ? !res.data.envdUnresponsiveAtPause
-          : undefined,
+      envdUnresponsiveAtPause: res.data.envdUnresponsiveAtPause || undefined,
     }
   }
 
@@ -1779,12 +1768,6 @@ export class SandboxApi extends ClientFactory {
   ): Promise<boolean> {
     const apiOpts = this.resolveOpts(opts)
     const memory = snapshotMemory('mode', apiOpts?.mode, apiOpts?.keepMemory)
-    if (apiOpts?.force && memory === false) {
-      throw new InvalidArgumentError(
-        "force cannot be combined with mode: 'filesystem'."
-      )
-    }
-
     const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
@@ -1796,7 +1779,7 @@ export class SandboxApi extends ClientFactory {
       },
       body: {
         memory,
-        requireHealthyGuest: !apiOpts?.force,
+        requireHealthyGuest: apiOpts?.strict ? true : undefined,
       },
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
@@ -1811,10 +1794,6 @@ export class SandboxApi extends ClientFactory {
     }
 
     const err = handleApiError(res)
-    if (err instanceof ServiceBusyError && !apiOpts?.force) {
-      err.message +=
-        " If the sandbox's guest agent (envd) is unresponsive, pass `force: true` to pause anyway; the sandbox then resumes only with `onResume: 'reboot'`."
-    }
     if (err) {
       throw err
     }
@@ -2246,10 +2225,7 @@ export class SandboxPaginator extends Paginator<SandboxInfo, SandboxApiOpts> {
         memoryMB: sandbox.memoryMB,
         envdVersion: sandbox.envdVersion,
         volumeMounts: sandbox.volumeMounts ?? [],
-        pauseIsHealthy:
-          sandbox.state === 'paused'
-            ? !sandbox.envdUnresponsiveAtPause
-            : undefined,
+        envdUnresponsiveAtPause: sandbox.envdUnresponsiveAtPause || undefined,
       })
     )
   }

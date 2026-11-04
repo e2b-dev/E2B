@@ -1,7 +1,11 @@
 import { afterAll, afterEach, beforeAll, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
 
-import { InvalidArgumentError, Sandbox, ServiceBusyError } from '../../src'
+import {
+  GuestAgentUnresponsiveError,
+  InvalidArgumentError,
+  Sandbox,
+} from '../../src'
 import { TEST_API_KEY, apiUrl } from '../setup'
 import { setupMockApi } from '../mockApi'
 
@@ -158,31 +162,17 @@ test('Sandbox.pause still sends the deprecated keepMemory', async () => {
   expect(lastPauseBody?.memory).toBe(false)
 })
 
-test('Sandbox.pause requires a healthy guest by default', async () => {
+test('Sandbox.pause omits requireHealthyGuest by default', async () => {
   await Sandbox.pause('test-sandbox-id', { apiKey: TEST_API_KEY })
+
+  expect(lastPauseBody).not.toHaveProperty('requireHealthyGuest')
+})
+
+test('Sandbox.pause with strict requires a healthy guest', async () => {
+  await Sandbox.pause('test-sandbox-id', { apiKey: TEST_API_KEY, strict: true })
 
   expect(lastPauseBody?.requireHealthyGuest).toBe(true)
 })
-
-test('Sandbox.pause with force skips the guest health requirement', async () => {
-  await Sandbox.pause('test-sandbox-id', { apiKey: TEST_API_KEY, force: true })
-
-  expect(lastPauseBody?.requireHealthyGuest).toBe(false)
-})
-
-test.each([[{ mode: 'filesystem' }], [{ keepMemory: false }]] as const)(
-  'Sandbox.pause rejects force with %o',
-  async (opts) => {
-    await expect(
-      Sandbox.pause('test-sandbox-id', {
-        apiKey: TEST_API_KEY,
-        force: true,
-        ...opts,
-      })
-    ).rejects.toThrowError(InvalidArgumentError)
-    expect(lastPauseBody).toBeUndefined()
-  }
-)
 
 test('Sandbox.pause rejects mode together with keepMemory', async () => {
   await expect(
@@ -247,38 +237,36 @@ test('Sandbox.connect sends an explicit timeout', async () => {
   expect(lastConnectBody?.timeout).toBe(60)
 })
 
-test.each([
-  [false, true],
-  [true, false],
-])(
-  'Sandbox.pause with force=%s hints force on a busy error: %s',
-  async (force, hinted) => {
-    server.use(
-      http.post(apiUrl('/sandboxes/:sandboxID/pause'), () =>
-        HttpResponse.json(
-          { code: 503, message: 'guest agent is not responding' },
-          { status: 503 }
-        )
+test('Sandbox.connect throws GuestAgentUnresponsiveError for a marked snapshot', async () => {
+  server.use(
+    http.post(apiUrl('/v2/sandboxes/:sandboxID/connect'), () =>
+      HttpResponse.json(
+        {
+          code: 409,
+          message:
+            'sandbox snapshot was taken while the guest agent was not responding',
+          error_code: 'sandbox_snapshot_guest_agent_unresponsive',
+        },
+        { status: 409 }
       )
     )
+  )
 
-    const err = await Sandbox.pause('test-sandbox-id', {
-      apiKey: TEST_API_KEY,
-      retries: 0,
-      force,
-    }).catch((e: unknown) => e)
+  const err = await Sandbox.connect('test-sandbox-id', {
+    apiKey: TEST_API_KEY,
+  }).catch((e: unknown) => e)
 
-    expect(err).toBeInstanceOf(ServiceBusyError)
-    expect((err as Error).message.includes('force: true')).toBe(hinted)
-  }
-)
+  expect(err).toBeInstanceOf(GuestAgentUnresponsiveError)
+  expect((err as GuestAgentUnresponsiveError).statusCode).toBe(409)
+  expect((err as Error).message).toContain("onResume: 'reboot'")
+})
 
 test.each([
-  ['paused', true, false],
-  ['paused', undefined, true],
+  ['paused', true, true],
+  ['paused', undefined, undefined],
   ['running', undefined, undefined],
 ] as const)(
-  'Sandbox.getInfo maps a %s sandbox with envdUnresponsiveAtPause=%s to pauseIsHealthy=%s',
+  'Sandbox.getInfo maps a %s sandbox with envdUnresponsiveAtPause=%s to %s',
   async (state, value, expected) => {
     server.use(
       http.get(apiUrl('/sandboxes/:sandboxID'), () =>
@@ -302,6 +290,6 @@ test.each([
       apiKey: TEST_API_KEY,
     })
 
-    expect(info.pauseIsHealthy).toBe(expected)
+    expect(info.envdUnresponsiveAtPause).toBe(expected)
   }
 )
