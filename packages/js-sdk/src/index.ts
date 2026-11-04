@@ -24,6 +24,7 @@ export {
   TimeoutError,
   RateLimitError,
   ServiceBusyError,
+  GuestUnresponsiveError,
   BuildError,
   FileUploadError,
   VolumeError,

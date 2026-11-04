@@ -4,7 +4,12 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from e2b import AsyncSandbox, InvalidArgumentException, Sandbox
+from e2b import (
+    AsyncSandbox,
+    GuestUnresponsiveException,
+    InvalidArgumentException,
+    Sandbox,
+)
 from e2b.api.client.api.sandboxes import (
     post_v2_sandboxes,
     post_v_2_sandboxes_sandbox_id_connect,
@@ -12,7 +17,9 @@ from e2b.api.client.api.sandboxes import (
     post_sandboxes_sandbox_id_pause,
     post_sandboxes_sandbox_id_snapshots,
 )
+from e2b.api.client.models import ListedSandbox, SandboxDetail
 from e2b.api.client.models import Sandbox as SandboxModel
+from e2b.sandbox.sandbox_api import SandboxInfo
 
 
 def _created_sandbox():
@@ -227,6 +234,18 @@ def test_pause_still_sends_the_deprecated_keep_memory(monkeypatch, test_api_key)
     assert body["memory"] is False
 
 
+def test_pause_omits_require_healthy_guest_by_default(monkeypatch, test_api_key):
+    body = _sync_pause_body(monkeypatch, test_api_key)
+
+    assert "requireHealthyGuest" not in body
+
+
+def test_pause_with_strict_requires_a_healthy_guest(monkeypatch, test_api_key):
+    body = _sync_pause_body(monkeypatch, test_api_key, strict=True)
+
+    assert body["requireHealthyGuest"] is True
+
+
 @pytest.mark.parametrize(
     "kwargs, match",
     [
@@ -263,6 +282,22 @@ async def test_async_pause_still_sends_the_deprecated_keep_memory(
     body = await _async_pause_body(monkeypatch, test_api_key, keep_memory=False)
 
     assert body["memory"] is False
+
+
+async def test_async_pause_omits_require_healthy_guest_by_default(
+    monkeypatch, test_api_key
+):
+    body = await _async_pause_body(monkeypatch, test_api_key)
+
+    assert "requireHealthyGuest" not in body
+
+
+async def test_async_pause_with_strict_requires_a_healthy_guest(
+    monkeypatch, test_api_key
+):
+    body = await _async_pause_body(monkeypatch, test_api_key, strict=True)
+
+    assert body["requireHealthyGuest"] is True
 
 
 def _snapshot_response():
@@ -347,3 +382,65 @@ async def test_async_connect_sends_explicit_timeout(monkeypatch, test_api_key):
     body = await _async_connect_body(monkeypatch, test_api_key, timeout=60)
 
     assert body["timeout"] == 60
+
+
+def _marked_snapshot_response():
+    return SimpleNamespace(
+        status_code=409,
+        content=(
+            b'{"code": 409, "message": "sandbox snapshot was taken while the guest'
+            b' agent was not responding", "error_code":'
+            b' "sandbox_snapshot_guest_agent_unresponsive"}'
+        ),
+        parsed=None,
+        headers={},
+    )
+
+
+def test_connect_raises_guest_unresponsive(monkeypatch, test_api_key):
+    request = Mock(return_value=_marked_snapshot_response())
+    monkeypatch.setattr(post_v_2_sandboxes_sandbox_id_connect, "sync_detailed", request)
+
+    with pytest.raises(GuestUnresponsiveException, match='on_resume="reboot"') as exc:
+        Sandbox.connect("sbx-test", api_key=test_api_key)
+
+    assert exc.value.status_code == 409
+
+
+async def test_async_connect_raises_guest_unresponsive(monkeypatch, test_api_key):
+    request = AsyncMock(return_value=_marked_snapshot_response())
+    monkeypatch.setattr(
+        post_v_2_sandboxes_sandbox_id_connect, "asyncio_detailed", request
+    )
+
+    with pytest.raises(GuestUnresponsiveException, match='on_resume="reboot"') as exc:
+        await AsyncSandbox.connect("sbx-test", api_key=test_api_key)
+
+    assert exc.value.status_code == 409
+
+
+@pytest.mark.parametrize(
+    "state, value, expected",
+    [("paused", True, True), ("paused", None, None), ("running", None, None)],
+)
+def test_sandbox_info_maps_envd_unresponsive_at_pause(state, value, expected):
+    data = {
+        "templateID": "base",
+        "sandboxID": "sbx-test",
+        "clientID": "client",
+        "startedAt": "2026-01-01T00:00:00Z",
+        "endAt": "2026-01-01T01:00:00Z",
+        "envdVersion": "0.2.4",
+        "cpuCount": 2,
+        "memoryMB": 512,
+        "diskSizeMB": 1024,
+        "state": state,
+    }
+    if value is not None:
+        data["envdUnresponsiveAtPause"] = value
+
+    detail = SandboxInfo._from_sandbox_detail(SandboxDetail.from_dict(data))
+    listed = SandboxInfo._from_listed_sandbox(ListedSandbox.from_dict(data))
+
+    assert detail.envd_unresponsive_at_pause is expected
+    assert listed.envd_unresponsive_at_pause is expected

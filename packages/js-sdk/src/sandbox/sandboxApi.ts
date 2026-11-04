@@ -672,6 +672,20 @@ export interface SandboxPauseOpts extends SandboxApiOpts {
    * `mode: 'filesystem'`, `keepMemory: true` is `mode: 'full'`.
    */
   keepMemory?: boolean
+
+  /**
+   * Refuse the pause when the sandbox's guest agent (envd) does not respond.
+   *
+   * With `strict: true` such a pause is refused with a {@link ServiceBusyError}
+   * and the sandbox keeps running. Otherwise the memory snapshot is taken
+   * anyway and marked (`envdUnresponsiveAtPause` in sandbox info); such a
+   * sandbox then resumes only with `onResume: 'reboot'`, which cold-boots it
+   * from disk. A `mode: 'filesystem'` pause always requires a responding guest
+   * agent.
+   *
+   * @default false
+   */
+  strict?: boolean
 }
 
 /**
@@ -1097,6 +1111,14 @@ export interface SandboxInfo {
    * Sandbox domain.
    */
   sandboxDomain?: string
+
+  /**
+   * `true` when the snapshot this paused sandbox resumes from was taken while
+   * its guest agent (envd) was not responding. Such a sandbox resumes only
+   * with `onResume: 'reboot'`; a plain resume throws
+   * {@link GuestUnresponsiveError}. Unset otherwise.
+   */
+  envdUnresponsiveAtPause?: boolean
 }
 
 /**
@@ -1566,6 +1588,7 @@ export class SandboxApi extends ClientFactory {
         : undefined,
       sandboxDomain: res.data.domain || undefined,
       volumeMounts: res.data.volumeMounts ?? [],
+      envdUnresponsiveAtPause: res.data.envdUnresponsiveAtPause || undefined,
     }
   }
 
@@ -1744,6 +1767,7 @@ export class SandboxApi extends ClientFactory {
     opts?: SandboxPauseOpts
   ): Promise<boolean> {
     const apiOpts = this.resolveOpts(opts)
+    const memory = snapshotMemory('mode', apiOpts?.mode, apiOpts?.keepMemory)
     const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
@@ -1754,7 +1778,8 @@ export class SandboxApi extends ClientFactory {
         },
       },
       body: {
-        memory: snapshotMemory('mode', apiOpts?.mode, apiOpts?.keepMemory),
+        memory,
+        requireHealthyGuest: apiOpts?.strict ? true : undefined,
       },
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
@@ -2200,6 +2225,7 @@ export class SandboxPaginator extends Paginator<SandboxInfo, SandboxApiOpts> {
         memoryMB: sandbox.memoryMB,
         envdVersion: sandbox.envdVersion,
         volumeMounts: sandbox.volumeMounts ?? [],
+        envdUnresponsiveAtPause: sandbox.envdUnresponsiveAtPause || undefined,
       })
     )
   }

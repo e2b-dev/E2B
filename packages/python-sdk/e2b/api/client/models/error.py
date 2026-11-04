@@ -20,7 +20,11 @@ class Error:
             node could not create the sandbox this time; retry), sandbox_create_refused (a node refused the sandbox for a
             reason no retry changes, such as a vcpu count out of bounds in the stored build; a server error, since no
             request field reaches that check), internal_server_error, secret_limit_reached, idempotency_request_mismatch,
-            idempotency_in_progress, idempotency_outcome_unknown.
+            idempotency_in_progress, idempotency_outcome_unknown, cluster_registration_invalid,
+            cluster_registration_conflict, cluster_assignment_invalid, cluster_assignment_project_not_found,
+            cluster_assignment_cluster_not_found, cluster_assignment_already_assigned, cluster_assignment_cluster_deleting,
+            sandbox_snapshot_guest_agent_unresponsive (a plain resume of a snapshot taken while the sandbox guest agent was
+            not responding; resume it with memory: false).
     """
 
     code: int
