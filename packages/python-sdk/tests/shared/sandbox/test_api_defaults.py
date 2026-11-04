@@ -6,7 +6,7 @@ import pytest
 
 from e2b import (
     AsyncSandbox,
-    GuestAgentUnresponsiveException,
+    GuestUnresponsiveException,
     InvalidArgumentException,
     Sandbox,
 )
@@ -397,27 +397,23 @@ def _marked_snapshot_response():
     )
 
 
-def test_connect_raises_guest_agent_unresponsive(monkeypatch, test_api_key):
+def test_connect_raises_guest_unresponsive(monkeypatch, test_api_key):
     request = Mock(return_value=_marked_snapshot_response())
     monkeypatch.setattr(post_v_2_sandboxes_sandbox_id_connect, "sync_detailed", request)
 
-    with pytest.raises(
-        GuestAgentUnresponsiveException, match='on_resume="reboot"'
-    ) as exc:
+    with pytest.raises(GuestUnresponsiveException, match='on_resume="reboot"') as exc:
         Sandbox.connect("sbx-test", api_key=test_api_key)
 
     assert exc.value.status_code == 409
 
 
-async def test_async_connect_raises_guest_agent_unresponsive(monkeypatch, test_api_key):
+async def test_async_connect_raises_guest_unresponsive(monkeypatch, test_api_key):
     request = AsyncMock(return_value=_marked_snapshot_response())
     monkeypatch.setattr(
         post_v_2_sandboxes_sandbox_id_connect, "asyncio_detailed", request
     )
 
-    with pytest.raises(
-        GuestAgentUnresponsiveException, match='on_resume="reboot"'
-    ) as exc:
+    with pytest.raises(GuestUnresponsiveException, match='on_resume="reboot"') as exc:
         await AsyncSandbox.connect("sbx-test", api_key=test_api_key)
 
     assert exc.value.status_code == 409

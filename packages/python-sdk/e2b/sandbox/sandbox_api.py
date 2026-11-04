@@ -1260,7 +1260,7 @@ class SandboxInfo:
     volume_mounts: List[Dict[str, str]] = field(default_factory=list)
     """Volume mounts for the sandbox."""
     envd_unresponsive_at_pause: Optional[bool] = None
-    """`True` when the snapshot this paused sandbox resumes from was taken while its guest agent (envd) was not responding. Such a sandbox resumes only with `on_resume="reboot"`; a plain resume raises `GuestAgentUnresponsiveException`. `None` otherwise."""
+    """`True` when the snapshot this paused sandbox resumes from was taken while its guest agent (envd) was not responding. Such a sandbox resumes only with `on_resume="reboot"`; a plain resume raises `GuestUnresponsiveException`. `None` otherwise."""
 
     @classmethod
     def _from_sandbox_data(

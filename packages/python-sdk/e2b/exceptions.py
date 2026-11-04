@@ -203,7 +203,7 @@ class RateLimitException(SandboxException):
         super().__init__(*args, status_code=429)
 
 
-class GuestAgentUnresponsiveException(SandboxException):
+class GuestUnresponsiveException(SandboxException):
     """
     Raised when a paused sandbox cannot be resumed with its memory because its
     snapshot was taken while the sandbox's guest agent (envd) was not

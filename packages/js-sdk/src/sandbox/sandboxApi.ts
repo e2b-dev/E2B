@@ -1116,7 +1116,7 @@ export interface SandboxInfo {
    * `true` when the snapshot this paused sandbox resumes from was taken while
    * its guest agent (envd) was not responding. Such a sandbox resumes only
    * with `onResume: 'reboot'`; a plain resume throws
-   * {@link GuestAgentUnresponsiveError}. Unset otherwise.
+   * {@link GuestUnresponsiveError}. Unset otherwise.
    */
   envdUnresponsiveAtPause?: boolean
 }

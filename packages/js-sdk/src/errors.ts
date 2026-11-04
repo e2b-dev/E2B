@@ -268,7 +268,7 @@ export class ServiceBusyError extends Error {
  * memory would bring the unresponsive agent back; resume the sandbox with
  * `onResume: 'reboot'`, which cold-boots it from disk.
  */
-export class GuestAgentUnresponsiveError extends SandboxError {
+export class GuestUnresponsiveError extends SandboxError {
   /**
    * The API's `error_code` for this error.
    */
@@ -276,7 +276,7 @@ export class GuestAgentUnresponsiveError extends SandboxError {
 
   constructor(message: string) {
     super(message)
-    this.name = 'GuestAgentUnresponsiveError'
+    this.name = 'GuestUnresponsiveError'
     this.statusCode = 409
   }
 }

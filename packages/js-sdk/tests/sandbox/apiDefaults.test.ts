@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeAll, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
 
 import {
-  GuestAgentUnresponsiveError,
+  GuestUnresponsiveError,
   InvalidArgumentError,
   Sandbox,
 } from '../../src'
@@ -237,7 +237,7 @@ test('Sandbox.connect sends an explicit timeout', async () => {
   expect(lastConnectBody?.timeout).toBe(60)
 })
 
-test('Sandbox.connect throws GuestAgentUnresponsiveError for a marked snapshot', async () => {
+test('Sandbox.connect throws GuestUnresponsiveError for a marked snapshot', async () => {
   server.use(
     http.post(apiUrl('/v2/sandboxes/:sandboxID/connect'), () =>
       HttpResponse.json(
@@ -256,8 +256,8 @@ test('Sandbox.connect throws GuestAgentUnresponsiveError for a marked snapshot',
     apiKey: TEST_API_KEY,
   }).catch((e: unknown) => e)
 
-  expect(err).toBeInstanceOf(GuestAgentUnresponsiveError)
-  expect((err as GuestAgentUnresponsiveError).statusCode).toBe(409)
+  expect(err).toBeInstanceOf(GuestUnresponsiveError)
+  expect((err as GuestUnresponsiveError).statusCode).toBe(409)
   expect((err as Error).message).toContain("onResume: 'reboot'")
 })
 
