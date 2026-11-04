@@ -1,8 +1,11 @@
+import builtins
+import hashlib
 import os
 import sys
 import tempfile
 import pytest
 from e2b.exceptions import TemplateException
+from e2b.template import utils as template_utils
 from e2b.template.utils import (
     calculate_files_hash,
     get_all_files_in_path,
@@ -565,3 +568,62 @@ class TestDockerignoreSemantics:
         files = self.relative_paths("*", test_dir, ["*.{txt,md}"])
         assert "a.txt" in files
         assert "b.{txt,md}" not in files
+
+
+class TestCalculateFilesHash:
+    @pytest.fixture
+    def test_dir(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield tmpdir
+
+    def test_should_hash_file_content_spanning_multiple_read_chunks(self, test_dir):
+        content = os.urandom(3 * 1024 * 1024 + 123)
+        file_path = os.path.join(test_dir, "big.bin")
+        with open(file_path, "wb") as f:
+            f.write(content)
+        stats = os.stat(file_path)
+
+        expected = hashlib.sha256()
+        expected.update(b"COPY big.bin /app")
+        expected.update(b"big.bin")
+        expected.update(str(stats.st_mode).encode())
+        expected.update(str(stats.st_size).encode())
+        expected.update(content)
+
+        assert (
+            calculate_files_hash("big.bin", "/app", test_dir, [], False, None)
+            == expected.hexdigest()
+        )
+
+    def test_should_not_read_whole_files_into_memory(self, test_dir, monkeypatch):
+        with open(os.path.join(test_dir, "big.bin"), "wb") as f:
+            f.write(os.urandom(2 * 1024 * 1024))
+
+        read_sizes = []
+        real_open = builtins.open
+
+        class RecordingFile:
+            def __init__(self, f):
+                self._f = f
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc):
+                self._f.close()
+
+            def read(self, size=-1):
+                read_sizes.append(size)
+                return self._f.read(size)
+
+        monkeypatch.setattr(
+            template_utils,
+            "open",
+            lambda *args, **kwargs: RecordingFile(real_open(*args, **kwargs)),
+            raising=False,
+        )
+
+        calculate_files_hash("big.bin", "/app", test_dir, [], False, None)
+
+        assert read_sizes
+        assert all(0 < size <= 1024 * 1024 for size in read_sizes)

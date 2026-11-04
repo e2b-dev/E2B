@@ -158,7 +158,7 @@ wheels = [
 
 [[package]]
 name = "e2b"
-version = "2.62.0"
+version = "2.62.1"
 source = { editable = "." }
 dependencies = [
     { name = "attrs" },

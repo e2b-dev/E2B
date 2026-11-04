@@ -1,5 +1,16 @@
 # @e2b/python-sdk
 
+## 2.62.1
+
+### Patch Changes
+
+- 48d24ac: - Fixed `Sandbox.files.read` / `AsyncSandbox.files.read` failing at random for
+  files over ~500 KB (and always for a few MB) with `httpx.ReadError ...
+  too_many_data_frames`. File downloads now go over HTTP/1.1 regardless of
+  `http_version`, as h2 closed HTTP/2 connections after receiving 100 empty
+  DATA frames, which the sandbox proxy sends throughout file responses.
+- 1ad3f76: Template builds hash `copy()` files in 1 MB chunks instead of reading each file fully into memory, cutting peak memory for large files. Hashes are unchanged, so existing build caches stay valid.
+
 ## 2.62.0
 
 ### Minor Changes

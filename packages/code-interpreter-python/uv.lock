@@ -260,7 +260,7 @@ wheels = [
 
 [[package]]
 name = "e2b"
-version = "2.62.0"
+version = "2.62.1"
 source = { editable = "../python-sdk" }
 dependencies = [
     { name = "attrs" },
@@ -333,7 +333,7 @@ dev = [
 
 [[package]]
 name = "e2b-code-interpreter"
-version = "2.11.7"
+version = "2.11.8"
 source = { editable = "." }
 dependencies = [
     { name = "attrs" },

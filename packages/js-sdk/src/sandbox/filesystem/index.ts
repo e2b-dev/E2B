@@ -15,6 +15,7 @@ import {
   Username,
   wrapStreamWithConnectionCleanup,
 } from '../../connectionConfig'
+import { createEnvdUploadFetch } from '../../envd/http2'
 
 import {
   checkSandboxHealth,
@@ -387,11 +388,16 @@ export class Filesystem {
   private readonly defaultWatchRecursive = false
   private readonly checkHealth: SandboxHealthCheck
 
+  /** `/files` uploads go over HTTP/1.1, see {@link createEnvdUploadFetch}. */
+  private readonly uploadFetch: (request: Request) => Promise<Response>
+
   constructor(
     transport: Transport,
     private readonly envdApi: EnvdApiClient,
     private readonly connectionConfig: ConnectionConfig
   ) {
+    const uploadFetch = createEnvdUploadFetch({ proxy: connectionConfig.proxy })
+    this.uploadFetch = (request) => uploadFetch(request)
     this.rpc = createClient(FilesystemService, transport)
     this.checkHealth = () => checkSandboxHealth(this.envdApi)
   }
@@ -734,6 +740,7 @@ export class Filesystem {
               headers,
               signal,
               body: {},
+              fetch: this.uploadFetch,
               // Streaming request bodies require half-duplex mode.
               ...(streamed && {
                 duplex: 'half' as const,
@@ -797,6 +804,7 @@ export class Filesystem {
             writeOpts?.signal
           ),
           body: {},
+          fetch: this.uploadFetch,
         })
         .catch(async (err) => {
           throw await handleEnvdApiFetchError(err, this.checkHealth)

@@ -279,6 +279,28 @@ export async function getAllFilesInPath(
   )
 }
 
+const HASH_CHUNK_SIZE = 1024 * 1024
+
+/**
+ * Feed a file's content into a hash in fixed-size chunks, so large files
+ * are never loaded into memory at once.
+ */
+function hashFileContent(
+  hash: crypto.Hash,
+  filePath: string,
+  buffer: Buffer
+): void {
+  const fd = fs.openSync(filePath, 'r')
+  try {
+    let bytesRead: number
+    while ((bytesRead = fs.readSync(fd, buffer, 0, buffer.length, null)) > 0) {
+      hash.update(buffer.subarray(0, bytesRead))
+    }
+  } finally {
+    fs.closeSync(fd)
+  }
+}
+
 /**
  * Calculate a hash of files being copied to detect changes for cache invalidation.
  * The hash includes file content, metadata (mode, size), and relative paths.
@@ -327,6 +349,9 @@ export async function calculateFilesHash(
     }
   }
 
+  // Reused across files so many small files don't each allocate a full chunk
+  const chunkBuffer = Buffer.allocUnsafe(HASH_CHUNK_SIZE)
+
   // Process files recursively
   for (const file of files) {
     // Add a relative path to hash calculation
@@ -357,8 +382,7 @@ export async function calculateFilesHash(
 
     // Add file content to hash calculation
     if (stats.isFile()) {
-      const content = fs.readFileSync(file.fullpath())
-      hash.update(new Uint8Array(content))
+      hashFileContent(hash, file.fullpath(), chunkBuffer)
     }
   }
 
