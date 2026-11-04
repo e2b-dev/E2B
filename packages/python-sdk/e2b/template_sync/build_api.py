@@ -5,9 +5,13 @@ from typing import Callable, Dict, Optional, List, Union
 
 import httpx
 from pyqwest import SyncHTTPTransport
-from pyqwest.httpx import PyqwestTransport
 
-from e2b.api import encode_path_param, handle_api_exception, proxy_to_config
+from e2b.deadline import PyqwestDeadlineTransport
+from e2b.api import (
+    encode_path_param,
+    handle_api_exception,
+    proxy_to_config,
+)
 from e2b.api.client.api.templates import (
     post_v3_templates,
     get_templates_template_id_files_hash,
@@ -138,7 +142,7 @@ def upload_file(
             with httpx.Client(
                 timeout=httpx.Timeout(upload_timeout),
                 follow_redirects=api_client._follow_redirects,
-                transport=PyqwestTransport(
+                transport=PyqwestDeadlineTransport(
                     SyncHTTPTransport(
                         tls_include_system_certs=True,
                         proxy=(
