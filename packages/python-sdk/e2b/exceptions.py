@@ -212,6 +212,9 @@ class GuestAgentUnresponsiveException(SandboxException):
     `on_resume="reboot"`, which cold-boots it from disk.
     """
 
+    code = "sandbox_snapshot_guest_agent_unresponsive"
+    """The API's `error_code` for this exception."""
+
     def __init__(self, *args):
         super().__init__(*args, status_code=409)
 

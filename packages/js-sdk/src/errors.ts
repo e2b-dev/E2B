@@ -269,6 +269,11 @@ export class ServiceBusyError extends Error {
  * `onResume: 'reboot'`, which cold-boots it from disk.
  */
 export class GuestAgentUnresponsiveError extends SandboxError {
+  /**
+   * The API's `error_code` for this error.
+   */
+  static readonly code = 'sandbox_snapshot_guest_agent_unresponsive'
+
   constructor(message: string) {
     super(message)
     this.name = 'GuestAgentUnresponsiveError'

@@ -14,9 +14,6 @@ import {
 import { createApiLogger } from '../logs'
 import { withRetry } from '../retry'
 
-const GUEST_AGENT_UNRESPONSIVE_ERROR_CODE =
-  'sandbox_snapshot_guest_agent_unresponsive'
-
 /**
  * Map an API error code and message to the matching error class — the same
  * mapping {@link handleApiError} applies to HTTP responses, usable for error
@@ -71,7 +68,7 @@ export function handleApiError(
   }
 
   const status = response.response.status
-  if (response.error?.error_code === GUEST_AGENT_UNRESPONSIVE_ERROR_CODE) {
+  if (response.error?.error_code === GuestAgentUnresponsiveError.code) {
     return new GuestAgentUnresponsiveError(
       `${response.error.message}. Resume the sandbox with \`onResume: 'reboot'\`.`
     )
