@@ -375,6 +375,9 @@ export class Sandbox extends SandboxApi {
    *
    * @returns A running sandbox instance
    *
+   * @throws {@link GuestUnresponsiveError} when the paused sandbox's snapshot was taken
+   * while its guest agent was not responding (`envdUnresponsiveAtPause`); connect with `onResume: 'reboot'`.
+   *
    * @example
    * ```ts
    * const sandbox = await Sandbox.create()
@@ -471,6 +474,9 @@ export class Sandbox extends SandboxApi {
    * @param opts connection options.
    *
    * @returns A running sandbox instance
+   *
+   * @throws {@link GuestUnresponsiveError} when the paused sandbox's snapshot was taken
+   * while its guest agent was not responding (`envdUnresponsiveAtPause`); connect with `onResume: 'reboot'`.
    *
    * @example
    * ```ts

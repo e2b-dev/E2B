@@ -292,6 +292,7 @@ class AsyncSandbox(SandboxApi):
             deployment built from `e2b-dev/runtime` at or after the commit that added the `memory`
             field to connect/resume (2026-08-20). An older control plane drops the field and
             restores memory while answering as if the request had succeeded.
+        :raises GuestUnresponsiveException: when the paused sandbox's snapshot was taken while its guest agent was not responding (``envd_unresponsive_at_pause``); connect with ``on_resume="reboot"``.
         :return: A running sandbox instance
 
         @example
@@ -334,6 +335,7 @@ class AsyncSandbox(SandboxApi):
             deployment built from `e2b-dev/runtime` at or after the commit that added the `memory`
             field to connect/resume (2026-08-20). An older control plane drops the field and
             restores memory while answering as if the request had succeeded.
+        :raises GuestUnresponsiveException: when the paused sandbox's snapshot was taken while its guest agent was not responding (``envd_unresponsive_at_pause``); connect with ``on_resume="reboot"``.
         :return: A running sandbox instance
 
         @example
@@ -372,6 +374,7 @@ class AsyncSandbox(SandboxApi):
             deployment built from `e2b-dev/runtime` at or after the commit that added the `memory`
             field to connect/resume (2026-08-20). An older control plane drops the field and
             restores memory while answering as if the request had succeeded.
+        :raises GuestUnresponsiveException: when the paused sandbox's snapshot was taken while its guest agent was not responding (``envd_unresponsive_at_pause``); connect with ``on_resume="reboot"``.
         :return: A running sandbox instance
 
         @example
