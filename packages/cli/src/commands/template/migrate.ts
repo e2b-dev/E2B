@@ -3,7 +3,9 @@ import * as commander from 'commander'
 import { asBold, asLocal, asPrimary } from '../../utils/format'
 
 export const migrateCommand = new commander.Command('migrate')
-  .description('Deprecated: use `e2b template init` instead.')
+  .description(
+    'Deprecated: define the template with the Template SDK (fromDockerfile) instead, see https://e2b.dev/docs/template/migration-v2'
+  )
   .allowUnknownOption(true)
   .allowExcessArguments(true)
   .action(async () => {
@@ -13,7 +15,8 @@ ${asBold('e2b template migrate')} has been removed and no longer reads
 ${asLocal('e2b.toml')} or ${asLocal('e2b.Dockerfile')}.
 
 Define your template with the Template SDK, for example with
-${asBold("Template().fromDockerfile('e2b.Dockerfile')")}.
+${asBold("Template().fromDockerfile('e2b.Dockerfile')")} (JS) or
+${asBold("Template().from_dockerfile('e2b.Dockerfile')")} (Python).
 
 Migration guide: ${asPrimary('https://e2b.dev/docs/template/migration-v2')}`
 
