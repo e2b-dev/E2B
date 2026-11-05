@@ -34,6 +34,11 @@ class SandboxDetail:
         disk_size_mb (int): Disk size for the sandbox in MiB
         state (SandboxState): State of the sandbox
         alias (Union[Unset, str]): Alias of the template
+        envd_unresponsive_at_pause (Union[Unset, bool]): True when the snapshot a paused sandbox would resume from was
+            taken while the sandbox guest agent was not responding. A plain resume of it is refused with 409 and error_code
+            sandbox_snapshot_guest_agent_unresponsive, because restoring that memory would bring the unresponsive agent
+            back; resume it without memory (`memory: false`), which cold-boots the sandbox from its disk. Omitted for a
+            running sandbox and for a snapshot whose agent answered.
         envd_access_token (Union[Unset, str]): Access token used for envd communication
         allow_internet_access (Union[None, Unset, bool]): Whether internet access was explicitly enabled or disabled for
             the sandbox. Null means it was not explicitly set.
@@ -59,6 +64,7 @@ class SandboxDetail:
     disk_size_mb: int
     state: SandboxState
     alias: Union[Unset, str] = UNSET
+    envd_unresponsive_at_pause: Union[Unset, bool] = UNSET
     envd_access_token: Union[Unset, str] = UNSET
     allow_internet_access: Union[None, Unset, bool] = UNSET
     domain: Union[None, Unset, str] = UNSET
@@ -91,6 +97,8 @@ class SandboxDetail:
         state = self.state.value
 
         alias = self.alias
+
+        envd_unresponsive_at_pause = self.envd_unresponsive_at_pause
 
         envd_access_token = self.envd_access_token
 
@@ -145,6 +153,8 @@ class SandboxDetail:
         )
         if alias is not UNSET:
             field_dict["alias"] = alias
+        if envd_unresponsive_at_pause is not UNSET:
+            field_dict["envdUnresponsiveAtPause"] = envd_unresponsive_at_pause
         if envd_access_token is not UNSET:
             field_dict["envdAccessToken"] = envd_access_token
         if allow_internet_access is not UNSET:
@@ -192,6 +202,8 @@ class SandboxDetail:
         state = SandboxState(d.pop("state"))
 
         alias = d.pop("alias", UNSET)
+
+        envd_unresponsive_at_pause = d.pop("envdUnresponsiveAtPause", UNSET)
 
         envd_access_token = d.pop("envdAccessToken", UNSET)
 
@@ -257,6 +269,7 @@ class SandboxDetail:
             disk_size_mb=disk_size_mb,
             state=state,
             alias=alias,
+            envd_unresponsive_at_pause=envd_unresponsive_at_pause,
             envd_access_token=envd_access_token,
             allow_internet_access=allow_internet_access,
             domain=domain,

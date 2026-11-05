@@ -1,7 +1,11 @@
 import { afterAll, afterEach, beforeAll, expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
 
-import { InvalidArgumentError, Sandbox } from '../../src'
+import {
+  GuestUnresponsiveError,
+  InvalidArgumentError,
+  Sandbox,
+} from '../../src'
 import { TEST_API_KEY, apiUrl } from '../setup'
 import { setupMockApi } from '../mockApi'
 
@@ -158,6 +162,18 @@ test('Sandbox.pause still sends the deprecated keepMemory', async () => {
   expect(lastPauseBody?.memory).toBe(false)
 })
 
+test('Sandbox.pause omits requireHealthyGuest by default', async () => {
+  await Sandbox.pause('test-sandbox-id', { apiKey: TEST_API_KEY })
+
+  expect(lastPauseBody).not.toHaveProperty('requireHealthyGuest')
+})
+
+test('Sandbox.pause with strict requires a healthy guest', async () => {
+  await Sandbox.pause('test-sandbox-id', { apiKey: TEST_API_KEY, strict: true })
+
+  expect(lastPauseBody?.requireHealthyGuest).toBe(true)
+})
+
 test('Sandbox.pause rejects mode together with keepMemory', async () => {
   await expect(
     Sandbox.pause('test-sandbox-id', {
@@ -220,3 +236,60 @@ test('Sandbox.connect sends an explicit timeout', async () => {
 
   expect(lastConnectBody?.timeout).toBe(60)
 })
+
+test('Sandbox.connect throws GuestUnresponsiveError for a marked snapshot', async () => {
+  server.use(
+    http.post(apiUrl('/v2/sandboxes/:sandboxID/connect'), () =>
+      HttpResponse.json(
+        {
+          code: 409,
+          message:
+            'sandbox snapshot was taken while the guest agent was not responding',
+          error_code: 'sandbox_snapshot_guest_agent_unresponsive',
+        },
+        { status: 409 }
+      )
+    )
+  )
+
+  const err = await Sandbox.connect('test-sandbox-id', {
+    apiKey: TEST_API_KEY,
+  }).catch((e: unknown) => e)
+
+  expect(err).toBeInstanceOf(GuestUnresponsiveError)
+  expect((err as GuestUnresponsiveError).statusCode).toBe(409)
+  expect((err as Error).message).toContain("onResume: 'reboot'")
+})
+
+test.each([
+  ['paused', true, true],
+  ['paused', undefined, undefined],
+  ['running', undefined, undefined],
+] as const)(
+  'Sandbox.getInfo maps a %s sandbox with envdUnresponsiveAtPause=%s to %s',
+  async (state, value, expected) => {
+    server.use(
+      http.get(apiUrl('/sandboxes/:sandboxID'), () =>
+        HttpResponse.json({
+          templateID: 'base',
+          sandboxID: 'test-sandbox-id',
+          clientID: 'client',
+          startedAt: '2026-01-01T00:00:00Z',
+          endAt: '2026-01-01T01:00:00Z',
+          envdVersion: '0.2.4',
+          cpuCount: 2,
+          memoryMB: 512,
+          diskSizeMB: 1024,
+          state,
+          ...(value !== undefined && { envdUnresponsiveAtPause: value }),
+        })
+      )
+    )
+
+    const info = await Sandbox.getInfo('test-sandbox-id', {
+      apiKey: TEST_API_KEY,
+    })
+
+    expect(info.envdUnresponsiveAtPause).toBe(expected)
+  }
+)

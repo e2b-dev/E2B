@@ -100,7 +100,9 @@ def sync_detailed(
     """Connect sandbox
 
      Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. Use
-    POST /v2/sandboxes/{sandboxID}/connect instead.
+    POST /v2/sandboxes/{sandboxID}/connect instead. Answers 409 with error_code
+    sandbox_snapshot_guest_agent_unresponsive when the paused sandbox's snapshot was taken while its
+    guest agent was not responding and the request did not ask for `memory: false`.
 
     Args:
         sandbox_id (str):
@@ -135,7 +137,9 @@ def sync(
     """Connect sandbox
 
      Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. Use
-    POST /v2/sandboxes/{sandboxID}/connect instead.
+    POST /v2/sandboxes/{sandboxID}/connect instead. Answers 409 with error_code
+    sandbox_snapshot_guest_agent_unresponsive when the paused sandbox's snapshot was taken while its
+    guest agent was not responding and the request did not ask for `memory: false`.
 
     Args:
         sandbox_id (str):
@@ -165,7 +169,9 @@ async def asyncio_detailed(
     """Connect sandbox
 
      Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. Use
-    POST /v2/sandboxes/{sandboxID}/connect instead.
+    POST /v2/sandboxes/{sandboxID}/connect instead. Answers 409 with error_code
+    sandbox_snapshot_guest_agent_unresponsive when the paused sandbox's snapshot was taken while its
+    guest agent was not responding and the request did not ask for `memory: false`.
 
     Args:
         sandbox_id (str):
@@ -198,7 +204,9 @@ async def asyncio(
     """Connect sandbox
 
      Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. Use
-    POST /v2/sandboxes/{sandboxID}/connect instead.
+    POST /v2/sandboxes/{sandboxID}/connect instead. Answers 409 with error_code
+    sandbox_snapshot_guest_agent_unresponsive when the paused sandbox's snapshot was taken while its
+    guest agent was not responding and the request did not ask for `memory: false`.
 
     Args:
         sandbox_id (str):

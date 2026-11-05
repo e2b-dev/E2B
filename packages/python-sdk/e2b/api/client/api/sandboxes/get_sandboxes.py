@@ -81,7 +81,8 @@ def sync_detailed(
 ) -> Response[Union[Error, list["ListedSandbox"]]]:
     """List running sandboxes
 
-     List all running sandboxes. Use GET /v2/sandboxes instead.
+     List all running sandboxes. Returns 400 when more than 5000 running sandboxes match; use GET
+    /v2/sandboxes to page through them.
 
     Args:
         metadata (Union[Unset, str]):
@@ -112,7 +113,8 @@ def sync(
 ) -> Optional[Union[Error, list["ListedSandbox"]]]:
     """List running sandboxes
 
-     List all running sandboxes. Use GET /v2/sandboxes instead.
+     List all running sandboxes. Returns 400 when more than 5000 running sandboxes match; use GET
+    /v2/sandboxes to page through them.
 
     Args:
         metadata (Union[Unset, str]):
@@ -138,7 +140,8 @@ async def asyncio_detailed(
 ) -> Response[Union[Error, list["ListedSandbox"]]]:
     """List running sandboxes
 
-     List all running sandboxes. Use GET /v2/sandboxes instead.
+     List all running sandboxes. Returns 400 when more than 5000 running sandboxes match; use GET
+    /v2/sandboxes to page through them.
 
     Args:
         metadata (Union[Unset, str]):
@@ -167,7 +170,8 @@ async def asyncio(
 ) -> Optional[Union[Error, list["ListedSandbox"]]]:
     """List running sandboxes
 
-     List all running sandboxes. Use GET /v2/sandboxes instead.
+     List all running sandboxes. Returns 400 when more than 5000 running sandboxes match; use GET
+    /v2/sandboxes to page through them.
 
     Args:
         metadata (Union[Unset, str]):

@@ -95,7 +95,10 @@ def sync_detailed(
 ) -> Response[Union[Error, Sandbox]]:
     """Resume sandbox
 
-     Resume the sandbox
+     Resume the sandbox. Answers 409 when the sandbox is already running, or when its snapshot was taken
+    while the sandbox guest agent was not responding and a plain resume would restore that memory
+    (error_code sandbox_snapshot_guest_agent_unresponsive); resume such a sandbox without memory
+    (`memory: false`).
 
     Args:
         sandbox_id (str):
@@ -129,7 +132,10 @@ def sync(
 ) -> Optional[Union[Error, Sandbox]]:
     """Resume sandbox
 
-     Resume the sandbox
+     Resume the sandbox. Answers 409 when the sandbox is already running, or when its snapshot was taken
+    while the sandbox guest agent was not responding and a plain resume would restore that memory
+    (error_code sandbox_snapshot_guest_agent_unresponsive); resume such a sandbox without memory
+    (`memory: false`).
 
     Args:
         sandbox_id (str):
@@ -158,7 +164,10 @@ async def asyncio_detailed(
 ) -> Response[Union[Error, Sandbox]]:
     """Resume sandbox
 
-     Resume the sandbox
+     Resume the sandbox. Answers 409 when the sandbox is already running, or when its snapshot was taken
+    while the sandbox guest agent was not responding and a plain resume would restore that memory
+    (error_code sandbox_snapshot_guest_agent_unresponsive); resume such a sandbox without memory
+    (`memory: false`).
 
     Args:
         sandbox_id (str):
@@ -190,7 +199,10 @@ async def asyncio(
 ) -> Optional[Union[Error, Sandbox]]:
     """Resume sandbox
 
-     Resume the sandbox
+     Resume the sandbox. Answers 409 when the sandbox is already running, or when its snapshot was taken
+    while the sandbox guest agent was not responding and a plain resume would restore that memory
+    (error_code sandbox_snapshot_guest_agent_unresponsive); resume such a sandbox without memory
+    (`memory: false`).
 
     Args:
         sandbox_id (str):

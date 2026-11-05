@@ -48,8 +48,6 @@
     "check-deps": "knip"
   },
   "devDependencies": {
-    "@types/handlebars": "^4.1.0",
-    "@types/inquirer": "^9.0.10",
     "@types/json2md": "^1.5.4",
     "@types/node": "catalog:",
     "@types/npmcli__package-json": "^4.0.4",

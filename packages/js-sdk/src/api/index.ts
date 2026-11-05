@@ -9,6 +9,7 @@ import {
   RateLimitError,
   ServiceBusyError,
   SandboxError,
+  GuestUnresponsiveError,
 } from '../errors'
 import { createApiLogger } from '../logs'
 import { withRetry } from '../retry'
@@ -67,6 +68,12 @@ export function handleApiError(
   }
 
   const status = response.response.status
+  if (response.error?.error_code === GuestUnresponsiveError.code) {
+    return new GuestUnresponsiveError(
+      `${response.error.message}. Resume the sandbox with \`onResume: 'reboot'\`.`
+    )
+  }
+
   if (status === 401 || status === 429 || status === 503) {
     return apiErrorFromCode(
       status,

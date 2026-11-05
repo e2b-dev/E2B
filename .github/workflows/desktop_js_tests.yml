@@ -89,7 +89,7 @@ jobs:
           deno-version: 'v${{ env.TOOL_VERSION_DENO }}'
 
       # Every leg runs the same suite; the cloudflare one inside workerd
-      # (vitest-pool-workers).
+      # (vitest-plugin).
       - name: Run test suite under ${{ matrix.runtime }}
         if: inputs.run_tests
         run: |

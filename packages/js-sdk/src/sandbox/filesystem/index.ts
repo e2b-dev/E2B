@@ -15,9 +15,11 @@ import {
   Username,
   wrapStreamWithConnectionCleanup,
 } from '../../connectionConfig'
+import { createEnvdUploadFetch } from '../../envd/http2'
 
 import {
   checkSandboxHealth,
+  EnvdApiClient,
   handleEnvdApiError,
   handleEnvdApiFetchError,
   handleWatchDirStartEvent,
@@ -27,8 +29,6 @@ import {
   handleRpcErrorWithHealthCheck,
   SandboxHealthCheck,
 } from '../../envd/rpc'
-
-import { EnvdApiClient } from '../../envd/api'
 import {
   EntryInfo as FsEntryInfo,
   Filesystem as FilesystemService,
@@ -388,11 +388,16 @@ export class Filesystem {
   private readonly defaultWatchRecursive = false
   private readonly checkHealth: SandboxHealthCheck
 
+  /** `/files` uploads go over HTTP/1.1, see {@link createEnvdUploadFetch}. */
+  private readonly uploadFetch: (request: Request) => Promise<Response>
+
   constructor(
     transport: Transport,
     private readonly envdApi: EnvdApiClient,
     private readonly connectionConfig: ConnectionConfig
   ) {
+    const uploadFetch = createEnvdUploadFetch({ proxy: connectionConfig.proxy })
+    this.uploadFetch = (request) => uploadFetch(request)
     this.rpc = createClient(FilesystemService, transport)
     this.checkHealth = () => checkSandboxHealth(this.envdApi)
   }
@@ -593,7 +598,7 @@ export class Filesystem {
    * Writing to a file at path that doesn't exist creates the necessary directories.
    *
    * @param path path to file.
-   * @param data data to write to the file. Data can be a string, `ArrayBuffer`, `Blob`, `ReadableStream`, or an `AsyncIterable` of byte chunks (e.g. an async generator or a Node.js `Readable`).
+   * @param data data to write to the file. Data can be a string, `ArrayBuffer`, `Uint8Array` (e.g. a Node.js `Buffer`), `Blob`, `ReadableStream`, or an `AsyncIterable` of byte chunks (e.g. an async generator or a Node.js `Readable`).
    * @param opts connection options.
    *
    * @returns information about the written file
@@ -735,6 +740,7 @@ export class Filesystem {
               headers,
               signal,
               body: {},
+              fetch: this.uploadFetch,
               // Streaming request bodies require half-duplex mode.
               ...(streamed && {
                 duplex: 'half' as const,
@@ -798,6 +804,7 @@ export class Filesystem {
             writeOpts?.signal
           ),
           body: {},
+          fetch: this.uploadFetch,
         })
         .catch(async (err) => {
           throw await handleEnvdApiFetchError(err, this.checkHealth)
