@@ -9,15 +9,44 @@ type UndiciRequestInit = RequestInit & {
   duplex?: 'half'
 }
 
+type UndiciDispatcher = { close(): Promise<void> }
+
+type UndiciAgentOptions = {
+  allowH2: boolean
+  connections?: number
+}
+
 export type UndiciModule = {
-  Agent: new (options: { allowH2: boolean; connections?: number }) => unknown
-  ProxyAgent: new (options: {
-    uri: string
-    allowH2: boolean
-    connections?: number
-    proxyTunnel: true
-  }) => unknown
+  Agent: new (options: UndiciAgentOptions) => UndiciDispatcher
+  ProxyAgent: new (
+    options: UndiciAgentOptions & { uri: string; proxyTunnel: true }
+  ) => UndiciDispatcher
   fetch: unknown
+}
+
+// Node's HTTP/2 client charges queued request-body bytes against a per-session
+// memory budget (`maxSessionMemory`, 10 MB) and resets the stream whose
+// response headers arrive while the budget is exhausted — with
+// ENHANCE_YOUR_CALM, or INTERNAL_ERROR where the reset is deferred. Bytes of
+// streams destroyed before they were flushed stay charged until the session
+// closes (nodejs/node#67113), so such a reset marks the session as poisoned.
+const POISONED_HTTP2_SESSION_RST =
+  /NGHTTP2_(ENHANCE_YOUR_CALM|INTERNAL_ERROR)\b/
+
+/**
+ * Whether a `fetch` rejection is Node's HTTP/2 client resetting the stream
+ * itself because the session's memory budget is exhausted. The session stays
+ * unusable for every later request, so the dispatcher holding it must go.
+ */
+export function isPoisonedHTTP2SessionError(err: unknown): boolean {
+  if (!(err instanceof Error) || !(err.cause instanceof Error)) {
+    return false
+  }
+  const cause = err.cause as Error & { code?: unknown }
+  return (
+    cause.code === 'ERR_HTTP2_STREAM_ERROR' &&
+    POISONED_HTTP2_SESSION_RST.test(cause.message)
+  )
 }
 
 const UNDICI_MIN_NODE = '22.19.0'
@@ -84,7 +113,9 @@ export function createRuntimeFetch(
 /**
  * Build a fetch bound to a bounded undici dispatcher (HTTP/2 enabled unless
  * `httpVersion` is `'1.1'`, `connections` origin connections, optional proxy
- * tunnel). Falls back to the global fetch when undici cannot be loaded.
+ * tunnel). A dispatcher whose HTTP/2 session Node reports as out of memory is
+ * retired and replaced, so one poisoned session does not fail every later
+ * request. Falls back to the global fetch when undici cannot be loaded.
  */
 export async function buildDispatchedFetch(options: {
   connections: number
@@ -99,30 +130,44 @@ export async function buildDispatchedFetch(options: {
   }
 
   const { Agent, ProxyAgent, fetch: undiciFetch } = undici
-  const allowH2 = (options.httpVersion ?? DEFAULT_HTTP_VERSION) === '2'
-  const dispatcher = options.proxy
-    ? new ProxyAgent({
-        uri: options.proxy,
-        allowH2,
-        connections: options.connections,
-        proxyTunnel: true,
-      })
-    : new Agent({
-        allowH2,
-        connections: options.connections,
-      })
+  const agentOptions: UndiciAgentOptions = {
+    allowH2: (options.httpVersion ?? DEFAULT_HTTP_VERSION) === '2',
+    connections: options.connections,
+  }
+  const createDispatcher = () =>
+    options.proxy
+      ? new ProxyAgent({
+          uri: options.proxy,
+          ...agentOptions,
+          proxyTunnel: true,
+        })
+      : new Agent(agentOptions)
   const fetchWithDispatcher = undiciFetch as unknown as (
     input: RequestInfo | URL,
     init?: UndiciRequestInit
   ) => Promise<Response>
 
-  return ((input, init) => {
-    const request = toUndiciRequestInput(input, init)
+  let dispatcher = createDispatcher()
 
-    return fetchWithDispatcher(request.input, {
-      ...request.init,
-      dispatcher,
-    })
+  return (async (input, init) => {
+    const request = toUndiciRequestInput(input, init)
+    const used = dispatcher
+
+    try {
+      return await fetchWithDispatcher(request.input, {
+        ...request.init,
+        dispatcher: used,
+      })
+    } catch (err) {
+      // Only the first failure of a dispatcher replaces it; its other in-flight
+      // requests fail the same way and must not retire the replacement.
+      if (used === dispatcher && isPoisonedHTTP2SessionError(err)) {
+        dispatcher = createDispatcher()
+        // Graceful: requests still running on the old session finish first.
+        void used.close().catch(() => {})
+      }
+      throw err
+    }
   }) as typeof fetch
 }
 

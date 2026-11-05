@@ -138,7 +138,10 @@ export interface ConnectionOpts {
    * filesystem, PTY). `'2'` multiplexes streams over shared connections;
    * `'1.1'` pins them to HTTP/1.1 with one connection per concurrent
    * request — for example when an intermediary on the path retires or
-   * mishandles long-lived HTTP/2 connections. Only applies in Node.
+   * mishandles long-lived HTTP/2 connections. File uploads (`files.write()`)
+   * always use HTTP/1.1, whatever this option says, so that their bodies
+   * cannot exhaust Node's per-session HTTP/2 memory and reset other requests.
+   * Only applies in Node.
    *
    * @default E2B_HTTP_VERSION // environment variable or `'2'`
    */

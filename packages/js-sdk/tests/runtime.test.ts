@@ -18,7 +18,7 @@ afterEach(() => {
 test.skipIf(!isNodeHost)(
   'Cloudflare Workers marker wins over Node-compat process.release',
   async () => {
-    // Workers' nodejs_compat (and vitest-pool-workers) populate
+    // Workers' nodejs_compat (and vitest-plugin) populate
     // process.release.name, so the explicit marker must take precedence.
     vi.stubGlobal('navigator', { userAgent: 'Cloudflare-Workers' })
 

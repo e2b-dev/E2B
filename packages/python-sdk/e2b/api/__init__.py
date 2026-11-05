@@ -22,6 +22,7 @@ from e2b.api.metadata import default_headers
 from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.exceptions import (
     AuthenticationException,
+    GuestUnresponsiveException,
     InvalidArgumentException,
     RateLimitException,
     ServiceBusyException,
@@ -199,6 +200,11 @@ def handle_api_exception(
         body = {}
 
     message = body["message"] if "message" in body else None
+    if body.get("error_code") == GuestUnresponsiveException.code:
+        return GuestUnresponsiveException(
+            f'{message}. Resume the sandbox with on_resume="reboot".'
+        ).with_traceback(stack_trace)
+
     if message is None and e.status_code not in (401, 429, 503):
         err = default_exception_class(f"{e.status_code}: {e.content}").with_traceback(
             stack_trace

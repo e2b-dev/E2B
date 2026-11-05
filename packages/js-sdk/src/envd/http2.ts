@@ -19,8 +19,10 @@ type EnvdFetchOptions = {
 // keep sharing a single dispatcher while each distinct proxy URL gets its own.
 const envdFetchers = new Map<string, typeof fetch>()
 const envdRpcFetchers = new Map<string, typeof fetch>()
+const envdUploadFetchers = new Map<string, typeof fetch>()
 const DEFAULT_ENVD_CONNECTION_LIMIT = 10
 const DEFAULT_ENVD_RPC_CONNECTION_LIMIT = 200
+const DEFAULT_ENVD_UPLOAD_CONNECTION_LIMIT = 50
 
 export function createEnvdFetchForRuntime(
   currentRuntime = runtime,
@@ -90,5 +92,42 @@ export function getEnvdRpcConnectionLimit(): number {
   return parsePositiveIntEnv(
     'E2B_ENVD_RPC_CONNECTIONS',
     DEFAULT_ENVD_RPC_CONNECTION_LIMIT
+  )
+}
+
+/**
+ * Fetch for `/files` uploads, always HTTP/1.1. Node's HTTP/2 client queues
+ * each buffered request body in full against the session's memory budget
+ * (`maxSessionMemory`, 10 MB) and resets whichever stream's response headers
+ * arrive while it is exhausted (ENHANCE_YOUR_CALM), so uploads multiplexed
+ * with everything else on the shared envd session fail each other and the
+ * reads next to them. HTTP/1.1 gives each upload a connection of its own; the
+ * pool is sized for many concurrent uploads per process since the request
+ * timeout keeps running while a request waits for a free connection.
+ */
+export function createEnvdUploadFetch({
+  proxy,
+}: Pick<FetchOpts, 'proxy'> = {}): typeof fetch {
+  const key = fetcherKey(proxy, '1.1')
+
+  const cached = envdUploadFetchers.get(key)
+  if (cached) {
+    return cached
+  }
+
+  const envdUploadFetch = createEnvdFetchForRuntime(runtime, {
+    connectionLimit: getEnvdUploadConnectionLimit(),
+    proxy,
+    httpVersion: '1.1',
+  })
+  envdUploadFetchers.set(key, envdUploadFetch)
+
+  return envdUploadFetch
+}
+
+export function getEnvdUploadConnectionLimit(): number {
+  return parsePositiveIntEnv(
+    'E2B_ENVD_UPLOAD_CONNECTIONS',
+    DEFAULT_ENVD_UPLOAD_CONNECTION_LIMIT
   )
 }

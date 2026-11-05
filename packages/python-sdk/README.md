@@ -70,6 +70,8 @@ Per-call params still take precedence over the client's params, and clients are 
 
 Sandbox `commands` and `files` traffic from all sandboxes in a process shares one HTTP/2 connection pool. Requests are spread over the pooled connections by free stream capacity, and a new connection is dialed only once every existing one is at the server's concurrent-stream limit (`100` for `sandbox.e2b.app`), up to `E2B_MAX_CONNECTIONS` connections per resolved address (default `200`). Past that cap, a request waits for a stream to free up. Long-running streams therefore never queue behind one connection's concurrent-stream limit, and idle processes keep a single connection.
 
+File downloads (`files.read`) are the exception: they use a separate HTTP/1.1 pool, where each in-flight download holds its own connection. That pool has the same `E2B_MAX_CONNECTIONS` cap per resolved address, so a process runs at most that many downloads at once across all its sandboxes, and further reads wait for a free connection.
+
 `E2B_MAX_CONNECTIONS` is read when `e2b` is imported:
 
 ```sh

@@ -28,11 +28,15 @@ export async function extractError(res: Response) {
 export class OutputMessage {
   constructor(
     /**
-     * The output line.
+     * Raw output chunk, not necessarily one line. Newlines are preserved.
      */
     public readonly line: string,
     /**
-     * Unix epoch in nanoseconds.
+     * Unix epoch in nanoseconds, as sent by the backend.
+     *
+     * Nanosecond epoch values exceed `Number.MAX_SAFE_INTEGER`, so the value is
+     * only precise to a few hundred nanoseconds (currently multiples of 256 ns).
+     * Chunks emitted closer together than that may share the same timestamp.
      */
     public readonly timestamp: number,
     /**
@@ -111,15 +115,15 @@ export class Result {
    */
   readonly svg?: string
   /**
-   * PNG representation of the data.
+   * Base64-encoded PNG representation of the data.
    */
   readonly png?: string
   /**
-   * JPEG representation of the data.
+   * Base64-encoded JPEG representation of the data.
    */
   readonly jpeg?: string
   /**
-   * PDF representation of the data.
+   * Base64-encoded PDF representation of the data.
    */
   readonly pdf?: string
   /**
@@ -269,11 +273,11 @@ export class Result {
  */
 export type Logs = {
   /**
-   * List of strings printed to stdout by prints, subprocesses, etc.
+   * Raw stdout chunks, not lines. Newlines are preserved; use `stdout.join('')` to rebuild the output.
    */
   stdout: string[]
   /**
-   * List of strings printed to stderr by prints, subprocesses, etc.
+   * Raw stderr chunks, not lines. Newlines are preserved; use `stderr.join('')` to rebuild the output.
    */
   stderr: string[]
 }
@@ -352,7 +356,7 @@ export async function parseOutput(
         await onStdout({
           error: false,
           line: msg.text,
-          timestamp: new Date().getTime() * 1000,
+          timestamp: msg.timestamp,
         })
       }
       break
@@ -362,7 +366,7 @@ export async function parseOutput(
         await onStderr({
           error: true,
           line: msg.text,
-          timestamp: new Date().getTime() * 1000,
+          timestamp: msg.timestamp,
         })
       }
       break

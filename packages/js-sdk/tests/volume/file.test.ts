@@ -77,12 +77,12 @@ describe('Volume File Operations', () => {
 
     volumeTest('should write and read binary data', async ({ volume }) => {
       const path = '/binary.bin'
-      const binaryData = new Uint8Array([0, 1, 2, 3, 4])
+      const binaryData = new Uint8Array([9, 0, 1, 2, 3, 4, 9]).subarray(1, 6)
 
-      await volume.writeFile(path, binaryData.buffer)
+      await volume.writeFile(path, binaryData)
       const readBytes = await volume.readFile(path, { format: 'bytes' })
 
-      expect(readBytes).toEqual(binaryData)
+      expect(readBytes).toEqual(new Uint8Array([0, 1, 2, 3, 4]))
     })
 
     volumeTest(

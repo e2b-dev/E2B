@@ -32,6 +32,11 @@ class ListedSandbox:
         envd_version (str): Version of the envd running in the sandbox
         alias (Union[Unset, str]): Alias of the template
         metadata (Union[Unset, Any]):
+        envd_unresponsive_at_pause (Union[Unset, bool]): True when the snapshot a paused sandbox would resume from was
+            taken while the sandbox guest agent was not responding. A plain resume of it is refused with 409 and error_code
+            sandbox_snapshot_guest_agent_unresponsive, because restoring that memory would bring the unresponsive agent
+            back; resume it without memory (`memory: false`), which cold-boots the sandbox from its disk. Omitted for a
+            running sandbox and for a snapshot whose agent answered.
         volume_mounts (Union[Unset, list['SandboxVolumeMount']]):
     """
 
@@ -47,6 +52,7 @@ class ListedSandbox:
     envd_version: str
     alias: Union[Unset, str] = UNSET
     metadata: Union[Unset, Any] = UNSET
+    envd_unresponsive_at_pause: Union[Unset, bool] = UNSET
     volume_mounts: Union[Unset, list["SandboxVolumeMount"]] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -75,6 +81,8 @@ class ListedSandbox:
 
         metadata = self.metadata
 
+        envd_unresponsive_at_pause = self.envd_unresponsive_at_pause
+
         volume_mounts: Union[Unset, list[dict[str, Any]]] = UNSET
         if not isinstance(self.volume_mounts, Unset):
             volume_mounts = []
@@ -102,6 +110,8 @@ class ListedSandbox:
             field_dict["alias"] = alias
         if metadata is not UNSET:
             field_dict["metadata"] = metadata
+        if envd_unresponsive_at_pause is not UNSET:
+            field_dict["envdUnresponsiveAtPause"] = envd_unresponsive_at_pause
         if volume_mounts is not UNSET:
             field_dict["volumeMounts"] = volume_mounts
 
@@ -136,6 +146,8 @@ class ListedSandbox:
 
         metadata = d.pop("metadata", UNSET)
 
+        envd_unresponsive_at_pause = d.pop("envdUnresponsiveAtPause", UNSET)
+
         volume_mounts = []
         _volume_mounts = d.pop("volumeMounts", UNSET)
         for volume_mounts_item_data in _volume_mounts or []:
@@ -156,6 +168,7 @@ class ListedSandbox:
             envd_version=envd_version,
             alias=alias,
             metadata=metadata,
+            envd_unresponsive_at_pause=envd_unresponsive_at_pause,
             volume_mounts=volume_mounts,
         )
 

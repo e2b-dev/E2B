@@ -261,6 +261,9 @@ def get_all_files_in_path(
     return sorted(list(files))
 
 
+_HASH_CHUNK_SIZE = 1024 * 1024
+
+
 def calculate_files_hash(
     src: str,
     dest: str,
@@ -329,7 +332,8 @@ def calculate_files_hash(
 
         if stat.S_ISREG(stats.st_mode):
             with open(file, "rb") as f:
-                hash_obj.update(f.read())
+                while chunk := f.read(_HASH_CHUNK_SIZE):
+                    hash_obj.update(chunk)
 
     return hash_obj.hexdigest()
 

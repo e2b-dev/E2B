@@ -146,7 +146,7 @@ jobs:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
 
-      # Full unit + connectionConfig suite inside workerd (vitest-pool-workers).
+      # Full unit + connectionConfig suite inside workerd (vitest-plugin).
       - name: Run test suite under Cloudflare workerd
         if: matrix.runtime == 'cloudflare'
         run: pnpm test:cf

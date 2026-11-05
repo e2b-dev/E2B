@@ -1,5 +1,48 @@
 # e2b
 
+## 2.63.0
+
+### Minor Changes
+
+- a8155c4: Add `strict` to `pause()` (default `false`). With `strict: true` / `strict=True` a pause is refused with `ServiceBusyError` / `ServiceBusyException` while the sandbox's guest agent does not respond, and the sandbox keeps running. Without it the API's default applies: the memory snapshot is taken anyway and marked. Sandbox info exposes the mark as `envdUnresponsiveAtPause` / `envd_unresponsive_at_pause`, and resuming such a sandbox without `onResume: 'reboot'` / `on_resume="reboot"` now throws `GuestUnresponsiveError` / `GuestUnresponsiveException`.
+
+## 2.62.2
+
+### Patch Changes
+
+- 08f05bb: Fix `TypeError: fetch failed` / `NGHTTP2_ENHANCE_YOUR_CALM` on concurrent `files.write()` calls. Node's HTTP/2 client queues each request body in full against a 10 MB per-session memory budget and resets the stream whose response arrives while it is exhausted; since undici 8 every envd request of a process shares one session, so parallel or large uploads reset each other and the reads next to them. `files.write()` uploads now go over HTTP/1.1 on a pool of their own (one request per connection, no shared budget; `E2B_ENVD_UPLOAD_CONNECTIONS`, default 50), and an envd dispatcher whose HTTP/2 session Node reports as out of memory is retired and replaced instead of failing every later request. Nothing is retried: a failed write may already have been applied.
+- 1ad3f76: Template builds hash `copy()` files in 1 MB chunks instead of reading each file fully into memory, cutting peak memory for large files. Hashes are unchanged, so existing build caches stay valid.
+
+## 2.62.1
+
+### Patch Changes
+
+- 320f39d: Update the `glob` dependency to v14.
+- 36258c1: `files.write()`, `files.writeFiles()` and `Volume.writeFile()` accept `Uint8Array`, including a Node.js `Buffer`.
+- 8e37561: Raise the minimum `undici` version to 8.12.3, which replaces HTTP/2 connections that stop responding after a stream timeout.
+
+## 2.62.0
+
+### Minor Changes
+
+- 9fdfa21: Add `retainOutput` (JS) / `retain_output` (Python) option to `commands.run` and `commands.connect` (default `true`)
+
+  - When `false`, stdout/stderr are not buffered in memory; `stdout`/`stderr` on the handle, result and `CommandExitError`/`CommandExitException` are `undefined`/`None`
+  - Output callbacks (`onStdout`/`onStderr`, `on_stdout`/`on_stderr`) still receive all output
+
+- d58ef55: `files.write` streams iterables of byte chunks to the sandbox instead of buffering them:
+
+  - JS: `AsyncIterable<Uint8Array>` data (async generators, Node.js `Readable`), alongside `ReadableStream`.
+  - Python: `Iterable[bytes]` in `Sandbox` and `AsyncIterable[bytes]` in `AsyncSandbox`; each SDK rejects the other's iterable kind with `InvalidArgumentException`.
+
+  Stream data always uses the octet-stream upload, works with `gzip`, and is never buffered in memory. In browsers that can't stream a request body (Firefox, Safari and every iOS browser), JS stream data throws `InvalidArgumentError` instead (pass a `Blob`, e.g. `await new Response(stream).blob()`); Chromium-based browsers stream it. A chunk that isn't bytes throws `InvalidArgumentError` / `InvalidArgumentException` rather than a transport error.
+
+  Python file-like objects that aren't `io.IOBase` but have a sync `read()` (`tempfile.NamedTemporaryFile()`, werkzeug `FileStorage`, Django `File`) are uploaded as files; objects with an async `read()` (aiofiles, aiohttp `response.content`) are consumed as async iterables by `AsyncSandbox`. `WriteEntry` (`str`, `bytes` or file-like data) is accepted by both `Sandbox.files.write_files` and `AsyncSandbox.files.write_files`; the new `SyncWriteEntry` and `AsyncWriteEntry` additionally take `Iterable[bytes]` / `AsyncIterable[bytes]`.
+
+  **Breaking (JS):** `ReadableStream` / `AsyncIterable` data is no longer buffered: browsers without streaming request bodies throw, and multipart is refused — `useOctetStream: false` throws `InvalidArgumentError`, and an envd older than 0.5.7 throws `TemplateError`. Python raises `InvalidArgumentException` / `TemplateException` for iterables in the same cases.
+
+  **Breaking (both SDKs):** `gzip: true` with `useOctetStream: false` / `gzip=True, use_octet_stream=False` is now rejected as an invalid combination (`InvalidArgumentError` / `InvalidArgumentException`) instead of gzip silently overriding it.
+
 ## 2.61.0
 
 ### Minor Changes
