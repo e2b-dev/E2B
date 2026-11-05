@@ -1,4 +1,4 @@
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
 
 export enum Language {
   TypeScript = 'typescript',

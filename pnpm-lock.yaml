@@ -95,6 +95,9 @@ importers:
 
   packages/cli:
     dependencies:
+      '@commander-js/extra-typings':
+        specifier: ~15.0.0
+        version: 15.0.0(commander@15.0.0)
       '@iarna/toml':
         specifier: ^2.2.5
         version: 2.2.5
@@ -117,7 +120,7 @@ importers:
         specifier: ^2.1.11
         version: 2.1.11
       commander:
-        specifier: ^15.0.0
+        specifier: ~15.0.0
         version: 15.0.0
       e2b:
         specifier: workspace:^
@@ -520,6 +523,11 @@ packages:
     engines: {node: '>=16'}
     cpu: [x64]
     os: [win32]
+
+  '@commander-js/extra-typings@15.0.0':
+    resolution: {integrity: sha512-yeJlba62xqmkgELUsn7356MEnzLLu/fw2x4lofFqGnXh6YysRdEs2BaLeLtg1+KU0AXvMeqQvTTp+3hBEBK+EA==}
+    peerDependencies:
+      commander: ~15.0.0
 
   '@connectrpc/connect-web@2.2.0':
     resolution: {integrity: sha512-uuBUcBTYfb/r1o98LzCCZk1H90yx0vmZ5m21dpw/q4EUwsKwkCDGI8H0aEdjcZld+Q2jJ5A5ADvPqfb6lzQ/sg==}
@@ -4333,6 +4341,10 @@ snapshots:
 
   '@cloudflare/workerd-windows-64@1.20261023.1':
     optional: true
+
+  '@commander-js/extra-typings@15.0.0(commander@15.0.0)':
+    dependencies:
+      commander: 15.0.0
 
   '@connectrpc/connect-web@2.2.0(@bufbuild/protobuf@2.16.0)(@connectrpc/connect@2.2.0(@bufbuild/protobuf@2.16.0))':
     dependencies:

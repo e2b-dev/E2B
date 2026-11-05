@@ -1,4 +1,4 @@
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
 import { NotFoundError, Sandbox } from 'e2b'
 
 import { ensureAPIKey } from 'src/api'
@@ -46,7 +46,7 @@ export const infoCommand = new commander.Command('info')
   )
   .alias('in')
   .option('-f, --format <format>', 'output format, eg. json, pretty')
-  .action(async (sandboxID: string, options: { format?: string }) => {
+  .action(async (sandboxID, options) => {
     try {
       const format = options.format || 'pretty'
       const apiKey = ensureAPIKey()

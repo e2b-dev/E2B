@@ -1,4 +1,4 @@
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
 import * as e2b from 'e2b'
 
 import { listAliases } from '../../utils/format'
@@ -16,13 +16,6 @@ import { handleE2BRequestError } from '../../utils/errors'
 const DEFAULT_LIMIT = 1000
 const PAGE_LIMIT = 100
 
-type ListOptions = {
-  project?: string
-  team?: string
-  limit?: number
-  format: string
-}
-
 export const listCommand = new commander.Command('list')
   .description('list sandbox templates')
   .alias('ls')
@@ -34,7 +27,7 @@ export const listCommand = new commander.Command('list')
     parseNonNegativeInt('Template limit')
   )
   .option('-f, --format <format>', 'output format, eg. json, pretty')
-  .action(async (opts: ListOptions) => {
+  .action(async (opts) => {
     try {
       const format = opts.format || 'pretty'
       const defaultLimit = format === 'json' ? undefined : DEFAULT_LIMIT

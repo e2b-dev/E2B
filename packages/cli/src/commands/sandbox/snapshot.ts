@@ -1,4 +1,4 @@
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
 import { NotFoundError, Sandbox, SnapshotInfo } from 'e2b'
 
 import { ensureAPIKey } from 'src/api'
@@ -16,7 +16,7 @@ const createSnapshotCommand = new commander.Command('create')
     '-n, --name <name>',
     'name for the snapshot template, reuses the existing template if it already exists'
   )
-  .action(async (sandboxID: string, options: { name?: string }) => {
+  .action(async (sandboxID, options) => {
     try {
       const apiKey = ensureAPIKey()
 
@@ -57,58 +57,53 @@ const listSnapshotsCommand = new commander.Command('list')
     (value) => parseInt(value)
   )
   .option('-f, --format <format>', 'output format, eg. json, pretty')
-  .action(
-    async (
-      sandboxID: string | undefined,
-      options: { name?: string; format?: string; limit?: number }
-    ) => {
-      try {
-        const apiKey = ensureAPIKey()
-        const format = options.format || 'pretty'
-        const limit =
-          options.limit === 0 ? undefined : (options.limit ?? DEFAULT_LIMIT)
+  .action(async (sandboxID, options) => {
+    try {
+      const apiKey = ensureAPIKey()
+      const format = options.format || 'pretty'
+      const limit =
+        options.limit === 0 ? undefined : (options.limit ?? DEFAULT_LIMIT)
 
-        let pageLimit = limit
-        if (!limit || limit > PAGE_LIMIT) {
-          pageLimit = PAGE_LIMIT
+      let pageLimit = limit
+      if (!limit || limit > PAGE_LIMIT) {
+        pageLimit = PAGE_LIMIT
+      }
+
+      const allSnapshots: SnapshotInfo[] = []
+      const paginator = Sandbox.listSnapshots({
+        apiKey,
+        sandboxId: sandboxID,
+        name: options.name,
+        limit: pageLimit,
+      })
+
+      while (paginator.hasNext && (!limit || allSnapshots.length < limit)) {
+        const batch = await paginator.nextItems()
+        allSnapshots.push(...batch)
+      }
+
+      const snapshots = limit ? allSnapshots.slice(0, limit) : allSnapshots
+      const hasMore =
+        paginator.hasNext || (limit ? allSnapshots.length > limit : false)
+
+      if (format === 'pretty') {
+        renderSnapshotTable(snapshots)
+        if (hasMore) {
+          console.log(
+            `Showing first ${limit} snapshots. Use --limit to change.`
+          )
         }
-
-        const allSnapshots: SnapshotInfo[] = []
-        const paginator = Sandbox.listSnapshots({
-          apiKey,
-          sandboxId: sandboxID,
-          name: options.name,
-          limit: pageLimit,
-        })
-
-        while (paginator.hasNext && (!limit || allSnapshots.length < limit)) {
-          const batch = await paginator.nextItems()
-          allSnapshots.push(...batch)
-        }
-
-        const snapshots = limit ? allSnapshots.slice(0, limit) : allSnapshots
-        const hasMore =
-          paginator.hasNext || (limit ? allSnapshots.length > limit : false)
-
-        if (format === 'pretty') {
-          renderSnapshotTable(snapshots)
-          if (hasMore) {
-            console.log(
-              `Showing first ${limit} snapshots. Use --limit to change.`
-            )
-          }
-        } else if (format === 'json') {
-          console.log(JSON.stringify(snapshots, null, 2))
-        } else {
-          console.error(`Unsupported output format: ${format}`)
-          process.exit(1)
-        }
-      } catch (err: any) {
-        console.error(err)
+      } else if (format === 'json') {
+        console.log(JSON.stringify(snapshots, null, 2))
+      } else {
+        console.error(`Unsupported output format: ${format}`)
         process.exit(1)
       }
+    } catch (err: any) {
+      console.error(err)
+      process.exit(1)
     }
-  )
+  })
 
 const deleteSnapshotCommand = new commander.Command('delete')
   .description('delete snapshots')
@@ -117,7 +112,7 @@ const deleteSnapshotCommand = new commander.Command('delete')
     `delete the snapshots specified by ${asBold('<snapshotIDs...>')}`
   )
   .alias('dl')
-  .action(async (snapshotIDs: string[]) => {
+  .action(async (snapshotIDs) => {
     try {
       const apiKey = ensureAPIKey()
 

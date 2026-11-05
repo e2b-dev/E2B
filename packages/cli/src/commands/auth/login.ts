@@ -1,5 +1,5 @@
 import * as listen from 'async-listen'
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
 import * as http from 'http'
 import * as e2b from 'e2b'
 

@@ -1,4 +1,4 @@
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
 
 import { ensureAPIKey } from 'src/api'
 import { asBold } from 'src/utils/format'
@@ -29,7 +29,7 @@ export const pauseCommand = new commander.Command('pause')
     `pause the sandbox specified by ${asBold('<sandboxID>')}`
   )
   .alias('ps')
-  .action(async (sandboxID: string) => {
+  .action(async (sandboxID) => {
     try {
       const apiKey = ensureAPIKey()
       await pauseSandbox(sandboxID, apiKey)
