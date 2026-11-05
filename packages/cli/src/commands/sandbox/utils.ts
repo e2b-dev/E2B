@@ -1,12 +1,31 @@
+import * as commander from '@commander-js/extra-typings'
 import { wait } from '../../utils/wait'
-import { asBold } from '../../utils/format'
-import { Sandbox } from 'e2b'
+import { asBold, asLocal } from '../../utils/format'
+import { Sandbox, SandboxState } from 'e2b'
 import { ensureAPIKey } from 'src/api'
 
 export function formatEnum(e: { [key: string]: string }) {
   return Object.values(e)
     .map((level) => asBold(level))
     .join(', ')
+}
+
+const SANDBOX_STATES: readonly SandboxState[] = ['running', 'paused']
+
+/**
+ * Parse a comma-separated `--state` filter, eg. `running,paused`, rejecting
+ * states the API doesn't know instead of forwarding them.
+ */
+export function parseSandboxStates(value: string): SandboxState[] {
+  return value.split(',').map((raw) => {
+    const state = raw.trim() as SandboxState
+    if (!SANDBOX_STATES.includes(state)) {
+      throw new commander.InvalidArgumentError(
+        `Invalid state ${asLocal(raw)}, expected ${SANDBOX_STATES.join(' or ')}.`
+      )
+    }
+    return state
+  })
 }
 
 export enum Format {

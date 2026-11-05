@@ -1,5 +1,5 @@
 import * as e2b from 'e2b'
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
 
 import { ensureAPIKey } from 'src/api'
 import { spawnConnectedTerminal, TerminalOpts } from 'src/terminal'
@@ -50,68 +50,54 @@ export function createCommand(
     )
     .addOption(deprecatedConfigOption)
     .alias(alias)
-    .action(
-      async (
-        template: string | undefined,
-        opts: {
-          detach?: boolean
-          'lifecycle.ontimeout'?: SandboxLifecycle['onTimeout']
-          'lifecycle.autoresume'?: boolean
-          timeout?: number
-          user?: string
-          cwd?: string
-          env?: Record<string, string>
-          config?: string
-        }
-      ) => {
-        if (deprecated) {
-          console.warn(
-            `Warning: The '${name}' command is deprecated and will be removed in future releases. Please use 'e2b sandbox create' instead.`
-          )
-        }
-        try {
-          warnIgnoredConfigOption(opts)
-
-          const apiKey = ensureAPIKey()
-
-          const templateID = template ?? DEFAULT_TEMPLATE
-
-          const lifecycle = buildLifecycle(
-            opts['lifecycle.ontimeout'],
-            opts['lifecycle.autoresume']
-          )
-          const sandboxOpts = {
-            apiKey,
-            ...(lifecycle ? { lifecycle } : {}),
-            ...(opts.timeout !== undefined ? { timeoutMs: opts.timeout } : {}),
-          }
-          const sandbox = await e2b.Sandbox.create(templateID, sandboxOpts)
-
-          if (!opts.detach) {
-            printDashboardSandboxInspectUrl(sandbox.sandboxId)
-            await connectSandbox({
-              sandbox,
-              template: { templateID },
-              timeoutMs: opts.timeout,
-              terminal: {
-                user: opts.user,
-                cwd: opts.cwd,
-                envs:
-                  opts.env && Object.keys(opts.env).length > 0
-                    ? opts.env
-                    : undefined,
-              },
-            })
-          } else {
-            console.log(sandbox.sandboxId)
-          }
-          process.exit(0)
-        } catch (err: any) {
-          console.error(err)
-          process.exit(1)
-        }
+    .action(async (template, opts) => {
+      if (deprecated) {
+        console.warn(
+          `Warning: The '${name}' command is deprecated and will be removed in future releases. Please use 'e2b sandbox create' instead.`
+        )
       }
-    )
+      try {
+        warnIgnoredConfigOption(opts)
+
+        const apiKey = ensureAPIKey()
+
+        const templateID = template ?? DEFAULT_TEMPLATE
+
+        const lifecycle = buildLifecycle(
+          opts['lifecycle.ontimeout'],
+          opts['lifecycle.autoresume']
+        )
+        const sandboxOpts = {
+          apiKey,
+          ...(lifecycle ? { lifecycle } : {}),
+          ...(opts.timeout !== undefined ? { timeoutMs: opts.timeout } : {}),
+        }
+        const sandbox = await e2b.Sandbox.create(templateID, sandboxOpts)
+
+        if (!opts.detach) {
+          printDashboardSandboxInspectUrl(sandbox.sandboxId)
+          await connectSandbox({
+            sandbox,
+            template: { templateID },
+            timeoutMs: opts.timeout,
+            terminal: {
+              user: opts.user,
+              cwd: opts.cwd,
+              envs:
+                opts.env && Object.keys(opts.env).length > 0
+                  ? opts.env
+                  : undefined,
+            },
+          })
+        } else {
+          console.log(sandbox.sandboxId)
+        }
+        process.exit(0)
+      } catch (err: any) {
+        console.error(err)
+        process.exit(1)
+      }
+    })
 }
 
 export function parseTimeout(timeoutRaw: string): number {

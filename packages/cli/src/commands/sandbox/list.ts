@@ -1,9 +1,9 @@
-import * as commander from 'commander'
-import { components, Sandbox, SandboxInfo, SandboxListOrder } from 'e2b'
+import * as commander from '@commander-js/extra-typings'
+import { Sandbox, SandboxInfo, SandboxListOrder, SandboxState } from 'e2b'
 
 import { ensureAPIKey } from 'src/api'
 import { renderTable } from 'src/utils/table'
-import { parseMetadata } from './utils'
+import { parseMetadata, parseSandboxStates } from './utils'
 
 const DEFAULT_LIMIT = 1000
 const PAGE_LIMIT = 100
@@ -14,7 +14,7 @@ export const listCommand = new commander.Command('list')
   .option(
     '-s, --state <state>',
     'filter by state, eg. running, paused. Defaults to running',
-    (value) => value.split(',')
+    parseSandboxStates
   )
   .option('-m, --metadata <metadata>', 'filter by metadata, eg. key1=value1')
   .option(
@@ -141,7 +141,7 @@ function renderSandboxTable(
 
 type ListSandboxesOptions = {
   limit?: number
-  state?: components['schemas']['SandboxState'][]
+  state?: SandboxState[]
   metadataRaw?: string
   template?: string
   startedAfter?: Date

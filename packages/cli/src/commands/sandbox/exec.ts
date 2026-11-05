@@ -3,7 +3,7 @@
  */
 
 import { Sandbox, CommandExitError, NotFoundError } from 'e2b'
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
 
 import { ensureAPIKey } from '../../api'
 import { setupSignalHandlers } from 'src/utils/signal'
@@ -39,74 +39,71 @@ export const execCommand = new commander.Command('exec')
     {} as Record<string, string>
   )
   .alias('ex')
-  .action(
-    async (sandboxID: string, commandParts: string[], opts: ExecOptions) => {
-      const hasPipedStdin = isPipedStdin()
+  .action(async (sandboxID, commandParts, opts) => {
+    const hasPipedStdin = isPipedStdin()
 
-      let command: string
-      try {
-        command = buildCommand(commandParts)
-      } catch (err) {
-        if (err instanceof commander.InvalidArgumentError) {
-          execCommand.error(`error: ${err.message}`)
-        }
-        throw err
+    let command: string
+    try {
+      command = buildCommand(commandParts)
+    } catch (err) {
+      if (err instanceof commander.InvalidArgumentError) {
+        execCommand.error(`error: ${err.message}`)
       }
-
-      try {
-        const apiKey = ensureAPIKey()
-        const sandbox = await Sandbox.connect(sandboxID, { apiKey })
-
-        if (hasPipedStdin && !sandbox.commands.supportsStdinClose) {
-          console.error(
-            'e2b: Warning: Piped stdin is not supported by this sandbox version.\n' +
-              'e2b: Rebuild your template to pick up the latest sandbox version.\n' +
-              'e2b: Ignoring piped stdin.'
-          )
-        }
-
-        const canPipeStdin =
-          hasPipedStdin && sandbox.commands.supportsStdinClose
-
-        if (opts.background) {
-          const handle = await sandbox.commands.run(command, {
-            background: true,
-            cwd: opts.cwd,
-            user: opts.user,
-            envs: opts.env,
-            timeoutMs: NO_COMMAND_TIMEOUT,
-            ...(canPipeStdin ? { stdin: true } : {}),
-          })
-
-          const removeSignalHandlers = setupSignalHandlers(async () => {
-            await handle.kill()
-          })
-
-          try {
-            if (canPipeStdin) {
-              await sendStdin(sandbox, handle.pid)
-            }
-          } finally {
-            removeSignalHandlers()
-          }
-
-          console.error(handle.pid)
-
-          await handle.disconnect()
-
-          // We always exit with code 0 when running in background.
-          process.exit(0)
-        }
-
-        const exitCode = await runCommand(sandbox, command, opts, canPipeStdin)
-
-        process.exit(exitCode)
-      } catch (err: any) {
-        console.error(err)
-        process.exit(1)
-      }
+      throw err
     }
-  )
+
+    try {
+      const apiKey = ensureAPIKey()
+      const sandbox = await Sandbox.connect(sandboxID, { apiKey })
+
+      if (hasPipedStdin && !sandbox.commands.supportsStdinClose) {
+        console.error(
+          'e2b: Warning: Piped stdin is not supported by this sandbox version.\n' +
+            'e2b: Rebuild your template to pick up the latest sandbox version.\n' +
+            'e2b: Ignoring piped stdin.'
+        )
+      }
+
+      const canPipeStdin = hasPipedStdin && sandbox.commands.supportsStdinClose
+
+      if (opts.background) {
+        const handle = await sandbox.commands.run(command, {
+          background: true,
+          cwd: opts.cwd,
+          user: opts.user,
+          envs: opts.env,
+          timeoutMs: NO_COMMAND_TIMEOUT,
+          ...(canPipeStdin ? { stdin: true } : {}),
+        })
+
+        const removeSignalHandlers = setupSignalHandlers(async () => {
+          await handle.kill()
+        })
+
+        try {
+          if (canPipeStdin) {
+            await sendStdin(sandbox, handle.pid)
+          }
+        } finally {
+          removeSignalHandlers()
+        }
+
+        console.error(handle.pid)
+
+        await handle.disconnect()
+
+        // We always exit with code 0 when running in background.
+        process.exit(0)
+      }
+
+      const exitCode = await runCommand(sandbox, command, opts, canPipeStdin)
+
+      process.exit(exitCode)
+    } catch (err: any) {
+      console.error(err)
+      process.exit(1)
+    }
+  })
 
 async function runCommand(
   sandbox: Sandbox,

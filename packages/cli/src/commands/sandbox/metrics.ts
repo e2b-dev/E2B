@@ -1,5 +1,5 @@
 import * as chalk from 'chalk'
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
 
 import { asBold, asTimestamp, withUnderline } from 'src/utils/format'
 import { wait } from 'src/utils/wait'
@@ -20,82 +20,74 @@ export const metricsCommand = new commander.Command('metrics')
     `specify format for printing metrics (${formatEnum(Format)})`,
     Format.PRETTY
   )
-  .action(
-    async (
-      sandboxID: string,
-      opts: {
-        follow?: boolean
-        format: Format
+  .action(async (sandboxID, opts) => {
+    try {
+      const format = opts.format.toLowerCase() as Format
+      if (!Object.values(Format).includes(format)) {
+        throw new Error(`Invalid log format: ${format}`)
       }
-    ) => {
-      try {
-        const format = opts.format.toLowerCase() as Format
-        if (!Object.values(Format).includes(format)) {
-          throw new Error(`Invalid log format: ${format}`)
+
+      let start: Date | undefined
+      let isFirstRun = true
+      let firstMetricsPrinted = false
+
+      if (format === Format.PRETTY) {
+        console.log(`\nMetrics for sandbox ${asBold(sandboxID)}:`)
+      }
+
+      const apiKey = ensureAPIKey()
+      const isRunningPromise = isRunning(sandboxID)
+
+      do {
+        const metrics = await Sandbox.getMetrics(sandboxID, { start, apiKey })
+
+        if (metrics.length !== 0 && !firstMetricsPrinted) {
+          firstMetricsPrinted = true
+          process.stdout.write('\n')
         }
 
-        let start: Date | undefined
-        let isFirstRun = true
-        let firstMetricsPrinted = false
+        for (const metric of metrics) {
+          if (start && metric.timestamp <= start) {
+            // Skip the metric if it has the same timestamp as the last one
+            continue
+          }
+          start = metric.timestamp
 
-        if (format === Format.PRETTY) {
-          console.log(`\nMetrics for sandbox ${asBold(sandboxID)}:`)
+          printMetric(metric.timestamp, JSON.stringify(metric), format)
         }
 
-        const apiKey = ensureAPIKey()
-        const isRunningPromise = isRunning(sandboxID)
+        const isRunning = await isRunningPromise
 
-        do {
-          const metrics = await Sandbox.getMetrics(sandboxID, { start, apiKey })
-
-          if (metrics.length !== 0 && !firstMetricsPrinted) {
-            firstMetricsPrinted = true
-            process.stdout.write('\n')
+        if (!isRunning && metrics.length === 0 && isFirstRun) {
+          if (format === Format.PRETTY) {
+            console.log(
+              `\nStopped printing metrics — sandbox ${withUnderline(
+                'not found'
+              )}`
+            )
           }
+          break
+        }
 
-          for (const metric of metrics) {
-            if (start && metric.timestamp <= start) {
-              // Skip the metric if it has the same timestamp as the last one
-              continue
-            }
-            start = metric.timestamp
-
-            printMetric(metric.timestamp, JSON.stringify(metric), format)
+        if (!isRunning) {
+          if (format === Format.PRETTY) {
+            console.log(
+              `\nStopped printing metrics — sandbox is ${withUnderline(
+                'closed'
+              )}`
+            )
           }
+          break
+        }
 
-          const isRunning = await isRunningPromise
-
-          if (!isRunning && metrics.length === 0 && isFirstRun) {
-            if (format === Format.PRETTY) {
-              console.log(
-                `\nStopped printing metrics — sandbox ${withUnderline(
-                  'not found'
-                )}`
-              )
-            }
-            break
-          }
-
-          if (!isRunning) {
-            if (format === Format.PRETTY) {
-              console.log(
-                `\nStopped printing metrics — sandbox is ${withUnderline(
-                  'closed'
-                )}`
-              )
-            }
-            break
-          }
-
-          await wait(400)
-          isFirstRun = false
-        } while (opts.follow)
-      } catch (err: any) {
-        console.error(err)
-        process.exit(1)
-      }
+        await wait(400)
+        isFirstRun = false
+      } while (opts.follow)
+    } catch (err: any) {
+      console.error(err)
+      process.exit(1)
     }
-  )
+  })
 
 function printMetric(timestamp: Date, line: string, format: Format) {
   const metric = JSON.parse(line)

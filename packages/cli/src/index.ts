@@ -1,7 +1,7 @@
 #!/usr/bin/env -S node --enable-source-maps
 
 import simpleUpdateNotifier from 'simple-update-notifier'
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
 import * as packageJSON from '../package.json'
 import { program } from './commands'
 import { commands2md } from './utils/commands2md'
