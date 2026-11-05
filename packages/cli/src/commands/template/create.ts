@@ -67,7 +67,7 @@ export const createCommand = new commander.Command('create')
         cpuCount?: number
         memoryMb?: number
         minFreeDiskMb?: number
-        noCache?: boolean
+        cache?: boolean
       }
     ) => {
       try {
@@ -146,7 +146,7 @@ export const createCommand = new commander.Command('create')
             cpuCount: cpuCount,
             memoryMB: memoryMB,
             minFreeDiskMb,
-            skipCache: opts.noCache,
+            skipCache: opts.cache === false,
             apiKey: apiKey,
             domain: domain,
             onBuildLogs: defaultBuildLogger(),
