@@ -27,16 +27,17 @@ const prog = program.version(
   'display E2B CLI version'
 )
 
-if (process.env.NODE_ENV === 'development') {
-  prog
-    .addOption(new commander.Option('-cmd2md').hideHelp())
-    .on('option:-cmd2md', () => {
-      commands2md(program.commands as any)
-      process.exit(0)
-    })
-}
-
 async function main() {
+  // Used by the e2b-dev/docs reference generator. Checked by hand because
+  // commander rejects multi-character short flags like `-cmd2md`.
+  if (
+    process.env.NODE_ENV === 'development' &&
+    process.argv.includes('-cmd2md')
+  ) {
+    commands2md(program.commands as commander.Command[])
+    process.exit(0)
+  }
+
   await prog.parseAsync()
   await updateCheck
 }

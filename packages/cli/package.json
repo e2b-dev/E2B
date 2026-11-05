@@ -77,7 +77,7 @@
     "boxen": "^7.1.1",
     "chalk": "^5.6.2",
     "cli-highlight": "^2.1.11",
-    "commander": "^11.1.0",
+    "commander": "^15.0.0",
     "e2b": "workspace:^",
     "handlebars": "^4.7.10",
     "inquirer": "^12.11.1",

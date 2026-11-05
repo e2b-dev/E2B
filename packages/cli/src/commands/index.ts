@@ -17,8 +17,7 @@ export const program = new commander.Command()
 
 Visit ${asPrimary(
       'E2B docs (https://e2b.dev/docs)'
-    )} to learn how to create sandbox templates and start sandboxes.
-`
+    )} to learn how to create sandbox templates and start sandboxes.`
   )
   .addCommand(authCommand)
   .addCommand(templateCommand)
