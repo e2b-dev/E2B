@@ -1,309 +1,39 @@
-import { select } from '@inquirer/prompts'
+import * as boxen from 'boxen'
 import * as commander from 'commander'
-import { Template, TemplateBuilder, TemplateClass } from 'e2b'
-import * as fs from 'fs'
-import * as path from 'path'
-import { E2BConfig, getConfigPath, loadConfig } from '../../config'
-import { defaultDockerfileName } from '../../docker/constants'
-import { configOption, parsePositiveInt, pathOption } from '../../options'
-import { getRoot } from '../../utils/filesystem'
-import { asLocal, asLocalRelative, asPrimary } from '../../utils/format'
-import { getDockerfile } from './dockerfile'
-import { validateTemplateName } from '../../utils/templateName'
-import {
-  generateAndWriteTemplateFiles,
-  Language,
-  languageDisplay,
-  parseLanguage,
-} from './generators'
-
-/**
- * Migrate Dockerfile to a specific target language using SDK
- */
-async function migrateToLanguage(
-  root: string,
-  config: E2BConfig,
-  dockerfileContent: string,
-  language: Language,
-  nameOverride?: string
-): Promise<void> {
-  // Initialize template with file context
-  const template = Template({
-    fileContextPath: root,
-  })
-
-  // Parse Dockerfile using SDK
-  let baseTemplate: TemplateBuilder
-  try {
-    baseTemplate = template.fromDockerfile(dockerfileContent)
-  } catch (error) {
-    console.warn(
-      "\n⚠️  Unfortunately, we weren't able to fully convert the template to the new SDK format."
-    )
-    console.warn(
-      '\nPlease build the Docker image manually, push it to a repository of your choice, and then reference it.'
-    )
-    console.warn("\nHere's an example of how to build the Docker image:")
-    console.warn(
-      `   ${asPrimary(
-        'docker build -f e2b.Dockerfile --platform linux/amd64 -t your-image-tag .'
-      )}`
-    )
-    console.warn(
-      '\nAfter building and pushing your image to a repository of your choice, update the generated template files to use the actual image tag.'
-    )
-    if (error instanceof Error) {
-      console.warn('\nCause:', error.message)
-    }
-    baseTemplate = template.fromImage('my-custom-image')
-  }
-
-  // Apply config start/ready commands
-  let parsedTemplate: TemplateClass = baseTemplate
-  if (config.start_cmd) {
-    parsedTemplate = baseTemplate.setStartCmd(
-      config.start_cmd,
-      config.ready_cmd || 'sleep 20'
-    )
-  } else if (config.ready_cmd) {
-    parsedTemplate = baseTemplate.setReadyCmd(config.ready_cmd)
-  }
-
-  const name = nameOverride || config.template_name || config.template_id
-  if (!name) {
-    throw new Error('Template name or ID is required')
-  }
-
-  // Generate code for the target language using shared functionality
-  await generateAndWriteTemplateFiles(
-    root,
-    name,
-    language,
-    parsedTemplate,
-    config.cpu_count,
-    config.memory_mb
-  )
-}
+import { asBold, asLocal, asPrimary } from '../../utils/format'
 
 export const migrateCommand = new commander.Command('migrate')
-  .description(
-    `migrate ${asLocal('e2b.Dockerfile')} and ${asLocal(
-      'e2b.toml'
-    )} to new Template SDK format`
-  )
-  .option(
-    '-d, --dockerfile <file>',
-    `specify path to Dockerfile. Defaults to ${asLocal('e2b.Dockerfile')}`
-  )
-  .addOption(configOption)
-  .option(
-    '-n, --name <name>',
-    'override the template name used in the generated files. Defaults to the template name or ID from the config file.',
-    (value) => {
-      try {
-        return validateTemplateName(value)
-      } catch (err) {
-        throw new commander.InvalidArgumentError(
-          err instanceof Error ? err.message : String(err)
-        )
-      }
-    }
-  )
-  .option(
-    '-c, --cmd <start-command>',
-    'override the command that will be executed when the sandbox is started.'
-  )
-  .option(
-    '--ready-cmd <ready-command>',
-    'override the command that will need to exit 0 for the template to be ready.'
-  )
-  .option(
-    '--cpu-count <cpu-count>',
-    'override the number of CPUs that will be used to run the sandbox.',
-    parsePositiveInt('CPU count')
-  )
-  .option(
-    '--memory-mb <memory-mb>',
-    'override the amount of memory in megabytes that will be used to run the sandbox. Must be an even number.',
-    parsePositiveInt('Memory in megabytes')
-  )
-  .option(
-    '-l, --language <language>',
-    `specify target language: ${Object.values(Language).join(', ')}`,
-    parseLanguage
-  )
-  .addOption(pathOption)
-  .action(
-    async (opts: {
-      dockerfile?: string
-      config?: string
-      path?: string
-      language?: Language
-      name?: string
-      cmd?: string
-      readyCmd?: string
-      cpuCount?: number
-      memoryMb?: number
-    }) => {
-      let success = false
-      try {
-        console.log('\n🔄 Migrating template configuration to SDK format...\n')
+  .description('Deprecated: use `e2b template init` instead.')
+  .allowUnknownOption(true)
+  .allowExcessArguments(true)
+  .action(async () => {
+    const deprecationMessage = `${asBold('DEPRECATION WARNING')}
 
-        // Validate memory override
-        if (opts.memoryMb && opts.memoryMb % 2 !== 0) {
-          throw new Error(
-            `The memory in megabytes must be an even number. You provided ${asLocal(
-              opts.memoryMb.toFixed(0)
-            )}.`
-          )
-        }
+${asBold('e2b template migrate')} has been removed and no longer reads
+${asLocal('e2b.toml')} or ${asLocal('e2b.Dockerfile')}.
 
-        const root = getRoot(opts.path)
-        const configPath = getConfigPath(root, opts.config)
+Define your template with the Template SDK, for example with
+${asBold("Template().fromDockerfile('e2b.Dockerfile')")}.
 
-        const { dockerfileContent, dockerfilePath, dockerfileRelativePath } =
-          getDockerfile(root, opts.dockerfile)
+Migration guide: ${asPrimary('https://e2b.dev/docs/template/migration-v2')}`
 
-        let config: E2BConfig = {
-          template_id: 'name-your-template',
-          dockerfile: defaultDockerfileName,
-        }
+    const deprecationWarning = boxen.default(deprecationMessage, {
+      padding: {
+        bottom: 0,
+        top: 0,
+        left: 2,
+        right: 2,
+      },
+      margin: {
+        top: 1,
+        bottom: 1,
+        left: 0,
+        right: 0,
+      },
+      borderColor: 'yellow',
+      borderStyle: 'round',
+    })
 
-        // Validate config file exists
-        if (fs.existsSync(configPath)) {
-          config = await loadConfig(configPath)
-        } else {
-          console.error(
-            `Config file ${asLocalRelative(
-              path.relative(root, configPath)
-            )} not found. Using defaults.`
-          )
-        }
-
-        // Apply command-line overrides on top of the loaded config
-        if (opts.cmd !== undefined) {
-          config.start_cmd = opts.cmd
-        }
-        if (opts.readyCmd !== undefined) {
-          config.ready_cmd = opts.readyCmd
-        }
-        if (opts.cpuCount !== undefined) {
-          config.cpu_count = opts.cpuCount
-        }
-        if (opts.memoryMb !== undefined) {
-          config.memory_mb = opts.memoryMb
-        }
-
-        // Determine target language
-        let language: Language
-        if (opts.language) {
-          language = opts.language
-          console.log(`Using language: ${asPrimary(languageDisplay[language])}`)
-        } else {
-          // Prompt for language selection
-          language = await select({
-            message: 'Select target language for Template SDK:',
-            choices: [
-              {
-                name: languageDisplay[Language.TypeScript],
-                value: Language.TypeScript,
-                description:
-                  'Generate .ts files for JavaScript/TypeScript projects',
-              },
-              {
-                name: languageDisplay[Language.PythonSync],
-                value: Language.PythonSync,
-                description: 'Generate synchronous Python template files',
-              },
-              {
-                name: languageDisplay[Language.PythonAsync],
-                value: Language.PythonAsync,
-                description: 'Generate asynchronous Python template files',
-              },
-            ],
-            default: Language.TypeScript,
-          })
-        }
-
-        // Perform migration
-        await migrateToLanguage(
-          root,
-          config,
-          dockerfileContent,
-          language,
-          opts.name
-        )
-
-        // Rename old files to .old extensions
-        const oldFilesRenamed: { oldPath: string; newPath: string }[] = []
-
-        // Rename Dockerfile if it exists
-        if (fs.existsSync(dockerfilePath)) {
-          const oldDockerfilePath = `${dockerfilePath}.old`
-          fs.renameSync(dockerfilePath, oldDockerfilePath)
-          oldFilesRenamed.push({
-            oldPath: dockerfileRelativePath,
-            newPath: path.relative(root, oldDockerfilePath),
-          })
-        }
-
-        // Rename e2b.toml if it exists
-        if (fs.existsSync(configPath)) {
-          const oldConfigPath = `${configPath}.old`
-          fs.renameSync(configPath, oldConfigPath)
-          oldFilesRenamed.push({
-            oldPath: path.relative(root, configPath),
-            newPath: path.relative(root, oldConfigPath),
-          })
-        }
-
-        if (oldFilesRenamed.length > 0) {
-          console.log('\n📁 Old template files no longer needed:')
-          oldFilesRenamed.forEach((file) => {
-            console.log(
-              `   ${asLocalRelative(file.oldPath)} → ${asLocalRelative(file.newPath)}`
-            )
-          })
-        }
-
-        console.log('\n🎉 Migration completed successfully!')
-
-        console.log('\n🔨 To get started with your template:')
-        if (language === Language.TypeScript) {
-          console.log(
-            `   ${asPrimary('npm install e2b')} (install e2b dependency)`
-          )
-          console.log(
-            `   ${asPrimary('npx tsx build.dev.ts')} (run development build)`
-          )
-          console.log(
-            `   ${asPrimary('npx tsx build.prod.ts')} (run production build)`
-          )
-        } else {
-          console.log(
-            `   ${asPrimary('pip install e2b')} (install e2b dependency)`
-          )
-          console.log(
-            `   ${asPrimary('python build_dev.py')} (run development build)`
-          )
-          console.log(
-            `   ${asPrimary('python build_prod.py')} (run production build)`
-          )
-        }
-
-        console.log(
-          `\nLearn more about Template SDK: ${asPrimary(
-            'https://e2b.dev/docs'
-          )}\n`
-        )
-        success = true
-      } catch (err: any) {
-        console.error(`Migration failed: ${err.message}`)
-        process.exit(1)
-      }
-
-      if (success) {
-        process.exit(0)
-      }
-    }
-  )
+    console.log(deprecationWarning)
+    process.exit(1)
+  })
