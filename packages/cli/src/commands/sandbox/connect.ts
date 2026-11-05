@@ -15,8 +15,7 @@ export const connectCommand = new commander.Command('connect')
   .option(
     '-e, --env <KEY=VALUE>',
     'set environment variable for the terminal session (repeatable)',
-    parseEnv,
-    {} as Record<string, string>
+    parseEnv
   )
   .alias('cn')
   .action(async (sandboxID, opts) => {

@@ -45,8 +45,7 @@ export function createCommand(
     .option(
       '-e, --env <KEY=VALUE>',
       'set environment variable for the terminal session (repeatable)',
-      parseEnv,
-      {} as Record<string, string>
+      parseEnv
     )
     .addOption(deprecatedConfigOption)
     .alias(alias)
