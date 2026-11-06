@@ -176,3 +176,24 @@ export async function ensureValidAccessToken(): Promise<{
     release()
   }
 }
+
+/**
+ * Apply `patch` to the stored config under the refresh lock, so it can't
+ * revert tokens another e2b process refreshes at the same time.
+ */
+export async function updateUserConfig(
+  patch: Partial<UserConfig>
+): Promise<UserConfig> {
+  const release = await acquireRefreshLock()
+  try {
+    const config = getUserConfig()
+    if (!config) {
+      throw new Error('No user config found, run `e2b auth login` first.')
+    }
+    const updated = { ...config, ...patch }
+    writeUserConfig(USER_CONFIG_PATH, updated)
+    return updated
+  } finally {
+    release()
+  }
+}
