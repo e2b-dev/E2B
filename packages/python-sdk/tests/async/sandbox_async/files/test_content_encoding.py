@@ -9,7 +9,7 @@ async def test_write_and_read_with_gzip(async_sandbox: AsyncSandbox, debug):
     info = await async_sandbox.files.write(filename, content, gzip=True)
     assert info.path == f"/home/user/{filename}"
 
-    read_content = await async_sandbox.files.read(filename, gzip=True)
+    read_content = await async_sandbox.files.read(filename)
     assert read_content == content
 
     if debug:
