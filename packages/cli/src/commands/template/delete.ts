@@ -7,6 +7,7 @@ import {
   asFormattedSandboxTemplate,
   SandboxTemplateRef,
 } from 'src/utils/format'
+import { deprecatedConfigOption, warnIgnoredConfigOption } from 'src/options'
 import { confirm } from 'src/utils/confirm'
 import { client } from 'src/api'
 import { handleE2BRequestError } from '../../utils/errors'
@@ -27,6 +28,7 @@ async function deleteTemplate(templateID: string) {
 export const deleteCommand = new commander.Command('delete')
   .description('delete sandbox template')
   .argument('<template>', `specify ${asBold('<template>')} to delete it`)
+  .addOption(deprecatedConfigOption)
   .alias('dl')
   .option('-y, --yes', 'skip manual delete confirmation')
   .action(
@@ -34,9 +36,15 @@ export const deleteCommand = new commander.Command('delete')
       template,
       opts: {
         yes?: boolean
+        config?: string
       }
     ) => {
       try {
+        warnIgnoredConfigOption(
+          opts,
+          `Pass the template as ${asBold('<template>')}.`
+        )
+
         const templates: SandboxTemplateRef[] = [{ templateID: template }]
 
         console.log(
