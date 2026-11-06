@@ -23,4 +23,28 @@ describe('ApiClient API key requirement', () => {
     const config = new ConnectionConfig({})
     assert.doesNotThrow(() => new ApiClient(config, { requireApiKey: false }))
   })
+
+  test.each(['Authorization', 'authorization'])(
+    'accepts an %s header in place of an API key',
+    async (header) => {
+      vi.stubEnv('E2B_API_KEY', '')
+      const seen: Headers[] = []
+      const config = new ConnectionConfig({
+        apiHeaders: { [header]: 'Bearer access-token', 'X-Team-ID': 'team' },
+      })
+      const client = new ApiClient(config)
+      await client.api.GET('/teams', {
+        fetch: async (request: Request) => {
+          seen.push(request.headers)
+          return new Response('[]', {
+            headers: { 'Content-Type': 'application/json' },
+          })
+        },
+      })
+
+      assert.equal(seen[0].get('Authorization'), 'Bearer access-token')
+      assert.equal(seen[0].get('X-Team-ID'), 'team')
+      assert.isNull(seen[0].get('X-API-KEY'))
+    }
+  )
 })

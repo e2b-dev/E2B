@@ -246,15 +246,30 @@ class ApiClient(AuthenticatedClient):
     ):
         self._proxy = config.proxy
 
-        if config.api_key is None:
+        # An `Authorization` header (e.g. an OAuth access token passed through
+        # `api_headers`) authenticates the request in place of an API key.
+        authorization = next(
+            (
+                (name, value)
+                for name, value in (config.headers or {}).items()
+                if name.lower() == "authorization"
+            ),
+            None,
+        )
+
+        if config.api_key is not None:
+            token = config.api_key
+            auth_header_name = "X-API-KEY"
+        elif authorization is not None:
+            # The generated client always writes `token` to `auth_header_name`;
+            # point it at the caller's own header so it isn't sent twice.
+            auth_header_name, token = authorization
+        else:
             raise AuthenticationException(
                 "API key is required, please visit the API Keys tab at https://e2b.dev/dashboard?tab=keys to get your API key. "
                 "You can either set the environment variable `E2B_API_KEY` "
                 'or you can pass it directly to the method like api_key="e2b_..."',
             )
-
-        token = config.api_key
-        auth_header_name = "X-API-KEY"
         prefix = ""
 
         self._logger = config.logger

@@ -103,7 +103,12 @@ class ApiClient {
       requireApiKey?: boolean
     } = {}
   ) {
-    if ((opts.requireApiKey ?? true) && !config.apiKey) {
+    // An `Authorization` header (e.g. an OAuth access token passed through
+    // `apiHeaders`) authenticates the request in place of an API key.
+    const hasAuthorization = Object.keys(config.headers ?? {}).some(
+      (name) => name.toLowerCase() === 'authorization'
+    )
+    if ((opts.requireApiKey ?? true) && !config.apiKey && !hasAuthorization) {
       throw new AuthenticationError(
         'API key is required, please visit the API Keys tab at https://e2b.dev/dashboard?tab=keys to get your API key. ' +
           'You can either set the environment variable `E2B_API_KEY` ' +
