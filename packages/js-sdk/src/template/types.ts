@@ -166,6 +166,92 @@ export type TemplateTagInfo = {
 }
 
 /**
+ * Information about a template.
+ */
+export type TemplateInfo = {
+  /**
+   * Template identifier.
+   */
+  templateId: string
+  /**
+   * Identifier of the last successful build of the template.
+   */
+  buildId: string
+  /**
+   * Names of the template (`namespace/name` when namespaced).
+   */
+  names: string[]
+  /**
+   * Description of the template.
+   */
+  description?: string
+  /**
+   * Whether the template is public or only accessible by the project.
+   */
+  public: boolean
+  /**
+   * Whether the template is one of the platform's default templates.
+   */
+  isDefault: boolean
+  /**
+   * Status of the last template build.
+   */
+  buildStatus: TemplateBuildStatus
+  /**
+   * Number of CPUs allocated to the sandbox.
+   */
+  cpuCount: number
+  /**
+   * Amount of memory in MiB allocated to the sandbox.
+   */
+  memoryMB: number
+  /**
+   * Disk size in MiB of the sandbox.
+   */
+  diskSizeMB: number
+  /**
+   * Version of envd running in the sandbox.
+   */
+  envdVersion: string
+  /**
+   * Number of times the template was built.
+   */
+  buildCount: number
+  /**
+   * Number of times the template was used to create a sandbox.
+   */
+  spawnCount: number
+  /**
+   * When the template was created.
+   */
+  createdAt: Date
+  /**
+   * When the template was last updated.
+   */
+  updatedAt: Date
+  /**
+   * When the template was last used to create a sandbox.
+   */
+  lastSpawnedAt?: Date
+}
+
+/**
+ * Options for listing templates.
+ */
+export type TemplateListOpts = Omit<ConnectionOpts, 'signal'> & {
+  /**
+   * Number of templates to return per page.
+   *
+   * @default 100
+   */
+  limit?: number
+  /**
+   * Token to the next page.
+   */
+  nextToken?: string
+}
+
+/**
  * Detailed information about a single template tag.
  */
 export type TemplateTag = {
