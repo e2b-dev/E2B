@@ -4,7 +4,7 @@ import * as e2b from 'e2b'
 import { listAliases } from '../../utils/format'
 import { renderTable } from 'src/utils/table'
 import { sortTemplatesAliases } from 'src/utils/templateSort'
-import { apiClient } from 'src/api'
+import { Auth, ensureAuth, projectIdOf } from 'src/api'
 import {
   deprecatedTeamOption,
   Format,
@@ -41,8 +41,9 @@ export const listCommand = new commander.Command('list')
       const limit = opts.limit === 0 ? undefined : (opts.limit ?? defaultLimit)
       process.stdout.write('\n')
 
-      const { templates, hasMore } = await listSandboxTemplates({
-        projectId: projectIdFromOptions(opts),
+      const auth = await ensureAuth(projectIdFromOptions(opts))
+      const projectId = projectIdOf(auth)
+      const { templates, hasMore } = await listSandboxTemplates(auth, {
         limit,
       })
 
@@ -51,14 +52,22 @@ export const listCommand = new commander.Command('list')
       }
 
       if (opts.format === Format.PRETTY) {
-        renderTemplateTable(templates)
+        renderTemplateTable(templates, projectId)
         if (hasMore) {
           console.log(
             `Showing first ${limit} templates. Use --limit to change.`
           )
         }
       } else {
-        console.log(JSON.stringify(templates, null, 2))
+        console.log(
+          JSON.stringify(
+            templates.map((template) =>
+              projectId ? { ...template, projectID: projectId } : template
+            ),
+            null,
+            2
+          )
+        )
       }
     } catch (err: any) {
       console.error(err)
@@ -67,7 +76,8 @@ export const listCommand = new commander.Command('list')
   })
 
 function renderTemplateTable(
-  templates: e2b.components['schemas']['Template'][]
+  templates: e2b.components['schemas']['Template'][],
+  projectId?: string
 ) {
   if (!templates?.length) {
     console.log('No templates found.')
@@ -99,6 +109,8 @@ function renderTemplateTable(
       value: (template) => String(template.diskSizeMB),
     },
     { header: 'Envd version', value: (template) => template.envdVersion },
+    // Omitted with E2B_API_KEY, where the CLI doesn't know the key's project.
+    ...(projectId ? [{ header: 'Project ID', value: () => projectId }] : []),
   ])
 }
 
@@ -107,22 +119,19 @@ type ListSandboxTemplatesResult = {
   hasMore: boolean
 }
 
-async function listSandboxTemplates({
-  projectId,
-  limit,
-}: {
-  projectId?: string
-  limit?: number
-}): Promise<ListSandboxTemplatesResult> {
+async function listSandboxTemplates(
+  auth: Auth,
+  { limit }: { limit?: number }
+): Promise<ListSandboxTemplatesResult> {
   let pageLimit = limit
   if (!limit || limit > PAGE_LIMIT) {
     pageLimit = PAGE_LIMIT
   }
 
-  // The project (an ID, slug or name, or the selected one) is resolved by
+  // The project (an ID, slug or name, or the selected one) was resolved by
   // ensureAuth: with an access token X-Team-ID selects it, with an API key
   // the key does. The teamID query param accepts IDs only, so it's not sent.
-  const client = await apiClient(projectId)
+  const client = new e2b.ApiClient(new e2b.ConnectionConfig(auth))
   const templates: e2b.components['schemas']['Template'][] = []
   let nextToken: string | undefined
 

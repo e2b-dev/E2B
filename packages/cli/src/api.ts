@@ -5,7 +5,13 @@ import * as packageJSON from '../package.json'
 import { getUserConfig, UserConfig } from './user'
 import { asBold, asPrimary } from './utils/format'
 import { ensureValidAccessToken, updateUserConfig } from './utils/token-refresh'
-import { bootstrapUser, fetchMe, findProject, Me } from './workspaces'
+import {
+  bootstrapUser,
+  fetchMe,
+  findProject,
+  Me,
+  publicProjectId,
+} from './workspaces'
 
 // Must run before any ConnectionConfig is constructed (including the
 // module-level one below) — configs read the integration at construction time.
@@ -153,6 +159,17 @@ export async function ensureAuth(cliProjectId?: string): Promise<Auth> {
     },
     domain: project.domain,
   }
+}
+
+/**
+ * The `prj_` ID of the project `auth` sends requests to, or `undefined` with
+ * `E2B_API_KEY`, where the key selects the project and the CLI can't tell
+ * which one it is.
+ */
+export function projectIdOf(auth: Auth): string | undefined {
+  return 'apiHeaders' in auth
+    ? publicProjectId(auth.apiHeaders['X-Team-ID'])
+    : undefined
 }
 
 /** An E2B API client authenticated with {@link ensureAuth}. */

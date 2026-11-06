@@ -12,6 +12,7 @@ import {
   personalProject,
   pickProject,
   Project,
+  publicProjectId,
   Workspace,
   workspaceApiUrl,
 } from '../src/workspaces'
@@ -342,5 +343,20 @@ describe('blockedWarning', () => {
       'Project Project p is blocked (credit_exhausted)'
     )
     expect(blockedWarning({ ...entry, project: project('ok') })).toBeUndefined()
+  })
+})
+
+describe('publicProjectId', () => {
+  test('encodes a project UUID as its prj_ TypeID', () => {
+    expect(publicProjectId('4151943a-a079-4e90-a768-5329467f5c67')).toBe(
+      'prj_21a6a3n83s9t8aet2k5537yq37'
+    )
+  })
+
+  test('returns anything else unchanged', () => {
+    expect(publicProjectId('prj_21a6a3n83s9t8aet2k5537yq37')).toBe(
+      'prj_21a6a3n83s9t8aet2k5537yq37'
+    )
+    expect(publicProjectId('team-id')).toBe('team-id')
   })
 })
