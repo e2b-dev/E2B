@@ -85,7 +85,7 @@
     "simple-update-notifier": "^2.0.0",
     "simple-wcswidth": "^1.1.2",
     "statuses": "^2.0.2",
-    "yup": "^1.7.1"
+    "zod": "^4.6.7"
   },
   "engines": {
     "node": ">=22.19.0"

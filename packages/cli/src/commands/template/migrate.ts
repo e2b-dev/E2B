@@ -5,11 +5,16 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { E2BConfig, getConfigPath, loadConfig } from '../../config'
 import { defaultDockerfileName } from '../../docker/constants'
-import { configOption, parsePositiveInt, pathOption } from '../../options'
+import {
+  configOption,
+  parseCpuCount,
+  parseMemoryMb,
+  pathOption,
+} from '../../options'
 import { getRoot } from '../../utils/filesystem'
 import { asLocal, asLocalRelative, asPrimary } from '../../utils/format'
 import { getDockerfile } from './dockerfile'
-import { validateTemplateName } from '../../utils/templateName'
+import { parseTemplateName } from '../../utils/templateName'
 import {
   generateAndWriteTemplateFiles,
   Language,
@@ -99,15 +104,7 @@ export const migrateCommand = new commander.Command('migrate')
   .option(
     '-n, --name <name>',
     'override the template name used in the generated files. Defaults to the template name or ID from the config file.',
-    (value) => {
-      try {
-        return validateTemplateName(value)
-      } catch (err) {
-        throw new commander.InvalidArgumentError(
-          err instanceof Error ? err.message : String(err)
-        )
-      }
-    }
+    parseTemplateName
   )
   .option(
     '-c, --cmd <start-command>',
@@ -120,12 +117,12 @@ export const migrateCommand = new commander.Command('migrate')
   .option(
     '--cpu-count <cpu-count>',
     'override the number of CPUs that will be used to run the sandbox.',
-    parsePositiveInt('CPU count')
+    parseCpuCount
   )
   .option(
     '--memory-mb <memory-mb>',
     'override the amount of memory in megabytes that will be used to run the sandbox. Must be an even number.',
-    parsePositiveInt('Memory in megabytes')
+    parseMemoryMb
   )
   .option(
     '-l, --language <language>',
@@ -137,15 +134,6 @@ export const migrateCommand = new commander.Command('migrate')
     let success = false
     try {
       console.log('\n🔄 Migrating template configuration to SDK format...\n')
-
-      // Validate memory override
-      if (opts.memoryMb && opts.memoryMb % 2 !== 0) {
-        throw new Error(
-          `The memory in megabytes must be an even number. You provided ${asLocal(
-            opts.memoryMb.toFixed(0)
-          )}.`
-        )
-      }
 
       const root = getRoot(opts.path)
       const configPath = getConfigPath(root, opts.config)

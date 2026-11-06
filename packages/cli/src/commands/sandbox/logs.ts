@@ -7,7 +7,10 @@ import { client, connectionConfig } from 'src/api'
 import { asBold, asTimestamp, withUnderline } from 'src/utils/format'
 import { wait } from 'src/utils/wait'
 import { handleE2BRequestError } from '../../utils/errors'
-import { waitForSandboxEnd, formatEnum, Format, isRunning } from './utils'
+import { Format, parseFormat } from 'src/options'
+import { zodParser } from 'src/validation'
+import { z } from 'zod'
+import { waitForSandboxEnd, formatEnum, isRunning } from './utils'
 
 enum LogLevel {
   DEBUG = 'DEBUG',
@@ -57,12 +60,23 @@ export const logsCommand = new commander.Command('logs')
     `filter logs by level (${formatEnum(
       LogLevel
     )}). The logs with the higher levels will be also shown.`,
+    zodParser(
+      z
+        .string()
+        .toUpperCase()
+        .pipe(
+          z.enum(LogLevel, {
+            error: `Level must be one of: ${Object.values(LogLevel).join(', ')}.`,
+          })
+        )
+    ),
     LogLevel.INFO
   )
   .option('-f, --follow', 'keep streaming logs until the sandbox is closed')
   .option(
     '--format <format>',
     `specify format for printing logs (${formatEnum(Format)})`,
+    parseFormat,
     Format.PRETTY
   )
   .option(
@@ -72,15 +86,7 @@ export const logsCommand = new commander.Command('logs')
   )
   .action(async (sandboxID, opts) => {
     try {
-      const level = opts.level.toUpperCase() as LogLevel
-      if (!Object.values(LogLevel).includes(level)) {
-        throw new Error(`Invalid log level: ${level}`)
-      }
-
-      const format = opts.format.toLowerCase() as Format
-      if (!Object.values(Format).includes(format)) {
-        throw new Error(`Invalid log format: ${format}`)
-      }
+      const { level, format } = opts
 
       // A bare `--loggers` (no value) yields `true`: don't filter by logger.
       const loggers = Array.isArray(opts.loggers) ? opts.loggers : undefined

@@ -1,8 +1,12 @@
 import * as commander from '@commander-js/extra-typings'
 import { Sandbox, SandboxInfo, SandboxListOrder, SandboxState } from 'e2b'
 
+import { z } from 'zod'
+
 import { ensureAPIKey } from 'src/api'
+import { Format, parseFormat } from 'src/options'
 import { renderTable } from 'src/utils/table'
+import { integer, zodParser } from 'src/validation'
 import { parseMetadata, parseSandboxStates } from './utils'
 
 const DEFAULT_LIMIT = 1000
@@ -16,7 +20,11 @@ export const listCommand = new commander.Command('list')
     'filter by state, eg. running, paused. Defaults to running',
     parseSandboxStates
   )
-  .option('-m, --metadata <metadata>', 'filter by metadata, eg. key1=value1')
+  .option(
+    '-m, --metadata <metadata>',
+    'filter by metadata, eg. key1=value1',
+    parseMetadata
+  )
   .option(
     '-t, --template <template>',
     'filter by template ID or alias, eg. base'
@@ -24,63 +32,63 @@ export const listCommand = new commander.Command('list')
   .option(
     '--started-after <date>',
     'filter by start time, only sandboxes started at or after this time are returned, eg. 2025-01-01T00:00:00Z',
-    (value) => {
-      const date = new Date(value)
-      if (isNaN(date.getTime())) {
-        throw new commander.InvalidArgumentError(
-          'Invalid date, expected an ISO 8601 timestamp, eg. 2025-01-01T00:00:00Z'
+    zodParser(
+      z
+        .string()
+        .transform((value) => new Date(value))
+        .pipe(
+          z.date({
+            error:
+              'Invalid date, expected an ISO 8601 timestamp, eg. 2025-01-01T00:00:00Z.',
+          })
         )
-      }
-      return date
-    }
+    )
   )
   .option(
     '-o, --order <order>',
     'sort order by start time, asc or desc (default: desc)',
-    (value) => {
-      if (value !== 'asc' && value !== 'desc') {
-        throw new commander.InvalidArgumentError(
-          "Invalid order, expected 'asc' or 'desc'"
-        )
-      }
-      return value
-    }
+    zodParser(
+      z.enum(['asc', 'desc'], {
+        error: "Invalid order, expected 'asc' or 'desc'.",
+      })
+    )
   )
   .option(
     '-l, --limit <limit>',
     `limit the number of sandboxes returned (default: ${DEFAULT_LIMIT}, 0 for no limit)`,
-    (value) => parseInt(value)
+    zodParser(integer('Sandbox limit', { min: 0 }))
   )
-  .option('-f, --format <format>', 'output format, eg. json, pretty')
+  .option(
+    '-f, --format <format>',
+    'output format, eg. json, pretty',
+    parseFormat,
+    Format.PRETTY
+  )
   .action(async (options) => {
     try {
       const state = options.state || ['running']
-      const format = options.format || 'pretty'
       const limit =
         options.limit === 0 ? undefined : (options.limit ?? DEFAULT_LIMIT)
       const { sandboxes, hasMore } = await listSandboxes({
         limit,
         state,
-        metadataRaw: options.metadata,
+        metadata: options.metadata,
         template: options.template,
         startedAfter: options.startedAfter,
         order: options.order,
       })
 
-      if (format === 'pretty') {
+      if (options.format === Format.PRETTY) {
         renderSandboxTable(sandboxes, options.order)
         if (hasMore) {
           console.log(
             `Showing first ${limit} sandboxes. Use --limit to change.`
           )
         }
-      } else if (format === 'json') {
+      } else {
         console.log(
           JSON.stringify(sortSandboxes(sandboxes, options.order), null, 2)
         )
-      } else {
-        console.error(`Unsupported output format: ${format}`)
-        process.exit(1)
       }
     } catch (err: any) {
       console.error(err)
@@ -142,7 +150,7 @@ function renderSandboxTable(
 type ListSandboxesOptions = {
   limit?: number
   state?: SandboxState[]
-  metadataRaw?: string
+  metadata?: Record<string, string>
   template?: string
   startedAfter?: Date
   order?: SandboxListOrder
@@ -156,13 +164,12 @@ type ListSandboxesResult = {
 async function listSandboxes({
   limit,
   state,
-  metadataRaw,
+  metadata,
   template,
   startedAfter,
   order,
 }: ListSandboxesOptions = {}): Promise<ListSandboxesResult> {
   const apiKey = ensureAPIKey()
-  const metadata = parseMetadata(metadataRaw)
 
   let pageLimit = limit
   if (!limit || limit > PAGE_LIMIT) {
