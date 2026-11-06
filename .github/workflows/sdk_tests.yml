@@ -168,10 +168,10 @@ jobs:
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
+  # Staging suites only run on manual dispatch, not on pull requests.
   js-tests-staging:
     name: Staging / JS SDK Tests
-    needs: changes
-    if: ${{ needs.changes.outputs.js == 'true' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     uses: ./.github/workflows/js_sdk_tests.yml
     with:
       E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
@@ -183,8 +183,7 @@ jobs:
 
   python-tests-staging:
     name: Staging / Python SDK Tests
-    needs: changes
-    if: ${{ needs.changes.outputs.python == 'true' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     uses: ./.github/workflows/python_sdk_tests.yml
     with:
       E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
@@ -193,8 +192,7 @@ jobs:
 
   cli-tests-staging:
     name: Staging / CLI Tests
-    needs: changes
-    if: ${{ needs.changes.outputs.cli == 'true' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     uses: ./.github/workflows/cli_tests.yml
     with:
       E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
@@ -203,8 +201,7 @@ jobs:
 
   code-interpreter-js-tests-staging:
     name: Staging / Code Interpreter JS SDK Tests
-    needs: changes
-    if: ${{ needs.changes.outputs.code_interpreter_js == 'true' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     uses: ./.github/workflows/code_interpreter_js_tests.yml
     with:
       E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
@@ -217,8 +214,7 @@ jobs:
 
   code-interpreter-python-tests-staging:
     name: Staging / Code Interpreter Python SDK Tests
-    needs: changes
-    if: ${{ needs.changes.outputs.code_interpreter_python == 'true' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     uses: ./.github/workflows/code_interpreter_python_tests.yml
     with:
       E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
@@ -228,8 +224,7 @@ jobs:
 
   desktop-js-tests-staging:
     name: Staging / Desktop JS SDK Tests
-    needs: changes
-    if: ${{ needs.changes.outputs.desktop_js == 'true' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     uses: ./.github/workflows/desktop_js_tests.yml
     with:
       E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
@@ -239,8 +234,7 @@ jobs:
 
   desktop-python-tests-staging:
     name: Staging / Desktop Python SDK Tests
-    needs: changes
-    if: ${{ needs.changes.outputs.desktop_python == 'true' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     uses: ./.github/workflows/desktop_python_tests.yml
     with:
       E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
