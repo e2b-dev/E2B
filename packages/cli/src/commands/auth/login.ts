@@ -35,7 +35,7 @@ export const loginCommand = new commander.Command('login')
       console.log(
         `\nAlready logged in. ${asFormattedConfig(
           userConfig
-        )}.\n\nIf you want to log in as a different user, log out first by running 'e2b auth logout'.\nTo change the project, run 'e2b auth configure'.\n`
+        )}.\n\nIf you want to log in as a different user, log out first by running 'e2b auth logout'.\nTo change the project, run 'e2b project use <project>' (see 'e2b project list').\n`
       )
       return
     } else if (!userConfig) {

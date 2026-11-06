@@ -42,6 +42,34 @@ export type Auth =
   | Required<Pick<e2b.ConnectionOpts, 'apiHeaders' | 'domain'>>
 
 let me: Promise<Me> | undefined
+let projectOverride: string | undefined
+let apiKeyProjectWarned = false
+
+/**
+ * The `--project` value of the running command. Set once, before the action
+ * runs, by the preAction hook in src/commands/index.ts.
+ */
+export function setProjectOverride(project: string | undefined) {
+  projectOverride = project
+}
+
+/** The project reference to use instead of the selected one, if any. */
+function requestedProject(): string | undefined {
+  return projectOverride || projectId
+}
+
+/**
+ * The project commands run in and where that choice comes from, or
+ * `undefined` when signed out without `--project` or `E2B_PROJECT_ID`.
+ */
+export function currentProject():
+  | { ref: string; source: '--project' | 'E2B_PROJECT_ID' | 'selected' }
+  | undefined {
+  if (projectOverride) return { ref: projectOverride, source: '--project' }
+  if (projectId) return { ref: projectId, source: 'E2B_PROJECT_ID' }
+  const config = getUserConfig()
+  return config ? { ref: config.projectId, source: 'selected' } : undefined
+}
 
 /** The logged-in user's workspaces and projects, fetched once per process. */
 export function getMe(): Promise<Me> {
@@ -65,14 +93,30 @@ export function getMe(): Promise<Me> {
 }
 
 /**
- * The project requests go to, and its control plane: `cliProjectId`, then
- * `E2B_PROJECT_ID`, then the project selected with `e2b auth configure`.
+ * {@link getMe} for commands about workspaces and projects. workspace-api
+ * only accepts the login's access token, so these need a login even when
+ * `E2B_API_KEY` is set.
+ */
+export async function requireMe(): Promise<Me> {
+  if (!getUserConfig()) {
+    console.error(
+      `You must be logged in to see your workspaces and projects. Run ${asBold(
+        'e2b auth login'
+      )}.`
+    )
+    process.exit(1)
+  }
+  return getMe()
+}
+
+/**
+ * The project requests go to, and its control plane: `--project`, then
+ * `E2B_PROJECT_ID`, then the project selected with `e2b project use`.
  */
 async function resolveProject(
-  config: UserConfig,
-  cliProjectId?: string
+  config: UserConfig
 ): Promise<{ id: string; domain: string }> {
-  const ref = cliProjectId || projectId
+  const ref = requestedProject()
   if (ref && ref !== config.projectId) {
     const { project } = findProject(await getMe(), ref)
     return { id: project.id, domain: project.control_plane_domain }
@@ -103,9 +147,19 @@ async function resolveProject(
  * request (not once per command) so long-running commands keep working after
  * the hour-long access token expires.
  */
-export async function ensureAuth(cliProjectId?: string): Promise<Auth> {
+export async function ensureAuth(): Promise<Auth> {
   const apiKey = process.env.E2B_API_KEY
-  if (apiKey) return { apiKey }
+  if (apiKey) {
+    if (projectOverride && !apiKeyProjectWarned) {
+      apiKeyProjectWarned = true
+      console.warn(
+        `${asBold('--project')} is ignored when ${asBold(
+          'E2B_API_KEY'
+        )} is set: the API key determines the project.`
+      )
+    }
+    return { apiKey }
+  }
 
   if (!getUserConfig()) {
     console.error(authErrorBox())
@@ -115,7 +169,7 @@ export async function ensureAuth(cliProjectId?: string): Promise<Auth> {
   const { accessToken, config } = await ensureValidAccessToken()
   let project: { id: string; domain: string }
   try {
-    project = await resolveProject(config, cliProjectId)
+    project = await resolveProject(config)
   } catch (err) {
     console.error(err instanceof Error ? err.message : err)
     process.exit(1)
@@ -131,19 +185,8 @@ export async function ensureAuth(cliProjectId?: string): Promise<Auth> {
 }
 
 /** An E2B API client authenticated with {@link ensureAuth}. */
-export async function apiClient(cliProjectId?: string) {
-  return new e2b.ApiClient(
-    new e2b.ConnectionConfig(await ensureAuth(cliProjectId))
-  )
-}
-
-export function ensureUserConfig(): UserConfig {
-  const userConfig = getUserConfig()
-  if (!userConfig) {
-    console.error('No user config found, run `e2b auth login` to log in first.')
-    process.exit(1)
-  }
-  return userConfig
+export async function apiClient() {
+  return new e2b.ApiClient(new e2b.ConnectionConfig(await ensureAuth()))
 }
 
 // Carries no credentials: used for the API domain and request signals only.

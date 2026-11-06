@@ -190,7 +190,7 @@ export function findProject(
   throw new Error(
     `Project "${ref}" not found among the projects you can access${
       workspace ? ` in workspace ${workspace.name}` : ''
-    }. Run ${asBold('e2b auth configure')} to choose one.`
+    }. Run ${asBold('e2b project list')} to see them.`
   )
 }
 
