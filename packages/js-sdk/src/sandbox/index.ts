@@ -28,6 +28,7 @@ import {
   SnapshotListOpts,
   SnapshotInfo,
   SnapshotPaginator,
+  SandboxLogsPaginator,
   CreateSnapshotOpts,
   SandboxPauseOpts,
 } from './sandboxApi'
@@ -937,16 +938,18 @@ export class Sandbox extends SandboxApi {
    *
    * @param opts sandbox logs options.
    *
-   * @returns log entries with their timestamp, level, message and structured fields, at most `limit` of them.
-   *
-   * @throws {SandboxNotFoundError} if the sandbox does not exist.
+   * @returns paginator for reading the sandbox logs.
    *
    * @example
    * ```ts
-   * const logs = await sandbox.getLogs({ search: 'error', direction: 'forward' })
+   * const paginator = sandbox.getLogs({ search: 'error', direction: 'forward' })
+   * while (paginator.hasNext) {
+   *   const logs = await paginator.nextItems()
+   *   console.log(logs)
+   * }
    * ```
    */
-  async getLogs(
+  getLogs(
     opts?: Pick<
       SandboxLogsOpts,
       | 'cursor'
@@ -957,8 +960,8 @@ export class Sandbox extends SandboxApi {
       | 'requestTimeoutMs'
       | 'signal'
     >
-  ) {
-    return await SandboxApi.getLogs(this.sandboxId, this.resolveApiOpts(opts))
+  ): SandboxLogsPaginator {
+    return SandboxApi.getLogs(this.sandboxId, this.resolveApiOpts(opts))
   }
 
   private resolveApiOpts<T extends ConnectionOpts>(

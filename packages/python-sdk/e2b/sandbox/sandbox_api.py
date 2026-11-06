@@ -1,6 +1,6 @@
 import inspect
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import (
     Any,
     Callable,
@@ -11,6 +11,9 @@ from typing import (
     Mapping,
     NotRequired,
     Optional,
+    Sequence,
+    Set,
+    Tuple,
     TypedDict,
     Unpack,
     Union,
@@ -18,6 +21,7 @@ from typing import (
 )
 
 from e2b.template.logger import LogEntryLevel
+from e2b.api.client.models import SandboxLogEntry as ClientSandboxLogEntry
 from e2b.api.client.models import (
     ListedSandbox,
     SandboxDetail,
@@ -1406,6 +1410,104 @@ class SnapshotPaginatorBase(PaginatorBase[SnapshotInfo, ApiParams]):
         super().__init__(limit=limit, next_token=next_token, **opts)
         self.sandbox_id = sandbox_id
         self.name = name
+
+
+_LOGS_MAX_PAGE_SIZE = 1000
+_EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+_LogKey = Tuple[datetime, str, str, Tuple[Tuple[str, str], ...]]
+
+
+def _to_unix_ms(value: datetime) -> int:
+    return (value.astimezone(timezone.utc) - _EPOCH) // timedelta(milliseconds=1)
+
+
+def _log_key(entry: SandboxLogEntry) -> _LogKey:
+    return (
+        entry.timestamp,
+        entry.level,
+        entry.message,
+        tuple(sorted(entry.fields.items())),
+    )
+
+
+class SandboxLogsPaginatorBase(PaginatorBase[SandboxLogEntry, ApiParams]):
+    def __init__(
+        self,
+        sandbox_id: str,
+        cursor: Optional[datetime] = None,
+        direction: Optional[SandboxLogsDirection] = None,
+        limit: Optional[int] = None,
+        level: Optional[LogEntryLevel] = None,
+        search: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ):
+        super().__init__(limit=limit, **opts)
+        self.sandbox_id = sandbox_id
+        self.direction = direction
+        self.level = level
+        self.search = search
+        self._cursor: Optional[int] = (
+            _to_unix_ms(cursor) if cursor is not None else None
+        )
+        self._seen_at_cursor: Set[_LogKey] = set()
+
+    def _page_size(self) -> int:
+        # Fetch the already returned entries at the cursor again on top of the page
+        return min(
+            _LOGS_MAX_PAGE_SIZE,
+            (self.limit or _LOGS_MAX_PAGE_SIZE) + len(self._seen_at_cursor),
+        )
+
+    def _process_page(
+        self, logs: Sequence[ClientSandboxLogEntry], page_size: int
+    ) -> List[SandboxLogEntry]:
+        entries = [
+            SandboxLogEntry(
+                timestamp=log.timestamp,
+                level=log.level.value,
+                message=log.message,
+                fields=log.fields.additional_properties,
+            )
+            for log in logs
+        ]
+        items = [e for e in entries if _log_key(e) not in self._seen_at_cursor]
+        self._advance(entries, page_size, len(items) > 0)
+        return items
+
+    # The API has no next token, so the next page starts at the millisecond of
+    # the last entry and the entries already returned from it are skipped.
+    def _advance(
+        self, entries: List[SandboxLogEntry], page_size: int, progressed: bool
+    ) -> None:
+        if len(entries) < page_size:
+            self._has_next = False
+            return
+
+        forward = self.direction == "forward"
+        last_ms = _to_unix_ms(entries[-1].timestamp)
+
+        next_cursor = last_ms if forward else last_ms + 1
+        if self._cursor is not None:
+            next_cursor = (
+                max(next_cursor, self._cursor)
+                if forward
+                else min(next_cursor, self._cursor)
+            )
+
+        low, high = min(last_ms, next_cursor), max(last_ms, next_cursor)
+        boundary = [
+            _log_key(e) for e in entries if low <= _to_unix_ms(e.timestamp) <= high
+        ]
+
+        if next_cursor != self._cursor:
+            self._cursor = next_cursor
+            self._seen_at_cursor = set(boundary)
+        elif not progressed:
+            # The page can't move past this millisecond, step over it
+            self._cursor = next_cursor + (1 if forward else -1)
+        else:
+            self._seen_at_cursor.update(boundary)
 
 
 class SandboxPaginatorBase(PaginatorBase[SandboxInfo, ApiParams]):

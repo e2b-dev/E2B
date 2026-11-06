@@ -23,7 +23,6 @@ from e2b.sandbox.sandbox_api import (
     McpServer,
     SandboxIamOpts,
     SandboxLifecycle,
-    SandboxLogEntry,
     SandboxLogsDirection,
     SandboxMetrics,
     SandboxNetworkOpts,
@@ -39,7 +38,7 @@ from e2b.sandbox_sync.commands.pty import Pty
 from e2b.sandbox_sync.filesystem.filesystem import Filesystem
 from e2b.sandbox_sync.git import Git
 from e2b.sandbox_sync.sandbox_api import SandboxApi, SandboxInfo
-from e2b.sandbox_sync.paginator import SnapshotPaginator
+from e2b.sandbox_sync.paginator import SandboxLogsPaginator, SnapshotPaginator
 from e2b.api.client.models import SandboxVolumeMount as SandboxVolumeMountAPI
 from e2b.volume.volume_sync import Volume
 
@@ -801,19 +800,17 @@ class Sandbox(SandboxApi):
         level: Optional[LogEntryLevel] = None,
         search: Optional[str] = None,
         **opts: Unpack[ApiParams],
-    ) -> List[SandboxLogEntry]:
+    ) -> SandboxLogsPaginator:
         """
-        Get the logs of the current sandbox.
+        Get the logs of the current sandbox, newest first by default. Logs are retained for 7 days.
 
-        :param cursor: Timestamp to start reading logs from. With `direction="backward"` logs older than the cursor are returned, with `"forward"` newer ones. Defaults to the current time for `"backward"` and the oldest retained log for `"forward"`.
+        :param cursor: Timestamp to start reading logs from. With `direction="backward"` older logs are returned, with `"forward"` newer ones. Defaults to the current time for `"backward"` and the oldest retained log for `"forward"`.
         :param direction: Order in which the logs are returned, defaults to `"backward"` (newest first)
-        :param limit: Maximum number of logs to return, defaults to 1000
+        :param limit: Maximum number of logs to return per page, defaults to 1000
         :param level: Minimum log level to return
         :param search: Case-sensitive substring the log message must contain
 
-        :return: Log entries with their timestamp, level, message and structured fields, at most `limit` of them. Logs are retained for 7 days.
-
-        :raises SandboxNotFoundException: If the sandbox does not exist
+        :return: Paginator for reading the sandbox logs
         """
         ...
 
@@ -828,14 +825,14 @@ class Sandbox(SandboxApi):
         level: Optional[LogEntryLevel] = None,
         search: Optional[str] = None,
         **opts: Unpack[ApiParams],
-    ) -> List[SandboxLogEntry]:
+    ) -> SandboxLogsPaginator:
         """
-        Get the logs of the sandbox specified by sandbox ID.
+        Get the logs of the sandbox specified by sandbox ID, newest first by default. Logs are retained for 7 days.
 
         :param sandbox_id: Sandbox ID
-        :param cursor: Timestamp to start reading logs from. With `direction="backward"` logs older than the cursor are returned, with `"forward"` newer ones. Defaults to the current time for `"backward"` and the oldest retained log for `"forward"`.
+        :param cursor: Timestamp to start reading logs from. With `direction="backward"` older logs are returned, with `"forward"` newer ones. Defaults to the current time for `"backward"` and the oldest retained log for `"forward"`.
         :param direction: Order in which the logs are returned, defaults to `"backward"` (newest first)
-        :param limit: Maximum number of logs to return, defaults to 1000
+        :param limit: Maximum number of logs to return per page, defaults to 1000
         :param level: Minimum log level to return
         :param search: Case-sensitive substring the log message must contain
         :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
@@ -846,9 +843,7 @@ class Sandbox(SandboxApi):
         :param request_timeout: Timeout for the request in seconds
         :param debug: Whether to use debug mode, defaults to `E2B_DEBUG` environment variable
 
-        :return: Log entries with their timestamp, level, message and structured fields, at most `limit` of them. Logs are retained for 7 days.
-
-        :raises SandboxNotFoundException: If the sandbox does not exist
+        :return: Paginator for reading the sandbox logs
         """
         ...
 
@@ -862,21 +857,19 @@ class Sandbox(SandboxApi):
         level: Optional[LogEntryLevel] = None,
         search: Optional[str] = None,
         **opts: Unpack[ApiParams],
-    ) -> List[SandboxLogEntry]:
+    ) -> SandboxLogsPaginator:
         """
-        Get the logs of the current sandbox.
+        Get the logs of the current sandbox, newest first by default. Logs are retained for 7 days.
 
-        :param cursor: Timestamp to start reading logs from. With `direction="backward"` logs older than the cursor are returned, with `"forward"` newer ones. Defaults to the current time for `"backward"` and the oldest retained log for `"forward"`.
+        :param cursor: Timestamp to start reading logs from. With `direction="backward"` older logs are returned, with `"forward"` newer ones. Defaults to the current time for `"backward"` and the oldest retained log for `"forward"`.
         :param direction: Order in which the logs are returned, defaults to `"backward"` (newest first)
-        :param limit: Maximum number of logs to return, defaults to 1000
+        :param limit: Maximum number of logs to return per page, defaults to 1000
         :param level: Minimum log level to return
         :param search: Case-sensitive substring the log message must contain
 
-        :return: Log entries with their timestamp, level, message and structured fields, at most `limit` of them. Logs are retained for 7 days.
-
-        :raises SandboxNotFoundException: If the sandbox does not exist
+        :return: Paginator for reading the sandbox logs
         """
-        return SandboxApi._cls_get_logs(
+        return SandboxLogsPaginator(
             sandbox_id=self.sandbox_id,
             cursor=cursor,
             direction=direction,
@@ -884,6 +877,28 @@ class Sandbox(SandboxApi):
             level=level,
             search=search,
             **self.connection_config.get_api_params(**opts),
+        )
+
+    @classmethod
+    def _cls_get_logs(
+        cls,
+        sandbox_id: str,
+        *,
+        cursor: Optional[datetime.datetime] = None,
+        direction: Optional[SandboxLogsDirection] = None,
+        limit: Optional[int] = None,
+        level: Optional[LogEntryLevel] = None,
+        search: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ) -> SandboxLogsPaginator:
+        return SandboxLogsPaginator(
+            sandbox_id=sandbox_id,
+            cursor=cursor,
+            direction=direction,
+            limit=limit,
+            level=level,
+            search=search,
+            **cls._resolve_api_params(**opts),
         )
 
     @overload

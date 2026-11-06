@@ -103,6 +103,7 @@ export type {
   SnapshotInfo,
   SnapshotListOpts,
   SnapshotPaginator,
+  SandboxLogsPaginator,
   CreateSnapshotOpts,
   SnapshotMode,
 } from './sandbox/sandboxApi'
