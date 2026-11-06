@@ -35,8 +35,7 @@ export const execCommand = new commander.Command('exec')
   .option(
     '-e, --env <KEY=VALUE>',
     'set environment variable (repeatable)',
-    parseEnv,
-    {} as Record<string, string>
+    parseEnv
   )
   .alias('ex')
   .action(async (sandboxID, commandParts, opts) => {
