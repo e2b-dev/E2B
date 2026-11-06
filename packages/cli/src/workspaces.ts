@@ -296,3 +296,22 @@ export async function pickProject(
     default: current?.workspace.id === chosen.id ? current : undefined,
   })
 }
+
+const TYPEID_ALPHABET = '0123456789abcdefghjkmnpqrstvwxyz'
+
+/**
+ * The `prj_` public ID of a project UUID: the TypeID encoding workspace-api
+ * uses for `public_id`, computed locally so lists don't need `/v1/me`.
+ * Anything that isn't a UUID is returned as is.
+ */
+export function publicProjectId(id: string): string {
+  const hex = id.replace(/-/g, '')
+  if (!/^[0-9a-f]{32}$/i.test(hex)) return id
+
+  const value = BigInt(`0x${hex}`)
+  let suffix = ''
+  for (let i = 25; i >= 0; i--) {
+    suffix += TYPEID_ALPHABET[Number((value >> BigInt(5 * i)) & 31n)]
+  }
+  return `prj_${suffix}`
+}
