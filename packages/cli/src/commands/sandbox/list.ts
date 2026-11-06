@@ -3,7 +3,7 @@ import { Sandbox, SandboxInfo, SandboxListOrder, SandboxState } from 'e2b'
 
 import { z } from 'zod'
 
-import { ensureAPIKey } from 'src/api'
+import { ensureAuth } from 'src/api'
 import { Format, parseFormat } from 'src/options'
 import { renderTable } from 'src/utils/table'
 import { integer, zodParser } from 'src/validation'
@@ -169,7 +169,7 @@ async function listSandboxes({
   startedAfter,
   order,
 }: ListSandboxesOptions = {}): Promise<ListSandboxesResult> {
-  const apiKey = ensureAPIKey()
+  const auth = await ensureAuth()
 
   let pageLimit = limit
   if (!limit || limit > PAGE_LIMIT) {
@@ -178,7 +178,7 @@ async function listSandboxes({
 
   const sandboxes: SandboxInfo[] = []
   const iterator = Sandbox.list({
-    apiKey: apiKey,
+    ...auth,
     limit: pageLimit,
     query: { state, metadata, template, startedAfter },
     order,

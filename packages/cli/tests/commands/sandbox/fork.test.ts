@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => {
 
   return {
     fork: vi.fn(),
-    ensureAPIKey: vi.fn(() => 'test-api-key'),
+    ensureAuth: vi.fn(async () => ({ apiKey: 'test-api-key' })),
     NotFoundError,
   }
 })
@@ -18,7 +18,7 @@ vi.mock('e2b', () => ({
 }))
 
 vi.mock('../../../src/api', () => ({
-  ensureAPIKey: mocks.ensureAPIKey,
+  ensureAuth: mocks.ensureAuth,
 }))
 
 async function runFork(args: string[]) {
