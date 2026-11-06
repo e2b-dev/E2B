@@ -161,7 +161,9 @@ export function findProject(me: Me, ref: string): ProjectEntry {
     )
   }
   throw new Error(
-    `Project "${ref}" not found among the projects you can access.`
+    `Project "${ref}" not found among the projects you can access. Run ${asBold(
+      'e2b project list'
+    )} to see them.`
   )
 }
 
@@ -175,7 +177,7 @@ export function blockedWarning({ project }: ProjectEntry): string | undefined {
 }
 
 /** `name — workspace (region)`, flagged when blocked or currently selected. */
-export function projectLabel(
+function projectLabel(
   { project, workspace }: ProjectEntry,
   selectedId?: string
 ): string {

@@ -182,10 +182,12 @@ describe('ensureAuth', () => {
       project('other'),
       project('flag'),
     ])
-    const { ensureAuth } = await import('../src/api')
+    const { ensureAuth, setProjectOverride } = await import('../src/api')
 
+    // `--project` reaches ensureAuth() through setProjectOverride().
     const target = async (ref?: string) => {
-      const auth = (await ensureAuth(ref)) as {
+      setProjectOverride(ref)
+      const auth = (await ensureAuth()) as {
         apiHeaders: Record<string, string>
         domain: string
       }
@@ -205,12 +207,25 @@ describe('ensureAuth', () => {
       throw new Error(`exit ${code}`)
     }) as never)
     const error = vi.spyOn(console, 'error').mockImplementation(() => {})
-    const { ensureAuth } = await import('../src/api')
+    const { ensureAuth, setProjectOverride } = await import('../src/api')
 
-    await expect(ensureAuth('prj_missing')).rejects.toThrow('exit 1')
+    setProjectOverride('prj_missing')
+    await expect(ensureAuth()).rejects.toThrow('exit 1')
     expect(String(error.mock.calls[0][0])).toContain(
       'Project "prj_missing" not found'
     )
+  })
+
+  test('warns that --project is ignored with E2B_API_KEY', async () => {
+    vi.stubEnv('E2B_API_KEY', 'e2b_env_key')
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const { ensureAuth, setProjectOverride } = await import('../src/api')
+
+    setProjectOverride('prj_other')
+    expect(await ensureAuth()).toEqual({ apiKey: 'e2b_env_key' })
+    await ensureAuth()
+    expect(warn).toHaveBeenCalledTimes(1)
+    expect(String(warn.mock.calls[0][0])).toContain('--project')
   })
 
   test('exits with the login hint when signed out', async () => {

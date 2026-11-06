@@ -9,8 +9,7 @@ import {
   deprecatedTeamOption,
   Format,
   parseFormat,
-  projectIdFromOptions,
-  projectOption,
+  projectOptionWithShortFlag,
 } from '../../options'
 import { handleE2BRequestError } from '../../utils/errors'
 import { integer, zodParser } from '../../validation'
@@ -21,7 +20,7 @@ const PAGE_LIMIT = 100
 export const listCommand = new commander.Command('list')
   .description('list sandbox templates')
   .alias('ls')
-  .addOption(projectOption)
+  .addOption(projectOptionWithShortFlag)
   .addOption(deprecatedTeamOption)
   .option(
     '-l, --limit <limit>',
@@ -42,7 +41,7 @@ export const listCommand = new commander.Command('list')
       process.stdout.write('\n')
 
       const { templates, hasMore } = await listSandboxTemplates({
-        projectId: resolveProjectId(projectIdFromOptions(opts)),
+        projectId: resolveProjectId(),
         limit,
       })
 
@@ -122,7 +121,7 @@ async function listSandboxTemplates({
   // With an access token, X-Team-ID (from the same project ID) selects the
   // project; with an API key, the key does and the teamID query param is
   // ignored.
-  const client = await apiClient(projectId)
+  const client = await apiClient()
   const templates: e2b.components['schemas']['Template'][] = []
   let nextToken: string | undefined
 
