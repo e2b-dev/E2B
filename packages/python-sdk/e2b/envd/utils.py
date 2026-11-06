@@ -18,8 +18,9 @@ def timeout_to_ms(timeout: Optional[float]) -> Optional[int]:
     treats a non-positive deadline as already expired. Positive values map to
     at least 1 ms so a sub-millisecond timeout stays a deadline instead of
     the 0 that connectrpc's ``timeout_ms or default`` fallback would
-    discard."""
-    if not timeout:
+    discard. Negative values are treated as disabled (``None``), since a
+    negative timeout is not a meaningful deadline."""
+    if not timeout or timeout < 0:
         return None
     return max(1, round(timeout * 1000))
 
