@@ -1,11 +1,13 @@
 import * as e2b from 'e2b'
 import * as commander from '@commander-js/extra-typings'
+import { z } from 'zod'
 
 import { ensureAPIKey } from 'src/api'
 import { spawnConnectedTerminal, TerminalOpts } from 'src/terminal'
 import { asBold, asFormattedSandboxTemplate } from 'src/utils/format'
 import { deprecatedConfigOption, warnIgnoredConfigOption } from '../../options'
 import { parseEnv } from '../../utils/env'
+import { zodParser } from '../../validation'
 import { printDashboardSandboxInspectUrl } from 'src/utils/urls'
 
 type SandboxLifecycle = {
@@ -99,31 +101,27 @@ export function createCommand(
     })
 }
 
-export function parseTimeout(timeoutRaw: string): number {
-  const timeoutSeconds = Number(timeoutRaw)
-  const timeoutMs = Math.floor(timeoutSeconds * 1000)
-  if (
-    !Number.isFinite(timeoutSeconds) ||
-    timeoutSeconds <= 0 ||
-    timeoutMs < MIN_TIMEOUT_MS
-  ) {
-    throw new commander.InvalidArgumentError(
-      '--timeout must be at least 30 seconds'
+const timeoutMessage = `--timeout must be at least ${MIN_TIMEOUT_MS / 1000} seconds.`
+
+/** `--timeout` in seconds (fractions allowed), returned in milliseconds. */
+export const parseTimeout = zodParser(
+  z
+    .string()
+    .trim()
+    .transform(Number)
+    .pipe(
+      z
+        .number({ error: timeoutMessage })
+        .min(MIN_TIMEOUT_MS / 1000, timeoutMessage)
     )
-  }
+    .transform((seconds) => Math.floor(seconds * 1000))
+)
 
-  return timeoutMs
-}
-
-function parseOnTimeout(onTimeout: string): SandboxLifecycle['onTimeout'] {
-  if (onTimeout !== 'pause' && onTimeout !== 'kill') {
-    throw new commander.InvalidArgumentError(
-      '--lifecycle.ontimeout must be "pause" or "kill"'
-    )
-  }
-
-  return onTimeout
-}
+const parseOnTimeout = zodParser(
+  z.enum(['pause', 'kill'], {
+    error: '--lifecycle.ontimeout must be "pause" or "kill".',
+  })
+)
 
 function buildLifecycle(
   onTimeout: SandboxLifecycle['onTimeout'] | undefined,

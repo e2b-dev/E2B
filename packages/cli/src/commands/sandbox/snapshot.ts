@@ -2,6 +2,8 @@ import * as commander from '@commander-js/extra-typings'
 import { NotFoundError, Sandbox, SnapshotInfo } from 'e2b'
 
 import { ensureAPIKey } from 'src/api'
+import { Format, parseFormat } from 'src/options'
+import { integer, zodParser } from 'src/validation'
 import { asBold } from 'src/utils/format'
 import { renderTable } from 'src/utils/table'
 
@@ -54,13 +56,17 @@ const listSnapshotsCommand = new commander.Command('list')
   .option(
     '-l, --limit <limit>',
     `limit the number of snapshots returned (default: ${DEFAULT_LIMIT}, 0 for no limit)`,
-    (value) => parseInt(value)
+    zodParser(integer('Snapshot limit', { min: 0 }))
   )
-  .option('-f, --format <format>', 'output format, eg. json, pretty')
+  .option(
+    '-f, --format <format>',
+    'output format, eg. json, pretty',
+    parseFormat,
+    Format.PRETTY
+  )
   .action(async (sandboxID, options) => {
     try {
       const apiKey = ensureAPIKey()
-      const format = options.format || 'pretty'
       const limit =
         options.limit === 0 ? undefined : (options.limit ?? DEFAULT_LIMIT)
 
@@ -86,18 +92,15 @@ const listSnapshotsCommand = new commander.Command('list')
       const hasMore =
         paginator.hasNext || (limit ? allSnapshots.length > limit : false)
 
-      if (format === 'pretty') {
+      if (options.format === Format.PRETTY) {
         renderSnapshotTable(snapshots)
         if (hasMore) {
           console.log(
             `Showing first ${limit} snapshots. Use --limit to change.`
           )
         }
-      } else if (format === 'json') {
-        console.log(JSON.stringify(snapshots, null, 2))
       } else {
-        console.error(`Unsupported output format: ${format}`)
-        process.exit(1)
+        console.log(JSON.stringify(snapshots, null, 2))
       }
     } catch (err: any) {
       console.error(err)

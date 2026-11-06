@@ -30,13 +30,13 @@ export const killCommand = new commander.Command('kill')
   )
   .option(
     '-m, --metadata <metadata>',
-    'when used with -a/--all flag, filter by metadata, eg. key1=value1'
+    'when used with -a/--all flag, filter by metadata, eg. key1=value1',
+    parseMetadata
   )
   .action(async (sandboxIDs, { all, state, metadata }) => {
     try {
       const apiKey = ensureAPIKey()
       const sandboxesState = state || ['running']
-      const sandboxesMetadata = parseMetadata(metadata)
 
       if ((!sandboxIDs || sandboxIDs.length === 0) && !all) {
         console.error(
@@ -62,7 +62,7 @@ export const killCommand = new commander.Command('kill')
           apiKey,
           query: {
             state: sandboxesState,
-            metadata: sandboxesMetadata,
+            metadata,
           },
         })
 
