@@ -227,6 +227,12 @@ class AsyncCommandHandle(Generic[OutputT]):
 
         The command is not killed, but SDK stops receiving events from the command.
         You can reconnect to the command using `sandbox.commands.connect` method.
+
+        Once it returns, the `on_stdout`/`on_stderr`/`on_pty` callbacks are guaranteed
+        not to fire for output produced after this call. It is safe to await from
+        inside one of those callbacks: a callback that is already running finishes,
+        and no further callbacks are dispatched. When a callback is running, this
+        method returns without waiting for the event task to finish.
         """
         self._disconnected = True
         # Cancelling the event task also cancels the callback it is awaiting.
