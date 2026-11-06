@@ -1882,8 +1882,6 @@ export class SandboxApi extends ClientFactory {
   /**
    * Delete a snapshot.
    *
-   * @deprecated Use `Template.delete` instead.
-   *
    * @param snapshotId snapshot ID.
    * @param opts connection options.
    *

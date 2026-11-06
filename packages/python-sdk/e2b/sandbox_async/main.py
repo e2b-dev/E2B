@@ -1062,8 +1062,6 @@ class AsyncSandbox(SandboxApi):
         """
         Delete a snapshot.
 
-        :deprecated: Use `AsyncTemplate.delete()` instead.
-
         :param snapshot_id: Snapshot ID
         :return: `True` if the snapshot was deleted, `False` if it was not found
         """

@@ -1060,8 +1060,6 @@ class Sandbox(SandboxApi):
         """
         Delete a snapshot.
 
-        :deprecated: Use `Template.delete()` instead.
-
         :param snapshot_id: Snapshot ID
         :return: `True` if the snapshot was deleted, `False` if it was not found
         """

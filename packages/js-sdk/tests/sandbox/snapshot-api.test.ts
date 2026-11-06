@@ -1,7 +1,7 @@
 import { assert } from 'vitest'
 
 import { sandboxTest, isDebug } from '../setup.js'
-import { Sandbox, SandboxError, Template } from '../../src'
+import { Sandbox, SandboxError } from '../../src'
 
 const SNAPSHOT_CREATE_REQUEST_TIMEOUT_MS = 120_000
 
@@ -18,7 +18,7 @@ sandboxTest.skipIf(isDebug)(
     assert.isTrue(snapshot.snapshotId.length > 0)
 
     // Cleanup
-    await Template.delete(snapshot.snapshotId)
+    await Sandbox.deleteSnapshot(snapshot.snapshotId)
   }
 )
 
@@ -48,7 +48,7 @@ sandboxTest.skipIf(isDebug)(
         await newSandbox.kill()
       }
     } finally {
-      await Template.delete(snapshot.snapshotId)
+      await Sandbox.deleteSnapshot(snapshot.snapshotId)
     }
   },
   180_000
@@ -101,7 +101,7 @@ sandboxTest.skipIf(isDebug)(
         sandbox1?.kill().catch(() => {}),
         sandbox2?.kill().catch(() => {}),
       ])
-      await Template.delete(snapshot.snapshotId)
+      await Sandbox.deleteSnapshot(snapshot.snapshotId)
     }
   },
   300_000
@@ -123,7 +123,7 @@ sandboxTest.skipIf(isDebug)('list snapshots', async ({ sandbox }) => {
     const found = snapshots.find((s) => s.snapshotId === snapshot.snapshotId)
     assert.isDefined(found)
   } finally {
-    await Template.delete(snapshot.snapshotId)
+    await Sandbox.deleteSnapshot(snapshot.snapshotId)
   }
 })
 
@@ -142,7 +142,7 @@ sandboxTest.skipIf(isDebug)(
       const found = snapshots.find((s) => s.snapshotId === snapshot.snapshotId)
       assert.isDefined(found)
     } finally {
-      await Template.delete(snapshot.snapshotId)
+      await Sandbox.deleteSnapshot(snapshot.snapshotId)
     }
   }
 )
@@ -160,7 +160,7 @@ sandboxTest.skipIf(isDebug)(
       assert.isTrue(snapshot.names.length > 0)
       assert.isTrue(snapshot.names.some((n) => n.includes(snapshotName)))
     } finally {
-      await Template.delete(snapshot.snapshotId)
+      await Sandbox.deleteSnapshot(snapshot.snapshotId)
     }
   }
 )
@@ -188,7 +188,7 @@ sandboxTest.skipIf(isDebug)(
       assert.isArray(emptySnapshots)
       assert.equal(emptySnapshots.length, 0)
     } finally {
-      await Template.delete(snapshot.snapshotId)
+      await Sandbox.deleteSnapshot(snapshot.snapshotId)
     }
   }
 )
@@ -197,11 +197,11 @@ sandboxTest.skipIf(isDebug)('delete snapshot', async ({ sandbox }) => {
   const snapshot = await sandbox.createSnapshot()
 
   // Delete should succeed
-  const deleted = await Template.delete(snapshot.snapshotId)
+  const deleted = await Sandbox.deleteSnapshot(snapshot.snapshotId)
   assert.isTrue(deleted)
 
   // Second delete should return false (not found)
-  const deletedAgain = await Template.delete(snapshot.snapshotId)
+  const deletedAgain = await Sandbox.deleteSnapshot(snapshot.snapshotId)
   assert.isFalse(deletedAgain)
 })
 
@@ -241,7 +241,7 @@ sandboxTest.skipIf(isDebug)(
         await newSandbox.kill()
       }
     } finally {
-      await Template.delete(snapshot.snapshotId)
+      await Sandbox.deleteSnapshot(snapshot.snapshotId)
     }
   },
   180_000
@@ -308,7 +308,7 @@ sandboxTest.skipIf(isDebug)(
         await newSandbox.kill()
       }
     } finally {
-      await Template.delete(snapshot.snapshotId)
+      await Sandbox.deleteSnapshot(snapshot.snapshotId)
     }
   },
   180_000

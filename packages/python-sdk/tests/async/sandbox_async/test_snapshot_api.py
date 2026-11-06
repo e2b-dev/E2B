@@ -1,5 +1,5 @@
 import pytest
-from e2b import AsyncSandbox, AsyncTemplate, SandboxException
+from e2b import AsyncSandbox, SandboxException
 
 pytestmark = pytest.mark.timeout(120)
 
@@ -11,7 +11,7 @@ async def test_create_snapshot(async_sandbox: AsyncSandbox):
     assert snapshot.snapshot_id
     assert len(snapshot.snapshot_id) > 0
 
-    await AsyncTemplate.delete(snapshot.snapshot_id)
+    await AsyncSandbox.delete_snapshot(snapshot.snapshot_id)
 
 
 @pytest.mark.skip_debug()
@@ -30,7 +30,7 @@ async def test_create_sandbox_from_snapshot(async_sandbox: AsyncSandbox):
         finally:
             await new_sandbox.kill()
     finally:
-        await AsyncTemplate.delete(snapshot.snapshot_id)
+        await AsyncSandbox.delete_snapshot(snapshot.snapshot_id)
 
 
 @pytest.mark.skip_debug()
@@ -62,7 +62,7 @@ async def test_create_multiple_sandboxes_from_snapshot(async_sandbox: AsyncSandb
             await sandbox1.kill()
             await sandbox2.kill()
     finally:
-        await AsyncTemplate.delete(snapshot.snapshot_id)
+        await AsyncSandbox.delete_snapshot(snapshot.snapshot_id)
 
 
 @pytest.mark.skip_debug()
@@ -79,7 +79,7 @@ async def test_list_snapshots(async_sandbox: AsyncSandbox):
         found = any(s.snapshot_id == snapshot.snapshot_id for s in snapshots)
         assert found
     finally:
-        await AsyncTemplate.delete(snapshot.snapshot_id)
+        await AsyncSandbox.delete_snapshot(snapshot.snapshot_id)
 
 
 @pytest.mark.skip_debug()
@@ -95,7 +95,7 @@ async def test_list_snapshots_for_sandbox(async_sandbox: AsyncSandbox):
         found = any(s.snapshot_id == snapshot.snapshot_id for s in snapshots)
         assert found
     finally:
-        await AsyncTemplate.delete(snapshot.snapshot_id)
+        await AsyncSandbox.delete_snapshot(snapshot.snapshot_id)
 
 
 @pytest.mark.skip_debug()
@@ -120,7 +120,7 @@ async def test_list_snapshots_filtered_by_name(
         assert isinstance(empty_snapshots, list)
         assert len(empty_snapshots) == 0
     finally:
-        await AsyncTemplate.delete(snapshot.snapshot_id)
+        await AsyncSandbox.delete_snapshot(snapshot.snapshot_id)
 
 
 @pytest.mark.skip_debug()
@@ -135,17 +135,17 @@ async def test_create_named_snapshot(async_sandbox: AsyncSandbox, sandbox_test_i
         assert len(snapshot.names) > 0
         assert any(snapshot_name in n for n in snapshot.names)
     finally:
-        await AsyncTemplate.delete(snapshot.snapshot_id)
+        await AsyncSandbox.delete_snapshot(snapshot.snapshot_id)
 
 
 @pytest.mark.skip_debug()
 async def test_delete_snapshot(async_sandbox: AsyncSandbox):
     snapshot = await async_sandbox.create_snapshot()
 
-    deleted = await AsyncTemplate.delete(snapshot.snapshot_id)
+    deleted = await AsyncSandbox.delete_snapshot(snapshot.snapshot_id)
     assert deleted is True
 
-    deleted_again = await AsyncTemplate.delete(snapshot.snapshot_id)
+    deleted_again = await AsyncSandbox.delete_snapshot(snapshot.snapshot_id)
     assert deleted_again is False
 
 
@@ -186,7 +186,7 @@ async def test_snapshot_preserves_filesystem(async_sandbox: AsyncSandbox):
         finally:
             await new_sandbox.kill()
     finally:
-        await AsyncTemplate.delete(snapshot.snapshot_id)
+        await AsyncSandbox.delete_snapshot(snapshot.snapshot_id)
 
 
 @pytest.mark.skip_debug()
@@ -196,7 +196,7 @@ async def test_create_snapshot_class_method(async_sandbox: AsyncSandbox):
     assert snapshot.snapshot_id
     assert len(snapshot.snapshot_id) > 0
 
-    await AsyncTemplate.delete(snapshot.snapshot_id)
+    await AsyncSandbox.delete_snapshot(snapshot.snapshot_id)
 
 
 async def _boot_id(sandbox: AsyncSandbox) -> str:
@@ -244,4 +244,4 @@ async def test_create_filesystem_only_snapshot(async_sandbox: AsyncSandbox):
         finally:
             await new_sandbox.kill()
     finally:
-        await AsyncTemplate.delete(snapshot.snapshot_id)
+        await AsyncSandbox.delete_snapshot(snapshot.snapshot_id)

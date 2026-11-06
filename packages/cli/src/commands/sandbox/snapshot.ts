@@ -1,5 +1,5 @@
 import * as commander from 'commander'
-import { NotFoundError, Sandbox, SnapshotInfo, Template } from 'e2b'
+import { NotFoundError, Sandbox, SnapshotInfo } from 'e2b'
 
 import { ensureAPIKey } from 'src/api'
 import { asBold } from 'src/utils/format'
@@ -123,7 +123,7 @@ const deleteSnapshotCommand = new commander.Command('delete')
 
       const results = await Promise.allSettled(
         snapshotIDs.map(async (snapshotID) => {
-          const deleted = await Template.delete(snapshotID, { apiKey })
+          const deleted = await Sandbox.deleteSnapshot(snapshotID, { apiKey })
           if (deleted) {
             console.log(`Snapshot ${asBold(snapshotID)} has been deleted`)
           } else {

@@ -1,5 +1,5 @@
 import pytest
-from e2b import Sandbox, SandboxException, Template
+from e2b import Sandbox, SandboxException
 
 pytestmark = pytest.mark.timeout(120)
 
@@ -11,7 +11,7 @@ def test_create_snapshot(sandbox: Sandbox):
     assert snapshot.snapshot_id
     assert len(snapshot.snapshot_id) > 0
 
-    Template.delete(snapshot.snapshot_id)
+    Sandbox.delete_snapshot(snapshot.snapshot_id)
 
 
 @pytest.mark.skip_debug()
@@ -30,7 +30,7 @@ def test_create_sandbox_from_snapshot(sandbox: Sandbox):
         finally:
             new_sandbox.kill()
     finally:
-        Template.delete(snapshot.snapshot_id)
+        Sandbox.delete_snapshot(snapshot.snapshot_id)
 
 
 @pytest.mark.skip_debug()
@@ -62,7 +62,7 @@ def test_create_multiple_sandboxes_from_snapshot(sandbox: Sandbox):
             sandbox1.kill()
             sandbox2.kill()
     finally:
-        Template.delete(snapshot.snapshot_id)
+        Sandbox.delete_snapshot(snapshot.snapshot_id)
 
 
 @pytest.mark.skip_debug()
@@ -79,7 +79,7 @@ def test_list_snapshots(sandbox: Sandbox):
         found = any(s.snapshot_id == snapshot.snapshot_id for s in snapshots)
         assert found
     finally:
-        Template.delete(snapshot.snapshot_id)
+        Sandbox.delete_snapshot(snapshot.snapshot_id)
 
 
 @pytest.mark.skip_debug()
@@ -93,7 +93,7 @@ def test_list_snapshots_for_sandbox(sandbox: Sandbox):
         found = any(s.snapshot_id == snapshot.snapshot_id for s in snapshots)
         assert found
     finally:
-        Template.delete(snapshot.snapshot_id)
+        Sandbox.delete_snapshot(snapshot.snapshot_id)
 
 
 @pytest.mark.skip_debug()
@@ -114,7 +114,7 @@ def test_list_snapshots_filtered_by_name(sandbox: Sandbox, sandbox_test_id: str)
         assert isinstance(empty_snapshots, list)
         assert len(empty_snapshots) == 0
     finally:
-        Template.delete(snapshot.snapshot_id)
+        Sandbox.delete_snapshot(snapshot.snapshot_id)
 
 
 @pytest.mark.skip_debug()
@@ -129,17 +129,17 @@ def test_create_named_snapshot(sandbox: Sandbox, sandbox_test_id: str):
         assert len(snapshot.names) > 0
         assert any(snapshot_name in n for n in snapshot.names)
     finally:
-        Template.delete(snapshot.snapshot_id)
+        Sandbox.delete_snapshot(snapshot.snapshot_id)
 
 
 @pytest.mark.skip_debug()
 def test_delete_snapshot(sandbox: Sandbox):
     snapshot = sandbox.create_snapshot()
 
-    deleted = Template.delete(snapshot.snapshot_id)
+    deleted = Sandbox.delete_snapshot(snapshot.snapshot_id)
     assert deleted is True
 
-    deleted_again = Template.delete(snapshot.snapshot_id)
+    deleted_again = Sandbox.delete_snapshot(snapshot.snapshot_id)
     assert deleted_again is False
 
 
@@ -180,7 +180,7 @@ def test_snapshot_preserves_filesystem(sandbox: Sandbox):
         finally:
             new_sandbox.kill()
     finally:
-        Template.delete(snapshot.snapshot_id)
+        Sandbox.delete_snapshot(snapshot.snapshot_id)
 
 
 @pytest.mark.skip_debug()
@@ -190,7 +190,7 @@ def test_create_snapshot_class_method(sandbox: Sandbox):
     assert snapshot.snapshot_id
     assert len(snapshot.snapshot_id) > 0
 
-    Template.delete(snapshot.snapshot_id)
+    Sandbox.delete_snapshot(snapshot.snapshot_id)
 
 
 def _boot_id(sandbox: Sandbox) -> str:
@@ -235,4 +235,4 @@ def test_create_filesystem_only_snapshot(sandbox: Sandbox):
         finally:
             new_sandbox.kill()
     finally:
-        Template.delete(snapshot.snapshot_id)
+        Sandbox.delete_snapshot(snapshot.snapshot_id)
