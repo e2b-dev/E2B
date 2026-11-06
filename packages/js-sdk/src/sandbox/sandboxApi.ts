@@ -2478,7 +2478,7 @@ export class SandboxLogsPaginator extends Paginator<
       throw err
     }
 
-    const logs = res.data?.logs ?? []
+    const logs: ApiSandboxLogEntry[] = res.data?.logs ?? []
     const items = logs.filter((log) => !this.seenAtCursor.has(logKey(log)))
     this.advance(logs, pageSize, items.length > 0)
 
