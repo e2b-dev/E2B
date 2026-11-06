@@ -7,11 +7,6 @@ on:
         required: false
         type: string
         default: ''
-      node-only:
-        description: 'Run only the Node legs (skip Bun, Deno, Cloudflare, and the browser)'
-        required: false
-        type: boolean
-        default: false
     secrets:
       E2B_API_KEY:
         required: true
@@ -32,18 +27,22 @@ jobs:
       # can run together without restoring Vitest's default worker
       # multiplication.
       max-parallel: 7
-      # With node-only (set by staging callers) the matrix collapses to the
-      # Node legs: the Bun/Deno/Cloudflare/browser legs re-run suites the Node
-      # legs already cover and add sandbox/build load, so the other runtimes
-      # are exercised against production only. Note this does drop backend
-      # signal for the browser leg specifically — it's the only one that
-      # depends on the API's CORS headers — so a staging-only CORS regression
-      # surfaces on the production run rather than before merge.
       matrix:
-        include: >-
-          ${{ inputs.node-only
-            && fromJSON('[{"runtime": "node", "os": "ubuntu-22.04"}, {"runtime": "node", "os": "windows-latest"}]')
-            || fromJSON('[{"runtime": "node", "os": "ubuntu-22.04"}, {"runtime": "node", "os": "windows-latest"}, {"runtime": "bun", "os": "ubuntu-22.04"}, {"runtime": "deno", "os": "ubuntu-22.04"}, {"runtime": "cloudflare", "os": "ubuntu-22.04"}, {"runtime": "cloudflare-deploy", "os": "ubuntu-22.04"}, {"runtime": "browser", "os": "ubuntu-22.04"}]') }}
+        include:
+          - runtime: node
+            os: ubuntu-22.04
+          - runtime: node
+            os: windows-latest
+          - runtime: bun
+            os: ubuntu-22.04
+          - runtime: deno
+            os: ubuntu-22.04
+          - runtime: cloudflare
+            os: ubuntu-22.04
+          - runtime: cloudflare-deploy
+            os: ubuntu-22.04
+          - runtime: browser
+            os: ubuntu-22.04
     runs-on: ${{ matrix.os }}
     env:
       E2B_TEST_MAX_WORKERS: 1
