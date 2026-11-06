@@ -1,6 +1,6 @@
 import { input, select } from '@inquirer/prompts'
 import PackageJson from '@npmcli/package-json'
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
 import { Template } from 'e2b'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -157,148 +157,142 @@ export const initCommand = new commander.Command('init')
     parseLanguage
   )
   .alias('it')
-  .action(
-    async (opts: { path?: string; name?: string; language?: Language }) => {
-      try {
-        process.stdout.write('\n')
+  .action(async (opts) => {
+    try {
+      process.stdout.write('\n')
 
-        const root = getRoot(opts.path)
+      const root = getRoot(opts.path)
 
-        console.log('🚀 Initializing Sandbox Template...\n')
+      console.log('🚀 Initializing Sandbox Template...\n')
 
-        // Step 1: Get template name (from CLI or prompt)
-        let templateName: string = opts.name ?? DEFAULT_TEMPLATE_NAME
-        if (opts.name === undefined) {
-          templateName = await input({
-            message: 'Enter template name:',
-            default: DEFAULT_TEMPLATE_NAME,
-            validate: (input: string) => {
-              try {
-                validateTemplateName(input)
-              } catch (err) {
-                return err instanceof Error ? err.message : err
-              }
+      // Step 1: Get template name (from CLI or prompt)
+      let templateName: string = opts.name ?? DEFAULT_TEMPLATE_NAME
+      if (opts.name === undefined) {
+        templateName = await input({
+          message: 'Enter template name:',
+          default: DEFAULT_TEMPLATE_NAME,
+          validate: (input: string) => {
+            try {
+              validateTemplateName(input)
+            } catch (err) {
+              return err instanceof Error ? err.message : err
+            }
 
-              return true
-            },
-          })
-        }
-        templateName = validateTemplateName(templateName)
-        console.log(`Using template name: ${templateName}`)
-
-        // Step 2: Get language (from CLI or prompt)
-        let language: Language
-        if (opts.language) {
-          language = opts.language
-          console.log(`Using language: ${languageDisplay[language]}`)
-        } else {
-          language = await select({
-            message: 'Select target language for template files:',
-            choices: [
-              {
-                name: languageDisplay[Language.TypeScript],
-                value: Language.TypeScript,
-                description:
-                  'Generate .ts files for JavaScript/TypeScript projects',
-              },
-              {
-                name: languageDisplay[Language.PythonSync],
-                value: Language.PythonSync,
-                description: 'Generate synchronous Python template files',
-              },
-              {
-                name: languageDisplay[Language.PythonAsync],
-                value: Language.PythonAsync,
-                description: 'Generate asynchronous Python template files',
-              },
-            ],
-            default: Language.TypeScript,
-          })
-        }
-
-        // Step 3: Create template directory - fail if it already exists
-        const templateDirName = templateName
-        const templateDir = path.join(root, templateDirName)
-
-        if (fs.existsSync(templateDir)) {
-          throw new Error(
-            `Directory '${templateDirName}' already exists. Please choose a different template name or remove the existing directory.`
-          )
-        }
-
-        await fs.promises.mkdir(templateDir, { recursive: true })
-
-        // Step 4: Generate template and build files in the template directory
-        const generatedFiles = await generateTemplateFiles(
-          templateDir,
-          templateName,
-          language
-        )
-
-        // Step 5: Add scripts
-        switch (language) {
-          case Language.TypeScript:
-            await addPackageJsonScripts(root, generatedFiles, templateDirName)
-            break
-          case Language.PythonAsync:
-          case Language.PythonSync:
-            await addMakefileScripts(root, generatedFiles, templateDirName)
-            break
-          default:
-            throw new Error('Unsupported language for scripts')
-        }
-
-        // Step 6: Create README.md
-        const readmeContent = await generateReadmeContent(
-          templateName,
-          templateDirName,
-          generatedFiles
-        )
-        const readmeFilePath = path.join(templateDir, 'README.md')
-        await fs.promises.writeFile(readmeFilePath, readmeContent, 'utf8')
-
-        console.log('\n🎉 Template initialized successfully!')
-        console.log(
-          `\nTemplate created in: ${asPrimary(`./${templateDirName}/`)}`
-        )
-        console.log('\n🔨 To get started with your template:')
-
-        switch (language) {
-          case Language.TypeScript:
-            console.log(
-              `   ${asPrimary('npm install e2b')} (install e2b dependency)`
-            )
-            console.log(
-              `   ${asPrimary('npm run e2b:build:dev')} (for development)`
-            )
-            console.log(
-              `   ${asPrimary('npm run e2b:build:prod')} (for production)`
-            )
-            break
-          case Language.PythonAsync:
-          case Language.PythonSync:
-            console.log(
-              `   ${asPrimary('pip install e2b')} (install e2b dependency)`
-            )
-            console.log(
-              `   ${asPrimary('make e2b:build:dev')} (for development)`
-            )
-            console.log(
-              `   ${asPrimary('make e2b:build:prod')} (for production)`
-            )
-            break
-          default:
-            throw new Error('Unsupported language for instructions')
-        }
-
-        console.log(
-          `\nLearn more about Sandbox Templates: ${asPrimary(
-            'https://e2b.dev/docs'
-          )}\n`
-        )
-      } catch (err: any) {
-        console.error(err)
-        process.exit(1)
+            return true
+          },
+        })
       }
+      templateName = validateTemplateName(templateName)
+      console.log(`Using template name: ${templateName}`)
+
+      // Step 2: Get language (from CLI or prompt)
+      let language: Language
+      if (opts.language) {
+        language = opts.language
+        console.log(`Using language: ${languageDisplay[language]}`)
+      } else {
+        language = await select({
+          message: 'Select target language for template files:',
+          choices: [
+            {
+              name: languageDisplay[Language.TypeScript],
+              value: Language.TypeScript,
+              description:
+                'Generate .ts files for JavaScript/TypeScript projects',
+            },
+            {
+              name: languageDisplay[Language.PythonSync],
+              value: Language.PythonSync,
+              description: 'Generate synchronous Python template files',
+            },
+            {
+              name: languageDisplay[Language.PythonAsync],
+              value: Language.PythonAsync,
+              description: 'Generate asynchronous Python template files',
+            },
+          ],
+          default: Language.TypeScript,
+        })
+      }
+
+      // Step 3: Create template directory - fail if it already exists
+      const templateDirName = templateName
+      const templateDir = path.join(root, templateDirName)
+
+      if (fs.existsSync(templateDir)) {
+        throw new Error(
+          `Directory '${templateDirName}' already exists. Please choose a different template name or remove the existing directory.`
+        )
+      }
+
+      await fs.promises.mkdir(templateDir, { recursive: true })
+
+      // Step 4: Generate template and build files in the template directory
+      const generatedFiles = await generateTemplateFiles(
+        templateDir,
+        templateName,
+        language
+      )
+
+      // Step 5: Add scripts
+      switch (language) {
+        case Language.TypeScript:
+          await addPackageJsonScripts(root, generatedFiles, templateDirName)
+          break
+        case Language.PythonAsync:
+        case Language.PythonSync:
+          await addMakefileScripts(root, generatedFiles, templateDirName)
+          break
+        default:
+          throw new Error('Unsupported language for scripts')
+      }
+
+      // Step 6: Create README.md
+      const readmeContent = await generateReadmeContent(
+        templateName,
+        templateDirName,
+        generatedFiles
+      )
+      const readmeFilePath = path.join(templateDir, 'README.md')
+      await fs.promises.writeFile(readmeFilePath, readmeContent, 'utf8')
+
+      console.log('\n🎉 Template initialized successfully!')
+      console.log(
+        `\nTemplate created in: ${asPrimary(`./${templateDirName}/`)}`
+      )
+      console.log('\n🔨 To get started with your template:')
+
+      switch (language) {
+        case Language.TypeScript:
+          console.log(
+            `   ${asPrimary('npm install e2b')} (install e2b dependency)`
+          )
+          console.log(
+            `   ${asPrimary('npm run e2b:build:dev')} (for development)`
+          )
+          console.log(
+            `   ${asPrimary('npm run e2b:build:prod')} (for production)`
+          )
+          break
+        case Language.PythonAsync:
+        case Language.PythonSync:
+          console.log(
+            `   ${asPrimary('pip install e2b')} (install e2b dependency)`
+          )
+          console.log(`   ${asPrimary('make e2b:build:dev')} (for development)`)
+          console.log(`   ${asPrimary('make e2b:build:prod')} (for production)`)
+          break
+        default:
+          throw new Error('Unsupported language for instructions')
+      }
+
+      console.log(
+        `\nLearn more about Sandbox Templates: ${asPrimary(
+          'https://e2b.dev/docs'
+        )}\n`
+      )
+    } catch (err: any) {
+      console.error(err)
+      process.exit(1)
     }
-  )
+  })

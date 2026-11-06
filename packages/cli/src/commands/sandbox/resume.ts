@@ -1,4 +1,4 @@
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
 
 import { ensureAPIKey } from 'src/api'
 import { asBold } from 'src/utils/format'
@@ -25,7 +25,7 @@ export const resumeCommand = new commander.Command('resume')
     `resume the sandbox specified by ${asBold('<sandboxID>')}`
   )
   .alias('rs')
-  .action(async (sandboxID: string) => {
+  .action(async (sandboxID) => {
     try {
       const apiKey = ensureAPIKey()
       await resumeSandbox(sandboxID, apiKey)
