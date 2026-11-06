@@ -14,6 +14,7 @@ from e2b.api.client.api.templates import (
     post_v_2_templates_template_id_builds_build_id,
     get_templates_template_id_builds_build_id_status,
     get_templates_aliases_alias,
+    delete_templates_template_id,
 )
 from e2b.api.client.api.tags import (
     post_templates_tags,
@@ -443,3 +444,28 @@ def get_template_tags(
         )
         for item in res.parsed
     ]
+
+
+def delete_template(client: AuthenticatedClient, template_id_or_name: str) -> bool:
+    """
+    Delete a template or snapshot.
+
+    Args:
+        client: Authenticated API client
+        template_id_or_name: Template or snapshot ID or name (a name may be namespaced)
+
+    Returns:
+        True if the template was deleted, False if it was not found
+    """
+    res = delete_templates_template_id.sync_detailed(
+        template_id=encode_path_param(template_id_or_name),
+        client=client,
+    )
+
+    if res.status_code == 404:
+        return False
+
+    if res.status_code >= 300:
+        raise handle_api_exception(res, TemplateException)
+
+    return True
