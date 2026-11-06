@@ -54,7 +54,6 @@ export function createCommand(
       async (
         template: string | undefined,
         opts: {
-          name?: string
           detach?: boolean
           'lifecycle.ontimeout'?: SandboxLifecycle['onTimeout']
           'lifecycle.autoresume'?: boolean

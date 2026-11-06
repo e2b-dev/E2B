@@ -23,14 +23,14 @@ export const metricsCommand = new commander.Command('metrics')
   .action(
     async (
       sandboxID: string,
-      opts?: {
-        follow: boolean
+      opts: {
+        follow?: boolean
         format: Format
       }
     ) => {
       try {
-        const format = opts?.format.toLowerCase() as Format | undefined
-        if (format && !Object.values(Format).includes(format)) {
+        const format = opts.format.toLowerCase() as Format
+        if (!Object.values(Format).includes(format)) {
           throw new Error(`Invalid log format: ${format}`)
         }
 
@@ -89,7 +89,7 @@ export const metricsCommand = new commander.Command('metrics')
 
           await wait(400)
           isFirstRun = false
-        } while (opts?.follow)
+        } while (opts.follow)
       } catch (err: any) {
         console.error(err)
         process.exit(1)
@@ -97,11 +97,7 @@ export const metricsCommand = new commander.Command('metrics')
     }
   )
 
-function printMetric(
-  timestamp: Date,
-  line: string,
-  format: Format | undefined
-) {
+function printMetric(timestamp: Date, line: string, format: Format) {
   const metric = JSON.parse(line)
   const level = chalk.default.green()
 
