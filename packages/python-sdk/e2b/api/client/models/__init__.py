@@ -33,6 +33,8 @@ from .sandbox_auto_resume_config import SandboxAutoResumeConfig
 from .sandbox_detail import SandboxDetail
 from .sandbox_egress_proxy_config_type_0 import SandboxEgressProxyConfigType0
 from .sandbox_egress_proxy_tls_config_type_0 import SandboxEgressProxyTLSConfigType0
+from .sandbox_event import SandboxEvent
+from .sandbox_event_event_data_type_0 import SandboxEventEventDataType0
 from .sandbox_fork_request import SandboxForkRequest
 from .sandbox_fork_result import SandboxForkResult
 from .sandbox_iam import SandboxIam
@@ -124,6 +126,8 @@ __all__ = (
     "SandboxEgressProxyConfigType0",
     "SandboxEgressProxyTLSConfigType0",
     "SandboxesWithMetrics",
+    "SandboxEvent",
+    "SandboxEventEventDataType0",
     "SandboxForkRequest",
     "SandboxForkResult",
     "SandboxIam",
