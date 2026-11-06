@@ -24,6 +24,9 @@ const userConfigSchema = z.object({
   ...authFields,
   projectName: z.string(),
   projectId: z.string(),
+  // The selected project's control plane (its API is `https://api.<domain>`).
+  // Absent in configs written before projects came from workspace-api.
+  projectDomain: z.string().optional(),
 })
 
 export type UserConfig = z.infer<typeof userConfigSchema>
