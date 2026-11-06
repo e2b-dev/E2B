@@ -3,7 +3,7 @@ import { Sandbox, SandboxInfo, SandboxListOrder, SandboxState } from 'e2b'
 
 import { z } from 'zod'
 
-import { ensureAuth } from 'src/api'
+import { Auth, ensureAuth, projectIdOf } from 'src/api'
 import { Format, parseFormat } from 'src/options'
 import { renderTable } from 'src/utils/table'
 import { integer, zodParser } from 'src/validation'
@@ -69,7 +69,9 @@ export const listCommand = new commander.Command('list')
       const state = options.state || ['running']
       const limit =
         options.limit === 0 ? undefined : (options.limit ?? DEFAULT_LIMIT)
-      const { sandboxes, hasMore } = await listSandboxes({
+      const auth = await ensureAuth()
+      const projectId = projectIdOf(auth)
+      const { sandboxes, hasMore } = await listSandboxes(auth, {
         limit,
         state,
         metadata: options.metadata,
@@ -79,7 +81,7 @@ export const listCommand = new commander.Command('list')
       })
 
       if (options.format === Format.PRETTY) {
-        renderSandboxTable(sandboxes, options.order)
+        renderSandboxTable(sandboxes, options.order, projectId)
         if (hasMore) {
           console.log(
             `Showing first ${limit} sandboxes. Use --limit to change.`
@@ -87,7 +89,13 @@ export const listCommand = new commander.Command('list')
         }
       } else {
         console.log(
-          JSON.stringify(sortSandboxes(sandboxes, options.order), null, 2)
+          JSON.stringify(
+            sortSandboxes(sandboxes, options.order).map((sandbox) =>
+              projectId ? { ...sandbox, projectId } : sandbox
+            ),
+            null,
+            2
+          )
         )
       }
     } catch (err: any) {
@@ -126,7 +134,8 @@ export function buildTableRows(
 
 function renderSandboxTable(
   sandboxes: SandboxInfo[],
-  order?: SandboxListOrder
+  order?: SandboxListOrder,
+  projectId?: string
 ) {
   if (!sandboxes?.length) {
     console.log('No sandboxes found')
@@ -144,6 +153,8 @@ function renderSandboxTable(
     { header: 'RAM MiB', value: (row) => String(row.memoryMB) },
     { header: 'Envd version', value: (row) => row.envdVersion },
     { header: 'Metadata', value: (row) => row.metadata },
+    // Omitted with E2B_API_KEY, where the CLI doesn't know the key's project.
+    ...(projectId ? [{ header: 'Project ID', value: () => projectId }] : []),
   ])
 }
 
@@ -161,16 +172,17 @@ type ListSandboxesResult = {
   hasMore: boolean
 }
 
-async function listSandboxes({
-  limit,
-  state,
-  metadata,
-  template,
-  startedAfter,
-  order,
-}: ListSandboxesOptions = {}): Promise<ListSandboxesResult> {
-  const auth = await ensureAuth()
-
+async function listSandboxes(
+  auth: Auth,
+  {
+    limit,
+    state,
+    metadata,
+    template,
+    startedAfter,
+    order,
+  }: ListSandboxesOptions = {}
+): Promise<ListSandboxesResult> {
   let pageLimit = limit
   if (!limit || limit > PAGE_LIMIT) {
     pageLimit = PAGE_LIMIT
