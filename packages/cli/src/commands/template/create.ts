@@ -1,7 +1,7 @@
 import * as boxen from 'boxen'
 import * as commander from '@commander-js/extra-typings'
 import { defaultBuildLogger, Template, TemplateClass } from 'e2b'
-import { connectionConfig, ensureAuth } from 'src/api'
+import { ensureAuth } from 'src/api'
 import {
   defaultDockerfileName,
   fallbackDockerfileName,
@@ -109,7 +109,6 @@ export const createCommand = new commander.Command('create')
 
       // Prepare API credentials for SDK
       const auth = await ensureAuth()
-      const domain = connectionConfig.domain
 
       // Build the template using SDK
       try {
@@ -120,7 +119,6 @@ export const createCommand = new commander.Command('create')
           minFreeDiskMb,
           skipCache: opts.cache === false,
           ...auth,
-          domain: domain,
           onBuildLogs: defaultBuildLogger(),
         })
       } catch (error) {

@@ -1,7 +1,6 @@
 import * as listen from 'async-listen'
 import * as commander from '@commander-js/extra-typings'
 import * as http from 'http'
-import * as e2b from 'e2b'
 
 import * as pkg from '../../../package.json'
 import {
@@ -14,8 +13,13 @@ import {
 } from 'src/user'
 import { asBold, asFormattedConfig, asFormattedError } from 'src/utils/format'
 import { openUrlInBrowser } from 'src/utils/openBrowser'
-import { connectionConfig, Teams } from 'src/api'
-import { handleE2BRequestError } from '../../utils/errors'
+import {
+  blockedWarning,
+  bootstrapUser,
+  fetchMe,
+  personalProject,
+  pickProject,
+} from 'src/workspaces'
 
 export const loginCommand = new commander.Command('login')
   .description('log in to CLI')
@@ -44,25 +48,35 @@ export const loginCommand = new commander.Command('login')
 
       const accessToken = signInResponse.accessToken
 
-      const signal = connectionConfig.getSignal()
-      const config = new e2b.ConnectionConfig({
-        apiHeaders: { Authorization: `Bearer ${accessToken}` },
-      })
-      const client = new e2b.ApiClient(config, { requireApiKey: false })
-      const res = await client.api.GET('/teams', {
-        signal,
-      })
-
-      handleE2BRequestError(res, 'Error getting projects')
-      const teams = res.data as Teams
-
-      const defaultTeam = teams.find((team) => team.isDefault)
-      if (!defaultTeam) {
+      // A user who signed up but never opened the dashboard isn't set up in
+      // workspace-api yet (401); bootstrapping creates the account.
+      let me = await fetchMe(accessToken)
+      if (!me) {
+        await bootstrapUser(accessToken)
+        me = await fetchMe(accessToken)
+      }
+      if (!me) {
         console.error(
-          asFormattedError('No default project found, please contact support')
+          asFormattedError(
+            'Your account could not be set up, please contact support'
+          )
         )
         process.exit(1)
       }
+
+      let selected
+      try {
+        selected =
+          personalProject(me) ??
+          (await pickProject(me, { message: 'Select the project to use' }))
+      } catch (err) {
+        console.error(
+          asFormattedError(err instanceof Error ? err.message : String(err))
+        )
+        process.exit(1)
+      }
+      const warning = blockedWarning(selected)
+      if (warning) console.warn(warning)
 
       userConfig = {
         version: 2,
@@ -79,8 +93,9 @@ export const loginCommand = new commander.Command('login')
           refresh_token: signInResponse.refreshToken,
         },
         last_refresh: getConfigRefreshTimestamp(),
-        projectName: defaultTeam.name,
-        projectId: defaultTeam.teamID,
+        projectName: selected.project.name,
+        projectId: selected.project.id,
+        projectDomain: selected.project.control_plane_domain,
       }
 
       writeUserConfig(USER_CONFIG_PATH, userConfig)
