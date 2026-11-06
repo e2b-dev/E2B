@@ -7,7 +7,6 @@ import {
   asFormattedSandboxTemplate,
   SandboxTemplateRef,
 } from 'src/utils/format'
-import { deprecatedConfigOption, warnIgnoredConfigOption } from 'src/options'
 import { confirm } from 'src/utils/confirm'
 import { client } from 'src/api'
 import { handleE2BRequestError } from '../../utils/errors'
@@ -37,12 +36,9 @@ async function templateAction(
   template: string,
   opts: {
     yes?: boolean
-    config?: string
   }
 ) {
   try {
-    warnIgnoredConfigOption(opts)
-
     const templates: SandboxTemplateRef[] = [{ templateID: template }]
 
     console.log(
@@ -95,7 +91,6 @@ async function templateAction(
 export const publishCommand = new commander.Command('publish')
   .description('publish sandbox template')
   .argument('<template>', `specify ${asBold('<template>')} to publish it`)
-  .addOption(deprecatedConfigOption)
   .alias('pb')
   .option('-y, --yes', 'skip manual publish confirmation')
   .action(templateAction.bind(null, true))
@@ -103,7 +98,6 @@ export const publishCommand = new commander.Command('publish')
 export const unPublishCommand = new commander.Command('unpublish')
   .description('unpublish sandbox template')
   .argument('<template>', `specify ${asBold('<template>')} to unpublish it`)
-  .addOption(deprecatedConfigOption)
   .alias('upb')
   .option('-y, --yes', 'skip manual unpublish confirmation')
   .action(templateAction.bind(null, false))
