@@ -1,43 +1,35 @@
 import * as commander from '@commander-js/extra-typings'
 
+import { z } from 'zod'
+
 import { asBold, asLocal } from './utils/format'
+import { integer, zodParser } from './validation'
 
-/**
- * Parse a CLI option as a positive integer, rejecting non-numeric values so
- * they don't silently become NaN.
- */
-export function parsePositiveInt(label: string): (value: string) => number {
-  return (value) => {
-    const parsed = Number(value)
-    if (!Number.isInteger(parsed) || parsed < 1) {
-      throw new commander.InvalidArgumentError(
-        `${label} must be a positive integer. You provided ${asLocal(value)}.`
-      )
-    }
-    return parsed
-  }
+export enum Format {
+  JSON = 'json',
+  PRETTY = 'pretty',
 }
 
-/**
- * Parse a CLI option as a non-negative integer.
- */
-export function parseNonNegativeInt(label: string): (value: string) => number {
-  return (value) => {
-    if (value.trim() === '') {
-      throw new commander.InvalidArgumentError(
-        `${label} must be a non-negative integer. You provided ${asLocal(value)}.`
-      )
-    }
+/** `--format` value, case-insensitive. */
+export const parseFormat = zodParser(
+  z
+    .string()
+    .toLowerCase()
+    .pipe(
+      z.enum(Format, {
+        error: `Format must be one of: ${Object.values(Format).join(', ')}.`,
+      })
+    )
+)
 
-    const parsed = Number(value)
-    if (!Number.isInteger(parsed) || parsed < 0) {
-      throw new commander.InvalidArgumentError(
-        `${label} must be a non-negative integer. You provided ${asLocal(value)}.`
-      )
-    }
-    return parsed
-  }
-}
+export const parseCpuCount = zodParser(integer('CPU count', { min: 1 }))
+
+export const parseMemoryMb = zodParser(
+  integer('Memory in megabytes', { min: 1 }).refine(
+    (memoryMb) => memoryMb % 2 === 0,
+    'Memory in megabytes must be an even number.'
+  )
+)
 
 export const pathOption = new commander.Option(
   '-p, --path <path>',
@@ -108,4 +100,4 @@ export function projectIdFromOptions(opts: {
 export const minFreeDiskMbOption = new commander.Option(
   '--min-free-disk-mb <min-free-disk-mb>',
   'requested minimum free space after build steps, in MiB. Omit for the team default or use 0 for no minimum growth. Growth is best effort and never shrinks the filesystem.'
-).argParser(parseNonNegativeInt('Minimum free disk in MiB'))
+).argParser(zodParser(integer('Minimum free disk in MiB', { min: 0 })))

@@ -7,7 +7,7 @@ import * as path from 'path'
 import { pathOption } from 'src/options'
 import { getRoot } from 'src/utils/filesystem'
 import { asPrimary } from 'src/utils/format'
-import { validateTemplateName } from 'src/utils/templateName'
+import { parseTemplateName, templateNameSchema } from 'src/utils/templateName'
 import {
   generateAndWriteTemplateFiles,
   GeneratedFiles,
@@ -142,15 +142,7 @@ async function addPackageJsonScripts(
 export const initCommand = new commander.Command('init')
   .description('initialize a new sandbox template using the SDK')
   .addOption(pathOption)
-  .option('-n, --name <name>', 'template name', (value) => {
-    try {
-      return validateTemplateName(value)
-    } catch (err) {
-      throw new commander.InvalidArgumentError(
-        err instanceof Error ? err.message : String(err)
-      )
-    }
-  })
+  .option('-n, --name <name>', 'template name', parseTemplateName)
   .option(
     '-l, --language <language>',
     `target language: ${Object.values(Language).join(', ')}`,
@@ -172,17 +164,12 @@ export const initCommand = new commander.Command('init')
           message: 'Enter template name:',
           default: DEFAULT_TEMPLATE_NAME,
           validate: (input: string) => {
-            try {
-              validateTemplateName(input)
-            } catch (err) {
-              return err instanceof Error ? err.message : err
-            }
-
-            return true
+            const result = templateNameSchema.safeParse(input)
+            return result.success || result.error.issues[0].message
           },
         })
       }
-      templateName = validateTemplateName(templateName)
+      templateName = templateNameSchema.parse(templateName)
       console.log(`Using template name: ${templateName}`)
 
       // Step 2: Get language (from CLI or prompt)

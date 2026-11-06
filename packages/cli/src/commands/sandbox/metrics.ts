@@ -3,7 +3,8 @@ import * as commander from '@commander-js/extra-typings'
 
 import { asBold, asTimestamp, withUnderline } from 'src/utils/format'
 import { wait } from 'src/utils/wait'
-import { formatEnum, Format, isRunning } from './utils'
+import { Format, parseFormat } from 'src/options'
+import { formatEnum, isRunning } from './utils'
 import { Sandbox } from 'e2b'
 import { ensureAPIKey } from '../../api'
 
@@ -18,14 +19,12 @@ export const metricsCommand = new commander.Command('metrics')
   .option(
     '--format <format>',
     `specify format for printing metrics (${formatEnum(Format)})`,
+    parseFormat,
     Format.PRETTY
   )
   .action(async (sandboxID, opts) => {
     try {
-      const format = opts.format.toLowerCase() as Format
-      if (!Object.values(Format).includes(format)) {
-        throw new Error(`Invalid log format: ${format}`)
-      }
+      const { format } = opts
 
       let start: Date | undefined
       let isFirstRun = true

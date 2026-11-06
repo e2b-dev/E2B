@@ -4,20 +4,10 @@ import { NotFoundError } from 'e2b'
 
 import { ensureAPIKey } from 'src/api'
 import { asBold } from 'src/utils/format'
+import { integer, zodParser } from 'src/validation'
 import { parseTimeout } from './create'
 
 const MAX_COUNT = 20
-
-function parseCount(countRaw: string): number {
-  const count = Number(countRaw)
-  if (!Number.isInteger(count) || count < 1 || count > MAX_COUNT) {
-    throw new commander.InvalidArgumentError(
-      `--count must be an integer between 1 and ${MAX_COUNT}`
-    )
-  }
-
-  return count
-}
 
 export const forkCommand = new commander.Command('fork')
   .description(
@@ -31,7 +21,7 @@ export const forkCommand = new commander.Command('fork')
   .option(
     '-n, --count <count>',
     `number of forks to create, at most ${MAX_COUNT} (default: 1)`,
-    parseCount
+    zodParser(integer('--count', { min: 1, max: MAX_COUNT }))
   )
   .option(
     '--timeout <seconds>',

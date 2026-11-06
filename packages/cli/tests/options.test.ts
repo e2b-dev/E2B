@@ -1,13 +1,14 @@
 import { Command } from '@commander-js/extra-typings'
 import { describe, expect, test } from 'vitest'
 
-import { parseNonNegativeInt, minFreeDiskMbOption } from '../src/options'
+import { minFreeDiskMbOption } from '../src/options'
+import { integer, zodParser } from '../src/validation'
 
 describe('minimum free disk options', () => {
-  test.each(['', '   ', '-1', '1.5', 'abc'])(
+  test.each(['', '   ', '-1', '1.5', 'abc', '1e3', '0x10'])(
     'rejects malformed value %j',
     (value: string) => {
-      expect(() => parseNonNegativeInt('Value')(value)).toThrow(
+      expect(() => zodParser(integer('Value', { min: 0 }))(value)).toThrow(
         'Value must be a non-negative integer.'
       )
     }
@@ -17,11 +18,14 @@ describe('minimum free disk options', () => {
     [[], undefined],
     [['--min-free-disk-mb', '0'], 0],
     [['--min-free-disk-mb', '20480'], 20480],
-  ] as const)('parses %j', (args: readonly string[], expected: number | undefined) => {
-    const command = new Command().addOption(minFreeDiskMbOption)
-    command.parse([...args], { from: 'user' })
-    expect(command.opts().minFreeDiskMb).toBe(expected)
-    expect(command.helpInformation()).toContain('--min-free-disk-mb')
-    expect(command.helpInformation()).not.toContain('--free-disk-space-mb')
-  })
+  ] as const)(
+    'parses %j',
+    (args: readonly string[], expected: number | undefined) => {
+      const command = new Command().addOption(minFreeDiskMbOption)
+      command.parse([...args], { from: 'user' })
+      expect(command.opts().minFreeDiskMb).toBe(expected)
+      expect(command.helpInformation()).toContain('--min-free-disk-mb')
+      expect(command.helpInformation()).not.toContain('--free-disk-space-mb')
+    }
+  )
 })
