@@ -1,7 +1,7 @@
 import * as commander from '@commander-js/extra-typings'
 import { NotFoundError, Sandbox, SnapshotInfo } from 'e2b'
 
-import { ensureAuth } from 'src/api'
+import { ensureAuth, projectIdOf } from 'src/api'
 import { Format, parseFormat } from 'src/options'
 import { integer, zodParser } from 'src/validation'
 import { asBold } from 'src/utils/format'
@@ -67,6 +67,7 @@ const listSnapshotsCommand = new commander.Command('list')
   .action(async (sandboxID, options) => {
     try {
       const auth = await ensureAuth()
+      const projectId = projectIdOf(auth)
       const limit =
         options.limit === 0 ? undefined : (options.limit ?? DEFAULT_LIMIT)
 
@@ -93,14 +94,22 @@ const listSnapshotsCommand = new commander.Command('list')
         paginator.hasNext || (limit ? allSnapshots.length > limit : false)
 
       if (options.format === Format.PRETTY) {
-        renderSnapshotTable(snapshots)
+        renderSnapshotTable(snapshots, projectId)
         if (hasMore) {
           console.log(
             `Showing first ${limit} snapshots. Use --limit to change.`
           )
         }
       } else {
-        console.log(JSON.stringify(snapshots, null, 2))
+        console.log(
+          JSON.stringify(
+            snapshots.map((snapshot) =>
+              projectId ? { ...snapshot, projectId } : snapshot
+            ),
+            null,
+            2
+          )
+        )
       }
     } catch (err: any) {
       console.error(err)
@@ -153,7 +162,7 @@ export const snapshotCommand = new commander.Command('snapshot')
   .addCommand(listSnapshotsCommand)
   .addCommand(deleteSnapshotCommand)
 
-function renderSnapshotTable(snapshots: SnapshotInfo[]) {
+function renderSnapshotTable(snapshots: SnapshotInfo[], projectId?: string) {
   if (!snapshots?.length) {
     console.log('No snapshots found')
     return
@@ -165,6 +174,8 @@ function renderSnapshotTable(snapshots: SnapshotInfo[]) {
       header: 'Names',
       value: (snapshot) => snapshot.names.map(stripControlChars).join(', '),
     },
+    // Omitted with E2B_API_KEY, where the CLI doesn't know the key's project.
+    ...(projectId ? [{ header: 'Project ID', value: () => projectId }] : []),
   ])
 }
 
