@@ -53,17 +53,19 @@ describe('Template Migration', () => {
   // Run tests for each test case
   describe('Migration Test Cases', () => {
     // Test case names correspond to fixture directory names
-    const testCases = [
-      'complex-python',
-      'copy-variations',
-      'custom-commands',
-      'minimal-dockerfile',
-      'multiple-env',
-      'start-cmd',
-      'multi-stage',
-    ]
+    const testCases: Record<string, string> = {
+      'complex-python': '--name complex-python-app',
+      'copy-variations': '--name copy-test',
+      'custom-commands':
+        '--name custom-app --cmd "node server.js" --ready-cmd "curl -f http://localhost:3000/health || exit 1"',
+      'minimal-dockerfile': '--name minimal-template',
+      'multiple-env': '--name env-test',
+      'start-cmd':
+        '--name start-cmd --cpu-count 2 --memory-mb 1024 --cmd "node server.js"',
+      'multi-stage': '--name multi-stage',
+    }
 
-    testCases.forEach((testCaseName) => {
+    Object.keys(testCases).forEach((testCaseName) => {
       describe(testCaseName.replace('-', ' '), () => {
         test('should migrate to TypeScript', async () => {
           await runMigrationTest(testCaseName, Language.TypeScript)
@@ -82,13 +84,17 @@ describe('Template Migration', () => {
     async function runMigrationTest(testCaseName: string, language: Language) {
       const fixtureDir = path.join(fixturesDir, testCaseName)
 
-      // Copy fixture files to test directory
-      await copyFixtureFiles(fixtureDir, testDir)
+      await fs.copyFile(
+        path.join(fixtureDir, 'e2b.Dockerfile'),
+        path.join(testDir, 'e2b.Dockerfile')
+      )
 
-      // Run migration
-      execSync(`node ${cliPath} template migrate --language ${language}`, {
-        cwd: testDir,
-      })
+      execSync(
+        `node ${cliPath} template migrate --language ${language} ${testCases[testCaseName]}`,
+        {
+          cwd: testDir,
+        }
+      )
 
       // Determine file extensions and names based on language
       const fileNames = getFileNames(language)
@@ -136,64 +142,26 @@ describe('Template Migration', () => {
         }
       }
 
-      // Check that old files are renamed to .old extensions
-      const oldDockerfilePath = path.join(testDir, 'e2b.Dockerfile.old')
-      const oldConfigPath = path.join(testDir, 'e2b.toml.old')
-
+      // Check that the Dockerfile is renamed to .old
       expect(
         await fs
-          .access(oldDockerfilePath)
+          .access(path.join(testDir, 'e2b.Dockerfile.old'))
           .then(() => true)
           .catch(() => false)
       ).toBe(true)
       expect(
         await fs
-          .access(oldConfigPath)
-          .then(() => true)
-          .catch(() => false)
-      ).toBe(true)
-
-      // Verify original files no longer exist
-      const originalDockerfilePath = path.join(testDir, 'e2b.Dockerfile')
-      const originalConfigPath = path.join(testDir, 'e2b.toml')
-
-      expect(
-        await fs
-          .access(originalDockerfilePath)
+          .access(path.join(testDir, 'e2b.Dockerfile'))
           .then(() => true)
           .catch(() => false)
       ).toBe(false)
-      expect(
-        await fs
-          .access(originalConfigPath)
-          .then(() => true)
-          .catch(() => false)
-      ).toBe(false)
-    }
-
-    async function copyFixtureFiles(fixtureDir: string, targetDir: string) {
-      // Copy Dockerfile and config
-      await fs.copyFile(
-        path.join(fixtureDir, 'e2b.Dockerfile'),
-        path.join(targetDir, 'e2b.Dockerfile')
-      )
-      await fs.copyFile(
-        path.join(fixtureDir, 'e2b.toml'),
-        path.join(targetDir, 'e2b.toml')
-      )
     }
   })
 
   describe('Override Options', () => {
-    test('should apply name, command and resource overrides', async () => {
+    test('should apply name, command and resource options', async () => {
       const dockerfile = 'FROM node:18'
       await fs.writeFile(path.join(testDir, 'e2b.Dockerfile'), dockerfile)
-
-      const config = `template_id = "config-name"
-dockerfile = "e2b.Dockerfile"
-cpu_count = 2
-memory_mb = 512`
-      await fs.writeFile(path.join(testDir, 'e2b.toml'), config)
 
       execSync(
         `node ${cliPath} template migrate --language typescript --name "  Overridden-Name  " --cmd "node server.js" --ready-cmd "curl localhost:3000" --cpu-count 4 --memory-mb 2048`,
@@ -215,7 +183,6 @@ memory_mb = 512`
         'utf-8'
       )
       expect(buildProdFile).toContain("'overridden-name'")
-      expect(buildProdFile).not.toContain("'config-name'")
       expect(buildProdFile).toContain('cpuCount: 4')
       expect(buildProdFile).toContain('memoryMB: 2048')
     })
@@ -223,10 +190,6 @@ memory_mb = 512`
     test('should reject an invalid --name', async () => {
       const dockerfile = 'FROM node:18'
       await fs.writeFile(path.join(testDir, 'e2b.Dockerfile'), dockerfile)
-
-      const config = `template_id = "config-name"
-dockerfile = "e2b.Dockerfile"`
-      await fs.writeFile(path.join(testDir, 'e2b.toml'), config)
 
       expect(() => {
         execSync(
@@ -241,10 +204,6 @@ dockerfile = "e2b.Dockerfile"`
     test('should reject non-numeric resource overrides', async () => {
       const dockerfile = 'FROM node:18'
       await fs.writeFile(path.join(testDir, 'e2b.Dockerfile'), dockerfile)
-
-      const config = `template_id = "config-name"
-dockerfile = "e2b.Dockerfile"`
-      await fs.writeFile(path.join(testDir, 'e2b.toml'), config)
 
       expect(() => {
         execSync(
@@ -269,10 +228,6 @@ dockerfile = "e2b.Dockerfile"`
       const dockerfile = 'FROM node:18'
       await fs.writeFile(path.join(testDir, 'e2b.Dockerfile'), dockerfile)
 
-      const config = `template_id = "resources"
-dockerfile = "e2b.Dockerfile"`
-      await fs.writeFile(path.join(testDir, 'e2b.toml'), config)
-
       expect(() => {
         execSync(
           `node ${cliPath} template migrate --language typescript --memory-mb 1023`,
@@ -285,32 +240,43 @@ dockerfile = "e2b.Dockerfile"`
   })
 
   describe('Error Cases', () => {
-    test('should succeed with warning when config file is missing', async () => {
-      // Create only Dockerfile, no config
-      const dockerfile = 'FROM node:18'
-      await fs.writeFile(path.join(testDir, 'e2b.Dockerfile'), dockerfile)
+    test('should ignore e2b.toml and warn on deprecated --config and --path', async () => {
+      await fs.writeFile(path.join(testDir, 'e2b.Dockerfile'), 'FROM node:18')
+      await fs.writeFile(
+        path.join(testDir, 'e2b.toml'),
+        'template_id = "config-name"\ndockerfile = "e2b.Dockerfile"\nstart_cmd = "node server.js"'
+      )
 
-      // Run migration and expect it to succeed with warning (capture stderr + stdout)
       const output = execSync(
-        `node ${cliPath} template migrate --language typescript 2>&1`,
+        `node ${cliPath} template migrate --language typescript --config e2b.toml --path . 2>&1`,
         {
           cwd: testDir,
           encoding: 'utf-8',
         }
       )
 
-      expect(output).toContain(
-        'Config file ./e2b.toml not found. Using defaults.'
-      )
+      expect(output).toContain('The --config flag is deprecated and ignored')
+      expect(output).toContain('The --path flag is deprecated')
       expect(output).toContain('Migration completed successfully')
+
+      const buildProdFile = await fs.readFile(
+        path.join(testDir, 'build.prod.ts'),
+        'utf-8'
+      )
+      expect(buildProdFile).toContain("'name-your-template'")
+      expect(buildProdFile).not.toContain("'config-name'")
+      const templateFile = await fs.readFile(
+        path.join(testDir, 'template.ts'),
+        'utf-8'
+      )
+      expect(templateFile).not.toContain('setStartCmd')
+
+      const files = await fs.readdir(testDir)
+      expect(files).toContain('e2b.toml')
+      expect(files).not.toContain('e2b.toml.old')
     })
 
     test('should fail gracefully when Dockerfile is missing', async () => {
-      // Create only config, no Dockerfile
-      const config = `template_id = "test-app"
-dockerfile = "e2b.Dockerfile"`
-      await fs.writeFile(path.join(testDir, 'e2b.toml'), config)
-
       // Run migration and expect it to fail
       expect(() => {
         execSync(`node ${cliPath} template migrate --language typescript`, {
@@ -325,11 +291,6 @@ dockerfile = "e2b.Dockerfile"`
       // Create test Dockerfile
       const dockerfile = 'FROM node:18'
       await fs.writeFile(path.join(testDir, 'e2b.Dockerfile'), dockerfile)
-
-      // Create test config
-      const config = `template_id = "test-app"
-dockerfile = "e2b.Dockerfile"`
-      await fs.writeFile(path.join(testDir, 'e2b.toml'), config)
 
       // Create existing files
       await fs.writeFile(path.join(testDir, 'template.ts'), '// existing')

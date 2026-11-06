@@ -41,7 +41,10 @@ async function templateAction(
   }
 ) {
   try {
-    warnIgnoredConfigOption(opts)
+    warnIgnoredConfigOption(
+      opts,
+      `Pass the template as ${asBold('<template>')}.`
+    )
 
     const templates: SandboxTemplateRef[] = [{ templateID: template }]
 
