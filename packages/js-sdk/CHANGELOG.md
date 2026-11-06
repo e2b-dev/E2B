@@ -1,5 +1,26 @@
 # e2b
 
+## 2.63.0
+
+### Minor Changes
+
+- a8155c4: Add `strict` to `pause()` (default `false`). With `strict: true` / `strict=True` a pause is refused with `ServiceBusyError` / `ServiceBusyException` while the sandbox's guest agent does not respond, and the sandbox keeps running. Without it the API's default applies: the memory snapshot is taken anyway and marked. Sandbox info exposes the mark as `envdUnresponsiveAtPause` / `envd_unresponsive_at_pause`, and resuming such a sandbox without `onResume: 'reboot'` / `on_resume="reboot"` now throws `GuestUnresponsiveError` / `GuestUnresponsiveException`.
+
+## 2.62.2
+
+### Patch Changes
+
+- 08f05bb: Fix `TypeError: fetch failed` / `NGHTTP2_ENHANCE_YOUR_CALM` on concurrent `files.write()` calls. Node's HTTP/2 client queues each request body in full against a 10 MB per-session memory budget and resets the stream whose response arrives while it is exhausted; since undici 8 every envd request of a process shares one session, so parallel or large uploads reset each other and the reads next to them. `files.write()` uploads now go over HTTP/1.1 on a pool of their own (one request per connection, no shared budget; `E2B_ENVD_UPLOAD_CONNECTIONS`, default 50), and an envd dispatcher whose HTTP/2 session Node reports as out of memory is retired and replaced instead of failing every later request. Nothing is retried: a failed write may already have been applied.
+- 1ad3f76: Template builds hash `copy()` files in 1 MB chunks instead of reading each file fully into memory, cutting peak memory for large files. Hashes are unchanged, so existing build caches stay valid.
+
+## 2.62.1
+
+### Patch Changes
+
+- 320f39d: Update the `glob` dependency to v14.
+- 36258c1: `files.write()`, `files.writeFiles()` and `Volume.writeFile()` accept `Uint8Array`, including a Node.js `Buffer`.
+- 8e37561: Raise the minimum `undici` version to 8.12.3, which replaces HTTP/2 connections that stop responding after a stream timeout.
+
 ## 2.62.0
 
 ### Minor Changes

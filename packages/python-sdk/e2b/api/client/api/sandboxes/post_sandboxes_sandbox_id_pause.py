@@ -85,7 +85,9 @@ def sync_detailed(
 ) -> Response[Union[Any, Error]]:
     """Pause sandbox
 
-     Pause the sandbox
+     Pause the sandbox. Answers 503 and leaves the sandbox running when it cannot be paused right now:
+    its node is busy, it is being snapshotted, or `requireHealthyGuest` was set and the sandbox guest
+    agent is not responding; retry later.
 
     Args:
         sandbox_id (str):
@@ -119,7 +121,9 @@ def sync(
 ) -> Optional[Union[Any, Error]]:
     """Pause sandbox
 
-     Pause the sandbox
+     Pause the sandbox. Answers 503 and leaves the sandbox running when it cannot be paused right now:
+    its node is busy, it is being snapshotted, or `requireHealthyGuest` was set and the sandbox guest
+    agent is not responding; retry later.
 
     Args:
         sandbox_id (str):
@@ -148,7 +152,9 @@ async def asyncio_detailed(
 ) -> Response[Union[Any, Error]]:
     """Pause sandbox
 
-     Pause the sandbox
+     Pause the sandbox. Answers 503 and leaves the sandbox running when it cannot be paused right now:
+    its node is busy, it is being snapshotted, or `requireHealthyGuest` was set and the sandbox guest
+    agent is not responding; retry later.
 
     Args:
         sandbox_id (str):
@@ -180,7 +186,9 @@ async def asyncio(
 ) -> Optional[Union[Any, Error]]:
     """Pause sandbox
 
-     Pause the sandbox
+     Pause the sandbox. Answers 503 and leaves the sandbox running when it cannot be paused right now:
+    its node is busy, it is being snapshotted, or `requireHealthyGuest` was set and the sandbox guest
+    agent is not responding; retry later.
 
     Args:
         sandbox_id (str):

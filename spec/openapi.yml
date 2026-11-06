@@ -90,6 +90,14 @@ components:
       required: true
       schema:
         type: string
+    aliasID:
+      name: aliasID
+      in: path
+      required: true
+      description: Identifier of the alias
+      schema:
+        type: string
+        format: uuid
     snapshotID:
       name: snapshotID
       in: path
@@ -239,6 +247,55 @@ components:
         minimum: 1
         maximum: 100
         default: 50
+    buildIDOrTemplate:
+      name: build_id_or_template
+      in: query
+      required: false
+      description: Optional filter by build identifier, template identifier, or template alias.
+      schema:
+        type: string
+    buildStatuses:
+      name: statuses
+      in: query
+      required: false
+      description: Comma-separated list of build statuses to include.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          $ref: "#/components/schemas/BuildStatus"
+    buildsCursor:
+      name: cursor
+      in: query
+      required: false
+      description: Cursor returned by the previous list response in `created_at|build_id` format.
+      schema:
+        type: string
+    buildsLimit:
+      name: limit
+      in: query
+      required: false
+      description: Maximum number of builds to return per page.
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 100
+        default: 50
+    buildIDs:
+      name: build_ids
+      in: query
+      required: true
+      description: Comma-separated list of build IDs to get statuses for.
+      style: form
+      explode: false
+      schema:
+        type: array
+        maxItems: 100
+        items:
+          type: string
+          format: uuid
     volumeID:
       name: volumeID
       in: path
@@ -271,7 +328,9 @@ components:
         exponential backoff. false marks a failure a retry cannot fix, such as a malformed request
         or a configuration fault, or an outcome that is unknown, where a retry could create a
         second sandbox. Successful responses and errors without an explicit classification omit
-        the header.
+        the header. With idempotency enabled, retry sandbox creation with the same Idempotency-Key
+        and request parameters. A retryable creation failure permits a fresh attempt; an
+        idempotency_in_progress response only reports an existing attempt and never releases it.
       required: false
       schema:
         type: boolean
@@ -808,6 +867,18 @@ components:
         onTimeout:
           $ref: "#/components/schemas/SandboxOnTimeout"
 
+    EnvdUnresponsiveAtPause:
+      type: boolean
+      description: >-
+        True when the snapshot a paused sandbox would resume from was taken
+        while the sandbox guest agent was not responding. A plain resume of
+        it is refused with 409 and error_code
+        sandbox_snapshot_guest_agent_unresponsive, because restoring that
+        memory would bring the unresponsive agent back; resume it without
+        memory (`memory: false`), which cold-boots the sandbox from its disk.
+        Omitted for a running sandbox and for a snapshot whose agent
+        answered.
+
     SandboxPauseMode:
       type: string
       description: >-
@@ -1016,6 +1087,8 @@ components:
           description: Time when the sandbox will expire
         envdVersion:
           $ref: "#/components/schemas/EnvdVersion"
+        envdUnresponsiveAtPause:
+          $ref: "#/components/schemas/EnvdUnresponsiveAtPause"
         envdAccessToken:
           type: string
           description: Access token used for envd communication
@@ -1094,6 +1167,8 @@ components:
           $ref: "#/components/schemas/SandboxState"
         envdVersion:
           $ref: "#/components/schemas/EnvdVersion"
+        envdUnresponsiveAtPause:
+          $ref: "#/components/schemas/EnvdUnresponsiveAtPause"
         volumeMounts:
           type: array
           items:
@@ -1263,7 +1338,9 @@ components:
             state has crash-recovery semantics — writes not flushed before the pause
             may be lost. A no-op for snapshots that contain no memory. Rejected with
             an error in environments where this capability is not enabled, never
-            silently downgraded to a memory restore.
+            silently downgraded to a memory restore. A snapshot taken while the
+            sandbox guest agent was not responding (envdUnresponsiveAtPause) can
+            only be resumed this way, and needs no enablement.
 
     ConnectSandbox:
       type: object
@@ -1283,7 +1360,10 @@ components:
             modified or deleted. Disk state has crash-recovery semantics — writes not
             flushed before the pause may be lost. A no-op for snapshots that contain
             no memory. Rejected with an error in environments where this capability
-            is not enabled, never silently downgraded to a memory restore.
+            is not enabled, never silently downgraded to a memory restore. A
+            snapshot taken while the sandbox guest agent was not responding
+            (envdUnresponsiveAtPause) can only be resumed this way, and needs no
+            enablement.
 
     ConnectSandboxV2:
       type: object
@@ -1302,7 +1382,10 @@ components:
             modified or deleted. Disk state has crash-recovery semantics — writes not
             flushed before the pause may be lost. A no-op for snapshots that contain
             no memory. Rejected with an error in environments where this capability
-            is not enabled, never silently downgraded to a memory restore.
+            is not enabled, never silently downgraded to a memory restore. A
+            snapshot taken while the sandbox guest agent was not responding
+            (envdUnresponsiveAtPause) can only be resumed this way, and needs no
+            enablement.
 
     SandboxTimeoutRequest:
       type: object
@@ -1353,6 +1436,19 @@ components:
             and open connections. Resume it with an explicit request (connect or
             resume); auto-resume, which can be triggered by arbitrary traffic,
             refuses such a sandbox. Defaults to true.
+        requireHealthyGuest:
+          type: boolean
+          default: false
+          description: >-
+            The pause checks that the sandbox guest agent answers before it
+            takes the snapshot. By default an unresponsive agent is recorded
+            on the snapshot and the pause proceeds; the sandbox then shows
+            `envdUnresponsiveAtPause` and a later resume must ask for
+            `memory: false`, since restoring that memory would bring the
+            unresponsive agent back. With this true, the pause is instead
+            refused with 503 while the agent does not answer, and the sandbox
+            keeps running. A filesystem-only pause (`memory: false`) is always
+            refused while the agent does not answer, whatever this says.
 
     SandboxForkRequest:
       type: object
@@ -1464,6 +1560,7 @@ components:
         - maxFreeDiskSizeMb
         - apiTeamRpsList
         - apiTeamRpsDelete
+        - maxSecrets
       properties:
         maxLengthHours:
           type: integer
@@ -1509,6 +1606,10 @@ components:
           type: integer
           format: int64
           description: Requests per second the team may make to delete endpoints
+        maxSecrets:
+          type: integer
+          format: int64
+          description: Maximum number of secrets the team may store
 
     TeamLimitsResponse:
       required:
@@ -1516,6 +1617,198 @@ components:
       properties:
         limits:
           $ref: "#/components/schemas/TeamLimits"
+
+    ClusterDetail:
+      type: object
+      description: A cluster's configuration. The cluster's token is never returned.
+      required:
+        - id
+        - name
+        - endpoint
+        - endpointTls
+        - deletionProtection
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        endpoint:
+          type: string
+        endpointTls:
+          type: boolean
+        sandboxProxyDomain:
+          type: string
+          nullable: true
+        authOrgId:
+          type: string
+          nullable: true
+        deletionProtection:
+          type: boolean
+          description: While true, deleting the cluster is refused.
+
+    ClusterDetailWithTeams:
+      type: object
+      required:
+        - cluster
+        - teams
+        - teamCount
+        - templateCount
+      properties:
+        cluster:
+          $ref: "#/components/schemas/ClusterDetail"
+        teams:
+          $ref: "#/components/schemas/ClusterTeamListResponse"
+        teamCount:
+          type: integer
+          format: int64
+          description: Teams assigned to the cluster. Must be 0 before the cluster can be deleted.
+        templateCount:
+          type: integer
+          format: int64
+          description: Live templates on the cluster. Deleting the cluster deletes them.
+
+    ClusterListItem:
+      type: object
+      required:
+        - id
+        - name
+        - endpoint
+        - teamCount
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        endpoint:
+          type: string
+        sandboxProxyDomain:
+          type: string
+          nullable: true
+        teamCount:
+          type: integer
+          format: int64
+          description: Number of teams assigned to the cluster.
+
+    ClusterListResponse:
+      type: object
+      required:
+        - items
+        - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClusterListItem"
+        total:
+          type: integer
+          format: int64
+          description: Number of clusters matching the search, ignoring limit and offset
+
+    ClusterTeamListItem:
+      type: object
+      required:
+        - id
+        - email
+        - isBanned
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        name:
+          type: string
+          nullable: true
+        slug:
+          type: string
+          nullable: true
+        isBanned:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    ClusterTeamListResponse:
+      type: object
+      required:
+        - items
+        - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClusterTeamListItem"
+        total:
+          type: integer
+          format: int64
+          description: Number of teams assigned to the cluster, ignoring limit and offset
+
+    AdminClusterCreateRequest:
+      type: object
+      required:
+        - name
+        - endpoint
+        - endpoint_tls
+        - token
+      properties:
+        cluster_id:
+          type: string
+          format: uuid
+          description: Optional stable identifier for idempotent creation. Reuse succeeds only when the immutable configuration is identical.
+        name:
+          type: string
+          minLength: 1
+        endpoint:
+          type: string
+          minLength: 1
+        endpoint_tls:
+          type: boolean
+        token:
+          type: string
+          minLength: 1
+        sandbox_proxy_domain:
+          type: string
+          nullable: true
+        auth_org_id:
+          type: string
+          nullable: true
+
+    ClusterUpdateRequest:
+      type: object
+      description: >-
+        Partial update; only the properties present are written. An explicit
+        null or an empty string clears `sandboxProxyDomain` or `authOrgId`.
+      properties:
+        name:
+          type: string
+          minLength: 1
+        endpoint:
+          type: string
+          minLength: 1
+        endpointTls:
+          type: boolean
+        sandboxProxyDomain:
+          type: string
+          nullable: true
+        authOrgId:
+          type: string
+          nullable: true
+        deletionProtection:
+          type: boolean
+
+    ClusterTokenRotateRequest:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          type: string
+          minLength: 1
+          format: password
+          description: New cluster access token. Write-only.
 
     AdminSandboxKillResult:
       required:
@@ -1557,6 +1850,135 @@ components:
         - AdminSandboxStateRunning
         - AdminSandboxStatePaused
         - AdminSandboxStateKilled
+
+    AdminSandboxBuildStatusGroup:
+      type: string
+      description: |
+        Coarse build state derived from the build status: pending (pending,
+        waiting), in_progress (in_progress, building, snapshotting), ready
+        (ready, uploaded, success) or failed (any other status)
+      enum:
+        - pending
+        - in_progress
+        - ready
+        - failed
+      x-enum-varnames:
+        - AdminSandboxBuildStatusGroupPending
+        - AdminSandboxBuildStatusGroupInProgress
+        - AdminSandboxBuildStatusGroupReady
+        - AdminSandboxBuildStatusGroupFailed
+
+    AdminSandboxBuild:
+      type: object
+      description: A build assigned to a sandbox's snapshot template under a tag
+      required:
+        - buildID
+        - templateID
+        - tag
+        - status
+        - statusGroup
+        - clusterNodeID
+        - assignedAt
+        - isCurrent
+        - restorable
+      properties:
+        buildID:
+          type: string
+          format: uuid
+          description: Identifier of the build
+        templateID:
+          type: string
+          description: Identifier of the snapshot template the build is assigned to
+        tag:
+          type: string
+          description: Tag the build is assigned under
+        status:
+          type: string
+          description: Build status as stored, for example ready, snapshotting or waiting
+        statusGroup:
+          $ref: "#/components/schemas/AdminSandboxBuildStatusGroup"
+        clusterNodeID:
+          type: string
+          nullable: true
+          description: Node that produced the build, null when it was not recorded
+        assignedAt:
+          type: string
+          format: date-time
+          description: When the build was assigned to the template under this tag
+        isCurrent:
+          type: boolean
+          description: |
+            Whether this build is the template's newest ready assignment under
+            the tag, the build a resume uses, regardless of the status filter
+        restorable:
+          type: boolean
+          description: |
+            Whether the restore route would accept this build: it is ready,
+            assigned under the default tag, not the current build, and its
+            snapshot template is not deleted
+
+    AdminSandboxBuildList:
+      type: object
+      required:
+        - items
+        - total
+        - snapshotTemplateID
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminSandboxBuild"
+        total:
+          type: integer
+          format: int64
+          description: Number of assignments matching the tag and status filter, ignoring limit and offset
+        snapshotTemplateID:
+          type: string
+          nullable: true
+          description: |
+            Identifier of the template that holds the sandbox's snapshot, null
+            when the sandbox has no snapshot
+
+    AdminSandboxBuildRestoreRequest:
+      type: object
+      required:
+        - buildID
+      properties:
+        buildID:
+          type: string
+          format: uuid
+          description: |
+            Build to make current. It must be ready and already assigned to the
+            sandbox's snapshot template under the default tag.
+
+    AdminSandboxBuildRestoreResult:
+      type: object
+      required:
+        - sandboxID
+        - templateID
+        - buildID
+        - assignedAt
+        - previousBuildID
+      properties:
+        sandboxID:
+          type: string
+          description: Identifier of the sandbox
+        templateID:
+          type: string
+          description: Identifier of the snapshot template that received the assignment
+        buildID:
+          type: string
+          format: uuid
+          description: Build that is now the template's current default build
+        assignedAt:
+          type: string
+          format: date-time
+          description: When the new assignment was written
+        previousBuildID:
+          type: string
+          format: uuid
+          nullable: true
+          description: Build that was current before the restore, null when there was none
 
     AdminTeamRunningSandboxCounts:
       type: object
@@ -1753,6 +2175,282 @@ components:
             maxLength: 63
             pattern: ^[a-z0-9]([a-z0-9-]*[a-z0-9])?$
 
+    AdminTeamBanResult:
+      type: object
+      description: |
+        The outcome of banning one team. The ban is stored before the team's
+        sandboxes are killed and its builds cancelled, so it holds even when
+        either step fails.
+      required:
+        - teamID
+        - sandboxesKilled
+        - sandboxesFailedToKill
+        - buildsCancelled
+        - buildsFailedToCancel
+      properties:
+        teamID:
+          type: string
+          format: uuid
+        sandboxesKilled:
+          type: integer
+          description: Number of the team's sandboxes killed
+        sandboxesFailedToKill:
+          type: integer
+          description: Number of the team's sandboxes that failed to kill
+        sandboxKillError:
+          type: string
+          description: Set when the kill step failed or ran out of time; the counts cover what it did until then.
+        buildsCancelled:
+          type: integer
+          description: Number of the team's builds cancelled
+        buildsFailedToCancel:
+          type: integer
+          description: Number of the team's builds that failed to cancel
+        buildCancelError:
+          type: string
+          description: Set when the cancel step failed or ran out of time; the counts cover what it did until then.
+
+    AdminTeamsBanRequest:
+      type: object
+      required:
+        - teamIDs
+      properties:
+        teamIDs:
+          type: array
+          minItems: 1
+          maxItems: 100
+          uniqueItems: true
+          items:
+            type: string
+            format: uuid
+
+    AdminTeamsBanResult:
+      type: object
+      required:
+        - banned
+        - notFound
+        - failed
+      properties:
+        banned:
+          type: array
+          description: Teams whose ban is stored, with the outcome of killing their sandboxes and cancelling their builds
+          items:
+            $ref: "#/components/schemas/AdminTeamBanResult"
+        notFound:
+          type: array
+          description: Requested teams that do not exist
+          items:
+            type: string
+            format: uuid
+        failed:
+          type: array
+          description: Teams whose ban could not be stored or put into force; retrying repeats every step
+          items:
+            $ref: "#/components/schemas/AdminTeamBanFailure"
+
+    AdminTeamBanFailure:
+      type: object
+      required:
+        - teamID
+        - error
+      properties:
+        teamID:
+          type: string
+          format: uuid
+        error:
+          type: string
+
+    AdminTemplateTeam:
+      required:
+        - id
+        - name
+        - email
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identifier of the team that owns the template
+        name:
+          type: string
+          description: Name of the team
+        email:
+          type: string
+          description: Contact email of the team
+
+    AdminTemplateAlias:
+      required:
+        - id
+        - templateID
+        - alias
+        - namespace
+        - isRenamable
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identifier of the alias
+        templateID:
+          type: string
+          description: Identifier of the template the alias resolves to
+        alias:
+          type: string
+          description: The alias
+        namespace:
+          type: string
+          nullable: true
+          description: Namespace of the alias, or null for an alias that resolves for every team
+        isRenamable:
+          type: boolean
+          description: Whether building the template under another name replaces the alias
+
+    AdminTemplateAliases:
+      required:
+        - templateID
+        - public
+        - team
+        - aliases
+      properties:
+        templateID:
+          type: string
+          description: Identifier of the template
+        public:
+          type: boolean
+          description: Whether the template is public
+        team:
+          $ref: "#/components/schemas/AdminTemplateTeam"
+        aliases:
+          type: array
+          description: All aliases of the template, those without a namespace first
+          items:
+            $ref: "#/components/schemas/AdminTemplateAlias"
+
+    AdminTemplateAliasCreateRequest:
+      required:
+        - templateID
+        - alias
+      properties:
+        templateID:
+          type: string
+          minLength: 1
+          description: Identifier of the template the alias resolves to
+        alias:
+          type: string
+          minLength: 1
+          maxLength: 128
+          description: The alias, without a namespace or tag
+
+    AdminTemplateAliasDeleted:
+      required:
+        - aliasID
+        - templateID
+        - alias
+      properties:
+        aliasID:
+          type: string
+          format: uuid
+          description: Identifier of the removed alias
+        templateID:
+          type: string
+          description: Identifier of the template the alias resolved to
+        alias:
+          type: string
+          description: The removed alias
+
+    AdminDefaultTemplate:
+      required:
+        - templateID
+        - description
+      properties:
+        templateID:
+          type: string
+          description: Identifier of the default template
+        description:
+          type: string
+          nullable: true
+          description: Description of the default template
+
+    AdminDefaultTemplateCreateRequest:
+      required:
+        - templateID
+      properties:
+        templateID:
+          type: string
+          minLength: 1
+          description: Identifier of the template to make a default template
+        description:
+          type: string
+          nullable: true
+          maxLength: 1000
+          description: Description of the default template; blank is stored as none
+
+    AdminDefaultTemplateUpdateRequest:
+      required:
+        - description
+      properties:
+        description:
+          type: string
+          nullable: true
+          maxLength: 1000
+          description: New description of the default template; null or blank clears it
+
+    AdminTemplateLookup:
+      required:
+        - templateID
+        - team
+        - names
+        - public
+        - createdAt
+        - lastSpawnedAt
+        - spawnCount
+        - isSnapshot
+        - snapshotSandboxID
+        - matchedBuildID
+        - builds
+      properties:
+        templateID:
+          type: string
+          description: Identifier of the template
+        team:
+          $ref: "#/components/schemas/AdminTemplateTeam"
+        names:
+          type: array
+          description: Names of the template (namespace/alias format when namespaced)
+          items:
+            type: string
+        public:
+          type: boolean
+          description: Whether the template is public
+        createdAt:
+          type: string
+          format: date-time
+          description: Time when the template was created
+        lastSpawnedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Time when the template was last used
+        spawnCount:
+          type: integer
+          format: int64
+          description: Number of times the template was used
+        isSnapshot:
+          type: boolean
+          description: Whether the template is a snapshot of a sandbox
+        snapshotSandboxID:
+          type: string
+          nullable: true
+          description: The sandbox a snapshot template was taken from
+        matchedBuildID:
+          type: string
+          format: uuid
+          nullable: true
+          description: The build the query matched, when it was a build ID
+        builds:
+          type: array
+          description: The template's newest builds of any tag and status, newest first, at most 100
+          items:
+            $ref: "#/components/schemas/TemplateBuild"
+
     VolumeToken:
       type: object
       properties:
@@ -1858,6 +2556,152 @@ components:
           type: string
           nullable: true
           description: Cursor of the next page, or null on the last page
+
+    BuildStatus:
+      type: string
+      description: Build status as the builds list reports it.
+      enum:
+        - building
+        - failed
+        - success
+
+    ListedBuild:
+      type: object
+      required:
+        - id
+        - template
+        - templateId
+        - status
+        - statusMessage
+        - createdAt
+        - finishedAt
+        - cpuCount
+        - memoryMB
+        - diskSizeMB
+        - envdVersion
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identifier of the build.
+        template:
+          type: string
+          description: Template alias when present, otherwise template ID.
+        templateId:
+          type: string
+          description: Identifier of the template.
+        status:
+          $ref: "#/components/schemas/BuildStatus"
+        statusMessage:
+          type: string
+          nullable: true
+          description: Failure message when status is `failed`, otherwise `null`.
+        createdAt:
+          type: string
+          format: date-time
+          description: Build creation timestamp in RFC3339 format.
+        finishedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Build completion timestamp in RFC3339 format, if finished.
+        cpuCount:
+          type: integer
+          format: int64
+          description: CPU cores configured for the build.
+        memoryMB:
+          type: integer
+          format: int64
+          description: Memory in MiB configured for the build.
+        diskSizeMB:
+          type: integer
+          format: int64
+          nullable: true
+          description: Disk size in MiB configured for the build, if recorded.
+        envdVersion:
+          type: string
+          nullable: true
+          description: envd version the build was created with, if recorded.
+
+    BuildsListResponse:
+      type: object
+      required:
+        - data
+        - nextCursor
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ListedBuild"
+        nextCursor:
+          type: string
+          nullable: true
+          description: Cursor to pass to the next list request, or `null` if there is no next page.
+
+    BuildStatusItem:
+      type: object
+      required:
+        - id
+        - status
+        - finishedAt
+        - statusMessage
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identifier of the build.
+        status:
+          $ref: "#/components/schemas/BuildStatus"
+        finishedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Build completion timestamp in RFC3339 format, if finished.
+        statusMessage:
+          type: string
+          nullable: true
+          description: Failure message when status is `failed`, otherwise `null`.
+
+    BuildsStatusesResponse:
+      type: object
+      required:
+        - buildStatuses
+      properties:
+        buildStatuses:
+          type: array
+          description: List of build statuses
+          items:
+            $ref: "#/components/schemas/BuildStatusItem"
+
+    BuildInfo:
+      type: object
+      required:
+        - createdAt
+        - finishedAt
+        - status
+        - statusMessage
+      properties:
+        names:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: Template names related to this build, if available.
+        createdAt:
+          type: string
+          format: date-time
+          description: Build creation timestamp in RFC3339 format.
+        finishedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Build completion timestamp in RFC3339 format, if finished.
+        status:
+          $ref: "#/components/schemas/BuildStatus"
+        statusMessage:
+          type: string
+          nullable: true
+          description: Failure message when status is `failed`, otherwise `null`.
 
     TemplateRequestResponseV3:
       required:
@@ -2240,6 +3084,7 @@ components:
       description: |
         Status of the node.
         - standby: the node is not actively used, but it can return to ready and continue serving traffic.
+        - not_ready: the node is starting and cannot take new work yet. It becomes ready by itself and cannot be set through the API.
       enum:
         - ready
         - draining
@@ -2247,6 +3092,7 @@ components:
         - unhealthy
         - standby
         - shutting_down
+        - not_ready
       x-enum-varnames:
         - NodeStatusReady
         - NodeStatusDraining
@@ -2254,6 +3100,7 @@ components:
         - NodeStatusUnhealthy
         - NodeStatusStandby
         - NodeStatusShuttingDown
+        - NodeStatusNotReady
 
     NodeStatusChange:
       required:
@@ -2770,7 +3617,13 @@ components:
             count out of bounds in the stored build; a server error, since no
             request field reaches that check), internal_server_error,
             secret_limit_reached, idempotency_request_mismatch, idempotency_in_progress,
-            idempotency_outcome_unknown.
+            idempotency_outcome_unknown, cluster_registration_invalid,
+            cluster_registration_conflict, cluster_assignment_invalid,
+            cluster_assignment_project_not_found, cluster_assignment_cluster_not_found,
+            cluster_assignment_already_assigned, cluster_assignment_cluster_deleting,
+            sandbox_snapshot_guest_agent_unresponsive (a plain resume of a
+            snapshot taken while the sandbox guest agent was not responding;
+            resume it with memory: false).
         message:
           type: string
           description: Error
@@ -3262,6 +4115,42 @@ components:
           type: string
           nullable: true
           description: Cursor to pass to the next list request, or null when there is no next page.
+    ManagementClusterRegistrationRequest:
+      type: object
+      required:
+        - name
+        - endpoint
+        - endpoint_tls
+        - token
+      properties:
+        name:
+          type: string
+          minLength: 1
+        endpoint:
+          type: string
+          minLength: 1
+        endpoint_tls:
+          type: boolean
+        token:
+          type: string
+          minLength: 1
+        sandbox_proxy_domain:
+          type: string
+          nullable: true
+        auth_org_id:
+          type: string
+          nullable: true
+
+    ManagementClusterProjects:
+      type: object
+      required: [project_ids]
+      properties:
+        project_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+
     ManagementProjectSettingsRequest:
       type: object
       required: [revision, settings]
@@ -3293,6 +4182,264 @@ components:
             Whether new sandboxes without an explicit network.allowPublicTraffic
             accept traffic without a traffic access token. Omission uses the
             public default. Existing sandboxes, resumes and forks keep their settings.
+
+    ManagementProjectUpsertRequest:
+      type: object
+      description: >-
+        The properties of a project this side stores. Name, slug and email are
+        synchronized on every push. The optional cluster assignment is preserved
+        when omitted.
+
+
+        A project's tier is not among them, and this side assigns none. Limits
+        arrive separately and in full through managementUpsertProjectLimits.
+      required: [name, slug, email]
+      properties:
+        cluster_id:
+          type: string
+          format: uuid
+          description: Cluster assignment to synchronize. Omission preserves the existing assignment.
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 63
+          description: >-
+            Changing it renames the project, and its template names follow:
+            each name held under an earlier slug is also given under the new
+            one, and the old names keep working. A name the new slug already
+            holds is left as it is. A slug already held on this control plane
+            is a 409, on a rename as much as on a create.
+        email:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Contact address recorded on the project.
+
+    ManagementProject:
+      allOf:
+        - $ref: "#/components/schemas/ManagementProjectUpsertRequest"
+        - type: object
+          required: [id]
+          properties:
+            id:
+              type: string
+              format: uuid
+
+    ManagementProjectMemberIdentity:
+      type: object
+      required: [issuer, subject]
+      properties:
+        issuer:
+          type: string
+          minLength: 1
+          maxLength: 2048
+        subject:
+          type: string
+          minLength: 1
+          maxLength: 2048
+
+    ManagementProjectMemberApplyRequest:
+      type: object
+      required: [revision, present]
+      properties:
+        revision:
+          type: integer
+          format: int64
+          minimum: 1
+        present:
+          type: boolean
+        is_default:
+          type: boolean
+          default: false
+          description: Whether this membership is the user's default team. Omitted requests from older sources remain non-default.
+        identities:
+          type: array
+          maxItems: 16
+          items:
+            $ref: "#/components/schemas/ManagementProjectMemberIdentity"
+
+    ManagementProjectBlockRequest:
+      type: object
+      description: >-
+        Desired project block state. A newer revision replaces the state,
+        including any intervening manual block or unblock.
+      required: [revision, blocked]
+      properties:
+        revision:
+          type: integer
+          format: int64
+          minimum: 1
+          description: >-
+            Monotonic per-project revision. Older or duplicate revisions
+            succeed without changing stored state.
+        blocked:
+          type: boolean
+          description: Whether the project is refused billable work.
+        reason:
+          type: string
+          description: >-
+            Reason included in blocked-request errors. Cleared when blocked is false.
+        decided_at:
+          $ref: "#/components/schemas/ManagementDecidedAt"
+
+    ManagementProjectBanRequest:
+      type: object
+      description: >-
+        Desired project ban state. A newer revision replaces the state,
+        including any intervening manual ban or unban.
+      required: [revision, banned]
+      properties:
+        revision:
+          type: integer
+          format: int64
+          minimum: 1
+          description: >-
+            Monotonic per-project revision. Older or duplicate revisions
+            succeed without changing stored state.
+        banned:
+          type: boolean
+          description: Whether the project is refused at authentication.
+        decided_at:
+          $ref: "#/components/schemas/ManagementDecidedAt"
+
+    ManagementDecidedAt:
+      type: string
+      format: date-time
+      description: >-
+        When the caller decided this revision, in RFC 3339. Stored with the
+        revision and used to measure how long the decision took to apply here.
+        Omit it when the caller does not know; the delivery is then counted as
+        origin unknown rather than as zero lag.
+
+    ManagementProjectLimits:
+      type: object
+      description: >-
+        A project's effective limits, already resolved by the caller. Every
+        field is absolute: this side stores what it is given and performs no
+        arithmetic of its own.
+
+
+        The minimums below are the contract for what a limit may be, at least
+        as strict as the CHECK constraints on default_limits. project_limits
+        stores the same values under looser constraints on purpose — it is a
+        push target, and a floor that only rejects the impossible keeps a
+        future decision about what is allowed a change to this schema rather
+        than a migration.
+
+
+        `max_disk_size_mb` and `max_free_disk_size_mb` are one ceiling under two
+        names, and either name alone carries it. A caller that sends both must
+        send them equal; a caller that sends neither is refused. Sending both is
+        what a caller does while receivers older than the second name are still
+        running.
+      required:
+        - revision
+        - concurrent_sandboxes
+        - max_sandbox_length_hours
+        - max_vcpu
+        - max_ram_mb
+        - disk_mb
+        - concurrent_template_builds
+        - events_ttl_days
+        - default_free_disk_size_mb
+        - api_team_rps_list
+        - api_team_rps_delete
+        - max_secrets
+      anyOf:
+        - required: [max_free_disk_size_mb]
+        - required: [max_disk_size_mb]
+      properties:
+        revision:
+          type: integer
+          format: int64
+          minimum: 1
+          description: >-
+            The caller's version of this answer, raised whenever the limits it
+            resolved for the project change. Delivery is over a network, so two
+            pushes can be in flight at once and arrive in either order: this
+            side stores the revision it accepted and drops a delivery at or
+            below it, which is what keeps a delayed retry from putting the
+            project back on limits it has already left.
+
+
+            Comparable only against earlier revisions for the same project.
+        concurrent_sandboxes:
+          type: integer
+          format: int32
+          minimum: 1
+        max_sandbox_length_hours:
+          type: integer
+          format: int32
+          minimum: 1
+        max_vcpu:
+          type: integer
+          format: int32
+          minimum: 1
+        max_ram_mb:
+          type: integer
+          format: int64
+          minimum: 1
+        disk_mb:
+          type: integer
+          format: int64
+          minimum: 1
+        concurrent_template_builds:
+          type: integer
+          format: int32
+          minimum: 1
+        events_ttl_days:
+          type: integer
+          format: int32
+          minimum: 1
+        default_free_disk_size_mb:
+          type: integer
+          format: int64
+          minimum: 0
+          description: >-
+            The default free-space growth target when a template build request
+            omits one. May sit anywhere at or below the maximum free-space
+            growth target, and usually sits well below it; a delivery whose
+            default exceeds the maximum is rejected.
+        max_free_disk_size_mb:
+          type: integer
+          format: int64
+          minimum: 1
+          description: >-
+            The most a template build may request as its free-space growth
+            target.
+        max_disk_size_mb:
+          type: integer
+          format: int64
+          minimum: 1
+          description: >-
+            The same ceiling as max_free_disk_size_mb, under the name it was
+            first published with. Kept until every deployed sender and receiver
+            speaks the other name.
+        api_team_rps_list:
+          type: integer
+          format: int64
+          minimum: 0
+          description: >-
+            Requests per second a project may make to each list endpoint. Zero
+            disables the limit.
+        api_team_rps_delete:
+          type: integer
+          format: int64
+          minimum: 0
+          description: >-
+            Requests per second a project may make to each delete endpoint. Zero
+            disables the limit.
+        max_secrets:
+          type: integer
+          format: int32
+          minimum: 1
+          description: Live secrets the project may hold.
+        decided_at:
+          $ref: "#/components/schemas/ManagementDecidedAt"
 
 tags:
   - name: templates
@@ -3510,7 +4657,7 @@ paths:
     get:
       summary: List running sandboxes
       x-api-group: list
-      description: List all running sandboxes. Use GET /v2/sandboxes instead.
+      description: List all running sandboxes. Returns 400 when more than 5000 running sandboxes match; use GET /v2/sandboxes to page through them.
       deprecated: true
       tags: [sandboxes]
       security:
@@ -3595,11 +4742,15 @@ paths:
           description: |
             Optional team-scoped key for retrying sandbox creation. Use 1 to 255 lowercase ASCII
             letters, digits, or hyphens (a-z, 0-9, -), such as a lowercase UUID. When idempotency is enabled,
-            matching retries replay the original status and body, including errors, for the retention period.
+            matching retries replay a completed status and body for the retention period. A creation
+            failure explicitly classified as safe to retry (Should-Retry: true) permits a fresh
+            attempt with the same key and parameters. Only one attempt can run at a time.
             Different request parameters return 409 with error_code idempotency_request_mismatch.
             An in-progress request returns 409 with error_code idempotency_in_progress; an unknown
             outcome returns 422 with error_code idempotency_outcome_unknown. These retries do not execute the request again.
-            Retries do not extend retention. After the key expires, it can start a new creation.
+            Retries do not extend retention. If a fresh attempt's request deadline plus response
+            persistence budget would exceed the remaining retention, the previous error is replayed.
+            After the key expires, it can start a new creation.
           schema:
             type: string
             minLength: 1
@@ -3996,6 +5147,8 @@ paths:
           $ref: "#/components/responses/404"
         "401":
           $ref: "#/components/responses/401"
+        "409":
+          $ref: "#/components/responses/409"
         "429":
           $ref: "#/components/responses/429"
         "500":
@@ -4055,7 +5208,11 @@ paths:
   /sandboxes/{sandboxID}/pause:
     post:
       summary: Pause sandbox
-      description: Pause the sandbox
+      description: >-
+        Pause the sandbox. Answers 503 and leaves the sandbox running when it
+        cannot be paused right now: its node is busy, it is being snapshotted,
+        or `requireHealthyGuest` was set and the sandbox guest agent is not
+        responding; retry later.
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
@@ -4093,7 +5250,12 @@ paths:
     post:
       summary: Resume sandbox
       deprecated: true
-      description: Resume the sandbox
+      description: >-
+        Resume the sandbox. Answers 409 when the sandbox is already running,
+        or when its snapshot was taken while the sandbox guest agent was not
+        responding and a plain resume would restore that memory (error_code
+        sandbox_snapshot_guest_agent_unresponsive); resume such a sandbox
+        without memory (`memory: false`).
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
@@ -4190,7 +5352,13 @@ paths:
   /sandboxes/{sandboxID}/connect:
     post:
       summary: Connect sandbox
-      description: Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. Use POST /v2/sandboxes/{sandboxID}/connect instead.
+      description: >-
+        Returns sandbox details. If the sandbox is paused, it will be resumed.
+        TTL is only extended. Use POST /v2/sandboxes/{sandboxID}/connect
+        instead. Answers 409 with error_code
+        sandbox_snapshot_guest_agent_unresponsive when the paused sandbox's
+        snapshot was taken while its guest agent was not responding and the
+        request did not ask for `memory: false`.
       deprecated: true
       tags: [sandboxes]
       security:
@@ -4245,7 +5413,10 @@ paths:
       description: >-
         Returns sandbox details. If the sandbox is paused, it will be resumed.
         TTL is only extended. The request body is optional; an omitted timeout
-        defaults to 300 seconds.
+        defaults to 300 seconds. Answers 409 with error_code
+        sandbox_snapshot_guest_agent_unresponsive when the paused sandbox's
+        snapshot was taken while its guest agent was not responding and the
+        request did not ask for `memory: false`.
       tags: [sandboxes]
       security:
         - ApiKeyAuth: []
@@ -4428,6 +5599,8 @@ paths:
           $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
+        "503":
+          $ref: "#/components/responses/503"
 
   /snapshots:
     get:
@@ -4608,7 +5781,7 @@ paths:
     get:
       summary: List templates
       x-api-group: list
-      description: List all templates
+      description: List all templates. Returns 400 when the team has more than 5000 templates; use /v2/templates to page through them.
       deprecated: true
       tags: [templates]
       security:
@@ -4635,6 +5808,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Template"
+        "400":
+          $ref: "#/components/responses/400"
         "401":
           $ref: "#/components/responses/401"
         "429":
@@ -4712,6 +5887,117 @@ paths:
           $ref: "#/components/responses/400"
         "401":
           $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/builds:
+    get:
+      summary: List team builds
+      description: >
+        Lists the team's builds, newest first, with an optional filter by build ID, template ID or
+        template alias and by status. `nextCursor` continues the listing. For E2B's own clients: it
+        may change or disappear without notice.
+      tags: [unstable]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/buildIDOrTemplate"
+        - $ref: "#/components/parameters/buildStatuses"
+        - $ref: "#/components/parameters/buildsLimit"
+        - $ref: "#/components/parameters/buildsCursor"
+      responses:
+        "200":
+          description: Successfully returned paginated builds.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuildsListResponse"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/builds/statuses:
+    get:
+      summary: Build statuses
+      description: >
+        Returns the statuses of the team's builds with the given IDs; IDs of other teams' builds are
+        left out. For E2B's own clients: it may change or disappear without notice.
+      tags: [unstable]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/buildIDs"
+      responses:
+        "200":
+          description: Successfully returned build statuses
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuildsStatusesResponse"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/builds/{buildID}:
+    get:
+      summary: Build details
+      description: >
+        Returns a build of the team with the names of its template. For E2B's own clients: it may
+        change or disappear without notice.
+      tags: [unstable]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/buildID"
+      responses:
+        "200":
+          description: Successfully returned build details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuildInfo"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "404":
+          $ref: "#/components/responses/404"
         "429":
           $ref: "#/components/responses/429"
         "500":
@@ -5470,6 +6756,124 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
+  /unstable/admin/sandboxes/{sandboxID}/builds:
+    get:
+      summary: List the builds of a sandbox's snapshot template
+      description: |
+        Lists the build assignments of the template that holds the sandbox's
+        snapshot under one tag. Assignments without a creation time are left
+        out. A sandbox without a snapshot returns no items and a null
+        `snapshotTemplateID`; this route does not report whether the sandbox
+        exists.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+        - name: statusGroup
+          in: query
+          required: false
+          description: Only list builds in these status groups, comma-separated. Omit to list every group.
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/AdminSandboxBuildStatusGroup"
+        - name: tag
+          in: query
+          required: false
+          description: Tag whose assignments are listed
+          schema:
+            type: string
+            minLength: 1
+            default: default
+        - name: order
+          in: query
+          required: false
+          description: Direction of the assignment time order
+          schema:
+            $ref: "#/components/schemas/OrderDirection"
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of builds to return
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          required: false
+          description: Number of matching builds to skip
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: A page of the snapshot template's build assignments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSandboxBuildList"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/admin/sandboxes/{sandboxID}/builds/restore:
+    post:
+      summary: Make a build the current build of a sandbox's snapshot
+      description: |
+        Assigns a ready build of the sandbox's snapshot template to the template
+        again under the default tag, so the sandbox resumes from that build.
+        The snapshot takes the restored build's kind, filesystem-only or
+        memory.
+        Answers 404 when the sandbox has no snapshot, its snapshot template is
+        deleted, or the build is not assigned to that template under the
+        default tag, and 409 when the build is not ready or is already the
+        current build.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminSandboxBuildRestoreRequest"
+      responses:
+        "200":
+          description: The build is now the snapshot template's current default build
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSandboxBuildRestoreResult"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "409":
+          $ref: "#/components/responses/409"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
   /admin/teams/{teamID}/builds/cancel:
     post:
       summary: Cancel all builds for a team
@@ -5605,6 +7009,327 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
+  /unstable/management/clusters/{clusterID}:
+    parameters:
+      - $ref: "#/components/parameters/clusterID"
+    put:
+      operationId: managementRegisterCluster
+      summary: Register a cluster.
+      description: A cluster registered here for the first time starts with deletion protection turned off. Registering an existing cluster again with the same name and auth organization updates its endpoint, TLS setting, sandbox proxy domain and token and keeps its stored deletion protection; a different name or auth organization returns a conflict with error_code cluster_registration_conflict. An invalid registration returns 400 with error_code cluster_registration_invalid.
+      tags: [admin]
+      security:
+        - AdminJWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManagementClusterRegistrationRequest"
+      responses:
+        "204":
+          description: Cluster registration is present.
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "409":
+          $ref: "#/components/responses/409"
+        "500":
+          $ref: "#/components/responses/500"
+    delete:
+      operationId: managementDeleteCluster
+      summary: Delete a cluster and its environments.
+      description: Deletes a cluster after all team assignments are detached. In the same transaction, soft-deletes every live template, snapshot template and paused sandbox snapshot on the cluster, releases their aliases, and releases all environment references while preserving environment and build history. A team assignment rejects the deletion and leaves the environments untouched, and so does deletion protection on the cluster. The local cluster's nil ID is rejected. Repeating a completed deletion succeeds.
+      tags: [admin]
+      security:
+        - AdminJWTAuth: []
+      responses:
+        "204":
+          description: Cluster is absent.
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "409":
+          $ref: "#/components/responses/409"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/management/clusters/{clusterID}/projects:
+    parameters:
+      - $ref: "#/components/parameters/clusterID"
+    get:
+      operationId: managementListClusterProjects
+      summary: List the projects assigned to a cluster.
+      description: Returns the ID of every project whose team is assigned to the cluster, whichever way it was assigned. A deleted project is never assigned. An absent cluster has no projects.
+      tags: [admin]
+      security:
+        - AdminJWTAuth: []
+      responses:
+        "200":
+          description: The projects assigned to the cluster.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManagementClusterProjects"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/management/clusters/{clusterID}/deletion:
+    parameters:
+      - $ref: "#/components/parameters/clusterID"
+    put:
+      operationId: managementRequestClusterDeletion
+      summary: Record that a cluster is being deleted.
+      description: Records that the caller is deleting the cluster, for a caller that deletes the cluster's teams before the cluster itself. Refused while the cluster has deletion protection turned on; a protection change in flight commits before or after the check, never between. Once recorded, deletion protection cannot be turned on, so the cluster delete that follows is not refused for protection, and no team can be newly assigned to the cluster. An assignment either commits before the deletion is recorded, where the caller's next project listing finds it, or is refused with cluster_assignment_cluster_deleting. Succeeds when the cluster is absent. Repeating the request succeeds. The local cluster's nil ID is rejected.
+      tags: [admin]
+      security:
+        - AdminJWTAuth: []
+      responses:
+        "204":
+          description: The deletion is recorded, or the cluster is absent.
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "409":
+          description: The cluster has deletion protection turned on.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/management/clusters/{clusterID}/destroy-readiness:
+    parameters:
+      - $ref: "#/components/parameters/clusterID"
+    get:
+      operationId: managementClusterDestroyReadiness
+      summary: Check cluster destroy readiness.
+      description: Checks whether the cluster has deletion protection turned on, or more than one team uses this exact cluster, either as an assigned team or as the owner of active templates or snapshots on it. One team's own templates and snapshots do not block this check, because deleting the cluster soft-deletes them. Soft-deleted history does not count. Returns success if the cluster is absent. This read does not change resources or prevent later assignments or template creation.
+      tags: [admin]
+      security:
+        - AdminJWTAuth: []
+      responses:
+        "204":
+          description: At most one team uses the cluster.
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "409":
+          description: The cluster has deletion protection turned on, or more than one team uses it and the other teams and their templates must move off it before destroying the cluster.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/management/projects/{projectID}/cluster/{clusterID}:
+    parameters:
+      - name: projectID
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - $ref: "#/components/parameters/clusterID"
+    put:
+      operationId: managementAssignProjectCluster
+      summary: Assign a cluster to a project.
+      description: >-
+        Assigns the cluster when the project has no cluster assigned. Replaying the identical
+        assignment succeeds; replacing a different assigned cluster returns a conflict.
+        Answers 404 when the project is missing or deleted.
+      tags: [admin]
+      security:
+        - AdminJWTAuth: []
+      responses:
+        "204":
+          description: Cluster is assigned to the project.
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "409":
+          $ref: "#/components/responses/409"
+        "500":
+          $ref: "#/components/responses/500"
+    delete:
+      operationId: managementDetachProjectCluster
+      summary: Detach a cluster assignment from a project.
+      description: Answers 404 when the project is missing or deleted.
+      tags: [admin]
+      security:
+        - AdminJWTAuth: []
+      responses:
+        "204":
+          description: The matching assignment is absent.
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "409":
+          $ref: "#/components/responses/409"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/management/projects/{projectID}:
+    parameters:
+      - name: projectID
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    put:
+      operationId: managementUpsertProject
+      summary: Create or reconcile a project.
+      tags: [admin]
+      security:
+        - AdminJWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManagementProjectUpsertRequest"
+      responses:
+        "200":
+          description: Existing project reconciled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManagementProject"
+        "201":
+          description: Project created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManagementProject"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "409":
+          $ref: "#/components/responses/409"
+        "500":
+          $ref: "#/components/responses/500"
+    delete:
+      operationId: managementDeleteProject
+      summary: Soft-delete a project.
+      description: >-
+        Marks the project deleted and blocked, releases its cluster assignment,
+        scrubs its name and email to DELETED and its slug to
+        deleted-<project ID>, which releases the old slug for reuse, deletes
+        its memberships and API keys, soft-deletes its templates and
+        snapshots, and enqueues the teardown of its running sandboxes, all in
+        one transaction. The project row remains. Afterwards the project
+        answers 404 to other management writes. Repeating the call answers
+        204 and repeats every step except the deletion time: it re-blocks and
+        re-scrubs the project, clears a cluster assignment written since,
+        deletes any memberships, keys, templates or snapshots created since,
+        and enqueues the teardown again.
+      tags: [admin]
+      security:
+        - AdminJWTAuth: []
+      responses:
+        "204":
+          description: Project is deleted and its teardown is enqueued.
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/management/projects/{projectID}/members/{userID}:
+    parameters:
+      - name: projectID
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: userID
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    put:
+      operationId: managementApplyProjectMember
+      summary: Apply one versioned project member projection.
+      description: >-
+        Applies the newest desired presence for one project member. An older
+        or duplicate revision is accepted without changing target state.
+      tags: [admin]
+      security:
+        - AdminJWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManagementProjectMemberApplyRequest"
+      responses:
+        "204":
+          description: Membership projection is applied or already superseded.
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "409":
+          $ref: "#/components/responses/409"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/management/projects/{projectID}/limits:
+    parameters:
+      - name: projectID
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    put:
+      operationId: managementUpsertProjectLimits
+      summary: Reconcile effective limits for a project.
+      tags: [admin]
+      security:
+        - AdminJWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManagementProjectLimits"
+      responses:
+        "204":
+          description: Effective limits are synchronized.
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+
   /unstable/management/projects/{projectID}/settings:
     parameters:
       - name: projectID
@@ -5643,6 +7368,83 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
+  /unstable/management/projects/{projectID}/block:
+    parameters:
+      - name: projectID
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    put:
+      operationId: managementApplyProjectBlock
+      summary: Apply a project's block state.
+      description: >-
+        Records whether the project is refused billable work, which the auth
+        path reads before it lets a sandbox start. An older or duplicate
+        revision is accepted without changing target state. Answers 404 when
+        the project is missing or deleted.
+      tags: [admin]
+      security:
+        - AdminJWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManagementProjectBlockRequest"
+      responses:
+        "204":
+          description: Block state is applied or already superseded.
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/management/projects/{projectID}/ban:
+    parameters:
+      - name: projectID
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    put:
+      operationId: managementApplyProjectBan
+      summary: Apply a project's ban state.
+      description: >-
+        Records whether the project is banned. Authentication refuses a banned
+        project's API keys and members. A revision that turns the ban on also
+        kills the project's running sandboxes and cancels its builds in the
+        background, and retries while the project stays banned and any of
+        them remain. The newest revision wins: an older or duplicate revision is
+        accepted without changing target state. Answers 404 when the project
+        is missing or deleted.
+      tags: [admin]
+      security:
+        - AdminJWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManagementProjectBanRequest"
+      responses:
+        "204":
+          description: Ban state is applied or already superseded.
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+
   /unstable/admin/teams/query:
     post:
       summary: List teams as admin
@@ -5668,6 +7470,44 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdminTeamList"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/admin/teams/bans:
+    post:
+      operationId: adminBanTeams
+      summary: Ban teams
+      description: |
+        Bans up to 100 teams at once, as
+        `PUT /unstable/admin/teams/{teamID}/ban` does, except that every
+        team's ban is stored before any team's sandboxes are killed or builds
+        cancelled, and the kills and cancellations of all teams share one time
+        budget. One team's failure does not stop the others; the response sorts
+        every requested team into banned, not found or failed. The work
+        continues if the caller disconnects.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminTeamsBanRequest"
+      responses:
+        "200":
+          description: The outcome for every requested team
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTeamsBanResult"
         "400":
           $ref: "#/components/responses/400"
         "401":
@@ -5750,6 +7590,596 @@ paths:
           $ref: "#/components/responses/404"
         "429":
           $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/admin/teams/{teamID}/ban:
+    parameters:
+      - name: teamID
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Team ID
+    put:
+      operationId: adminBanTeam
+      summary: Ban a team
+      description: |
+        Marks the team as banned so its API keys stop authenticating, then
+        kills its sandboxes and cancels its builds. The ban is stored first:
+        a failure to kill or cancel is reported in the result and does not
+        undo it. Killing and cancelling stop after a fixed time budget, and a
+        step cut short is reported as failed. Banning an already banned team
+        repeats the kill and cancel. The work continues if the caller
+        disconnects.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      responses:
+        "200":
+          description: The team is banned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTeamBanResult"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+    delete:
+      operationId: adminUnbanTeam
+      summary: Unban a team
+      description: Clears the team's ban. Idempotent.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      responses:
+        "204":
+          description: The team is not banned
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/admin/clusters:
+    get:
+      operationId: adminListClusters
+      summary: List clusters as admin
+      description: Lists the registered clusters with the number of teams assigned to each. Never returns a cluster's token. The local cluster is not a registered cluster and is not listed.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of clusters to return
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          required: false
+          description: Number of matching clusters to skip
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            default: 0
+        - name: search
+          in: query
+          required: false
+          description: Case-insensitive substring match on the cluster name or endpoint
+          schema:
+            type: string
+        - name: sortBy
+          in: query
+          required: false
+          description: Column to order by
+          schema:
+            type: string
+            enum:
+              - endpoint
+              - name
+              - teamCount
+            default: endpoint
+        - name: sortOrder
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
+            x-enum-varnames:
+              - AdminListClustersSortOrderAsc
+              - AdminListClustersSortOrderDesc
+      responses:
+        "200":
+          description: The page of matching clusters and the number of all matching clusters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClusterListResponse"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+    post:
+      operationId: adminCreateCluster
+      summary: Create a cluster as admin
+      description: Creates a cluster whose configuration cannot be modified through this route. A new cluster starts with deletion protection turned on. Creating a cluster again with the same `cluster_id` and an identical configuration answers 201 with the stored cluster, whose deletionProtection is whatever is stored; a different configuration, or an auth organization another cluster uses, returns 409 with error_code cluster_registration_conflict. An invalid request returns 400 with error_code cluster_registration_invalid.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminClusterCreateRequest"
+      responses:
+        "201":
+          description: Cluster created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClusterDetail"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "409":
+          $ref: "#/components/responses/409"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/admin/clusters/{clusterID}:
+    parameters:
+      - $ref: "#/components/parameters/clusterID"
+    get:
+      operationId: adminGetCluster
+      summary: Cluster as admin
+      description: Returns a cluster with the first page of its assigned teams, the number of teams assigned to it and the number of live templates on it. Never returns the cluster's token.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      parameters:
+        - name: teamsLimit
+          in: query
+          required: false
+          description: Page size for the embedded teams page
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: teamsOffset
+          in: query
+          required: false
+          description: Offset for the embedded teams page
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: The cluster
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClusterDetailWithTeams"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+    patch:
+      operationId: adminUpdateCluster
+      summary: Update a cluster as admin
+      description: >-
+        Writes only the properties present in the body. `endpoint` and
+        `endpointTls` change where orchestration traffic for every team on the
+        cluster goes, `sandboxProxyDomain` changes the public URL of every
+        sandbox on it, and `authOrgId` changes how the cluster authenticates.
+        A body with no property returns 400. Another cluster using the auth organization
+        returns 409, and so does turning deletion protection on after the
+        cluster's deletion is recorded. The token is rotated through
+        `PUT /unstable/admin/clusters/{clusterID}/token`.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClusterUpdateRequest"
+      responses:
+        "200":
+          description: The cluster as updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClusterDetail"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "409":
+          $ref: "#/components/responses/409"
+        "500":
+          $ref: "#/components/responses/500"
+    delete:
+      operationId: adminDeleteCluster
+      summary: Delete a cluster and its environments as admin
+      description: Deletes a cluster after all team assignments are detached. In the same transaction, soft-deletes every live template, snapshot template and paused sandbox snapshot on the cluster, releases their aliases, and releases all environment references while preserving environment and build history. A team assignment rejects the deletion and leaves the environments untouched, and so does deletion protection on the cluster. The local cluster's nil ID is rejected. Repeating a completed deletion succeeds.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      responses:
+        "204":
+          description: Cluster deleted or already absent.
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "409":
+          $ref: "#/components/responses/409"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/admin/clusters/{clusterID}/teams:
+    parameters:
+      - $ref: "#/components/parameters/clusterID"
+    get:
+      operationId: adminListClusterTeams
+      summary: List a cluster's teams as admin
+      description: Lists the teams assigned to the cluster.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of teams to return
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          required: false
+          description: Number of teams to skip
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            default: 0
+        - name: sortBy
+          in: query
+          required: false
+          description: Column to order by
+          schema:
+            type: string
+            enum:
+              - createdAt
+              - name
+            default: createdAt
+        - name: sortOrder
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+            x-enum-varnames:
+              - AdminListClusterTeamsSortOrderAsc
+              - AdminListClusterTeamsSortOrderDesc
+      responses:
+        "200":
+          description: The page of teams assigned to the cluster
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClusterTeamListResponse"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/admin/clusters/{clusterID}/token:
+    parameters:
+      - $ref: "#/components/parameters/clusterID"
+    put:
+      operationId: adminRotateClusterToken
+      summary: Rotate a cluster's token as admin
+      description: Replaces the token used to reach the cluster. The previous token stops working at once. No route returns a cluster's token.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClusterTokenRotateRequest"
+      responses:
+        "204":
+          description: Token rotated.
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/admin/templates/aliases:
+    get:
+      summary: Search template aliases as admin
+      description: >
+        Finds the templates whose ID equals `search`, or that own an alias equal to `search` in any
+        namespace, with their owning team and all their aliases. Deleted templates are left out.
+        Results are ordered by template ID; the next page's token is returned in `X-Next-Token`.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      parameters:
+        - name: search
+          in: query
+          required: true
+          description: Exact template ID or alias
+          schema:
+            type: string
+            minLength: 1
+        - $ref: "#/components/parameters/paginationNextToken"
+        - $ref: "#/components/parameters/paginationLimit"
+      responses:
+        "200":
+          description: Successfully returned the matching templates
+          headers:
+            X-Next-Token:
+              $ref: "#/components/headers/XNextToken"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminTemplateAliases"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+    post:
+      summary: Add a template alias without a namespace as admin
+      description: >
+        Adds an alias without a namespace to a template, so the template resolves by that name for
+        every team. The alias follows the rules of template names (lowercase letters, digits, `-`
+        and `_`) and cannot equal a template ID. Returns 404 when the template does not exist and
+        409 when the alias is taken.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminTemplateAliasCreateRequest"
+      responses:
+        "201":
+          description: The alias was added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTemplateAlias"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "409":
+          $ref: "#/components/responses/409"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/admin/templates/aliases/{aliasID}:
+    delete:
+      summary: Remove a template alias without a namespace as admin
+      description: >
+        Removes an alias without a namespace. A namespaced alias is not removed and answers 404.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      parameters:
+        - $ref: "#/components/parameters/aliasID"
+      responses:
+        "200":
+          description: The alias was removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTemplateAliasDeleted"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/admin/templates/defaults:
+    post:
+      summary: Add a default template as admin
+      description: >
+        Makes a template one of the platform's default templates. Returns 404 when the template
+        does not exist and 409 when it is already a default template.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminDefaultTemplateCreateRequest"
+      responses:
+        "201":
+          description: The template is now a default template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminDefaultTemplate"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "409":
+          $ref: "#/components/responses/409"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/admin/templates/defaults/{templateID}:
+    patch:
+      summary: Update a default template as admin
+      description: Updates the description of a default template. Returns 404 when the template is not a default template.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      parameters:
+        - $ref: "#/components/parameters/templateID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminDefaultTemplateUpdateRequest"
+      responses:
+        "200":
+          description: The default template was updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminDefaultTemplate"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+    delete:
+      summary: Remove a default template as admin
+      description: >
+        Stops a template being one of the platform's default templates. The template itself is not
+        changed. Returns 404 when the template is not a default template.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      parameters:
+        - $ref: "#/components/parameters/templateID"
+      responses:
+        "204":
+          description: The template is no longer a default template
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/admin/templates/lookup:
+    get:
+      summary: Look up a template as admin
+      description: >
+        Resolves `query` as, in order: a build ID (a UUID, matched to the template of the build's
+        newest assignment, with no fallback), a template ID, or a template name (`namespace/alias`,
+        or an alias without a namespace). Returns the template with its owning team and its newest
+        builds. Deleted templates are not found.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      parameters:
+        - name: query
+          in: query
+          required: true
+          description: Build ID, template ID, or template name
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        "200":
+          description: Successfully resolved the template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTemplateLookup"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
         "500":
           $ref: "#/components/responses/500"
 

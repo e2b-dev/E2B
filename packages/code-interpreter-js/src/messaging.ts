@@ -32,7 +32,11 @@ export class OutputMessage {
      */
     public readonly line: string,
     /**
-     * Unix epoch in nanoseconds.
+     * Unix epoch in nanoseconds, as sent by the backend.
+     *
+     * Nanosecond epoch values exceed `Number.MAX_SAFE_INTEGER`, so the value is
+     * only precise to a few hundred nanoseconds (currently multiples of 256 ns).
+     * Chunks emitted closer together than that may share the same timestamp.
      */
     public readonly timestamp: number,
     /**
@@ -352,7 +356,7 @@ export async function parseOutput(
         await onStdout({
           error: false,
           line: msg.text,
-          timestamp: new Date().getTime() * 1000,
+          timestamp: msg.timestamp,
         })
       }
       break
@@ -362,7 +366,7 @@ export async function parseOutput(
         await onStderr({
           error: true,
           line: msg.text,
-          timestamp: new Date().getTime() * 1000,
+          timestamp: msg.timestamp,
         })
       }
       break

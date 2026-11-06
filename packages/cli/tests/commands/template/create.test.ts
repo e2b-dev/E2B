@@ -75,6 +75,28 @@ describe('template create cli backend integration', () => {
       expect(output).not.toMatch(/You must be logged in/)
     }
   )
+
+  test(
+    'template create --no-cache rebuilds every step',
+    { timeout: 300_000 },
+    () => {
+      const result = runCli([
+        'template',
+        'create',
+        templateName,
+        '--path',
+        testDir,
+        '--no-cache',
+      ])
+      const output = String(result.stdout || '') + String(result.stderr || '')
+
+      expect(result.status, output).toBe(0)
+      expect(output).toContain('✅ Building sandbox template')
+      // The previous test built the same template, so every step would be
+      // reported as CACHED unless the build skipped the cache.
+      expect(output).not.toContain('CACHED')
+    }
+  )
 })
 
 function runCli(args: string[]): ReturnType<typeof spawnSync> {

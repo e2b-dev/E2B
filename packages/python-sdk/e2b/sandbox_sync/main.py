@@ -286,6 +286,7 @@ class Sandbox(SandboxApi):
             deployment built from `e2b-dev/runtime` at or after the commit that added the `memory`
             field to connect/resume (2026-08-20). An older control plane drops the field and
             restores memory while answering as if the request had succeeded.
+        :raises GuestUnresponsiveException: when the paused sandbox's snapshot was taken while its guest agent was not responding (``envd_unresponsive_at_pause``); connect with ``on_resume="reboot"``.
         :return: A running sandbox instance
 
         @example
@@ -329,6 +330,7 @@ class Sandbox(SandboxApi):
             deployment built from `e2b-dev/runtime` at or after the commit that added the `memory`
             field to connect/resume (2026-08-20). An older control plane drops the field and
             restores memory while answering as if the request had succeeded.
+        :raises GuestUnresponsiveException: when the paused sandbox's snapshot was taken while its guest agent was not responding (``envd_unresponsive_at_pause``); connect with ``on_resume="reboot"``.
         :return: A running sandbox instance
 
         @example
@@ -367,6 +369,7 @@ class Sandbox(SandboxApi):
             deployment built from `e2b-dev/runtime` at or after the commit that added the `memory`
             field to connect/resume (2026-08-20). An older control plane drops the field and
             restores memory while answering as if the request had succeeded.
+        :raises GuestUnresponsiveException: when the paused sandbox's snapshot was taken while its guest agent was not responding (``envd_unresponsive_at_pause``); connect with ``on_resume="reboot"``.
         :return: A running sandbox instance
 
         @example
@@ -791,6 +794,7 @@ class Sandbox(SandboxApi):
         keep_memory: Optional[bool] = None,
         *,
         mode: Optional[SnapshotMode] = None,
+        strict: bool = False,
         **opts: Unpack[ApiParams],
     ) -> bool:
         """
@@ -798,6 +802,7 @@ class Sandbox(SandboxApi):
 
         :param keep_memory: :deprecated: Use `mode` instead: `keep_memory=False` is `mode="filesystem"`, `keep_memory=True` is `mode="full"`.
         :param mode: What the pause persists. With `"filesystem"`, the in-memory state is dropped and only the filesystem is persisted; resuming such a sandbox cold-boots (reboots) it from disk, losing running processes and open connections. Defaults to `"full"` (memory and filesystem).
+        :param strict: Refuse the pause when the sandbox's guest agent (envd) does not respond: it raises :class:`ServiceBusyException` and the sandbox keeps running. Otherwise the memory snapshot is taken anyway and marked (`envd_unresponsive_at_pause` in sandbox info); such a sandbox then resumes only with `on_resume="reboot"`, which cold-boots it from disk. A `mode="filesystem"` pause always requires a responding guest agent.
 
         :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
@@ -810,6 +815,7 @@ class Sandbox(SandboxApi):
         keep_memory: Optional[bool] = None,
         *,
         mode: Optional[SnapshotMode] = None,
+        strict: bool = False,
         **opts: Unpack[ApiParams],
     ) -> bool:
         """
@@ -818,6 +824,7 @@ class Sandbox(SandboxApi):
         :param sandbox_id: Sandbox ID
         :param keep_memory: :deprecated: Use `mode` instead: `keep_memory=False` is `mode="filesystem"`, `keep_memory=True` is `mode="full"`.
         :param mode: What the pause persists. With `"filesystem"`, the in-memory state is dropped and only the filesystem is persisted; resuming such a sandbox cold-boots (reboots) it from disk, losing running processes and open connections. Defaults to `"full"` (memory and filesystem).
+        :param strict: Refuse the pause when the sandbox's guest agent (envd) does not respond: it raises :class:`ServiceBusyException` and the sandbox keeps running. Otherwise the memory snapshot is taken anyway and marked (`envd_unresponsive_at_pause` in sandbox info); such a sandbox then resumes only with `on_resume="reboot"`, which cold-boots it from disk. A `mode="filesystem"` pause always requires a responding guest agent.
 
         :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
@@ -829,6 +836,7 @@ class Sandbox(SandboxApi):
         keep_memory: Optional[bool] = None,
         *,
         mode: Optional[SnapshotMode] = None,
+        strict: bool = False,
         **opts: Unpack[ApiParams],
     ) -> bool:
         """
@@ -836,6 +844,7 @@ class Sandbox(SandboxApi):
 
         :param keep_memory: :deprecated: Use `mode` instead: `keep_memory=False` is `mode="filesystem"`, `keep_memory=True` is `mode="full"`.
         :param mode: What the pause persists. With `"filesystem"`, the in-memory state is dropped and only the filesystem is persisted; resuming such a sandbox cold-boots (reboots) it from disk, losing running processes and open connections. Defaults to `"full"` (memory and filesystem).
+        :param strict: Refuse the pause when the sandbox's guest agent (envd) does not respond: it raises :class:`ServiceBusyException` and the sandbox keeps running. Otherwise the memory snapshot is taken anyway and marked (`envd_unresponsive_at_pause` in sandbox info); such a sandbox then resumes only with `on_resume="reboot"`, which cold-boots it from disk. A `mode="filesystem"` pause always requires a responding guest agent.
 
         :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
@@ -844,6 +853,7 @@ class Sandbox(SandboxApi):
             sandbox_id=self.sandbox_id,
             keep_memory=keep_memory,
             mode=mode,
+            strict=strict,
             **self.connection_config.get_api_params(**opts),
         )
 

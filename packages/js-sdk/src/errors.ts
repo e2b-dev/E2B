@@ -262,6 +262,26 @@ export class ServiceBusyError extends Error {
 }
 
 /**
+ * Thrown when a paused sandbox cannot be resumed with its memory because its
+ * snapshot was taken while the sandbox's guest agent (envd) was not
+ * responding (`envdUnresponsiveAtPause` in sandbox info). Restoring that
+ * memory would bring the unresponsive agent back; resume the sandbox with
+ * `onResume: 'reboot'`, which cold-boots it from disk.
+ */
+export class GuestUnresponsiveError extends SandboxError {
+  /**
+   * The API's `error_code` for this error.
+   */
+  static readonly code = 'sandbox_snapshot_guest_agent_unresponsive'
+
+  constructor(message: string) {
+    super(message)
+    this.name = 'GuestUnresponsiveError'
+    this.statusCode = 409
+  }
+}
+
+/**
  * Thrown when the build fails.
  */
 export class BuildError extends Error {

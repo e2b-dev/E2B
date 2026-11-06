@@ -54,7 +54,6 @@ export function createCommand(
       async (
         template: string | undefined,
         opts: {
-          name?: string
           detach?: boolean
           'lifecycle.ontimeout'?: SandboxLifecycle['onTimeout']
           'lifecycle.autoresume'?: boolean
@@ -164,7 +163,7 @@ function buildLifecycle(
   return { onTimeout, ...(autoResume ? { autoResume: true } : {}) }
 }
 
-export async function connectSandbox({
+async function connectSandbox({
   sandbox,
   template,
   timeoutMs,

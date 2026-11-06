@@ -73,25 +73,28 @@ export const logsCommand = new commander.Command('logs')
   .action(
     async (
       sandboxID: string,
-      opts?: {
+      opts: {
         level: string
-        follow: boolean
+        follow?: boolean
         format: Format
-        loggers?: string[]
+        loggers?: string[] | true
       }
     ) => {
       try {
-        const level = opts?.level.toUpperCase() as LogLevel | undefined
-        if (level && !Object.values(LogLevel).includes(level)) {
+        const level = opts.level.toUpperCase() as LogLevel
+        if (!Object.values(LogLevel).includes(level)) {
           throw new Error(`Invalid log level: ${level}`)
         }
 
-        const format = opts?.format.toLowerCase() as Format | undefined
-        if (format && !Object.values(Format).includes(format)) {
+        const format = opts.format.toLowerCase() as Format
+        if (!Object.values(Format).includes(format)) {
           throw new Error(`Invalid log format: ${format}`)
         }
 
-        const getIsRunning = opts?.follow
+        // A bare `--loggers` (no value) yields `true`: don't filter by logger.
+        const loggers = Array.isArray(opts.loggers) ? opts.loggers : undefined
+
+        const getIsRunning = opts.follow
           ? waitForSandboxEnd(sandboxID)
           : () => false
 
@@ -112,16 +115,10 @@ export const logsCommand = new commander.Command('logs')
           }
 
           for (const log of logs) {
-            printLog(
-              log.timestamp,
-              log.line,
-              level,
-              format,
-              opts?.loggers ?? undefined
-            )
+            printLog(log.timestamp, log.line, level, format, loggers)
           }
 
-          if (!opts?.follow) break
+          if (!opts.follow) break
 
           const isSandboxRunning = await isRunning(sandboxID)
 
@@ -155,7 +152,7 @@ export const logsCommand = new commander.Command('logs')
 
           await wait(400)
           isFirstRun = false
-        } while (getIsRunning() && opts?.follow)
+        } while (getIsRunning() && opts.follow)
       } catch (err: any) {
         console.error(err)
         process.exit(1)
@@ -166,9 +163,9 @@ export const logsCommand = new commander.Command('logs')
 function printLog(
   timestamp: string,
   line: string,
-  allowedLevel: LogLevel | undefined,
-  format: Format | undefined,
-  allowedLoggers?: string[] | undefined
+  allowedLevel: LogLevel,
+  format: Format,
+  allowedLoggers: string[] | undefined
 ) {
   const log = JSON.parse(line)
   let level = log['level'].toUpperCase()
@@ -177,8 +174,7 @@ function printLog(
 
   // Check if the current logger startsWith any of the allowed loggers. If there are no specified loggers, print logs from all loggers.
   if (
-    allowedLoggers !== undefined &&
-    Array.isArray(allowedLoggers) &&
+    allowedLoggers &&
     !allowedLoggers.some((allowedLogger) =>
       log.logger.startsWith(allowedLogger)
     )
@@ -239,7 +235,7 @@ function printLog(
   }
 }
 
-export async function listSandboxLogs({
+async function listSandboxLogs({
   sandboxID,
   start,
 }: {

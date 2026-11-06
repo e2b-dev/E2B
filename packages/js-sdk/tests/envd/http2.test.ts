@@ -4,6 +4,7 @@ afterEach(() => {
   vi.restoreAllMocks()
   vi.resetModules()
   delete process.env.E2B_ENVD_RPC_CONNECTIONS
+  delete process.env.E2B_ENVD_UPLOAD_CONNECTIONS
 })
 
 test('uses undici with HTTP/2 enabled in Node', async () => {
@@ -295,5 +296,18 @@ test('uses global fetch outside Node', async () => {
   expect(fallbackFetch).toHaveBeenCalledWith(
     'https://example.com/status',
     undefined
+  )
+})
+
+test('getEnvdUploadConnectionLimit defaults to 50 and honours E2B_ENVD_UPLOAD_CONNECTIONS', async () => {
+  const { getEnvdUploadConnectionLimit } = await import('../../src/envd/http2')
+  expect(getEnvdUploadConnectionLimit()).toBe(50)
+
+  process.env.E2B_ENVD_UPLOAD_CONNECTIONS = '8'
+  expect(getEnvdUploadConnectionLimit()).toBe(8)
+
+  process.env.E2B_ENVD_UPLOAD_CONNECTIONS = 'bogus'
+  expect(() => getEnvdUploadConnectionLimit()).toThrow(
+    /E2B_ENVD_UPLOAD_CONNECTIONS/
   )
 })

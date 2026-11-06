@@ -113,7 +113,7 @@ jobs:
               - 'packages/dockerfile-utils-python/**/!(*.md)'
 
   js-tests:
-    name: Production / JS SDK Tests
+    name: JS SDK Tests
     needs: changes
     if: ${{ needs.changes.outputs.js == 'true' || github.event_name == 'workflow_dispatch' }}
     uses: ./.github/workflows/js_sdk_tests.yml
@@ -121,7 +121,7 @@ jobs:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
   python-tests:
-    name: Production / Python SDK Tests
+    name: Python SDK Tests
     needs: changes
     if: ${{ needs.changes.outputs.python == 'true' || github.event_name == 'workflow_dispatch' }}
     uses: ./.github/workflows/python_sdk_tests.yml
@@ -129,7 +129,7 @@ jobs:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
   cli-tests:
-    name: Production / CLI Tests
+    name: CLI Tests
     needs: changes
     if: ${{ needs.changes.outputs.cli == 'true' || github.event_name == 'workflow_dispatch' }}
     uses: ./.github/workflows/cli_tests.yml
@@ -137,7 +137,7 @@ jobs:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
   code-interpreter-js-tests:
-    name: Production / Code Interpreter JS SDK Tests
+    name: Code Interpreter JS SDK Tests
     needs: changes
     if: ${{ needs.changes.outputs.code_interpreter_js == 'true' || github.event_name == 'workflow_dispatch' }}
     uses: ./.github/workflows/code_interpreter_js_tests.yml
@@ -145,7 +145,7 @@ jobs:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
   code-interpreter-python-tests:
-    name: Production / Code Interpreter Python SDK Tests
+    name: Code Interpreter Python SDK Tests
     needs: changes
     if: ${{ needs.changes.outputs.code_interpreter_python == 'true' || github.event_name == 'workflow_dispatch' }}
     uses: ./.github/workflows/code_interpreter_python_tests.yml
@@ -153,7 +153,7 @@ jobs:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
   desktop-js-tests:
-    name: Production / Desktop JS SDK Tests
+    name: Desktop JS SDK Tests
     needs: changes
     if: ${{ needs.changes.outputs.desktop_js == 'true' || github.event_name == 'workflow_dispatch' }}
     uses: ./.github/workflows/desktop_js_tests.yml
@@ -161,92 +161,12 @@ jobs:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
   desktop-python-tests:
-    name: Production / Desktop Python SDK Tests
+    name: Desktop Python SDK Tests
     needs: changes
     if: ${{ needs.changes.outputs.desktop_python == 'true' || github.event_name == 'workflow_dispatch' }}
     uses: ./.github/workflows/desktop_python_tests.yml
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
-
-  js-tests-staging:
-    name: Staging / JS SDK Tests
-    needs: changes
-    if: ${{ needs.changes.outputs.js == 'true' || github.event_name == 'workflow_dispatch' }}
-    uses: ./.github/workflows/js_sdk_tests.yml
-    with:
-      E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
-      # Staging only checks backend compatibility, so the Node legs suffice;
-      # Bun/Deno/Cloudflare runtime coverage runs against production above.
-      node-only: true
-    secrets:
-      E2B_API_KEY: ${{ secrets.E2B_API_KEY_STAGING }}
-
-  python-tests-staging:
-    name: Staging / Python SDK Tests
-    needs: changes
-    if: ${{ needs.changes.outputs.python == 'true' || github.event_name == 'workflow_dispatch' }}
-    uses: ./.github/workflows/python_sdk_tests.yml
-    with:
-      E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
-    secrets:
-      E2B_API_KEY: ${{ secrets.E2B_API_KEY_STAGING }}
-
-  cli-tests-staging:
-    name: Staging / CLI Tests
-    needs: changes
-    if: ${{ needs.changes.outputs.cli == 'true' || github.event_name == 'workflow_dispatch' }}
-    uses: ./.github/workflows/cli_tests.yml
-    with:
-      E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
-    secrets:
-      E2B_API_KEY: ${{ secrets.E2B_API_KEY_STAGING }}
-
-  code-interpreter-js-tests-staging:
-    name: Staging / Code Interpreter JS SDK Tests
-    needs: changes
-    if: ${{ needs.changes.outputs.code_interpreter_js == 'true' || github.event_name == 'workflow_dispatch' }}
-    uses: ./.github/workflows/code_interpreter_js_tests.yml
-    with:
-      E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
-      run_recovery_tests: false
-      # Staging only checks backend compatibility, so the Node leg suffices;
-      # Bun/Deno runtime coverage runs against production above.
-      node-only: true
-    secrets:
-      E2B_API_KEY: ${{ secrets.E2B_API_KEY_STAGING }}
-
-  code-interpreter-python-tests-staging:
-    name: Staging / Code Interpreter Python SDK Tests
-    needs: changes
-    if: ${{ needs.changes.outputs.code_interpreter_python == 'true' || github.event_name == 'workflow_dispatch' }}
-    uses: ./.github/workflows/code_interpreter_python_tests.yml
-    with:
-      E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
-      run_recovery_tests: false
-    secrets:
-      E2B_API_KEY: ${{ secrets.E2B_API_KEY_STAGING }}
-
-  desktop-js-tests-staging:
-    name: Staging / Desktop JS SDK Tests
-    needs: changes
-    if: ${{ needs.changes.outputs.desktop_js == 'true' || github.event_name == 'workflow_dispatch' }}
-    uses: ./.github/workflows/desktop_js_tests.yml
-    with:
-      E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
-      run_tests: false
-    secrets:
-      E2B_API_KEY: ${{ secrets.E2B_API_KEY_STAGING }}
-
-  desktop-python-tests-staging:
-    name: Staging / Desktop Python SDK Tests
-    needs: changes
-    if: ${{ needs.changes.outputs.desktop_python == 'true' || github.event_name == 'workflow_dispatch' }}
-    uses: ./.github/workflows/desktop_python_tests.yml
-    with:
-      E2B_DOMAIN: ${{ vars.E2B_DOMAIN_STAGING }}
-      run_tests: false
-    secrets:
-      E2B_API_KEY: ${{ secrets.E2B_API_KEY_STAGING }}
 
   dockerfile-utils-js-tests:
     name: Dockerfile Utils JS Tests
@@ -282,11 +202,11 @@ jobs:
         run: |
           echo "Job results: ${{ join(needs.*.result, ', ') }}"
           if ${{ contains(needs.*.result, 'failure') }}; then
-            echo "::error::Change detection or a Production SDK test suite failed."
+            echo "::error::Change detection or an SDK test suite failed."
             exit 1
           fi
           if ${{ contains(needs.*.result, 'cancelled') }}; then
-            echo "::error::Change detection or a Production SDK test suite was cancelled; tests were not verified — re-run before merging."
+            echo "::error::Change detection or an SDK test suite was cancelled; tests were not verified — re-run before merging."
             exit 1
           fi
-          echo "All Production SDK test suites passed or were skipped."
+          echo "All SDK test suites passed or were skipped."

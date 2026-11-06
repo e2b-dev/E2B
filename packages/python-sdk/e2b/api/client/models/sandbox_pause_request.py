@@ -17,19 +17,30 @@ class SandboxPauseRequest:
             persisted and resuming the sandbox cold-boots (reboots) it from disk, losing in-memory state, running processes,
             and open connections. Resume it with an explicit request (connect or resume); auto-resume, which can be
             triggered by arbitrary traffic, refuses such a sandbox. Defaults to true. Default: True.
+        require_healthy_guest (Union[Unset, bool]): The pause checks that the sandbox guest agent answers before it
+            takes the snapshot. By default an unresponsive agent is recorded on the snapshot and the pause proceeds; the
+            sandbox then shows `envdUnresponsiveAtPause` and a later resume must ask for `memory: false`, since restoring
+            that memory would bring the unresponsive agent back. With this true, the pause is instead refused with 503 while
+            the agent does not answer, and the sandbox keeps running. A filesystem-only pause (`memory: false`) is always
+            refused while the agent does not answer, whatever this says. Default: False.
     """
 
     memory: Union[Unset, bool] = True
+    require_healthy_guest: Union[Unset, bool] = False
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         memory = self.memory
+
+        require_healthy_guest = self.require_healthy_guest
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
         if memory is not UNSET:
             field_dict["memory"] = memory
+        if require_healthy_guest is not UNSET:
+            field_dict["requireHealthyGuest"] = require_healthy_guest
 
         return field_dict
 
@@ -38,8 +49,11 @@ class SandboxPauseRequest:
         d = dict(src_dict)
         memory = d.pop("memory", UNSET)
 
+        require_healthy_guest = d.pop("requireHealthyGuest", UNSET)
+
         sandbox_pause_request = cls(
             memory=memory,
+            require_healthy_guest=require_healthy_guest,
         )
 
         sandbox_pause_request.additional_properties = d

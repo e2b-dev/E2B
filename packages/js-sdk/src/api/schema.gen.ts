@@ -56,7 +56,7 @@ export interface paths {
         /**
          * List running sandboxes
          * @deprecated
-         * @description List all running sandboxes. Use GET /v2/sandboxes instead.
+         * @description List all running sandboxes. Returns 400 when more than 5000 running sandboxes match; use GET /v2/sandboxes to page through them.
          */
         get: {
             parameters: {
@@ -190,6 +190,7 @@ export interface paths {
                 };
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
+                409: components["responses"]["409"];
                 429: components["responses"]["429"];
                 500: components["responses"]["500"];
             };
@@ -211,7 +212,7 @@ export interface paths {
         /**
          * Connect sandbox
          * @deprecated
-         * @description Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. Use POST /v2/sandboxes/{sandboxID}/connect instead.
+         * @description Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. Use POST /v2/sandboxes/{sandboxID}/connect instead. Answers 409 with error_code sandbox_snapshot_guest_agent_unresponsive when the paused sandbox's snapshot was taken while its guest agent was not responding and the request did not ask for `memory: false`.
          */
         post: {
             parameters: {
@@ -473,7 +474,7 @@ export interface paths {
         put?: never;
         /**
          * Pause sandbox
-         * @description Pause the sandbox
+         * @description Pause the sandbox. Answers 503 and leaves the sandbox running when it cannot be paused right now: its node is busy, it is being snapshotted, or `requireHealthyGuest` was set and the sandbox guest agent is not responding; retry later.
          */
         post: {
             parameters: {
@@ -569,7 +570,7 @@ export interface paths {
         /**
          * Resume sandbox
          * @deprecated
-         * @description Resume the sandbox
+         * @description Resume the sandbox. Answers 409 when the sandbox is already running, or when its snapshot was taken while the sandbox guest agent was not responding and a plain resume would restore that memory (error_code sandbox_snapshot_guest_agent_unresponsive); resume such a sandbox without memory (`memory: false`).
          */
         post: {
             parameters: {
@@ -653,6 +654,7 @@ export interface paths {
                 404: components["responses"]["404"];
                 429: components["responses"]["429"];
                 500: components["responses"]["500"];
+                503: components["responses"]["503"];
             };
         };
         delete?: never;
@@ -1179,7 +1181,7 @@ export interface paths {
         /**
          * List templates
          * @deprecated
-         * @description List all templates
+         * @description List all templates. Returns 400 when the team has more than 5000 templates; use /v2/templates to page through them.
          */
         get: {
             parameters: {
@@ -1201,6 +1203,7 @@ export interface paths {
                         "application/json": components["schemas"]["Template"][];
                     };
                 };
+                400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 429: components["responses"]["429"];
                 500: components["responses"]["500"];
@@ -2013,11 +2016,15 @@ export interface paths {
                     /**
                      * @description Optional team-scoped key for retrying sandbox creation. Use 1 to 255 lowercase ASCII
                      *     letters, digits, or hyphens (a-z, 0-9, -), such as a lowercase UUID. When idempotency is enabled,
-                     *     matching retries replay the original status and body, including errors, for the retention period.
+                     *     matching retries replay a completed status and body for the retention period. A creation
+                     *     failure explicitly classified as safe to retry (Should-Retry: true) permits a fresh
+                     *     attempt with the same key and parameters. Only one attempt can run at a time.
                      *     Different request parameters return 409 with error_code idempotency_request_mismatch.
                      *     An in-progress request returns 409 with error_code idempotency_in_progress; an unknown
                      *     outcome returns 422 with error_code idempotency_outcome_unknown. These retries do not execute the request again.
-                     *     Retries do not extend retention. After the key expires, it can start a new creation.
+                     *     Retries do not extend retention. If a fresh attempt's request deadline plus response
+                     *     persistence budget would exceed the remaining retention, the previous error is replayed.
+                     *     After the key expires, it can start a new creation.
                      */
                     "Idempotency-Key"?: string;
                 };
@@ -2154,7 +2161,7 @@ export interface paths {
         put?: never;
         /**
          * Connect sandbox (v2)
-         * @description Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. The request body is optional; an omitted timeout defaults to 300 seconds.
+         * @description Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. The request body is optional; an omitted timeout defaults to 300 seconds. Answers 409 with error_code sandbox_snapshot_guest_agent_unresponsive when the paused sandbox's snapshot was taken while its guest agent was not responding and the request did not ask for `memory: false`.
          */
         post: {
             parameters: {
@@ -2659,7 +2666,7 @@ export interface components {
             step?: string;
         };
         ConnectSandbox: {
-            /** @description Defaults to true. When false and the sandbox is paused, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. */
+            /** @description Defaults to true. When false and the sandbox is paused, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. A snapshot taken while the sandbox guest agent was not responding (envdUnresponsiveAtPause) can only be resumed this way, and needs no enablement. */
             memory?: boolean;
             /**
              * Format: int32
@@ -2668,7 +2675,7 @@ export interface components {
             timeout: number;
         };
         ConnectSandboxV2: {
-            /** @description Defaults to true. When false and the sandbox is paused, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. */
+            /** @description Defaults to true. When false and the sandbox is paused, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. A snapshot taken while the sandbox guest agent was not responding (envdUnresponsiveAtPause) can only be resumed this way, and needs no enablement. */
             memory?: boolean;
             /**
              * Format: int32
@@ -2693,6 +2700,8 @@ export interface components {
          * @description Disk size for the sandbox in MiB
          */
         DiskSizeMB: number;
+        /** @description True when the snapshot a paused sandbox would resume from was taken while the sandbox guest agent was not responding. A plain resume of it is refused with 409 and error_code sandbox_snapshot_guest_agent_unresponsive, because restoring that memory would bring the unresponsive agent back; resume it without memory (`memory: false`), which cold-boots the sandbox from its disk. Omitted for a running sandbox and for a snapshot whose agent answered. */
+        EnvdUnresponsiveAtPause: boolean;
         /** @description Version of the envd running in the sandbox */
         EnvdVersion: string;
         EnvVars: {
@@ -2704,7 +2713,7 @@ export interface components {
              * @description Error code
              */
             code: number;
-            /** @description Machine-readable semantic error code. Not a closed set; initial values: sandbox_capacity_unavailable, sandbox_placement_timeout, sandbox_no_compatible_node, sandbox_create_failed (a node could not create the sandbox this time; retry), sandbox_create_refused (a node refused the sandbox for a reason no retry changes, such as a vcpu count out of bounds in the stored build; a server error, since no request field reaches that check), internal_server_error, secret_limit_reached, idempotency_request_mismatch, idempotency_in_progress, idempotency_outcome_unknown. */
+            /** @description Machine-readable semantic error code. Not a closed set; initial values: sandbox_capacity_unavailable, sandbox_placement_timeout, sandbox_no_compatible_node, sandbox_create_failed (a node could not create the sandbox this time; retry), sandbox_create_refused (a node refused the sandbox for a reason no retry changes, such as a vcpu count out of bounds in the stored build; a server error, since no request field reaches that check), internal_server_error, secret_limit_reached, idempotency_request_mismatch, idempotency_in_progress, idempotency_outcome_unknown, cluster_registration_invalid, cluster_registration_conflict, cluster_assignment_invalid, cluster_assignment_project_not_found, cluster_assignment_cluster_not_found, cluster_assignment_already_assigned, cluster_assignment_cluster_deleting, sandbox_snapshot_guest_agent_unresponsive (a plain resume of a snapshot taken while the sandbox guest agent was not responding; resume it with memory: false). */
             error_code?: string;
             /** @description Error */
             message: string;
@@ -2745,6 +2754,7 @@ export interface components {
              * @description Time when the sandbox will expire
              */
             endAt: string;
+            envdUnresponsiveAtPause?: components["schemas"]["EnvdUnresponsiveAtPause"];
             envdVersion: components["schemas"]["EnvdVersion"];
             memoryMB: components["schemas"]["MemoryMB"];
             metadata?: components["schemas"]["SandboxMetadata"];
@@ -2892,7 +2902,7 @@ export interface components {
              * @description Automatically pauses the sandbox after the timeout
              */
             autoPause?: boolean;
-            /** @description Defaults to true. When false, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. */
+            /** @description Defaults to true. When false, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. A snapshot taken while the sandbox guest agent was not responding (envdUnresponsiveAtPause) can only be resumed this way, and needs no enablement. */
             memory?: boolean;
             /**
              * Format: int32
@@ -2951,6 +2961,7 @@ export interface components {
             endAt: string;
             /** @description Access token used for envd communication */
             envdAccessToken?: string;
+            envdUnresponsiveAtPause?: components["schemas"]["EnvdUnresponsiveAtPause"];
             envdVersion: components["schemas"]["EnvdVersion"];
             lifecycle?: components["schemas"]["SandboxLifecycle"];
             memoryMB: components["schemas"]["MemoryMB"];
@@ -3182,6 +3193,11 @@ export interface components {
              * @default true
              */
             memory?: boolean;
+            /**
+             * @description The pause checks that the sandbox guest agent answers before it takes the snapshot. By default an unresponsive agent is recorded on the snapshot and the pause proceeds; the sandbox then shows `envdUnresponsiveAtPause` and a later resume must ask for `memory: false`, since restoring that memory would bring the unresponsive agent back. With this true, the pause is instead refused with 503 while the agent does not answer, and the sandbox keeps running. A filesystem-only pause (`memory: false`) is always refused while the agent does not answer, whatever this says.
+             * @default false
+             */
+            requireHealthyGuest?: boolean;
         };
         SandboxRefreshRequest: {
             /** @description Duration for which the sandbox should be kept alive in seconds */
@@ -3311,6 +3327,11 @@ export interface components {
              * @description Maximum memory per sandbox, in MiB
              */
             maxRamMb: number;
+            /**
+             * Format: int64
+             * @description Maximum number of secrets the team may store
+             */
+            maxSecrets: number;
             /**
              * Format: int64
              * @description Maximum vCPUs per sandbox
@@ -3807,7 +3828,9 @@ export interface components {
          *     exponential backoff. false marks a failure a retry cannot fix, such as a malformed request
          *     or a configuration fault, or an outcome that is unknown, where a retry could create a
          *     second sandbox. Successful responses and errors without an explicit classification omit
-         *     the header.
+         *     the header. With idempotency enabled, retry sandbox creation with the same Idempotency-Key
+         *     and request parameters. A retryable creation failure permits a fresh attempt; an
+         *     idempotency_in_progress response only reports an existing attempt and never releases it.
          */
         ShouldRetry: boolean;
         /** @description Cursor to fetch the next page of results, if more exist */
