@@ -9,6 +9,7 @@ from e2b.api.client_sync import get_api_client
 from e2b.template.consts import GZIP, RESOLVE_SYMLINKS
 from e2b.template.logger import LogEntry, LogEntryEnd, LogEntryStart
 from e2b.template.main import TemplateBase, TemplateClass
+from e2b.template_sync.paginator import TemplatePaginator
 from e2b.template.types import BuildInfo, InstructionType, TemplateTag, TemplateTagInfo
 from e2b.template_sync.build_api import (
     assign_tags,
@@ -551,3 +552,30 @@ class Template(TemplateBase):
         )
 
         return get_template_tags(api_client, template_id)
+
+    @classmethod
+    def list(
+        cls,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ) -> TemplatePaginator:
+        """
+        List the project's templates.
+
+        :param limit: Number of templates to return per page.
+        :param next_token: Token to the next page.
+
+        :return: Paginator over the project's templates. Drain it page by page:
+
+            ```python
+            paginator = Template.list(limit=50)
+            while paginator.has_next:
+                templates = paginator.next_items()
+            ```
+        """
+        return TemplatePaginator(
+            limit=limit,
+            next_token=next_token,
+            **cls._resolve_api_params(**opts),
+        )

@@ -160,11 +160,14 @@ from .template.types import (
     CopyItem,
     TemplateBuildStatus,
     TemplateBuildStatusResponse,
+    TemplateInfo,
     TemplateTag,
     TemplateTagInfo,
 )
 from .template_async.main import AsyncTemplate
+from .template_async.paginator import AsyncTemplatePaginator
 from .template_sync.main import Template
+from .template_sync.paginator import TemplatePaginator
 
 from .volume.volume_sync import Volume
 from .volume.volume_async import AsyncVolume
@@ -302,6 +305,9 @@ __all__ = [
     "BuildStatusReason",
     "TemplateBuildStatus",
     "TemplateBuildStatusResponse",
+    "TemplateInfo",
+    "TemplatePaginator",
+    "AsyncTemplatePaginator",
     "TemplateTag",
     "TemplateTagInfo",
     "ReadyCmd",
