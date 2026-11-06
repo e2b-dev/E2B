@@ -1,13 +1,13 @@
 import * as commander from '@commander-js/extra-typings'
 
-import { ensureAPIKey } from 'src/api'
+import { Auth, ensureAuth } from 'src/api'
 import { asBold } from 'src/utils/format'
 import * as e2b from 'e2b'
 import { NotFoundError } from 'e2b'
 
-async function resumeSandbox(sandboxID: string, apiKey: string) {
+async function resumeSandbox(sandboxID: string, auth: Auth) {
   try {
-    await e2b.Sandbox.connect(sandboxID, { apiKey })
+    await e2b.Sandbox.connect(sandboxID, auth)
     console.log(`Sandbox ${asBold(sandboxID)} has been resumed`)
   } catch (err: unknown) {
     if (err instanceof NotFoundError) {
@@ -27,8 +27,8 @@ export const resumeCommand = new commander.Command('resume')
   .alias('rs')
   .action(async (sandboxID) => {
     try {
-      const apiKey = ensureAPIKey()
-      await resumeSandbox(sandboxID, apiKey)
+      const auth = await ensureAuth()
+      await resumeSandbox(sandboxID, auth)
     } catch (err: unknown) {
       console.error(err)
       process.exit(1)

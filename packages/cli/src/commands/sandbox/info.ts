@@ -1,7 +1,7 @@
 import * as commander from '@commander-js/extra-typings'
 import { NotFoundError, Sandbox } from 'e2b'
 
-import { ensureAPIKey } from 'src/api'
+import { ensureAuth } from 'src/api'
 import { Format, parseFormat } from 'src/options'
 import { asBold } from 'src/utils/format'
 
@@ -54,8 +54,8 @@ export const infoCommand = new commander.Command('info')
   )
   .action(async (sandboxID, options) => {
     try {
-      const apiKey = ensureAPIKey()
-      const info = await Sandbox.getInfo(sandboxID, { apiKey })
+      const auth = await ensureAuth()
+      const info = await Sandbox.getInfo(sandboxID, auth)
 
       if (options.format === Format.PRETTY) {
         renderPrettyInfo(info as unknown as Record<string, unknown>)

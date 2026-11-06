@@ -1,13 +1,13 @@
 import * as commander from '@commander-js/extra-typings'
 
-import { ensureAPIKey } from 'src/api'
+import { Auth, ensureAuth } from 'src/api'
 import { asBold } from 'src/utils/format'
 import * as e2b from 'e2b'
 import { Sandbox } from 'e2b'
 import { parseMetadata, parseSandboxStates } from './utils'
 
-async function killSandbox(sandboxID: string, apiKey: string) {
-  const killed = await e2b.Sandbox.kill(sandboxID, { apiKey })
+async function killSandbox(sandboxID: string, auth: Auth) {
+  const killed = await e2b.Sandbox.kill(sandboxID, auth)
   if (killed) {
     console.log(`Sandbox ${asBold(sandboxID)} has been killed`)
   } else {
@@ -35,7 +35,7 @@ export const killCommand = new commander.Command('kill')
   )
   .action(async (sandboxIDs, { all, state, metadata }) => {
     try {
-      const apiKey = ensureAPIKey()
+      const auth = await ensureAuth()
       const sandboxesState = state || ['running']
 
       if ((!sandboxIDs || sandboxIDs.length === 0) && !all) {
@@ -59,7 +59,7 @@ export const killCommand = new commander.Command('kill')
       if (all) {
         let total = 0
         const iterator = Sandbox.list({
-          apiKey,
+          ...auth,
           query: {
             state: sandboxesState,
             metadata,
@@ -71,7 +71,7 @@ export const killCommand = new commander.Command('kill')
           total += sandboxes.length
 
           await Promise.all(
-            sandboxes.map((sandbox) => killSandbox(sandbox.sandboxId, apiKey))
+            sandboxes.map((sandbox) => killSandbox(sandbox.sandboxId, auth))
           )
         }
 
@@ -84,7 +84,7 @@ export const killCommand = new commander.Command('kill')
         process.exit(0)
       } else {
         await Promise.all(
-          sandboxIDs.map((sandboxID) => killSandbox(sandboxID, apiKey))
+          sandboxIDs.map((sandboxID) => killSandbox(sandboxID, auth))
         )
       }
     } catch (err: any) {
