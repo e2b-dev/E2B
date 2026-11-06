@@ -486,3 +486,29 @@ export async function getTemplateTags(
     createdAt: new Date(item.createdAt),
   }))
 }
+
+export async function deleteTemplate(
+  client: ApiClient,
+  { templateID }: { templateID: string },
+  signal?: AbortSignal
+): Promise<boolean> {
+  const res = await client.api.DELETE('/templates/{templateID}', {
+    params: {
+      path: {
+        templateID,
+      },
+    },
+    signal,
+  })
+
+  if (res.response.status === 404) {
+    return false
+  }
+
+  const error = handleApiError(res, TemplateError)
+  if (error) {
+    throw error
+  }
+
+  return true
+}
