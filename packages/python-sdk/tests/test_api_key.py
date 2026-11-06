@@ -10,3 +10,28 @@ def test_api_client_requires_api_key(monkeypatch):
     config = ConnectionConfig()
     with pytest.raises(AuthenticationException, match=r"API key is required"):
         ApiClient(config)
+
+
+@pytest.mark.parametrize("header", ["Authorization", "authorization"])
+def test_api_client_accepts_authorization_header(monkeypatch, header):
+    monkeypatch.delenv("E2B_API_KEY", raising=False)
+    config = ConnectionConfig(
+        api_headers={header: "Bearer access-token", "X-Team-ID": "team"}
+    )
+
+    client = ApiClient(config)
+    headers = client.get_httpx_client().headers
+
+    assert headers.get_list("Authorization") == ["Bearer access-token"]
+    assert headers["X-Team-ID"] == "team"
+    assert "X-API-KEY" not in headers
+
+
+def test_api_client_prefers_api_key(monkeypatch):
+    monkeypatch.delenv("E2B_API_KEY", raising=False)
+    config = ConnectionConfig(api_key="e2b_key")
+
+    headers = ApiClient(config).get_httpx_client().headers
+
+    assert headers["X-API-KEY"] == "e2b_key"
+    assert "Authorization" not in headers
