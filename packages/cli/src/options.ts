@@ -69,9 +69,20 @@ export function warnIgnoredConfigOption(opts: { config?: string }) {
   )
 }
 
+const projectDescription = `project to run the command in instead of the selected one: its ID, prj_ ID, slug or name. Defaults to E2B_PROJECT_ID, then the project chosen with ${asBold(
+  'e2b project use'
+)}.`
+
+/** Added to every command that calls the E2B API (see src/commands/index.ts). */
 export const projectOption = new commander.Option(
-  '-t, --project <project-id>',
-  'specify the project ID that the operation will be associated with. You can find project ID in the project settings in the E2B dashboard (https://e2b.dev/dashboard?tab=general).'
+  '--project <project>',
+  projectDescription
+)
+
+// `template list` accepted `-t` before every command took --project.
+export const projectOptionWithShortFlag = new commander.Option(
+  '-t, --project <project>',
+  projectDescription
 )
 
 export const deprecatedTeamOption = new commander.Option(
