@@ -66,6 +66,8 @@ export type {
 export type {
   SandboxInfo,
   SandboxMetrics,
+  SandboxLogEntry,
+  SandboxLogsOpts,
   SandboxOpts,
   SandboxApiOpts,
   SandboxConnectOpts,
@@ -101,6 +103,7 @@ export type {
   SnapshotInfo,
   SnapshotListOpts,
   SnapshotPaginator,
+  SandboxLogsPaginator,
   CreateSnapshotOpts,
   SnapshotMode,
 } from './sandbox/sandboxApi'

@@ -20,6 +20,7 @@ import {
   SandboxConnectOpts,
   SandboxForkOpts,
   SandboxMetricsOpts,
+  SandboxLogsOpts,
   SandboxApi,
   SandboxListOpts,
   SandboxNetworkUpdate,
@@ -27,6 +28,7 @@ import {
   SnapshotListOpts,
   SnapshotInfo,
   SnapshotPaginator,
+  SandboxLogsPaginator,
   CreateSnapshotOpts,
   SandboxPauseOpts,
 } from './sandboxApi'
@@ -928,6 +930,38 @@ export class Sandbox extends SandboxApi {
       this.sandboxId,
       this.resolveApiOpts(opts)
     )
+  }
+
+  /**
+   * Get the logs of the sandbox, newest first by default.
+   * Logs are retained for 7 days.
+   *
+   * @param opts sandbox logs options.
+   *
+   * @returns paginator for reading the sandbox logs.
+   *
+   * @example
+   * ```ts
+   * const paginator = sandbox.getLogs({ search: 'error', direction: 'forward' })
+   * while (paginator.hasNext) {
+   *   const logs = await paginator.nextItems()
+   *   console.log(logs)
+   * }
+   * ```
+   */
+  getLogs(
+    opts?: Pick<
+      SandboxLogsOpts,
+      | 'cursor'
+      | 'direction'
+      | 'limit'
+      | 'level'
+      | 'search'
+      | 'requestTimeoutMs'
+      | 'signal'
+    >
+  ): SandboxLogsPaginator {
+    return SandboxApi.getLogs(this.sandboxId, this.resolveApiOpts(opts))
   }
 
   private resolveApiOpts<T extends ConnectionOpts>(

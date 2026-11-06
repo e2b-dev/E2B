@@ -17,6 +17,7 @@ import {
 import { Paginator } from '../paginator'
 import { resolveIdempotencyKey } from '../retry'
 import { timeoutToSeconds } from '../utils'
+import type { LogEntryLevel } from '../template/logger'
 import type { Volume } from '../volume'
 import type { McpServer as BaseMcpServer } from './mcp'
 
@@ -964,6 +965,38 @@ export interface SandboxMetricsOpts extends SandboxApiOpts {
 }
 
 /**
+ * Options for getting sandbox logs.
+ */
+export interface SandboxLogsOpts extends SandboxApiOpts {
+  /**
+   * Timestamp to start reading logs from.
+   * With `direction: 'backward'` older logs are returned, with `'forward'` newer ones.
+   * Defaults to the current time for `'backward'` and the oldest retained log for `'forward'`.
+   */
+  cursor?: Date
+  /**
+   * Order in which the logs are returned.
+   *
+   * @default 'backward'
+   */
+  direction?: 'forward' | 'backward'
+  /**
+   * Maximum number of logs to return per page.
+   *
+   * @default 1000
+   */
+  limit?: number
+  /**
+   * Minimum log level to return.
+   */
+  level?: LogEntryLevel
+  /**
+   * Case-sensitive substring the log message must contain.
+   */
+  search?: string
+}
+
+/**
  * Options for listing snapshots.
  */
 export interface SnapshotListOpts extends Omit<SandboxApiOpts, 'signal'> {
@@ -1164,6 +1197,31 @@ export interface SandboxMetrics {
    * Total disk space available in bytes.
    */
   diskTotal: number
+}
+
+/**
+ * Sandbox log entry.
+ */
+export interface SandboxLogEntry {
+  /**
+   * Timestamp of the log entry.
+   */
+  timestamp: Date
+
+  /**
+   * Log level.
+   */
+  level: LogEntryLevel
+
+  /**
+   * Log message.
+   */
+  message: string
+
+  /**
+   * Structured fields attached to the log entry.
+   */
+  fields: Record<string, string>
 }
 
 function resolveNetworkSelector(
@@ -1670,6 +1728,31 @@ export class SandboxApi extends ClientFactory {
         diskTotal: metric.diskTotal,
       })) ?? []
     )
+  }
+
+  /**
+   * Get the logs of the sandbox, newest first by default.
+   * Logs are retained for 7 days.
+   *
+   * @param sandboxId sandbox ID.
+   * @param opts sandbox logs options.
+   *
+   * @returns paginator for reading the sandbox logs.
+   *
+   * @example
+   * ```ts
+   * const paginator = Sandbox.getLogs(sandboxId, { level: 'warn' })
+   * while (paginator.hasNext) {
+   *   const logs = await paginator.nextItems()
+   *   console.log(logs)
+   * }
+   * ```
+   */
+  static getLogs(
+    sandboxId: string,
+    opts?: SandboxLogsOpts
+  ): SandboxLogsPaginator {
+    return new SandboxLogsPaginator(sandboxId, this.resolveOpts(opts))
   }
 
   /**
@@ -2288,5 +2371,164 @@ export class SnapshotPaginator extends Paginator<SnapshotInfo, SandboxApiOpts> {
         names: snapshot.names ?? [],
       })
     )
+  }
+}
+
+const LOGS_MAX_PAGE_SIZE = 1000
+
+type ApiSandboxLogEntry = components['schemas']['SandboxLogEntry']
+
+function logKey(log: ApiSandboxLogEntry): string {
+  return JSON.stringify([log.timestamp, log.level, log.message, log.fields])
+}
+
+/**
+ * Paginator for reading sandbox logs.
+ *
+ * @example
+ * ```ts
+ * const paginator = sandbox.getLogs()
+ * while (paginator.hasNext) {
+ *   const logs = await paginator.nextItems()
+ *   console.log(logs)
+ * }
+ * ```
+ */
+export class SandboxLogsPaginator extends Paginator<
+  SandboxLogEntry,
+  SandboxApiOpts
+> {
+  private readonly sandboxId: string
+  private readonly direction?: SandboxLogsOpts['direction']
+  private readonly level?: LogEntryLevel
+  private readonly search?: string
+
+  private cursor?: number
+  private seenAtCursor = new Set<string>()
+  private finished = false
+
+  constructor(sandboxId: string, opts?: SandboxLogsOpts) {
+    super(opts, opts?.limit)
+
+    this.sandboxId = sandboxId
+    this.direction = opts?.direction
+    this.level = opts?.level
+    this.search = opts?.search
+    this.cursor = opts?.cursor?.getTime()
+  }
+
+  override get hasNext(): boolean {
+    return !this.finished
+  }
+
+  /**
+   * Get the next page of logs.
+   *
+   * @param opts per-call connection options.
+   *
+   * @throws {SandboxNotFoundError} if the sandbox does not exist.
+   * @throws Error if there are no more items to fetch. Call this method only if `hasNext` is `true`.
+   *
+   * @returns List of log entries
+   */
+  async nextItems(opts?: SandboxApiOpts): Promise<SandboxLogEntry[]> {
+    if (!this.hasNext) {
+      throw new Error('No more items to fetch')
+    }
+
+    const apiOpts = ConnectionConfig.mergeOpts(this.opts, opts)
+    const config = new ConnectionConfig(apiOpts)
+
+    if (config.debug) {
+      // Skip getting the logs in debug mode
+      this.finished = true
+      return []
+    }
+
+    const client = new ApiClient(config)
+
+    // Fetch the already returned entries at the cursor again on top of the page
+    const pageSize = Math.min(
+      LOGS_MAX_PAGE_SIZE,
+      (this.limit || LOGS_MAX_PAGE_SIZE) + this.seenAtCursor.size
+    )
+
+    const res = await client.api.GET('/v2/sandboxes/{sandboxID}/logs', {
+      params: {
+        path: {
+          sandboxID: this.sandboxId,
+        },
+        query: {
+          cursor: this.cursor,
+          direction: this.direction,
+          limit: pageSize,
+          level: this.level,
+          search: this.search,
+        },
+      },
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
+    })
+
+    if (res.error?.code === 404) {
+      throw new SandboxNotFoundError(`Sandbox ${this.sandboxId} not found`)
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    const logs: ApiSandboxLogEntry[] = res.data?.logs ?? []
+    const items = logs.filter((log) => !this.seenAtCursor.has(logKey(log)))
+    this.advance(logs, pageSize, items.length > 0)
+
+    return items.map((log) => ({
+      timestamp: new Date(log.timestamp),
+      level: log.level,
+      message: log.message,
+      fields: log.fields,
+    }))
+  }
+
+  // The API has no next token, so the next page starts at the millisecond of
+  // the last entry and the entries already returned from it are skipped.
+  private advance(
+    logs: ApiSandboxLogEntry[],
+    pageSize: number,
+    progressed: boolean
+  ) {
+    if (logs.length < pageSize) {
+      this.finished = true
+      return
+    }
+
+    const forward = this.direction === 'forward'
+    const lastMs = new Date(logs[logs.length - 1].timestamp).getTime()
+
+    let nextCursor = forward ? lastMs : lastMs + 1
+    if (this.cursor !== undefined) {
+      nextCursor = forward
+        ? Math.max(nextCursor, this.cursor)
+        : Math.min(nextCursor, this.cursor)
+    }
+
+    const low = Math.min(lastMs, nextCursor)
+    const high = Math.max(lastMs, nextCursor)
+    const boundary = logs
+      .filter((log) => {
+        const ms = new Date(log.timestamp).getTime()
+        return ms >= low && ms <= high
+      })
+      .map(logKey)
+
+    if (nextCursor !== this.cursor) {
+      this.cursor = nextCursor
+      this.seenAtCursor = new Set(boundary)
+    } else if (!progressed) {
+      // The page can't move past this millisecond, step over it
+      this.cursor = nextCursor + (forward ? 1 : -1)
+    } else {
+      boundary.forEach((key) => this.seenAtCursor.add(key))
+    }
   }
 }
