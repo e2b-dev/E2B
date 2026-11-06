@@ -1,7 +1,7 @@
 import { Sandbox, SandboxState } from 'e2b'
 import { z } from 'zod'
 
-import { ensureAPIKey } from 'src/api'
+import { ensureAuth } from 'src/api'
 import { keyValuePairs, zodParser } from 'src/validation'
 import { wait } from '../../utils/wait'
 import { asBold } from '../../utils/format'
@@ -72,9 +72,9 @@ export function waitForSandboxEnd(sandboxID: string) {
 
 export async function isRunning(sandboxID: string) {
   try {
-    const apiKey = ensureAPIKey()
+    const auth = await ensureAuth()
     const info = await Sandbox.getInfo(sandboxID, {
-      apiKey,
+      ...auth,
     })
     return info.state === 'running'
   } catch (err) {

@@ -1,13 +1,13 @@
 import * as commander from '@commander-js/extra-typings'
 
-import { ensureAPIKey } from 'src/api'
+import { Auth, ensureAuth } from 'src/api'
 import { asBold } from 'src/utils/format'
 import * as e2b from 'e2b'
 import { NotFoundError } from 'e2b'
 
-async function pauseSandbox(sandboxID: string, apiKey: string) {
+async function pauseSandbox(sandboxID: string, auth: Auth) {
   try {
-    const paused = await e2b.Sandbox.pause(sandboxID, { apiKey })
+    const paused = await e2b.Sandbox.pause(sandboxID, auth)
     if (paused) {
       console.log(`Sandbox ${asBold(sandboxID)} has been paused`)
     } else {
@@ -31,8 +31,8 @@ export const pauseCommand = new commander.Command('pause')
   .alias('ps')
   .action(async (sandboxID) => {
     try {
-      const apiKey = ensureAPIKey()
-      await pauseSandbox(sandboxID, apiKey)
+      const auth = await ensureAuth()
+      await pauseSandbox(sandboxID, auth)
     } catch (err: unknown) {
       console.error(err)
       process.exit(1)

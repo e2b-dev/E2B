@@ -24,7 +24,6 @@ const userConfigSchema = z.object({
   ...authFields,
   projectName: z.string(),
   projectId: z.string(),
-  projectApiKey: z.string(),
 })
 
 export type UserConfig = z.infer<typeof userConfigSchema>
@@ -35,7 +34,6 @@ const v1UserConfigSchema = z.object({
   ...authFields,
   teamName: z.string(),
   teamId: z.string(),
-  teamApiKey: z.string(),
 })
 
 export const USER_CONFIG_PATH = path.join(os.homedir(), '.e2b', 'config.json') // TODO: Keep in Keychain
@@ -46,9 +44,8 @@ export const DEPRECATED_USER_CONFIG_MESSAGE =
 // getUserConfig can be called several times per command; warn only once.
 let deprecationWarned = false
 
-export const DOCS_BASE =
-  process.env.E2B_DOCS_BASE ||
-  `https://${process.env.E2B_DOMAIN || 'e2b.dev'}/docs`
+/** Browser sign-in page for `e2b auth login`. */
+export const CLI_AUTH_URL = `https://${process.env.E2B_DOMAIN || 'e2b.dev'}/auth/cli`
 
 const DASHBOARD_BASE =
   process.env.E2B_DASHBOARD_BASE ||
@@ -92,15 +89,16 @@ function migrateV1UserConfig(config: unknown): UserConfig | null {
 
   // Spread the original object, not the parsed one, so fields this CLI
   // version doesn't know about are kept when the config is written back.
-  const { teamName, teamId, teamApiKey, ...rest } = config as z.infer<
+  const { teamName, teamId, ...rest } = config as z.infer<
     typeof v1UserConfigSchema
-  >
+  > & { teamApiKey?: string }
+  // Requests use the access token; the stored API key is not carried over.
+  delete rest.teamApiKey
   return {
     ...rest,
     version: 2,
     projectName: teamName,
     projectId: teamId,
-    projectApiKey: teamApiKey,
   }
 }
 
@@ -114,9 +112,24 @@ export function getConfigRefreshTimestamp(): string {
  * written as owner-readable/writable only because it contains credentials.
  */
 export function writeUserConfig(configPath: string, config: UserConfig): void {
+  // Earlier CLI versions stored a long-lived project API key (`projectApiKey`,
+  // or `teamApiKey` in v1). Requests now use the access token, so the key is
+  // dropped from disk the next time the config is written (login, configure
+  // or a token refresh).
+  const persisted: Record<string, unknown> = { ...config }
+  delete persisted.projectApiKey
+  delete persisted.teamApiKey
+
   const dir = path.dirname(configPath)
   fs.mkdirSync(dir, { recursive: true, mode: 0o700 })
   fs.chmodSync(dir, 0o700)
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2), { mode: 0o600 })
-  fs.chmodSync(configPath, 0o600)
+  // Write to a temporary file and rename it over the config, so other e2b
+  // processes reading it (token refreshes happen in the background of any
+  // command) never see a partially written file.
+  const tmpPath = `${configPath}.${process.pid}.tmp`
+  fs.writeFileSync(tmpPath, JSON.stringify(persisted, null, 2), {
+    mode: 0o600,
+  })
+  fs.chmodSync(tmpPath, 0o600)
+  fs.renameSync(tmpPath, configPath)
 }
