@@ -13,6 +13,7 @@ from e2b.api.client.api.sandboxes import (
     delete_sandboxes_sandbox_id,
     get_sandboxes_sandbox_id,
     get_sandboxes_sandbox_id_metrics,
+    get_v_2_sandboxes_sandbox_id_logs,
     post_v2_sandboxes,
     post_v_2_sandboxes_sandbox_id_connect,
     post_sandboxes_sandbox_id_fork,
@@ -23,6 +24,8 @@ from e2b.api.client.api.sandboxes import (
 )
 from e2b.api.client.api.templates import delete_templates_template_id
 from e2b.api.client.models import (
+    LogLevel,
+    LogsDirection,
     ConnectSandboxV2,
     Error,
     NewSandboxV2,
@@ -43,6 +46,7 @@ from e2b.exceptions import (
 )
 from e2b.retry import resolve_idempotency_key
 from e2b.sandbox.main import SandboxBase
+from e2b.template.logger import LogEntryLevel
 from e2b.sandbox.sandbox_api import (
     build_network_update_body,
     McpServer,
@@ -50,6 +54,8 @@ from e2b.sandbox.sandbox_api import (
     SandboxInfo,
     SandboxLifecycle,
     SandboxListOrder,
+    SandboxLogEntry,
+    SandboxLogsDirection,
     SandboxMetrics,
     SandboxNetworkOpts,
     SandboxNetworkUpdate,
@@ -322,6 +328,57 @@ class SandboxApi(SandboxBase):
                 timestamp=metric.timestamp,
             )
             for metric in res.parsed
+        ]
+
+    @classmethod
+    def _cls_get_logs(
+        cls,
+        sandbox_id: str,
+        *,
+        cursor: Optional[datetime.datetime] = None,
+        direction: Optional[SandboxLogsDirection] = None,
+        limit: Optional[int] = None,
+        level: Optional[LogEntryLevel] = None,
+        search: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ) -> List[SandboxLogEntry]:
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
+
+        if config.debug:
+            # Skip getting the logs in debug mode
+            return []
+
+        api_client = get_api_client(config)
+        res = get_v_2_sandboxes_sandbox_id_logs.sync_detailed(
+            sandbox_id,
+            cursor=int(cursor.timestamp() * 1000) if cursor else UNSET,
+            direction=LogsDirection(direction) if direction else UNSET,
+            limit=limit if limit is not None else UNSET,
+            level=LogLevel(level) if level else UNSET,
+            search=search if search is not None else UNSET,
+            client=api_client,
+        )
+
+        if res.status_code == 404:
+            raise SandboxNotFoundException(f"Sandbox {sandbox_id} not found")
+
+        if res.status_code >= 300:
+            raise handle_api_exception(res)
+
+        if res.parsed is None:
+            return []
+
+        if isinstance(res.parsed, Error):
+            raise SandboxException(f"{res.parsed.message}: Request failed")
+
+        return [
+            SandboxLogEntry(
+                timestamp=log.timestamp,
+                level=log.level.value,
+                message=log.message,
+                fields=log.fields.additional_properties,
+            )
+            for log in res.parsed.logs
         ]
 
     @classmethod

@@ -20,6 +20,7 @@ import {
   SandboxConnectOpts,
   SandboxForkOpts,
   SandboxMetricsOpts,
+  SandboxLogsOpts,
   SandboxApi,
   SandboxListOpts,
   SandboxNetworkUpdate,
@@ -928,6 +929,36 @@ export class Sandbox extends SandboxApi {
       this.sandboxId,
       this.resolveApiOpts(opts)
     )
+  }
+
+  /**
+   * Get the logs of the sandbox, newest first by default.
+   * Logs are retained for 7 days.
+   *
+   * @param opts sandbox logs options.
+   *
+   * @returns log entries with their timestamp, level, message and structured fields, at most `limit` of them.
+   *
+   * @throws {SandboxNotFoundError} if the sandbox does not exist.
+   *
+   * @example
+   * ```ts
+   * const logs = await sandbox.getLogs({ search: 'error', direction: 'forward' })
+   * ```
+   */
+  async getLogs(
+    opts?: Pick<
+      SandboxLogsOpts,
+      | 'cursor'
+      | 'direction'
+      | 'limit'
+      | 'level'
+      | 'search'
+      | 'requestTimeoutMs'
+      | 'signal'
+    >
+  ) {
+    return await SandboxApi.getLogs(this.sandboxId, this.resolveApiOpts(opts))
   }
 
   private resolveApiOpts<T extends ConnectionOpts>(

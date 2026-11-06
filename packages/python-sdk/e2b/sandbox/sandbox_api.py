@@ -17,6 +17,7 @@ from typing import (
     cast,
 )
 
+from e2b.template.logger import LogEntryLevel
 from e2b.api.client.models import (
     ListedSandbox,
     SandboxDetail,
@@ -1363,6 +1364,24 @@ class SandboxMetrics:
     """Cached memory (page cache) in bytes."""
     timestamp: datetime
     """Timestamp of the metric entry."""
+
+
+SandboxLogsDirection = Literal["forward", "backward"]
+"""Order in which sandbox logs are returned."""
+
+
+@dataclass
+class SandboxLogEntry:
+    """Sandbox log entry."""
+
+    timestamp: datetime
+    """Timestamp of the log entry."""
+    level: LogEntryLevel
+    """Log level."""
+    message: str
+    """Log message."""
+    fields: Dict[str, str]
+    """Structured fields attached to the log entry."""
 
 
 @dataclass

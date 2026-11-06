@@ -17,6 +17,7 @@ import {
 import { Paginator } from '../paginator'
 import { resolveIdempotencyKey } from '../retry'
 import { timeoutToSeconds } from '../utils'
+import type { LogEntryLevel } from '../template/logger'
 import type { Volume } from '../volume'
 import type { McpServer as BaseMcpServer } from './mcp'
 
@@ -964,6 +965,38 @@ export interface SandboxMetricsOpts extends SandboxApiOpts {
 }
 
 /**
+ * Options for getting sandbox logs.
+ */
+export interface SandboxLogsOpts extends SandboxApiOpts {
+  /**
+   * Timestamp to start reading logs from.
+   * With `direction: 'backward'` logs older than the cursor are returned, with `'forward'` newer ones.
+   * Defaults to the current time for `'backward'` and the oldest retained log for `'forward'`.
+   */
+  cursor?: Date
+  /**
+   * Order in which the logs are returned.
+   *
+   * @default 'backward'
+   */
+  direction?: 'forward' | 'backward'
+  /**
+   * Maximum number of logs to return.
+   *
+   * @default 1000
+   */
+  limit?: number
+  /**
+   * Minimum log level to return.
+   */
+  level?: LogEntryLevel
+  /**
+   * Case-sensitive substring the log message must contain.
+   */
+  search?: string
+}
+
+/**
  * Options for listing snapshots.
  */
 export interface SnapshotListOpts extends Omit<SandboxApiOpts, 'signal'> {
@@ -1164,6 +1197,31 @@ export interface SandboxMetrics {
    * Total disk space available in bytes.
    */
   diskTotal: number
+}
+
+/**
+ * Sandbox log entry.
+ */
+export interface SandboxLogEntry {
+  /**
+   * Timestamp of the log entry.
+   */
+  timestamp: Date
+
+  /**
+   * Log level.
+   */
+  level: LogEntryLevel
+
+  /**
+   * Log message.
+   */
+  message: string
+
+  /**
+   * Structured fields attached to the log entry.
+   */
+  fields: Record<string, string>
 }
 
 function resolveNetworkSelector(
@@ -1668,6 +1726,71 @@ export class SandboxApi extends ClientFactory {
         memCache: metric.memCache,
         diskUsed: metric.diskUsed,
         diskTotal: metric.diskTotal,
+      })) ?? []
+    )
+  }
+
+  /**
+   * Get the logs of the sandbox, newest first by default.
+   * Logs are retained for 7 days.
+   *
+   * @param sandboxId sandbox ID.
+   * @param opts sandbox logs options.
+   *
+   * @returns log entries with their timestamp, level, message and structured fields, at most `limit` of them.
+   *
+   * @throws {SandboxNotFoundError} if the sandbox does not exist.
+   *
+   * @example
+   * ```ts
+   * const logs = await Sandbox.getLogs(sandboxId, { level: 'warn', limit: 100 })
+   * ```
+   */
+  static async getLogs(
+    sandboxId: string,
+    opts?: SandboxLogsOpts
+  ): Promise<SandboxLogEntry[]> {
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
+
+    if (config.debug) {
+      // Skip getting the logs in debug mode
+      return []
+    }
+
+    const client = new ApiClient(config)
+
+    const res = await client.api.GET('/v2/sandboxes/{sandboxID}/logs', {
+      params: {
+        path: {
+          sandboxID: sandboxId,
+        },
+        query: {
+          cursor: apiOpts?.cursor?.getTime(),
+          direction: apiOpts?.direction,
+          limit: apiOpts?.limit,
+          level: apiOpts?.level,
+          search: apiOpts?.search,
+        },
+      },
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
+    })
+
+    if (res.error?.code === 404) {
+      throw new SandboxNotFoundError(`Sandbox ${sandboxId} not found`)
+    }
+
+    const err = handleApiError(res)
+    if (err) {
+      throw err
+    }
+
+    return (
+      res.data?.logs.map((log: components['schemas']['SandboxLogEntry']) => ({
+        timestamp: new Date(log.timestamp),
+        level: log.level,
+        message: log.message,
+        fields: log.fields,
       })) ?? []
     )
   }

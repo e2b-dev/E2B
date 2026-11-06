@@ -66,6 +66,8 @@ export type {
 export type {
   SandboxInfo,
   SandboxMetrics,
+  SandboxLogEntry,
+  SandboxLogsOpts,
   SandboxOpts,
   SandboxApiOpts,
   SandboxConnectOpts,
