@@ -564,6 +564,7 @@ class Template(TemplateBase):
 
         :param name_or_id: Template or snapshot name or ID
         :return: True if the template was deleted, False if it was not found
+        :raises TemplateException: If the API returns an error other than not found
 
         Example
         ```python

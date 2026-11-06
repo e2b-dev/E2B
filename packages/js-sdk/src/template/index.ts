@@ -437,6 +437,7 @@ export class TemplateBase
    * @param nameOrId Template or snapshot name or ID
    * @param options Authentication options
    * @returns `true` if the template was deleted, `false` if it was not found
+   * @throws TemplateError if the API returns an error other than not found
    *
    * @example
    * ```ts
