@@ -2,7 +2,7 @@ import * as e2b from 'e2b'
 import * as commander from '@commander-js/extra-typings'
 import { z } from 'zod'
 
-import { ensureAPIKey } from 'src/api'
+import { ensureAuth } from 'src/api'
 import { spawnConnectedTerminal, TerminalOpts } from 'src/terminal'
 import { asBold, asFormattedSandboxTemplate } from 'src/utils/format'
 import { deprecatedConfigOption, warnIgnoredConfigOption } from '../../options'
@@ -60,7 +60,7 @@ export function createCommand(
       try {
         warnIgnoredConfigOption(opts)
 
-        const apiKey = ensureAPIKey()
+        const auth = await ensureAuth()
 
         const templateID = template ?? DEFAULT_TEMPLATE
 
@@ -69,7 +69,7 @@ export function createCommand(
           opts['lifecycle.autoresume']
         )
         const sandboxOpts = {
-          apiKey,
+          ...auth,
           ...(lifecycle ? { lifecycle } : {}),
           ...(opts.timeout !== undefined ? { timeoutMs: opts.timeout } : {}),
         }
@@ -157,11 +157,16 @@ async function connectSandbox({
   timeoutMs?: number
   terminal?: TerminalOpts
 }) {
+  // Resolve credentials on every call rather than reusing the ones the
+  // sandbox was created with: a session can outlive the hour-long access token.
+  const setSandboxTimeout = async (ms: number) =>
+    e2b.Sandbox.setTimeout(sandbox.sandboxId, ms, await ensureAuth())
+
   // keep-alive loop — track the in-flight promise so we can await it on shutdown
   let pendingKeepAlive: Promise<void> = Promise.resolve()
   const keepAliveTimeoutMs = timeoutMs ?? 30_000
   const intervalId = setInterval(() => {
-    pendingKeepAlive = sandbox.setTimeout(keepAliveTimeoutMs)
+    pendingKeepAlive = setSandboxTimeout(keepAliveTimeoutMs)
   }, 5_000)
 
   console.log(
@@ -174,7 +179,7 @@ async function connectSandbox({
   } finally {
     clearInterval(intervalId)
     await pendingKeepAlive.catch(() => {})
-    await sandbox.setTimeout(timeoutMs ?? 1_000)
+    await setSandboxTimeout(timeoutMs ?? 1_000)
     console.log(
       `Closing terminal connection to template ${asFormattedSandboxTemplate(
         template

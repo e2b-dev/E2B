@@ -2,13 +2,15 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => {
   const create = vi.fn()
-  const ensureAPIKey = vi.fn(() => 'test-api-key')
+  const setTimeout = vi.fn()
+  const ensureAuth = vi.fn(async () => ({ apiKey: 'test-api-key' }))
   const spawnConnectedTerminal = vi.fn()
   const printDashboardSandboxInspectUrl = vi.fn()
 
   return {
     create,
-    ensureAPIKey,
+    setTimeout,
+    ensureAuth,
     spawnConnectedTerminal,
     printDashboardSandboxInspectUrl,
   }
@@ -17,11 +19,12 @@ const mocks = vi.hoisted(() => {
 vi.mock('e2b', () => ({
   Sandbox: {
     create: mocks.create,
+    setTimeout: mocks.setTimeout,
   },
 }))
 
 vi.mock('../../../src/api', () => ({
-  ensureAPIKey: mocks.ensureAPIKey,
+  ensureAuth: mocks.ensureAuth,
 }))
 
 vi.mock('src/utils/urls', () => ({
@@ -144,8 +147,14 @@ describe('sandbox create lifecycle options', () => {
       cwd: undefined,
       envs: undefined,
     })
-    expect(sandbox.setTimeout).toHaveBeenCalledWith(120_000)
-    expect(sandbox.setTimeout).not.toHaveBeenCalledWith(1_000)
+    expect(mocks.setTimeout).toHaveBeenCalledWith('sandbox-id', 120_000, {
+      apiKey: 'test-api-key',
+    })
+    expect(mocks.setTimeout).not.toHaveBeenCalledWith(
+      'sandbox-id',
+      1_000,
+      expect.anything()
+    )
     expect(exitSpy).toHaveBeenCalledWith(0)
     vi.useRealTimers()
   })

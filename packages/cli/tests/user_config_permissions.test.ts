@@ -35,7 +35,6 @@ describe('writeUserConfig', () => {
       last_refresh: '2024-06-24T12:00:00.000Z',
       projectName: 'default',
       projectId: 'project-id',
-      projectApiKey: 'project-api-key-secret',
     }
 
     writeUserConfig(configPath, config)
@@ -48,5 +47,32 @@ describe('writeUserConfig', () => {
       expect(fs.statSync(configPath).mode & 0o777).toBe(0o600)
     }
     expect(JSON.parse(fs.readFileSync(configPath, 'utf8'))).toEqual(config)
+  })
+
+  it('drops the API key stored by earlier CLI versions', () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'e2b-config-key-'))
+    tmpDirs.push(tmpDir)
+    const configPath = path.join(tmpDir, 'config.json')
+    const config = {
+      version: 2,
+      identity: { email: 'user@example.com' },
+      oauth: {
+        token_endpoint: 'https://hydra.example.com/oauth2/token',
+        revoke_endpoint: 'https://hydra.example.com/oauth2/revoke',
+        client_id: 'cli-client-id',
+      },
+      tokens: { access_token: 'access', refresh_token: 'refresh' },
+      projectName: 'default',
+      projectId: 'project-id',
+      futureField: 'kept',
+    } as const
+    writeUserConfig(configPath, {
+      ...config,
+      projectApiKey: 'e2b_secret',
+    } as UserConfig)
+
+    expect(JSON.parse(fs.readFileSync(configPath, 'utf8'))).toEqual(config)
+    // The temporary file used for the atomic write is renamed away.
+    expect(fs.readdirSync(tmpDir)).toEqual(['config.json'])
   })
 })

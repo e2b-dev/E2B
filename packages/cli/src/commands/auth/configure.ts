@@ -27,11 +27,7 @@ export const configureCommand = new commander.Command('configure')
       return
     }
 
-    // ensureValidAccessToken may refresh tokens and write them to disk.
-    // Re-read the config afterwards so we persist the refreshed tokens
-    // instead of overwriting them with stale in-memory copies.
-    const accessToken = await ensureValidAccessToken()
-    const userConfig = ensureUserConfig()
+    const { accessToken, config: userConfig } = await ensureValidAccessToken()
 
     const config = new e2b.ConnectionConfig({
       apiHeaders: { Authorization: `Bearer ${accessToken}` },
@@ -60,11 +56,15 @@ export const configureCommand = new commander.Command('configure')
       ])
     )['project']
 
-    userConfig.projectName = team.name
-    userConfig.projectId = team.teamID
-    userConfig.projectApiKey = team.apiKey
-    userConfig.last_refresh = getConfigRefreshTimestamp()
-    writeUserConfig(USER_CONFIG_PATH, userConfig)
+    // Re-read the config: another e2b process may have refreshed (and so
+    // rotated) the tokens while the prompt was open, and writing back the
+    // copy read before it would sign the user out on the next refresh.
+    writeUserConfig(USER_CONFIG_PATH, {
+      ...ensureUserConfig(),
+      projectName: team.name,
+      projectId: team.teamID,
+      last_refresh: getConfigRefreshTimestamp(),
+    })
 
     console.log(`Project ${asBold(team.name)} (${team.teamID}) selected.\n`)
   })

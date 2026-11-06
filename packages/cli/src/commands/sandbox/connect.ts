@@ -3,7 +3,7 @@ import * as commander from '@commander-js/extra-typings'
 
 import { spawnConnectedTerminal, TerminalOpts } from 'src/terminal'
 import { asBold, asPrimary } from 'src/utils/format'
-import { ensureAPIKey } from '../../api'
+import { Auth, ensureAuth } from '../../api'
 import { parseEnv } from 'src/utils/env'
 import { printDashboardSandboxInspectUrl } from 'src/utils/urls'
 
@@ -20,15 +20,13 @@ export const connectCommand = new commander.Command('connect')
   .alias('cn')
   .action(async (sandboxID, opts) => {
     try {
-      const apiKey = ensureAPIKey()
-
       if (!sandboxID) {
         console.error('You need to specify sandbox ID')
         process.exit(1)
       }
 
       await connectToSandbox({
-        apiKey,
+        auth: await ensureAuth(),
         sandboxID,
         terminal: {
           user: opts.user,
@@ -47,15 +45,15 @@ export const connectCommand = new commander.Command('connect')
   })
 
 async function connectToSandbox({
-  apiKey,
+  auth,
   sandboxID,
   terminal,
 }: {
-  apiKey: string
+  auth: Auth
   sandboxID: string
   terminal?: TerminalOpts
 }) {
-  const sandbox = await e2b.Sandbox.connect(sandboxID, { apiKey })
+  const sandbox = await e2b.Sandbox.connect(sandboxID, auth)
 
   printDashboardSandboxInspectUrl(sandbox.sandboxId)
 
