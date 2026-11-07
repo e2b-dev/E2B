@@ -1,6 +1,9 @@
 import asyncio
 from typing import cast
 
+import httpx
+import pytest
+
 from packaging.version import Version
 
 from e2b.connection_config import ConnectionConfig
@@ -218,3 +221,64 @@ async def test_async_on_exit_error_does_not_leak():
     await handle._wait
     assert handle._wait.done()
     assert handle._wait.exception() is None
+
+
+@pytest.mark.parametrize("async_callback", [False, True])
+async def test_async_watch_dir_immediate_stop_notifies_exit_once(
+    monkeypatch, async_callback
+):
+    from e2b.sandbox_async.filesystem.filesystem import Filesystem
+
+    closed = []
+
+    class Rpc:
+        async def watch_dir(self, *_args, **_kwargs):
+            try:
+                yield filesystem_pb.WatchDirResponse(
+                    event=Oneof("start", filesystem_pb.WatchDirResponse.StartEvent())
+                )
+                await asyncio.Event().wait()
+            finally:
+                closed.append(True)
+
+    monkeypatch.setattr(
+        "e2b.sandbox_async.filesystem.filesystem.create_rpc_client",
+        lambda *_args: Rpc(),
+    )
+    exit_calls = []
+
+    async def on_exit(error):
+        await asyncio.sleep(0)
+        exit_calls.append(error)
+
+    async with httpx.AsyncClient() as client:
+        files = Filesystem(
+            "http://localhost:49999", Version("0.6.4"), ConnectionConfig(), client
+        )
+        handle = await files.watch_dir(
+            "/home/user",
+            on_event=lambda _event: None,
+            on_exit=on_exit if async_callback else exit_calls.append,
+        )
+        # No yield to the event loop between obtaining the handle and stopping it.
+        await handle.stop()
+        await handle.stop()
+
+    assert exit_calls == [None]
+    assert closed == [True]
+
+
+@pytest.mark.parametrize("error", [None, RuntimeError("stream failed")])
+async def test_async_stop_after_stream_end_does_not_repeat_exit(error):
+    async def events():
+        if error is not None:
+            raise error
+        yield _fs_event("a.txt")
+
+    exit_calls = []
+    handle = AsyncWatchHandle(events(), lambda _event: None, exit_calls.append)
+    await handle._wait
+    await handle.stop()
+    await handle.stop()
+
+    assert exit_calls == [error]
