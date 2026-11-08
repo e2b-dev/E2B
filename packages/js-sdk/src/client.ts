@@ -75,6 +75,13 @@ export class E2B {
     const boundOpts: E2BClientOpts = { ...(opts ?? {}) }
     delete (boundOpts as ConnectionOpts).signal
 
+    if (boundOpts.headers) {
+      boundOpts.headers = { ...boundOpts.headers }
+    }
+    if (boundOpts.apiHeaders) {
+      boundOpts.apiHeaders = { ...boundOpts.apiHeaders }
+    }
+
     this.Sandbox = class extends Sandbox {
       protected static override readonly boundOpts = boundOpts
     }
