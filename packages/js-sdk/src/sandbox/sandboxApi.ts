@@ -1378,11 +1378,10 @@ function fromApiEgressProxy(
       : {}),
     ...(egressProxy.tls?.enabled === true
       ? {
-          tls: {
-            ...(egressProxy.tls.serverName !== undefined
+          tls:
+            egressProxy.tls.serverName !== undefined
               ? { serverName: egressProxy.tls.serverName }
-              : {}),
-          },
+              : {},
         }
       : {}),
   }
