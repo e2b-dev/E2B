@@ -56,7 +56,7 @@ const listSnapshotsCommand = new commander.Command('list')
   .option(
     '-l, --limit <limit>',
     `limit the number of snapshots returned (default: ${DEFAULT_LIMIT}, 0 for no limit)`,
-    zodParser(integer('Snapshot limit', { min: 0 }))
+    zodParser(integer('--limit', { min: 0 }))
   )
   .option(
     '-f, --format <format>',

@@ -81,7 +81,13 @@ describe('keyValuePairs', () => {
     })
   })
 
-  test.each(['key', '=value', 'a=1,', ''])('rejects %j', (value: string) => {
+  test('skips empty segments and returns undefined for an empty filter', () => {
+    expect(parseMetadata('a=1,')).toEqual({ a: '1' })
+    expect(parseMetadata('')).toBeUndefined()
+    expect(parseMetadata(' , ')).toBeUndefined()
+  })
+
+  test.each(['key', '=value', 'a=1,b'])('rejects %j', (value: string) => {
     expect(() => parseMetadata(value)).toThrow(InvalidArgumentError)
   })
 })
