@@ -70,7 +70,6 @@
     "e2b": "dist/index.js"
   },
   "dependencies": {
-    "@iarna/toml": "^2.2.5",
     "@inquirer/prompts": "^7.10.1",
     "@npmcli/package-json": "^7.0.5",
     "async-listen": "^3.1.0",
@@ -83,8 +82,7 @@
     "inquirer": "^12.11.1",
     "simple-update-notifier": "^2.0.0",
     "simple-wcswidth": "^1.1.2",
-    "statuses": "^2.0.2",
-    "yup": "^1.7.1"
+    "statuses": "^2.0.2"
   },
   "engines": {
     "node": ">=22.19.0"

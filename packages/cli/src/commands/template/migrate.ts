@@ -3,11 +3,17 @@ import * as commander from 'commander'
 import { Template, TemplateBuilder, TemplateClass } from 'e2b'
 import * as fs from 'fs'
 import * as path from 'path'
-import { E2BConfig, getConfigPath, loadConfig } from '../../config'
-import { defaultDockerfileName } from '../../docker/constants'
-import { configOption, parsePositiveInt, pathOption } from '../../options'
+import {
+  defaultDockerfileName,
+  fallbackDockerfileName,
+} from '../../docker/constants'
+import {
+  deprecatedConfigOption,
+  parsePositiveInt,
+  warnIgnoredConfigOption,
+} from '../../options'
 import { getRoot } from '../../utils/filesystem'
-import { asLocal, asLocalRelative, asPrimary } from '../../utils/format'
+import { asBold, asLocal, asLocalRelative, asPrimary } from '../../utils/format'
 import { getDockerfile } from './dockerfile'
 import { validateTemplateName } from '../../utils/templateName'
 import {
@@ -17,15 +23,29 @@ import {
   parseLanguage,
 } from './generators'
 
+const defaultTemplateName = 'name-your-template'
+
+const deprecatedPathOption = new commander.Option(
+  '-p, --path <path>',
+  `[deprecated] run the command from ${asBold('<path>')} instead`
+).hideHelp()
+
+interface MigrateOverrides {
+  name?: string
+  startCmd?: string
+  readyCmd?: string
+  cpuCount?: number
+  memoryMb?: number
+}
+
 /**
  * Migrate Dockerfile to a specific target language using SDK
  */
 async function migrateToLanguage(
   root: string,
-  config: E2BConfig,
   dockerfileContent: string,
   language: Language,
-  nameOverride?: string
+  overrides: MigrateOverrides
 ): Promise<void> {
   // Initialize template with file context
   const template = Template({
@@ -58,47 +78,40 @@ async function migrateToLanguage(
     baseTemplate = template.fromImage('my-custom-image')
   }
 
-  // Apply config start/ready commands
   let parsedTemplate: TemplateClass = baseTemplate
-  if (config.start_cmd) {
+  if (overrides.startCmd) {
     parsedTemplate = baseTemplate.setStartCmd(
-      config.start_cmd,
-      config.ready_cmd || 'sleep 20'
+      overrides.startCmd,
+      overrides.readyCmd || 'sleep 20'
     )
-  } else if (config.ready_cmd) {
-    parsedTemplate = baseTemplate.setReadyCmd(config.ready_cmd)
+  } else if (overrides.readyCmd) {
+    parsedTemplate = baseTemplate.setReadyCmd(overrides.readyCmd)
   }
 
-  const name = nameOverride || config.template_name || config.template_id
-  if (!name) {
-    throw new Error('Template name or ID is required')
-  }
-
-  // Generate code for the target language using shared functionality
   await generateAndWriteTemplateFiles(
     root,
-    name,
+    overrides.name ?? defaultTemplateName,
     language,
     parsedTemplate,
-    config.cpu_count,
-    config.memory_mb
+    overrides.cpuCount,
+    overrides.memoryMb
   )
 }
 
 export const migrateCommand = new commander.Command('migrate')
-  .description(
-    `migrate ${asLocal('e2b.Dockerfile')} and ${asLocal(
-      'e2b.toml'
-    )} to new Template SDK format`
-  )
+  .description('migrate a Dockerfile to the Template SDK format')
   .option(
     '-d, --dockerfile <file>',
-    `specify path to Dockerfile. Defaults to ${asLocal('e2b.Dockerfile')}`
+    `specify path to Dockerfile. By default E2B tries to find ${asLocal(
+      defaultDockerfileName
+    )} or ${asLocal(fallbackDockerfileName)} in the current directory.`
   )
-  .addOption(configOption)
+  .addOption(deprecatedConfigOption)
   .option(
     '-n, --name <name>',
-    'override the template name used in the generated files. Defaults to the template name or ID from the config file.',
+    `specify the template name used in the generated files. Defaults to ${asLocal(
+      defaultTemplateName
+    )}.`,
     (value) => {
       try {
         return validateTemplateName(value)
@@ -111,20 +124,20 @@ export const migrateCommand = new commander.Command('migrate')
   )
   .option(
     '-c, --cmd <start-command>',
-    'override the command that will be executed when the sandbox is started.'
+    'specify the command that will be executed when the sandbox is started.'
   )
   .option(
     '--ready-cmd <ready-command>',
-    'override the command that will need to exit 0 for the template to be ready.'
+    'specify the command that will need to exit 0 for the template to be ready.'
   )
   .option(
     '--cpu-count <cpu-count>',
-    'override the number of CPUs that will be used to run the sandbox.',
+    'specify the number of CPUs that will be used to run the sandbox.',
     parsePositiveInt('CPU count')
   )
   .option(
     '--memory-mb <memory-mb>',
-    'override the amount of memory in megabytes that will be used to run the sandbox. Must be an even number.',
+    'specify the amount of memory in megabytes that will be used to run the sandbox. Must be an even number.',
     parsePositiveInt('Memory in megabytes')
   )
   .option(
@@ -132,7 +145,7 @@ export const migrateCommand = new commander.Command('migrate')
     `specify target language: ${Object.values(Language).join(', ')}`,
     parseLanguage
   )
-  .addOption(pathOption)
+  .addOption(deprecatedPathOption)
   .action(
     async (opts: {
       dockerfile?: string
@@ -147,7 +160,19 @@ export const migrateCommand = new commander.Command('migrate')
     }) => {
       let success = false
       try {
-        console.log('\n🔄 Migrating template configuration to SDK format...\n')
+        warnIgnoredConfigOption(
+          opts,
+          `Use ${asBold('--name')}, ${asBold('--cmd')}, ${asBold(
+            '--ready-cmd'
+          )}, ${asBold('--cpu-count')} and ${asBold('--memory-mb')} instead.`
+        )
+        if (opts.path) {
+          console.error(
+            `The ${asBold('--path')} flag is deprecated, run the command from the template directory instead.`
+          )
+        }
+
+        console.log('\n🔄 Migrating Dockerfile to SDK format...\n')
 
         // Validate memory override
         if (opts.memoryMb && opts.memoryMb % 2 !== 0) {
@@ -159,40 +184,8 @@ export const migrateCommand = new commander.Command('migrate')
         }
 
         const root = getRoot(opts.path)
-        const configPath = getConfigPath(root, opts.config)
-
         const { dockerfileContent, dockerfilePath, dockerfileRelativePath } =
           getDockerfile(root, opts.dockerfile)
-
-        let config: E2BConfig = {
-          template_id: 'name-your-template',
-          dockerfile: defaultDockerfileName,
-        }
-
-        // Validate config file exists
-        if (fs.existsSync(configPath)) {
-          config = await loadConfig(configPath)
-        } else {
-          console.error(
-            `Config file ${asLocalRelative(
-              path.relative(root, configPath)
-            )} not found. Using defaults.`
-          )
-        }
-
-        // Apply command-line overrides on top of the loaded config
-        if (opts.cmd !== undefined) {
-          config.start_cmd = opts.cmd
-        }
-        if (opts.readyCmd !== undefined) {
-          config.ready_cmd = opts.readyCmd
-        }
-        if (opts.cpuCount !== undefined) {
-          config.cpu_count = opts.cpuCount
-        }
-        if (opts.memoryMb !== undefined) {
-          config.memory_mb = opts.memoryMb
-        }
 
         // Determine target language
         let language: Language
@@ -226,13 +219,13 @@ export const migrateCommand = new commander.Command('migrate')
         }
 
         // Perform migration
-        await migrateToLanguage(
-          root,
-          config,
-          dockerfileContent,
-          language,
-          opts.name
-        )
+        await migrateToLanguage(root, dockerfileContent, language, {
+          name: opts.name,
+          startCmd: opts.cmd,
+          readyCmd: opts.readyCmd,
+          cpuCount: opts.cpuCount,
+          memoryMb: opts.memoryMb,
+        })
 
         // Rename old files to .old extensions
         const oldFilesRenamed: { oldPath: string; newPath: string }[] = []
@@ -244,16 +237,6 @@ export const migrateCommand = new commander.Command('migrate')
           oldFilesRenamed.push({
             oldPath: dockerfileRelativePath,
             newPath: path.relative(root, oldDockerfilePath),
-          })
-        }
-
-        // Rename e2b.toml if it exists
-        if (fs.existsSync(configPath)) {
-          const oldConfigPath = `${configPath}.old`
-          fs.renameSync(configPath, oldConfigPath)
-          oldFilesRenamed.push({
-            oldPath: path.relative(root, configPath),
-            newPath: path.relative(root, oldConfigPath),
           })
         }
 

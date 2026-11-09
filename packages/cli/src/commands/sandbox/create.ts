@@ -70,7 +70,10 @@ export function createCommand(
           )
         }
         try {
-          warnIgnoredConfigOption(opts)
+          warnIgnoredConfigOption(
+            opts,
+            `Pass the template as ${asBold('[template]')}.`
+          )
 
           const apiKey = ensureAPIKey()
 
