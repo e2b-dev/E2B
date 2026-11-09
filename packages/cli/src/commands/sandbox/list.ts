@@ -48,7 +48,7 @@ export const listCommand = new commander.Command('list')
     '-o, --order <order>',
     'sort order by start time, asc or desc (default: desc)',
     zodParser(
-      z.enum(['asc', 'desc'], {
+      z.enum(['asc', 'desc'] as const satisfies readonly SandboxListOrder[], {
         error: "Invalid order, expected 'asc' or 'desc'.",
       })
     )
@@ -56,7 +56,7 @@ export const listCommand = new commander.Command('list')
   .option(
     '-l, --limit <limit>',
     `limit the number of sandboxes returned (default: ${DEFAULT_LIMIT}, 0 for no limit)`,
-    zodParser(integer('Sandbox limit', { min: 0 }))
+    zodParser(integer('--limit', { min: 0 }))
   )
   .option(
     '-f, --format <format>',

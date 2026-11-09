@@ -42,11 +42,13 @@ export function integer(
 
 /**
  * Comma-separated `key=value` pairs, eg. `env=prod,team=ml`. Values may
- * contain `=`; only the first one separates key from value.
+ * contain `=`; only the first one separates key from value. Empty segments
+ * (`-m ""`, a trailing comma) are skipped; with no pairs left the result is
+ * undefined, so an empty filter means no filter.
  */
 export const keyValuePairs = z
   .string()
-  .transform((value) => value.split(','))
+  .transform((value) => value.split(',').filter((pair) => pair.trim()))
   .pipe(
     z.array(
       z
@@ -64,4 +66,6 @@ export const keyValuePairs = z
         })
     )
   )
-  .transform((pairs) => Object.fromEntries(pairs))
+  .transform((pairs) =>
+    pairs.length > 0 ? Object.fromEntries(pairs) : undefined
+  )

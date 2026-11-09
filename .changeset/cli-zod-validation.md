@@ -2,7 +2,7 @@
 '@e2b/cli': minor
 ---
 
-Validate all CLI options and arguments with zod. Invalid values now fail before the command runs, with a message naming the option, e.g. `error: option '-l, --limit <limit>' argument 'abc' is invalid. Sandbox limit must be a non-negative integer.`
+Validate all CLI options and arguments with zod. Invalid values now fail before the command runs, with a message naming the option, e.g. `error: option '-l, --limit <limit>' argument 'abc' is invalid. --limit must be a non-negative integer.`
 
 Inputs that used to be silently accepted are now rejected:
 
