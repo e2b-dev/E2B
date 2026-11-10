@@ -143,6 +143,17 @@ describe('e2b project list', () => {
     const { err } = await run(['project', 'list', '--workspace', 'nope'])
     expect(err).toContain('Workspace "nope" not found')
   })
+
+  test('rejects an ambiguous workspace name', async () => {
+    me.workspaces.push({ ...me.workspaces[1], id: 'team2', public_id: 'wrk_team2', projects: [] })
+    try {
+      const { err } = await run(['project', 'list', '--workspace', 'TEAM'])
+      expect(err).toContain('More than one workspace is named "TEAM"')
+      expect(err).toContain('wrk_team, wrk_team2')
+    } finally {
+      me.workspaces.pop()
+    }
+  })
 })
 
 describe('e2b project use', () => {

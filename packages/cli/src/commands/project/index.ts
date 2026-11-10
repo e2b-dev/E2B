@@ -1,6 +1,6 @@
 import * as commander from '@commander-js/extra-typings'
 
-import { currentProject, requireMe } from 'src/api'
+import { currentProject, ProjectSource, requireMe } from 'src/api'
 import { Format, parseFormat, projectOption } from 'src/options'
 import { asBold, asFormattedError } from 'src/utils/format'
 import { renderTable } from 'src/utils/table'
@@ -12,6 +12,7 @@ import {
   Me,
   Project,
   ProjectEntry,
+  ProjectStatus,
 } from 'src/workspaces'
 
 const formatOption = new commander.Option(
@@ -62,12 +63,20 @@ const listCommand = new commander.Command('list')
       let entries = allProjects(me)
       if (opts.workspace) {
         const ref = opts.workspace
-        const workspace = me.workspaces.find(
-          (w) =>
-            w.id === ref ||
-            w.public_id === ref ||
-            w.name.toLowerCase() === ref.toLowerCase()
+        const exact = me.workspaces.find(
+          (w) => w.id === ref || w.public_id === ref
         )
+        const byName = me.workspaces.filter(
+          (w) => w.name.toLowerCase() === ref.toLowerCase()
+        )
+        if (!exact && byName.length > 1) {
+          fail(
+            `More than one workspace is named "${ref}": ${byName
+              .map((w) => w.public_id)
+              .join(', ')}. Pass the workspace ID instead.`
+          )
+        }
+        const workspace = exact ?? byName[0]
         if (!workspace) {
           fail(
             `Workspace "${ref}" not found. Run ${asBold('e2b workspace list')} to see your workspaces.`
@@ -119,8 +128,12 @@ const useCommand = new commander.Command('use')
     try {
       const entry = findProject(await requireMe(), ref)
       const { project, workspace } = entry
-      if (project.status !== 'active') {
-        fail(`Project ${project.name} is ${project.status} and can't be used.`)
+      if (project.status !== ProjectStatus.Active) {
+        fail(
+          `Project ${project.name} is ${project.status} and can't be used. Pick an active project from ${asBold(
+            'e2b project list'
+          )}, or try again once it is active.`
+        )
       }
       const warning = blockedWarning(entry)
       if (warning) console.warn(warning)
@@ -135,7 +148,7 @@ const useCommand = new commander.Command('use')
       )
 
       const override = currentProject()
-      if (override?.source === 'E2B_PROJECT_ID') {
+      if (override?.source === ProjectSource.Env) {
         console.warn(
           `${asBold('E2B_PROJECT_ID')} is set and takes precedence over the selected project.`
         )
@@ -189,7 +202,9 @@ const infoCommand = new commander.Command('info')
         ['Your access', project.capabilities.join(', ') || 'none'],
         [
           'Selected by',
-          current.source === 'selected' ? 'e2b project use' : current.source,
+          current.source === ProjectSource.Selected
+            ? 'e2b project use'
+            : current.source,
         ],
       ]
       const width = Math.max(...rows.map(([label]) => label.length)) + 2
