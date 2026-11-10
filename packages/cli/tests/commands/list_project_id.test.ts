@@ -118,14 +118,14 @@ describe('lists with the access token', () => {
     expect(pretty).toContain(PROJECT_ID)
 
     const json = JSON.parse(await run(sandboxList, ['-f', 'json']))
-    expect(json[0]).toMatchObject({ sandboxId: 'sbx', projectId: PROJECT_ID })
+    expect(json[0]).toMatchObject({ sandboxId: 'sbx', projectID: PROJECT_ID })
   })
 
   test('snapshot list shows the project ID', async () => {
     expect(await run(snapshotList, ['list'])).toContain(PROJECT_ID)
 
     const json = JSON.parse(await run(snapshotList, ['list', '-f', 'json']))
-    expect(json[0]).toMatchObject({ snapshotId: 'snap', projectId: PROJECT_ID })
+    expect(json[0]).toMatchObject({ snapshotId: 'snap', projectID: PROJECT_ID })
   })
 
   test('template list shows the project ID', async () => {
@@ -147,6 +147,6 @@ describe('lists with E2B_API_KEY', () => {
     expect(await run(templateList, [])).not.toContain('PROJECT ID')
 
     const json = JSON.parse(await run(sandboxList, ['-f', 'json']))
-    expect(json[0]).not.toHaveProperty('projectId')
+    expect(json[0]).not.toHaveProperty('projectID')
   })
 })

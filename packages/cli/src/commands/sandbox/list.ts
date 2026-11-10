@@ -91,7 +91,7 @@ export const listCommand = new commander.Command('list')
         console.log(
           JSON.stringify(
             sortSandboxes(sandboxes, options.order).map((sandbox) =>
-              projectId ? { ...sandbox, projectId } : sandbox
+              projectId ? { ...sandbox, projectID: projectId } : sandbox
             ),
             null,
             2
