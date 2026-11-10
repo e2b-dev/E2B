@@ -58,17 +58,27 @@ function requestedProject(): string | undefined {
   return projectOverride || projectId
 }
 
+/** Where the current project comes from; shown as `selected_by` in JSON. */
+export enum ProjectSource {
+  Flag = '--project',
+  Env = 'E2B_PROJECT_ID',
+  Selected = 'selected',
+}
+
 /**
  * The project commands run in and where that choice comes from, or
  * `undefined` when signed out without `--project` or `E2B_PROJECT_ID`.
  */
 export function currentProject():
-  | { ref: string; source: '--project' | 'E2B_PROJECT_ID' | 'selected' }
-  | undefined {
-  if (projectOverride) return { ref: projectOverride, source: '--project' }
-  if (projectId) return { ref: projectId, source: 'E2B_PROJECT_ID' }
+  { ref: string; source: ProjectSource } | undefined {
+  if (projectOverride) {
+    return { ref: projectOverride, source: ProjectSource.Flag }
+  }
+  if (projectId) return { ref: projectId, source: ProjectSource.Env }
   const config = getUserConfig()
-  return config ? { ref: config.projectId, source: 'selected' } : undefined
+  return config
+    ? { ref: config.projectId, source: ProjectSource.Selected }
+    : undefined
 }
 
 /** The logged-in user's workspaces and projects, fetched once per process. */
