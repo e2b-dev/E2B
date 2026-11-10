@@ -5,16 +5,22 @@ import * as path from 'path'
 
 const configName = 'e2b.toml'
 
-// Matches the yup schema this replaced: required strings must be non-empty
-// and quoted numbers such as `cpu_count = "2"` are still accepted.
+// A TOML number, or a quoted one like `cpu_count = "2"`, which the yup schema
+// this replaced also accepted. Other TOML types (booleans, dates) are rejected.
+const integerField = (min: number) =>
+  z
+    .union([z.number(), z.string().regex(/^\d+$/).transform(Number)])
+    .pipe(z.number().int().min(min))
+
+// Required strings must be non-empty, as with yup's `required()`.
 export const configSchema = z.object({
   template_id: z.string().min(1),
   template_name: z.string().optional(),
   dockerfile: z.string().min(1),
   start_cmd: z.string().optional(),
   ready_cmd: z.string().optional(),
-  cpu_count: z.coerce.number().int().min(1).optional(),
-  memory_mb: z.coerce.number().int().min(128).optional(),
+  cpu_count: integerField(1).optional(),
+  memory_mb: integerField(128).optional(),
 })
 
 export type E2BConfig = z.infer<typeof configSchema>

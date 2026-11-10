@@ -52,6 +52,18 @@ describe('loadConfig', () => {
     })
   })
 
+  test.each(['cpu_count = true', 'cpu_count = "two"', 'memory_mb = 1979-05-27'])(
+    'rejects a non-numeric %s',
+    async (line: string) => {
+      await fs.writeFile(
+        configPath,
+        `template_id = "abc"\ndockerfile = "e2b.Dockerfile"\n${line}\n`
+      )
+
+      await expect(loadConfig(configPath)).rejects.toThrow('Invalid config')
+    }
+  )
+
   test('reports every invalid field', async () => {
     await fs.writeFile(
       configPath,
