@@ -104,7 +104,7 @@ const listSnapshotsCommand = new commander.Command('list')
         console.log(
           JSON.stringify(
             snapshots.map((snapshot) =>
-              projectId ? { ...snapshot, projectId } : snapshot
+              projectId ? { ...snapshot, projectID: projectId } : snapshot
             ),
             null,
             2
