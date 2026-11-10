@@ -11,4 +11,4 @@ Inputs that used to be silently accepted are now rejected:
 - `-m, --metadata` pairs without `=` are rejected instead of ignored, and values may now contain `=`.
 - Integer options no longer accept forms like `1e3` or `0x10`.
 
-`--format` (case-insensitive), `--level`, the `template create` name and an odd `--memory-mb` are now rejected when parsed, not after the command starts. Invalid `e2b.toml` files list every invalid field instead of only the first.
+`--format` (case-insensitive), `--level`, the `template create` name and an odd `--memory-mb` are now rejected when parsed, not after the command starts. Invalid `e2b.toml` files list every invalid field instead of only the first, and `cpu_count`/`memory_mb` there must be TOML numbers (quoted numbers like `"2"` are no longer accepted).
