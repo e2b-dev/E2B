@@ -257,7 +257,8 @@ class ApiClient(AuthenticatedClient):
             None,
         )
 
-        if config.api_key is not None:
+        # Like the JS SDK, an empty E2B_API_KEY counts as unset.
+        if config.api_key:
             token = config.api_key
             auth_header_name = "X-API-KEY"
         elif authorization is not None:

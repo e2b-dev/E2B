@@ -13,8 +13,12 @@ def test_api_client_requires_api_key(monkeypatch):
 
 
 @pytest.mark.parametrize("header", ["Authorization", "authorization"])
-def test_api_client_accepts_authorization_header(monkeypatch, header):
-    monkeypatch.delenv("E2B_API_KEY", raising=False)
+@pytest.mark.parametrize("env_api_key", [None, ""])
+def test_api_client_accepts_authorization_header(monkeypatch, header, env_api_key):
+    if env_api_key is None:
+        monkeypatch.delenv("E2B_API_KEY", raising=False)
+    else:
+        monkeypatch.setenv("E2B_API_KEY", env_api_key)
     config = ConnectionConfig(
         api_headers={header: "Bearer access-token", "X-Team-ID": "team"}
     )
