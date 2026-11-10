@@ -136,7 +136,10 @@ async def test_build_resolves_build_impl_and_config_off_cls(configs, monkeypatch
 
     assert (
         await BoundAsyncTemplate.build_in_background(
-            Template().from_base_image(), "my-template", min_free_disk_mb=0
+            Template().from_base_image(),
+            "my-template",
+            min_free_disk_mb=0,
+            max_cpu_count=4,
         )
         is build_info
     )
@@ -145,6 +148,7 @@ async def test_build_resolves_build_impl_and_config_off_cls(configs, monkeypatch
     assert configs[0].api_key == BOUND_API_KEY
     assert configs[0].domain == BOUND_DOMAIN
     assert mock_build.call_args.kwargs["min_free_disk_mb"] == 0
+    assert mock_build.call_args.kwargs["max_cpu_count"] == 4
 
 
 @pytest.mark.asyncio
@@ -213,3 +217,40 @@ async def test_minimum_free_disk_option(
         assert bodies[0].min_free_disk_mb is UNSET
     else:
         assert bodies[0].min_free_disk_mb == expected
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("method", ["build", "build_in_background"])
+@pytest.mark.parametrize(
+    "options, expected_body",
+    [
+        ({}, {}),
+        (
+            {"cpu_count": 2, "max_cpu_count": 4},
+            {"cpuCount": 2, "maxCpuCount": 4},
+        ),
+    ],
+)
+async def test_cpu_options(configs, monkeypatch, method, options, expected_body):
+    bodies = []
+
+    async def request(*, client, body):
+        bodies.append(body)
+        return SimpleNamespace(
+            status_code=202,
+            parsed=SimpleNamespace(
+                template_id="template-id", build_id="build-id", tags=[]
+            ),
+        )
+
+    monkeypatch.setattr(
+        template_async_build_api.post_v3_templates, "asyncio_detailed", request
+    )
+    monkeypatch.setattr(template_async_main, "trigger_build", AsyncMock())
+    monkeypatch.setattr(template_async_main, "wait_for_build_finish", AsyncMock())
+    await getattr(AsyncTemplate, method)(
+        Template().from_template("parent"), "resizable", **options
+    )
+    assert [body.to_dict() for body in bodies] == [
+        {"name": "resizable", **expected_body}
+    ]

@@ -67,7 +67,7 @@ export const listCommand = new commander.Command('list')
     }
   })
 
-function renderTemplateTable(
+export function renderTemplateTable(
   templates: e2b.components['schemas']['Template'][]
 ) {
   if (!templates?.length) {
@@ -86,6 +86,10 @@ function renderTemplateTable(
       value: (template) => listAliases(template.aliases),
     },
     { header: 'vCPUs', value: (template) => String(template.cpuCount) },
+    {
+      header: 'Max vCPUs',
+      value: (template) => template.maxCpuCount?.toString(),
+    },
     { header: 'RAM MiB', value: (template) => String(template.memoryMB) },
     {
       header: 'Created by',

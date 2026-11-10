@@ -38,6 +38,7 @@ class TemplateWithBuilds:
         envd_version (str): Version of the envd running in the sandbox
         build_status (TemplateBuildStatus): Status of the template build
         builds (list['TemplateBuild']): List of builds for the template
+        max_cpu_count (Union[Unset, int]): CPU cores for the sandbox
         is_default (Union[Unset, bool]): Whether the template is one of the platform's default templates. A default
             template owned by another team carries zero or null usage fields (`spawnCount`, `buildCount`, `lastSpawnedAt`,
             `createdBy`).
@@ -61,6 +62,7 @@ class TemplateWithBuilds:
     envd_version: str
     build_status: TemplateBuildStatus
     builds: list["TemplateBuild"]
+    max_cpu_count: Union[Unset, int] = UNSET
     is_default: Union[Unset, bool] = UNSET
     description: Union[Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -113,6 +115,8 @@ class TemplateWithBuilds:
             builds_item = builds_item_data.to_dict()
             builds.append(builds_item)
 
+        max_cpu_count = self.max_cpu_count
+
         is_default = self.is_default
 
         description = self.description
@@ -140,6 +144,8 @@ class TemplateWithBuilds:
                 "builds": builds,
             }
         )
+        if max_cpu_count is not UNSET:
+            field_dict["maxCpuCount"] = max_cpu_count
         if is_default is not UNSET:
             field_dict["isDefault"] = is_default
         if description is not UNSET:
@@ -218,6 +224,8 @@ class TemplateWithBuilds:
 
             builds.append(builds_item)
 
+        max_cpu_count = d.pop("maxCpuCount", UNSET)
+
         is_default = d.pop("isDefault", UNSET)
 
         description = d.pop("description", UNSET)
@@ -240,6 +248,7 @@ class TemplateWithBuilds:
             envd_version=envd_version,
             build_status=build_status,
             builds=builds,
+            max_cpu_count=max_cpu_count,
             is_default=is_default,
             description=description,
         )

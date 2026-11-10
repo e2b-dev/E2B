@@ -179,6 +179,8 @@ class Sandbox(SandboxApi):
         volume_mounts: Optional[SandboxVolumeMount] = None,
         logger: Optional[logging.Logger] = None,
         idempotency_key: Optional[str] = None,
+        *,
+        cpu_count: Optional[int] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -202,6 +204,7 @@ class Sandbox(SandboxApi):
             header when creating a sandbox. Retries reuse it. Keys must contain
             1–255 lowercase ASCII letters, digits or hyphens (e.g. a lowercase
             UUID), otherwise ``InvalidArgumentException`` is raised.
+        :param cpu_count: CPUs to start with, from 1 to the template's ``max_cpu_count``. Defaults to the template's ``cpu_count``. Fixed-size templates accept only their own ``cpu_count``.
 
         :return: A Sandbox instance for the new sandbox
 
@@ -235,6 +238,7 @@ class Sandbox(SandboxApi):
             volume_mounts=transformed_mounts,
             logger=logger,
             idempotency_key=idempotency_key,
+            cpu_count=cpu_count,
             **opts,
         )
 
@@ -1197,6 +1201,7 @@ class Sandbox(SandboxApi):
         volume_mounts: Optional[list] = None,
         logger: Optional[logging.Logger] = None,
         idempotency_key: Optional[str] = None,
+        cpu_count: Optional[int] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         params = cls._resolve_api_params(**opts)
@@ -1223,6 +1228,7 @@ class Sandbox(SandboxApi):
                 volume_mounts=volume_mounts,
                 logger=logger,
                 idempotency_key=idempotency_key,
+                cpu_count=cpu_count,
                 **params,
             )
 

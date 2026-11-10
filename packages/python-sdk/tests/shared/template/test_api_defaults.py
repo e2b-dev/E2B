@@ -70,3 +70,25 @@ async def test_async_build_sends_explicit_cpu_and_memory(monkeypatch):
 
     assert body["cpuCount"] == 1
     assert body["memoryMB"] == 512
+
+
+def test_build_omits_max_cpu_count_when_unset(monkeypatch):
+    body = _sync_build_body(monkeypatch, cpu_count=2, memory_mb=None)
+
+    assert "maxCpuCount" not in body
+
+
+def test_build_sends_explicit_max_cpu_count(monkeypatch):
+    body = _sync_build_body(monkeypatch, cpu_count=2, memory_mb=None, max_cpu_count=4)
+
+    assert body["cpuCount"] == 2
+    assert body["maxCpuCount"] == 4
+
+
+async def test_async_build_sends_explicit_max_cpu_count(monkeypatch):
+    body = await _async_build_body(
+        monkeypatch, cpu_count=2, memory_mb=None, max_cpu_count=4
+    )
+
+    assert body["cpuCount"] == 2
+    assert body["maxCpuCount"] == 4

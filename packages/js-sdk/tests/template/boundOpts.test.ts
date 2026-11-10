@@ -188,3 +188,22 @@ test.each([
     },
   ])
 })
+
+test.each([
+  [{}, {}],
+  [
+    { cpuCount: 2, maxCpuCount: 4 },
+    { cpuCount: 2, maxCpuCount: 4 },
+  ],
+])('build sends the CPU options %j', async (options, expected) => {
+  await Template.buildInBackground(
+    Template().fromTemplate('parent'),
+    'resizable',
+    {
+      apiKey: TEST_API_KEY,
+      ...options,
+    }
+  )
+
+  expect(buildRequestBodies).toEqual([{ name: 'resizable', ...expected }])
+})

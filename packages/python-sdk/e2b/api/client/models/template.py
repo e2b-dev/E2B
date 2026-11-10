@@ -36,6 +36,7 @@ class Template:
         build_count (int): Number of times the template was built
         envd_version (str): Version of the envd running in the sandbox
         build_status (TemplateBuildStatus): Status of the template build
+        max_cpu_count (Union[Unset, int]): CPU cores for the sandbox
         is_default (Union[Unset, bool]): Whether the template is one of the platform's default templates. A default
             template owned by another team carries zero or null usage fields (`spawnCount`, `buildCount`, `lastSpawnedAt`,
             `createdBy`).
@@ -58,6 +59,7 @@ class Template:
     build_count: int
     envd_version: str
     build_status: TemplateBuildStatus
+    max_cpu_count: Union[Unset, int] = UNSET
     is_default: Union[Unset, bool] = UNSET
     description: Union[Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -105,6 +107,8 @@ class Template:
 
         build_status = self.build_status.value
 
+        max_cpu_count = self.max_cpu_count
+
         is_default = self.is_default
 
         description = self.description
@@ -131,6 +135,8 @@ class Template:
                 "buildStatus": build_status,
             }
         )
+        if max_cpu_count is not UNSET:
+            field_dict["maxCpuCount"] = max_cpu_count
         if is_default is not UNSET:
             field_dict["isDefault"] = is_default
         if description is not UNSET:
@@ -201,6 +207,8 @@ class Template:
 
         build_status = TemplateBuildStatus(d.pop("buildStatus"))
 
+        max_cpu_count = d.pop("maxCpuCount", UNSET)
+
         is_default = d.pop("isDefault", UNSET)
 
         description = d.pop("description", UNSET)
@@ -222,6 +230,7 @@ class Template:
             build_count=build_count,
             envd_version=envd_version,
             build_status=build_status,
+            max_cpu_count=max_cpu_count,
             is_default=is_default,
             description=description,
         )
