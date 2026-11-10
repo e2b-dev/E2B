@@ -65,17 +65,20 @@ export function waitForSandboxEnd(sandboxID: string) {
     }
   }
 
-  monitor()
+  monitor().catch((err) => {
+    // Credentials could not be refreshed: stop, as a missing login would.
+    console.error(err instanceof Error ? err.message : err)
+    process.exit(1)
+  })
 
   return () => running
 }
 
 export async function isRunning(sandboxID: string) {
+  // Outside the try: a failed token refresh is not a stopped sandbox.
+  const auth = await ensureAuth()
   try {
-    const auth = await ensureAuth()
-    const info = await Sandbox.getInfo(sandboxID, {
-      ...auth,
-    })
+    const info = await Sandbox.getInfo(sandboxID, auth)
     return info.state === 'running'
   } catch (err) {
     console.error(`Failed to check sandbox status: ${err}`)

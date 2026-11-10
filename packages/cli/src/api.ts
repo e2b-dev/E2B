@@ -34,8 +34,14 @@ Visit ${asPrimary('https://e2b.dev/dashboard?tab=keys')} to get the API key.`
   })
 }
 
-/** Credentials to spread into SDK call options, e.g. `Sandbox.list({ ...auth })`. */
-export type Auth = { apiKey: string } | { apiHeaders: Record<string, string> }
+/**
+ * Credentials to spread into SDK call options, e.g. `Sandbox.list({ ...auth })`.
+ * Derived from ConnectionOpts so a renamed SDK option fails to compile here
+ * instead of being silently dropped by the spreads.
+ */
+export type Auth =
+  | Required<Pick<e2b.ConnectionOpts, 'apiKey'>>
+  | Required<Pick<e2b.ConnectionOpts, 'apiHeaders'>>
 
 /**
  * Resolve credentials for an E2B API call.

@@ -166,7 +166,12 @@ async function connectSandbox({
   let pendingKeepAlive: Promise<void> = Promise.resolve()
   const keepAliveTimeoutMs = timeoutMs ?? 30_000
   const intervalId = setInterval(() => {
-    pendingKeepAlive = setSandboxTimeout(keepAliveTimeoutMs)
+    // Handled here: an unhandled rejection would take the session down.
+    pendingKeepAlive = setSandboxTimeout(keepAliveTimeoutMs).catch((err) => {
+      console.error(
+        `Failed to keep the sandbox alive: ${err instanceof Error ? err.message : err}`
+      )
+    })
   }, 5_000)
 
   console.log(
