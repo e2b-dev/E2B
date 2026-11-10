@@ -45,67 +45,59 @@ jobs:
         id: filter
         with:
           # `**/!(*.md)` excludes Markdown so docs-only changes don't trigger the suites.
+          # Each suite runs only when its own package changes: a change to the
+          # base SDK (packages/js-sdk, packages/python-sdk) doesn't re-run the
+          # CLI, Code Interpreter or Desktop suites, and root JS files don't
+          # trigger the Python suites. pnpm-lock.yaml is left out because a
+          # package's dependency change also touches its own package.json.
           filters: |
             shared: &shared
               - '.github/workflows/sdk_tests.yml'
-              - 'spec/**/!(*.md)'
-              - 'pnpm-lock.yaml'
-              - 'pnpm-workspace.yaml'
-              - 'package.json'
               - '.tool-versions'
-            js:
-              - *shared
-              - '.github/workflows/js_sdk_tests.yml'
+            js_shared: &js_shared
+              - '.github/workflows/sdk_tests.yml'
+              - '.tool-versions'
+              - 'package.json'
+              - 'pnpm-workspace.yaml'
               - 'tsconfig.sdk.json'
               - 'tsdown.sdk.config.mts'
+              - 'vitest.sdk.config.mts'
+              - 'vitest.cloudflare.config.mts'
+            js:
+              - *js_shared
+              - '.github/workflows/js_sdk_tests.yml'
+              - 'spec/**/!(*.md)'
               - 'packages/js-sdk/**/!(*.md)'
               - 'packages/dockerfile-utils-js/**/!(*.md)'
             python:
               - *shared
               - '.github/workflows/python_sdk_tests.yml'
+              - 'spec/**/!(*.md)'
               - 'packages/python-sdk/**/!(*.md)'
               - 'packages/dockerfile-utils-python/**/!(*.md)'
             cli:
-              - *shared
+              - *js_shared
               - '.github/workflows/cli_tests.yml'
               - 'packages/cli/**/!(*.md)'
-              - 'packages/js-sdk/**/!(*.md)'
-              - 'packages/dockerfile-utils-js/**/!(*.md)'
             code_interpreter_js:
-              - *shared
+              - *js_shared
               - '.github/workflows/code_interpreter_js_tests.yml'
-              - 'tsconfig.sdk.json'
-              - 'tsdown.sdk.config.mts'
-              - 'vitest.sdk.config.mts'
               - 'packages/code-interpreter-js/**/!(*.md)'
-              - 'packages/js-sdk/**/!(*.md)'
-              - 'packages/dockerfile-utils-js/**/!(*.md)'
             code_interpreter_python:
               - *shared
               - '.github/workflows/code_interpreter_python_tests.yml'
               - 'packages/code-interpreter-python/**/!(*.md)'
-              - 'packages/python-sdk/**/!(*.md)'
-              - 'packages/dockerfile-utils-python/**/!(*.md)'
             desktop_js:
-              - *shared
+              - *js_shared
               - '.github/workflows/desktop_js_tests.yml'
-              - 'tsconfig.sdk.json'
-              - 'tsdown.sdk.config.mts'
-              - 'vitest.sdk.config.mts'
               - 'packages/desktop-js/**/!(*.md)'
-              - 'packages/js-sdk/**/!(*.md)'
-              - 'packages/dockerfile-utils-js/**/!(*.md)'
             desktop_python:
               - *shared
               - '.github/workflows/desktop_python_tests.yml'
               - 'packages/desktop-python/**/!(*.md)'
-              - 'packages/python-sdk/**/!(*.md)'
-              - 'packages/dockerfile-utils-python/**/!(*.md)'
             dockerfile_utils_js:
-              - *shared
+              - *js_shared
               - '.github/workflows/dockerfile_utils_js_tests.yml'
-              - 'tsconfig.sdk.json'
-              - 'tsdown.sdk.config.mts'
               - 'packages/dockerfile-utils-js/**/!(*.md)'
             dockerfile_utils_python:
               - *shared
