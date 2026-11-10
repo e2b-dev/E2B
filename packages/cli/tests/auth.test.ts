@@ -174,6 +174,47 @@ describe('ensureAuth', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
+  test('sets up the account in workspace-api when /v1/me does not know the user yet', async () => {
+    writeConfig(jwt(3600), 'refresh-1', {})
+    const calls: string[] = []
+    let bootstrapped = false
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string, init: RequestInit) => {
+        calls.push(`${init.method} ${new URL(url).pathname}`)
+        if (url.endsWith('/v1/users/bootstrap')) {
+          bootstrapped = true
+          return Response.json({})
+        }
+        if (!bootstrapped) return new Response(null, { status: 401 })
+        return Response.json({
+          workspaces: [
+            {
+              id: 'ws',
+              public_id: 'wrk_ws',
+              name: 'Workspace',
+              kind: 'personal',
+              blocked: false,
+              block_reasons: [],
+              capabilities: [],
+              projects: [project('config-project')],
+            },
+          ],
+        })
+      })
+    )
+    const { ensureAuth } = await import('../src/api')
+
+    expect(await ensureAuth()).toMatchObject({
+      domain: 'config-project.e2b.dev',
+    })
+    expect(calls).toEqual([
+      'GET /v1/me',
+      'POST /v1/users/bootstrap',
+      'GET /v1/me',
+    ])
+  })
+
   test('resolves --project, then E2B_PROJECT_ID, to the project ID and its control plane', async () => {
     writeConfig(jwt(3600))
     vi.stubEnv('E2B_PROJECT_ID', 'prj_other')

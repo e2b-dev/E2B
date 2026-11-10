@@ -1,4 +1,5 @@
 import { select } from '@inquirer/prompts'
+import { ConnectionConfig } from 'e2b'
 import { z } from 'zod'
 
 import * as packageJSON from '../package.json'
@@ -34,6 +35,18 @@ const workspaceSchema = z.object({
 
 const meSchema = z.object({ workspaces: z.array(workspaceSchema) })
 
+/** The `status` values the CLI acts on; others are passed through as text. */
+export enum ProjectStatus {
+  Active = 'active',
+}
+
+/** The workspace `kind` values the CLI acts on. */
+export enum WorkspaceKind {
+  Personal = 'personal',
+}
+
+const WORKSPACE_API_REQUEST_TIMEOUT_MS = 30_000
+
 export type Project = z.infer<typeof projectSchema>
 export type Workspace = z.infer<typeof workspaceSchema>
 export type Me = z.infer<typeof meSchema>
@@ -51,7 +64,8 @@ export function workspaceApiUrl(): string {
   const override = process.env.E2B_WORKSPACE_API_URL
   if (override) return override.replace(/\/+$/, '')
 
-  const domain = process.env.E2B_DOMAIN || 'e2b.dev'
+  // The same resolution as the SDK: E2B_DOMAIN, then its default.
+  const domain = new ConnectionConfig().domain
   if (domain === 'e2b.app' || domain === 'e2b.dev') {
     return 'https://workspace-api.e2b.dev'
   }
@@ -69,7 +83,7 @@ async function workspaceApi(
       Authorization: `Bearer ${accessToken}`,
       'User-Agent': `e2b-cli/${packageJSON.version}`,
     },
-    signal: AbortSignal.timeout(30_000),
+    signal: AbortSignal.timeout(WORKSPACE_API_REQUEST_TIMEOUT_MS),
   })
 }
 
@@ -121,7 +135,9 @@ export function allProjects(me: Me): ProjectEntry[] {
 
 /** Projects that can be used: provisioned and not being deleted. */
 export function activeProjects(me: Me): ProjectEntry[] {
-  return allProjects(me).filter(({ project }) => project.status === 'active')
+  return allProjects(me).filter(
+    ({ project }) => project.status === ProjectStatus.Active
+  )
 }
 
 /**
@@ -131,7 +147,7 @@ export function activeProjects(me: Me): ProjectEntry[] {
  */
 export function personalProject(me: Me): ProjectEntry | undefined {
   return activeProjects(me).find(
-    ({ workspace }) => workspace.kind === 'personal'
+    ({ workspace }) => workspace.kind === WorkspaceKind.Personal
   )
 }
 
@@ -190,7 +206,8 @@ export function projectLabel(
 
 /**
  * Ask which active project to use. Without a terminal to prompt in, or with
- * a single candidate, the first active project is returned.
+ * a single candidate, the currently selected project is kept, or the first
+ * active one is returned.
  */
 export async function pickProject(
   me: Me,
@@ -204,7 +221,11 @@ export async function pickProject(
       )}.`
     )
   }
-  if (entries.length === 1 || !process.stdin.isTTY) return entries[0]
+  if (entries.length === 1 || !process.stdin.isTTY) {
+    return (
+      entries.find(({ project }) => project.id === selectedId) ?? entries[0]
+    )
+  }
 
   return select({
     message,

@@ -144,6 +144,18 @@ describe('pickProject', () => {
       'first'
     )
   })
+
+  test('keeps the selected project without a terminal', async () => {
+    const me: Me = {
+      workspaces: [
+        workspace('standard', [project('first'), project('second')]),
+      ],
+    }
+    expect(
+      (await pickProject(me, { message: 'Pick', selectedId: 'second' }))
+        .project.id
+    ).toBe('second')
+  })
 })
 
 describe('fetchMe', () => {

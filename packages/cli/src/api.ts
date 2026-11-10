@@ -5,7 +5,7 @@ import * as packageJSON from '../package.json'
 import { getUserConfig, UserConfig } from './user'
 import { asBold, asPrimary } from './utils/format'
 import { ensureValidAccessToken, updateUserConfig } from './utils/token-refresh'
-import { fetchMe, findProject, Me } from './workspaces'
+import { bootstrapUser, fetchMe, findProject, Me } from './workspaces'
 
 // Must run before any ConnectionConfig is constructed (including the
 // module-level one below) — configs read the integration at construction time.
@@ -47,7 +47,13 @@ let me: Promise<Me> | undefined
 export function getMe(): Promise<Me> {
   me ??= (async () => {
     const { accessToken } = await ensureValidAccessToken()
-    const result = await fetchMe(accessToken)
+    let result = await fetchMe(accessToken)
+    if (!result) {
+      // A user who logged in before workspace-api, or never opened the
+      // dashboard, has no account there yet: set it up, as login does.
+      await bootstrapUser(accessToken)
+      result = await fetchMe(accessToken)
+    }
     if (!result) {
       throw new Error(
         'Your session was not accepted. Run `e2b auth login` again.'
