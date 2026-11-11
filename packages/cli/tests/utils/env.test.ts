@@ -27,4 +27,8 @@ describe('parseEnv', () => {
     parseEnv('EMPTY=', acc)
     expect(acc).toEqual({ EMPTY: '' })
   })
+
+  test('starts a fresh object on the first occurrence', () => {
+    expect(parseEnv('FOO=bar', undefined)).toEqual({ FOO: 'bar' })
+  })
 })

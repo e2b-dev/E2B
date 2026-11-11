@@ -3,7 +3,7 @@ import * as commander from '@commander-js/extra-typings'
 import * as http from 'http'
 import * as e2b from 'e2b'
 
-import { pkg } from 'src'
+import * as pkg from '../../../package.json'
 import {
   DOCS_BASE,
   getConfigRefreshTimestamp,
