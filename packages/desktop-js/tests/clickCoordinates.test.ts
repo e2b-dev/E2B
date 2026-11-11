@@ -43,10 +43,10 @@ test.each([
 test('passing only one coordinate is rejected', async () => {
   const { sandbox, ran } = sandboxWithFakeCommands()
   await expect(sandbox.leftClick(5)).rejects.toThrow(
-    'Both x and y must be provided together'
+    'Pass both `x` and `y` to click at a position, or neither to click at the current cursor position.'
   )
   await expect(sandbox.rightClick(undefined, 7)).rejects.toThrow(
-    'Both x and y must be provided together'
+    'Pass both `x` and `y` to click at a position, or neither to click at the current cursor position.'
   )
   expect(ran).toEqual([])
 })

@@ -1,5 +1,7 @@
 import pytest
 
+from e2b import InvalidArgumentException
+
 from e2b_desktop import Sandbox
 
 
@@ -57,9 +59,9 @@ def test_clicks_at_the_origin_move_to_it(method, click_command):
 
 def test_single_coordinate_is_rejected():
     sandbox, ran = _sandbox_with_fake_commands()
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidArgumentException):
         sandbox.left_click(5)
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidArgumentException):
         sandbox.right_click(y=7)
     assert ran == []
 

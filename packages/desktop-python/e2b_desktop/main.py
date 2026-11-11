@@ -22,6 +22,7 @@ from e2b import (
     CommandResult,
     TimeoutException,
     CommandExitException,
+    InvalidArgumentException,
     SandboxIamOpts,
     SandboxLifecycle,
     SandboxNetworkOpts,
@@ -392,6 +393,7 @@ class Sandbox(SandboxBase):
 
         :param x: The x coordinate to click at, together with `y`
         :param y: The y coordinate to click at, together with `x`
+        :raises InvalidArgumentException: If only one of `x` and `y` is passed
         """
         self._check_click_position(x, y)
         if x is not None and y is not None:
@@ -404,6 +406,7 @@ class Sandbox(SandboxBase):
 
         :param x: The x coordinate to click at, together with `y`
         :param y: The y coordinate to click at, together with `x`
+        :raises InvalidArgumentException: If only one of `x` and `y` is passed
         """
         self._check_click_position(x, y)
         if x is not None and y is not None:
@@ -416,6 +419,7 @@ class Sandbox(SandboxBase):
 
         :param x: The x coordinate to click at, together with `y`
         :param y: The y coordinate to click at, together with `x`
+        :raises InvalidArgumentException: If only one of `x` and `y` is passed
         """
         self._check_click_position(x, y)
         if x is not None and y is not None:
@@ -428,6 +432,7 @@ class Sandbox(SandboxBase):
 
         :param x: The x coordinate to click at, together with `y`
         :param y: The y coordinate to click at, together with `x`
+        :raises InvalidArgumentException: If only one of `x` and `y` is passed
         """
         self._check_click_position(x, y)
         if x is not None and y is not None:
@@ -441,7 +446,9 @@ class Sandbox(SandboxBase):
         position to move to, and silently skipping the move hides the mistake.
         """
         if (x is None) != (y is None):
-            raise ValueError("Both x and y must be provided together")
+            raise InvalidArgumentException(
+                "Pass both `x` and `y` to click at a position, or neither to click at the current cursor position."
+            )
 
     def scroll(self, direction: Literal["up", "down"] = "down", amount: int = 1):
         """

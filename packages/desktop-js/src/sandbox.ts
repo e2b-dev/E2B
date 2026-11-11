@@ -4,6 +4,7 @@ import {
   CommandHandle,
   CommandResult,
   CommandExitError,
+  InvalidArgumentError,
   TimeoutError,
 } from 'e2b'
 
@@ -279,6 +280,10 @@ export class Sandbox extends SandboxBase {
 
   /**
    * Left click on the mouse position.
+   *
+   * @param x - The x coordinate to click at. Must be passed together with `y`.
+   * @param y - The y coordinate to click at. Must be passed together with `x`.
+   * @throws {InvalidArgumentError} If only one of `x` and `y` is passed.
    */
   async leftClick(x?: number, y?: number): Promise<void> {
     this.assertClickPosition(x, y)
@@ -292,6 +297,10 @@ export class Sandbox extends SandboxBase {
 
   /**
    * Double left click on the mouse position.
+   *
+   * @param x - The x coordinate to click at. Must be passed together with `y`.
+   * @param y - The y coordinate to click at. Must be passed together with `x`.
+   * @throws {InvalidArgumentError} If only one of `x` and `y` is passed.
    */
   async doubleClick(x?: number, y?: number): Promise<void> {
     this.assertClickPosition(x, y)
@@ -305,6 +314,10 @@ export class Sandbox extends SandboxBase {
 
   /**
    * Right click on the mouse position.
+   *
+   * @param x - The x coordinate to click at. Must be passed together with `y`.
+   * @param y - The y coordinate to click at. Must be passed together with `x`.
+   * @throws {InvalidArgumentError} If only one of `x` and `y` is passed.
    */
   async rightClick(x?: number, y?: number): Promise<void> {
     this.assertClickPosition(x, y)
@@ -318,6 +331,10 @@ export class Sandbox extends SandboxBase {
 
   /**
    * Middle click on the mouse position.
+   *
+   * @param x - The x coordinate to click at. Must be passed together with `y`.
+   * @param y - The y coordinate to click at. Must be passed together with `x`.
+   * @throws {InvalidArgumentError} If only one of `x` and `y` is passed.
    */
   async middleClick(x?: number, y?: number): Promise<void> {
     this.assertClickPosition(x, y)
@@ -335,7 +352,9 @@ export class Sandbox extends SandboxBase {
    */
   private assertClickPosition(x?: number, y?: number): void {
     if ((x === undefined) !== (y === undefined)) {
-      throw new Error('Both x and y must be provided together')
+      throw new InvalidArgumentError(
+        'Pass both `x` and `y` to click at a position, or neither to click at the current cursor position.'
+      )
     }
   }
 
