@@ -492,12 +492,26 @@ export class Sandbox extends SandboxBase {
    * @returns The ID of the window.
    */
   async getApplicationWindows(application: string): Promise<string[]> {
-    const result = await this.commands.run(
-      `xdotool search --onlyvisible --class ${application}`
-    )
+    let result: CommandResult
+    try {
+      result = await this.commands.run(
+        `xdotool search --onlyvisible --class ${this.quoteString(application)}`
+      )
+    } catch (error) {
+      // xdotool search exits with status 1 and empty stdout when no visible
+      // window matches — that is an empty result, not a failure.
+      if (
+        error instanceof CommandExitError &&
+        error.exitCode === 1 &&
+        error.stdout?.trim() === ''
+      ) {
+        return []
+      }
+      throw error
+    }
 
-    // When no window matches, xdotool prints nothing — splitting the empty
-    // output on newlines would report one empty-string window id.
+    // Splitting the output on newlines can report empty-string window ids
+    // for blank lines, so keep only the non-empty lines.
     return result.stdout
       .split('\n')
       .map((line) => line.trim())
