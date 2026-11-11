@@ -263,6 +263,7 @@ export class Result {
       latex: this.latex,
       json: this.json,
       javascript: this.javascript,
+      ...(this.data ? { data: this.data } : {}),
       ...(Object.keys(this.extra).length > 0 ? { extra: this.extra } : {}),
     }
   }
