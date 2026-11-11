@@ -1,5 +1,4 @@
 import * as fs from 'fs'
-import * as path from 'path'
 
 import {
   getUserConfig,
@@ -7,16 +6,20 @@ import {
   USER_CONFIG_PATH,
   UserConfig,
 } from 'src/user'
-import { wait } from './wait'
+import { withFileLock } from './lock'
 
 const REFRESH_SKEW_SECONDS = 60
 
-const LOCK_PATH = `${USER_CONFIG_PATH}.lock`
-// Longer than a refresh can take (REFRESH_TIMEOUT_MS), so a live holder's lock
-// is never treated as stale; a crashed holder's is cleared after this long.
-const LOCK_STALE_MS = 30_000
-const LOCK_WAIT_MS = 45_000
 const REFRESH_TIMEOUT_MS = 15_000
+
+/** Serializes writes to the user config across e2b processes. */
+const CONFIG_LOCK_PATH = `${USER_CONFIG_PATH}.lock`
+const CONFIG_LOCK = {
+  // Longer than a refresh can take (REFRESH_TIMEOUT_MS), so a live holder's
+  // lock is never treated as stale.
+  staleMs: 30_000,
+  timeoutMs: 45_000,
+}
 
 function decodeJwtExp(token: string): number | undefined {
   const payload = token.split('.')[1]
@@ -91,38 +94,6 @@ async function refreshOAuthToken(
 }
 
 /**
- * Take the cross-process refresh lock, waiting for another holder to finish.
- * Returns a function that releases it.
- */
-async function acquireRefreshLock(): Promise<() => void> {
-  fs.mkdirSync(path.dirname(LOCK_PATH), { recursive: true, mode: 0o700 })
-  const deadline = Date.now() + LOCK_WAIT_MS
-
-  for (;;) {
-    try {
-      fs.closeSync(fs.openSync(LOCK_PATH, 'wx', 0o600))
-      return () => fs.rmSync(LOCK_PATH, { force: true })
-    } catch (err) {
-      if ((err as NodeJS.ErrnoException).code !== 'EEXIST') throw err
-    }
-
-    const lockAgeMs =
-      Date.now() -
-      (fs.statSync(LOCK_PATH, { throwIfNoEntry: false })?.mtimeMs ?? Date.now())
-    if (lockAgeMs > LOCK_STALE_MS) {
-      fs.rmSync(LOCK_PATH, { force: true })
-      continue
-    }
-    if (Date.now() > deadline) {
-      throw new Error(
-        `Timed out waiting for another e2b process to refresh your credentials. If none is running, delete ${LOCK_PATH} and try again.`
-      )
-    }
-    await wait(100)
-  }
-}
-
-/**
  * Return a valid access token for the logged-in user, refreshing it first if
  * it expires within a minute, along with the config it belongs to.
  *
@@ -143,36 +114,43 @@ export async function ensureValidAccessToken(): Promise<{
     return { accessToken: current.tokens.access_token, config: current }
   }
 
-  const release = await acquireRefreshLock()
-  try {
-    const config = getUserConfig()
-    if (!config) {
-      throw new Error('No user config found, run `e2b auth login` first.')
-    }
-    if (!isTokenExpired(config.tokens.access_token)) {
-      return { accessToken: config.tokens.access_token, config }
-    }
+  return withFileLock(
+    CONFIG_LOCK_PATH,
+    async () => {
+      const config = getUserConfig()
+      if (!config) {
+        throw new Error('No user config found, run `e2b auth login` first.')
+      }
+      if (!isTokenExpired(config.tokens.access_token)) {
+        return { accessToken: config.tokens.access_token, config }
+      }
 
-    const refreshed = await refreshOAuthToken(
-      config.tokens.refresh_token,
-      config.oauth.client_id,
-      config.oauth.token_endpoint
-    )
+      let refreshed: RefreshedTokens
+      try {
+        refreshed = await refreshOAuthToken(
+          config.tokens.refresh_token,
+          config.oauth.client_id,
+          config.oauth.token_endpoint
+        )
+      } catch (err) {
+        if (
+          err instanceof TokenRefreshError &&
+          err.errorCode === 'invalid_grant'
+        ) {
+          fs.rmSync(USER_CONFIG_PATH, { force: true })
+          throw new Error(
+            'Your session has expired. Please run `e2b auth login` again.'
+          )
+        }
+        throw err
+      }
 
-    // Token refresh updates only tokens.* — it does NOT update last_refresh.
-    const updated = { ...config, tokens: refreshed }
-    writeUserConfig(USER_CONFIG_PATH, updated)
+      // Token refresh updates only tokens.* — it does NOT update last_refresh.
+      const updated = { ...config, tokens: refreshed }
+      writeUserConfig(USER_CONFIG_PATH, updated)
 
-    return { accessToken: refreshed.access_token, config: updated }
-  } catch (err) {
-    if (err instanceof TokenRefreshError && err.errorCode === 'invalid_grant') {
-      fs.rmSync(USER_CONFIG_PATH, { force: true })
-      throw new Error(
-        'Your session has expired. Please run `e2b auth login` again.'
-      )
-    }
-    throw err
-  } finally {
-    release()
-  }
+      return { accessToken: refreshed.access_token, config: updated }
+    },
+    CONFIG_LOCK
+  )
 }
