@@ -6,8 +6,13 @@ import {
   defaultDockerfileName,
   fallbackDockerfileName,
 } from 'src/docker/constants'
-import { minFreeDiskMbOption, parsePositiveInt, pathOption } from 'src/options'
-import { validateTemplateName } from 'src/utils/templateName'
+import {
+  minFreeDiskMbOption,
+  parseCpuCount,
+  parseMemoryMb,
+  pathOption,
+} from 'src/options'
+import { parseTemplateName } from 'src/utils/templateName'
 import { getRoot } from 'src/utils/filesystem'
 import {
   asFormattedSandboxTemplate,
@@ -24,9 +29,11 @@ export const createCommand = new commander.Command('create')
   .description(
     'build Dockerfile as a Sandbox template. This command reads a Dockerfile and builds it directly.'
   )
-  .argument(
-    '<template-name>',
-    'template name to create or rebuild. The template name must be lowercase and contain only letters, numbers, dashes and underscores.'
+  .addArgument(
+    new commander.Argument(
+      '<template-name>',
+      'template name to create or rebuild. The template name must be lowercase and contain only letters, numbers, dashes and underscores.'
+    ).argParser(parseTemplateName)
   )
   .addOption(pathOption)
   .option(
@@ -46,12 +53,12 @@ export const createCommand = new commander.Command('create')
   .option(
     '--cpu-count <cpu-count>',
     'specify the number of CPUs that will be used to run the sandbox. The default value is 2.',
-    parsePositiveInt('CPU count')
+    parseCpuCount
   )
   .option(
     '--memory-mb <memory-mb>',
     'specify the amount of memory in megabytes that will be used to run the sandbox. Must be an even number. The default value is 1024.',
-    parsePositiveInt('Memory in megabytes')
+    parseMemoryMb
   )
   .addOption(minFreeDiskMbOption)
   .option('--no-cache', 'skip cache when building the template.')
@@ -59,28 +66,6 @@ export const createCommand = new commander.Command('create')
   .action(async (templateName, opts) => {
     try {
       process.stdout.write('\n')
-
-      // Validate and normalize template name
-      try {
-        templateName = validateTemplateName(templateName)
-      } catch (err) {
-        console.error(
-          `Template name ${asLocal(templateName)} is not valid. ${
-            err instanceof Error ? err.message : String(err)
-          }`
-        )
-        process.exit(1)
-      }
-
-      // Validate memory
-      if (opts.memoryMb && opts.memoryMb % 2 !== 0) {
-        console.error(
-          `The memory in megabytes must be an even number. You provided ${asLocal(
-            opts.memoryMb.toFixed(0)
-          )}.`
-        )
-        process.exit(1)
-      }
 
       const root = getRoot(opts.path)
 

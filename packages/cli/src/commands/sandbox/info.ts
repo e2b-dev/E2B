@@ -2,6 +2,7 @@ import * as commander from '@commander-js/extra-typings'
 import { NotFoundError, Sandbox } from 'e2b'
 
 import { ensureAPIKey } from 'src/api'
+import { Format, parseFormat } from 'src/options'
 import { asBold } from 'src/utils/format'
 
 const fieldLabels: Partial<Record<string, string>> = {
@@ -45,20 +46,21 @@ export const infoCommand = new commander.Command('info')
     `show information for sandbox specified by ${asBold('<sandboxID>')}`
   )
   .alias('in')
-  .option('-f, --format <format>', 'output format, eg. json, pretty')
+  .option(
+    '-f, --format <format>',
+    'output format, eg. json, pretty',
+    parseFormat,
+    Format.PRETTY
+  )
   .action(async (sandboxID, options) => {
     try {
-      const format = options.format || 'pretty'
       const apiKey = ensureAPIKey()
       const info = await Sandbox.getInfo(sandboxID, { apiKey })
 
-      if (format === 'pretty') {
+      if (options.format === Format.PRETTY) {
         renderPrettyInfo(info as unknown as Record<string, unknown>)
-      } else if (format === 'json') {
-        console.log(JSON.stringify(info, null, 2))
       } else {
-        console.error(`Unsupported output format: ${format}`)
-        process.exit(1)
+        console.log(JSON.stringify(info, null, 2))
       }
     } catch (err: any) {
       if (err instanceof NotFoundError) {

@@ -1,4 +1,6 @@
-import * as commander from '@commander-js/extra-typings'
+import { z } from 'zod'
+
+import { zodParser } from '../../../validation'
 
 export enum Language {
   TypeScript = 'typescript',
@@ -12,17 +14,12 @@ export const languageDisplay = {
   [Language.PythonAsync]: 'Python (async)',
 }
 
-/**
- * Parses the `--language` option value, rejecting unknown languages.
- */
-export function parseLanguage(value: string): Language {
-  if (!Object.values(Language).includes(value as Language)) {
-    throw new commander.InvalidArgumentError(
-      `Invalid language. Must be one of: ${Object.values(Language).join(', ')}`
-    )
-  }
-  return value as Language
-}
+/** `--language` value. */
+export const parseLanguage = zodParser(
+  z.enum(Language, {
+    error: `Invalid language. Must be one of: ${Object.values(Language).join(', ')}.`,
+  })
+)
 
 export interface TemplateJSON {
   fromImage?: string

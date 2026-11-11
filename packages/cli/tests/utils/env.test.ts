@@ -1,3 +1,4 @@
+import { InvalidArgumentError } from '@commander-js/extra-typings'
 import { describe, expect, test } from 'vitest'
 
 import { parseEnv } from '../../src/utils/env'
@@ -16,10 +17,8 @@ describe('parseEnv', () => {
     expect(acc).toEqual({ TOKEN: 'a=b=c' })
   })
 
-  test('ignores entries without a value', () => {
-    const acc: Record<string, string> = {}
-    parseEnv('NOVALUE', acc)
-    expect(acc).toEqual({})
+  test.each(['NOVALUE', '=value', ''])('rejects %j', (value: string) => {
+    expect(() => parseEnv(value)).toThrow(InvalidArgumentError)
   })
 
   test('preserves an empty string value', () => {

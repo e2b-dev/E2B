@@ -1,8 +1,10 @@
-import * as commander from '@commander-js/extra-typings'
-import { wait } from '../../utils/wait'
-import { asBold, asLocal } from '../../utils/format'
 import { Sandbox, SandboxState } from 'e2b'
+import { z } from 'zod'
+
 import { ensureAPIKey } from 'src/api'
+import { keyValuePairs, zodParser } from 'src/validation'
+import { wait } from '../../utils/wait'
+import { asBold } from '../../utils/format'
 
 export function formatEnum(e: { [key: string]: string }) {
   return Object.values(e)
@@ -10,28 +12,31 @@ export function formatEnum(e: { [key: string]: string }) {
     .join(', ')
 }
 
-const SANDBOX_STATES: readonly SandboxState[] = ['running', 'paused']
+const SANDBOX_STATES = [
+  'running',
+  'paused',
+] as const satisfies readonly SandboxState[]
 
 /**
  * Parse a comma-separated `--state` filter, eg. `running,paused`, rejecting
  * states the API doesn't know instead of forwarding them.
  */
-export function parseSandboxStates(value: string): SandboxState[] {
-  return value.split(',').map((raw) => {
-    const state = raw.trim() as SandboxState
-    if (!SANDBOX_STATES.includes(state)) {
-      throw new commander.InvalidArgumentError(
-        `Invalid state ${asLocal(raw)}, expected ${SANDBOX_STATES.join(' or ')}.`
+export const parseSandboxStates = zodParser(
+  z
+    .string()
+    .transform((value) => value.split(',').map((state) => state.trim()))
+    .pipe(
+      z.array(
+        z.enum(SANDBOX_STATES, {
+          error: (issue) =>
+            `Invalid state ${JSON.stringify(issue.input)}, expected ${SANDBOX_STATES.join(' or ')}.`,
+        })
       )
-    }
-    return state
-  })
-}
+    )
+)
 
-export enum Format {
-  JSON = 'json',
-  PRETTY = 'pretty',
-}
+/** `--metadata` filter, eg. `key1=value1,key2=value2`. */
+export const parseMetadata = zodParser(keyValuePairs)
 
 const maxRuntime = 24 * 60 * 60 * 1000 // 24 hours in milliseconds
 
@@ -76,21 +81,4 @@ export async function isRunning(sandboxID: string) {
     console.error(`Failed to check sandbox status: ${err}`)
     return false
   }
-}
-
-export function parseMetadata(metadataRaw?: string) {
-  let metadata: Record<string, string> | undefined = undefined
-  if (metadataRaw && metadataRaw.length > 0) {
-    const parsedMetadata: Record<string, string> = {}
-    metadataRaw.split(',').map((pair: string) => {
-      const [key, value] = pair.split('=')
-      if (key && value) {
-        parsedMetadata[key.trim()] = value.trim()
-      }
-    })
-
-    metadata = parsedMetadata
-  }
-
-  return metadata
 }
