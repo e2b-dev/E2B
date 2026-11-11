@@ -48,24 +48,20 @@ export const loginCommand = new commander.Command('login')
 
       const accessToken = signInResponse.accessToken
 
-      // A user who signed up but never opened the dashboard isn't set up in
-      // workspace-api yet (401); bootstrapping creates the account.
-      let me = await fetchMe(accessToken)
-      if (!me) {
-        await bootstrapUser(accessToken)
-        me = await fetchMe(accessToken)
-      }
-      if (!me) {
-        console.error(
-          asFormattedError(
-            'Your account could not be set up, please contact support'
-          )
-        )
-        process.exit(1)
-      }
-
       let selected
       try {
+        // A user who signed up but never opened the dashboard isn't set up in
+        // workspace-api yet (401); bootstrapping creates the account.
+        let me = await fetchMe(accessToken)
+        if (!me) {
+          await bootstrapUser(accessToken)
+          me = await fetchMe(accessToken)
+        }
+        if (!me) {
+          throw new Error(
+            'Your account could not be set up, please contact support'
+          )
+        }
         selected =
           personalProject(me) ??
           (await pickProject(me, { message: 'Select the project to use' }))

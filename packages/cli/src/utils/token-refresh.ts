@@ -156,10 +156,12 @@ export async function ensureValidAccessToken(): Promise<{
 
 /**
  * Apply `patch` to the stored config under the config lock, so it can't
- * revert tokens another e2b process refreshes at the same time.
+ * revert tokens another e2b process refreshes at the same time. A function
+ * gets the config as it is under the lock, which may differ from the one
+ * the caller read.
  */
 export async function updateUserConfig(
-  patch: Partial<UserConfig>
+  patch: Partial<UserConfig> | ((config: UserConfig) => Partial<UserConfig>)
 ): Promise<UserConfig> {
   return withFileLock(
     USER_CONFIG_PATH,
@@ -168,7 +170,10 @@ export async function updateUserConfig(
       if (!config) {
         throw new Error('No user config found, run `e2b auth login` first.')
       }
-      const updated = { ...config, ...patch }
+      const updated = {
+        ...config,
+        ...(typeof patch === 'function' ? patch(config) : patch),
+      }
       writeUserConfig(USER_CONFIG_PATH, updated)
       return updated
     },

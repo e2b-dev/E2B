@@ -103,6 +103,10 @@ describe('findProject', () => {
         project('b', { name: 'Shared' }),
         project('c', { name: 'shared' }),
       ]),
+      workspace('other', [
+        project('d', { slug: 'slug-b' }),
+        project('e', { slug: 'shared' }),
+      ]),
     ],
   }
 
@@ -112,8 +116,19 @@ describe('findProject', () => {
 
   test('rejects an ambiguous name', () => {
     expect(() => findProject(me, 'Shared')).toThrow(
-      'More than one project is named "Shared": prj_b (standard workspace), prj_c (standard workspace)'
+      'More than one project matches "Shared": prj_b (standard workspace), prj_c (standard workspace)'
     )
+  })
+
+  test('rejects a slug shared across workspaces', () => {
+    expect(() => findProject(me, 'slug-b')).toThrow(
+      'More than one project matches "slug-b": prj_b (standard workspace), prj_d (other workspace)'
+    )
+  })
+
+  test('prefers a slug over names', () => {
+    // "shared" is e's slug and, case-insensitively, b's and c's name.
+    expect(findProject(me, 'shared').project.id).toBe('e')
   })
 
   test('rejects an unknown project', () => {

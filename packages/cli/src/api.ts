@@ -83,7 +83,13 @@ async function resolveProject(
 
   // Selected before the CLI stored control-plane domains: look it up once.
   const { project } = findProject(await getMe(), config.projectId)
-  await updateUserConfig({ projectDomain: project.control_plane_domain })
+  // Only for the project still selected: `e2b auth configure` may have
+  // switched to another one since `config` was read.
+  await updateUserConfig((current) =>
+    current.projectId === project.id
+      ? { projectDomain: project.control_plane_domain }
+      : {}
+  )
   return { id: project.id, domain: project.control_plane_domain }
 }
 
@@ -142,23 +148,6 @@ export function ensureUserConfig(): UserConfig {
     process.exit(1)
   }
   return userConfig
-}
-
-/**
- * Resolve project ID with proper precedence:
- * 1. CLI --project flag (or the deprecated --team flag)
- * 2. E2B_PROJECT_ID env var (or the deprecated E2B_TEAM_ID)
- * 3. ~/.e2b/config.json projectId (only if E2B_API_KEY env var is NOT set,
- *    to avoid mismatch between env var API key and config file project ID)
- */
-export function resolveProjectId(cliProjectId?: string): string | undefined {
-  if (cliProjectId) return cliProjectId
-  if (projectId) return projectId
-  if (!process.env.E2B_API_KEY) {
-    const config = getUserConfig()
-    return config?.projectId
-  }
-  return undefined
 }
 
 // Carries no credentials: used for the API domain and request signals only.

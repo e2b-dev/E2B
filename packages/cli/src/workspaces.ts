@@ -157,19 +157,23 @@ export function personalProject(me: Me): ProjectEntry | undefined {
  */
 export function findProject(me: Me, ref: string): ProjectEntry {
   const entries = allProjects(me)
-  const exact = entries.find(
-    ({ project }) =>
-      project.id === ref || project.public_id === ref || project.slug === ref
+  const byId = entries.find(
+    ({ project }) => project.id === ref || project.public_id === ref
   )
-  if (exact) return exact
+  if (byId) return byId
 
-  const byName = entries.filter(
-    ({ project }) => project.name.toLowerCase() === ref.toLowerCase()
-  )
-  if (byName.length === 1) return byName[0]
-  if (byName.length > 1) {
+  // Slugs are unique within a workspace, names not even there; across
+  // workspaces either can repeat.
+  const bySlug = entries.filter(({ project }) => project.slug === ref)
+  const matches = bySlug.length
+    ? bySlug
+    : entries.filter(
+        ({ project }) => project.name.toLowerCase() === ref.toLowerCase()
+      )
+  if (matches.length === 1) return matches[0]
+  if (matches.length > 1) {
     throw new Error(
-      `More than one project is named "${ref}": ${byName
+      `More than one project matches "${ref}": ${matches
         .map(
           ({ project, workspace }) => `${project.public_id} (${workspace.name})`
         )
