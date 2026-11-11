@@ -16,8 +16,9 @@ from pyqwest.httpx._transport import convert_timeout
 
 from e2b.connection_config import ConnectionConfig
 
+from e2b_code_interpreter._timeouts import _request_deadline
 from e2b_code_interpreter.code_interpreter_async import AsyncSandbox
-from e2b_code_interpreter.code_interpreter_sync import Sandbox, _request_deadline
+from e2b_code_interpreter.code_interpreter_sync import Sandbox
 
 REQUEST_TIMEOUT = 60.0
 
@@ -34,6 +35,10 @@ class _CapturingClient:
         self._captured = captured
 
     def stream(self, *args, **kwargs):
+        self._captured.update(kwargs)
+        raise _Stop
+
+    def post(self, *args, **kwargs):
         self._captured.update(kwargs)
         raise _Stop
 
@@ -130,6 +135,48 @@ async def test_async_zero_timeout_disables_the_deadline():
     captured: dict = {}
     with pytest.raises(_Stop):
         await _sandbox(AsyncSandbox, captured).run_code("1 + 1", timeout=0)
+
+    tmo = _captured_timeout(captured)
+    assert (tmo.read, tmo.write, tmo.pool, tmo.connect) == (None, None, None, None)
+    assert convert_timeout({"timeout": tmo.as_dict()}) is None
+
+
+@pytest.mark.parametrize("timeout", [3, 10])
+def test_context_request_timeout_is_the_request_deadline(timeout):
+    captured: dict = {}
+    with pytest.raises(_Stop):
+        _sandbox(Sandbox, captured).create_code_context(request_timeout=timeout)
+
+    _assert_deadline(_captured_timeout(captured), timeout, timeout)
+
+
+@pytest.mark.parametrize("timeout", [3, 10])
+async def test_async_context_request_timeout_is_the_request_deadline(timeout):
+    captured: dict = {}
+    with pytest.raises(_Stop):
+        await _sandbox(AsyncSandbox, captured).create_code_context(
+            request_timeout=timeout
+        )
+
+    _assert_deadline(_captured_timeout(captured), timeout, timeout)
+
+
+def test_context_request_timeout_zero_disables_the_deadline():
+    """An explicit `request_timeout=0` means unbounded — `or` used to swap the
+    0 for the configured default and silently re-enable the deadline."""
+    captured: dict = {}
+    with pytest.raises(_Stop):
+        _sandbox(Sandbox, captured).create_code_context(request_timeout=0)
+
+    tmo = _captured_timeout(captured)
+    assert (tmo.read, tmo.write, tmo.pool, tmo.connect) == (None, None, None, None)
+    assert convert_timeout({"timeout": tmo.as_dict()}) is None
+
+
+async def test_async_context_request_timeout_zero_disables_the_deadline():
+    captured: dict = {}
+    with pytest.raises(_Stop):
+        await _sandbox(AsyncSandbox, captured).create_code_context(request_timeout=0)
 
     tmo = _captured_timeout(captured)
     assert (tmo.read, tmo.write, tmo.pool, tmo.connect) == (None, None, None, None)
