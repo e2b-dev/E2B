@@ -1,33 +1,9 @@
-import { ApiClient, components, handleApiError } from '../api'
+import { ApiClient, handleApiError } from '../api'
 import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
 import { TemplateError } from '../errors'
 import { Paginator } from '../paginator'
+import { convertTemplateInfo } from './types'
 import type { TemplateInfo, TemplateListOpts } from './types'
-
-function convertTemplateInfo(
-  template: components['schemas']['Template']
-): TemplateInfo {
-  return {
-    templateId: template.templateID,
-    buildId: template.buildID,
-    names: template.names,
-    ...(template.description && { description: template.description }),
-    public: template.public,
-    isDefault: template.isDefault ?? false,
-    buildStatus: template.buildStatus,
-    cpuCount: template.cpuCount,
-    memoryMB: template.memoryMB,
-    diskSizeMB: template.diskSizeMB,
-    envdVersion: template.envdVersion,
-    buildCount: template.buildCount,
-    spawnCount: template.spawnCount,
-    createdAt: new Date(template.createdAt),
-    updatedAt: new Date(template.updatedAt),
-    ...(template.lastSpawnedAt && {
-      lastSpawnedAt: new Date(template.lastSpawnedAt),
-    }),
-  }
-}
 
 /**
  * Paginator for listing templates.

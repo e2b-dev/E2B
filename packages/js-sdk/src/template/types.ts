@@ -3,6 +3,7 @@ import type { PathLike } from 'node:fs'
 import type { LogEntry } from './logger'
 import type { McpServer } from '../sandbox/mcp'
 import { ConnectionOpts } from '../connectionConfig'
+import type { components } from '../api'
 
 /**
  * Options for creating a new template.
@@ -233,6 +234,31 @@ export type TemplateInfo = {
    * When the template was last used to create a sandbox.
    */
   lastSpawnedAt?: Date
+}
+
+export function convertTemplateInfo(
+  template: components['schemas']['Template']
+): TemplateInfo {
+  return {
+    templateId: template.templateID,
+    buildId: template.buildID,
+    names: template.names,
+    ...(template.description && { description: template.description }),
+    public: template.public,
+    isDefault: template.isDefault ?? false,
+    buildStatus: template.buildStatus,
+    cpuCount: template.cpuCount,
+    memoryMB: template.memoryMB,
+    diskSizeMB: template.diskSizeMB,
+    envdVersion: template.envdVersion,
+    buildCount: template.buildCount,
+    spawnCount: template.spawnCount,
+    createdAt: new Date(template.createdAt),
+    updatedAt: new Date(template.updatedAt),
+    ...(template.lastSpawnedAt && {
+      lastSpawnedAt: new Date(template.lastSpawnedAt),
+    }),
+  }
 }
 
 /**
