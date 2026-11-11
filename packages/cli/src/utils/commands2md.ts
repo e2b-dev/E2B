@@ -1,4 +1,4 @@
-import { Command } from 'commander'
+import { Command } from '@commander-js/extra-typings'
 import fs from 'fs'
 import json2md from 'json2md'
 import path from 'path'

@@ -1,5 +1,5 @@
 import * as boxen from 'boxen'
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
 import { defaultBuildLogger, Template, TemplateClass } from 'e2b'
 import { connectionConfig, ensureAPIKey } from 'src/api'
 import {
@@ -56,111 +56,98 @@ export const createCommand = new commander.Command('create')
   .addOption(minFreeDiskMbOption)
   .option('--no-cache', 'skip cache when building the template.')
   .alias('ct')
-  .action(
-    async (
-      templateName: string,
-      opts: {
-        path?: string
-        dockerfile?: string
-        cmd?: string
-        readyCmd?: string
-        cpuCount?: number
-        memoryMb?: number
-        minFreeDiskMb?: number
-        cache?: boolean
-      }
-    ) => {
+  .action(async (templateName, opts) => {
+    try {
+      process.stdout.write('\n')
+
+      // Validate and normalize template name
       try {
-        process.stdout.write('\n')
-
-        // Validate and normalize template name
-        try {
-          templateName = validateTemplateName(templateName)
-        } catch (err) {
-          console.error(
-            `Template name ${asLocal(templateName)} is not valid. ${
-              err instanceof Error ? err.message : String(err)
-            }`
-          )
-          process.exit(1)
-        }
-
-        // Validate memory
-        if (opts.memoryMb && opts.memoryMb % 2 !== 0) {
-          console.error(
-            `The memory in megabytes must be an even number. You provided ${asLocal(
-              opts.memoryMb.toFixed(0)
-            )}.`
-          )
-          process.exit(1)
-        }
-
-        const root = getRoot(opts.path)
-
-        // Use options directly
-        const dockerfile = opts.dockerfile
-        const startCmd = opts.cmd
-        const readyCmd = opts.readyCmd
-        const cpuCount = opts.cpuCount
-        const memoryMB = opts.memoryMb
-        const minFreeDiskMb = opts.minFreeDiskMb
-
-        // Get Dockerfile content
-        const { dockerfileContent, dockerfileRelativePath } = getDockerfile(
-          root,
-          dockerfile
+        templateName = validateTemplateName(templateName)
+      } catch (err) {
+        console.error(
+          `Template name ${asLocal(templateName)} is not valid. ${
+            err instanceof Error ? err.message : String(err)
+          }`
         )
+        process.exit(1)
+      }
 
-        console.log(
-          `Found ${asLocalRelative(
-            dockerfileRelativePath
-          )} that will be used to build the sandbox template.`
+      // Validate memory
+      if (opts.memoryMb && opts.memoryMb % 2 !== 0) {
+        console.error(
+          `The memory in megabytes must be an even number. You provided ${asLocal(
+            opts.memoryMb.toFixed(0)
+          )}.`
         )
+        process.exit(1)
+      }
 
-        // Initialize template builder with file context and parse Dockerfile
-        const baseTemplate = Template({
-          fileContextPath: root,
-        }).fromDockerfile(dockerfileContent)
+      const root = getRoot(opts.path)
 
-        // Apply start/ready commands if provided
-        let finalTemplate: TemplateClass = baseTemplate
-        if (startCmd && readyCmd) {
-          finalTemplate = baseTemplate.setStartCmd(startCmd, readyCmd)
-        } else if (readyCmd) {
-          finalTemplate = baseTemplate.setReadyCmd(readyCmd)
-        } else if (startCmd) {
-          console.error('Both start and ready commands must be provided.')
-          process.exit(1)
+      // Use options directly
+      const dockerfile = opts.dockerfile
+      const startCmd = opts.cmd
+      const readyCmd = opts.readyCmd
+      const cpuCount = opts.cpuCount
+      const memoryMB = opts.memoryMb
+      const minFreeDiskMb = opts.minFreeDiskMb
+
+      // Get Dockerfile content
+      const { dockerfileContent, dockerfileRelativePath } = getDockerfile(
+        root,
+        dockerfile
+      )
+
+      console.log(
+        `Found ${asLocalRelative(
+          dockerfileRelativePath
+        )} that will be used to build the sandbox template.`
+      )
+
+      // Initialize template builder with file context and parse Dockerfile
+      const baseTemplate = Template({
+        fileContextPath: root,
+      }).fromDockerfile(dockerfileContent)
+
+      // Apply start/ready commands if provided
+      let finalTemplate: TemplateClass = baseTemplate
+      if (startCmd && readyCmd) {
+        finalTemplate = baseTemplate.setStartCmd(startCmd, readyCmd)
+      } else if (readyCmd) {
+        finalTemplate = baseTemplate.setReadyCmd(readyCmd)
+      } else if (startCmd) {
+        console.error('Both start and ready commands must be provided.')
+        process.exit(1)
+      }
+
+      console.log('\nBuilding sandbox template...\n')
+
+      // Prepare API credentials for SDK
+      const apiKey = ensureAPIKey()
+      const domain = connectionConfig.domain
+
+      // Build the template using SDK
+      try {
+        await Template.build(finalTemplate, {
+          alias: templateName,
+          cpuCount: cpuCount,
+          memoryMB: memoryMB,
+          minFreeDiskMb,
+          skipCache: opts.cache === false,
+          apiKey: apiKey,
+          domain: domain,
+          onBuildLogs: defaultBuildLogger(),
+        })
+      } catch (error) {
+        console.error('\n❌ Template build failed.')
+        if (error instanceof Error) {
+          console.error('Error:', error.message)
         }
+        process.exit(1)
+      }
 
-        console.log('\nBuilding sandbox template...\n')
-
-        // Prepare API credentials for SDK
-        const apiKey = ensureAPIKey()
-        const domain = connectionConfig.domain
-
-        // Build the template using SDK
-        try {
-          await Template.build(finalTemplate, {
-            alias: templateName,
-            cpuCount: cpuCount,
-            memoryMB: memoryMB,
-            minFreeDiskMb,
-            skipCache: opts.cache === false,
-            apiKey: apiKey,
-            domain: domain,
-            onBuildLogs: defaultBuildLogger(),
-          })
-        } catch (error) {
-          console.error('\n❌ Template build failed.')
-          if (error instanceof Error) {
-            console.error('Error:', error.message)
-          }
-          process.exit(1)
-        }
-
-        // Display success message with examples
-        const pythonExample = asPython(`from e2b import Sandbox, AsyncSandbox
+      // Display success message with examples
+      const pythonExample = asPython(`from e2b import Sandbox, AsyncSandbox
 
 # Create sync sandbox
 sandbox = Sandbox.create("${templateName}")
@@ -168,49 +155,48 @@ sandbox = Sandbox.create("${templateName}")
 # Create async sandbox
 sandbox = await AsyncSandbox.create("${templateName}")`)
 
-        const typescriptExample = asTypescript(`import { Sandbox } from 'e2b'
+      const typescriptExample = asTypescript(`import { Sandbox } from 'e2b'
 
 // Create sandbox
 const sandbox = await Sandbox.create('${templateName}')`)
 
-        const examplesMessage = `You can now use the template to create custom sandboxes.\nLearn more on ${asPrimary(
-          'https://e2b.dev/docs'
-        )}`
+      const examplesMessage = `You can now use the template to create custom sandboxes.\nLearn more on ${asPrimary(
+        'https://e2b.dev/docs'
+      )}`
 
-        const exampleHeader = boxen.default(examplesMessage, {
-          padding: {
-            bottom: 1,
-            top: 1,
-            left: 2,
-            right: 2,
-          },
-          margin: {
-            top: 1,
-            bottom: 1,
-            left: 0,
-            right: 0,
-          },
-          fullscreen(width) {
-            return [width, 0]
-          },
-          float: 'left',
-        })
+      const exampleHeader = boxen.default(examplesMessage, {
+        padding: {
+          bottom: 1,
+          top: 1,
+          left: 2,
+          right: 2,
+        },
+        margin: {
+          top: 1,
+          bottom: 1,
+          left: 0,
+          right: 0,
+        },
+        fullscreen(width) {
+          return [width, 0]
+        },
+        float: 'left',
+      })
 
-        const exampleUsage = `${withDelimiter(
-          pythonExample,
-          'Python SDK'
-        )}\n${withDelimiter(typescriptExample, 'JS SDK', true)}`
+      const exampleUsage = `${withDelimiter(
+        pythonExample,
+        'Python SDK'
+      )}\n${withDelimiter(typescriptExample, 'JS SDK', true)}`
 
-        console.log(
-          `\n✅ Building sandbox template ${asFormattedSandboxTemplate({
-            templateID: templateName,
-          })} finished.\n${exampleHeader}\n${exampleUsage}\n`
-        )
+      console.log(
+        `\n✅ Building sandbox template ${asFormattedSandboxTemplate({
+          templateID: templateName,
+        })} finished.\n${exampleHeader}\n${exampleUsage}\n`
+      )
 
-        process.exit(0)
-      } catch (err: any) {
-        console.error(err)
-        process.exit(1)
-      }
+      process.exit(0)
+    } catch (err: any) {
+      console.error(err)
+      process.exit(1)
     }
-  )
+  })

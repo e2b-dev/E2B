@@ -1,4 +1,4 @@
-import { Command } from 'commander'
+import { Command } from '@commander-js/extra-typings'
 import { describe, expect, test } from 'vitest'
 
 import { parseNonNegativeInt, minFreeDiskMbOption } from '../src/options'

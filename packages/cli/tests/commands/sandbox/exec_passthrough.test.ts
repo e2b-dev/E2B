@@ -61,7 +61,7 @@ vi.mock(
 async function runExec(argv: string[]): Promise<{ command: string; opts: any }> {
   vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never)
 
-  const commander = await import('commander')
+  const commander = await import('@commander-js/extra-typings')
   const { sandboxCommand } = await import('../../../src/commands/sandbox')
   const program = new commander.Command()
     .enablePositionalOptions()
