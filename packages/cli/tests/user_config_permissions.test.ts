@@ -49,7 +49,7 @@ describe('writeUserConfig', () => {
     expect(JSON.parse(fs.readFileSync(configPath, 'utf8'))).toEqual(config)
   })
 
-  it('drops the API key stored by earlier CLI versions', () => {
+  it('keeps the API key stored by earlier CLI versions', () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'e2b-config-key-'))
     tmpDirs.push(tmpDir)
     const configPath = path.join(tmpDir, 'config.json')
@@ -65,11 +65,9 @@ describe('writeUserConfig', () => {
       projectName: 'default',
       projectId: 'project-id',
       futureField: 'kept',
-    } as const
-    writeUserConfig(configPath, {
-      ...config,
       projectApiKey: 'e2b_secret',
-    } as UserConfig)
+    } as const
+    writeUserConfig(configPath, config as UserConfig)
 
     expect(JSON.parse(fs.readFileSync(configPath, 'utf8'))).toEqual(config)
     // The temporary file used for the atomic write is renamed away.

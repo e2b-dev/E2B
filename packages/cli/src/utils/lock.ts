@@ -42,6 +42,14 @@ export async function withFileLock<T>(
         maxTimeout: RETRY_INTERVAL_MS,
         maxRetryTime: timeoutMs,
       },
+      // proper-lockfile's default handler throws from a timer, which would
+      // take the whole command down. Losing the lock only means another e2b
+      // process took it over, so warn and let `fn` finish.
+      onCompromised: (err) => {
+        console.error(
+          `Warning: lost the lock on ${filePath} (${err.message}); another e2b process may have taken it over.`
+        )
+      },
     })
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ELOCKED') {

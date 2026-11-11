@@ -66,6 +66,7 @@ describe('getUserConfig', () => {
       ...v1AuthFields,
       projectName: 'default',
       projectId: 'team-id',
+      projectApiKey: 'team-api-key-secret',
       dockerProxySet: true,
     })
   })

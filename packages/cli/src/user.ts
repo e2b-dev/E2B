@@ -24,6 +24,9 @@ const userConfigSchema = z.object({
   ...authFields,
   projectName: z.string(),
   projectId: z.string(),
+  // Stored by earlier CLI versions, which authenticate with it. Not used for
+  // requests any more, but kept on disk so those versions stay signed in.
+  projectApiKey: z.string().optional(),
 })
 
 export type UserConfig = z.infer<typeof userConfigSchema>
@@ -89,16 +92,17 @@ function migrateV1UserConfig(config: unknown): UserConfig | null {
 
   // Spread the original object, not the parsed one, so fields this CLI
   // version doesn't know about are kept when the config is written back.
-  const { teamName, teamId, ...rest } = config as z.infer<
+  const { teamName, teamId, teamApiKey, ...rest } = config as z.infer<
     typeof v1UserConfigSchema
   > & { teamApiKey?: string }
-  // Requests use the access token; the stored API key is not carried over.
-  delete rest.teamApiKey
   return {
     ...rest,
     version: 2,
     projectName: teamName,
     projectId: teamId,
+    // Requests use the access token, but the key is kept so CLI versions that
+    // still authenticate with it stay signed in.
+    ...(teamApiKey ? { projectApiKey: teamApiKey } : {}),
   }
 }
 
@@ -112,13 +116,10 @@ export function getConfigRefreshTimestamp(): string {
  * written as owner-readable/writable only because it contains credentials.
  */
 export function writeUserConfig(configPath: string, config: UserConfig): void {
-  // Earlier CLI versions stored a long-lived project API key (`projectApiKey`,
-  // or `teamApiKey` in v1). Requests now use the access token, so the key is
-  // dropped from disk the next time the config is written (login, configure
-  // or a token refresh).
+  // Requests use the access token, but a stored `projectApiKey` is written
+  // back unchanged so CLI versions that still authenticate with it stay
+  // signed in.
   const persisted: Record<string, unknown> = { ...config }
-  delete persisted.projectApiKey
-  delete persisted.teamApiKey
 
   const dir = path.dirname(configPath)
   fs.mkdirSync(dir, { recursive: true, mode: 0o700 })

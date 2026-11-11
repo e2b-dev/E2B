@@ -150,8 +150,8 @@ describe('ensureValidAccessToken', () => {
       access_token: accessToken,
       refresh_token: 'refresh-2',
     })
-    // The API key earlier versions stored is dropped on write.
-    expect(stored.projectApiKey).toBeUndefined()
+    // The API key earlier versions stored is kept, so they stay signed in.
+    expect(stored.projectApiKey).toBe('e2b_stale_key')
     expect(fs.existsSync(`${configPath()}.lock`)).toBe(false)
   })
 
