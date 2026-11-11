@@ -389,36 +389,59 @@ class Sandbox(SandboxBase):
     def left_click(self, x: Optional[int] = None, y: Optional[int] = None):
         """
         Left click on the mouse position.
+
+        :param x: The x coordinate to click at, together with `y`
+        :param y: The y coordinate to click at, together with `x`
         """
-        if x and y:
+        self._check_click_position(x, y)
+        if x is not None and y is not None:
             self.move_mouse(x, y)
         self.commands.run("xdotool click 1")
 
     def double_click(self, x: Optional[int] = None, y: Optional[int] = None):
         """
         Double left click on the mouse position.
+
+        :param x: The x coordinate to click at, together with `y`
+        :param y: The y coordinate to click at, together with `x`
         """
-        if x and y:
+        self._check_click_position(x, y)
+        if x is not None and y is not None:
             self.move_mouse(x, y)
         self.commands.run("xdotool click --repeat 2 1")
 
     def right_click(self, x: Optional[int] = None, y: Optional[int] = None):
-        if (x is None) != (y is None):
-            raise ValueError("Both x and y must be provided together")
         """
         Right click on the mouse position.
+
+        :param x: The x coordinate to click at, together with `y`
+        :param y: The y coordinate to click at, together with `x`
         """
-        if x and y:
+        self._check_click_position(x, y)
+        if x is not None and y is not None:
             self.move_mouse(x, y)
         self.commands.run("xdotool click 3")
 
     def middle_click(self, x: Optional[int] = None, y: Optional[int] = None):
         """
         Middle click on the mouse position.
+
+        :param x: The x coordinate to click at, together with `y`
+        :param y: The y coordinate to click at, together with `x`
         """
-        if x and y:
+        self._check_click_position(x, y)
+        if x is not None and y is not None:
             self.move_mouse(x, y)
         self.commands.run("xdotool click 2")
+
+    @staticmethod
+    def _check_click_position(x: Optional[int], y: Optional[int]) -> None:
+        """
+        Coordinates must be passed together: with only one of them there is no
+        position to move to, and silently skipping the move hides the mistake.
+        """
+        if (x is None) != (y is None):
+            raise ValueError("Both x and y must be provided together")
 
     def scroll(self, direction: Literal["up", "down"] = "down", amount: int = 1):
         """

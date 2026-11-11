@@ -281,7 +281,9 @@ export class Sandbox extends SandboxBase {
    * Left click on the mouse position.
    */
   async leftClick(x?: number, y?: number): Promise<void> {
-    if (x && y) {
+    this.assertClickPosition(x, y)
+
+    if (x !== undefined && y !== undefined) {
       await this.moveMouse(x, y)
     }
 
@@ -292,7 +294,9 @@ export class Sandbox extends SandboxBase {
    * Double left click on the mouse position.
    */
   async doubleClick(x?: number, y?: number): Promise<void> {
-    if (x && y) {
+    this.assertClickPosition(x, y)
+
+    if (x !== undefined && y !== undefined) {
       await this.moveMouse(x, y)
     }
 
@@ -303,7 +307,9 @@ export class Sandbox extends SandboxBase {
    * Right click on the mouse position.
    */
   async rightClick(x?: number, y?: number): Promise<void> {
-    if (x && y) {
+    this.assertClickPosition(x, y)
+
+    if (x !== undefined && y !== undefined) {
       await this.moveMouse(x, y)
     }
 
@@ -314,11 +320,23 @@ export class Sandbox extends SandboxBase {
    * Middle click on the mouse position.
    */
   async middleClick(x?: number, y?: number): Promise<void> {
-    if (x && y) {
+    this.assertClickPosition(x, y)
+
+    if (x !== undefined && y !== undefined) {
       await this.moveMouse(x, y)
     }
 
     await this.commands.run('xdotool click 2')
+  }
+
+  /**
+   * Coordinates must be passed together: with only one of them there is no
+   * position to move to, and silently skipping the move hides the mistake.
+   */
+  private assertClickPosition(x?: number, y?: number): void {
+    if ((x === undefined) !== (y === undefined)) {
+      throw new Error('Both x and y must be provided together')
+    }
   }
 
   /**
