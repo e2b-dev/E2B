@@ -1,7 +1,7 @@
 import * as commander from '@commander-js/extra-typings'
 
 import { currentProject, ProjectSource, requireMe } from 'src/api'
-import { Format, parseFormat, projectOption } from 'src/options'
+import { Format, parseFormat } from 'src/options'
 import { asBold, asFormattedError } from 'src/utils/format'
 import { renderTable } from 'src/utils/table'
 import { updateUserConfig } from 'src/utils/token-refresh'
@@ -164,8 +164,7 @@ const useCommand = new commander.Command('use')
   })
 
 const infoCommand = new commander.Command('info')
-  .description('show the current project, or the one passed with --project')
-  .addOption(projectOption)
+  .description('show the project commands run in')
   .addOption(formatOption)
   .action(async (opts) => {
     try {

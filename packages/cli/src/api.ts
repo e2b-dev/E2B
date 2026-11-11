@@ -42,38 +42,19 @@ export type Auth =
   | Required<Pick<e2b.ConnectionOpts, 'apiHeaders' | 'domain'>>
 
 let me: Promise<Me> | undefined
-let projectOverride: string | undefined
-let apiKeyProjectWarned = false
-
-/**
- * The `--project` value of the running command. Set once, before the action
- * runs, by the preAction hook in src/commands/index.ts.
- */
-export function setProjectOverride(project: string | undefined) {
-  projectOverride = project
-}
-
-/** The project reference to use instead of the selected one, if any. */
-function requestedProject(): string | undefined {
-  return projectOverride || projectId
-}
 
 /** Where the current project comes from; shown as `selected_by` in JSON. */
 export enum ProjectSource {
-  Flag = '--project',
   Env = 'E2B_PROJECT_ID',
   Selected = 'selected',
 }
 
 /**
  * The project commands run in and where that choice comes from, or
- * `undefined` when signed out without `--project` or `E2B_PROJECT_ID`.
+ * `undefined` when signed out without `E2B_PROJECT_ID`.
  */
 export function currentProject():
   { ref: string; source: ProjectSource } | undefined {
-  if (projectOverride) {
-    return { ref: projectOverride, source: ProjectSource.Flag }
-  }
   if (projectId) return { ref: projectId, source: ProjectSource.Env }
   const config = getUserConfig()
   return config
@@ -114,13 +95,14 @@ export async function requireMe(): Promise<Me> {
 }
 
 /**
- * The project requests go to, and its control plane: `--project`, then
+ * The project requests go to, and its control plane: `cliProjectId`, then
  * `E2B_PROJECT_ID`, then the project selected with `e2b project use`.
  */
 async function resolveProject(
-  config: UserConfig
+  config: UserConfig,
+  cliProjectId?: string
 ): Promise<{ id: string; domain: string }> {
-  const ref = requestedProject()
+  const ref = cliProjectId || projectId
   if (ref && ref !== config.projectId) {
     const { project } = findProject(await getMe(), ref)
     return { id: project.id, domain: project.control_plane_domain }
@@ -151,19 +133,9 @@ async function resolveProject(
  * request (not once per command) so long-running commands keep working after
  * the hour-long access token expires.
  */
-export async function ensureAuth(): Promise<Auth> {
+export async function ensureAuth(cliProjectId?: string): Promise<Auth> {
   const apiKey = process.env.E2B_API_KEY
-  if (apiKey) {
-    if (projectOverride && !apiKeyProjectWarned) {
-      apiKeyProjectWarned = true
-      console.warn(
-        `${asBold('--project')} is ignored when ${asBold(
-          'E2B_API_KEY'
-        )} is set: the API key determines the project.`
-      )
-    }
-    return { apiKey }
-  }
+  if (apiKey) return { apiKey }
 
   if (!getUserConfig()) {
     console.error(authErrorBox())
@@ -173,7 +145,7 @@ export async function ensureAuth(): Promise<Auth> {
   const { accessToken, config } = await ensureValidAccessToken()
   let project: { id: string; domain: string }
   try {
-    project = await resolveProject(config)
+    project = await resolveProject(config, cliProjectId)
   } catch (err) {
     console.error(err instanceof Error ? err.message : err)
     process.exit(1)
@@ -189,8 +161,10 @@ export async function ensureAuth(): Promise<Auth> {
 }
 
 /** An E2B API client authenticated with {@link ensureAuth}. */
-export async function apiClient() {
-  return new e2b.ApiClient(new e2b.ConnectionConfig(await ensureAuth()))
+export async function apiClient(cliProjectId?: string) {
+  return new e2b.ApiClient(
+    new e2b.ConnectionConfig(await ensureAuth(cliProjectId))
+  )
 }
 
 // Carries no credentials: used for the API domain and request signals only.
