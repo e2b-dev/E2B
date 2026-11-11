@@ -62,6 +62,14 @@ class E2B:
         # change the bound configuration.
         api_params = cast(ApiParams, dict(cast(Dict[str, object], opts)))
 
+        headers = api_params.get("headers")
+        if headers is not None:
+            api_params["headers"] = dict(headers)
+
+        api_headers = api_params.get("api_headers")
+        if api_headers is not None:
+            api_params["api_headers"] = dict(api_headers)
+
         self.Sandbox = _bind(Sandbox, api_params)
         """`Sandbox` class bound to this client's connection configuration."""
 
