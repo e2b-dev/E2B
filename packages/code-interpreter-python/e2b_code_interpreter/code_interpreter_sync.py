@@ -31,6 +31,28 @@ from e2b_code_interpreter.exceptions import (
 logger = logging.getLogger(__name__)
 
 
+def _request_deadline(
+    timeout: Optional[float], request_timeout: Optional[float] = None
+) -> httpx.Timeout:
+    """
+    Builds the httpx timeout so the transport derives `timeout` as the
+    whole-request deadline.
+
+    The SDK's pyqwest-backed transport collapses httpx's per-phase timeouts
+    into a single whole-request deadline by summing the read and write phases
+    (see `convert_timeout` in `pyqwest.httpx._transport`). Carrying `timeout`
+    on both phases — e.g. `httpx.Timeout(timeout, ...)` — therefore derives
+    `2 * timeout`, so the write phase is set to 0, which the transport adds as
+    nothing, while `connect` keeps `request_timeout` (defaulting to `timeout`
+    when there is no separate connect budget). A `timeout` of None leaves the
+    request unbounded; the transport still bounds connect on its own.
+    """
+    if timeout is None:
+        return httpx.Timeout(None)
+    connect = request_timeout if request_timeout is not None else timeout
+    return httpx.Timeout(connect=connect, read=timeout, write=0, pool=timeout)
+
+
 class Sandbox(BaseSandbox):
     """
     E2B cloud sandbox is a secure and isolated cloud environment.
@@ -214,21 +236,12 @@ class Sandbox(BaseSandbox):
                 },
                 headers=headers,
                 # `timeout` bounds the execution, `request_timeout` only the
-                # connect. Every non-connect phase must carry `timeout`: the
-                # SDK's pyqwest-backed transport collapses the per-phase
-                # timeouts into a single whole-request deadline and takes the
-                # longest of them, so leaving `request_timeout` on the write
-                # and pool phases would raise the floor to
-                # `max(timeout, request_timeout)` and silently ignore any
-                # `timeout` shorter than it. This matches the JS SDK, which
-                # aborts the execution on a `timeout`-long timer.
-                # `timeout=0` disables the deadline entirely; the transport
-                # still bounds connect on its own.
-                timeout=(
-                    httpx.Timeout(timeout, connect=request_timeout)
-                    if timeout is not None
-                    else httpx.Timeout(None)
-                ),
+                # connect. The transport derives the whole-request deadline
+                # from the read and write phases (see `_request_deadline`),
+                # so this must be built as `read + write == timeout`. This
+                # matches the JS SDK, which aborts the execution on a
+                # `timeout`-long timer.
+                timeout=_request_deadline(timeout, request_timeout),
             ) as response:
                 err = extract_exception(response)
                 if err:
@@ -291,7 +304,9 @@ class Sandbox(BaseSandbox):
                 f"{self._jupyter_url}/contexts",
                 json=data,
                 headers=headers,
-                timeout=request_timeout or self.connection_config.request_timeout,
+                timeout=_request_deadline(
+                    request_timeout or self.connection_config.request_timeout
+                ),
             )
 
             err = extract_exception(response)
@@ -331,7 +346,7 @@ class Sandbox(BaseSandbox):
             response = self._client.delete(
                 f"{self._jupyter_url}/contexts/{context_id}",
                 headers=headers,
-                timeout=self.connection_config.request_timeout,
+                timeout=_request_deadline(self.connection_config.request_timeout),
             )
 
             err = extract_exception(response)
@@ -361,7 +376,7 @@ class Sandbox(BaseSandbox):
             response = self._client.get(
                 f"{self._jupyter_url}/contexts",
                 headers=headers,
-                timeout=self.connection_config.request_timeout,
+                timeout=_request_deadline(self.connection_config.request_timeout),
             )
 
             err = extract_exception(response)
@@ -401,7 +416,7 @@ class Sandbox(BaseSandbox):
             response = self._client.post(
                 f"{self._jupyter_url}/contexts/{context_id}/restart",
                 headers=headers,
-                timeout=self.connection_config.request_timeout,
+                timeout=_request_deadline(self.connection_config.request_timeout),
             )
 
             err = extract_exception(response)
