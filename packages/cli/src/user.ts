@@ -24,9 +24,6 @@ const userConfigSchema = z.object({
   ...authFields,
   projectName: z.string(),
   projectId: z.string(),
-  // Stored by earlier CLI versions, which authenticate with it. Not used for
-  // requests any more, but kept on disk so those versions stay signed in.
-  projectApiKey: z.string().optional(),
 })
 
 export type UserConfig = z.infer<typeof userConfigSchema>
@@ -92,17 +89,14 @@ function migrateV1UserConfig(config: unknown): UserConfig | null {
 
   // Spread the original object, not the parsed one, so fields this CLI
   // version doesn't know about are kept when the config is written back.
-  const { teamName, teamId, teamApiKey, ...rest } = config as z.infer<
+  const { teamName, teamId, ...rest } = config as z.infer<
     typeof v1UserConfigSchema
-  > & { teamApiKey?: string }
+  >
   return {
     ...rest,
     version: 2,
     projectName: teamName,
     projectId: teamId,
-    // Requests use the access token, but the key is kept so CLI versions that
-    // still authenticate with it stay signed in.
-    ...(teamApiKey ? { projectApiKey: teamApiKey } : {}),
   }
 }
 
@@ -116,11 +110,6 @@ export function getConfigRefreshTimestamp(): string {
  * written as owner-readable/writable only because it contains credentials.
  */
 export function writeUserConfig(configPath: string, config: UserConfig): void {
-  // Requests use the access token, but a stored `projectApiKey` is written
-  // back unchanged so CLI versions that still authenticate with it stay
-  // signed in.
-  const persisted: Record<string, unknown> = { ...config }
-
   const dir = path.dirname(configPath)
   fs.mkdirSync(dir, { recursive: true, mode: 0o700 })
   fs.chmodSync(dir, 0o700)
@@ -128,7 +117,7 @@ export function writeUserConfig(configPath: string, config: UserConfig): void {
   // processes reading it (token refreshes happen in the background of any
   // command) never see a partially written file.
   const tmpPath = `${configPath}.${process.pid}.tmp`
-  fs.writeFileSync(tmpPath, JSON.stringify(persisted, null, 2), {
+  fs.writeFileSync(tmpPath, JSON.stringify(config, null, 2), {
     mode: 0o600,
   })
   fs.chmodSync(tmpPath, 0o600)

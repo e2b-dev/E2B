@@ -42,7 +42,7 @@ function writeConfig(accessToken: string, refreshToken = 'refresh-1') {
       tokens: { access_token: accessToken, refresh_token: refreshToken },
       projectName: 'default',
       projectId: 'config-project',
-      projectApiKey: 'e2b_stale_key',
+      futureField: 'kept',
     })
   )
 }
@@ -150,8 +150,8 @@ describe('ensureValidAccessToken', () => {
       access_token: accessToken,
       refresh_token: 'refresh-2',
     })
-    // The API key earlier versions stored is kept, so they stay signed in.
-    expect(stored.projectApiKey).toBe('e2b_stale_key')
+    // Fields this version doesn't know about survive the write.
+    expect(stored.futureField).toBe('kept')
     expect(fs.existsSync(`${configPath()}.lock`)).toBe(false)
   })
 

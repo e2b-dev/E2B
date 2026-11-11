@@ -65,7 +65,6 @@ describe('writeUserConfig', () => {
       projectName: 'default',
       projectId: 'project-id',
       futureField: 'kept',
-      projectApiKey: 'e2b_secret',
     } as const
     writeUserConfig(configPath, config as UserConfig)
 
