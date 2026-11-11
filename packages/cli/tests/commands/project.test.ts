@@ -51,7 +51,6 @@ const me: Me = {
 }
 
 const mocks = vi.hoisted(() => ({
-  setProjectOverride: vi.fn(),
   updateUserConfig: vi.fn(),
   current: undefined as { ref: string; source: string } | undefined,
 }))
@@ -62,7 +61,6 @@ vi.mock(
     ...(await importOriginal()),
     requireMe: async () => me,
     currentProject: () => mocks.current,
-    setProjectOverride: mocks.setProjectOverride,
   })
 )
 
@@ -181,50 +179,19 @@ describe('e2b project use', () => {
 
 describe('e2b project info', () => {
   test('shows the current project and why it is current', async () => {
-    mocks.current = { ref: 'prj_shared', source: '--project' }
-    const { out } = await run([
-      'project',
-      'info',
-      '--project',
-      'prj_shared',
-      '-f',
-      'json',
-    ])
+    mocks.current = { ref: 'prj_shared', source: 'E2B_PROJECT_ID' }
+    const { out } = await run(['project', 'info', '-f', 'json'])
     expect(JSON.parse(out)).toMatchObject({
       id: 'shared',
       control_plane_domain: 'shared.e2b.dev',
       workspace_name: 'Team',
-      selected_by: '--project',
+      selected_by: 'E2B_PROJECT_ID',
     })
   })
-})
 
-describe('--project', () => {
-  test('is passed to ensureAuth() before the action runs', async () => {
-    await run(['project', 'info', '--project', 'prj_shared'])
-    expect(mocks.setProjectOverride).toHaveBeenCalledWith('prj_shared')
-  })
-
-  test('is offered by every command that calls the API', async () => {
-    const { program } = await import('../../src/commands')
-    const leaves = (cmd: typeof program, path: string[] = []): string[][] =>
-      cmd.commands.flatMap((sub) =>
-        sub.commands.length
-          ? leaves(sub as typeof program, [...path, sub.name()])
-          : [[...path, sub.name()]]
-      )
-    const withoutProject = leaves(program)
-      .filter(([group]) => group === 'sandbox' || group === 'template')
-      .filter((path) => {
-        let cmd = program as {
-          commands: readonly (typeof program)[]
-        } & typeof program
-        for (const name of path) {
-          cmd = cmd.commands.find((c) => c.name() === name) as typeof cmd
-        }
-        return !cmd.options.some((option) => option.long === '--project')
-      })
-      .map((path) => path.join(' '))
-    expect(withoutProject).toEqual(['template init', 'template migrate'])
+  test('fails when no project is selected', async () => {
+    mocks.current = undefined
+    const { err } = await run(['project', 'info'])
+    expect(err).toContain('No project selected')
   })
 })

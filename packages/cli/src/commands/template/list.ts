@@ -9,7 +9,8 @@ import {
   deprecatedTeamOption,
   Format,
   parseFormat,
-  projectOptionWithShortFlag,
+  projectIdFromOptions,
+  projectOption,
 } from '../../options'
 import { handleE2BRequestError } from '../../utils/errors'
 import { integer, zodParser } from '../../validation'
@@ -20,7 +21,7 @@ const PAGE_LIMIT = 100
 export const listCommand = new commander.Command('list')
   .description('list sandbox templates')
   .alias('ls')
-  .addOption(projectOptionWithShortFlag)
+  .addOption(projectOption)
   .addOption(deprecatedTeamOption)
   .option(
     '-l, --limit <limit>',
