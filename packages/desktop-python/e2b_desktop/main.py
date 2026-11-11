@@ -563,11 +563,15 @@ class Sandbox(SandboxBase):
         """
         Get the window IDs of all windows for the given application.
         """
-        return (
-            self.commands.run(f"xdotool search --onlyvisible --class {application}")
-            .stdout.strip()
-            .split("\n")
-        )
+        # When no window matches, xdotool prints nothing — splitting the
+        # empty output on newlines would report one empty-string window id.
+        return [
+            line.strip()
+            for line in self.commands.run(
+                f"xdotool search --onlyvisible --class {application}"
+            ).stdout.split("\n")
+            if line.strip()
+        ]
 
     def get_window_title(self, window_id: str) -> str:
         """

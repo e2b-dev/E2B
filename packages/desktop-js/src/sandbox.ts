@@ -496,7 +496,12 @@ export class Sandbox extends SandboxBase {
       `xdotool search --onlyvisible --class ${application}`
     )
 
-    return result.stdout.trim().split('\n')
+    // When no window matches, xdotool prints nothing — splitting the empty
+    // output on newlines would report one empty-string window id.
+    return result.stdout
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0)
   }
 
   /**
