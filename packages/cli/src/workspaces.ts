@@ -181,7 +181,9 @@ export function findProject(me: Me, ref: string): ProjectEntry {
     )
   }
   throw new Error(
-    `Project "${ref}" not found among the projects you can access.`
+    `Project "${ref}" not found among the projects you can access. Run ${asBold(
+      'e2b auth configure'
+    )} to choose one.`
   )
 }
 

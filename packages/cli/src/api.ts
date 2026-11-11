@@ -117,11 +117,7 @@ export async function ensureAuth(cliProjectId?: string): Promise<Auth> {
   try {
     project = await resolveProject(config, cliProjectId)
   } catch (err) {
-    console.error(
-      `${err instanceof Error ? err.message : err} Run ${asBold(
-        'e2b auth configure'
-      )} to choose a project.`
-    )
+    console.error(err instanceof Error ? err.message : err)
     process.exit(1)
   }
 
