@@ -6,13 +6,13 @@ import * as path from 'path'
 const configName = 'e2b.toml'
 
 export const configSchema = z.object({
-  template_id: z.string(),
+  template_id: z.string().min(1),
   template_name: z.string().optional(),
-  dockerfile: z.string(),
+  dockerfile: z.string().min(1),
   start_cmd: z.string().optional(),
   ready_cmd: z.string().optional(),
-  cpu_count: z.number().int().min(1).optional(),
-  memory_mb: z.number().int().min(128).optional(),
+  cpu_count: z.coerce.number().int().min(1).optional(),
+  memory_mb: z.coerce.number().int().min(128).optional(),
 })
 
 export type E2BConfig = z.infer<typeof configSchema>

@@ -31,6 +31,41 @@ describe('loadConfig', () => {
     })
   })
 
+  test('coerces quoted numbers in cpu_count and memory_mb', async () => {
+    await fs.writeFile(
+      configPath,
+      'template_id = "abc"\ndockerfile = "e2b.Dockerfile"\ncpu_count = "2"\nmemory_mb = "512"\n'
+    )
+
+    expect(await loadConfig(configPath)).toMatchObject({
+      cpu_count: 2,
+      memory_mb: 512,
+    })
+  })
+
+  test.each(['cpu_count = "two"', 'memory_mb = 1.5'])(
+    'rejects a non-integer %s',
+    async (line: string) => {
+      await fs.writeFile(
+        configPath,
+        `template_id = "abc"\ndockerfile = "e2b.Dockerfile"\n${line}\n`
+      )
+
+      await expect(loadConfig(configPath)).rejects.toThrow('Invalid config')
+    }
+  )
+
+  test.each([
+    ['template_id', 'template_id = ""\ndockerfile = "e2b.Dockerfile"\n'],
+    ['dockerfile', 'template_id = "abc"\ndockerfile = ""\n'],
+  ])('rejects an empty %s', async (field: string, content: string) => {
+    await fs.writeFile(configPath, content)
+
+    const error = await loadConfig(configPath).catch((err: Error) => err)
+    expect(error).toBeInstanceOf(Error)
+    expect((error as Error).message).toContain(`→ at ${field}`)
+  })
+
   test('reports every invalid field', async () => {
     await fs.writeFile(
       configPath,
