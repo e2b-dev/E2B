@@ -15,10 +15,10 @@ function sandboxWithRun(run: () => Promise<RunResult>): { sandbox: any } {
 }
 
 // Real xdotool behavior: a search with no match exits with status 1 and
-// prints nothing on stdout.
-function sandboxWithNoMatch(stdout = ''): { sandbox: any } {
+// prints nothing on stdout or stderr.
+function sandboxWithNoMatch(stdout = '', stderr = ''): { sandbox: any } {
   return sandboxWithRun(async () => {
-    throw new CommandExitError({ exitCode: 1, stdout, stderr: '' })
+    throw new CommandExitError({ exitCode: 1, stdout, stderr })
   })
 }
 
@@ -30,6 +30,13 @@ test('no matching window (xdotool exit 1 with empty stdout) yields an empty list
 test('no match with whitespace-only stdout yields an empty list', async () => {
   const { sandbox } = sandboxWithNoMatch('\n  \n')
   await expect(sandbox.getApplicationWindows('firefox')).resolves.toEqual([])
+})
+
+test('exit 1 with empty stdout but a stderr diagnostic (e.g. a broken X display) still propagates', async () => {
+  const { sandbox } = sandboxWithNoMatch('', 'xdotool: cannot open display')
+  await expect(sandbox.getApplicationWindows('firefox')).rejects.toThrow(
+    CommandExitError
+  )
 })
 
 test('one window id per non-empty line', async () => {

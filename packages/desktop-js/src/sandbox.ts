@@ -498,12 +498,15 @@ export class Sandbox extends SandboxBase {
         `xdotool search --onlyvisible --class ${this.quoteString(application)}`
       )
     } catch (error) {
-      // xdotool search exits with status 1 and empty stdout when no visible
-      // window matches — that is an empty result, not a failure.
+      // xdotool search exits with status 1 with empty stdout when no visible
+      // window matches — that is an empty result, not a failure. An exit 1
+      // that carries a stderr diagnostic (e.g. a broken X display) is a real
+      // failure and must propagate.
       if (
         error instanceof CommandExitError &&
         error.exitCode === 1 &&
-        error.stdout?.trim() === ''
+        error.stdout?.trim() === '' &&
+        (error.stderr ?? '').trim() === ''
       ) {
         return []
       }

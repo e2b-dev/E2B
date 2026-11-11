@@ -568,9 +568,15 @@ class Sandbox(SandboxBase):
                 f"xdotool search --onlyvisible --class {quote_string(application)}"
             )
         except CommandExitException as e:
-            # xdotool search exits with status 1 and empty stdout when no
+            # xdotool search exits with status 1 with empty stdout when no
             # visible window matches — that is an empty result, not a failure.
-            if e.exit_code == 1 and not (e.stdout or "").strip():
+            # An exit 1 that carries a stderr diagnostic (e.g. a broken X
+            # display) is a real failure and must propagate.
+            if (
+                e.exit_code == 1
+                and not (e.stdout or "").strip()
+                and not (e.stderr or "").strip()
+            ):
                 return []
             raise
 
