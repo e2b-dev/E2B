@@ -1,62 +1,60 @@
 import * as fs from 'fs'
 import * as path from 'path'
-
-import { wait } from './wait'
+import { lock } from 'proper-lockfile'
 
 export type FileLockOptions = {
   /**
-   * A lock file older than this is taken to be left behind by a process that
-   * crashed while holding it, and is removed. Must be longer than `fn` can
-   * take, or a live holder's lock could be taken over.
+   * A lock whose holder hasn't touched it for this long is taken to be left
+   * behind by a process that crashed, and is removed. The holder refreshes
+   * the lock every `staleMs / 2`, so a live holder is never taken over.
    */
   staleMs: number
   /** How long to wait for another holder before giving up. */
   timeoutMs: number
 }
 
-const POLL_INTERVAL_MS = 100
+const RETRY_INTERVAL_MS = 100
 
 /**
- * Run `fn` while holding an exclusive lock that all e2b processes on this
- * machine share, and release it afterwards, whether `fn` returns or throws.
+ * Run `fn` while holding an exclusive lock on `filePath` that all e2b
+ * processes on this machine share, and release it afterwards, whether `fn`
+ * returns or throws.
  *
- * The lock is a file created with `O_EXCL` at `lockPath`: whoever creates it
- * holds the lock, and the others poll until it's gone.
+ * The lock is `${filePath}.lock`, managed by proper-lockfile: it's created
+ * atomically, kept fresh while held, released when the process exits, and
+ * taken over once stale. `filePath` itself doesn't have to exist.
  */
 export async function withFileLock<T>(
-  lockPath: string,
+  filePath: string,
   fn: () => T | Promise<T>,
   { staleMs, timeoutMs }: FileLockOptions
 ): Promise<T> {
-  fs.mkdirSync(path.dirname(lockPath), { recursive: true, mode: 0o700 })
-  const deadline = Date.now() + timeoutMs
+  fs.mkdirSync(path.dirname(filePath), { recursive: true, mode: 0o700 })
 
-  for (;;) {
-    try {
-      fs.closeSync(fs.openSync(lockPath, 'wx', 0o600))
-      break
-    } catch (err) {
-      if ((err as NodeJS.ErrnoException).code !== 'EEXIST') throw err
-    }
-
-    const lockAgeMs =
-      Date.now() -
-      (fs.statSync(lockPath, { throwIfNoEntry: false })?.mtimeMs ?? Date.now())
-    if (lockAgeMs > staleMs) {
-      fs.rmSync(lockPath, { force: true })
-      continue
-    }
-    if (Date.now() > deadline) {
+  let release: () => Promise<void>
+  try {
+    release = await lock(filePath, {
+      realpath: false,
+      stale: staleMs,
+      retries: {
+        retries: Math.ceil(timeoutMs / RETRY_INTERVAL_MS),
+        minTimeout: RETRY_INTERVAL_MS,
+        maxTimeout: RETRY_INTERVAL_MS,
+        maxRetryTime: timeoutMs,
+      },
+    })
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ELOCKED') {
       throw new Error(
-        `Timed out waiting for another e2b process to release ${lockPath}. If none is running, delete it and try again.`
+        `Timed out waiting for another e2b process to release ${filePath}.lock. If none is running, delete it and try again.`
       )
     }
-    await wait(POLL_INTERVAL_MS)
+    throw err
   }
 
   try {
     return await fn()
   } finally {
-    fs.rmSync(lockPath, { force: true })
+    await release()
   }
 }

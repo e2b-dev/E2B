@@ -187,7 +187,7 @@ describe('ensureValidAccessToken', () => {
   test('clears a lock left behind by a crashed process', async () => {
     writeConfig(jwt(-10))
     const lockPath = `${configPath()}.lock`
-    fs.writeFileSync(lockPath, '')
+    fs.mkdirSync(lockPath)
     const old = new Date(Date.now() - 60_000)
     fs.utimesSync(lockPath, old, old)
     const fetchMock = mockTokenEndpoint()

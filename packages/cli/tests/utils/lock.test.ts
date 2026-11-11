@@ -8,11 +8,13 @@ import { withFileLock } from '../../src/utils/lock'
 const options = { staleMs: 30_000, timeoutMs: 2_000 }
 
 let dir: string
+let filePath: string
 let lockPath: string
 
 beforeEach(() => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), 'e2b-lock-'))
-  lockPath = path.join(dir, 'nested', 'config.json.lock')
+  filePath = path.join(dir, 'nested', 'config.json')
+  lockPath = `${filePath}.lock`
 })
 
 afterEach(() => {
@@ -25,7 +27,7 @@ describe('withFileLock', () => {
     let maxActive = 0
     const run = (id: number) =>
       withFileLock(
-        lockPath,
+        filePath,
         async () => {
           active += 1
           maxActive = Math.max(maxActive, active)
@@ -44,7 +46,7 @@ describe('withFileLock', () => {
   test('releases the lock when the holder throws', async () => {
     await expect(
       withFileLock(
-        lockPath,
+        filePath,
         () => {
           throw new Error('boom')
         },
@@ -55,20 +57,19 @@ describe('withFileLock', () => {
   })
 
   test('takes over a lock left behind by a crashed process', async () => {
-    fs.mkdirSync(path.dirname(lockPath), { recursive: true })
-    fs.writeFileSync(lockPath, '')
+    fs.mkdirSync(lockPath, { recursive: true })
     const old = new Date(Date.now() - 60_000)
     fs.utimesSync(lockPath, old, old)
 
-    expect(await withFileLock(lockPath, () => 'ran', options)).toBe('ran')
+    expect(await withFileLock(filePath, () => 'ran', options)).toBe('ran')
+    expect(fs.existsSync(lockPath)).toBe(false)
   })
 
   test('gives up while a live holder keeps the lock', async () => {
-    fs.mkdirSync(path.dirname(lockPath), { recursive: true })
-    fs.writeFileSync(lockPath, '')
+    fs.mkdirSync(lockPath, { recursive: true })
 
     await expect(
-      withFileLock(lockPath, () => 'ran', { staleMs: 30_000, timeoutMs: 200 })
+      withFileLock(filePath, () => 'ran', { staleMs: 30_000, timeoutMs: 200 })
     ).rejects.toThrow(
       `Timed out waiting for another e2b process to release ${lockPath}`
     )

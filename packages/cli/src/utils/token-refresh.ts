@@ -13,7 +13,6 @@ const REFRESH_SKEW_SECONDS = 60
 const REFRESH_TIMEOUT_MS = 15_000
 
 /** Serializes writes to the user config across e2b processes. */
-const CONFIG_LOCK_PATH = `${USER_CONFIG_PATH}.lock`
 const CONFIG_LOCK = {
   // Longer than a refresh can take (REFRESH_TIMEOUT_MS), so a live holder's
   // lock is never treated as stale.
@@ -115,7 +114,7 @@ export async function ensureValidAccessToken(): Promise<{
   }
 
   return withFileLock(
-    CONFIG_LOCK_PATH,
+    USER_CONFIG_PATH,
     async () => {
       const config = getUserConfig()
       if (!config) {
