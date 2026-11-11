@@ -238,9 +238,9 @@ export type TemplateInfo = {
 /**
  * Options for listing templates.
  */
-export type TemplateListOpts = Omit<ConnectionOpts, 'signal'> & {
+export interface TemplateListOpts extends Omit<ConnectionOpts, 'signal'> {
   /**
-   * Number of templates to return per page.
+   * Maximum number of templates to return per page.
    *
    * @default 100
    */

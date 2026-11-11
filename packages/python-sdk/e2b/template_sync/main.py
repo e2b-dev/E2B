@@ -556,6 +556,7 @@ class Template(TemplateBase):
     @classmethod
     def list(
         cls,
+        *,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
         **opts: Unpack[ApiParams],
@@ -563,7 +564,7 @@ class Template(TemplateBase):
         """
         List the project's templates.
 
-        :param limit: Number of templates to return per page.
+        :param limit: Maximum number of templates to return per page. Defaults to 100.
         :param next_token: Token to the next page.
 
         :return: Paginator over the project's templates. Drain it page by page:
