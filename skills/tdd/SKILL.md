@@ -35,4 +35,4 @@ Ask: "What's the public interface, and which seams should we test?" Give each pr
 
 ---
 
-Adapted from [mattpocock/skills `tdd`](https://github.com/mattpocock/skills/tree/3f599139104dfceabc7754eeb91319802f85e042/skills/engineering/tdd) (MIT, see [LICENSE](LICENSE)).
+Adapted from [mattpocock/skills `tdd`](https://github.com/mattpocock/skills/tree/3f599139104dfceabc7754eeb91319802f85e042/skills/engineering/tdd) by Matt Pocock.
