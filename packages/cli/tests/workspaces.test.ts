@@ -241,11 +241,13 @@ describe('pickProject', () => {
           ],
         },
       ])
-      expect(asked()[0].names[0]).toContain('1 active project')
+      expect(asked()[0].names[0]).toContain('(1 active project)')
       expect(asked()[0].names[0]).toContain('current')
-      expect(asked()[0].names[1]).toContain('2 active projects')
+      expect(asked()[0].names[1]).toContain('(2 active projects)')
       // The selected project's workspace is preselected.
-      expect(prompts.select.mock.calls[0][0].initialValue).toBe(me.workspaces[0])
+      expect(prompts.select.mock.calls[0][0].initialValue).toBe(
+        me.workspaces[0]
+      )
     })
 
     test('asks even when a step has a single choice', async () => {
