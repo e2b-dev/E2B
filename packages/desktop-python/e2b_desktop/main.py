@@ -563,11 +563,26 @@ class Sandbox(SandboxBase):
         """
         Get the window IDs of all windows for the given application.
         """
-        return (
-            self.commands.run(f"xdotool search --onlyvisible --class {application}")
-            .stdout.strip()
-            .split("\n")
-        )
+        try:
+            result = self.commands.run(
+                f"xdotool search --onlyvisible --class {quote_string(application)}"
+            )
+        except CommandExitException as e:
+            # xdotool search exits with status 1 with empty stdout when no
+            # visible window matches — that is an empty result, not a failure.
+            # An exit 1 that carries a stderr diagnostic (e.g. a broken X
+            # display) is a real failure and must propagate.
+            if (
+                e.exit_code == 1
+                and not (e.stdout or "").strip()
+                and not (e.stderr or "").strip()
+            ):
+                return []
+            raise
+
+        # Splitting the output on newlines can report empty-string window ids
+        # for blank lines, so keep only the non-empty lines.
+        return [line.strip() for line in result.stdout.split("\n") if line.strip()]
 
     def get_window_title(self, window_id: str) -> str:
         """
