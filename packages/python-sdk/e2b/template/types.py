@@ -130,6 +130,9 @@ class TemplateInfo:
     description: Optional[str] = None
     """Description of the template."""
 
+    max_cpu_count: Optional[int] = None
+    """Maximum number of CPUs a sandbox can be started with. Set only for resizable templates."""
+
     @classmethod
     def _from_model(cls, template: TemplateModel) -> "TemplateInfo":
         return cls(
@@ -154,6 +157,11 @@ class TemplateInfo:
                 None
                 if isinstance(template.description, Unset)
                 else template.description or None
+            ),
+            max_cpu_count=(
+                None
+                if isinstance(template.max_cpu_count, Unset)
+                else template.max_cpu_count
             ),
         )
 

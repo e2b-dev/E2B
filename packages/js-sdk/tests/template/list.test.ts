@@ -25,7 +25,7 @@ function mockTemplate(index: number) {
     createdAt: '2024-01-15T10:30:00Z',
     updatedAt: '2024-01-16T12:00:00Z',
     lastSpawnedAt: index === 0 ? null : '2024-01-17T08:00:00Z',
-    ...(index === 1 && { description: 'Second template' }),
+    ...(index === 1 && { description: 'Second template', maxCpuCount: 4 }),
   }
 }
 
@@ -98,6 +98,7 @@ describe('Template.list', () => {
       updatedAt: new Date('2024-01-16T12:00:00Z'),
     })
     expect(described.description).toBe('Second template')
+    expect(described.maxCpuCount).toBe(4)
     expect(described.lastSpawnedAt).toEqual(new Date('2024-01-17T08:00:00Z'))
   })
 

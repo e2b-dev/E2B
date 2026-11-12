@@ -208,6 +208,11 @@ export type TemplateInfo = {
    */
   cpuCount: number
   /**
+   * Maximum number of CPUs a sandbox can be started with. Set only for
+   * resizable templates.
+   */
+  maxCpuCount?: number
+  /**
    * Amount of memory in MiB allocated to the sandbox.
    */
   memoryMB: number
@@ -253,6 +258,7 @@ export function convertTemplateInfo(
     isDefault: template.isDefault ?? false,
     buildStatus: template.buildStatus,
     cpuCount: template.cpuCount,
+    ...(template.maxCpuCount != null && { maxCpuCount: template.maxCpuCount }),
     memoryMB: template.memoryMB,
     diskSizeMB: template.diskSizeMB,
     envdVersion: template.envdVersion,

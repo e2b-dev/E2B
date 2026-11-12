@@ -1,30 +1,29 @@
 import { afterEach, describe, expect, test, vi } from 'vitest'
-import * as e2b from 'e2b'
+import type { TemplateInfo } from 'e2b'
 
 import { renderTemplateTable } from '../../../src/commands/template/list'
 
-type Template = e2b.components['schemas']['Template']
-
-function template(templateID: string, extra: Partial<Template>): Template {
+function template(
+  templateId: string,
+  extra: Partial<TemplateInfo>
+): TemplateInfo {
   return {
-    templateID,
-    buildID: 'build-id',
+    templateId,
+    buildId: 'build-id',
     cpuCount: 2,
     memoryMB: 512,
     diskSizeMB: 1024,
     public: false,
-    aliases: [templateID],
-    names: [templateID],
-    createdAt: '2026-11-05T15:00:00Z',
-    updatedAt: '2026-11-05T15:00:00Z',
-    lastSpawnedAt: null,
+    isDefault: false,
+    names: [templateId],
+    createdAt: new Date('2026-11-05T15:00:00Z'),
+    updatedAt: new Date('2026-11-05T15:00:00Z'),
     spawnCount: 0,
     buildCount: 1,
     envdVersion: '0.2.0',
     buildStatus: 'ready',
-    createdBy: null,
     ...extra,
-  } as Template
+  }
 }
 
 describe('template list table', () => {
