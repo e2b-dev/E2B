@@ -43,23 +43,12 @@ export type Auth =
 
 let me: Promise<Me> | undefined
 
-/** Where the current project comes from; shown as `selected_by` in JSON. */
-export enum ProjectSource {
-  Env = 'E2B_PROJECT_ID',
-  Selected = 'selected',
-}
-
 /**
- * The project commands run in and where that choice comes from, or
- * `undefined` when signed out without `E2B_PROJECT_ID`.
+ * The project commands run in: `E2B_PROJECT_ID`, else the one selected with
+ * `e2b project use`; `undefined` when signed out without `E2B_PROJECT_ID`.
  */
-export function currentProject():
-  { ref: string; source: ProjectSource } | undefined {
-  if (projectId) return { ref: projectId, source: ProjectSource.Env }
-  const config = getUserConfig()
-  return config
-    ? { ref: config.projectId, source: ProjectSource.Selected }
-    : undefined
+export function currentProject(): string | undefined {
+  return projectId || getUserConfig()?.projectId
 }
 
 /** The logged-in user's workspaces and projects, fetched once per process. */
