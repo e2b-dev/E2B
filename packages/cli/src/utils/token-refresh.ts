@@ -1,4 +1,5 @@
 import * as fs from 'fs'
+import { decodeJwt } from 'jose'
 
 import {
   getUserConfig,
@@ -22,13 +23,8 @@ const CONFIG_LOCK = {
 
 /** The `exp` claim of a JWT, or `undefined` for anything else. */
 export function decodeJwtExp(token: string): number | undefined {
-  const payload = token.split('.')[1]
-  if (!payload) return undefined
   try {
-    const decoded = JSON.parse(
-      Buffer.from(payload, 'base64url').toString('utf8')
-    ) as { exp?: number }
-    return decoded.exp
+    return decodeJwt(token).exp
   } catch {
     return undefined
   }

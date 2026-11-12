@@ -85,6 +85,7 @@
     "commander": "~15.0.0",
     "e2b": "workspace:^",
     "handlebars": "^4.7.10",
+    "jose": "^6.2.16",
     "openapi-fetch": "^0.17.0",
     "proper-lockfile": "^4.1.2",
     "simple-update-notifier": "^2.0.0",
