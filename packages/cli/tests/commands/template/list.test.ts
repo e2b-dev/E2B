@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, test } from 'vitest'
-import { ApiClient, ConnectionConfig } from 'e2b'
+import { Template } from 'e2b'
 import { isDebug, runCli } from '../../setup'
 
 const apiKey = process.env.E2B_API_KEY
@@ -23,10 +23,10 @@ function listTemplates(args: string[]) {
 }
 
 function listTemplateIds(args: string[]): string[] {
-  const templates: { templateID: string }[] = JSON.parse(
+  const templates: { templateId: string }[] = JSON.parse(
     listTemplates([...args, '-f', 'json'])
   )
-  return templates.map((t) => t.templateID)
+  return templates.map((t) => t.templateId)
 }
 
 describe('template list', () => {
@@ -36,11 +36,9 @@ describe('template list', () => {
   beforeAll(async () => {
     if (shouldSkip) return
 
-    const client = new ApiClient(new ConnectionConfig({ apiKey, domain }))
-    const res = await client.api.GET('/v2/templates')
-    expect(res.response.ok, res.response.statusText).toBe(true)
-    firstPageIds = res.data!.map((t: { templateID: string }) => t.templateID)
-    hasSecondPage = !!res.response.headers.get('x-next-token')
+    const paginator = Template.list({ apiKey, domain })
+    firstPageIds = (await paginator.nextItems()).map((t) => t.templateId)
+    hasSecondPage = paginator.hasNext
   })
 
   integrationTest(

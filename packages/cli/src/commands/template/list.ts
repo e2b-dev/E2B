@@ -1,10 +1,9 @@
 import * as commander from '@commander-js/extra-typings'
-import * as e2b from 'e2b'
+import { Template, TemplateInfo } from 'e2b'
 
 import { listAliases } from '../../utils/format'
 import { renderTable } from 'src/utils/table'
-import { sortTemplatesAliases } from 'src/utils/templateSort'
-import { apiClient } from 'src/api'
+import { ensureAuth } from 'src/api'
 import {
   deprecatedTeamOption,
   Format,
@@ -12,7 +11,6 @@ import {
   projectIdFromOptions,
   projectOption,
 } from '../../options'
-import { handleE2BRequestError } from '../../utils/errors'
 import { integer, zodParser } from '../../validation'
 
 const DEFAULT_LIMIT = 1000
@@ -47,7 +45,7 @@ export const listCommand = new commander.Command('list')
       })
 
       for (const template of templates) {
-        sortTemplatesAliases(template.aliases)
+        template.names.sort()
       }
 
       if (opts.format === Format.PRETTY) {
@@ -66,9 +64,7 @@ export const listCommand = new commander.Command('list')
     }
   })
 
-export function renderTemplateTable(
-  templates: e2b.components['schemas']['Template'][]
-) {
+export function renderTemplateTable(templates: TemplateInfo[]) {
   if (!templates?.length) {
     console.log('No templates found.')
     return
@@ -79,10 +75,10 @@ export function renderTemplateTable(
       header: 'Access',
       value: (template) => (template.public ? 'Public' : 'Private'),
     },
-    { header: 'Template ID', value: (template) => template.templateID },
+    { header: 'Template ID', value: (template) => template.templateId },
     {
       header: 'Template Name',
-      value: (template) => listAliases(template.aliases),
+      value: (template) => listAliases(template.names),
     },
     { header: 'vCPUs', value: (template) => String(template.cpuCount) },
     {
@@ -91,12 +87,8 @@ export function renderTemplateTable(
     },
     { header: 'RAM MiB', value: (template) => String(template.memoryMB) },
     {
-      header: 'Created by',
-      value: (template) => template.createdBy?.email,
-    },
-    {
       header: 'Created at',
-      value: (template) => new Date(template.createdAt).toLocaleDateString(),
+      value: (template) => template.createdAt.toLocaleDateString(),
     },
     {
       header: 'Disk size MiB',
@@ -107,7 +99,7 @@ export function renderTemplateTable(
 }
 
 type ListSandboxTemplatesResult = {
-  templates: e2b.components['schemas']['Template'][]
+  templates: TemplateInfo[]
   hasMore: boolean
 }
 
@@ -123,36 +115,17 @@ async function listSandboxTemplates({
     pageLimit = PAGE_LIMIT
   }
 
-  // The project (an ID, slug or name, or the selected one) is resolved by
-  // ensureAuth: with an access token X-Team-ID selects it, with an API key
-  // the key does. The teamID query param accepts IDs only, so it's not sent.
-  const client = await apiClient(projectId)
-  const templates: e2b.components['schemas']['Template'][] = []
-  let nextToken: string | undefined
+  const auth = await ensureAuth(projectId)
+  const templates: TemplateInfo[] = []
+  const iterator = Template.list({ ...auth, limit: pageLimit })
 
-  do {
-    const res = await client.api.GET('/v2/templates', {
-      params: { query: { limit: pageLimit, nextToken } },
-    })
-
-    if (!res.response.ok || !res.data) {
-      handleE2BRequestError(
-        {
-          error: res.error ?? {
-            code: res.response.status,
-            message: res.response.statusText,
-          },
-        },
-        'Error getting templates'
-      )
-    }
-    templates.push(...res.data)
-    nextToken = res.response.headers.get('x-next-token') || undefined
-  } while (nextToken && (!limit || templates.length < limit))
+  while (iterator.hasNext && (!limit || templates.length < limit)) {
+    templates.push(...(await iterator.nextItems()))
+  }
 
   return {
     templates: limit ? templates.slice(0, limit) : templates,
     // We can't change the page size during iteration, so we may have to check if we have more templates than the limit
-    hasMore: !!nextToken || (limit ? templates.length > limit : false),
+    hasMore: iterator.hasNext || (limit ? templates.length > limit : false),
   }
 }

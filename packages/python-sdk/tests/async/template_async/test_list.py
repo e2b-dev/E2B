@@ -32,6 +32,7 @@ def _template(index: int) -> TemplateModel:
     }
     if index == 1:
         data["description"] = "Second template"
+        data["maxCpuCount"] = 4
     return TemplateModel.from_dict(data)
 
 
@@ -104,6 +105,7 @@ async def test_list_templates_maps_template_info():
         updated_at=datetime(2024, 1, 16, 12, 0, tzinfo=timezone.utc),
     )
     assert described.description == "Second template"
+    assert described.max_cpu_count == 4
     assert described.last_spawned_at == datetime(2024, 1, 17, 8, 0, tzinfo=timezone.utc)
 
 
