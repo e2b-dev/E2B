@@ -52,6 +52,10 @@ def _parse_response(
     if response.status_code == 404:
         response_404 = cast(Any, None)
         return response_404
+    if response.status_code == 413:
+        response_413 = Error.from_dict(response.json())
+
+        return response_413
     if response.status_code == 500:
         response_500 = Error.from_dict(response.json())
 

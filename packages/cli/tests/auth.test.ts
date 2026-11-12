@@ -73,8 +73,8 @@ function project(id: string, overrides: Record<string, unknown> = {}) {
 function mockWorkspaceApi(
   projects = [project('config-project'), project('other')]
 ) {
-  const fetchMock = vi.fn(async (url: string) => {
-    expect(url).toBe('https://workspace-api.e2b.dev/v1/me')
+  const fetchMock = vi.fn(async (req: Request) => {
+    expect(req.url).toBe('https://workspace-api.e2b.dev/v1/me')
     return Response.json({
       workspaces: [
         {

@@ -21,8 +21,10 @@ function project(id: string, overrides: Partial<Project> = {}): Project {
     id,
     public_id: `prj_${id}`,
     workspace_id: 'ws',
+    created_at: '2026-01-01T00:00:00Z',
     name: `Project ${id}`,
     slug: `slug-${id}`,
+    email: 'owner@example.com',
     region: 'us-west-1',
     control_plane_domain: 'e2b-foxtrot.dev',
     status: 'active',
@@ -34,18 +36,21 @@ function project(id: string, overrides: Partial<Project> = {}): Project {
 }
 
 function workspace(
-  kind: string,
+  id: string,
   projects: Project[],
   overrides: Partial<Workspace> = {}
 ): Workspace {
   return {
-    id: kind,
-    public_id: `wrk_${kind}`,
-    name: `${kind} workspace`,
-    kind,
+    id,
+    public_id: `wrk_${id}`,
+    created_at: '2026-01-01T00:00:00Z',
+    name: `${id} workspace`,
+    kind: id === 'personal' ? 'personal' : 'standard',
     blocked: false,
     block_reasons: [],
     capabilities: [],
+    has_sso: false,
+    has_scim: false,
     projects,
     ...overrides,
   }
@@ -317,15 +322,29 @@ describe('fetchMe', () => {
     expect(await fetchMe('token')).toBeUndefined()
   })
 
-  test('sends the access token and validates the response', async () => {
-    const fetchMock = vi.fn(async (_url: string, _init: RequestInit) =>
-      Response.json({ workspaces: [{ id: 'missing-fields' }] })
-    )
+  test('sends the access token and returns the response', async () => {
+    vi.stubEnv('E2B_WORKSPACE_API_URL', 'http://localhost:8080')
+    const me: Me = { workspaces: [workspace('personal', [project('a')])] }
+    const fetchMock = vi.fn(async (_req: Request) => Response.json(me))
     vi.stubGlobal('fetch', fetchMock)
 
-    await expect(fetchMe('token')).rejects.toThrow('Unexpected response')
-    const headers = fetchMock.mock.calls[0][1].headers as Record<string, string>
-    expect(headers.Authorization).toBe('Bearer token')
+    expect(await fetchMe('token')).toEqual(me)
+    const req = fetchMock.mock.calls[0][0]
+    expect(req.url).toBe('http://localhost:8080/v1/me')
+    expect(req.headers.get('Authorization')).toBe('Bearer token')
+  })
+
+  test('throws with the response body on other errors', async () => {
+    vi.stubEnv('E2B_WORKSPACE_API_URL', 'http://localhost:8080')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        Response.json({ code: 500, message: 'boom' }, { status: 500 })
+      )
+    )
+    await expect(fetchMe('token')).rejects.toThrow(
+      'Failed to list your workspaces (500 from http://localhost:8080): {"code":500,"message":"boom"}'
+    )
   })
 })
 

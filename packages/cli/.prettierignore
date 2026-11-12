@@ -1,2 +1,3 @@
 *.hbs
 tests/**/fixtures/**/*
+schema.gen.ts

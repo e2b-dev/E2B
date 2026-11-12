@@ -5,7 +5,7 @@
 # fall back to the tracked copy in spec/ with a warning.
 .PHONY: fetch-specs
 fetch-specs:
-	@for spec in api-spec envd-spec volume-api-spec; do \
+	@for spec in api-spec envd-spec volume-api-spec workspace-api-spec; do \
 		./scripts/fetch-spec.sh $$spec || \
 			echo "WARNING: could not fetch $$spec; using the tracked copy in spec/"; \
 	done
@@ -21,10 +21,13 @@ endif
 	@echo "Generating code"
 	docker run -v $$PWD:/workspace $(or $(CODEGEN_IMAGE),codegen-env) make generate
 
-generate: generate-js generate-python
+generate: generate-js generate-cli generate-python
 
 generate-js:
 	cd packages/js-sdk && pnpm generate
+
+generate-cli:
+	cd packages/cli && pnpm generate
 
 generate-python:
 	cd packages/python-sdk && make generate

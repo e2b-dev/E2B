@@ -8,12 +8,13 @@ source repository and re-sync:
 - `openapi.yml`, `envd/envd.yaml`, `envd/filesystem/`, `envd/process/` are
   owned by the [runtime repository](https://github.com/e2b-dev/runtime), pinned
   by `runtime-ref`.
-- `openapi-volumecontent.yml` is owned by the private belt repository,
-  pinned by `belt-ref`.
+- `openapi-volumecontent.yml` and `openapi-workspace.yml` (workspace-api,
+  used by the CLI) are owned by the private belt repository, pinned by
+  `belt-ref`.
 
 Fetches authenticate with a GitHub token when available (`GITHUB_TOKEN`, or
 being logged in with `gh auth login`); the public runtime specs also fetch
-anonymously, while the volume-content spec needs a token with read access
+anonymously, while the belt specs need a token with read access
 to belt. When a fetch fails, `make codegen` warns and falls back to the
 tracked copy.
 
@@ -27,6 +28,7 @@ upstream. To update the specs, point the pin at a newer commit and re-run
 pnpm fetch:api-spec     # openapi.yml
 pnpm fetch:envd-spec    # envd spec
 pnpm fetch:volume-spec  # openapi-volumecontent.yml
+pnpm fetch:workspace-spec  # openapi-workspace.yml
 E2B_RUNTIME_REF=main pnpm fetch:api-spec     # try the latest without moving the pin
 E2B_BELT_REF=main pnpm fetch:volume-spec
 ```
