@@ -247,7 +247,7 @@ function projectLabel({ project }: ProjectEntry, selectedId?: string): string {
   }`
 }
 
-/** `name (kind, N active projects)`, flagged when it holds the selected project. */
+/** `name (N active projects)`, flagged when it holds the selected project. */
 function workspaceLabel(
   workspace: Workspace,
   entries: ProjectEntry[],
@@ -256,7 +256,7 @@ function workspaceLabel(
   const own = entries.filter((entry) => entry.workspace.id === workspace.id)
   const count = `${own.length} active project${own.length === 1 ? '' : 's'}`
   const current = own.some(({ project }) => project.id === selectedId)
-  return `${asBold(workspace.name)} (${workspace.kind}, ${count})${
+  return `${asBold(workspace.name)} (${count})${
     current ? ` [${asPrimary('current')}]` : ''
   }`
 }

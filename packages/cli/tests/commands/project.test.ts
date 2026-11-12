@@ -122,6 +122,13 @@ describe('e2b workspace list', () => {
       expect.objectContaining({ public_id: 'wrk_team', project_count: 2 }),
     ])
   })
+
+  test('does not show the workspace kind in the table', async () => {
+    const { out } = await run(['workspace', 'list'])
+    expect(out).toContain('wrk_personal')
+    expect(out).not.toMatch(/kind/i)
+    expect(out).not.toContain('standard')
+  })
 })
 
 describe('e2b project list', () => {
