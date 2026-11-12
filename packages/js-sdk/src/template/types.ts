@@ -40,6 +40,11 @@ export type BasicBuildOptions = {
    */
   cpuCount?: number
   /**
+   * Maximum number of CPUs allocated to the sandbox.
+   * Setting it makes the template resizable. Must be at least `cpuCount`.
+   */
+  maxCpuCount?: number
+  /**
    * Amount of memory in MB allocated to the sandbox.
    */
   memoryMB?: number

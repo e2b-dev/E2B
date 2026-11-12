@@ -1077,6 +1077,7 @@ export class TemplateBase
         name,
         tags: options.tags,
         cpuCount: options.cpuCount,
+        maxCpuCount: options.maxCpuCount,
         memoryMB: options.memoryMB,
         minFreeDiskMb: options.minFreeDiskMb,
       },
