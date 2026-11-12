@@ -7,6 +7,7 @@ from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.template.consts import GZIP, RESOLVE_SYMLINKS
 from e2b.template.logger import LogEntry, LogEntryEnd, LogEntryStart
 from e2b.template.main import TemplateBase, TemplateClass
+from e2b.template_async.paginator import AsyncTemplatePaginator
 from e2b.template.types import BuildInfo, InstructionType, TemplateTag, TemplateTagInfo
 from e2b.template.utils import normalize_build_arguments, read_dockerignore
 
@@ -559,6 +560,34 @@ class AsyncTemplate(TemplateBase):
         )
 
         return await get_template_tags(api_client, template_id)
+
+    @classmethod
+    def list(
+        cls,
+        *,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ) -> AsyncTemplatePaginator:
+        """
+        List the project's templates.
+
+        :param limit: Maximum number of templates to return per page. Defaults to 100.
+        :param next_token: Token to the next page.
+
+        :return: Paginator over the project's templates. Drain it page by page:
+
+            ```python
+            paginator = AsyncTemplate.list(limit=50)
+            while paginator.has_next:
+                templates = await paginator.next_items()
+            ```
+        """
+        return AsyncTemplatePaginator(
+            limit=limit,
+            next_token=next_token,
+            **cls._resolve_api_params(**opts),
+        )
 
     @classmethod
     async def delete(

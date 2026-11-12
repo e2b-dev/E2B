@@ -8,6 +8,7 @@ import {
 import { BuildError, InvalidArgumentError } from '../errors'
 import { runtime, shellQuote } from '../utils'
 import { callableTemplate } from './callable'
+import { TemplatePaginator } from './paginator'
 import {
   assignTags,
   checkAliasExists,
@@ -40,6 +41,7 @@ import {
   TemplateClass,
   TemplateFinal,
   TemplateFromImage,
+  TemplateListOpts,
   TemplateOptions,
   TemplateTag,
   TemplateTagInfo,
@@ -429,6 +431,26 @@ export class TemplateBase
       { templateID: templateId },
       config.getSignal(undefined, options?.signal)
     )
+  }
+
+  /**
+   * List the project's templates.
+   *
+   * @param opts connection and pagination options.
+   *
+   * @returns a {@link TemplatePaginator} that yields pages of templates.
+   *
+   * @example
+   * ```ts
+   * const paginator = Template.list({ limit: 50 })
+   * while (paginator.hasNext) {
+   *   const templates = await paginator.nextItems()
+   *   console.log(templates)
+   * }
+   * ```
+   */
+  static list(opts?: TemplateListOpts): TemplatePaginator {
+    return new TemplatePaginator(this.resolveOpts(opts))
   }
 
   /**
@@ -1321,6 +1343,8 @@ export class TemplateBase
  */
 export const Template = callableTemplate(TemplateBase)
 
+export { TemplatePaginator } from './paginator'
+
 export type {
   BuildInfo,
   BuildOptions,
@@ -1332,6 +1356,8 @@ export type {
   TemplateBuildStatus,
   TemplateBuildStatusResponse,
   TemplateClass,
+  TemplateInfo,
+  TemplateListOpts,
   TemplateTag,
   TemplateTagInfo,
 } from './types'
