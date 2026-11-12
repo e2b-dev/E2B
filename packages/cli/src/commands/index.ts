@@ -4,6 +4,8 @@ import { asPrimary } from 'src/utils/format'
 import { templateCommand } from './template'
 import { sandboxCommand } from './sandbox'
 import { authCommand } from './auth'
+import { workspaceCommand } from './workspace'
+import { projectCommand } from './project'
 
 export const program = new commander.Command()
   // Fixed so help reads `e2b` however the entrypoint is invoked (npm bin
@@ -20,5 +22,7 @@ Visit ${asPrimary(
     )} to learn how to create sandbox templates and start sandboxes.`
   )
   .addCommand(authCommand)
+  .addCommand(workspaceCommand)
+  .addCommand(projectCommand)
   .addCommand(templateCommand)
   .addCommand(sandboxCommand)

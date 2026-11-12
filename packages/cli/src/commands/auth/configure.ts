@@ -7,7 +7,7 @@ import { blockedWarning, pickProject } from 'src/workspaces'
 import { asBold, asFormattedError } from '../../utils/format'
 
 export const configureCommand = new commander.Command('configure')
-  .description('configure user')
+  .description('choose the project commands run in, interactively')
   .action(async () => {
     console.log('Configuring user...\n')
 

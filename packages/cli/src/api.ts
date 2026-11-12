@@ -43,6 +43,14 @@ export type Auth =
 
 let me: Promise<Me> | undefined
 
+/**
+ * The project commands run in: `E2B_PROJECT_ID`, else the one selected with
+ * `e2b project use`; `undefined` when signed out without `E2B_PROJECT_ID`.
+ */
+export function currentProject(): string | undefined {
+  return projectId || getUserConfig()?.projectId
+}
+
 /** The logged-in user's workspaces and projects, fetched once per process. */
 export function getMe(): Promise<Me> {
   me ??= (async () => {
@@ -59,8 +67,25 @@ export function getMe(): Promise<Me> {
 }
 
 /**
+ * {@link getMe} for commands about workspaces and projects. workspace-api
+ * only accepts the login's access token, so these need a login even when
+ * `E2B_API_KEY` is set.
+ */
+export async function requireMe(): Promise<Me> {
+  if (!getUserConfig()) {
+    console.error(
+      `You must be logged in to see your workspaces and projects. Run ${asBold(
+        'e2b auth login'
+      )}.`
+    )
+    process.exit(1)
+  }
+  return getMe()
+}
+
+/**
  * The project requests go to, and its control plane: `cliProjectId`, then
- * `E2B_PROJECT_ID`, then the project selected with `e2b auth configure`.
+ * `E2B_PROJECT_ID`, then the project selected with `e2b project use`.
  */
 async function resolveProject(
   config: UserConfig,
@@ -129,15 +154,6 @@ export async function apiClient(cliProjectId?: string) {
   return new e2b.ApiClient(
     new e2b.ConnectionConfig(await ensureAuth(cliProjectId))
   )
-}
-
-export function ensureUserConfig(): UserConfig {
-  const userConfig = getUserConfig()
-  if (!userConfig) {
-    console.error('No user config found, run `e2b auth login` to log in first.')
-    process.exit(1)
-  }
-  return userConfig
 }
 
 // Carries no credentials: used for the API domain and request signals only.
