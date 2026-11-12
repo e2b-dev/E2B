@@ -151,6 +151,28 @@ export function personalProject(me: Me): ProjectEntry | undefined {
   )
 }
 
+/** Find a workspace by ID (UUID or `wrk_` public ID) or unambiguous name. */
+export function findWorkspace(me: Me, ref: string): Workspace {
+  const exact = me.workspaces.find((w) => w.id === ref || w.public_id === ref)
+  if (exact) return exact
+  const byName = me.workspaces.filter(
+    (w) => w.name.toLowerCase() === ref.toLowerCase()
+  )
+  if (byName.length === 1) return byName[0]
+  if (byName.length > 1) {
+    throw new Error(
+      `More than one workspace is named "${ref}": ${byName
+        .map((w) => w.public_id)
+        .join(', ')}. Pass the workspace ID instead.`
+    )
+  }
+  throw new Error(
+    `Workspace "${ref}" not found. Run ${asBold(
+      'e2b workspace list'
+    )} to see your workspaces.`
+  )
+}
+
 /**
  * Find a project by ID (UUID or `prj_` public ID), slug or name, among the
  * projects of `workspace` when given. Names are matched case-insensitively
