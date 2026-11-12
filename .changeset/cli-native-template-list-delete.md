@@ -1,7 +1,7 @@
 ---
-'@e2b/cli': patch
-'e2b': patch
-'@e2b/python-sdk': patch
+'@e2b/cli': minor
+'e2b': minor
+'@e2b/python-sdk': minor
 ---
 
 `e2b template list` and `e2b template delete` now use the SDK's `Template.list()` and `Template.delete()`. `TemplateInfo` gains `maxCpuCount` (`max_cpu_count` in Python) for resizable templates.
