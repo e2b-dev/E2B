@@ -14,6 +14,7 @@ import {
   pickProject,
   Project,
   ProjectEntry,
+  ProjectStatus,
 } from 'src/workspaces'
 
 const workspaceOption = (purpose: string) =>
@@ -134,7 +135,7 @@ const useCommand = new commander.Command('use')
         })
       }
       const { project, workspace: owner } = entry
-      if (project.status !== 'active') {
+      if (project.status !== ProjectStatus.Active) {
         fail(
           `Project ${project.name} is ${project.status} and can't be used. Pick an active project from ${asBold(
             'e2b project list'

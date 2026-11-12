@@ -8,9 +8,46 @@ import type { components, paths } from './workspace-api/schema.gen'
 
 const WORKSPACE_API_REQUEST_TIMEOUT_MS = 30_000
 
-export type Project = components['schemas']['Project']
-export type Workspace = components['schemas']['Workspace']
-export type Me = components['schemas']['Me']
+type ApiProject = components['schemas']['Project']
+type ApiWorkspace = components['schemas']['Workspace']
+
+// Only the fields the CLI uses, so `--format json` output doesn't grow with
+// every field workspace-api adds.
+export type Project = Pick<
+  ApiProject,
+  | 'id'
+  | 'public_id'
+  | 'workspace_id'
+  | 'name'
+  | 'slug'
+  | 'region'
+  | 'control_plane_domain'
+  | 'status'
+  | 'blocked'
+  | 'block_reasons'
+  | 'capabilities'
+>
+export type Workspace = Pick<
+  ApiWorkspace,
+  | 'id'
+  | 'public_id'
+  | 'name'
+  | 'kind'
+  | 'blocked'
+  | 'block_reasons'
+  | 'capabilities'
+> & { projects: Project[] }
+export type Me = { workspaces: Workspace[] }
+
+/** The `status` values the CLI acts on. */
+export enum ProjectStatus {
+  Active = 'active',
+}
+
+/** The workspace `kind` values the CLI acts on. */
+export enum WorkspaceKind {
+  Personal = 'personal',
+}
 
 /** A project together with the workspace it is listed under. */
 export type ProjectEntry = { project: Project; workspace: Workspace }
@@ -44,7 +81,8 @@ function workspaceApi(accessToken: string) {
 }
 
 function requestError(res: Response, body: unknown, action: string) {
-  const detail = typeof body === 'string' ? body : JSON.stringify(body)
+  const detail =
+    (typeof body === 'string' ? body : JSON.stringify(body)) || res.statusText
   return new Error(
     `Failed to ${action} (${res.status} from ${workspaceApiUrl()})${
       detail ? `: ${detail}` : ''
@@ -64,10 +102,39 @@ export async function fetchMe(accessToken: string): Promise<Me | undefined> {
     { signal: AbortSignal.timeout(WORKSPACE_API_REQUEST_TIMEOUT_MS) }
   )
   if (response.status === 401) return undefined
-  if (error !== undefined || !data) {
+  if (!response.ok || data === undefined) {
     throw requestError(response, error, 'list your workspaces')
   }
-  return data
+  return { workspaces: data.workspaces.map(toWorkspace) }
+}
+
+function toProject(p: ApiProject): Project {
+  return {
+    id: p.id,
+    public_id: p.public_id,
+    workspace_id: p.workspace_id,
+    name: p.name,
+    slug: p.slug,
+    region: p.region,
+    control_plane_domain: p.control_plane_domain,
+    status: p.status,
+    blocked: p.blocked,
+    block_reasons: p.block_reasons,
+    capabilities: p.capabilities,
+  }
+}
+
+function toWorkspace(w: ApiWorkspace): Workspace {
+  return {
+    id: w.id,
+    public_id: w.public_id,
+    name: w.name,
+    kind: w.kind,
+    blocked: w.blocked,
+    block_reasons: w.block_reasons,
+    capabilities: w.capabilities,
+    projects: w.projects.map(toProject),
+  }
 }
 
 /** Every project in `me`, with its workspace. */
@@ -79,7 +146,9 @@ export function allProjects(me: Me): ProjectEntry[] {
 
 /** Projects that can be used: provisioned and not being deleted. */
 export function activeProjects(me: Me): ProjectEntry[] {
-  return allProjects(me).filter(({ project }) => project.status === 'active')
+  return allProjects(me).filter(
+    ({ project }) => project.status === ProjectStatus.Active
+  )
 }
 
 /**
@@ -89,7 +158,7 @@ export function activeProjects(me: Me): ProjectEntry[] {
  */
 export function personalProject(me: Me): ProjectEntry | undefined {
   return activeProjects(me).find(
-    ({ workspace }) => workspace.kind === 'personal'
+    ({ workspace }) => workspace.kind === WorkspaceKind.Personal
   )
 }
 
