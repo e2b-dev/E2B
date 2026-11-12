@@ -1,4 +1,4 @@
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
 import * as e2b from 'e2b'
 
 import { listAliases } from '../../utils/format'
@@ -7,21 +7,16 @@ import { sortTemplatesAliases } from 'src/utils/templateSort'
 import { client, ensureAPIKey, resolveProjectId } from 'src/api'
 import {
   deprecatedTeamOption,
-  parseNonNegativeInt,
+  Format,
+  parseFormat,
   projectIdFromOptions,
   projectOption,
 } from '../../options'
 import { handleE2BRequestError } from '../../utils/errors'
+import { integer, zodParser } from '../../validation'
 
 const DEFAULT_LIMIT = 1000
 const PAGE_LIMIT = 100
-
-type ListOptions = {
-  project?: string
-  team?: string
-  limit?: number
-  format: string
-}
 
 export const listCommand = new commander.Command('list')
   .description('list sandbox templates')
@@ -31,13 +26,18 @@ export const listCommand = new commander.Command('list')
   .option(
     '-l, --limit <limit>',
     `limit the number of templates returned (default: ${DEFAULT_LIMIT} for pretty output, no limit for json; 0 for no limit)`,
-    parseNonNegativeInt('Template limit')
+    zodParser(integer('Template limit', { min: 0 }))
   )
-  .option('-f, --format <format>', 'output format, eg. json, pretty')
-  .action(async (opts: ListOptions) => {
+  .option(
+    '-f, --format <format>',
+    'output format, eg. json, pretty',
+    parseFormat,
+    Format.PRETTY
+  )
+  .action(async (opts) => {
     try {
-      const format = opts.format || 'pretty'
-      const defaultLimit = format === 'json' ? undefined : DEFAULT_LIMIT
+      const defaultLimit =
+        opts.format === Format.JSON ? undefined : DEFAULT_LIMIT
       const limit = opts.limit === 0 ? undefined : (opts.limit ?? defaultLimit)
       ensureAPIKey()
       process.stdout.write('\n')
@@ -51,18 +51,15 @@ export const listCommand = new commander.Command('list')
         sortTemplatesAliases(template.aliases)
       }
 
-      if (format === 'pretty') {
+      if (opts.format === Format.PRETTY) {
         renderTemplateTable(templates)
         if (hasMore) {
           console.log(
             `Showing first ${limit} templates. Use --limit to change.`
           )
         }
-      } else if (format === 'json') {
-        console.log(JSON.stringify(templates, null, 2))
       } else {
-        console.error(`Unsupported output format: ${format}`)
-        process.exit(1)
+        console.log(JSON.stringify(templates, null, 2))
       }
     } catch (err: any) {
       console.error(err)
@@ -70,7 +67,7 @@ export const listCommand = new commander.Command('list')
     }
   })
 
-function renderTemplateTable(
+export function renderTemplateTable(
   templates: e2b.components['schemas']['Template'][]
 ) {
   if (!templates?.length) {
@@ -89,6 +86,10 @@ function renderTemplateTable(
       value: (template) => listAliases(template.aliases),
     },
     { header: 'vCPUs', value: (template) => String(template.cpuCount) },
+    {
+      header: 'Max vCPUs',
+      value: (template) => template.maxCpuCount?.toString(),
+    },
     { header: 'RAM MiB', value: (template) => String(template.memoryMB) },
     {
       header: 'Created by',

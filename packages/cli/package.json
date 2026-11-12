@@ -39,8 +39,9 @@
     "build": "tsc --noEmit --skipLibCheck && tsdown --minify",
     "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit --skipLibCheck",
-    "lint": "oxlint --config ../../.oxlintrc.json src",
-    "format": "prettier --write src",
+    "lint": "oxlint --config ../../.oxlintrc.json src scripts",
+    "format": "prettier --write src scripts",
+    "generate:reference": "tsx scripts/generate-reference.ts",
     "test:interactive": "pnpm build && ./dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest watch",
@@ -48,15 +49,14 @@
     "check-deps": "knip"
   },
   "devDependencies": {
-    "@types/json2md": "^1.5.4",
     "@types/node": "catalog:",
     "@types/npmcli__package-json": "^4.0.4",
     "@types/statuses": "^2.0.6",
     "@typescript/native": "catalog:",
     "@vitest/coverage-v8": "catalog:",
-    "json2md": "^2.0.3",
     "knip": "^5.88.1",
     "tsdown": "catalog:",
+    "tsx": "^4.23.15",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
@@ -70,6 +70,7 @@
     "e2b": "dist/index.js"
   },
   "dependencies": {
+    "@commander-js/extra-typings": "~15.0.0",
     "@iarna/toml": "^2.2.5",
     "@inquirer/prompts": "^7.10.1",
     "@npmcli/package-json": "^7.0.5",
@@ -77,14 +78,14 @@
     "boxen": "^7.1.1",
     "chalk": "^5.6.2",
     "cli-highlight": "^2.1.11",
-    "commander": "^11.1.0",
+    "commander": "~15.0.0",
     "e2b": "workspace:^",
     "handlebars": "^4.7.10",
     "inquirer": "^12.11.1",
     "simple-update-notifier": "^2.0.0",
     "simple-wcswidth": "^1.1.2",
     "statuses": "^2.0.2",
-    "yup": "^1.7.1"
+    "zod": "^4.6.7"
   },
   "engines": {
     "node": ">=22.19.0"

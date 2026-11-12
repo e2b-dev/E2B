@@ -1,5 +1,5 @@
 import * as fs from 'fs'
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
 
 const SHELL_SAFE_RE = /^[A-Za-z0-9_@%+=:,./-]+$/
 

@@ -20,6 +20,7 @@ type RequestBuildInput = {
   name: string
   tags?: string[]
   cpuCount?: number
+  maxCpuCount?: number
   memoryMB?: number
   minFreeDiskMb?: number
 }
@@ -51,7 +52,14 @@ export type TriggerBuildTemplate = components['schemas']['TemplateBuildStartV2']
 
 export async function requestBuild(
   client: ApiClient,
-  { name, tags, cpuCount, memoryMB, minFreeDiskMb }: RequestBuildInput,
+  {
+    name,
+    tags,
+    cpuCount,
+    maxCpuCount,
+    memoryMB,
+    minFreeDiskMb,
+  }: RequestBuildInput,
   signal?: AbortSignal
 ) {
   const requestBuildRes = await client.api.POST('/v3/templates', {
@@ -59,6 +67,7 @@ export async function requestBuild(
       name,
       tags,
       cpuCount,
+      maxCpuCount,
       memoryMB,
       minFreeDiskMb,
     },

@@ -1,4 +1,4 @@
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
 import * as fs from 'fs'
 
 import { getUserConfig, USER_CONFIG_PATH } from 'src/user'

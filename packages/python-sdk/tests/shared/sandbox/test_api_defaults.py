@@ -58,6 +58,7 @@ def test_create_omits_api_owned_fields_when_unset(monkeypatch, test_api_key):
     assert "timeout" not in body
     assert "secure" not in body
     assert "allow_internet_access" not in body
+    assert "cpuCount" not in body
 
 
 def test_create_sends_explicit_values(monkeypatch, test_api_key):
@@ -70,6 +71,18 @@ def test_create_sends_explicit_values(monkeypatch, test_api_key):
 
     assert body["timeout"] == 60
     assert body["allow_internet_access"] is False
+
+
+def test_create_sends_explicit_cpu_count(monkeypatch, test_api_key):
+    body = _sync_create_body(monkeypatch, test_api_key, cpu_count=4)
+
+    assert body["cpuCount"] == 4
+
+
+async def test_async_create_sends_explicit_cpu_count(monkeypatch, test_api_key):
+    body = await _async_create_body(monkeypatch, test_api_key, cpu_count=4)
+
+    assert body["cpuCount"] == 4
 
 
 def test_create_ignores_deprecated_secure(monkeypatch, test_api_key):
