@@ -53,6 +53,7 @@ async def request_build(
     cpu_count: Optional[int],
     memory_mb: Optional[int],
     min_free_disk_mb: Optional[int],
+    max_cpu_count: Optional[int] = None,
 ):
     res = await post_v3_templates.asyncio_detailed(
         client=client,
@@ -60,6 +61,7 @@ async def request_build(
             name=name,
             tags=tags if tags else UNSET,
             cpu_count=cpu_count if cpu_count is not None else UNSET,
+            max_cpu_count=max_cpu_count if max_cpu_count is not None else UNSET,
             memory_mb=memory_mb if memory_mb is not None else UNSET,
             min_free_disk_mb=(
                 min_free_disk_mb if min_free_disk_mb is not None else UNSET

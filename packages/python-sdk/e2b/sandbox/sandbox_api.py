@@ -1246,7 +1246,7 @@ class SandboxInfo:
     state: SandboxState
     """Sandbox state."""
     cpu_count: int
-    """Sandbox CPU count."""
+    """Number of CPUs online in the sandbox."""
     memory_mb: int
     """Sandbox Memory size in MiB."""
     envd_version: str
@@ -1348,7 +1348,7 @@ class SandboxMetrics:
     """Sandbox metrics."""
 
     cpu_count: int
-    """Number of CPUs."""
+    """Number of CPUs online in the sandbox."""
     cpu_used_pct: float
     """CPU usage percentage."""
     disk_total: int

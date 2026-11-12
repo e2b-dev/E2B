@@ -1,30 +1,26 @@
-/**
- * Allowed template name (alias) format, matching the server-side validation in
- * e2b-dev/runtime (`id.identifierRegex`): the name is trimmed and lowercased,
- * then must contain only lowercase letters, numbers, dashes and underscores.
- */
-const templateNameRegex = /^[a-z0-9-_]+$/
+import { z } from 'zod'
+
+import { zodParser } from '../validation'
 
 const MAX_TEMPLATE_NAME_LENGTH = 128
 
 /**
- * Validates a template name and returns its normalized form (trimmed and
- * lowercased), matching how the server normalizes it.
+ * Template name (alias), normalized like the server-side validation in
+ * e2b-dev/runtime (`id.identifierRegex`): trimmed and lowercased, then only
+ * lowercase letters, numbers, dashes and underscores.
  */
-export function validateTemplateName(name: string): string {
-  const cleaned = name?.trim().toLowerCase()
-  if (!cleaned) {
-    throw new Error('Template name cannot be empty')
-  }
-  if (!templateNameRegex.test(cleaned)) {
-    throw new Error(
-      'Template name must contain only letters, numbers, dashes and underscores'
-    )
-  }
-  if (cleaned.length > MAX_TEMPLATE_NAME_LENGTH) {
-    throw new Error(
-      `Template name must be at most ${MAX_TEMPLATE_NAME_LENGTH} characters long`
-    )
-  }
-  return cleaned
-}
+export const templateNameSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(1, 'Template name cannot be empty.')
+  .regex(
+    /^[a-z0-9-_]+$/,
+    'Template name must contain only letters, numbers, dashes and underscores.'
+  )
+  .max(
+    MAX_TEMPLATE_NAME_LENGTH,
+    `Template name must be at most ${MAX_TEMPLATE_NAME_LENGTH} characters long.`
+  )
+
+export const parseTemplateName = zodParser(templateNameSchema)

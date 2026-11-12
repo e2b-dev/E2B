@@ -1,4 +1,4 @@
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
 import * as e2b from 'e2b'
 import * as util from 'util'
 import * as chalk from 'chalk'
@@ -7,7 +7,10 @@ import { client, connectionConfig } from 'src/api'
 import { asBold, asTimestamp, withUnderline } from 'src/utils/format'
 import { wait } from 'src/utils/wait'
 import { handleE2BRequestError } from '../../utils/errors'
-import { waitForSandboxEnd, formatEnum, Format, isRunning } from './utils'
+import { Format, parseFormat } from 'src/options'
+import { zodParser } from 'src/validation'
+import { z } from 'zod'
+import { waitForSandboxEnd, formatEnum, isRunning } from './utils'
 
 enum LogLevel {
   DEBUG = 'DEBUG',
@@ -57,108 +60,97 @@ export const logsCommand = new commander.Command('logs')
     `filter logs by level (${formatEnum(
       LogLevel
     )}). The logs with the higher levels will be also shown.`,
+    zodParser(
+      z
+        .string()
+        .toUpperCase()
+        .pipe(
+          z.enum(LogLevel, {
+            error: `Level must be one of: ${Object.values(LogLevel).join(', ')}.`,
+          })
+        )
+    ),
     LogLevel.INFO
   )
   .option('-f, --follow', 'keep streaming logs until the sandbox is closed')
   .option(
     '--format <format>',
     `specify format for printing logs (${formatEnum(Format)})`,
+    parseFormat,
     Format.PRETTY
   )
   .option(
     '--loggers [loggers]',
     'filter logs by loggers. Specify multiple loggers by separating them with a comma.',
-    (val: string) => val.split(',')
+    (val) => val.split(',')
   )
-  .action(
-    async (
-      sandboxID: string,
-      opts: {
-        level: string
-        follow?: boolean
-        format: Format
-        loggers?: string[] | true
+  .action(async (sandboxID, opts) => {
+    try {
+      const { level, format } = opts
+
+      // A bare `--loggers` (no value) yields `true`: don't filter by logger.
+      const loggers = Array.isArray(opts.loggers) ? opts.loggers : undefined
+
+      const getIsRunning = opts.follow
+        ? waitForSandboxEnd(sandboxID)
+        : () => false
+
+      let start: number | undefined
+      let isFirstRun = true
+      let firstLogsPrinted = false
+
+      if (format === Format.PRETTY) {
+        console.log(`\nLogs for sandbox ${asBold(sandboxID)}:`)
       }
-    ) => {
-      try {
-        const level = opts.level.toUpperCase() as LogLevel
-        if (!Object.values(LogLevel).includes(level)) {
-          throw new Error(`Invalid log level: ${level}`)
+
+      do {
+        const logs = await listSandboxLogs({ sandboxID, start })
+
+        if (logs.length !== 0 && firstLogsPrinted === false) {
+          firstLogsPrinted = true
+          process.stdout.write('\n')
         }
 
-        const format = opts.format.toLowerCase() as Format
-        if (!Object.values(Format).includes(format)) {
-          throw new Error(`Invalid log format: ${format}`)
+        for (const log of logs) {
+          printLog(log.timestamp, log.line, level, format, loggers)
         }
 
-        // A bare `--loggers` (no value) yields `true`: don't filter by logger.
-        const loggers = Array.isArray(opts.loggers) ? opts.loggers : undefined
+        if (!opts.follow) break
 
-        const getIsRunning = opts.follow
-          ? waitForSandboxEnd(sandboxID)
-          : () => false
+        const isSandboxRunning = await isRunning(sandboxID)
 
-        let start: number | undefined
-        let isFirstRun = true
-        let firstLogsPrinted = false
-
-        if (format === Format.PRETTY) {
-          console.log(`\nLogs for sandbox ${asBold(sandboxID)}:`)
+        if (!isSandboxRunning && logs.length === 0 && isFirstRun) {
+          if (format === Format.PRETTY) {
+            console.log(
+              `\nStopped printing logs — sandbox ${withUnderline('not found')}`
+            )
+          }
+          break
         }
 
-        do {
-          const logs = await listSandboxLogs({ sandboxID, start })
-
-          if (logs.length !== 0 && firstLogsPrinted === false) {
-            firstLogsPrinted = true
-            process.stdout.write('\n')
+        if (!isSandboxRunning) {
+          if (format === Format.PRETTY) {
+            console.log(
+              `\nStopped printing logs — sandbox is ${withUnderline('closed')}`
+            )
           }
+          break
+        }
 
-          for (const log of logs) {
-            printLog(log.timestamp, log.line, level, format, loggers)
-          }
+        const lastLog = logs.length > 0 ? logs[logs.length - 1] : undefined
+        if (lastLog) {
+          // TODO: Use the timestamp from the last log instead of the current time?
+          start = new Date(lastLog.timestamp).getTime() + 1
+        }
 
-          if (!opts.follow) break
-
-          const isSandboxRunning = await isRunning(sandboxID)
-
-          if (!isSandboxRunning && logs.length === 0 && isFirstRun) {
-            if (format === Format.PRETTY) {
-              console.log(
-                `\nStopped printing logs — sandbox ${withUnderline(
-                  'not found'
-                )}`
-              )
-            }
-            break
-          }
-
-          if (!isSandboxRunning) {
-            if (format === Format.PRETTY) {
-              console.log(
-                `\nStopped printing logs — sandbox is ${withUnderline(
-                  'closed'
-                )}`
-              )
-            }
-            break
-          }
-
-          const lastLog = logs.length > 0 ? logs[logs.length - 1] : undefined
-          if (lastLog) {
-            // TODO: Use the timestamp from the last log instead of the current time?
-            start = new Date(lastLog.timestamp).getTime() + 1
-          }
-
-          await wait(400)
-          isFirstRun = false
-        } while (getIsRunning() && opts.follow)
-      } catch (err: any) {
-        console.error(err)
-        process.exit(1)
-      }
+        await wait(400)
+        isFirstRun = false
+      } while (getIsRunning() && opts.follow)
+    } catch (err: any) {
+      console.error(err)
+      process.exit(1)
     }
-  )
+  })
 
 function printLog(
   timestamp: string,
