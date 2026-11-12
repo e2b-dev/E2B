@@ -24,6 +24,7 @@ from e2b.sandbox.sandbox_api import (
     McpServer,
     SandboxIamOpts,
     SandboxLifecycle,
+    SandboxLogsDirection,
     SandboxMetrics,
     SandboxNetworkOpts,
     SandboxNetworkUpdate,
@@ -32,12 +33,16 @@ from e2b.sandbox.sandbox_api import (
     SnapshotMode,
 )
 from e2b.sandbox.utils import class_method_variant
+from e2b.template.logger import LogEntryLevel
 from e2b.sandbox_async.commands.command import Commands
 from e2b.sandbox_async.commands.pty import Pty
 from e2b.sandbox_async.filesystem.filesystem import Filesystem
 from e2b.sandbox_async.git import Git
 from e2b.sandbox_async.sandbox_api import SandboxApi, SandboxInfo
-from e2b.sandbox_async.paginator import AsyncSnapshotPaginator
+from e2b.sandbox_async.paginator import (
+    AsyncSandboxLogsPaginator,
+    AsyncSnapshotPaginator,
+)
 from e2b.volume.volume_async import AsyncVolume
 from e2b.api.client.models import SandboxVolumeMount as SandboxVolumeMountAPI
 
@@ -792,6 +797,117 @@ class AsyncSandbox(SandboxApi):
             start=start,
             end=end,
             **self.connection_config.get_api_params(**opts),
+        )
+
+    @overload
+    def get_logs(
+        self,
+        *,
+        cursor: Optional[datetime.datetime] = None,
+        direction: Optional[SandboxLogsDirection] = None,
+        limit: Optional[int] = None,
+        level: Optional[LogEntryLevel] = None,
+        search: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ) -> AsyncSandboxLogsPaginator:
+        """
+        Get the logs of the current sandbox, newest first by default. Logs are retained for 7 days.
+
+        :param cursor: Timestamp to start reading logs from. With `direction="backward"` older logs are returned, with `"forward"` newer ones. Defaults to the current time for `"backward"` and the oldest retained log for `"forward"`.
+        :param direction: Order in which the logs are returned, defaults to `"backward"` (newest first)
+        :param limit: Maximum number of logs to return per page, defaults to 1000
+        :param level: Minimum log level to return
+        :param search: Case-sensitive substring the log message must contain
+
+        :return: Paginator for reading the sandbox logs
+        """
+        ...
+
+    @overload
+    @staticmethod
+    def get_logs(
+        sandbox_id: str,
+        *,
+        cursor: Optional[datetime.datetime] = None,
+        direction: Optional[SandboxLogsDirection] = None,
+        limit: Optional[int] = None,
+        level: Optional[LogEntryLevel] = None,
+        search: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ) -> AsyncSandboxLogsPaginator:
+        """
+        Get the logs of the sandbox specified by sandbox ID, newest first by default. Logs are retained for 7 days.
+
+        :param sandbox_id: Sandbox ID
+        :param cursor: Timestamp to start reading logs from. With `direction="backward"` older logs are returned, with `"forward"` newer ones. Defaults to the current time for `"backward"` and the oldest retained log for `"forward"`.
+        :param direction: Order in which the logs are returned, defaults to `"backward"` (newest first)
+        :param limit: Maximum number of logs to return per page, defaults to 1000
+        :param level: Minimum log level to return
+        :param search: Case-sensitive substring the log message must contain
+        :param api_key: E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable
+        :param domain: Domain to use for the request, defaults to `E2B_DOMAIN` environment variable
+        :param api_url: URL of the E2B API, defaults to `https://api.<domain>`
+        :param headers: Additional headers to send with the request
+        :param proxy: Proxy to use for the request
+        :param request_timeout: Timeout for the request in seconds
+        :param debug: Whether to use debug mode, defaults to `E2B_DEBUG` environment variable
+
+        :return: Paginator for reading the sandbox logs
+        """
+        ...
+
+    @class_method_variant("_cls_get_logs")
+    def get_logs(
+        self,
+        *,
+        cursor: Optional[datetime.datetime] = None,
+        direction: Optional[SandboxLogsDirection] = None,
+        limit: Optional[int] = None,
+        level: Optional[LogEntryLevel] = None,
+        search: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ) -> AsyncSandboxLogsPaginator:
+        """
+        Get the logs of the current sandbox, newest first by default. Logs are retained for 7 days.
+
+        :param cursor: Timestamp to start reading logs from. With `direction="backward"` older logs are returned, with `"forward"` newer ones. Defaults to the current time for `"backward"` and the oldest retained log for `"forward"`.
+        :param direction: Order in which the logs are returned, defaults to `"backward"` (newest first)
+        :param limit: Maximum number of logs to return per page, defaults to 1000
+        :param level: Minimum log level to return
+        :param search: Case-sensitive substring the log message must contain
+
+        :return: Paginator for reading the sandbox logs
+        """
+        return AsyncSandboxLogsPaginator(
+            sandbox_id=self.sandbox_id,
+            cursor=cursor,
+            direction=direction,
+            limit=limit,
+            level=level,
+            search=search,
+            **self.connection_config.get_api_params(**opts),
+        )
+
+    @classmethod
+    def _cls_get_logs(
+        cls,
+        sandbox_id: str,
+        *,
+        cursor: Optional[datetime.datetime] = None,
+        direction: Optional[SandboxLogsDirection] = None,
+        limit: Optional[int] = None,
+        level: Optional[LogEntryLevel] = None,
+        search: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ) -> AsyncSandboxLogsPaginator:
+        return AsyncSandboxLogsPaginator(
+            sandbox_id=sandbox_id,
+            cursor=cursor,
+            direction=direction,
+            limit=limit,
+            level=level,
+            search=search,
+            **cls._resolve_api_params(**opts),
         )
 
     @overload
