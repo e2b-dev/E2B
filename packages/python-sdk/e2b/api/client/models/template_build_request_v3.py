@@ -19,6 +19,7 @@ class TemplateBuildRequestV3:
         alias (Union[Unset, str]): Alias of the template. Deprecated, use name instead.
         team_id (Union[Unset, str]): Identifier of the team, as its UUID or its public project ID (prj_)
         cpu_count (Union[Unset, int]): CPU cores for the sandbox
+        max_cpu_count (Union[Unset, int]): CPU cores for the sandbox
         memory_mb (Union[Unset, int]): Memory for the sandbox in MiB
         min_free_disk_mb (Union[Unset, int]): Requested minimum free space after the template's build steps, in MiB.
             Omit to use the team's default. Set to 0 to request no minimum free-disk growth. The filesystem is never shrunk,
@@ -31,6 +32,7 @@ class TemplateBuildRequestV3:
     alias: Union[Unset, str] = UNSET
     team_id: Union[Unset, str] = UNSET
     cpu_count: Union[Unset, int] = UNSET
+    max_cpu_count: Union[Unset, int] = UNSET
     memory_mb: Union[Unset, int] = UNSET
     min_free_disk_mb: Union[Unset, int] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -47,6 +49,8 @@ class TemplateBuildRequestV3:
         team_id = self.team_id
 
         cpu_count = self.cpu_count
+
+        max_cpu_count = self.max_cpu_count
 
         memory_mb = self.memory_mb
 
@@ -65,6 +69,8 @@ class TemplateBuildRequestV3:
             field_dict["teamID"] = team_id
         if cpu_count is not UNSET:
             field_dict["cpuCount"] = cpu_count
+        if max_cpu_count is not UNSET:
+            field_dict["maxCpuCount"] = max_cpu_count
         if memory_mb is not UNSET:
             field_dict["memoryMB"] = memory_mb
         if min_free_disk_mb is not UNSET:
@@ -85,6 +91,8 @@ class TemplateBuildRequestV3:
 
         cpu_count = d.pop("cpuCount", UNSET)
 
+        max_cpu_count = d.pop("maxCpuCount", UNSET)
+
         memory_mb = d.pop("memoryMB", UNSET)
 
         min_free_disk_mb = d.pop("minFreeDiskMb", UNSET)
@@ -95,6 +103,7 @@ class TemplateBuildRequestV3:
             alias=alias,
             team_id=team_id,
             cpu_count=cpu_count,
+            max_cpu_count=max_cpu_count,
             memory_mb=memory_mb,
             min_free_disk_mb=min_free_disk_mb,
         )

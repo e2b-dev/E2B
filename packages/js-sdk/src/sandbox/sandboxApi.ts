@@ -17,6 +17,7 @@ import {
 import { Paginator } from '../paginator'
 import { resolveIdempotencyKey } from '../retry'
 import { timeoutToSeconds } from '../utils'
+import { deleteTemplate } from '../template/buildApi'
 import type { Volume } from '../volume'
 import type { McpServer as BaseMcpServer } from './mcp'
 
@@ -793,6 +794,14 @@ export interface SandboxOpts extends ConnectionOpts {
   timeoutMs?: number
 
   /**
+   * CPUs to start with, from 1 to the template's `maxCpuCount`.
+   * Fixed-size templates accept only their own `cpuCount`.
+   *
+   * @default the template's `cpuCount`
+   */
+  cpuCount?: number
+
+  /**
    * @deprecated Every sandbox secures envd access; this option is accepted for backward compatibility and ignored.
    */
   secure?: boolean
@@ -1073,7 +1082,7 @@ export interface SandboxInfo {
   state: SandboxState
 
   /**
-   * Sandbox CPU count.
+   * Number of CPUs online in the sandbox.
    */
   cpuCount: number
 
@@ -1136,7 +1145,7 @@ export interface SandboxMetrics {
   cpuUsedPct: number
 
   /**
-   * Number of CPU cores.
+   * Number of CPUs online in the sandbox.
    */
   cpuCount: number
 
@@ -1378,11 +1387,10 @@ function fromApiEgressProxy(
       : {}),
     ...(egressProxy.tls?.enabled === true
       ? {
-          tls: {
-            ...(egressProxy.tls.serverName !== undefined
+          tls:
+            egressProxy.tls.serverName !== undefined
               ? { serverName: egressProxy.tls.serverName }
-              : {}),
-          },
+              : {},
         }
       : {}),
   }
@@ -1894,25 +1902,11 @@ export class SandboxApi extends ClientFactory {
     const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
-    const res = await client.api.DELETE('/templates/{templateID}', {
-      params: {
-        path: {
-          templateID: snapshotId,
-        },
-      },
-      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
-    })
-
-    if (res.error?.code === 404) {
-      return false
-    }
-
-    const err = handleApiError(res)
-    if (err) {
-      throw err
-    }
-
-    return true
+    return deleteTemplate(
+      client,
+      { templateID: snapshotId },
+      config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal)
+    )
   }
 
   protected static async createSandbox(
@@ -1990,6 +1984,7 @@ export class SandboxApi extends ClientFactory {
       envVars: opts?.envs,
       timeout:
         timeoutMs === undefined ? undefined : timeoutToSeconds(timeoutMs),
+      cpuCount: opts?.cpuCount,
       allow_internet_access: opts?.allowInternetAccess,
       network: buildNetworkBody(opts?.network, iam),
       iam,

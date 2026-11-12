@@ -59,6 +59,12 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
+    "413":
+      description: Request body too large
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
     "500":
       description: Server error
       content:
@@ -146,6 +152,8 @@ paths:
                 $ref: "#/components/schemas/VolumeEntryStat"
         "404":
           $ref: "#/components/responses/404"
+        "413":
+          $ref: "#/components/responses/413"
 
     patch:
       description: Update path metadata
@@ -180,6 +188,8 @@ paths:
           description: "Invalid metadata provided"
         "404":
           description: "path not found"
+        "413":
+          $ref: "#/components/responses/413"
         "500":
           description: "Internal server error"
 
@@ -194,6 +204,8 @@ paths:
           description: Successfully deleted a path
         "404":
           $ref: "#/components/responses/404"
+        "413":
+          $ref: "#/components/responses/413"
 
   /volumecontent/{volumeID}/dir:
     get:
@@ -220,6 +232,8 @@ paths:
           description: "Invalid path provided"
         "404":
           description: "path not found"
+        "413":
+          $ref: "#/components/responses/413"
         "500":
           $ref: "#/components/responses/500"
     post:
@@ -260,6 +274,8 @@ paths:
                 $ref: "#/components/schemas/VolumeEntryStat"
         "404":
           description: "path not found"
+        "413":
+          $ref: "#/components/responses/413"
         "500":
           $ref: "#/components/responses/500"
 
@@ -280,11 +296,15 @@ paths:
                 format: binary
         "404":
           description: "path not found"
+        "413":
+          $ref: "#/components/responses/413"
         "500":
           $ref: "#/components/responses/500"
     put:
       description: Upload file
       tags: [ volumes ]
+      # The validator must not read this body; see streamsRequestBodyExtension.
+      x-stream-request-body: true
       parameters:
         - $ref: "#/components/parameters/volumeID"
         - $ref: "#/components/parameters/path"

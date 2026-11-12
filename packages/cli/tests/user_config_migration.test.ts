@@ -66,12 +66,13 @@ describe('getUserConfig', () => {
       ...v1AuthFields,
       projectName: 'default',
       projectId: 'team-id',
-      projectApiKey: 'team-api-key-secret',
+      // Not used by this version: carried over like any unknown field.
+      teamApiKey: 'team-api-key-secret',
       dockerProxySet: true,
     })
   })
 
-  it('returns a valid v2 config as-is', async () => {
+  it('keeps fields of a v2 config that it does not use, like the API key earlier versions stored', async () => {
     const v2Config = {
       version: 2,
       ...v1AuthFields,
@@ -95,9 +96,8 @@ describe('getUserConfig', () => {
       // Missing team* fields — cannot be migrated.
     })
 
-    const { getUserConfig, DEPRECATED_USER_CONFIG_MESSAGE } = await import(
-      '../src/user'
-    )
+    const { getUserConfig, DEPRECATED_USER_CONFIG_MESSAGE } =
+      await import('../src/user')
     expect(getUserConfig()).toBeNull()
     expect(fs.existsSync(configPath)).toBe(true)
     expect(consoleError).toHaveBeenCalledWith(DEPRECATED_USER_CONFIG_MESSAGE)

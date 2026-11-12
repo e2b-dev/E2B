@@ -1,10 +1,8 @@
 import { beforeAll, describe, expect, test } from 'vitest'
-import { ApiClient, ConnectionConfig } from 'e2b'
-import { getUserConfig } from 'src/user'
+import { Template } from 'e2b'
 import { isDebug, runCli } from '../../setup'
 
-const userConfig = getUserConfig()
-const apiKey = process.env.E2B_API_KEY || userConfig?.projectApiKey
+const apiKey = process.env.E2B_API_KEY
 const domain = process.env.E2B_DOMAIN || 'e2b.app'
 const shouldSkip = !apiKey || isDebug
 const integrationTest = test.skipIf(shouldSkip)
@@ -25,10 +23,10 @@ function listTemplates(args: string[]) {
 }
 
 function listTemplateIds(args: string[]): string[] {
-  const templates: { templateID: string }[] = JSON.parse(
+  const templates: { templateId: string }[] = JSON.parse(
     listTemplates([...args, '-f', 'json'])
   )
-  return templates.map((t) => t.templateID)
+  return templates.map((t) => t.templateId)
 }
 
 describe('template list', () => {
@@ -38,11 +36,9 @@ describe('template list', () => {
   beforeAll(async () => {
     if (shouldSkip) return
 
-    const client = new ApiClient(new ConnectionConfig({ apiKey, domain }))
-    const res = await client.api.GET('/v2/templates')
-    expect(res.response.ok, res.response.statusText).toBe(true)
-    firstPageIds = res.data!.map((t: { templateID: string }) => t.templateID)
-    hasSecondPage = !!res.response.headers.get('x-next-token')
+    const paginator = Template.list({ apiKey, domain })
+    firstPageIds = (await paginator.nextItems()).map((t) => t.templateId)
+    hasSecondPage = paginator.hasNext
   })
 
   integrationTest(
@@ -55,7 +51,14 @@ describe('template list', () => {
 
       expect(ids).toHaveLength(limit)
       expect(new Set(ids).size).toBe(limit)
-      expect(ids).toEqual(expect.arrayContaining(firstPageIds))
+      // Other suites create and delete templates in the same team while this
+      // runs, so compare order rather than membership: first-page templates
+      // still listed keep their relative order.
+      const firstPage = new Set(firstPageIds)
+      const stillListed = new Set(ids)
+      expect(ids.filter((id) => firstPage.has(id))).toEqual(
+        firstPageIds.filter((id) => stillListed.has(id))
+      )
     },
     timeoutMs
   )

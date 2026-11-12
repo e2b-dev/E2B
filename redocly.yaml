@@ -19,6 +19,11 @@
 # orchestrator's control plane, not to SDKs, so they are dropped before the
 # SDK schemas are generated. remove-unused-components then drops the
 # component schemas only those operations referenced.
+#
+# The workspace api filters the synced workspace-api spec
+# (spec/openapi-workspace.yml) down to the operations the CLI calls, so the
+# CLI's generated schema carries only their types; add an operationId here
+# when the CLI starts calling another endpoint.
 apis:
   js-sdk:
     root: spec/openapi.yml
@@ -57,4 +62,12 @@ apis:
       filter-out:
         property: x-internal
         value: [true]
+      remove-unused-components: on
+  workspace:
+    root: spec/openapi-workspace.yml
+    decorators:
+      filter-in:
+        property: operationId
+        value: [getMe]
+        applyTo: Operation
       remove-unused-components: on

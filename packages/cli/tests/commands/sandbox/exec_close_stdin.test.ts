@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => {
   const sendStdin = vi.fn()
   const closeStdin = vi.fn()
   const kill = vi.fn()
-  const ensureAPIKey = vi.fn(() => 'test-api-key')
+  const ensureAuth = vi.fn(async () => ({ apiKey: 'test-api-key' }))
   const isPipedStdin = vi.fn()
   const streamStdinChunks = vi.fn()
   const setupSignalHandlers = vi.fn(() => () => {})
@@ -19,7 +19,7 @@ const mocks = vi.hoisted(() => {
     sendStdin,
     closeStdin,
     kill,
-    ensureAPIKey,
+    ensureAuth,
     isPipedStdin,
     streamStdinChunks,
     setupSignalHandlers,
@@ -47,7 +47,7 @@ vi.mock('e2b', () => {
 })
 
 vi.mock('../../../src/api', () => ({
-  ensureAPIKey: mocks.ensureAPIKey,
+  ensureAuth: mocks.ensureAuth,
 }))
 
 vi.mock('src/utils/signal', () => ({

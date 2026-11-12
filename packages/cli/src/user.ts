@@ -1,38 +1,43 @@
 import * as os from 'os'
 import * as path from 'path'
 import * as fs from 'fs'
+import { z } from 'zod'
+
+const authFields = {
+  identity: z.object({ email: z.string() }),
+  oauth: z.object({
+    token_endpoint: z.string(),
+    revoke_endpoint: z.string(),
+    client_id: z.string(),
+  }),
+  tokens: z.object({ access_token: z.string(), refresh_token: z.string() }),
+  // Never checked by earlier CLI versions: a bad value must not sign users out.
+  last_refresh: z.string().optional().catch(undefined),
+  dockerProxySet: z.boolean().optional().catch(undefined),
+}
 
 /**
  * User configuration stored in ~/.e2b/config.json
  */
-export interface UserIdentity {
-  email: string
-}
+const userConfigSchema = z.object({
+  version: z.literal(2),
+  ...authFields,
+  projectName: z.string(),
+  projectId: z.string(),
+  // The selected project's control plane (its API is `https://api.<domain>`).
+  // Absent in configs written before projects came from workspace-api.
+  projectDomain: z.string().optional(),
+})
 
-export interface UserOAuth {
-  token_endpoint: string
-  revoke_endpoint: string
-  client_id: string
-}
+export type UserConfig = z.infer<typeof userConfigSchema>
 
-export interface UserTokens {
-  access_token: string
-  refresh_token: string
-}
-
-export interface UserConfig {
-  version: 2
-  identity: UserIdentity
-  oauth: UserOAuth
-  tokens: UserTokens
-  last_refresh: string
-  projectName: string
-  projectId: string
-  projectApiKey: string
-  dockerProxySet?: boolean
-}
-
-type UnknownRecord = Record<string, unknown>
+/** The pre-project config format, with team* instead of project* fields. */
+const v1UserConfigSchema = z.object({
+  version: z.literal(1),
+  ...authFields,
+  teamName: z.string(),
+  teamId: z.string(),
+})
 
 export const USER_CONFIG_PATH = path.join(os.homedir(), '.e2b', 'config.json') // TODO: Keep in Keychain
 
@@ -42,9 +47,8 @@ export const DEPRECATED_USER_CONFIG_MESSAGE =
 // getUserConfig can be called several times per command; warn only once.
 let deprecationWarned = false
 
-export const DOCS_BASE =
-  process.env.E2B_DOCS_BASE ||
-  `https://${process.env.E2B_DOMAIN || 'e2b.dev'}/docs`
+/** Browser sign-in page for `e2b auth login`. */
+export const CLI_AUTH_URL = `https://${process.env.E2B_DOMAIN || 'e2b.dev'}/auth/cli`
 
 const DASHBOARD_BASE =
   process.env.E2B_DASHBOARD_BASE ||
@@ -66,7 +70,7 @@ export function getUserConfig(): UserConfig | null {
 
   // An unrecognized config is treated as being signed out, but the file is
   // kept on disk — `e2b auth login` overwrites it.
-  if (!isUserConfig(config)) {
+  if (!userConfigSchema.safeParse(config).success) {
     if (!deprecationWarned) {
       deprecationWarned = true
       console.error(DEPRECATED_USER_CONFIG_MESSAGE)
@@ -74,40 +78,9 @@ export function getUserConfig(): UserConfig | null {
     return null
   }
 
-  return config
-}
-
-function isObject(value: unknown): value is UnknownRecord {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
-
-function isString(value: unknown): value is string {
-  return typeof value === 'string'
-}
-
-function hasValidAuthFields(config: UnknownRecord): boolean {
-  return (
-    isObject(config.identity) &&
-    isString(config.identity.email) &&
-    isObject(config.oauth) &&
-    isString(config.oauth.token_endpoint) &&
-    isString(config.oauth.revoke_endpoint) &&
-    isString(config.oauth.client_id) &&
-    isObject(config.tokens) &&
-    isString(config.tokens.access_token) &&
-    isString(config.tokens.refresh_token)
-  )
-}
-
-function isUserConfig(config: unknown): config is UserConfig {
-  if (!isObject(config)) return false
-  if (config.version !== 2) return false
-  return (
-    hasValidAuthFields(config) &&
-    isString(config.projectName) &&
-    isString(config.projectId) &&
-    isString(config.projectApiKey)
-  )
+  // Return the original object, not the parsed one, so fields this CLI
+  // version doesn't know about are kept when the config is written back.
+  return config as UserConfig
 }
 
 /**
@@ -115,25 +88,19 @@ function isUserConfig(config: unknown): config is UserConfig {
  * Returns null if the config is not a valid v1 config.
  */
 function migrateV1UserConfig(config: unknown): UserConfig | null {
-  if (!isObject(config)) return null
-  if (config.version !== 1) return null
-  if (!hasValidAuthFields(config)) return null
-  if (
-    !isString(config.teamName) ||
-    !isString(config.teamId) ||
-    !isString(config.teamApiKey)
-  ) {
-    return null
-  }
+  if (!v1UserConfigSchema.safeParse(config).success) return null
 
-  const { teamName, teamId, teamApiKey, ...rest } = config
+  // Spread the original object, not the parsed one, so fields this CLI
+  // version doesn't know about are kept when the config is written back.
+  const { teamName, teamId, ...rest } = config as z.infer<
+    typeof v1UserConfigSchema
+  >
   return {
     ...rest,
     version: 2,
     projectName: teamName,
     projectId: teamId,
-    projectApiKey: teamApiKey,
-  } as UserConfig
+  }
 }
 
 export function getConfigRefreshTimestamp(): string {
@@ -149,6 +116,13 @@ export function writeUserConfig(configPath: string, config: UserConfig): void {
   const dir = path.dirname(configPath)
   fs.mkdirSync(dir, { recursive: true, mode: 0o700 })
   fs.chmodSync(dir, 0o700)
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2), { mode: 0o600 })
-  fs.chmodSync(configPath, 0o600)
+  // Write to a temporary file and rename it over the config, so other e2b
+  // processes reading it (token refreshes happen in the background of any
+  // command) never see a partially written file.
+  const tmpPath = `${configPath}.${process.pid}.tmp`
+  fs.writeFileSync(tmpPath, JSON.stringify(config, null, 2), {
+    mode: 0o600,
+  })
+  fs.chmodSync(tmpPath, 0o600)
+  fs.renameSync(tmpPath, configPath)
 }

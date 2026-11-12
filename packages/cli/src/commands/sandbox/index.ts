@@ -1,4 +1,4 @@
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
 
 import { connectCommand } from './connect'
 import { infoCommand } from './info'

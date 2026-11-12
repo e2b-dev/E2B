@@ -4,6 +4,8 @@ from enum import Enum
 from pathlib import Path
 from typing import List, Literal, NotRequired, Optional, TypedDict, Union
 
+from e2b.api.client.models import Template as TemplateModel
+from e2b.api.client.types import Unset
 from e2b.template.logger import LogEntry
 
 
@@ -72,6 +74,96 @@ class TemplateTagInfo:
 
     tags: List[str]
     """Assigned tags of the template."""
+
+
+@dataclass
+class TemplateInfo:
+    """
+    Information about a template.
+    """
+
+    template_id: str
+    """Template identifier."""
+
+    build_id: str
+    """Identifier of the last successful build of the template."""
+
+    names: List[str]
+    """Names of the template (`namespace/name` when namespaced)."""
+
+    public: bool
+    """Whether the template is public or only accessible by the project."""
+
+    is_default: bool
+    """Whether the template is one of the platform's default templates."""
+
+    build_status: TemplateBuildStatus
+    """Status of the last template build."""
+
+    cpu_count: int
+    """Number of CPUs allocated to the sandbox."""
+
+    memory_mb: int
+    """Amount of memory in MiB allocated to the sandbox."""
+
+    disk_size_mb: int
+    """Disk size in MiB of the sandbox."""
+
+    envd_version: str
+    """Version of envd running in the sandbox."""
+
+    build_count: int
+    """Number of times the template was built."""
+
+    spawn_count: int
+    """Number of times the template was used to create a sandbox."""
+
+    created_at: datetime
+    """When the template was created."""
+
+    updated_at: datetime
+    """When the template was last updated."""
+
+    last_spawned_at: Optional[datetime] = None
+    """When the template was last used to create a sandbox."""
+
+    description: Optional[str] = None
+    """Description of the template."""
+
+    max_cpu_count: Optional[int] = None
+    """Maximum number of CPUs a sandbox can be started with. Set only for resizable templates."""
+
+    @classmethod
+    def _from_model(cls, template: TemplateModel) -> "TemplateInfo":
+        return cls(
+            template_id=template.template_id,
+            build_id=template.build_id,
+            names=list(template.names),
+            public=template.public,
+            is_default=(
+                False if isinstance(template.is_default, Unset) else template.is_default
+            ),
+            build_status=TemplateBuildStatus(template.build_status.value),
+            cpu_count=template.cpu_count,
+            memory_mb=template.memory_mb,
+            disk_size_mb=template.disk_size_mb,
+            envd_version=template.envd_version,
+            build_count=template.build_count,
+            spawn_count=template.spawn_count,
+            created_at=template.created_at,
+            updated_at=template.updated_at,
+            last_spawned_at=template.last_spawned_at,
+            description=(
+                None
+                if isinstance(template.description, Unset)
+                else template.description or None
+            ),
+            max_cpu_count=(
+                None
+                if isinstance(template.max_cpu_count, Unset)
+                else template.max_cpu_count
+            ),
+        )
 
 
 @dataclass

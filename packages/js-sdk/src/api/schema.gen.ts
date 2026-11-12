@@ -1856,6 +1856,53 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/unstable/sandboxes/{sandboxID}/record": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Sandbox record
+         * @description Returns the team's latest recorded run of the sandbox, including runs that have already ended, and whether its monitoring, logs and events data are still retained. Returns 404 when the team has no recorded run of the sandbox.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    sandboxID: components["parameters"]["sandboxID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned the sandbox record */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SandboxRecord"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                404: components["responses"]["404"];
+                429: components["responses"]["429"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/unstable/teams/{teamID}/limits": {
         parameters: {
             query?: never;
@@ -2829,6 +2876,8 @@ export interface components {
              */
             autoPauseMemory?: boolean;
             autoResume?: components["schemas"]["SandboxAutoResumeConfig"];
+            /** @description Online vCPU target for the sandbox. Defaults to the template's cpuCount; at most its maxCpuCount (fixed-size templates accept only their cpuCount). */
+            cpuCount?: components["schemas"]["CPUCount"];
             envVars?: components["schemas"]["EnvVars"];
             iam?: components["schemas"]["SandboxIam"];
             mcp?: components["schemas"]["Mcp"];
@@ -2864,6 +2913,8 @@ export interface components {
              */
             autoPauseMemory?: boolean;
             autoResume?: components["schemas"]["SandboxAutoResumeConfig"];
+            /** @description Online vCPU target for the sandbox. Defaults to the template's cpuCount; at most its maxCpuCount (fixed-size templates accept only their cpuCount). */
+            cpuCount?: components["schemas"]["CPUCount"];
             envVars?: components["schemas"]["EnvVars"];
             iam?: components["schemas"]["SandboxIam"];
             mcp?: components["schemas"]["Mcp"];
@@ -2902,6 +2953,8 @@ export interface components {
              * @description Automatically pauses the sandbox after the timeout
              */
             autoPause?: boolean;
+            /** @description Online vCPU target for the resumed sandbox. Defaults to the snapshot's cpuCount; at most the template's maxCpuCount (fixed-size templates accept only their cpuCount). */
+            cpuCount?: components["schemas"]["CPUCount"];
             /** @description Defaults to true. When false, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. A snapshot taken while the sandbox guest agent was not responding (envdUnresponsiveAtPause) can only be resumed this way, and needs no enablement. */
             memory?: boolean;
             /**
@@ -3199,6 +3252,33 @@ export interface components {
              */
             requireHealthyGuest?: boolean;
         };
+        SandboxRecord: {
+            /** @description Alias of the template */
+            alias?: string;
+            cpuCount: components["schemas"]["CPUCount"];
+            diskSizeMB: components["schemas"]["DiskSizeMB"];
+            /** @description Base domain where the sandbox traffic is accessible */
+            domain?: string | null;
+            /** @description Whether the sandbox ended more than the team's events retention window ago, so its events data is no longer available */
+            eventsRetentionExpired: boolean;
+            memoryMB: components["schemas"]["MemoryMB"];
+            /** @description Whether the sandbox ended more than the fixed retention window ago, so its monitoring and logs data is no longer available */
+            retentionExpired: boolean;
+            /** @description Identifier of the sandbox */
+            sandboxID: string;
+            /**
+             * Format: date-time
+             * @description Time when the sandbox was started
+             */
+            startedAt: string;
+            /**
+             * Format: date-time
+             * @description Time when the sandbox was stopped
+             */
+            stoppedAt?: string | null;
+            /** @description Identifier of the template from which is the sandbox created */
+            templateID: string;
+        };
         SandboxRefreshRequest: {
             /** @description Duration for which the sandbox should be kept alive in seconds */
             duration?: number;
@@ -3418,6 +3498,8 @@ export interface components {
              * @description Time when the template was last used
              */
             lastSpawnedAt: string | null;
+            /** @description Maximum CPU count for resizable templates; absent for fixed-size templates. */
+            maxCpuCount?: components["schemas"]["CPUCount"];
             memoryMB: components["schemas"]["MemoryMB"];
             /** @description Names of the template (namespace/alias format when namespaced) */
             names: string[];
@@ -3461,6 +3543,8 @@ export interface components {
              * @description Time when the build was finished
              */
             finishedAt?: string;
+            /** @description Maximum CPU count for resizable templates; absent for fixed-size templates. */
+            maxCpuCount?: components["schemas"]["CPUCount"];
             memoryMB: components["schemas"]["MemoryMB"];
             status: components["schemas"]["TemplateBuildStatus"];
             /**
@@ -3512,6 +3596,8 @@ export interface components {
              */
             alias?: string;
             cpuCount?: components["schemas"]["CPUCount"];
+            /** @description Maximum CPU count the template's sandboxes can be resized to; makes the template resizable. Must be at least cpuCount. */
+            maxCpuCount?: components["schemas"]["CPUCount"];
             memoryMB?: components["schemas"]["MemoryMB"];
             minFreeDiskMb?: components["schemas"]["MinFreeDiskMb"];
             /** @description Name of the template. Can include a tag with colon separator (e.g. "my-template" or "my-template:v1"). If tag is included, it will be treated as if the tag was provided in the tags array. */

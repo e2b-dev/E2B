@@ -3,6 +3,7 @@ import type { PathLike } from 'node:fs'
 import type { LogEntry } from './logger'
 import type { McpServer } from '../sandbox/mcp'
 import { ConnectionOpts } from '../connectionConfig'
+import type { components } from '../api'
 
 /**
  * Options for creating a new template.
@@ -39,6 +40,11 @@ export type BasicBuildOptions = {
    * Number of CPUs allocated to the sandbox.
    */
   cpuCount?: number
+  /**
+   * Maximum number of CPUs allocated to the sandbox.
+   * Setting it makes the template resizable. Must be at least `cpuCount`.
+   */
+  maxCpuCount?: number
   /**
    * Amount of memory in MB allocated to the sandbox.
    */
@@ -163,6 +169,123 @@ export type TemplateTagInfo = {
    * Assigned tags of the template.
    */
   tags: string[]
+}
+
+/**
+ * Information about a template.
+ */
+export type TemplateInfo = {
+  /**
+   * Template identifier.
+   */
+  templateId: string
+  /**
+   * Identifier of the last successful build of the template.
+   */
+  buildId: string
+  /**
+   * Names of the template (`namespace/name` when namespaced).
+   */
+  names: string[]
+  /**
+   * Description of the template.
+   */
+  description?: string
+  /**
+   * Whether the template is public or only accessible by the project.
+   */
+  public: boolean
+  /**
+   * Whether the template is one of the platform's default templates.
+   */
+  isDefault: boolean
+  /**
+   * Status of the last template build.
+   */
+  buildStatus: TemplateBuildStatus
+  /**
+   * Number of CPUs allocated to the sandbox.
+   */
+  cpuCount: number
+  /**
+   * Maximum number of CPUs a sandbox can be started with. Set only for
+   * resizable templates.
+   */
+  maxCpuCount?: number
+  /**
+   * Amount of memory in MiB allocated to the sandbox.
+   */
+  memoryMB: number
+  /**
+   * Disk size in MiB of the sandbox.
+   */
+  diskSizeMB: number
+  /**
+   * Version of envd running in the sandbox.
+   */
+  envdVersion: string
+  /**
+   * Number of times the template was built.
+   */
+  buildCount: number
+  /**
+   * Number of times the template was used to create a sandbox.
+   */
+  spawnCount: number
+  /**
+   * When the template was created.
+   */
+  createdAt: Date
+  /**
+   * When the template was last updated.
+   */
+  updatedAt: Date
+  /**
+   * When the template was last used to create a sandbox.
+   */
+  lastSpawnedAt?: Date
+}
+
+export function convertTemplateInfo(
+  template: components['schemas']['Template']
+): TemplateInfo {
+  return {
+    templateId: template.templateID,
+    buildId: template.buildID,
+    names: template.names,
+    ...(template.description && { description: template.description }),
+    public: template.public,
+    isDefault: template.isDefault ?? false,
+    buildStatus: template.buildStatus,
+    cpuCount: template.cpuCount,
+    ...(template.maxCpuCount != null && { maxCpuCount: template.maxCpuCount }),
+    memoryMB: template.memoryMB,
+    diskSizeMB: template.diskSizeMB,
+    envdVersion: template.envdVersion,
+    buildCount: template.buildCount,
+    spawnCount: template.spawnCount,
+    createdAt: new Date(template.createdAt),
+    updatedAt: new Date(template.updatedAt),
+    ...(template.lastSpawnedAt && {
+      lastSpawnedAt: new Date(template.lastSpawnedAt),
+    }),
+  }
+}
+
+/**
+ * Options for listing templates.
+ */
+export interface TemplateListOpts extends Omit<ConnectionOpts, 'signal'> {
+  /**
+   * Maximum number of templates to return per page.
+   *
+   * @default 100
+   */
+  limit?: number
+  /**
+   * Token to the next page.
+   */
+  nextToken?: string
 }
 
 /**

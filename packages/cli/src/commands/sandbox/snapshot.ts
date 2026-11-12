@@ -1,7 +1,9 @@
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
 import { NotFoundError, Sandbox, SnapshotInfo } from 'e2b'
 
-import { ensureAPIKey } from 'src/api'
+import { ensureAuth } from 'src/api'
+import { Format, parseFormat } from 'src/options'
+import { integer, zodParser } from 'src/validation'
 import { asBold } from 'src/utils/format'
 import { renderTable } from 'src/utils/table'
 
@@ -16,12 +18,12 @@ const createSnapshotCommand = new commander.Command('create')
     '-n, --name <name>',
     'name for the snapshot template, reuses the existing template if it already exists'
   )
-  .action(async (sandboxID: string, options: { name?: string }) => {
+  .action(async (sandboxID, options) => {
     try {
-      const apiKey = ensureAPIKey()
+      const auth = await ensureAuth()
 
       const snapshot = await Sandbox.createSnapshot(sandboxID, {
-        apiKey,
+        ...auth,
         name: options.name,
       })
 
@@ -54,61 +56,57 @@ const listSnapshotsCommand = new commander.Command('list')
   .option(
     '-l, --limit <limit>',
     `limit the number of snapshots returned (default: ${DEFAULT_LIMIT}, 0 for no limit)`,
-    (value) => parseInt(value)
+    zodParser(integer('--limit', { min: 0 }))
   )
-  .option('-f, --format <format>', 'output format, eg. json, pretty')
-  .action(
-    async (
-      sandboxID: string | undefined,
-      options: { name?: string; format?: string; limit?: number }
-    ) => {
-      try {
-        const apiKey = ensureAPIKey()
-        const format = options.format || 'pretty'
-        const limit =
-          options.limit === 0 ? undefined : (options.limit ?? DEFAULT_LIMIT)
+  .option(
+    '-f, --format <format>',
+    'output format, eg. json, pretty',
+    parseFormat,
+    Format.PRETTY
+  )
+  .action(async (sandboxID, options) => {
+    try {
+      const auth = await ensureAuth()
+      const limit =
+        options.limit === 0 ? undefined : (options.limit ?? DEFAULT_LIMIT)
 
-        let pageLimit = limit
-        if (!limit || limit > PAGE_LIMIT) {
-          pageLimit = PAGE_LIMIT
-        }
-
-        const allSnapshots: SnapshotInfo[] = []
-        const paginator = Sandbox.listSnapshots({
-          apiKey,
-          sandboxId: sandboxID,
-          name: options.name,
-          limit: pageLimit,
-        })
-
-        while (paginator.hasNext && (!limit || allSnapshots.length < limit)) {
-          const batch = await paginator.nextItems()
-          allSnapshots.push(...batch)
-        }
-
-        const snapshots = limit ? allSnapshots.slice(0, limit) : allSnapshots
-        const hasMore =
-          paginator.hasNext || (limit ? allSnapshots.length > limit : false)
-
-        if (format === 'pretty') {
-          renderSnapshotTable(snapshots)
-          if (hasMore) {
-            console.log(
-              `Showing first ${limit} snapshots. Use --limit to change.`
-            )
-          }
-        } else if (format === 'json') {
-          console.log(JSON.stringify(snapshots, null, 2))
-        } else {
-          console.error(`Unsupported output format: ${format}`)
-          process.exit(1)
-        }
-      } catch (err: any) {
-        console.error(err)
-        process.exit(1)
+      let pageLimit = limit
+      if (!limit || limit > PAGE_LIMIT) {
+        pageLimit = PAGE_LIMIT
       }
+
+      const allSnapshots: SnapshotInfo[] = []
+      const paginator = Sandbox.listSnapshots({
+        ...auth,
+        sandboxId: sandboxID,
+        name: options.name,
+        limit: pageLimit,
+      })
+
+      while (paginator.hasNext && (!limit || allSnapshots.length < limit)) {
+        const batch = await paginator.nextItems()
+        allSnapshots.push(...batch)
+      }
+
+      const snapshots = limit ? allSnapshots.slice(0, limit) : allSnapshots
+      const hasMore =
+        paginator.hasNext || (limit ? allSnapshots.length > limit : false)
+
+      if (options.format === Format.PRETTY) {
+        renderSnapshotTable(snapshots)
+        if (hasMore) {
+          console.log(
+            `Showing first ${limit} snapshots. Use --limit to change.`
+          )
+        }
+      } else {
+        console.log(JSON.stringify(snapshots, null, 2))
+      }
+    } catch (err: any) {
+      console.error(err)
+      process.exit(1)
     }
-  )
+  })
 
 const deleteSnapshotCommand = new commander.Command('delete')
   .description('delete snapshots')
@@ -117,13 +115,13 @@ const deleteSnapshotCommand = new commander.Command('delete')
     `delete the snapshots specified by ${asBold('<snapshotIDs...>')}`
   )
   .alias('dl')
-  .action(async (snapshotIDs: string[]) => {
+  .action(async (snapshotIDs) => {
     try {
-      const apiKey = ensureAPIKey()
+      const auth = await ensureAuth()
 
       const results = await Promise.allSettled(
         snapshotIDs.map(async (snapshotID) => {
-          const deleted = await Sandbox.deleteSnapshot(snapshotID, { apiKey })
+          const deleted = await Sandbox.deleteSnapshot(snapshotID, auth)
           if (deleted) {
             console.log(`Snapshot ${asBold(snapshotID)} has been deleted`)
           } else {
