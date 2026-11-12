@@ -74,9 +74,9 @@
     "e2b": "dist/index.js"
   },
   "dependencies": {
+    "@clack/prompts": "^1.8.1",
     "@commander-js/extra-typings": "~15.0.0",
     "@iarna/toml": "^2.2.5",
-    "@inquirer/prompts": "^7.10.1",
     "@npmcli/package-json": "^7.0.5",
     "async-listen": "^3.1.0",
     "boxen": "^7.1.1",
@@ -85,7 +85,6 @@
     "commander": "~15.0.0",
     "e2b": "workspace:^",
     "handlebars": "^4.7.10",
-    "inquirer": "^12.11.1",
     "openapi-fetch": "^0.17.0",
     "proper-lockfile": "^4.1.2",
     "simple-update-notifier": "^2.0.0",

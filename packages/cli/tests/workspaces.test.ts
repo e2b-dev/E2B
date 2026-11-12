@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
 const prompts = vi.hoisted(() => ({ select: vi.fn() }))
-vi.mock('@inquirer/prompts', () => ({ select: prompts.select }))
+vi.mock('../src/utils/prompts', () => ({ select: prompts.select }))
 
 import {
   activeProjects,
@@ -176,8 +176,8 @@ describe('pickProject', () => {
   })
 
   describe('with a terminal', () => {
-    type Choice = { name: string; value: unknown }
-    type Prompt = { message: string; choices: Choice[]; default?: unknown }
+    type Option = { label: string; value: unknown }
+    type Prompt = { message: string; options: Option[]; initialValue?: unknown }
 
     const me: Me = {
       workspaces: [
@@ -200,7 +200,7 @@ describe('pickProject', () => {
     const asked = () =>
       prompts.select.mock.calls.map(([prompt]: [Prompt]) => ({
         message: prompt.message,
-        names: prompt.choices.map((c) => c.name),
+        names: prompt.options.map((o) => o.label),
       }))
 
     afterEach(() => {
@@ -219,8 +219,8 @@ describe('pickProject', () => {
     test('asks for the workspace, then one of its active projects', async () => {
       withTTY()
       answer(
-        (p) => p.choices[1].value,
-        (p) => p.choices[1].value
+        (p) => p.options[1].value,
+        (p) => p.options[1].value
       )
       const picked = await pickProject(me, { message: 'Pick', selectedId: 'a' })
 
@@ -245,15 +245,15 @@ describe('pickProject', () => {
       expect(asked()[0].names[0]).toContain('current')
       expect(asked()[0].names[1]).toContain('2 active projects')
       // The selected project's workspace is preselected.
-      expect(prompts.select.mock.calls[0][0].default).toBe(me.workspaces[0])
+      expect(prompts.select.mock.calls[0][0].initialValue).toBe(me.workspaces[0])
     })
 
     test('asks even when a step has a single choice', async () => {
       withTTY()
       const single: Me = { workspaces: [me.workspaces[0]] }
       answer(
-        (p) => p.choices[0].value,
-        (p) => p.choices[0].value
+        (p) => p.options[0].value,
+        (p) => p.options[0].value
       )
       expect((await pickProject(single, { message: 'Pick' })).project.id).toBe(
         'a'
@@ -266,7 +266,7 @@ describe('pickProject', () => {
 
     test('only offers the given workspace', async () => {
       withTTY()
-      answer((p) => p.choices[1].value)
+      answer((p) => p.options[1].value)
       const picked = await pickProject(me, {
         message: 'Pick',
         workspace: me.workspaces[1],

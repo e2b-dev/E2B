@@ -9,7 +9,7 @@ import {
   SandboxTemplateRef,
 } from 'src/utils/format'
 import { deprecatedConfigOption, warnIgnoredConfigOption } from 'src/options'
-import { confirm } from 'src/utils/confirm'
+import { confirm } from 'src/utils/prompts'
 import { ensureAuth } from 'src/api'
 
 async function deleteTemplate(templateID: string) {

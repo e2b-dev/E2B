@@ -1,4 +1,4 @@
-import { select } from '@inquirer/prompts'
+import { select } from './utils/prompts'
 import { ConnectionConfig } from 'e2b'
 import createClient from 'openapi-fetch'
 
@@ -298,22 +298,22 @@ export async function pickProject(
     workspace ??
     (await select({
       message: 'Select workspace',
-      pageSize: 20,
-      choices: workspaces.map((candidate) => ({
-        name: workspaceLabel(candidate, entries, selectedId),
+      maxItems: 20,
+      options: workspaces.map((candidate) => ({
+        label: workspaceLabel(candidate, entries, selectedId),
         value: candidate,
       })),
-      default: current?.workspace,
+      initialValue: current?.workspace,
     }))
 
   const candidates = entries.filter((entry) => entry.workspace.id === chosen.id)
   return select({
     message,
-    pageSize: 20,
-    choices: candidates.map((entry) => ({
-      name: projectLabel(entry, selectedId),
+    maxItems: 20,
+    options: candidates.map((entry) => ({
+      label: projectLabel(entry, selectedId),
       value: entry,
     })),
-    default: current?.workspace.id === chosen.id ? current : undefined,
+    initialValue: current?.workspace.id === chosen.id ? current : undefined,
   })
 }
