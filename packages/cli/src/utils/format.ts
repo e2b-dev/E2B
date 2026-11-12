@@ -17,17 +17,6 @@ export function asFormattedConfig(config: UserConfig) {
   return `You are logged in as ${email},\nSelected project: ${project} (${projectId})`
 }
 
-export function asFormattedTeam(
-  team: e2b.components['schemas']['Team'],
-  selected: string
-) {
-  const name = asBold(team.name)
-  const id = asBold(team.teamID)
-  const isSelected =
-    team.teamID == selected ? asPrimary(' (currently selected project)') : ''
-  return `${name} (${id})${isSelected}`
-}
-
 export type SandboxTemplateRef = Pick<
   e2b.components['schemas']['Template'],
   'templateID'
@@ -44,7 +33,7 @@ export function asFormattedSandboxTemplate(template: SandboxTemplateRef) {
   return `${id}${name}`.trim()
 }
 
-function asRed(text: string) {
+export function asRed(text: string) {
   return chalk.default.redBright(text)
 }
 

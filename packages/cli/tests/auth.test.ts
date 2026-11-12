@@ -27,7 +27,11 @@ function configPath() {
   return path.join(mockHome, '.e2b', 'config.json')
 }
 
-function writeConfig(accessToken: string, refreshToken = 'refresh-1') {
+function writeConfig(
+  accessToken: string,
+  refreshToken = 'refresh-1',
+  extra: Record<string, unknown> = { projectDomain: 'config.e2b.dev' }
+) {
   fs.mkdirSync(path.dirname(configPath()), { recursive: true })
   fs.writeFileSync(
     configPath(),
@@ -43,8 +47,51 @@ function writeConfig(accessToken: string, refreshToken = 'refresh-1') {
       projectName: 'default',
       projectId: 'config-project',
       futureField: 'kept',
+      ...extra,
     })
   )
+}
+
+function project(id: string, overrides: Record<string, unknown> = {}) {
+  return {
+    id,
+    public_id: `prj_${id}`,
+    workspace_id: 'ws',
+    name: `Project ${id}`,
+    slug: `slug-${id}`,
+    region: 'us-west-1',
+    control_plane_domain: `${id}.e2b.dev`,
+    status: 'active',
+    blocked: false,
+    block_reasons: [],
+    capabilities: ['project:read'],
+    ...overrides,
+  }
+}
+
+/** workspace-api `GET /v1/me` listing the given projects. */
+function mockWorkspaceApi(
+  projects = [project('config-project'), project('other')]
+) {
+  const fetchMock = vi.fn(async (url: string) => {
+    expect(url).toBe('https://workspace-api.e2b.dev/v1/me')
+    return Response.json({
+      workspaces: [
+        {
+          id: 'ws',
+          public_id: 'wrk_ws',
+          name: 'Workspace',
+          kind: 'personal',
+          blocked: false,
+          block_reasons: [],
+          capabilities: [],
+          projects,
+        },
+      ],
+    })
+  })
+  vi.stubGlobal('fetch', fetchMock)
+  return fetchMock
 }
 
 function readConfig() {
@@ -100,6 +147,7 @@ describe('ensureAuth', () => {
   test('uses the access token and the configured project otherwise', async () => {
     const token = jwt(3600)
     writeConfig(token)
+    const fetchMock = mockWorkspaceApi()
     const { ensureAuth } = await import('../src/api')
 
     expect(await ensureAuth()).toEqual({
@@ -107,23 +155,86 @@ describe('ensureAuth', () => {
         Authorization: `Bearer ${token}`,
         'X-Team-ID': 'config-project',
       },
+      domain: 'config.e2b.dev',
     })
+    // The stored project needs no lookup.
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  test('selects the project from --project, then E2B_PROJECT_ID', async () => {
-    writeConfig(jwt(3600))
-    vi.stubEnv('E2B_PROJECT_ID', 'env-project')
+  test('looks up and stores the domain of a project selected by an earlier version', async () => {
+    writeConfig(jwt(3600), 'refresh-1', {})
+    const fetchMock = mockWorkspaceApi()
     const { ensureAuth } = await import('../src/api')
 
-    const headers = async (project?: string) =>
-      ((await ensureAuth(project)) as { apiHeaders: Record<string, string> })
-        .apiHeaders['X-Team-ID']
-    expect(await headers()).toBe('env-project')
-    expect(await headers('flag-project')).toBe('flag-project')
+    expect(await ensureAuth()).toMatchObject({
+      domain: 'config-project.e2b.dev',
+    })
+    expect(readConfig().projectDomain).toBe('config-project.e2b.dev')
+    await ensureAuth()
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  test('exits with the login hint when workspace-api rejects the session', async () => {
+    writeConfig(jwt(3600), 'refresh-1', {})
+    const fetchMock = vi.fn(async () => new Response(null, { status: 401 }))
+    vi.stubGlobal('fetch', fetchMock)
+    vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {
+      throw new Error(`exit ${code}`)
+    }) as never)
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const { ensureAuth } = await import('../src/api')
+
+    await expect(ensureAuth()).rejects.toThrow('exit 1')
+    expect(String(error.mock.calls[0][0])).toContain(
+      'Your session was not accepted. Run `e2b auth login` again.'
+    )
+    // Nothing is set up on the user's behalf.
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  test('resolves --project, then E2B_PROJECT_ID, to the project ID and its control plane', async () => {
+    writeConfig(jwt(3600))
+    vi.stubEnv('E2B_PROJECT_ID', 'prj_other')
+    const fetchMock = mockWorkspaceApi([
+      project('config-project'),
+      project('other'),
+      project('flag'),
+    ])
+    const { ensureAuth } = await import('../src/api')
+
+    const target = async (ref?: string) => {
+      const auth = (await ensureAuth(ref)) as {
+        apiHeaders: Record<string, string>
+        domain: string
+      }
+      return [auth.apiHeaders['X-Team-ID'], auth.domain]
+    }
+    expect(await target()).toEqual(['other', 'other.e2b.dev'])
+    expect(await target('slug-flag')).toEqual(['flag', 'flag.e2b.dev'])
+    expect(await target('project FLAG')).toEqual(['flag', 'flag.e2b.dev'])
+    // /v1/me is fetched once per process.
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  test('exits with a hint when the project is not accessible', async () => {
+    writeConfig(jwt(3600))
+    mockWorkspaceApi()
+    vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {
+      throw new Error(`exit ${code}`)
+    }) as never)
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const { ensureAuth } = await import('../src/api')
+
+    await expect(ensureAuth('prj_missing')).rejects.toThrow('exit 1')
+    expect(String(error.mock.calls[0][0])).toContain(
+      'Project "prj_missing" not found'
+    )
   })
 
   test('exits with the login hint when signed out', async () => {
-    const exit = vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {
+    const exit = vi.spyOn(process, 'exit').mockImplementation(((
+      code?: number
+    ) => {
       throw new Error(`exit ${code}`)
     }) as never)
     const error = vi.spyOn(console, 'error').mockImplementation(() => {})

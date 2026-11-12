@@ -4,7 +4,7 @@ import * as e2b from 'e2b'
 import { listAliases } from '../../utils/format'
 import { renderTable } from 'src/utils/table'
 import { sortTemplatesAliases } from 'src/utils/templateSort'
-import { apiClient, resolveProjectId } from 'src/api'
+import { apiClient } from 'src/api'
 import {
   deprecatedTeamOption,
   Format,
@@ -42,7 +42,7 @@ export const listCommand = new commander.Command('list')
       process.stdout.write('\n')
 
       const { templates, hasMore } = await listSandboxTemplates({
-        projectId: resolveProjectId(projectIdFromOptions(opts)),
+        projectId: projectIdFromOptions(opts),
         limit,
       })
 
@@ -123,19 +123,16 @@ async function listSandboxTemplates({
     pageLimit = PAGE_LIMIT
   }
 
-  // With an access token, X-Team-ID (from the same project ID) selects the
-  // project; with an API key, the key does and the teamID query param is
-  // ignored.
+  // The project (an ID, slug or name, or the selected one) is resolved by
+  // ensureAuth: with an access token X-Team-ID selects it, with an API key
+  // the key does. The teamID query param accepts IDs only, so it's not sent.
   const client = await apiClient(projectId)
   const templates: e2b.components['schemas']['Template'][] = []
   let nextToken: string | undefined
 
   do {
     const res = await client.api.GET('/v2/templates', {
-      params: {
-        // the backend API still calls the project ID "teamID"
-        query: { teamID: projectId, limit: pageLimit, nextToken },
-      },
+      params: { query: { limit: pageLimit, nextToken } },
     })
 
     if (!res.response.ok || !res.data) {
