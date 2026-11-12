@@ -152,11 +152,18 @@ export function personalProject(me: Me): ProjectEntry | undefined {
 }
 
 /**
- * Find a project by ID (UUID or `prj_` public ID), slug or name. Names are
- * matched case-insensitively and must be unambiguous.
+ * Find a project by ID (UUID or `prj_` public ID), slug or name, among the
+ * projects of `workspace` when given. Names are matched case-insensitively
+ * and must be unambiguous.
  */
-export function findProject(me: Me, ref: string): ProjectEntry {
-  const entries = allProjects(me)
+export function findProject(
+  me: Me,
+  ref: string,
+  workspace?: Workspace
+): ProjectEntry {
+  const entries = allProjects(me).filter(
+    (entry) => !workspace || entry.workspace.id === workspace.id
+  )
   const byId = entries.find(
     ({ project }) => project.id === ref || project.public_id === ref
   )
@@ -181,9 +188,9 @@ export function findProject(me: Me, ref: string): ProjectEntry {
     )
   }
   throw new Error(
-    `Project "${ref}" not found among the projects you can access. Run ${asBold(
-      'e2b auth configure'
-    )} to choose one.`
+    `Project "${ref}" not found among the projects you can access${
+      workspace ? ` in workspace ${workspace.name}` : ''
+    }. Run ${asBold('e2b auth configure')} to choose one.`
   )
 }
 
@@ -196,50 +203,88 @@ export function blockedWarning({ project }: ProjectEntry): string | undefined {
   return `Project ${project.name} is blocked${reasons}, so requests to it may be refused. Check the project in the dashboard.`
 }
 
-/** `name — workspace (region)`, flagged when blocked or currently selected. */
-export function projectLabel(
-  { project, workspace }: ProjectEntry,
-  selectedId?: string
-): string {
+/** `name (region)`, flagged when blocked or currently selected. */
+function projectLabel({ project }: ProjectEntry, selectedId?: string): string {
   const flags = [
     project.blocked ? asRed('blocked') : undefined,
     project.id === selectedId ? asPrimary('current') : undefined,
   ].filter(Boolean)
-  return `${asBold(project.name)} — ${workspace.name} (${project.region})${
+  return `${asBold(project.name)} (${project.region})${
     flags.length ? ` [${flags.join(', ')}]` : ''
   }`
 }
 
+/** `name (kind, N active projects)`, flagged when it holds the selected project. */
+function workspaceLabel(
+  workspace: Workspace,
+  entries: ProjectEntry[],
+  selectedId?: string
+): string {
+  const own = entries.filter((entry) => entry.workspace.id === workspace.id)
+  const count = `${own.length} active project${own.length === 1 ? '' : 's'}`
+  const current = own.some(({ project }) => project.id === selectedId)
+  return `${asBold(workspace.name)} (${workspace.kind}, ${count})${
+    current ? ` [${asPrimary('current')}]` : ''
+  }`
+}
+
 /**
- * Ask which active project to use. Without a terminal to prompt in, or with
- * a single candidate, the currently selected project is kept, or the first
- * active one is returned.
+ * Ask which active project to use: first the workspace, then one of its
+ * projects, skipping a step that has a single choice. With `workspace` only
+ * its projects are offered. Without a terminal to prompt in, the currently
+ * selected project is kept if it is a candidate, else the first one is
+ * returned.
  */
 export async function pickProject(
   me: Me,
-  { message, selectedId }: { message: string; selectedId?: string }
+  {
+    message,
+    selectedId,
+    workspace,
+  }: { message: string; selectedId?: string; workspace?: Workspace }
 ): Promise<ProjectEntry> {
-  const entries = activeProjects(me)
+  const entries = activeProjects(me).filter(
+    (entry) => !workspace || entry.workspace.id === workspace.id
+  )
   if (entries.length === 0) {
     throw new Error(
-      `You don't have any active projects. Create one at ${asPrimary(
-        'https://e2b.dev/dashboard'
-      )}.`
+      workspace
+        ? `Workspace ${workspace.name} has no active projects.`
+        : `You don't have any active projects. Create one at ${asPrimary(
+            'https://e2b.dev/dashboard'
+          )}.`
     )
   }
+  const current = entries.find(({ project }) => project.id === selectedId)
   if (entries.length === 1 || !process.stdin.isTTY) {
-    return (
-      entries.find(({ project }) => project.id === selectedId) ?? entries[0]
-    )
+    return current ?? entries[0]
   }
 
+  const workspaces = me.workspaces.filter((candidate) =>
+    entries.some((entry) => entry.workspace.id === candidate.id)
+  )
+  const chosen =
+    workspaces.length === 1
+      ? workspaces[0]
+      : await select({
+          message: 'Select workspace',
+          pageSize: 20,
+          choices: workspaces.map((candidate) => ({
+            name: workspaceLabel(candidate, entries, selectedId),
+            value: candidate,
+          })),
+          default: current?.workspace,
+        })
+
+  const candidates = entries.filter((entry) => entry.workspace.id === chosen.id)
+  if (candidates.length === 1) return candidates[0]
   return select({
     message,
     pageSize: 20,
-    choices: entries.map((entry) => ({
+    choices: candidates.map((entry) => ({
       name: projectLabel(entry, selectedId),
       value: entry,
     })),
-    default: entries.find(({ project }) => project.id === selectedId),
+    default: current?.workspace.id === chosen.id ? current : undefined,
   })
 }

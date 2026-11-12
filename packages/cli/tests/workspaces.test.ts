@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
+const prompts = vi.hoisted(() => ({ select: vi.fn() }))
+vi.mock('@inquirer/prompts', () => ({ select: prompts.select }))
+
 import {
   activeProjects,
   blockedWarning,
@@ -170,6 +173,141 @@ describe('pickProject', () => {
       (await pickProject(me, { message: 'Pick', selectedId: 'second' }))
         .project.id
     ).toBe('second')
+  })
+
+  describe('with a terminal', () => {
+    type Choice = { name: string; value: unknown }
+    type Prompt = { message: string; choices: Choice[]; default?: unknown }
+
+    const me: Me = {
+      workspaces: [
+        workspace('personal', [project('a')]),
+        workspace('standard', [
+          project('b'),
+          project('c'),
+          project('d', { status: 'provisioning' }),
+        ]),
+      ],
+    }
+
+    function answer(...picks: ((prompt: Prompt) => unknown)[]) {
+      for (const pick of picks) {
+        prompts.select.mockImplementationOnce(async (prompt: Prompt) =>
+          pick(prompt)
+        )
+      }
+    }
+    const asked = () =>
+      prompts.select.mock.calls.map(([prompt]: [Prompt]) => ({
+        message: prompt.message,
+        names: prompt.choices.map((c) => c.name),
+      }))
+
+    afterEach(() => {
+      prompts.select.mockReset()
+      Object.defineProperty(process.stdin, 'isTTY', {
+        value: undefined,
+        configurable: true,
+      })
+    })
+    const withTTY = () =>
+      Object.defineProperty(process.stdin, 'isTTY', {
+        value: true,
+        configurable: true,
+      })
+
+    test('asks for the workspace, then one of its active projects', async () => {
+      withTTY()
+      answer(
+        (p) => p.choices[1].value,
+        (p) => p.choices[1].value
+      )
+      const picked = await pickProject(me, { message: 'Pick', selectedId: 'a' })
+
+      expect(picked.project.id).toBe('c')
+      expect(asked()).toEqual([
+        {
+          message: 'Select workspace',
+          names: [
+            expect.stringContaining('personal workspace'),
+            expect.stringContaining('standard workspace'),
+          ],
+        },
+        {
+          message: 'Pick',
+          names: [
+            expect.stringContaining('Project b'),
+            expect.stringContaining('Project c'),
+          ],
+        },
+      ])
+      expect(asked()[0].names[0]).toContain('1 active project')
+      expect(asked()[0].names[0]).toContain('current')
+      expect(asked()[0].names[1]).toContain('2 active projects')
+      // The selected project's workspace is preselected.
+      expect(prompts.select.mock.calls[0][0].default).toBe(me.workspaces[0])
+    })
+
+    test('skips the project step when the workspace has one project', async () => {
+      withTTY()
+      answer((p) => p.choices[0].value)
+      expect((await pickProject(me, { message: 'Pick' })).project.id).toBe('a')
+      expect(asked()).toHaveLength(1)
+    })
+
+    test('skips the workspace step with a single workspace', async () => {
+      withTTY()
+      const single: Me = { workspaces: [me.workspaces[1]] }
+      answer((p) => p.choices[0].value)
+      expect((await pickProject(single, { message: 'Pick' })).project.id).toBe(
+        'b'
+      )
+      expect(asked()).toEqual([
+        { message: 'Pick', names: [expect.any(String), expect.any(String)] },
+      ])
+    })
+
+    test('only offers the given workspace', async () => {
+      withTTY()
+      answer((p) => p.choices[1].value)
+      const picked = await pickProject(me, {
+        message: 'Pick',
+        workspace: me.workspaces[1],
+      })
+      expect(picked.project.id).toBe('c')
+      expect(asked()).toHaveLength(1)
+      expect(asked()[0].message).toBe('Pick')
+    })
+
+    test('fails when the given workspace has no active project', async () => {
+      withTTY()
+      const empty = workspace('empty', [project('x', { status: 'deleting' })])
+      await expect(
+        pickProject({ workspaces: [...me.workspaces, empty] }, {
+          message: 'Pick',
+          workspace: empty,
+        })
+      ).rejects.toThrow('Workspace empty workspace has no active projects')
+    })
+  })
+})
+
+describe('findProject in a workspace', () => {
+  const me: Me = {
+    workspaces: [
+      workspace('one', [project('a', { name: 'Shared' })]),
+      workspace('two', [project('b', { name: 'Shared' })]),
+    ],
+  }
+
+  test('scopes names to the workspace', () => {
+    expect(findProject(me, 'shared', me.workspaces[1]).project.id).toBe('b')
+  })
+
+  test('does not find projects of other workspaces', () => {
+    expect(() => findProject(me, 'prj_a', me.workspaces[1])).toThrow(
+      'not found among the projects you can access in workspace two workspace'
+    )
   })
 })
 
