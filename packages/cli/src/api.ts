@@ -63,10 +63,21 @@ export function currentProject(): string | undefined {
   return envAccessToken ? undefined : getUserConfig()?.projectId
 }
 
-/** `E2B_ACCESS_TOKEN`, checked for expiry: it can't be refreshed. */
+/**
+ * `E2B_ACCESS_TOKEN`, checked to be an OAuth access token (a JWT: the same
+ * variable used to hold the dashboard's access tokens, which no longer
+ * work) that hasn't expired, since it can't be refreshed.
+ */
 function checkedEnvAccessToken(): string {
   const exp = decodeJwtExp(envAccessToken!)
-  if (exp && Math.floor(Date.now() / 1000) >= exp) {
+  if (!exp) {
+    throw new Error(
+      `${asBold('E2B_ACCESS_TOKEN')} is not an OAuth access token. Access tokens from the dashboard are no longer supported: unset it and run ${asBold(
+        'e2b auth login'
+      )}, or use ${asBold('E2B_API_KEY')}.`
+    )
+  }
+  if (Math.floor(Date.now() / 1000) >= exp) {
     throw new Error(
       `${asBold('E2B_ACCESS_TOKEN')} has expired. Set a current one, or unset it and run ${asBold(
         'e2b auth login'

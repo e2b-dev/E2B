@@ -323,6 +323,18 @@ describe('ensureAuth', () => {
       expect(fetchMock).not.toHaveBeenCalled()
     })
 
+    test('rejects a value that is not an OAuth token', async () => {
+      vi.stubEnv('E2B_ACCESS_TOKEN', 'legacy-dashboard-token')
+      const fetchMock = mockWorkspaceApi()
+      const error = failing()
+
+      await expect(headersOf()).rejects.toThrow('exit 1')
+      expect(String(error.mock.calls[0][0])).toContain(
+        'E2B_ACCESS_TOKEN is not an OAuth access token'
+      )
+      expect(fetchMock).not.toHaveBeenCalled()
+    })
+
     test('names the token when workspace-api rejects it', async () => {
       vi.stubEnv('E2B_ACCESS_TOKEN', jwt(3600))
       vi.stubGlobal(
