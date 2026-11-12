@@ -13,6 +13,7 @@ import {
   assignTags,
   checkAliasExists,
   getTemplateTags,
+  deleteTemplate,
   removeTags,
   getBuildStatus,
   getFileUploadLink,
@@ -450,6 +451,32 @@ export class TemplateBase
    */
   static list(opts?: TemplateListOpts): TemplatePaginator {
     return new TemplatePaginator(this.resolveOpts(opts))
+  }
+
+  /**
+   * Delete a template or snapshot.
+   *
+   * @param nameOrId Template or snapshot name or ID
+   * @param options Authentication options
+   * @returns `true` if the template was deleted, `false` if it was not found
+   * @throws TemplateError if the API returns an error other than not found
+   *
+   * @example
+   * ```ts
+   * const deleted = await Template.delete('my-template')
+   * ```
+   */
+  static async delete(
+    nameOrId: string,
+    options?: ConnectionOpts
+  ): Promise<boolean> {
+    const config = new ConnectionConfig(this.resolveOpts(options))
+    const client = new ApiClient(config)
+    return deleteTemplate(
+      client,
+      { templateID: nameOrId },
+      config.getSignal(undefined, options?.signal)
+    )
   }
 
   fromDebianImage(variant: string = 'stable'): TemplateBuilder {

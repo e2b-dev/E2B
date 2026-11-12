@@ -14,6 +14,7 @@ from e2b.template.types import BuildInfo, InstructionType, TemplateTag, Template
 from e2b.template_sync.build_api import (
     assign_tags,
     check_alias_exists,
+    delete_template,
     get_template_tags,
     remove_tags,
     get_build_status,
@@ -589,3 +590,30 @@ class Template(TemplateBase):
             next_token=next_token,
             **cls._resolve_api_params(**opts),
         )
+
+    @classmethod
+    def delete(
+        cls,
+        name_or_id: str,
+        **opts: Unpack[ApiParams],
+    ) -> bool:
+        """
+        Delete a template or snapshot.
+
+        :param name_or_id: Template or snapshot name or ID
+        :return: True if the template was deleted, False if it was not found
+        :raises TemplateException: If the API returns an error other than not found
+
+        Example
+        ```python
+        from e2b import Template
+
+        deleted = Template.delete('my-template')
+        ```
+        """
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
+        api_client = get_api_client(
+            config,
+        )
+
+        return delete_template(api_client, name_or_id)

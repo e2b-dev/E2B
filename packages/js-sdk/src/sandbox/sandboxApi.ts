@@ -17,6 +17,7 @@ import {
 import { Paginator } from '../paginator'
 import { resolveIdempotencyKey } from '../retry'
 import { timeoutToSeconds } from '../utils'
+import { deleteTemplate } from '../template/buildApi'
 import type { Volume } from '../volume'
 import type { McpServer as BaseMcpServer } from './mcp'
 
@@ -1901,25 +1902,11 @@ export class SandboxApi extends ClientFactory {
     const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
-    const res = await client.api.DELETE('/templates/{templateID}', {
-      params: {
-        path: {
-          templateID: snapshotId,
-        },
-      },
-      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
-    })
-
-    if (res.error?.code === 404) {
-      return false
-    }
-
-    const err = handleApiError(res)
-    if (err) {
-      throw err
-    }
-
-    return true
+    return deleteTemplate(
+      client,
+      { templateID: snapshotId },
+      config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal)
+    )
   }
 
   protected static async createSandbox(
