@@ -230,7 +230,7 @@ function workspaceLabel(
 
 /**
  * Ask which active project to use: first the workspace, then one of its
- * projects, skipping a step that has a single choice. With `workspace` only
+ * projects, each step shown even with a single choice. With `workspace` only
  * its projects are offered. Without a terminal to prompt in, the currently
  * selected project is kept if it is a candidate, else the first one is
  * returned.
@@ -256,28 +256,24 @@ export async function pickProject(
     )
   }
   const current = entries.find(({ project }) => project.id === selectedId)
-  if (entries.length === 1 || !process.stdin.isTTY) {
-    return current ?? entries[0]
-  }
+  if (!process.stdin.isTTY) return current ?? entries[0]
 
   const workspaces = me.workspaces.filter((candidate) =>
     entries.some((entry) => entry.workspace.id === candidate.id)
   )
   const chosen =
-    workspaces.length === 1
-      ? workspaces[0]
-      : await select({
-          message: 'Select workspace',
-          pageSize: 20,
-          choices: workspaces.map((candidate) => ({
-            name: workspaceLabel(candidate, entries, selectedId),
-            value: candidate,
-          })),
-          default: current?.workspace,
-        })
+    workspace ??
+    (await select({
+      message: 'Select workspace',
+      pageSize: 20,
+      choices: workspaces.map((candidate) => ({
+        name: workspaceLabel(candidate, entries, selectedId),
+        value: candidate,
+      })),
+      default: current?.workspace,
+    }))
 
   const candidates = entries.filter((entry) => entry.workspace.id === chosen.id)
-  if (candidates.length === 1) return candidates[0]
   return select({
     message,
     pageSize: 20,

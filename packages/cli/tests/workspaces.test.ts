@@ -248,22 +248,19 @@ describe('pickProject', () => {
       expect(prompts.select.mock.calls[0][0].default).toBe(me.workspaces[0])
     })
 
-    test('skips the project step when the workspace has one project', async () => {
+    test('asks even when a step has a single choice', async () => {
       withTTY()
-      answer((p) => p.choices[0].value)
-      expect((await pickProject(me, { message: 'Pick' })).project.id).toBe('a')
-      expect(asked()).toHaveLength(1)
-    })
-
-    test('skips the workspace step with a single workspace', async () => {
-      withTTY()
-      const single: Me = { workspaces: [me.workspaces[1]] }
-      answer((p) => p.choices[0].value)
+      const single: Me = { workspaces: [me.workspaces[0]] }
+      answer(
+        (p) => p.choices[0].value,
+        (p) => p.choices[0].value
+      )
       expect((await pickProject(single, { message: 'Pick' })).project.id).toBe(
-        'b'
+        'a'
       )
       expect(asked()).toEqual([
-        { message: 'Pick', names: [expect.any(String), expect.any(String)] },
+        { message: 'Select workspace', names: [expect.any(String)] },
+        { message: 'Pick', names: [expect.stringContaining('Project a')] },
       ])
     })
 
