@@ -72,3 +72,11 @@ def test_rejects_invalid_patterns_with_value_error():
         PatternMatcher(["[abc"])
     with pytest.raises(ValueError, match=r"Invalid ignore pattern '\[\\q\]'"):
         PatternMatcher(["[\\q]"])
+
+
+@pytest.mark.parametrize(
+    ("path", "excluded"),
+    [("5", True), ("\u0661", False), ("d", False)],
+)
+def test_digit_class_only_matches_ascii_digits(path, excluded):
+    assert PatternMatcher([r"[\d]"]).matches(path) is excluded
