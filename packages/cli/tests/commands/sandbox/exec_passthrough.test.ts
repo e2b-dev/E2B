@@ -3,14 +3,14 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 const mocks = vi.hoisted(() => {
   const connect = vi.fn()
   const run = vi.fn()
-  const ensureAPIKey = vi.fn(() => 'test-api-key')
+  const ensureAuth = vi.fn(async () => ({ apiKey: 'test-api-key' }))
   const isPipedStdin = vi.fn()
   const setupSignalHandlers = vi.fn(() => () => {})
 
   return {
     connect,
     run,
-    ensureAPIKey,
+    ensureAuth,
     isPipedStdin,
     setupSignalHandlers,
   }
@@ -37,7 +37,7 @@ vi.mock('e2b', () => {
 })
 
 vi.mock('../../../src/api', () => ({
-  ensureAPIKey: mocks.ensureAPIKey,
+  ensureAuth: mocks.ensureAuth,
 }))
 
 vi.mock('src/utils/signal', () => ({

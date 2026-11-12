@@ -3,7 +3,7 @@ import * as e2b from 'e2b'
 import * as util from 'util'
 import * as chalk from 'chalk'
 
-import { client, connectionConfig } from 'src/api'
+import { apiClient, connectionConfig } from 'src/api'
 import { asBold, asTimestamp, withUnderline } from 'src/utils/format'
 import { wait } from 'src/utils/wait'
 import { handleE2BRequestError } from '../../utils/errors'
@@ -234,6 +234,8 @@ async function listSandboxLogs({
   sandboxID: string
   start?: number
 }): Promise<e2b.components['schemas']['SandboxLog'][]> {
+  // A fresh client per call: `--follow` can outlive the hour-long access token.
+  const client = await apiClient()
   const signal = connectionConfig.getSignal()
   const res = await client.api.GET('/sandboxes/{sandboxID}/logs', {
     signal,

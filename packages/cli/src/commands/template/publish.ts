@@ -9,10 +9,11 @@ import {
 } from 'src/utils/format'
 import { deprecatedConfigOption, warnIgnoredConfigOption } from 'src/options'
 import { confirm } from 'src/utils/confirm'
-import { client } from 'src/api'
+import { apiClient } from 'src/api'
 import { handleE2BRequestError } from '../../utils/errors'
 
 async function publishTemplate(templateID: string, publish: boolean) {
+  const client = await apiClient()
   const res = await client.api.PATCH('/v2/templates/{templateID}', {
     params: {
       path: {

@@ -2,7 +2,7 @@ import * as commander from '@commander-js/extra-typings'
 import * as e2b from 'e2b'
 import { NotFoundError } from 'e2b'
 
-import { ensureAPIKey } from 'src/api'
+import { ensureAuth } from 'src/api'
 import { asBold } from 'src/utils/format'
 import { integer, zodParser } from 'src/validation'
 import { parseTimeout } from './create'
@@ -30,10 +30,10 @@ export const forkCommand = new commander.Command('fork')
   )
   .action(async (sandboxID, opts) => {
     try {
-      const apiKey = ensureAPIKey()
+      const auth = await ensureAuth()
 
       const forks = await e2b.Sandbox.fork(sandboxID, {
-        apiKey,
+        ...auth,
         ...(opts.count !== undefined ? { count: opts.count } : {}),
         ...(opts.timeout !== undefined ? { timeoutMs: opts.timeout } : {}),
       })

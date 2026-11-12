@@ -1,7 +1,7 @@
 import { Sandbox, SandboxState } from 'e2b'
 import { z } from 'zod'
 
-import { ensureAPIKey } from 'src/api'
+import { ensureAuth } from 'src/api'
 import { keyValuePairs, zodParser } from 'src/validation'
 import { wait } from '../../utils/wait'
 import { asBold } from '../../utils/format'
@@ -65,17 +65,20 @@ export function waitForSandboxEnd(sandboxID: string) {
     }
   }
 
-  monitor()
+  monitor().catch((err) => {
+    // Credentials could not be refreshed: stop, as a missing login would.
+    console.error(err instanceof Error ? err.message : err)
+    process.exit(1)
+  })
 
   return () => running
 }
 
 export async function isRunning(sandboxID: string) {
+  // Outside the try: a failed token refresh is not a stopped sandbox.
+  const auth = await ensureAuth()
   try {
-    const apiKey = ensureAPIKey()
-    const info = await Sandbox.getInfo(sandboxID, {
-      apiKey,
-    })
+    const info = await Sandbox.getInfo(sandboxID, auth)
     return info.state === 'running'
   } catch (err) {
     console.error(`Failed to check sandbox status: ${err}`)

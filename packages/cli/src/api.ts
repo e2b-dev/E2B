@@ -4,6 +4,7 @@ import * as e2b from 'e2b'
 import * as packageJSON from '../package.json'
 import { getUserConfig, UserConfig } from './user'
 import { asBold, asPrimary } from './utils/format'
+import { ensureValidAccessToken } from './utils/token-refresh'
 
 // Must run before any ConnectionConfig is constructed (including the
 // module-level one below) — configs read the integration at construction time.
@@ -12,7 +13,6 @@ e2b.ConnectionConfig.setIntegration(`e2b-cli/${packageJSON.version}`)
 export type Teams =
   e2b.paths['/teams']['get']['responses'][200]['content']['application/json']
 
-export let apiKey = process.env.E2B_API_KEY
 export const projectId = process.env.E2B_PROJECT_ID || process.env.E2B_TEAM_ID
 
 const authErrorBox = () => {
@@ -34,19 +34,47 @@ Visit ${asPrimary('https://e2b.dev/dashboard?tab=keys')} to get the API key.`
   })
 }
 
-export function ensureAPIKey() {
-  // If apiKey is not already set (either from env var or from user config), try to get it from config file
-  if (!apiKey) {
-    const userConfig = getUserConfig()
-    apiKey = userConfig?.projectApiKey
-  }
+/**
+ * Credentials to spread into SDK call options, e.g. `Sandbox.list({ ...auth })`.
+ * Derived from ConnectionOpts so a renamed SDK option fails to compile here
+ * instead of being silently dropped by the spreads.
+ */
+export type Auth =
+  | Required<Pick<e2b.ConnectionOpts, 'apiKey'>>
+  | Required<Pick<e2b.ConnectionOpts, 'apiHeaders'>>
 
-  if (!apiKey) {
+/**
+ * Resolve credentials for an E2B API call.
+ *
+ * `E2B_API_KEY` wins, for CI/CD and other non-interactive use. Otherwise the
+ * logged-in user's OAuth access token is used, refreshed first when it is
+ * about to expire, with `X-Team-ID` selecting the project. Call this right
+ * before each request (not once per command) so long-running commands keep
+ * working after the hour-long access token expires.
+ */
+export async function ensureAuth(cliProjectId?: string): Promise<Auth> {
+  const apiKey = process.env.E2B_API_KEY
+  if (apiKey) return { apiKey }
+
+  if (!getUserConfig()) {
     console.error(authErrorBox())
     process.exit(1)
-  } else {
-    return apiKey
   }
+
+  const { accessToken, config } = await ensureValidAccessToken()
+  return {
+    apiHeaders: {
+      Authorization: `Bearer ${accessToken}`,
+      'X-Team-ID': resolveProjectId(cliProjectId) ?? config.projectId,
+    },
+  }
+}
+
+/** An E2B API client authenticated with {@link ensureAuth}. */
+export async function apiClient(cliProjectId?: string) {
+  return new e2b.ApiClient(
+    new e2b.ConnectionConfig(await ensureAuth(cliProjectId))
+  )
 }
 
 export function ensureUserConfig(): UserConfig {
@@ -75,14 +103,5 @@ export function resolveProjectId(cliProjectId?: string): string | undefined {
   return undefined
 }
 
-const userConfig = getUserConfig()
-
-export const connectionConfig = new e2b.ConnectionConfig({
-  apiKey: process.env.E2B_API_KEY || userConfig?.projectApiKey,
-})
-
-// `e2b auth login` runs before any API key exists, and this client is built at
-// import time, so don't require an API key here.
-export const client = new e2b.ApiClient(connectionConfig, {
-  requireApiKey: false,
-})
+// Carries no credentials: used for the API domain and request signals only.
+export const connectionConfig = new e2b.ConnectionConfig()

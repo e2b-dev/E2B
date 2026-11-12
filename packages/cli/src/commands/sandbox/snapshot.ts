@@ -1,7 +1,7 @@
 import * as commander from '@commander-js/extra-typings'
 import { NotFoundError, Sandbox, SnapshotInfo } from 'e2b'
 
-import { ensureAPIKey } from 'src/api'
+import { ensureAuth } from 'src/api'
 import { Format, parseFormat } from 'src/options'
 import { integer, zodParser } from 'src/validation'
 import { asBold } from 'src/utils/format'
@@ -20,10 +20,10 @@ const createSnapshotCommand = new commander.Command('create')
   )
   .action(async (sandboxID, options) => {
     try {
-      const apiKey = ensureAPIKey()
+      const auth = await ensureAuth()
 
       const snapshot = await Sandbox.createSnapshot(sandboxID, {
-        apiKey,
+        ...auth,
         name: options.name,
       })
 
@@ -66,7 +66,7 @@ const listSnapshotsCommand = new commander.Command('list')
   )
   .action(async (sandboxID, options) => {
     try {
-      const apiKey = ensureAPIKey()
+      const auth = await ensureAuth()
       const limit =
         options.limit === 0 ? undefined : (options.limit ?? DEFAULT_LIMIT)
 
@@ -77,7 +77,7 @@ const listSnapshotsCommand = new commander.Command('list')
 
       const allSnapshots: SnapshotInfo[] = []
       const paginator = Sandbox.listSnapshots({
-        apiKey,
+        ...auth,
         sandboxId: sandboxID,
         name: options.name,
         limit: pageLimit,
@@ -117,11 +117,11 @@ const deleteSnapshotCommand = new commander.Command('delete')
   .alias('dl')
   .action(async (snapshotIDs) => {
     try {
-      const apiKey = ensureAPIKey()
+      const auth = await ensureAuth()
 
       const results = await Promise.allSettled(
         snapshotIDs.map(async (snapshotID) => {
-          const deleted = await Sandbox.deleteSnapshot(snapshotID, { apiKey })
+          const deleted = await Sandbox.deleteSnapshot(snapshotID, auth)
           if (deleted) {
             console.log(`Snapshot ${asBold(snapshotID)} has been deleted`)
           } else {

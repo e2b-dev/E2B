@@ -1,10 +1,8 @@
 import { beforeAll, describe, expect, test } from 'vitest'
 import { ApiClient, ConnectionConfig } from 'e2b'
-import { getUserConfig } from 'src/user'
 import { isDebug, runCli } from '../../setup'
 
-const userConfig = getUserConfig()
-const apiKey = process.env.E2B_API_KEY || userConfig?.projectApiKey
+const apiKey = process.env.E2B_API_KEY
 const domain = process.env.E2B_DOMAIN || 'e2b.app'
 const shouldSkip = !apiKey || isDebug
 const integrationTest = test.skipIf(shouldSkip)

@@ -5,7 +5,7 @@ import * as e2b from 'e2b'
 
 import * as pkg from '../../../package.json'
 import {
-  DOCS_BASE,
+  CLI_AUTH_URL,
   getConfigRefreshTimestamp,
   getUserConfig,
   writeUserConfig,
@@ -81,7 +81,6 @@ export const loginCommand = new commander.Command('login')
         last_refresh: getConfigRefreshTimestamp(),
         projectName: defaultTeam.name,
         projectId: defaultTeam.teamID,
-        projectApiKey: defaultTeam.apiKey,
       }
 
       writeUserConfig(USER_CONFIG_PATH, userConfig)
@@ -107,7 +106,7 @@ interface SignInWithBrowserResponse {
 async function signInWithBrowser(): Promise<SignInWithBrowserResponse> {
   const server = http.createServer()
   const { port } = await listen.default(server, 0, '127.0.0.1')
-  const loginUrl = new URL(`${DOCS_BASE}/api/cli`)
+  const loginUrl = new URL(CLI_AUTH_URL)
   loginUrl.searchParams.set('next', `http://localhost:${port}`)
   loginUrl.searchParams.set('cliVersion', pkg.version)
 
@@ -115,7 +114,7 @@ async function signInWithBrowser(): Promise<SignInWithBrowserResponse> {
     server.once('request', (req, res) => {
       // Close the HTTP connection to prevent `server.close()` from hanging
       res.setHeader('connection', 'close')
-      const followUpUrl = new URL(`${DOCS_BASE}/api/cli`)
+      const followUpUrl = new URL(CLI_AUTH_URL)
       const searchParams = new URL(req.url || '/', 'http://localhost')
         .searchParams
       const searchParamsObj = Object.fromEntries(
