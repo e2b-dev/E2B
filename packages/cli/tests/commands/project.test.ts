@@ -146,7 +146,12 @@ describe('e2b project list', () => {
   })
 
   test('rejects an ambiguous workspace name', async () => {
-    me.workspaces.push({ ...me.workspaces[1], id: 'team2', public_id: 'wrk_team2', projects: [] })
+    me.workspaces.push({
+      ...me.workspaces[1],
+      id: 'team2',
+      public_id: 'wrk_team2',
+      projects: [],
+    })
     try {
       const { err } = await run(['project', 'list', '--workspace', 'TEAM'])
       expect(err).toContain('More than one workspace is named "TEAM"')
@@ -187,7 +192,9 @@ describe('e2b project use', () => {
       '--workspace',
       'Team',
     ])
-    expect(err).toContain('not found among the projects you can access in workspace Team')
+    expect(err).toContain(
+      'not found among the projects you can access in workspace Team'
+    )
     expect(mocks.updateUserConfig).not.toHaveBeenCalled()
   })
 
@@ -211,9 +218,9 @@ describe('e2b project use', () => {
 
       const { out } = await run(['project', 'use'])
 
-      expect(
-        mocks.select.mock.calls.map(([p]: [Prompt]) => p.message)
-      ).toEqual(['Select workspace', 'Select project'])
+      expect(mocks.select.mock.calls.map(([p]: [Prompt]) => p.message)).toEqual(
+        ['Select workspace', 'Select project']
+      )
       // Team's only active project is still offered, not selected outright.
       expect(mocks.select.mock.calls[1][0].choices).toHaveLength(1)
       expect(mocks.updateUserConfig).toHaveBeenCalledWith(
@@ -233,9 +240,9 @@ describe('e2b project use', () => {
       )
       const { out } = await run(['project', 'use', '--workspace', 'wrk_team'])
       // No workspace prompt; the project prompt lists Team's projects only.
-      expect(
-        mocks.select.mock.calls.map(([p]: [Prompt]) => p.message)
-      ).toEqual(['Select project'])
+      expect(mocks.select.mock.calls.map(([p]: [Prompt]) => p.message)).toEqual(
+        ['Select project']
+      )
       expect(out).toContain('Now using project Project shared')
     })
 

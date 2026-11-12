@@ -1,41 +1,45 @@
 import { select } from '@inquirer/prompts'
 import { ConnectionConfig } from 'e2b'
-import { z } from 'zod'
+import createClient from 'openapi-fetch'
 
 import * as packageJSON from '../package.json'
 import { asBold, asPrimary, asRed } from './utils/format'
+import type { components, paths } from './workspace-api/schema.gen'
 
-// Only the fields the CLI uses. `status` and `kind` stay plain strings so a
-// value added server-side doesn't break the CLI.
-const projectSchema = z.object({
-  id: z.string(),
-  public_id: z.string(),
-  workspace_id: z.string(),
-  name: z.string(),
-  slug: z.string(),
-  region: z.string(),
-  // The project's control plane: its API is `https://api.<domain>`.
-  control_plane_domain: z.string(),
-  status: z.string(),
-  blocked: z.boolean(),
-  block_reasons: z.array(z.string()),
-  capabilities: z.array(z.string()),
-})
+const WORKSPACE_API_REQUEST_TIMEOUT_MS = 30_000
 
-const workspaceSchema = z.object({
-  id: z.string(),
-  public_id: z.string(),
-  name: z.string(),
-  kind: z.string(),
-  blocked: z.boolean(),
-  block_reasons: z.array(z.string()),
-  capabilities: z.array(z.string()),
-  projects: z.array(projectSchema),
-})
+type ApiProject = components['schemas']['Project']
+type ApiWorkspace = components['schemas']['Workspace']
 
-const meSchema = z.object({ workspaces: z.array(workspaceSchema) })
+// Only the fields the CLI uses, so `--format json` output doesn't grow with
+// every field workspace-api adds.
+export type Project = Pick<
+  ApiProject,
+  | 'id'
+  | 'public_id'
+  | 'workspace_id'
+  | 'name'
+  | 'slug'
+  | 'region'
+  | 'control_plane_domain'
+  | 'status'
+  | 'blocked'
+  | 'block_reasons'
+  | 'capabilities'
+>
+export type Workspace = Pick<
+  ApiWorkspace,
+  | 'id'
+  | 'public_id'
+  | 'name'
+  | 'kind'
+  | 'blocked'
+  | 'block_reasons'
+  | 'capabilities'
+> & { projects: Project[] }
+export type Me = { workspaces: Workspace[] }
 
-/** The `status` values the CLI acts on; others are passed through as text. */
+/** The `status` values the CLI acts on. */
 export enum ProjectStatus {
   Active = 'active',
 }
@@ -44,12 +48,6 @@ export enum ProjectStatus {
 export enum WorkspaceKind {
   Personal = 'personal',
 }
-
-const WORKSPACE_API_REQUEST_TIMEOUT_MS = 30_000
-
-export type Project = z.infer<typeof projectSchema>
-export type Workspace = z.infer<typeof workspaceSchema>
-export type Me = z.infer<typeof meSchema>
 
 /** A project together with the workspace it is listed under. */
 export type ProjectEntry = { project: Project; workspace: Workspace }
@@ -72,26 +70,22 @@ export function workspaceApiUrl(): string {
   return `https://workspace-api.${domain}`
 }
 
-async function workspaceApi(
-  method: 'GET' | 'POST',
-  path: string,
-  accessToken: string
-): Promise<Response> {
-  return fetch(`${workspaceApiUrl()}${path}`, {
-    method,
+function workspaceApi(accessToken: string) {
+  return createClient<paths>({
+    baseUrl: workspaceApiUrl(),
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'User-Agent': `e2b-cli/${packageJSON.version}`,
     },
-    signal: AbortSignal.timeout(WORKSPACE_API_REQUEST_TIMEOUT_MS),
   })
 }
 
-async function requestError(res: Response, action: string) {
-  const body = await res.text().catch(() => '')
+function requestError(res: Response, body: unknown, action: string) {
+  const detail =
+    (typeof body === 'string' ? body : JSON.stringify(body)) || res.statusText
   return new Error(
     `Failed to ${action} (${res.status} from ${workspaceApiUrl()})${
-      body ? `: ${body}` : ''
+      detail ? `: ${detail}` : ''
     }`
   )
 }
@@ -103,17 +97,44 @@ async function requestError(res: Response, action: string) {
  * workspace-api yet" for a user who never opened the dashboard.
  */
 export async function fetchMe(accessToken: string): Promise<Me | undefined> {
-  const res = await workspaceApi('GET', '/v1/me', accessToken)
-  if (res.status === 401) return undefined
-  if (!res.ok) throw await requestError(res, 'list your workspaces')
-
-  const parsed = meSchema.safeParse(await res.json())
-  if (!parsed.success) {
-    throw new Error(
-      `Unexpected response from ${workspaceApiUrl()}/v1/me:\n${z.prettifyError(parsed.error)}`
-    )
+  const { data, error, response } = await workspaceApi(accessToken).GET(
+    '/v1/me',
+    { signal: AbortSignal.timeout(WORKSPACE_API_REQUEST_TIMEOUT_MS) }
+  )
+  if (response.status === 401) return undefined
+  if (!response.ok || data === undefined) {
+    throw requestError(response, error, 'list your workspaces')
   }
-  return parsed.data
+  return { workspaces: data.workspaces.map(toWorkspace) }
+}
+
+function toProject(p: ApiProject): Project {
+  return {
+    id: p.id,
+    public_id: p.public_id,
+    workspace_id: p.workspace_id,
+    name: p.name,
+    slug: p.slug,
+    region: p.region,
+    control_plane_domain: p.control_plane_domain,
+    status: p.status,
+    blocked: p.blocked,
+    block_reasons: p.block_reasons,
+    capabilities: p.capabilities,
+  }
+}
+
+function toWorkspace(w: ApiWorkspace): Workspace {
+  return {
+    id: w.id,
+    public_id: w.public_id,
+    name: w.name,
+    kind: w.kind,
+    blocked: w.blocked,
+    block_reasons: w.block_reasons,
+    capabilities: w.capabilities,
+    projects: w.projects.map(toProject),
+  }
 }
 
 /** Every project in `me`, with its workspace. */

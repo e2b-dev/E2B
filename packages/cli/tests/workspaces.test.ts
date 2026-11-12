@@ -34,15 +34,15 @@ function project(id: string, overrides: Partial<Project> = {}): Project {
 }
 
 function workspace(
-  kind: string,
+  id: string,
   projects: Project[],
   overrides: Partial<Workspace> = {}
 ): Workspace {
   return {
-    id: kind,
-    public_id: `wrk_${kind}`,
-    name: `${kind} workspace`,
-    kind,
+    id,
+    public_id: `wrk_${id}`,
+    name: `${id} workspace`,
+    kind: id === 'personal' ? 'personal' : 'standard',
     blocked: false,
     block_reasons: [],
     capabilities: [],
@@ -170,8 +170,8 @@ describe('pickProject', () => {
       ],
     }
     expect(
-      (await pickProject(me, { message: 'Pick', selectedId: 'second' }))
-        .project.id
+      (await pickProject(me, { message: 'Pick', selectedId: 'second' })).project
+        .id
     ).toBe('second')
   })
 
@@ -280,10 +280,13 @@ describe('pickProject', () => {
       withTTY()
       const empty = workspace('empty', [project('x', { status: 'deleting' })])
       await expect(
-        pickProject({ workspaces: [...me.workspaces, empty] }, {
-          message: 'Pick',
-          workspace: empty,
-        })
+        pickProject(
+          { workspaces: [...me.workspaces, empty] },
+          {
+            message: 'Pick',
+            workspace: empty,
+          }
+        )
       ).rejects.toThrow('Workspace empty workspace has no active projects')
     })
   })
@@ -317,15 +320,51 @@ describe('fetchMe', () => {
     expect(await fetchMe('token')).toBeUndefined()
   })
 
-  test('sends the access token and validates the response', async () => {
-    const fetchMock = vi.fn(async (_url: string, _init: RequestInit) =>
-      Response.json({ workspaces: [{ id: 'missing-fields' }] })
+  test('sends the access token and keeps only the fields the CLI uses', async () => {
+    vi.stubEnv('E2B_WORKSPACE_API_URL', 'http://localhost:8080')
+    const me: Me = { workspaces: [workspace('personal', [project('a')])] }
+    const fetchMock = vi.fn(async (_req: Request) =>
+      Response.json({
+        workspaces: me.workspaces.map((w) => ({
+          ...w,
+          has_sso: false,
+          projects: w.projects.map((p) => ({ ...p, email: 'a@example.com' })),
+        })),
+      })
     )
     vi.stubGlobal('fetch', fetchMock)
 
-    await expect(fetchMe('token')).rejects.toThrow('Unexpected response')
-    const headers = fetchMock.mock.calls[0][1].headers as Record<string, string>
-    expect(headers.Authorization).toBe('Bearer token')
+    expect(await fetchMe('token')).toEqual(me)
+    const req = fetchMock.mock.calls[0][0]
+    expect(req.url).toBe('http://localhost:8080/v1/me')
+    expect(req.headers.get('Authorization')).toBe('Bearer token')
+  })
+
+  test('throws with the response body on other errors', async () => {
+    vi.stubEnv('E2B_WORKSPACE_API_URL', 'http://localhost:8080')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        Response.json({ code: 500, message: 'boom' }, { status: 500 })
+      )
+    )
+    await expect(fetchMe('token')).rejects.toThrow(
+      'Failed to list your workspaces (500 from http://localhost:8080): {"code":500,"message":"boom"}'
+    )
+  })
+
+  test('falls back to the status text without a body', async () => {
+    vi.stubEnv('E2B_WORKSPACE_API_URL', 'http://localhost:8080')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(null, { status: 502, statusText: 'Bad Gateway' })
+      )
+    )
+    await expect(fetchMe('token')).rejects.toThrow(
+      'Failed to list your workspaces (502 from http://localhost:8080): Bad Gateway'
+    )
   })
 })
 
