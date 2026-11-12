@@ -1,5 +1,6 @@
 import * as commander from '@commander-js/extra-typings'
 import * as chalk from 'chalk'
+import { Template } from 'e2b'
 
 import {
   asBold,
@@ -9,21 +10,13 @@ import {
 } from 'src/utils/format'
 import { deprecatedConfigOption, warnIgnoredConfigOption } from 'src/options'
 import { confirm } from 'src/utils/confirm'
-import { apiClient } from 'src/api'
-import { handleE2BRequestError } from '../../utils/errors'
+import { ensureAuth } from 'src/api'
 
 async function deleteTemplate(templateID: string) {
-  const client = await apiClient()
-  const res = await client.api.DELETE('/templates/{templateID}', {
-    params: {
-      path: {
-        templateID,
-      },
-    },
-  })
-
-  handleE2BRequestError(res, 'Error deleting sandbox template')
-  return
+  const deleted = await Template.delete(templateID, await ensureAuth())
+  if (!deleted) {
+    throw new Error(`Sandbox template ${templateID} not found`)
+  }
 }
 
 export const deleteCommand = new commander.Command('delete')
