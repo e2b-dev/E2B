@@ -8,7 +8,6 @@ import { updateUserConfig } from 'src/utils/token-refresh'
 import {
   allProjects,
   blockedWarning,
-  defaultProject,
   findProject,
   findWorkspace,
   Me,
@@ -46,14 +45,10 @@ function projectStatus({ status, blocked, block_reasons }: Project) {
     : 'blocked'
 }
 
-/**
- * The project commands run in: the current one if `me` lists it; with
- * `E2B_ACCESS_TOKEN` and no `E2B_PROJECT_ID`, the token's default project.
- */
+/** The project commands run in, which `me` has to list. */
 function resolveCurrent(me: Me): ProjectEntry {
   const current = currentProject()
   if (current) return findProject(me, current)
-  if (envAccessToken) return defaultProject(me)
   throw new Error(
     `No project selected. Run ${asBold('e2b project use <project>')}.`
   )

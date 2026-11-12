@@ -9,7 +9,7 @@ import {
   ensureValidAccessToken,
   updateUserConfig,
 } from './utils/token-refresh'
-import { defaultProject, fetchMe, findProject, Me } from './workspaces'
+import { fetchMe, findProject, Me } from './workspaces'
 
 // Must run before any ConnectionConfig is constructed (including the
 // module-level one below) — configs read the integration at construction time.
@@ -64,15 +64,23 @@ export function currentProject(): string | undefined {
 }
 
 /**
+ * What is wrong with the credentials in the environment, if anything.
  * `E2B_API_KEY` and `E2B_ACCESS_TOKEN` select different projects (the key's
- * own, the token's user's), so both at once is a mistake, not a precedence.
+ * own, `E2B_PROJECT_ID`), so both at once is a mistake, not a precedence;
+ * and the token needs the project named, like the key names its own.
  */
-export const CONFLICTING_CREDENTIALS = `Both ${asBold('E2B_API_KEY')} and ${asBold(
-  'E2B_ACCESS_TOKEN'
-)} are set. Unset one of them.`
-
-export function envCredentialsConflict(): boolean {
-  return Boolean(process.env.E2B_API_KEY && envAccessToken)
+export function envCredentialsError(): string | undefined {
+  if (process.env.E2B_API_KEY && envAccessToken) {
+    return `Both ${asBold('E2B_API_KEY')} and ${asBold(
+      'E2B_ACCESS_TOKEN'
+    )} are set. Unset one of them.`
+  }
+  if (envAccessToken && !projectId) {
+    return `${asBold('E2B_ACCESS_TOKEN')} needs ${asBold(
+      'E2B_PROJECT_ID'
+    )}: set it to the project requests go to (its ID, prj_ ID, slug or name).`
+  }
+  return undefined
 }
 
 /**
@@ -124,8 +132,9 @@ export function getMe(): Promise<Me> {
  * even when `E2B_API_KEY` is set.
  */
 export async function requireMe(): Promise<Me> {
-  if (envCredentialsConflict()) {
-    console.error(CONFLICTING_CREDENTIALS)
+  const envError = envCredentialsError()
+  if (envError) {
+    console.error(envError)
     process.exit(1)
   }
   if (!envAccessToken && !getUserConfig()) {
@@ -145,15 +154,13 @@ export async function requireMe(): Promise<Me> {
 }
 
 /**
- * The project requests with `E2B_ACCESS_TOKEN` go to: `cliProjectId`, then
- * `E2B_PROJECT_ID`, else the default project the token's user has.
+ * The project every request with `E2B_ACCESS_TOKEN` goes to: `E2B_PROJECT_ID`
+ * (required, checked by {@link envCredentialsError}), resolved through
+ * `/v1/me` for its UUID and control plane. `--project` plays no part, as
+ * with `E2B_API_KEY`.
  */
-async function resolveEnvProject(
-  cliProjectId?: string
-): Promise<{ id: string; domain: string }> {
-  const me = await getMe()
-  const ref = cliProjectId || projectId
-  const { project } = ref ? findProject(me, ref) : defaultProject(me)
+async function resolveEnvProject(): Promise<{ id: string; domain: string }> {
+  const { project } = findProject(await getMe(), projectId!)
   return { id: project.id, domain: project.control_plane_domain }
 }
 
@@ -189,18 +196,20 @@ async function resolveProject(
 /**
  * Resolve credentials for an E2B API call.
  *
- * `E2B_API_KEY` or `E2B_ACCESS_TOKEN`, for CI/CD and other non-interactive
- * use (setting both is refused), each ignoring the stored login. Otherwise
- * the logged-in user's OAuth access token is used, refreshed first when it
- * is about to expire. With a token, `X-Team-ID`
+ * `E2B_API_KEY` or `E2B_ACCESS_TOKEN` with `E2B_PROJECT_ID`, for CI/CD and
+ * other non-interactive use (setting both credentials is refused), each
+ * ignoring the stored login and `cliProjectId`. Otherwise the logged-in
+ * user's OAuth access token is used, refreshed first when it is about to
+ * expire. With a token, `X-Team-ID`
  * selects the project and requests go to that project's control plane
  * (`domain`). Call this right before each request (not once per command) so
  * long-running commands keep working after the hour-long access token
  * expires.
  */
 export async function ensureAuth(cliProjectId?: string): Promise<Auth> {
-  if (envCredentialsConflict()) {
-    console.error(CONFLICTING_CREDENTIALS)
+  const envError = envCredentialsError()
+  if (envError) {
+    console.error(envError)
     process.exit(1)
   }
   const apiKey = process.env.E2B_API_KEY
@@ -208,7 +217,7 @@ export async function ensureAuth(cliProjectId?: string): Promise<Auth> {
 
   if (envAccessToken) {
     try {
-      const project = await resolveEnvProject(cliProjectId)
+      const project = await resolveEnvProject()
       return {
         apiHeaders: {
           Authorization: `Bearer ${checkedEnvAccessToken()}`,

@@ -1,10 +1,6 @@
 import * as commander from '@commander-js/extra-typings'
 
-import {
-  CONFLICTING_CREDENTIALS,
-  envAccessToken,
-  envCredentialsConflict,
-} from 'src/api'
+import { envAccessToken, envCredentialsError } from 'src/api'
 import { getUserConfig } from 'src/user'
 import { asFormattedConfig, asFormattedError } from 'src/utils/format'
 
@@ -18,8 +14,9 @@ export const infoCommand = new commander.Command('info')
       console.error(asFormattedError('Failed to read user config', err))
     }
 
-    if (envCredentialsConflict()) {
-      console.error(asFormattedError(CONFLICTING_CREDENTIALS))
+    const envError = envCredentialsError()
+    if (envError) {
+      console.error(asFormattedError(envError))
       process.exit(1)
     }
     if (process.env.E2B_API_KEY) {

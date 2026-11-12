@@ -162,30 +162,6 @@ export function personalProject(me: Me): ProjectEntry | undefined {
   )
 }
 
-const NO_ACTIVE_PROJECTS = `You don't have any active projects. Create one at ${asPrimary(
-  'https://e2b.dev/dashboard'
-)}.`
-
-/**
- * The project to use when none is chosen and nobody can be asked: the
- * personal one, else the only active one. Otherwise the caller has to name
- * one with `E2B_PROJECT_ID`.
- */
-export function defaultProject(me: Me): ProjectEntry {
-  const personal = personalProject(me)
-  if (personal) return personal
-  const active = activeProjects(me)
-  if (active.length === 1) return active[0]
-  if (active.length === 0) throw new Error(NO_ACTIVE_PROJECTS)
-  throw new Error(
-    `Set ${asBold('E2B_PROJECT_ID')} to one of your projects: ${active
-      .map(
-        ({ project, workspace }) => `${project.public_id} (${workspace.name})`
-      )
-      .join(', ')}.`
-  )
-}
-
 /** Find a workspace by ID (UUID or `wrk_` public ID) or unambiguous name. */
 export function findWorkspace(me: Me, ref: string): Workspace {
   const exact = me.workspaces.find((w) => w.id === ref || w.public_id === ref)
@@ -307,7 +283,9 @@ export async function pickProject(
     throw new Error(
       workspace
         ? `Workspace ${workspace.name} has no active projects.`
-        : NO_ACTIVE_PROJECTS
+        : `You don't have any active projects. Create one at ${asPrimary(
+            'https://e2b.dev/dashboard'
+          )}.`
     )
   }
   const current = entries.find(({ project }) => project.id === selectedId)

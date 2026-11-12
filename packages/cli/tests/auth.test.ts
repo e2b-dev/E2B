@@ -233,6 +233,8 @@ describe('ensureAuth', () => {
   })
 
   describe('with E2B_ACCESS_TOKEN', () => {
+    beforeEach(() => vi.stubEnv('E2B_PROJECT_ID', 'prj_other'))
+
     const headersOf = async (ref?: string) => {
       const { ensureAuth } = await import('../src/api')
       return (await ensureAuth(ref)) as {
@@ -247,60 +249,47 @@ describe('ensureAuth', () => {
       return vi.spyOn(console, 'error').mockImplementation(() => {})
     }
 
-    test('uses the token and E2B_PROJECT_ID, ignoring the stored login', async () => {
+    test('uses the token and E2B_PROJECT_ID, ignoring the stored login and --project', async () => {
       const envToken = jwt(3600, 'env')
       writeConfig(jwt(3600, 'login'))
       vi.stubEnv('E2B_ACCESS_TOKEN', envToken)
-      vi.stubEnv('E2B_PROJECT_ID', 'prj_other')
-      const fetchMock = mockWorkspaceApi()
+      const fetchMock = mockWorkspaceApi([
+        project('config-project'),
+        project('other'),
+        project('flag'),
+      ])
 
-      expect(await headersOf()).toEqual({
+      const expected = {
         apiHeaders: {
           Authorization: `Bearer ${envToken}`,
           'X-Team-ID': 'other',
         },
         domain: 'other.e2b.dev',
-      })
+      }
+      expect(await headersOf()).toEqual(expected)
+      // Like with E2B_API_KEY, the environment decides the project.
+      expect(await headersOf('slug-flag')).toEqual(expected)
       // /v1/me was asked with the env token, not the login's.
       const req = fetchMock.mock.calls[0][0] as Request
       expect(req.headers.get('Authorization')).toBe(`Bearer ${envToken}`)
       expect(fetchMock).toHaveBeenCalledTimes(1)
     })
 
-    test('falls back to the personal project without E2B_PROJECT_ID', async () => {
+    test('needs E2B_PROJECT_ID', async () => {
       vi.stubEnv('E2B_ACCESS_TOKEN', jwt(3600))
-      mockWorkspaceApi([project('mine'), project('second')])
-
-      expect((await headersOf()).apiHeaders['X-Team-ID']).toBe('mine')
-    })
-
-    test('needs E2B_PROJECT_ID without a personal project', async () => {
-      vi.stubEnv('E2B_ACCESS_TOKEN', jwt(3600))
-      vi.stubGlobal(
-        'fetch',
-        vi.fn(async () =>
-          Response.json({
-            workspaces: [
-              {
-                id: 'ws',
-                public_id: 'wrk_ws',
-                name: 'Acme',
-                kind: 'standard',
-                blocked: false,
-                block_reasons: [],
-                capabilities: [],
-                projects: [project('a'), project('b')],
-              },
-            ],
-          })
-        )
-      )
+      vi.stubEnv('E2B_PROJECT_ID', '')
+      const fetchMock = mockWorkspaceApi()
       const error = failing()
+      const { ensureAuth, requireMe } = await import('../src/api')
 
-      await expect(headersOf()).rejects.toThrow('exit 1')
-      expect(String(error.mock.calls[0][0])).toContain(
-        'Set E2B_PROJECT_ID to one of your projects: prj_a (Acme), prj_b (Acme)'
-      )
+      await expect(ensureAuth()).rejects.toThrow('exit 1')
+      await expect(requireMe()).rejects.toThrow('exit 1')
+      for (const call of error.mock.calls) {
+        expect(String(call[0])).toContain(
+          'E2B_ACCESS_TOKEN needs E2B_PROJECT_ID'
+        )
+      }
+      expect(fetchMock).not.toHaveBeenCalled()
     })
 
     test('is refused together with E2B_API_KEY', async () => {

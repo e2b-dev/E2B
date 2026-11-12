@@ -276,13 +276,6 @@ describe('e2b project info', () => {
     const { err } = await run(['project', 'info'])
     expect(err).toContain('No project selected')
   })
-
-  test('shows the personal project with E2B_ACCESS_TOKEN and no E2B_PROJECT_ID', async () => {
-    mocks.current = undefined
-    mocks.envToken = 'token'
-    const { out } = await run(['project', 'info', '-f', 'json'])
-    expect(JSON.parse(out)).toMatchObject({ id: 'mine' })
-  })
 })
 
 describe('with E2B_ACCESS_TOKEN', () => {
@@ -300,11 +293,11 @@ describe('with E2B_ACCESS_TOKEN', () => {
     expect(mocks.updateUserConfig).not.toHaveBeenCalled()
   })
 
-  test('project list marks the personal project current', async () => {
-    mocks.current = undefined
+  test('project list marks the E2B_PROJECT_ID project current', async () => {
+    mocks.current = 'prj_shared'
     mocks.envToken = 'token'
     const { out } = await run(['project', 'list', '-f', 'json'])
     const rows = JSON.parse(out) as { id: string; current: boolean }[]
-    expect(rows.find((r) => r.current)?.id).toBe('mine')
+    expect(rows.find((r) => r.current)?.id).toBe('shared')
   })
 })
