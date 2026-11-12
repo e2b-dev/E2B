@@ -48,7 +48,6 @@ const listCommand = new commander.Command('list')
       renderTable(workspaces, [
         { header: 'Workspace ID', value: (w) => w.public_id },
         { header: 'Name', value: (w) => w.name },
-        { header: 'Kind', value: (w) => w.kind },
         { header: 'Projects', value: (w) => String(w.projects.length) },
         { header: 'Status', value: workspaceStatus },
       ])
