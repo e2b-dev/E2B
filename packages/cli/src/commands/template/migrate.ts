@@ -1,4 +1,4 @@
-import { select } from '@inquirer/prompts'
+import { select } from '../../utils/prompts'
 import * as commander from '@commander-js/extra-typings'
 import { Template, TemplateBuilder, TemplateClass } from 'e2b'
 import * as fs from 'fs'
@@ -180,25 +180,24 @@ export const migrateCommand = new commander.Command('migrate')
         // Prompt for language selection
         language = await select({
           message: 'Select target language for Template SDK:',
-          choices: [
+          options: [
             {
-              name: languageDisplay[Language.TypeScript],
+              label: languageDisplay[Language.TypeScript],
               value: Language.TypeScript,
-              description:
-                'Generate .ts files for JavaScript/TypeScript projects',
+              hint: 'Generate .ts files for JavaScript/TypeScript projects',
             },
             {
-              name: languageDisplay[Language.PythonSync],
+              label: languageDisplay[Language.PythonSync],
               value: Language.PythonSync,
-              description: 'Generate synchronous Python template files',
+              hint: 'Generate synchronous Python template files',
             },
             {
-              name: languageDisplay[Language.PythonAsync],
+              label: languageDisplay[Language.PythonAsync],
               value: Language.PythonAsync,
-              description: 'Generate asynchronous Python template files',
+              hint: 'Generate asynchronous Python template files',
             },
           ],
-          default: Language.TypeScript,
+          initialValue: Language.TypeScript,
         })
       }
 

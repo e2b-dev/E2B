@@ -1,4 +1,4 @@
-import { input, select } from '@inquirer/prompts'
+import { select, text } from 'src/utils/prompts'
 import PackageJson from '@npmcli/package-json'
 import * as commander from '@commander-js/extra-typings'
 import { Template } from 'e2b'
@@ -160,12 +160,15 @@ export const initCommand = new commander.Command('init')
       // Step 1: Get template name (from CLI or prompt)
       let templateName: string = opts.name ?? DEFAULT_TEMPLATE_NAME
       if (opts.name === undefined) {
-        templateName = await input({
+        templateName = await text({
           message: 'Enter template name:',
-          default: DEFAULT_TEMPLATE_NAME,
-          validate: (input: string) => {
-            const result = templateNameSchema.safeParse(input)
-            return result.success || result.error.issues[0].message
+          placeholder: DEFAULT_TEMPLATE_NAME,
+          defaultValue: DEFAULT_TEMPLATE_NAME,
+          validate: (value: string | undefined) => {
+            // Empty input falls back to the default name.
+            if (!value) return
+            const result = templateNameSchema.safeParse(value)
+            return result.success ? undefined : result.error.issues[0].message
           },
         })
       }
@@ -180,25 +183,24 @@ export const initCommand = new commander.Command('init')
       } else {
         language = await select({
           message: 'Select target language for template files:',
-          choices: [
+          options: [
             {
-              name: languageDisplay[Language.TypeScript],
+              label: languageDisplay[Language.TypeScript],
               value: Language.TypeScript,
-              description:
-                'Generate .ts files for JavaScript/TypeScript projects',
+              hint: 'Generate .ts files for JavaScript/TypeScript projects',
             },
             {
-              name: languageDisplay[Language.PythonSync],
+              label: languageDisplay[Language.PythonSync],
               value: Language.PythonSync,
-              description: 'Generate synchronous Python template files',
+              hint: 'Generate synchronous Python template files',
             },
             {
-              name: languageDisplay[Language.PythonAsync],
+              label: languageDisplay[Language.PythonAsync],
               value: Language.PythonAsync,
-              description: 'Generate asynchronous Python template files',
+              hint: 'Generate asynchronous Python template files',
             },
           ],
-          default: Language.TypeScript,
+          initialValue: Language.TypeScript,
         })
       }
 

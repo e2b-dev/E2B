@@ -8,7 +8,7 @@ import {
   SandboxTemplateRef,
 } from 'src/utils/format'
 import { deprecatedConfigOption, warnIgnoredConfigOption } from 'src/options'
-import { confirm } from 'src/utils/confirm'
+import { confirm } from 'src/utils/prompts'
 import { apiClient } from 'src/api'
 import { handleE2BRequestError } from '../../utils/errors'
 
