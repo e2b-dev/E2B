@@ -189,6 +189,10 @@ async def test_auto_resume_wakes_on_http_request(async_sandbox_factory):
     )
 
     cmd = await sandbox.commands.run("python3 -m http.server 8000", background=True)
+    # An attached handle's stream ends when the sandbox pauses, and the SDK
+    # probes envd's /health on that error, which wakes an auto-resume
+    # sandbox before the test can observe it paused.
+    await cmd.disconnect()
     try:
         await wait_for_state(sandbox, SandboxState.PAUSED)
 
