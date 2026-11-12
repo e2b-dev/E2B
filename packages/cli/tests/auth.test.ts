@@ -303,12 +303,21 @@ describe('ensureAuth', () => {
       )
     })
 
-    test('loses to E2B_API_KEY', async () => {
+    test('is refused together with E2B_API_KEY', async () => {
       vi.stubEnv('E2B_ACCESS_TOKEN', jwt(3600))
       vi.stubEnv('E2B_API_KEY', 'e2b_env_key')
-      const { ensureAuth } = await import('../src/api')
+      const fetchMock = mockWorkspaceApi()
+      const error = failing()
+      const { ensureAuth, requireMe } = await import('../src/api')
 
-      expect(await ensureAuth()).toEqual({ apiKey: 'e2b_env_key' })
+      await expect(ensureAuth()).rejects.toThrow('exit 1')
+      await expect(requireMe()).rejects.toThrow('exit 1')
+      for (const call of error.mock.calls) {
+        expect(String(call[0])).toContain(
+          'Both E2B_API_KEY and E2B_ACCESS_TOKEN are set. Unset one of them.'
+        )
+      }
+      expect(fetchMock).not.toHaveBeenCalled()
     })
 
     test('rejects an expired token', async () => {

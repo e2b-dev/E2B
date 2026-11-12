@@ -64,6 +64,18 @@ export function currentProject(): string | undefined {
 }
 
 /**
+ * `E2B_API_KEY` and `E2B_ACCESS_TOKEN` select different projects (the key's
+ * own, the token's user's), so both at once is a mistake, not a precedence.
+ */
+export const CONFLICTING_CREDENTIALS = `Both ${asBold('E2B_API_KEY')} and ${asBold(
+  'E2B_ACCESS_TOKEN'
+)} are set. Unset one of them.`
+
+export function envCredentialsConflict(): boolean {
+  return Boolean(process.env.E2B_API_KEY && envAccessToken)
+}
+
+/**
  * `E2B_ACCESS_TOKEN`, checked to be an OAuth access token (a JWT: the same
  * variable used to hold the dashboard's access tokens, which no longer
  * work) that hasn't expired, since it can't be refreshed.
@@ -112,6 +124,10 @@ export function getMe(): Promise<Me> {
  * even when `E2B_API_KEY` is set.
  */
 export async function requireMe(): Promise<Me> {
+  if (envCredentialsConflict()) {
+    console.error(CONFLICTING_CREDENTIALS)
+    process.exit(1)
+  }
   if (!envAccessToken && !getUserConfig()) {
     console.error(
       `You must be logged in to see your workspaces and projects. Run ${asBold(
@@ -173,15 +189,20 @@ async function resolveProject(
 /**
  * Resolve credentials for an E2B API call.
  *
- * `E2B_API_KEY` wins, for CI/CD and other non-interactive use, then
- * `E2B_ACCESS_TOKEN`. Otherwise the logged-in user's OAuth access token is
- * used, refreshed first when it is about to expire. With a token, `X-Team-ID`
+ * `E2B_API_KEY` or `E2B_ACCESS_TOKEN`, for CI/CD and other non-interactive
+ * use (setting both is refused), each ignoring the stored login. Otherwise
+ * the logged-in user's OAuth access token is used, refreshed first when it
+ * is about to expire. With a token, `X-Team-ID`
  * selects the project and requests go to that project's control plane
  * (`domain`). Call this right before each request (not once per command) so
  * long-running commands keep working after the hour-long access token
  * expires.
  */
 export async function ensureAuth(cliProjectId?: string): Promise<Auth> {
+  if (envCredentialsConflict()) {
+    console.error(CONFLICTING_CREDENTIALS)
+    process.exit(1)
+  }
   const apiKey = process.env.E2B_API_KEY
   if (apiKey) return { apiKey }
 
