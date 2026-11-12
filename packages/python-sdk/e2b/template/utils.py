@@ -1,4 +1,5 @@
 import hashlib
+import ntpath
 import os
 import posixpath
 import tarfile
@@ -33,6 +34,28 @@ def make_traceback(caller_frame: Optional[FrameType]) -> Optional[TracebackType]
     )
 
 
+def _is_absolute_path(path: str) -> bool:
+    """Whether ``path`` is absolute in either path flavour.
+
+    A template source is a POSIX-style path relative to the context directory on
+    every platform, so the check cannot rely on the host's flavour alone:
+    since Python 3.13 ``ntpath.isabs()`` only treats a path that carries a drive
+    as absolute, so on Windows a rooted path such as ``/absolute/path`` or
+    ``\\absolute\\path`` is not absolute by that measure even though it resolves
+    outside the context directory there.
+    """
+    return (
+        os.path.isabs(path)
+        # Rooted POSIX path (`/foo`), wherever the host is.
+        or posixpath.isabs(path)
+        # Rooted Windows path (`\foo`, `\\server\share`). `ntpath.splitdrive()`
+        # leaves these drive-less, so they need their own check.
+        or path.startswith("\\")
+        # Drive-prefixed path (`C:\foo`, `C:foo`).
+        or ntpath.splitdrive(path)[0] != ""
+    )
+
+
 def validate_relative_path(
     src: str,
     stack_trace: Optional[TracebackType],
@@ -48,7 +71,7 @@ def validate_relative_path(
     :raises TemplateException: If the path is absolute or escapes the context directory
 
     Invalid paths:
-    - Absolute paths: /absolute/path, C:\\Windows\\path
+    - Absolute paths: /absolute/path, C:\\Windows\\path, \\\\server\\share (whatever the host platform is)
     - Parent directory escapes: ../foo, foo/../../bar, ./foo/../../../bar
 
     Valid paths:
@@ -56,8 +79,11 @@ def validate_relative_path(
     - Current directory prefix: ./foo, ./foo/bar
     - Internal parent refs that don't escape: foo/../bar (stays within context)
     """
-    # Check for absolute paths using Python's cross-platform implementation
-    if os.path.isabs(src):
+    # Absolute paths are rejected on every platform, not just on the host's own
+    # path flavour: a rooted or drive-prefixed source never resolves inside the
+    # context directory, and letting it through only defers the failure to the
+    # build's file-hash step.
+    if _is_absolute_path(src):
         raise TemplateException(
             f'Invalid source path "{src}": absolute paths are not allowed. '
             "Use a relative path within the context directory."

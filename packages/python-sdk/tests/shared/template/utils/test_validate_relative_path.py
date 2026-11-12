@@ -1,6 +1,7 @@
 import sys
 import pytest
 
+from e2b import Template
 from e2b.template.utils import validate_relative_path
 from e2b.exceptions import TemplateException
 
@@ -90,6 +91,52 @@ class TestValidateRelativePathInvalidEscape:
     def test_rejects_deeply_nested_escape(self):
         with pytest.raises(TemplateException):
             validate_relative_path("a/b/c/../../../../escape", None)
+
+
+class TestValidateRelativePathHostIndependentAbsolute:
+    """Absolute paths are rejected whatever the host's path flavour is.
+
+    A template source is a POSIX-style path relative to the context directory on
+    every platform, but `os.path.isabs()` only follows the host's flavour: since
+    Python 3.13 `ntpath.isabs()` requires a drive, so on Windows the rooted
+    (drive-less) paths below used to pass the guard and reach the build context.
+    """
+
+    @pytest.mark.parametrize(
+        "src",
+        [
+            "/absolute/path",
+            "/",
+            "/etc/passwd",
+            "\\absolute\\path",
+            "\\\\server\\share\\file",
+            "C:\\Windows\\System32",
+            "C:drive-relative",
+        ],
+    )
+    def test_rejects_path_absolute_in_either_flavour(self, src):
+        with pytest.raises(TemplateException, match="absolute paths are not allowed"):
+            validate_relative_path(src, None)
+
+
+class TestCopyRejectsAbsoluteSource:
+    """`copy()` / `copy_items()` fail fast instead of recording the source."""
+
+    def test_copy_rejects_absolute_source(self):
+        template = Template().from_base_image()
+
+        with pytest.raises(TemplateException, match="absolute paths are not allowed"):
+            template.copy("/absolute/path", "/app/")
+
+        assert template._template._instructions == []
+
+    def test_copy_items_rejects_absolute_source(self):
+        template = Template().from_base_image()
+
+        with pytest.raises(TemplateException, match="absolute paths are not allowed"):
+            template.copy_items([{"src": "/absolute/path", "dest": "/app/"}])
+
+        assert template._template._instructions == []
 
 
 class TestValidateRelativePathErrorMessages:
