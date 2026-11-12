@@ -934,7 +934,7 @@ export class Sandbox extends SandboxApi {
     opts?: T
   ): ConnectionOpts & T {
     return ConnectionConfig.mergeOpts(
-      this.connectionConfig,
+      this.connectionConfig.toOpts(),
       opts
     ) as ConnectionOpts & T
   }
