@@ -12,6 +12,12 @@ sandboxTest('read file', async ({ sandbox }) => {
   assert.equal(readContent, content)
 })
 
+sandboxTest('read procfs file', async ({ sandbox }) => {
+  // envd serves procfs files (stat size 0) only on the gzip download path.
+  const bootId = await sandbox.files.read('/proc/sys/kernel/random/boot_id')
+  assert.match(bootId, /^[0-9a-f-]{36}\n$/)
+})
+
 sandboxTest('read non-existing file', async ({ sandbox }) => {
   const filename = 'non_existing_file.txt'
 

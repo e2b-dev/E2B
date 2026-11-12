@@ -8,7 +8,7 @@ def test_write_and_read_with_gzip(sandbox, debug):
     info = sandbox.files.write(filename, content, gzip=True)
     assert info.path == f"/home/user/{filename}"
 
-    read_content = sandbox.files.read(filename, gzip=True)
+    read_content = sandbox.files.read(filename)
     assert read_content == content
 
     if debug:

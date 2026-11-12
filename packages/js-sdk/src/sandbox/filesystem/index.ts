@@ -315,7 +315,8 @@ export interface FilesystemWriteOpts extends FilesystemRequestOpts {
  */
 export interface FilesystemReadOpts extends FilesystemRequestOpts {
   /**
-   * When true, the download will request gzip-encoded responses.
+   * @deprecated Downloads always request gzip-encoded responses, so this
+   * option has no effect. It will be removed in the next major version.
    */
   gzip?: boolean
   /**
@@ -483,10 +484,8 @@ export class Filesystem {
       user = defaultUsername
     }
 
-    const headers: Record<string, string> = {}
-    if (opts?.gzip) {
-      headers['Accept-Encoding'] = 'gzip'
-    }
+    // Not every fetch negotiates compression by default (workerd's doesn't).
+    const headers: Record<string, string> = { 'Accept-Encoding': 'gzip' }
 
     if (format === 'stream') {
       // The request timeout bounds only the initial handshake; once the
