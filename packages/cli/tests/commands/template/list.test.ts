@@ -51,7 +51,14 @@ describe('template list', () => {
 
       expect(ids).toHaveLength(limit)
       expect(new Set(ids).size).toBe(limit)
-      expect(ids).toEqual(expect.arrayContaining(firstPageIds))
+      // Other suites create and delete templates in the same team while this
+      // runs, so compare order rather than membership: first-page templates
+      // still listed keep their relative order.
+      const firstPage = new Set(firstPageIds)
+      const stillListed = new Set(ids)
+      expect(ids.filter((id) => firstPage.has(id))).toEqual(
+        firstPageIds.filter((id) => stillListed.has(id))
+      )
     },
     timeoutMs
   )
