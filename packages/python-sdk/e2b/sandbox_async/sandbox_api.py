@@ -6,7 +6,6 @@ from packaging.version import Version
 from e2b.api import (
     SandboxCreateResponse,
     api_exception_from_code,
-    encode_path_param,
     handle_api_exception,
 )
 from e2b.api.client.api.sandboxes import (
@@ -21,7 +20,6 @@ from e2b.api.client.api.sandboxes import (
     post_sandboxes_sandbox_id_timeout,
     put_sandboxes_sandbox_id_network,
 )
-from e2b.api.client.api.templates import delete_templates_template_id
 from e2b.api.client.models import (
     ConnectSandboxV2,
     Error,
@@ -66,6 +64,7 @@ from e2b.sandbox.sandbox_api import (
     to_sandbox_create_response,
     validate_fork_count,
 )
+from e2b.template_async.build_api import delete_template
 from e2b.sandbox_async.paginator import AsyncSandboxPaginator
 
 
@@ -223,6 +222,7 @@ class SandboxApi(SandboxBase):
         volume_mounts: Optional[List[SandboxVolumeMountAPI]] = None,
         logger: Optional[logging.Logger] = None,
         idempotency_key: Optional[str] = None,
+        cpu_count: Optional[int] = None,
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
         key = resolve_idempotency_key(idempotency_key)
@@ -242,6 +242,7 @@ class SandboxApi(SandboxBase):
             auto_resume=lifecycle_body.auto_resume,
             metadata=metadata or {},
             timeout=timeout if timeout is not None else UNSET,
+            cpu_count=cpu_count if cpu_count is not None else UNSET,
             env_vars=env_vars or {},
             mcp=cast(Any, mcp) or UNSET,
             allow_internet_access=(
@@ -381,19 +382,7 @@ class SandboxApi(SandboxBase):
     ) -> bool:
         config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
-        api_client = get_api_client(config)
-        res = await delete_templates_template_id.asyncio_detailed(
-            encode_path_param(snapshot_id),
-            client=api_client,
-        )
-
-        if res.status_code == 404:
-            return False
-
-        if res.status_code >= 300:
-            raise handle_api_exception(res)
-
-        return True
+        return await delete_template(get_api_client(config), snapshot_id)
 
     @classmethod
     async def _cls_pause(

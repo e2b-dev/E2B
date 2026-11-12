@@ -1,9 +1,9 @@
 import * as e2b from 'e2b'
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
 
 import { spawnConnectedTerminal, TerminalOpts } from 'src/terminal'
 import { asBold, asPrimary } from 'src/utils/format'
-import { ensureAPIKey } from '../../api'
+import { Auth, ensureAuth } from '../../api'
 import { parseEnv } from 'src/utils/env'
 import { printDashboardSandboxInspectUrl } from 'src/utils/urls'
 
@@ -15,55 +15,45 @@ export const connectCommand = new commander.Command('connect')
   .option(
     '-e, --env <KEY=VALUE>',
     'set environment variable for the terminal session (repeatable)',
-    parseEnv,
-    {} as Record<string, string>
+    parseEnv
   )
   .alias('cn')
-  .action(
-    async (
-      sandboxID: string,
-      opts: { user?: string; cwd?: string; env?: Record<string, string> }
-    ) => {
-      try {
-        const apiKey = ensureAPIKey()
-
-        if (!sandboxID) {
-          console.error('You need to specify sandbox ID')
-          process.exit(1)
-        }
-
-        await connectToSandbox({
-          apiKey,
-          sandboxID,
-          terminal: {
-            user: opts.user,
-            cwd: opts.cwd,
-            envs:
-              opts.env && Object.keys(opts.env).length > 0
-                ? opts.env
-                : undefined,
-          },
-        })
-        // We explicitly call exit because the sandbox is keeping the program alive.
-        // We also don't want to call sandbox.close because that would disconnect other users from the edit session.
-        process.exit(0)
-      } catch (err: any) {
-        console.error(err)
+  .action(async (sandboxID, opts) => {
+    try {
+      if (!sandboxID) {
+        console.error('You need to specify sandbox ID')
         process.exit(1)
       }
+
+      await connectToSandbox({
+        auth: await ensureAuth(),
+        sandboxID,
+        terminal: {
+          user: opts.user,
+          cwd: opts.cwd,
+          envs:
+            opts.env && Object.keys(opts.env).length > 0 ? opts.env : undefined,
+        },
+      })
+      // We explicitly call exit because the sandbox is keeping the program alive.
+      // We also don't want to call sandbox.close because that would disconnect other users from the edit session.
+      process.exit(0)
+    } catch (err: any) {
+      console.error(err)
+      process.exit(1)
     }
-  )
+  })
 
 async function connectToSandbox({
-  apiKey,
+  auth,
   sandboxID,
   terminal,
 }: {
-  apiKey: string
+  auth: Auth
   sandboxID: string
   terminal?: TerminalOpts
 }) {
-  const sandbox = await e2b.Sandbox.connect(sandboxID, { apiKey })
+  const sandbox = await e2b.Sandbox.connect(sandboxID, auth)
 
   printDashboardSandboxInspectUrl(sandbox.sandboxId)
 

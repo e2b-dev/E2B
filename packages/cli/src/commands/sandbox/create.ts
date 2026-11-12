@@ -1,11 +1,13 @@
 import * as e2b from 'e2b'
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
+import { z } from 'zod'
 
-import { ensureAPIKey } from 'src/api'
+import { ensureAuth } from 'src/api'
 import { spawnConnectedTerminal, TerminalOpts } from 'src/terminal'
 import { asBold, asFormattedSandboxTemplate } from 'src/utils/format'
 import { deprecatedConfigOption, warnIgnoredConfigOption } from '../../options'
 import { parseEnv } from '../../utils/env'
+import { zodParser } from '../../validation'
 import { printDashboardSandboxInspectUrl } from 'src/utils/urls'
 
 type SandboxLifecycle = {
@@ -45,101 +47,81 @@ export function createCommand(
     .option(
       '-e, --env <KEY=VALUE>',
       'set environment variable for the terminal session (repeatable)',
-      parseEnv,
-      {} as Record<string, string>
+      parseEnv
     )
     .addOption(deprecatedConfigOption)
     .alias(alias)
-    .action(
-      async (
-        template: string | undefined,
-        opts: {
-          name?: string
-          detach?: boolean
-          'lifecycle.ontimeout'?: SandboxLifecycle['onTimeout']
-          'lifecycle.autoresume'?: boolean
-          timeout?: number
-          user?: string
-          cwd?: string
-          env?: Record<string, string>
-          config?: string
-        }
-      ) => {
-        if (deprecated) {
-          console.warn(
-            `Warning: The '${name}' command is deprecated and will be removed in future releases. Please use 'e2b sandbox create' instead.`
-          )
-        }
-        try {
-          warnIgnoredConfigOption(opts)
-
-          const apiKey = ensureAPIKey()
-
-          const templateID = template ?? DEFAULT_TEMPLATE
-
-          const lifecycle = buildLifecycle(
-            opts['lifecycle.ontimeout'],
-            opts['lifecycle.autoresume']
-          )
-          const sandboxOpts = {
-            apiKey,
-            ...(lifecycle ? { lifecycle } : {}),
-            ...(opts.timeout !== undefined ? { timeoutMs: opts.timeout } : {}),
-          }
-          const sandbox = await e2b.Sandbox.create(templateID, sandboxOpts)
-
-          if (!opts.detach) {
-            printDashboardSandboxInspectUrl(sandbox.sandboxId)
-            await connectSandbox({
-              sandbox,
-              template: { templateID },
-              timeoutMs: opts.timeout,
-              terminal: {
-                user: opts.user,
-                cwd: opts.cwd,
-                envs:
-                  opts.env && Object.keys(opts.env).length > 0
-                    ? opts.env
-                    : undefined,
-              },
-            })
-          } else {
-            console.log(sandbox.sandboxId)
-          }
-          process.exit(0)
-        } catch (err: any) {
-          console.error(err)
-          process.exit(1)
-        }
+    .action(async (template, opts) => {
+      if (deprecated) {
+        console.warn(
+          `Warning: The '${name}' command is deprecated and will be removed in future releases. Please use 'e2b sandbox create' instead.`
+        )
       }
-    )
+      try {
+        warnIgnoredConfigOption(opts)
+
+        const auth = await ensureAuth()
+
+        const templateID = template ?? DEFAULT_TEMPLATE
+
+        const lifecycle = buildLifecycle(
+          opts['lifecycle.ontimeout'],
+          opts['lifecycle.autoresume']
+        )
+        const sandboxOpts = {
+          ...auth,
+          ...(lifecycle ? { lifecycle } : {}),
+          ...(opts.timeout !== undefined ? { timeoutMs: opts.timeout } : {}),
+        }
+        const sandbox = await e2b.Sandbox.create(templateID, sandboxOpts)
+
+        if (!opts.detach) {
+          printDashboardSandboxInspectUrl(sandbox.sandboxId)
+          await connectSandbox({
+            sandbox,
+            template: { templateID },
+            timeoutMs: opts.timeout,
+            terminal: {
+              user: opts.user,
+              cwd: opts.cwd,
+              envs:
+                opts.env && Object.keys(opts.env).length > 0
+                  ? opts.env
+                  : undefined,
+            },
+          })
+        } else {
+          console.log(sandbox.sandboxId)
+        }
+        process.exit(0)
+      } catch (err: any) {
+        console.error(err)
+        process.exit(1)
+      }
+    })
 }
 
-export function parseTimeout(timeoutRaw: string): number {
-  const timeoutSeconds = Number(timeoutRaw)
-  const timeoutMs = Math.floor(timeoutSeconds * 1000)
-  if (
-    !Number.isFinite(timeoutSeconds) ||
-    timeoutSeconds <= 0 ||
-    timeoutMs < MIN_TIMEOUT_MS
-  ) {
-    throw new commander.InvalidArgumentError(
-      '--timeout must be at least 30 seconds'
+const timeoutMessage = `--timeout must be at least ${MIN_TIMEOUT_MS / 1000} seconds.`
+
+/** `--timeout` in seconds (fractions allowed), returned in milliseconds. */
+export const parseTimeout = zodParser(
+  z
+    .string()
+    .trim()
+    .transform(Number)
+    .pipe(
+      z
+        .number({ error: timeoutMessage })
+        .min(MIN_TIMEOUT_MS / 1000, timeoutMessage)
     )
-  }
+    .transform((seconds) => Math.floor(seconds * 1000))
+)
 
-  return timeoutMs
-}
-
-function parseOnTimeout(onTimeout: string): SandboxLifecycle['onTimeout'] {
-  if (onTimeout !== 'pause' && onTimeout !== 'kill') {
-    throw new commander.InvalidArgumentError(
-      '--lifecycle.ontimeout must be "pause" or "kill"'
-    )
-  }
-
-  return onTimeout
-}
+const parseOnTimeout = zodParser(
+  z.enum(['pause', 'kill'], {
+    error: '--lifecycle.ontimeout must be "pause" or "kill".',
+  })
+)
 
 function buildLifecycle(
   onTimeout: SandboxLifecycle['onTimeout'] | undefined,
@@ -175,11 +157,21 @@ async function connectSandbox({
   timeoutMs?: number
   terminal?: TerminalOpts
 }) {
+  // Resolve credentials on every call rather than reusing the ones the
+  // sandbox was created with: a session can outlive the hour-long access token.
+  const setSandboxTimeout = async (ms: number) =>
+    e2b.Sandbox.setTimeout(sandbox.sandboxId, ms, await ensureAuth())
+
   // keep-alive loop — track the in-flight promise so we can await it on shutdown
   let pendingKeepAlive: Promise<void> = Promise.resolve()
   const keepAliveTimeoutMs = timeoutMs ?? 30_000
   const intervalId = setInterval(() => {
-    pendingKeepAlive = sandbox.setTimeout(keepAliveTimeoutMs)
+    // Handled here: an unhandled rejection would take the session down.
+    pendingKeepAlive = setSandboxTimeout(keepAliveTimeoutMs).catch((err) => {
+      console.error(
+        `Failed to keep the sandbox alive: ${err instanceof Error ? err.message : err}`
+      )
+    })
   }, 5_000)
 
   console.log(
@@ -192,7 +184,7 @@ async function connectSandbox({
   } finally {
     clearInterval(intervalId)
     await pendingKeepAlive.catch(() => {})
-    await sandbox.setTimeout(timeoutMs ?? 1_000)
+    await setSandboxTimeout(timeoutMs ?? 1_000)
     console.log(
       `Closing terminal connection to template ${asFormattedSandboxTemplate(
         template

@@ -50,6 +50,7 @@ export interface paths {
                     };
                     content?: never;
                 };
+                413: components["responses"]["413"];
                 500: components["responses"]["500"];
             };
         };
@@ -92,6 +93,7 @@ export interface paths {
                     };
                     content?: never;
                 };
+                413: components["responses"]["413"];
                 500: components["responses"]["500"];
             };
         };
@@ -138,6 +140,7 @@ export interface paths {
                     };
                     content?: never;
                 };
+                413: components["responses"]["413"];
                 500: components["responses"]["500"];
             };
         };
@@ -224,6 +227,7 @@ export interface paths {
                     };
                 };
                 404: components["responses"]["404"];
+                413: components["responses"]["413"];
             };
         };
         put?: never;
@@ -250,6 +254,7 @@ export interface paths {
                     content?: never;
                 };
                 404: components["responses"]["404"];
+                413: components["responses"]["413"];
             };
         };
         options?: never;
@@ -302,6 +307,7 @@ export interface paths {
                     };
                     content?: never;
                 };
+                413: components["responses"]["413"];
                 /** @description Internal server error */
                 500: {
                     headers: {
@@ -349,6 +355,15 @@ export interface components {
     responses: {
         /** @description Not found */
         404: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Request body too large */
+        413: {
             headers: {
                 [name: string]: unknown;
             };

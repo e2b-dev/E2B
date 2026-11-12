@@ -1,4 +1,4 @@
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
 
 import { getUserConfig } from 'src/user'
 import { asFormattedConfig, asFormattedError } from 'src/utils/format'

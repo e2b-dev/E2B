@@ -1,27 +1,20 @@
-import * as commander from 'commander'
-import * as e2b from 'e2b'
+import * as commander from '@commander-js/extra-typings'
+import { Template, TemplateInfo } from 'e2b'
 
 import { listAliases } from '../../utils/format'
 import { renderTable } from 'src/utils/table'
-import { sortTemplatesAliases } from 'src/utils/templateSort'
-import { client, ensureAPIKey, resolveProjectId } from 'src/api'
+import { ensureAuth } from 'src/api'
 import {
   deprecatedTeamOption,
-  parseNonNegativeInt,
+  Format,
+  parseFormat,
   projectIdFromOptions,
   projectOption,
 } from '../../options'
-import { handleE2BRequestError } from '../../utils/errors'
+import { integer, zodParser } from '../../validation'
 
 const DEFAULT_LIMIT = 1000
 const PAGE_LIMIT = 100
-
-type ListOptions = {
-  project?: string
-  team?: string
-  limit?: number
-  format: string
-}
 
 export const listCommand = new commander.Command('list')
   .description('list sandbox templates')
@@ -31,38 +24,39 @@ export const listCommand = new commander.Command('list')
   .option(
     '-l, --limit <limit>',
     `limit the number of templates returned (default: ${DEFAULT_LIMIT} for pretty output, no limit for json; 0 for no limit)`,
-    parseNonNegativeInt('Template limit')
+    zodParser(integer('Template limit', { min: 0 }))
   )
-  .option('-f, --format <format>', 'output format, eg. json, pretty')
-  .action(async (opts: ListOptions) => {
+  .option(
+    '-f, --format <format>',
+    'output format, eg. json, pretty',
+    parseFormat,
+    Format.PRETTY
+  )
+  .action(async (opts) => {
     try {
-      const format = opts.format || 'pretty'
-      const defaultLimit = format === 'json' ? undefined : DEFAULT_LIMIT
+      const defaultLimit =
+        opts.format === Format.JSON ? undefined : DEFAULT_LIMIT
       const limit = opts.limit === 0 ? undefined : (opts.limit ?? defaultLimit)
-      ensureAPIKey()
       process.stdout.write('\n')
 
       const { templates, hasMore } = await listSandboxTemplates({
-        projectId: resolveProjectId(projectIdFromOptions(opts)),
+        projectId: projectIdFromOptions(opts),
         limit,
       })
 
       for (const template of templates) {
-        sortTemplatesAliases(template.aliases)
+        template.names.sort()
       }
 
-      if (format === 'pretty') {
+      if (opts.format === Format.PRETTY) {
         renderTemplateTable(templates)
         if (hasMore) {
           console.log(
             `Showing first ${limit} templates. Use --limit to change.`
           )
         }
-      } else if (format === 'json') {
-        console.log(JSON.stringify(templates, null, 2))
       } else {
-        console.error(`Unsupported output format: ${format}`)
-        process.exit(1)
+        console.log(JSON.stringify(templates, null, 2))
       }
     } catch (err: any) {
       console.error(err)
@@ -70,9 +64,7 @@ export const listCommand = new commander.Command('list')
     }
   })
 
-function renderTemplateTable(
-  templates: e2b.components['schemas']['Template'][]
-) {
+export function renderTemplateTable(templates: TemplateInfo[]) {
   if (!templates?.length) {
     console.log('No templates found.')
     return
@@ -83,20 +75,20 @@ function renderTemplateTable(
       header: 'Access',
       value: (template) => (template.public ? 'Public' : 'Private'),
     },
-    { header: 'Template ID', value: (template) => template.templateID },
+    { header: 'Template ID', value: (template) => template.templateId },
     {
       header: 'Template Name',
-      value: (template) => listAliases(template.aliases),
+      value: (template) => listAliases(template.names),
     },
     { header: 'vCPUs', value: (template) => String(template.cpuCount) },
+    {
+      header: 'Max vCPUs',
+      value: (template) => template.maxCpuCount?.toString(),
+    },
     { header: 'RAM MiB', value: (template) => String(template.memoryMB) },
     {
-      header: 'Created by',
-      value: (template) => template.createdBy?.email,
-    },
-    {
       header: 'Created at',
-      value: (template) => new Date(template.createdAt).toLocaleDateString(),
+      value: (template) => template.createdAt.toLocaleDateString(),
     },
     {
       header: 'Disk size MiB',
@@ -107,7 +99,7 @@ function renderTemplateTable(
 }
 
 type ListSandboxTemplatesResult = {
-  templates: e2b.components['schemas']['Template'][]
+  templates: TemplateInfo[]
   hasMore: boolean
 }
 
@@ -123,35 +115,17 @@ async function listSandboxTemplates({
     pageLimit = PAGE_LIMIT
   }
 
-  const templates: e2b.components['schemas']['Template'][] = []
-  let nextToken: string | undefined
+  const auth = await ensureAuth(projectId)
+  const templates: TemplateInfo[] = []
+  const iterator = Template.list({ ...auth, limit: pageLimit })
 
-  do {
-    const res = await client.api.GET('/v2/templates', {
-      params: {
-        // the backend API still calls the project ID "teamID"
-        query: { teamID: projectId, limit: pageLimit, nextToken },
-      },
-    })
-
-    if (!res.response.ok || !res.data) {
-      handleE2BRequestError(
-        {
-          error: res.error ?? {
-            code: res.response.status,
-            message: res.response.statusText,
-          },
-        },
-        'Error getting templates'
-      )
-    }
-    templates.push(...res.data)
-    nextToken = res.response.headers.get('x-next-token') || undefined
-  } while (nextToken && (!limit || templates.length < limit))
+  while (iterator.hasNext && (!limit || templates.length < limit)) {
+    templates.push(...(await iterator.nextItems()))
+  }
 
   return {
     templates: limit ? templates.slice(0, limit) : templates,
     // We can't change the page size during iteration, so we may have to check if we have more templates than the limit
-    hasMore: !!nextToken || (limit ? templates.length > limit : false),
+    hasMore: iterator.hasNext || (limit ? templates.length > limit : false),
   }
 }

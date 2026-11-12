@@ -106,9 +106,13 @@ sandboxTest.skipIf(isDebug)(
     })
 
     try {
-      await sandbox.commands.run(corsHttpServerCmd(8000), {
+      const server = await sandbox.commands.run(corsHttpServerCmd(8000), {
         background: true,
       })
+      // An attached handle's stream ends when the sandbox pauses, and the SDK
+      // probes envd's /health on that error, which wakes an auto-resume
+      // sandbox before the test can observe it paused.
+      await server.disconnect()
 
       await waitForState(sandbox, 'paused')
 

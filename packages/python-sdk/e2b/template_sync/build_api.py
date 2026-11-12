@@ -14,6 +14,7 @@ from e2b.api.client.api.templates import (
     post_v_2_templates_template_id_builds_build_id,
     get_templates_template_id_builds_build_id_status,
     get_templates_aliases_alias,
+    delete_templates_template_id,
 )
 from e2b.api.client.api.tags import (
     post_templates_tags,
@@ -51,6 +52,7 @@ def request_build(
     cpu_count: Optional[int],
     memory_mb: Optional[int],
     min_free_disk_mb: Optional[int],
+    max_cpu_count: Optional[int] = None,
 ):
     res = post_v3_templates.sync_detailed(
         client=client,
@@ -58,6 +60,7 @@ def request_build(
             name=name,
             tags=tags if tags else UNSET,
             cpu_count=cpu_count if cpu_count is not None else UNSET,
+            max_cpu_count=max_cpu_count if max_cpu_count is not None else UNSET,
             memory_mb=memory_mb if memory_mb is not None else UNSET,
             min_free_disk_mb=(
                 min_free_disk_mb if min_free_disk_mb is not None else UNSET
@@ -443,3 +446,28 @@ def get_template_tags(
         )
         for item in res.parsed
     ]
+
+
+def delete_template(client: AuthenticatedClient, template_id_or_name: str) -> bool:
+    """
+    Delete a template or snapshot.
+
+    Args:
+        client: Authenticated API client
+        template_id_or_name: Template or snapshot ID or name (a name may be namespaced)
+
+    Returns:
+        True if the template was deleted, False if it was not found
+    """
+    res = delete_templates_template_id.sync_detailed(
+        template_id=encode_path_param(template_id_or_name),
+        client=client,
+    )
+
+    if res.status_code == 404:
+        return False
+
+    if res.status_code >= 300:
+        raise handle_api_exception(res, TemplateException)
+
+    return True

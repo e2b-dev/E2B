@@ -1121,6 +1121,52 @@ components:
           items:
             $ref: "#/components/schemas/SandboxVolumeMount"
 
+    SandboxRecord:
+      required:
+        - templateID
+        - sandboxID
+        - startedAt
+        - cpuCount
+        - memoryMB
+        - diskSizeMB
+        - retentionExpired
+        - eventsRetentionExpired
+      properties:
+        templateID:
+          type: string
+          description: Identifier of the template from which is the sandbox created
+        alias:
+          type: string
+          description: Alias of the template
+        sandboxID:
+          type: string
+          description: Identifier of the sandbox
+        startedAt:
+          type: string
+          format: date-time
+          description: Time when the sandbox was started
+        stoppedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Time when the sandbox was stopped
+        domain:
+          type: string
+          nullable: true
+          description: Base domain where the sandbox traffic is accessible
+        cpuCount:
+          $ref: "#/components/schemas/CPUCount"
+        memoryMB:
+          $ref: "#/components/schemas/MemoryMB"
+        diskSizeMB:
+          $ref: "#/components/schemas/DiskSizeMB"
+        retentionExpired:
+          type: boolean
+          description: Whether the sandbox ended more than the fixed retention window ago, so its monitoring and logs data is no longer available
+        eventsRetentionExpired:
+          type: boolean
+          description: Whether the sandbox ended more than the team's events retention window ago, so its events data is no longer available
+
     ListedSandbox:
       required:
         - templateID
@@ -1195,6 +1241,13 @@ components:
           minimum: 0
           default: 15
           description: Time to live for the sandbox in seconds.
+        cpuCount:
+          allOf:
+            - $ref: "#/components/schemas/CPUCount"
+          description: >-
+            Online vCPU target for the sandbox. Defaults to the template's
+            cpuCount; at most its maxCpuCount (fixed-size templates accept only
+            their cpuCount).
         autoPause:
           type: boolean
           default: false
@@ -1252,6 +1305,13 @@ components:
           minimum: 1
           default: 300
           description: Time to live for the sandbox in seconds.
+        cpuCount:
+          allOf:
+            - $ref: "#/components/schemas/CPUCount"
+          description: >-
+            Online vCPU target for the sandbox. Defaults to the template's
+            cpuCount; at most its maxCpuCount (fixed-size templates accept only
+            their cpuCount).
         autoPause:
           type: boolean
           default: false
@@ -1326,6 +1386,13 @@ components:
           minimum: 0
           default: 15
           description: Time to live for the sandbox in seconds.
+        cpuCount:
+          allOf:
+            - $ref: "#/components/schemas/CPUCount"
+          description: >-
+            Online vCPU target for the resumed sandbox. Defaults to the
+            snapshot's cpuCount; at most the template's maxCpuCount
+            (fixed-size templates accept only their cpuCount).
         autoPause:
           type: boolean
           deprecated: true
@@ -1980,6 +2047,150 @@ components:
           nullable: true
           description: Build that was current before the restore, null when there was none
 
+    AdminSandboxOverview:
+      type: object
+      description: |
+        Who owns a sandbox and what its snapshot holds, read from the database:
+        the team, the snapshot template and its most recent pause, and the
+        newest default-tag build assignment of that template
+      required:
+        - sandboxId
+        - team
+        - snapshotTemplateId
+        - lastPause
+        - latestBuild
+        - buildCount
+      properties:
+        sandboxId:
+          type: string
+          description: Identifier of the sandbox
+        team:
+          $ref: "#/components/schemas/AdminSandboxOverviewTeam"
+        snapshotTemplateId:
+          type: string
+          nullable: true
+          description: Template that holds the sandbox's snapshot, null when the sandbox has no snapshot
+        lastPause:
+          allOf:
+            - $ref: "#/components/schemas/AdminSandboxLastPause"
+          nullable: true
+          description: What the most recent pause recorded, null when the sandbox has no snapshot
+        latestBuild:
+          allOf:
+            - $ref: "#/components/schemas/AdminSandboxOverviewBuild"
+          nullable: true
+          description: |
+            Newest default-tag build assignment of the snapshot template, null
+            when there is no snapshot or no assignment
+        buildCount:
+          type: integer
+          format: int64
+          description: Number of default-tag build assignments of the snapshot template
+
+    AdminSandboxOverviewTeam:
+      type: object
+      description: The team the sandbox belongs to
+      required:
+        - id
+        - name
+        - email
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identifier of the team
+        name:
+          type: string
+          nullable: true
+          description: Name of the team
+        email:
+          type: string
+          nullable: true
+          description: Contact email of the team
+
+    AdminSandboxLastPause:
+      type: object
+      description: |
+        The snapshot as the most recent pause left it. A resume can change
+        whether the sandbox auto-pauses without rewriting it, and restoring an
+        older build does not change it.
+      required:
+        - kind
+        - autoPause
+        - autoPauseKind
+      properties:
+        kind:
+          allOf:
+            - $ref: "#/components/schemas/AdminSandboxPauseKind"
+          description: Kind of snapshot the most recent pause took
+        autoPause:
+          type: boolean
+          description: Whether the sandbox pauses instead of being killed on timeout, as of the most recent pause
+        autoPauseKind:
+          allOf:
+            - $ref: "#/components/schemas/AdminSandboxPauseKind"
+          description: Kind of snapshot an auto-pause takes, as of the most recent pause
+
+    AdminSandboxPauseKind:
+      type: string
+      description: |
+        What a pause kept: memory is a full snapshot that resumes where the
+        sandbox left off, filesystem keeps only the root filesystem and boots
+        it again on resume
+      enum:
+        - memory
+        - filesystem
+      x-enum-varnames:
+        - AdminSandboxPauseKindMemory
+        - AdminSandboxPauseKindFilesystem
+
+    AdminSandboxOverviewBuild:
+      type: object
+      description: The newest default-tag build assignment of a sandbox's snapshot template
+      required:
+        - buildId
+        - templateId
+        - tag
+        - status
+        - statusGroup
+        - clusterNodeId
+        - assignedAt
+        - isCurrent
+        - restorable
+      properties:
+        buildId:
+          type: string
+          format: uuid
+          description: Identifier of the build
+        templateId:
+          type: string
+          description: Identifier of the snapshot template the build is assigned to
+        tag:
+          type: string
+          description: Tag the build is assigned under
+        status:
+          type: string
+          description: Build status as stored, for example ready, snapshotting or waiting
+        statusGroup:
+          allOf:
+            - $ref: "#/components/schemas/AdminSandboxBuildStatusGroup"
+          nullable: true
+          description: Coarse build state, null when the stored group is not one of the known values
+        clusterNodeId:
+          type: string
+          nullable: true
+          description: Node that produced the build, null when it was not recorded
+        assignedAt:
+          type: string
+          format: date-time
+          description: When the build was assigned to the template under the tag
+        isCurrent:
+          type: boolean
+          description: Always true, the newest assignment is the one the template resolves to
+        restorable:
+          type: boolean
+          description: Always false, the newest assignment is already current
+
     AdminTeamRunningSandboxCounts:
       type: object
       description: |
@@ -2486,6 +2697,10 @@ components:
           description: Identifier of the last successful build for given template
         cpuCount:
           $ref: "#/components/schemas/CPUCount"
+        maxCpuCount:
+          allOf:
+            - $ref: "#/components/schemas/CPUCount"
+          description: "Maximum CPU count for resizable templates; absent for fixed-size templates."
         memoryMB:
           $ref: "#/components/schemas/MemoryMB"
         diskSizeMB:
@@ -2767,6 +2982,10 @@ components:
           description: Time when the build was finished
         cpuCount:
           $ref: "#/components/schemas/CPUCount"
+        maxCpuCount:
+          allOf:
+            - $ref: "#/components/schemas/CPUCount"
+          description: "Maximum CPU count for resizable templates; absent for fixed-size templates."
         memoryMB:
           $ref: "#/components/schemas/MemoryMB"
         diskSizeMB:
@@ -2844,6 +3063,10 @@ components:
           description: Identifier of the team, as its UUID or its public project ID (prj_)
         cpuCount:
           $ref: "#/components/schemas/CPUCount"
+        maxCpuCount:
+          allOf:
+            - $ref: "#/components/schemas/CPUCount"
+          description: "Maximum CPU count the template's sandboxes can be resized to; makes the template resizable. Must be at least cpuCount."
         memoryMB:
           $ref: "#/components/schemas/MemoryMB"
         minFreeDiskMb:
@@ -5204,6 +5427,36 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
+  /unstable/sandboxes/{sandboxID}/record:
+    get:
+      summary: Sandbox record
+      description: Returns the team's latest recorded run of the sandbox, including runs that have already ended, and whether its monitoring, logs and events data are still retained. Returns 404 when the team has no recorded run of the sandbox.
+      tags: [sandboxes]
+      security:
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+      responses:
+        "200":
+          description: Successfully returned the sandbox record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SandboxRecord"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "404":
+          $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
   # TODO: Pause and resume might be exposed as POST /sandboxes/{sandboxID}/snapshot and then POST /sandboxes with specified snapshotting setup
   /sandboxes/{sandboxID}/pause:
     post:
@@ -6745,6 +6998,40 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdminSandbox"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/admin/sandboxes/{sandboxID}/overview:
+    get:
+      summary: Sandbox overview
+      description: |
+        Reads a sandbox's team, snapshot template, most recent pause and newest
+        default-tag build from the database. The team comes from the
+        stopped-sandbox log, or from the snapshot when the sandbox has not
+        stopped. Returns 404 when neither knows the sandbox. A sandbox without
+        a snapshot returns null `snapshotTemplateId`, `lastPause` and
+        `latestBuild`.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      parameters:
+        - $ref: "#/components/parameters/sandboxID"
+      responses:
+        "200":
+          description: The sandbox overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSandboxOverview"
         "400":
           $ref: "#/components/responses/400"
         "401":

@@ -8,10 +8,12 @@ import {
 import { BuildError, InvalidArgumentError } from '../errors'
 import { runtime, shellQuote } from '../utils'
 import { callableTemplate } from './callable'
+import { TemplatePaginator } from './paginator'
 import {
   assignTags,
   checkAliasExists,
   getTemplateTags,
+  deleteTemplate,
   removeTags,
   getBuildStatus,
   getFileUploadLink,
@@ -39,6 +41,7 @@ import {
   TemplateClass,
   TemplateFinal,
   TemplateFromImage,
+  TemplateListOpts,
   TemplateOptions,
   TemplateTag,
   TemplateTagInfo,
@@ -426,6 +429,52 @@ export class TemplateBase
     return getTemplateTags(
       client,
       { templateID: templateId },
+      config.getSignal(undefined, options?.signal)
+    )
+  }
+
+  /**
+   * List the project's templates.
+   *
+   * @param opts connection and pagination options.
+   *
+   * @returns a {@link TemplatePaginator} that yields pages of templates.
+   *
+   * @example
+   * ```ts
+   * const paginator = Template.list({ limit: 50 })
+   * while (paginator.hasNext) {
+   *   const templates = await paginator.nextItems()
+   *   console.log(templates)
+   * }
+   * ```
+   */
+  static list(opts?: TemplateListOpts): TemplatePaginator {
+    return new TemplatePaginator(this.resolveOpts(opts))
+  }
+
+  /**
+   * Delete a template or snapshot.
+   *
+   * @param nameOrId Template or snapshot name or ID
+   * @param options Authentication options
+   * @returns `true` if the template was deleted, `false` if it was not found
+   * @throws TemplateError if the API returns an error other than not found
+   *
+   * @example
+   * ```ts
+   * const deleted = await Template.delete('my-template')
+   * ```
+   */
+  static async delete(
+    nameOrId: string,
+    options?: ConnectionOpts
+  ): Promise<boolean> {
+    const config = new ConnectionConfig(this.resolveOpts(options))
+    const client = new ApiClient(config)
+    return deleteTemplate(
+      client,
+      { templateID: nameOrId },
       config.getSignal(undefined, options?.signal)
     )
   }
@@ -1077,6 +1126,7 @@ export class TemplateBase
         name,
         tags: options.tags,
         cpuCount: options.cpuCount,
+        maxCpuCount: options.maxCpuCount,
         memoryMB: options.memoryMB,
         minFreeDiskMb: options.minFreeDiskMb,
       },
@@ -1293,6 +1343,8 @@ export class TemplateBase
  */
 export const Template = callableTemplate(TemplateBase)
 
+export { TemplatePaginator } from './paginator'
+
 export type {
   BuildInfo,
   BuildOptions,
@@ -1304,6 +1356,8 @@ export type {
   TemplateBuildStatus,
   TemplateBuildStatusResponse,
   TemplateClass,
+  TemplateInfo,
+  TemplateListOpts,
   TemplateTag,
   TemplateTagInfo,
 } from './types'
