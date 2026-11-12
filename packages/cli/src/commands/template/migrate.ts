@@ -184,17 +184,14 @@ export const migrateCommand = new commander.Command('migrate')
             {
               label: languageDisplay[Language.TypeScript],
               value: Language.TypeScript,
-              hint: 'Generate .ts files for JavaScript/TypeScript projects',
             },
             {
               label: languageDisplay[Language.PythonSync],
               value: Language.PythonSync,
-              hint: 'Generate synchronous Python template files',
             },
             {
               label: languageDisplay[Language.PythonAsync],
               value: Language.PythonAsync,
-              hint: 'Generate asynchronous Python template files',
             },
           ],
           initialValue: Language.TypeScript,
