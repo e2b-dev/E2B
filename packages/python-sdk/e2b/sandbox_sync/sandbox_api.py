@@ -6,7 +6,6 @@ from packaging.version import Version
 from e2b.api import (
     SandboxCreateResponse,
     api_exception_from_code,
-    encode_path_param,
     handle_api_exception,
 )
 from e2b.api.client.api.sandboxes import (
@@ -21,7 +20,6 @@ from e2b.api.client.api.sandboxes import (
     post_sandboxes_sandbox_id_timeout,
     put_sandboxes_sandbox_id_network,
 )
-from e2b.api.client.api.templates import delete_templates_template_id
 from e2b.api.client.models import (
     ConnectSandboxV2,
     Error,
@@ -65,6 +63,7 @@ from e2b.sandbox.sandbox_api import (
     to_sandbox_create_response,
     validate_fork_count,
 )
+from e2b.template_sync.build_api import delete_template
 from e2b.sandbox_sync.paginator import SandboxPaginator, get_api_client
 
 
@@ -471,19 +470,7 @@ class SandboxApi(SandboxBase):
     ) -> bool:
         config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
-        api_client = get_api_client(config)
-        res = delete_templates_template_id.sync_detailed(
-            encode_path_param(snapshot_id),
-            client=api_client,
-        )
-
-        if res.status_code == 404:
-            return False
-
-        if res.status_code >= 300:
-            raise handle_api_exception(res)
-
-        return True
+        return delete_template(get_api_client(config), snapshot_id)
 
     @classmethod
     def _cls_pause(
