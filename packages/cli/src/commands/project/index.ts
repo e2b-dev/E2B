@@ -1,6 +1,6 @@
 import * as commander from '@commander-js/extra-typings'
 
-import { currentProject, projectId, requireMe } from 'src/api'
+import { currentProject, envAccessToken, projectId, requireMe } from 'src/api'
 import { Format, parseFormat } from 'src/options'
 import { asBold, asFormattedError } from 'src/utils/format'
 import { renderTable } from 'src/utils/table'
@@ -8,6 +8,7 @@ import { updateUserConfig } from 'src/utils/token-refresh'
 import {
   allProjects,
   blockedWarning,
+  defaultProject,
   findProject,
   findWorkspace,
   Me,
@@ -45,12 +46,22 @@ function projectStatus({ status, blocked, block_reasons }: Project) {
     : 'blocked'
 }
 
-/** The current project, if it is one `me` lists. */
-function findCurrent(me: Me): ProjectEntry | undefined {
+/**
+ * The project commands run in: the current one if `me` lists it; with
+ * `E2B_ACCESS_TOKEN` and no `E2B_PROJECT_ID`, the token's default project.
+ */
+function resolveCurrent(me: Me): ProjectEntry {
   const current = currentProject()
-  if (!current) return undefined
+  if (current) return findProject(me, current)
+  if (envAccessToken) return defaultProject(me)
+  throw new Error(
+    `No project selected. Run ${asBold('e2b project use <project>')}.`
+  )
+}
+
+function findCurrent(me: Me): ProjectEntry | undefined {
   try {
-    return findProject(me, current)
+    return resolveCurrent(me)
   } catch {
     return undefined
   }
@@ -115,6 +126,13 @@ const useCommand = new commander.Command('use')
   .addOption(workspaceOption('the workspace to pick from or look in'))
   .action(async (ref, opts) => {
     try {
+      if (envAccessToken) {
+        fail(
+          `${asBold('E2B_ACCESS_TOKEN')} is set, so the stored project is not used. Choose the project with ${asBold(
+            'E2B_PROJECT_ID'
+          )} instead.`
+        )
+      }
       const me = await requireMe()
       const workspace = opts.workspace
         ? findWorkspace(me, opts.workspace)
@@ -174,11 +192,7 @@ const infoCommand = new commander.Command('info')
   .addOption(formatOption)
   .action(async (opts) => {
     try {
-      const current = currentProject()
-      if (!current) {
-        fail(`No project selected. Run ${asBold('e2b project use <project>')}.`)
-      }
-      const { project, workspace } = findProject(await requireMe(), current)
+      const { project, workspace } = resolveCurrent(await requireMe())
 
       if (opts.format === Format.JSON) {
         console.log(

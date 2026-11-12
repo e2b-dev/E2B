@@ -20,7 +20,8 @@ const CONFIG_LOCK = {
   timeoutMs: 45_000,
 }
 
-function decodeJwtExp(token: string): number | undefined {
+/** The `exp` claim of a JWT, or `undefined` for anything else. */
+export function decodeJwtExp(token: string): number | undefined {
   const payload = token.split('.')[1]
   if (!payload) return undefined
   try {

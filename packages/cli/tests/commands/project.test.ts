@@ -53,6 +53,7 @@ const me: Me = {
 const mocks = vi.hoisted(() => ({
   updateUserConfig: vi.fn(),
   current: undefined as string | undefined,
+  envToken: undefined as string | undefined,
   select: vi.fn(),
 }))
 
@@ -64,6 +65,10 @@ vi.mock(
     ...(await importOriginal()),
     requireMe: async () => me,
     currentProject: () => mocks.current,
+    // The real value is read from the environment once, at import.
+    get envAccessToken() {
+      return mocks.envToken
+    },
   })
 )
 
@@ -108,6 +113,7 @@ beforeEach(() => {
   vi.resetModules()
   vi.clearAllMocks()
   mocks.current = 'mine'
+  mocks.envToken = undefined
 })
 
 afterEach(() => {
@@ -269,5 +275,29 @@ describe('e2b project info', () => {
     mocks.current = undefined
     const { err } = await run(['project', 'info'])
     expect(err).toContain('No project selected')
+  })
+
+  test('shows the personal project with E2B_ACCESS_TOKEN and no E2B_PROJECT_ID', async () => {
+    mocks.current = undefined
+    mocks.envToken = 'token'
+    const { out } = await run(['project', 'info', '-f', 'json'])
+    expect(JSON.parse(out)).toMatchObject({ id: 'mine' })
+  })
+})
+
+describe('with E2B_ACCESS_TOKEN', () => {
+  test('project use refuses, pointing at E2B_PROJECT_ID', async () => {
+    mocks.envToken = 'token'
+    const { err } = await run(['project', 'use', 'prj_shared'])
+    expect(err).toContain('Choose the project with E2B_PROJECT_ID')
+    expect(mocks.updateUserConfig).not.toHaveBeenCalled()
+  })
+
+  test('project list marks the personal project current', async () => {
+    mocks.current = undefined
+    mocks.envToken = 'token'
+    const { out } = await run(['project', 'list', '-f', 'json'])
+    const rows = JSON.parse(out) as { id: string; current: boolean }[]
+    expect(rows.find((r) => r.current)?.id).toBe('mine')
   })
 })
