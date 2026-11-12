@@ -20,7 +20,7 @@ export async function text(opts: clack.TextOptions): Promise<string> {
 
 export async function confirm(
   message: string,
-  initialValue = false
+  { initialValue = false }: Pick<clack.ConfirmOptions, 'initialValue'> = {}
 ): Promise<boolean> {
   return exitIfCanceled(await clack.confirm({ message, initialValue }))
 }
