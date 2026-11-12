@@ -55,9 +55,13 @@ export const loginCommand = new commander.Command('login')
             'Your login was not accepted by workspace-api, please contact support'
           )
         }
-        selected =
-          personalProject(me) ??
-          (await pickProject(me, { message: 'Select the project to use' }))
+        // Ask, with the personal workspace and its project preselected;
+        // without a terminal that default (or the only active project) is
+        // taken as is.
+        selected = await pickProject(me, {
+          message: 'Select the project to use',
+          selectedId: personalProject(me)?.project.id,
+        })
       } catch (err) {
         console.error(
           asFormattedError(err instanceof Error ? err.message : String(err))
