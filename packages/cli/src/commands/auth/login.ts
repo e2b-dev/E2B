@@ -15,7 +15,6 @@ import { asBold, asFormattedConfig, asFormattedError } from 'src/utils/format'
 import { openUrlInBrowser } from 'src/utils/openBrowser'
 import {
   blockedWarning,
-  bootstrapUser,
   fetchMe,
   personalProject,
   pickProject,
@@ -50,16 +49,10 @@ export const loginCommand = new commander.Command('login')
 
       let selected
       try {
-        // A user who signed up but never opened the dashboard isn't set up in
-        // workspace-api yet (401); bootstrapping creates the account.
-        let me = await fetchMe(accessToken)
-        if (!me) {
-          await bootstrapUser(accessToken)
-          me = await fetchMe(accessToken)
-        }
+        const me = await fetchMe(accessToken)
         if (!me) {
           throw new Error(
-            'Your account could not be set up, please contact support'
+            'Your login was not accepted by workspace-api, please contact support'
           )
         }
         selected =

@@ -116,16 +116,6 @@ export async function fetchMe(accessToken: string): Promise<Me | undefined> {
   return parsed.data
 }
 
-/**
- * Create the account (a personal workspace with a first project, or SSO
- * workspace membership) for a signed-in user workspace-api doesn't know yet.
- * Idempotent: an existing account is returned unchanged.
- */
-export async function bootstrapUser(accessToken: string): Promise<void> {
-  const res = await workspaceApi('POST', '/v1/users/bootstrap', accessToken)
-  if (!res.ok) throw await requestError(res, 'set up your account')
-}
-
 /** Every project in `me`, with its workspace. */
 export function allProjects(me: Me): ProjectEntry[] {
   return me.workspaces.flatMap((workspace) =>
