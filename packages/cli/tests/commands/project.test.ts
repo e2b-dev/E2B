@@ -205,16 +205,17 @@ describe('e2b project use', () => {
         configurable: true,
       })
       type Prompt = { message: string; choices: { value: unknown }[] }
-      // Team has one active project, so only the workspace is asked for.
-      mocks.select.mockImplementationOnce(
-        async (p: Prompt) => p.choices[1].value
-      )
+      mocks.select
+        .mockImplementationOnce(async (p: Prompt) => p.choices[1].value)
+        .mockImplementationOnce(async (p: Prompt) => p.choices[0].value)
 
       const { out } = await run(['project', 'use'])
 
       expect(
         mocks.select.mock.calls.map(([p]: [Prompt]) => p.message)
-      ).toEqual(['Select workspace'])
+      ).toEqual(['Select workspace', 'Select project'])
+      // Team's only active project is still offered, not selected outright.
+      expect(mocks.select.mock.calls[1][0].choices).toHaveLength(1)
       expect(mocks.updateUserConfig).toHaveBeenCalledWith(
         expect.objectContaining({ projectId: 'shared' })
       )
@@ -226,9 +227,15 @@ describe('e2b project use', () => {
         value: true,
         configurable: true,
       })
-      // Team has one active project, so nothing is asked.
+      type Prompt = { message: string; choices: { value: unknown }[] }
+      mocks.select.mockImplementationOnce(
+        async (p: Prompt) => p.choices[0].value
+      )
       const { out } = await run(['project', 'use', '--workspace', 'wrk_team'])
-      expect(mocks.select).not.toHaveBeenCalled()
+      // No workspace prompt; the project prompt lists Team's projects only.
+      expect(
+        mocks.select.mock.calls.map(([p]: [Prompt]) => p.message)
+      ).toEqual(['Select project'])
       expect(out).toContain('Now using project Project shared')
     })
 
