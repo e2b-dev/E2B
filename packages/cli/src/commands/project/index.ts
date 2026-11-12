@@ -1,6 +1,6 @@
 import * as commander from '@commander-js/extra-typings'
 
-import { currentProject, ProjectSource, requireMe } from 'src/api'
+import { currentProject, projectId, requireMe } from 'src/api'
 import { Format, parseFormat } from 'src/options'
 import { asBold, asFormattedError } from 'src/utils/format'
 import { renderTable } from 'src/utils/table'
@@ -42,7 +42,7 @@ function findCurrent(me: Me): ProjectEntry | undefined {
   const current = currentProject()
   if (!current) return undefined
   try {
-    return findProject(me, current.ref)
+    return findProject(me, current)
   } catch {
     return undefined
   }
@@ -147,8 +147,7 @@ const useCommand = new commander.Command('use')
         `Now using project ${asBold(project.name)} (${project.public_id}) in workspace ${asBold(workspace.name)}.`
       )
 
-      const override = currentProject()
-      if (override?.source === ProjectSource.Env) {
+      if (projectId) {
         console.warn(
           `${asBold('E2B_PROJECT_ID')} is set and takes precedence over the selected project.`
         )
@@ -172,7 +171,7 @@ const infoCommand = new commander.Command('info')
       if (!current) {
         fail(`No project selected. Run ${asBold('e2b project use <project>')}.`)
       }
-      const { project, workspace } = findProject(await requireMe(), current.ref)
+      const { project, workspace } = findProject(await requireMe(), current)
 
       if (opts.format === Format.JSON) {
         console.log(
@@ -180,7 +179,6 @@ const infoCommand = new commander.Command('info')
             {
               ...project,
               workspace_name: workspace.name,
-              selected_by: current.source,
             },
             null,
             2
@@ -199,12 +197,6 @@ const infoCommand = new commander.Command('info')
         ['Control plane', project.control_plane_domain],
         ['Status', projectStatus(project)],
         ['Your access', project.capabilities.join(', ') || 'none'],
-        [
-          'Selected by',
-          current.source === ProjectSource.Selected
-            ? 'e2b project use'
-            : current.source,
-        ],
       ]
       const width = Math.max(...rows.map(([label]) => label.length)) + 2
       console.log(`\nProject info for ${asBold(project.name)}:`)

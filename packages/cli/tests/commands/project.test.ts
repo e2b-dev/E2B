@@ -52,7 +52,7 @@ const me: Me = {
 
 const mocks = vi.hoisted(() => ({
   updateUserConfig: vi.fn(),
-  current: undefined as { ref: string; source: string } | undefined,
+  current: undefined as string | undefined,
 }))
 
 vi.mock(
@@ -104,7 +104,7 @@ async function run(args: string[]) {
 beforeEach(() => {
   vi.resetModules()
   vi.clearAllMocks()
-  mocks.current = { ref: 'mine', source: 'selected' }
+  mocks.current = 'mine'
 })
 
 afterEach(() => {
@@ -178,14 +178,13 @@ describe('e2b project use', () => {
 })
 
 describe('e2b project info', () => {
-  test('shows the current project and why it is current', async () => {
-    mocks.current = { ref: 'prj_shared', source: 'E2B_PROJECT_ID' }
+  test('shows the current project', async () => {
+    mocks.current = 'prj_shared'
     const { out } = await run(['project', 'info', '-f', 'json'])
     expect(JSON.parse(out)).toMatchObject({
       id: 'shared',
       control_plane_domain: 'shared.e2b.dev',
       workspace_name: 'Team',
-      selected_by: 'E2B_PROJECT_ID',
     })
   })
 
