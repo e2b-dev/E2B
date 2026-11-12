@@ -14,13 +14,25 @@ export const infoCommand = new commander.Command('info')
       console.error(asFormattedError('Failed to read user config', err))
     }
 
-    if (envAccessToken) {
+    // The same precedence as ensureAuth: the key wins for API calls, the
+    // token is still what workspace-api is asked with.
+    if (process.env.E2B_API_KEY) {
+      console.log(
+        `Authenticating with E2B_API_KEY${
+          envAccessToken
+            ? ', and with E2B_ACCESS_TOKEN for workspace and project commands'
+            : ''
+        }${userConfig ? '; the login below is not used' : ''}.`
+      )
+    } else if (envAccessToken) {
       console.log(
         `Authenticating with E2B_ACCESS_TOKEN${userConfig ? '; the login below is not used' : ''}.`
       )
     }
     if (!userConfig) {
-      if (!envAccessToken) console.log('Not logged in')
+      if (!envAccessToken && !process.env.E2B_API_KEY) {
+        console.log('Not logged in')
+      }
       return
     }
 

@@ -85,7 +85,9 @@ export function getMe(): Promise<Me> {
     const result = await fetchMe(accessToken)
     if (!result) {
       throw new Error(
-        'Your session was not accepted. Run `e2b auth login` again.'
+        envAccessToken
+          ? `${asBold('E2B_ACCESS_TOKEN')} was rejected. Set a current access token.`
+          : 'Your session was not accepted. Run `e2b auth login` again.'
       )
     }
     return result

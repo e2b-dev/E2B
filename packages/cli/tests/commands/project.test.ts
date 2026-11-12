@@ -293,6 +293,13 @@ describe('with E2B_ACCESS_TOKEN', () => {
     expect(mocks.updateUserConfig).not.toHaveBeenCalled()
   })
 
+  test('auth configure refuses, pointing at E2B_PROJECT_ID', async () => {
+    mocks.envToken = 'token'
+    const { err } = await run(['auth', 'configure'])
+    expect(err).toContain('Choose the project with E2B_PROJECT_ID')
+    expect(mocks.updateUserConfig).not.toHaveBeenCalled()
+  })
+
   test('project list marks the personal project current', async () => {
     mocks.current = undefined
     mocks.envToken = 'token'

@@ -323,6 +323,20 @@ describe('ensureAuth', () => {
       expect(fetchMock).not.toHaveBeenCalled()
     })
 
+    test('names the token when workspace-api rejects it', async () => {
+      vi.stubEnv('E2B_ACCESS_TOKEN', jwt(3600))
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => new Response(null, { status: 401 }))
+      )
+      const error = failing()
+
+      await expect(headersOf()).rejects.toThrow('exit 1')
+      expect(String(error.mock.calls[0][0])).toContain(
+        'E2B_ACCESS_TOKEN was rejected'
+      )
+    })
+
     test('lets requireMe list workspaces without a login', async () => {
       vi.stubEnv('E2B_ACCESS_TOKEN', jwt(3600))
       mockWorkspaceApi()
