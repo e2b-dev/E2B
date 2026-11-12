@@ -9,11 +9,19 @@ import {
   allProjects,
   blockedWarning,
   findProject,
+  findWorkspace,
   Me,
+  pickProject,
   Project,
   ProjectEntry,
   ProjectStatus,
 } from 'src/workspaces'
+
+const workspaceOption = (purpose: string) =>
+  new commander.Option(
+    '-w, --workspace <workspace>',
+    `${purpose}: its ID, wrk_ ID or name`
+  )
 
 const formatOption = new commander.Option(
   '-f, --format <format>',
@@ -51,10 +59,7 @@ function findCurrent(me: Me): ProjectEntry | undefined {
 const listCommand = new commander.Command('list')
   .description('list the projects you can access')
   .alias('ls')
-  .option(
-    '-w, --workspace <workspace>',
-    'only list projects in this workspace: its ID, wrk_ ID or name'
-  )
+  .addOption(workspaceOption('only list projects in this workspace'))
   .addOption(formatOption)
   .action(async (opts) => {
     try {
@@ -62,26 +67,7 @@ const listCommand = new commander.Command('list')
 
       let entries = allProjects(me)
       if (opts.workspace) {
-        const ref = opts.workspace
-        const exact = me.workspaces.find(
-          (w) => w.id === ref || w.public_id === ref
-        )
-        const byName = me.workspaces.filter(
-          (w) => w.name.toLowerCase() === ref.toLowerCase()
-        )
-        if (!exact && byName.length > 1) {
-          fail(
-            `More than one workspace is named "${ref}": ${byName
-              .map((w) => w.public_id)
-              .join(', ')}. Pass the workspace ID instead.`
-          )
-        }
-        const workspace = exact ?? byName[0]
-        if (!workspace) {
-          fail(
-            `Workspace "${ref}" not found. Run ${asBold('e2b workspace list')} to see your workspaces.`
-          )
-        }
+        const workspace = findWorkspace(me, opts.workspace)
         entries = entries.filter((e) => e.workspace.id === workspace.id)
       }
       const currentId = findCurrent(me)?.project.id
@@ -122,12 +108,33 @@ const listCommand = new commander.Command('list')
   })
 
 const useCommand = new commander.Command('use')
-  .description('set the project commands run in by default')
-  .argument('<project>', 'the project: its ID, prj_ ID, slug or name')
-  .action(async (ref) => {
+  .description(
+    'set the project commands run in by default; without a project, pick one'
+  )
+  .argument('[project]', 'the project: its ID, prj_ ID, slug or name')
+  .addOption(workspaceOption('the workspace to pick from or look in'))
+  .action(async (ref, opts) => {
     try {
-      const entry = findProject(await requireMe(), ref)
-      const { project, workspace } = entry
+      const me = await requireMe()
+      const workspace = opts.workspace
+        ? findWorkspace(me, opts.workspace)
+        : undefined
+      let entry: ProjectEntry
+      if (ref) {
+        entry = findProject(me, ref, workspace)
+      } else {
+        if (!process.stdin.isTTY) {
+          fail(
+            `Pass the project to use: ${asBold('e2b project use <project>')}.`
+          )
+        }
+        entry = await pickProject(me, {
+          message: 'Select project',
+          selectedId: findCurrent(me)?.project.id,
+          workspace,
+        })
+      }
+      const { project, workspace: owner } = entry
       if (project.status !== ProjectStatus.Active) {
         fail(
           `Project ${project.name} is ${project.status} and can't be used. Pick an active project from ${asBold(
@@ -144,7 +151,7 @@ const useCommand = new commander.Command('use')
         projectDomain: project.control_plane_domain,
       })
       console.log(
-        `Now using project ${asBold(project.name)} (${project.public_id}) in workspace ${asBold(workspace.name)}.`
+        `Now using project ${asBold(project.name)} (${project.public_id}) in workspace ${asBold(owner.name)}.`
       )
 
       if (projectId) {

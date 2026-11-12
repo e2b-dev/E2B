@@ -53,7 +53,10 @@ const me: Me = {
 const mocks = vi.hoisted(() => ({
   updateUserConfig: vi.fn(),
   current: undefined as string | undefined,
+  select: vi.fn(),
 }))
+
+vi.mock('@inquirer/prompts', () => ({ select: mocks.select }))
 
 vi.mock(
   '../../src/api',
@@ -174,6 +177,66 @@ describe('e2b project use', () => {
     const { err } = await run(['project', 'use', 'prj_new'])
     expect(err).toContain("is provisioning and can't be used")
     expect(mocks.updateUserConfig).not.toHaveBeenCalled()
+  })
+
+  test('looks a name up in --workspace only', async () => {
+    const { err } = await run([
+      'project',
+      'use',
+      'Project mine',
+      '--workspace',
+      'Team',
+    ])
+    expect(err).toContain('not found among the projects you can access in workspace Team')
+    expect(mocks.updateUserConfig).not.toHaveBeenCalled()
+  })
+
+  describe('without a project', () => {
+    afterEach(() => {
+      Object.defineProperty(process.stdin, 'isTTY', {
+        value: undefined,
+        configurable: true,
+      })
+    })
+
+    test('asks for the workspace, then the project', async () => {
+      Object.defineProperty(process.stdin, 'isTTY', {
+        value: true,
+        configurable: true,
+      })
+      type Prompt = { message: string; choices: { value: unknown }[] }
+      // Team has one active project, so only the workspace is asked for.
+      mocks.select.mockImplementationOnce(
+        async (p: Prompt) => p.choices[1].value
+      )
+
+      const { out } = await run(['project', 'use'])
+
+      expect(
+        mocks.select.mock.calls.map(([p]: [Prompt]) => p.message)
+      ).toEqual(['Select workspace'])
+      expect(mocks.updateUserConfig).toHaveBeenCalledWith(
+        expect.objectContaining({ projectId: 'shared' })
+      )
+      expect(out).toContain('in workspace Team')
+    })
+
+    test('only offers --workspace', async () => {
+      Object.defineProperty(process.stdin, 'isTTY', {
+        value: true,
+        configurable: true,
+      })
+      // Team has one active project, so nothing is asked.
+      const { out } = await run(['project', 'use', '--workspace', 'wrk_team'])
+      expect(mocks.select).not.toHaveBeenCalled()
+      expect(out).toContain('Now using project Project shared')
+    })
+
+    test('needs a terminal', async () => {
+      const { err } = await run(['project', 'use'])
+      expect(err).toContain('Pass the project to use')
+      expect(mocks.updateUserConfig).not.toHaveBeenCalled()
+    })
   })
 })
 
