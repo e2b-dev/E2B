@@ -71,7 +71,15 @@ function hexDigitsOf(uuid: string): string | undefined {
  * @throws {InvalidIdError} if `uuid` is not in one of those forms.
  */
 export function uuidToBytes(uuid: string): Uint8Array {
-  const hex = typeof uuid === 'string' ? hexDigitsOf(uuid) : undefined
+  if (typeof uuid !== 'string') {
+    // Named by its type: a symbol would throw from a template literal and
+    // replace this error with a TypeError.
+    throw new InvalidIdError(
+      'uuid',
+      `Expected a UUID string, got ${uuid === null ? 'null' : typeof uuid}.`
+    )
+  }
+  const hex = hexDigitsOf(uuid)
   if (hex === undefined) {
     throw new InvalidIdError(
       'uuid',
@@ -92,9 +100,18 @@ export function uuidToBytes(uuid: string): Uint8Array {
  *
  * @param bytes exactly 16 bytes, most significant first.
  * @returns the UUID in 8-4-4-4-12 hex form.
- * @throws {InvalidIdError} if `bytes` is not 16 bytes long.
+ * @throws {InvalidIdError} if `bytes` is not a `Uint8Array` of 16 bytes.
  */
 export function bytesToUuid(bytes: Uint8Array): string {
+  // By tag rather than `instanceof`, so a Uint8Array from another realm (an
+  // iframe, a vm context) and a Buffer both pass. Anything else would format
+  // values above 255 as "undefined", or be a TypeError for null.
+  if (Object.prototype.toString.call(bytes) !== '[object Uint8Array]') {
+    throw new InvalidIdError(
+      'uuid',
+      `Cannot format ${bytes === null ? 'null' : `a ${typeof bytes}`} as a UUID: expected a Uint8Array of exactly ${DECODED_LENGTH} bytes.`
+    )
+  }
   if (bytes.length !== DECODED_LENGTH) {
     throw new InvalidIdError(
       'uuid',
