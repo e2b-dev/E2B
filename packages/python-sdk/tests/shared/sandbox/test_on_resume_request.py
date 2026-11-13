@@ -1,4 +1,3 @@
-import inspect
 from types import SimpleNamespace
 from typing import Any, Dict, Optional, cast
 from unittest.mock import AsyncMock, Mock
@@ -167,12 +166,40 @@ async def test_async_connect_keeps_timeout_and_logger_positional(
     assert body["memory"] is False
 
 
-@pytest.mark.parametrize("sandbox", [Sandbox, AsyncSandbox], ids=["sync", "async"])
-def test_on_resume_is_keyword_only_on_the_instance_form(sandbox):
-    signature = inspect.signature(sandbox.connect)
+def test_instance_connect_takes_on_resume_only_by_keyword(monkeypatch, test_api_key):
+    request = Mock(return_value=_connected_sandbox())
+    monkeypatch.setattr(post_v_2_sandboxes_sandbox_id_connect, "sync_detailed", request)
+    sandbox = Sandbox.connect(SANDBOX_ID, api_key=test_api_key)
+    request.reset_mock()
 
-    assert signature.parameters["on_resume"].kind is inspect.Parameter.KEYWORD_ONLY
-    assert signature.parameters["timeout"].kind is not inspect.Parameter.KEYWORD_ONLY
+    with pytest.raises(TypeError):
+        cast(Any, sandbox.connect)(300, "reboot")
+    request.assert_not_called()
+
+    sandbox.connect(300, on_resume="reboot")
+    body = request.call_args.kwargs["body"].to_dict()
+    assert body["timeout"] == 300
+    assert body["memory"] is False
+
+
+async def test_async_instance_connect_takes_on_resume_only_by_keyword(
+    monkeypatch, test_api_key
+):
+    request = AsyncMock(return_value=_connected_sandbox())
+    monkeypatch.setattr(
+        post_v_2_sandboxes_sandbox_id_connect, "asyncio_detailed", request
+    )
+    sandbox = await AsyncSandbox.connect(SANDBOX_ID, api_key=test_api_key)
+    request.reset_mock()
+
+    with pytest.raises(TypeError):
+        await cast(Any, sandbox.connect)(300, "reboot")
+    request.assert_not_called()
+
+    await sandbox.connect(300, on_resume="reboot")
+    body = request.call_args.kwargs["body"].to_dict()
+    assert body["timeout"] == 300
+    assert body["memory"] is False
 
 
 @pytest.mark.parametrize("value", UNRECOGNIZED)

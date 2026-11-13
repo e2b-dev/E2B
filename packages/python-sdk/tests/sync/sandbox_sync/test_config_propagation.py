@@ -3,16 +3,13 @@ import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Dict, List, Tuple
-from unittest.mock import Mock
 
 import httpx
 import pytest
 from local_api_server import connect_recording_proxy
 
 from e2b import Sandbox
-from e2b.api import SandboxCreateResponse
 from e2b.connection_config import ConnectionConfig
-import e2b.sandbox_sync.main as sandbox_sync_main
 
 BASE_DOMAIN = "base.e2b.dev"
 BASE_REQUEST_TIMEOUT = 11
@@ -160,39 +157,53 @@ def test_pause_request_timeout_override_wins(fake_api, test_api_key):
     assert sandbox.pause(request_timeout=5) is True
 
 
-@pytest.mark.skip_debug()
-def test_connect_sets_stable_host_routing_headers(monkeypatch, test_api_key):
-    mock_connect = Mock(
-        return_value=SandboxCreateResponse(
-            sandbox_id="sbx-test",
-            sandbox_domain="e2b.app",
-            envd_version="0.4.0",
-            envd_access_token="tok",
-            traffic_access_token="traffic",
-        )
-    )
-    monkeypatch.setattr(sandbox_sync_main.SandboxApi, "_cls_connect", mock_connect)
+class _FakeEnvdHandler(BaseHTTPRequestHandler):
+    """Answers envd file reads and records each request's headers."""
 
-    monkeypatch.setattr(ConnectionConfig, "_integration", "testing/version")
-    config = ConnectionConfig(
-        api_key=test_api_key,
-        api_headers=BASE_HEADERS,
-    )
+    headers_seen: List[Dict[str, str]] = []
+
+    def log_message(self, *args):  # noqa: A003 - silence the default stderr log
+        pass
+
+    def do_GET(self):
+        type(self).headers_seen.append({k.lower(): v for k, v in self.headers.items()})
+        body = b"hello"
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+
+@pytest.fixture
+def fake_envd():
+    _FakeEnvdHandler.headers_seen = []
+    server = ThreadingHTTPServer(("127.0.0.1", 0), _FakeEnvdHandler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        yield f"http://127.0.0.1:{server.server_port}"
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+@pytest.mark.skip_debug()
+def test_connect_sends_stable_host_routing_headers_to_envd(
+    fake_api, fake_envd, test_api_key
+):
     sandbox = Sandbox.connect(
         "sbx-test",
-        **config.get_api_params(),
+        api_key=test_api_key,
+        api_url=fake_api(),
+        sandbox_url=fake_envd,
+        api_headers=BASE_HEADERS,
     )
 
-    assert sandbox.envd_api_url == "https://sandbox.e2b.app"
-    assert "X-Test" not in sandbox.connection_config.sandbox_headers
-    assert sandbox.connection_config.sandbox_headers["User-Agent"].startswith(
-        "e2b-python-sdk/"
-    )
-    assert sandbox.connection_config.sandbox_headers["User-Agent"].endswith(
-        " testing/version"
-    )
-    assert sandbox.connection_config.sandbox_headers["E2b-Sandbox-Id"] == "sbx-test"
-    assert sandbox.connection_config.sandbox_headers["E2b-Sandbox-Port"] == str(
-        ConnectionConfig.envd_port
-    )
-    assert sandbox.connection_config.sandbox_headers["X-Access-Token"] == "tok"
+    assert sandbox.files.read("/hello.txt") == "hello"
+
+    [headers] = _FakeEnvdHandler.headers_seen
+    assert "x-test" not in headers
+    assert headers["user-agent"].startswith("e2b-python-sdk/")
+    assert headers["e2b-sandbox-id"] == "sbx-test"
+    assert headers["e2b-sandbox-port"] == str(ConnectionConfig.envd_port)
+    assert headers["x-access-token"] == "tok"

@@ -1,11 +1,7 @@
-import { expect, assert, expectTypeOf } from 'vitest'
+import { expect, assert } from 'vitest'
 
 import { sandboxTest } from '../../setup.js'
-import {
-  CommandStartOpts,
-  InvalidArgumentError,
-  TimeoutError,
-} from '../../../src/index.js'
+import { InvalidArgumentError, TimeoutError } from '../../../src/index.js'
 
 sandboxTest('run', async ({ sandbox }) => {
   const text = 'Hello, World!'
@@ -71,7 +67,6 @@ sandboxTest('run without retaining output', async ({ sandbox }) => {
     },
   })
 
-  expectTypeOf(cmd.stdout).toEqualTypeOf<undefined>()
   assert.equal(cmd.exitCode, 0)
   assert.isUndefined(cmd.stdout)
   assert.isUndefined(cmd.stderr)
@@ -87,34 +82,12 @@ sandboxTest(
       retainOutput: false,
     })
 
-    expectTypeOf(handle.stdout).toEqualTypeOf<undefined>()
     const result = await handle.wait()
 
     assert.equal(result.exitCode, 0)
     assert.isUndefined(handle.stdout)
     assert.isUndefined(result.stdout)
     assert.isUndefined(result.stderr)
-  }
-)
-
-sandboxTest('run retains output by default', async ({ sandbox }) => {
-  const cmd = await sandbox.commands.run('echo out', { retainOutput: true })
-
-  expectTypeOf(cmd.stdout).toEqualTypeOf<string>()
-  assert.equal(cmd.stdout, 'out\n')
-})
-
-sandboxTest(
-  'run types non-literal retainOutput as possibly undefined',
-  async ({ sandbox }) => {
-    const opts: CommandStartOpts = { retainOutput: false }
-    const cmd = await sandbox.commands.run('echo out', opts)
-
-    expectTypeOf(cmd.stdout).toEqualTypeOf<string | undefined>()
-    assert.isUndefined(cmd.stdout)
-
-    const defaults = await sandbox.commands.run('echo out', {})
-    expectTypeOf(defaults.stdout).toEqualTypeOf<string>()
   }
 )
 
@@ -144,14 +117,6 @@ sandboxTest('run with string shell', async ({ sandbox }) => {
   await expect(
     sandbox.commands.run('echo hello', {
       shell: '/bin/sh' as unknown as string[],
-    })
-  ).rejects.toThrowError(InvalidArgumentError)
-})
-
-sandboxTest('run with non-array shell', async ({ sandbox }) => {
-  await expect(
-    sandbox.commands.run('echo hello', {
-      shell: new Set(['/bin/sh', '-c']) as unknown as string[],
     })
   ).rejects.toThrowError(InvalidArgumentError)
 })

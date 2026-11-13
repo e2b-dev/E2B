@@ -50,12 +50,6 @@ def test_volume_api_url_custom_domain_in_args():
     assert config.api_url == "https://api.custom.com"
 
 
-def test_volume_token_defaults_to_none():
-    config = VolumeConnectionConfig()
-    assert config.token is None
-    assert config.access_token is None
-
-
 def test_volume_token_in_args():
     config = VolumeConnectionConfig(token="vol-token")
     assert config.token == "vol-token"

@@ -140,3 +140,18 @@ def test_stream_input_sends_start_then_ordered_utf8_data(fake_envd_sandbox: Sand
         base64.b64decode(message["data"]["input"]["stdin"]) for message in messages[1:]
     ]
     assert data == [b"first", b"caf\xc3\xa9", b"second"]
+
+
+def test_pty_stream_input_sends_pty_data_under_the_stream_timeout(
+    fake_envd_sandbox: Sandbox,
+):
+    fake_envd_sandbox.pty.stream_input(42, ["a", b"b"], timeout=5)
+
+    [(path, headers, messages)] = _FakeEnvdHandler.requests
+    assert path == "/process.Process/StreamInput"
+    assert headers["connect-timeout-ms"] == "5000"
+    assert messages[0] == {"start": {"process": {"pid": 42}}}
+    data = [
+        base64.b64decode(message["data"]["input"]["pty"]) for message in messages[1:]
+    ]
+    assert data == [b"a", b"b"]

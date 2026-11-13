@@ -14,7 +14,6 @@ from e2b.exceptions import InvalidArgumentException, TemplateException
 from e2b.sandbox.filesystem.filesystem import (
     AsyncWriteEntry,
     SyncWriteEntry,
-    ChunkCheck,
     WriteEntry,
     check_stream_upload,
     multipart_body_is_streamed,
@@ -276,13 +275,6 @@ def test_file_like_wrappers_are_read_as_files():
         assert multipart_body_is_streamed(files)
         chunks = list(to_upload_body(f))
         assert [len(c) for c in chunks] == [IO_CHUNK_SIZE, 1]
-
-
-def test_chunk_check_records_the_validation_error():
-    check = ChunkCheck()
-    with pytest.raises(InvalidArgumentException) as raised:
-        b"".join(to_upload_body(iter([b"ok", "text"]), check=check))  # type: ignore[arg-type]
-    assert check.error is raised.value
 
 
 async def test_async_readers_are_not_file_like():

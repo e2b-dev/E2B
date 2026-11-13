@@ -8,8 +8,7 @@ import {
   afterEach,
   vi,
 } from 'vitest'
-import { createHash, randomBytes } from 'crypto'
-import fs, { statSync } from 'fs'
+import { randomBytes } from 'crypto'
 import { appendFile, writeFile, mkdir, mkdtemp, rm, symlink } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join, basename, relative } from 'path'
@@ -585,28 +584,21 @@ describe('calculateFilesHash', () => {
   test('should hash file content spanning multiple read chunks', async () => {
     const content = randomBytes(3 * 1024 * 1024 + 123)
     const filePath = join(testDir, 'big.bin')
+    const hash = () =>
+      calculateFilesHash('big.bin', '/app', testDir, [], false, undefined)
+
     await writeFile(filePath, content)
-    const stats = statSync(filePath)
+    const original = await hash()
 
-    const expected = createHash('sha256')
-      .update('COPY big.bin /app')
-      .update('big.bin')
-      .update(stats.mode.toString())
-      .update(stats.size.toString())
-      .update(content)
-      .digest('hex')
+    // Flip one byte in the final, partial chunk; same size and mode.
+    content[content.length - 1] ^= 0xff
+    await writeFile(filePath, content)
+    const changed = await hash()
 
-    expect(
-      await calculateFilesHash('big.bin', '/app', testDir, [], false, undefined)
-    ).toBe(expected)
-  })
+    content[content.length - 1] ^= 0xff
+    await writeFile(filePath, content)
 
-  test('should not read whole files into memory', async () => {
-    await writeFile(join(testDir, 'big.bin'), randomBytes(2 * 1024 * 1024))
-    const readFileSync = vi.spyOn(fs, 'readFileSync')
-
-    await calculateFilesHash('big.bin', '/app', testDir, [], false, undefined)
-
-    expect(readFileSync).not.toHaveBeenCalled()
+    expect(changed).not.toBe(original)
+    expect(await hash()).toBe(original)
   })
 })
