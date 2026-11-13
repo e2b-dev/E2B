@@ -105,3 +105,8 @@ def test_run_with_shell_without_args(sandbox: Sandbox):
 def test_run_with_empty_shell(sandbox: Sandbox):
     with pytest.raises(InvalidArgumentException):
         sandbox.commands.run("echo hello", shell=[])
+
+
+def test_run_with_string_shell(sandbox: Sandbox):
+    with pytest.raises(InvalidArgumentException):
+        sandbox.commands.run("echo hello", shell="/bin/sh")

@@ -245,7 +245,7 @@ class Commands:
         :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
         :param request_timeout: Not applied to this streaming call — both opening the stream and the stream itself are bounded by `timeout` (unlimited when `0`)
         :param retain_output: If `False`, stdout and stderr are not accumulated in memory and are `None` on the result. Use `on_stdout`/`on_stderr` to consume the output instead
-        :param shell: Shell used to run the command, as the executable followed by its arguments. The command is passed as the last argument, e.g. `["/bin/sh", "-c"]` runs `/bin/sh -c <cmd>`. Defaults to `["/bin/bash", "-l", "-c"]`. Raises :class:`InvalidArgumentException` if `shell` is empty or its first element is empty
+        :param shell: Shell used to run the command, as the executable followed by its arguments. The command is passed as the last argument, e.g. `["/bin/sh", "-c"]` runs `/bin/sh -c <cmd>`. Defaults to `["/bin/bash", "-l", "-c"]`. Raises :class:`InvalidArgumentException` if `shell` is a string, is empty, or its first element is empty
 
         :return: `CommandResult` result of the command execution
         """
@@ -282,7 +282,7 @@ class Commands:
         :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
         :param request_timeout: Not applied to this streaming call — both opening the stream and the stream itself are bounded by `timeout` (unlimited when `0`)
         :param retain_output: If `False`, stdout and stderr are not accumulated in memory and are `None` on the result. Use `on_stdout`/`on_stderr` to consume the output instead
-        :param shell: Shell used to run the command, as the executable followed by its arguments. The command is passed as the last argument, e.g. `["/bin/sh", "-c"]` runs `/bin/sh -c <cmd>`. Defaults to `["/bin/bash", "-l", "-c"]`. Raises :class:`InvalidArgumentException` if `shell` is empty or its first element is empty
+        :param shell: Shell used to run the command, as the executable followed by its arguments. The command is passed as the last argument, e.g. `["/bin/sh", "-c"]` runs `/bin/sh -c <cmd>`. Defaults to `["/bin/bash", "-l", "-c"]`. Raises :class:`InvalidArgumentException` if `shell` is a string, is empty, or its first element is empty
 
         :return: `CommandResult` result of the command execution
         """
@@ -335,7 +335,7 @@ class Commands:
         :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
         :param request_timeout: Not applied to this streaming call — both opening the stream and the stream itself are bounded by `timeout` (unlimited when `0`)
         :param retain_output: If `False`, stdout and stderr are not accumulated in memory and are `None` on the result. Use `on_stdout`/`on_stderr` to consume the output instead
-        :param shell: Shell used to run the command, as the executable followed by its arguments. The command is passed as the last argument, e.g. `["/bin/sh", "-c"]` runs `/bin/sh -c <cmd>`. Defaults to `["/bin/bash", "-l", "-c"]`. Raises :class:`InvalidArgumentException` if `shell` is empty or its first element is empty
+        :param shell: Shell used to run the command, as the executable followed by its arguments. The command is passed as the last argument, e.g. `["/bin/sh", "-c"]` runs `/bin/sh -c <cmd>`. Defaults to `["/bin/bash", "-l", "-c"]`. Raises :class:`InvalidArgumentException` if `shell` is a string, is empty, or its first element is empty
 
         :return: `CommandHandle` handle to interact with the running command
         """
@@ -370,7 +370,7 @@ class Commands:
         :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
         :param request_timeout: Not applied to this streaming call — both opening the stream and the stream itself are bounded by `timeout` (unlimited when `0`)
         :param retain_output: If `False`, stdout and stderr are not accumulated in memory and are `None` on the result. Use `on_stdout`/`on_stderr` to consume the output instead
-        :param shell: Shell used to run the command, as the executable followed by its arguments. The command is passed as the last argument, e.g. `["/bin/sh", "-c"]` runs `/bin/sh -c <cmd>`. Defaults to `["/bin/bash", "-l", "-c"]`. Raises :class:`InvalidArgumentException` if `shell` is empty or its first element is empty
+        :param shell: Shell used to run the command, as the executable followed by its arguments. The command is passed as the last argument, e.g. `["/bin/sh", "-c"]` runs `/bin/sh -c <cmd>`. Defaults to `["/bin/bash", "-l", "-c"]`. Raises :class:`InvalidArgumentException` if `shell` is a string, is empty, or its first element is empty
 
         :return: `CommandHandle` handle to interact with the running command
         """

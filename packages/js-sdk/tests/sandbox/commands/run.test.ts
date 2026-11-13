@@ -139,3 +139,11 @@ sandboxTest('run with empty shell', async ({ sandbox }) => {
     sandbox.commands.run('echo hello', { shell: [] })
   ).rejects.toThrowError(InvalidArgumentError)
 })
+
+sandboxTest('run with string shell', async ({ sandbox }) => {
+  await expect(
+    sandbox.commands.run('echo hello', {
+      shell: '/bin/sh' as unknown as string[],
+    })
+  ).rejects.toThrowError(InvalidArgumentError)
+})

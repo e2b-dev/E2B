@@ -73,7 +73,7 @@ export interface CommandStartOpts extends CommandRequestOpts {
   /**
    * Shell used to run the command, as the executable followed by its arguments.
    * The command is passed as the last argument, e.g. `['/bin/sh', '-c']` runs `/bin/sh -c <cmd>`.
-   * Throws {@link InvalidArgumentError} if `shell` is empty or its first element (the executable) is empty.
+   * Throws {@link InvalidArgumentError} if `shell` is not an array, is empty, or its first element (the executable) is empty.
    *
    * @default `['/bin/bash', '-l', '-c']`
    */
@@ -466,8 +466,9 @@ export class Commands {
       )
     }
 
-    const [shell, ...shellArgs] = opts?.shell ?? DEFAULT_SHELL
-    if (!shell) {
+    const shellOpt = opts?.shell ?? DEFAULT_SHELL
+    const [shell, ...shellArgs] = shellOpt
+    if (typeof shellOpt === 'string' || !shell) {
       throw new InvalidArgumentError(
         "`shell` must start with the executable, e.g. `['/bin/sh', '-c']`. Omit `shell` to use the default `['/bin/bash', '-l', '-c']`."
       )

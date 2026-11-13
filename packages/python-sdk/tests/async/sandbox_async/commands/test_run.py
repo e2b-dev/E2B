@@ -102,3 +102,8 @@ async def test_run_with_shell_without_args(async_sandbox: AsyncSandbox):
 async def test_run_with_empty_shell(async_sandbox: AsyncSandbox):
     with pytest.raises(InvalidArgumentException):
         await async_sandbox.commands.run("echo hello", shell=[])
+
+
+async def test_run_with_string_shell(async_sandbox: AsyncSandbox):
+    with pytest.raises(InvalidArgumentException):
+        await async_sandbox.commands.run("echo hello", shell="/bin/sh")
