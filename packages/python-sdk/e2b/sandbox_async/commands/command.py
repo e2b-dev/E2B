@@ -218,6 +218,7 @@ class Commands:
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
         *,
+        shell_startup: Literal["default", "skip"] = "default",
         retain_output: Literal[False],
     ) -> CommandResult[None]:
         """
@@ -233,6 +234,7 @@ class Commands:
         :param stdin: If `True`, the command will have a stdin stream that you can send data to using `sandbox.commands.send_stdin()`
         :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
         :param request_timeout: Timeout for opening the stream in **seconds** — the wait until envd confirms with a start event. The running stream is bounded by `timeout`
+        :param shell_startup: `skip` runs non-login Bash without startup files and sets BASH_ENV to an empty string for the command and its children. Tools configured only in startup files may need explicit environment variables. Defaults to `default` (a login shell)
         :param retain_output: If `False`, stdout and stderr are not accumulated in memory and are `None` on the result. Use `on_stdout`/`on_stderr` to consume the output instead
 
         :return: `CommandResult` result of the command execution
@@ -253,6 +255,7 @@ class Commands:
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
         *,
+        shell_startup: Literal["default", "skip"] = "default",
         retain_output: Literal[True] = True,
     ) -> CommandResult:
         """
@@ -268,6 +271,7 @@ class Commands:
         :param stdin: If `True`, the command will have a stdin stream that you can send data to using `sandbox.commands.send_stdin()`
         :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
         :param request_timeout: Timeout for opening the stream in **seconds** — the wait until envd confirms with a start event. The running stream is bounded by `timeout`
+        :param shell_startup: `skip` runs non-login Bash without startup files and sets BASH_ENV to an empty string for the command and its children. Tools configured only in startup files may need explicit environment variables. Defaults to `default` (a login shell)
         :param retain_output: If `False`, stdout and stderr are not accumulated in memory and are `None` on the result. Use `on_stdout`/`on_stderr` to consume the output instead
 
         :return: `CommandResult` result of the command execution
@@ -288,6 +292,7 @@ class Commands:
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
         *,
+        shell_startup: Literal["default", "skip"] = "default",
         retain_output: bool,
     ) -> CommandResult[Optional[str]]: ...
 
@@ -305,6 +310,7 @@ class Commands:
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
         *,
+        shell_startup: Literal["default", "skip"] = "default",
         retain_output: Literal[False],
     ) -> AsyncCommandHandle[None]:
         """
@@ -320,6 +326,7 @@ class Commands:
         :param stdin: If `True`, the command will have a stdin stream that you can send data to using `sandbox.commands.send_stdin()`
         :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
         :param request_timeout: Timeout for opening the stream in **seconds** — the wait until envd confirms with a start event. The running stream is bounded by `timeout`
+        :param shell_startup: `skip` runs non-login Bash without startup files and sets BASH_ENV to an empty string for the command and its children. Tools configured only in startup files may need explicit environment variables. Defaults to `default` (a login shell)
         :param retain_output: If `False`, stdout and stderr are not accumulated in memory and are `None` on the result. Use `on_stdout`/`on_stderr` to consume the output instead
 
         :return: `AsyncCommandHandle` handle to interact with the running command
@@ -340,6 +347,7 @@ class Commands:
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
         *,
+        shell_startup: Literal["default", "skip"] = "default",
         retain_output: Literal[True] = True,
     ) -> AsyncCommandHandle:
         """
@@ -355,6 +363,7 @@ class Commands:
         :param stdin: If `True`, the command will have a stdin stream that you can send data to using `sandbox.commands.send_stdin()`
         :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
         :param request_timeout: Timeout for opening the stream in **seconds** — the wait until envd confirms with a start event. The running stream is bounded by `timeout`
+        :param shell_startup: `skip` runs non-login Bash without startup files and sets BASH_ENV to an empty string for the command and its children. Tools configured only in startup files may need explicit environment variables. Defaults to `default` (a login shell)
         :param retain_output: If `False`, stdout and stderr are not accumulated in memory and are `None` on the result. Use `on_stdout`/`on_stderr` to consume the output instead
 
         :return: `AsyncCommandHandle` handle to interact with the running command
@@ -375,6 +384,7 @@ class Commands:
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
         *,
+        shell_startup: Literal["default", "skip"] = "default",
         retain_output: bool,
     ) -> AsyncCommandHandle[Optional[str]]: ...
 
@@ -391,6 +401,7 @@ class Commands:
         timeout: Optional[float] = 60,
         request_timeout: Optional[float] = None,
         *,
+        shell_startup: Literal["default", "skip"] = "default",
         retain_output: bool = True,
     ):
         # Check version for stdin support
@@ -414,6 +425,7 @@ class Commands:
             on_stdout=on_stdout,
             on_stderr=on_stderr,
             retain_output=retain_output,
+            shell_startup=shell_startup,
         )
 
         return proc if background else await proc.wait()
@@ -430,14 +442,19 @@ class Commands:
         on_stdout: Optional[OutputHandler[Stdout]],
         on_stderr: Optional[OutputHandler[Stderr]],
         retain_output: bool,
+        shell_startup: Literal["default", "skip"],
     ) -> AsyncCommandHandle[Optional[str]]:
         events = as_stream(
             self._rpc.start(
                 process_pb.StartRequest(
                     process=process_pb.ProcessConfig(
                         cmd="/bin/bash",
-                        envs=envs,
-                        args=["-l", "-c", cmd],
+                        envs={**(envs or {}), "BASH_ENV": ""}
+                        if shell_startup == "skip"
+                        else envs,
+                        args=["--noprofile", "--norc", "-c", cmd]
+                        if shell_startup == "skip"
+                        else ["-l", "-c", cmd],
                         cwd=cwd,
                     ),
                     stdin=stdin,

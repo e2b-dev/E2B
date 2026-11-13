@@ -44,6 +44,14 @@ export interface CommandRequestOpts extends Partial<
  */
 export interface CommandStartOpts extends CommandRequestOpts {
   /**
+   * Shell startup behavior. `skip` runs non-login Bash without startup files
+   * and sets BASH_ENV to an empty string for the command and its children.
+   * Tools configured only in startup files may need explicit environment variables.
+   *
+   * @default 'default' // start a login shell
+   */
+  shellStartup?: 'default' | 'skip'
+  /**
    * If true, starts command in the background and the method returns immediately.
    * You can use {@link CommandHandle.wait} to wait for the command to finish.
    */
@@ -469,8 +477,14 @@ export class Commands {
         process: {
           cmd: '/bin/bash',
           cwd: opts?.cwd,
-          envs: opts?.envs,
-          args: ['-l', '-c', cmd],
+          envs:
+            opts?.shellStartup === 'skip'
+              ? { ...opts?.envs, BASH_ENV: '' }
+              : opts?.envs,
+          args:
+            opts?.shellStartup === 'skip'
+              ? ['--noprofile', '--norc', '-c', cmd]
+              : ['-l', '-c', cmd],
         },
         stdin: opts?.stdin || false,
       },
