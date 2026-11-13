@@ -45,9 +45,12 @@ class Chart:
 
     def __init__(self, **kwargs):
         self._raw_data = kwargs
-        self.type = ChartType(kwargs["type"] or ChartType.UNKNOWN)
-        self.title = kwargs["title"]
-        self.elements = kwargs["elements"]
+        try:
+            self.type = ChartType(kwargs["type"])
+        except ValueError:
+            self.type = ChartType.UNKNOWN
+        self.title = kwargs.get("title", "")
+        self.elements = kwargs.get("elements", [])
 
     def to_dict(self) -> dict:
         return self._raw_data
@@ -61,10 +64,10 @@ class Chart2D(Chart):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.x_label = kwargs["x_label"]
-        self.y_label = kwargs["y_label"]
-        self.x_unit = kwargs["x_unit"]
-        self.y_unit = kwargs["y_unit"]
+        self.x_label = kwargs.get("x_label")
+        self.y_label = kwargs.get("y_label")
+        self.x_unit = kwargs.get("x_unit")
+        self.y_unit = kwargs.get("y_unit")
 
 
 class PointData:
@@ -89,27 +92,28 @@ class PointChart(Chart2D):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.x_label = kwargs["x_label"]
+        self.x_label = kwargs.get("x_label")
 
         try:
             self.x_scale = ScaleType(kwargs.get("x_scale"))
         except ValueError:
             self.x_scale = ScaleType.UNKNOWN
 
-        self.x_ticks = kwargs["x_ticks"]
-        self.x_tick_labels = kwargs["x_tick_labels"]
+        self.x_ticks = kwargs.get("x_ticks", [])
+        self.x_tick_labels = kwargs.get("x_tick_labels", [])
 
-        self.y_label = kwargs["y_label"]
+        self.y_label = kwargs.get("y_label")
 
         try:
             self.y_scale = ScaleType(kwargs.get("y_scale"))
         except ValueError:
             self.y_scale = ScaleType.UNKNOWN
 
-        self.y_ticks = kwargs["y_ticks"]
-        self.y_tick_labels = kwargs["y_tick_labels"]
+        self.y_ticks = kwargs.get("y_ticks", [])
+        self.y_tick_labels = kwargs.get("y_tick_labels", [])
 
-        self.elements = [PointData(**d) for d in kwargs["elements"]]
+        elements = kwargs.get("elements", [])
+        self.elements = [PointData(**d) for d in elements]
 
 
 class LineChart(PointChart):
@@ -126,9 +130,9 @@ class BarData:
     value: str
 
     def __init__(self, **kwargs):
-        self.label = kwargs["label"]
-        self.value = kwargs["value"]
-        self.group = kwargs["group"]
+        self.label = kwargs.get("label")
+        self.value = kwargs.get("value")
+        self.group = kwargs.get("group")
 
 
 class BarChart(Chart2D):
@@ -138,7 +142,8 @@ class BarChart(Chart2D):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.elements = [BarData(**d) for d in kwargs["elements"]]
+        elements = kwargs.get("elements", [])
+        self.elements = [BarData(**d) for d in elements]
 
 
 class PieData:
@@ -147,9 +152,9 @@ class PieData:
     radius: float
 
     def __init__(self, **kwargs):
-        self.label = kwargs["label"]
-        self.angle = kwargs["angle"]
-        self.radius = kwargs["radius"]
+        self.label = kwargs.get("label")
+        self.angle = kwargs.get("angle")
+        self.radius = kwargs.get("radius")
 
 
 class PieChart(Chart):
@@ -159,7 +164,8 @@ class PieChart(Chart):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.elements = [PieData(**d) for d in kwargs["elements"]]
+        elements = kwargs.get("elements", [])
+        self.elements = [PieData(**d) for d in elements]
 
 
 class BoxAndWhiskerData:
@@ -172,12 +178,12 @@ class BoxAndWhiskerData:
     outliers: List[float]
 
     def __init__(self, **kwargs):
-        self.label = kwargs["label"]
-        self.min = kwargs["min"]
-        self.first_quartile = kwargs["first_quartile"]
-        self.median = kwargs["median"]
-        self.third_quartile = kwargs["third_quartile"]
-        self.max = kwargs["max"]
+        self.label = kwargs.get("label")
+        self.min = kwargs.get("min")
+        self.first_quartile = kwargs.get("first_quartile")
+        self.median = kwargs.get("median")
+        self.third_quartile = kwargs.get("third_quartile")
+        self.max = kwargs.get("max")
         self.outliers = kwargs.get("outliers") or []
 
 
@@ -188,7 +194,8 @@ class BoxAndWhiskerChart(Chart2D):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.elements = [BoxAndWhiskerData(**d) for d in kwargs["elements"]]
+        elements = kwargs.get("elements", [])
+        self.elements = [BoxAndWhiskerData(**d) for d in elements]
 
 
 class SuperChart(Chart):
@@ -199,7 +206,7 @@ class SuperChart(Chart):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.elements = []
-        for raw_chart in kwargs["elements"]:
+        for raw_chart in kwargs.get("elements", []):
             chart = _deserialize_chart(raw_chart)
             if chart is not None:
                 self.elements.append(chart)
