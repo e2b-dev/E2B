@@ -17,7 +17,6 @@ def test_skip_shell_startup_preserves_command_environment(sandbox: Sandbox):
 
 @pytest.mark.parametrize("user", ["root", "user"])
 def test_shell_startup_profiles(sandbox: Sandbox, user):
-    sandbox = sandbox
     home = "/root" if user == "root" else "/home/user"
     sandbox.files.write(
         "/etc/profile.d/e2b-startup-test.sh",
@@ -55,7 +54,6 @@ def test_skip_inherited_bash_env(sandbox_factory):
 
 
 def test_skip_preserves_command_lifecycle(sandbox: Sandbox):
-    sandbox = sandbox
     stdout = []
     stderr = []
     handle = sandbox.commands.run(
