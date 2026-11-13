@@ -189,7 +189,7 @@ class Sandbox(BaseSandbox):
             )
 
         timeout = None if timeout == 0 else (timeout or DEFAULT_TIMEOUT)
-        request_timeout = request_timeout or self.connection_config.request_timeout
+        request_timeout = self.connection_config.get_request_timeout(request_timeout)
         context_id = context.id if context else None
 
         try:
@@ -214,16 +214,12 @@ class Sandbox(BaseSandbox):
                 },
                 headers=headers,
                 # `timeout` bounds the execution, `request_timeout` only the
-                # connect. Every non-connect phase must carry `timeout`: the
-                # SDK's pyqwest-backed transport collapses the per-phase
-                # timeouts into a single whole-request deadline and takes the
-                # longest of them, so leaving `request_timeout` on the write
-                # and pool phases would raise the floor to
-                # `max(timeout, request_timeout)` and silently ignore any
-                # `timeout` shorter than it. This matches the JS SDK, which
-                # aborts the execution on a `timeout`-long timer.
-                # `timeout=0` disables the deadline entirely; the transport
-                # still bounds connect on its own.
+                # connect. The SDK's transport enforces the `read` phase as the
+                # whole-request deadline (see `e2b.deadline`), so `timeout`
+                # goes there -- matching the JS SDK, which aborts the
+                # execution on a `timeout`-long timer -- and `request_timeout`
+                # must stay off it, or it would silently replace a shorter
+                # `timeout`. `timeout=0` disables the deadline entirely.
                 timeout=(
                     httpx.Timeout(timeout, connect=request_timeout)
                     if timeout is not None
@@ -291,7 +287,7 @@ class Sandbox(BaseSandbox):
                 f"{self._jupyter_url}/contexts",
                 json=data,
                 headers=headers,
-                timeout=request_timeout or self.connection_config.request_timeout,
+                timeout=self.connection_config.get_request_timeout(request_timeout),
             )
 
             err = extract_exception(response)
