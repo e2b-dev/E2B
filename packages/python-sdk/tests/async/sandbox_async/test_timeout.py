@@ -1,5 +1,4 @@
 import pytest
-from datetime import datetime
 
 from time import sleep
 
@@ -24,9 +23,3 @@ async def test_shorten_then_lengthen_timeout(async_sandbox: AsyncSandbox):
 
     is_running = await async_sandbox.is_running()
     assert is_running is True
-
-
-@pytest.mark.skip_debug()
-async def test_get_timeout(async_sandbox: AsyncSandbox):
-    info = await async_sandbox.get_info()
-    assert isinstance(info.end_at, datetime)

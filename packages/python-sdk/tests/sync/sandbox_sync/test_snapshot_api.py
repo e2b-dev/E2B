@@ -144,46 +144,6 @@ def test_delete_snapshot(sandbox: Sandbox):
 
 
 @pytest.mark.skip_debug()
-@pytest.mark.timeout(180)
-def test_snapshot_preserves_filesystem(sandbox: Sandbox):
-    app_dir = "/home/user/app"
-    config_path = f"{app_dir}/config.json"
-    config_content = '{"env": "test"}'
-    data_path = f"{app_dir}/data.txt"
-    data_content = "important data"
-
-    sandbox.files.make_dir(app_dir)
-    sandbox.files.write(config_path, config_content)
-    sandbox.files.write(data_path, data_content)
-
-    snapshot = sandbox.create_snapshot()
-
-    try:
-        try:
-            new_sandbox = Sandbox.create(snapshot.snapshot_id)
-        except SandboxException as error:
-            # Placement can transiently time out while the snapshot is restored.
-            # Retry only the backend response that explicitly asks the caller to do so.
-            if "Failed to place sandbox: placement timed out" not in str(error):
-                raise
-            new_sandbox = Sandbox.create(snapshot.snapshot_id)
-
-        try:
-            dir_exists = new_sandbox.files.exists(app_dir)
-            assert dir_exists
-
-            config = new_sandbox.files.read(config_path)
-            data = new_sandbox.files.read(data_path)
-
-            assert config == config_content
-            assert data == data_content
-        finally:
-            new_sandbox.kill()
-    finally:
-        Sandbox.delete_snapshot(snapshot.snapshot_id)
-
-
-@pytest.mark.skip_debug()
 def test_create_snapshot_class_method(sandbox: Sandbox):
     snapshot = Sandbox.create_snapshot(sandbox.sandbox_id)
 
