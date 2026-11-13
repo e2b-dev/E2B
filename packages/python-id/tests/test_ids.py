@@ -299,6 +299,29 @@ def test_is_id_is_false_for_anything_that_is_not_a_string(value):
     assert is_id("project", value) is False
 
 
+@pytest.mark.parametrize(
+    "value", [None, 123, b"prj_01kyjhkfvse96rg4d2qzd9enft", ["x"], {}]
+)
+def test_decode_id_and_parse_id_reject_anything_that_is_not_a_string(value):
+    # The same payload handed to decode_id or parse_id has to be an
+    # InvalidIdException, which callers turn into a 400, not an AttributeError.
+    for call in (lambda: decode_id("project", value), lambda: parse_id(value)):
+        with pytest.raises(InvalidIdException) as caught:
+            call()
+        assert caught.value.reason == "prefix"
+
+
+@pytest.mark.parametrize("value", ["prjx", "volx", "prj"])
+def test_an_id_with_no_separator_names_no_kind(value: str):
+    # Pinned on both sides: @e2b/id once sliced to indexOf's -1 here and blamed
+    # "prjx" on the project kind.
+    with pytest.raises(InvalidIdException) as caught:
+        decode_id("volume", value)
+    assert caught.value.reason == "prefix"
+    assert caught.value.actual_kind is None
+    assert 'expected it to start with "vol_"' in str(caught.value)
+
+
 def test_an_unknown_kind_is_false_rather_than_a_raise():
     assert is_id(cast(IdKind, "template"), _PROJECT_ID) is False
 

@@ -94,6 +94,14 @@ class ParsedId:
     uuid: uuidlib.UUID
 
 
+def _not_a_string(id: object) -> InvalidIdException:
+    # A None or a number out of a JSON payload. Callers that turn
+    # InvalidIdException into a 400 would otherwise get an AttributeError, and a
+    # 500. Matches @e2b/id, which raises the same reason for the same input.
+    got = "None" if id is None else type(id).__name__
+    return InvalidIdException("prefix", f"Expected an ID string, got {got}.")
+
+
 def _prefix_of(kind: IdKind) -> str:
     prefix: Optional[str] = ID_PREFIXES.get(kind)
     if prefix is None:
@@ -157,8 +165,12 @@ def decode_id(kind: IdKind, id: str) -> uuidlib.UUID:
         # UUID('019fa519-bf79-724d-8811-a2bfda9755fa')
     """
     prefix = _prefix_of(kind)
+    if not isinstance(id, str):
+        raise _not_a_string(id)
     if not id.startswith(prefix + _SEPARATOR):
-        named = _KINDS_BY_PREFIX.get(id.split(_SEPARATOR)[0])
+        # As in parse_id, an ID with no separator has no prefix to name.
+        named_prefix, separator, _ = id.partition(_SEPARATOR)
+        named = _KINDS_BY_PREFIX.get(named_prefix) if separator else None
         if named is not None:
             raise InvalidIdException(
                 "prefix", f'"{id}" is a {named} ID, not a {kind} ID.', named
@@ -199,6 +211,8 @@ def parse_id(id: str) -> ParsedId:
         parse_id("vol_01kyjhkfy5f16s71n5tymkmt9a")
         # ParsedId(kind='volume', uuid=UUID('019fa519-bfc5-784d-9386-a5d7a93a692a'))
     """
+    if not isinstance(id, str):
+        raise _not_a_string(id)
     prefix, separator, _ = id.partition(_SEPARATOR)
     if not separator:
         raise InvalidIdException(
