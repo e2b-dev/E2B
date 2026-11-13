@@ -372,6 +372,28 @@ describe('ensureAuth', () => {
       )
     })
 
+    test('auth info reports the token without E2B_PROJECT_ID, warning it is needed', async () => {
+      vi.stubEnv('E2B_ACCESS_TOKEN', jwt(3600))
+      vi.stubEnv('E2B_PROJECT_ID', '')
+      const log = vi.spyOn(console, 'log').mockImplementation(() => {})
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const exit = vi.spyOn(process, 'exit').mockImplementation(((
+        code?: number
+      ) => {
+        throw new Error(`exit ${code}`)
+      }) as never)
+      const { program } = await import('../src/commands')
+
+      await program.parseAsync(['auth', 'info'], { from: 'user' })
+      expect(String(log.mock.calls[0][0])).toBe(
+        'Authenticating with E2B_ACCESS_TOKEN.'
+      )
+      expect(String(warn.mock.calls[0][0])).toContain(
+        'E2B_ACCESS_TOKEN needs E2B_PROJECT_ID'
+      )
+      expect(exit).not.toHaveBeenCalled()
+    })
+
     test('lets requireMe list workspaces without a login', async () => {
       vi.stubEnv('E2B_ACCESS_TOKEN', jwt(3600))
       mockWorkspaceApi()

@@ -1,6 +1,11 @@
 import * as commander from '@commander-js/extra-typings'
 
-import { envAccessToken, envProjectCredentialsError } from 'src/api'
+import {
+  accessTokenNeedsProject,
+  envAccessToken,
+  envCredentialsError,
+  projectId,
+} from 'src/api'
 import { getUserConfig } from 'src/user'
 import { asFormattedConfig, asFormattedError } from 'src/utils/format'
 
@@ -14,7 +19,7 @@ export const infoCommand = new commander.Command('info')
       console.error(asFormattedError('Failed to read user config', err))
     }
 
-    const envError = envProjectCredentialsError()
+    const envError = envCredentialsError()
     if (envError) {
       console.error(asFormattedError(envError))
       process.exit(1)
@@ -27,6 +32,8 @@ export const infoCommand = new commander.Command('info')
       console.log(
         `Authenticating with E2B_ACCESS_TOKEN${userConfig ? '; the login below is not used' : ''}.`
       )
+      // Reported, not fatal: listing workspaces and projects works without it.
+      if (!projectId) console.warn(accessTokenNeedsProject())
     }
     if (!userConfig) {
       if (!envAccessToken && !process.env.E2B_API_KEY) {

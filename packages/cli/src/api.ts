@@ -102,17 +102,6 @@ export const accessTokenNeedsProject = () =>
   )} to see your projects.`
 
 /**
- * {@link envCredentialsError}, plus a missing `E2B_PROJECT_ID` with
- * `E2B_ACCESS_TOKEN`: for commands that need a project.
- */
-export function envProjectCredentialsError(): string | undefined {
-  return (
-    envCredentialsError() ??
-    (envAccessToken && !projectId ? accessTokenNeedsProject() : undefined)
-  )
-}
-
-/**
  * `E2B_ACCESS_TOKEN`, checked not to have expired, since it can't be
  * refreshed.
  */
@@ -177,7 +166,7 @@ export async function requireMe(): Promise<Me> {
 
 /**
  * The project every request with `E2B_ACCESS_TOKEN` goes to: `E2B_PROJECT_ID`
- * (required, checked by {@link envProjectCredentialsError}), resolved through
+ * (required, checked in {@link ensureAuth}), resolved through
  * `/v1/me` for its UUID and control plane. `--project` plays no part, as
  * with `E2B_API_KEY`.
  */
@@ -229,7 +218,9 @@ async function resolveProject(
  * expires.
  */
 export async function ensureAuth(cliProjectId?: string): Promise<Auth> {
-  const envError = envProjectCredentialsError()
+  const envError =
+    envCredentialsError() ??
+    (envAccessToken && !projectId ? accessTokenNeedsProject() : undefined)
   if (envError) {
     console.error(envError)
     process.exit(1)
