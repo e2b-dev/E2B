@@ -170,6 +170,7 @@ def get_all_files_in_path(
     context_path: str,
     ignore_patterns: List[str],
     include_directories: bool = True,
+    resolve_symlinks: bool = False,
 ) -> List[str]:
     """
     Get all files for a given path and ignore patterns.
@@ -183,6 +184,7 @@ def get_all_files_in_path(
     :param context_path: Base directory for resolving relative paths
     :param ignore_patterns: Ignore patterns in `.dockerignore` syntax
     :param include_directories: Whether to include directories
+    :param resolve_symlinks: Whether to traverse symbolic links to directories
     :return: Array of files
     """
     files = set()
@@ -196,7 +198,15 @@ def get_all_files_in_path(
     except ValueError as e:
         raise TemplateException(str(e)) from e
 
-    def walk(dir_path: str, dir_relative_path: str) -> None:
+    def walk(
+        dir_path: str, dir_relative_path: str, ancestors: frozenset[str] = frozenset()
+    ) -> None:
+        real_path = os.path.realpath(dir_path)
+        if real_path in ancestors:
+            raise TemplateException(
+                f"Cannot resolve cyclic directory symlink: {dir_relative_path}"
+            )
+        ancestors = ancestors | {real_path}
         with os.scandir(dir_path) as entries:
             for entry in entries:
                 relative_path = (
@@ -207,10 +217,10 @@ def get_all_files_in_path(
                 ignored = matcher.matches(relative_path)
                 if not ignored:
                     files.add(entry.path)
-                if entry.is_dir(follow_symlinks=False) and (
+                if entry.is_dir(follow_symlinks=resolve_symlinks) and (
                     not ignored or matcher.may_match_under(relative_path)
                 ):
-                    walk(entry.path, relative_path)
+                    walk(entry.path, relative_path, ancestors)
 
     # Use glob to find all files/directories matching the pattern under context_path
     files_glob = glob.glob(
@@ -248,8 +258,9 @@ def get_all_files_in_path(
         if relative_path != "." and matcher.matches(relative_path):
             continue
 
-        # Symlinks are not followed, the link itself is copied
-        if os.path.isdir(file_path) and not os.path.islink(file_path):
+        if os.path.isdir(file_path) and (
+            resolve_symlinks or not os.path.islink(file_path)
+        ):
             # If it's a directory, add the directory and all entries recursively
             if include_directories:
                 files.add(file_path)
@@ -295,7 +306,9 @@ def calculate_files_hash(
 
     hash_obj.update(content.encode())
 
-    files = get_all_files_in_path(src, context_path, ignore_patterns, True)
+    files = get_all_files_in_path(
+        src, context_path, ignore_patterns, True, resolve_symlinks
+    )
 
     if len(files) == 0:
         raise ValueError(f"No files found in {src_path}").with_traceback(stack_trace)
@@ -367,7 +380,7 @@ def tar_file_stream(
             dereference=resolve_symlinks,
         ) as tar:
             files = get_all_files_in_path(
-                file_name, file_context_path, ignore_patterns, True
+                file_name, file_context_path, ignore_patterns, True, resolve_symlinks
             )
             for file in files:
                 tar.add(

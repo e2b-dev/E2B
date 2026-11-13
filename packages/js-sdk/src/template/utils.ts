@@ -205,7 +205,8 @@ export async function getAllFilesInPath(
   src: string,
   contextPath: string,
   ignorePatterns: string[],
-  includeDirectories: boolean = true
+  includeDirectories: boolean = true,
+  resolveSymlinks: boolean = false
 ) {
   const { glob } = await dynamicImport<typeof import('glob')>('glob')
   const files = new Map<string, Path>()
@@ -271,6 +272,40 @@ export async function getAllFilesInPath(
     }
   }
 
+  if (resolveSymlinks) {
+    const contextRoot = path.resolve(contextPath)
+    // Keep logical paths so both ignore rules and archive names use the link's
+    // location, rather than the resolved target's location.
+    for (const file of files.values()) {
+      if (!file.isSymbolicLink()) continue
+      const target = await fs.promises
+        .stat(file.fullpath())
+        .catch(() => undefined)
+      if (!target?.isDirectory()) continue
+
+      const realPath = await fs.promises.realpath(file.fullpath())
+      let parent = path.dirname(file.fullpath())
+      while (parent !== contextRoot || files.has(parent)) {
+        if ((await fs.promises.realpath(parent)) === realPath) {
+          throw new TemplateError(
+            `Cannot resolve cyclic directory symlink: ${file.relativePosix()}`
+          )
+        }
+        const next = path.dirname(parent)
+        if (next === parent) break
+        parent = next
+      }
+
+      const linkedFiles = await glob(
+        normalizePath(path.join(file.relative(), '**/*')),
+        { ignore, withFileTypes: true, dot: true, cwd: contextPath }
+      )
+      for (const child of linkedFiles) {
+        if (!files.has(child.fullpath())) files.set(child.fullpath(), child)
+      }
+    }
+  }
+
   // Sort by full path for a deterministic order — the default sort() would
   // stringify the Path objects to '[object Object]' and keep glob order,
   // making the files hash dependent on filesystem traversal order.
@@ -329,7 +364,13 @@ export async function calculateFilesHash(
 
   hash.update(content)
 
-  const files = await getAllFilesInPath(src, contextPath, ignorePatterns, true)
+  const files = await getAllFilesInPath(
+    src,
+    contextPath,
+    ignorePatterns,
+    true,
+    resolveSymlinks
+  )
 
   if (files.length === 0) {
     const error = new Error(`No files found in ${srcPath}`)
@@ -533,7 +574,8 @@ export async function spoolTarArchive(
     fileName,
     fileContextPath,
     ignorePatterns,
-    true
+    true,
+    resolveSymlinks
   )
 
   const filePaths = allFiles.map((file) => file.relativePosix())
