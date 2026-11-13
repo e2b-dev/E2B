@@ -20,10 +20,12 @@ import httpx
 import pytest
 from connectrpc.code import Code
 from connectrpc.errors import ConnectError
-from envd_frame_server import make_config
+from envd_frame_server import frame_recording_server, make_config
 from packaging.version import Version
+from pyqwest import HTTPVersion
+from transport_caches import reset_transport_caches
 
-import e2b.sandbox_async.commands.command as command_async
+import e2b.api.client_async as api_client_async
 from e2b.envd.client_async import first_event
 from e2b.envd.rpc import handle_rpc_exception
 from e2b.exceptions import TimeoutException
@@ -108,23 +110,28 @@ async def test_external_cancellation_is_not_masked():
 
 
 async def test_commands_connect_applies_request_timeout(monkeypatch):
-    class NeverStartingRpc:
-        def connect(self, req, headers=None, timeout_ms=None):
-            return connectrpc_style_stream(30)
+    # The frame server is plaintext, so force HTTP/2 prior knowledge while
+    # keeping the SDK's own RPC client factory and transport cache.
+    build_transport = api_client_async.HTTPTransport
 
-    # Hand Commands the stub directly; the real factory would register a
-    # pooled transport in the process-global cache.
-    monkeypatch.setattr(
-        command_async, "create_rpc_client", lambda *_args, **_kwargs: NeverStartingRpc()
-    )
-    commands = Commands(
-        "http://127.0.0.1:1",
-        make_config(),
-        Version("0.5.0"),
-        httpx.AsyncClient(),
-    )
+    def build_http2_transport(**kwargs):
+        kwargs["http_version"] = HTTPVersion.HTTP2
+        return build_transport(**kwargs)
 
-    start = time.monotonic()
-    with pytest.raises(TimeoutException, match="request_timeout"):
-        await commands.connect(pid=1, request_timeout=0.1)
-    assert time.monotonic() - start < 5
+    reset_transport_caches()
+    monkeypatch.setattr(api_client_async, "HTTPTransport", build_http2_transport)
+    try:
+        with frame_recording_server(server_ends_stream=False, respond=False) as server:
+            commands = Commands(
+                f"http://127.0.0.1:{server.port}",
+                make_config(),
+                Version("0.5.0"),
+                httpx.AsyncClient(),
+            )
+
+            start = time.monotonic()
+            with pytest.raises(TimeoutException, match="request_timeout"):
+                await commands.connect(pid=1, request_timeout=0.1)
+            assert time.monotonic() - start < 5
+    finally:
+        reset_transport_caches()

@@ -17,9 +17,8 @@ from e2b.api.client.api.sandboxes import (
     post_sandboxes_sandbox_id_pause,
     post_sandboxes_sandbox_id_snapshots,
 )
-from e2b.api.client.models import ListedSandbox, SandboxDetail
 from e2b.api.client.models import Sandbox as SandboxModel
-from e2b.sandbox.sandbox_api import SandboxInfo
+from local_api_server import Reply, local_api_server
 
 
 def _created_sandbox():
@@ -432,11 +431,13 @@ async def test_async_connect_raises_guest_unresponsive(monkeypatch, test_api_key
     assert exc.value.status_code == 409
 
 
-@pytest.mark.parametrize(
+ENVD_UNRESPONSIVE_CASES = pytest.mark.parametrize(
     "state, value, expected",
     [("paused", True, True), ("paused", None, None), ("running", None, None)],
 )
-def test_sandbox_info_maps_envd_unresponsive_at_pause(state, value, expected):
+
+
+def _sandbox_reply(state, value):
     data = {
         "templateID": "base",
         "sandboxID": "sbx-test",
@@ -452,8 +453,39 @@ def test_sandbox_info_maps_envd_unresponsive_at_pause(state, value, expected):
     if value is not None:
         data["envdUnresponsiveAtPause"] = value
 
-    detail = SandboxInfo._from_sandbox_detail(SandboxDetail.from_dict(data))
-    listed = SandboxInfo._from_listed_sandbox(ListedSandbox.from_dict(data))
+    def reply(method: str, path: str) -> Reply:
+        path = path.split("?")[0]
+        if method == "GET" and path == "/sandboxes/sbx-test":
+            return 200, data, None
+        if method == "GET" and path == "/v2/sandboxes":
+            return 200, [data], None
+        return 404, {"code": 404, "message": "not found"}, None
 
-    assert detail.envd_unresponsive_at_pause is expected
+    return reply
+
+
+@ENVD_UNRESPONSIVE_CASES
+def test_sandbox_info_maps_envd_unresponsive_at_pause(
+    state, value, expected, test_api_key
+):
+    with local_api_server(_sandbox_reply(state, value)) as api:
+        info = Sandbox.get_info("sbx-test", api_key=test_api_key, api_url=api.url)
+        [listed] = Sandbox.list(api_key=test_api_key, api_url=api.url).next_items()
+
+    assert info.envd_unresponsive_at_pause is expected
+    assert listed.envd_unresponsive_at_pause is expected
+
+
+@ENVD_UNRESPONSIVE_CASES
+async def test_async_sandbox_info_maps_envd_unresponsive_at_pause(
+    state, value, expected, test_api_key
+):
+    with local_api_server(_sandbox_reply(state, value)) as api:
+        info = await AsyncSandbox.get_info(
+            "sbx-test", api_key=test_api_key, api_url=api.url
+        )
+        paginator = AsyncSandbox.list(api_key=test_api_key, api_url=api.url)
+        [listed] = await paginator.next_items()
+
+    assert info.envd_unresponsive_at_pause is expected
     assert listed.envd_unresponsive_at_pause is expected
