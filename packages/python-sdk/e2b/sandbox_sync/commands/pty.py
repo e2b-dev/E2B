@@ -1,13 +1,10 @@
+from typing import Dict, Iterable, Optional, Union
+
 import httpx
-import threading
 
-from typing import Dict, Optional, Union
+from e2b.api.client_sync import get_envd_api
 
-from connectrpc.code import Code
-from connectrpc.errors import ConnectError
 from packaging.version import Version
-from e2b.api import make_logging_event_hooks
-from e2b.api.client_sync import get_envd_transport
 from protobuf import Oneof
 
 from e2b.envd.process import process_connect, process_pb
@@ -16,9 +13,10 @@ from e2b.connection_config import (
     ConnectionConfig,
     KEEPALIVE_PING_HEADER,
     KEEPALIVE_PING_INTERVAL_SEC,
+    STREAM_INPUT_TIMEOUT,
 )
 from e2b.envd.api import check_sandbox_health
-from e2b.envd.rpc import handle_rpc_exception_with_health
+from e2b.envd.rpc import handle_rpc_exception_with_health, kill_process
 from e2b.envd.utils import (
     authentication_header,
     extract_start_pid,
@@ -26,6 +24,7 @@ from e2b.envd.utils import (
 )
 from e2b.envd.client_sync import as_stream, create_rpc_client
 from e2b.sandbox.commands.command_handle import PtySize
+from e2b.sandbox.commands.stream_input import stream_input_sync
 from e2b.sandbox_sync.commands.command_handle import CommandHandle
 
 
@@ -39,38 +38,25 @@ class Pty:
         envd_api_url: str,
         connection_config: ConnectionConfig,
         envd_version: Version,
+        envd_api: httpx.Client,
     ) -> None:
-        self._envd_api_url = envd_api_url
         self._connection_config = connection_config
         self._envd_version = envd_version
-        self._thread_local = threading.local()
         self._rpc = create_rpc_client(
             process_connect.ProcessClientSync,
             envd_api_url,
             connection_config,
         )
-
-    def _create_envd_api(self) -> httpx.Client:
-        transport = get_envd_transport(self._connection_config)
-        return httpx.Client(
-            base_url=self._envd_api_url,
-            transport=transport,
-            headers=self._connection_config.sandbox_headers,
-            event_hooks=make_logging_event_hooks(self._connection_config.logger),
+        self._envd_api = envd_api
+        # The health probe run after a request failed goes without the
+        # connection retries, so a sandbox that cannot be reached is not tried
+        # all over again (see `get_transport`).
+        self._envd_health_api = get_envd_api(
+            connection_config, envd_api_url, retry_connect=False
         )
 
-    @property
-    def _envd_api(self) -> httpx.Client:
-        # Unlike the shared RPC client, the httpx transports are per-thread
-        # (see e2b.api.client_sync), so the client wrapping them is too.
-        envd_api = getattr(self._thread_local, "envd_api", None)
-        if envd_api is None:
-            envd_api = self._create_envd_api()
-            self._thread_local.envd_api = envd_api
-        return envd_api
-
     def _check_health(self) -> Optional[bool]:
-        return check_sandbox_health(self._envd_api)
+        return check_sandbox_health(self._envd_health_api)
 
     def kill(
         self,
@@ -85,22 +71,12 @@ class Pty:
 
         :return: `true` if the PTY was killed, `false` if the PTY was not found
         """
-        try:
-            self._rpc.send_signal(
-                process_pb.SendSignalRequest(
-                    process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
-                    signal=process_pb.Signal.SIGKILL,
-                ),
-                timeout_ms=timeout_to_ms(
-                    self._connection_config.get_request_timeout(request_timeout)
-                ),
-            )
-            return True
-        except Exception as e:
-            if isinstance(e, ConnectError):
-                if e.code == Code.NOT_FOUND:
-                    return False
-            raise handle_rpc_exception_with_health(e, self._check_health)
+        return kill_process(
+            self._rpc,
+            pid,
+            self._connection_config.get_request_timeout(request_timeout),
+            self._check_health,
+        )
 
     def send_stdin(
         self,
@@ -111,8 +87,25 @@ class Pty:
         """
         Send input to a PTY.
 
+        :deprecated: Use `send_input()` instead. PTYs have no stdin; this sends input to the PTY.
+
         :param pid: Process ID of the PTY
-        :param data: Input data to send
+        :param data: Input data to send, `str` is encoded as UTF-8
+        :param request_timeout: Timeout for the request in **seconds**
+        """
+        return self.send_input(pid, data, request_timeout)
+
+    def send_input(
+        self,
+        pid: int,
+        data: Union[str, bytes],
+        request_timeout: Optional[float] = None,
+    ) -> None:
+        """
+        Send input to a PTY.
+
+        :param pid: Process ID of the PTY
+        :param data: Input data to send, `str` is encoded as UTF-8
         :param request_timeout: Timeout for the request in **seconds**
         """
         try:
@@ -131,6 +124,31 @@ class Pty:
             )
         except Exception as e:
             raise handle_rpc_exception_with_health(e, self._check_health)
+
+    def stream_input(
+        self,
+        pid: int,
+        data: Iterable[Union[str, bytes]],
+        *,
+        timeout: Optional[float] = STREAM_INPUT_TIMEOUT,
+    ) -> None:
+        """Stream input to a PTY.
+
+        Blocks until ``data`` is exhausted; input is sent as the iterable
+        yields it, and no keepalives are sent while it blocks.
+
+        :param pid: Process ID of the PTY.
+        :param data: Iterable of strings or bytes to send in order.
+        :param timeout: Timeout in seconds; defaults to ``STREAM_INPUT_TIMEOUT``
+            (60 seconds). ``0`` or ``None`` disables the timeout.
+        :return: ``None`` after all input is sent and envd acknowledges the stream.
+        :raises NotFoundException: If the PTY does not exist.
+        :raises TimeoutException: If the stream timeout expires.
+        :raises SandboxException: If the streaming request fails.
+        :raises InvalidArgumentException: If ``data`` is a single ``str`` or
+            ``bytes`` value instead of an iterable of chunks.
+        """
+        stream_input_sync(self._rpc, pid, "pty", data, timeout, self._check_health)
 
     def create(
         self,
@@ -186,7 +204,7 @@ class Pty:
                 pid=pid,
                 handle_kill=lambda: self.kill(pid),
                 events=events,
-                handle_send_stdin=lambda data, request_timeout=None: self.send_stdin(
+                handle_send_input=lambda data, request_timeout=None: self.send_input(
                     pid, data, request_timeout
                 ),
                 check_health=self._check_health,
@@ -233,7 +251,7 @@ class Pty:
                 pid=pid,
                 handle_kill=lambda: self.kill(pid),
                 events=events,
-                handle_send_stdin=lambda data, request_timeout=None: self.send_stdin(
+                handle_send_input=lambda data, request_timeout=None: self.send_input(
                     pid, data, request_timeout
                 ),
                 check_health=self._check_health,

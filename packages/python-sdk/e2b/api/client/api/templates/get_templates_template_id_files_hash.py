@@ -41,6 +41,10 @@ def _parse_response(
         response_404 = Error.from_dict(response.json())
 
         return response_404
+    if response.status_code == 429:
+        response_429 = Error.from_dict(response.json())
+
+        return response_429
     if response.status_code == 500:
         response_500 = Error.from_dict(response.json())
 
@@ -74,7 +78,7 @@ def sync_detailed(
 
     Args:
         template_id (str):
-        hash_ (str): Hash of the files
+        hash_ (str): Hash of the files (lowercase hex SHA-256)
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -108,7 +112,7 @@ def sync(
 
     Args:
         template_id (str):
-        hash_ (str): Hash of the files
+        hash_ (str): Hash of the files (lowercase hex SHA-256)
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -137,7 +141,7 @@ async def asyncio_detailed(
 
     Args:
         template_id (str):
-        hash_ (str): Hash of the files
+        hash_ (str): Hash of the files (lowercase hex SHA-256)
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -169,7 +173,7 @@ async def asyncio(
 
     Args:
         template_id (str):
-        hash_ (str): Hash of the files
+        hash_ (str): Hash of the files (lowercase hex SHA-256)
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

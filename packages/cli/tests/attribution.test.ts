@@ -33,7 +33,6 @@ async function captureUserAgent(args: string[]): Promise<string | undefined> {
     E2B_API_KEY: `e2b_${'0'.repeat(40)}`,
   }
   delete env.E2B_DEBUG
-  delete env.E2B_ACCESS_TOKEN
 
   userAgents.length = 0
   const result = await runCliWithPipedStdin(args, Buffer.alloc(0), {

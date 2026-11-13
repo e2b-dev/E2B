@@ -1,12 +1,19 @@
 import type { PathLike } from 'node:fs'
 import { ApiClient } from '../api'
-import { ConnectionConfig, ConnectionOpts } from '../connectionConfig'
+import {
+  ClientFactory,
+  ConnectionConfig,
+  ConnectionOpts,
+} from '../connectionConfig'
 import { BuildError, InvalidArgumentError } from '../errors'
 import { runtime, shellQuote } from '../utils'
+import { callableTemplate } from './callable'
+import { TemplatePaginator } from './paginator'
 import {
   assignTags,
   checkAliasExists,
   getTemplateTags,
+  deleteTemplate,
   removeTags,
   getBuildStatus,
   getFileUploadLink,
@@ -34,6 +41,7 @@ import {
   TemplateClass,
   TemplateFinal,
   TemplateFromImage,
+  TemplateListOpts,
   TemplateOptions,
   TemplateTag,
   TemplateTagInfo,
@@ -50,9 +58,12 @@ import {
 } from './utils'
 
 /**
- * Base class for building E2B sandbox templates.
+ * Builder for E2B sandbox templates, and the entrypoint for the template API.
+ *
+ * Exposed as {@link Template}, which can be called as a factory.
  */
 export class TemplateBase
+  extends ClientFactory
   implements TemplateFromImage, TemplateBuilder, TemplateFinal
 {
   private defaultBaseImage: string = 'e2bdev/base'
@@ -72,6 +83,7 @@ export class TemplateBase
   private stackTraces: (string | undefined)[] = []
 
   constructor(options?: TemplateOptions) {
+    super()
     this.fileContextPath =
       options?.fileContextPath ??
       (runtime === 'browser' ? '.' : (getCallerDirectory() ?? '.'))
@@ -158,32 +170,34 @@ export class TemplateBase
       options
     )
 
+    const buildOpts = this.resolveOpts(buildOptions) ?? {}
+
     try {
-      buildOptions.onBuildLogs?.(new LogEntryStart(new Date(), 'Build started'))
+      buildOpts.onBuildLogs?.(new LogEntryStart(new Date(), 'Build started'))
       const baseTemplate = template as TemplateBase
 
-      const config = new ConnectionConfig(buildOptions)
+      const config = new ConnectionConfig(buildOpts)
       const client = new ApiClient(config)
 
-      const data = await baseTemplate.build(client, config, name, buildOptions)
+      const data = await baseTemplate.build(client, config, name, buildOpts)
 
-      buildOptions.onBuildLogs?.(
+      buildOpts.onBuildLogs?.(
         new LogEntry(new Date(), 'info', 'Waiting for logs...')
       )
 
       await waitForBuildFinish(client, {
         templateID: data.templateId,
         buildID: data.buildId,
-        onBuildLogs: buildOptions.onBuildLogs,
+        onBuildLogs: buildOpts.onBuildLogs,
         logsRefreshFrequency: baseTemplate.logsRefreshFrequency,
         stackTraces: baseTemplate.stackTraces,
-        signal: buildOptions.signal,
+        signal: buildOpts.signal,
         requestTimeoutMs: config.requestTimeoutMs,
       })
 
       return data
     } finally {
-      buildOptions.onBuildLogs?.(new LogEntryEnd(new Date(), 'Build finished'))
+      buildOpts.onBuildLogs?.(new LogEntryEnd(new Date(), 'Build finished'))
     }
   }
 
@@ -240,10 +254,11 @@ export class TemplateBase
       options
     )
 
-    const config = new ConnectionConfig(buildOptions)
+    const buildOpts = this.resolveOpts(buildOptions) ?? {}
+    const config = new ConnectionConfig(buildOpts)
     const client = new ApiClient(config)
 
-    return (template as TemplateBase).build(client, config, name, buildOptions)
+    return (template as TemplateBase).build(client, config, name, buildOpts)
   }
 
   /**
@@ -254,14 +269,14 @@ export class TemplateBase
    *
    * @example
    * ```ts
-   * const status = await Template.getBuildStatus(data, { logsOffset: 0 })
+   * const status = await Template.getBuildStatus(data)
    * ```
    */
   static async getBuildStatus(
     data: Pick<BuildInfo, 'templateId' | 'buildId'>,
     options?: GetBuildStatusOptions
   ): Promise<TemplateBuildStatusResponse> {
-    const config = new ConnectionConfig(options)
+    const config = new ConnectionConfig(this.resolveOpts(options))
     const client = new ApiClient(config)
 
     return await getBuildStatus(
@@ -269,7 +284,7 @@ export class TemplateBase
       {
         templateID: data.templateId,
         buildID: data.buildId,
-        logsOffset: options?.logsOffset ?? 0,
+        logsOffset: options?.logsOffset,
       },
       config.getSignal(undefined, options?.signal)
     )
@@ -294,7 +309,7 @@ export class TemplateBase
     name: string,
     options?: ConnectionOpts
   ): Promise<boolean> {
-    return TemplateBase.aliasExists(name, options)
+    return this.aliasExists(name, options)
   }
 
   /**
@@ -317,7 +332,7 @@ export class TemplateBase
     alias: string,
     options?: ConnectionOpts
   ): Promise<boolean> {
-    const config = new ConnectionConfig(options)
+    const config = new ConnectionConfig(this.resolveOpts(options))
     const client = new ApiClient(config)
 
     return checkAliasExists(
@@ -349,7 +364,7 @@ export class TemplateBase
     tags: string | string[],
     options?: ConnectionOpts
   ): Promise<TemplateTagInfo> {
-    const config = new ConnectionConfig(options)
+    const config = new ConnectionConfig(this.resolveOpts(options))
     const client = new ApiClient(config)
     const normalizedTags = Array.isArray(tags) ? tags : [tags]
     return assignTags(
@@ -380,7 +395,7 @@ export class TemplateBase
     tags: string | string[],
     options?: ConnectionOpts
   ): Promise<void> {
-    const config = new ConnectionConfig(options)
+    const config = new ConnectionConfig(this.resolveOpts(options))
     const client = new ApiClient(config)
     const normalizedTags = Array.isArray(tags) ? tags : [tags]
     return removeTags(
@@ -409,11 +424,57 @@ export class TemplateBase
     templateId: string,
     options?: ConnectionOpts
   ): Promise<TemplateTag[]> {
-    const config = new ConnectionConfig(options)
+    const config = new ConnectionConfig(this.resolveOpts(options))
     const client = new ApiClient(config)
     return getTemplateTags(
       client,
       { templateID: templateId },
+      config.getSignal(undefined, options?.signal)
+    )
+  }
+
+  /**
+   * List the project's templates.
+   *
+   * @param opts connection and pagination options.
+   *
+   * @returns a {@link TemplatePaginator} that yields pages of templates.
+   *
+   * @example
+   * ```ts
+   * const paginator = Template.list({ limit: 50 })
+   * while (paginator.hasNext) {
+   *   const templates = await paginator.nextItems()
+   *   console.log(templates)
+   * }
+   * ```
+   */
+  static list(opts?: TemplateListOpts): TemplatePaginator {
+    return new TemplatePaginator(this.resolveOpts(opts))
+  }
+
+  /**
+   * Delete a template or snapshot.
+   *
+   * @param nameOrId Template or snapshot name or ID
+   * @param options Authentication options
+   * @returns `true` if the template was deleted, `false` if it was not found
+   * @throws TemplateError if the API returns an error other than not found
+   *
+   * @example
+   * ```ts
+   * const deleted = await Template.delete('my-template')
+   * ```
+   */
+  static async delete(
+    nameOrId: string,
+    options?: ConnectionOpts
+  ): Promise<boolean> {
+    const config = new ConnectionConfig(this.resolveOpts(options))
+    const client = new ApiClient(config)
+    return deleteTemplate(
+      client,
+      { templateID: nameOrId },
       config.getSignal(undefined, options?.signal)
     )
   }
@@ -424,6 +485,20 @@ export class TemplateBase
 
   fromUbuntuImage(variant: string = 'latest'): TemplateBuilder {
     return this.fromImage(`ubuntu:${variant}`)
+  }
+
+  fromFedoraImage(variant: string = '44'): TemplateBuilder {
+    return this.fromImage(`fedora:${variant}`)
+  }
+
+  fromAlpineImage(variant: string = '3.24'): TemplateBuilder {
+    return this.fromImage(`alpine:${variant}`)
+  }
+
+  // Left on `latest`: Arch is a rolling release and template provisioning runs
+  // `pacman -Syu`, so pinning a tag would not change the built result.
+  fromArchImage(variant: string = 'latest'): TemplateBuilder {
+    return this.fromImage(`archlinux:${variant}`)
   }
 
   fromPythonImage(version: string = '3'): TemplateBuilder {
@@ -587,7 +662,7 @@ export class TemplateBase
         srcString,
         dest.toString(),
         options?.user ?? '',
-        options?.mode ? padOctal(options.mode) : '',
+        options?.mode !== undefined ? padOctal(options.mode) : '',
       ]
 
       this.instructions.push({
@@ -668,7 +743,7 @@ export class TemplateBase
   ): TemplateBuilder {
     const paths = Array.isArray(path) ? path : [path]
     const args = ['mkdir', '-p']
-    if (options?.mode) {
+    if (options?.mode !== undefined) {
       args.push(`-m ${padOctal(options.mode)}`)
     }
     args.push(...paths.map((p) => shellQuote(p.toString())))
@@ -1050,8 +1125,10 @@ export class TemplateBase
       {
         name,
         tags: options.tags,
-        cpuCount: options.cpuCount ?? 2,
-        memoryMB: options.memoryMB ?? 1024,
+        cpuCount: options.cpuCount,
+        maxCpuCount: options.maxCpuCount,
+        memoryMB: options.memoryMB,
+        minFreeDiskMb: options.minFreeDiskMb,
       },
       config.getSignal(undefined, options.signal)
     )
@@ -1085,7 +1162,7 @@ export class TemplateBase
           stackTrace = this.stackTraces[index + 1]
         }
 
-        const { present, url } = await getFileUploadLink(
+        const { present, url, headers } = await getFileUploadLink(
           client,
           {
             templateID,
@@ -1104,9 +1181,10 @@ export class TemplateBase
               fileName: src,
               fileContextPath: this.fileContextPath.toString(),
               url,
+              headers,
               ignorePatterns: [
-                ...this.fileIgnorePatterns,
                 ...readDockerignore(this.fileContextPath.toString()),
+                ...this.fileIgnorePatterns,
               ],
               resolveSymlinks: instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
               gzip: instruction.gzip ?? GZIP,
@@ -1196,10 +1274,10 @@ export class TemplateBase
             dest,
             this.fileContextPath.toString(),
             [
-              ...this.fileIgnorePatterns,
               ...(runtime === 'browser'
                 ? []
                 : readDockerignore(this.fileContextPath.toString())),
+              ...this.fileIgnorePatterns,
             ],
             instruction.resolveSymlinks ?? RESOLVE_SYMLINKS,
             stackTrace
@@ -1240,10 +1318,16 @@ export class TemplateBase
 }
 
 /**
- * Create a new E2B template builder instance.
+ * Builder and API entrypoint for E2B sandbox templates.
  *
- * @param options Optional configuration for the template builder
- * @returns A new template builder instance
+ * `Template` is the {@link TemplateBase} class, wrapped so it can also be
+ * called as a factory returning a builder. The statics (`Template.build`,
+ * `Template.exists`, …) resolve their connection options off the class they are
+ * called on — so a subclass can bind its own defaults.
+ *
+ * @param options Optional builder options, e.g. the file context path used to
+ *   resolve relative paths passed to `copy`
+ * @returns A template builder
  *
  * @example
  * ```ts
@@ -1257,20 +1341,9 @@ export class TemplateBase
  * await Template.build(template, 'my-python-app:v1.0')
  * ```
  */
-export function Template(options?: TemplateOptions): TemplateFromImage {
-  return new TemplateBase(options)
-}
+export const Template = callableTemplate(TemplateBase)
 
-Template.build = TemplateBase.build
-Template.buildInBackground = TemplateBase.buildInBackground
-Template.getBuildStatus = TemplateBase.getBuildStatus
-Template.exists = TemplateBase.exists
-Template.aliasExists = TemplateBase.aliasExists
-Template.assignTags = TemplateBase.assignTags
-Template.removeTags = TemplateBase.removeTags
-Template.getTags = TemplateBase.getTags
-Template.toJSON = TemplateBase.toJSON
-Template.toDockerfile = TemplateBase.toDockerfile
+export { TemplatePaginator } from './paginator'
 
 export type {
   BuildInfo,
@@ -1283,6 +1356,8 @@ export type {
   TemplateBuildStatus,
   TemplateBuildStatusResponse,
   TemplateClass,
+  TemplateInfo,
+  TemplateListOpts,
   TemplateTag,
   TemplateTagInfo,
 } from './types'

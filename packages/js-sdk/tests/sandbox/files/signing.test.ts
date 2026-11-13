@@ -3,12 +3,6 @@ import { assert, describe } from 'vitest'
 import { sandboxTest, isDebug } from '../../setup'
 
 describe('file signing', () => {
-  sandboxTest.override({
-    sandboxOpts: {
-      secure: true,
-    },
-  })
-
   sandboxTest.skipIf(isDebug)(
     'test access file with expired signing',
     async ({ sandbox }) => {

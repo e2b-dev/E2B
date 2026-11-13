@@ -11,6 +11,8 @@ from typing import (
     Union,
     Tuple,
     Coroutine,
+    Generic,
+    cast,
 )
 
 from e2b.envd.rpc import ahandle_rpc_exception_with_health
@@ -21,6 +23,8 @@ from e2b.exceptions import SandboxException
 from e2b.sandbox.commands.command_handle import (
     CommandExitException,
     CommandResult,
+    OutputT,
+    join_output,
     Stderr,
     Stdout,
     PtyOutput,
@@ -28,7 +32,7 @@ from e2b.sandbox.commands.command_handle import (
 from e2b.sandbox_async.utils import OutputHandler
 
 
-class AsyncCommandHandle:
+class AsyncCommandHandle(Generic[OutputT]):
     """
     Command execution handle.
 
@@ -43,18 +47,22 @@ class AsyncCommandHandle:
         return self._pid
 
     @property
-    def stdout(self):
+    def stdout(self) -> OutputT:
         """
         Command stdout output.
+
+        `None` if the command was started with `retain_output=False`.
         """
-        return "".join(self._stdout_chunks)
+        return self._join_output(self._stdout_chunks)
 
     @property
-    def stderr(self):
+    def stderr(self) -> OutputT:
         """
         Command stderr output.
+
+        `None` if the command was started with `retain_output=False`.
         """
-        return "".join(self._stderr_chunks)
+        return self._join_output(self._stderr_chunks)
 
     @property
     def error(self):
@@ -95,16 +103,21 @@ class AsyncCommandHandle:
             Callable[[Optional[float]], Coroutine[Any, Any, None]]
         ] = None,
         check_health: Optional[Callable[[], Awaitable[Optional[bool]]]] = None,
+        retain_output: bool = True,
+        handle_send_input: Optional[
+            Callable[[Union[str, bytes], Optional[float]], Coroutine[Any, Any, None]]
+        ] = None,
     ):
         self._pid = pid
         self._handle_kill = handle_kill
         self._handle_send_stdin = handle_send_stdin
         self._handle_close_stdin = handle_close_stdin
+        self._handle_send_input = handle_send_input
         self._check_health = check_health
         self._events = events
 
-        self._stdout_chunks: List[str] = []
-        self._stderr_chunks: List[str] = []
+        self._stdout_chunks: Optional[List[str]] = [] if retain_output else None
+        self._stderr_chunks: Optional[List[str]] = [] if retain_output else None
 
         self._stdout_decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
         self._stderr_decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
@@ -113,10 +126,14 @@ class AsyncCommandHandle:
         self._on_stderr = on_stderr
         self._on_pty = on_pty
 
-        self._result: Optional[CommandResult] = None
+        self._result: Optional[CommandResult[OutputT]] = None
         self._iteration_exception: Optional[Exception] = None
 
         self._wait = asyncio.create_task(self._handle_events())
+
+    @staticmethod
+    def _join_output(chunks: Optional[List[str]]) -> OutputT:
+        return cast(OutputT, join_output(chunks))
 
     def _flush_decoders(
         self,
@@ -130,11 +147,13 @@ class AsyncCommandHandle:
         events: List[Union[Tuple[Stdout, None, None], Tuple[None, Stderr, None]]] = []
         out = self._stdout_decoder.decode(b"", final=True)
         if out:
-            self._stdout_chunks.append(out)
+            if self._stdout_chunks is not None:
+                self._stdout_chunks.append(out)
             events.append((out, None, None))
         err = self._stderr_decoder.decode(b"", final=True)
         if err:
-            self._stderr_chunks.append(err)
+            if self._stderr_chunks is not None:
+                self._stderr_chunks.append(err)
             events.append((None, err, None))
         return events
 
@@ -156,17 +175,19 @@ class AsyncCommandHandle:
                 match oneof:
                     case Oneof(field="data", value=data):
                         match data.output:
-                            case Oneof(field="stdout", value=chunk) if chunk:
+                            case Oneof(field="stdout", value=chunk):
                                 out = self._stdout_decoder.decode(chunk)
                                 if out:
-                                    self._stdout_chunks.append(out)
+                                    if self._stdout_chunks is not None:
+                                        self._stdout_chunks.append(out)
                                     yield out, None, None
-                            case Oneof(field="stderr", value=chunk) if chunk:
+                            case Oneof(field="stderr", value=chunk):
                                 out = self._stderr_decoder.decode(chunk)
                                 if out:
-                                    self._stderr_chunks.append(out)
+                                    if self._stderr_chunks is not None:
+                                        self._stderr_chunks.append(out)
                                     yield None, out, None
-                            case Oneof(field="pty", value=chunk) if chunk:
+                            case Oneof(field="pty", value=chunk):
                                 yield None, None, chunk
                     case Oneof(field="end", value=end):
                         # Flush trailing decoder bytes into the accumulators and
@@ -175,8 +196,8 @@ class AsyncCommandHandle:
                         # still observes the exit code.
                         flushed = list(self._flush_decoders())
                         self._result = CommandResult(
-                            stdout="".join(self._stdout_chunks),
-                            stderr="".join(self._stderr_chunks),
+                            stdout=self._join_output(self._stdout_chunks),
+                            stderr=self._join_output(self._stderr_chunks),
                             exit_code=end.exit_code,
                             # Optional scalar: unset reads as "" — the presence
                             # check keeps it None, matching the JS SDK
@@ -238,7 +259,7 @@ class AsyncCommandHandle:
                 e, self._check_health
             )
 
-    async def wait(self) -> CommandResult:
+    async def wait(self) -> CommandResult[OutputT]:
         """
         Wait for the command to finish and return the result.
         If the command exits with a non-zero exit code, it throws a `CommandExitException`.
@@ -254,8 +275,8 @@ class AsyncCommandHandle:
 
         if self._result.exit_code != 0:
             raise CommandExitException(
-                stdout="".join(self._stdout_chunks),
-                stderr="".join(self._stderr_chunks),
+                stdout=self._join_output(self._stdout_chunks),
+                stderr=self._join_output(self._stderr_chunks),
                 exit_code=self._result.exit_code,
                 error=self._result.error,
             )
@@ -287,10 +308,37 @@ class AsyncCommandHandle:
         :param request_timeout: Timeout for the request in **seconds**
         """
         if self._handle_send_stdin is None:
+            if self._handle_send_input is not None:
+                raise SandboxException(
+                    "PTY handles have no stdin, use send_input() to send input to the PTY instead."
+                )
             raise SandboxException(
                 "Sending stdin is not supported for this command handle."
             )
         await self._handle_send_stdin(data, request_timeout)
+
+    async def send_input(
+        self,
+        data: Union[str, bytes],
+        request_timeout: Optional[float] = None,
+    ) -> None:
+        """
+        Send input to the PTY.
+
+        Only available on handles returned by `sandbox.pty.create()` and `sandbox.pty.connect()`.
+
+        :param data: Input data to send, `str` is encoded as UTF-8
+        :param request_timeout: Timeout for the request in **seconds**
+        """
+        if self._handle_send_input is None:
+            if self._handle_send_stdin is not None:
+                raise SandboxException(
+                    "Sending input is only supported for PTY handles, use send_stdin() to send data to the command stdin instead."
+                )
+            raise SandboxException(
+                "Sending input is not supported for this command handle."
+            )
+        await self._handle_send_input(data, request_timeout)
 
     async def close_stdin(self, request_timeout: Optional[float] = None) -> None:
         """

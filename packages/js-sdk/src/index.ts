@@ -5,6 +5,7 @@ export { ConnectionConfig } from './connectionConfig'
 export type {
   ConnectionConfigOpts,
   ConnectionOpts,
+  HttpVersion,
   Username,
 } from './connectionConfig'
 export {
@@ -17,14 +18,23 @@ export {
   NotFoundError,
   SandboxError,
   SandboxNotFoundError,
+  SandboxNotRunningError,
+  SandboxUnreachableError,
   TemplateError,
   TimeoutError,
   RateLimitError,
+  ServiceBusyError,
+  GuestUnresponsiveError,
   BuildError,
   FileUploadError,
   VolumeError,
+  VolumeNotFoundError,
+  VolumePathNotFoundError,
+  SecretError,
+  SecretNotFoundError,
 } from './errors'
 export type { Logger } from './logs'
+export type { UploadData } from './utils'
 
 export { getSignature } from './sandbox/signature'
 
@@ -43,7 +53,10 @@ export type {
 } from './sandbox/filesystem/watchHandle'
 
 export { CommandExitError } from './sandbox/commands/commandHandle'
+export { CommandInputHandle } from './sandbox/commands/inputHandle'
+export type { CommandStreamInputOpts } from './sandbox/commands/inputHandle'
 export type {
+  CommandOutput,
   CommandResult,
   Stdout,
   Stderr,
@@ -56,12 +69,21 @@ export type {
   SandboxOpts,
   SandboxApiOpts,
   SandboxConnectOpts,
+  SandboxOnResume,
   SandboxForkOpts,
   SandboxMetricsOpts,
   SandboxPauseOpts,
   SandboxState,
   SandboxListOpts,
+  SandboxListOrder,
   SandboxPaginator,
+  SandboxIamOpts,
+  SandboxIamToken,
+  SandboxIamTokenType,
+  SandboxEgressProxyOpts,
+  SandboxEgressProxyTLSOpts,
+  SandboxEgressProxyInfo,
+  SandboxEgressProxyTLSInfo,
   SandboxNetworkOpts,
   SandboxNetworkInfo,
   SandboxNetworkSelector,
@@ -70,6 +92,8 @@ export type {
   SandboxNetworkRuleInfo,
   SandboxNetworkRules,
   SandboxNetworkTransform,
+  SandboxNetworkTransformContext,
+  SandboxNetworkTransformResolver,
   SandboxNetworkUpdate,
   SandboxOnTimeout,
   SandboxLifecycle,
@@ -78,9 +102,21 @@ export type {
   SnapshotListOpts,
   SnapshotPaginator,
   CreateSnapshotOpts,
+  SnapshotMode,
 } from './sandbox/sandboxApi'
 
 export type { McpServer } from './sandbox/mcp'
+
+export { Secret, SecretPaginator } from './secret'
+export type {
+  SecretInfo,
+  SecretCreateOpts,
+  SecretUpdateOpts,
+  SecretGetInfoOpts,
+  SecretExistsOpts,
+  SecretDestroyOpts,
+  SecretListOpts,
+} from './secret'
 
 export { ALL_TRAFFIC } from './sandbox/network'
 
@@ -101,6 +137,9 @@ export type {
   GitRemoteAddOpts,
   GitCommitOpts,
   GitAddOpts,
+  GitResetMode,
+  GitResetOpts,
+  GitRestoreOpts,
   GitDeleteBranchOpts,
   GitPushOpts,
   GitPullOpts,
@@ -110,6 +149,7 @@ export type {
   GitBranches,
   GitFileStatus,
   GitStatus,
+  GitStatusLabel,
 } from './sandbox/git'
 
 export { Volume, VolumeFileType } from './volume'
@@ -130,9 +170,12 @@ export type {
 export { Sandbox }
 import { Sandbox } from './sandbox'
 
+export { E2B, type E2BClientOpts } from './client'
+
 export default Sandbox
 
 export * from './template'
+export { DockerfileSyntaxError } from './template/dockerfileParser'
 
 export {
   ReadyCmd,

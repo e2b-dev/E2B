@@ -49,6 +49,8 @@ DEFAULT_GIT_ENV = {"GIT_TERMINAL_PROMPT": "0"}
 class Git:
     """
     Async module for running git operations in the sandbox.
+
+    :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
     """
 
     def __init__(self, commands: Commands) -> None:

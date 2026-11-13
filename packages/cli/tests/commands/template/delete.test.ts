@@ -1,68 +1,78 @@
-import * as fs from 'fs/promises'
-import * as path from 'path'
-import { execSync } from 'child_process'
-import { afterEach, beforeEach, describe, expect, test } from 'vitest'
+import { createServer, Server } from 'node:http'
+import type { AddressInfo } from 'node:net'
+import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 
-describe('Template Delete --config', () => {
-    let testDir: string
+import { runCliWithPipedStdin } from '../../setup'
 
-    beforeEach(async () => {
-        testDir = await fs.mkdtemp('e2b-delete-config-test-')
+let server: Server
+let apiUrl: string
+const templates = new Set<string>()
+const deleteRequests: string[] = []
 
-        const defaultConfig = `template_id = "default-template-id"
-dockerfile = "e2b.Dockerfile"`
-        await fs.writeFile(path.join(testDir, 'e2b.toml'), defaultConfig)
+beforeAll(async () => {
+  server = createServer((req, res) => {
+    const match = req.url?.match(/^\/templates\/([^/?]+)$/)
+    if (req.method !== 'DELETE' || !match) {
+      res.statusCode = 500
+      res.end()
+      return
+    }
 
-        const customConfig = `template_id = "custom-template-id"
-dockerfile = "e2b.Dockerfile"`
-        await fs.writeFile(path.join(testDir, 'custom.toml'), customConfig)
-
-        await fs.writeFile(path.join(testDir, 'e2b.Dockerfile'), 'FROM alpine:3.18')
-    })
-
-    afterEach(async () => {
-        if (testDir) {
-            await fs.rm(testDir, { recursive: true, force: true })
-        }
-    })
-
-    test('uses the config file passed via --config even when e2b.toml exists', async () => {
-        const cliPath = path.join(process.cwd(), 'dist', 'index.js')
-
-        let output = ''
-        try {
-            output = execSync(
-                `node "${cliPath}" template delete --yes --path "${testDir}" --config custom.toml 2>&1`,
-                { encoding: 'utf-8', stdio: 'pipe', timeout: 10_000 }
-            )
-        } catch (err: any) {
-            output = (err?.stdout ?? '') + (err?.stderr ?? '')
-        }
-
-        expect(output).toContain('Sandbox templates to delete')
-        expect(output).toContain('custom-template-id')
-        expect(output).toContain('custom.toml')
-        expect(output).not.toContain('default-template-id')
-    })
-
-    test('uses the default e2b.toml when --config is not provided', async () => {
-        const cliPath = path.join(process.cwd(), 'dist', 'index.js')
-
-        let output = ''
-        try {
-            output = execSync(
-                `node "${cliPath}" template delete --yes --path "${testDir}" 2>&1`,
-                { encoding: 'utf-8', stdio: 'pipe', timeout: 10_000 }
-            )
-        } catch (err: any) {
-            output = (err?.stdout ?? '') + (err?.stderr ?? '')
-        }
-
-        expect(output).toContain('Sandbox templates to delete')
-        expect(output).toContain('default-template-id')
-        expect(output).toContain('e2b.toml')
-        expect(output).not.toContain('custom-template-id')
-    })
+    const templateID = decodeURIComponent(match[1])
+    deleteRequests.push(templateID)
+    if (!templates.delete(templateID)) {
+      res.statusCode = 404
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify({ code: 404, message: 'template not found' }))
+      return
+    }
+    res.statusCode = 204
+    res.end()
+  })
+  await new Promise<void>((resolve) =>
+    server.listen(0, '127.0.0.1', () => resolve())
+  )
+  const { port } = server.address() as AddressInfo
+  apiUrl = `http://127.0.0.1:${port}`
 })
 
+afterAll(() => {
+  server.close()
+})
 
+function deleteTemplate(template: string) {
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    E2B_API_URL: apiUrl,
+    E2B_API_KEY: `e2b_${'0'.repeat(40)}`,
+  }
+  delete env.E2B_DEBUG
+
+  return runCliWithPipedStdin(
+    ['template', 'delete', template, '--yes'],
+    Buffer.alloc(0),
+    { timeoutMs: 30_000, env }
+  )
+}
+
+describe('template delete', () => {
+  test('deletes the template, then reports it missing', async () => {
+    templates.add('demo')
+
+    const deleted = await deleteTemplate('demo')
+    expect(deleted.error).toBeUndefined()
+    expect(deleted.status, deleted.stderr.toString()).toBe(0)
+    expect(deleted.stdout.toString()).toContain(
+      '- Deleting sandbox template demo'
+    )
+    expect(templates.has('demo')).toBe(false)
+
+    const missing = await deleteTemplate('demo')
+    expect(missing.status).toBe(1)
+    expect(missing.stderr.toString()).toContain(
+      'Sandbox template demo not found'
+    )
+
+    expect(deleteRequests).toEqual(['demo', 'demo'])
+  })
+})

@@ -1,0 +1,327 @@
+from types import SimpleNamespace
+from typing import Any, Dict, Optional, cast
+from unittest.mock import AsyncMock, Mock
+
+import pytest
+
+from e2b import AsyncSandbox, Sandbox
+from e2b.api.client.api.sandboxes import post_v2_sandboxes
+from e2b.api.client.models import Sandbox as SandboxModel
+from e2b.exceptions import InvalidArgumentException
+
+
+def _created_sandbox():
+    return SimpleNamespace(
+        status_code=200,
+        parsed=SandboxModel(
+            client_id="client-id",
+            envd_version="0.2.4",
+            sandbox_id="sbx-test",
+            template_id="template-id",
+        ),
+    )
+
+
+def _sync_request_body(monkeypatch, api_key: str, lifecycle) -> Dict[str, Any]:
+    request = Mock(return_value=_created_sandbox())
+    monkeypatch.setattr(post_v2_sandboxes, "sync_detailed", request)
+
+    Sandbox.create(api_key=api_key, lifecycle=lifecycle)
+
+    return request.call_args.kwargs["body"].to_dict()
+
+
+async def _async_request_body(monkeypatch, api_key: str, lifecycle) -> Dict[str, Any]:
+    request = AsyncMock(return_value=_created_sandbox())
+    monkeypatch.setattr(post_v2_sandboxes, "asyncio_detailed", request)
+
+    await AsyncSandbox.create(api_key=api_key, lifecycle=lifecycle)
+
+    return request.call_args.kwargs["body"].to_dict()
+
+
+# `None` expects autoPause to be absent from the payload: an unconfigured
+# timeout action is not a choice of kill, so the API keeps ownership of the
+# default instead of receiving autoPause: False.
+AUTO_PAUSE_CASES = [
+    pytest.param(None, None, id="no-lifecycle"),
+    pytest.param({"on_timeout": "kill"}, False, id="explicit-kill"),
+    pytest.param({"on_timeout": "pause"}, True, id="explicit-pause"),
+    # Untyped callers can build the lifecycle conditionally and leave on_timeout
+    # out, or pass it as None; neither selects an action.
+    pytest.param(cast(Any, {"auto_resume": False}), None, id="no-on-timeout-key"),
+    pytest.param(cast(Any, {"on_timeout": None}), None, id="none-on-timeout"),
+]
+
+
+@pytest.mark.parametrize("lifecycle, auto_pause", AUTO_PAUSE_CASES)
+def test_create_sends_auto_pause_only_when_configured(
+    monkeypatch, test_api_key, lifecycle, auto_pause: Optional[bool]
+):
+    body = _sync_request_body(monkeypatch, test_api_key, lifecycle)
+
+    if auto_pause is None:
+        assert "autoPause" not in body
+    else:
+        assert body["autoPause"] is auto_pause
+    assert "autoPauseMemory" not in body
+
+
+@pytest.mark.parametrize("lifecycle, auto_pause", AUTO_PAUSE_CASES)
+async def test_async_create_sends_auto_pause_only_when_configured(
+    monkeypatch, test_api_key, lifecycle, auto_pause: Optional[bool]
+):
+    body = await _async_request_body(monkeypatch, test_api_key, lifecycle)
+
+    if auto_pause is None:
+        assert "autoPause" not in body
+    else:
+        assert body["autoPause"] is auto_pause
+    assert "autoPauseMemory" not in body
+
+
+def test_create_omits_auto_pause_memory_when_pause_omits_mode(
+    monkeypatch, test_api_key
+):
+    body = _sync_request_body(
+        monkeypatch,
+        test_api_key,
+        {"on_timeout": {"action": "pause"}},
+    )
+
+    assert body["autoPause"] is True
+    assert "autoPauseMemory" not in body
+
+
+def test_create_sends_the_pause_snapshot_kind_alongside_auto_pause(
+    monkeypatch, test_api_key
+):
+    body = _sync_request_body(
+        monkeypatch,
+        test_api_key,
+        {"on_timeout": {"action": "pause", "mode": "filesystem"}},
+    )
+
+    assert body["autoPause"] is True
+    assert body["autoPauseMemory"] is False
+
+    body = _sync_request_body(
+        monkeypatch,
+        test_api_key,
+        {"on_timeout": {"action": "pause", "mode": "full"}},
+    )
+
+    assert body["autoPause"] is True
+    assert body["autoPauseMemory"] is True
+
+
+def test_create_still_sends_the_deprecated_keep_memory(monkeypatch, test_api_key):
+    body = _sync_request_body(
+        monkeypatch,
+        test_api_key,
+        {"on_timeout": {"action": "pause", "keep_memory": False}},
+    )
+
+    assert body["autoPause"] is True
+    assert body["autoPauseMemory"] is False
+
+
+@pytest.mark.parametrize(
+    "lifecycle",
+    [
+        pytest.param(cast(Any, {"auto_resume": True}), id="no-on-timeout-key"),
+        pytest.param(
+            cast(Any, {"on_timeout": None, "auto_resume": True}), id="none-on-timeout"
+        ),
+    ],
+)
+def test_create_rejects_auto_resume_without_a_timeout_action(test_api_key, lifecycle):
+    # An unconfigured on_timeout still resolves to kill semantics locally, so
+    # auto_resume has no pause to attach to.
+    with pytest.raises(InvalidArgumentException):
+        Sandbox.create(api_key=test_api_key, lifecycle=lifecycle)
+
+
+@pytest.mark.parametrize(
+    "lifecycle",
+    [
+        pytest.param(cast(Any, {"auto_resume": True}), id="no-on-timeout-key"),
+        pytest.param(
+            cast(Any, {"on_timeout": None, "auto_resume": True}), id="none-on-timeout"
+        ),
+    ],
+)
+async def test_async_create_rejects_auto_resume_without_a_timeout_action(
+    test_api_key, lifecycle
+):
+    with pytest.raises(InvalidArgumentException):
+        await AsyncSandbox.create(api_key=test_api_key, lifecycle=lifecycle)
+
+
+INVALID_LIFECYCLES = [
+    # A filesystem-only auto-pause snapshot can only be resumed explicitly.
+    pytest.param(
+        {"on_timeout": {"action": "pause", "mode": "filesystem"}, "auto_resume": True},
+        id="filesystem-only-pause-with-auto-resume",
+    ),
+    pytest.param(
+        {"on_timeout": {"action": "pause", "keep_memory": False}, "auto_resume": True},
+        id="keep-memory-false-pause-with-auto-resume",
+    ),
+    # The discriminated union forbids this at type-check time; the runtime
+    # guard covers callers that bypass the type.
+    pytest.param(
+        cast(Any, {"on_timeout": {"action": "kill", "mode": "filesystem"}}),
+        id="mode-with-kill",
+    ),
+    pytest.param(
+        cast(Any, {"on_timeout": {"action": "kill", "keep_memory": False}}),
+        id="keep-memory-with-kill",
+    ),
+    pytest.param(
+        cast(Any, {"on_timeout": {"action": "pause", "mode": "memory"}}),
+        id="unknown-mode",
+    ),
+    pytest.param(
+        {"on_timeout": {"action": "pause", "mode": "full", "keep_memory": True}},
+        id="mode-with-keep-memory",
+    ),
+]
+
+
+@pytest.mark.parametrize("lifecycle", INVALID_LIFECYCLES)
+def test_create_rejects_an_invalid_lifecycle(monkeypatch, test_api_key, lifecycle):
+    request = Mock(return_value=_created_sandbox())
+    monkeypatch.setattr(post_v2_sandboxes, "sync_detailed", request)
+
+    with pytest.raises(InvalidArgumentException):
+        Sandbox.create(api_key=test_api_key, lifecycle=lifecycle)
+
+    request.assert_not_called()
+
+
+@pytest.mark.parametrize("lifecycle", INVALID_LIFECYCLES)
+async def test_async_create_rejects_an_invalid_lifecycle(
+    monkeypatch, test_api_key, lifecycle
+):
+    request = AsyncMock(return_value=_created_sandbox())
+    monkeypatch.setattr(post_v2_sandboxes, "asyncio_detailed", request)
+
+    with pytest.raises(InvalidArgumentException):
+        await AsyncSandbox.create(api_key=test_api_key, lifecycle=lifecycle)
+
+    request.assert_not_called()
+
+
+# `None` expects autoResume to be absent from the payload: an unconfigured
+# preference is not an explicit opt-out, so the API keeps ownership of the
+# default instead of receiving {"enabled": False}.
+AUTO_RESUME_CASES = [
+    pytest.param(None, None, id="no-lifecycle"),
+    pytest.param({"on_timeout": "pause"}, None, id="only-on-timeout"),
+    pytest.param(
+        {"on_timeout": "pause", "auto_resume": False},
+        {"enabled": False},
+        id="explicit-false",
+    ),
+    pytest.param(
+        {"on_timeout": "pause", "auto_resume": True},
+        {"enabled": True},
+        id="explicit-true",
+    ),
+    pytest.param(
+        cast(Any, {"on_timeout": "pause", "auto_resume": None}),
+        None,
+        id="explicit-none",
+    ),
+]
+
+
+@pytest.mark.parametrize("lifecycle, auto_resume", AUTO_RESUME_CASES)
+def test_create_sends_auto_resume_only_when_configured(
+    monkeypatch, test_api_key, lifecycle, auto_resume
+):
+    body = _sync_request_body(monkeypatch, test_api_key, lifecycle)
+
+    if auto_resume is None:
+        assert "autoResume" not in body
+    else:
+        assert body["autoResume"] == auto_resume
+
+
+@pytest.mark.parametrize("lifecycle, auto_resume", AUTO_RESUME_CASES)
+async def test_async_create_sends_auto_resume_only_when_configured(
+    monkeypatch, test_api_key, lifecycle, auto_resume
+):
+    body = await _async_request_body(monkeypatch, test_api_key, lifecycle)
+
+    if auto_resume is None:
+        assert "autoResume" not in body
+    else:
+        assert body["autoResume"] == auto_resume
+
+
+# on_timeout is resolved into the boolean autoPause before the request is built,
+# so the API never sees the action and cannot reject a typo. Resolving it to
+# kill would delete a sandbox the caller asked to preserve.
+UNRECOGNIZED_ON_TIMEOUT = [
+    "Pause",
+    "PAUSE",
+    "pause\n",
+    "paused",
+    True,
+    {"action": "Pause"},
+    {},
+]
+
+
+@pytest.mark.parametrize("on_timeout", UNRECOGNIZED_ON_TIMEOUT)
+def test_create_rejects_an_unrecognized_on_timeout(
+    monkeypatch, test_api_key, on_timeout
+):
+    request = Mock(return_value=_created_sandbox())
+    monkeypatch.setattr(post_v2_sandboxes, "sync_detailed", request)
+
+    with pytest.raises(InvalidArgumentException):
+        Sandbox.create(
+            api_key=test_api_key, lifecycle=cast(Any, {"on_timeout": on_timeout})
+        )
+
+    request.assert_not_called()
+
+
+@pytest.mark.parametrize("on_timeout", UNRECOGNIZED_ON_TIMEOUT)
+async def test_async_create_rejects_an_unrecognized_on_timeout(
+    monkeypatch, test_api_key, on_timeout
+):
+    request = AsyncMock(return_value=_created_sandbox())
+    monkeypatch.setattr(post_v2_sandboxes, "asyncio_detailed", request)
+
+    with pytest.raises(InvalidArgumentException):
+        await AsyncSandbox.create(
+            api_key=test_api_key, lifecycle=cast(Any, {"on_timeout": on_timeout})
+        )
+
+    request.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "on_timeout,expected_field",
+    [
+        ("Pause", "on_timeout"),
+        ({"action": "Pause"}, 'on_timeout["action"]'),
+        ({}, 'on_timeout["action"]'),
+    ],
+)
+def test_the_error_names_the_field_the_caller_wrote(
+    monkeypatch, test_api_key, on_timeout, expected_field
+):
+    request = Mock(return_value=_created_sandbox())
+    monkeypatch.setattr(post_v2_sandboxes, "sync_detailed", request)
+
+    with pytest.raises(InvalidArgumentException) as excinfo:
+        Sandbox.create(
+            api_key=test_api_key, lifecycle=cast(Any, {"on_timeout": on_timeout})
+        )
+
+    assert str(excinfo.value).startswith(f"{expected_field} must be one of")

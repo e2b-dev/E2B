@@ -1,5 +1,3 @@
-import { randomUUID } from 'node:crypto'
-
 export const AUTHOR_NAME = 'Sandbox Bot'
 export const AUTHOR_EMAIL = 'sandbox@example.com'
 export const USERNAME = 'git'
@@ -10,13 +8,26 @@ export const PROTOCOL = 'https'
 const BASE_DIR = '/tmp/test-git'
 
 export async function createBaseDir(sandbox: any) {
-  const baseDir = `${BASE_DIR}/${randomUUID()}`
+  const baseDir = `${BASE_DIR}/${crypto.randomUUID()}`
   await sandbox.commands.run(`rm -rf "${baseDir}" && mkdir -p "${baseDir}"`)
   return baseDir
 }
 
 export async function cleanupBaseDir(sandbox: any, baseDir: string) {
-  await sandbox.commands.run(`rm -rf "${baseDir}"`)
+  const command = `rm -rf "${baseDir}"`
+
+  try {
+    await sandbox.commands.run(command)
+  } catch (error) {
+    if (
+      !(error instanceof Error) ||
+      !error.message.includes('Network connection lost')
+    ) {
+      throw error
+    }
+
+    await sandbox.commands.run(command)
+  }
 }
 
 export async function createRepo(sandbox: any, baseDir: string) {
@@ -47,11 +58,21 @@ export async function startGitDaemon(sandbox: any, baseDir: string) {
       `--enable=receive-pack --informative-errors --listen=127.0.0.1 --port=${port}`,
     { background: true }
   )
-  await sandbox.commands.run('sleep 1')
+  const remoteUrl = `git://127.0.0.1:${port}/remote.git`
+
+  try {
+    await sandbox.commands.run(
+      `for i in $(seq 1 50); do git ls-remote "${remoteUrl}" >/dev/null 2>&1 && exit 0; sleep 0.1; done; exit 1`
+    )
+  } catch (error) {
+    await handle.kill().catch(() => {})
+    throw error
+  }
+
   return {
     handle,
     remotePath,
-    remoteUrl: `git://127.0.0.1:${port}/remote.git`,
+    remoteUrl,
     port,
   }
 }

@@ -3,14 +3,16 @@ import { createConnectTransport } from '@connectrpc/connect-web'
 import {
   ConnectionConfig,
   ConnectionOpts,
-  DEFAULT_SANDBOX_TIMEOUT_MS,
   defaultUsername,
   Username,
 } from '../connectionConfig'
 import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
+import { rejectProxyUnavailableResponse } from '../envd/rpc'
 import { createEnvdFetch, createEnvdRpcFetch } from '../envd/http2'
 import { createRpcLogger } from '../logs'
+import { createClientStreamingTransport } from '../envd/streamingTransport'
 import { Commands, Pty } from './commands'
+import { CommandExitError } from './commands/commandHandle'
 import { Filesystem } from './filesystem'
 import { Git } from './git'
 import {
@@ -30,7 +32,7 @@ import {
 } from './sandboxApi'
 import { getSignature } from './signature'
 import { compareVersions } from 'compare-versions'
-import { InvalidArgumentError, TemplateError } from '../errors'
+import { InvalidArgumentError, SandboxError, TemplateError } from '../errors'
 import { ENVD_DEBUG_FALLBACK, ENVD_DEFAULT_USER } from '../envd/versions'
 import { shellQuote } from '../utils'
 
@@ -57,7 +59,6 @@ export interface SandboxUrlOpts {
  * - Access Linux OS
  * - Create, list, and delete files and directories
  * - Run commands
- * - Run git operations
  * - Run isolated code
  * - Access the internet
  *
@@ -75,7 +76,6 @@ export interface SandboxUrlOpts {
 export class Sandbox extends SandboxApi {
   protected static readonly defaultTemplate: string = 'base'
   protected static readonly defaultMcpTemplate: string = 'mcp-gateway'
-  protected static readonly defaultSandboxTimeoutMs = DEFAULT_SANDBOX_TIMEOUT_MS
 
   /**
    * Module for interacting with the sandbox filesystem
@@ -91,6 +91,8 @@ export class Sandbox extends SandboxApi {
   readonly pty: Pty
   /**
    * Module for running git operations in the sandbox
+   *
+   * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
    */
   readonly git: Git
 
@@ -161,41 +163,51 @@ export class Sandbox extends SandboxApi {
       'E2b-Sandbox-Id': this.sandboxId,
       'E2b-Sandbox-Port': this.envdPort.toString(),
     }
-    const envdFetch = createEnvdFetch(this.connectionConfig.proxy)
-    const envdRpcFetch = createEnvdRpcFetch(this.connectionConfig.proxy)
+    const envdFetch = createEnvdFetch(this.connectionConfig)
+    const envdRpcFetch = createEnvdRpcFetch(this.connectionConfig)
+    const interceptors = opts?.logger
+      ? [createRpcLogger(opts.logger)]
+      : undefined
+
+    const rpcFetch: typeof fetch = (url, options) => {
+      // Patch fetch to always use redirect: "follow"
+      // connect-web doesn't allow to configure redirect option - https://github.com/connectrpc/connect-es/pull/1082
+      // connect-web package uses redirect: "error" which is not supported in edge runtimes
+      // E2B endpoints should be safe to use with redirect: "follow" https://github.com/e2b-dev/E2B/issues/531#issuecomment-2779492867
+
+      const headers = new Headers({
+        'User-Agent': this.connectionConfig.headers?.['User-Agent'] ?? '',
+      })
+      new Headers(options?.headers).forEach((value, key) =>
+        headers.append(key, value)
+      )
+      new Headers(sandboxHeaders).forEach((value, key) =>
+        headers.append(key, value)
+      )
+
+      if (this.envdAccessToken) {
+        headers.append('X-Access-Token', this.envdAccessToken)
+      }
+
+      options = {
+        ...(options ?? {}),
+        headers: headers,
+        redirect: 'follow',
+      }
+
+      return envdRpcFetch(url, options).then(rejectProxyUnavailableResponse)
+    }
 
     const rpcTransport = createConnectTransport({
       baseUrl: this.envdApiUrl,
       useBinaryFormat: false,
-      interceptors: opts?.logger ? [createRpcLogger(opts.logger)] : undefined,
-      fetch: (url, options) => {
-        // Patch fetch to always use redirect: "follow"
-        // connect-web doesn't allow to configure redirect option - https://github.com/connectrpc/connect-es/pull/1082
-        // connect-web package uses redirect: "error" which is not supported in edge runtimes
-        // E2B endpoints should be safe to use with redirect: "follow" https://github.com/e2b-dev/E2B/issues/531#issuecomment-2779492867
-
-        const headers = new Headers({
-          'User-Agent': this.connectionConfig.headers?.['User-Agent'] ?? '',
-        })
-        new Headers(options?.headers).forEach((value, key) =>
-          headers.append(key, value)
-        )
-        new Headers(sandboxHeaders).forEach((value, key) =>
-          headers.append(key, value)
-        )
-
-        if (this.envdAccessToken) {
-          headers.append('X-Access-Token', this.envdAccessToken)
-        }
-
-        options = {
-          ...(options ?? {}),
-          headers: headers,
-          redirect: 'follow',
-        }
-
-        return envdRpcFetch(url, options)
-      },
+      interceptors,
+      fetch: rpcFetch,
+    })
+    const rpcStreamingTransport = createClientStreamingTransport({
+      baseUrl: this.envdApiUrl,
+      fetch: rpcFetch,
+      interceptors,
     })
 
     this.envdApi = new EnvdApiClient(
@@ -221,9 +233,15 @@ export class Sandbox extends SandboxApi {
     this.commands = new Commands(
       rpcTransport,
       this.envdApi,
-      this.connectionConfig
+      this.connectionConfig,
+      rpcStreamingTransport
     )
-    this.pty = new Pty(rpcTransport, this.envdApi, this.connectionConfig)
+    this.pty = new Pty(
+      rpcTransport,
+      this.envdApi,
+      this.connectionConfig,
+      rpcStreamingTransport
+    )
     this.git = new Git(this.commands)
   }
 
@@ -235,14 +253,16 @@ export class Sandbox extends SandboxApi {
    * `opts.query.state = [...]`.
    *
    * @param opts connection options, plus optional `query` to filter by
-   *   metadata / state and `limit` / `nextToken` for pagination.
+   *   metadata / state / start time / template, `order` to sort by start
+   *   time across the whole result set (not within a page), and `limit` /
+   *   `nextToken` for pagination.
    *
    * @returns a {@link SandboxPaginator} that yields pages of sandboxes
    *   (running and paused by default). Iterate pages via
    *   `await paginator.nextItems()` while `paginator.hasNext` is `true`.
    */
   static list(opts?: SandboxListOpts): SandboxPaginator {
-    return new SandboxPaginator(opts)
+    return new SandboxPaginator(this.resolveOpts(opts))
   }
 
   /**
@@ -302,7 +322,8 @@ export class Sandbox extends SandboxApi {
             sandboxOpts: templateOrOpts,
           }
 
-    const config = new ConnectionConfig(sandboxOpts)
+    const apiOpts = this.resolveOpts(sandboxOpts)
+    const config = new ConnectionConfig(apiOpts)
     if (config.debug) {
       return new this({
         sandboxId: 'debug_sandbox_id',
@@ -311,27 +332,32 @@ export class Sandbox extends SandboxApi {
       }) as InstanceType<S>
     }
 
-    const sandboxInfo = await SandboxApi.createSandbox(
+    const sandboxInfo = await this.createSandbox(
       template,
-      sandboxOpts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
-      sandboxOpts
+      apiOpts?.timeoutMs,
+      apiOpts
     )
 
     const sandbox = new this({ ...sandboxInfo, ...config }) as InstanceType<S>
 
     if (sandboxOpts?.mcp) {
       sandbox.mcpToken = crypto.randomUUID()
-      const res = await sandbox.commands.run(
-        `mcp-gateway --config ${shellQuote(JSON.stringify(sandboxOpts.mcp))}`,
-        {
-          user: 'root',
-          envs: {
-            GATEWAY_ACCESS_TOKEN: sandbox.mcpToken ?? '',
-          },
+      try {
+        await sandbox.commands.run(
+          `mcp-gateway --config ${shellQuote(JSON.stringify(sandboxOpts.mcp))}`,
+          {
+            user: 'root',
+            envs: {
+              GATEWAY_ACCESS_TOKEN: sandbox.mcpToken ?? '',
+            },
+          }
+        )
+      } catch (error) {
+        await sandbox.kill().catch(() => undefined)
+        if (error instanceof CommandExitError) {
+          throw new SandboxError(`Failed to start MCP gateway: ${error.stderr}`)
         }
-      )
-      if (res.exitCode !== 0) {
-        throw new Error(`Failed to start MCP gateway: ${res.stderr}`)
+        throw error
       }
     }
 
@@ -349,6 +375,9 @@ export class Sandbox extends SandboxApi {
    *
    * @returns A running sandbox instance
    *
+   * @throws {@link GuestUnresponsiveError} when the paused sandbox's snapshot was taken
+   * while its guest agent was not responding (`envdUnresponsiveAtPause`); connect with `onResume: 'reboot'`.
+   *
    * @example
    * ```ts
    * const sandbox = await Sandbox.create()
@@ -363,7 +392,8 @@ export class Sandbox extends SandboxApi {
     sandboxId: string,
     opts?: SandboxConnectOpts
   ): Promise<InstanceType<S>> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     if (config.debug) {
       return new this({
         sandboxId,
@@ -372,7 +402,7 @@ export class Sandbox extends SandboxApi {
       }) as InstanceType<S>
     }
 
-    const sandbox = await SandboxApi.connectSandbox(sandboxId, opts)
+    const sandbox = await this.connectSandbox(sandboxId, apiOpts)
 
     return new this({
       sandboxId,
@@ -418,13 +448,14 @@ export class Sandbox extends SandboxApi {
     sandboxId: string,
     opts?: SandboxForkOpts
   ): Promise<Array<InstanceType<S> | Error>> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
 
-    const results = await SandboxApi.forkSandbox(
+    const results = await this.forkSandbox(
       sandboxId,
-      opts?.timeoutMs ?? this.defaultSandboxTimeoutMs,
-      opts?.count ?? 1,
-      opts
+      apiOpts?.timeoutMs,
+      apiOpts?.count,
+      apiOpts
     )
 
     return results.map((result) =>
@@ -444,10 +475,13 @@ export class Sandbox extends SandboxApi {
    *
    * @returns A running sandbox instance
    *
+   * @throws {@link GuestUnresponsiveError} when the paused sandbox's snapshot was taken
+   * while its guest agent was not responding (`envdUnresponsiveAtPause`); connect with `onResume: 'reboot'`.
+   *
    * @example
    * ```ts
    * const sandbox = await Sandbox.create()
-   * await sandbox.betaPause()
+   * await sandbox.pause()
    *
    * // Connect to the same sandbox.
    * const sameSandbox = await sandbox.connect()
@@ -628,13 +662,17 @@ export class Sandbox extends SandboxApi {
   /**
    * Pause a sandbox by its ID.
    *
-   * @param opts connection options, plus `keepMemory` to control the snapshot
-   * kind. When `opts.keepMemory` is `false`, the in-memory state is dropped and
-   * only the filesystem is persisted (a filesystem-only snapshot); resuming such
-   * a sandbox cold-boots (reboots) it from disk, losing running processes and
-   * open connections. Defaults to `true` (full memory snapshot).
+   * @param opts connection options, plus `mode` to control the snapshot kind.
+   * With `mode: 'filesystem'`, the in-memory state is dropped and only the
+   * filesystem is persisted; resuming such a sandbox cold-boots (reboots) it
+   * from disk, losing running processes and open connections. Defaults to
+   * `'full'` (memory and filesystem). Pass `strict: true` to refuse the pause
+   * when the sandbox's guest agent does not respond.
    *
    * @returns `true` if the sandbox got paused, `false` if the sandbox was already paused.
+   *
+   * @throws {@link ServiceBusyError} when `strict` is set and the sandbox's
+   * guest agent does not respond; the sandbox keeps running.
    *
    * @example
    * ```ts
@@ -642,7 +680,10 @@ export class Sandbox extends SandboxApi {
    * await sandbox.pause()
    *
    * // filesystem-only snapshot (resume reboots the sandbox)
-   * await sandbox.pause({ keepMemory: false })
+   * await sandbox.pause({ mode: 'filesystem' })
+   *
+   * // refuse the pause if the guest agent is unresponsive
+   * await sandbox.pause({ strict: true })
    * ```
    */
   async pause(opts?: SandboxPauseOpts): Promise<boolean> {
@@ -665,9 +706,18 @@ export class Sandbox extends SandboxApi {
    *
    * Use the returned `snapshotId` with `Sandbox.create(snapshotId)` to create a new sandbox from the snapshot.
    *
-   * @param opts snapshot creation options including optional name and connection options.
+   * @param opts snapshot creation options including optional name, `mode`
+   * (`'filesystem'` takes a filesystem-only snapshot; sandboxes created from it
+   * cold-boot instead of restoring memory), and connection options.
    *
    * @returns snapshot information including the snapshot ID.
+   *
+   * @throws {@link SandboxError} with `statusCode` 400 when `mode: 'filesystem'`
+   * is requested but the feature is not enabled for the team
+   * (`snapshot_filesystem_only_disabled`), and with `statusCode` 409 when the
+   * sandbox's node runs an orchestrator that predates the option
+   * (`snapshot_filesystem_only_unsupported_node`). A full memory snapshot
+   * still works in both cases; for 409, pause and resume the sandbox and retry.
    *
    * @example
    * ```ts
@@ -679,12 +729,16 @@ export class Sandbox extends SandboxApi {
    *
    * // Create a new sandbox from the snapshot
    * const newSandbox = await Sandbox.create(snapshot.snapshotId)
+   *
+   * // Filesystem-only snapshot: sandboxes created from it start fresh from disk
+   * const fsSnapshot = await sandbox.createSnapshot({ mode: 'filesystem' })
    * ```
    */
   async createSnapshot(opts?: CreateSnapshotOpts): Promise<SnapshotInfo> {
     return await SandboxApi.createSnapshot(this.sandboxId, {
       ...this.resolveApiOpts(opts),
       name: opts?.name,
+      mode: opts?.mode,
     })
   }
 
@@ -734,7 +788,7 @@ export class Sandbox extends SandboxApi {
    *
    * @param path path to the file in the sandbox.
    *
-   * @param opts download url options.
+   * @param opts upload url options.
    *
    * @returns URL for uploading file.
    */
@@ -879,10 +933,10 @@ export class Sandbox extends SandboxApi {
   private resolveApiOpts<T extends ConnectionOpts>(
     opts?: T
   ): ConnectionOpts & T {
-    return {
-      ...this.connectionConfig,
-      ...(opts ?? {}),
-    } as ConnectionOpts & T
+    return ConnectionConfig.mergeOpts(
+      this.connectionConfig,
+      opts
+    ) as ConnectionOpts & T
   }
 
   private fileUrl(path: string | undefined, username: string | undefined) {

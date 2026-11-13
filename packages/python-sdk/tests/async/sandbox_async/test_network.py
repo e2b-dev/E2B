@@ -1,5 +1,6 @@
 import asyncio
 import json
+from unittest.mock import AsyncMock
 
 import httpx
 import pytest
@@ -17,15 +18,31 @@ async def wait_for_status(
 ) -> httpx.Response:
     deadline = asyncio.get_running_loop().time() + timeout
     response: httpx.Response | None = None
+    last_transport_error: httpx.TransportError | None = None
 
     while asyncio.get_running_loop().time() < deadline:
-        response = await client.get(url, headers=headers, follow_redirects=True)
-        if response.status_code == status_code:
-            return response
+        try:
+            response = await client.get(url, headers=headers, follow_redirects=True)
+        except httpx.TransportError as error:
+            last_transport_error = error
+        else:
+            if response.status_code == status_code:
+                return response
         await asyncio.sleep(1)
 
-    assert response is not None
-    return response
+    if response is not None:
+        return response
+    assert last_transport_error is not None
+    raise last_transport_error
+
+
+async def test_wait_for_status_retries_transport_errors():
+    response = httpx.Response(200)
+    client = AsyncMock()
+    client.get.side_effect = [httpx.ConnectError("not ready"), response]
+
+    assert await wait_for_status(client, "https://sandbox.test", 200) is response
+    assert client.get.await_count == 2
 
 
 @pytest.mark.skip_debug()
@@ -123,7 +140,7 @@ async def test_allow_takes_precedence_over_deny(async_sandbox_factory):
 async def test_allow_public_traffic_false(async_sandbox_factory):
     """Test that sandbox with allow_public_traffic=False requires traffic access token."""
     async_sandbox = await async_sandbox_factory(
-        secure=True, network=SandboxNetworkOpts(allow_public_traffic=False)
+        network=SandboxNetworkOpts(allow_public_traffic=False)
     )
 
     # Verify the sandbox was created successfully and has a traffic access token
@@ -178,14 +195,30 @@ async def test_allow_public_traffic_true(async_sandbox_factory):
 
 
 @pytest.mark.skip_debug()
-async def test_firewall_transform_injects_headers(async_sandbox_factory):
+async def test_firewall_transform_injects_headers(
+    async_sandbox_factory, httpbin_template
+):
     """Test that a firewall rule with a transform injects headers into outbound requests."""
-    injected_header = "X-E2B-Test-Token"
+    injected_header = "X-Test-Token"
     injected_value = "e2b-transform-value-123"
+    # Port the httpbin template's start command listens on.
+    httpbin_port = 8080
+
+    # The transform is applied by the egress proxy on the way out of the
+    # sandbox, so the target has to be reachable from the public internet — a
+    # CI service container would not be. A sidecar sandbox running the httpbin
+    # template is that target, which keeps the test off any externally hosted
+    # service. Its ready command has already passed by the time create returns,
+    # so the server is serving.
+    httpbin = await async_sandbox_factory(
+        template_name=httpbin_template,
+        network=SandboxNetworkOpts(allow_public_traffic=True),
+    )
+    httpbin_host = httpbin.get_host(httpbin_port)
 
     network: SandboxNetworkOpts = {
         "rules": {
-            "httpbin.e2b.team": [
+            httpbin_host: [
                 {"transform": {"headers": {injected_header: injected_value}}},
             ],
         },
@@ -193,13 +226,14 @@ async def test_firewall_transform_injects_headers(async_sandbox_factory):
     async_sandbox = await async_sandbox_factory(network=network)
 
     result = await async_sandbox.commands.run(
-        "curl -sS --max-time 10 https://httpbin.e2b.team/headers"
+        f"curl -sS --retry 5 --retry-connrefused --max-time 10 "
+        f"https://{httpbin_host}/headers"
     )
     assert result.exit_code == 0
 
     parsed = json.loads(result.stdout)
     reflected = parsed["headers"].get(injected_header)
-    assert reflected == injected_value, (
+    assert reflected == [injected_value], (
         f"expected httpbin to reflect {injected_header}={injected_value}, "
         f"got headers: {parsed['headers']}"
     )
@@ -262,6 +296,164 @@ async def test_update_network_clears_existing_rules(async_sandbox_factory):
     assert r2.exit_code == 0
 
 
+def dns_probe_cmd(server: str) -> str:
+    """Sends one DNS query for example.com to `server` over UDP. Fails if no reply comes back."""
+    return f"""python3 -c "
+import socket
+q = bytes.fromhex('abcd01000001000000000000076578616d706c6503636f6d0000010001')
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.settimeout(3)
+s.sendto(q, ('{server}', 53))
+s.recv(512)
+"
+"""
+
+
+DOMAIN_ONLY = SandboxNetworkOpts(
+    allow_out=["example.com"],
+    deny_out=lambda ctx: [ctx.all_traffic],
+)
+
+
+async def skip_unless_dns_servers_supported(async_sandbox):
+    # These tests need an API that supports dns_servers. Call this on a sandbox
+    # created with dns_servers set: if get_info doesn't report them back, skip.
+    info = await async_sandbox.get_info()
+    if info.network is None or "dns_servers" not in info.network:
+        pytest.skip("the API doesn't report dns_servers")
+
+
+@pytest.mark.skip_debug()
+async def test_empty_dns_servers_allows_no_dns_server(async_sandbox_factory):
+    """dns_servers=[] blocks 8.8.8.8; the allowed domain stays reachable."""
+    async_sandbox = await async_sandbox_factory(
+        network={**DOMAIN_ONLY, "dns_servers": []}
+    )
+    await skip_unless_dns_servers_supported(async_sandbox)
+
+    with pytest.raises(CommandExitException):
+        await async_sandbox.commands.run(dns_probe_cmd("8.8.8.8"))
+    with pytest.raises(CommandExitException):
+        await async_sandbox.commands.run(
+            "curl --connect-timeout 3 --max-time 5 -Is https://8.8.8.8"
+        )
+
+    # Allowed domains are matched by name, not by IP, so any public IP in
+    # /etc/hosts works.
+    await async_sandbox.commands.run(
+        "echo '1.1.1.1 example.com' >> /etc/hosts", user="root"
+    )
+    result = await async_sandbox.commands.run(
+        "curl -s -o /dev/null -w '%{http_code}' https://example.com"
+    )
+    assert result.stdout.strip() == "200"
+
+    info = await async_sandbox.get_info()
+    assert info.network is not None
+    assert info.network.get("dns_servers") == []
+
+
+@pytest.mark.skip_debug()
+async def test_dns_servers_allows_listed_servers_instead_of_8888(async_sandbox_factory):
+    """dns_servers=["1.1.1.1"] opens 1.1.1.1 and closes 8.8.8.8."""
+    async_sandbox = await async_sandbox_factory(
+        network={**DOMAIN_ONLY, "dns_servers": ["1.1.1.1"]}
+    )
+    await skip_unless_dns_servers_supported(async_sandbox)
+
+    assert (await async_sandbox.commands.run(dns_probe_cmd("1.1.1.1"))).exit_code == 0
+    with pytest.raises(CommandExitException):
+        await async_sandbox.commands.run(dns_probe_cmd("8.8.8.8"))
+
+    info = await async_sandbox.get_info()
+    assert info.network is not None
+    assert info.network.get("dns_servers") == ["1.1.1.1"]
+
+
+@pytest.mark.skip_debug()
+async def test_update_network_resets_dns_servers_when_omitted(async_sandbox_factory):
+    """Leaving dns_servers out of update_network resets it to 8.8.8.8."""
+    async_sandbox = await async_sandbox_factory(
+        network={**DOMAIN_ONLY, "dns_servers": []}
+    )
+    await skip_unless_dns_servers_supported(async_sandbox)
+    network = {"allow_out": ["example.com"], "deny_out": ["0.0.0.0/0"]}
+
+    # Left out, so it goes back to the default (8.8.8.8).
+    await async_sandbox.update_network(network)
+    assert (await async_sandbox.commands.run(dns_probe_cmd("8.8.8.8"))).exit_code == 0
+    info = await async_sandbox.get_info()
+    assert info.network is not None
+    assert "dns_servers" not in info.network
+
+    await async_sandbox.update_network({**network, "dns_servers": []})
+    with pytest.raises(CommandExitException):
+        await async_sandbox.commands.run(dns_probe_cmd("8.8.8.8"))
+
+    await async_sandbox.update_network({**network, "dns_servers": ["8.8.8.8"]})
+    assert (await async_sandbox.commands.run(dns_probe_cmd("8.8.8.8"))).exit_code == 0
+
+
+@pytest.mark.skip_debug()
+async def test_domain_allowlist_allows_8888_by_default(async_sandbox_factory):
+    """Without dns_servers, a domain allowlist still resolves through 8.8.8.8."""
+    async_sandbox = await async_sandbox_factory(network=DOMAIN_ONLY)
+
+    assert (await async_sandbox.commands.run(dns_probe_cmd("8.8.8.8"))).exit_code == 0
+
+    info = await async_sandbox.get_info()
+    assert info.network is not None
+    assert "dns_servers" not in info.network
+
+
+@pytest.mark.skip_debug()
+async def test_https_ports(async_sandbox_factory):
+    """Test that a port listed in https_ports proxies to an HTTPS backend."""
+    port = 8443
+    async_sandbox = await async_sandbox_factory(
+        network=SandboxNetworkOpts(https_ports=[port])
+    )
+
+    # Generate a self-signed certificate inside the sandbox
+    keygen = await async_sandbox.commands.run(
+        "openssl req -x509 -newkey rsa:2048 "
+        "-keyout /tmp/https-backend-key.pem -out /tmp/https-backend-cert.pem "
+        '-days 1 -nodes -subj "/CN=localhost"'
+    )
+    assert keygen.exit_code == 0
+
+    # Start an HTTPS server on the configured port
+    await async_sandbox.commands.run(
+        f"""python3 -c "
+import http.server, ssl
+class H(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b'https backend')
+    def log_message(self, *a): pass
+server = http.server.ThreadingHTTPServer(('0.0.0.0', {port}), H)
+context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+context.load_cert_chain('/tmp/https-backend-cert.pem', '/tmp/https-backend-key.pem')
+server.socket = context.wrap_socket(server.socket, server_side=True)
+server.serve_forever()
+" """,
+        background=True,
+    )
+
+    sandbox_url = f"https://{async_sandbox.get_host(port)}"
+
+    async with httpx.AsyncClient() as client:
+        response = await wait_for_status(client, sandbox_url, 200)
+        assert response.status_code == 200
+        assert response.text == "https backend"
+
+    # The port is reported back in the sandbox info
+    info = await async_sandbox.get_info()
+    assert info.network is not None
+    assert info.network.get("https_ports") == [port]
+
+
 @pytest.mark.skip_debug()
 async def test_mask_request_host(async_sandbox_factory):
     """Test that mask_request_host modifies the Host header correctly."""
@@ -269,10 +461,6 @@ async def test_mask_request_host(async_sandbox_factory):
         network=SandboxNetworkOpts(mask_request_host="custom-host.example.com:${PORT}"),
         timeout=60,
     )
-
-    import asyncio
-
-    import httpx
 
     port = 8080
     output_file = "/tmp/headers.txt"
@@ -289,7 +477,7 @@ class H(http.server.BaseHTTPRequestHandler):
         self.send_response(200)
         self.end_headers()
     def log_message(self, *a): pass
-http.server.HTTPServer(('', {port}), H).handle_request()
+http.server.HTTPServer(('', {port}), H).serve_forever()
 " """,
         background=True,
     )
@@ -302,12 +490,8 @@ http.server.HTTPServer(('', {port}), H).handle_request()
     # Make a request from OUTSIDE the sandbox through the proxy
     # The Host header should be modified according to mask_request_host
     async with httpx.AsyncClient() as client:
-        try:
-            await client.get(sandbox_url, timeout=5.0)
-        except Exception:
-            pass
-
-    await asyncio.sleep(1)
+        response = await wait_for_status(client, sandbox_url, 200)
+        assert response.status_code == 200
 
     # Read the captured headers from inside the sandbox
     result = await async_sandbox.commands.run(f"cat {output_file}")

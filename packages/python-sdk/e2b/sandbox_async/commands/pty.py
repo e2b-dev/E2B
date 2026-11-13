@@ -2,8 +2,8 @@ from typing import Dict, Optional, Union
 
 import httpx
 
-from connectrpc.code import Code
-from connectrpc.errors import ConnectError
+from e2b.api.client_async import get_envd_api
+
 from packaging.version import Version
 from protobuf import Oneof
 
@@ -13,9 +13,10 @@ from e2b.connection_config import (
     ConnectionConfig,
     KEEPALIVE_PING_HEADER,
     KEEPALIVE_PING_INTERVAL_SEC,
+    STREAM_INPUT_TIMEOUT,
 )
 from e2b.envd.api import acheck_sandbox_health
-from e2b.envd.rpc import ahandle_rpc_exception_with_health
+from e2b.envd.rpc import akill_process, ahandle_rpc_exception_with_health
 from e2b.envd.utils import (
     authentication_header,
     extract_start_pid,
@@ -23,6 +24,7 @@ from e2b.envd.utils import (
 )
 from e2b.envd.client_async import as_stream, create_rpc_client, first_event
 from e2b.sandbox.commands.command_handle import PtySize
+from e2b.sandbox_async.commands.command_input_handle import AsyncCommandInputHandle
 from e2b.sandbox_async.commands.command_handle import (
     AsyncCommandHandle,
     OutputHandler,
@@ -44,12 +46,21 @@ class Pty:
     ) -> None:
         self._connection_config = connection_config
         self._envd_version = envd_version
-        self._check_health = lambda: acheck_sandbox_health(envd_api)
         self._rpc = create_rpc_client(
             process_connect.ProcessClient,
             envd_api_url,
             connection_config,
         )
+        self._envd_api = envd_api
+        # The health probe run after a request failed goes without the
+        # connection retries, so a sandbox that cannot be reached is not tried
+        # all over again (see `get_transport`).
+        self._envd_health_api = get_envd_api(
+            connection_config, envd_api_url, retry_connect=False
+        )
+
+    async def _check_health(self) -> Optional[bool]:
+        return await acheck_sandbox_health(self._envd_health_api)
 
     async def kill(
         self,
@@ -64,22 +75,12 @@ class Pty:
 
         :return: `true` if the PTY was killed, `false` if the PTY was not found
         """
-        try:
-            await self._rpc.send_signal(
-                process_pb.SendSignalRequest(
-                    process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
-                    signal=process_pb.Signal.SIGKILL,
-                ),
-                timeout_ms=timeout_to_ms(
-                    self._connection_config.get_request_timeout(request_timeout)
-                ),
-            )
-            return True
-        except Exception as e:
-            if isinstance(e, ConnectError):
-                if e.code == Code.NOT_FOUND:
-                    return False
-            raise await ahandle_rpc_exception_with_health(e, self._check_health)
+        return await akill_process(
+            self._rpc,
+            pid,
+            self._connection_config.get_request_timeout(request_timeout),
+            self._check_health,
+        )
 
     async def send_stdin(
         self,
@@ -90,8 +91,25 @@ class Pty:
         """
         Send input to a PTY.
 
+        :deprecated: Use `send_input()` instead. PTYs have no stdin; this sends input to the PTY.
+
         :param pid: Process ID of the PTY
-        :param data: Input data to send
+        :param data: Input data to send, `str` is encoded as UTF-8
+        :param request_timeout: Timeout for the request in **seconds**
+        """
+        return await self.send_input(pid, data, request_timeout)
+
+    async def send_input(
+        self,
+        pid: int,
+        data: Union[str, bytes],
+        request_timeout: Optional[float] = None,
+    ) -> None:
+        """
+        Send input to a PTY.
+
+        :param pid: Process ID of the PTY
+        :param data: Input data to send, `str` is encoded as UTF-8
         :param request_timeout: Timeout for the request in **seconds**
         """
         try:
@@ -110,6 +128,32 @@ class Pty:
             )
         except Exception as e:
             raise await ahandle_rpc_exception_with_health(e, self._check_health)
+
+    def stream_input(
+        self,
+        pid: int,
+        *,
+        timeout: Optional[float] = STREAM_INPUT_TIMEOUT,
+    ) -> AsyncCommandInputHandle:
+        """Open an ordered input handle to a PTY.
+
+        :param pid: Process ID of the PTY.
+        :param timeout: Timeout in seconds; defaults to ``STREAM_INPUT_TIMEOUT``
+            (60 seconds). ``0`` or ``None`` disables the timeout.
+        :return: Handle for queuing ordered input with ``send()`` and ending the
+            stream with ``close()``.
+        :raises NotFoundException: If the PTY does not exist; surfaced by the
+            handle's ``send()`` or ``close()``.
+        :raises TimeoutException: If the stream timeout expires; surfaced by
+            the handle's ``send()`` or ``close()``.
+        """
+        return AsyncCommandInputHandle(
+            self._rpc,
+            pid,
+            "pty",
+            timeout,
+            self._check_health,
+        )
 
     async def create(
         self,
@@ -170,7 +214,7 @@ class Pty:
                 handle_kill=lambda: self.kill(pid),
                 events=events,
                 on_pty=on_data,
-                handle_send_stdin=lambda data, request_timeout=None: self.send_stdin(
+                handle_send_input=lambda data, request_timeout=None: self.send_input(
                     pid, data, request_timeout
                 ),
                 check_health=self._check_health,
@@ -222,7 +266,7 @@ class Pty:
                 handle_kill=lambda: self.kill(pid),
                 events=events,
                 on_pty=on_data,
-                handle_send_stdin=lambda data, request_timeout=None: self.send_stdin(
+                handle_send_input=lambda data, request_timeout=None: self.send_input(
                     pid, data, request_timeout
                 ),
                 check_health=self._check_health,

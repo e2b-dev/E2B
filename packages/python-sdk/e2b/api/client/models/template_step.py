@@ -16,7 +16,7 @@ class TemplateStep:
     Attributes:
         type_ (str): Type of the step
         args (Union[Unset, list[str]]): Arguments for the step
-        files_hash (Union[Unset, str]): Hash of the files used in the step
+        files_hash (Union[Unset, str]): Hash of the files used in the step (lowercase hex SHA-256)
         force (Union[Unset, bool]): Whether the step should be forced to run regardless of the cache Default: False.
     """
 

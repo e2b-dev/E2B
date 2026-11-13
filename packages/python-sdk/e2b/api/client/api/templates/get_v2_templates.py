@@ -59,6 +59,10 @@ def _parse_response(
         response_403 = Error.from_dict(response.json())
 
         return response_403
+    if response.status_code == 429:
+        response_429 = Error.from_dict(response.json())
+
+        return response_429
     if response.status_code == 500:
         response_500 = Error.from_dict(response.json())
 
@@ -92,7 +96,8 @@ def sync_detailed(
      List all templates
 
     Args:
-        team_id (Union[Unset, str]): Identifier of the team
+        team_id (Union[Unset, str]): Identifier of the team, as its UUID or its public project ID
+            (prj_)
         next_token (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 100.
 
@@ -129,7 +134,8 @@ def sync(
      List all templates
 
     Args:
-        team_id (Union[Unset, str]): Identifier of the team
+        team_id (Union[Unset, str]): Identifier of the team, as its UUID or its public project ID
+            (prj_)
         next_token (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 100.
 
@@ -161,7 +167,8 @@ async def asyncio_detailed(
      List all templates
 
     Args:
-        team_id (Union[Unset, str]): Identifier of the team
+        team_id (Union[Unset, str]): Identifier of the team, as its UUID or its public project ID
+            (prj_)
         next_token (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 100.
 
@@ -196,7 +203,8 @@ async def asyncio(
      List all templates
 
     Args:
-        team_id (Union[Unset, str]): Identifier of the team
+        team_id (Union[Unset, str]): Identifier of the team, as its UUID or its public project ID
+            (prj_)
         next_token (Union[Unset, str]):
         limit (Union[Unset, int]):  Default: 100.
 

@@ -6,6 +6,8 @@ import pytest
 from protobuf import Oneof
 
 from e2b.envd.process import process_pb
+from e2b.exceptions import SandboxException
+from e2b.sandbox.commands.command_handle import CommandExitException
 from e2b.sandbox_async.commands.command_handle import AsyncCommandHandle
 from e2b.sandbox_sync.commands.command_handle import CommandHandle
 
@@ -288,3 +290,134 @@ async def test_async_flushes_incomplete_trailing_utf8_on_stream_error():
     # be flushed to the stdout callback as a replacement character.
     assert "".join(chunks) == "a�"
     assert isinstance(handle._iteration_exception, RuntimeError)
+
+
+def test_sync_does_not_retain_output():
+    def events():
+        yield _stdout_event(b"out")
+        yield _stderr_event(b"err")
+        yield _end_event()
+
+    stdout = []
+    stderr = []
+    handle = CommandHandle(
+        pid=1, handle_kill=lambda: True, events=events(), retain_output=False
+    )
+    result = handle.wait(on_stdout=stdout.append, on_stderr=stderr.append)
+
+    assert result.exit_code == 0
+    assert result.stdout is None
+    assert result.stderr is None
+    assert stdout == ["out"]
+    assert stderr == ["err"]
+
+
+def test_sync_exit_exception_without_retained_output():
+    def events():
+        yield _stderr_event(b"err")
+        yield _end_event(1)
+
+    handle = CommandHandle(
+        pid=1, handle_kill=lambda: True, events=events(), retain_output=False
+    )
+    with pytest.raises(CommandExitException) as exc_info:
+        handle.wait()
+
+    assert exc_info.value.exit_code == 1
+    assert exc_info.value.stdout is None
+    assert exc_info.value.stderr is None
+    assert str(exc_info.value) == "Command exited with code 1"
+
+
+async def test_async_does_not_retain_output():
+    async def events():
+        yield _stdout_event(b"out")
+        yield _stderr_event(b"err")
+        yield _end_event()
+
+    stdout = []
+    handle = AsyncCommandHandle(
+        pid=1,
+        handle_kill=_kill,
+        events=events(),
+        on_stdout=stdout.append,
+        retain_output=False,
+    )
+    result = await handle.wait()
+
+    assert result.exit_code == 0
+    assert result.stdout is None
+    assert result.stderr is None
+    assert handle.stdout is None
+    assert handle.stderr is None
+    assert stdout == ["out"]
+
+
+async def test_async_exit_exception_without_retained_output():
+    async def events():
+        yield _stderr_event(b"err")
+        yield _end_event(1)
+
+    handle = AsyncCommandHandle(
+        pid=1, handle_kill=_kill, events=events(), retain_output=False
+    )
+    with pytest.raises(CommandExitException) as exc_info:
+        await handle.wait()
+
+    assert exc_info.value.stdout is None
+    assert exc_info.value.stderr is None
+
+
+def test_sync_pty_handle_send_input():
+    sent = []
+    handle = CommandHandle(
+        pid=1,
+        handle_kill=lambda: True,
+        events=iter([]),
+        handle_send_input=lambda data, request_timeout=None: sent.append(data),
+    )
+
+    handle.send_input("ls\n")
+    handle.send_input(b"\x01")
+    assert sent == ["ls\n", b"\x01"]
+
+    with pytest.raises(SandboxException, match=r"use send_input\(\)"):
+        handle.send_stdin("ls\n")
+
+
+def test_sync_command_handle_send_input_points_to_send_stdin():
+    handle = CommandHandle(
+        pid=1,
+        handle_kill=lambda: True,
+        events=iter([]),
+        handle_send_stdin=lambda data, request_timeout=None: None,
+    )
+
+    with pytest.raises(SandboxException, match=r"use send_stdin\(\)"):
+        handle.send_input("ls\n")
+
+
+async def test_async_pty_handle_send_input():
+    sent = []
+
+    async def send_input(data, request_timeout=None):
+        sent.append(data)
+
+    async def no_events():
+        return
+        yield
+
+    handle = AsyncCommandHandle(
+        pid=1,
+        handle_kill=_kill,
+        events=no_events(),
+        handle_send_input=send_input,
+    )
+
+    await handle.send_input("ls\n")
+    await handle.send_input(b"\x01")
+    assert sent == ["ls\n", b"\x01"]
+
+    with pytest.raises(SandboxException, match=r"use send_input\(\)"):
+        await handle.send_stdin("ls\n")
+    await handle.disconnect()

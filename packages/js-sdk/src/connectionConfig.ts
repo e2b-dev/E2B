@@ -1,15 +1,50 @@
 import { Logger } from './logs'
 import { getEnvVar, version } from './api/metadata'
 import { runtime } from './utils'
+import { resolveRetries } from './retry'
+import { InvalidArgumentError } from './errors'
 
 // Remove once all deployments support sandbox subdomains
-const supportedDomains = ['e2b.app', 'e2b.dev', 'e2b.pro', 'e2b-staging.dev']
+const supportedDomains = [
+  'e2b.app',
+  'e2b.dev',
+  'e2b.pro',
+  'e2b-staging.dev',
+  'e2b-tango.dev',
+  'e2b-juliett.dev',
+  'foxtrot-2.e2b.dev',
+]
 
 export const REQUEST_TIMEOUT_MS = 60_000 // 60 seconds
-export const DEFAULT_SANDBOX_TIMEOUT_MS = 300_000 // 300 seconds
+export const STREAM_INPUT_TIMEOUT_MS = 60_000 // 60 seconds
+export const DEFAULT_RETRIES = 3
 export const KEEPALIVE_PING_INTERVAL_SEC = 50 // 50 seconds
 
 export const KEEPALIVE_PING_HEADER = 'Keepalive-Ping-Interval'
+
+/**
+ * HTTP version the SDK speaks to the E2B API and to sandboxes.
+ */
+export type HttpVersion = '1.1' | '2'
+export const DEFAULT_HTTP_VERSION: HttpVersion = '2'
+
+/**
+ * The HTTP version to use: the explicit value, else `E2B_HTTP_VERSION`, else
+ * {@link DEFAULT_HTTP_VERSION}. Rejects anything but `'1.1'` or `'2'`.
+ */
+export function resolveHttpVersion(httpVersion?: string): HttpVersion {
+  let source = 'httpVersion'
+  if (httpVersion === undefined) {
+    source = 'E2B_HTTP_VERSION'
+    httpVersion = getEnvVar('E2B_HTTP_VERSION') || DEFAULT_HTTP_VERSION
+  }
+  if (httpVersion !== '1.1' && httpVersion !== '2') {
+    throw new InvalidArgumentError(
+      `${source} must be '1.1' or '2', got '${httpVersion}'`
+    )
+  }
+  return httpVersion
+}
 
 /**
  * Connection options for requests to the API.
@@ -23,21 +58,11 @@ export interface ConnectionOpts {
   apiKey?: string
   /**
    * Whether to validate the format of the E2B API key on the client side.
-   * Disable this when your deployment issues API keys that don't match the
-   * default `e2b_` format.
    *
-   * @default E2B_VALIDATE_API_KEY // environment variable or `true`
+   * @deprecated The API key format is no longer validated on the client side;
+   * this option has no effect.
    */
   validateApiKey?: boolean
-  /**
-   * E2B access token to use for authentication.
-   *
-   * @deprecated Pass the token through `apiHeaders` instead, e.g.
-   * `apiHeaders: { Authorization: \`Bearer ${token}\` }`.
-   *
-   * @default E2B_ACCESS_TOKEN // environment variable
-   */
-  accessToken?: string
   /**
    * Domain to use for the API.
    *
@@ -48,12 +73,18 @@ export interface ConnectionOpts {
    * API Url to use for the API.
    * @internal
    * @default E2B_API_URL // environment variable or `https://api.${domain}`
+   *
+   * @deprecated `apiUrl` and the `E2B_API_URL` environment variable will be
+   * removed in the next major version.
    */
   apiUrl?: string
   /**
    * Sandbox Url to use for the API.
    * @internal
    * @default E2B_SANDBOX_URL // environment variable, `https://sandbox.${domain}`
+   *
+   * @deprecated `sandboxUrl` and the `E2B_SANDBOX_URL` environment variable
+   * will be removed in the next major version.
    */
   sandboxUrl?: string
   /**
@@ -68,6 +99,21 @@ export interface ConnectionOpts {
    * @default 60_000 // 60 seconds
    */
   requestTimeoutMs?: number
+  /**
+   * Number of control-plane API retries for responses marked `Should-Retry: true`,
+   * or 429/502/503/504 responses without that header. `Should-Retry: false` is
+   * never retried. Waits for a valid `Retry-After` delta-seconds value, otherwise
+   * exponential backoff with jitter from 100 ms to 10 s. Also retries failures
+   * to establish the connection; network errors after the request is sent are
+   * not retried.
+   * A retry is skipped when its wait would exhaust the request timeout.
+   * Retry waits use a 60-second total limit when request timeouts are disabled.
+   * Set to `0` to disable retries. Defaults to 3 retries.
+   *
+   * @default 3
+   * @throws InvalidArgumentError if the value is negative or not an integer
+   */
+  retries?: number
   /**
    * Logger to use for logging messages. It can accept any object that implements `Logger` interface—for example, {@link console}.
    */
@@ -87,6 +133,19 @@ export interface ConnectionOpts {
    * @example 'http://user:pass@127.0.0.1:8080'
    */
   proxy?: string
+  /**
+   * HTTP version for requests to the E2B API and to sandboxes (commands,
+   * filesystem, PTY). `'2'` multiplexes streams over shared connections;
+   * `'1.1'` pins them to HTTP/1.1 with one connection per concurrent
+   * request — for example when an intermediary on the path retires or
+   * mishandles long-lived HTTP/2 connections. File uploads (`files.write()`)
+   * always use HTTP/1.1, whatever this option says, so that their bodies
+   * cannot exhaust Node's per-session HTTP/2 memory and reset other requests.
+   * Only applies in Node.
+   *
+   * @default E2B_HTTP_VERSION // environment variable or `'2'`
+   */
+  httpVersion?: HttpVersion
 
   /**
    * Additional headers to send with E2B API requests.
@@ -404,30 +463,32 @@ export class ConnectionConfig {
   readonly logger?: Logger
 
   readonly requestTimeoutMs: number
+  readonly retries: number
 
   readonly apiKey?: string
-  readonly validateApiKey: boolean
   /**
-   * @deprecated Pass the token through `apiHeaders` instead.
+   * @deprecated The API key format is no longer validated on the client side;
+   * this option has no effect.
    */
-  readonly accessToken?: string
+  readonly validateApiKey?: boolean
 
   readonly headers?: Record<string, string>
 
   readonly proxy?: string
+  readonly httpVersion: HttpVersion
 
   constructor(opts?: ConnectionOpts) {
     this.apiKey = opts?.apiKey || ConnectionConfig.apiKey
-    this.validateApiKey =
-      opts?.validateApiKey ?? ConnectionConfig.validateApiKey
+    this.validateApiKey = opts?.validateApiKey
     this.debug = opts?.debug ?? ConnectionConfig.debug
     this.domain = opts?.domain || ConnectionConfig.domain
-    this.accessToken = opts?.accessToken || ConnectionConfig.accessToken
     this.requestTimeoutMs = opts?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
+    this.retries = resolveRetries(opts?.retries ?? DEFAULT_RETRIES)
     this.logger = opts?.logger
     this.headers = { ...(opts?.headers ?? {}), ...(opts?.apiHeaders ?? {}) }
     ConnectionConfig.applyUserAgent(this.headers)
     this.proxy = opts?.proxy
+    this.httpVersion = resolveHttpVersion(opts?.httpVersion)
 
     this.apiUrl =
       opts?.apiUrl ||
@@ -435,6 +496,43 @@ export class ConnectionConfig {
       (this.debug ? 'http://localhost:3000' : `https://api.${this.domain}`)
 
     this.sandboxUrl = opts?.sandboxUrl || ConnectionConfig.sandboxUrl
+  }
+
+  /**
+   * Merge connection options bound to a class (e.g. by an `E2B` client) with
+   * the per-call options. Per-call options win, then the bound options, then
+   * the environment variables resolved by the `ConnectionConfig` constructor.
+   *
+   * Explicitly `undefined` per-call values are dropped so they fall back to the
+   * bound options instead of clearing them.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  static mergeOpts<T extends ConnectionOpts>(
+    boundOpts: ConnectionOpts | undefined,
+    opts?: T
+  ): T | undefined {
+    if (!boundOpts) {
+      return opts
+    }
+
+    const merged: Record<string, unknown> = { ...boundOpts }
+    for (const [key, value] of Object.entries(opts ?? {})) {
+      if (value !== undefined) {
+        // `defineProperty` so a `__proto__` key (e.g. from parsed JSON) becomes
+        // a plain own property instead of changing the prototype.
+        Object.defineProperty(merged, key, {
+          value,
+          enumerable: true,
+          writable: true,
+          configurable: true,
+        })
+      }
+    }
+
+    return merged as T
   }
 
   private static get domain() {
@@ -455,16 +553,6 @@ export class ConnectionConfig {
 
   private static get apiKey() {
     return getEnvVar('E2B_API_KEY')
-  }
-
-  private static get validateApiKey() {
-    return (
-      (getEnvVar('E2B_VALIDATE_API_KEY') || 'true').toLowerCase() !== 'false'
-    )
-  }
-
-  private static get accessToken() {
-    return getEnvVar('E2B_ACCESS_TOKEN')
   }
 
   getSignal(requestTimeoutMs?: number, signal?: AbortSignal) {
@@ -514,6 +602,44 @@ export class ConnectionConfig {
     }
 
     return `${port}-${sandboxId}.${sandboxDomain ?? this.domain}`
+  }
+}
+
+/**
+ * Base class for the resource classes (`Sandbox`, `Volume`, `Template`,
+ * `Secret`) whose static methods build a `ConnectionConfig` from per-call
+ * options. An {@link E2B} client exposes subclasses of these with its own
+ * options bound, and every static method resolves them through
+ * {@link ClientFactory.resolveOpts}.
+ *
+ * @internal
+ * @hidden
+ * @hide
+ */
+export class ClientFactory {
+  /**
+   * Connection options bound to this class by an {@link E2B} client.
+   *
+   * Empty on the base classes, so the env-configured default path is unchanged.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  protected static readonly boundOpts?: Omit<ConnectionOpts, 'signal'>
+
+  /**
+   * Merge the connection options bound to this class with the per-call options,
+   * with the per-call options taking precedence.
+   *
+   * @internal
+   * @hidden
+   * @hide
+   */
+  protected static resolveOpts<T extends ConnectionOpts>(
+    opts?: T
+  ): T | undefined {
+    return ConnectionConfig.mergeOpts(this.boundOpts, opts)
   }
 }
 

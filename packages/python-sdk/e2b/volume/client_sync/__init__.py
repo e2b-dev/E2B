@@ -1,27 +1,33 @@
-import os
-import threading
-from typing import Dict, Optional
-
 import httpx
-from httpx import Limits
-from httpx._types import ProxyTypes
+from pyqwest.httpx import PyqwestTransport
 
-from e2b.api import connection_retries, make_logging_event_hooks
+from e2b.api import (
+    make_logging_event_hooks,
+    proxy_to_config,
+)
+from e2b.api.client_sync import get_httpx_transport
 from e2b.api.metadata import default_headers
 from e2b.exceptions import AuthenticationException
 from e2b.volume.client.client import AuthenticatedClient as VolumeApiClient
-from e2b.volume.connection_config import VolumeConnectionConfig
-
-limits = Limits(
-    max_keepalive_connections=int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20"),
-    max_connections=int(os.getenv("E2B_MAX_CONNECTIONS") or "2000"),
-    keepalive_expiry=int(os.getenv("E2B_KEEPALIVE_EXPIRY") or "300"),
-)
-
-TransportKey = Optional[ProxyTypes]
+from e2b.volume.connection_config import READ_TIMEOUT, VolumeConnectionConfig
 
 
 def get_api_client(config: VolumeConnectionConfig, **kwargs) -> VolumeApiClient:
+    """The client for volume content API calls."""
+    return _api_client(config, get_transport(config), **kwargs)
+
+
+def get_streaming_api_client(
+    config: VolumeConnectionConfig, **kwargs
+) -> VolumeApiClient:
+    """The client for streamed downloads: the same client on the streaming
+    transport, which bounds a stalled read (see :func:`get_streaming_transport`)."""
+    return _api_client(config, get_streaming_transport(config), **kwargs)
+
+
+def _api_client(
+    config: VolumeConnectionConfig, transport: PyqwestTransport, **kwargs
+) -> VolumeApiClient:
     if config.access_token is None:
         raise AuthenticationException(
             "Volume token is required for volume content operations. "
@@ -48,35 +54,39 @@ def get_api_client(config: VolumeConnectionConfig, **kwargs) -> VolumeApiClient:
         httpx_args={
             # The proxy lives in the cached transport; passing `proxy` here too
             # would mount a fresh, never-closed proxy transport per client.
-            "transport": get_transport(config),
+            "transport": transport,
             "event_hooks": make_logging_event_hooks(config.logger),
         },
         **kwargs,
     )
 
 
-class TransportWithLogger(httpx.HTTPTransport):
-    _thread_local = threading.local()
+def get_transport(config: VolumeConnectionConfig) -> PyqwestTransport:
+    """The shared pyqwest-backed httpx transport for volume content API calls —
+    the same pool the control-plane REST API and the envd HTTP API draw from
+    (see :func:`e2b.api.client_sync.get_pyqwest_transport`); reqwest pools per
+    host, so the volume host gets its own connections within it.
 
-    @property
-    def pool(self):
-        return self._pool
-
-
-def get_transport(config: VolumeConnectionConfig) -> TransportWithLogger:
-    instances: Dict[TransportKey, TransportWithLogger] = getattr(
-        TransportWithLogger._thread_local, "instances", {}
+    It carries no idle read bound: reqwest's read timer keeps running while a
+    request body is sent and while waiting for the response head, so one here
+    would cut off uploads and slow unary responses (they stay bounded by
+    their whole-request deadlines instead). Streamed downloads, which do need
+    an idle bound, use :func:`get_streaming_transport`.
+    """
+    return get_httpx_transport(
+        proxy_to_config(config.proxy), http_version=config.http_version
     )
-    key: TransportKey = config.proxy
-    cached = instances.get(key)
-    if cached is not None:
-        return cached
 
-    transport = TransportWithLogger(
-        limits=limits,
-        proxy=config.proxy,
-        retries=connection_retries,
+
+def get_streaming_transport(config: VolumeConnectionConfig) -> PyqwestTransport:
+    """The transport for streamed downloads, carrying ``READ_TIMEOUT`` as the
+    idle bound on every read: it resets after each successful read, so it caps
+    how long a streamed download may stall without limiting total transfer
+    time. It is fixed per pool — the adapter's per-request timeouts are
+    whole-request deadlines rather than idle bounds — so streamed downloads get
+    their own, shared with the sandbox filesystem's streaming transport
+    whenever the two bounds agree.
+    """
+    return get_httpx_transport(
+        proxy_to_config(config.proxy), READ_TIMEOUT, http_version=config.http_version
     )
-    instances[key] = transport
-    TransportWithLogger._thread_local.instances = instances
-    return transport

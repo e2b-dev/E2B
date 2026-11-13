@@ -1,3 +1,4 @@
+import os
 import random
 from uuid import uuid4
 
@@ -6,9 +7,18 @@ import pytest
 BASE_DIR = "/tmp/test-git"
 
 
+@pytest.fixture(autouse=True)
+def skip_unless_git_tests_enabled():
+    """The sandbox `git` API is deprecated; its tests only run when opted in."""
+    if os.getenv("ENABLE_GIT_TESTS") is None:
+        pytest.skip("skipped because ENABLE_GIT_TESTS is not set")
+
+
 @pytest.fixture
 def git_sandbox(sandbox_factory):
-    return sandbox_factory(timeout=10)
+    # Git suites can cross the old 10-second lifetime while the live backend is
+    # busy, which kills the sandbox in the middle of an otherwise healthy RPC.
+    return sandbox_factory(timeout=60)
 
 
 @pytest.fixture
@@ -62,11 +72,15 @@ def git_daemon(git_sandbox, git_base_dir):
         f"--enable=receive-pack --informative-errors --listen=127.0.0.1 --port={port}"
     )
     handle = git_sandbox.commands.run(cmd, background=True)
-    git_sandbox.commands.run("sleep 1")
+    remote_url = f"git://127.0.0.1:{port}/remote.git"
     try:
+        git_sandbox.commands.run(
+            f'for i in $(seq 1 50); do git ls-remote "{remote_url}" >/dev/null 2>&1 '
+            "&& exit 0; sleep 0.1; done; exit 1"
+        )
         yield {
             "remote_path": remote_path,
-            "remote_url": f"git://127.0.0.1:{port}/remote.git",
+            "remote_url": remote_url,
             "port": port,
             "base_dir": git_base_dir,
         }

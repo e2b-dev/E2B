@@ -1,0 +1,777 @@
+# e2b
+
+## 2.64.0
+
+### Minor Changes
+
+- 6a976f3: `e2b template list` and `e2b template delete` now use the SDK's `Template.list()` and `Template.delete()`. `TemplateInfo` gains `maxCpuCount` (`max_cpu_count` in Python) for resizable templates.
+
+  Breaking: `e2b template list -f json` now prints the SDK's `TemplateInfo` objects (`templateId`, `buildId`, `names`, …) instead of the raw API response (`templateID`, `buildID`, `aliases`, `createdBy`, …), and the pretty table drops the `Created by` column (the API deprecated the creator's email).
+
+- 1b3b2a4: Add `shell` option to `commands.run` to run the command in a custom shell, e.g. `shell: ['/bin/sh', '-c']` runs `/bin/sh -c <cmd>` (default stays `['/bin/bash', '-l', '-c']`)
+- 6ee9a4b: Add resizable templates: build a template with `maxCpuCount` and pick each sandbox's `cpuCount` on create. `e2b template list` shows a `Max vCPUs` column.
+- 106efea: The API client accepts an `Authorization` header in place of an API key. Requests can now authenticate with an OAuth access token passed through `apiHeaders` (JS) or `api_headers` (Python), together with the `X-Team-ID` header that selects the team:
+
+  ```ts
+  await Sandbox.create({
+    apiHeaders: { Authorization: `Bearer ${accessToken}`, 'X-Team-ID': teamId },
+  })
+  ```
+
+  ```python
+  Sandbox.create(api_headers={"Authorization": f"Bearer {access_token}", "X-Team-ID": team_id})
+  ```
+
+- c513ae1: Add `Template.delete(nameOrId)` (JS) and `Template.delete(name_or_id)` / `AsyncTemplate.delete(name_or_id)` (Python) to delete a template or snapshot; returns `false` when it isn't found. `Sandbox.deleteSnapshot` / `Sandbox.delete_snapshot` now share its implementation and raise `TemplateError` / `TemplateException` (subclasses of `SandboxError` / `SandboxException`) on failure
+- e50db00: Add `Template.list()` returning a `TemplatePaginator` (`AsyncTemplatePaginator` for `AsyncTemplate`) that pages through the project's templates as `TemplateInfo`, like `Sandbox.list()` and `Secret.list()`.
+
+### Patch Changes
+
+- cf7208a: Bump `@connectrpc/connect` and `@connectrpc/connect-web` to ^2.3.0 (HTTP/2 stream cleanup and cancellation fixes) and `glob` to ^14.0.3
+- Updated dependencies [aec4543]
+  - @e2b/dockerfile-utils@0.1.2
+
+## 2.63.0
+
+### Minor Changes
+
+- a8155c4: Add `strict` to `pause()` (default `false`). With `strict: true` / `strict=True` a pause is refused with `ServiceBusyError` / `ServiceBusyException` while the sandbox's guest agent does not respond, and the sandbox keeps running. Without it the API's default applies: the memory snapshot is taken anyway and marked. Sandbox info exposes the mark as `envdUnresponsiveAtPause` / `envd_unresponsive_at_pause`, and resuming such a sandbox without `onResume: 'reboot'` / `on_resume="reboot"` now throws `GuestUnresponsiveError` / `GuestUnresponsiveException`.
+
+## 2.62.2
+
+### Patch Changes
+
+- 08f05bb: Fix `TypeError: fetch failed` / `NGHTTP2_ENHANCE_YOUR_CALM` on concurrent `files.write()` calls. Node's HTTP/2 client queues each request body in full against a 10 MB per-session memory budget and resets the stream whose response arrives while it is exhausted; since undici 8 every envd request of a process shares one session, so parallel or large uploads reset each other and the reads next to them. `files.write()` uploads now go over HTTP/1.1 on a pool of their own (one request per connection, no shared budget; `E2B_ENVD_UPLOAD_CONNECTIONS`, default 50), and an envd dispatcher whose HTTP/2 session Node reports as out of memory is retired and replaced instead of failing every later request. Nothing is retried: a failed write may already have been applied.
+- 1ad3f76: Template builds hash `copy()` files in 1 MB chunks instead of reading each file fully into memory, cutting peak memory for large files. Hashes are unchanged, so existing build caches stay valid.
+
+## 2.62.1
+
+### Patch Changes
+
+- 320f39d: Update the `glob` dependency to v14.
+- 36258c1: `files.write()`, `files.writeFiles()` and `Volume.writeFile()` accept `Uint8Array`, including a Node.js `Buffer`.
+- 8e37561: Raise the minimum `undici` version to 8.12.3, which replaces HTTP/2 connections that stop responding after a stream timeout.
+
+## 2.62.0
+
+### Minor Changes
+
+- 9fdfa21: Add `retainOutput` (JS) / `retain_output` (Python) option to `commands.run` and `commands.connect` (default `true`)
+
+  - When `false`, stdout/stderr are not buffered in memory; `stdout`/`stderr` on the handle, result and `CommandExitError`/`CommandExitException` are `undefined`/`None`
+  - Output callbacks (`onStdout`/`onStderr`, `on_stdout`/`on_stderr`) still receive all output
+
+- d58ef55: `files.write` streams iterables of byte chunks to the sandbox instead of buffering them:
+
+  - JS: `AsyncIterable<Uint8Array>` data (async generators, Node.js `Readable`), alongside `ReadableStream`.
+  - Python: `Iterable[bytes]` in `Sandbox` and `AsyncIterable[bytes]` in `AsyncSandbox`; each SDK rejects the other's iterable kind with `InvalidArgumentException`.
+
+  Stream data always uses the octet-stream upload, works with `gzip`, and is never buffered in memory. In browsers that can't stream a request body (Firefox, Safari and every iOS browser), JS stream data throws `InvalidArgumentError` instead (pass a `Blob`, e.g. `await new Response(stream).blob()`); Chromium-based browsers stream it. A chunk that isn't bytes throws `InvalidArgumentError` / `InvalidArgumentException` rather than a transport error.
+
+  Python file-like objects that aren't `io.IOBase` but have a sync `read()` (`tempfile.NamedTemporaryFile()`, werkzeug `FileStorage`, Django `File`) are uploaded as files; objects with an async `read()` (aiofiles, aiohttp `response.content`) are consumed as async iterables by `AsyncSandbox`. `WriteEntry` (`str`, `bytes` or file-like data) is accepted by both `Sandbox.files.write_files` and `AsyncSandbox.files.write_files`; the new `SyncWriteEntry` and `AsyncWriteEntry` additionally take `Iterable[bytes]` / `AsyncIterable[bytes]`.
+
+  **Breaking (JS):** `ReadableStream` / `AsyncIterable` data is no longer buffered: browsers without streaming request bodies throw, and multipart is refused — `useOctetStream: false` throws `InvalidArgumentError`, and an envd older than 0.5.7 throws `TemplateError`. Python raises `InvalidArgumentException` / `TemplateException` for iterables in the same cases.
+
+  **Breaking (both SDKs):** `gzip: true` with `useOctetStream: false` / `gzip=True, use_octet_stream=False` is now rejected as an invalid combination (`InvalidArgumentError` / `InvalidArgumentException`) instead of gzip silently overriding it.
+
+## 2.61.0
+
+### Minor Changes
+
+- bea0fe6: - Added an `idempotencyKey` (JavaScript) and `idempotency_key` (Python) option
+  to `Sandbox.create` that sends `Idempotency-Key` on sandbox creation. Keys
+  must contain 1–255 lowercase ASCII letters, digits or hyphens.
+
+## 2.60.0
+
+### Minor Changes
+
+- e514999: Retry control-plane API errors marked `Should-Retry: true`, or 429/502/503/504 responses without the header (e.g. from a load balancer); `Should-Retry: false` is never retried.
+
+  - Removes method and replayable-operation retry allowlists
+  - Post-send network errors are no longer retried; connection failures still are
+
+### Patch Changes
+
+- 451a696: Preserve omitted public-traffic options during Python sandbox creation so the server applies its default. Normalize null network responses to omitted values in Python and JavaScript. Explicit true and false values are unchanged.
+- a2b2cae: Bump `undici` to `^8.12.2` to fix CVE-2026-109869 (GHSA-xjj6-f33q-929c, high): denial of service via unhandled error on excessive content-encodings
+
+## 2.59.0
+
+### Minor Changes
+
+- e5a9fa6: Add `dnsServers` to the network options (`dns_servers` in Python): the DNS servers a sandbox can reach when `allowOut` contains a domain. Leave it out to allow the default, 8.8.8.8, pass a list of IPs to allow those instead, or pass `[]` to allow none. It only opens the firewall and doesn't change the sandbox's `/etc/resolv.conf`. `updateNetwork`/`update_network` reset it to the default when it is left out, like the other fields, and `getInfo`/`get_info` report it when set.
+
+### Patch Changes
+
+- 5a714f0: Deprecate the `apiUrl` / `api_url` and `sandboxUrl` / `sandbox_url` connection options and their `E2B_API_URL` and `E2B_SANDBOX_URL` environment variables. They keep working for now and will be removed in the next major version.
+- 61b6b55: Use the unified `https://sandbox.<domain>` endpoint for sandbox traffic on `e2b-tango.dev`, `e2b-juliett.dev` and `foxtrot-2.e2b.dev`.
+
+## 2.58.0
+
+### Minor Changes
+
+- 3c4c7cf: - JS: `sandbox.commands.streamInput(pid)` / `sandbox.pty.streamInput(pid)` return a `CommandInputHandle` that sends ordered stdin/PTY input over one `StreamInput` RPC.
+  - Python async: `stream_input(pid)` returns an `AsyncCommandInputHandle`; Python sync: `stream_input(pid, data)` blocks while it sends an iterable of input.
+
+## 2.57.0
+
+### Minor Changes
+
+- a1ad326: Add `tls` to the egress proxy options as `true` or `{ serverName?, caCert? }` (`server_name`/`ca_cert` in Python); `getInfo`/`get_info` reports it without the CA.
+
+### Patch Changes
+
+- 9f4a9ef: Bump `@bufbuild/protobuf` to ^2.16.0
+- 999782e: Share the process kill implementation between commands and PTY, share the CLI `--language` option parser between `template init` and `template migrate`, and drop unused internal exports
+
+## 2.56.0
+
+### Minor Changes
+
+- 6a74c39: Require Node.js 22.19.0 or newer and depend on `undici@^8` only (undici 7 is dropped).
+
+  - undici 8 respects the server's HTTP/2 `SETTINGS_MAX_CONCURRENT_STREAMS` and opens more connections when one is saturated.
+  - Breaking: the SDK-level in-flight request cap is removed, along with the `E2B_API_INFLIGHT_REQUESTS`, `E2B_ENVD_INFLIGHT_REQUESTS` and `E2B_ENVD_RPC_INFLIGHT_REQUESTS` env vars. Concurrency is governed by undici's connection pools (`E2B_API_CONNECTIONS`, `E2B_ENVD_RPC_CONNECTIONS`).
+
+- 73a784d: Require Node.js 22 or newer (Node.js 20 is no longer supported).
+
+### Patch Changes
+
+- Updated dependencies [73a784d]
+  - @e2b/dockerfile-utils@0.1.1
+
+## 2.55.0
+
+### Minor Changes
+
+- b52cd30: Add `mode: 'full' | 'filesystem'` (exported as the `SnapshotMode` type) to `createSnapshot` / `create_snapshot`. With `'filesystem'`, only the filesystem is persisted: the snapshot is smaller and faster to take, and sandboxes created from it cold-boot (start fresh from disk) instead of restoring memory. The source sandbox keeps running either way. Omitted, the API default (a full memory snapshot) applies.
+
+  `pause()` and the `lifecycle.onTimeout` / `lifecycle["on_timeout"]` pause object form accept the same `mode`. Their `keepMemory` / `keep_memory` option is deprecated in favor of it (`keepMemory: false` is `mode: 'filesystem'`) and keeps working; passing both is an `InvalidArgumentError` / `InvalidArgumentException`.
+
+### Patch Changes
+
+- 0894595: Remove dead empty-chunk guards from command output handling; envd never sends empty output chunks, so behavior is unchanged.
+
+## 2.54.0
+
+### Minor Changes
+
+- cc85f69: Replace the third-party Dockerfile parsers (`dockerfile-ast`, `dockerfile-parse`) used by `Template.fromDockerfile` / `Template.from_dockerfile` with a built-in parser ported from BuildKit. Quoted and escaped values in `ENV`/`ARG`/`COPY`, whitespace inside `RUN`/`CMD` arguments, mixed-case `AS` aliases, comments in line continuations, the `# escape=` directive, `COPY --chmod`, heredocs and `ENTRYPOINT` + `CMD` combination are now handled consistently in both SDKs. A `.dockerignore` line consisting of a lone `!` is now rejected, as Docker does, instead of being skipped.
+
+### Patch Changes
+
+- Updated dependencies [cc85f69]
+  - @e2b/dockerfile-utils@0.1.0
+
+## 2.53.1
+
+### Patch Changes
+
+- cd4c62b: Publish the changes from the previous release, which was versioned but failed to publish to npm and PyPI.
+
+## 2.53.0
+
+### Minor Changes
+
+- 1de92fc: Add `SandboxNotRunningError` / `SandboxNotRunningException` and `SandboxUnreachableError` / `SandboxUnreachableException` for envd requests that fail because the sandbox cannot be reached. Both extend `TimeoutError` / `TimeoutException`, which these cases raised before, so existing `instanceof TimeoutError` / `except TimeoutException` handling keeps working.
+
+  - `SandboxNotRunning*` — the proxy answered `502 "The sandbox was not found"` (killed, paused or timed out), either directly or from the health probe the SDK runs after a dropped connection or an unexplained `Unavailable` (e.g. the sandbox was killed mid-command). Retrying will not help.
+  - `SandboxUnreachable*` — the sandbox is not confirmed stopped but cannot be reached: `502 "port is not open"`, other `502`s, or a connection failure whose health probe got no answer. The original error is the `cause` / `__cause__`.
+  - A connection failure whose health probe finds the sandbox running still raises the original transport error. The probe itself runs without connection retries.
+
+  **Breaking (JS):** `commands.run` / `connect`, `pty.create` / `connect` and `files.watchDir` on a gone sandbox now throw `SandboxNotRunningError` instead of `SandboxNotFoundError`, like every other call. `SandboxNotFoundError` is only raised by the control plane API.
+
+### Patch Changes
+
+- 8f51c9f: Share the sandbox create/connect/fork response mapping (JS and Python) and the Python `Commands.run` / `Commands.connect` handle setup
+- b3bb653: Remove the `E2B_USER_AGENT_SOURCE` environment variable. The SDKs no longer add a `source/<value>` User-Agent token, append `?source=` to Code Interpreter requests, or log trace IDs and add `(trace_id=…)` to error messages when it is set to `ci`, so SDK behavior no longer depends on that variable.
+
+  Code Interpreter errors for statuses other than 404 and 502 now use the same `<status> <reason>[: <body>]` message in JS and Python: JS includes the response body, and Python falls back to the reason phrase when the body is empty.
+
+## 2.52.1
+
+### Patch Changes
+
+- cc29617: Match BuildKit when filtering the template build context with `.dockerignore`: a leading `**` followed by literal characters (e.g. `**.txt`) now matches at any depth, a negated pattern matching only a parent directory (e.g. `src/app.ts` then `!src`) no longer re-includes the path, and in the JS SDK `?` and bracket expressions match characters outside the BMP (e.g. emoji) as a single character.
+- 3ba1d05: Retry a `502` response only for operations that are safe to replay: a gateway may answer `502` after the API already processed the request, so a `502` from sandbox creation, fork, snapshot or another resource-creating `POST` is returned instead of being retried (which could create a duplicate). `503` is still retried for every operation. Secret updates (`POST /secrets/{id}`) are no longer replayed after a `502` or a dropped connection, as each update appends a new version.
+- 4813482: Bump dependency floors: `undici` `^7.29.1 → ^7.30.0` and optional `undici8` `8.10.2 → 8.11.2` (backported HTTP/2 WebSocket, decompression backpressure and aborted-request fixes), `compare-versions` `^6.1.0 → ^6.1.1` in `e2b`, and `inquirer` `^12.10.0 → ^12.11.1` in `@e2b/cli`.
+- d0ed5c1: fix(js-sdk): treat `WatchHandle.stop()` as a clean watch end - `onExit` now fires with no error instead of a `TimeoutError` blaming `requestTimeoutMs`, matching the Python SDK behavior.
+
+## 2.52.0
+
+### Minor Changes
+
+- 2de0cc3: Cap sandbox fork count at 20. `e2b sandbox fork --count`, JavaScript `Sandbox.fork({ count })`, and Python `Sandbox.fork(count=...)` reject a count outside 1–20 before the API call. Counts from 21 through 100 used to reach the API. Omitting count still leaves the field off the request so the API default applies.
+- 03887ad: Apply `.dockerignore` and `fileIgnorePatterns` / `file_ignore_patterns` the way Docker does when copying files into a template, so ignored files are no longer uploaded or included in the files hash:
+
+  - A pattern that matches a directory (`node_modules`, `.git`, `dist/`) now excludes everything under it, and a leading `/` is ignored.
+  - `!` patterns re-include paths; the last matching pattern wins.
+  - In Python, patterns now also apply when the copied path contains `.` or `..` segments (for example `copy(".")`).
+  - `fileIgnorePatterns` / `file_ignore_patterns` are applied after the `.dockerignore` lines, so they take precedence.
+  - Absolute patterns pointing into the context directory are treated as relative to it.
+  - Brace expansion (`{a,b}`) is not supported, as in Docker. In JS, `fileIgnorePatterns` such as `**/*.{env,pem}` previously expanded and now match `{env,pem}` literally; list each pattern separately instead (`**/*.env`, `**/*.pem`).
+  - In Python, copying a symlink to a directory copies the link itself instead of the directory's contents, as in JS.
+  - Copying a path inside an ignored directory now fails with "No files found", as in Docker. An invalid pattern (such as an unterminated `[`) now raises an error.
+
+  Directory sizes are no longer part of the files hash, since they depend on the filesystem rather than on the copied files. The files hash of `copy()` steps that copy directories or are affected by ignore patterns changes once, so those steps are rebuilt on the next build.
+
+- 2f92cc3: Add an `http_version` (Python) / `httpVersion` (JS) connection option, `"1.1"` or `"2"` (default), also settable with the `E2B_HTTP_VERSION` environment variable, to pin requests to the E2B API, to sandboxes (commands, filesystem, PTY) and to volume content to HTTP/1.1. It can also be bound once on a client: `E2B(http_version="1.1")` / `new E2B({ httpVersion: '1.1' })`.
+
+### Patch Changes
+
+- 8c7e5cb: Update the Cloudflare Vitest pool dependency to include a worker disposal fix.
+- 97522f8: Retry control-plane HTTP requests after `502` and `503` responses and failures to establish the connection (connection refused, DNS, unreachable host), in addition to `429`. Any other network error (dropped connection, or the opaque `TypeError` browsers and Cloudflare Workers raise) is retried too, except for `POST` operations not known to be safe to replay (sandbox creation, fork, snapshot, volume/secret/API-key/webhook creation), which the server may already have processed. `Retry-After` is honored when the server sends one; otherwise retries back off exponentially with jitter, starting at 100 ms and capped at 10 s. The existing `retries` option (default 3, `0` to disable) and request-timeout budget apply to all of them.
+- 8c7e5cb: Update the protobuf and OpenAPI clients, terminal styling, and interactive prompts to compatible minor releases.
+- 4975149: Remove unused internal constants and attributes, and share the command handle setup between `Commands.run` and `Commands.connect`
+
+## 2.51.0
+
+### Minor Changes
+
+- 5c0f6eb: Remove SDK-side defaults from API request payloads so the API defaults apply when options are omitted. Sandbox create/fork/connect no longer preset a 5-minute timeout, fork no longer presets `count: 1`, create no longer presets `allow_internet_access`, pause no longer presets keeping memory, and template builds no longer preset CPU/memory. Explicitly provided values are still sent unchanged.
+
+  Sandbox create and connect now use the v2 API endpoints (`POST /v2/sandboxes`, `POST /v2/sandboxes/{id}/connect`), which default `timeout` to 5 minutes and always secure envd access. The `secure` option on `Sandbox.create` is deprecated: every sandbox is secured, so the option is still accepted but ignored.
+
+### Patch Changes
+
+- 5c0f6eb: Remove client-side validation of the fork `count` argument. The API validates the requested fork count and rejects invalid values.
+
+## 2.50.0
+
+### Minor Changes
+
+- 5b015ad: Removed the V1 template build operations and schemas from the generated API clients. The API no longer serves them (runtime `87968fc1e1fa`); control planes carrying that change answer `410 Gone`. Template builds go through the Template SDK.
+
+  Visible removal, classified minor: the JS `paths` namespace loses `POST /templates`, `POST /templates/{templateID}`, `POST /templates/{templateID}/builds/{buildID}` and `POST /v2/templates`, and `components['schemas']` loses `TemplateLegacy`, `TemplateBuildRequest` and `TemplateBuildRequestV2`; the Python `e2b.api.client.models` package loses `TemplateLegacy`, `TemplateBuildRequest` and `TemplateBuildRequestV2`, and `e2b.api.client.api.templates` loses the `post_templates`, `post_templates_template_id`, `post_templates_template_id_builds_build_id` and `post_v2_templates` modules. No SDK method accepted or returned them; code that imported these names directly must drop the import.
+
+  The regenerated clients also pick up a documented `429` on most operations, a `409` on template create (v3), the upload-request `headers` on the build file-upload link, `minLength: 1` on the v2 build source fields, and a deprecation marker on the always-empty `logs` field of the build status.
+
+### Patch Changes
+
+- 956e3ab: Apply the request headers the API returns with a template layer-file upload link. Azure Blob Storage requires `x-ms-blob-type` on the upload request, which its signed URL cannot carry, so `COPY` instructions failed on Azure-backed clusters. GCS- and S3-backed clusters return no headers and are unaffected.
+- e1fbe86: Bump `@connectrpc/connect` and `@connectrpc/connect-web` to 2.2.0 (fixes `Http2SessionManager.verify()` hanging when the connection closes mid-verification and stops delivering stream messages after cancellation).
+- 80496c0: Fix uploads of non-native `ReadableStream`s in the browser silently sending the text `[object ReadableStream]` instead of the data. Buffering a stream drained it with `new Response(stream)`, which accepts any async iterable on Node (an undici extension) but only its own stream class in a browser, stringifying anything else. Streams are now drained through the reader, which every implementation supports.
+- 80496c0: Report a sandbox killed mid-request as an actionable `TimeoutError` in the browser. When the connection to a sandbox drops mid-request the SDK probes the sandbox's health to tell a killed sandbox apart from a transient network blip, but the probe only ran for connection-dropped wordings it recognized, and the browser's (`network error`) was missing — so killing a sandbox while a command was running surfaced a generic `SandboxError: [unknown] network error` instead of `TimeoutError: ... The sandbox was killed or reached its end of life while the request was in flight.`
+- e1fbe86: Bump `undici` to 7.29.1 and the optional `undici8` fallback to 8.10.2 to pick up the September 2026 security fixes.
+
+## 2.49.1
+
+### Patch Changes
+
+- 90e3fc5: Reject invalid `Sandbox.create` lifecycle options and `Sandbox.connect` `onResume` values before requiring an API key, matching the Python SDK.
+- 5e418dc: Document that `onResume` / `on_resume` needs a control plane that knows the option: an older self-hosted or BYOC control plane drops the `memory` field and restores memory while reporting success, instead of rejecting the request.
+- 9136603: Retry control-plane HTTP requests up to three times after `429` responses using the server's delta-seconds `Retry-After` delay. Retries can be configured or disabled with `retries`, and stop when waiting would exhaust the request timeout. Envd requests, including filesystem operations, and volume-content requests are not retried.
+
+## 2.49.0
+
+### Minor Changes
+
+- f842aa8: Expose a configurable minimum free-disk target with `minFreeDiskMb` in JavaScript, `min_free_disk_mb` in Python, and `--min-free-disk-mb` in `template create`. Omission uses the team default, while explicit zero requests no minimum growth. Growth is best effort and never shrinks an existing filesystem.
+
+## 2.48.0
+
+### Minor Changes
+
+- 08efa36: Add `httpsPorts` (JS) / `https_ports` (Python) to the sandbox network config. Ports listed there have their public URLs proxied to the sandbox over HTTPS — use it when the service listening on the port serves TLS itself. This is not TLS passthrough: traffic is still terminated at the E2B proxy and re-encrypted on the hop to the sandbox, and the backend certificate is not verified, so self-signed certificates work. The configured ports are also returned in the sandbox info network config.
+- 6b759bf: Add `ServiceBusyError` (JavaScript) / `ServiceBusyException` (Python) for HTTP 503 responses: the API refused the operation because the service or the node running the sandbox is temporarily busy, the sandbox is unchanged, and the call can be retried. A refused `pause()` is the first case. The base `SandboxError` / `SandboxException` also carries the HTTP status as `statusCode` / `status_code` when the error came from an API response, so callers can branch on the status without parsing the message. Like `AuthenticationError` / `AuthenticationException`, the new class does not subclass the sandbox base error: it is raised for every 503 whatever the operation, so catch it explicitly.
+
+### Patch Changes
+
+- 58c81f1: `onTimeout` / `on_timeout` and `onResume` / `on_resume` now raise `InvalidArgumentError` / `InvalidArgumentException` for a value outside their two literals, instead of silently resolving it to the other one. Both are resolved into a boolean before the request is built, so the value never reaches the API and a typo cannot be rejected server-side: `on_timeout="Pause"` previously resolved to `kill` and deleted the sandbox and its snapshot at timeout, and `on_resume="Reboot"` previously restored the memory the caller asked to skip. A nullish value still means "not configured" and leaves the choice to the API.
+
+## 2.47.0
+
+### Minor Changes
+
+- 1980d6b: Add `onResume` / `on_resume` to `Sandbox.connect()`: `'reboot'` resumes a paused sandbox from its disk state alone, leaving the memory snapshot untouched, for the case where restoring that memory wedges the guest. `'restore'` stays the default. Where filesystem-only resume is not enabled, a `'reboot'` that would actually drop memory is rejected with an error rather than silently restoring it.
+- 043d050: Removed generated types for endpoints the SDKs never exposed. The JS `components['schemas']` namespace and the Python `e2b.api.client.models` package no longer include the admin, cluster/rig, node, team-API-key and access-token schemas (`Node`, `NodeDetail`, `NodeMetrics`, `NodeStatus`, `NodeStatusChange`, `MachineInfo`, `DiskMetrics`, `Rig*`, `Admin*`, `TeamAPIKey`, `NewTeamAPIKey`, `CreatedTeamAPIKey`, `UpdateTeamAPIKey`, `IdentifierMaskingDetails`, `VolumeToken`; Python additionally `Team`, `TeamMetric`, `MaxTeamMetric`, `CreatedAccessToken`, `NewAccessToken`). No SDK method ever accepted or returned them, so code that uses the SDK through its methods is unaffected; code that imported these type names directly must drop the import.
+
+### Patch Changes
+
+- cd921aa: Bump `@bufbuild/protobuf` to ^2.14.1 and the optional `undici8` dependency to undici@8.10.1
+- 3289fdc: Remove unused CLI formatting helpers and de-duplicate internal constants
+
+## 2.46.1
+
+### Patch Changes
+
+- d4a7f41: Deprecate the sandbox git module (`sandbox.git`) and its public types and errors. Run git through the commands module instead, e.g. `sandbox.commands.run('git clone <url> repo')`. The module keeps working and will be removed in the next major version.
+
+## 2.46.0
+
+### Minor Changes
+
+- 9d1c90d: Remove client-side API key format validation. The SDK no longer checks that the API key matches the `e2b_` hex format — only that a key is present. The `validateApiKey`/`validate_api_key` option is deprecated and has no effect, and the `E2B_VALIDATE_API_KEY` environment variable is no longer read. The server remains the source of truth for key validity.
+
+### Patch Changes
+
+- 67c06e0: Point the two Code Interpreter README links at `code-interpreting/analyze-data-with-ai` instead of the `code-interpreting` section index. The index has no landing page and 307s to that article, dropping the query string on the way, so the UTM parameters were lost before the reader arrived. Linking at the resolved path keeps them.
+- 8943d6f: Update runtime dependencies: `tar` 7.5.22 and `@bufbuild/protobuf` 2.14.0 in the JS SDK, `statuses` 2.0.2, `async-listen` 3.1.0 and `yup` 1.7.1 in the CLI. No behavior change.
+- 182b498: Point the README documentation links at `docs.e2b.dev` instead of `e2b.dev/docs`. The docs site moved to its own subdomain and has no `/docs` path prefix there, so `e2b.dev/docs` serves a 308 to `docs.e2b.dev/` and `e2b.dev/docs/code-interpreting` maps to `docs.e2b.dev/code-interpreting`. The UTM parameters are unchanged and survived the redirect, so this removes a redirect hop rather than fixing broken attribution.
+- b802997: Fix two `network.egressProxy` / `network["egress_proxy"]` cases an untyped caller reaches.
+
+  The JS SDK had no shape guard: `buildEgressProxyBody` rebuilds the body from the known fields, so an `address` that was missing or not a string vanished and the caller got an API error about a config they never wrote (`{"egressProxy":{}}`). It now raises `InvalidArgumentError` naming the option, the way the Python SDK already did:
+
+  ```ts
+  // InvalidArgumentError: network egressProxy must be an object with a string
+  // 'address' (e.g. 'proxy.example.com:1080').
+  await Sandbox.create({
+    network: { egressProxy: 'proxy.example.com:1080' as never },
+  })
+  ```
+
+  A `null` / `None` username or password is now treated as absent instead of being serialized as a JSON null the API rejects — reading a credential out of an unset environment variable is how a caller lands there, and it means the proxy takes no credentials:
+
+  ```ts
+  await Sandbox.create({
+    network: {
+      egressProxy: {
+        address: 'proxy.example.com:1080',
+        // Unset in the environment; the proxy takes no credentials.
+        username: process.env.PROXY_USER,
+      },
+    },
+  })
+  ```
+
+  ```python
+  Sandbox.create(
+      network={
+          "egress_proxy": {
+              "address": "proxy.example.com:1080",
+              "username": os.environ.get("PROXY_USER"),
+          },
+      },
+  )
+  ```
+
+## 2.45.0
+
+### Minor Changes
+
+- 8787dfe: Add sorting and new filters to `Sandbox.list`. The `order` option (`'asc'` / `'desc'`, default `'desc'`) sorts sandboxes by start time across the whole paginated dataset, and the query now supports `startedAfter` / `started_after` (inclusive lower bound on start time) and `template` (exact template ID or alias) filters, all applied server-side before pagination. The CLI `e2b sandbox list` command exposes these via `--order`, `--started-after`, and `--template`.
+
+## 2.44.1
+
+### Patch Changes
+
+- d000bbd: Fix `Volume.exists()` to return `false` for missing paths again — `getInfo()` now throws `VolumePathNotFoundError` (which no longer subclasses the deprecated `NotFoundError`), so the 404 catch is updated accordingly.
+
+## 2.44.0
+
+### Minor Changes
+
+- 5759f17: Add an `E2B` client that binds a connection config once and exposes the resource surfaces off it, so a single process can talk to several API keys, domains or deployments. The classes it exposes are per-client subclasses of the real `Sandbox`/`Volume`/`Template`/`Secret` classes, so they behave exactly like the top-level ones — per-call options still win over the client's options, which win over the environment variables. The named top-level exports are unchanged and keep reading the environment.
+
+  Nothing existing changes: `Template` is now the `TemplateBase` class made callable as a factory, so `Template(...)`, the statics and `instanceof` keep working, and the default export is still `Sandbox`.
+
+  ```ts
+  import { E2B } from 'e2b'
+
+  const { Sandbox, Volume, Template, Secret } = new E2B({
+    apiKey: 'e2b_***',
+    domain: 'e2b.dev',
+  })
+
+  const sandbox = await Sandbox.create()
+  const volume = await Volume.create('my-volume')
+  const exists = await Template.exists('my-template')
+  await Template.build(Template().fromPythonImage('3'), 'my-env')
+  await Secret.create('openai-api-key', 'sk-***')
+  ```
+
+  ```python
+  from e2b import E2B
+
+  client = E2B(api_key="e2b_***", domain="e2b.dev")
+  Sandbox, Volume, Template = client.Sandbox, client.Volume, client.Template
+  Secret = client.Secret
+
+  sandbox = Sandbox.create()
+  volume = Volume.create("my-volume")
+  exists = Template.exists("my-template")
+  secret = Secret.create("openai-api-key", "sk-***")
+
+  # Async variants are exposed too.
+  AsyncSandbox = client.AsyncSandbox
+  async_sandbox = await AsyncSandbox.create()
+  ```
+
+## 2.43.0
+
+### Minor Changes
+
+- f89f8c3: Add Secrets Management to the SDK. The `Secret` class (and `AsyncSecret` in Python) now manages E2B secrets: `create` and `update` store secret values (write-only — no read surface returns them), `getInfo` / `get_info` and the paginated `list` read metadata, `exists` and `destroy` are idempotent existence and lifecycle helpers, and `fill` formats the `${e2b.secrets.name}` placeholder that the runtime resolves to the secret's current value.
+
+### Patch Changes
+
+- 61503f7: Report `iam.tokens.toJSON`, `.then`, `.toString` and `.valueOf` as unregistered workload tokens in a network `transform` callback. These four names were exempt from the unknown-token guard because the runtime reads them off any object it serializes, awaits or coerces, so referencing one as a token name used to serialize `Bearer undefined` or a built-in's source text into the rule. Such a value carries no placeholder for the egress proxy to resolve, so it was forwarded verbatim and the destination answered 401 on a garbage credential, with no error from E2B. They now throw `InvalidArgumentError` like any other unregistered name — on use rather than on the read, so serializing, awaiting and coercing the map itself keep working. The Python SDK was not affected.
+
+  ```ts
+  import { Sandbox, Secret } from 'e2b'
+
+  await Sandbox.create({
+    iam: {
+      tokens: {
+        aws: Secret.iamToken({
+          audience: 'sts.amazonaws.com',
+          tokenType: 'JWT-SVID',
+        }),
+      },
+    },
+    network: {
+      rules: {
+        'api.example.com': [
+          {
+            // InvalidArgumentError: Network transform references iam token
+            // 'then', which is not registered. Registered tokens: 'aws'.
+            transform: ({ iam }) => ({
+              headers: { Authorization: `Bearer ${iam.tokens.then}` },
+            }),
+          },
+        ],
+      },
+    },
+  })
+  ```
+
+- d79c6cd: Remove the unused `stackTrace` constructor parameter from error classes that never have a caller stack trace attached (`TimeoutError`, `NotEnoughSpaceError`, `NotFoundError`, `FileNotFoundError`, `SandboxNotFoundError`, `GitUpstreamError`, `VolumeNotFoundError`, `VolumePathNotFoundError`).
+- 2be6c12: Internal refactor: the template API operations resolve their connection config through a class-level hook, so a `TemplateBase` subclass can carry bound connection options. No behavior change — `Template` / `AsyncTemplate` keep reading config from per-call options and environment variables. In the Python SDK the terminal template operations (`build`, `build_in_background`, `get_build_status`, `exists`, `alias_exists`, `assign_tags`, `remove_tags`, `get_tags`) became `classmethod`s, with signatures unchanged for callers.
+- 05aa03c: Add typed not-found errors for volumes: `VolumeNotFoundError` / `VolumeNotFoundException` (thrown when a volume is not found) and `VolumePathNotFoundError` / `VolumePathNotFoundException` (thrown when a path inside a volume is not found). All subclass the existing `NotFoundError` / `NotFoundException`, so existing catches keep working.
+
+## 2.42.0
+
+### Minor Changes
+
+- 7af41e9: Refresh the MCP server types from the current MCP gateway catalog: 49 servers are new (`n8n`, `neo4j`, `okta`, `temporal`, `proxmox`, `zscaler`, the AWS Labs family, ...), 61 titles and 10 descriptions were rewritten, and 4 servers changed their options (`awsDiagram`, `context7`, `neo4jCypher`, `onlyofficeDocspace`).
+
+  Six servers the catalog no longer publishes are gone from `McpServer`: `postgres`, `root`, `tembo`, `flexprice`, `triplewhale`, `cdataConnectcloud`. `awsDiagram` and `context7` now require an option (`outputDir` and `apiKey`), so `awsDiagram: {}` and `context7: {}` stop type-checking, and `onlyofficeDocspace` is down to `baseUrl` and `docspaceApiKey`. The removals also narrow `McpServerName`, so `Template().addMcpServer('postgres')` stops compiling. The config is still passed to the gateway as written, so a dropped server can be kept by casting past the type — whether it starts is up to the gateway.
+
+  ```ts
+  import { Sandbox } from 'e2b'
+
+  const sandbox = await Sandbox.create({
+    mcp: {
+      n8n: {
+        apiKey: process.env.N8N_API_KEY!,
+        apiUrl: 'https://n8n.example.com/api/v1',
+      },
+    },
+  })
+  ```
+
+### Patch Changes
+
+- 15bd48b: Omit `autoPause` from the create-sandbox request when no timeout lifecycle is configured, and omit `autoPauseMemory` unless `keepMemory` / `keep_memory` was chosen. Sending the SDK's local defaults for those fields was indistinguishable from an explicit choice, so the API could not tell "no preference" from a client choice and own its defaults. Explicit values are still always sent:
+
+  ```ts
+  import { Sandbox } from 'e2b'
+
+  // No timeout lifecycle: autoPause is omitted, the API applies its default.
+  await Sandbox.create()
+
+  // Explicit action: autoPause: false / autoPause: true, as before.
+  await Sandbox.create({ lifecycle: { onTimeout: 'kill' } })
+  await Sandbox.create({ lifecycle: { onTimeout: 'pause' } })
+
+  // Snapshot kind is only sent when keepMemory is set.
+  await Sandbox.create({
+    lifecycle: { onTimeout: { action: 'pause', keepMemory: false } },
+  })
+  ```
+
+  ```python
+  from e2b import Sandbox
+
+  # No timeout lifecycle: auto_pause is omitted, the API applies its default.
+  Sandbox.create()
+
+  # Explicit action: autoPause: false / autoPause: true, as before.
+  Sandbox.create(lifecycle={"on_timeout": "kill"})
+  Sandbox.create(lifecycle={"on_timeout": "pause"})
+
+  # Snapshot kind is only sent when keep_memory is set.
+  Sandbox.create(
+      lifecycle={"on_timeout": {"action": "pause", "keep_memory": False}}
+  )
+  ```
+
+- 5367693: Omit `autoResume` from the `POST /sandboxes` request when `lifecycle.autoResume` / `lifecycle["auto_resume"]` is not configured, instead of sending the SDK's local default as `{ "autoResume": { "enabled": false } }`. The API can now tell an unset preference from an explicit opt-out and own the default itself. Explicit values are unchanged on the wire.
+
+  ```ts
+  import { Sandbox } from 'e2b'
+
+  // autoResume is left out of the request entirely — the API's default applies
+  await Sandbox.create({ lifecycle: { onTimeout: 'pause' } })
+
+  // an explicit choice is still sent as before
+  await Sandbox.create({ lifecycle: { onTimeout: 'pause', autoResume: true } })
+  ```
+
+  ```python
+  from e2b import Sandbox
+
+  # auto_resume is left out of the request entirely — the API's default applies
+  Sandbox.create(lifecycle={"on_timeout": "pause"})
+
+  # an explicit choice is still sent as before
+  Sandbox.create(lifecycle={"on_timeout": "pause", "auto_resume": True})
+  ```
+
+- 2daced6: Tag the package homepage and README links with UTM parameters (`utm_source=npm`/`pypi`) so registry traffic to e2b.dev is attributed correctly. No functional change.
+
+## 2.41.0
+
+### Minor Changes
+
+- 6824cdf: Add `network.egressProxy` / `network["egress_proxy"]` for routing a sandbox's outbound TCP through a SOCKS5 proxy you operate ("bring your own proxy"). Tunneling happens on the host after the `allowOut` / `denyOut` lists are evaluated, so nothing runs inside the sandbox and code running there can neither see the proxy nor route around it. UDP-based traffic — DNS and QUIC/HTTP3 — is not tunneled.
+
+  ```ts
+  import { Sandbox } from 'e2b'
+
+  const sandbox = await Sandbox.create({
+    network: {
+      egressProxy: {
+        address: 'proxy.example.com:1080',
+        username: 'proxy-user',
+        password: 'proxy-password',
+      },
+    },
+  })
+  ```
+
+  ```python
+  from e2b import Sandbox
+
+  sandbox = Sandbox.create(
+      network={
+          "egress_proxy": {
+              "address": "proxy.example.com:1080",
+              "username": "proxy-user",
+              "password": "proxy-password",
+          },
+      },
+  )
+  ```
+
+  It combines with the rest of the network configuration — here everything except `api.example.com` is denied, and the traffic that is allowed goes through your proxy:
+
+  ```ts
+  await Sandbox.create({
+    network: {
+      allowOut: ['api.example.com'],
+      denyOut: ({ allTraffic }) => [allTraffic],
+      egressProxy: { address: 'proxy.example.com:1080' },
+    },
+  })
+  ```
+
+  ```python
+  Sandbox.create(
+      network={
+          "allow_out": ["api.example.com"],
+          "deny_out": lambda ctx: [ctx.all_traffic],
+          "egress_proxy": {"address": "proxy.example.com:1080"},
+      },
+  )
+  ```
+
+  `updateNetwork` / `update_network` sets or replaces the proxy on a sandbox that is already running, with no restart. The update replaces the whole configuration instead of merging into it, so an update that leaves the proxy out stops tunneling — repeat it in every update that should keep it.
+
+  ```ts
+  // Start tunneling on the running sandbox
+  await sandbox.updateNetwork({
+    allowOut: ['api.example.com'],
+    denyOut: ({ allTraffic }) => [allTraffic],
+    egressProxy: { address: 'proxy.example.com:1080' },
+  })
+
+  // Stop tunneling: an update without egressProxy clears it
+  await sandbox.updateNetwork({})
+  ```
+
+  ```python
+  # Start tunneling on the running sandbox
+  sandbox.update_network({
+      "allow_out": ["api.example.com"],
+      "deny_out": lambda ctx: [ctx.all_traffic],
+      "egress_proxy": {"address": "proxy.example.com:1080"},
+  })
+
+  # Stop tunneling: an update without egress_proxy clears it
+  sandbox.update_network({})
+  ```
+
+  `getInfo` / `get_info` reports the proxy the sandbox's egress is currently tunneled through. The password is never returned, so the returned `SandboxEgressProxyInfo` does not have the field at all:
+
+  ```ts
+  const info = await sandbox.getInfo()
+  console.log(info.network?.egressProxy)
+  // { address: 'proxy.example.com:1080', username: 'proxy-user' }
+  ```
+
+  ```python
+  info = sandbox.get_info()
+  print((info.network or {}).get("egress_proxy"))
+  # {'address': 'proxy.example.com:1080', 'username': 'proxy-user'}
+  ```
+
+  Egress fails closed: when the proxy is unreachable or does not speak SOCKS5, outbound connections fail rather than falling back to a direct connection. The address is validated server-side when the sandbox is created — a rejected create leaves nothing behind. Available on E2B Cloud and in BYOC deployments; a sandbox that names a proxy on a deployment built from the open source `e2b-dev/infra` repository is rejected as unsupported.
+
+## 2.40.0
+
+### Minor Changes
+
+- 6248b12: Remove the deprecated `accessToken` / `access_token` option and its `E2B_ACCESS_TOKEN` environment fallback. E2B access tokens are no longer accepted for API authentication, so the SDKs no longer resolve one or send it as an `Authorization: Bearer` header — requests authenticate with the API key alone.
+
+  If you were relying on the option to send a bearer token to a custom deployment, pass the header directly, which is what the deprecation notice already pointed to:
+
+  ```ts
+  // Before
+  const sandbox = await Sandbox.create({ accessToken: token })
+
+  // After
+  const sandbox = await Sandbox.create({
+    apiHeaders: { Authorization: `Bearer ${token}` },
+  })
+  ```
+
+  ```python
+  # Before
+  config = ConnectionConfig(access_token=token)
+
+  # After
+  config = ConnectionConfig(api_headers={"Authorization": f"Bearer {token}"})
+  ```
+
+  Note that `Sandbox.envd_access_token` / `traffic_access_token` are unrelated per-sandbox tokens and are unaffected.
+
+## 2.39.0
+
+### Minor Changes
+
+- 07eb9be: Allow a network rule's `transform` to be a callback, so a workload identity token from the `iam` option can be injected into egress requests without the SDK ever seeing its value. The callback receives placeholder strings that the egress proxy resolves per request — `iam.tokens.aws` is `${e2b.identity.tokens.aws}` on the wire — and referencing a token that is not registered in `iam.tokens` fails with `InvalidArgumentError` / `InvalidArgumentException` instead of silently sending a placeholder no token will ever replace.
+
+  `updateNetwork` / `update_network` accepts the same callbacks, but its payload carries no `iam` config, so token names cannot be checked there and every name resolves to its placeholder.
+
+  Token names are validated where they are registered and again before they are interpolated: a name cannot be empty or contain `{`, `}` or control characters, since the proxy reads a placeholder up to its first `}` and a brace in the name would resolve a different token than the one referenced.
+
+  ```ts
+  import { Sandbox, Secret } from 'e2b'
+
+  const sandbox = await Sandbox.create({
+    iam: {
+      tokens: {
+        aws: Secret.iamToken({
+          audience: 'sts.amazonaws.com',
+          tokenType: 'JWT-SVID',
+        }),
+      },
+    },
+    network: {
+      allowOut: ({ rules }) => [...rules.keys()],
+      rules: {
+        'api.internal.example.com': [
+          {
+            transform: ({ iam }) => ({
+              headers: { Authorization: `Bearer ${iam.tokens.aws}` },
+            }),
+          },
+        ],
+      },
+    },
+  })
+  ```
+
+  ```python
+  from e2b import Sandbox, Secret
+
+  sandbox = Sandbox.create(
+      iam={
+          "tokens": {
+              "aws": Secret.iam_token(audience="sts.amazonaws.com", token_type="JWT-SVID"),
+          },
+      },
+      network={
+          "allow_out": lambda ctx: list(ctx.rules.keys()),
+          "rules": {
+              "api.internal.example.com": [
+                  {
+                      "transform": lambda ctx: {
+                          "headers": {"Authorization": f"Bearer {ctx.iam.tokens['aws']}"},
+                      },
+                  },
+              ],
+          },
+      },
+  )
+  ```
+
+- 64b25bb: Add the `iam` option to `Sandbox.create` for configuring sandbox workload identity, and a `Secret` class with an `iamToken` / `iam_token` method for defining the workload tokens. Passing a non-empty `tokens` map (name → `{ audience, tokenType }`) enables workload identity for the sandbox:
+
+  ```ts
+  import { Sandbox, Secret } from 'e2b'
+
+  const sandbox = await Sandbox.create({
+    iam: {
+      tokens: {
+        aws: Secret.iamToken({
+          audience: 'sts.amazonaws.com',
+          tokenType: 'JWT-SVID',
+        }),
+      },
+    },
+  })
+  ```
+
+  ```python
+  from e2b import Sandbox, Secret
+
+  sandbox = Sandbox.create(
+      iam={
+          "tokens": {
+              "aws": Secret.iam_token(audience="sts.amazonaws.com", token_type="JWT-SVID"),
+          },
+      },
+  )
+  ```
+
+  Plain `{ audience, tokenType }` objects (`{"audience": ..., "token_type": ...}` dicts in Python) are accepted as token values too.
+
+## 2.38.3
+
+### Patch Changes
+
+- cab27aa: Kill newly created sandboxes when MCP gateway startup fails. The failure now surfaces as `SandboxError` (JS) / `SandboxException` (Python) with a `Failed to start MCP gateway: <stderr>` message instead of a bare command exit error.
+
+## 2.38.2
+
+### Patch Changes
+
+- d5a382e: Bump both undici dependencies past the 2026-07-24 security advisories: the required `undici` from `^7.28.0` to `^7.29.0`, and the optional `undici8` (`npm:undici@…`) from 8.8.0 to 8.10.0. Both releases fix one High ([GHSA-4cwx-7wf7-3272](https://github.com/nodejs/undici/security/advisories/GHSA-4cwx-7wf7-3272)) and four Medium advisories, and undici 8.10.0 additionally fixes HTTP/2 request settling, refused-stream retries and GOAWAY handling, which the SDK exercises because every dispatcher it builds sets `allowH2: true`. Neither bump moves a Node floor — 7.29.0 still requires Node `>=20.18.1` and 8.10.0 still requires `>=22.19.0`, matching the `UNDICI_8_MIN_NODE` gate — so package selection and behaviour are unchanged.
+
+## 2.38.1
+
+### Patch Changes
+
+- 88f41f3: Align ANSI stripping of template build log messages across both SDKs. The Python SDK's `strip_ansi_escape_codes` now ports the JS SDK's `stripAnsi` regex: OSC sequences (hyperlinks, window titles) are matched non-greedily up to the first string terminator — including sequences spanning newlines — and CSI sequences are stripped without requiring a terminator. Both implementations additionally strip the remaining ECMA-48 string controls (DCS/Sixel, SOS, PM, APC) through their string terminator so control payloads no longer leak into cleaned logs.
+- 86f7b8e: Export `GitResetMode`, `GitResetOpts`, `GitRestoreOpts` and `GitStatusLabel` from the JS SDK entry point, so the argument and status types of the public `git.reset()`, `git.restore()` and `git.status()` methods can be named by callers
+
+## 2.38.0
+
+### Minor Changes
+
+- 2821fb0: Route volume content requests to a team's custom (BYOC) cluster. When a team is connected to a custom cluster, the volume create and get endpoints now return that cluster's `domain`, and the SDK uses it as the destination for volume content requests instead of the default `api.<E2B_DOMAIN>` host. Teams on the default cluster are unaffected and keep their configured domain.
+
+## 2.37.0
+
+### Minor Changes
+
+- 1504fbc: Add `fromFedoraImage`, `fromAlpineImage`, and `fromArchImage` base-image helpers to the `Template` builder (`from_fedora_image`, `from_alpine_image`, `from_arch_image` in the Python SDK), alongside the existing `fromUbuntuImage`/`fromDebianImage`/etc. Templates can now start from Fedora, Alpine, and Arch base images (the orchestrator identifies the distro from `/etc/os-release`). Fedora and Alpine default to pinned tags (`fedora:44`, `alpine:3.24`) so builds stay reproducible; Arch defaults to `latest` because it is a rolling release and provisioning runs `pacman -Syu` regardless.
+
+### Patch Changes
+
+- 6733f36: Align the Python SDK's `from_fedora_image` and `from_alpine_image` defaults with the JS SDK: `fedora:44` and `alpine:3.24`, replacing `fedora:42` (end-of-life, so its repositories leave the normal mirror network and provisioning can fail) and `alpine:3.22`. Callers that omit the variant now get the same base image in both SDKs, and both tags are the ones the orchestrator's distro build tests cover. Also corrects the JS `TemplateFromImage` type docs, which still named the old defaults.
+- 1ebe925: Recognize web platform objects by what they are, not by which class minted them. Libraries replace the web globals the same way they replace `globalThis.fetch` (`@hono/node-server` installs its own `Request`, remix's `installGlobals()` swaps `Request`/`Blob`/`File`, `web-streams-polyfill` swaps `ReadableStream`, jsdom-style test environments bring their own copies), and values also cross realms — so a perfectly good `Request`, `Blob` or `ReadableStream` could fail the SDK's `instanceof` checks and take the wrong branch. This fixes: every API call crashing with `Failed to parse URL from [object Request]`; the abort signal of such a `Request` being ignored while it waited for an in-flight slot; uploads of a foreign `Blob` or `ReadableStream` — including the body of such a `Request` — silently containing the text `"[object Blob]"`/`"[object ReadableStream]"`; gzipped uploads of a foreign stream hanging; a foreign stream being buffered into memory instead of streamed; and `volume.readFile()` returning empty data.
+- ee0ad25: Update snapshot docstrings to use project terminology instead of team (e.g. "my-project/my-snapshot", project slug)

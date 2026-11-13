@@ -6,7 +6,7 @@ import pytest
 
 @pytest.mark.skip_debug()
 def test_download_url_with_signing(sandbox_factory):
-    sbx = sandbox_factory(timeout=100, secure=True)
+    sbx = sandbox_factory(timeout=100)
     file_path = "test_download_url_with_signing.txt"
     file_content = "This file will be watched."
 
@@ -22,7 +22,7 @@ def test_download_url_with_signing(sandbox_factory):
 
 @pytest.mark.skip_debug()
 def test_download_url_with_signing_and_expiration(sandbox_factory):
-    sbx = sandbox_factory(timeout=100, secure=True)
+    sbx = sandbox_factory(timeout=100)
     file_path = "test_download_url_with_signing.txt"
     file_content = "This file will be watched."
 
@@ -38,7 +38,7 @@ def test_download_url_with_signing_and_expiration(sandbox_factory):
 
 @pytest.mark.skip_debug()
 def test_download_url_with_expired_signing(sandbox_factory):
-    sbx = sandbox_factory(timeout=100, secure=True)
+    sbx = sandbox_factory(timeout=100)
     file_path = "test_download_url_with_signing.txt"
     file_content = "This file will be watched."
 

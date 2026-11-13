@@ -63,7 +63,7 @@ with Sandbox.create() as sandbox:
 
 ### 4. Code execution with Code Interpreter
 
-If you need to execute code with [`runCode()`](https://e2b.dev/docs/code-interpreting?utm_source=github&utm_medium=referral&utm_campaign=readme&utm_content=E2B)/[`run_code()`](https://e2b.dev/docs/code-interpreting?utm_source=github&utm_medium=referral&utm_campaign=readme&utm_content=E2B), install the [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter):
+If you need to execute code with [`runCode()`](https://e2b.dev/docs/code-interpreting?utm_source=github&utm_medium=referral&utm_campaign=readme&utm_content=E2B)/[`run_code()`](https://e2b.dev/docs/code-interpreting?utm_source=github&utm_medium=referral&utm_campaign=readme&utm_content=E2B), install the Code Interpreter SDK ([JavaScript](./packages/code-interpreter-js) / [Python](./packages/code-interpreter-python)):
 
 ```
 npm i @e2b/code-interpreter  # JavaScript/TypeScript
@@ -78,18 +78,35 @@ const execution = await sandbox.runCode('x = 1; x += 1; x')
 console.log(execution.text)  // outputs 2
 ```
 
-### 5. Check docs
+### 5. Computer use with Desktop
+
+For mouse, keyboard, screenshot, application, and desktop streaming APIs, install the Desktop SDK ([JavaScript](./packages/desktop-js) / [Python](./packages/desktop-python)):
+
+```
+npm i @e2b/desktop  # JavaScript/TypeScript
+pip install e2b-desktop  # Python
+```
+
+```ts
+import { Sandbox } from '@e2b/desktop'
+
+const desktop = await Sandbox.create()
+await desktop.launch('google-chrome')
+const screenshot = await desktop.screenshot()
+```
+
+### 6. Check docs
 Visit [E2B documentation](https://e2b.dev/docs?utm_source=github&utm_medium=referral&utm_campaign=readme&utm_content=E2B).
 
-### 6. E2B cookbook
+### 7. E2B cookbook
 Visit our [Cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main) to get inspired by examples with different LLMs and AI frameworks.
 
 ## Self-hosting
 
-Read the [self-hosting guide](https://github.com/e2b-dev/infra/blob/main/self-host.md) to learn how to set up the [E2B infrastructure](https://github.com/e2b-dev/infra) on your own. The infrastructure is deployed using Terraform. 
+Read the [embed deployment guide](https://github.com/e2b-dev/runtime/blob/main/embed/README.md) to learn how to set up the [E2B runtime](https://github.com/e2b-dev/runtime) on your own. The infrastructure is deployed using Terraform. 
 
 Supported cloud providers:
 - 🟢 AWS
 - 🟢 Google Cloud (GCP)
-- [ ] Azure
-- [ ] General Linux machine
+- 🟢 Azure
+- 🟢 General Linux machine (via Embed) 

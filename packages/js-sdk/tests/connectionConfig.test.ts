@@ -1,9 +1,12 @@
 import { assert, test, beforeEach, afterEach } from 'vitest'
 import {
   ConnectionConfig,
+  DEFAULT_RETRIES,
   setupRequestController,
   wrapStreamWithConnectionCleanup,
 } from '../src/connectionConfig'
+import { runtime } from '../src/utils'
+import { InvalidArgumentError } from '../src/errors'
 
 // Store original env vars to restore after tests
 let originalEnv: { [key: string]: string | undefined }
@@ -13,8 +16,8 @@ beforeEach(() => {
     E2B_API_URL: process.env.E2B_API_URL,
     E2B_DOMAIN: process.env.E2B_DOMAIN,
     E2B_SANDBOX_URL: process.env.E2B_SANDBOX_URL,
+    E2B_HTTP_VERSION: process.env.E2B_HTTP_VERSION,
     E2B_DEBUG: process.env.E2B_DEBUG,
-    E2B_VALIDATE_API_KEY: process.env.E2B_VALIDATE_API_KEY,
   }
 })
 
@@ -42,6 +45,12 @@ test('api_url defaults correctly', () => {
   assert.equal(config.apiUrl, 'https://api.e2b.app')
 })
 
+test('retries default to three and accept a non-negative integer', () => {
+  assert.equal(new ConnectionConfig().retries, DEFAULT_RETRIES)
+  assert.equal(new ConnectionConfig({ retries: 2 }).retries, 2)
+  assert.throws(() => new ConnectionConfig({ retries: -1 }))
+})
+
 test('api_url in args', () => {
   const config = new ConnectionConfig({ apiUrl: 'http://localhost:8080' })
   assert.equal(config.apiUrl, 'http://localhost:8080')
@@ -61,21 +70,26 @@ test('api_url has correct priority', () => {
   assert.equal(config.apiUrl, 'http://localhost:8080')
 })
 
-test('sandbox_url defaults to stable sandbox host in production', () => {
-  delete process.env.E2B_SANDBOX_URL
-  delete process.env.E2B_DOMAIN
-  delete process.env.E2B_DEBUG
+// The stable host is deliberately not used in a browser (CORS); the browser
+// side of this branch is asserted in connectionConfig.browser.test.ts.
+test.skipIf(runtime === 'browser')(
+  'sandbox_url defaults to stable sandbox host in production',
+  () => {
+    delete process.env.E2B_SANDBOX_URL
+    delete process.env.E2B_DOMAIN
+    delete process.env.E2B_DEBUG
 
-  const config = new ConnectionConfig()
+    const config = new ConnectionConfig()
 
-  assert.equal(
-    config.getSandboxUrl('sbx-test', {
-      sandboxDomain: 'e2b.app',
-      envdPort: 49983,
-    }),
-    'https://sandbox.e2b.app'
-  )
-})
+    assert.equal(
+      config.getSandboxUrl('sbx-test', {
+        sandboxDomain: 'e2b.app',
+        envdPort: 49983,
+      }),
+      'https://sandbox.e2b.app'
+    )
+  }
+)
 
 test('sandbox_direct_url keeps per-sandbox host in production', () => {
   delete process.env.E2B_SANDBOX_URL
@@ -90,6 +104,30 @@ test('sandbox_direct_url keeps per-sandbox host in production', () => {
       envdPort: 49983,
     }),
     'https://49983-sbx-test.e2b.app'
+  )
+})
+
+test
+  .skipIf(runtime === 'browser')
+  .each([
+    'e2b.dev',
+    'e2b.pro',
+    'e2b-staging.dev',
+    'e2b-tango.dev',
+    'e2b-juliett.dev',
+    'foxtrot-2.e2b.dev',
+  ])('sandbox_url uses stable host on %s', (domain) => {
+  delete process.env.E2B_SANDBOX_URL
+  delete process.env.E2B_DEBUG
+
+  const config = new ConnectionConfig({ domain })
+
+  assert.equal(
+    config.getSandboxUrl('sbx-test', {
+      sandboxDomain: domain,
+      envdPort: 49983,
+    }),
+    `https://sandbox.${domain}`
   )
 })
 
@@ -151,25 +189,44 @@ test('sandbox_url stays localhost in debug mode', () => {
   )
 })
 
-test('validateApiKey defaults to true', () => {
-  delete process.env.E2B_VALIDATE_API_KEY
+test('httpVersion defaults to http2 and reads E2B_HTTP_VERSION', () => {
+  delete process.env.E2B_HTTP_VERSION
+  assert.equal(new ConnectionConfig().httpVersion, '2')
+  assert.equal(new ConnectionConfig({ httpVersion: '1.1' }).httpVersion, '1.1')
 
-  const config = new ConnectionConfig()
-  assert.equal(config.validateApiKey, true)
+  process.env.E2B_HTTP_VERSION = '1.1'
+  assert.equal(new ConnectionConfig().httpVersion, '1.1')
+  process.env.E2B_HTTP_VERSION = '2'
+  assert.equal(new ConnectionConfig().httpVersion, '2')
+
+  process.env.E2B_HTTP_VERSION = 'http3'
+  assert.throws(() => new ConnectionConfig(), InvalidArgumentError)
+  assert.throws(() => new ConnectionConfig(), /E2B_HTTP_VERSION/)
+  // An explicit option never consults the environment.
+  assert.equal(new ConnectionConfig({ httpVersion: '1.1' }).httpVersion, '1.1')
 })
 
-test('validateApiKey disabled via env var', () => {
-  process.env.E2B_VALIDATE_API_KEY = 'false'
-
-  const config = new ConnectionConfig()
-  assert.equal(config.validateApiKey, false)
+test('httpVersion rejects values other than 1.1 and 2', () => {
+  delete process.env.E2B_HTTP_VERSION
+  for (const value of ['http1', 'http2', '1', '2.0', 'HTTP/1.1', '']) {
+    assert.throws(
+      () => new ConnectionConfig({ httpVersion: value as HttpVersion }),
+      InvalidArgumentError
+    )
+    assert.throws(
+      () => new ConnectionConfig({ httpVersion: value as HttpVersion }),
+      /httpVersion must be '1.1' or '2'/
+    )
+  }
 })
 
-test('validateApiKey in args has priority over env var', () => {
-  process.env.E2B_VALIDATE_API_KEY = 'true'
+test('httpVersion in args has priority over env var', () => {
+  process.env.E2B_HTTP_VERSION = '1.1'
+  assert.equal(new ConnectionConfig({ httpVersion: '2' }).httpVersion, '2')
 
-  const config = new ConnectionConfig({ validateApiKey: false })
-  assert.equal(config.validateApiKey, false)
+  // Per-call options and bound options keep the option when merged.
+  const merged = ConnectionConfig.mergeOpts({ httpVersion: '1.1' }, {})
+  assert.equal(new ConnectionConfig(merged).httpVersion, '1.1')
 })
 
 test('debug false in args overrides E2B_DEBUG env var', () => {

@@ -12,8 +12,8 @@ async def test_resize(async_sandbox: AsyncSandbox):
         PtySize(cols=80, rows=24), on_data=lambda x: append_data(output, x)
     )
 
-    await async_sandbox.pty.send_stdin(terminal.pid, b"tput cols\n")
-    await async_sandbox.pty.send_stdin(terminal.pid, b"exit\n")
+    await async_sandbox.pty.send_input(terminal.pid, b"tput cols\n")
+    await async_sandbox.pty.send_input(terminal.pid, b"exit\n")
     await terminal.wait()
     assert terminal.exit_code == 0
 
@@ -26,8 +26,8 @@ async def test_resize(async_sandbox: AsyncSandbox):
     )
 
     await async_sandbox.pty.resize(terminal.pid, PtySize(cols=100, rows=24))
-    await async_sandbox.pty.send_stdin(terminal.pid, b"tput cols\n")
-    await async_sandbox.pty.send_stdin(terminal.pid, b"exit\n")
+    await async_sandbox.pty.send_input(terminal.pid, b"tput cols\n")
+    await async_sandbox.pty.send_input(terminal.pid, b"exit\n")
 
     await terminal.wait()
     assert terminal.exit_code == 0

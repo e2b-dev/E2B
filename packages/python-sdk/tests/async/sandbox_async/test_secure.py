@@ -5,7 +5,7 @@ from e2b import AsyncSandbox
 
 @pytest.mark.skip_debug()
 async def test_start_secured(async_sandbox_factory):
-    sbx = await async_sandbox_factory(timeout=5, secure=True)
+    sbx = await async_sandbox_factory(timeout=5)
 
     assert await sbx.is_running()
     assert sbx._envd_version is not None
@@ -14,7 +14,7 @@ async def test_start_secured(async_sandbox_factory):
 
 @pytest.mark.skip_debug()
 async def test_connect_to_secured(async_sandbox_factory):
-    sbx = await async_sandbox_factory(timeout=100, secure=True)
+    sbx = await async_sandbox_factory(timeout=100)
 
     assert await sbx.is_running()
     assert sbx._envd_version is not None

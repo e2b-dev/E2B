@@ -1,6 +1,4 @@
-from typing import Generic, Mapping, Optional, TypeVar
-
-from typing_extensions import Unpack
+from typing import Generic, Mapping, Optional, TypeVar, Unpack
 
 from e2b.connection_config import ApiParams
 

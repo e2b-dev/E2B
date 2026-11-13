@@ -14,7 +14,7 @@
 
 
 ## What is E2B?
-[E2B](https://www.e2b.dev/) is an open-source infrastructure that allows you to run AI-generated code in secure isolated sandboxes in the cloud. To start and control sandboxes, use our [JavaScript SDK](https://www.npmjs.com/package/e2b) or [Python SDK](https://pypi.org/project/e2b).
+[E2B](https://e2b.dev/?utm_source=pypi&utm_medium=referral&utm_campaign=readme&utm_content=e2b) is an open-source infrastructure that allows you to run AI-generated code in secure isolated sandboxes in the cloud. To start and control sandboxes, use our [JavaScript SDK](https://www.npmjs.com/package/e2b) or [Python SDK](https://pypi.org/project/e2b).
 
 ## Run your first Sandbox
 
@@ -25,8 +25,8 @@ pip install e2b
 ```
 
 ### 2. Get your E2B API key
-1. Sign up to E2B [here](https://e2b.dev).
-2. Get your API key [here](https://e2b.dev/dashboard?tab=keys).
+1. Sign up to E2B [here](https://e2b.dev/?utm_source=pypi&utm_medium=referral&utm_campaign=readme&utm_content=e2b).
+2. Get your API key [here](https://e2b.dev/dashboard?tab=keys&utm_source=pypi&utm_medium=referral&utm_campaign=readme&utm_content=e2b).
 3. Set environment variable with your API key
 ```
 E2B_API_KEY=e2b_***
@@ -42,9 +42,45 @@ with Sandbox.create() as sandbox:
     print(result.stdout)  # Hello from E2B!
 ```
 
-### 4. Code execution with Code Interpreter
+### 4. Bind the configuration to a client
 
-If you need [`run_code()`](https://e2b.dev/docs/code-interpreting), install the [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter):
+The top-level `Sandbox`, `AsyncSandbox`, `Volume`, `AsyncVolume`, `Template`, `AsyncTemplate` and `Secret` exports read their configuration from the environment variables. To use an explicit configuration — e.g. several API keys or domains in one process — create an `E2B` client and use the resource classes it exposes:
+
+```py
+from e2b import E2B
+
+client = E2B(api_key="e2b_***", domain="e2b.dev")
+
+sandbox = client.Sandbox.create()
+volume = client.Volume.create("my-volume")
+exists = client.Template.exists("my-template")
+secret = client.Secret.create("openai-api-key", "sk-***")
+
+# The async variants are exposed as well.
+async_sandbox = await client.AsyncSandbox.create()
+
+# The classes can be assigned and used like the top-level ones.
+Sandbox = client.Sandbox
+paginator = Sandbox.list()
+```
+
+Per-call params still take precedence over the client's params, and clients are isolated from each other and from the env-configured top-level exports.
+
+### High-concurrency sandbox streams
+
+Sandbox `commands` and `files` traffic from all sandboxes in a process shares one HTTP/2 connection pool. Requests are spread over the pooled connections by free stream capacity, and a new connection is dialed only once every existing one is at the server's concurrent-stream limit (`100` for `sandbox.e2b.app`), up to `E2B_MAX_CONNECTIONS` connections per resolved address (default `200`). Past that cap, a request waits for a stream to free up. Long-running streams therefore never queue behind one connection's concurrent-stream limit, and idle processes keep a single connection.
+
+File downloads (`files.read`) are the exception: they use a separate HTTP/1.1 pool, where each in-flight download holds its own connection. That pool has the same `E2B_MAX_CONNECTIONS` cap per resolved address, so a process runs at most that many downloads at once across all its sandboxes, and further reads wait for a free connection.
+
+`E2B_MAX_CONNECTIONS` is read when `e2b` is imported:
+
+```sh
+E2B_MAX_CONNECTIONS=400 python eval.py
+```
+
+### 5. Code execution with Code Interpreter
+
+If you need [`run_code()`](https://docs.e2b.dev/code-interpreting/analyze-data-with-ai?utm_source=pypi&utm_medium=referral&utm_campaign=readme&utm_content=e2b), install the [Code Interpreter SDK](https://github.com/e2b-dev/code-interpreter):
 
 ```
 pip install e2b-code-interpreter
@@ -58,8 +94,8 @@ with Sandbox.create() as sandbox:
     print(execution.text)  # outputs 2
 ```
 
-### 5. Check docs
-Visit [E2B documentation](https://e2b.dev/docs).
+### 6. Check docs
+Visit [E2B documentation](https://docs.e2b.dev/?utm_source=pypi&utm_medium=referral&utm_campaign=readme&utm_content=e2b).
 
-### 6. E2B cookbook
+### 7. E2B cookbook
 Visit our [Cookbook](https://github.com/e2b-dev/e2b-cookbook/tree/main) to get inspired by examples with different LLMs and AI frameworks.

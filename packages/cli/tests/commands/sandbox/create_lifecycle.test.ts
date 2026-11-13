@@ -2,28 +2,33 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => {
   const create = vi.fn()
-  const ensureAPIKey = vi.fn(() => 'test-api-key')
+  const setTimeout = vi.fn()
+  const ensureAuth = vi.fn(async () => ({ apiKey: 'test-api-key' }))
   const spawnConnectedTerminal = vi.fn()
+  const printDashboardSandboxInspectUrl = vi.fn()
 
   return {
     create,
-    ensureAPIKey,
+    setTimeout,
+    ensureAuth,
     spawnConnectedTerminal,
+    printDashboardSandboxInspectUrl,
   }
 })
 
 vi.mock('e2b', () => ({
   Sandbox: {
     create: mocks.create,
+    setTimeout: mocks.setTimeout,
   },
 }))
 
 vi.mock('../../../src/api', () => ({
-  ensureAPIKey: mocks.ensureAPIKey,
+  ensureAuth: mocks.ensureAuth,
 }))
 
 vi.mock('src/utils/urls', () => ({
-  printDashboardSandboxInspectUrl: vi.fn(),
+  printDashboardSandboxInspectUrl: mocks.printDashboardSandboxInspectUrl,
 }))
 
 vi.mock('src/terminal', () => ({
@@ -137,11 +142,83 @@ describe('sandbox create lifecycle options', () => {
       { from: 'user' }
     )
 
-    expect(mocks.spawnConnectedTerminal).toHaveBeenCalledWith(sandbox)
-    expect(sandbox.setTimeout).toHaveBeenCalledWith(120_000)
-    expect(sandbox.setTimeout).not.toHaveBeenCalledWith(1_000)
+    expect(mocks.spawnConnectedTerminal).toHaveBeenCalledWith(sandbox, {
+      user: undefined,
+      cwd: undefined,
+      envs: undefined,
+    })
+    expect(mocks.setTimeout).toHaveBeenCalledWith('sandbox-id', 120_000, {
+      apiKey: 'test-api-key',
+    })
+    expect(mocks.setTimeout).not.toHaveBeenCalledWith(
+      'sandbox-id',
+      1_000,
+      expect.anything()
+    )
     expect(exitSpy).toHaveBeenCalledWith(0)
     vi.useRealTimers()
+  })
+
+  test('passes user, cwd and envs to the connected terminal', async () => {
+    const exitSpy = vi
+      .spyOn(process, 'exit')
+      .mockImplementation((() => undefined) as never)
+    const sandbox = {
+      sandboxId: 'sandbox-id',
+      setTimeout: vi.fn().mockResolvedValue(undefined),
+    }
+    mocks.create.mockResolvedValue(sandbox)
+
+    const { createCommand } = await import(
+      '../../../src/commands/sandbox/create'
+    )
+    await createCommand('create', 'cr', false).parseAsync(
+      [
+        'base',
+        '--user',
+        'root',
+        '--cwd',
+        '/app',
+        '--env',
+        'FOO=bar',
+        '--env',
+        'BAZ=qux=quux',
+      ],
+      { from: 'user' }
+    )
+
+    expect(mocks.spawnConnectedTerminal).toHaveBeenCalledWith(sandbox, {
+      user: 'root',
+      cwd: '/app',
+      envs: { FOO: 'bar', BAZ: 'qux=quux' },
+    })
+    expect(exitSpy).toHaveBeenCalledWith(0)
+  })
+
+  test('omits empty envs when no --env flags are provided', async () => {
+    const exitSpy = vi
+      .spyOn(process, 'exit')
+      .mockImplementation((() => undefined) as never)
+    const sandbox = {
+      sandboxId: 'sandbox-id',
+      setTimeout: vi.fn().mockResolvedValue(undefined),
+    }
+    mocks.create.mockResolvedValue(sandbox)
+
+    const { createCommand } = await import(
+      '../../../src/commands/sandbox/create'
+    )
+    await createCommand('create', 'cr', false).parseAsync(
+      ['base', '--user', 'root'],
+      { from: 'user' }
+    )
+
+    expect(mocks.spawnConnectedTerminal).toHaveBeenCalledWith(sandbox, {
+      user: 'root',
+      cwd: undefined,
+      envs: undefined,
+    })
+    expect(exitSpy).toHaveBeenCalledWith(0)
   })
 
   test('rejects autoresume without pause on timeout', async () => {
@@ -228,6 +305,25 @@ describe('sandbox create lifecycle options', () => {
 
     expect(mocks.create).not.toHaveBeenCalled()
     expect(exitSpy).toHaveBeenCalledWith(1)
+  })
+
+  test('prints only the sandbox ID to stdout when detached', async () => {
+    const exitSpy = vi
+      .spyOn(process, 'exit')
+      .mockImplementation((() => undefined) as never)
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    const { createCommand } = await import(
+      '../../../src/commands/sandbox/create'
+    )
+    await createCommand('create', 'cr', false).parseAsync(
+      ['base', '--detach'],
+      { from: 'user' }
+    )
+
+    expect(logSpy.mock.calls).toEqual([['sandbox-id']])
+    expect(mocks.printDashboardSandboxInspectUrl).not.toHaveBeenCalled()
+    expect(exitSpy).toHaveBeenCalledWith(0)
   })
 
   test('passes lifecycle and timeout together to Sandbox.create', async () => {

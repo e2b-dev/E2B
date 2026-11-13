@@ -1,6 +1,6 @@
 import { expect } from 'vitest'
 
-import { sandboxTest } from '../../setup.js'
+import { gitTest } from '../../setup.js'
 import {
   AUTHOR_EMAIL,
   AUTHOR_NAME,
@@ -9,7 +9,7 @@ import {
   createRepo,
 } from './helpers.js'
 
-sandboxTest('git status reports untracked file', async ({ sandbox }) => {
+gitTest('git status reports untracked file', async ({ sandbox }) => {
   const baseDir = await createBaseDir(sandbox)
 
   try {
@@ -36,7 +36,7 @@ sandboxTest('git status reports untracked file', async ({ sandbox }) => {
   }
 })
 
-sandboxTest(
+gitTest(
   'git status reports added modified deleted renamed',
   async ({ sandbox }) => {
     const baseDir = await createBaseDir(sandbox)

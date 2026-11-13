@@ -35,6 +35,6 @@ def test_run_command_as_user_that_does_not_exist(build):
         build(template)
 
     assert (
-        "failed to run command 'whoami': command failed: unauthenticated: invalid username: 'root123'"
+        "failed to run command: command failed: unauthenticated: invalid username: 'root123'"
         in str(exc_info.value)
     )

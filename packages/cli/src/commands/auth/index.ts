@@ -1,4 +1,4 @@
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
 import { loginCommand } from './login'
 import { logoutCommand } from './logout'
 import { infoCommand } from './info'

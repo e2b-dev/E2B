@@ -6,48 +6,79 @@
  */
 
 export interface McpServer {
-  airtable?: AirtableMCPServer
+  airtable?: Airtable
   aks?: AzureKubernetesServiceAKS
-  apiGateway?: ApiGateway
-  apify?: ApifyMCPServer
-  arxiv?: ArXivMCPServer
+  alfresco?: Alfresco
+  amazonBedrockAgentcore?: AWSBedrockAgentCore
+  amazonKendraIndex?: AmazonKendraIndex
+  amazonNeptune?: AmazonNeptune
+  amazonQbusinessAnonymous?: AmazonQBusiness
+  apiGateway?: APIGateway
+  apify?: Apify
+  arm?: Arm
+  arxiv?: ArXiv
   astGrep?: AstGrep
   astraDb?: AstraDB
   astroDocs?: AstroDocs
-  atlan?: AtlanMCPServer
+  atlan?: Atlan
   atlasDocs?: AtlasDocs
   atlassian?: Atlassian
   audienseInsights?: AudienseInsights
+  awsApi?: AWSAPI
+  awsAppsync?: AWSAppSync
+  awsBedrockCustomModelImport?: AWSBedrockCustomModelImport
+  awsBedrockDataAutomation?: AWSBedrockDataAutomation
   awsCdk?: AWSCDK
-  awsCore?: AWSCoreMCPServer
+  awsCore?: AWSCore
+  awsDataprocessing?: AWSDataProcessing
   awsDiagram?: AWSDiagram
   awsDocumentation?: AWSDocumentation
+  awsHealthomics?: AWSHealthOmics
+  awsIotSitewise?: AWSIoTSiteWise
   awsKbRetrievalServer?: AWSKBRetrievalArchived
+  awsLocation?: AmazonLocationService
+  awsMsk?: AmazonMSK
+  awsPricing?: AWSPricing
   awsTerraform?: AWSTerraform
+  awslabsBillingCostManagement?: AWSBillingAndCostManagement
+  awslabsCcapi?: AWSCloudControlAPI
+  awslabsCfn?: AWSCloudFormation
+  awslabsCloudtrail?: AWSCloudTrail
+  awslabsCloudwatch?: AmazonCloudWatch
+  awslabsCloudwatchAppsignals?: AmazonCloudWatchApplicationSignals
+  awslabsCostExplorer?: AWSCostExplorer
+  awslabsDynamodb?: AmazonDynamoDB
+  awslabsElasticache?: AmazonElastiCache
+  awslabsIam?: AWSIAM
+  awslabsMemcached?: AmazonElastiCacheForMemcached
+  awslabsNovaCanvas?: AWSLabsNovaCanvas
+  awslabsRedshift?: AmazonRedshift
+  awslabsS3Tables?: AWSS3Tables
+  awslabsTimestreamForInfluxdb?: AmazonTimestreamForInfluxDB
+  awslabsValkey?: AmazonElastiCacheMemoryDBForValkey
   azure?: Azure
-  beagleSecurity?: BeagleSecurityMCPServer
+  beagleSecurity?: BeagleSecurity
   bitrefill?: Bitrefill
   box?: Box
   brave?: BraveSearch
   browserbase?: Browserbase
   buildkite?: Buildkite
-  camunda?: CamundaBPMProcessEngineMCPServer
-  cdataConnectcloud?: CDataConnectCloud
-  charmhealth?: CharmHealthMCPServer
+  camunda?: CamundaBPMProcessEngine
+  charmhealth?: CharmHealth
   chroma?: Chroma
   circleci?: CircleCI
-  clickhouse?: OfficialClickHouseMCPServer
+  clickhouse?: OfficialClickHouse
   close?: Close
-  cloudRun?: CloudRunMCP
+  cloudRun?: CloudRun
   cloudflareDocs?: CloudflareDocs
   cockroachdb?: CockroachDB
   codeInterpreter?: PythonInterpreter
   context7?: Context7
   couchbase?: Couchbase
-  cylera?: TheOfficialMCPServerForCylera
+  cylera?: Cylera
   cyreslabAiShodan?: Shodan
   dappier?: Dappier
-  dappierRemote?: DappierRemoteMCPServer
+  dappierRemote?: DappierRemote
   dart?: DartAI
   databaseServer?: MCPDatabaseServer
   databutton?: Databutton
@@ -58,14 +89,15 @@ export interface McpServer {
   discord?: Discord
   dockerhub?: DockerHub
   dodoPayments?: DodoPayments
-  dreamfactory?: DreamFactoryMCPServer
-  duckduckgo?: DuckDuckGo
-  dynatrace?: DynatraceMCPServer
+  dotnetTypesExplorer?: NETTypesExplorer
+  dreamfactory?: DreamFactory
+  duckduckgo?: PrivateWebSearch
+  dynatrace?: Dynatrace
   e2b?: E2B
   edubase?: EduBase
-  effect?: EffectMCP
+  effect?: Effect
   elasticsearch?: Elasticsearch
-  elevenlabs?: ElevenlabsMCP
+  elevenlabs?: ElevenLabs
   everart?: EverArtArchived
   exa?: Exa
   explorium?: ExploriumB2BData
@@ -74,8 +106,8 @@ export interface McpServer {
   filesystem?: FilesystemReference
   findADomain?: FindADomain
   firecrawl?: Firecrawl
-  firewalla?: FirewallaMCPServer
-  flexprice?: FlexPrice
+  firewalla?: Firewalla
+  geminiApiDocs?: GeminiAPIDocs
   git?: GitReference
   github?: GitHubArchived
   githubChat?: GitHubChat
@@ -83,21 +115,22 @@ export interface McpServer {
   gitlab?: GitLabArchived
   gitmcp?: GitMCP
   glif?: GlifApp
-  gmail?: GmailMCPServer
+  gmail?: Gmail
+  googleFlights?: GoogleFlights
   googleMaps?: GoogleMapsArchived
-  googleMapsComprehensive?: GoogleMapsComprehensiveMCP
+  googleMapsComprehensive?: GoogleMapsComprehensive
   grafana?: Grafana
   gyazo?: Gyazo
-  hackernews?: HackernewsMcp
+  hackernews?: HackerNews
   hackle?: Hackle
   handwritingOcr?: HandwritingOCR
-  hdx?: HumanitarianDataExchangeMCPServer
+  hdx?: HumanitarianDataExchange
   heroku?: Heroku
-  hostinger?: HostingerAPIMCPServer
-  hoverfly?: HoverflyMCPServer
+  hostinger?: HostingerAPI
+  hoverfly?: Hoverfly
   hubspot?: HubSpot
   huggingFace?: HuggingFace
-  hummingbot?: HummingbotMCPTradingAgent
+  hummingbot?: HummingbotTradingAgent
   husqvarnaAutomower?: HusqvarnaAutomower
   hyperbrowser?: Hyperbrowser
   hyperspell?: Hyperspell
@@ -105,46 +138,50 @@ export interface McpServer {
   inspektorGadget?: InspektorGadget
   javadocs?: Javadocs
   jetbrains?: JetBrains
-  kafkaSchemaReg?: KafkaSchemaRegistryMCP
+  kafkaSchemaReg?: KafkaSchemaRegistry
   kagisearch?: KagiSearch
-  keboola?: KeboolaMCPServer
+  keboola?: Keboola
   kong?: KongKonnect
-  kubectl?: KubectlMCPServer
+  kubectl?: Kubectl
   kubernetes?: Kubernetes
   lara?: LaraTranslate
   line?: LINE
-  linkedin?: LinkedInMCPServer
+  linkedin?: LinkedIn
   llmtxt?: LLMText
-  maestro?: MaestroMCPServer
+  maestro?: Maestro
   manifold?: Manifold
-  mapbox?: MapboxMCPServer
-  mapboxDevkit?: MapboxDeveloperMCPServer
+  mapbox?: Mapbox
+  mapboxDevkit?: MapboxDeveloper
   markdownify?: Markdownify
   markitdown?: Markitdown
-  mavenTools?: MavenToolsMCPServer
+  mavenTools?: MavenTools
   memory?: MemoryReference
   mercadoLibre?: MercadoLibre
   mercadoPago?: MercadoPago
-  metabase?: MetabaseMCP
+  metabase?: Metabase
   minecraftWiki?: MinecraftWiki
   mongodb?: MongoDB
   multiversxMx?: MultiversX
+  n8n?: N8N
   nasdaqDataLink?: NasdaqDataLink
   needle?: Needle
+  neo4j?: Neo4J
   neo4jCloudAuraApi?: Neo4JCloudAuraApi
   neo4jCypher?: Neo4JCypher
   neo4jDataModeling?: Neo4JDataModeling
   neo4jMemory?: Neo4JMemory
   neon?: Neon
+  nextDevtools?: NextJsDevTools
   nodeCodeSandbox?: NodeJsSandbox
   notion?: Notion
   novita?: Novita
   npmSentinel?: NPMSentinel
   obsidian?: Obsidian
-  oktaMcpFctr?: OktaMCPServer
-  omi?: OmiMcp
+  okta?: Okta
+  oktaMcpFctr?: Okta1
+  omi?: Omi
   onlyofficeDocspace?: ONLYOFFICEDocSpace
-  openapi?: OpenAPIToolkitForMCP
+  openapi?: OpenAPIToolkit
   openapiSchema?: OpenAPISchema
   openbnbAirbnb?: AirbnbSearch
   openmesh?: OpenMesh
@@ -154,85 +191,91 @@ export interface McpServer {
   openzeppelinStellar?: OpenZeppelinStellarContracts
   openzeppelinStylus?: OpenZeppelinStylusContracts
   opik?: Opik
-  opine?: OpineMCPServer
-  oracle?: OracleDatabaseMCPServer
+  opine?: Opine
+  oracle?: OracleDatabase
   ospMarketingTools?: OSPMarketingTools
   oxylabs?: Oxylabs
   paperSearch?: PaperSearch
   perplexityAsk?: Perplexity
   pia?: ProgramIntegrityAlliance
   pinecone?: PineconeAssistant
-  playwright?: ExecuteAutomationPlaywrightMCP
-  pluggedinMcpProxy?: PluggedInMCPProxy
+  playwright?: ExecuteAutomationPlaywright
+  pluggedinMcpProxy?: PluggedInProxy
   polarSignals?: PolarSignals
   pomodash?: PomoDash
-  postgres?: PostgreSQLReadonlyArchived
-  postman?: PostmanMCPServer
+  postman?: Postman
   prefEditor?: PrefEditor
   prometheus?: Prometheus
+  proxmox?: ProxmoxVE
   puppeteer?: PuppeteerArchived
   pythonRefactoring?: PythonRefactoringAssistant
-  quantconnect?: QuantConnectMCPServer
-  ramparts?: RampartsMCPSecurityScanner
+  quantconnect?: QuantConnect
+  ramparts?: RampartsSecurityScanner
   razorpay?: Razorpay
-  reddit?: McpReddit
+  reddit?: Reddit
   redis?: Redis
   redisCloud?: RedisCloud
   ref?: RefUpToDateDocs
   remote?: RemoteMCP
   render?: Render
-  resend?: SendEmails
+  resend?: Resend
   risken?: RISKEN
-  root?: RootIoVulnerabilityRemediationMCP
-  ros2?: WiseVisionROS2MCPServer
+  ros2?: WiseVisionROS2
   rube?: Rube
-  rustMcpFilesystem?: BlazingFastAsynchronousMCPServerForSeamlessFilesystemOperations
+  rustMcpFilesystem?: RustFilesystem
   schemacrawlerAi?: SchemaCrawlerAI
-  schoginiMcpImageBorder?: SchoginiMCPImageBorder
+  schoginiMcpImageBorder?: SchoginiImageBorder
   scrapegraph?: ScrapeGraph
   scrapezy?: Scrapezy
-  securenoteLink?: SecurenoteLinkMcpServer
+  securenoteLink?: SecurenoteLink
   semgrep?: Semgrep
   sentry?: SentryArchived
   sequa?: SequaAI
   sequentialthinking?: SequentialThinkingReference
   shortIo?: ShortIo
-  simplechecklist?: SimpleCheckListMCPServer
+  simplechecklist?: SimpleCheckList
   singlestore?: Singlestore
   slack?: SlackArchived
-  smartbear?: SmartBearMCPServer
+  smartbear?: SmartBear
   sonarqube?: SonarQube
   sqlite?: SQLiteArchived
   stackgen?: StackGen
   stackhawk?: StackHawk
   stripe?: Stripe
   supadata?: Supadata
-  suzieq?: SuzieqMCP
+  suzieq?: Suzieq
   taskOrchestrator?: TaskOrchestrator
   tavily?: Tavily
   teamwork?: Teamwork
   telnyx?: Telnyx
-  tembo?: Tembo
+  temporal?: Temporal
   terraform?: HashicorpTerraform
+  testkube?: Testkube
   textToGraphql?: TextToGraphQL
+  thingsboard?: ThingsBoard
   tigris?: TigrisData
   time?: TimeReference
-  triplewhale?: Triplewhale
-  unrealEngine?: UnrealEngineMCPServer
+  unrealEngine?: UnrealEngine
+  vectraAiRux?: VectraAIRUXMCPServer
   veyrax?: VeyraX
+  victorialogs?: VictoriaLogs
+  victoriametrics?: VictoriaMetrics
+  victoriatraces?: VictoriaTraces
   vizro?: Vizro
-  vulnNist?: VulnNistMcpServer
-  wayfound?: WayfoundMCP
+  vulnNist?: VulnNIST
+  wayfound?: Wayfound
   webflow?: Webflow
   wikipedia?: Wikipedia
   wolframAlpha?: WolframAlpha
   youtubeTranscript?: YouTubeTranscripts
+  zen?: Zen
   zerodhaKite?: ZerodhaKiteConnect
+  zscaler?: Zscaler
 }
 /**
  * Provides AI assistants with direct access to Airtable bases, allowing them to read schemas, query records, and interact with your Airtable data. Supports listing bases, retrieving table structures, and searching through records to help automate workflows and answer questions about your organized data.
  */
-export interface AirtableMCPServer {
+export interface Airtable {
   airtableApiKey: string
   nodeenv: string
 }
@@ -266,9 +309,46 @@ export interface AzureKubernetesServiceAKS {
   kubeconfig: string
 }
 /**
+ * A minimal Model Context Protocol (MCP) server for Alfresco providing tools via the Alfresco REST API.
+ */
+export interface Alfresco {
+  alfrescoHost: string
+}
+/**
+ * Documentation on AgentCore platform services.
+ */
+export interface AWSBedrockAgentCore {}
+/**
+ * Enterprise search and RAG enhancement.
+ */
+export interface AmazonKendraIndex {
+  awsProfile?: string
+  awsRegion?: string
+  kendraIndexId: string
+}
+/**
+ * Graph database queries with Cypher and Gremlin.
+ */
+export interface AmazonNeptune {
+  awsProfile?: string
+  awsRegion?: string
+  neptuneEndpoint: string
+}
+/**
+ * AI assistant for ingested content with anonymous access.
+ */
+export interface AmazonQBusiness {
+  awsAccessKeyId?: string
+  awsProfile?: string
+  awsRegion?: string
+  awsSecretAccessKey?: string
+  awsSessionToken?: string
+  qbusinessApplicationId: string
+}
+/**
  * A universal MCP (Model Context Protocol) server to integrate any API with Claude Desktop using only Docker configurations.
  */
-export interface ApiGateway {
+export interface APIGateway {
   api1HeaderAuthorization: string
   api1Name: string
   api1SwaggerUrl: string
@@ -276,7 +356,7 @@ export interface ApiGateway {
 /**
  * Apify is the world's largest marketplace of tools for web scraping, data extraction, and web automation. You can extract structured data from social media, e-commerce, search engines, maps, travel sites, or any other website.
  */
-export interface ApifyMCPServer {
+export interface Apify {
   apifyToken: string
   /**
    * Comma-separated list of tools to enable. Can be either a tool category, a specific tool, or an Apify Actor. For example: "actors,docs,apify/rag-web-browser". For more details visit https://mcp.apify.com.
@@ -284,9 +364,23 @@ export interface ApifyMCPServer {
   tools: string
 }
 /**
+ * Provides AI assistants with specialized tools for Arm architecture development, migration, optimization, and profiling. Includes knowledge base search, code migration analysis, container architecture inspection, Arm Performix workload profiling, and assembly performance analysis.
+ */
+export interface Arm {
+  /**
+   * Optional path to an SSH known_hosts file for Arm Performix remote target access
+   */
+  sshKnownHostsPath?: string
+  /**
+   * Optional path to an SSH private key for Arm Performix remote target access
+   */
+  sshPrivateKeyPath?: string
+  workspacePath: string
+}
+/**
  * The ArXiv MCP Server provides a comprehensive bridge between AI assistants and arXiv's research repository through the Model Context Protocol (MCP).   Features: • Search arXiv papers with advanced filtering • Download and store papers locally as markdown • Read and analyze paper content • Deep research analysis prompts • Local paper management and storage • Enhanced tool descriptions optimized for local AI models • Docker MCP Gateway compatible with detailed context  Perfect for researchers, academics, and AI assistants conducting literature reviews and research analysis.  **Recent Update**: Enhanced tool descriptions specifically designed to resolve local AI model confusion and improve Docker MCP Gateway compatibility.
  */
-export interface ArXivMCPServer {
+export interface ArXiv {
   /**
    * Directory path where downloaded papers will be stored
    */
@@ -312,7 +406,7 @@ export interface AstroDocs {}
 /**
  * MCP server for interacting with Atlan services including asset search, updates, and lineage traversal for comprehensive data governance and discovery.
  */
-export interface AtlanMCPServer {
+export interface Atlan {
   apiKey: string
   baseUrl: string
 }
@@ -344,21 +438,83 @@ export interface AudienseInsights {
   twitterBearerToken?: string
 }
 /**
+ * Comprehensive AWS API support with command validation and access to all services.
+ */
+export interface AWSAPI {
+  awsAccessKeyId: string
+  awsProfileName: string
+  awsRegion: string
+  awsSecretAccessKey: string
+  awsSessionToken: string
+}
+/**
+ * Manage applications powered by AWS AppSync.
+ */
+export interface AWSAppSync {
+  awsAccessKeyId: string
+  awsProfile: string
+  awsRegion: string
+  awsSecretAccessKey: string
+  awsSessionToken: string
+}
+/**
+ * Manage custom models in Bedrock.
+ */
+export interface AWSBedrockCustomModelImport {
+  awsAccessKeyId: string
+  awsProfile: string
+  awsRegion: string
+  awsSecretAccessKey: string
+  awsSessionToken: string
+  bedrockModelImportS3Bucket: string
+}
+/**
+ * Analyze documents, images, videos, and audio.
+ */
+export interface AWSBedrockDataAutomation {
+  awsBucketName: string
+  awsProfile?: string
+  awsRegion?: string
+}
+/**
  * AWS Cloud Development Kit (CDK) best practices, infrastructure as code patterns, and security compliance with CDK Nag.
  */
 export interface AWSCDK {}
 /**
  * Starting point for using the awslabs MCP servers.
  */
-export interface AWSCoreMCPServer {}
+export interface AWSCore {}
+/**
+ * Data processing and transformation services.
+ */
+export interface AWSDataProcessing {
+  awsProfile: string
+  awsRegion: string
+}
 /**
  * Seamlessly create diagrams using the Python diagrams package DSL. This server allows you to generate AWS diagrams, sequence diagrams, flow diagrams, and class diagrams using Python code.
  */
-export interface AWSDiagram {}
+export interface AWSDiagram {
+  outputDir: string
+}
 /**
  * Tools to access AWS documentation, search for content, and get recommendations.
  */
 export interface AWSDocumentation {}
+/**
+ * Generate, run, debug lifescience workflows.
+ */
+export interface AWSHealthOmics {
+  awsProfile: string
+  awsRegion: string
+}
+/**
+ * Industrial IoT asset management.
+ */
+export interface AWSIoTSiteWise {
+  awsProfile: string
+  awsRegion: string
+}
 /**
  * An MCP server implementation for retrieving information from the AWS Knowledge Base using the Bedrock Agent Runtime.
  */
@@ -367,17 +523,175 @@ export interface AWSKBRetrievalArchived {
   awsSecretAccessKey?: string
 }
 /**
+ * Place search, geocoding, and route optimization.
+ */
+export interface AmazonLocationService {
+  awsAccessKeyId: string
+  awsProfile: string
+  awsRegion: string
+  awsSecretAccessKey: string
+  awsSessionToken: string
+}
+/**
+ * Managed Kafka cluster operations.
+ */
+export interface AmazonMSK {
+  awsAccessKeyId: string
+  awsProfile: string
+  awsRegion: string
+  awsSecretAccessKey: string
+  awsSessionToken: string
+}
+/**
+ * AWS service pricing and cost estimates.
+ */
+export interface AWSPricing {
+  awsAccessKeyId: string
+  awsProfile: string
+  awsRegion: string
+  awsSecretAccessKey: string
+  awsSessionToken: string
+}
+/**
  * Terraform on AWS best practices, infrastructure as code patterns, and security compliance with Checkov.
  */
 export interface AWSTerraform {}
 /**
- * The Azure MCP Server, bringing the power of Azure to your agents.
+ * Billing and cost management.
+ */
+export interface AWSBillingAndCostManagement {
+  awsProfile: string
+  awsRegion: string
+  storageLensManifestLocation: string
+}
+/**
+ * Direct resource management with security scanning.
+ */
+export interface AWSCloudControlAPI {
+  awsAccessKeyId: string
+  awsProfile: string
+  awsRegion: string
+  awsSecretAccessKey: string
+}
+/**
+ * CloudFormation resource management via Cloud Control API.
+ */
+export interface AWSCloudFormation {
+  awsAccessKeyId: string
+  awsProfile: string
+  awsRegion: string
+  awsSecretAccessKey: string
+  awsSessionToken: string
+}
+/**
+ * AWS CloudTrail audit logging and monitoring.
+ */
+export interface AWSCloudTrail {
+  awsProfile: string
+}
+/**
+ * Metrics, alarms, and logs analysis.
+ */
+export interface AmazonCloudWatch {
+  awsProfile: string
+  awsRegion: string
+}
+/**
+ * Application performance monitoring and insights.
+ */
+export interface AmazonCloudWatchApplicationSignals {
+  awsProfile: string
+  awsRegion: string
+}
+/**
+ * Detailed cost analysis and reporting.
+ */
+export interface AWSCostExplorer {
+  awsAccessKeyId: string
+  awsProfile: string
+  awsRegion: string
+  awsSecretAccessKey: string
+  awsSessionToken: string
+}
+/**
+ * Complete DynamoDB operations and table management.
+ */
+export interface AmazonDynamoDB {
+  awsProfile: string
+  awsRegion: string
+}
+/**
+ * ElastiCache control plane operations.
+ */
+export interface AmazonElastiCache {
+  awsProfile: string
+  awsRegion: string
+}
+/**
+ * IAM user, role, group, and policy management.
+ */
+export interface AWSIAM {
+  awsAccessKeyId: string
+  awsProfile: string
+  awsRegion: string
+  awsSecretAccessKey: string
+}
+/**
+ * High-speed caching with Memcached.
+ */
+export interface AmazonElastiCacheForMemcached {
+  memcachedHost: string
+  memcachedPort?: string
+}
+/**
+ * AI image generation using Amazon Nova Canvas.
+ */
+export interface AWSLabsNovaCanvas {
+  awsAccessKeyId: string
+  awsProfile: string
+  awsRegion: string
+  awsSecretAccessKey: string
+  awsSessionToken: string
+}
+/**
+ * Data warehouse operations and queries.
+ */
+export interface AmazonRedshift {
+  awsProfile: string
+  awsRegion: string
+}
+/**
+ * Manage S3 Tables for analytics.
+ */
+export interface AWSS3Tables {
+  awsAccessKeyId: string
+  awsProfile: string
+  awsRegion: string
+  awsSecretAccessKey: string
+  awsSessionToken: string
+}
+/**
+ * Time-series database operations.
+ */
+export interface AmazonTimestreamForInfluxDB {
+  awsProfile: string
+  awsRegion: string
+}
+/**
+ * Advanced data structures with Valkey.
+ */
+export interface AmazonElastiCacheMemoryDBForValkey {
+  valkeyHost: string
+  valkeyPort: string
+}
+/**
+ * Catalog of official Microsoft MCP (Model Context Protocol) server implementations for AI-powered data access and tool integration.
  */
 export interface Azure {}
 /**
  * Connects with the Beagle Security backend using a user token to manage applications, run automated security tests, track vulnerabilities across environments, and gain intelligence from Application and API vulnerability data.
  */
-export interface BeagleSecurityMCPServer {
+export interface BeagleSecurity {
   beagleSecurityApiToken: string
 }
 /**
@@ -417,20 +731,13 @@ export interface Buildkite {
 /**
  * Tools to interact with the Camunda 7 Community Edition Engine using the Model Context Protocol (MCP). Whether you're automating workflows, querying process instances, or integrating with external systems, Camunda MCP Server is your agentic solution for seamless interaction with Camunda.
  */
-export interface CamundaBPMProcessEngineMCPServer {
+export interface CamundaBPMProcessEngine {
   camundahost: string
-}
-/**
- * This fully functional MCP Server allows you to connect to any data source in Connect Cloud from Claude Desktop.
- */
-export interface CDataConnectCloud {
-  cdataPat?: string
-  username: string
 }
 /**
  * An MCP server for CharmHealth EHR that allows LLMs and MCP clients to interact with patient records, encounters, and practice information.
  */
-export interface CharmHealthMCPServer {
+export interface CharmHealth {
   charmhealthApiKey: string
   charmhealthBaseUrl: string
   charmhealthClientId: string
@@ -455,7 +762,7 @@ export interface CircleCI {
 /**
  * Official ClickHouse MCP Server.
  */
-export interface OfficialClickHouseMCPServer {
+export interface OfficialClickHouse {
   connectTimeout: string
   host: string
   password: string
@@ -474,7 +781,7 @@ export interface Close {
 /**
  * MCP server to deploy apps to Cloud Run.
  */
-export interface CloudRunMCP {
+export interface CloudRun {
   /**
    * path to application-default credentials (eg $HOME/.config/gcloud/application_default_credentials.json )
    */
@@ -503,9 +810,11 @@ export interface CockroachDB {
  */
 export interface PythonInterpreter {}
 /**
- * Context7 MCP Server -- Up-to-date code documentation for LLMs and AI code editors.
+ * Pull up-to-date, version-specific documentation and code examples for any library or framework straight into your prompt.
  */
-export interface Context7 {}
+export interface Context7 {
+  apiKey: string
+}
 /**
  * Couchbase is a distributed document database with a powerful search engine and in-built operational and analytical capabilities.
  */
@@ -531,7 +840,7 @@ export interface Couchbase {
 /**
  * Brings context about device inventory, threats, risks and utilization powered by the Cylera Partner API into an LLM.
  */
-export interface TheOfficialMCPServerForCylera {
+export interface Cylera {
   cyleraBaseUrl: string
   cyleraPassword: string
   cyleraUsername: string
@@ -551,7 +860,7 @@ export interface Dappier {
 /**
  * Enable fast, free real-time web search and access premium data from trusted media brands—news, financial markets, sports, entertainment, weather, and more. Build powerful AI agents with Dappier.
  */
-export interface DappierRemoteMCPServer {
+export interface DappierRemote {
   dappierRemoteApiKey: string
 }
 /**
@@ -622,20 +931,24 @@ export interface DodoPayments {
   dodoPaymentsApiKey: string
 }
 /**
+ * Provides detailed type information from .NET projects including assembly exploration, namespace discovery, type reflection, and NuGet integration for AI coding agents.
+ */
+export interface NETTypesExplorer {}
+/**
  * DreamFactory is a REST API generation platform with support for hundreds of data sources, including Microsoft SQL Server, MySQL, PostgreSQL, and MongoDB. The DreamFactory MCP Server makes it easy for users to securely interact with their data sources via an MCP client.
  */
-export interface DreamFactoryMCPServer {
+export interface DreamFactory {
   dreamfactoryapikey: string
   dreamfactoryurl: string
 }
 /**
- * A Model Context Protocol (MCP) server that provides web search capabilities through DuckDuckGo, with additional features for content fetching and parsing.
+ * Community-maintained server for DuckDuckGo search. Not published by or affiliated with DuckDuckGo.
  */
-export interface DuckDuckGo {}
+export interface PrivateWebSearch {}
 /**
  * This MCP Server allows interaction with the Dynatrace observability platform, brining real-time observability data directly into your development workflow.
  */
-export interface DynatraceMCPServer {
+export interface Dynatrace {
   oauthClientId: string
   oauthClientSecret: string
   url: string
@@ -657,7 +970,7 @@ export interface EduBase {
 /**
  * Tools and resources for writing Effect code in Typescript.
  */
-export interface EffectMCP {}
+export interface Effect {}
 /**
  * Interact with your Elasticsearch indices through natural language conversations.
  */
@@ -668,7 +981,7 @@ export interface Elasticsearch {
 /**
  * Official ElevenLabs Model Context Protocol (MCP) server that enables interaction with powerful Text to Speech and audio processing APIs.
  */
-export interface ElevenlabsMCP {
+export interface ElevenLabs {
   apiKey?: string
   data: string
 }
@@ -727,7 +1040,7 @@ export interface Firecrawl {
 /**
  * Real-time network monitoring, security analysis, and firewall management through 28 specialized tools. Access security alerts, network flows, device status, and firewall rules directly from your Firewalla device.
  */
-export interface FirewallaMCPServer {
+export interface Firewalla {
   /**
    * Your Firewalla Box Global ID
    */
@@ -739,12 +1052,9 @@ export interface FirewallaMCPServer {
   mspId: string
 }
 /**
- * Official flexprice MCP Server.
+ * Provides tools to search and retrieve Google Gemini API documentation.
  */
-export interface FlexPrice {
-  apiKey: string
-  baseUrl: string
-}
+export interface GeminiAPIDocs {}
 /**
  * Git repository interaction and automation.
  */
@@ -784,7 +1094,7 @@ export interface GitLabArchived {
  */
 export interface GitMCP {}
 /**
- * Easily run glif.app AI workflows inside your LLM: image generators, memes, selfies, and more. Glif supports all major multimedia AI models inside one app.
+ * Deprecated — use the hosted Glif MCP server at https://glif.app/mcp.
  */
 export interface GlifApp {
   apiToken: string
@@ -794,13 +1104,17 @@ export interface GlifApp {
 /**
  * A Model Context Protocol server for Gmail operations using IMAP/SMTP with app password authentication. Supports listing messages, searching emails, and sending messages. To create your app password, visit your Google Account settings under Security > App Passwords. Or visit the link https://myaccount.google.com/apppasswords.
  */
-export interface GmailMCPServer {
+export interface Gmail {
   /**
    * Your Gmail email address
    */
   emailAddress: string
   emailPassword?: string
 }
+/**
+ * Interact with Google Flights data to search for one-way, round-trip, and date range flight options between airports.
+ */
+export interface GoogleFlights {}
 /**
  * Tools for interacting with the Google Maps API.
  */
@@ -810,7 +1124,7 @@ export interface GoogleMapsArchived {
 /**
  * Complete Google Maps integration with 8 tools including geocoding, places search, directions, elevation data, and more using Google's latest APIs.
  */
-export interface GoogleMapsComprehensiveMCP {
+export interface GoogleMapsComprehensive {
   googleMapsApiKey: string
 }
 /**
@@ -829,7 +1143,7 @@ export interface Gyazo {
 /**
  * A Model Context Protocol (MCP) server that provides access to Hacker News stories, comments, and user data, with support for search and content retrieval.
  */
-export interface HackernewsMcp {}
+export interface HackerNews {}
 /**
  * Model Context Protocol server for Hackle.
  */
@@ -845,7 +1159,7 @@ export interface HandwritingOCR {
 /**
  * HDX MCP Server provides access to humanitarian data through the Humanitarian Data Exchange (HDX) API - https://data.humdata.org/hapi. This server offers 33 specialized tools for retrieving humanitarian information including affected populations (refugees, IDPs, returnees), baseline demographics, food security indicators, conflict data, funding information, and operational presence across hundreds of countries and territories. See repository for instructions on getting a free HDX_APP_INDENTIFIER for access.
  */
-export interface HumanitarianDataExchangeMCPServer {
+export interface HumanitarianDataExchange {
   appIdentifier: string
 }
 /**
@@ -857,13 +1171,13 @@ export interface Heroku {
 /**
  * Interact with Hostinger services over the Hostinger API.
  */
-export interface HostingerAPIMCPServer {
+export interface HostingerAPI {
   apitoken: string
 }
 /**
  * A Model Context Protocol (MCP) server that exposes Hoverfly as a programmable tool for AI assistants like Cursor, Claude, GitHub Copilot, and others supporting MCP. It enables dynamic mocking of third-party APIs to unblock development, automate testing, and simulate unavailable services during integration.
  */
-export interface HoverflyMCPServer {
+export interface Hoverfly {
   data: string
 }
 /**
@@ -879,7 +1193,7 @@ export interface HuggingFace {}
 /**
  * Hummingbot MCP is an open-source toolset that lets you control and monitor your Hummingbot trading bots through AI-powered commands and automation.
  */
-export interface HummingbotMCPTradingAgent {
+export interface HummingbotTradingAgent {
   apiUrl: string
   hummingbotApiPassword?: string
   hummingbotApiUsername?: string
@@ -938,7 +1252,7 @@ export interface JetBrains {
 /**
  * Comprehensive MCP server for Kafka Schema Registry operations. Features multi-registry support, schema contexts, migration tools, OAuth authentication, and 57+ tools for complete schema management. Supports SLIM_MODE for optimal performance.
  */
-export interface KafkaSchemaRegistryMCP {
+export interface KafkaSchemaRegistry {
   /**
    * Schema Registry URL
    */
@@ -955,7 +1269,7 @@ export interface KafkaSchemaRegistryMCP {
   viewonly?: string
 }
 /**
- * The Official Model Context Protocol (MCP) server for Kagi search & other tools.
+ * The Official Model Context Protocol (MCP) server for Kagi Search & other tools.
  */
 export interface KagiSearch {
   engine: string
@@ -964,7 +1278,7 @@ export interface KagiSearch {
 /**
  * Keboola MCP Server is an open-source bridge between your Keboola project and modern AI tools.
  */
-export interface KeboolaMCPServer {
+export interface Keboola {
   kbcStorageToken: string
   kbcWorkspaceSchema: string
 }
@@ -978,7 +1292,7 @@ export interface KongKonnect {
 /**
  * MCP Server that enables AI assistants to interact with Kubernetes clusters via kubectl operations.
  */
-export interface KubectlMCPServer {
+export interface Kubectl {
   kubeconfig: string
 }
 /**
@@ -1007,7 +1321,7 @@ export interface LINE {
 /**
  * This MCP server allows Claude and other AI assistants to access your LinkedIn. Scrape LinkedIn profiles and companies, get your recommended jobs, and perform job searches. Set your li_at LinkedIn cookie to use this server.
  */
-export interface LinkedInMCPServer {
+export interface LinkedIn {
   linkedinCookie: string
   /**
    * Custom user agent string (optional, helps avoid detection and cookie login issues)
@@ -1021,7 +1335,7 @@ export interface LLMText {}
 /**
  * A Model Context Protocol (MCP) server exposing Bitcoin blockchain data through the Maestro API platform. Provides tools to explore blocks, transactions, addresses, inscriptions, runes, and other metaprotocol data.
  */
-export interface MaestroMCPServer {
+export interface Maestro {
   apiKeyApiKey: string
 }
 /**
@@ -1031,13 +1345,13 @@ export interface Manifold {}
 /**
  * Transform any AI agent into a geospatially-aware system with Mapbox APIs. Provides geocoding, POI search, routing, travel time matrices, isochrones, and static map generation.
  */
-export interface MapboxMCPServer {
+export interface Mapbox {
   accessToken: string
 }
 /**
  * Direct access to Mapbox developer APIs for AI assistants. Enables style management, token management, GeoJSON preview, and other developer tools for building Mapbox applications.
  */
-export interface MapboxDeveloperMCPServer {
+export interface MapboxDeveloper {
   mapboxAccessToken: string
 }
 /**
@@ -1055,7 +1369,7 @@ export interface Markitdown {
 /**
  * JVM dependency intelligence for any build tool using Maven Central Repository. Includes Context7 integration for upgrade documentation and guidance.
  */
-export interface MavenToolsMCPServer {}
+export interface MavenTools {}
 /**
  * Knowledge graph-based persistent memory system.
  */
@@ -1075,7 +1389,7 @@ export interface MercadoPago {
 /**
  * A comprehensive MCP server for Metabase with 70+ tools.
  */
-export interface MetabaseMCP {
+export interface Metabase {
   apiKey: string
   metabaseurl: string
   metabaseusername: string
@@ -1099,6 +1413,16 @@ export interface MultiversX {
   wallet: string
 }
 /**
+ * Bridges n8n's workflow automation platform with AI models, providing access to 543 n8n nodes, workflow templates, and AI-capable automation tools.
+ */
+export interface N8N {
+  apiKey: string
+  /**
+   * The URL of your n8n instance (use http://host.docker.internal:5678 for local instances)
+   */
+  apiUrl: string
+}
+/**
  * MCP server to interact with the data feeds provided by the Nasdaq Data Link. Developed by the community and maintained by Stefano Amorelli.
  */
 export interface NasdaqDataLink {
@@ -1109,6 +1433,17 @@ export interface NasdaqDataLink {
  */
 export interface Needle {
   needleApiKey: string
+}
+/**
+ * Official MCP server for Neo4j. Interact with Neo4j using Cypher graph queries.
+ */
+export interface Neo4J {
+  database: string
+  password: string
+  readOnly: boolean
+  telemetry: boolean
+  uri: string
+  username: string
 }
 /**
  * Manage Neo4j Aura database instances through the Neo4j Aura API.
@@ -1133,6 +1468,7 @@ export interface Neo4JCypher {
   readOnly?: boolean
   readTimeout?: string
   responseTokenLimit?: string
+  schemaSampleSize?: string
   serverAllowOrigins?: string
   serverAllowedHosts?: string
   serverHost?: string
@@ -1175,6 +1511,10 @@ export interface Neon {
   apiKey: string
 }
 /**
+ * next-devtools-mcp is a Model Context Protocol (MCP) server that provides Next.js development tools and utilities for AI coding assistants.
+ */
+export interface NextJsDevTools {}
+/**
  * A Node.js–based Model Context Protocol server that spins up disposable Docker containers to execute arbitrary JavaScript.
  */
 export interface NodeJsSandbox {}
@@ -1199,9 +1539,21 @@ export interface Obsidian {
   apiKey: string
 }
 /**
+ * ## :tada: __It's Official__ :tada: The Okta Open-Source MCP Server integrates with LLMs and AI agents, allowing you to perform various Okta management operations using natural language and is Generally Available (GA).
+ */
+export interface Okta {
+  logPath: string
+  oktaClientId: string
+  oktaKeyId: string
+  oktaLogLevel: string
+  oktaOrgUrl: string
+  oktaPrivateKey: string
+  oktaScopes: string
+}
+/**
  * Secure Okta identity and access management via Model Context Protocol (MCP). Access Okta users, groups, applications, logs, and policies through AI assistants with enterprise-grade security.
  */
-export interface OktaMCPServer {
+export interface Okta1 {
   /**
    * Okta organization URL (e.g., https://dev-123456.okta.com)
    */
@@ -1219,7 +1571,7 @@ export interface OktaMCPServer {
 /**
  * A Model Context Protocol server for Omi interaction and automation. This server provides tools to read, search, and manipulate Memories and Conversations.
  */
-export interface OmiMcp {
+export interface Omi {
   apiKey: string
 }
 /**
@@ -1228,18 +1580,11 @@ export interface OmiMcp {
 export interface ONLYOFFICEDocSpace {
   baseUrl: string
   docspaceApiKey: string
-  docspaceAuthToken: string
-  docspacePassword: string
-  docspaceUsername: string
-  dynamic: boolean
-  origin: string
-  toolsets: string
-  userAgent: string
 }
 /**
  * Fetch, validate, and generate code or curl from any OpenAPI or Swagger spec - all from a single URL.
  */
-export interface OpenAPIToolkitForMCP {
+export interface OpenAPIToolkit {
   mode: string
 }
 /**
@@ -1279,7 +1624,7 @@ export interface OpenZeppelinStellarContracts {}
  */
 export interface OpenZeppelinStylusContracts {}
 /**
- * Model Context Protocol (MCP) implementation for Opik enabling seamless IDE integration and unified access to prompts, projects, traces, and metrics.
+ * Model Context Protocol (MCP) server for Opik, the open-source LLM observability and evaluation platform, built by Comet. Read traces, log scores, and manage prompts from Claude Code, Cursor, or VS Code.
  */
 export interface Opik {
   apiBaseUrl: string
@@ -1289,13 +1634,13 @@ export interface Opik {
 /**
  * A Model Context Protocol (MCP) server for querying deals and evaluations from the Opine CRM API.
  */
-export interface OpineMCPServer {
+export interface Opine {
   opineApiKey: string
 }
 /**
  * Connect to Oracle databases via MCP, providing secure read-only access with support for schema exploration, query execution, and metadata inspection.
  */
-export interface OracleDatabaseMCPServer {
+export interface OracleDatabase {
   oracleConnectionString: string
   oracleUser: string
   password: string
@@ -1312,7 +1657,7 @@ export interface Oxylabs {
   username: string
 }
 /**
- * A MCP for searching and downloading academic papers from multiple sources like arXiv, PubMed, bioRxiv, etc.
+ * MCP, CLI, Skills for searching and downloading academic papers from multiple sources like arXiv, PubMed, bioRxiv, etc.
  */
 export interface PaperSearch {}
 /**
@@ -1337,13 +1682,13 @@ export interface PineconeAssistant {
 /**
  * Playwright Model Context Protocol Server - Tool to automate Browsers and APIs in Claude Desktop, Cline, Cursor IDE and More 🔌.
  */
-export interface ExecuteAutomationPlaywrightMCP {
+export interface ExecuteAutomationPlaywright {
   data: string
 }
 /**
  * A unified MCP proxy that aggregates multiple MCP servers into one interface, enabling seamless tool discovery and management across all your AI interactions. Manage all your MCP servers from a single connection point with RAG capabilities and real-time notifications.
  */
-export interface PluggedInMCPProxy {
+export interface PluggedInProxy {
   /**
    * Base URL for the Plugged.in API (optional, defaults to https://plugged.in for cloud or http://localhost:12005 for self-hosted)
    */
@@ -1363,15 +1708,9 @@ export interface PomoDash {
   apiKey: string
 }
 /**
- * Connect with read-only access to PostgreSQL databases. This server enables LLMs to inspect database schemas and execute read-only queries.
- */
-export interface PostgreSQLReadonlyArchived {
-  url: string
-}
-/**
  * Postman's MCP server connects AI agents, assistants, and chatbots directly to your APIs on Postman. Use natural language to prompt AI to automate work across your Postman collections, environments, workspaces, and more.
  */
-export interface PostmanMCPServer {
+export interface Postman {
   apiKey: string
 }
 /**
@@ -1388,17 +1727,48 @@ export interface Prometheus {
   prometheusUrl: string
 }
 /**
+ * Manage Proxmox VE infrastructure including virtual machines, containers, storage, networking, firewall rules, high availability, and more.
+ */
+export interface ProxmoxVE {
+  /**
+   * Proxmox VE hostname or IP address
+   */
+  host: string
+  password?: string
+  /**
+   * Proxmox VE API port
+   */
+  port?: string
+  /**
+   * Request timeout in seconds
+   */
+  timeout?: string
+  /**
+   * API token name
+   */
+  tokenName: string
+  tokenValue: string
+  /**
+   * Proxmox VE user (e.g. root@pam)
+   */
+  user?: string
+  /**
+   * Verify SSL certificates (true/false)
+   */
+  verifySsl?: string
+}
+/**
  * Browser automation and web scraping using Puppeteer.
  */
 export interface PuppeteerArchived {}
 /**
- * Educational Python refactoring assistant that provides guided suggestions for AI assistants.  Features: • Step-by-step refactoring instructions without modifying code • Comprehensive code analysis using professional tools (Rope, Radon, Vulture, Jedi, LibCST, Pyrefly) • Educational approach teaching refactoring patterns through guided practice • Support for both guide-only and apply-changes modes • Identifies long functions, high complexity, dead code, and type issues • Provides precise line numbers and specific refactoring instructions • Compatible with all AI assistants (Claude, GPT, Cursor, Continue, etc.)  Perfect for developers learning refactoring patterns while maintaining full control over code changes. Acts as a refactoring mentor rather than an automated code modifier.
+ * Educational Python refactoring assistant that provides guided suggestions for AI assistants.
  */
 export interface PythonRefactoringAssistant {}
 /**
  * The QuantConnect MCP Server is a bridge for AIs (such as Claude and OpenAI o3 Pro) to interact with our cloud platform. When equipped with our MCP, the AI can perform tasks on your behalf through our API such as updating projects, writing strategies, backtesting, and deploying strategies to production live-trading.
  */
-export interface QuantConnectMCPServer {
+export interface QuantConnect {
   agentname: string
   quantconnectapitoken: string
   quantconnectuserid: string
@@ -1406,7 +1776,7 @@ export interface QuantConnectMCPServer {
 /**
  * A comprehensive security scanner for MCP servers with YARA rules and static analysis capabilities.
  */
-export interface RampartsMCPSecurityScanner {}
+export interface RampartsSecurityScanner {}
 /**
  * Razorpay's Official MCP Server.
  */
@@ -1415,9 +1785,9 @@ export interface Razorpay {
   keySecret?: string
 }
 /**
- * A comprehensive Model Context Protocol (MCP) server for Reddit integration. This server enables AI agents to interact with Reddit programmatically through a standardized interface.
+ * This server provides AI agents with tools to fetch, post and search on Reddit.
  */
-export interface McpReddit {
+export interface Reddit {
   redditClientId: string
   redditClientSecret: string
   redditPassword: string
@@ -1463,9 +1833,9 @@ export interface Render {
   apiKey: string
 }
 /**
- * Send emails directly from Cursor with this email sending MCP server.
+ * The official MCP server to send emails and interact with Resend.
  */
-export interface SendEmails {
+export interface Resend {
   apiKey?: string
   /**
    * comma separated list of reply to email addresses
@@ -1484,15 +1854,9 @@ export interface RISKEN {
   url: string
 }
 /**
- * MCP server that provides container image vulnerability scanning and remediation capabilities through Root.io.
- */
-export interface RootIoVulnerabilityRemediationMCP {
-  apiAccessToken: string
-}
-/**
  * Python server implementing Model Context Protocol (MCP) for ROS2.
  */
-export interface WiseVisionROS2MCPServer {}
+export interface WiseVisionROS2 {}
 /**
  * Access to Rube's catalog of remote MCP servers.
  */
@@ -1502,7 +1866,7 @@ export interface Rube {
 /**
  * The Rust MCP Filesystem is a high-performance, asynchronous, and lightweight Model Context Protocol (MCP) server built in Rust for secure and efficient filesystem operations. Designed with security in mind, it operates in read-only mode by default and restricts clients from updating allowed directories via MCP Roots unless explicitly enabled, ensuring robust protection against unauthorized access. Leveraging asynchronous I/O, it delivers blazingly fast performance with a minimal resource footprint. Optimized for token efficiency, the Rust MCP Filesystem enables large language models (LLMs) to precisely target searches and edits within specific sections of large files and restrict operations by file size range, making it ideal for efficient file exploration, automation, and system integration.
  */
-export interface BlazingFastAsynchronousMCPServerForSeamlessFilesystemOperations {
+export interface RustFilesystem {
   /**
    * Enable read/write mode. If false, the app operates in read-only mode.
    */
@@ -1555,7 +1919,7 @@ export interface SchemaCrawlerAI {
 /**
  * This adds a border to an image and returns base64 encoded image.
  */
-export interface SchoginiMCPImageBorder {}
+export interface SchoginiImageBorder {}
 /**
  * ScapeGraph MCP Server.
  */
@@ -1571,7 +1935,7 @@ export interface Scrapezy {
 /**
  * SecureNote.link MCP Server - allowing AI agents to securely share sensitive information through end-to-end encrypted notes.
  */
-export interface SecurenoteLinkMcpServer {}
+export interface SecurenoteLink {}
 /**
  * MCP server for using Semgrep to scan code for security vulnerabilities.
  */
@@ -1602,7 +1966,7 @@ export interface ShortIo {
 /**
  * Advanced SimpleCheckList with MCP server and SQLite database for comprehensive task management.  Features: • Complete project and task management system • Hierarchical organization (Projects → Groups → Task Lists → Tasks → Subtasks) • SQLite database for data persistence • RESTful API with comprehensive endpoints • MCP protocol compliance for AI assistant integration • Docker-optimized deployment with stability improvements  **v1.0.1 Update**: Enhanced Docker stability with improved container lifecycle management. Default mode optimized for containerized deployment with reliable startup and shutdown processes.  Perfect for AI assistants managing complex project workflows and task hierarchies.
  */
-export interface SimpleCheckListMCPServer {}
+export interface SimpleCheckList {}
 /**
  * MCP server for interacting with SingleStore Management API and services.
  */
@@ -1620,7 +1984,7 @@ export interface SlackArchived {
 /**
  * MCP server for AI access to SmartBear tools, including BugSnag, Reflect, API Hub, PactFlow.
  */
-export interface SmartBearMCPServer {
+export interface SmartBear {
   apiHubApiKey: string
   bugsnagApiKey: string
   bugsnagAuthToken: string
@@ -1680,7 +2044,7 @@ export interface Supadata {
 /**
  * MCP Server to interact with a SuzieQ network observability instance via its REST API.
  */
-export interface SuzieqMCP {
+export interface Suzieq {
   apiEndpoint: string
   apiKey: string
 }
@@ -1707,15 +2071,47 @@ export interface Telnyx {
   apiKey: string
 }
 /**
- * MCP server for Tembo Cloud's platform API.
+ * Manage Temporal workflows, schedules, namespaces, task queues, and workflow execution history from MCP clients.
  */
-export interface Tembo {
-  apiKey: string
+export interface Temporal {
+  apiKey?: string
+  /**
+   * Temporal frontend host and port.
+   */
+  temporalHost: string
+  /**
+   * Temporal namespace to connect to.
+   */
+  temporalNamespace: string
+  /**
+   * Optional path inside the container to an mTLS client certificate.
+   */
+  temporalTlsClientCertPath?: string
+  /**
+   * Optional path inside the container to an mTLS client private key.
+   */
+  temporalTlsClientKeyPath?: string
+  /**
+   * Whether to force TLS for the Temporal connection.
+   */
+  temporalTlsEnabled?: string
 }
 /**
  * The Terraform MCP Server provides seamless integration with Terraform ecosystem, enabling advanced automation and interaction capabilities for Infrastructure as Code (IaC) development.
  */
 export interface HashicorpTerraform {}
+/**
+ * The Testkube MCP Server exposes continuous testing capabilities (test orchestration, execution, troubleshooting and anlysis) to AI tools and workflows.
+ */
+export interface Testkube {
+  tkAccessToken: string
+  /**
+   * The URL of the Testkube Control Plane
+   */
+  tkControlPlaneUrl: string
+  tkEnvId: string
+  tkOrgId: string
+}
 /**
  * Transform natural language queries into GraphQL queries using an AI agent. Provides schema management, query validation, execution, and history tracking.
  */
@@ -1737,6 +2133,17 @@ export interface TextToGraphQL {
   openaiApiKey: string
 }
 /**
+ * Connect your AI workflows to the ThingsBoard IoT Platform through this MCP server.  Enables LLMs to query device telemetry, manage IoT entities (devices, assets, customers), and analyze sensor data - all through natural language.  Perfect for building AI-powered IoT monitoring, predictive maintenance, and automated device management workflows. Supports both ThingsBoard Community Edition and Professional Edition.
+ */
+export interface ThingsBoard {
+  password?: string
+  /**
+   * URL of your ThingsBoard Platform instance
+   */
+  url: string
+  username?: string
+}
+/**
  * Tigris is a globally distributed S3-compatible object storage service that provides low latency anywhere in the world, enabling developers to store and access any amount of data for a wide range of use cases.
  */
 export interface TigrisData {
@@ -1749,15 +2156,9 @@ export interface TigrisData {
  */
 export interface TimeReference {}
 /**
- * Triplewhale MCP Server.
- */
-export interface Triplewhale {
-  apiKey: string
-}
-/**
  * A comprehensive Model Context Protocol (MCP) server that enables AI assistants to control Unreal Engine via Remote Control API. Built with TypeScript and designed for game development automation.
  */
-export interface UnrealEngineMCPServer {
+export interface UnrealEngine {
   /**
    * Logging level
    */
@@ -1776,10 +2177,122 @@ export interface UnrealEngineMCPServer {
   ueRcWsPort: string
 }
 /**
+ * Vectra AI MCP Server - An MCP server that connects AI assistants & agents to the Vectra AI security platform, enabling intelligent threat analysis and automated incident response.
+ */
+export interface VectraAIRUXMCPServer {
+  /**
+   * The client ID of the Vectra AI RUX MCP Server
+   */
+  VECTRACLIENTID: string
+  vectraClientSecret?: string
+  /**
+   * The base URL of the Vectra AI RUX MCP Server
+   */
+  vectraUrl?: string
+}
+/**
  * VeyraX MCP is the only connection you need to access all your tools in any MCP-compatible environment.
  */
 export interface VeyraX {
   apiKey: string
+}
+/**
+ * Provides access to your VictoriaLogs instance and seamless integration with VictoriaLogs APIs and documentation. It can give you a comprehensive interface for logs, observability, and debugging tasks related to your VictoriaLogs instances, enable advanced automation and interaction capabilities for engineers and tools.
+ */
+export interface VictoriaLogs {
+  /**
+   * Comma-separated list of tools to disable (possible values: export, metric_statistics, test_rules)
+   */
+  mcpDisabledTools?: string
+  /**
+   * Defines the heartbeat interval for the streamable-http protocol. It means the MCP server will send a heartbeat to the client through the GET connection, to keep the connection alive from being closed by the network infrastructure (e.g. gateways)
+   */
+  mcpHeartbeatInterval?: string
+  /**
+   * Address and port on which the MCP server listens for incoming connections (e.g., ':8081')
+   */
+  mcpListenAddr?: string
+  /**
+   * Mode in which the MCP server operates (possible values: stdio, http, sse)
+   */
+  mcpServerMode?: string
+  vlInstanceBearerToken?: string
+  /**
+   * URL of VictoriaLogs instance (it should be root URL of vlsingle or vlselect)
+   */
+  vlInstanceEntrypoint: string
+  /**
+   * Optional custom headers to include in requests to VictoriaLogs instance, formatted as 'header1=value1,header2=value2'
+   */
+  vlInstanceHeaders?: string
+}
+/**
+ * Provides access to your VictoriaMetrics instance and seamless integration with VictoriaMetrics APIs and documentation. It can give you a comprehensive interface for monitoring, observability, and debugging tasks related to your VictoriaMetrics instances, enable advanced automation and interaction capabilities for engineers and tools.
+ */
+export interface VictoriaMetrics {
+  /**
+   * Set to 'true' to disable all resource endpoints
+   */
+  mcpDisableResources?: string
+  /**
+   * Comma-separated list of tools to disable (possible values: export, metric_statistics, test_rules)
+   */
+  mcpDisabledTools?: string
+  /**
+   * Defines the heartbeat interval for the streamable-http protocol. It means the MCP server will send a heartbeat to the client through the GET connection, to keep the connection alive from being closed by the network infrastructure (e.g. gateways)
+   */
+  mcpHeartbeatInterval?: string
+  /**
+   * Address and port on which the MCP server listens for incoming connections (e.g., ':8080')
+   */
+  mcpListenAddr?: string
+  /**
+   * Mode in which the MCP server operates (possible values: stdio, http, sse)
+   */
+  mcpServerMode?: string
+  vmInstanceBearerToken?: string
+  /**
+   * URL of VictoriaMetrics instance (it should be root URL of vmsingle or vmselect)
+   */
+  vmInstanceEntrypoint: string
+  /**
+   * Optional custom headers to include in requests to VictoriaMetrics instance, formatted as 'header1=value1,header2=value2'
+   */
+  vmInstanceHeaders?: string
+  /**
+   * Type of VictoriaMetrics instance (possible values: single, cluster)
+   */
+  vmInstanceType: string
+}
+/**
+ * Provides access to your VictoriaTraces instance and seamless integration with VictoriaTraces APIs and documentation. It can give you a comprehensive interface for tracing, observability, and debugging tasks related to your VictoriaTraces instances, enable advanced automation and interaction capabilities for engineers and tools.
+ */
+export interface VictoriaTraces {
+  /**
+   * Comma-separated list of tools to disable (possible values: export, metric_statistics, test_rules)
+   */
+  mcpDisabledTools?: string
+  /**
+   * Defines the heartbeat interval for the streamable-http protocol. It means the MCP server will send a heartbeat to the client through the GET connection, to keep the connection alive from being closed by the network infrastructure (e.g. gateways)
+   */
+  mcpHeartbeatInterval?: string
+  /**
+   * Address and port on which the MCP server listens for incoming connections (e.g., ':8081')
+   */
+  mcpListenAddr?: string
+  /**
+   * Mode in which the MCP server operates (possible values: stdio, http, sse)
+   */
+  mcpServerMode?: string
+  vtInstanceBearerToken?: string
+  /**
+   * URL of VictoriaTraces instance (it should be root URL of vtsingle or vtselect)
+   */
+  vtInstanceEntrypoint: string
+  /**
+   * Optional custom headers to include in requests to VictoriaTraces instance, formatted as 'header1=value1,header2=value2'
+   */
+  vtInstanceHeaders?: string
 }
 /**
  * provides tools and templates to create a functioning Vizro chart or dashboard step by step.
@@ -1788,11 +2301,11 @@ export interface Vizro {}
 /**
  * This MCP server exposes tools to query the NVD/CVE REST API and return formatted text results suitable for LLM consumption via the MCP protocol. It includes automatic query chunking for large date ranges and parallel processing for improved performance.
  */
-export interface VulnNistMcpServer {}
+export interface VulnNIST {}
 /**
  * Wayfound’s MCP server allows business users to govern, supervise, and improve AI Agents.
  */
-export interface WayfoundMCP {
+export interface Wayfound {
   mcpApiKey: string
 }
 /**
@@ -1816,6 +2329,15 @@ export interface WolframAlpha {
  */
 export interface YouTubeTranscripts {}
 /**
+ * Bridges multiple AI models and CLIs, enabling orchestrated workflows across Claude Code, Gemini CLI, Codex CLI, and other AI development tools.
+ */
+export interface Zen {
+  geminiApiKey: string
+  openaiApiKey: string
+  openrouterApiKey: string
+  xaiApiKey: string
+}
+/**
  * MCP server for Zerodha Kite Connect API - India's leading stock broker trading platform. Execute trades, manage portfolios, and access real-time market data for NSE, BSE, and other Indian exchanges.
  */
 export interface ZerodhaKiteConnect {
@@ -1832,4 +2354,34 @@ export interface ZerodhaKiteConnect {
    * OAuth redirect URL configured in your Kite Connect app
    */
   kiteRedirectUrl?: string
+}
+/**
+ * Manage the Zscaler Zero Trust Exchange platform via 300+ tools across ZPA (private access), ZIA (internet access), ZDX (digital experience), ZCC (client connector), ZTW (workload segmentation), ZMS (microsegmentation), EASM (attack surface management), Z-Insights (security analytics), and ZIdentity (identity management). Create and manage policies, troubleshoot connectivity, audit security configurations, and investigate incidents — all from your AI assistant.
+ */
+export interface Zscaler {
+  /**
+   * Comma-separated services to disable (zcc,zdx,zpa,zia,ztw,zid,zeasm,zins,zms)
+   */
+  disabledServices: string
+  /**
+   * Comma-separated tool name patterns to disable (e.g. zia_delete_*,zpa_bulk_*)
+   */
+  disabledTools: string
+  /**
+   * Skip HMAC confirmation prompts for destructive operations (true/false)
+   */
+  skipConfirmations: string
+  /**
+   * Enable write operations (true/false)
+   */
+  writeEnabled: string
+  /**
+   * Comma-separated write tool patterns to allow (e.g. zpa_create_*,zia_update_*)
+   */
+  writeTools: string
+  zscalerClientId: string
+  zscalerClientSecret: string
+  zscalerCloud: string
+  zscalerCustomerId: string
+  zscalerVanityDomain: string
 }

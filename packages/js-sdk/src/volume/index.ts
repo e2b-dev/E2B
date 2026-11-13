@@ -7,12 +7,19 @@ import {
   FILE_TIMEOUT_MS,
 } from './client'
 import {
+  ClientFactory,
   ConnectionConfig,
   ConnectionOpts,
+  HttpVersion,
   setupRequestController,
   wrapStreamWithConnectionCleanup,
 } from '../connectionConfig'
-import { NotFoundError, VolumeError } from '../errors'
+import { isArrayBufferLike, isBlobLike } from '../is'
+import {
+  VolumeError,
+  VolumeNotFoundError,
+  VolumePathNotFoundError,
+} from '../errors'
 import { toUploadBody } from '../utils'
 import { VolumeFileType } from './types'
 import type {
@@ -45,7 +52,7 @@ function convertVolumeEntryStat(
  * Create a `Volume` instance to interact with a volume by its ID,
  * or use the static methods to manage volumes.
  */
-export class Volume {
+export class Volume extends ClientFactory {
   /**
    * Volume ID.
    */
@@ -77,6 +84,11 @@ export class Volume {
   readonly proxy?: string
 
   /**
+   * HTTP version used for requests to the volume content API.
+   */
+  readonly httpVersion?: HttpVersion
+
+  /**
    * Create a local Volume instance with no API call.
    *
    * @param volumeId volume ID.
@@ -85,6 +97,7 @@ export class Volume {
    * @param domain domain for the volume API.
    * @param debug whether to use debug mode.
    * @param proxy proxy URL for the volume content API.
+   * @param opts connection options kept for the volume content API.
    */
   constructor(
     volumeId: string,
@@ -92,14 +105,17 @@ export class Volume {
     token: string,
     domain?: string,
     debug?: boolean,
-    proxy?: string
+    proxy?: string,
+    opts?: Pick<ConnectionOpts, 'httpVersion'>
   ) {
+    super()
     this.volumeId = volumeId
     this.name = name
     this.token = token
     this.domain = domain
     this.debug = debug
     this.proxy = proxy
+    this.httpVersion = opts?.httpVersion
   }
 
   /**
@@ -110,15 +126,20 @@ export class Volume {
    *
    * @returns new Volume instance.
    */
-  static async create(name: string, opts?: ConnectionOpts): Promise<Volume> {
-    const config = new ConnectionConfig(opts)
+  static async create<V extends typeof Volume>(
+    this: V,
+    name: string,
+    opts?: ConnectionOpts
+  ): Promise<InstanceType<V>> {
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.POST('/volumes', {
       body: {
         name,
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     const err = handleApiError(res, VolumeError)
@@ -130,14 +151,15 @@ export class Volume {
       throw new Error('Response data is missing')
     }
 
-    return new Volume(
+    return new this(
       res.data.volumeID,
       res.data.name,
       res.data.token,
-      config.domain,
+      res.data.domain || config.domain,
       config.debug,
-      config.proxy
-    )
+      config.proxy,
+      { httpVersion: config.httpVersion }
+    ) as InstanceType<V>
   }
 
   /**
@@ -148,20 +170,23 @@ export class Volume {
    *
    * @returns Volume instance.
    */
-  static async connect(
+  static async connect<V extends typeof Volume>(
+    this: V,
     volumeId: string,
     opts?: ConnectionOpts
-  ): Promise<Volume> {
-    const config = new ConnectionConfig(opts)
-    const { name, token } = await Volume.getInfo(volumeId, opts)
-    return new Volume(
+  ): Promise<InstanceType<V>> {
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
+    const { name, token, domain } = await this.getInfo(volumeId, apiOpts)
+    return new this(
       volumeId,
       name,
       token,
-      config.domain,
+      domain ?? config.domain,
       config.debug,
-      config.proxy
-    )
+      config.proxy,
+      { httpVersion: config.httpVersion }
+    ) as InstanceType<V>
   }
 
   /**
@@ -176,7 +201,8 @@ export class Volume {
     volumeId: string,
     opts?: ConnectionOpts
   ): Promise<VolumeAndToken> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.GET('/volumes/{volumeID}', {
@@ -185,11 +211,11 @@ export class Volume {
           volumeID: volumeId,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.response.status === 404) {
-      throw new NotFoundError(`Volume ${volumeId} not found`)
+      throw new VolumeNotFoundError(`Volume ${volumeId} not found`)
     }
 
     const err = handleApiError(res, VolumeError)
@@ -201,6 +227,7 @@ export class Volume {
       volumeId: res.data!.volumeID,
       name: res.data!.name,
       token: res.data!.token,
+      domain: res.data!.domain || undefined,
     }
   }
 
@@ -212,11 +239,12 @@ export class Volume {
    * @returns list of volume information.
    */
   static async list(opts?: ConnectionOpts): Promise<VolumeInfo[]> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.GET('/volumes', {
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     const err = handleApiError(res, VolumeError)
@@ -240,7 +268,8 @@ export class Volume {
     volumeId: string,
     opts?: ConnectionOpts
   ): Promise<boolean> {
-    const config = new ConnectionConfig(opts)
+    const apiOpts = this.resolveOpts(opts)
+    const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
 
     const res = await client.api.DELETE('/volumes/{volumeID}', {
@@ -249,7 +278,7 @@ export class Volume {
           volumeID: volumeId,
         },
       },
-      signal: config.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
     if (res.response.status === 404) {
@@ -294,7 +323,7 @@ export class Volume {
     })
 
     if (res.response.status === 404) {
-      throw new NotFoundError(`Path ${path} not found`)
+      throw new VolumePathNotFoundError(`Path ${path} not found`)
     }
 
     const err = handleApiError(res, VolumeError)
@@ -338,7 +367,7 @@ export class Volume {
     })
 
     if (res.response.status === 404) {
-      throw new NotFoundError(`Path ${path} not found`)
+      throw new VolumePathNotFoundError(`Path ${path} not found`)
     }
 
     const err = handleApiError(res, VolumeError)
@@ -380,7 +409,7 @@ export class Volume {
     })
 
     if (res.response.status === 404) {
-      throw new NotFoundError(`Path ${path} not found`)
+      throw new VolumePathNotFoundError(`Path ${path} not found`)
     }
 
     const err = handleApiError(res, VolumeError)
@@ -413,7 +442,7 @@ export class Volume {
       await this.getInfo(path, opts)
       return true
     } catch (err) {
-      if (err instanceof NotFoundError) {
+      if (err instanceof VolumePathNotFoundError) {
         return false
       }
       throw err
@@ -455,7 +484,7 @@ export class Volume {
     })
 
     if (res.response.status === 404) {
-      throw new NotFoundError(`Path ${path} not found`)
+      throw new VolumePathNotFoundError(`Path ${path} not found`)
     }
 
     const err = handleApiError(res, VolumeError)
@@ -572,7 +601,7 @@ export class Volume {
             await res.response.body.cancel().catch(() => {})
           }
           cleanup()
-          throw new NotFoundError(`Path ${path} not found`)
+          throw new VolumePathNotFoundError(`Path ${path} not found`)
         }
 
         const err = handleApiError(res, VolumeError)
@@ -613,7 +642,7 @@ export class Volume {
     })
 
     if (res.response.status === 404) {
-      throw new NotFoundError(`Path ${path} not found`)
+      throw new VolumePathNotFoundError(`Path ${path} not found`)
     }
 
     const err = handleApiError(res, VolumeError)
@@ -623,7 +652,7 @@ export class Volume {
 
     // When the file is empty, `res.data` is `undefined`, so empty values are synthesized below.
     if (format === 'bytes') {
-      return res.data instanceof ArrayBuffer
+      return isArrayBufferLike(res.data)
         ? new Uint8Array(res.data)
         : new Uint8Array()
     }
@@ -633,7 +662,7 @@ export class Volume {
     }
 
     // format === 'blob'
-    return res.data instanceof Blob ? res.data : new Blob([])
+    return isBlobLike(res.data) ? res.data : new Blob([])
   }
 
   /**
@@ -644,7 +673,7 @@ export class Volume {
    * Writing to a file that already exists overwrites the file.
    *
    * @param path path to the file.
-   * @param data data to write to the file. Data can be a string, `ArrayBuffer`, `Blob`, or `ReadableStream`. Outside the browser, `ReadableStream` data is streamed to the API instead of being buffered in memory.
+   * @param data data to write to the file. Data can be a string, `ArrayBuffer`, `Uint8Array` (e.g. a Node.js `Buffer`), `Blob`, or `ReadableStream`. `ReadableStream` data is streamed to the API instead of being buffered in memory (a browser that can't stream request bodies throws `InvalidArgumentError`; pass a `Blob`).
    * @param options file creation options.
    * @param opts connection options.
    *
@@ -652,7 +681,7 @@ export class Volume {
    */
   async writeFile(
     path: string,
-    data: string | ArrayBuffer | Blob | ReadableStream<Uint8Array>,
+    data: string | ArrayBuffer | Uint8Array | Blob | ReadableStream<Uint8Array>,
     opts?: VolumeWriteOpts & VolumeApiOpts
   ): Promise<VolumeEntryStat> {
     const config = new VolumeConnectionConfig(this, {
@@ -661,16 +690,14 @@ export class Volume {
     })
     const client = new VolumeApiClient(config)
 
-    // `toUploadBody` returns a `ReadableStream` only when the body should be
-    // streamed (non-browser stream input); otherwise it buffers into a Blob.
-    const body = await toUploadBody(data)
-    const isStream = body instanceof ReadableStream
+    // `toUploadBody` streams stream input; other data is sent as a Blob.
+    const { body, streamed } = await toUploadBody(data)
 
     // A streamed upload carries no client-side timeout: the socket-write
     // "wire" isn't observable through fetch, and a stalled producer is the
     // caller's own code, so a stuck streamed upload is bounded server-side (or
     // via `opts.signal`). Buffered uploads keep the normal request timeout.
-    const signal = isStream ? opts?.signal : config.getSignal()
+    const signal = streamed ? opts?.signal : config.getSignal()
 
     const res = await client.api.PUT('/volumecontent/{volumeID}/file', {
       params: {
@@ -692,11 +719,11 @@ export class Volume {
       },
       signal,
       // Streaming request bodies require half-duplex mode.
-      ...(isStream && { duplex: 'half' as const }),
+      ...(streamed && { duplex: 'half' as const }),
     })
 
     if (res.response.status === 404) {
-      throw new NotFoundError(`Path ${path} not found`)
+      throw new VolumePathNotFoundError(`Path ${path} not found`)
     }
 
     const err = handleApiError(res, VolumeError)
@@ -736,7 +763,7 @@ export class Volume {
     })
 
     if (res.response.status === 404) {
-      throw new NotFoundError(`Path ${path} not found`)
+      throw new VolumePathNotFoundError(`Path ${path} not found`)
     }
 
     const err = handleApiError(res, VolumeError)

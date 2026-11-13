@@ -3,16 +3,17 @@ set -euo pipefail
 
 # Fetches API specs from their source-of-truth repositories with Copybara.
 #
-# Usage: scripts/fetch-spec.sh <api-spec|envd-spec|volume-api-spec>
+# Usage: scripts/fetch-spec.sh <api-spec|envd-spec|volume-api-spec|workspace-api-spec>
 #
-# api-spec and envd-spec come from e2b-dev/infra at the commit pinned in
-# spec/infra-ref. Override it with E2B_INFRA_REF, e.g.
-# `E2B_INFRA_REF=main pnpm fetch:api-spec` to try the latest spec without
-# touching the pin. volume-api-spec comes from e2b-dev/belt at the commit
-# pinned in spec/belt-ref (override with E2B_BELT_REF).
+# api-spec and envd-spec come from e2b-dev/runtime at the commit pinned in
+# spec/runtime-ref. Override it with E2B_RUNTIME_REF, e.g.
+# `E2B_RUNTIME_REF=main pnpm fetch:api-spec` to try the latest spec without
+# touching the pin. volume-api-spec and workspace-api-spec come from
+# e2b-dev/belt at the commit pinned in spec/belt-ref (override with
+# E2B_BELT_REF).
 #
 # Fetches authenticate with GITHUB_TOKEN (or `gh auth login`) when available;
-# the public infra specs also fetch anonymously. volume-api-spec needs a
+# the public runtime specs also fetch anonymously. The belt specs need a
 # token with read access to the private belt repo — `make fetch-specs` falls
 # back to the tracked copy in spec/ with a warning when a fetch fails.
 #
@@ -20,17 +21,17 @@ set -euo pipefail
 # paths each workflow owns (and therefore replaces) is declared by the
 # destination_files globs in copy.bara.sky.
 
-SPEC="${1:?usage: fetch-spec.sh <api-spec|envd-spec|volume-api-spec>}"
+SPEC="${1:?usage: fetch-spec.sh <api-spec|envd-spec|volume-api-spec|workspace-api-spec>}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 TOKEN="${GITHUB_TOKEN:-$(gh auth token 2> /dev/null || true)}"
 
 case "$SPEC" in
   api-spec | envd-spec)
-    SOURCE="e2b-dev/infra"
-    REF="${E2B_INFRA_REF:-$(tr -d '[:space:]' < "$ROOT_DIR/spec/infra-ref")}"
+    SOURCE="e2b-dev/runtime"
+    REF="${E2B_RUNTIME_REF:-$(tr -d '[:space:]' < "$ROOT_DIR/spec/runtime-ref")}"
     ;;
-  volume-api-spec)
+  volume-api-spec | workspace-api-spec)
     SOURCE="e2b-dev/belt"
     REF="${E2B_BELT_REF:-$(tr -d '[:space:]' < "$ROOT_DIR/spec/belt-ref")}"
     ;;

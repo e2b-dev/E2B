@@ -1,18 +1,70 @@
 import logging
 import os
 
-from typing import cast, Optional, Dict, TypedDict
+from typing import (
+    cast,
+    Literal,
+    Mapping,
+    Optional,
+    Dict,
+    Tuple,
+    TypedDict,
+    Union,
+    Unpack,
+)
 
-from httpx._types import ProxyTypes
-from typing_extensions import Unpack
-
+import httpx
+from e2b.exceptions import InvalidArgumentException
+from e2b.retry import resolve_max_retries
 from e2b.api.metadata import package_version
 from e2b.sandbox_domains import is_supported_sandbox_domain
 
+ProxyTypes = Union[str, httpx.URL, httpx.Proxy]
+"""The forms the ``proxy`` option accepts: a URL string, an ``httpx.URL``, or
+an ``httpx.Proxy``.
+
+Identical to ``httpx._types.ProxyTypes``, spelled out here so the SDK doesn't
+import httpx's private module at runtime — and so the union can grow a pyqwest
+proxy type as the transports move off httpx. :func:`e2b.api.proxy_to_config`
+narrows it to what the pyqwest REST transports take.
+"""
+
 REQUEST_TIMEOUT: float = 60.0  # 60 seconds
+STREAM_INPUT_TIMEOUT: float = 60.0  # 60 seconds
+DEFAULT_RETRIES = 3
+
+# Idle bound for every read on the streaming envd file-transfer transport:
+# the transfer is aborted when no bytes at all arrive for this long. It
+# resets on each chunk, so it never limits total transfer time — only a
+# fully stalled stream. Matches the previous default stream idle timeout
+# (the request timeout).
+#
+# Kept equal to `e2b.volume.connection_config.READ_TIMEOUT` on purpose: the
+# read bound is part of the transport cache key, so the volume streaming pool
+# and the sandbox-filesystem streaming pool are the same reqwest pool only
+# while the two constants agree. Change one and they silently split in two.
+READ_TIMEOUT: float = 60.0  # 60 seconds
 
 KEEPALIVE_PING_INTERVAL_SEC = 50  # 50 seconds
 KEEPALIVE_PING_HEADER = "Keepalive-Ping-Interval"
+
+HttpVersion = Literal["1.1", "2"]
+DEFAULT_HTTP_VERSION: HttpVersion = "2"
+HTTP_VERSIONS: Tuple[HttpVersion, ...] = ("1.1", "2")
+
+
+def resolve_http_version(http_version: Optional[str] = None) -> HttpVersion:
+    """The HTTP version to use: the explicit value, else ``E2B_HTTP_VERSION``,
+    else ``DEFAULT_HTTP_VERSION``. Rejects anything but ``"1.1"`` or ``"2"``."""
+    source = "http_version"
+    if http_version is None:
+        source = "E2B_HTTP_VERSION"
+        http_version = os.getenv("E2B_HTTP_VERSION") or DEFAULT_HTTP_VERSION
+    if http_version not in HTTP_VERSIONS:
+        raise InvalidArgumentException(
+            f"{source} must be '1.1' or '2', got {http_version!r}"
+        )
+    return cast(HttpVersion, http_version)
 
 
 class ApiParams(TypedDict, total=False):
@@ -25,6 +77,19 @@ class ApiParams(TypedDict, total=False):
     request_timeout: Optional[float]
     """Timeout for the request in **seconds**, defaults to 60 seconds."""
 
+    retries: Optional[int]
+    """Number of control-plane retries for responses marked ``Should-Retry: true``,
+    or 429/502/503/504 responses without that header. ``Should-Retry: false`` is
+    never retried. Waits for valid ``Retry-After`` delta-seconds, otherwise
+    exponential backoff with jitter from 0.1 to 10 seconds. Connection failures
+    are retried separately; see ``E2B_CONNECTION_RETRIES``. Network errors after
+    the request is sent (e.g. a dropped connection) are not retried.
+    A retry is skipped when its wait would exhaust the request timeout.
+    Retry waits use a 60-second total limit when request timeouts are disabled.
+    Set to ``0`` to disable retries. Defaults to 3 retries.
+
+    :raises InvalidArgumentException: if the value is negative or not an integer."""
+
     headers: Optional[Dict[str, str]]
     """Additional headers to send with the request. Deprecated, use api_headers instead."""
 
@@ -35,16 +100,16 @@ class ApiParams(TypedDict, total=False):
     """E2B API Key to use for authentication, defaults to `E2B_API_KEY` environment variable."""
 
     validate_api_key: Optional[bool]
-    """Whether to validate the format of the E2B API key on the client side.
-    Disable this when your deployment issues API keys that don't match the
-    default `e2b_` format. Defaults to `E2B_VALIDATE_API_KEY` environment
-    variable or `True`."""
+    """Deprecated: the API key format is no longer validated on the client side;
+    this option has no effect."""
 
     domain: Optional[str]
     """E2B domain to use for authentication, defaults to `E2B_DOMAIN` environment variable."""
 
     api_url: Optional[str]
-    """URL to use for the API, defaults to `https://api.<domain>`. For internal use only."""
+    """URL to use for the API, defaults to `E2B_API_URL` environment variable or `https://api.<domain>`. For internal use only.
+
+    :deprecated: `api_url` and the `E2B_API_URL` environment variable will be removed in the next major version."""
 
     debug: Optional[bool]
     """Whether to use debug mode, defaults to `E2B_DEBUG` environment variable."""
@@ -53,7 +118,20 @@ class ApiParams(TypedDict, total=False):
     """Proxy to use for the request. In case of a sandbox it applies to all **requests made to the returned sandbox**."""
 
     sandbox_url: Optional[str]
-    """URL to connect to sandbox, defaults to `E2B_SANDBOX_URL` environment variable."""
+    """URL to connect to sandbox, defaults to `E2B_SANDBOX_URL` environment variable.
+
+    :deprecated: `sandbox_url` and the `E2B_SANDBOX_URL` environment variable will be removed in the next major version."""
+
+    http_version: Optional[HttpVersion]
+    """HTTP version for requests to the E2B API and to sandboxes (commands,
+    filesystem, PTY), defaults to `E2B_HTTP_VERSION` environment variable or
+    `"2"`. `"1.1"` pins them to HTTP/1.1, which
+    uses one connection per concurrent request instead of multiplexing streams
+    over shared connections — for example when an intermediary on the path
+    retires or mishandles long-lived HTTP/2 connections. In the Python SDK,
+    file downloads (`files.read`) always use HTTP/1.1, overriding this
+    option, to work around an HTTP/2 empty-DATA-frame limit in the
+    underlying transport."""
 
 
 class ApiParamsWithLogger(ApiParams, total=False):
@@ -66,6 +144,56 @@ class ApiParamsWithLogger(ApiParams, total=False):
     """
 
     logger: Optional[logging.Logger]
+
+
+def merge_api_params(
+    bound_params: Optional[ApiParams], params: Mapping[str, object]
+) -> ApiParams:
+    """
+    Merge the API params bound to a class (e.g. by an :class:`e2b.E2B` client)
+    with the per-call params. Per-call params win, then the bound params, then
+    the environment variables resolved by :class:`ConnectionConfig`.
+
+    Per-call params explicitly set to ``None`` are dropped so they fall back to
+    the bound params instead of clearing them.
+
+    :meta private:
+    """
+    if not bound_params:
+        return cast(ApiParams, params)
+
+    merged = cast(Dict[str, object], dict(bound_params))
+    merged.update({k: v for k, v in params.items() if v is not None})
+    return cast(ApiParams, merged)
+
+
+class ClientFactory:
+    """
+    Base class for the resource classes (`Sandbox`, `Volume`, `Template`,
+    `Secret`) whose classmethods build a :class:`ConnectionConfig` from per-call
+    params. An :class:`e2b.E2B` client exposes subclasses of these with its own
+    params bound, and every classmethod resolves them through
+    :meth:`_resolve_api_params`.
+
+    :meta private:
+    """
+
+    _bound_api_params: ApiParams = {}
+    """API params bound to this class by an :class:`e2b.E2B` client.
+
+    Empty on the base classes, so the env-configured default path is unchanged.
+
+    :meta private:
+    """
+
+    @classmethod
+    def _resolve_api_params(cls, **opts: Unpack[ApiParams]) -> ApiParams:
+        """
+        Merge the API params bound to this class with the per-call params.
+
+        :meta private:
+        """
+        return merge_api_params(cls._bound_api_params, opts)
 
 
 class ConnectionConfig:
@@ -106,20 +234,12 @@ class ConnectionConfig:
         return os.getenv("E2B_API_KEY")
 
     @staticmethod
-    def _validate_api_key():
-        return os.getenv("E2B_VALIDATE_API_KEY", "true").lower() != "false"
-
-    @staticmethod
     def _api_url():
         return os.getenv("E2B_API_URL")
 
     @staticmethod
     def _sandbox_url():
         return os.getenv("E2B_SANDBOX_URL")
-
-    @staticmethod
-    def _access_token():
-        return os.getenv("E2B_ACCESS_TOKEN")
 
     @staticmethod
     def _build_user_agent() -> str:
@@ -158,26 +278,21 @@ class ConnectionConfig:
         validate_api_key: Optional[bool] = None,
         api_url: Optional[str] = None,
         sandbox_url: Optional[str] = None,
-        access_token: Optional[str] = None,
         request_timeout: Optional[float] = None,
         headers: Optional[Dict[str, str]] = None,
         api_headers: Optional[Dict[str, str]] = None,
         extra_sandbox_headers: Optional[Dict[str, str]] = None,
         proxy: Optional[ProxyTypes] = None,
         logger: Optional[logging.Logger] = None,
+        *,
+        retries: Optional[int] = None,
+        http_version: Optional[HttpVersion] = None,
     ):
         self.logger = logger
         self.domain = domain or ConnectionConfig._domain()
         self.debug = debug if debug is not None else ConnectionConfig._debug()
         self.api_key = api_key or ConnectionConfig._api_key()
-        self.validate_api_key = (
-            validate_api_key
-            if validate_api_key is not None
-            else ConnectionConfig._validate_api_key()
-        )
-        # Deprecated: pass the token through `api_headers` instead, e.g.
-        # api_headers={"Authorization": f"Bearer {token}"}.
-        self.access_token = access_token or ConnectionConfig._access_token()
+        self.validate_api_key = validate_api_key
         self.headers = {**(headers or {}), **(api_headers or {})}
         self._user_agent_is_sdk_built = self._apply_user_agent(
             self.headers,
@@ -186,6 +301,9 @@ class ConnectionConfig:
         self.__extra_sandbox_headers = extra_sandbox_headers or {}
 
         self.proxy = proxy
+        self.retries = resolve_max_retries(
+            retries if retries is not None else DEFAULT_RETRIES
+        )
 
         self.request_timeout = ConnectionConfig._get_request_timeout(
             REQUEST_TIMEOUT,
@@ -201,6 +319,7 @@ class ConnectionConfig:
         self._sandbox_url: Optional[str] = (
             sandbox_url or ConnectionConfig._sandbox_url()
         )
+        self.http_version: HttpVersion = resolve_http_version(http_version)
 
     @staticmethod
     def _get_request_timeout(
@@ -217,27 +336,35 @@ class ConnectionConfig:
     def get_request_timeout(self, request_timeout: Optional[float] = None):
         return self._get_request_timeout(self.request_timeout, request_timeout)
 
-    def get_sandbox_url(self, sandbox_id: str, sandbox_domain: str) -> str:
+    def get_sandbox_url(
+        self, sandbox_id: str, sandbox_domain: str, port: Optional[int] = None
+    ) -> str:
+        port = self.envd_port if port is None else port
+
         if self._sandbox_url:
             return self._sandbox_url  # type: ignore[return-value]
 
         if self.debug:
-            return f"http://{self.get_host(sandbox_id, sandbox_domain, self.envd_port)}"
+            return f"http://{self.get_host(sandbox_id, sandbox_domain, port)}"
 
         sandbox_domain = sandbox_domain or self.domain
         if is_supported_sandbox_domain(sandbox_domain):
             return f"https://sandbox.{sandbox_domain}"
 
-        return f"https://{self.get_host(sandbox_id, sandbox_domain, self.envd_port)}"
+        return f"https://{self.get_host(sandbox_id, sandbox_domain, port)}"
 
-    def get_sandbox_direct_url(self, sandbox_id: str, sandbox_domain: str) -> str:
+    def get_sandbox_direct_url(
+        self, sandbox_id: str, sandbox_domain: str, port: Optional[int] = None
+    ) -> str:
+        port = self.envd_port if port is None else port
+
         if self._sandbox_url:
             return self._sandbox_url  # type: ignore[return-value]
 
         if self.debug:
-            return f"http://{self.get_host(sandbox_id, sandbox_domain, self.envd_port)}"
+            return f"http://{self.get_host(sandbox_id, sandbox_domain, port)}"
 
-        return f"https://{self.get_host(sandbox_id, sandbox_domain, self.envd_port)}"
+        return f"https://{self.get_host(sandbox_id, sandbox_domain, port)}"
 
     def get_host(self, sandbox_id: str, sandbox_domain: str, port: int) -> str:
         """
@@ -263,7 +390,6 @@ class ConnectionConfig:
         Get the parameters for the API call.
 
         This is used to avoid passing the following attributes to the API call:
-        - access_token
         - api_url
 
         It also returns a copy, so the original object is not modified.
@@ -280,6 +406,8 @@ class ConnectionConfig:
         debug = opts.get("debug")
         proxy = opts.get("proxy")
         sandbox_url = opts.get("sandbox_url")
+        http_version = opts.get("http_version")
+        retries = opts.get("retries")
 
         req_headers = self.headers.copy()
         if headers is not None:
@@ -318,7 +446,11 @@ class ConnectionConfig:
                     if sandbox_url is not None
                     else cast(Optional[str], self._sandbox_url)
                 ),
+                http_version=(
+                    http_version if http_version is not None else self.http_version
+                ),
                 logger=self.logger,
+                retries=retries if retries is not None else self.retries,
             )
         )
 

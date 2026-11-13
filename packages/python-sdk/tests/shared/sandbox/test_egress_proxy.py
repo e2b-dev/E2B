@@ -1,0 +1,442 @@
+from typing import Any, cast
+
+import pytest
+
+from e2b import SandboxEgressProxyTLSOpts, SandboxNetworkOpts, SandboxNetworkUpdate
+from e2b.api.client.models import SandboxNetworkConfig
+from e2b.api.client.models import (
+    SandboxEgressProxyConfigType0 as ClientSandboxEgressProxyConfig,
+)
+from e2b.api.client.models import (
+    SandboxEgressProxyTLSConfigType0 as ClientSandboxEgressProxyTLSConfig,
+)
+from e2b.api.client.types import UNSET
+from e2b.exceptions import InvalidArgumentException
+from e2b.sandbox.sandbox_api import (
+    build_network_config,
+    build_network_update_body,
+    from_client_network_config,
+)
+
+
+def test_create_sends_the_egress_proxy():
+    network: SandboxNetworkOpts = {
+        "egress_proxy": {
+            "address": "proxy.example.com:1080",
+            "username": "proxy-user",
+            "password": "proxy-password",
+        },
+    }
+
+    body = build_network_config(network)
+    assert body is not None
+    assert body["egress_proxy"].to_dict() == {
+        "address": "proxy.example.com:1080",
+        "username": "proxy-user",
+        "password": "proxy-password",
+    }
+
+
+def test_create_sends_an_address_only_egress_proxy():
+    body = build_network_config({"egress_proxy": {"address": "proxy.example.com:1080"}})
+    assert body is not None
+    assert body["egress_proxy"].to_dict() == {"address": "proxy.example.com:1080"}
+
+
+def test_create_sends_egress_proxy_tls_options():
+    tls: SandboxEgressProxyTLSOpts = {
+        "server_name": "proxy.example.com",
+        "ca_cert": "-----BEGIN CERTIFICATE-----",
+    }
+    body = build_network_config(
+        {"egress_proxy": {"address": "proxy.example.com:1080", "tls": tls}}
+    )
+
+    assert body is not None
+    assert body["egress_proxy"].to_dict() == {
+        "address": "proxy.example.com:1080",
+        "tls": {
+            "enabled": True,
+            "serverName": "proxy.example.com",
+            "caCert": "-----BEGIN CERTIFICATE-----",
+        },
+    }
+
+
+@pytest.mark.parametrize(
+    ("tls", "wire_tls"),
+    [
+        pytest.param(True, {"enabled": True}, id="true"),
+        pytest.param({}, {"enabled": True}, id="empty-options"),
+    ],
+)
+def test_create_sends_tls_settings(tls, wire_tls):
+    body = build_network_config(
+        {"egress_proxy": {"address": "proxy.example.com:1080", "tls": tls}}
+    )
+
+    assert body is not None
+    assert body["egress_proxy"].to_dict() == {
+        "address": "proxy.example.com:1080",
+        "tls": wire_tls,
+    }
+
+
+def test_create_omits_none_tls_options_and_strips_unknown_keys():
+    network = cast(
+        Any,
+        {
+            "egress_proxy": {
+                "address": "proxy.example.com:1080",
+                "tls": {
+                    "server_name": None,
+                    "ca_cert": None,
+                    "protocol": "tls",
+                },
+            },
+        },
+    )
+
+    body = build_network_config(network)
+
+    assert body is not None
+    assert body["egress_proxy"].to_dict() == {
+        "address": "proxy.example.com:1080",
+        "tls": {"enabled": True},
+    }
+
+
+@pytest.mark.parametrize(
+    "tls",
+    [
+        pytest.param(False, id="false"),
+        pytest.param(None, id="none"),
+    ],
+)
+def test_create_omits_false_or_none_tls_options(tls):
+    body = build_network_config(
+        cast(
+            Any,
+            {"egress_proxy": {"address": "proxy.example.com:1080", "tls": tls}},
+        )
+    )
+
+    assert body is not None
+    assert "tls" not in body["egress_proxy"].to_dict()
+
+
+def test_create_combines_the_egress_proxy_with_allow_and_deny_lists():
+    network: SandboxNetworkOpts = {
+        "allow_out": ["api.example.com"],
+        "deny_out": lambda ctx: [ctx.all_traffic],
+        "egress_proxy": {"address": "proxy.example.com:1080"},
+    }
+
+    body = build_network_config(network)
+    assert body is not None
+    assert body["allow_out"] == ["api.example.com"]
+    assert body["deny_out"] == ["0.0.0.0/0"]
+    assert body["egress_proxy"].to_dict() == {"address": "proxy.example.com:1080"}
+
+
+@pytest.mark.parametrize(
+    "network",
+    [
+        pytest.param({"allow_out": ["api.example.com"]}, id="omitted"),
+        # Untyped callers spell "no proxy" as None; the JS SDK treats an
+        # explicit null the same way.
+        pytest.param({"egress_proxy": None}, id="none"),
+    ],
+)
+def test_create_omits_the_egress_proxy(network):
+    body = build_network_config(cast(Any, network))
+    assert body is not None
+    assert "egress_proxy" not in body
+
+
+@pytest.mark.parametrize(
+    "egress_proxy",
+    [
+        # An empty dict is falsy but present — it must not silently disable
+        # tunneling the way `or None` used to. Match JS: fail loudly.
+        pytest.param({}, id="empty"),
+        pytest.param({"username": "proxy-user"}, id="missing-address"),
+        pytest.param({"address": 1080}, id="non-string-address"),
+        pytest.param("proxy.example.com:1080", id="string"),
+    ],
+)
+def test_create_rejects_a_malformed_egress_proxy(egress_proxy):
+    with pytest.raises(InvalidArgumentException, match="egress_proxy"):
+        build_network_config(cast(Any, {"egress_proxy": egress_proxy}))
+
+
+@pytest.mark.parametrize(
+    "tls",
+    [
+        pytest.param("tls", id="string"),
+        pytest.param([], id="array"),
+    ],
+)
+def test_create_rejects_malformed_egress_proxy_tls(tls):
+    with pytest.raises(
+        InvalidArgumentException,
+        match="network egress_proxy tls must be a bool or a dict\\.",
+    ):
+        build_network_config(
+            cast(
+                Any,
+                {
+                    "egress_proxy": {
+                        "address": "proxy.example.com:1080",
+                        "tls": tls,
+                    }
+                },
+            )
+        )
+
+
+@pytest.mark.parametrize(
+    "tls",
+    [
+        pytest.param({"enabled": False}, id="enabled-false"),
+        pytest.param({"enabled": True}, id="enabled-true"),
+    ],
+)
+def test_create_rejects_egress_proxy_tls_enabled_key(tls):
+    with pytest.raises(
+        InvalidArgumentException,
+        match="network egress_proxy tls takes no 'enabled'; pass tls=True or tls=False instead\\.",
+    ):
+        build_network_config(
+            cast(
+                Any,
+                {
+                    "egress_proxy": {
+                        "address": "proxy.example.com:1080",
+                        "tls": tls,
+                    }
+                },
+            )
+        )
+
+
+def test_create_omits_none_credentials():
+    # Reading a credential out of an unset environment variable is how a caller
+    # lands here, and it means the proxy takes no credentials — the API only
+    # accepts a string.
+    network = cast(
+        Any,
+        {
+            "egress_proxy": {
+                "address": "proxy.example.com:1080",
+                "username": None,
+                "password": None,
+            },
+        },
+    )
+
+    body = build_network_config(network)
+    assert body is not None
+    assert body["egress_proxy"].to_dict() == {"address": "proxy.example.com:1080"}
+
+
+def test_create_strips_unknown_egress_proxy_keys():
+    # An untyped caller can copy an extra key out of a config file; the API
+    # rejects unknown properties.
+    network = cast(
+        Any,
+        {
+            "egress_proxy": {
+                "address": "proxy.example.com:1080",
+                "protocol": "socks5",
+            },
+        },
+    )
+
+    body = build_network_config(network)
+    assert body is not None
+    assert body["egress_proxy"].to_dict() == {"address": "proxy.example.com:1080"}
+
+
+def test_update_sets_the_egress_proxy():
+    network: SandboxNetworkUpdate = {
+        "allow_out": ["api.example.com"],
+        "deny_out": lambda ctx: [ctx.all_traffic],
+        "egress_proxy": {"address": "proxy.example.com:1080"},
+    }
+
+    assert build_network_update_body(network).to_dict() == {
+        "allowOut": ["api.example.com"],
+        "denyOut": ["0.0.0.0/0"],
+        "egressProxy": {"address": "proxy.example.com:1080"},
+    }
+
+
+def test_update_sends_egress_proxy_tls_options():
+    network: SandboxNetworkUpdate = {
+        "egress_proxy": {
+            "address": "proxy.example.com:1080",
+            "tls": {
+                "server_name": "proxy.example.com",
+                "ca_cert": "-----BEGIN CERTIFICATE-----",
+            },
+        },
+    }
+
+    assert build_network_update_body(network).to_dict() == {
+        "egressProxy": {
+            "address": "proxy.example.com:1080",
+            "tls": {
+                "enabled": True,
+                "serverName": "proxy.example.com",
+                "caCert": "-----BEGIN CERTIFICATE-----",
+            },
+        },
+    }
+
+
+def test_update_sends_true_tls_as_enabled():
+    network: SandboxNetworkUpdate = {
+        "egress_proxy": {
+            "address": "proxy.example.com:1080",
+            "tls": True,
+        },
+    }
+
+    assert build_network_update_body(network).to_dict() == {
+        "egressProxy": {
+            "address": "proxy.example.com:1080",
+            "tls": {"enabled": True},
+        },
+    }
+
+
+@pytest.mark.parametrize(
+    "tls",
+    [
+        pytest.param({"enabled": False}, id="enabled-false"),
+        pytest.param({"enabled": True}, id="enabled-true"),
+    ],
+)
+def test_update_rejects_egress_proxy_tls_enabled_key(tls):
+    with pytest.raises(
+        InvalidArgumentException,
+        match="network egress_proxy tls takes no 'enabled'; pass tls=True or tls=False instead\\.",
+    ):
+        build_network_update_body(
+            cast(
+                Any,
+                {
+                    "egress_proxy": {
+                        "address": "proxy.example.com:1080",
+                        "tls": tls,
+                    }
+                },
+            )
+        )
+
+
+@pytest.mark.parametrize(
+    "tls",
+    [
+        pytest.param(False, id="false"),
+        pytest.param(None, id="none"),
+    ],
+)
+def test_update_omits_false_or_none_tls_options(tls):
+    network = cast(
+        Any,
+        {
+            "egress_proxy": {
+                "address": "proxy.example.com:1080",
+                "tls": tls,
+            },
+        },
+    )
+
+    assert build_network_update_body(network).to_dict() == {
+        "egressProxy": {"address": "proxy.example.com:1080"},
+    }
+
+
+def test_update_without_the_egress_proxy_clears_it():
+    # The update replaces the whole configuration instead of merging into it, so
+    # omitting the proxy stops tunneling rather than leaving it in place.
+    assert build_network_update_body({}).to_dict() == {}
+
+
+def test_get_info_reports_the_active_egress_proxy_without_the_password():
+    info = from_client_network_config(
+        SandboxNetworkConfig(
+            allow_out=["api.example.com"],
+            egress_proxy=ClientSandboxEgressProxyConfig(
+                address="proxy.example.com:1080",
+                username="proxy-user",
+                # SandboxEgressProxyInfo says the password is not there, so it
+                # must not be there even if a future API version starts echoing
+                # it back.
+                password="proxy-password",
+            ),
+        )
+    )
+
+    assert info is not None
+    assert info["egress_proxy"] == {
+        "address": "proxy.example.com:1080",
+        "username": "proxy-user",
+    }
+
+
+def test_get_info_reports_egress_proxy_tls_without_the_ca_certificate():
+    info = from_client_network_config(
+        SandboxNetworkConfig(
+            egress_proxy=ClientSandboxEgressProxyConfig(
+                address="proxy.example.com:1080",
+                tls=ClientSandboxEgressProxyTLSConfig(
+                    enabled=True,
+                    server_name="proxy.example.com",
+                    ca_cert="-----BEGIN CERTIFICATE-----",
+                ),
+            ),
+        )
+    )
+
+    assert info is not None
+    assert info["egress_proxy"] == {
+        "address": "proxy.example.com:1080",
+        "tls": {"server_name": "proxy.example.com"},
+    }
+
+
+def test_get_info_omits_egress_proxy_tls_when_disabled():
+    info = from_client_network_config(
+        SandboxNetworkConfig(
+            egress_proxy=ClientSandboxEgressProxyConfig(
+                address="proxy.example.com:1080",
+                tls=ClientSandboxEgressProxyTLSConfig(
+                    enabled=False,
+                    server_name="proxy.example.com",
+                ),
+            ),
+        )
+    )
+
+    assert info is not None
+    assert info["egress_proxy"] == {"address": "proxy.example.com:1080"}
+
+
+@pytest.mark.parametrize(
+    "egress_proxy",
+    [
+        pytest.param(UNSET, id="unset"),
+        # The wire field is nullable; absence has to read the same either way.
+        pytest.param(None, id="none"),
+    ],
+)
+def test_get_info_reports_no_egress_proxy(egress_proxy):
+    info = from_client_network_config(
+        SandboxNetworkConfig(allow_out=["api.example.com"], egress_proxy=egress_proxy)
+    )
+
+    assert info is not None
+    assert "egress_proxy" not in info

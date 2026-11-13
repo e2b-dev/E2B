@@ -1,0 +1,263 @@
+import { afterAll, afterEach, beforeAll, expect, test } from 'vitest'
+import { http, HttpResponse } from 'msw'
+
+import { InvalidArgumentError, Sandbox } from '../../src'
+import { TEST_API_KEY, apiUrl } from '../setup'
+import { setupMockApi } from '../mockApi'
+
+let lastCreateBody: Record<string, unknown> | undefined
+
+const server = setupMockApi(
+  http.post(apiUrl('/v2/sandboxes'), async ({ request }) => {
+    lastCreateBody = (await request.json()) as Record<string, unknown>
+    return HttpResponse.json({
+      sandboxID: 'test-sandbox-id',
+      templateID: 'base',
+      envdVersion: '0.2.4',
+    })
+  })
+)
+
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
+
+afterAll(() => server.close())
+
+afterEach(() => {
+  lastCreateBody = undefined
+  server.resetHandlers()
+})
+
+test('Sandbox.create omits autoPause when no lifecycle is configured', async () => {
+  // An omitted lifecycle expresses no preference; autoPause: false would be
+  // indistinguishable from an explicit 'kill' and would override the API default.
+  await Sandbox.create('base', { apiKey: TEST_API_KEY })
+
+  expect(lastCreateBody).toBeDefined()
+  expect(lastCreateBody).not.toHaveProperty('autoPause')
+  expect(lastCreateBody).not.toHaveProperty('autoPauseMemory')
+  expect(lastCreateBody).not.toHaveProperty('autoResume')
+})
+
+test('Sandbox.create sends autoPause: false for an explicit kill', async () => {
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    lifecycle: { onTimeout: 'kill' },
+  })
+
+  expect(lastCreateBody?.autoPause).toBe(false)
+  expect(lastCreateBody).not.toHaveProperty('autoPauseMemory')
+  expect(lastCreateBody).not.toHaveProperty('autoResume')
+})
+
+test('Sandbox.create sends autoPause: true for an explicit pause', async () => {
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    lifecycle: { onTimeout: 'pause' },
+  })
+
+  expect(lastCreateBody?.autoPause).toBe(true)
+  // Bare 'pause' expresses no preference about the snapshot kind.
+  expect(lastCreateBody).not.toHaveProperty('autoPauseMemory')
+  expect(lastCreateBody).not.toHaveProperty('autoResume')
+})
+
+test('Sandbox.create omits autoPauseMemory when pause omits mode', async () => {
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    lifecycle: { onTimeout: { action: 'pause' } },
+  })
+
+  expect(lastCreateBody?.autoPause).toBe(true)
+  expect(lastCreateBody).not.toHaveProperty('autoPauseMemory')
+  expect(lastCreateBody).not.toHaveProperty('autoResume')
+})
+
+test('Sandbox.create sends the pause snapshot kind alongside autoPause', async () => {
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    lifecycle: { onTimeout: { action: 'pause', mode: 'filesystem' } },
+  })
+
+  expect(lastCreateBody?.autoPause).toBe(true)
+  expect(lastCreateBody?.autoPauseMemory).toBe(false)
+  expect(lastCreateBody).not.toHaveProperty('autoResume')
+
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    lifecycle: { onTimeout: { action: 'pause', mode: 'full' } },
+  })
+
+  expect(lastCreateBody?.autoPause).toBe(true)
+  expect(lastCreateBody?.autoPauseMemory).toBe(true)
+  expect(lastCreateBody).not.toHaveProperty('autoResume')
+})
+
+test('Sandbox.create still sends the deprecated keepMemory', async () => {
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    lifecycle: { onTimeout: { action: 'pause', keepMemory: false } },
+  })
+
+  expect(lastCreateBody?.autoPause).toBe(true)
+  expect(lastCreateBody?.autoPauseMemory).toBe(false)
+})
+
+test('Sandbox.create omits autoPause for a lifecycle without onTimeout', async () => {
+  // Untyped callers can build the lifecycle conditionally and leave
+  // onTimeout out, or pass it as null; neither selects an action.
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    lifecycle: { autoResume: false } as never,
+  })
+
+  expect(lastCreateBody).toBeDefined()
+  expect(lastCreateBody).not.toHaveProperty('autoPause')
+  expect(lastCreateBody?.autoResume).toEqual({ enabled: false })
+
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    lifecycle: { onTimeout: null } as never,
+  })
+
+  expect(lastCreateBody).toBeDefined()
+  expect(lastCreateBody).not.toHaveProperty('autoPause')
+  expect(lastCreateBody).not.toHaveProperty('autoResume')
+})
+
+test('Sandbox.create rejects autoResume without a timeout action', async () => {
+  // An unconfigured onTimeout still resolves to kill semantics locally, so
+  // autoResume has no pause to attach to.
+  await expect(
+    Sandbox.create('base', {
+      apiKey: TEST_API_KEY,
+      lifecycle: { autoResume: true } as never,
+    })
+  ).rejects.toThrowError(InvalidArgumentError)
+
+  expect(lastCreateBody).toBeUndefined()
+})
+
+async function expectInvalidLifecycleWithoutApiKey(
+  lifecycle: NonNullable<Parameters<typeof Sandbox.create>[1]>['lifecycle']
+) {
+  const previous = process.env.E2B_API_KEY
+  delete process.env.E2B_API_KEY
+  try {
+    await expect(Sandbox.create('base', { lifecycle })).rejects.toThrowError(
+      InvalidArgumentError
+    )
+  } finally {
+    if (previous === undefined) {
+      delete process.env.E2B_API_KEY
+    } else {
+      process.env.E2B_API_KEY = previous
+    }
+  }
+  expect(lastCreateBody).toBeUndefined()
+}
+
+test('filesystem-only auto-pause with auto-resume is InvalidArgumentError without an API key', async () => {
+  await expectInvalidLifecycleWithoutApiKey({
+    onTimeout: { action: 'pause', mode: 'filesystem' },
+    autoResume: true,
+  })
+  await expectInvalidLifecycleWithoutApiKey({
+    onTimeout: { action: 'pause', keepMemory: false },
+    autoResume: true,
+  })
+})
+
+test('mode on kill is InvalidArgumentError without an API key', async () => {
+  await expectInvalidLifecycleWithoutApiKey({
+    // @ts-expect-error mode is not allowed with action: 'kill'
+    onTimeout: { action: 'kill', mode: 'filesystem' },
+  })
+  await expectInvalidLifecycleWithoutApiKey({
+    // @ts-expect-error keepMemory is not allowed with action: 'kill'
+    onTimeout: { action: 'kill', keepMemory: false },
+  })
+})
+
+test('an unknown or doubled pause mode is InvalidArgumentError without an API key', async () => {
+  await expectInvalidLifecycleWithoutApiKey({
+    onTimeout: { action: 'pause', mode: 'memory' as never },
+  })
+  await expectInvalidLifecycleWithoutApiKey({
+    onTimeout: { action: 'pause', mode: 'full', keepMemory: true },
+  })
+})
+
+test('an explicit autoResume: false is sent', async () => {
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    lifecycle: { onTimeout: 'pause', autoResume: false },
+  })
+
+  expect(lastCreateBody?.autoResume).toEqual({ enabled: false })
+})
+
+test('an explicit autoResume: true is sent', async () => {
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    lifecycle: { onTimeout: 'pause', autoResume: true },
+  })
+
+  expect(lastCreateBody?.autoResume).toEqual({ enabled: true })
+})
+
+test('an explicit null autoResume from an untyped caller is omitted', async () => {
+  await Sandbox.create('base', {
+    apiKey: TEST_API_KEY,
+    // @ts-expect-error null is not a valid autoResume value
+    lifecycle: { onTimeout: 'pause', autoResume: null },
+  })
+
+  expect(lastCreateBody).not.toHaveProperty('autoResume')
+})
+
+// onTimeout is resolved into the boolean autoPause before the request is built,
+// so the API never sees the action and cannot reject a typo. Resolving it to
+// kill would delete a sandbox the caller asked to preserve.
+const unrecognizedOnTimeout = [
+  'Pause',
+  'PAUSE',
+  'pause\n',
+  'paused',
+  true,
+  { action: 'Pause' },
+  {},
+]
+
+test.for(unrecognizedOnTimeout)(
+  'an unrecognized onTimeout %o is rejected',
+  async (onTimeout) => {
+    await expect(
+      Sandbox.create('base', {
+        apiKey: TEST_API_KEY,
+        // @ts-expect-error deliberately outside the union
+        lifecycle: { onTimeout },
+      })
+    ).rejects.toThrowError(InvalidArgumentError)
+
+    expect(lastCreateBody).toBeUndefined()
+  }
+)
+
+test.for([
+  ['Pause', 'onTimeout'],
+  [{ action: 'Pause' }, 'onTimeout.action'],
+  [{}, 'onTimeout.action'],
+] as const)(
+  'the error for %o names the field the caller wrote',
+  async ([onTimeout, expectedField]) => {
+    await expect(
+      Sandbox.create('base', {
+        apiKey: TEST_API_KEY,
+        // @ts-expect-error deliberately outside the union
+        lifecycle: { onTimeout },
+      })
+    ).rejects.toThrowError(
+      new RegExp(`^${expectedField.replace('.', '\\.')} must be one of`)
+    )
+  }
+)

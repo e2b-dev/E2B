@@ -54,10 +54,26 @@ def _parse_response(
         response_404 = Error.from_dict(response.json())
 
         return response_404
+    if response.status_code == 409:
+        response_409 = Error.from_dict(response.json())
+
+        return response_409
+    if response.status_code == 429:
+        response_429 = Error.from_dict(response.json())
+
+        return response_429
     if response.status_code == 500:
         response_500 = Error.from_dict(response.json())
 
         return response_500
+    if response.status_code == 503:
+        response_503 = Error.from_dict(response.json())
+
+        return response_503
+    if response.status_code == 504:
+        response_504 = Error.from_dict(response.json())
+
+        return response_504
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -83,7 +99,10 @@ def sync_detailed(
 ) -> Response[Union[Error, Sandbox]]:
     """Connect sandbox
 
-     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended.
+     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. Use
+    POST /v2/sandboxes/{sandboxID}/connect instead. Answers 409 with error_code
+    sandbox_snapshot_guest_agent_unresponsive when the paused sandbox's snapshot was taken while its
+    guest agent was not responding and the request did not ask for `memory: false`.
 
     Args:
         sandbox_id (str):
@@ -117,7 +136,10 @@ def sync(
 ) -> Optional[Union[Error, Sandbox]]:
     """Connect sandbox
 
-     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended.
+     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. Use
+    POST /v2/sandboxes/{sandboxID}/connect instead. Answers 409 with error_code
+    sandbox_snapshot_guest_agent_unresponsive when the paused sandbox's snapshot was taken while its
+    guest agent was not responding and the request did not ask for `memory: false`.
 
     Args:
         sandbox_id (str):
@@ -146,7 +168,10 @@ async def asyncio_detailed(
 ) -> Response[Union[Error, Sandbox]]:
     """Connect sandbox
 
-     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended.
+     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. Use
+    POST /v2/sandboxes/{sandboxID}/connect instead. Answers 409 with error_code
+    sandbox_snapshot_guest_agent_unresponsive when the paused sandbox's snapshot was taken while its
+    guest agent was not responding and the request did not ask for `memory: false`.
 
     Args:
         sandbox_id (str):
@@ -178,7 +203,10 @@ async def asyncio(
 ) -> Optional[Union[Error, Sandbox]]:
     """Connect sandbox
 
-     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended.
+     Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. Use
+    POST /v2/sandboxes/{sandboxID}/connect instead. Answers 409 with error_code
+    sandbox_snapshot_guest_agent_unresponsive when the paused sandbox's snapshot was taken while its
+    guest agent was not responding and the request did not ask for `memory: false`.
 
     Args:
         sandbox_id (str):

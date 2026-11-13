@@ -18,7 +18,7 @@ async def test_connect_to_pty(async_sandbox: AsyncSandbox):
         envs={"FOO": "bar"},
     )
 
-    await async_sandbox.pty.send_stdin(terminal.pid, b"echo $FOO\n")
+    await async_sandbox.pty.send_input(terminal.pid, b"echo $FOO\n")
 
     # Give time for the command output in the first connection
     await asyncio.sleep(0.3)
@@ -30,7 +30,7 @@ async def test_connect_to_pty(async_sandbox: AsyncSandbox):
         terminal.pid, on_data=lambda x: append_data(output2, x)
     )
 
-    await async_sandbox.pty.send_stdin(terminal.pid, b"echo $FOO\nexit\n")
+    await async_sandbox.pty.send_input(terminal.pid, b"echo $FOO\nexit\n")
 
     await reconnect_handle.wait()
 

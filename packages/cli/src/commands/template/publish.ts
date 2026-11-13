@@ -1,31 +1,19 @@
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
 import * as chalk from 'chalk'
-import * as fs from 'fs'
 
 import {
   asBold,
   asFormattedError,
   asFormattedSandboxTemplate,
-  asLocal,
-  asLocalRelative,
+  SandboxTemplateRef,
 } from 'src/utils/format'
-import {
-  configOption,
-  deprecatedTeamOption,
-  pathOption,
-  projectIdFromOptions,
-  projectOption,
-  selectMultipleOption,
-} from 'src/options'
-import { configName, E2BConfig, getConfigPath, loadConfig } from 'src/config'
-import { getRoot } from 'src/utils/filesystem'
-import { listSandboxTemplates } from './list'
-import { getPromptTemplates } from 'src/utils/templatePrompt'
-import { confirm } from 'src/utils/confirm'
-import { client, resolveProjectId } from 'src/api'
+import { deprecatedConfigOption, warnIgnoredConfigOption } from 'src/options'
+import { confirm } from 'src/utils/prompts'
+import { apiClient } from 'src/api'
 import { handleE2BRequestError } from '../../utils/errors'
 
 async function publishTemplate(templateID: string, publish: boolean) {
+  const client = await apiClient()
   const res = await client.api.PATCH('/v2/templates/{templateID}', {
     params: {
       path: {
@@ -49,107 +37,21 @@ async function templateAction(
   publish: boolean,
   template: string,
   opts: {
-    path?: string
-    config?: string
     yes?: boolean
-    select?: boolean
-    project?: string
-    team?: string
+    config?: string
   }
 ) {
   try {
-    let projectId = projectIdFromOptions(opts)
+    warnIgnoredConfigOption(opts)
 
-    const root = getRoot(opts.path)
-
-    const templates: (Pick<E2BConfig, 'template_id'> & {
-      configPath?: string
-    })[] = []
-
-    if (template) {
-      templates.push({
-        template_id: template,
-      })
-    } else if (opts.select) {
-      projectId = resolveProjectId(projectId)
-
-      const allTemplates = await listSandboxTemplates({
-        projectId,
-      })
-
-      const filteredTemplates = allTemplates.filter(
-        (e) => !e.public === publish
-      )
-
-      if (filteredTemplates.length === 0) {
-        console.log(
-          `No sandbox templates available ${
-            publish ? 'to publish' : 'to unpublish'
-          } found`
-        )
-        return
-      }
-
-      const selectedTemplates = await getPromptTemplates(
-        filteredTemplates,
-        `Select sandbox templates to ${publish ? 'publish' : 'unpublish'}`
-      )
-      templates.push(
-        ...selectedTemplates.map((e) => ({
-          template_id: e.templateID,
-          ...e,
-        }))
-      )
-
-      if (!templates || templates.length === 0) {
-        console.log('No sandbox templates selected')
-        return
-      }
-    } else {
-      const configPath = getConfigPath(root, opts.config)
-      const config = fs.existsSync(configPath)
-        ? await loadConfig(configPath)
-        : undefined
-
-      if (!config) {
-        console.log(
-          `No ${asLocal(configName)} found in ${asLocalRelative(
-            root
-          )}. Specify sandbox template with ${asBold(
-            '[template]'
-          )} argument or use interactive mode with ${asBold('-s')} flag.`
-        )
-        return
-      }
-
-      templates.push({
-        ...config,
-        configPath,
-      })
-    }
-
-    if (!templates || templates.length === 0) {
-      console.log(
-        `No sandbox templates selected. Specify sandbox template with ${asBold(
-          '[template]'
-        )} argument or use interactive mode with  ${asBold('-s')} flag.`
-      )
-      return
-    }
+    const templates: SandboxTemplateRef[] = [{ templateID: template }]
 
     console.log(
       chalk.default.underline(
         `Sandbox templates to ${publish ? 'publish' : 'unpublish'}`
       )
     )
-    templates.forEach((e) =>
-      console.log(
-        asFormattedSandboxTemplate(
-          { ...e, templateID: e.template_id },
-          e.configPath
-        )
-      )
-    )
+    templates.forEach((e) => console.log(asFormattedSandboxTemplate(e)))
     process.stdout.write('\n')
 
     if (!opts.yes) {
@@ -176,12 +78,9 @@ async function templateAction(
         console.log(
           `- ${
             publish ? 'Publishing' : 'Unpublishing'
-          } sandbox template ${asFormattedSandboxTemplate(
-            { ...e, templateID: e.template_id },
-            e.configPath
-          )}`
+          } sandbox template ${asFormattedSandboxTemplate(e)}`
         )
-        const names = await publishTemplate(e.template_id, publish)
+        const names = await publishTemplate(e.templateID, publish)
         if (publish && names.length > 0) {
           console.log(`  Published as: ${asBold(names.join(', '))}`)
         }
@@ -196,42 +95,16 @@ async function templateAction(
 
 export const publishCommand = new commander.Command('publish')
   .description('publish sandbox template')
-  .argument(
-    '[template]',
-    `specify ${asBold(
-      '[template]'
-    )} to publish it. If you dont specify ${asBold(
-      '[template]'
-    )} the command will try to publish sandbox template defined by ${asLocal(
-      'e2b.toml'
-    )}.`
-  )
-  .addOption(pathOption)
-  .addOption(configOption)
-  .addOption(selectMultipleOption)
-  .addOption(projectOption)
-  .addOption(deprecatedTeamOption)
+  .argument('<template>', `specify ${asBold('<template>')} to publish it`)
+  .addOption(deprecatedConfigOption)
   .alias('pb')
   .option('-y, --yes', 'skip manual publish confirmation')
   .action(templateAction.bind(null, true))
 
 export const unPublishCommand = new commander.Command('unpublish')
   .description('unpublish sandbox template')
-  .argument(
-    '[template]',
-    `specify ${asBold(
-      '[template]'
-    )} to unpublish it. If you don't specify ${asBold(
-      '[template]'
-    )} the command will try to unpublish sandbox template defined by ${asLocal(
-      'e2b.toml'
-    )}.`
-  )
-  .addOption(pathOption)
-  .addOption(configOption)
-  .addOption(selectMultipleOption)
-  .addOption(projectOption)
-  .addOption(deprecatedTeamOption)
+  .argument('<template>', `specify ${asBold('<template>')} to unpublish it`)
+  .addOption(deprecatedConfigOption)
   .alias('upb')
   .option('-y, --yes', 'skip manual unpublish confirmation')
   .action(templateAction.bind(null, false))

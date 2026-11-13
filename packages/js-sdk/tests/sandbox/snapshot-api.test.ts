@@ -1,7 +1,9 @@
 import { assert } from 'vitest'
 
 import { sandboxTest, isDebug } from '../setup.js'
-import { Sandbox } from '../../src'
+import { Sandbox, SandboxError } from '../../src'
+
+const SNAPSHOT_CREATE_REQUEST_TIMEOUT_MS = 120_000
 
 sandboxTest.skipIf(isDebug)(
   'create a snapshot from sandbox',
@@ -35,6 +37,7 @@ sandboxTest.skipIf(isDebug)(
       // Create a new sandbox from the snapshot
       const newSandbox = await Sandbox.create(snapshot.snapshotId, {
         metadata: { sandboxTestId: `${sandboxTestId}-from-snapshot` },
+        requestTimeoutMs: SNAPSHOT_CREATE_REQUEST_TIMEOUT_MS,
       })
 
       try {
@@ -47,7 +50,8 @@ sandboxTest.skipIf(isDebug)(
     } finally {
       await Sandbox.deleteSnapshot(snapshot.snapshotId)
     }
-  }
+  },
+  180_000
 )
 
 sandboxTest.skipIf(isDebug)(
@@ -59,46 +63,48 @@ sandboxTest.skipIf(isDebug)(
 
     const snapshot = await sandbox.createSnapshot()
 
+    let sandbox1: Sandbox | undefined
+    let sandbox2: Sandbox | undefined
     try {
       // Create two sandboxes from the same snapshot
-      const sandbox1 = await Sandbox.create(snapshot.snapshotId, {
+      sandbox1 = await Sandbox.create(snapshot.snapshotId, {
         metadata: { sandboxTestId: `${sandboxTestId}-branch-1` },
+        requestTimeoutMs: SNAPSHOT_CREATE_REQUEST_TIMEOUT_MS,
       })
-      const sandbox2 = await Sandbox.create(snapshot.snapshotId, {
+      sandbox2 = await Sandbox.create(snapshot.snapshotId, {
         metadata: { sandboxTestId: `${sandboxTestId}-branch-2` },
+        requestTimeoutMs: SNAPSHOT_CREATE_REQUEST_TIMEOUT_MS,
       })
 
-      try {
-        // Both should have the same initial content
-        const content1 = await sandbox1.files.read('/home/user/shared.txt')
-        const content2 = await sandbox2.files.read('/home/user/shared.txt')
+      // Both should have the same initial content
+      const content1 = await sandbox1.files.read('/home/user/shared.txt')
+      const content2 = await sandbox2.files.read('/home/user/shared.txt')
 
-        assert.equal(content1, testContent)
-        assert.equal(content2, testContent)
+      assert.equal(content1, testContent)
+      assert.equal(content2, testContent)
 
-        // Modify one sandbox - should not affect the other
-        await sandbox1.files.write(
-          '/home/user/shared.txt',
-          'modified in sandbox1'
-        )
+      // Modify one sandbox - should not affect the other
+      await sandbox1.files.write(
+        '/home/user/shared.txt',
+        'modified in sandbox1'
+      )
 
-        const modifiedContent = await sandbox1.files.read(
-          '/home/user/shared.txt'
-        )
-        const unchangedContent = await sandbox2.files.read(
-          '/home/user/shared.txt'
-        )
+      const modifiedContent = await sandbox1.files.read('/home/user/shared.txt')
+      const unchangedContent = await sandbox2.files.read(
+        '/home/user/shared.txt'
+      )
 
-        assert.equal(modifiedContent, 'modified in sandbox1')
-        assert.equal(unchangedContent, testContent)
-      } finally {
-        await sandbox1.kill()
-        await sandbox2.kill()
-      }
+      assert.equal(modifiedContent, 'modified in sandbox1')
+      assert.equal(unchangedContent, testContent)
     } finally {
+      await Promise.all([
+        sandbox1?.kill().catch(() => {}),
+        sandbox2?.kill().catch(() => {}),
+      ])
       await Sandbox.deleteSnapshot(snapshot.snapshotId)
     }
-  }
+  },
+  300_000
 )
 
 sandboxTest.skipIf(isDebug)('list snapshots', async ({ sandbox }) => {
@@ -217,6 +223,7 @@ sandboxTest.skipIf(isDebug)(
     try {
       const newSandbox = await Sandbox.create(snapshot.snapshotId, {
         metadata: { sandboxTestId: `${sandboxTestId}-fs-test` },
+        requestTimeoutMs: SNAPSHOT_CREATE_REQUEST_TIMEOUT_MS,
       })
 
       try {
@@ -236,5 +243,73 @@ sandboxTest.skipIf(isDebug)(
     } finally {
       await Sandbox.deleteSnapshot(snapshot.snapshotId)
     }
-  }
+  },
+  180_000
+)
+
+sandboxTest.skipIf(isDebug)(
+  'create a filesystem-only snapshot',
+  async ({ sandbox, sandboxTestId, skip }) => {
+    const testContent = 'filesystem-only snapshot content'
+    await sandbox.files.write('/home/user/fs-only.txt', testContent)
+
+    // Kernel boot id: it changes only across a real (cold) boot. Read via a
+    // command, not files.read: envd serves procfs files as an empty 200
+    // because it sizes them by stat.
+    const bootId = async (sbx: Sandbox) =>
+      (
+        await sbx.commands.run('cat /proc/sys/kernel/random/boot_id')
+      ).stdout.trim()
+    const sourceBoot = await bootId(sandbox)
+    assert.isTrue(sourceBoot.length > 0)
+
+    let snapshot
+    try {
+      snapshot = await sandbox.createSnapshot({ mode: 'filesystem' })
+    } catch (error) {
+      // The API answers 400 while filesystem-only snapshots are not enabled
+      // for the team; there is nothing to prove in that environment.
+      if (
+        error instanceof SandboxError &&
+        error.statusCode === 400 &&
+        error.message.includes('not enabled for this team')
+      ) {
+        skip('filesystem-only snapshots are not enabled for this team')
+      }
+      throw error
+    }
+    assert.isString(snapshot.snapshotId)
+    assert.isTrue(snapshot.snapshotId.length > 0)
+
+    try {
+      // The source sandbox keeps running and was not rebooted.
+      assert.isTrue(await sandbox.isRunning())
+      assert.equal(
+        await sandbox.files.read('/home/user/fs-only.txt'),
+        testContent
+      )
+      assert.equal(await bootId(sandbox), sourceBoot)
+
+      // A sandbox created from it has the files and a fresh boot id: it
+      // cold-booted instead of restoring memory. A memory snapshot would
+      // carry the source's boot id over, so this is what tells them apart.
+      const newSandbox = await Sandbox.create(snapshot.snapshotId, {
+        metadata: { sandboxTestId: `${sandboxTestId}-fs-only` },
+        requestTimeoutMs: SNAPSHOT_CREATE_REQUEST_TIMEOUT_MS,
+      })
+
+      try {
+        const content = await newSandbox.files.read('/home/user/fs-only.txt')
+        assert.equal(content, testContent)
+        const newBoot = await bootId(newSandbox)
+        assert.isTrue(newBoot.length > 0)
+        assert.notEqual(newBoot, sourceBoot)
+      } finally {
+        await newSandbox.kill()
+      }
+    } finally {
+      await Sandbox.deleteSnapshot(snapshot.snapshotId)
+    }
+  },
+  180_000
 )

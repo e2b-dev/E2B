@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process'
 import * as fs from 'node:fs/promises'
+import * as os from 'node:os'
 import * as path from 'node:path'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 
@@ -8,6 +9,27 @@ const domain = process.env.E2B_DOMAIN || 'e2b.app'
 
 const cliPath = path.join(process.cwd(), 'dist', 'index.js')
 const templateName = `cli-create-api-key-test-${Date.now()}`
+
+test('rejects the retired disk flag without a stack trace', () => {
+  const result = spawnSync(
+    'node',
+    [
+      cliPath,
+      'template',
+      'create',
+      'retired-disk-flag-test',
+      '--min-free-disk-mb',
+      '0',
+      '--free-disk-space-mb',
+      '1024',
+    ],
+    { encoding: 'utf8', timeout: 10_000 }
+  )
+
+  expect(result.status).toBe(1)
+  expect(result.stderr).toContain("unknown option '--free-disk-space-mb'")
+  expect(result.stderr).not.toMatch(/InvalidArgumentError|\n\s+at /)
+})
 
 describe('template create cli backend integration', () => {
   let testDir: string
@@ -18,7 +40,7 @@ describe('template create cli backend integration', () => {
         'E2B_API_KEY must be set to run template create backend tests'
       )
     }
-    testDir = await fs.mkdtemp('e2b-create-test-')
+    testDir = await fs.mkdtemp(path.join(os.tmpdir(), 'e2b-create-test-'))
     await fs.writeFile(
       path.join(testDir, 'e2b.Dockerfile'),
       'FROM ubuntu:latest\n'
@@ -32,7 +54,7 @@ describe('template create cli backend integration', () => {
   })
 
   test(
-    'template create succeeds with E2B_API_KEY alone (no E2B_ACCESS_TOKEN)',
+    'template create succeeds with E2B_API_KEY alone',
     { timeout: 300_000 },
     () => {
       const result = runCli([
@@ -49,15 +71,37 @@ describe('template create cli backend integration', () => {
       // path prints "❌ Template build failed." instead.
       expect(output).toContain('✅ Building sandbox template')
       expect(output).not.toContain('❌ Template build failed')
-      // Auth never fell through to the access-token error box.
+      // Auth never fell through to the "log in first" error box.
       expect(output).not.toMatch(/You must be logged in/)
+    }
+  )
+
+  test(
+    'template create --no-cache rebuilds every step',
+    { timeout: 300_000 },
+    () => {
+      const result = runCli([
+        'template',
+        'create',
+        templateName,
+        '--path',
+        testDir,
+        '--no-cache',
+      ])
+      const output = String(result.stdout || '') + String(result.stderr || '')
+
+      expect(result.status, output).toBe(0)
+      expect(output).toContain('✅ Building sandbox template')
+      // The previous test built the same template, so every step would be
+      // reported as CACHED unless the build skipped the cache.
+      expect(output).not.toContain('CACHED')
     }
   )
 })
 
 function runCli(args: string[]): ReturnType<typeof spawnSync> {
-  // Intentionally exclude E2B_ACCESS_TOKEN from the child env so this test
-  // verifies the API-key-only auth path end-to-end.
+  // A minimal child env (API key only) so this test verifies the API-key auth
+  // path end-to-end.
   return spawnSync('node', [cliPath, ...args], {
     env: {
       PATH: process.env.PATH,

@@ -23,6 +23,7 @@ class NewSandbox:
     Attributes:
         template_id (str): Identifier of the required template
         timeout (Union[Unset, int]): Time to live for the sandbox in seconds. Default: 15.
+        cpu_count (Union[Unset, int]): CPU cores for the sandbox
         auto_pause (Union[Unset, bool]): Automatically pauses the sandbox after the timeout Default: False.
         auto_pause_memory (Union[Unset, bool]): Controls the snapshot kind taken when the sandbox auto-pauses on timeout
             (only relevant when autoPause is true). When false, the auto-pause drops the in-memory state and persists only
@@ -30,7 +31,8 @@ class NewSandbox:
             snapshot cannot be auto-resumed by traffic and must be resumed explicitly, so it cannot be combined with
             autoResume. Defaults to true (full memory snapshot). Default: True.
         auto_resume (Union[Unset, SandboxAutoResumeConfig]): Auto-resume configuration for paused sandboxes.
-        secure (Union[Unset, bool]): Secure all system communication with sandbox
+        secure (Union[Unset, bool]): Ignored. All system communication with the sandbox is always secured; the
+            template's envd version must support secured access.
         allow_internet_access (Union[Unset, bool]): Allow sandbox to access the internet. When set to false, it behaves
             the same as specifying denyOut to 0.0.0.0/0 in the network config.
         network (Union[Unset, SandboxNetworkConfig]):
@@ -44,6 +46,7 @@ class NewSandbox:
 
     template_id: str
     timeout: Union[Unset, int] = 15
+    cpu_count: Union[Unset, int] = UNSET
     auto_pause: Union[Unset, bool] = False
     auto_pause_memory: Union[Unset, bool] = True
     auto_resume: Union[Unset, "SandboxAutoResumeConfig"] = UNSET
@@ -63,6 +66,8 @@ class NewSandbox:
         template_id = self.template_id
 
         timeout = self.timeout
+
+        cpu_count = self.cpu_count
 
         auto_pause = self.auto_pause
 
@@ -112,6 +117,8 @@ class NewSandbox:
         )
         if timeout is not UNSET:
             field_dict["timeout"] = timeout
+        if cpu_count is not UNSET:
+            field_dict["cpuCount"] = cpu_count
         if auto_pause is not UNSET:
             field_dict["autoPause"] = auto_pause
         if auto_pause_memory is not UNSET:
@@ -149,6 +156,8 @@ class NewSandbox:
         template_id = d.pop("templateID")
 
         timeout = d.pop("timeout", UNSET)
+
+        cpu_count = d.pop("cpuCount", UNSET)
 
         auto_pause = d.pop("autoPause", UNSET)
 
@@ -210,6 +219,7 @@ class NewSandbox:
         new_sandbox = cls(
             template_id=template_id,
             timeout=timeout,
+            cpu_count=cpu_count,
             auto_pause=auto_pause,
             auto_pause_memory=auto_pause_memory,
             auto_resume=auto_resume,

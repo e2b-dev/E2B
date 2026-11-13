@@ -14,25 +14,42 @@ class ResumedSandbox:
     """
     Attributes:
         timeout (Union[Unset, int]): Time to live for the sandbox in seconds. Default: 15.
+        cpu_count (Union[Unset, int]): CPU cores for the sandbox
         auto_pause (Union[Unset, bool]): Automatically pauses the sandbox after the timeout
+        memory (Union[Unset, bool]): Defaults to true. When false, resume from disk state only: the sandbox cold-boots
+            fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery
+            semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory.
+            Rejected with an error in environments where this capability is not enabled, never silently downgraded to a
+            memory restore. A snapshot taken while the sandbox guest agent was not responding (envdUnresponsiveAtPause) can
+            only be resumed this way, and needs no enablement.
     """
 
     timeout: Union[Unset, int] = 15
+    cpu_count: Union[Unset, int] = UNSET
     auto_pause: Union[Unset, bool] = UNSET
+    memory: Union[Unset, bool] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         timeout = self.timeout
 
+        cpu_count = self.cpu_count
+
         auto_pause = self.auto_pause
+
+        memory = self.memory
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
         if timeout is not UNSET:
             field_dict["timeout"] = timeout
+        if cpu_count is not UNSET:
+            field_dict["cpuCount"] = cpu_count
         if auto_pause is not UNSET:
             field_dict["autoPause"] = auto_pause
+        if memory is not UNSET:
+            field_dict["memory"] = memory
 
         return field_dict
 
@@ -41,11 +58,17 @@ class ResumedSandbox:
         d = dict(src_dict)
         timeout = d.pop("timeout", UNSET)
 
+        cpu_count = d.pop("cpuCount", UNSET)
+
         auto_pause = d.pop("autoPause", UNSET)
+
+        memory = d.pop("memory", UNSET)
 
         resumed_sandbox = cls(
             timeout=timeout,
+            cpu_count=cpu_count,
             auto_pause=auto_pause,
+            memory=memory,
         )
 
         resumed_sandbox.additional_properties = d

@@ -19,8 +19,10 @@ import {
 type RequestBuildInput = {
   name: string
   tags?: string[]
-  cpuCount: number
-  memoryMB: number
+  cpuCount?: number
+  maxCpuCount?: number
+  memoryMB?: number
+  minFreeDiskMb?: number
 }
 
 type GetFileUploadLinkInput = {
@@ -50,7 +52,14 @@ export type TriggerBuildTemplate = components['schemas']['TemplateBuildStartV2']
 
 export async function requestBuild(
   client: ApiClient,
-  { name, tags, cpuCount, memoryMB }: RequestBuildInput,
+  {
+    name,
+    tags,
+    cpuCount,
+    maxCpuCount,
+    memoryMB,
+    minFreeDiskMb,
+  }: RequestBuildInput,
   signal?: AbortSignal
 ) {
   const requestBuildRes = await client.api.POST('/v3/templates', {
@@ -58,7 +67,9 @@ export async function requestBuild(
       name,
       tags,
       cpuCount,
+      maxCpuCount,
       memoryMB,
+      minFreeDiskMb,
     },
     signal,
   })
@@ -111,6 +122,7 @@ export async function uploadFile(
     fileName: string
     fileContextPath: string
     url: string
+    headers?: Record<string, string>
     ignorePatterns: string[]
     resolveSymlinks: boolean
     gzip: boolean
@@ -126,6 +138,7 @@ export async function uploadFile(
   const {
     fileName,
     url,
+    headers,
     fileContextPath,
     ignorePatterns,
     resolveSymlinks,
@@ -152,7 +165,7 @@ export async function uploadFile(
       abortOpts?.signal
     )
 
-    const res = await putFileStream(url, tar.path, tar.size, signal)
+    const res = await putFileStream(url, tar.path, tar.size, signal, headers)
 
     if (!res.ok) {
       throw new FileUploadError(
@@ -174,14 +187,14 @@ async function putFileStream(
   url: string,
   filePath: string,
   size: number,
-  signal: AbortSignal | undefined
+  signal: AbortSignal | undefined,
+  headers?: Record<string, string>
 ): Promise<{ ok: boolean; statusText: string }> {
   // Prefer undici's fetch: it honors the explicit Content-Length on stream
   // bodies on every runtime, while Deno's native fetch ignores the header and
-  // falls back to chunked. Where undici isn't resolvable (e.g. bundled apps),
-  // fall back to the global fetch — Node's and Bun's native fetch also honor
-  // Content-Length on stream bodies. loadUndici tries undici 8 first and
-  // falls back to undici 7 where 8 doesn't import (Bun).
+  // falls back to chunked. Where undici doesn't load (e.g. bundled apps),
+  // the global fetch is used — Node's and Bun's native fetch also honor
+  // Content-Length on stream bodies.
   const undici = await loadUndici()
   const fetchImpl = (undici?.fetch as typeof fetch | undefined) ?? fetch
 
@@ -190,7 +203,13 @@ async function putFileStream(
     body: stream.Readable.toWeb(
       fs.createReadStream(filePath)
     ) as ReadableStream,
+    // API-returned headers applied as given (Azure needs x-ms-blob-type, which a SAS cannot carry); Content-Length stays ours, dropped case-insensitively since fetch header names are not case-sensitive.
     headers: {
+      ...Object.fromEntries(
+        Object.entries(headers ?? {}).filter(
+          ([name]) => name.toLowerCase() !== 'content-length'
+        )
+      ),
       'Content-Length': size.toString(),
     },
     // Streaming request bodies require half-duplex mode.
@@ -475,4 +494,30 @@ export async function getTemplateTags(
     buildId: item.buildID,
     createdAt: new Date(item.createdAt),
   }))
+}
+
+export async function deleteTemplate(
+  client: ApiClient,
+  { templateID }: { templateID: string },
+  signal?: AbortSignal
+): Promise<boolean> {
+  const res = await client.api.DELETE('/templates/{templateID}', {
+    params: {
+      path: {
+        templateID,
+      },
+    },
+    signal,
+  })
+
+  if (res.response.status === 404) {
+    return false
+  }
+
+  const error = handleApiError(res, TemplateError)
+  if (error) {
+    throw error
+  }
+
+  return true
 }

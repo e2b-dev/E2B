@@ -30,7 +30,56 @@ function wrangler(args: string[]) {
   return { ...result, output: `${result.stdout ?? ''}\n${result.stderr ?? ''}` }
 }
 
-export default function setup(project: TestProject) {
+// A temporary deploy lands on a brand-new account subdomain
+// (<worker>.<random-name>.workers.dev), and until both the route and the
+// script propagate to the edge Cloudflare serves an HTML error page: a 404
+// ("nothing is here yet") for the missing route, or a 500 ("Script not
+// found") from a colo that already has the route but not the script. Wait
+// for the worker itself to answer (405 to GET, worker.mjs is POST-only) so
+// the test's own retries only have to absorb transient network failures.
+const propagationErrorTitle = /Script not found/i
+
+async function waitUntilLive(workerUrl: string, timeoutMs = 240_000) {
+  const deadline = Date.now() + timeoutMs
+  for (;;) {
+    // Thrown fetch errors (DNS/connect for the fresh subdomain) are also
+    // transient — keep waiting on those, but fail fast on anything that is
+    // not a propagation error so real errors surface immediately.
+    const response = await fetch(workerUrl).catch((err) => {
+      console.log(`Worker not reachable yet (${err}), waiting...`)
+      return undefined
+    })
+    if (response) {
+      if (response.status === 405) {
+        return
+      }
+      if (response.status === 404) {
+        console.log('Worker route not live yet (404), waiting...')
+      } else {
+        const text = await response.text()
+        const title = text.match(/<title>(.*?)<\/title>/is)?.[1]?.trim()
+        if (!propagationErrorTitle.test(title ?? '')) {
+          throw new Error(
+            `Worker at ${workerUrl} answered ${response.status}${
+              title ? ` ("${title}")` : ''
+            } — not a propagation error: ${text.slice(0, 200)}`
+          )
+        }
+        console.log(
+          `Worker script not live yet (${response.status}, "${title}"), waiting...`
+        )
+      }
+    }
+    if (Date.now() >= deadline) {
+      throw new Error(
+        `Worker at ${workerUrl} did not come up within ${timeoutMs / 1000}s of deploy`
+      )
+    }
+    await new Promise((resolve) => setTimeout(resolve, 3_000))
+  }
+}
+
+export default async function setup(project: TestProject) {
   rmSync(outputFile, { force: true })
 
   console.log('Deploying worker to a temporary Cloudflare preview account...')
@@ -58,6 +107,8 @@ export default function setup(project: TestProject) {
   }
 
   console.log(`Deployed: ${workerUrl}`)
+  await waitUntilLive(workerUrl)
+  console.log('Worker is live.')
   project.provide('cfWorkerUrl', workerUrl)
 
   return function teardown() {

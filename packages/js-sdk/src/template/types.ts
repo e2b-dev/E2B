@@ -3,6 +3,7 @@ import type { PathLike } from 'node:fs'
 import type { LogEntry } from './logger'
 import type { McpServer } from '../sandbox/mcp'
 import { ConnectionOpts } from '../connectionConfig'
+import type { components } from '../api'
 
 /**
  * Options for creating a new template.
@@ -14,7 +15,10 @@ export type TemplateOptions = {
    */
   fileContextPath?: PathLike
   /**
-   * Array of glob patterns to ignore when copying files.
+   * Patterns in `.dockerignore` syntax for files to exclude when copying.
+   * They are applied after the `.dockerignore` file in the context directory, so they take precedence over it.
+   * An invalid pattern (such as an unterminated `[`) throws a `TemplateError`.
+   * Brace expansion (`{a,b}`) is not supported, as in Docker.
    */
   fileIgnorePatterns?: string[]
 }
@@ -34,14 +38,23 @@ export type BasicBuildOptions = {
   tags?: string[]
   /**
    * Number of CPUs allocated to the sandbox.
-   * @default 2
    */
   cpuCount?: number
   /**
+   * Maximum number of CPUs allocated to the sandbox.
+   * Setting it makes the template resizable. Must be at least `cpuCount`.
+   */
+  maxCpuCount?: number
+  /**
    * Amount of memory in MB allocated to the sandbox.
-   * @default 1024
    */
   memoryMB?: number
+  /**
+   * Requested minimum free space for the template filesystem after the build steps
+   * have run, in MiB. Growth is best effort and the filesystem is never shrunk.
+   * Omit to use the team default or set to 0 to request no growth.
+   */
+  minFreeDiskMb?: number
   /**
    * If true, skips cache and forces a complete rebuild.
    * @default false
@@ -134,8 +147,8 @@ export type TemplateBuildStatusResponse = {
    */
   logEntries: LogEntry[]
   /**
-   * Build logs (raw strings).
-   * @deprecated Use `logEntries` instead.
+   * Build logs (raw strings). Always empty since the V1 build path was removed.
+   * @deprecated Use `logEntries` instead. Will be removed in the next major version.
    */
   logs: string[]
   /**
@@ -156,6 +169,123 @@ export type TemplateTagInfo = {
    * Assigned tags of the template.
    */
   tags: string[]
+}
+
+/**
+ * Information about a template.
+ */
+export type TemplateInfo = {
+  /**
+   * Template identifier.
+   */
+  templateId: string
+  /**
+   * Identifier of the last successful build of the template.
+   */
+  buildId: string
+  /**
+   * Names of the template (`namespace/name` when namespaced).
+   */
+  names: string[]
+  /**
+   * Description of the template.
+   */
+  description?: string
+  /**
+   * Whether the template is public or only accessible by the project.
+   */
+  public: boolean
+  /**
+   * Whether the template is one of the platform's default templates.
+   */
+  isDefault: boolean
+  /**
+   * Status of the last template build.
+   */
+  buildStatus: TemplateBuildStatus
+  /**
+   * Number of CPUs allocated to the sandbox.
+   */
+  cpuCount: number
+  /**
+   * Maximum number of CPUs a sandbox can be started with. Set only for
+   * resizable templates.
+   */
+  maxCpuCount?: number
+  /**
+   * Amount of memory in MiB allocated to the sandbox.
+   */
+  memoryMB: number
+  /**
+   * Disk size in MiB of the sandbox.
+   */
+  diskSizeMB: number
+  /**
+   * Version of envd running in the sandbox.
+   */
+  envdVersion: string
+  /**
+   * Number of times the template was built.
+   */
+  buildCount: number
+  /**
+   * Number of times the template was used to create a sandbox.
+   */
+  spawnCount: number
+  /**
+   * When the template was created.
+   */
+  createdAt: Date
+  /**
+   * When the template was last updated.
+   */
+  updatedAt: Date
+  /**
+   * When the template was last used to create a sandbox.
+   */
+  lastSpawnedAt?: Date
+}
+
+export function convertTemplateInfo(
+  template: components['schemas']['Template']
+): TemplateInfo {
+  return {
+    templateId: template.templateID,
+    buildId: template.buildID,
+    names: template.names,
+    ...(template.description && { description: template.description }),
+    public: template.public,
+    isDefault: template.isDefault ?? false,
+    buildStatus: template.buildStatus,
+    cpuCount: template.cpuCount,
+    ...(template.maxCpuCount != null && { maxCpuCount: template.maxCpuCount }),
+    memoryMB: template.memoryMB,
+    diskSizeMB: template.diskSizeMB,
+    envdVersion: template.envdVersion,
+    buildCount: template.buildCount,
+    spawnCount: template.spawnCount,
+    createdAt: new Date(template.createdAt),
+    updatedAt: new Date(template.updatedAt),
+    ...(template.lastSpawnedAt && {
+      lastSpawnedAt: new Date(template.lastSpawnedAt),
+    }),
+  }
+}
+
+/**
+ * Options for listing templates.
+ */
+export interface TemplateListOpts extends Omit<ConnectionOpts, 'signal'> {
+  /**
+   * Maximum number of templates to return per page.
+   *
+   * @default 100
+   */
+  limit?: number
+  /**
+   * Token to the next page.
+   */
+  nextToken?: string
 }
 
 /**
@@ -244,6 +374,42 @@ export interface TemplateFromImage {
    * ```
    */
   fromUbuntuImage(variant?: string): TemplateBuilder
+
+  /**
+   * Start from a Fedora-based Docker image.
+   * @param variant Fedora variant (default: '44')
+   *
+   * @example
+   * ```ts
+   * Template().fromFedoraImage('44')
+   * ```
+   */
+  fromFedoraImage(variant?: string): TemplateBuilder
+
+  /**
+   * Start from an Alpine-based Docker image.
+   * @param variant Alpine variant (default: '3.24')
+   *
+   * @example
+   * ```ts
+   * Template().fromAlpineImage('3.24')
+   * ```
+   */
+  fromAlpineImage(variant?: string): TemplateBuilder
+
+  /**
+   * Start from an Arch Linux-based Docker image.
+   *
+   * Defaults to `latest`: Arch is a rolling release and template provisioning
+   * runs `pacman -Syu`, so pinning a tag would not change the built result.
+   * @param variant Arch Linux variant (default: 'latest')
+   *
+   * @example
+   * ```ts
+   * Template().fromArchImage('base-devel')
+   * ```
+   */
+  fromArchImage(variant?: string): TemplateBuilder
 
   /**
    * Start from a Python-based Docker image.

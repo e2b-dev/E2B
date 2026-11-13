@@ -48,10 +48,18 @@ def _parse_response(
         response_409 = Error.from_dict(response.json())
 
         return response_409
+    if response.status_code == 429:
+        response_429 = Error.from_dict(response.json())
+
+        return response_429
     if response.status_code == 500:
         response_500 = Error.from_dict(response.json())
 
         return response_500
+    if response.status_code == 503:
+        response_503 = Error.from_dict(response.json())
+
+        return response_503
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -77,7 +85,9 @@ def sync_detailed(
 ) -> Response[Union[Any, Error]]:
     """Pause sandbox
 
-     Pause the sandbox
+     Pause the sandbox. Answers 503 and leaves the sandbox running when it cannot be paused right now:
+    its node is busy, it is being snapshotted, or `requireHealthyGuest` was set and the sandbox guest
+    agent is not responding; retry later.
 
     Args:
         sandbox_id (str):
@@ -111,7 +121,9 @@ def sync(
 ) -> Optional[Union[Any, Error]]:
     """Pause sandbox
 
-     Pause the sandbox
+     Pause the sandbox. Answers 503 and leaves the sandbox running when it cannot be paused right now:
+    its node is busy, it is being snapshotted, or `requireHealthyGuest` was set and the sandbox guest
+    agent is not responding; retry later.
 
     Args:
         sandbox_id (str):
@@ -140,7 +152,9 @@ async def asyncio_detailed(
 ) -> Response[Union[Any, Error]]:
     """Pause sandbox
 
-     Pause the sandbox
+     Pause the sandbox. Answers 503 and leaves the sandbox running when it cannot be paused right now:
+    its node is busy, it is being snapshotted, or `requireHealthyGuest` was set and the sandbox guest
+    agent is not responding; retry later.
 
     Args:
         sandbox_id (str):
@@ -172,7 +186,9 @@ async def asyncio(
 ) -> Optional[Union[Any, Error]]:
     """Pause sandbox
 
-     Pause the sandbox
+     Pause the sandbox. Answers 503 and leaves the sandbox running when it cannot be paused right now:
+    its node is busy, it is being snapshotted, or `requireHealthyGuest` was set and the sandbox guest
+    agent is not responding; retry later.
 
     Args:
         sandbox_id (str):

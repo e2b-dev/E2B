@@ -7,11 +7,6 @@ on:
         required: false
         type: string
         default: ''
-      node-only:
-        description: 'Run only the Node legs (skip Bun, Deno, and Cloudflare)'
-        required: false
-        type: boolean
-        default: false
     secrets:
       E2B_API_KEY:
         required: true
@@ -28,35 +23,58 @@ jobs:
     name: JS SDK - ${{ matrix.runtime }} (${{ matrix.os }})
     strategy:
       fail-fast: false
-      # With node-only (set by staging callers) the matrix collapses to the
-      # Node legs: the Bun/Deno/Cloudflare legs re-run suites the Node legs
-      # already cover and add sandbox/build load without extra backend
-      # signal, so the other runtimes are exercised against production only.
+      # Each runtime keeps one live-test worker, so all seven runtime/OS jobs
+      # can run together without restoring Vitest's default worker
+      # multiplication.
+      max-parallel: 7
       matrix:
-        include: >-
-          ${{ inputs.node-only
-            && fromJSON('[{"runtime": "node", "os": "ubuntu-22.04"}, {"runtime": "node", "os": "windows-latest"}]')
-            || fromJSON('[{"runtime": "node", "os": "ubuntu-22.04"}, {"runtime": "node", "os": "windows-latest"}, {"runtime": "bun", "os": "ubuntu-22.04"}, {"runtime": "deno", "os": "ubuntu-22.04"}, {"runtime": "cloudflare", "os": "ubuntu-22.04"}, {"runtime": "cloudflare-deploy", "os": "ubuntu-22.04"}]') }}
+        include:
+          - runtime: node
+            os: ubuntu-22.04
+          - runtime: node
+            os: windows-latest
+          - runtime: bun
+            os: ubuntu-22.04
+          - runtime: deno
+            os: ubuntu-22.04
+          - runtime: cloudflare
+            os: ubuntu-22.04
+          - runtime: cloudflare-deploy
+            os: ubuntu-22.04
+          - runtime: browser
+            os: ubuntu-22.04
     runs-on: ${{ matrix.os }}
+    env:
+      E2B_TEST_MAX_WORKERS: 1
+    # The cloudflare-deploy leg is advisory: it deploys to a brand-new
+    # Cloudflare preview account on every run, so it inherits that account's
+    # propagation and read-after-write races (the fresh workers.dev subdomain
+    # 404s until the route reaches the edge; the subdomain API can 404 the
+    # script it just accepted). Those fail ~1 run in 8 without saying anything
+    # about the SDK, and this job gates both the required `SDK Tests Status`
+    # check and the release workflow's publish step. It still runs and still
+    # reports — a genuine bundle regression (e.g. a Workers startup crash) is
+    # rejected at upload deterministically, not intermittently.
+    continue-on-error: ${{ matrix.runtime == 'cloudflare-deploy' }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Parse .tool-versions
-        uses: wistia/parse-tool-versions@v2.1.1
+        uses: wistia/parse-tool-versions@32f568a4ffd4bfa7720ebf93f171597d1ebc979a # v2.1.1
         with:
           filename: '.tool-versions'
           uppercase: 'true'
           prefix: 'tool_version_'
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
         id: pnpm-install
         with:
           version: '${{ env.TOOL_VERSION_PNPM }}'
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: '${{ env.TOOL_VERSION_NODEJS }}'
           registry-url: 'https://registry.npmjs.org'
@@ -72,19 +90,22 @@ jobs:
         run: |
           pnpm install --frozen-lockfile
 
-      # Only the Node runtime runs the vitest `browser` project, which drives
-      # Chromium through Playwright.
+      # Only the browser leg needs Chromium, which Playwright drives.
       - name: Get Playwright version
-        if: matrix.runtime == 'node'
+        if: matrix.runtime == 'browser'
         id: playwright-version
         run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
 
       - name: Cache Playwright browsers
-        if: matrix.runtime == 'node'
-        uses: actions/cache@v4
+        if: matrix.runtime == 'browser'
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
-          path: ${{ matrix.os == 'windows-latest' && '~/AppData/Local/ms-playwright' || '~/.cache/ms-playwright' }}
+          path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright Chromium
+        if: matrix.runtime == 'browser'
+        run: pnpm run playwright:install
 
       # The unit bundle test and the Cloudflare deploy config fail in CI when
       # the build output is missing.
@@ -100,7 +121,9 @@ jobs:
 
       - name: Install Bun
         if: matrix.runtime == 'bun'
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: '${{ env.TOOL_VERSION_BUN }}'
 
       - name: Run test suite under Bun
         if: matrix.runtime == 'bun'
@@ -111,7 +134,7 @@ jobs:
 
       - name: Install Deno
         if: matrix.runtime == 'deno'
-        uses: denoland/setup-deno@v2
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
         with:
           deno-version: v${{ env.TOOL_VERSION_DENO }}
 
@@ -122,7 +145,7 @@ jobs:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
 
-      # Full unit + connectionConfig suite inside workerd (vitest-pool-workers).
+      # Full unit + connectionConfig suite inside workerd (vitest-plugin).
       - name: Run test suite under Cloudflare workerd
         if: matrix.runtime == 'cloudflare'
         run: pnpm test:cf
@@ -136,6 +159,16 @@ jobs:
       - name: Run Cloudflare Workers deploy tests
         if: matrix.runtime == 'cloudflare-deploy'
         run: pnpm test:cf:deploy
+        env:
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}
+
+      # Full unit + connectionConfig suite inside Chromium (vitest browser mode).
+      # Chromium comes from the cached install step above; `pretest:browser`
+      # covers local runs, where it's a no-op once installed.
+      - name: Run test suite in the browser
+        if: matrix.runtime == 'browser'
+        run: pnpm test:browser
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           E2B_DOMAIN: ${{ inputs.E2B_DOMAIN }}

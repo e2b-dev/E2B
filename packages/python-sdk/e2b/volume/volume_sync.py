@@ -1,11 +1,19 @@
 import io
-from typing import IO, Iterator, List, Literal, Optional, Union, cast, overload
+from typing import (
+    IO,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Self,
+    Union,
+    Unpack,
+    cast,
+    overload,
+)
 from http import HTTPStatus
 
 import httpx
-
-from httpx._types import ProxyTypes
-from typing_extensions import Unpack
 
 from e2b.api import handle_api_exception
 from e2b.api.client.api.volumes import (
@@ -20,8 +28,19 @@ from e2b.api.client.models import (
 )
 from e2b.api.client.types import Response
 from e2b.api.client_sync import get_api_client as get_core_api_client
-from e2b.connection_config import ApiParams, ConnectionConfig
-from e2b.exceptions import NotFoundException, VolumeException
+from e2b.connection_config import (
+    ApiParams,
+    ClientFactory,
+    ConnectionConfig,
+    HttpVersion,
+    ProxyTypes,
+)
+from e2b.exceptions import (
+    NotFoundException,
+    VolumeException,
+    VolumeNotFoundException,
+    VolumePathNotFoundException,
+)
 from e2b.volume.client.api.volumes import (
     get_volumecontent_volume_id_path as get_path,
     get_volumecontent_volume_id_dir as get_dir,
@@ -37,6 +56,9 @@ from e2b.volume.client.models import (
 )
 from e2b.volume.client.types import File as FilePayload, UNSET
 from e2b.volume.client_sync import get_api_client as get_volume_api_client
+from e2b.volume.client_sync import (
+    get_streaming_api_client as get_streaming_volume_api_client,
+)
 from e2b.volume.connection_config import (
     VolumeApiParams,
     VolumeConnectionConfig,
@@ -48,10 +70,13 @@ from e2b.volume.types import (
     VolumeEntryStat,
 )
 from e2b.io_utils import iter_io_chunks
-from e2b.volume.utils import DualMethod, convert_volume_entry_stat
+from e2b.volume.utils import (
+    DualMethod,
+    convert_volume_entry_stat,
+)
 
 
-class Volume:
+class Volume(ClientFactory):
     """E2B Volume for persistent storage that can be mounted to sandboxes."""
 
     def __init__(
@@ -62,6 +87,8 @@ class Volume:
         domain: Optional[str] = None,
         debug: Optional[bool] = None,
         proxy: Optional[ProxyTypes] = None,
+        *,
+        http_version: Optional[HttpVersion] = None,
     ):
         self._volume_id = volume_id
         self._name = name
@@ -69,6 +96,7 @@ class Volume:
         self._domain = domain
         self._debug = debug
         self._proxy = proxy
+        self._http_version = http_version
 
     @property
     def volume_id(self) -> str:
@@ -94,10 +122,15 @@ class Volume:
             headers=opts.get("headers"),
             logger=opts.get("logger"),
             proxy=opts.get("proxy") if opts.get("proxy") is not None else self._proxy,
+            http_version=(
+                opts.get("http_version")
+                if opts.get("http_version") is not None
+                else self._http_version
+            ),
         )
 
     @classmethod
-    def create(cls, name: str, **opts: Unpack[ApiParams]) -> "Volume":
+    def create(cls, name: str, **opts: Unpack[ApiParams]) -> Self:
         """
         Create a new volume.
 
@@ -105,7 +138,7 @@ class Volume:
 
         :return: A Volume instance for the new volume
         """
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
         api_client = get_core_api_client(config)
         res = post_volumes.sync_detailed(
@@ -122,18 +155,24 @@ class Volume:
         if isinstance(res.parsed, Error):
             raise Exception(f"{res.parsed.message}: Request failed")
 
+        domain = (
+            res.parsed.domain
+            if isinstance(res.parsed.domain, str) and res.parsed.domain
+            else None
+        )
         vol = cls(
             volume_id=res.parsed.volume_id,
             name=res.parsed.name,
             token=res.parsed.token,
-            domain=config.domain,
+            domain=domain or config.domain,
             debug=config.debug,
             proxy=config.proxy,
+            http_version=config.http_version,
         )
         return vol
 
     @classmethod
-    def connect(cls, volume_id: str, **opts: Unpack[ApiParams]) -> "Volume":
+    def connect(cls, volume_id: str, **opts: Unpack[ApiParams]) -> Self:
         """
         Connect to an existing volume by ID.
 
@@ -142,18 +181,21 @@ class Volume:
         :return: A Volume instance for the existing volume
         """
         info = cls.get_info(volume_id, **opts)
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
         return cls(
             volume_id=volume_id,
             name=info.name,
             token=info.token,
-            domain=config.domain,
+            domain=info.domain or config.domain,
             debug=config.debug,
             proxy=config.proxy,
+            http_version=config.http_version,
         )
 
-    @staticmethod
-    def _class_get_info(volume_id: str, **opts: Unpack[ApiParams]) -> VolumeAndToken:
+    @classmethod
+    def _class_get_info(
+        cls, volume_id: str, **opts: Unpack[ApiParams]
+    ) -> VolumeAndToken:
         """
         Get information about a volume.
 
@@ -161,7 +203,7 @@ class Volume:
 
         :return: Volume info
         """
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
         api_client = get_core_api_client(config)
         res = get_volumes_volume_id.sync_detailed(
@@ -170,7 +212,7 @@ class Volume:
         )
 
         if res.status_code == 404:
-            raise NotFoundException(f"Volume {volume_id} not found")
+            raise VolumeNotFoundException(f"Volume {volume_id} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
@@ -181,20 +223,26 @@ class Volume:
         if isinstance(res.parsed, Error):
             raise Exception(f"{res.parsed.message}: Request failed")
 
+        domain = (
+            res.parsed.domain
+            if isinstance(res.parsed.domain, str) and res.parsed.domain
+            else None
+        )
         return VolumeAndToken(
             volume_id=res.parsed.volume_id,
             name=res.parsed.name,
             token=res.parsed.token,
+            domain=domain,
         )
 
-    @staticmethod
-    def _class_list(**opts: Unpack[ApiParams]) -> List[VolumeInfo]:
+    @classmethod
+    def _class_list(cls, **opts: Unpack[ApiParams]) -> List[VolumeInfo]:
         """
         List all volumes.
 
         :return: List of volumes
         """
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
         api_client = get_core_api_client(config)
         res = get_volumes.sync_detailed(
@@ -212,14 +260,14 @@ class Volume:
 
         return [VolumeInfo(volume_id=v.volume_id, name=v.name) for v in res.parsed]
 
-    @staticmethod
-    def destroy(volume_id: str, **opts: Unpack[ApiParams]) -> bool:
+    @classmethod
+    def destroy(cls, volume_id: str, **opts: Unpack[ApiParams]) -> bool:
         """
         Destroy a volume.
 
         :param volume_id: Volume ID
         """
-        config = ConnectionConfig(**opts)
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
 
         api_client = get_core_api_client(config)
         res = delete_volumes_volume_id.sync_detailed(
@@ -258,7 +306,7 @@ class Volume:
         )
 
         if res.status_code == 404:
-            raise NotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(f"Path {path} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
@@ -310,7 +358,7 @@ class Volume:
         )
 
         if res.status_code == 404:
-            raise NotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(f"Path {path} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
@@ -362,7 +410,7 @@ class Volume:
         )
 
         if res.status_code == 404:
-            raise NotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(f"Path {path} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
@@ -375,8 +423,8 @@ class Volume:
 
         return convert_volume_entry_stat(cast(VolumeEntryStatApi, res.parsed))
 
-    get_info = DualMethod(_class_get_info.__func__, _instance_get_info)
-    list = DualMethod(_class_list.__func__, _instance_list)
+    get_info = DualMethod(_class_get_info, _instance_get_info)
+    list = DualMethod(_class_list, _instance_list)
 
     def update_metadata(
         self,
@@ -414,7 +462,7 @@ class Volume:
         )
 
         if res.status_code == 404:
-            raise NotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(f"Path {path} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
@@ -463,11 +511,11 @@ class Volume:
 
         :param path: Path to the file
         :param format: Format of the file content—`text` by default
-        :param stream_idle_timeout: Idle timeout in **seconds** for a streamed
-            read (`format="stream"`)—abort if no chunk arrives within this
-            window while reading. Resets on every chunk, so it bounds a stalled
-            stream without limiting total transfer time. Defaults to the request
-            timeout; pass `0` to disable.
+        :param stream_idle_timeout: Ignored — the sync client cannot
+            interrupt a blocking read. A stalled streamed read is bounded by
+            a transport-wide idle read timeout instead (60 seconds), which
+            resets on every chunk. (`AsyncVolume.read_file` honors this
+            parameter.)
         :param opts: Connection options
 
         :return: File content as string, bytes, or iterator of bytes
@@ -481,26 +529,30 @@ class Volume:
         )
 
         if format == "stream":
-            # The request timeout bounds connection setup, not total transfer;
-            # consuming the body must not be killed by it. httpx's per-chunk
-            # `read` timeout becomes the idle-read timeout for the body
-            # (defaults to the request timeout), bounding a stalled stream
-            # without limiting total transfer time. Pass `0` to disable.
-            # Mirrors the sandbox files stream path.
-            idle_timeout = (
-                timeout if stream_idle_timeout is None else stream_idle_timeout
+            # Through the pyqwest adapter a per-request timeout is a
+            # whole-request deadline that would kill long downloads, so a
+            # streamed read is sent with one only when the caller set
+            # `request_timeout` explicitly (making it the total-transfer
+            # deadline). A stalled stream is instead bounded by the
+            # transport-wide idle read timeout (see `get_streaming_transport`), which
+            # resets on every chunk without limiting total transfer time.
+            stream_timeout = VolumeConnectionConfig._get_request_timeout(
+                None, opts.get("request_timeout")
             )
-            stream_timeout = httpx.Timeout(timeout, read=idle_timeout or None)
+            # The streaming transport carries the idle read timeout; the
+            # regular one must not (it would cut off slow uploads and
+            # responses), so streamed reads get their own client.
+            stream_client = get_streaming_volume_api_client(config)
 
             def stream_file() -> Iterator[bytes]:
-                with api_client.get_httpx_client().stream(
+                with stream_client.get_httpx_client().stream(
                     method="GET",
                     url=f"/volumecontent/{self._volume_id}/file",
                     params=params,
                     timeout=stream_timeout,
                 ) as response:
                     if response.status_code == 404:
-                        raise NotFoundException(f"Path {path} not found")
+                        raise VolumePathNotFoundException(f"Path {path} not found")
 
                     if response.status_code >= 300:
                         api_response = Response(
@@ -523,7 +575,7 @@ class Volume:
         )
 
         if response.status_code == 404:
-            raise NotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(f"Path {path} not found")
 
         if response.status_code >= 300:
             api_response = Response(
@@ -599,7 +651,7 @@ class Volume:
         )
 
         if res.status_code == 404:
-            raise NotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(f"Path {path} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)
@@ -633,7 +685,7 @@ class Volume:
         )
 
         if res.status_code == 404:
-            raise NotFoundException(f"Path {path} not found")
+            raise VolumePathNotFoundException(f"Path {path} not found")
 
         if res.status_code >= 300:
             raise handle_api_exception(res, VolumeException)

@@ -2,7 +2,7 @@ import httpx
 import pytest
 
 from e2b import AsyncVolume
-from e2b.exceptions import NotFoundException
+from e2b.exceptions import VolumePathNotFoundException
 import e2b.volume.volume_async as volume_async_mod
 
 _files = {
@@ -21,19 +21,25 @@ def _handler(request: httpx.Request) -> httpx.Response:
 
 @pytest.fixture
 def volume(monkeypatch) -> AsyncVolume:
-    real_get_api_client = volume_async_mod.get_volume_api_client
-
-    def mock_get_api_client(config, **kwargs):
-        client = real_get_api_client(config, **kwargs)
-        client.set_async_httpx_client(
-            httpx.AsyncClient(
-                base_url=config.api_url,
-                transport=httpx.MockTransport(_handler),
+    def mock(real_get_api_client):
+        def mock_get_api_client(config, **kwargs):
+            client = real_get_api_client(config, **kwargs)
+            client.set_async_httpx_client(
+                httpx.AsyncClient(
+                    base_url=config.api_url,
+                    transport=httpx.MockTransport(_handler),
+                )
             )
-        )
-        return client
+            return client
 
-    monkeypatch.setattr(volume_async_mod, "get_volume_api_client", mock_get_api_client)
+        return mock_get_api_client
+
+    # Streamed reads run on their own client (the streaming transport), so
+    # both factories need the mock transport.
+    for name in ("get_volume_api_client", "get_streaming_volume_api_client"):
+        monkeypatch.setattr(
+            volume_async_mod, name, mock(getattr(volume_async_mod, name))
+        )
     return AsyncVolume(volume_id="vol-1", name="test-volume", token="vol-token")
 
 
@@ -44,7 +50,7 @@ async def test_read_file_stream_yields_content(volume: AsyncVolume):
 
 
 async def test_read_file_stream_raises_for_missing_path(volume: AsyncVolume):
-    with pytest.raises(NotFoundException):
+    with pytest.raises(VolumePathNotFoundException):
         async for _ in await volume.read_file("missing.txt", format="stream"):
             pass
 
@@ -66,5 +72,5 @@ async def test_read_file_text_and_bytes_of_empty_file(volume: AsyncVolume):
 
 
 async def test_read_file_missing_path_raises(volume: AsyncVolume):
-    with pytest.raises(NotFoundException):
+    with pytest.raises(VolumePathNotFoundException):
         await volume.read_file("missing.txt")

@@ -1,15 +1,6 @@
-import {
-  Code,
-  ConnectError,
-  createClient,
-  Client,
-  Transport,
-} from '@connectrpc/connect'
+import { createClient, Client, Transport } from '@connectrpc/connect'
 
-import {
-  Signal,
-  Process as ProcessService,
-} from '../../envd/process/process_pb'
+import { Process as ProcessService } from '../../envd/process/process_pb'
 import {
   ConnectionConfig,
   ConnectionOpts,
@@ -19,9 +10,11 @@ import {
   setupRequestController,
 } from '../../connectionConfig'
 import { CommandHandle } from './commandHandle'
+import { CommandInputHandle, CommandStreamInputOpts } from './inputHandle'
 import {
   authenticationHeader,
   handleRpcErrorWithHealthCheck,
+  killProcess,
   SandboxHealthCheck,
 } from '../../envd/rpc'
 import {
@@ -30,8 +23,10 @@ import {
   handleProcessStartEvent,
 } from '../../envd/api'
 
-export interface PtyCreateOpts
-  extends Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'> {
+export interface PtyCreateOpts extends Pick<
+  ConnectionOpts,
+  'requestTimeoutMs' | 'signal'
+> {
   /**
    * Number of columns for the PTY.
    */
@@ -81,6 +76,7 @@ export type PtyConnectOpts = Pick<PtyCreateOpts, 'onData' | 'timeoutMs'> &
  */
 export class Pty {
   private readonly rpc: Client<typeof ProcessService>
+  private readonly streamingRpc: Client<typeof ProcessService>
   private readonly envdVersion: string
   private readonly checkHealth: SandboxHealthCheck
 
@@ -89,9 +85,11 @@ export class Pty {
   constructor(
     private readonly transport: Transport,
     private readonly envdApi: EnvdApiClient,
-    private readonly connectionConfig: ConnectionConfig
+    private readonly connectionConfig: ConnectionConfig,
+    streamingTransport: Transport
   ) {
     this.rpc = createClient(ProcessService, this.transport)
+    this.streamingRpc = createClient(ProcessService, streamingTransport)
     this.envdVersion = envdApi.version
     this.checkHealth = () => checkSandboxHealth(this.envdApi)
   }
@@ -153,9 +151,11 @@ export class Pty {
         undefined,
         undefined,
         opts.onData,
-        (data, stdinOpts) => this.sendStdin(pid, data, stdinOpts),
         undefined,
-        this.checkHealth
+        undefined,
+        this.checkHealth,
+        undefined,
+        (data, inputOpts) => this.sendInput(pid, data, inputOpts)
       )
     } catch (err) {
       cleanup()
@@ -210,9 +210,11 @@ export class Pty {
         undefined,
         undefined,
         opts?.onData,
-        (data, stdinOpts) => this.sendStdin(pid, data, stdinOpts),
         undefined,
-        this.checkHealth
+        undefined,
+        this.checkHealth,
+        undefined,
+        (data, inputOpts) => this.sendInput(pid, data, inputOpts)
       )
     } catch (err) {
       cleanup()
@@ -227,7 +229,7 @@ export class Pty {
    * @param data input data to send to the PTY.
    * @param opts connection options.
    */
-  async sendStdin(
+  async sendInput(
     pid: number,
     data: string | Uint8Array,
     opts?: Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>
@@ -264,20 +266,39 @@ export class Pty {
   }
 
   /**
-   * Send input to a PTY.
+   * Open a persistent input stream to a PTY.
    *
-   * @deprecated Use {@link Pty.sendStdin} instead.
+   * Input sent through this stream is ordered relative to other `send` calls.
+   * Use this instead of {@link Pty.sendInput} when ordering matters; each
+   * `sendInput` call is a separate request. The stream sends keepalive messages
+   * while idle.
    *
-   * @param pid process ID of the PTY.
-   * @param data input data to send to the PTY.
-   * @param opts connection options.
+   * In browsers, this requires fetch request-body streaming support (Chromium
+   * over HTTP/2).
+   *
+   * @param pid Process ID of the PTY.
+   * @param opts Optional stream timeout and abort signal. `timeoutMs` defaults to `STREAM_INPUT_TIMEOUT_MS` (60_000 milliseconds).
+   * @returns A handle whose `send()` method queues input in order and whose `close()` method ends the stream and waits for envd.
+   * @throws {NotFoundError} If the PTY does not exist, surfaced from `send()` or `close()`.
+   * @throws {TimeoutError} If the stream timeout expires, surfaced from `send()` or `close()`.
+   * @example
+   * ```ts
+   * const input = sandbox.pty.streamInput(pid)
+   * await input.send('echo hello\n')
+   * await input.close()
+   * ```
    */
-  async sendInput(
+  streamInput(
     pid: number,
-    data: string | Uint8Array,
-    opts?: Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>
-  ): Promise<void> {
-    return this.sendStdin(pid, data, opts)
+    opts: CommandStreamInputOpts = {}
+  ): CommandInputHandle {
+    return new CommandInputHandle(
+      this.streamingRpc,
+      pid,
+      'pty',
+      opts,
+      this.checkHealth
+    )
   }
 
   /**
@@ -334,34 +355,11 @@ export class Pty {
     pid: number,
     opts?: Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>
   ): Promise<boolean> {
-    try {
-      await this.rpc.sendSignal(
-        {
-          process: {
-            selector: {
-              case: 'pid',
-              value: pid,
-            },
-          },
-          signal: Signal.SIGKILL,
-        },
-        {
-          signal: this.connectionConfig.getSignal(
-            opts?.requestTimeoutMs,
-            opts?.signal
-          ),
-        }
-      )
-
-      return true
-    } catch (err) {
-      if (err instanceof ConnectError) {
-        if (err.code === Code.NotFound) {
-          return false
-        }
-      }
-
-      throw await handleRpcErrorWithHealthCheck(err, this.checkHealth)
-    }
+    return killProcess(
+      this.rpc,
+      pid,
+      this.connectionConfig.getSignal(opts?.requestTimeoutMs, opts?.signal),
+      this.checkHealth
+    )
   }
 }

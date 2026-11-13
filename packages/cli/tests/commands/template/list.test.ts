@@ -1,0 +1,89 @@
+import { beforeAll, describe, expect, test } from 'vitest'
+import { Template } from 'e2b'
+import { isDebug, runCli } from '../../setup'
+
+const apiKey = process.env.E2B_API_KEY
+const domain = process.env.E2B_DOMAIN || 'e2b.app'
+const shouldSkip = !apiKey || isDebug
+const integrationTest = test.skipIf(shouldSkip)
+const timeoutMs = 120_000
+
+const env: NodeJS.ProcessEnv = {
+  ...process.env,
+  E2B_API_KEY: apiKey,
+  E2B_DOMAIN: domain,
+}
+delete env.E2B_DEBUG
+
+function listTemplates(args: string[]) {
+  const result = runCli(['template', 'list', ...args], { timeoutMs, env })
+  expect(result.error).toBeUndefined()
+  expect(result.status, String(result.stderr)).toBe(0)
+  return String(result.stdout)
+}
+
+function listTemplateIds(args: string[]): string[] {
+  const templates: { templateId: string }[] = JSON.parse(
+    listTemplates([...args, '-f', 'json'])
+  )
+  return templates.map((t) => t.templateId)
+}
+
+describe('template list', () => {
+  let firstPageIds: string[] = []
+  let hasSecondPage = false
+
+  beforeAll(async () => {
+    if (shouldSkip) return
+
+    const paginator = Template.list({ apiKey, domain })
+    firstPageIds = (await paginator.nextItems()).map((t) => t.templateId)
+    hasSecondPage = paginator.hasNext
+  })
+
+  integrationTest(
+    'stops at --limit across pages',
+    () => {
+      if (!hasSecondPage) return
+      const limit = firstPageIds.length + 1
+
+      const ids = listTemplateIds(['--limit', String(limit)])
+
+      expect(ids).toHaveLength(limit)
+      expect(new Set(ids).size).toBe(limit)
+      // Other suites create and delete templates in the same team while this
+      // runs, so compare order rather than membership: first-page templates
+      // still listed keep their relative order.
+      const firstPage = new Set(firstPageIds)
+      const stillListed = new Set(ids)
+      expect(ids.filter((id) => firstPage.has(id))).toEqual(
+        firstPageIds.filter((id) => stillListed.has(id))
+      )
+    },
+    timeoutMs
+  )
+
+  integrationTest(
+    'hints at --limit when more templates exist',
+    () => {
+      if (firstPageIds.length < 2) return
+
+      expect(listTemplates(['--limit', '1'])).toContain(
+        'Showing first 1 templates. Use --limit to change.'
+      )
+    },
+    timeoutMs
+  )
+
+  test('rejects a malformed --limit before calling the API', () => {
+    const result = runCli(['template', 'list', '--limit', 'abc'], {
+      timeoutMs,
+      env,
+    })
+
+    expect(result.status).not.toBe(0)
+    expect(String(result.stderr)).toContain(
+      'Template limit must be a non-negative integer'
+    )
+  })
+})

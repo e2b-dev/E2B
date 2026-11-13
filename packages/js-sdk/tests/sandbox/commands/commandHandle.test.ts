@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { CommandHandle } from '../../../src/sandbox/commands/commandHandle'
+import {
+  CommandExitError,
+  CommandHandle,
+} from '../../../src/sandbox/commands/commandHandle'
 
 type EventKind = 'stdout' | 'stderr' | 'pty'
 
@@ -473,5 +476,125 @@ describe('CommandHandle', () => {
     )
 
     await expect(handle.wait()).rejects.toThrow('callback failed')
+  })
+
+  it('does not retain output when retainOutput is false', async () => {
+    async function* events() {
+      yield dataEvent('stdout', new TextEncoder().encode('out'))
+      yield dataEvent('stderr', new TextEncoder().encode('err'))
+      yield endEvent(0)
+    }
+
+    const stdout: string[] = []
+    const stderr: string[] = []
+    const handle = new CommandHandle<undefined>(
+      1,
+      () => {},
+      async () => true,
+      events(),
+      (data) => {
+        stdout.push(data)
+      },
+      (data) => {
+        stderr.push(data)
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      false
+    )
+
+    const result = await handle.wait()
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).toBeUndefined()
+    expect(result.stderr).toBeUndefined()
+    expect(handle.stdout).toBeUndefined()
+    expect(handle.stderr).toBeUndefined()
+    expect(stdout).toEqual(['out'])
+    expect(stderr).toEqual(['err'])
+  })
+
+  it('throws CommandExitError without output when retainOutput is false', async () => {
+    async function* events() {
+      yield dataEvent('stderr', new TextEncoder().encode('err'))
+      yield endEvent(1)
+    }
+
+    const handle = new CommandHandle<undefined>(
+      1,
+      () => {},
+      async () => true,
+      events(),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      false
+    )
+
+    const err = await handle.wait().catch((e) => e)
+    expect(err).toBeInstanceOf(CommandExitError)
+    expect(err.exitCode).toBe(1)
+    expect(err.stdout).toBeUndefined()
+    expect(err.stderr).toBeUndefined()
+  })
+})
+
+describe('CommandHandle input routing', () => {
+  async function* noEvents() {}
+
+  function ptyHandle(
+    sendInput: (data: string | Uint8Array) => Promise<void>
+  ): CommandHandle {
+    return new CommandHandle(
+      1,
+      () => {},
+      async () => true,
+      noEvents(),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      sendInput
+    )
+  }
+
+  it('sends PTY input through sendInput', async () => {
+    const sent: (string | Uint8Array)[] = []
+    const handle = ptyHandle(async (data) => {
+      sent.push(data)
+    })
+
+    await handle.sendInput('ls\n')
+    await handle.sendInput(new Uint8Array([1, 2]))
+
+    expect(sent).toEqual(['ls\n', new Uint8Array([1, 2])])
+  })
+
+  it('points PTY handles from sendStdin to sendInput', async () => {
+    const handle = ptyHandle(async () => {})
+
+    await expect(handle.sendStdin('ls\n')).rejects.toThrow(/use sendInput\(\)/)
+  })
+
+  it('points command handles from sendInput to sendStdin', async () => {
+    const handle = new CommandHandle(
+      1,
+      () => {},
+      async () => true,
+      noEvents(),
+      undefined,
+      undefined,
+      undefined,
+      async () => {}
+    )
+
+    await expect(handle.sendInput('ls\n')).rejects.toThrow(/use sendStdin\(\)/)
   })
 })

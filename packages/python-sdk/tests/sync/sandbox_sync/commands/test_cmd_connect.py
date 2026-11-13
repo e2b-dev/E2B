@@ -16,3 +16,14 @@ def test_connect_to_non_existing_process(sandbox):
 
     with pytest.raises(NotFoundException):
         sandbox.commands.connect(non_existing_pid)
+
+
+def test_connect_without_retaining_output(sandbox):
+    cmd = sandbox.commands.run("sleep 1; echo out", background=True)
+
+    stdout = []
+    handle = sandbox.commands.connect(cmd.pid, retain_output=False)
+    result = handle.wait(on_stdout=stdout.append)
+
+    assert result.stdout is None
+    assert "".join(stdout) == "out\n"

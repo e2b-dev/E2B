@@ -24,8 +24,8 @@ from envd_frame_server import (
     make_sync_client,
 )
 
-from e2b.envd.client_async import ConnectionRetryTransport
-from e2b.envd.client_sync import (
+from e2b.api.client_async import ConnectionRetryTransport
+from e2b.api.client_sync import (
     ConnectionRetryTransport as SyncConnectionRetryTransport,
 )
 from e2b.envd.process.process_pb import ConnectRequest

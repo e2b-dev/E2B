@@ -33,7 +33,7 @@ export function getEnvVar(name: string) {
  * the env var is unset. Throws on non-integer input rather than silently
  * falling back so misconfiguration is surfaced loudly.
  */
-export function parseIntEnv(name: string, defaultValue: number): number {
+function parseIntEnv(name: string, defaultValue: number): number {
   const raw = getEnvVar(name)
   if (!raw) return defaultValue
 
@@ -60,26 +60,5 @@ export function parsePositiveIntEnv(
     throw new Error(`Invalid ${name}=${parsed}: expected a positive integer.`)
   }
 
-  return parsed
-}
-
-/**
- * Parse an inflight-limit env var. Returns `0` to disable the cap (documented
- * opt-out) or a positive integer to cap concurrency. Throws on non-integer or
- * negative values so misconfiguration is surfaced loudly rather than silently
- * removing the cap. A return value of `0` is recognized by
- * {@link limitConcurrency} as "no cap".
- */
-export function parseInflightLimitEnv(
-  name: string,
-  defaultValue: number
-): number {
-  const parsed = parseIntEnv(name, defaultValue)
-  if (parsed < 0) {
-    throw new Error(
-      `Invalid ${name}=${parsed}: expected a non-negative integer ` +
-        '(use 0 to disable the cap).'
-    )
-  }
   return parsed
 }

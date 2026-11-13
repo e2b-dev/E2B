@@ -1,19 +1,21 @@
+import inspect
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import (
     Any,
     Callable,
     Dict,
+    Iterable,
     List,
     Literal,
     Mapping,
+    NotRequired,
     Optional,
     TypedDict,
+    Unpack,
     Union,
     cast,
 )
-
-from typing_extensions import NotRequired, Unpack
 
 from e2b.api.client.models import (
     ListedSandbox,
@@ -21,7 +23,16 @@ from e2b.api.client.models import (
     SandboxState,
 )
 from e2b.api.client.models import (
+    SandboxAutoResumeConfig as ClientSandboxAutoResumeConfig,
+)
+from e2b.api.client.models import (
     SandboxLifecycle as ClientSandboxLifecycle,
+)
+from e2b.api.client.models import (
+    SandboxEgressProxyConfigType0 as ClientSandboxEgressProxyConfig,
+)
+from e2b.api.client.models import (
+    SandboxEgressProxyTLSConfigType0 as ClientSandboxEgressProxyTLSConfig,
 )
 from e2b.api.client.models import (
     SandboxNetworkConfig as ClientSandboxNetworkConfig,
@@ -39,16 +50,72 @@ from e2b.api.client.models import (
     SandboxNetworkTransformHeaders as ClientSandboxNetworkTransformHeaders,
 )
 from e2b.api.client.models import (
+    SandboxIam as ClientSandboxIam,
+)
+from e2b.api.client.models import (
+    SandboxIamToken as ClientSandboxIamToken,
+)
+from e2b.api.client.models import (
+    SandboxIamTokens as ClientSandboxIamTokens,
+)
+from e2b.api.client.models import (
     SandboxNetworkUpdateConfig,
 )
 from e2b.api.client.models import (
     SandboxNetworkUpdateConfigRules,
 )
-from e2b.api.client.types import Unset
+from e2b.api import SandboxCreateResponse
+from e2b.api.client.models.sandbox import Sandbox as CreatedSandbox
+from e2b.api.client.types import UNSET, Unset
 from e2b.connection_config import ApiParams
+from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox.mcp import McpServer as BaseMcpServer
+from e2b.sandbox.iam import (
+    IamTokenPlaceholders,
+    validate_iam_token_name,
+)
 from e2b.sandbox.network import ALL_TRAFFIC
 from e2b.paginator import PaginatorBase
+
+
+MAX_FORK_COUNT = 20
+
+
+def to_sandbox_create_response(sandbox: CreatedSandbox) -> SandboxCreateResponse:
+    """Map a created, connected or forked sandbox from the API response."""
+    return SandboxCreateResponse(
+        sandbox_id=sandbox.sandbox_id,
+        sandbox_domain=sandbox.domain if isinstance(sandbox.domain, str) else None,
+        envd_version=sandbox.envd_version,
+        envd_access_token=(
+            sandbox.envd_access_token
+            if isinstance(sandbox.envd_access_token, str)
+            else None
+        ),
+        traffic_access_token=(
+            sandbox.traffic_access_token
+            if isinstance(sandbox.traffic_access_token, str)
+            else None
+        ),
+    )
+
+
+def validate_fork_count(count: Any) -> None:
+    """Reject a fork count the SDK will not send.
+
+    ``None`` is left off the request so the API default applies.
+    """
+    if count is None:
+        return
+    if (
+        isinstance(count, bool)
+        or not isinstance(count, int)
+        or count < 1
+        or count > MAX_FORK_COUNT
+    ):
+        raise InvalidArgumentException(
+            f"count must be an integer between 1 and {MAX_FORK_COUNT}"
+        )
 
 
 class GitHubMcpServerConfig(TypedDict):
@@ -91,14 +158,66 @@ class SandboxNetworkTransform(TypedDict):
     """
 
 
+@dataclass(frozen=True)
+class _SandboxNetworkTransformIam:
+    """Workload identity placeholders."""
+
+    tokens: Mapping[str, str]
+    """
+    Placeholder for each workload token registered in
+    :attr:`SandboxOpts.iam`, keyed by token name. ``tokens["aws"]`` is the
+    string ``"${e2b.identity.tokens.aws}"``, which the egress proxy replaces
+    with a freshly minted token when it forwards the request.
+
+    Reading a name that is not registered raises
+    :class:`InvalidArgumentException` — the proxy never turns an unregistered
+    name into a token, so a typo would surface as a confusing auth failure at
+    the destination.
+    """
+
+
+@dataclass(frozen=True)
+class SandboxNetworkTransformContext:
+    """
+    Context passed to a :class:`SandboxNetworkRule` ``transform`` callable. Its
+    values are literal placeholder strings that the egress proxy resolves per
+    request, so the secret itself never leaves the platform.
+    """
+
+    iam: _SandboxNetworkTransformIam
+    """Workload identity placeholders."""
+
+
+SandboxNetworkTransformResolver = Callable[
+    [SandboxNetworkTransformContext], SandboxNetworkTransform
+]
+"""
+Callable form of ``SandboxNetworkRule.transform``. Invoked once while the
+request is being built, with a context of placeholder strings.
+"""
+
+
 class SandboxNetworkRule(TypedDict):
     """
     Per-domain rule applied to egress requests.
     """
 
-    transform: NotRequired[SandboxNetworkTransform]
+    transform: NotRequired[
+        Union[SandboxNetworkTransform, SandboxNetworkTransformResolver]
+    ]
     """
     Transform applied to requests matching this rule.
+
+    Accepts either a static :class:`SandboxNetworkTransform` or a callable that
+    receives a :class:`SandboxNetworkTransformContext` of placeholder strings —
+    use the callable to inject a workload identity token the proxy mints per
+    request::
+
+        {
+            "transform": lambda ctx: {
+                "headers": {"Authorization": f"Bearer {ctx.iam.tokens['aws']}"},
+            },
+        }
     """
 
 
@@ -144,6 +263,121 @@ and returns the same.
 """
 
 
+class SandboxEgressProxyTLSOpts(TypedDict, total=False):
+    """
+    TLS settings for the connection to a BYOP SOCKS5 proxy.
+    """
+
+    server_name: str
+    """
+    Name to verify the proxy certificate against and send as SNI, up to 253
+    characters. Defaults to the host part of ``address``; set this only when
+    the certificate does not match the address.
+    """
+
+    ca_cert: str
+    """
+    One or more PEM CA certificates, up to 8192 bytes. This replaces the
+    system trust store rather than adding to it.
+    """
+
+
+class SandboxEgressProxyOpts(TypedDict):
+    """
+    SOCKS5 proxy the sandbox's outbound TCP is tunneled through — "bring your
+    own proxy".
+
+    Tunneling happens on the host, after :attr:`SandboxNetworkOpts.allow_out` /
+    :attr:`SandboxNetworkOpts.deny_out` filtering, so nothing runs inside the
+    sandbox and code running there can neither see the proxy nor route around
+    it. UDP-based traffic — DNS and QUIC/HTTP3 — is not tunneled and leaves the
+    sandbox the usual way.
+
+    Egress fails closed: when the proxy is unreachable or does not speak
+    SOCKS5, outbound connections fail rather than falling back to a direct
+    connection.
+
+    Pass credentials when the proxy requires them::
+
+        sandbox = Sandbox.create(
+            network={
+                "egress_proxy": {
+                    "address": "proxy.example.com:1080",
+                    "username": "proxy-user",
+                    "password": "proxy-password",
+                },
+            },
+        )
+
+    Set ``"tls": True`` to enable TLS with the system trust store, or pass a
+    mapping to set a custom server name or CA certificate.
+    """
+
+    address: str
+    """
+    SOCKS5 proxy address in ``host:port`` form, e.g.
+    ``"proxy.example.com:1080"``. The host can be a hostname or an IP literal;
+    a hostname is re-resolved at dial time and the resolved address is pinned
+    for that connection, so a DNS change cannot redirect a connection that is
+    already being established.
+
+    The proxy has to be reachable from E2B's infrastructure: an address that
+    does not resolve, or that resolves into a private or otherwise internal
+    range, is rejected before the sandbox exists.
+    """
+
+    username: NotRequired[str]
+    """
+    SOCKS5 username (`RFC 1929 <https://datatracker.ietf.org/doc/html/rfc1929>`_),
+    up to 255 bytes. Omit it for a proxy that takes no credentials.
+    """
+
+    password: NotRequired[str]
+    """
+    SOCKS5 password, up to 255 bytes. Only valid together with
+    :attr:`username`.
+    """
+
+    tls: NotRequired[Union[bool, SandboxEgressProxyTLSOpts]]
+    """
+    Connect to the proxy over TLS. The SOCKS5 handshake, credentials, and
+    tunneled traffic run inside the TLS session; TLS protects only the hop to
+    the proxy. The certificate is always verified, TLS 1.2 or newer is
+    required, and failures never fall back to plaintext.
+
+    Set to ``True`` to use the system trust store and the host part of
+    ``address`` for SNI. Passing a mapping also enables TLS, with optional
+    custom ``server_name`` and ``ca_cert``.
+    """
+
+
+class SandboxEgressProxyTLSInfo(TypedDict):
+    """
+    TLS status for the egress proxy connection. The CA certificate is never
+    returned by the API.
+    """
+
+    server_name: NotRequired[str]
+    """See :attr:`SandboxEgressProxyTLSOpts.server_name`."""
+
+
+class SandboxEgressProxyInfo(TypedDict):
+    """
+    Egress proxy as returned by the sandbox info endpoint. Mirrors
+    :class:`SandboxEgressProxyOpts` without ``password`` or ``ca_cert`` — the
+    API never returns them.
+    """
+
+    address: str
+    """See :attr:`SandboxEgressProxyOpts.address`."""
+
+    username: NotRequired[str]
+    """See :attr:`SandboxEgressProxyOpts.username`."""
+
+    tls: NotRequired[SandboxEgressProxyTLSInfo]
+    """Set when TLS to the proxy is on."""
+
+
 class SandboxNetworkOpts(TypedDict):
     """
     Sandbox network configuration options.
@@ -185,12 +419,75 @@ class SandboxNetworkOpts(TypedDict):
     Registering a host here does not allow egress on its own — the host must
     also appear in ``allow_out``. Hosts registered here are exposed to the
     ``allow_out``/``deny_out`` callables via ``ctx.rules``.
+
+    A rule's ``transform`` can also be a callable receiving a
+    :class:`SandboxNetworkTransformContext`, which is how a workload identity
+    token from :attr:`SandboxOpts.iam` gets injected without the SDK ever
+    seeing its value::
+
+        rules={
+            "api.internal.example.com": [
+                {
+                    "transform": lambda ctx: {
+                        "headers": {
+                            "Authorization": f"Bearer {ctx.iam.tokens['aws']}",
+                        },
+                    },
+                },
+            ],
+        }
+    """
+
+    egress_proxy: NotRequired[SandboxEgressProxyOpts]
+    """
+    Tunnel the sandbox's outbound TCP through a SOCKS5 proxy you operate.
+
+    Filtering runs first, so a connection ``deny_out`` blocks never reaches the
+    proxy, and per-host :attr:`rules` transforms still apply before the
+    connection is dialed. Omit it to send the sandbox's traffic out directly.
+
+    Available on E2B Cloud and in BYOC deployments; a sandbox that names a
+    proxy on a deployment built from the open source ``e2b-dev/runtime``
+    repository is rejected as unsupported.
+
+    Deny everything except a host, and tunnel what is left::
+
+        Sandbox.create(
+            network={
+                "allow_out": ["api.example.com"],
+                "deny_out": lambda ctx: [ctx.all_traffic],
+                "egress_proxy": {"address": "proxy.example.com:1080"},
+            },
+        )
+    """
+
+    dns_servers: NotRequired[List[str]]
+    """
+    DNS servers the sandbox can reach when ``allow_out`` contains a domain.
+    Each entry must be an IPv4 address (up to 10 entries), and all traffic to it is allowed.
+
+    Leave it out to allow the default nameserver ``8.8.8.8``. Pass a list to
+    allow those servers instead, or ``[]`` to allow none. Allowed domains still
+    work without a reachable server, since they are matched by name, not by
+    IP; add the names you need to ``/etc/hosts``.
+
+    This only opens the firewall. It does not change the sandbox's
+    ``/etc/resolv.conf``, which still points at ``8.8.8.8``, so write your own
+    servers there too. With no domain in ``allow_out`` it has no effect::
+
+        Sandbox.create(
+            network={
+                "allow_out": ["api.example.com"],
+                "deny_out": lambda ctx: [ctx.all_traffic],
+                "dns_servers": ["1.1.1.1"],
+            },
+        )
     """
 
     allow_public_traffic: NotRequired[bool]
     """
     Controls whether sandbox URLs should be publicly accessible or require authentication.
-    Defaults to True.
+    When omitted, the server applies its default.
     """
 
     mask_request_host: NotRequired[str]
@@ -200,6 +497,18 @@ class SandboxNetworkOpts(TypedDict):
 
     Examples:
     - Custom subdomain: `"${PORT}-myapp.example.com"`
+    """
+
+    https_ports: NotRequired[List[int]]
+    """
+    Ports whose public URLs should connect to the sandbox using HTTPS.
+
+    Use this when the service listening on the port serves HTTPS (TLS) itself.
+    This is not TLS passthrough — traffic is still terminated at the E2B proxy
+    and re-encrypted on the hop to the sandbox. The backend certificate is not
+    verified, so self-signed certificates work.
+
+    Example: ``Sandbox.create(network={"https_ports": [3000]})``
     """
 
 
@@ -217,12 +526,74 @@ class SandboxNetworkUpdate(TypedDict, total=False):
     """See :attr:`SandboxNetworkOpts.deny_out`."""
 
     rules: SandboxNetworkRules
-    """See :attr:`SandboxNetworkOpts.rules`."""
+    """
+    See :attr:`SandboxNetworkOpts.rules`. A ``transform`` callable works here
+    too, but the update payload carries no ``iam`` config, so token names cannot
+    be checked against the sandbox's registered tokens — every name resolves to
+    its placeholder and a typo only surfaces at the destination.
+    """
+
+    egress_proxy: SandboxEgressProxyOpts
+    """
+    See :attr:`SandboxNetworkOpts.egress_proxy`. Sets or replaces the proxy on a
+    sandbox that is already running, with no restart.
+
+    The update replaces the whole configuration instead of merging into it, so
+    an update that leaves this out stops tunneling and sends the sandbox's
+    traffic out directly — even when the update was only meant to change the
+    allow and deny lists. Repeat it in every update that should keep tunneling.
+
+    The same replace semantics apply to ``tls``: an update that repeats
+    ``address`` but omits ``tls`` keeps tunneling without TLS.
+    """
+
+    dns_servers: List[str]
+    """
+    See :attr:`SandboxNetworkOpts.dns_servers`. Leaving it out resets it to
+    the default, ``8.8.8.8``, like the other fields, so repeat a custom list in
+    every update that should keep it.
+    """
 
     allow_internet_access: bool
     """
     Allow sandbox to access the internet. When set to ``False``, it behaves the
     same as specifying ``deny_out=["0.0.0.0/0"]`` in the network config.
+    """
+
+
+SandboxIamTokenType = Union[Literal["JWT-SVID"], str]
+"""
+Workload token type. ``"JWT-SVID"`` is the only type the API accepts in this
+version; the set is defined server-side and may grow, so any string is allowed.
+"""
+
+
+class SandboxIamToken(TypedDict):
+    """
+    Workload token definition for sandbox workload identity.
+    """
+
+    audience: str
+    """Audience of the workload token, stored exactly as provided."""
+
+    token_type: SandboxIamTokenType
+    """Workload token type."""
+
+
+class SandboxIamOpts(TypedDict, total=False):
+    """
+    Sandbox workload identity configuration. A non-empty ``tokens`` map enables
+    workload identity for the sandbox.
+    """
+
+    tokens: Dict[str, SandboxIamToken]
+    """
+    Named workload-token definitions, keyed by a caller-chosen token name.
+    Values can be created with :meth:`Secret.iam_token`.
+
+    A name is interpolated into the ``"${e2b.identity.tokens.<name>}"``
+    placeholder a network transform resolves, so it cannot be empty or contain
+    ``{``, ``}`` or control characters.
     """
 
 
@@ -236,31 +607,90 @@ class SandboxNetworkInfo(TypedDict, total=False):
     allow_out: List[str]
     deny_out: List[str]
     rules: Dict[str, List[SandboxNetworkRuleInfo]]
+    egress_proxy: SandboxEgressProxyInfo
+    """
+    Proxy the sandbox's egress is currently tunneled through, absent when it
+    goes out directly. See :class:`SandboxEgressProxyInfo` for why the password
+    is missing.
+    """
+    dns_servers: List[str]
+    """
+    DNS servers the sandbox can reach when ``allow_out`` contains a domain. See
+    :attr:`SandboxNetworkOpts.dns_servers`. Missing means the default,
+    ``8.8.8.8``.
+    """
     allow_public_traffic: bool
     mask_request_host: str
+    https_ports: List[int]
+
+
+SnapshotMode = Literal["full", "filesystem"]
+"""
+What a pause or snapshot persists.
+
+``"full"`` persists the filesystem and the memory (running processes, in-memory
+state and open connections); resuming restores the sandbox exactly where it left
+off. ``"filesystem"`` persists only the filesystem: smaller and faster to take,
+and resuming (or creating a sandbox from the snapshot) cold-boots it from disk,
+without the running processes, in-memory state and open connections.
+"""
+
+
+def resolve_snapshot_memory(
+    field: str,
+    mode: Optional[SnapshotMode],
+    keep_memory: Optional[bool] = None,
+) -> Union[Unset, bool]:
+    """Resolve ``mode`` (or the deprecated ``keep_memory``) into the API's
+    ``memory`` flag.
+
+    Unset, it stays ``UNSET`` so the API default (currently a full snapshot)
+    applies. ``field`` names the option in error messages.
+    """
+    if mode is not None and keep_memory is not None:
+        raise InvalidArgumentException(
+            f"Pass either {field} or the deprecated keep_memory, not both."
+        )
+    if mode is None:
+        return keep_memory if keep_memory is not None else UNSET
+    # Re-check at runtime for callers that bypass the type.
+    allowed = ("full", "filesystem")
+    if mode not in allowed:
+        raise InvalidArgumentException(
+            f"{field} must be one of: {', '.join(allowed)} (got {mode!r})."
+        )
+    return mode == "full"
 
 
 class SandboxOnTimeoutPause(TypedDict):
     """
     Object form of `on_timeout` that auto-pauses the sandbox when the timeout is
-    reached, optionally controlling the pause snapshot kind via `keep_memory`.
+    reached, optionally controlling the pause snapshot kind via `mode`.
     """
 
     action: Literal["pause"]
     """Auto-pause the sandbox when the timeout is reached."""
 
+    mode: NotRequired[SnapshotMode]
+    """
+    What the timeout auto-pause persists. Left unset, it is omitted from the
+    create request and the API's own default (currently `"full"`) applies. With
+    `"filesystem"`, the auto-pause drops the in-memory state and persists only
+    the filesystem; resuming such a sandbox cold-boots (reboots) it from disk,
+    losing running processes and open connections.
+
+    `"filesystem"` cannot be combined with `auto_resume`: auto-resume wakes a
+    paused sandbox on inbound traffic by restoring its memory snapshot in place,
+    so the request that woke it hits an already-running process. A
+    filesystem-only snapshot has no memory to restore — resuming cold-boots it —
+    so it can't be woken transparently by traffic and must be resumed explicitly
+    via `connect()`.
+    """
+
     keep_memory: NotRequired[bool]
     """
-    Whether the timeout auto-pause keeps a full memory snapshot. Defaults to `True`.
-    When `False`, the auto-pause drops the in-memory state and persists only the
-    filesystem (a filesystem-only snapshot); resuming such a sandbox cold-boots
-    (reboots) it from disk, losing running processes and open connections.
-
-    Cannot be combined with `auto_resume`: auto-resume wakes a paused sandbox on
-    inbound traffic by restoring its memory snapshot in place, so the request that
-    woke it hits an already-running process. A filesystem-only snapshot has no
-    memory to restore — resuming cold-boots it — so it can't be woken transparently
-    by traffic and must be resumed explicitly via `connect()`.
+    :deprecated: Use `mode` instead: `keep_memory: False` is
+    `mode: "filesystem"`, `keep_memory: True` is `mode: "full"`.
     """
 
 
@@ -279,33 +709,36 @@ SandboxOnTimeout = Union[
 """
 What should happen to the sandbox when the timeout is reached. Either the bare
 action (`"pause"` / `"kill"`) or the object form. The object form is a
-discriminated union on `action`: `keep_memory` is only accepted alongside
-`action: "pause"`. Passing `keep_memory` with `action: "kill"` is a static type
-error.
+discriminated union on `action`: `mode` is only accepted alongside
+`action: "pause"`. Passing `mode` with `action: "kill"` is a static type error.
 """
 
 
 class SandboxLifecycle(TypedDict):
     """
-    Sandbox lifecycle configuration; defines post-timeout behavior and auto-resume settings.
-    Defaults to `on_timeout="kill"` and `auto_resume=False`.
+    Sandbox lifecycle configuration; defines post-timeout behavior and auto-resume
+    settings. An omitted `on_timeout` leaves the choice to the API (currently
+    `"kill"`); an omitted `auto_resume` leaves the choice to the API.
     """
 
     on_timeout: SandboxOnTimeout
     """
     What should happen to the sandbox when timeout is reached. `"kill"` terminates
     the sandbox; `"pause"` pauses it for later resume. Accepts either the bare
-    action or an object `{"action": "pause", "keep_memory": ...}` /
-    `{"action": "kill"}` to also control the pause snapshot kind. Defaults to
-    `"kill"`.
+    action or an object `{"action": "pause", "mode": ...}` /
+    `{"action": "kill"}` to also control the pause snapshot kind. A value outside
+    the two actions raises `InvalidArgumentException`. Omitted from the
+    create request when unset, leaving the API's default (currently `"kill"`) in
+    effect.
     """
 
     auto_resume: NotRequired[bool]
     """
-    Whether activity should cause the sandbox to resume when paused. Defaults to `False`.
-    Can be `True` only when `on_timeout` is `pause`. Not supported when
-    `keep_memory` is `False` (a filesystem-only snapshot must be resumed
-    explicitly via `connect()`).
+    Whether activity should cause the sandbox to resume when paused. Leave unset
+    to let the API pick the behavior. Set `False` to opt out explicitly and keep
+    auto-resume off even if the API's default changes. Can be `True` only when
+    `on_timeout` is `pause`. Not supported with `mode: "filesystem"` (a
+    filesystem-only snapshot must be resumed explicitly via `connect()`).
     """
 
 
@@ -325,6 +758,39 @@ class SandboxInfoLifecycle(TypedDict):
     """
 
 
+def resolve_connect_memory(
+    on_resume: Optional["SandboxOnResume"],
+) -> Union[Unset, bool]:
+    """Resolve ``on_resume`` into ``ConnectSandboxV2.memory``.
+
+    ``"restore"`` is the API's own default, so it travels as an omitted field.
+    """
+    # A nullish value is not a choice of restore, matching how every other
+    # nullish option is treated. Any other value outside the union never reaches
+    # the API — it is resolved here into the boolean memory field — so it cannot
+    # be rejected server-side, and resolving it to restore would silently skip
+    # the reboot the caller asked for.
+    if on_resume is None:
+        return UNSET
+    allowed = ("restore", "reboot")
+    if on_resume not in allowed:
+        raise InvalidArgumentException(
+            f"on_resume must be one of: {', '.join(allowed)} (got {on_resume!r})."
+        )
+    return False if on_resume == "reboot" else UNSET
+
+
+SandboxOnResume = Literal["restore", "reboot"]
+"""
+How a paused sandbox comes back.
+
+``"restore"`` restores the memory snapshot, so processes and open connections
+survive the pause. ``"reboot"`` ignores any memory in the snapshot and
+cold-boots from disk state alone — the rescue path for a snapshot whose memory
+image wedges the guest.
+"""
+
+
 def _resolve_network_selector(
     selector: Optional[SandboxNetworkSelector],
     rules: Mapping[str, List[SandboxNetworkRule]],
@@ -339,7 +805,28 @@ def _resolve_network_selector(
     return list(selector)
 
 
-def _build_client_rules(rules: SandboxNetworkRules) -> SandboxNetworkConfigRules:
+def _build_transform_context(
+    token_names: Iterable[str],
+    *,
+    validate: bool,
+) -> SandboxNetworkTransformContext:
+    """
+    Build the context handed to ``transform`` callables.
+
+    ``token_names`` are the workload tokens the request registers; see
+    :class:`_IamTokenPlaceholders` for what ``validate`` controls.
+    """
+    return SandboxNetworkTransformContext(
+        iam=_SandboxNetworkTransformIam(
+            tokens=IamTokenPlaceholders(token_names, validate=validate),
+        ),
+    )
+
+
+def _build_client_rules(
+    rules: SandboxNetworkRules,
+    ctx: SandboxNetworkTransformContext,
+) -> SandboxNetworkConfigRules:
     client_rules = SandboxNetworkConfigRules()
     for host, host_rules in rules.items():
         converted: List[ClientSandboxNetworkRule] = []
@@ -348,6 +835,27 @@ def _build_client_rules(rules: SandboxNetworkRules) -> SandboxNetworkConfigRules
             if transform is None:
                 converted.append(ClientSandboxNetworkRule())
                 continue
+
+            if callable(transform):
+                transform = transform(ctx)
+                # A callable that returns something other than a transform
+                # resolves to no headers at all, which would silently create the
+                # rule without the headers it is for.
+                if inspect.isawaitable(transform):
+                    if inspect.iscoroutine(transform):
+                        # Close it so the caller does not also get a
+                        # "coroutine was never awaited" RuntimeWarning.
+                        transform.close()
+                    raise InvalidArgumentException(
+                        f"Network transform callable for {host!r} must be "
+                        "synchronous, it returned an awaitable. Resolve the "
+                        "value before creating the sandbox."
+                    )
+                if not isinstance(transform, Mapping):
+                    raise InvalidArgumentException(
+                        f"Network transform callable for {host!r} must return a "
+                        f"transform dict, got {type(transform).__name__}."
+                    )
 
             client_transform = ClientSandboxNetworkTransform()
             headers = transform.get("headers")
@@ -362,38 +870,118 @@ def _build_client_rules(rules: SandboxNetworkRules) -> SandboxNetworkConfigRules
     return client_rules
 
 
+def _build_egress_proxy(
+    egress_proxy: SandboxEgressProxyOpts,
+) -> ClientSandboxEgressProxyConfig:
+    """
+    Rebuild the proxy config from the known fields so stray keys in the
+    caller's dict never reach the wire. Address reachability is the server's —
+    it is the only side that can tell whether the address resolves, and to where.
+    The required ``address`` key is checked here so an untyped caller that
+    omits it gets :class:`InvalidArgumentException` rather than a bare
+    ``KeyError`` from deep inside create.
+    """
+    # Re-check at runtime for callers that bypass the TypedDict — a bare
+    # KeyError from deep inside create would not name the option.
+    if not isinstance(egress_proxy, Mapping) or not isinstance(
+        egress_proxy.get("address"), str
+    ):
+        raise InvalidArgumentException(
+            "network egress_proxy must be a dict with a string 'address' "
+            "(e.g. 'proxy.example.com:1080')."
+        )
+
+    # `is not None` also skips a ``None`` credential, which is what reading one
+    # out of an unset environment variable yields and what "this proxy takes no
+    # credentials" means; the API only accepts a string.
+    body = ClientSandboxEgressProxyConfig(address=egress_proxy["address"])
+    if egress_proxy.get("username") is not None:
+        body.username = egress_proxy["username"]
+    if egress_proxy.get("password") is not None:
+        body.password = egress_proxy["password"]
+    tls = egress_proxy.get("tls")
+    if tls is not None:
+        if isinstance(tls, bool):
+            if tls:
+                body.tls = ClientSandboxEgressProxyTLSConfig(enabled=True)
+        elif isinstance(tls, Mapping):
+            if "enabled" in tls:
+                raise InvalidArgumentException(
+                    "network egress_proxy tls takes no 'enabled'; pass "
+                    "tls=True or tls=False instead."
+                )
+
+            client_tls = ClientSandboxEgressProxyTLSConfig(enabled=True)
+            if tls.get("server_name") is not None:
+                client_tls.server_name = tls["server_name"]
+            if tls.get("ca_cert") is not None:
+                client_tls.ca_cert = tls["ca_cert"]
+            body.tls = client_tls
+        else:
+            raise InvalidArgumentException(
+                "network egress_proxy tls must be a bool or a dict."
+            )
+
+    return body
+
+
 def _build_network_egress(
     network: Mapping[str, Any],
+    ctx: SandboxNetworkTransformContext,
 ) -> Dict[str, Any]:
     """
-    Resolve the shared egress fields (``allow_out`` / ``deny_out`` / per-host
-    ``rules``) used by both the create and update endpoints. ``rules`` in the
-    returned dict is the inner ``Dict[host, List[ClientSandboxNetworkRule]]``
-    — callers wrap it in their endpoint-specific rules attrs class.
+    Resolve the shared egress fields (``allow_out`` / ``deny_out`` /
+    ``egress_proxy`` / per-host ``rules``) used by both the create and update
+    endpoints. ``rules`` in the returned dict is the inner
+    ``Dict[host, List[ClientSandboxNetworkRule]]`` — callers wrap it in their
+    endpoint-specific rules attrs class.
     """
     rules = network.get("rules") or {}
     allow_out = _resolve_network_selector(network.get("allow_out"), rules)
     deny_out = _resolve_network_selector(network.get("deny_out"), rules)
+    # `is not None` also covers an explicit `"egress_proxy": None`, which
+    # untyped callers spell "no proxy" as; the JS SDK's `!= null` does the
+    # same. Do not use truthiness — an empty dict must reach the builder so
+    # it fails loudly instead of silently disabling tunneling.
+    egress_proxy = network.get("egress_proxy")
 
     body: Dict[str, Any] = {}
     if allow_out is not None:
         body["allow_out"] = allow_out
     if deny_out is not None:
         body["deny_out"] = deny_out
+    if egress_proxy is not None:
+        body["egress_proxy"] = _build_egress_proxy(egress_proxy)
+    # `is not None` so an empty list is sent (it means "no DNS server"), like
+    # the JS SDK's `!= null`.
+    if network.get("dns_servers") is not None:
+        body["dns_servers"] = list(network["dns_servers"])
     if "rules" in network and network["rules"] is not None:
-        body["rules"] = _build_client_rules(network["rules"]).additional_properties
+        body["rules"] = _build_client_rules(network["rules"], ctx).additional_properties
 
     return body
 
 
 def build_network_config(
     network: Optional[SandboxNetworkOpts],
+    iam: Optional[ClientSandboxIam] = None,
 ) -> Optional[Dict[str, Any]]:
-    """Resolve a :class:`SandboxNetworkOpts` into the dict the API expects."""
+    """Resolve a :class:`SandboxNetworkOpts` into the dict the API expects.
+
+    ``iam`` is the built workload identity config of the same request — its
+    token names are what ``transform`` callables may reference.
+    """
     if network is None:
         return None
 
-    body = _build_network_egress(network)
+    token_names: List[str] = []
+    if iam is not None and not isinstance(iam.tokens, Unset):
+        token_names = iam.tokens.additional_keys
+
+    body = _build_network_egress(
+        network,
+        _build_transform_context(token_names, validate=True),
+    )
     if "rules" in body:
         client_rules = SandboxNetworkConfigRules()
         client_rules.additional_properties = body["rules"]
@@ -402,21 +990,158 @@ def build_network_config(
         body["allow_public_traffic"] = network["allow_public_traffic"]
     if "mask_request_host" in network:
         body["mask_request_host"] = network["mask_request_host"]
+    if network.get("https_ports") is not None:
+        body["https_ports"] = list(network["https_ports"])
 
     return body
+
+
+def build_iam_config(
+    iam: Optional[SandboxIamOpts],
+) -> Optional[ClientSandboxIam]:
+    """Resolve a :class:`SandboxIamOpts` into the API client body.
+
+    Returns ``None`` for a config with no tokens — only a non-empty tokens
+    map enables workload identity, so an empty config is omitted from the
+    request payload entirely.
+    """
+    if iam is None:
+        return None
+
+    tokens = iam.get("tokens")
+    if not tokens:
+        return None
+
+    client_tokens = ClientSandboxIamTokens()
+    for name, token in tokens.items():
+        # Re-check at runtime for callers that bypass the TypedDict — a bare
+        # KeyError from deep inside create would not name the option or the
+        # snake_case key the wire's camelCase 'tokenType' maps to.
+        if (
+            not isinstance(token, dict)
+            or not isinstance(token.get("audience"), str)
+            or not isinstance(token.get("token_type"), str)
+        ):
+            raise InvalidArgumentException(
+                f"iam token {name!r} must be a dict with string 'audience' and "
+                "'token_type' values (snake_case 'token_type', not 'tokenType')."
+            )
+
+        # A network transform placeholder is the only way to consume a workload
+        # token, so a name that cannot appear in one is rejected where it is
+        # registered rather than at the reference that would have used it.
+        validate_iam_token_name(name)
+
+        client_tokens[name] = ClientSandboxIamToken(
+            audience=token["audience"],
+            token_type=token["token_type"],
+        )
+
+    body = ClientSandboxIam()
+    body.tokens = client_tokens
+    return body
+
+
+@dataclass(frozen=True)
+class SandboxLifecycleBody:
+    """Lifecycle fields of a create-sandbox request, as ``NewSandboxV2`` takes them."""
+
+    auto_pause: Union[Unset, bool]
+    auto_pause_memory: Union[Unset, bool]
+    auto_resume: Union[Unset, ClientSandboxAutoResumeConfig]
+
+
+def build_lifecycle_config(
+    lifecycle: Optional[SandboxLifecycle],
+) -> SandboxLifecycleBody:
+    """Resolve a :class:`SandboxLifecycle` into the create-request lifecycle fields.
+
+    ``auto_pause`` is left unset when no ``on_timeout`` was configured: sending
+    ``False`` would be indistinguishable from an explicit ``"kill"`` and would
+    override the default the API owns. ``auto_pause_memory`` is likewise left
+    unset unless the caller chose ``mode``.
+    """
+    # on_timeout accepts a bare action or {"action", "mode"}; normalize.
+    # Only the object form carries mode (or the deprecated keep_memory).
+    on_timeout_raw = lifecycle.get("on_timeout") if lifecycle else None
+    # A missing on_timeout — or an explicit None from an untyped caller — is not
+    # a choice of kill. It only resolves to kill semantics locally, for the
+    # validation below.
+    on_timeout_configured = on_timeout_raw is not None
+    if isinstance(on_timeout_raw, dict):
+        on_timeout = on_timeout_raw.get("action")
+        pause_opts = cast(Dict[str, Any], on_timeout_raw)
+    else:
+        # Only fall back when unconfigured, not on other falsy-but-present
+        # values an untyped caller might pass.
+        on_timeout = on_timeout_raw if on_timeout_configured else "kill"
+        pause_opts = {}
+
+    allowed_actions = ("pause", "kill")
+    if on_timeout_configured and on_timeout not in allowed_actions:
+        # Name the field the caller wrote: the object form's bad value is on
+        # "action", not on on_timeout itself.
+        field = (
+            'on_timeout["action"]' if isinstance(on_timeout_raw, dict) else "on_timeout"
+        )
+        raise InvalidArgumentException(
+            f"{field} must be one of: {', '.join(allowed_actions)} (got {on_timeout!r})."
+        )
+    # The action never reaches the API — it is resolved here into the boolean
+    # auto_pause — so an unrecognized value cannot be rejected server-side, and
+    # resolving it to kill would delete the sandbox a caller asked to preserve.
+
+    # mode only governs a pause action. The discriminated union type forbids it
+    # on action="kill"; re-check at runtime for callers that bypass the type.
+    if ("mode" in pause_opts or "keep_memory" in pause_opts) and on_timeout != "pause":
+        raise InvalidArgumentException(
+            "mode is only allowed when on_timeout action is 'pause'."
+        )
+    memory = resolve_snapshot_memory(
+        'on_timeout["mode"]', pause_opts.get("mode"), pause_opts.get("keep_memory")
+    )
+    auto_resume = lifecycle.get("auto_resume") if lifecycle else None
+
+    if auto_resume and on_timeout != "pause":
+        raise InvalidArgumentException(
+            "auto_resume can only be True when on_timeout action is 'pause'."
+        )
+
+    if memory is False and auto_resume:
+        raise InvalidArgumentException(
+            "auto_resume: True is not a valid value with mode: 'filesystem' - "
+            "a filesystem-only snapshot cannot be auto-resumed by traffic and "
+            "must be resumed explicitly using Sandbox.connect()."
+        )
+
+    return SandboxLifecycleBody(
+        auto_pause=(on_timeout == "pause") if on_timeout_configured else UNSET,
+        auto_pause_memory=memory if on_timeout == "pause" else UNSET,
+        auto_resume=(
+            ClientSandboxAutoResumeConfig(enabled=auto_resume)
+            if auto_resume is not None
+            else UNSET
+        ),
+    )
 
 
 def build_network_update_body(
     network: SandboxNetworkUpdate,
 ) -> SandboxNetworkUpdateConfig:
     """Resolve a :class:`SandboxNetworkUpdate` into the API client body."""
-    egress = _build_network_egress(network)
+    egress = _build_network_egress(
+        network, _build_transform_context([], validate=False)
+    )
 
     body = SandboxNetworkUpdateConfig()
     if "allow_out" in egress:
         body.allow_out = egress["allow_out"]
     if "deny_out" in egress:
         body.deny_out = egress["deny_out"]
+    if "egress_proxy" in egress:
+        body.egress_proxy = egress["egress_proxy"]
+    if "dns_servers" in egress:
+        body.dns_servers = egress["dns_servers"]
     if "rules" in egress:
         rules = SandboxNetworkUpdateConfigRules()
         rules.additional_properties = egress["rules"]
@@ -425,6 +1150,32 @@ def build_network_update_body(
         body.allow_internet_access = network["allow_internet_access"]
 
     return body
+
+
+def _from_client_egress_proxy(
+    egress_proxy: Union[ClientSandboxEgressProxyConfig, None, Unset],
+) -> Optional[SandboxEgressProxyInfo]:
+    """
+    Map the wire proxy config into the SDK-owned shape: ``password`` is dropped
+    because the API never returns it, and the wire's ``None`` for "no proxy"
+    becomes an absent key.
+    """
+    if not isinstance(egress_proxy, ClientSandboxEgressProxyConfig):
+        return None
+
+    result: SandboxEgressProxyInfo = {"address": egress_proxy.address}
+    if not isinstance(egress_proxy.username, Unset):
+        result["username"] = egress_proxy.username
+    if (
+        isinstance(egress_proxy.tls, ClientSandboxEgressProxyTLSConfig)
+        and egress_proxy.tls.enabled is True
+    ):
+        tls: SandboxEgressProxyTLSInfo = {}
+        if not isinstance(egress_proxy.tls.server_name, Unset):
+            tls["server_name"] = egress_proxy.tls.server_name
+        result["tls"] = tls
+
+    return result
 
 
 def from_client_network_config(
@@ -443,10 +1194,19 @@ def from_client_network_config(
         result["rules"] = cast(
             Dict[str, List[SandboxNetworkRuleInfo]], network.rules.to_dict()
         )
-    if not isinstance(network.allow_public_traffic, Unset):
+    egress_proxy = _from_client_egress_proxy(network.egress_proxy)
+    if egress_proxy is not None:
+        result["egress_proxy"] = egress_proxy
+    if not isinstance(network.dns_servers, Unset):
+        result["dns_servers"] = list(network.dns_servers)
+    if network.allow_public_traffic is not None and not isinstance(
+        network.allow_public_traffic, Unset
+    ):
         result["allow_public_traffic"] = network.allow_public_traffic
     if not isinstance(network.mask_request_host, Unset):
         result["mask_request_host"] = network.mask_request_host
+    if not isinstance(network.https_ports, Unset):
+        result["https_ports"] = list(network.https_ports)
 
     return result
 
@@ -486,7 +1246,7 @@ class SandboxInfo:
     state: SandboxState
     """Sandbox state."""
     cpu_count: int
-    """Sandbox CPU count."""
+    """Number of CPUs online in the sandbox."""
     memory_mb: int
     """Sandbox Memory size in MiB."""
     envd_version: str
@@ -499,6 +1259,8 @@ class SandboxInfo:
     """Sandbox lifecycle configuration."""
     volume_mounts: List[Dict[str, str]] = field(default_factory=list)
     """Volume mounts for the sandbox."""
+    envd_unresponsive_at_pause: Optional[bool] = None
+    """`True` when the snapshot this paused sandbox resumes from was taken while its guest agent (envd) was not responding. Such a sandbox resumes only with `on_resume="reboot"`; a plain resume raises `GuestUnresponsiveException`. `None` otherwise."""
 
     @classmethod
     def _from_sandbox_data(
@@ -532,6 +1294,9 @@ class SandboxInfo:
             allow_internet_access=allow_internet_access,
             network=network,
             lifecycle=lifecycle,
+            envd_unresponsive_at_pause=(
+                True if sandbox.envd_unresponsive_at_pause is True else None
+            ),
         )
 
     @classmethod
@@ -557,6 +1322,10 @@ class SandboxInfo:
         )
 
 
+SandboxListOrder = Literal["asc", "desc"]
+"""Sort order for listing sandboxes by start time."""
+
+
 @dataclass
 class SandboxQuery:
     """Query parameters for listing sandboxes."""
@@ -567,13 +1336,19 @@ class SandboxQuery:
     state: Optional[list[SandboxState]] = None
     """Filter sandboxes by state."""
 
+    started_after: Optional[datetime] = None
+    """Filter sandboxes to those started at or after this time. Naive datetimes are interpreted as local time."""
+
+    template: Optional[str] = None
+    """Filter sandboxes by a template ID or name."""
+
 
 @dataclass
 class SandboxMetrics:
     """Sandbox metrics."""
 
     cpu_count: int
-    """Number of CPUs."""
+    """Number of CPUs online in the sandbox."""
     cpu_used_pct: float
     """CPU usage percentage."""
     disk_total: int
@@ -597,7 +1372,7 @@ class SnapshotInfo:
     snapshot_id: str
     """Snapshot identifier — template ID with tag, or namespaced name with tag (e.g. my-snapshot:latest). Can be used with Sandbox.create() to create a new sandbox from this snapshot."""
     names: List[str] = field(default_factory=list)
-    """Full names of the snapshot template including team namespace and tag (e.g. team-slug/my-snapshot:v2)."""
+    """Full names of the snapshot template including project slug and tag (e.g. project-slug/my-snapshot:v2)."""
 
 
 class SnapshotPaginatorBase(PaginatorBase[SnapshotInfo, ApiParams]):
@@ -620,7 +1395,9 @@ class SandboxPaginatorBase(PaginatorBase[SandboxInfo, ApiParams]):
         query: Optional[SandboxQuery] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
+        order: Optional[SandboxListOrder] = None,
         **opts: Unpack[ApiParams],
     ):
         super().__init__(limit=limit, next_token=next_token, **opts)
         self.query = query
+        self.order = order

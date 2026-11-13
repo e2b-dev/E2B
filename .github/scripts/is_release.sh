@@ -1,9 +1,9 @@
 #!/bin/sh
 
-# This script checks if the current commit contains changesets.
+# This script checks if the release plan contains packages.
 
 set -eu
 
-CHANGES=$(node -e "require('@changesets/read').default(process.cwd()).then(result => console.log(!!result.length))")
+CHANGES=$(node -e 'console.log(JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).releases.length > 0)' "$1")
 
 echo "${CHANGES}"

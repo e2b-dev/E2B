@@ -1,9 +1,13 @@
 name: Release
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      recovery_commit:
+        description: 'Recover an already-bumped release (full commit SHA, otherwise leave empty)'
+        type: string
+        default: ''
 
-# Shared literal group so production and candidate releases on the same ref serialize.
 concurrency: release-${{ github.ref }}
 
 permissions:
@@ -14,31 +18,52 @@ jobs:
   preflight:
     name: Release preflight
     runs-on: ubuntu-latest
+    env:
+      RECOVERY_COMMIT: ${{ inputs.recovery_commit }}
     outputs:
       release: ${{ steps.version.outputs.release }}
       js-sdk: ${{ steps.js.outputs.release }}
       python-sdk: ${{ steps.python.outputs.release }}
       cli: ${{ steps.cli.outputs.release }}
+      code_interpreter_js: ${{ steps.code_interpreter_js.outputs.release }}
+      code_interpreter_python: ${{ steps.code_interpreter_python.outputs.release }}
+      desktop_js: ${{ steps.desktop_js.outputs.release }}
+      desktop_python: ${{ steps.desktop_python.outputs.release }}
+      dockerfile_utils_js: ${{ steps.dockerfile_utils_js.outputs.release }}
+      dockerfile_utils_python: ${{ steps.dockerfile_utils_python.outputs.release }}
       itinerary: ${{ steps.itinerary.outputs.itinerary }}
     steps:
+      - name: Check the ref
+        # `workflow_dispatch` offers every branch in the picker, and a feature
+        # branch carrying changesets would otherwise publish real packages and
+        # push the version bump to that branch.
+        if: github.ref != 'refs/heads/main'
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          echo "::error::Releases must run on main; this run is on ${REF}."
+          exit 1
+
       - name: Checkout Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3.7.0
+        with:
+          fetch-depth: 0
 
       - name: Parse .tool-versions
-        uses: wistia/parse-tool-versions@v2.1.1
+        uses: wistia/parse-tool-versions@32f568a4ffd4bfa7720ebf93f171597d1ebc979a # v2.1.1
         with:
           filename: '.tool-versions'
           uppercase: 'true'
           prefix: 'tool_version_'
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
         id: pnpm-install
         with:
           version: '${{ env.TOOL_VERSION_PNPM }}'
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: '${{ env.TOOL_VERSION_NODEJS }}'
           registry-url: 'https://registry.npmjs.org'
@@ -56,44 +81,81 @@ jobs:
       - name: Check if new version
         id: version
         run: |
-          IS_RELEASE=$(./.github/scripts/is_release.sh)
+          node .github/scripts/release_plan.cjs "$RUNNER_TEMP/release-plan.json"
+          IS_RELEASE=$(./.github/scripts/is_release.sh "$RUNNER_TEMP/release-plan.json")
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
       - name: Check JavaScript SDK Release
         id: js
         if: steps.version.outputs.release == 'true'
         run: |
-          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "e2b")
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "e2b" "$RUNNER_TEMP/release-plan.json")
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
       - name: Check Python SDK Release
         id: python
         if: steps.version.outputs.release == 'true'
         run: |
-          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/python-sdk")
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/python-sdk" "$RUNNER_TEMP/release-plan.json")
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
       - name: Check CLI Release
         id: cli
         if: steps.version.outputs.release == 'true'
         run: |
-          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/cli")
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/cli" "$RUNNER_TEMP/release-plan.json")
+          echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Check Code Interpreter JavaScript SDK Release
+        id: code_interpreter_js
+        if: steps.version.outputs.release == 'true'
+        run: |
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/code-interpreter" "$RUNNER_TEMP/release-plan.json")
+          echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Check Code Interpreter Python SDK Release
+        id: code_interpreter_python
+        if: steps.version.outputs.release == 'true'
+        run: |
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/code-interpreter-python" "$RUNNER_TEMP/release-plan.json")
+          echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Check Desktop JavaScript SDK Release
+        id: desktop_js
+        if: steps.version.outputs.release == 'true'
+        run: |
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/desktop" "$RUNNER_TEMP/release-plan.json")
+          echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Check Desktop Python SDK Release
+        id: desktop_python
+        if: steps.version.outputs.release == 'true'
+        run: |
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/desktop-python" "$RUNNER_TEMP/release-plan.json")
+          echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Check Dockerfile Utils JavaScript Release
+        id: dockerfile_utils_js
+        if: steps.version.outputs.release == 'true'
+        run: |
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/dockerfile-utils" "$RUNNER_TEMP/release-plan.json")
+          echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Check Dockerfile Utils Python Release
+        id: dockerfile_utils_python
+        if: steps.version.outputs.release == 'true'
+        run: |
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/dockerfile-utils-python" "$RUNNER_TEMP/release-plan.json")
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
       - name: Build release itinerary
         id: itinerary
         if: steps.version.outputs.release == 'true'
+        # This only feeds the Slack notifications, so it must never be the thing
+        # that blocks a release; the messages fall back to a placeholder.
+        continue-on-error: true
         run: |
-          pnpm changeset status --output=.cs-status.json
-          ITINERARY=$(node -e '
-            const data = require("./.cs-status.json");
-            const labels = { "e2b": "JS SDK (e2b)", "@e2b/python-sdk": "Python SDK (e2b)", "@e2b/cli": "CLI (@e2b/cli)" };
-            const order = ["e2b", "@e2b/python-sdk", "@e2b/cli"];
-            const byName = Object.fromEntries(data.releases.map(r => [r.name, r]));
-            const lines = order.filter(n => byName[n]).map(n => `• ${labels[n]} v${byName[n].newVersion}`);
-            process.stdout.write(lines.join("\n") || "• No packages were published");
-          ')
-          rm -f .cs-status.json
+          ITINERARY=$(node ./.github/scripts/build_release_itinerary.cjs "$RUNNER_TEMP/release-plan.json")
           {
             echo "itinerary<<EOF"
             echo "$ITINERARY"
@@ -121,11 +183,63 @@ jobs:
     uses: ./.github/workflows/cli_tests.yml
     secrets: inherit
 
+  code-interpreter-js-tests:
+    name: Code Interpreter JS SDK Tests
+    needs: [preflight]
+    if: needs.preflight.outputs.code_interpreter_js == 'true'
+    uses: ./.github/workflows/code_interpreter_js_tests.yml
+    secrets: inherit
+
+  code-interpreter-python-tests:
+    name: Code Interpreter Python SDK Tests
+    needs: [preflight]
+    if: needs.preflight.outputs.code_interpreter_python == 'true'
+    uses: ./.github/workflows/code_interpreter_python_tests.yml
+    secrets: inherit
+
+  desktop-js-tests:
+    name: Desktop JS SDK Tests
+    needs: [preflight]
+    if: needs.preflight.outputs.desktop_js == 'true'
+    uses: ./.github/workflows/desktop_js_tests.yml
+    secrets: inherit
+
+  desktop-python-tests:
+    name: Desktop Python SDK Tests
+    needs: [preflight]
+    if: needs.preflight.outputs.desktop_python == 'true'
+    uses: ./.github/workflows/desktop_python_tests.yml
+    secrets: inherit
+
+  dockerfile-utils-js-tests:
+    name: Dockerfile Utils JS Tests
+    needs: [preflight]
+    if: needs.preflight.outputs.dockerfile_utils_js == 'true'
+    uses: ./.github/workflows/dockerfile_utils_js_tests.yml
+
+  dockerfile-utils-python-tests:
+    name: Dockerfile Utils Python Tests
+    needs: [preflight]
+    if: needs.preflight.outputs.dockerfile_utils_python == 'true'
+    uses: ./.github/workflows/dockerfile_utils_python_tests.yml
+
   publish:
     name: Publish
-    needs: [preflight, python-tests, js-tests, cli-tests]
+    needs:
+      - preflight
+      - python-tests
+      - js-tests
+      - cli-tests
+      - code-interpreter-js-tests
+      - code-interpreter-python-tests
+      - desktop-js-tests
+      - desktop-python-tests
+      - dockerfile-utils-js-tests
+      - dockerfile-utils-python-tests
     if: (!cancelled()) && !contains(needs.*.result, 'failure') && needs.preflight.outputs.release == 'true'
     uses: ./.github/workflows/publish_packages.yml
+    with:
+      recovery_commit: ${{ inputs.recovery_commit }}
     secrets: inherit
 
   report-start:
@@ -142,13 +256,26 @@ jobs:
             :rocket: A new release has been triggered :hourglass_flowing_sand:
 
             *Releasing:*
-            ${{ needs.preflight.outputs.itinerary }}
+            ${{ needs.preflight.outputs.itinerary || '• (itinerary unavailable)' }}
           SLACK_TITLE: Release Started
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_CHANNEL: 'monitoring-releases'
 
   report-failure:
-    needs: [python-tests, js-tests, cli-tests, publish]
+    # `preflight` included so a failure there is reported too, whether or not
+    # `failure()` looks past this job's direct dependencies.
+    needs:
+      - preflight
+      - python-tests
+      - js-tests
+      - cli-tests
+      - code-interpreter-js-tests
+      - code-interpreter-python-tests
+      - desktop-js-tests
+      - desktop-python-tests
+      - dockerfile-utils-js-tests
+      - dockerfile-utils-python-tests
+      - publish
     if: failure()
     name: Release Failed - Slack Notification
     runs-on: ubuntu-latest
@@ -176,7 +303,7 @@ jobs:
             :tada: A new version has been released successfully! :ship-it-parrot:
 
             *Released:*
-            ${{ needs.preflight.outputs.itinerary }}
+            ${{ needs.preflight.outputs.itinerary || '• (itinerary unavailable)' }}
           SLACK_TITLE: Release Succeeded
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_CHANNEL: 'monitoring-releases'

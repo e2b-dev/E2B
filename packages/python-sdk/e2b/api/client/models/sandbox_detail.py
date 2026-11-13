@@ -6,6 +6,7 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 from dateutil.parser import isoparse
 
+from ..models.sandbox_pause_mode import SandboxPauseMode
 from ..models.sandbox_state import SandboxState
 from ..types import UNSET, Unset
 
@@ -33,6 +34,11 @@ class SandboxDetail:
         disk_size_mb (int): Disk size for the sandbox in MiB
         state (SandboxState): State of the sandbox
         alias (Union[Unset, str]): Alias of the template
+        envd_unresponsive_at_pause (Union[Unset, bool]): True when the snapshot a paused sandbox would resume from was
+            taken while the sandbox guest agent was not responding. A plain resume of it is refused with 409 and error_code
+            sandbox_snapshot_guest_agent_unresponsive, because restoring that memory would bring the unresponsive agent
+            back; resume it without memory (`memory: false`), which cold-boots the sandbox from its disk. Omitted for a
+            running sandbox and for a snapshot whose agent answered.
         envd_access_token (Union[Unset, str]): Access token used for envd communication
         allow_internet_access (Union[None, Unset, bool]): Whether internet access was explicitly enabled or disabled for
             the sandbox. Null means it was not explicitly set.
@@ -40,6 +46,10 @@ class SandboxDetail:
         metadata (Union[Unset, Any]):
         network (Union[Unset, SandboxNetworkConfig]):
         lifecycle (Union[Unset, SandboxLifecycle]): Sandbox lifecycle policy returned by sandbox info.
+        pause_mode (Union[Unset, SandboxPauseMode]): What the sandbox's latest pause saved. `full` saved the filesystem
+            and the memory, and resuming restores the sandbox where it left off. `filesystem` saved only the filesystem, and
+            resuming reboots the sandbox from disk. Returned for a paused sandbox once its pause has finished, and omitted
+            while it is still pausing.
         volume_mounts (Union[Unset, list['SandboxVolumeMount']]):
     """
 
@@ -54,12 +64,14 @@ class SandboxDetail:
     disk_size_mb: int
     state: SandboxState
     alias: Union[Unset, str] = UNSET
+    envd_unresponsive_at_pause: Union[Unset, bool] = UNSET
     envd_access_token: Union[Unset, str] = UNSET
     allow_internet_access: Union[None, Unset, bool] = UNSET
     domain: Union[None, Unset, str] = UNSET
     metadata: Union[Unset, Any] = UNSET
     network: Union[Unset, "SandboxNetworkConfig"] = UNSET
     lifecycle: Union[Unset, "SandboxLifecycle"] = UNSET
+    pause_mode: Union[Unset, SandboxPauseMode] = UNSET
     volume_mounts: Union[Unset, list["SandboxVolumeMount"]] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -86,6 +98,8 @@ class SandboxDetail:
 
         alias = self.alias
 
+        envd_unresponsive_at_pause = self.envd_unresponsive_at_pause
+
         envd_access_token = self.envd_access_token
 
         allow_internet_access: Union[None, Unset, bool]
@@ -109,6 +123,10 @@ class SandboxDetail:
         lifecycle: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.lifecycle, Unset):
             lifecycle = self.lifecycle.to_dict()
+
+        pause_mode: Union[Unset, str] = UNSET
+        if not isinstance(self.pause_mode, Unset):
+            pause_mode = self.pause_mode.value
 
         volume_mounts: Union[Unset, list[dict[str, Any]]] = UNSET
         if not isinstance(self.volume_mounts, Unset):
@@ -135,6 +153,8 @@ class SandboxDetail:
         )
         if alias is not UNSET:
             field_dict["alias"] = alias
+        if envd_unresponsive_at_pause is not UNSET:
+            field_dict["envdUnresponsiveAtPause"] = envd_unresponsive_at_pause
         if envd_access_token is not UNSET:
             field_dict["envdAccessToken"] = envd_access_token
         if allow_internet_access is not UNSET:
@@ -147,6 +167,8 @@ class SandboxDetail:
             field_dict["network"] = network
         if lifecycle is not UNSET:
             field_dict["lifecycle"] = lifecycle
+        if pause_mode is not UNSET:
+            field_dict["pauseMode"] = pause_mode
         if volume_mounts is not UNSET:
             field_dict["volumeMounts"] = volume_mounts
 
@@ -180,6 +202,8 @@ class SandboxDetail:
         state = SandboxState(d.pop("state"))
 
         alias = d.pop("alias", UNSET)
+
+        envd_unresponsive_at_pause = d.pop("envdUnresponsiveAtPause", UNSET)
 
         envd_access_token = d.pop("envdAccessToken", UNSET)
 
@@ -219,6 +243,13 @@ class SandboxDetail:
         else:
             lifecycle = SandboxLifecycle.from_dict(_lifecycle)
 
+        _pause_mode = d.pop("pauseMode", UNSET)
+        pause_mode: Union[Unset, SandboxPauseMode]
+        if isinstance(_pause_mode, Unset):
+            pause_mode = UNSET
+        else:
+            pause_mode = SandboxPauseMode(_pause_mode)
+
         volume_mounts = []
         _volume_mounts = d.pop("volumeMounts", UNSET)
         for volume_mounts_item_data in _volume_mounts or []:
@@ -238,12 +269,14 @@ class SandboxDetail:
             disk_size_mb=disk_size_mb,
             state=state,
             alias=alias,
+            envd_unresponsive_at_pause=envd_unresponsive_at_pause,
             envd_access_token=envd_access_token,
             allow_internet_access=allow_internet_access,
             domain=domain,
             metadata=metadata,
             network=network,
             lifecycle=lifecycle,
+            pause_mode=pause_mode,
             volume_mounts=volume_mounts,
         )
 

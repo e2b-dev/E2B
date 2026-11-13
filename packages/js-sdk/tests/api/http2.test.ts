@@ -3,10 +3,7 @@ import { afterEach, expect, test, vi } from 'vitest'
 afterEach(() => {
   vi.restoreAllMocks()
   vi.resetModules()
-  vi.doUnmock('undici')
-  vi.doUnmock('../../src/utils')
   delete process.env.E2B_API_CONNECTIONS
-  delete process.env.E2B_API_INFLIGHT_REQUESTS
 })
 
 test('uses undici with a bounded HTTP/2 dispatcher for API requests', async () => {
@@ -146,17 +143,44 @@ test('late-binds the global fetch fallback when undici cannot be loaded', async 
   }
 })
 
-test('caches API fetchers per proxy', async () => {
+test('pins the API dispatcher to HTTP/1.1 when httpVersion is http1', async () => {
+  const agents: Array<{ allowH2?: boolean; connections?: number }> = []
+
+  class Agent {
+    constructor(options: { allowH2?: boolean; connections?: number }) {
+      agents.push(options)
+    }
+  }
+
+  const undiciFetch = vi.fn(() => Promise.resolve(new Response('ok')))
+
+  const { createApiFetchForRuntime } = await import('../../src/api/http2')
+
+  const fetcher = createApiFetchForRuntime('node', {
+    connectionLimit: 3,
+    httpVersion: '1.1',
+    loadUndici: () => Promise.resolve({ Agent, fetch: undiciFetch }),
+  })
+  await fetcher('https://api.e2b.app/sandboxes')
+
+  expect(agents).toEqual([{ allowH2: false, connections: 3 }])
+})
+
+test('caches API fetchers per proxy and HTTP version', async () => {
   const { createApiFetch } = await import('../../src/api/http2')
 
   const noProxy = createApiFetch()
-  const proxyA = createApiFetch('http://127.0.0.1:8080')
-  const proxyB = createApiFetch('http://127.0.0.1:9090')
+  const proxyA = createApiFetch({ proxy: 'http://127.0.0.1:8080' })
+  const proxyB = createApiFetch({ proxy: 'http://127.0.0.1:9090' })
+  const noProxyH1 = createApiFetch({ httpVersion: '1.1' })
 
   expect(createApiFetch()).toBe(noProxy)
-  expect(createApiFetch('http://127.0.0.1:8080')).toBe(proxyA)
+  expect(createApiFetch({ httpVersion: '2' })).toBe(noProxy)
+  expect(createApiFetch({ proxy: 'http://127.0.0.1:8080' })).toBe(proxyA)
+  expect(createApiFetch({ httpVersion: '1.1' })).toBe(noProxyH1)
   expect(proxyA).not.toBe(noProxy)
   expect(proxyA).not.toBe(proxyB)
+  expect(noProxyH1).not.toBe(noProxy)
 })
 
 test('getApiConnectionLimit throws on a malformed env value', async () => {
@@ -165,28 +189,4 @@ test('getApiConnectionLimit throws on a malformed env value', async () => {
   const { getApiConnectionLimit } = await import('../../src/api/http2')
 
   expect(() => getApiConnectionLimit()).toThrow(/E2B_API_CONNECTIONS/)
-})
-
-test('getApiInflightLimit throws on a malformed env value', async () => {
-  process.env.E2B_API_INFLIGHT_REQUESTS = 'not-a-number'
-
-  const { getApiInflightLimit } = await import('../../src/api/http2')
-
-  expect(() => getApiInflightLimit()).toThrow(/E2B_API_INFLIGHT_REQUESTS/)
-})
-
-test('getApiInflightLimit returns 0 when explicitly disabled', async () => {
-  process.env.E2B_API_INFLIGHT_REQUESTS = '0'
-
-  const { getApiInflightLimit } = await import('../../src/api/http2')
-
-  expect(getApiInflightLimit()).toBe(0)
-})
-
-test('getApiInflightLimit throws on negative env value', async () => {
-  process.env.E2B_API_INFLIGHT_REQUESTS = '-5'
-
-  const { getApiInflightLimit } = await import('../../src/api/http2')
-
-  expect(() => getApiInflightLimit()).toThrow(/E2B_API_INFLIGHT_REQUESTS=-5/)
 })

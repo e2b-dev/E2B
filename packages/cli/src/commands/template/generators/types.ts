@@ -1,3 +1,7 @@
+import { z } from 'zod'
+
+import { zodParser } from '../../../validation'
+
 export enum Language {
   TypeScript = 'typescript',
   PythonSync = 'python-sync',
@@ -9,6 +13,13 @@ export const languageDisplay = {
   [Language.PythonSync]: 'Python (sync)',
   [Language.PythonAsync]: 'Python (async)',
 }
+
+/** `--language` value. */
+export const parseLanguage = zodParser(
+  z.enum(Language, {
+    error: `Invalid language. Must be one of: ${Object.values(Language).join(', ')}.`,
+  })
+)
 
 export interface TemplateJSON {
   fromImage?: string

@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Union, Literal
 from pathlib import Path
 
 
+from e2b.connection_config import ClientFactory
 from e2b.exceptions import BuildException, InvalidArgumentException
 from e2b.template.consts import RESOLVE_SYMLINKS
 from e2b.template.dockerfile_parser import parse_dockerfile
@@ -83,7 +84,7 @@ class TemplateBuilder:
                 src_string,
                 str(dest),
                 user or "",
-                pad_octal(mode) if mode else "",
+                pad_octal(mode) if mode is not None else "",
             ]
 
             instruction: Instruction = {
@@ -231,7 +232,7 @@ class TemplateBuilder:
         """
         path_list = [path] if isinstance(path, (str, Path)) else path
         args = ["mkdir", "-p"]
-        if mode:
+        if mode is not None:
             args.append(f"-m {pad_octal(mode)}")
         args.extend([shlex.quote(str(p)) for p in path_list])
 
@@ -749,7 +750,7 @@ class TemplateFinal:
         self._template = template
 
 
-class TemplateBase:
+class TemplateBase(ClientFactory):
     """
     Base class for building E2B sandbox templates.
     """
@@ -765,7 +766,7 @@ class TemplateBase:
         Create a new template builder instance.
 
         :param file_context_path: Base path for resolving relative file paths in copy operations
-        :param file_ignore_patterns: List of glob patterns to ignore when copying files
+        :param file_ignore_patterns: Patterns in `.dockerignore` syntax for files to exclude when copying. They are applied after the `.dockerignore` file in the context directory, so they take precedence over it. An invalid pattern (such as an unterminated `[`) raises a :class:`TemplateException`. Brace expansion (`{a,b}`) is not supported, as in Docker
         """
         self._default_base_image: str = "e2bdev/base"
         self._base_image: Optional[str] = self._default_base_image
@@ -845,6 +846,55 @@ class TemplateBase:
         ```
         """
         return self.from_image(f"ubuntu:{variant}")
+
+    def from_fedora_image(self, variant: str = "44") -> TemplateBuilder:
+        """
+        Start template from a Fedora base image.
+
+        :param variant: Fedora image variant (default: '44')
+
+        :return: `TemplateBuilder` class
+
+        Example
+        ```python
+        Template().from_fedora_image('44')
+        ```
+        """
+        return self.from_image(f"fedora:{variant}")
+
+    def from_alpine_image(self, variant: str = "3.24") -> TemplateBuilder:
+        """
+        Start template from an Alpine base image.
+
+        :param variant: Alpine image variant (default: '3.24')
+
+        :return: `TemplateBuilder` class
+
+        Example
+        ```python
+        Template().from_alpine_image('3.24')
+        ```
+        """
+        return self.from_image(f"alpine:{variant}")
+
+    def from_arch_image(self, variant: str = "latest") -> TemplateBuilder:
+        """
+        Start template from an Arch Linux base image.
+
+        Defaults to `latest`: Arch is a rolling release and template
+        provisioning runs `pacman -Syu`, so pinning a tag would not change
+        the built result.
+
+        :param variant: Arch Linux image variant (default: 'latest')
+
+        :return: `TemplateBuilder` class
+
+        Example
+        ```python
+        Template().from_arch_image('base-devel')
+        ```
+        """
+        return self.from_image(f"archlinux:{variant}")
 
     def from_python_image(self, version: str = "3") -> TemplateBuilder:
         """
@@ -1199,8 +1249,8 @@ class TemplateBase:
                     dest,
                     self._file_context_path,
                     [
-                        *self._file_ignore_patterns,
                         *read_dockerignore(self._file_context_path),
+                        *self._file_ignore_patterns,
                     ],
                     resolve_symlinks
                     if resolve_symlinks is not None

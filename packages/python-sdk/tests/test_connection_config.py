@@ -1,4 +1,8 @@
+import pytest
+
 from e2b import ConnectionConfig
+from e2b.connection_config import DEFAULT_RETRIES
+from e2b.exceptions import InvalidArgumentException
 
 
 def test_api_url_defaults_correctly(monkeypatch):
@@ -28,37 +32,27 @@ def test_api_url_has_correct_priority(monkeypatch):
     assert config.api_url == "http://localhost:8080"
 
 
-def test_validate_api_key_defaults_to_true(monkeypatch):
-    monkeypatch.delenv("E2B_VALIDATE_API_KEY", raising=False)
-
-    config = ConnectionConfig()
-    assert config.validate_api_key is True
-
-
-def test_validate_api_key_disabled_via_env_var(monkeypatch):
-    monkeypatch.setenv("E2B_VALIDATE_API_KEY", "false")
-
-    config = ConnectionConfig()
-    assert config.validate_api_key is False
-
-
-def test_validate_api_key_arg_has_priority_over_env_var(monkeypatch):
-    monkeypatch.setenv("E2B_VALIDATE_API_KEY", "true")
-
-    config = ConnectionConfig(validate_api_key=False)
-    assert config.validate_api_key is False
-
-
 def test_sandbox_url_uses_stable_host_for_supported_domain():
     config = ConnectionConfig(domain="e2b.app")
 
     assert config.get_sandbox_url("sandbox-id", "e2b.app") == "https://sandbox.e2b.app"
 
 
-def test_sandbox_url_uses_stable_host_for_supported_non_prod_domain():
-    config = ConnectionConfig(domain="e2b.dev")
+@pytest.mark.parametrize(
+    "domain",
+    [
+        "e2b.dev",
+        "e2b.pro",
+        "e2b-staging.dev",
+        "e2b-tango.dev",
+        "e2b-juliett.dev",
+        "foxtrot-2.e2b.dev",
+    ],
+)
+def test_sandbox_url_uses_stable_host_for_supported_non_prod_domain(domain):
+    config = ConnectionConfig(domain=domain)
 
-    assert config.get_sandbox_url("sandbox-id", "e2b.dev") == "https://sandbox.e2b.dev"
+    assert config.get_sandbox_url("sandbox-id", domain) == f"https://sandbox.{domain}"
 
 
 def test_sandbox_url_uses_explicit_url_first():
@@ -105,6 +99,51 @@ def test_sandbox_direct_url_keeps_per_sandbox_host_for_supported_domain():
     assert (
         config.get_sandbox_direct_url("sandbox-id", "e2b.app")
         == "https://49983-sandbox-id.e2b.app"
+    )
+
+
+def test_sandbox_url_with_port_uses_stable_host_for_supported_domain():
+    config = ConnectionConfig(domain="e2b.app")
+
+    assert (
+        config.get_sandbox_url("sandbox-id", "e2b.app", port=49999)
+        == "https://sandbox.e2b.app"
+    )
+
+
+def test_sandbox_url_with_port_uses_per_sandbox_host_for_unsupported_domain():
+    config = ConnectionConfig(domain="example.dev")
+
+    assert (
+        config.get_sandbox_url("sandbox-id", "example.dev", port=49999)
+        == "https://49999-sandbox-id.example.dev"
+    )
+
+
+def test_sandbox_url_with_port_debug_uses_localhost():
+    config = ConnectionConfig(debug=True)
+
+    assert (
+        config.get_sandbox_url("sandbox-id", "e2b.app", port=49999)
+        == "http://localhost:49999"
+    )
+
+
+def test_sandbox_direct_url_with_port_uses_per_sandbox_host():
+    config = ConnectionConfig(domain="e2b.app")
+
+    assert (
+        config.get_sandbox_direct_url("sandbox-id", "e2b.app", port=49999)
+        == "https://49999-sandbox-id.e2b.app"
+    )
+
+
+def test_sandbox_url_without_port_uses_envd_port():
+    config = ConnectionConfig(domain="example.dev")
+
+    assert (
+        config.get_sandbox_url("sandbox-id", "example.dev")
+        == "https://49983-sandbox-id.example.dev"
     )
 
 
@@ -234,3 +273,63 @@ def test_get_api_params_includes_sandbox_url():
     # Per-call override takes priority.
     overridden = config.get_api_params(sandbox_url="https://sandbox.override.com")
     assert overridden["sandbox_url"] == "https://sandbox.override.com"
+
+
+def test_retries_default_to_three_and_propagate():
+    config = ConnectionConfig(retries=5)
+
+    assert ConnectionConfig().retries == DEFAULT_RETRIES
+    assert config.retries == 5
+    assert config.get_api_params()["retries"] == 5
+    assert config.get_api_params(retries=0)["retries"] == 0
+
+
+@pytest.mark.parametrize("retries", [-1, 1.5, True])
+def test_retries_reject_invalid_values(retries):
+    with pytest.raises(InvalidArgumentException):
+        ConnectionConfig(retries=retries)
+
+
+def test_http_version_defaults_to_http2_and_propagates(monkeypatch):
+    monkeypatch.delenv("E2B_HTTP_VERSION", raising=False)
+
+    assert ConnectionConfig().http_version == "2"
+    assert ConnectionConfig().get_api_params()["http_version"] == "2"
+
+    config = ConnectionConfig(http_version="1.1")
+    assert config.http_version == "1.1"
+    # Reconstructed configs (a sandbox's sub-clients) keep the setting, and a
+    # per-call value overrides it.
+    assert config.get_api_params()["http_version"] == "1.1"
+    assert ConnectionConfig(**config.get_api_params()).http_version == "1.1"
+    assert config.get_api_params(http_version="2")["http_version"] == "2"
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [("1.1", "1.1"), ("2", "2"), ("", "2")],
+)
+def test_http_version_reads_env_var(monkeypatch, value, expected):
+    monkeypatch.setenv("E2B_HTTP_VERSION", value)
+
+    assert ConnectionConfig().http_version == expected
+    # The explicit argument wins over the environment.
+    other = "2" if expected == "1.1" else "1.1"
+    assert ConnectionConfig(http_version=other).http_version == other
+
+
+def test_http_version_rejects_unknown_env_value(monkeypatch):
+    monkeypatch.setenv("E2B_HTTP_VERSION", "http3")
+
+    with pytest.raises(InvalidArgumentException, match="E2B_HTTP_VERSION"):
+        ConnectionConfig()
+    # An explicit option never consults the environment.
+    assert ConnectionConfig(http_version="1.1").http_version == "1.1"
+
+
+@pytest.mark.parametrize("value", ["http1", "http2", "1", "2.0", "HTTP/1.1", ""])
+def test_http_version_rejects_unknown_explicit_value(monkeypatch, value):
+    monkeypatch.delenv("E2B_HTTP_VERSION", raising=False)
+
+    with pytest.raises(InvalidArgumentException, match="http_version"):
+        ConnectionConfig(http_version=value)

@@ -1,9 +1,50 @@
-import { describe, expect } from 'vitest'
-import { NotFoundError, VolumeError, VolumeFileType } from '../../src'
-import { volumeTest } from '../setup'
+import { afterAll, beforeAll, beforeEach, describe, expect } from 'vitest'
+import { http, HttpResponse } from 'msw'
+
+import {
+  RateLimitError,
+  VolumeError,
+  VolumeFileType,
+  VolumePathNotFoundError,
+} from '../../src'
+import { apiUrl, volumeTest } from '../setup'
+import { setupMockApi } from '../mockApi'
+import { createMockVolumeApi } from './mockVolumeContent'
+
+const server = setupMockApi()
+
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
+afterAll(() => server.close())
+// A fresh mock per test gives isolated state (same as the per-fixture
+// MockVolumeContentAPI in the Python SDK tests).
+beforeEach(() => server.resetHandlers(...createMockVolumeApi()))
 
 describe('Volume File Operations', () => {
   describe('writeFile and readFile', () => {
+    volumeTest(
+      'does not retry a buffered upload after rate limiting',
+      async ({ volume }) => {
+        let attempts = 0
+        server.use(
+          http.put(apiUrl('/volumecontent/:volumeID/file'), () => {
+            attempts++
+            return HttpResponse.json(
+              { message: 'rate limited' },
+              {
+                status: 429,
+                headers: { 'Retry-After': '0' },
+              }
+            )
+          })
+        )
+
+        await expect(
+          volume.writeFile('/retry.txt', 'retry')
+        ).rejects.toBeInstanceOf(RateLimitError)
+        expect(attempts).toBe(1)
+      }
+    )
+
     volumeTest('should write and read a text file', async ({ volume }) => {
       const path = '/test.txt'
       const content = 'Hello, World!'
@@ -36,12 +77,12 @@ describe('Volume File Operations', () => {
 
     volumeTest('should write and read binary data', async ({ volume }) => {
       const path = '/binary.bin'
-      const binaryData = new Uint8Array([0, 1, 2, 3, 4])
+      const binaryData = new Uint8Array([9, 0, 1, 2, 3, 4, 9]).subarray(1, 6)
 
-      await volume.writeFile(path, binaryData.buffer)
+      await volume.writeFile(path, binaryData)
       const readBytes = await volume.readFile(path, { format: 'bytes' })
 
-      expect(readBytes).toEqual(binaryData)
+      expect(readBytes).toEqual(new Uint8Array([0, 1, 2, 3, 4]))
     })
 
     volumeTest(
@@ -221,11 +262,11 @@ describe('Volume File Operations', () => {
     })
 
     volumeTest(
-      'should throw NotFoundError when updating non-existent file',
+      'should throw VolumePathNotFoundError when updating non-existent file',
       async ({ volume }) => {
         await expect(
           volume.updateMetadata('/non-existent.txt', { mode: 0o644 })
-        ).rejects.toThrow(NotFoundError)
+        ).rejects.toThrow(VolumePathNotFoundError)
       }
     )
   })
@@ -317,10 +358,10 @@ describe('Volume File Operations', () => {
     })
 
     volumeTest(
-      'should throw NotFoundError for non-existent directory',
+      'should throw VolumePathNotFoundError for non-existent directory',
       async ({ volume }) => {
         await expect(volume.list('/non-existent')).rejects.toThrow(
-          NotFoundError
+          VolumePathNotFoundError
         )
       }
     )
@@ -356,10 +397,10 @@ describe('Volume File Operations', () => {
     })
 
     volumeTest(
-      'should throw NotFoundError when removing non-existent file',
+      'should throw VolumePathNotFoundError when removing non-existent file',
       async ({ volume }) => {
         await expect(volume.remove('/non-existent.txt')).rejects.toThrow(
-          NotFoundError
+          VolumePathNotFoundError
         )
       }
     )

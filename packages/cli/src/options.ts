@@ -1,22 +1,35 @@
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
+
+import { z } from 'zod'
 
 import { asBold, asLocal } from './utils/format'
+import { integer, zodParser } from './validation'
 
-/**
- * Parse a CLI option as a positive integer, rejecting non-numeric values so
- * they don't silently become NaN.
- */
-export function parsePositiveInt(label: string): (value: string) => number {
-  return (value) => {
-    const parsed = Number(value)
-    if (!Number.isInteger(parsed) || parsed < 1) {
-      throw new commander.InvalidArgumentError(
-        `${label} must be a positive integer. You provided ${asLocal(value)}.`
-      )
-    }
-    return parsed
-  }
+export enum Format {
+  JSON = 'json',
+  PRETTY = 'pretty',
 }
+
+/** `--format` value, case-insensitive. */
+export const parseFormat = zodParser(
+  z
+    .string()
+    .toLowerCase()
+    .pipe(
+      z.enum(Format, {
+        error: `Format must be one of: ${Object.values(Format).join(', ')}.`,
+      })
+    )
+)
+
+export const parseCpuCount = zodParser(integer('CPU count', { min: 1 }))
+
+export const parseMemoryMb = zodParser(
+  integer('Memory in megabytes', { min: 1 }).refine(
+    (memoryMb) => memoryMb % 2 === 0,
+    'Memory in megabytes must be an even number.'
+  )
+)
 
 export const pathOption = new commander.Option(
   '-p, --path <path>',
@@ -25,6 +38,7 @@ export const pathOption = new commander.Option(
   )} directory`
 )
 
+// Only `template migrate` reads e2b.toml; no other command accepts this option.
 export const configOption = new commander.Option(
   '--config <e2b-toml>',
   `specify path to the E2B config toml. By default E2B tries to find ${asBold(
@@ -32,14 +46,32 @@ export const configOption = new commander.Option(
   )} in root directory. We recommend using the new build system (https://e2b.dev/docs/template/defining-template) that does not use config files.`
 )
 
-export const selectMultipleOption = new commander.Option(
-  '-s, --select',
-  'select sandbox template from interactive list'
-)
+// Accepted but ignored by commands that used to read e2b.toml, so existing
+// scripts keep working instead of failing with an opaque unknown option error.
+export const deprecatedConfigOption = new commander.Option(
+  '--config <e2b-toml>',
+  `[deprecated] ${asBold('e2b.toml')} is no longer read here`
+).hideHelp()
+
+/**
+ * Warn when the ignored --config flag is passed to a command that no longer
+ * reads e2b.toml.
+ */
+export function warnIgnoredConfigOption(opts: { config?: string }) {
+  if (!opts.config) return
+
+  console.error(
+    `The ${asBold('--config')} flag is no longer read here. Pass the template as ${asBold(
+      '[template]'
+    )}. ${asBold(
+      'e2b template migrate --config'
+    )} still reads ${asLocal('e2b.toml')}.`
+  )
+}
 
 export const projectOption = new commander.Option(
   '-t, --project <project-id>',
-  'specify the project ID that the operation will be associated with. You can find project ID in the project settings in the E2B dashboard (https://e2b.dev/dashboard?tab=team).'
+  'specify the project ID that the operation will be associated with. You can find project ID in the project settings in the E2B dashboard (https://e2b.dev/dashboard?tab=general).'
 )
 
 export const deprecatedTeamOption = new commander.Option(
@@ -64,3 +96,8 @@ export function projectIdFromOptions(opts: {
   }
   return opts.project ?? opts.team
 }
+
+export const minFreeDiskMbOption = new commander.Option(
+  '--min-free-disk-mb <min-free-disk-mb>',
+  'requested minimum free space after build steps, in MiB. Omit for the team default or use 0 for no minimum growth. Growth is best effort and never shrinks the filesystem.'
+).argParser(zodParser(integer('Minimum free disk in MiB', { min: 0 })))

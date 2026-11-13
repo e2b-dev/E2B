@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import pytest
 
 from e2b import Sandbox
-from e2b.api.client.api.sandboxes import post_sandboxes_sandbox_id_connect
+from e2b.api.client.api.sandboxes import post_v_2_sandboxes_sandbox_id_connect
 from e2b.api.client.models import Sandbox as SandboxModel
 import e2b.sandbox_sync.main as sandbox_sync_main
 
@@ -24,7 +24,7 @@ def test_connect(sandbox_factory):
 def test_connect_with_secure(sandbox_factory):
     dir_name = f"test_directory_{uuid.uuid4()}"
 
-    sbx = sandbox_factory(timeout=10, secure=True)
+    sbx = sandbox_factory(timeout=10)
 
     assert sbx.is_running()
 
@@ -125,7 +125,7 @@ def test_connect_normalizes_unset_tokens(monkeypatch, test_api_key):
     )
     mock_request = Mock(return_value=SimpleNamespace(status_code=200, parsed=model))
     monkeypatch.setattr(
-        post_sandboxes_sandbox_id_connect, "sync_detailed", mock_request
+        post_v_2_sandboxes_sandbox_id_connect, "sync_detailed", mock_request
     )
 
     sbx = Sandbox.connect("sbx-test", debug=False, api_key=test_api_key)

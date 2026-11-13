@@ -79,6 +79,24 @@ class DefaultHeadersInterceptor:
         self._apply(ctx)
         return await call_next(request, ctx)
 
+    def intercept_client_stream_sync(
+        self,
+        call_next: Callable[[Iterator[REQ], RequestContext], RES],
+        request: Iterator[REQ],
+        ctx: RequestContext,
+    ) -> RES:
+        self._apply(ctx)
+        return call_next(request, ctx)
+
+    async def intercept_client_stream(
+        self,
+        call_next: Callable[[AsyncIterator[REQ], RequestContext], Awaitable[RES]],
+        request: AsyncIterator[REQ],
+        ctx: RequestContext,
+    ) -> RES:
+        self._apply(ctx)
+        return await call_next(request, ctx)
+
     def intercept_server_stream_sync(
         self,
         call_next: Callable[[REQ, RequestContext], Iterator[RES]],
@@ -105,9 +123,13 @@ class LoggingInterceptor:
     streamed message at DEBUG — mirroring the httpx event hooks used for the
     REST API and file transfer requests.
 
-    Upstreamed to pyqwest as a logging middleware
-    (https://github.com/curioswitch/pyqwest/pull/192); this interceptor stays
-    until that ships in a pyqwest release the SDK can depend on.
+    pyqwest logs requests itself on the ``pyqwest.access`` and ``pyqwest``
+    loggers, but those are process-wide loggers that cannot carry the
+    per-sandbox logger this option gives callers, and they see only the HTTP
+    exchange — not the streamed messages, nor the Connect error code of a
+    stream that fails inside a ``200 OK`` response. This interceptor is what
+    serves the ``logger`` option; the pyqwest loggers sit below it as
+    transport-level diagnostics.
     """
 
     def __init__(self, logger: logging.Logger, base_url: str):
@@ -146,6 +168,36 @@ class LoggingInterceptor:
         self,
         call_next: Callable[[REQ, RequestContext], Awaitable[RES]],
         request: REQ,
+        ctx: RequestContext,
+    ) -> RES:
+        self._log_request(ctx)
+        try:
+            response = await call_next(request, ctx)
+        except Exception as e:
+            self._log_response(ctx, e)
+            raise
+        self._log_response(ctx, None)
+        return response
+
+    def intercept_client_stream_sync(
+        self,
+        call_next: Callable[[Iterator[REQ], RequestContext], RES],
+        request: Iterator[REQ],
+        ctx: RequestContext,
+    ) -> RES:
+        self._log_request(ctx)
+        try:
+            response = call_next(request, ctx)
+        except Exception as e:
+            self._log_response(ctx, e)
+            raise
+        self._log_response(ctx, None)
+        return response
+
+    async def intercept_client_stream(
+        self,
+        call_next: Callable[[AsyncIterator[REQ], RequestContext], Awaitable[RES]],
+        request: AsyncIterator[REQ],
         ctx: RequestContext,
     ) -> RES:
         self._log_request(ctx)

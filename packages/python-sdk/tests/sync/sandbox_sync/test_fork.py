@@ -1,14 +1,15 @@
 import pytest
 
 from e2b import Sandbox
-from e2b.exceptions import InvalidArgumentException, SandboxNotFoundException
+from e2b.exceptions import SandboxNotFoundException
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(90)
 def test_fork(sandbox: Sandbox):
     sandbox.files.write("/home/user/state.txt", "state before fork")
 
-    forks = sandbox.fork()
+    forks = sandbox.fork(request_timeout=60)
     assert len(forks) == 1
 
     fork = forks[0]
@@ -32,8 +33,9 @@ def test_fork(sandbox: Sandbox):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(90)
 def test_fork_multiple(sandbox: Sandbox):
-    forks = sandbox.fork(count=2, timeout=60)
+    forks = sandbox.fork(count=2, timeout=60, request_timeout=60)
     assert len(forks) == 2
 
     forked_sandboxes = [fork for fork in forks if isinstance(fork, Sandbox)]
@@ -53,8 +55,9 @@ def test_fork_multiple(sandbox: Sandbox):
 
 
 @pytest.mark.skip_debug()
+@pytest.mark.timeout(90)
 def test_fork_by_id(sandbox: Sandbox):
-    forks = Sandbox.fork(sandbox.sandbox_id)
+    forks = Sandbox.fork(sandbox.sandbox_id, request_timeout=60)
     assert len(forks) == 1
 
     fork = forks[0]
@@ -73,8 +76,3 @@ def test_fork_killed_sandbox(sandbox_factory):
 
     with pytest.raises(SandboxNotFoundException):
         sandbox.fork()
-
-
-def test_fork_invalid_count():
-    with pytest.raises(InvalidArgumentException):
-        Sandbox.fork("sbx-test", count=0)

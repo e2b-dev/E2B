@@ -1,26 +1,45 @@
-import asyncio
 import json
 import logging
 import os
-import re
-import threading
-import weakref
 from dataclasses import dataclass
 from types import TracebackType
-from typing import Callable, Optional, Protocol, Union
+from typing import (
+    NamedTuple,
+    Optional,
+    Protocol,
+    Tuple,
+    Union,
+)
+from urllib.parse import quote
 
 import httpx
-from httpx import AsyncBaseTransport, BaseTransport, Limits, Timeout
+from httpx import AsyncBaseTransport, BaseTransport, Timeout
+from pyqwest import Proxy
 
 from e2b.api.client.client import AuthenticatedClient
 from e2b.api.client.types import Response
 from e2b.api.metadata import default_headers
-from e2b.connection_config import ConnectionConfig
+from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.exceptions import (
     AuthenticationException,
+    GuestUnresponsiveException,
+    InvalidArgumentException,
     RateLimitException,
+    ServiceBusyException,
     SandboxException,
 )
+
+
+def encode_path_param(value: str) -> str:
+    """
+    Percent-encode a template ID, name, or alias for use as one URL path segment.
+
+    Endpoints that take a template ID also accept a name, which may be
+    namespaced (``namespace/name``) and carry a ``:tag``. Escaping those
+    separators keeps the value inside a single segment instead of splitting the
+    route, matching the JS SDK's ``encodeURIComponent``.
+    """
+    return quote(value, safe="")
 
 
 def make_logging_event_hooks(log: Optional[logging.Logger]) -> dict:
@@ -62,13 +81,67 @@ def make_async_logging_event_hooks(log: Optional[logging.Logger]) -> dict:
     return {"request": [on_request], "response": [on_response]}
 
 
-limits = Limits(
-    max_keepalive_connections=int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20"),
-    max_connections=int(os.getenv("E2B_MAX_CONNECTIONS") or "2000"),
-    keepalive_expiry=int(os.getenv("E2B_KEEPALIVE_EXPIRY") or "300"),
-)
-
 connection_retries = int(os.getenv("E2B_CONNECTION_RETRIES") or "3")
+
+# Pool tuning for the pyqwest transports, shared by the REST API, envd RPC,
+# and envd HTTP API stacks. `pool_max_idle_per_host` is per host rather than
+# the global idle cap the httpx transports took, which suits both: API traffic
+# goes to a single host and each sandbox is its own host.
+pool_idle_timeout = float(os.getenv("E2B_KEEPALIVE_EXPIRY") or "300")
+pool_max_idle_per_host = int(os.getenv("E2B_MAX_KEEPALIVE_CONNECTIONS") or "20")
+
+# pyqwest spreads an origin's HTTP/2 streams over as many connections as the
+# server's concurrent-stream limit requires (envd's edge, which all sandboxes
+# share, advertises 100), dialing another once every connection is full, so
+# long-running commands never queue behind one connection. `max_connections`
+# caps the connections to each address an origin resolves to; past it, a
+# request waits on the least loaded connection for a stream to free up.
+max_connections = max(1, int(os.getenv("E2B_MAX_CONNECTIONS") or "200"))
+
+
+class ProxyConfig(NamedTuple):
+    """The ``proxy`` connection option in the shape pyqwest transports take.
+
+    A tuple so it can key the transport caches directly: it is hashable and
+    compares by value, where a ``pyqwest.Proxy`` compares by identity and
+    would hand every call its own connection pool."""
+
+    url: str
+    auth: Optional[Tuple[str, str]] = None
+    headers: Tuple[Tuple[str, str], ...] = ()
+
+    def to_pyqwest(self) -> Proxy:
+        """The ``pyqwest.Proxy`` to hand a transport."""
+        return Proxy(self.url, auth=self.auth, headers=self.headers or None)
+
+
+def proxy_to_config(proxy: Optional[ProxyTypes]) -> Optional[ProxyConfig]:
+    """Convert the ``proxy`` connection option — a URL string, an
+    ``httpx.URL``, or an ``httpx.Proxy`` — to the proxy configuration pyqwest
+    transports take: a proxy URL (scheme http, https, socks5, or socks5h,
+    credentials allowed in the userinfo), basic-auth credentials, and headers
+    to send to the proxy. An ``httpx.Proxy`` ``ssl_context`` has no pyqwest
+    counterpart and is rejected rather than silently dropped."""
+    if proxy is None:
+        return None
+    if isinstance(proxy, str):
+        return ProxyConfig(proxy)
+    if isinstance(proxy, httpx.URL):
+        return ProxyConfig(str(proxy))
+    if isinstance(proxy, httpx.Proxy):
+        if proxy.ssl_context is not None:
+            raise InvalidArgumentException("httpx.Proxy ssl_context is not supported")
+        # httpx.Proxy splits userinfo out of the URL into `.auth`; pyqwest
+        # takes the credentials the same way, so they pass straight through.
+        return ProxyConfig(
+            str(proxy.url),
+            auth=proxy.auth,
+            headers=tuple(proxy.headers.items()),
+        )
+    raise InvalidArgumentException(
+        "Only URL-string, httpx.URL, and httpx.Proxy proxies are supported, "
+        'e.g. proxy="http://user:pass@localhost:8030"'
+    )
 
 
 @dataclass
@@ -101,9 +174,19 @@ def api_exception_from_code(
             text += f" - {message}"
         return RateLimitException(text)
 
-    return default_exception_class(f"{status_code}: {message}").with_traceback(
+    if status_code == 503:
+        text = f"{status_code}: Service temporarily unavailable, please retry."
+        if message:
+            text += f" - {message}"
+        return ServiceBusyException(text)
+
+    err = default_exception_class(f"{status_code}: {message}").with_traceback(
         stack_trace
     )
+    if isinstance(err, SandboxException):
+        err.status_code = status_code
+
+    return err
 
 
 def handle_api_exception(
@@ -117,10 +200,19 @@ def handle_api_exception(
         body = {}
 
     message = body["message"] if "message" in body else None
-    if message is None and e.status_code not in (401, 429):
-        return default_exception_class(f"{e.status_code}: {e.content}").with_traceback(
+    if body.get("error_code") == GuestUnresponsiveException.code:
+        return GuestUnresponsiveException(
+            f'{message}. Resume the sandbox with on_resume="reboot".'
+        ).with_traceback(stack_trace)
+
+    if message is None and e.status_code not in (401, 429, 503):
+        err = default_exception_class(f"{e.status_code}: {e.content}").with_traceback(
             stack_trace
         )
+        if isinstance(err, SandboxException):
+            err.status_code = e.status_code
+
+        return err
 
     return api_exception_from_code(
         e.status_code, message, default_exception_class, stack_trace
@@ -135,79 +227,56 @@ class SupportsApiErrorResponse(Protocol):
     def content(self) -> Union[str, bytes]: ...
 
 
-_API_KEY_PATTERN = re.compile(r"\Ae2b_[0-9a-f]+\Z")
-_API_KEY_EXAMPLE = "e2b_" + "0" * 40
-
-
-def validate_api_key(api_key: str) -> None:
-    """Validate that an E2B API key has the expected ``e2b_`` prefix
-    followed by hex characters. Raises ``AuthenticationException`` otherwise.
-    """
-    if not _API_KEY_PATTERN.match(api_key):
-        raise AuthenticationException(
-            'Invalid API key format: expected "e2b_" followed by hex '
-            f'characters (e.g. "{_API_KEY_EXAMPLE}"). '
-            "Visit the API Keys tab at https://e2b.dev/dashboard?tab=keys to get your API key."
-        )
-
-
 class ApiClient(AuthenticatedClient):
     """
     The client for interacting with the E2B API.
+
+    A single lazily-created httpx client (see the generated
+    ``AuthenticatedClient``) serves all threads and event loops: the pyqwest
+    transports it delegates to are thread-safe and loop-independent, and
+    ``httpx.Client`` is documented thread-safe.
     """
 
     def __init__(
         self,
         config: ConnectionConfig,
         transport: Optional[Union[BaseTransport, AsyncBaseTransport]] = None,
-        transport_factory: Optional[Callable[[], BaseTransport]] = None,
-        async_transport_factory: Optional[Callable[[], AsyncBaseTransport]] = None,
         *args,
         **kwargs,
     ):
-        if transport is not None and (
-            transport_factory is not None or async_transport_factory is not None
-        ):
-            raise ValueError("Use either transport or transport_factory, not both")
-
-        self._transport_factory = transport_factory
-        self._async_transport_factory = async_transport_factory
-        self._thread_local = threading.local()
-        # Keyed weakly by the event loop object itself, not id(loop) —
-        # CPython reuses object ids, so a new loop could otherwise inherit
-        # a client bound to a previous, closed loop.
-        self._async_clients: weakref.WeakKeyDictionary[
-            asyncio.AbstractEventLoop, httpx.AsyncClient
-        ] = weakref.WeakKeyDictionary()
         self._proxy = config.proxy
 
-        if config.api_key is None:
+        # An `Authorization` header (e.g. an OAuth access token passed through
+        # `api_headers`) authenticates the request in place of an API key.
+        authorization = next(
+            (
+                (name, value)
+                for name, value in (config.headers or {}).items()
+                if name.lower() == "authorization"
+            ),
+            None,
+        )
+
+        # Like the JS SDK, an empty E2B_API_KEY counts as unset.
+        if config.api_key:
+            token = config.api_key
+            auth_header_name = "X-API-KEY"
+        elif authorization is not None:
+            # The generated client always writes `token` to `auth_header_name`;
+            # point it at the caller's own header so it isn't sent twice.
+            auth_header_name, token = authorization
+        else:
             raise AuthenticationException(
                 "API key is required, please visit the API Keys tab at https://e2b.dev/dashboard?tab=keys to get your API key. "
                 "You can either set the environment variable `E2B_API_KEY` "
                 'or you can pass it directly to the method like api_key="e2b_..."',
             )
-
-        if config.api_key is not None and config.validate_api_key:
-            validate_api_key(config.api_key)
-
-        token = config.api_key
-        auth_header_name = "X-API-KEY"
         prefix = ""
 
         self._logger = config.logger
 
         headers = {
             **default_headers,
-            # Deprecated: send the access token alongside the API key when one
-            # is available, mirroring the JS SDK. Prefer `api_headers` instead.
-            # Spread before `config.headers` so a custom `Authorization` in
-            # `api_headers` wins over the deprecated access token, matching JS.
-            **(
-                {"Authorization": f"Bearer {config.access_token}"}
-                if config.access_token is not None
-                else {}
-            ),
             **(config.headers or {}),
         }
 
@@ -223,12 +292,10 @@ class ApiClient(AuthenticatedClient):
             "event_hooks": self._logging_event_hooks(),
         }
         if transport is not None:
+            # The proxy lives in the transport; passing `proxy` here too
+            # would mount a fresh, never-closed proxy transport per client.
             httpx_args["transport"] = transport
-        if (
-            transport is None
-            and transport_factory is None
-            and async_transport_factory is None
-        ):
+        else:
             httpx_args["proxy"] = config.proxy
 
         # config.request_timeout is None when the timeout is explicitly
@@ -248,53 +315,6 @@ class ApiClient(AuthenticatedClient):
 
     def _logging_event_hooks(self) -> dict:
         return make_logging_event_hooks(self._logger)
-
-    def _headers_with_auth(self) -> dict:
-        return {
-            **self._headers,
-            self.auth_header_name: (
-                f"{self.prefix} {self.token}" if self.prefix else self.token
-            ),
-        }
-
-    def get_httpx_client(self) -> httpx.Client:
-        if self._client is not None or self._transport_factory is None:
-            return super().get_httpx_client()
-
-        client = getattr(self._thread_local, "client", None)
-        if client is None:
-            client = httpx.Client(
-                base_url=self._base_url,
-                cookies=self._cookies,
-                headers=self._headers_with_auth(),
-                timeout=self._timeout,
-                verify=self._verify_ssl,
-                follow_redirects=self._follow_redirects,
-                event_hooks=self._httpx_args.get("event_hooks"),
-                transport=self._transport_factory(),
-            )
-            self._thread_local.client = client
-        return client
-
-    def get_async_httpx_client(self) -> httpx.AsyncClient:
-        if self._async_client is not None or self._async_transport_factory is None:
-            return super().get_async_httpx_client()
-
-        loop = asyncio.get_running_loop()
-        client = self._async_clients.get(loop)
-        if client is None:
-            client = httpx.AsyncClient(
-                base_url=self._base_url,
-                cookies=self._cookies,
-                headers=self._headers_with_auth(),
-                timeout=self._timeout,
-                verify=self._verify_ssl,
-                follow_redirects=self._follow_redirects,
-                event_hooks=self._httpx_args.get("event_hooks"),
-                transport=self._async_transport_factory(),
-            )
-            self._async_clients[loop] = client
-        return client
 
 
 # We need to override the logging hooks for the async usage

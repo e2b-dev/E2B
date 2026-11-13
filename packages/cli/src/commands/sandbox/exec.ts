@@ -3,10 +3,11 @@
  */
 
 import { Sandbox, CommandExitError, NotFoundError } from 'e2b'
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
 
-import { ensureAPIKey } from '../../api'
+import { ensureAuth } from '../../api'
 import { setupSignalHandlers } from 'src/utils/signal'
+import { parseEnv } from 'src/utils/env'
 import { buildCommand, isPipedStdin, streamStdinChunks } from './exec_helpers'
 
 interface ExecOptions {
@@ -19,83 +20,89 @@ interface ExecOptions {
 const NO_COMMAND_TIMEOUT = 0
 export const execCommand = new commander.Command('exec')
   .description('execute a command in a running sandbox')
+  .addHelpText(
+    'after',
+    '\nEverything after the sandbox ID is passed through to the remote command,\n' +
+      'so e2b options must come before the sandbox ID:\n' +
+      '  e2b sandbox exec -u root <sandboxID> codex exec "prompt" --help'
+  )
   .argument('<sandboxID>', 'sandbox ID to execute command in')
   .argument('<command...>', 'command to execute')
+  .passThroughOptions()
   .option('-b, --background', 'run in background and return immediately')
   .option('-c, --cwd <dir>', 'working directory')
   .option('-u, --user <user>', 'run as specified user')
   .option(
     '-e, --env <KEY=VALUE>',
     'set environment variable (repeatable)',
-    (value: string, previous: Record<string, string>) => {
-      const [key, ...rest] = value.split('=')
-      if (key && rest.length > 0) {
-        previous[key] = rest.join('=')
-      }
-      return previous
-    },
-    {} as Record<string, string>
+    parseEnv
   )
   .alias('ex')
-  .action(
-    async (sandboxID: string, commandParts: string[], opts: ExecOptions) => {
-      const hasPipedStdin = isPipedStdin()
+  .action(async (sandboxID, commandParts, opts) => {
+    const hasPipedStdin = isPipedStdin()
 
-      const command = buildCommand(commandParts)
-      try {
-        const apiKey = ensureAPIKey()
-        const sandbox = await Sandbox.connect(sandboxID, { apiKey })
-
-        if (hasPipedStdin && !sandbox.commands.supportsStdinClose) {
-          console.error(
-            'e2b: Warning: Piped stdin is not supported by this sandbox version.\n' +
-              'e2b: Rebuild your template to pick up the latest sandbox version.\n' +
-              'e2b: Ignoring piped stdin.'
-          )
-        }
-
-        const canPipeStdin =
-          hasPipedStdin && sandbox.commands.supportsStdinClose
-
-        if (opts.background) {
-          const handle = await sandbox.commands.run(command, {
-            background: true,
-            cwd: opts.cwd,
-            user: opts.user,
-            envs: opts.env,
-            timeoutMs: NO_COMMAND_TIMEOUT,
-            ...(canPipeStdin ? { stdin: true } : {}),
-          })
-
-          const removeSignalHandlers = setupSignalHandlers(async () => {
-            await handle.kill()
-          })
-
-          try {
-            if (canPipeStdin) {
-              await sendStdin(sandbox, handle.pid)
-            }
-          } finally {
-            removeSignalHandlers()
-          }
-
-          console.error(handle.pid)
-
-          await handle.disconnect()
-
-          // We always exit with code 0 when running in background.
-          process.exit(0)
-        }
-
-        const exitCode = await runCommand(sandbox, command, opts, canPipeStdin)
-
-        process.exit(exitCode)
-      } catch (err: any) {
-        console.error(err)
-        process.exit(1)
+    let command: string
+    try {
+      command = buildCommand(commandParts)
+    } catch (err) {
+      if (err instanceof commander.InvalidArgumentError) {
+        execCommand.error(`error: ${err.message}`)
       }
+      throw err
     }
-  )
+
+    try {
+      const auth = await ensureAuth()
+      const sandbox = await Sandbox.connect(sandboxID, auth)
+
+      if (hasPipedStdin && !sandbox.commands.supportsStdinClose) {
+        console.error(
+          'e2b: Warning: Piped stdin is not supported by this sandbox version.\n' +
+            'e2b: Rebuild your template to pick up the latest sandbox version.\n' +
+            'e2b: Ignoring piped stdin.'
+        )
+      }
+
+      const canPipeStdin = hasPipedStdin && sandbox.commands.supportsStdinClose
+
+      if (opts.background) {
+        const handle = await sandbox.commands.run(command, {
+          background: true,
+          cwd: opts.cwd,
+          user: opts.user,
+          envs: opts.env,
+          timeoutMs: NO_COMMAND_TIMEOUT,
+          ...(canPipeStdin ? { stdin: true } : {}),
+        })
+
+        const removeSignalHandlers = setupSignalHandlers(async () => {
+          await handle.kill()
+        })
+
+        try {
+          if (canPipeStdin) {
+            await sendStdin(sandbox, handle.pid)
+          }
+        } finally {
+          removeSignalHandlers()
+        }
+
+        console.error(handle.pid)
+
+        await handle.disconnect()
+
+        // We always exit with code 0 when running in background.
+        process.exit(0)
+      }
+
+      const exitCode = await runCommand(sandbox, command, opts, canPipeStdin)
+
+      process.exit(exitCode)
+    } catch (err: any) {
+      console.error(err)
+      process.exit(1)
+    }
+  })
 
 async function runCommand(
   sandbox: Sandbox,

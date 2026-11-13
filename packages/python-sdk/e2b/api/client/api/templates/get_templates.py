@@ -41,10 +41,18 @@ def _parse_response(
             response_200.append(response_200_item)
 
         return response_200
+    if response.status_code == 400:
+        response_400 = Error.from_dict(response.json())
+
+        return response_400
     if response.status_code == 401:
         response_401 = Error.from_dict(response.json())
 
         return response_401
+    if response.status_code == 429:
+        response_429 = Error.from_dict(response.json())
+
+        return response_429
     if response.status_code == 500:
         response_500 = Error.from_dict(response.json())
 
@@ -73,10 +81,12 @@ def sync_detailed(
 ) -> Response[Union[Error, list["Template"]]]:
     """List templates
 
-     List all templates
+     List all templates. Returns 400 when the team has more than 5000 templates; use /v2/templates to
+    page through them.
 
     Args:
-        team_id (Union[Unset, str]): Identifier of the team
+        team_id (Union[Unset, str]): Identifier of the team, as its UUID or its public project ID
+            (prj_)
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -104,10 +114,12 @@ def sync(
 ) -> Optional[Union[Error, list["Template"]]]:
     """List templates
 
-     List all templates
+     List all templates. Returns 400 when the team has more than 5000 templates; use /v2/templates to
+    page through them.
 
     Args:
-        team_id (Union[Unset, str]): Identifier of the team
+        team_id (Union[Unset, str]): Identifier of the team, as its UUID or its public project ID
+            (prj_)
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -130,10 +142,12 @@ async def asyncio_detailed(
 ) -> Response[Union[Error, list["Template"]]]:
     """List templates
 
-     List all templates
+     List all templates. Returns 400 when the team has more than 5000 templates; use /v2/templates to
+    page through them.
 
     Args:
-        team_id (Union[Unset, str]): Identifier of the team
+        team_id (Union[Unset, str]): Identifier of the team, as its UUID or its public project ID
+            (prj_)
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -159,10 +173,12 @@ async def asyncio(
 ) -> Optional[Union[Error, list["Template"]]]:
     """List templates
 
-     List all templates
+     List all templates. Returns 400 when the team has more than 5000 templates; use /v2/templates to
+    page through them.
 
     Args:
-        team_id (Union[Unset, str]): Identifier of the team
+        team_id (Union[Unset, str]): Identifier of the team, as its UUID or its public project ID
+            (prj_)
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

@@ -1,12 +1,16 @@
 import { describe, it, expect, afterAll, afterEach, beforeAll } from 'vitest'
 import { http, HttpResponse } from 'msw'
-import { setupServer } from 'msw/node'
-import { randomUUID } from 'node:crypto'
 
-import { Volume, NotFoundError, VolumeError } from '../../src'
+import {
+  Volume,
+  VolumeError,
+  VolumeNotFoundError,
+  VolumePathNotFoundError,
+} from '../../src'
 import { VolumeConnectionConfig } from '../../src/volume/client'
 import { runtime } from '../../src/utils'
 import { apiUrl } from '../setup'
+import { setupMockApi } from '../mockApi'
 
 // In-memory store for mock volumes
 const volumes = new Map<
@@ -21,8 +25,8 @@ const restHandlers = [
   // POST /volumes - create (returns VolumeAndToken)
   http.post(apiUrl('/volumes'), async ({ request }) => {
     const { name } = (await request.clone().json()) as { name: string }
-    const volumeID = randomUUID()
-    const token = `vol-token-${randomUUID()}`
+    const volumeID = crypto.randomUUID()
+    const token = `vol-token-${crypto.randomUUID()}`
     volumes.set(volumeID, { volumeID, name, token })
     return HttpResponse.json({ volumeID, name, token }, { status: 201 })
   }),
@@ -80,7 +84,7 @@ const restHandlers = [
   }),
 ]
 
-const server = setupServer(...restHandlers)
+const server = setupMockApi(...restHandlers)
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 afterAll(() => server.close())
@@ -140,10 +144,10 @@ describe('Volume CRUD', () => {
     expect(result).toBe(false)
   })
 
-  it('should throw NotFoundError when getting info of non-existent volume', async () => {
-    await expect(Volume.getInfo('non-existent-id')).rejects.toThrow(
-      NotFoundError
-    )
+  it('should throw VolumeNotFoundError when getting info of non-existent volume', async () => {
+    const err = await Volume.getInfo('non-existent-id').catch((err) => err)
+    expect(err).toBeInstanceOf(VolumeNotFoundError)
+    expect(err).toBeInstanceOf(VolumeError)
   })
 
   it('should throw VolumeError for a non-2xx response without content', async () => {
@@ -185,6 +189,18 @@ describe('Volume CRUD', () => {
     expect(config.proxy).toBe('http://127.0.0.1:9090')
   })
 
+  it('should keep the httpVersion on the instance so content calls reuse it', async () => {
+    const vol = await Volume.create('http1-volume', { httpVersion: '1.1' })
+    expect(vol.httpVersion).toBe('1.1')
+    expect(new VolumeConnectionConfig(vol).httpVersion).toBe('1.1')
+    expect(
+      new VolumeConnectionConfig(vol, { httpVersion: '2' }).httpVersion
+    ).toBe('2')
+
+    const connected = await Volume.connect(vol.volumeId, { httpVersion: '1.1' })
+    expect(connected.httpVersion).toBe('1.1')
+  })
+
   it('should handle full lifecycle: create, get, list, destroy', async () => {
     // Create
     const vol = await Volume.create('lifecycle-vol')
@@ -206,6 +222,68 @@ describe('Volume CRUD', () => {
     // List again - should be empty
     const listAfter = await Volume.list()
     expect(listAfter).toHaveLength(0)
+  })
+})
+
+describe('Volume BYOC domain', () => {
+  const byocDomain = 'cluster.example.com'
+  const defaultDomain = process.env.E2B_DOMAIN || 'e2b.app'
+
+  it('uses the domain returned by create for content requests', async () => {
+    server.use(
+      http.post(apiUrl('/volumes'), async ({ request }) => {
+        const { name } = (await request.clone().json()) as { name: string }
+        const volumeID = crypto.randomUUID()
+        const token = `vol-token-${crypto.randomUUID()}`
+        return HttpResponse.json(
+          { volumeID, name, token, domain: byocDomain },
+          { status: 201 }
+        )
+      })
+    )
+
+    const vol = await Volume.create('byoc-volume')
+
+    // The BYOC domain is stored on the instance and drives the content API
+    // destination (https://api.<domain>), replacing the default domain.
+    expect(vol.domain).toBe(byocDomain)
+    const config = new VolumeConnectionConfig(vol)
+    expect(config.domain).toBe(byocDomain)
+    expect(config.apiUrl).toBe(`https://api.${byocDomain}`)
+  })
+
+  it('falls back to the default domain when create returns no domain', async () => {
+    const vol = await Volume.create('default-volume')
+
+    expect(vol.domain).toBe(defaultDomain)
+    expect(new VolumeConnectionConfig(vol).domain).toBe(defaultDomain)
+  })
+
+  it('propagates the domain through getInfo and connect', async () => {
+    const created = await Volume.create('connect-volume')
+
+    server.use(
+      http.get<{ volumeID: string }>(
+        apiUrl('/volumes/:volumeID'),
+        ({ params }) => {
+          const vol = volumes.get(params.volumeID)
+          if (!vol) {
+            return HttpResponse.json(
+              { code: 404, message: 'Not found' },
+              { status: 404 }
+            )
+          }
+          return HttpResponse.json({ ...vol, domain: byocDomain })
+        }
+      )
+    )
+
+    const info = await Volume.getInfo(created.volumeId)
+    expect(info.domain).toBe(byocDomain)
+
+    const connected = await Volume.connect(created.volumeId)
+    expect(connected.domain).toBe(byocDomain)
+    expect(new VolumeConnectionConfig(connected).domain).toBe(byocDomain)
   })
 })
 
@@ -262,10 +340,12 @@ describe('Volume content readFile', () => {
     expect(await new Response(stream).text()).toBe('')
   })
 
-  it('should throw NotFoundError for a missing file', async () => {
+  it('should throw VolumePathNotFoundError for a missing file', async () => {
     const vol = await Volume.create('content-volume')
 
-    await expect(vol.readFile('missing.txt')).rejects.toThrow(NotFoundError)
+    const err = await vol.readFile('missing.txt').catch((err) => err)
+    expect(err).toBeInstanceOf(VolumePathNotFoundError)
+    expect(err).toBeInstanceOf(VolumeError)
   })
 
   it('should reject at call time for a missing file with stream format', async () => {
@@ -273,7 +353,7 @@ describe('Volume content readFile', () => {
 
     await expect(
       vol.readFile('missing.txt', { format: 'stream' })
-    ).rejects.toThrow(NotFoundError)
+    ).rejects.toThrow(VolumePathNotFoundError)
   })
 })
 

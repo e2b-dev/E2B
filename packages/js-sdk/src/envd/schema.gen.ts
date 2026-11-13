@@ -4,43 +4,6 @@
  */
 
 export interface paths {
-    "/collapse": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Collapse envd's own anonymous heap into 2 MiB transparent hugepages before pause, so on resume envd touches fewer distinct guest-physical frames (each a cold fault). Best-effort. */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Heap collapsed */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["CollapseResult"];
-                    };
-                };
-                500: components["responses"]["InternalServerError"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/envs": {
         parameters: {
             query?: never;
@@ -134,7 +97,6 @@ export interface paths {
          *     multipart upload receive the same metadata. If the same
          *     `X-Metadata-<key>` header is sent more than once, only the first
          *     value is used.
-         *
          */
         post: {
             parameters: {
@@ -212,132 +174,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/freeze": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Freeze user/pty cgroups before pause. Written directly by envd to avoid Process.Start / shell overhead under load. */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Cgroups frozen */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                500: components["responses"]["InternalServerError"];
-                /** @description Freeze lock is held by another operation */
-                503: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/fsfreeze": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Freeze the guest rootfs (FIFREEZE) before a filesystem-only pause so it is flushed to a consistent on-disk state, closing the sync->pause race. Idempotent. On a successful filesystem-only pause the VM is rebooted, so no thaw is needed; the orchestrator thaws only on the pause-failure path. */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Rootfs frozen */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                500: components["responses"]["InternalServerError"];
-                /** @description Freeze lock is held by another operation */
-                503: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/fsthaw": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Thaw the guest rootfs (FITHAW). Intended ONLY for the orchestrator's pause-failure rollback path, so a frozen filesystem cannot leave the live VM deadlocked. Idempotent. */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Rootfs thawed */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                500: components["responses"]["InternalServerError"];
-                /** @description Freeze lock is held by another operation */
-                503: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/health": {
         parameters: {
             query?: never;
@@ -366,64 +202,6 @@ export interface paths {
         };
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/init": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Set initial vars, ensure the time and metadata is synced with the host */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        /** @description Access token for secure access to envd service */
-                        accessToken?: string;
-                        /** @description PEM-encoded CA certificates to install into the system trust store (may contain multiple concatenated PEM blocks) */
-                        caBundle?: string;
-                        /** @description The default user to use for operations */
-                        defaultUser?: string;
-                        /** @description The default working directory to use for operations */
-                        defaultWorkdir?: string;
-                        envVars?: components["schemas"]["EnvVars"];
-                        /** @description IP address of the hyperloop server to connect to */
-                        hyperloopIP?: string;
-                        /** @description Lifecycle ID of the sandbox */
-                        lifecycleID?: string;
-                        /**
-                         * Format: date-time
-                         * @description The current timestamp in RFC3339 format
-                         */
-                        timestamp?: string;
-                        volumeMounts?: components["schemas"]["VolumeMount"][];
-                    };
-                };
-            };
-            responses: {
-                /** @description Env vars set, the time and metadata is synced with the host */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
         delete?: never;
         options?: never;
         head?: never;
@@ -466,70 +244,10 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/unfreeze": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Unfreeze user/pty cgroups. Intended ONLY for the orchestrator's pause-failure rollback path; the normal resume thaw happens via /init's deferred unfreeze, not here. */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Cgroups unfrozen */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                500: components["responses"]["InternalServerError"];
-                /** @description Freeze lock is held by another operation */
-                503: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** @description Per-call statistics from a heap collapse */
-        CollapseResult: {
-            /** @description Chunks MADV_COLLAPSE accepted but were already hugepages (no work) */
-            alreadyHuge?: number;
-            /** @description 2 MiB chunks attempted */
-            chunks?: number;
-            /** @description Chunks whose base pages were actually migrated into a new hugepage (real work) */
-            collapsed?: number;
-            /**
-             * Format: int64
-             * @description Wall-clock time spent collapsing, in milliseconds
-             */
-            elapsedMs?: number;
-            /** @description Anonymous read-write regions scanned */
-            regions?: number;
-            /** @description Chunks that could not be collapsed (empty or ineligible) */
-            skipped?: number;
-        };
         ComposeRequest: {
             /** @description Destination file path for the composed file */
             destination: string;
@@ -565,13 +283,24 @@ export interface components {
         };
         /** @description Resource usage metrics */
         Metrics: {
-            /** @description Number of CPU cores */
+            /** @description Number of CPU cores online */
             cpu_count?: number;
+            /** @description Number of CPUs the guest can bring online */
+            cpu_possible?: number;
+            /** @description Online count last requested, 0 when none was */
+            cpu_target?: number;
+            /** @description Attempts at reaching cpu_target since it was set */
+            cpu_target_attempts?: number;
             /**
              * Format: float
              * @description CPU usage percentage
              */
             cpu_used_pct?: number;
+            /**
+             * Format: int64
+             * @description How long a CPU online or offline write has been running in the guest kernel, 0 when none is. A value that keeps growing means CPU hotplug is stuck.
+             */
+            cpu_write_pending_ms?: number;
             /** @description Total disk space in bytes */
             disk_total?: number;
             /** @description Used disk space in bytes */
@@ -580,24 +309,25 @@ export interface components {
             mem_cache?: number;
             /** @description Total virtual memory in bytes */
             mem_total?: number;
-            /** @description Total virtual memory in MiB */
-            mem_total_mib?: number;
             /** @description Used virtual memory in bytes */
             mem_used?: number;
-            /** @description Used virtual memory in MiB */
-            mem_used_mib?: number;
+            /** @description The latest 32 out-of-memory kills since the guest booted, oldest first. Reading does not consume them. Empty when there are none. Omitted when not known (while envd is still reading the kernel log, when it can't be read or envd stopped reading it, and outside Firecracker). */
+            oom_kills?: components["schemas"]["OOMKill"][];
             /**
              * Format: int64
              * @description Unix timestamp in UTC for current sandbox time
              */
             ts?: number;
         };
-        /** @description Volume mount configuration */
-        VolumeMount: {
-            /** @description Server target address */
-            nfs_target: string;
-            /** @description Mount path inside the sandbox */
-            path: string;
+        /** @description A process the guest kernel killed for running out of memory */
+        OOMKill: {
+            /** @description Name of the killed process, or Unknown if the record doesn't show it */
+            process: string;
+            /**
+             * Format: int64
+             * @description Kernel log sequence number of the kill record. It only grows, across pauses and envd restarts.
+             */
+            seq: number;
         };
     };
     responses: {
@@ -616,10 +346,12 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                /** @example {
+                /**
+                 * @example {
                  *       "message": "path '/home/user/missing.txt' does not exist",
                  *       "code": 404
-                 *     } */
+                 *     }
+                 */
                 "application/json": components["schemas"]["Error"];
             };
         };
@@ -629,10 +361,12 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                /** @example {
+                /**
+                 * @example {
                  *       "message": "error opening file '/home/user/file.txt': permission denied",
                  *       "code": 500
-                 *     } */
+                 *     }
+                 */
                 "application/json": components["schemas"]["Error"];
             };
         };
@@ -642,10 +376,12 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                /** @example {
+                /**
+                 * @example {
                  *       "message": "path '/home/user/docs' is a directory",
                  *       "code": 400
-                 *     } */
+                 *     }
+                 */
                 "application/json": components["schemas"]["Error"];
             };
         };
@@ -655,10 +391,12 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                /** @example {
+                /**
+                 * @example {
                  *       "message": "error looking up user 'nonexistent': user: unknown user nonexistent",
                  *       "code": 401
-                 *     } */
+                 *     }
+                 */
                 "application/json": components["schemas"]["Error"];
             };
         };
@@ -668,10 +406,12 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                /** @example {
+                /**
+                 * @example {
                  *       "message": "no acceptable encoding found, supported: [identity, gzip]",
                  *       "code": 406
-                 *     } */
+                 *     }
+                 */
                 "application/json": components["schemas"]["Error"];
             };
         };
@@ -681,10 +421,12 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                /** @example {
+                /**
+                 * @example {
                  *       "message": "not enough disk space available",
                  *       "code": 507
-                 *     } */
+                 *     }
+                 */
                 "application/json": components["schemas"]["Error"];
             };
         };
@@ -694,13 +436,15 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                /** @example [
+                /**
+                 * @example [
                  *       {
                  *         "path": "/home/user/hello.txt",
                  *         "name": "hello.txt",
                  *         "type": "file"
                  *       }
-                 *     ] */
+                 *     ]
+                 */
                 "application/json": components["schemas"]["EntryInfo"][];
             };
         };

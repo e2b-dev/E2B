@@ -1,44 +1,62 @@
-import * as tablePrinter from 'console-table-printer'
-import * as commander from 'commander'
-import * as e2b from 'e2b'
+import * as commander from '@commander-js/extra-typings'
+import { Template, TemplateInfo } from 'e2b'
 
 import { listAliases } from '../../utils/format'
-import { sortTemplatesAliases } from 'src/utils/templateSort'
-import { client, ensureAPIKey, resolveProjectId } from 'src/api'
+import { renderTable } from 'src/utils/table'
+import { ensureAuth } from 'src/api'
 import {
   deprecatedTeamOption,
+  Format,
+  parseFormat,
   projectIdFromOptions,
   projectOption,
 } from '../../options'
-import { handleE2BRequestError } from '../../utils/errors'
+import { integer, zodParser } from '../../validation'
+
+const DEFAULT_LIMIT = 1000
+const PAGE_LIMIT = 100
 
 export const listCommand = new commander.Command('list')
   .description('list sandbox templates')
   .alias('ls')
   .addOption(projectOption)
   .addOption(deprecatedTeamOption)
-  .option('-f, --format <format>', 'output format, eg. json, pretty')
-  .action(async (opts: { project?: string; team?: string; format: string }) => {
+  .option(
+    '-l, --limit <limit>',
+    `limit the number of templates returned (default: ${DEFAULT_LIMIT} for pretty output, no limit for json; 0 for no limit)`,
+    zodParser(integer('Template limit', { min: 0 }))
+  )
+  .option(
+    '-f, --format <format>',
+    'output format, eg. json, pretty',
+    parseFormat,
+    Format.PRETTY
+  )
+  .action(async (opts) => {
     try {
-      const format = opts.format || 'pretty'
-      ensureAPIKey()
+      const defaultLimit =
+        opts.format === Format.JSON ? undefined : DEFAULT_LIMIT
+      const limit = opts.limit === 0 ? undefined : (opts.limit ?? defaultLimit)
       process.stdout.write('\n')
 
-      const templates = await listSandboxTemplates({
-        projectId: resolveProjectId(projectIdFromOptions(opts)),
+      const { templates, hasMore } = await listSandboxTemplates({
+        projectId: projectIdFromOptions(opts),
+        limit,
       })
 
       for (const template of templates) {
-        sortTemplatesAliases(template.aliases)
+        template.names.sort()
       }
 
-      if (format === 'pretty') {
-        renderTable(templates)
-      } else if (format === 'json') {
-        console.log(JSON.stringify(templates, null, 2))
+      if (opts.format === Format.PRETTY) {
+        renderTemplateTable(templates)
+        if (hasMore) {
+          console.log(
+            `Showing first ${limit} templates. Use --limit to change.`
+          )
+        }
       } else {
-        console.error(`Unsupported output format: ${format}`)
-        process.exit(1)
+        console.log(JSON.stringify(templates, null, 2))
       }
     } catch (err: any) {
       console.error(err)
@@ -46,88 +64,68 @@ export const listCommand = new commander.Command('list')
     }
   })
 
-function renderTable(templates: e2b.components['schemas']['Template'][]) {
+export function renderTemplateTable(templates: TemplateInfo[]) {
   if (!templates?.length) {
     console.log('No templates found.')
     return
   }
 
-  const table = new tablePrinter.Table({
-    title: 'Sandbox templates',
-    columns: [
-      { name: 'visibility', alignment: 'left', title: 'Access' },
-      { name: 'templateID', alignment: 'left', title: 'Template ID' },
-      {
-        name: 'aliases',
-        alignment: 'left',
-        title: 'Template Name',
-        color: 'orange',
-        maxLen: 20,
-      },
-      { name: 'cpuCount', alignment: 'right', title: 'vCPUs' },
-      { name: 'memoryMB', alignment: 'right', title: 'RAM MiB' },
-      { name: 'createdBy', alignment: 'right', title: 'Created by' },
-      { name: 'createdAt', alignment: 'right', title: 'Created at' },
-      { name: 'diskSizeMB', alignment: 'right', title: 'Disk size MiB' },
-      { name: 'envdVersion', alignment: 'right', title: 'Envd version' },
-    ],
-    disabledColumns: [
-      'public',
-      'buildID',
-      'buildCount',
-      'lastSpawnedAt',
-      'spawnCount',
-      'updatedAt',
-    ],
-    rows: templates.map((template) => ({
-      ...template,
-      visibility: template.public ? 'Public' : 'Private',
-      aliases: listAliases(template.aliases),
-      createdBy: template.createdBy?.email,
-      createdAt: new Date(template.createdAt).toLocaleDateString(),
-    })),
-    style: {
-      headerTop: {
-        left: '',
-        right: '',
-        mid: '',
-        other: '',
-      },
-      headerBottom: {
-        left: '',
-        right: '',
-        mid: '',
-        other: '',
-      },
-      tableBottom: {
-        left: '',
-        right: '',
-        mid: '',
-        other: '',
-      },
-      vertical: '',
+  renderTable(templates, [
+    {
+      header: 'Access',
+      value: (template) => (template.public ? 'Public' : 'Private'),
     },
-    colorMap: {
-      orange: '\x1b[38;5;216m',
+    { header: 'Template ID', value: (template) => template.templateId },
+    {
+      header: 'Template Name',
+      value: (template) => listAliases(template.names),
     },
-  })
-  table.printTable()
-
-  process.stdout.write('\n')
+    { header: 'vCPUs', value: (template) => String(template.cpuCount) },
+    {
+      header: 'Max vCPUs',
+      value: (template) => template.maxCpuCount?.toString(),
+    },
+    { header: 'RAM MiB', value: (template) => String(template.memoryMB) },
+    {
+      header: 'Created at',
+      value: (template) => template.createdAt.toLocaleDateString(),
+    },
+    {
+      header: 'Disk size MiB',
+      value: (template) => String(template.diskSizeMB),
+    },
+    { header: 'Envd version', value: (template) => template.envdVersion },
+  ])
 }
 
-export async function listSandboxTemplates({
+type ListSandboxTemplatesResult = {
+  templates: TemplateInfo[]
+  hasMore: boolean
+}
+
+async function listSandboxTemplates({
   projectId,
+  limit,
 }: {
   projectId?: string
-}): Promise<e2b.components['schemas']['Template'][]> {
-  const templates = await client.api.GET('/templates', {
-    params: {
-      // the backend API still calls the project ID "teamID"
-      query: { teamID: projectId },
-    },
-  })
+  limit?: number
+}): Promise<ListSandboxTemplatesResult> {
+  let pageLimit = limit
+  if (!limit || limit > PAGE_LIMIT) {
+    pageLimit = PAGE_LIMIT
+  }
 
-  handleE2BRequestError(templates, 'Error getting templates')
-  return templates.data
+  const auth = await ensureAuth(projectId)
+  const templates: TemplateInfo[] = []
+  const iterator = Template.list({ ...auth, limit: pageLimit })
+
+  while (iterator.hasNext && (!limit || templates.length < limit)) {
+    templates.push(...(await iterator.nextItems()))
+  }
+
+  return {
+    templates: limit ? templates.slice(0, limit) : templates,
+    // We can't change the page size during iteration, so we may have to check if we have more templates than the limit
+    hasMore: iterator.hasNext || (limit ? templates.length > limit : false),
+  }
 }

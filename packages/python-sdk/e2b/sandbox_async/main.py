@@ -1,32 +1,35 @@
+import asyncio
 import datetime
 import json
 import logging
 import shlex
 import uuid
-from typing import Dict, List, Optional, Union, overload
+from typing import Dict, List, Optional, Self, Unpack, Union, overload
 
 import httpx
 from packaging.version import Version
-from typing_extensions import Self, Unpack
-
-from e2b.api import make_async_logging_event_hooks
 from e2b.api.client.types import Unset
-from e2b.api.client_async import get_envd_transport as get_transport
+from e2b.api.client_async import get_envd_api
 from e2b.connection_config import ApiParams, ConnectionConfig
 from e2b.envd.api import ENVD_API_HEALTH_ROUTE, ahandle_envd_api_exception
 from e2b.envd.versions import ENVD_DEBUG_FALLBACK
 from e2b.exceptions import (
+    SandboxException,
     TemplateException,
     format_request_timeout_error,
 )
+from e2b.sandbox.commands.command_handle import CommandExitException
 from e2b.sandbox.main import SandboxOpts
 from e2b.sandbox.sandbox_api import (
     McpServer,
+    SandboxIamOpts,
     SandboxLifecycle,
     SandboxMetrics,
     SandboxNetworkOpts,
     SandboxNetworkUpdate,
+    SandboxOnResume,
     SnapshotInfo,
+    SnapshotMode,
 )
 from e2b.sandbox.utils import class_method_variant
 from e2b.sandbox_async.commands.command import Commands
@@ -91,6 +94,8 @@ class AsyncSandbox(SandboxApi):
     def git(self) -> Git:
         """
         Module for running git operations in the sandbox.
+
+        :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
         """
         return self._git
 
@@ -105,13 +110,7 @@ class AsyncSandbox(SandboxApi):
         """
         super().__init__(**opts)
 
-        self._transport = get_transport(self.connection_config)
-        self._envd_api = httpx.AsyncClient(
-            base_url=self.envd_api_url,
-            transport=self._transport,
-            headers=self.connection_config.sandbox_headers,
-            event_hooks=make_async_logging_event_hooks(self.connection_config.logger),
-        )
+        self._envd_api = get_envd_api(self.connection_config, self.envd_api_url)
         self._filesystem = Filesystem(
             self.envd_api_url,
             self._envd_version,
@@ -175,13 +174,17 @@ class AsyncSandbox(SandboxApi):
         timeout: Optional[int] = None,
         metadata: Optional[Dict[str, str]] = None,
         envs: Optional[Dict[str, str]] = None,
-        secure: bool = True,
-        allow_internet_access: bool = True,
+        secure: Optional[bool] = None,
+        allow_internet_access: Optional[bool] = None,
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
+        iam: Optional[SandboxIamOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
         volume_mounts: Optional[SandboxAsyncVolumeMount] = None,
         logger: Optional[logging.Logger] = None,
+        idempotency_key: Optional[str] = None,
+        *,
+        cpu_count: Optional[int] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -190,16 +193,22 @@ class AsyncSandbox(SandboxApi):
         By default, the sandbox is created from the default `base` sandbox template.
 
         :param template: Sandbox template name or ID
-        :param timeout: Timeout for the sandbox in **seconds**, default to 300 seconds. The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
+        :param timeout: Timeout for the sandbox in **seconds**. The maximum time a sandbox can be kept alive is 24 hours (86_400 seconds) for Pro users and 1 hour (3_600 seconds) for Hobby users.
         :param metadata: Custom metadata for the sandbox
         :param envs: Custom environment variables for the sandbox
-        :param secure: Envd is secured with access token and cannot be used without it, defaults to `True`.
-        :param allow_internet_access: Allow sandbox to access the internet, defaults to `True`. If set to `False`, it works the same as setting network `deny_out` to `[0.0.0.0/0]`.
+        :param secure: Deprecated — every sandbox secures envd access; accepted for backward compatibility and ignored
+        :param allow_internet_access: Allow sandbox to access the internet. If set to `False`, it works the same as setting network `deny_out` to `[0.0.0.0/0]`.
         :param mcp: MCP server to enable in the sandbox
-        :param network: Sandbox network configuration. ``allow_out``/``deny_out`` may also be a callable receiving a :class:`SandboxNetworkSelectorContext` (``ctx.all_traffic``, ``ctx.rules``) and returning a list of strings. Per-host transform rules are nested under ``network.rules``.
-        :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` (default) or ``"pause"``, or an object ``{"action": "pause"|"kill", "keep_memory": bool}`` where ``keep_memory`` (default ``True``) set to ``False`` makes a timeout auto-pause filesystem-only (cold-boots on resume; cannot be combined with ``auto_resume``); ``auto_resume``: ``False`` (default) or ``True`` (only when ``on_timeout`` action is ``"pause"``). Example: ``{"on_timeout": {"action": "pause", "keep_memory": False}}``
+        :param network: Sandbox network configuration. ``allow_out``/``deny_out`` may also be a callable receiving a :class:`SandboxNetworkSelectorContext` (``ctx.all_traffic``, ``ctx.rules``) and returning a list of strings. Per-host transform rules are nested under ``network.rules``; a rule's ``transform`` may be a callable receiving a :class:`SandboxNetworkTransformContext` of placeholder strings (``ctx.iam.tokens[name]``).
+        :param iam: Sandbox workload identity configuration. A non-empty ``tokens`` map enables workload identity for the sandbox; token definitions can be created with :meth:`Secret.iam_token`. Example: ``{"tokens": {"aws": Secret.iam_token(audience="sts.amazonaws.com", token_type="JWT-SVID")}}``. Registered tokens are exposed to ``network.rules`` ``transform`` callables as ``ctx.iam.tokens[name]`` placeholders, which the egress proxy resolves per request
+        :param lifecycle: Sandbox lifecycle configuration — ``on_timeout``: ``"kill"`` or ``"pause"`` (omitted from the request when unset, leaving the API's default, currently ``"kill"``, in effect), or an object ``{"action": "pause"|"kill", "mode": "full"|"filesystem"}`` where ``mode`` set to ``"filesystem"`` makes a timeout auto-pause filesystem-only (cold-boots on resume; cannot be combined with ``auto_resume``); an omitted ``mode`` leaves the snapshot kind to the API (``keep_memory`` is a deprecated alias); ``auto_resume``: leave unset to let the API pick the behavior, set ``False`` to opt out explicitly, or ``True`` (only when ``on_timeout`` action is ``"pause"``). Example: ``{"on_timeout": {"action": "pause", "mode": "filesystem"}}``
         :param volume_mounts: Dictionary mapping mount paths to AsyncVolume instances or volume names
         :param logger: Logger used for request and response logging for this sandbox. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
+        :param idempotency_key: Idempotency key sent as the ``Idempotency-Key``
+            header when creating a sandbox. Retries reuse it. Keys must contain
+            1–255 lowercase ASCII letters, digits or hyphens (e.g. a lowercase
+            UUID), otherwise ``InvalidArgumentException`` is raised.
+        :param cpu_count: CPUs to start with, from 1 to the template's ``max_cpu_count``. Defaults to the template's ``cpu_count``. Fixed-size templates accept only their own ``cpu_count``.
 
         :return: A Sandbox instance for the new sandbox
 
@@ -225,13 +234,15 @@ class AsyncSandbox(SandboxApi):
             timeout=timeout,
             metadata=metadata,
             envs=envs,
-            secure=secure,
             allow_internet_access=allow_internet_access,
             mcp=mcp,
             network=network,
+            iam=iam,
             lifecycle=lifecycle,
             volume_mounts=transformed_mounts,
             logger=logger,
+            idempotency_key=idempotency_key,
+            cpu_count=cpu_count,
             **opts,
         )
 
@@ -239,13 +250,24 @@ class AsyncSandbox(SandboxApi):
             token = str(uuid.uuid4())
             sandbox._mcp_token = token
 
-            res = await sandbox.commands.run(
-                f"mcp-gateway --config {shlex.quote(json.dumps(mcp))}",
-                user="root",
-                envs={"GATEWAY_ACCESS_TOKEN": token},
-            )
-            if res.exit_code != 0:
-                raise Exception(f"Failed to start MCP gateway: {res.stderr}")
+            try:
+                await sandbox.commands.run(
+                    f"mcp-gateway --config {shlex.quote(json.dumps(mcp))}",
+                    user="root",
+                    envs={"GATEWAY_ACCESS_TOKEN": token},
+                )
+            except BaseException as e:
+                try:
+                    await sandbox.kill()
+                except asyncio.CancelledError:
+                    raise
+                except Exception:
+                    pass
+                if isinstance(e, CommandExitException):
+                    raise SandboxException(
+                        f"Failed to start MCP gateway: {e.stderr}"
+                    ) from e
+                raise
 
         return sandbox
 
@@ -253,6 +275,8 @@ class AsyncSandbox(SandboxApi):
     async def connect(
         self,
         timeout: Optional[int] = None,
+        *,
+        on_resume: SandboxOnResume = "restore",
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -263,6 +287,16 @@ class AsyncSandbox(SandboxApi):
 
         :param timeout: Timeout for the sandbox in **seconds**
             For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
+        :param on_resume: `"restore"` (the default) restores the memory snapshot; `"reboot"`
+            cold-boots from disk state, so writes not flushed before the pause may be lost.
+            Rejected where filesystem-only resume is not enabled; a no-op for a snapshot
+            without memory or a sandbox that is already running. A value outside the two
+            literals raises `InvalidArgumentException`.
+            Needs a control plane that knows this option: E2B Cloud, or a self-hosted or BYOC
+            deployment built from `e2b-dev/runtime` at or after the commit that added the `memory`
+            field to connect/resume (2026-08-20). An older control plane drops the field and
+            restores memory while answering as if the request had succeeded.
+        :raises GuestUnresponsiveException: when the paused sandbox's snapshot was taken while its guest agent was not responding (``envd_unresponsive_at_pause``); connect with ``on_resume="reboot"``.
         :return: A running sandbox instance
 
         @example
@@ -282,6 +316,8 @@ class AsyncSandbox(SandboxApi):
         sandbox_id: str,
         timeout: Optional[int] = None,
         logger: Optional[logging.Logger] = None,
+        *,
+        on_resume: SandboxOnResume = "restore",
         **opts: Unpack[ApiParams],
     ) -> "AsyncSandbox":
         """
@@ -294,6 +330,16 @@ class AsyncSandbox(SandboxApi):
         :param timeout: Timeout for the sandbox in **seconds**
             For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
         :param logger: Logger used for request and response logging for this sandbox. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
+        :param on_resume: `"restore"` (the default) restores the memory snapshot; `"reboot"`
+            cold-boots from disk state, so writes not flushed before the pause may be lost.
+            Rejected where filesystem-only resume is not enabled; a no-op for a snapshot
+            without memory or a sandbox that is already running. A value outside the two
+            literals raises `InvalidArgumentException`.
+            Needs a control plane that knows this option: E2B Cloud, or a self-hosted or BYOC
+            deployment built from `e2b-dev/runtime` at or after the commit that added the `memory`
+            field to connect/resume (2026-08-20). An older control plane drops the field and
+            restores memory while answering as if the request had succeeded.
+        :raises GuestUnresponsiveException: when the paused sandbox's snapshot was taken while its guest agent was not responding (``envd_unresponsive_at_pause``); connect with ``on_resume="reboot"``.
         :return: A running sandbox instance
 
         @example
@@ -311,6 +357,8 @@ class AsyncSandbox(SandboxApi):
     async def connect(
         self,
         timeout: Optional[int] = None,
+        *,
+        on_resume: SandboxOnResume = "restore",
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -321,6 +369,16 @@ class AsyncSandbox(SandboxApi):
 
         :param timeout: Timeout for the sandbox in **seconds**
             For running sandboxes, the timeout will update only if the new timeout is longer than the existing one.
+        :param on_resume: `"restore"` (the default) restores the memory snapshot; `"reboot"`
+            cold-boots from disk state, so writes not flushed before the pause may be lost.
+            Rejected where filesystem-only resume is not enabled; a no-op for a snapshot
+            without memory or a sandbox that is already running. A value outside the two
+            literals raises `InvalidArgumentException`.
+            Needs a control plane that knows this option: E2B Cloud, or a self-hosted or BYOC
+            deployment built from `e2b-dev/runtime` at or after the commit that added the `memory`
+            field to connect/resume (2026-08-20). An older control plane drops the field and
+            restores memory while answering as if the request had succeeded.
+        :raises GuestUnresponsiveException: when the paused sandbox's snapshot was taken while its guest agent was not responding (``envd_unresponsive_at_pause``); connect with ``on_resume="reboot"``.
         :return: A running sandbox instance
 
         @example
@@ -339,6 +397,7 @@ class AsyncSandbox(SandboxApi):
         await SandboxApi._cls_connect(
             sandbox_id=self.sandbox_id,
             timeout=timeout,
+            on_resume=on_resume,
             **self.connection_config.get_api_params(**opts),
         )
 
@@ -366,8 +425,8 @@ class AsyncSandbox(SandboxApi):
         error codes map to the same exception classes as other API errors
         (e.g. 429 to `RateLimitException`).
 
-        :param timeout: Timeout for the forked sandboxes in **seconds**, defaults to 300 seconds
-        :param count: Number of forked sandboxes to create, defaults to 1
+        :param timeout: Timeout for the forked sandboxes in **seconds**.
+        :param count: Number of forked sandboxes to create. An integer between 1 and 20. Omitted, the API default applies.
 
         :return: List with one entry per requested fork — a sandbox instance or an exception
 
@@ -405,8 +464,8 @@ class AsyncSandbox(SandboxApi):
         (e.g. 429 to `RateLimitException`).
 
         :param sandbox_id: Sandbox ID
-        :param timeout: Timeout for the forked sandboxes in **seconds**, defaults to 300 seconds
-        :param count: Number of forked sandboxes to create, defaults to 1
+        :param timeout: Timeout for the forked sandboxes in **seconds**.
+        :param count: Number of forked sandboxes to create. An integer between 1 and 20. Omitted, the API default applies.
         :param logger: Logger used for request and response logging for the forked sandboxes. Accepts any standard library `logging.Logger`. When omitted, no request/response logging is emitted.
 
         :return: List with one entry per requested fork — a sandbox instance or an exception
@@ -442,8 +501,8 @@ class AsyncSandbox(SandboxApi):
         error codes map to the same exception classes as other API errors
         (e.g. 429 to `RateLimitException`).
 
-        :param timeout: Timeout for the forked sandboxes in **seconds**, defaults to 300 seconds
-        :param count: Number of forked sandboxes to create, defaults to 1
+        :param timeout: Timeout for the forked sandboxes in **seconds**.
+        :param count: Number of forked sandboxes to create. An integer between 1 and 20. Omitted, the API default applies.
 
         :return: List with one entry per requested fork — a sandbox instance or an exception
 
@@ -738,13 +797,18 @@ class AsyncSandbox(SandboxApi):
     @overload
     async def pause(
         self,
-        keep_memory: bool = True,
+        keep_memory: Optional[bool] = None,
+        *,
+        mode: Optional[SnapshotMode] = None,
+        strict: bool = False,
         **opts: Unpack[ApiParams],
     ) -> bool:
         """
         Pause the sandbox.
 
-        :param keep_memory: When `False`, the in-memory state is dropped and only the filesystem is persisted (no memory snapshot); resuming such a sandbox cold-boots (reboots) it from disk. Defaults to `True`.
+        :param keep_memory: :deprecated: Use `mode` instead: `keep_memory=False` is `mode="filesystem"`, `keep_memory=True` is `mode="full"`.
+        :param mode: What the pause persists. With `"filesystem"`, the in-memory state is dropped and only the filesystem is persisted; resuming such a sandbox cold-boots (reboots) it from disk, losing running processes and open connections. Defaults to `"full"` (memory and filesystem).
+        :param strict: Refuse the pause when the sandbox's guest agent (envd) does not respond: it raises :class:`ServiceBusyException` and the sandbox keeps running. Otherwise the memory snapshot is taken anyway and marked (`envd_unresponsive_at_pause` in sandbox info); such a sandbox then resumes only with `on_resume="reboot"`, which cold-boots it from disk. A `mode="filesystem"` pause always requires a responding guest agent.
 
         :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
@@ -754,14 +818,19 @@ class AsyncSandbox(SandboxApi):
     @staticmethod
     async def pause(
         sandbox_id: str,
-        keep_memory: bool = True,
+        keep_memory: Optional[bool] = None,
+        *,
+        mode: Optional[SnapshotMode] = None,
+        strict: bool = False,
         **opts: Unpack[ApiParams],
     ) -> bool:
         """
         Pause the sandbox specified by sandbox ID.
 
         :param sandbox_id: Sandbox ID
-        :param keep_memory: When `False`, the in-memory state is dropped and only the filesystem is persisted (no memory snapshot); resuming such a sandbox cold-boots (reboots) it from disk. Defaults to `True`.
+        :param keep_memory: :deprecated: Use `mode` instead: `keep_memory=False` is `mode="filesystem"`, `keep_memory=True` is `mode="full"`.
+        :param mode: What the pause persists. With `"filesystem"`, the in-memory state is dropped and only the filesystem is persisted; resuming such a sandbox cold-boots (reboots) it from disk, losing running processes and open connections. Defaults to `"full"` (memory and filesystem).
+        :param strict: Refuse the pause when the sandbox's guest agent (envd) does not respond: it raises :class:`ServiceBusyException` and the sandbox keeps running. Otherwise the memory snapshot is taken anyway and marked (`envd_unresponsive_at_pause` in sandbox info); such a sandbox then resumes only with `on_resume="reboot"`, which cold-boots it from disk. A `mode="filesystem"` pause always requires a responding guest agent.
 
         :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
@@ -770,13 +839,18 @@ class AsyncSandbox(SandboxApi):
     @class_method_variant("_cls_pause")
     async def pause(
         self,
-        keep_memory: bool = True,
+        keep_memory: Optional[bool] = None,
+        *,
+        mode: Optional[SnapshotMode] = None,
+        strict: bool = False,
         **opts: Unpack[ApiParams],
     ) -> bool:
         """
         Pause the sandbox.
 
-        :param keep_memory: When `False`, the in-memory state is dropped and only the filesystem is persisted (no memory snapshot); resuming such a sandbox cold-boots (reboots) it from disk, losing running processes and open connections. Defaults to `True` (full memory snapshot).
+        :param keep_memory: :deprecated: Use `mode` instead: `keep_memory=False` is `mode="filesystem"`, `keep_memory=True` is `mode="full"`.
+        :param mode: What the pause persists. With `"filesystem"`, the in-memory state is dropped and only the filesystem is persisted; resuming such a sandbox cold-boots (reboots) it from disk, losing running processes and open connections. Defaults to `"full"` (memory and filesystem).
+        :param strict: Refuse the pause when the sandbox's guest agent (envd) does not respond: it raises :class:`ServiceBusyException` and the sandbox keeps running. Otherwise the memory snapshot is taken anyway and marked (`envd_unresponsive_at_pause` in sandbox info); such a sandbox then resumes only with `on_resume="reboot"`, which cold-boots it from disk. A `mode="filesystem"` pause always requires a responding guest agent.
 
         :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
@@ -784,13 +858,17 @@ class AsyncSandbox(SandboxApi):
         return await SandboxApi._cls_pause(
             sandbox_id=self.sandbox_id,
             keep_memory=keep_memory,
+            mode=mode,
+            strict=strict,
             **self.connection_config.get_api_params(**opts),
         )
 
     @overload
     async def beta_pause(
         self,
-        keep_memory: bool = True,
+        keep_memory: Optional[bool] = None,
+        *,
+        mode: Optional[SnapshotMode] = None,
         **opts: Unpack[ApiParams],
     ) -> bool: ...
 
@@ -798,14 +876,18 @@ class AsyncSandbox(SandboxApi):
     @staticmethod
     async def beta_pause(
         sandbox_id: str,
-        keep_memory: bool = True,
+        keep_memory: Optional[bool] = None,
+        *,
+        mode: Optional[SnapshotMode] = None,
         **opts: Unpack[ApiParams],
     ) -> bool: ...
 
     @class_method_variant("_cls_pause")
     async def beta_pause(
         self,
-        keep_memory: bool = True,
+        keep_memory: Optional[bool] = None,
+        *,
+        mode: Optional[SnapshotMode] = None,
         **opts: Unpack[ApiParams],
     ) -> bool:
         """
@@ -813,12 +895,14 @@ class AsyncSandbox(SandboxApi):
 
         :return: `True` if the sandbox got paused, `False` if the sandbox was already paused
         """
-        return await self.pause(keep_memory=keep_memory, **opts)
+        return await self.pause(keep_memory=keep_memory, mode=mode, **opts)
 
     @overload
     async def create_snapshot(
         self,
         name: Optional[str] = None,
+        *,
+        mode: Optional[SnapshotMode] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotInfo:
         """
@@ -831,6 +915,8 @@ class AsyncSandbox(SandboxApi):
         Use the returned `snapshot_id` with `AsyncSandbox.create(snapshot_id)` to create a new sandbox from the snapshot.
 
         :param name: Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one.
+        :param mode: What the snapshot persists. With `"filesystem"`, only the filesystem is persisted: the snapshot is smaller and faster to take, and sandboxes created from it cold-boot (start fresh from disk) instead of restoring memory, so they begin without the running processes, in-memory state and open connections of the source sandbox. The source sandbox keeps running either way. Defaults to `"full"` (memory and filesystem).
+        :raises SandboxException: when the API refuses a filesystem-only snapshot (``mode="filesystem"``). ``status_code`` 400 means the feature is not enabled for the team (``snapshot_filesystem_only_disabled``); 409 means the sandbox's node runs an orchestrator that predates the option (``snapshot_filesystem_only_unsupported_node``). A full memory snapshot still works in both cases; for 409, pause and resume the sandbox and retry.
 
         :return: Snapshot information including the snapshot ID and names
         """
@@ -841,6 +927,8 @@ class AsyncSandbox(SandboxApi):
     async def create_snapshot(
         sandbox_id: str,
         name: Optional[str] = None,
+        *,
+        mode: Optional[SnapshotMode] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotInfo:
         """
@@ -850,6 +938,8 @@ class AsyncSandbox(SandboxApi):
 
         :param sandbox_id: Sandbox ID
         :param name: Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one.
+        :param mode: What the snapshot persists. With `"filesystem"`, only the filesystem is persisted: the snapshot is smaller and faster to take, and sandboxes created from it cold-boot (start fresh from disk) instead of restoring memory, so they begin without the running processes, in-memory state and open connections of the source sandbox. The source sandbox keeps running either way. Defaults to `"full"` (memory and filesystem).
+        :raises SandboxException: when the API refuses a filesystem-only snapshot (``mode="filesystem"``). ``status_code`` 400 means the feature is not enabled for the team (``snapshot_filesystem_only_disabled``); 409 means the sandbox's node runs an orchestrator that predates the option (``snapshot_filesystem_only_unsupported_node``). A full memory snapshot still works in both cases; for 409, pause and resume the sandbox and retry.
 
         :return: Snapshot information including the snapshot ID and names
         """
@@ -859,6 +949,8 @@ class AsyncSandbox(SandboxApi):
     async def create_snapshot(
         self,
         name: Optional[str] = None,
+        *,
+        mode: Optional[SnapshotMode] = None,
         **opts: Unpack[ApiParams],
     ) -> SnapshotInfo:
         """
@@ -871,12 +963,15 @@ class AsyncSandbox(SandboxApi):
         Use the returned `snapshot_id` with `AsyncSandbox.create(snapshot_id)` to create a new sandbox from the snapshot.
 
         :param name: Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one.
+        :param mode: What the snapshot persists. With `"filesystem"`, only the filesystem is persisted: the snapshot is smaller and faster to take, and sandboxes created from it cold-boot (start fresh from disk) instead of restoring memory, so they begin without the running processes, in-memory state and open connections of the source sandbox. The source sandbox keeps running either way. Defaults to `"full"` (memory and filesystem).
+        :raises SandboxException: when the API refuses a filesystem-only snapshot (``mode="filesystem"``). ``status_code`` 400 means the feature is not enabled for the team (``snapshot_filesystem_only_disabled``); 409 means the sandbox's node runs an orchestrator that predates the option (``snapshot_filesystem_only_unsupported_node``). A full memory snapshot still works in both cases; for 409, pause and resume the sandbox and retry.
 
         :return: Snapshot information including the snapshot ID and names
         """
         return await SandboxApi._cls_create_snapshot(
             sandbox_id=self.sandbox_id,
             name=name,
+            mode=mode,
             **self.connection_config.get_api_params(**opts),
         )
 
@@ -893,7 +988,7 @@ class AsyncSandbox(SandboxApi):
 
         :param limit: Maximum number of snapshots to return per page
         :param next_token: Token for pagination
-        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1")
+        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-project/my-snapshot" or "my-snapshot:v1")
 
         :return: Paginator for listing snapshots
         """
@@ -914,7 +1009,7 @@ class AsyncSandbox(SandboxApi):
         :param sandbox_id: Filter snapshots by source sandbox ID
         :param limit: Maximum number of snapshots to return per page
         :param next_token: Token for pagination
-        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1")
+        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-project/my-snapshot" or "my-snapshot:v1")
 
         :return: Paginator for listing snapshots
         """
@@ -933,7 +1028,7 @@ class AsyncSandbox(SandboxApi):
 
         :param limit: Maximum number of snapshots to return per page
         :param next_token: Token for pagination
-        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1")
+        :param name: Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-project/my-snapshot" or "my-snapshot:v1")
 
         :return: Paginator for listing snapshots
         """
@@ -945,8 +1040,9 @@ class AsyncSandbox(SandboxApi):
             **self.connection_config.get_api_params(**opts),
         )
 
-    @staticmethod
+    @classmethod
     def _cls_list_snapshots(
+        cls,
         sandbox_id: Optional[str] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
@@ -958,11 +1054,12 @@ class AsyncSandbox(SandboxApi):
             name=name,
             limit=limit,
             next_token=next_token,
-            **opts,
+            **cls._resolve_api_params(**opts),
         )
 
-    @staticmethod
+    @classmethod
     async def delete_snapshot(
+        cls,
         snapshot_id: str,
         **opts: Unpack[ApiParams],
     ) -> bool:
@@ -972,7 +1069,7 @@ class AsyncSandbox(SandboxApi):
         :param snapshot_id: Snapshot ID
         :return: `True` if the snapshot was deleted, `False` if it was not found
         """
-        return await SandboxApi._cls_delete_snapshot(
+        return await cls._cls_delete_snapshot(
             snapshot_id=snapshot_id,
             **opts,
         )
@@ -995,9 +1092,12 @@ class AsyncSandbox(SandboxApi):
         sandbox_id: str,
         timeout: Optional[int] = None,
         logger: Optional[logging.Logger] = None,
+        *,
+        on_resume: SandboxOnResume = "restore",
         **opts: Unpack[ApiParams],
     ) -> Self:
-        debug = ConnectionConfig(**opts).debug
+        params = cls._resolve_api_params(**opts)
+        debug = ConnectionConfig(**params).debug
         if debug:
             sandbox_domain = None
             envd_version = ENVD_DEBUG_FALLBACK
@@ -1007,8 +1107,9 @@ class AsyncSandbox(SandboxApi):
             sandbox = await SandboxApi._cls_connect(
                 sandbox_id=sandbox_id,
                 timeout=timeout,
+                on_resume=on_resume,
                 logger=logger,
-                **opts,
+                **params,
             )
 
             sandbox_id = sandbox.sandbox_id
@@ -1027,7 +1128,7 @@ class AsyncSandbox(SandboxApi):
         connection_config = ConnectionConfig(
             extra_sandbox_headers=sandbox_headers,
             logger=logger,
-            **opts,
+            **params,
         )
 
         return cls(
@@ -1048,12 +1149,13 @@ class AsyncSandbox(SandboxApi):
         logger: Optional[logging.Logger] = None,
         **opts: Unpack[ApiParams],
     ) -> List[Union[Self, Exception]]:
+        params = cls._resolve_api_params(**opts)
         responses = await SandboxApi._cls_fork(
             sandbox_id=sandbox_id,
             timeout=timeout,
             count=count,
             logger=logger,
-            **opts,
+            **params,
         )
 
         sandboxes: List[Union[Self, Exception]] = []
@@ -1072,7 +1174,7 @@ class AsyncSandbox(SandboxApi):
             connection_config = ConnectionConfig(
                 extra_sandbox_headers=sandbox_headers,
                 logger=logger,
-                **opts,
+                **params,
             )
 
             sandboxes.append(
@@ -1095,18 +1197,21 @@ class AsyncSandbox(SandboxApi):
         timeout: Optional[int],
         metadata: Optional[Dict[str, str]],
         envs: Optional[Dict[str, str]],
-        secure: bool,
-        allow_internet_access: bool,
+        allow_internet_access: Optional[bool],
         mcp: Optional[McpServer] = None,
         network: Optional[SandboxNetworkOpts] = None,
+        iam: Optional[SandboxIamOpts] = None,
         lifecycle: Optional[SandboxLifecycle] = None,
         volume_mounts: Optional[list] = None,
         logger: Optional[logging.Logger] = None,
+        idempotency_key: Optional[str] = None,
+        cpu_count: Optional[int] = None,
         **opts: Unpack[ApiParams],
     ) -> Self:
+        params = cls._resolve_api_params(**opts)
         extra_sandbox_headers = {}
 
-        debug = ConnectionConfig(**opts).debug
+        debug = ConnectionConfig(**params).debug
         if debug:
             sandbox_id = "debug_sandbox_id"
             sandbox_domain = None
@@ -1116,17 +1221,19 @@ class AsyncSandbox(SandboxApi):
         else:
             response = await SandboxApi._create_sandbox(
                 template=template or cls.default_template,
-                timeout=timeout or cls.default_sandbox_timeout,
+                timeout=timeout,
                 metadata=metadata,
                 env_vars=envs,
-                secure=secure,
                 allow_internet_access=allow_internet_access,
                 mcp=mcp,
                 network=network,
+                iam=iam,
                 lifecycle=lifecycle,
                 volume_mounts=volume_mounts,
                 logger=logger,
-                **opts,
+                idempotency_key=idempotency_key,
+                cpu_count=cpu_count,
+                **params,
             )
 
             sandbox_id = response.sandbox_id
@@ -1146,7 +1253,7 @@ class AsyncSandbox(SandboxApi):
         connection_config = ConnectionConfig(
             extra_sandbox_headers=extra_sandbox_headers,
             logger=logger,
-            **opts,
+            **params,
         )
 
         return cls(

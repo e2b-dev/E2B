@@ -55,6 +55,21 @@ async def test_timeout_raises_timeout_exception():
     assert time.monotonic() - start < 5
 
 
+async def test_timeout_with_preexisting_pending_cancellation():
+    task = asyncio.current_task()
+    assert task is not None
+    task.cancel()
+    try:
+        await asyncio.sleep(0)
+    except asyncio.CancelledError:
+        pass
+
+    start = time.monotonic()
+    with pytest.raises(TimeoutException, match="request_timeout"):
+        await first_event(connectrpc_style_stream(30), 0.1)
+    assert time.monotonic() - start < 5
+
+
 async def test_timeout_when_cancellation_propagates():
     # A stream cancelled outside connectrpc's conversion scope (e.g. before
     # the request is sent) lets wait_for raise TimeoutError itself.

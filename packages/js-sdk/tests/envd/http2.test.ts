@@ -3,11 +3,8 @@ import { afterEach, expect, test, vi } from 'vitest'
 afterEach(() => {
   vi.restoreAllMocks()
   vi.resetModules()
-  vi.doUnmock('undici')
-  vi.doUnmock('../../src/utils')
   delete process.env.E2B_ENVD_RPC_CONNECTIONS
-  delete process.env.E2B_ENVD_INFLIGHT_REQUESTS
-  delete process.env.E2B_ENVD_RPC_INFLIGHT_REQUESTS
+  delete process.env.E2B_ENVD_UPLOAD_CONNECTIONS
 })
 
 test('uses undici with HTTP/2 enabled in Node', async () => {
@@ -91,24 +88,78 @@ test('uses a ProxyAgent dispatcher when a proxy is configured', async () => {
   expect(requests[0].init?.dispatcher).toBeInstanceOf(ProxyAgent)
 })
 
-test('caches envd fetchers per proxy', async () => {
-  const { createEnvdFetch, createEnvdRpcFetch } = await import(
-    '../../src/envd/http2'
-  )
+test('pins the dispatcher to HTTP/1.1 when httpVersion is http1', async () => {
+  const agents: Array<{ allowH2?: boolean; connections?: number }> = []
+  const proxyAgents: Array<{ uri?: string; allowH2?: boolean }> = []
+
+  class Agent {
+    constructor(options: { allowH2?: boolean; connections?: number }) {
+      agents.push(options)
+    }
+  }
+
+  class ProxyAgent {
+    constructor(options: { uri?: string; allowH2?: boolean }) {
+      proxyAgents.push(options)
+    }
+  }
+
+  const undiciFetch = vi.fn(() => Promise.resolve(new Response('ok')))
+
+  const { createEnvdFetchForRuntime } = await import('../../src/envd/http2')
+
+  const direct = createEnvdFetchForRuntime('node', {
+    connectionLimit: 1,
+    httpVersion: '1.1',
+    loadUndici: () =>
+      Promise.resolve({ Agent, ProxyAgent, fetch: undiciFetch }),
+  })
+  await direct('https://example.com/status')
+
+  const proxied = createEnvdFetchForRuntime('node', {
+    connectionLimit: 1,
+    httpVersion: '1.1',
+    proxy: 'http://127.0.0.1:8080',
+    loadUndici: () =>
+      Promise.resolve({ Agent, ProxyAgent, fetch: undiciFetch }),
+  })
+  await proxied('https://example.com/status')
+
+  expect(agents).toEqual([{ allowH2: false, connections: 1 }])
+  expect(proxyAgents).toEqual([
+    {
+      uri: 'http://127.0.0.1:8080',
+      allowH2: false,
+      connections: 1,
+      proxyTunnel: true,
+    },
+  ])
+})
+
+test('caches envd fetchers per proxy and HTTP version', async () => {
+  const { createEnvdFetch, createEnvdRpcFetch } =
+    await import('../../src/envd/http2')
 
   const noProxy = createEnvdFetch()
-  const proxyA = createEnvdFetch('http://127.0.0.1:8080')
+  const proxyA = createEnvdFetch({ proxy: 'http://127.0.0.1:8080' })
+  const noProxyH1 = createEnvdFetch({ httpVersion: '1.1' })
 
   expect(createEnvdFetch()).toBe(noProxy)
-  expect(createEnvdFetch('http://127.0.0.1:8080')).toBe(proxyA)
+  expect(createEnvdFetch({ httpVersion: '2' })).toBe(noProxy)
+  expect(createEnvdFetch({ proxy: 'http://127.0.0.1:8080' })).toBe(proxyA)
+  expect(createEnvdFetch({ httpVersion: '1.1' })).toBe(noProxyH1)
   expect(proxyA).not.toBe(noProxy)
+  expect(noProxyH1).not.toBe(noProxy)
 
   const rpcNoProxy = createEnvdRpcFetch()
-  const rpcProxyA = createEnvdRpcFetch('http://127.0.0.1:8080')
+  const rpcProxyA = createEnvdRpcFetch({ proxy: 'http://127.0.0.1:8080' })
+  const rpcNoProxyH1 = createEnvdRpcFetch({ httpVersion: '1.1' })
 
   expect(createEnvdRpcFetch()).toBe(rpcNoProxy)
-  expect(createEnvdRpcFetch('http://127.0.0.1:8080')).toBe(rpcProxyA)
+  expect(createEnvdRpcFetch({ proxy: 'http://127.0.0.1:8080' })).toBe(rpcProxyA)
+  expect(createEnvdRpcFetch({ httpVersion: '1.1' })).toBe(rpcNoProxyH1)
   expect(rpcProxyA).not.toBe(rpcNoProxy)
+  expect(rpcNoProxyH1).not.toBe(rpcNoProxy)
 })
 
 test('passes Request objects to undici as URL plus init', async () => {
@@ -180,54 +231,6 @@ test('getEnvdRpcConnectionLimit throws on malformed env value', async () => {
   expect(() => getEnvdRpcConnectionLimit()).toThrow(/E2B_ENVD_RPC_CONNECTIONS/)
 })
 
-test('getEnvdInflightLimit throws on malformed env value', async () => {
-  process.env.E2B_ENVD_INFLIGHT_REQUESTS = 'bogus'
-
-  const { getEnvdInflightLimit } = await import('../../src/envd/http2')
-
-  expect(() => getEnvdInflightLimit()).toThrow(/E2B_ENVD_INFLIGHT_REQUESTS/)
-})
-
-test('getEnvdRpcInflightLimit throws on malformed env value', async () => {
-  process.env.E2B_ENVD_RPC_INFLIGHT_REQUESTS = 'bogus'
-
-  const { getEnvdRpcInflightLimit } = await import('../../src/envd/http2')
-
-  expect(() => getEnvdRpcInflightLimit()).toThrow(
-    /E2B_ENVD_RPC_INFLIGHT_REQUESTS/
-  )
-})
-
-test('inflight limit env vars return 0 when explicitly disabled', async () => {
-  process.env.E2B_ENVD_INFLIGHT_REQUESTS = '0'
-  process.env.E2B_ENVD_RPC_INFLIGHT_REQUESTS = '0'
-
-  const { getEnvdInflightLimit, getEnvdRpcInflightLimit } = await import(
-    '../../src/envd/http2'
-  )
-
-  expect(getEnvdInflightLimit()).toBe(0)
-  expect(getEnvdRpcInflightLimit()).toBe(0)
-})
-
-test('getEnvdInflightLimit throws on negative env value', async () => {
-  process.env.E2B_ENVD_INFLIGHT_REQUESTS = '-1'
-
-  const { getEnvdInflightLimit } = await import('../../src/envd/http2')
-
-  expect(() => getEnvdInflightLimit()).toThrow(/E2B_ENVD_INFLIGHT_REQUESTS=-1/)
-})
-
-test('getEnvdRpcInflightLimit throws on negative env value', async () => {
-  process.env.E2B_ENVD_RPC_INFLIGHT_REQUESTS = '-5'
-
-  const { getEnvdRpcInflightLimit } = await import('../../src/envd/http2')
-
-  expect(() => getEnvdRpcInflightLimit()).toThrow(
-    /E2B_ENVD_RPC_INFLIGHT_REQUESTS=-5/
-  )
-})
-
 test('defers loading undici until the first Node request', async () => {
   const Agent = vi.fn()
   const undiciFetch = vi.fn(() => Promise.resolve(new Response('ok')))
@@ -293,5 +296,18 @@ test('uses global fetch outside Node', async () => {
   expect(fallbackFetch).toHaveBeenCalledWith(
     'https://example.com/status',
     undefined
+  )
+})
+
+test('getEnvdUploadConnectionLimit defaults to 50 and honours E2B_ENVD_UPLOAD_CONNECTIONS', async () => {
+  const { getEnvdUploadConnectionLimit } = await import('../../src/envd/http2')
+  expect(getEnvdUploadConnectionLimit()).toBe(50)
+
+  process.env.E2B_ENVD_UPLOAD_CONNECTIONS = '8'
+  expect(getEnvdUploadConnectionLimit()).toBe(8)
+
+  process.env.E2B_ENVD_UPLOAD_CONNECTIONS = 'bogus'
+  expect(() => getEnvdUploadConnectionLimit()).toThrow(
+    /E2B_ENVD_UPLOAD_CONNECTIONS/
   )
 })

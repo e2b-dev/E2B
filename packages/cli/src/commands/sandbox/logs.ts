@@ -1,13 +1,16 @@
-import * as commander from 'commander'
+import * as commander from '@commander-js/extra-typings'
 import * as e2b from 'e2b'
 import * as util from 'util'
 import * as chalk from 'chalk'
 
-import { client, connectionConfig } from 'src/api'
+import { apiClient, connectionConfig } from 'src/api'
 import { asBold, asTimestamp, withUnderline } from 'src/utils/format'
 import { wait } from 'src/utils/wait'
 import { handleE2BRequestError } from '../../utils/errors'
-import { waitForSandboxEnd, formatEnum, Format, isRunning } from './utils'
+import { Format, parseFormat } from 'src/options'
+import { zodParser } from 'src/validation'
+import { z } from 'zod'
+import { waitForSandboxEnd, formatEnum, isRunning } from './utils'
 
 enum LogLevel {
   DEBUG = 'DEBUG',
@@ -57,118 +60,104 @@ export const logsCommand = new commander.Command('logs')
     `filter logs by level (${formatEnum(
       LogLevel
     )}). The logs with the higher levels will be also shown.`,
+    zodParser(
+      z
+        .string()
+        .toUpperCase()
+        .pipe(
+          z.enum(LogLevel, {
+            error: `Level must be one of: ${Object.values(LogLevel).join(', ')}.`,
+          })
+        )
+    ),
     LogLevel.INFO
   )
   .option('-f, --follow', 'keep streaming logs until the sandbox is closed')
   .option(
     '--format <format>',
     `specify format for printing logs (${formatEnum(Format)})`,
+    parseFormat,
     Format.PRETTY
   )
   .option(
     '--loggers [loggers]',
     'filter logs by loggers. Specify multiple loggers by separating them with a comma.',
-    (val: string) => val.split(',')
+    (val) => val.split(',')
   )
-  .action(
-    async (
-      sandboxID: string,
-      opts?: {
-        level: string
-        follow: boolean
-        format: Format
-        loggers?: string[]
+  .action(async (sandboxID, opts) => {
+    try {
+      const { level, format } = opts
+
+      // A bare `--loggers` (no value) yields `true`: don't filter by logger.
+      const loggers = Array.isArray(opts.loggers) ? opts.loggers : undefined
+
+      const getIsRunning = opts.follow
+        ? waitForSandboxEnd(sandboxID)
+        : () => false
+
+      let start: number | undefined
+      let isFirstRun = true
+      let firstLogsPrinted = false
+
+      if (format === Format.PRETTY) {
+        console.log(`\nLogs for sandbox ${asBold(sandboxID)}:`)
       }
-    ) => {
-      try {
-        const level = opts?.level.toUpperCase() as LogLevel | undefined
-        if (level && !Object.values(LogLevel).includes(level)) {
-          throw new Error(`Invalid log level: ${level}`)
+
+      do {
+        const logs = await listSandboxLogs({ sandboxID, start })
+
+        if (logs.length !== 0 && firstLogsPrinted === false) {
+          firstLogsPrinted = true
+          process.stdout.write('\n')
         }
 
-        const format = opts?.format.toLowerCase() as Format | undefined
-        if (format && !Object.values(Format).includes(format)) {
-          throw new Error(`Invalid log format: ${format}`)
+        for (const log of logs) {
+          printLog(log.timestamp, log.line, level, format, loggers)
         }
 
-        const getIsRunning = opts?.follow
-          ? waitForSandboxEnd(sandboxID)
-          : () => false
+        if (!opts.follow) break
 
-        let start: number | undefined
-        let isFirstRun = true
-        let firstLogsPrinted = false
+        const isSandboxRunning = await isRunning(sandboxID)
 
-        if (format === Format.PRETTY) {
-          console.log(`\nLogs for sandbox ${asBold(sandboxID)}:`)
-        }
-
-        do {
-          const logs = await listSandboxLogs({ sandboxID, start })
-
-          if (logs.length !== 0 && firstLogsPrinted === false) {
-            firstLogsPrinted = true
-            process.stdout.write('\n')
-          }
-
-          for (const log of logs) {
-            printLog(
-              log.timestamp,
-              log.line,
-              level,
-              format,
-              opts?.loggers ?? undefined
+        if (!isSandboxRunning && logs.length === 0 && isFirstRun) {
+          if (format === Format.PRETTY) {
+            console.log(
+              `\nStopped printing logs — sandbox ${withUnderline('not found')}`
             )
           }
+          break
+        }
 
-          if (!opts?.follow) break
-
-          const isSandboxRunning = await isRunning(sandboxID)
-
-          if (!isSandboxRunning && logs.length === 0 && isFirstRun) {
-            if (format === Format.PRETTY) {
-              console.log(
-                `\nStopped printing logs — sandbox ${withUnderline(
-                  'not found'
-                )}`
-              )
-            }
-            break
+        if (!isSandboxRunning) {
+          if (format === Format.PRETTY) {
+            console.log(
+              `\nStopped printing logs — sandbox is ${withUnderline('closed')}`
+            )
           }
+          break
+        }
 
-          if (!isSandboxRunning) {
-            if (format === Format.PRETTY) {
-              console.log(
-                `\nStopped printing logs — sandbox is ${withUnderline(
-                  'closed'
-                )}`
-              )
-            }
-            break
-          }
+        const lastLog = logs.length > 0 ? logs[logs.length - 1] : undefined
+        if (lastLog) {
+          // TODO: Use the timestamp from the last log instead of the current time?
+          start = new Date(lastLog.timestamp).getTime() + 1
+        }
 
-          const lastLog = logs.length > 0 ? logs[logs.length - 1] : undefined
-          if (lastLog) {
-            // TODO: Use the timestamp from the last log instead of the current time?
-            start = new Date(lastLog.timestamp).getTime() + 1
-          }
-
-          await wait(400)
-          isFirstRun = false
-        } while (getIsRunning() && opts?.follow)
-      } catch (err: any) {
-        console.error(err)
-        process.exit(1)
-      }
+        await wait(400)
+        isFirstRun = false
+      } while (getIsRunning() && opts.follow)
+    } catch (err: any) {
+      console.error(err)
+      process.exit(1)
     }
-  )
+  })
 
 function printLog(
   timestamp: string,
   line: string,
-  allowedLevel: LogLevel | undefined,
-  format: Format | undefined,
-  allowedLoggers?: string[] | undefined
+  allowedLevel: LogLevel,
+  format: Format,
+  allowedLoggers: string[] | undefined
 ) {
   const log = JSON.parse(line)
   let level = log['level'].toUpperCase()
@@ -177,8 +166,7 @@ function printLog(
 
   // Check if the current logger startsWith any of the allowed loggers. If there are no specified loggers, print logs from all loggers.
   if (
-    allowedLoggers !== undefined &&
-    Array.isArray(allowedLoggers) &&
+    allowedLoggers &&
     !allowedLoggers.some((allowedLogger) =>
       log.logger.startsWith(allowedLogger)
     )
@@ -239,13 +227,15 @@ function printLog(
   }
 }
 
-export async function listSandboxLogs({
+async function listSandboxLogs({
   sandboxID,
   start,
 }: {
   sandboxID: string
   start?: number
 }): Promise<e2b.components['schemas']['SandboxLog'][]> {
+  // A fresh client per call: `--follow` can outlive the hour-long access token.
+  const client = await apiClient()
   const signal = connectionConfig.getSignal()
   const res = await client.api.GET('/sandboxes/{sandboxID}/logs', {
     signal,

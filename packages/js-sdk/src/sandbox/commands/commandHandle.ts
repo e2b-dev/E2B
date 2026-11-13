@@ -8,16 +8,29 @@ import type { CommandRequestOpts } from '.'
 
 declare const __brand: unique symbol
 type Brand<B> = { [__brand]: B }
-export type Branded<T, B> = T & Brand<B>
+type Branded<T, B> = T & Brand<B>
 
 export type Stdout = Branded<string, 'stdout'>
 export type Stderr = Branded<string, 'stderr'>
 export type PtyOutput = Branded<Uint8Array, 'pty'>
 
 /**
+ * Type of the accumulated command output: `string` when `retainOutput` is
+ * omitted or `true`, `undefined` when it is `false`, and `string | undefined`
+ * when it is only known to be a `boolean`.
+ */
+export type CommandOutput<RetainOutput extends boolean | undefined = true> = [
+  RetainOutput,
+] extends [true | undefined]
+  ? string
+  : [RetainOutput] extends [false]
+    ? undefined
+    : string | undefined
+
+/**
  * Command execution result.
  */
-export interface CommandResult {
+export interface CommandResult<Output extends string | undefined = string> {
   /**
    * Command execution exit code.
    * `0` if the command finished successfully.
@@ -29,19 +42,24 @@ export interface CommandResult {
   error?: string
   /**
    * Command stdout output.
+   * `undefined` if the command was started with `retainOutput: false`.
    */
-  stdout: string
+  stdout: Output
   /**
    * Command stderr output.
+   * `undefined` if the command was started with `retainOutput: false`.
    */
-  stderr: string
+  stderr: Output
 }
 
 /**
  * Error thrown when a command exits with a non-zero exit code.
  */
-export class CommandExitError extends SandboxError implements CommandResult {
-  constructor(private readonly result: CommandResult) {
+export class CommandExitError<Output extends string | undefined = string>
+  extends SandboxError
+  implements CommandResult<Output>
+{
+  constructor(private readonly result: CommandResult<Output>) {
     super(result.error)
     this.name = 'CommandExitError'
   }
@@ -63,6 +81,7 @@ export class CommandExitError extends SandboxError implements CommandResult {
 
   /**
    * Command execution stdout output.
+   * `undefined` if the command was started with `retainOutput: false`.
    */
   get stdout() {
     return this.result.stdout
@@ -70,6 +89,7 @@ export class CommandExitError extends SandboxError implements CommandResult {
 
   /**
    * Command execution stderr output.
+   * `undefined` if the command was started with `retainOutput: false`.
    */
   get stderr() {
     return this.result.stderr
@@ -83,18 +103,18 @@ export class CommandExitError extends SandboxError implements CommandResult {
  *
  * @property {number} pid process ID of the command.
  */
-export class CommandHandle
+export class CommandHandle<Output extends string | undefined = string>
   implements
-    Omit<CommandResult, 'exitCode' | 'error'>,
-    Partial<Pick<CommandResult, 'exitCode' | 'error'>>
+    Omit<CommandResult<Output>, 'exitCode' | 'error'>,
+    Partial<Pick<CommandResult<Output>, 'exitCode' | 'error'>>
 {
-  private _stdout = ''
-  private _stderr = ''
+  private _stdout?: string
+  private _stderr?: string
 
   private readonly stdoutDecoder = new TextDecoder()
   private readonly stderrDecoder = new TextDecoder()
 
-  private result?: CommandResult
+  private result?: CommandResult<Output>
   private iterationError?: Error
 
   private disconnected = false
@@ -121,8 +141,17 @@ export class CommandHandle
     private readonly handleCloseStdin?: (
       opts?: CommandRequestOpts
     ) => Promise<void>,
-    private readonly checkHealth?: SandboxHealthCheck
+    private readonly checkHealth?: SandboxHealthCheck,
+    retainOutput = true,
+    private readonly handleSendInput?: (
+      data: string | Uint8Array,
+      opts?: CommandRequestOpts
+    ) => Promise<void>
   ) {
+    if (retainOutput) {
+      this._stdout = ''
+      this._stderr = ''
+    }
     this._wait = this.handleEvents()
   }
 
@@ -145,16 +174,18 @@ export class CommandHandle
 
   /**
    * Command execution stderr output.
+   * `undefined` if the command was started with `retainOutput: false`.
    */
-  get stderr() {
-    return this._stderr
+  get stderr(): Output {
+    return this._stderr as Output
   }
 
   /**
    * Command execution stdout output.
+   * `undefined` if the command was started with `retainOutput: false`.
    */
-  get stdout() {
-    return this._stdout
+  get stdout(): Output {
+    return this._stdout as Output
   }
 
   /**
@@ -163,7 +194,7 @@ export class CommandHandle
    *
    * @returns `CommandResult` result of command execution.
    */
-  async wait() {
+  async wait(): Promise<CommandResult<Output>> {
     await this._wait
 
     if (this.iterationError) {
@@ -221,11 +252,37 @@ export class CommandHandle
   ): Promise<void> {
     if (!this.handleSendStdin) {
       throw new SandboxError(
-        'Sending stdin is not supported for this command handle.'
+        this.handleSendInput
+          ? 'PTY handles have no stdin, use sendInput() to send input to the PTY instead.'
+          : 'Sending stdin is not supported for this command handle.'
       )
     }
 
     await this.handleSendStdin(data, opts)
+  }
+
+  /**
+   * Send input to the PTY.
+   *
+   * Only available on handles returned by `sandbox.pty.create()` and `sandbox.pty.connect()`.
+   * Strings are encoded as UTF-8.
+   *
+   * @param data input data to send to the PTY.
+   * @param opts connection options.
+   */
+  async sendInput(
+    data: string | Uint8Array,
+    opts?: CommandRequestOpts
+  ): Promise<void> {
+    if (!this.handleSendInput) {
+      throw new SandboxError(
+        this.handleSendStdin
+          ? 'Sending input is only supported for PTY handles, use sendStdin() to send data to the command stdin instead.'
+          : 'Sending input is not supported for this command handle.'
+      )
+    }
+
+    await this.handleSendInput(data, opts)
   }
 
   /**
@@ -246,6 +303,18 @@ export class CommandHandle
     await this.handleCloseStdin(opts)
   }
 
+  private appendStdout(out: string) {
+    if (this._stdout !== undefined) {
+      this._stdout += out
+    }
+  }
+
+  private appendStderr(out: string) {
+    if (this._stderr !== undefined) {
+      this._stderr += out
+    }
+  }
+
   /**
    * Flush any bytes still buffered in the stream decoders.
    *
@@ -257,12 +326,12 @@ export class CommandHandle
   > {
     const stdoutRest = this.stdoutDecoder.decode()
     if (stdoutRest) {
-      this._stdout += stdoutRest
+      this.appendStdout(stdoutRest)
       yield [stdoutRest as Stdout, null, null]
     }
     const stderrRest = this.stderrDecoder.decode()
     if (stderrRest) {
-      this._stderr += stderrRest
+      this.appendStderr(stderrRest)
       yield [null, stderrRest as Stderr, null]
     }
   }
@@ -283,7 +352,7 @@ export class CommandHandle
                   stream: true,
                 })
                 if (out) {
-                  this._stdout += out
+                  this.appendStdout(out)
                   yield [out as Stdout, null, null]
                 }
                 break
@@ -292,7 +361,7 @@ export class CommandHandle
                   stream: true,
                 })
                 if (out) {
-                  this._stderr += out
+                  this.appendStderr(out)
                   yield [null, out as Stderr, null]
                 }
                 break
@@ -321,7 +390,6 @@ export class CommandHandle
             break
           }
         }
-        // TODO: Handle empty events like in python SDK
       }
     } catch (e) {
       // The stream raised before an `end` event (e.g. disconnect or RPC

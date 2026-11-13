@@ -8,7 +8,7 @@ def test_pty(sandbox: Sandbox):
 
     terminal = sandbox.pty.create(PtySize(80, 24), envs={"ABC": "123"}, cwd="/")
 
-    sandbox.pty.send_stdin(terminal.pid, b"echo $ABC\nexit\n")
+    sandbox.pty.send_input(terminal.pid, b"echo $ABC\nexit\n")
 
     output = []
     result = terminal.wait(on_pty=lambda x: append_data(output, x))
