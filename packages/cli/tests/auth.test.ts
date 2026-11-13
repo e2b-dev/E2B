@@ -466,6 +466,22 @@ describe('ensureValidAccessToken', () => {
     )
     expect(fs.existsSync(configPath())).toBe(false)
   })
+
+  test('clears a lock left behind by a crashed process', async () => {
+    writeConfig(jwt(-10))
+    const lockPath = `${configPath()}.lock`
+    fs.mkdirSync(lockPath)
+    const old = new Date(Date.now() - 60_000)
+    fs.utimesSync(lockPath, old, old)
+    const fetchMock = mockTokenEndpoint()
+    const { ensureValidAccessToken } =
+      await import('../src/utils/token-refresh')
+
+    await ensureValidAccessToken()
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fs.existsSync(lockPath)).toBe(false)
+  })
 })
 
 describe('CLI_AUTH_URL', () => {
