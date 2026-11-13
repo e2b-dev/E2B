@@ -147,3 +147,11 @@ sandboxTest('run with string shell', async ({ sandbox }) => {
     })
   ).rejects.toThrowError(InvalidArgumentError)
 })
+
+sandboxTest('run with non-array shell', async ({ sandbox }) => {
+  await expect(
+    sandbox.commands.run('echo hello', {
+      shell: new Set(['/bin/sh', '-c']) as unknown as string[],
+    })
+  ).rejects.toThrowError(InvalidArgumentError)
+})

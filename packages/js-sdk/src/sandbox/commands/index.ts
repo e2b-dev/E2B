@@ -467,12 +467,12 @@ export class Commands {
     }
 
     const shellOpt = opts?.shell ?? DEFAULT_SHELL
-    const [shell, ...shellArgs] = shellOpt
-    if (typeof shellOpt === 'string' || !shell) {
+    if (!Array.isArray(shellOpt) || !shellOpt[0]) {
       throw new InvalidArgumentError(
         "`shell` must start with the executable, e.g. `['/bin/sh', '-c']`. Omit `shell` to use the default `['/bin/bash', '-l', '-c']`."
       )
     }
+    const [shell, ...shellArgs] = shellOpt
 
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs

@@ -107,3 +107,8 @@ async def test_run_with_empty_shell(async_sandbox: AsyncSandbox):
 async def test_run_with_string_shell(async_sandbox: AsyncSandbox):
     with pytest.raises(InvalidArgumentException):
         await async_sandbox.commands.run("echo hello", shell="/bin/sh")
+
+
+async def test_run_with_non_sequence_shell(async_sandbox: AsyncSandbox):
+    with pytest.raises(InvalidArgumentException):
+        await async_sandbox.commands.run("echo hello", shell={"/bin/sh", "-c"})  # type: ignore[arg-type]

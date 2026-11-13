@@ -110,3 +110,8 @@ def test_run_with_empty_shell(sandbox: Sandbox):
 def test_run_with_string_shell(sandbox: Sandbox):
     with pytest.raises(InvalidArgumentException):
         sandbox.commands.run("echo hello", shell="/bin/sh")
+
+
+def test_run_with_non_sequence_shell(sandbox: Sandbox):
+    with pytest.raises(InvalidArgumentException):
+        sandbox.commands.run("echo hello", shell={"/bin/sh", "-c"})  # type: ignore[arg-type]

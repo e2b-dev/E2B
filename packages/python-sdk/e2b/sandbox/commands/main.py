@@ -50,7 +50,12 @@ def shell_command(shell: Optional[Sequence[str]], cmd: str) -> Tuple[str, List[s
     """
     if shell is None:
         shell = DEFAULT_SHELL
-    if isinstance(shell, str) or not shell or not shell[0]:
+    if (
+        isinstance(shell, str)
+        or not isinstance(shell, Sequence)
+        or not shell
+        or not shell[0]
+    ):
         raise InvalidArgumentException(
             '`shell` must start with the executable, e.g. `["/bin/sh", "-c"]`. Omit `shell` to use the default `["/bin/bash", "-l", "-c"]`.'
         )
