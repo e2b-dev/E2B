@@ -123,6 +123,7 @@ beforeEach(() => {
   vi.resetModules()
   vi.unstubAllEnvs()
   vi.stubEnv('E2B_API_KEY', '')
+  vi.stubEnv('E2B_ACCESS_TOKEN', '')
   vi.stubEnv('E2B_PROJECT_ID', '')
   vi.stubEnv('E2B_TEAM_ID', '')
   mockHome = fs.mkdtempSync(path.join(os.tmpdir(), 'e2b-auth-'))
@@ -229,6 +230,177 @@ describe('ensureAuth', () => {
     expect(String(error.mock.calls[0][0])).toContain(
       'Project "prj_missing" not found'
     )
+  })
+
+  describe('with E2B_ACCESS_TOKEN', () => {
+    beforeEach(() => vi.stubEnv('E2B_PROJECT_ID', 'prj_other'))
+
+    const headersOf = async (ref?: string) => {
+      const { ensureAuth } = await import('../src/api')
+      return (await ensureAuth(ref)) as {
+        apiHeaders: Record<string, string>
+        domain: string
+      }
+    }
+    const failing = () => {
+      vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {
+        throw new Error(`exit ${code}`)
+      }) as never)
+      return vi.spyOn(console, 'error').mockImplementation(() => {})
+    }
+
+    test('uses the token and E2B_PROJECT_ID, ignoring the stored login and --project', async () => {
+      const envToken = jwt(3600, 'env')
+      writeConfig(jwt(3600, 'login'))
+      vi.stubEnv('E2B_ACCESS_TOKEN', envToken)
+      const fetchMock = mockWorkspaceApi([
+        project('config-project'),
+        project('other'),
+        project('flag'),
+      ])
+
+      const expected = {
+        apiHeaders: {
+          Authorization: `Bearer ${envToken}`,
+          'X-Team-ID': 'other',
+        },
+        domain: 'other.e2b.dev',
+      }
+      expect(await headersOf()).toEqual(expected)
+      // Like with E2B_API_KEY, the environment decides the project.
+      expect(await headersOf('slug-flag')).toEqual(expected)
+      // /v1/me was asked with the env token, not the login's.
+      const req = fetchMock.mock.calls[0][0] as Request
+      expect(req.headers.get('Authorization')).toBe(`Bearer ${envToken}`)
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+    })
+
+    test('needs E2B_PROJECT_ID for requests, pointing at project list', async () => {
+      vi.stubEnv('E2B_ACCESS_TOKEN', jwt(3600))
+      vi.stubEnv('E2B_PROJECT_ID', '')
+      const fetchMock = mockWorkspaceApi()
+      const error = failing()
+      const { ensureAuth } = await import('../src/api')
+
+      await expect(ensureAuth()).rejects.toThrow('exit 1')
+      const message = String(error.mock.calls[0][0])
+      expect(message).toContain('E2B_ACCESS_TOKEN needs E2B_PROJECT_ID')
+      expect(message).toContain('e2b project list')
+      expect(fetchMock).not.toHaveBeenCalled()
+    })
+
+    test('lets requireMe list projects without E2B_PROJECT_ID', async () => {
+      vi.stubEnv('E2B_ACCESS_TOKEN', jwt(3600))
+      vi.stubEnv('E2B_PROJECT_ID', '')
+      mockWorkspaceApi()
+      const { currentProject, requireMe } = await import('../src/api')
+
+      expect((await requireMe()).workspaces).toHaveLength(1)
+      expect(currentProject()).toBeUndefined()
+    })
+
+    test('is refused together with E2B_API_KEY', async () => {
+      vi.stubEnv('E2B_ACCESS_TOKEN', jwt(3600))
+      vi.stubEnv('E2B_API_KEY', 'e2b_env_key')
+      const fetchMock = mockWorkspaceApi()
+      const error = failing()
+      const { ensureAuth, requireMe } = await import('../src/api')
+
+      await expect(ensureAuth()).rejects.toThrow('exit 1')
+      await expect(requireMe()).rejects.toThrow('exit 1')
+      for (const call of error.mock.calls) {
+        expect(String(call[0])).toContain(
+          'Both E2B_API_KEY and E2B_ACCESS_TOKEN are set. Unset one of them.'
+        )
+      }
+      expect(fetchMock).not.toHaveBeenCalled()
+    })
+
+    test('rejects an expired token', async () => {
+      vi.stubEnv('E2B_ACCESS_TOKEN', jwt(-10))
+      const fetchMock = mockWorkspaceApi()
+      const error = failing()
+
+      await expect(headersOf()).rejects.toThrow('exit 1')
+      expect(String(error.mock.calls[0][0])).toContain(
+        'E2B_ACCESS_TOKEN has expired'
+      )
+      expect(fetchMock).not.toHaveBeenCalled()
+    })
+
+    test('ignores a value that is not an OAuth token, with a warning', async () => {
+      const loginToken = jwt(3600, 'login')
+      writeConfig(loginToken)
+      vi.stubEnv('E2B_ACCESS_TOKEN', 'legacy-dashboard-token')
+      vi.stubEnv('E2B_PROJECT_ID', '')
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      // The stored login is used, as if the variable were unset.
+      expect(await headersOf()).toEqual({
+        apiHeaders: {
+          Authorization: `Bearer ${loginToken}`,
+          'X-Team-ID': 'config-project',
+        },
+        domain: 'config.e2b.dev',
+      })
+      expect(warn).toHaveBeenCalledTimes(1)
+      expect(String(warn.mock.calls[0][0])).toContain(
+        'E2B_ACCESS_TOKEN is not an OAuth access token and is ignored'
+      )
+    })
+
+    test('ignores a value that is not an OAuth token next to E2B_API_KEY', async () => {
+      vi.stubEnv('E2B_ACCESS_TOKEN', 'legacy-dashboard-token')
+      vi.stubEnv('E2B_API_KEY', 'e2b_env_key')
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      // Not refused as both credentials set: the key is used.
+      expect(await headersOf()).toEqual({ apiKey: 'e2b_env_key' })
+    })
+
+    test('names the token when workspace-api rejects it', async () => {
+      vi.stubEnv('E2B_ACCESS_TOKEN', jwt(3600))
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => new Response(null, { status: 401 }))
+      )
+      const error = failing()
+
+      await expect(headersOf()).rejects.toThrow('exit 1')
+      expect(String(error.mock.calls[0][0])).toContain(
+        'E2B_ACCESS_TOKEN was rejected'
+      )
+    })
+
+    test('auth info reports the token without E2B_PROJECT_ID, warning it is needed', async () => {
+      vi.stubEnv('E2B_ACCESS_TOKEN', jwt(3600))
+      vi.stubEnv('E2B_PROJECT_ID', '')
+      const log = vi.spyOn(console, 'log').mockImplementation(() => {})
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const exit = vi.spyOn(process, 'exit').mockImplementation(((
+        code?: number
+      ) => {
+        throw new Error(`exit ${code}`)
+      }) as never)
+      const { program } = await import('../src/commands')
+
+      await program.parseAsync(['auth', 'info'], { from: 'user' })
+      expect(String(log.mock.calls[0][0])).toBe(
+        'Authenticating with E2B_ACCESS_TOKEN.'
+      )
+      expect(String(warn.mock.calls[0][0])).toContain(
+        'E2B_ACCESS_TOKEN needs E2B_PROJECT_ID'
+      )
+      expect(exit).not.toHaveBeenCalled()
+    })
+
+    test('lets requireMe list workspaces without a login', async () => {
+      vi.stubEnv('E2B_ACCESS_TOKEN', jwt(3600))
+      mockWorkspaceApi()
+      const { requireMe } = await import('../src/api')
+
+      expect((await requireMe()).workspaces).toHaveLength(1)
+    })
   })
 
   test('exits with the login hint when signed out', async () => {
