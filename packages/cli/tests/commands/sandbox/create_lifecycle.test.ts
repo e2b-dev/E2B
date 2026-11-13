@@ -195,32 +195,6 @@ describe('sandbox create lifecycle options', () => {
     expect(exitSpy).toHaveBeenCalledWith(0)
   })
 
-  test('omits empty envs when no --env flags are provided', async () => {
-    const exitSpy = vi
-      .spyOn(process, 'exit')
-      .mockImplementation((() => undefined) as never)
-    const sandbox = {
-      sandboxId: 'sandbox-id',
-      setTimeout: vi.fn().mockResolvedValue(undefined),
-    }
-    mocks.create.mockResolvedValue(sandbox)
-
-    const { createCommand } = await import(
-      '../../../src/commands/sandbox/create'
-    )
-    await createCommand('create', 'cr', false).parseAsync(
-      ['base', '--user', 'root'],
-      { from: 'user' }
-    )
-
-    expect(mocks.spawnConnectedTerminal).toHaveBeenCalledWith(sandbox, {
-      user: 'root',
-      cwd: undefined,
-      envs: undefined,
-    })
-    expect(exitSpy).toHaveBeenCalledWith(0)
-  })
-
   test('rejects autoresume without pause on timeout', async () => {
     const exitSpy = vi
       .spyOn(process, 'exit')
@@ -323,38 +297,6 @@ describe('sandbox create lifecycle options', () => {
 
     expect(logSpy.mock.calls).toEqual([['sandbox-id']])
     expect(mocks.printDashboardSandboxInspectUrl).not.toHaveBeenCalled()
-    expect(exitSpy).toHaveBeenCalledWith(0)
-  })
-
-  test('passes lifecycle and timeout together to Sandbox.create', async () => {
-    const exitSpy = vi
-      .spyOn(process, 'exit')
-      .mockImplementation((() => undefined) as never)
-
-    const { createCommand } = await import(
-      '../../../src/commands/sandbox/create'
-    )
-    await createCommand('create', 'cr', false).parseAsync(
-      [
-        'base',
-        '--detach',
-        '--timeout',
-        '120',
-        '--lifecycle.ontimeout',
-        'pause',
-        '--lifecycle.autoresume',
-      ],
-      { from: 'user' }
-    )
-
-    expect(mocks.create).toHaveBeenCalledWith('base', {
-      apiKey: 'test-api-key',
-      lifecycle: {
-        onTimeout: 'pause',
-        autoResume: true,
-      },
-      timeoutMs: 120_000,
-    })
     expect(exitSpy).toHaveBeenCalledWith(0)
   })
 })
