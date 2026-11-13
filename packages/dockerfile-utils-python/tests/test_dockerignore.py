@@ -75,8 +75,23 @@ def test_rejects_invalid_patterns_with_value_error():
 
 
 @pytest.mark.parametrize(
-    ("path", "excluded"),
-    [("5", True), ("\u0661", False), ("d", False)],
+    ("pattern", "path", "excluded"),
+    [
+        (r"[\d]", "5", True),
+        (r"[\d]", "\u0661", False),
+        (r"[\d]", "d", False),
+        (r"[\s]", " ", True),
+        (r"[\s]", "\u00a0", False),
+        (r"[\S]", "\u00a0", True),
+        (r"[\S]", "\t", False),
+    ],
 )
-def test_digit_class_only_matches_ascii_digits(path, excluded):
-    assert PatternMatcher([r"[\d]"]).matches(path) is excluded
+def test_class_escapes_are_ascii_only(pattern, path, excluded):
+    assert PatternMatcher([pattern]).matches(path) is excluded
+
+
+def test_rejects_ranges_with_a_whitespace_class_escape():
+    with pytest.raises(ValueError):
+        PatternMatcher([r"[\s-x]"])
+    with pytest.raises(ValueError):
+        PatternMatcher([r"[a-\S]"])
