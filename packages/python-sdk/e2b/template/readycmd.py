@@ -121,7 +121,7 @@ def wait_for_timeout(timeout: int):
     """
     Wait for a specified timeout before considering the sandbox ready.
 
-    Uses `sleep` command to wait for a fixed duration.
+    Uses `sleep` command to wait for a fixed duration, preserving fractional seconds.
 
     :param timeout: Time to wait in **milliseconds** (minimum: 1000ms / 1 second)
 
@@ -139,6 +139,6 @@ def wait_for_timeout(timeout: int):
     ```
     """
     # convert to seconds, but ensure minimum of 1 second
-    seconds = max(1, timeout // 1000)
-    cmd = f"sleep {seconds}"
+    seconds = max(1, timeout / 1000)
+    cmd = f"sleep {seconds}".removesuffix(".0")
     return ReadyCmd(cmd)

@@ -46,4 +46,10 @@ describe('readycmd', () => {
     expect(waitForTimeout(5000).getCmd()).toBe('sleep 5')
     expect(waitForTimeout(100).getCmd()).toBe('sleep 1')
   })
+
+  test('waitForTimeout preserves fractional seconds', () => {
+    expect(waitForTimeout(1500).getCmd()).toBe('sleep 1.5')
+    expect(waitForTimeout(1001).getCmd()).toBe('sleep 1.001')
+    expect(waitForTimeout(1234567).getCmd()).toBe('sleep 1234.567')
+  })
 })
