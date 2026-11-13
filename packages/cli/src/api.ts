@@ -20,8 +20,20 @@ export const projectId = process.env.E2B_PROJECT_ID || process.env.E2B_TEAM_ID
 /**
  * An OAuth access token given instead of logging in. It is used as is (there
  * is no refresh token to renew it with), and the stored login is ignored.
+ *
+ * The variable used to hold the dashboard's access tokens, which no longer
+ * work and which some shells and CI jobs still export. A value that isn't an
+ * OAuth access token (a JWT) is ignored with a warning, as if it were unset.
  */
-export const envAccessToken = process.env.E2B_ACCESS_TOKEN || undefined
+export const envAccessToken = (() => {
+  const token = process.env.E2B_ACCESS_TOKEN
+  if (!token) return undefined
+  if (decodeJwtExp(token)) return token
+  console.warn(
+    `${asBold('E2B_ACCESS_TOKEN')} is not an OAuth access token and is ignored: access tokens from the dashboard are no longer supported. Unset it to remove this warning.`
+  )
+  return undefined
+})()
 
 const authErrorBox = () => {
   const body = `You must be logged in to use this command. Run ${asBold(
@@ -101,19 +113,11 @@ export function envProjectCredentialsError(): string | undefined {
 }
 
 /**
- * `E2B_ACCESS_TOKEN`, checked to be an OAuth access token (a JWT: the same
- * variable used to hold the dashboard's access tokens, which no longer
- * work) that hasn't expired, since it can't be refreshed.
+ * `E2B_ACCESS_TOKEN`, checked not to have expired, since it can't be
+ * refreshed.
  */
 function checkedEnvAccessToken(): string {
-  const exp = decodeJwtExp(envAccessToken!)
-  if (!exp) {
-    throw new Error(
-      `${asBold('E2B_ACCESS_TOKEN')} is not an OAuth access token. Access tokens from the dashboard are no longer supported: unset it and run ${asBold(
-        'e2b auth login'
-      )}, or use ${asBold('E2B_API_KEY')}.`
-    )
-  }
+  const exp = decodeJwtExp(envAccessToken!)!
   if (Math.floor(Date.now() / 1000) >= exp) {
     throw new Error(
       `${asBold('E2B_ACCESS_TOKEN')} has expired. Set a current one, or unset it and run ${asBold(

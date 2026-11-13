@@ -328,16 +328,34 @@ describe('ensureAuth', () => {
       expect(fetchMock).not.toHaveBeenCalled()
     })
 
-    test('rejects a value that is not an OAuth token', async () => {
+    test('ignores a value that is not an OAuth token, with a warning', async () => {
+      const loginToken = jwt(3600, 'login')
+      writeConfig(loginToken)
       vi.stubEnv('E2B_ACCESS_TOKEN', 'legacy-dashboard-token')
-      const fetchMock = mockWorkspaceApi()
-      const error = failing()
+      vi.stubEnv('E2B_PROJECT_ID', '')
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
-      await expect(headersOf()).rejects.toThrow('exit 1')
-      expect(String(error.mock.calls[0][0])).toContain(
-        'E2B_ACCESS_TOKEN is not an OAuth access token'
+      // The stored login is used, as if the variable were unset.
+      expect(await headersOf()).toEqual({
+        apiHeaders: {
+          Authorization: `Bearer ${loginToken}`,
+          'X-Team-ID': 'config-project',
+        },
+        domain: 'config.e2b.dev',
+      })
+      expect(warn).toHaveBeenCalledTimes(1)
+      expect(String(warn.mock.calls[0][0])).toContain(
+        'E2B_ACCESS_TOKEN is not an OAuth access token and is ignored'
       )
-      expect(fetchMock).not.toHaveBeenCalled()
+    })
+
+    test('ignores a value that is not an OAuth token next to E2B_API_KEY', async () => {
+      vi.stubEnv('E2B_ACCESS_TOKEN', 'legacy-dashboard-token')
+      vi.stubEnv('E2B_API_KEY', 'e2b_env_key')
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      // Not refused as both credentials set: the key is used.
+      expect(await headersOf()).toEqual({ apiKey: 'e2b_env_key' })
     })
 
     test('names the token when workspace-api rejects it', async () => {
