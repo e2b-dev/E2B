@@ -1,5 +1,36 @@
 # e2b
 
+## 2.64.0
+
+### Minor Changes
+
+- 6a976f3: `e2b template list` and `e2b template delete` now use the SDK's `Template.list()` and `Template.delete()`. `TemplateInfo` gains `maxCpuCount` (`max_cpu_count` in Python) for resizable templates.
+
+  Breaking: `e2b template list -f json` now prints the SDK's `TemplateInfo` objects (`templateId`, `buildId`, `names`, …) instead of the raw API response (`templateID`, `buildID`, `aliases`, `createdBy`, …), and the pretty table drops the `Created by` column (the API deprecated the creator's email).
+
+- 1b3b2a4: Add `shell` option to `commands.run` to run the command in a custom shell, e.g. `shell: ['/bin/sh', '-c']` runs `/bin/sh -c <cmd>` (default stays `['/bin/bash', '-l', '-c']`)
+- 6ee9a4b: Add resizable templates: build a template with `maxCpuCount` and pick each sandbox's `cpuCount` on create. `e2b template list` shows a `Max vCPUs` column.
+- 106efea: The API client accepts an `Authorization` header in place of an API key. Requests can now authenticate with an OAuth access token passed through `apiHeaders` (JS) or `api_headers` (Python), together with the `X-Team-ID` header that selects the team:
+
+  ```ts
+  await Sandbox.create({
+    apiHeaders: { Authorization: `Bearer ${accessToken}`, 'X-Team-ID': teamId },
+  })
+  ```
+
+  ```python
+  Sandbox.create(api_headers={"Authorization": f"Bearer {access_token}", "X-Team-ID": team_id})
+  ```
+
+- c513ae1: Add `Template.delete(nameOrId)` (JS) and `Template.delete(name_or_id)` / `AsyncTemplate.delete(name_or_id)` (Python) to delete a template or snapshot; returns `false` when it isn't found. `Sandbox.deleteSnapshot` / `Sandbox.delete_snapshot` now share its implementation and raise `TemplateError` / `TemplateException` (subclasses of `SandboxError` / `SandboxException`) on failure
+- e50db00: Add `Template.list()` returning a `TemplatePaginator` (`AsyncTemplatePaginator` for `AsyncTemplate`) that pages through the project's templates as `TemplateInfo`, like `Sandbox.list()` and `Secret.list()`.
+
+### Patch Changes
+
+- cf7208a: Bump `@connectrpc/connect` and `@connectrpc/connect-web` to ^2.3.0 (HTTP/2 stream cleanup and cancellation fixes) and `glob` to ^14.0.3
+- Updated dependencies [aec4543]
+  - @e2b/dockerfile-utils@0.1.2
+
 ## 2.63.0
 
 ### Minor Changes
