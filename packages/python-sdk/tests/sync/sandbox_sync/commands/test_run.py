@@ -1,6 +1,6 @@
 import pytest
 
-from e2b import Sandbox, TimeoutException
+from e2b import InvalidArgumentException, Sandbox, TimeoutException
 
 
 def test_run(sandbox: Sandbox):
@@ -86,3 +86,32 @@ def test_run_in_background_without_retaining_output(sandbox: Sandbox):
     assert result.stdout is None
     assert result.stderr is None
     assert "".join(stdout) == "out\n"
+
+
+def test_run_with_custom_shell(sandbox: Sandbox):
+    cmd = sandbox.commands.run("print(6 * 7)", shell=["python3", "-c"])
+
+    assert cmd.exit_code == 0
+    assert cmd.stdout == "42\n"
+
+
+def test_run_with_shell_without_args(sandbox: Sandbox):
+    cmd = sandbox.commands.run("$HOME", shell=["echo"])
+
+    assert cmd.exit_code == 0
+    assert cmd.stdout == "$HOME\n"
+
+
+def test_run_with_empty_shell(sandbox: Sandbox):
+    with pytest.raises(InvalidArgumentException):
+        sandbox.commands.run("echo hello", shell=[])
+
+
+def test_run_with_string_shell(sandbox: Sandbox):
+    with pytest.raises(InvalidArgumentException):
+        sandbox.commands.run("echo hello", shell="/bin/sh")
+
+
+def test_run_with_non_sequence_shell(sandbox: Sandbox):
+    with pytest.raises(InvalidArgumentException):
+        sandbox.commands.run("echo hello", shell={"/bin/sh", "-c"})  # type: ignore[arg-type]
