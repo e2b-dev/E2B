@@ -26,11 +26,13 @@ import {
   SandboxHealthCheck,
 } from '../../envd/rpc'
 import { ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE } from '../../envd/versions'
-import { SandboxError } from '../../errors'
+import { InvalidArgumentError, SandboxError } from '../../errors'
 import { CommandHandle, CommandOutput, CommandResult } from './commandHandle'
 import { CommandInputHandle, CommandStreamInputOpts } from './inputHandle'
 export { Pty } from './pty'
 export type { CommandStreamInputOpts }
+
+const DEFAULT_SHELL = ['/bin/bash', '-l', '-c']
 
 /**
  * Options for sending a command request.
@@ -68,6 +70,13 @@ export interface CommandStartOpts extends CommandRequestOpts {
    * @default `{}`
    */
   envs?: Record<string, string>
+  /**
+   * Shell used to run the command, as the executable followed by its arguments.
+   * The command is passed as the last argument, e.g. `['/bin/sh', '-c']` runs `/bin/sh -c <cmd>`.
+   *
+   * @default `['/bin/bash', '-l', '-c']`
+   */
+  shell?: string[]
   /**
    * Callback for command stdout output.
    */
@@ -456,6 +465,13 @@ export class Commands {
       )
     }
 
+    const [shell, ...shellArgs] = opts?.shell ?? DEFAULT_SHELL
+    if (!shell) {
+      throw new InvalidArgumentError(
+        'shell must contain at least the shell executable'
+      )
+    }
+
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
@@ -467,10 +483,10 @@ export class Commands {
     const events = this.rpc.start(
       {
         process: {
-          cmd: '/bin/bash',
+          cmd: shell,
           cwd: opts?.cwd,
           envs: opts?.envs,
-          args: ['-l', '-c', cmd],
+          args: [...shellArgs, cmd],
         },
         stdin: opts?.stdin || false,
       },

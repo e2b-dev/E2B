@@ -1,5 +1,7 @@
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
+
+from e2b.exceptions import InvalidArgumentException
 
 
 @dataclass
@@ -37,3 +39,19 @@ class ProcessInfo:
     """
     Executed command working directory.
     """
+
+
+DEFAULT_SHELL = ["/bin/bash", "-l", "-c"]
+
+
+def shell_command(shell: Optional[List[str]], cmd: str) -> Tuple[str, List[str]]:
+    """
+    Split `shell` into the executable and its arguments, with `cmd` appended as the last argument.
+    """
+    if shell is None:
+        shell = DEFAULT_SHELL
+    if not shell or not shell[0]:
+        raise InvalidArgumentException(
+            "shell must contain at least the shell executable"
+        )
+    return shell[0], [*shell[1:], cmd]
