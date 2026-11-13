@@ -120,6 +120,21 @@ jobs:
           name: e2b-dockerfile-utils-js
           path: packages/dockerfile-utils-js/*.tgz
 
+      - name: Pack ID JS
+        if: ${{ !cancelled() }}
+        working-directory: packages/js-id
+        run: |
+          pnpm run build
+          pnpm version prerelease --preid=${{ env.BRANCH_ID }} --no-git-tag-version
+          pnpm pack
+
+      - name: Upload ID JS artifact
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: e2b-id-js
+          path: packages/js-id/*.tgz
+
       # Independent of the CLI steps above: a CLI failure should still leave
       # reviewers a usable SDK tarball, as it did before the CLI moved ahead of it.
       - name: Pack JS SDK
@@ -226,6 +241,8 @@ jobs:
           CODE_INTERPRETER_JS_TGZ=$(artifact_basename packages/code-interpreter-js/*.tgz)
           DESKTOP_JS_VERSION=$(node -p "require('./packages/desktop-js/package.json').version")
           DESKTOP_JS_TGZ=$(artifact_basename packages/desktop-js/*.tgz)
+          ID_JS_VERSION=$(node -p "require('./packages/js-id/package.json').version")
+          ID_JS_TGZ=$(artifact_basename packages/js-id/*.tgz)
           PY_VERSION=$(grep '^version' packages/python-sdk/pyproject.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
           PY_WHL=$(artifact_basename packages/python-sdk/dist/*.whl)
           DOCKERFILE_UTILS_PY_WHL=$(artifact_basename packages/dockerfile-utils-python/dist/*.whl)
@@ -252,6 +269,10 @@ jobs:
           BODY+="**Desktop JS SDK** (\`@e2b/desktop@${DESKTOP_JS_VERSION}\`):"$'\n'
           BODY+='```sh'$'\n'
           BODY+="npm install ./${DESKTOP_JS_TGZ}"$'\n'
+          BODY+='```'$'\n\n'
+          BODY+="**ID JS** (\`@e2b/id@${ID_JS_VERSION}\`):"$'\n'
+          BODY+='```sh'$'\n'
+          BODY+="npm install ./${ID_JS_TGZ}"$'\n'
           BODY+='```'$'\n\n'
           BODY+="**Python SDK** (\`e2b==${PY_VERSION}\`, with \`e2b-dockerfile-utils==${DOCKERFILE_UTILS_PY_VERSION}\`):"$'\n'
           BODY+='```sh'$'\n'
