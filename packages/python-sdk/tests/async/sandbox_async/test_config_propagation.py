@@ -1,7 +1,13 @@
+import json
+import threading
+import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from typing import Dict, List, Tuple
 from unittest.mock import AsyncMock
 
+import httpx
 import pytest
-from packaging.version import Version
+from local_api_server import connect_recording_proxy
 
 from e2b import AsyncSandbox
 from e2b.api import SandboxCreateResponse
@@ -12,76 +18,146 @@ BASE_DOMAIN = "base.e2b.dev"
 BASE_REQUEST_TIMEOUT = 11
 BASE_DEBUG = False
 BASE_HEADERS = {"X-Test": "base"}
+CONNECTED_SANDBOX = {
+    "sandboxID": "sbx-test",
+    "templateID": "tmpl-test",
+    "clientID": "client-test",
+    "envdVersion": "0.2.4",
+    "envdAccessToken": "tok",
+    "trafficAccessToken": "tok",
+    "domain": "sandbox.e2b.dev",
+}
 
 
-def create_sandbox(monkeypatch, api_key: str) -> AsyncSandbox:
-    monkeypatch.setattr(
-        sandbox_async_main, "get_envd_api", lambda *_args, **_kwargs: object()
-    )
-    monkeypatch.setattr(
-        sandbox_async_main, "Filesystem", lambda *args, **kwargs: object()
-    )
-    monkeypatch.setattr(
-        sandbox_async_main, "Commands", lambda *args, **kwargs: object()
-    )
-    monkeypatch.setattr(sandbox_async_main, "Pty", lambda *args, **kwargs: object())
-    monkeypatch.setattr(sandbox_async_main, "Git", lambda *args, **kwargs: object())
+class _FakeApiHandler(BaseHTTPRequestHandler):
+    """Answers sandbox connect and pause requests and records each one."""
 
-    return AsyncSandbox(
-        sandbox_id="sbx-test",
-        sandbox_domain="sandbox.e2b.dev",
-        envd_version=Version("0.2.4"),
-        envd_access_token="tok",
-        traffic_access_token="tok",
-        connection_config=ConnectionConfig(
-            api_key=api_key,
-            domain=BASE_DOMAIN,
-            request_timeout=BASE_REQUEST_TIMEOUT,
-            debug=BASE_DEBUG,
-            api_headers=BASE_HEADERS,
-        ),
+    requests: List[Tuple[str, str, Dict[str, str]]] = []
+    delay = 0.0
+
+    def log_message(self, *args):  # noqa: A003 - silence the default stderr log
+        pass
+
+    def do_POST(self):
+        self.rfile.read(int(self.headers.get("Content-Length") or 0))
+        type(self).requests.append(
+            (self.command, self.path, {k.lower(): v for k, v in self.headers.items()})
+        )
+        if self.path.endswith("/connect"):
+            body = json.dumps(CONNECTED_SANDBOX).encode()
+            self.send_response(201)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+        time.sleep(type(self).delay)
+        self.send_response(204)
+        self.end_headers()
+
+
+@pytest.fixture
+def fake_api():
+    """Starts local API servers; yields a factory returning their base URLs."""
+    _FakeApiHandler.requests = []
+    _FakeApiHandler.delay = 0.0
+    servers = []
+
+    def start() -> str:
+        server = ThreadingHTTPServer(("127.0.0.1", 0), _FakeApiHandler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        servers.append(server)
+        return f"http://127.0.0.1:{server.server_port}"
+
+    try:
+        yield start
+    finally:
+        for server in servers:
+            server.shutdown()
+            server.server_close()
+
+
+async def create_sandbox(
+    api_key: str, api_url: str, request_timeout: float = BASE_REQUEST_TIMEOUT
+) -> AsyncSandbox:
+    return await AsyncSandbox.connect(
+        "sbx-test",
+        api_key=api_key,
+        api_url=api_url,
+        domain=BASE_DOMAIN,
+        request_timeout=request_timeout,
+        debug=BASE_DEBUG,
+        api_headers=BASE_HEADERS,
+        retries=0,
     )
+
+
+def pause_requests_to(api_url: str) -> List[Dict[str, str]]:
+    port = api_url.rsplit(":", 1)[1]
+    return [
+        headers
+        for method, path, headers in _FakeApiHandler.requests
+        if method == "POST"
+        and path == "/sandboxes/sbx-test/pause"
+        and headers["host"].endswith(f":{port}")
+    ]
 
 
 @pytest.mark.skip_debug()
-async def test_pause_passes_connection_config_without_overrides(
-    monkeypatch, test_api_key
-):
-    mock_pause = AsyncMock(return_value="sbx-test")
-    monkeypatch.setattr(sandbox_async_main.SandboxApi, "_cls_pause", mock_pause)
+async def test_pause_passes_connection_config_without_overrides(fake_api, test_api_key):
+    api_url = fake_api()
+    sandbox = await create_sandbox(test_api_key, api_url)
 
-    sandbox = create_sandbox(monkeypatch, test_api_key)
-    await sandbox.pause()
+    assert await sandbox.pause() is True
 
-    mock_pause.assert_awaited_once()
-    assert mock_pause.call_args.kwargs["sandbox_id"] == "sbx-test"
-    assert mock_pause.call_args.kwargs["api_key"] == test_api_key
-    assert mock_pause.call_args.kwargs["domain"] == BASE_DOMAIN
-    assert mock_pause.call_args.kwargs["request_timeout"] == BASE_REQUEST_TIMEOUT
-    assert mock_pause.call_args.kwargs["debug"] == BASE_DEBUG
-    assert mock_pause.call_args.kwargs["headers"]["X-Test"] == BASE_HEADERS["X-Test"]
+    [headers] = pause_requests_to(api_url)
+    assert headers["x-api-key"] == test_api_key
+    assert headers["x-test"] == BASE_HEADERS["X-Test"]
 
 
 @pytest.mark.skip_debug()
-async def test_pause_applies_overrides(monkeypatch, test_api_key):
-    mock_pause = AsyncMock(return_value="sbx-test")
-    monkeypatch.setattr(sandbox_async_main.SandboxApi, "_cls_pause", mock_pause)
+async def test_pause_applies_header_overrides(fake_api, test_api_key):
+    api_url = fake_api()
+    sandbox = await create_sandbox(test_api_key, api_url)
 
-    sandbox = create_sandbox(monkeypatch, test_api_key)
-    await sandbox.pause(
-        domain="override.e2b.dev",
-        request_timeout=20,
-        api_headers={"X-Extra": "1"},
+    assert await sandbox.pause(api_headers={"X-Extra": "1"}) is True
+
+    [headers] = pause_requests_to(api_url)
+    assert headers["x-api-key"] == test_api_key
+    assert headers["x-test"] == BASE_HEADERS["X-Test"]
+    assert headers["x-extra"] == "1"
+
+
+@pytest.mark.skip_debug()
+@pytest.mark.xfail(
+    strict=True, reason="SDK-412: per-call domain is ignored on instance methods"
+)
+async def test_pause_domain_override_wins(test_api_key):
+    # A debug connect skips the API, so the instance's API URL stays the one
+    # derived from its domain (as after a real create/connect), not explicit.
+    sandbox = await AsyncSandbox.connect(
+        "sbx-test", api_key=test_api_key, domain=BASE_DOMAIN, debug=True
     )
 
-    mock_pause.assert_awaited_once()
-    assert mock_pause.call_args.kwargs["sandbox_id"] == "sbx-test"
-    assert mock_pause.call_args.kwargs["api_key"] == test_api_key
-    assert mock_pause.call_args.kwargs["domain"] == "override.e2b.dev"
-    assert mock_pause.call_args.kwargs["request_timeout"] == 20
-    assert mock_pause.call_args.kwargs["debug"] == BASE_DEBUG
-    assert mock_pause.call_args.kwargs["headers"]["X-Test"] == BASE_HEADERS["X-Test"]
-    assert mock_pause.call_args.kwargs["headers"]["X-Extra"] == "1"
+    with connect_recording_proxy() as (proxy, targets):
+        # The proxy refuses the tunnel, so the call fails; only the target matters.
+        with pytest.raises(Exception):
+            await sandbox.pause(domain="override.e2b.dev", debug=False, proxy=proxy)
+
+    # Connection-level retries may open the tunnel more than once.
+    assert targets and set(targets) == {"api.override.e2b.dev:443"}
+
+
+@pytest.mark.skip_debug()
+async def test_pause_request_timeout_override_wins(fake_api, test_api_key):
+    _FakeApiHandler.delay = 0.5
+    sandbox = await create_sandbox(test_api_key, fake_api(), request_timeout=0.1)
+
+    # The control-plane client surfaces the raw httpx timeout.
+    with pytest.raises(httpx.TimeoutException):
+        await sandbox.pause()
+
+    assert await sandbox.pause(request_timeout=5) is True
 
 
 @pytest.mark.skip_debug()
@@ -100,7 +176,7 @@ async def test_connect_sets_stable_host_routing_headers(monkeypatch, test_api_ke
     monkeypatch.setattr(ConnectionConfig, "_integration", "testing/version")
     config = ConnectionConfig(
         api_key=test_api_key,
-        headers=BASE_HEADERS,
+        api_headers=BASE_HEADERS,
     )
     sandbox = await AsyncSandbox.connect(
         "sbx-test",

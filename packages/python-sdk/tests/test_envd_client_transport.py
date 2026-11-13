@@ -1,13 +1,14 @@
+import socket
+import threading
 from typing import cast
 
 import httpx
 import pytest
-from pyqwest import Proxy
 from transport_caches import reset_transport_caches
 
 import e2b.api.client_async as api_client_async
 import e2b.api.client_sync as api_client_sync
-from e2b.api import ProxyConfig, proxy_to_config
+from e2b.api import ProxyConfig, connection_retries, proxy_to_config
 from e2b.connection_config import ConnectionConfig, ProxyTypes
 from e2b.envd import client_async, client_sync
 from e2b.envd.process.process_connect import ProcessClient, ProcessClientSync
@@ -68,19 +69,6 @@ def test_proxy_to_config_carries_httpx_proxy_headers():
     )
 
 
-def test_proxy_config_builds_a_pyqwest_proxy():
-    config = ProxyConfig(
-        "http://localhost:8030", auth=("user", "pass"), headers=(("x-custom", "1"),)
-    )
-    assert isinstance(config.to_pyqwest(), Proxy)
-    # Equal configs are one cache key even though the Proxy objects they build
-    # are not equal to each other.
-    assert config == ProxyConfig(
-        "http://localhost:8030", auth=("user", "pass"), headers=(("x-custom", "1"),)
-    )
-    assert config.to_pyqwest() != config.to_pyqwest()
-
-
 def test_proxy_to_config_rejects_httpx_proxy_ssl_context():
     import ssl
 
@@ -110,41 +98,69 @@ def test_sync_pool_is_cached_per_proxy():
     assert pool_a is not pool_c
 
 
-def test_sync_retry_connect_false_returns_the_pool_under_the_retrying_transport():
-    key = (None, None, api_client_sync.DEFAULT_HTTP_VERSION)
-    retrying = api_client_sync.get_pyqwest_transport(None)
-    plain = api_client_sync.get_pyqwest_transport(None, retry_connect=False)
+@pytest.fixture
+def tls_refusing_server():
+    """An https URL whose server accepts each TCP connection and closes it
+    before the TLS handshake — a connect failure — plus the accept count."""
+    listener = socket.socket()
+    listener.bind(("127.0.0.1", 0))
+    listener.listen(16)
+    accepted = [0]
 
-    assert isinstance(retrying, api_client_sync.ConnectionRetryTransport)
-    assert isinstance(plain, api_client_sync.SyncHTTPTransport)
-    assert plain is api_client_sync._pools[key]
-    assert plain is api_client_sync.get_pyqwest_transport(None, retry_connect=False)
+    def serve():
+        while True:
+            try:
+                conn, _ = listener.accept()
+            except OSError:
+                return
+            accepted[0] += 1
+            conn.close()
 
-    # The httpx adapters are cached per flag, each over its own transport.
-    adapter = api_client_sync.get_httpx_transport(None)
-    plain_adapter = api_client_sync.get_httpx_transport(None, retry_connect=False)
-    assert adapter is api_client_sync.get_httpx_transport(None)
-    assert plain_adapter is api_client_sync.get_httpx_transport(
-        None, retry_connect=False
+    thread = threading.Thread(target=serve, daemon=True)
+    thread.start()
+    try:
+        yield f"https://127.0.0.1:{listener.getsockname()[1]}", accepted
+    finally:
+        listener.close()
+
+
+@pytest.mark.parametrize("retry_connect", [True, False])
+def test_sync_envd_api_retry_connect_controls_connect_attempts(
+    test_api_key, tls_refusing_server, retry_connect
+):
+    # The `/health` probe after a failed RPC uses `retry_connect=False`, so an
+    # unreachable sandbox is tried once instead of all over again.
+    url, accepted = tls_refusing_server
+    envd_api = api_client_sync.get_envd_api(
+        ConnectionConfig(api_key=test_api_key), url, retry_connect=retry_connect
     )
-    assert adapter is not plain_adapter
+
+    try:
+        with pytest.raises(httpx.ConnectError):
+            envd_api.get("/health")
+    finally:
+        envd_api.close()
+
+    assert accepted[0] == (1 + connection_retries if retry_connect else 1)
 
 
-def test_async_retry_connect_false_returns_the_pool_under_the_retrying_transport():
-    key = (None, None, api_client_async.DEFAULT_HTTP_VERSION)
-    retrying = api_client_async.get_pyqwest_transport(None)
-    plain = api_client_async.get_pyqwest_transport(None, retry_connect=False)
-
-    assert isinstance(retrying, api_client_async.ConnectionRetryTransport)
-    assert isinstance(plain, api_client_async.HTTPTransport)
-    assert plain is api_client_async._pools[key]
-
-    adapter = api_client_async.get_httpx_transport(None)
-    plain_adapter = api_client_async.get_httpx_transport(None, retry_connect=False)
-    assert plain_adapter is api_client_async.get_httpx_transport(
-        None, retry_connect=False
+@pytest.mark.parametrize("retry_connect", [True, False])
+@pytest.mark.asyncio
+async def test_async_envd_api_retry_connect_controls_connect_attempts(
+    test_api_key, tls_refusing_server, retry_connect
+):
+    url, accepted = tls_refusing_server
+    envd_api = api_client_async.get_envd_api(
+        ConnectionConfig(api_key=test_api_key), url, retry_connect=retry_connect
     )
-    assert adapter is not plain_adapter
+
+    try:
+        with pytest.raises(httpx.ConnectError):
+            await envd_api.get("/health")
+    finally:
+        await envd_api.aclose()
+
+    assert accepted[0] == (1 + connection_retries if retry_connect else 1)
 
 
 def test_sync_pool_is_not_shared_across_proxy_credentials():

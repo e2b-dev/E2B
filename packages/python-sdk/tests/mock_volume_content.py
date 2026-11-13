@@ -6,9 +6,11 @@ against a stateful in-process filesystem instead of a live volume server.
 
 import json
 import posixpath
+import socket
+import threading
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Tuple
 
 import httpx
 
@@ -229,3 +231,55 @@ class MockVolumeContentAPI:
             if p == path or p.startswith(prefix):
                 del self.entries[p]
         return httpx.Response(204)
+
+
+class RecordingProxy:
+    """A local forward proxy that records each tunnel request and refuses it.
+
+    Volume content calls go to ``https://api.<domain>``, so a client sent
+    through this proxy issues ``CONNECT api.<domain>:443``: the recorded
+    ``(target, Proxy-Authorization)`` pairs show whether a content call used
+    the proxy and which host it was headed for. The tunnel is refused with a
+    502, so the call itself fails with a connection error.
+    """
+
+    def __init__(self):
+        self.tunnels: List[Tuple[str, Optional[str]]] = []
+        self._sock = socket.socket()
+        self._sock.bind(("127.0.0.1", 0))
+        self._sock.listen(16)
+        self.port = self._sock.getsockname()[1]
+        self.url = f"http://127.0.0.1:{self.port}"
+        threading.Thread(target=self._serve, daemon=True).start()
+
+    def url_with_auth(self, user: str, password: str) -> str:
+        return f"http://{user}:{password}@127.0.0.1:{self.port}"
+
+    def _serve(self):
+        while True:
+            try:
+                conn, _ = self._sock.accept()
+            except OSError:
+                return
+            with conn:
+                head = b""
+                while b"\r\n\r\n" not in head:
+                    chunk = conn.recv(65536)
+                    if not chunk:
+                        break
+                    head += chunk
+                lines = head.decode(errors="replace").split("\r\n")
+                method, _, rest = lines[0].partition(" ")
+                if method == "CONNECT":
+                    headers = dict(
+                        (k.strip().lower(), v.strip())
+                        for k, _, v in (line.partition(":") for line in lines[1:])
+                        if k
+                    )
+                    self.tunnels.append(
+                        (rest.split(" ")[0], headers.get("proxy-authorization"))
+                    )
+                conn.sendall(b"HTTP/1.1 502 Bad Gateway\r\nContent-Length: 0\r\n\r\n")
+
+    def close(self):
+        self._sock.close()
