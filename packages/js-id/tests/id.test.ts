@@ -364,6 +364,60 @@ describe('the fixes the review found', () => {
     }
   )
 
+  // The same payload handed to decodeId or parseId has to be an InvalidIdError,
+  // which callers turn into a 400, not a TypeError, which becomes a 500.
+  test.each([null, undefined, 123, ['x'], {}, Symbol('x')])(
+    'decodeId and parseId reject %s with an InvalidIdError',
+    (value) => {
+      for (const call of [
+        () => decodeId('project', value as unknown as string),
+        () => parseId(value as unknown as string),
+      ]) {
+        expect(call).toThrow(InvalidIdError)
+        expect(call).toThrow(expect.objectContaining({ reason: 'prefix' }))
+      }
+    }
+  )
+
+  // A plain-object lookup of the kind would answer these with a function
+  // inherited from Object.prototype and mint `function toString() { … }_…`.
+  test.each([
+    'toString',
+    'valueOf',
+    'constructor',
+    'hasOwnProperty',
+    '__proto__',
+  ])('the kind %s does not reach Object.prototype', (kind) => {
+    const unknown = kind as IdKind
+    for (const call of [
+      () => encodeId(unknown, GOLDEN_IDS[0][1]),
+      () => createId(unknown),
+      () => decodeId(unknown, projectId),
+    ]) {
+      expect(call).toThrow(expect.objectContaining({ reason: 'kind' }))
+    }
+    expect(isId(unknown, projectId)).toBe(false)
+  })
+
+  // Slicing up to indexOf's -1 would drop the last character, so "prjx" would
+  // be blamed on the project kind.
+  test.each(['prjx', 'volx', 'prj'])(
+    'an id with no separator, %s, names no kind',
+    (value) => {
+      try {
+        decodeId('volume', value)
+        expect.fail(`decodeId should have rejected ${value}`)
+      } catch (error) {
+        expect(error).toBeInstanceOf(InvalidIdError)
+        expect((error as InvalidIdError).reason).toBe('prefix')
+        expect((error as InvalidIdError).actualKind).toBeUndefined()
+        expect((error as InvalidIdError).message).toMatch(
+          /expected it to start with "vol_"/
+        )
+      }
+    }
+  )
+
   test('an unknown kind is false rather than a throw', () => {
     expect(isId('template' as IdKind, projectId)).toBe(false)
   })

@@ -6,7 +6,7 @@ import type { IdKind } from './id'
  * branch on this rather than on the message, which is prose and may be reworded.
  *
  * - `kind`: the kind asked for is not one this package knows.
- * - `prefix`: the ID names a different kind, or none.
+ * - `prefix`: the ID names a different kind, or none, or is not a string.
  * - `length`: the encoding is not {@link ENCODED_LENGTH} characters.
  * - `alphabet`: it holds a character outside the lowercase Crockford alphabet.
  * - `overflow`: its leading character is above `7`, so it spells a value no 16

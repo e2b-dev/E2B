@@ -118,11 +118,28 @@ function knownKinds(): string {
     .join(', ')
 }
 
+/**
+ * The error for an `id` that is not a string at all — a `null` or a number out
+ * of a JSON payload typed `any`. Callers that turn {@link InvalidIdError} into a
+ * 400 would otherwise get a TypeError, and a 500. The value is described by its
+ * type rather than interpolated: a symbol would throw from a template literal.
+ */
+function notAString(id: unknown): InvalidIdError {
+  return new InvalidIdError(
+    'prefix',
+    `Expected an ID string, got ${id === null ? 'null' : typeof id}.`
+  )
+}
+
 function prefixOf<K extends IdKind>(kind: K): IdPrefix<K> {
   // Cast so the undefined branch stays reachable to the compiler: an unknown
   // kind cannot come from TypeScript, but it can come from JavaScript or from
-  // a cast, and the message it gets should be this one.
-  const prefix = ID_PREFIXES[kind] as IdPrefix<K> | undefined
+  // a cast, and the message it gets should be this one. Own properties only:
+  // `ID_PREFIXES['toString']` would otherwise answer with a function inherited
+  // from `Object.prototype` and mint `function toString() { … }_…`.
+  const prefix = Object.hasOwn(ID_PREFIXES, kind)
+    ? (ID_PREFIXES[kind] as IdPrefix<K>)
+    : undefined
   if (prefix === undefined) {
     throw new InvalidIdError(
       'kind',
@@ -172,8 +189,13 @@ export function encodeId<K extends IdKind>(kind: K, uuid: string): Id<K> {
  */
 export function decodeId<K extends IdKind>(kind: K, id: string): string {
   const prefix = prefixOf(kind)
+  if (typeof id !== 'string') throw notAString(id)
   if (!id.startsWith(`${prefix}${SEPARATOR}`)) {
-    const named = KINDS_BY_PREFIX.get(id.slice(0, id.indexOf(SEPARATOR)))
+    // With no separator there is no prefix to name: slicing to `indexOf`'s -1
+    // would drop the last character and could land on a real one ("prjx").
+    const separator = id.indexOf(SEPARATOR)
+    const named =
+      separator < 0 ? undefined : KINDS_BY_PREFIX.get(id.slice(0, separator))
     throw named === undefined
       ? new InvalidIdError(
           'prefix',
@@ -218,6 +240,7 @@ export function createId<K extends IdKind>(kind: K): Id<K> {
  * ```
  */
 export function parseId(id: string): ParsedId {
+  if (typeof id !== 'string') throw notAString(id)
   const separator = id.indexOf(SEPARATOR)
   if (separator < 0) {
     throw new InvalidIdError(
@@ -271,8 +294,8 @@ export function parseId(id: string): ParsedId {
 export function isId<K extends IdKind>(kind: K, value: string): value is Id<K> {
   if (typeof value !== 'string') return false
 
-  const prefix = ID_PREFIXES[kind] as string | undefined
-  if (prefix === undefined) return false
+  if (!Object.hasOwn(ID_PREFIXES, kind)) return false
+  const prefix: string = ID_PREFIXES[kind]
   if (!value.startsWith(prefix + SEPARATOR)) return false
 
   return (
