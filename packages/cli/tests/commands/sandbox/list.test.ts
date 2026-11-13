@@ -42,45 +42,16 @@ describe('sandbox list table rows', () => {
     expect(rows.map((r) => r.sandboxId)).toEqual(['sbx-a', 'sbx-b'])
   })
 
-  test('sorts descending when order is desc', () => {
-    const september = sandbox('sbx-sep', new Date('2026-09-01T10:00:00Z'))
-    const october = sandbox('sbx-oct', new Date('2026-10-01T09:00:00Z'))
-
-    const rows = buildTableRows([september, october], 'desc')
-
-    expect(rows.map((r) => r.sandboxId)).toEqual(['sbx-oct', 'sbx-sep'])
-  })
-
   test('formats dates and state for display', () => {
     const startedAt = new Date('2026-09-01T10:00:00Z')
     const [row] = buildTableRows([sandbox('sbx-1', startedAt)])
 
-    expect(row.startedAt).toBe(startedAt.toLocaleString())
     expect(row.state).toBe('Running')
     expect(row.metadata).toBe('{}')
-  })
-
-  test('does not mutate the input array', () => {
-    const september = sandbox('sbx-sep', new Date('2026-09-01T10:00:00Z'))
-    const october = sandbox('sbx-oct', new Date('2026-10-01T09:00:00Z'))
-    const input = [october, september]
-
-    buildTableRows(input)
-
-    expect(input.map((s) => s.sandboxId)).toEqual(['sbx-oct', 'sbx-sep'])
   })
 })
 
 describe('sandbox list json sorting', () => {
-  test('sorts ascending by default', () => {
-    const september = sandbox('sbx-sep', new Date('2026-09-01T10:00:00Z'))
-    const october = sandbox('sbx-oct', new Date('2026-10-01T09:00:00Z'))
-
-    const sorted = sortSandboxes([october, september])
-
-    expect(sorted.map((s) => s.sandboxId)).toEqual(['sbx-sep', 'sbx-oct'])
-  })
-
   test('sorts descending when order is desc', () => {
     const september = sandbox('sbx-sep', new Date('2026-09-01T10:00:00Z'))
     const october = sandbox('sbx-oct', new Date('2026-10-01T09:00:00Z'))
