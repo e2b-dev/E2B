@@ -1,0 +1,69 @@
+{
+  "name": "@e2b/acp",
+  "version": "0.0.0",
+  "packageManager": "pnpm@10.34.5",
+  "description": "Run Agent Client Protocol (ACP) agents in E2B sandboxes",
+  "homepage": "https://e2b.dev/docs/agents/acp?utm_source=npm&utm_medium=referral&utm_campaign=package_homepage&utm_content=e2b-acp",
+  "license": "MIT",
+  "author": {
+    "name": "FoundryLabs, Inc.",
+    "email": "hello@e2b.dev",
+    "url": "https://e2b.dev"
+  },
+  "bugs": "https://github.com/e2b-dev/e2b/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/e2b-dev/e2b",
+    "directory": "packages/acp-js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "prepublishOnly": "pnpm build",
+    "build": "tsc --noEmit && tsdown",
+    "dev": "tsdown --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint --config ../../.oxlintrc.json src tests",
+    "format": "prettier --write src/ tests/"
+  },
+  "devDependencies": {
+    "@agentclientprotocol/sdk": "1.8.0",
+    "@types/node": "catalog:",
+    "@typescript/native": "catalog:",
+    "dotenv": "^16.4.5",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "package.json"
+  ],
+  "keywords": [
+    "e2b",
+    "acp",
+    "agent-client-protocol",
+    "ai-agents",
+    "coding-agents",
+    "sandbox"
+  ],
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "browserslist": [
+    "defaults"
+  ],
+  "dependencies": {
+    "e2b": "workspace:^"
+  },
+  "peerDependencies": {
+    "@agentclientprotocol/sdk": "^1.8.0"
+  }
+}
