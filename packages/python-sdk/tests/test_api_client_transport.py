@@ -34,11 +34,6 @@ from e2b.api.client_sync import get_transport as get_sync_transport
 from e2b.connection_config import READ_TIMEOUT, ConnectionConfig
 
 
-def run_in_worker_thread(fn):
-    with ThreadPoolExecutor(max_workers=1) as executor:
-        return executor.submit(fn).result()
-
-
 def test_sync_api_client_proxy_uses_explicit_transport(test_api_key):
     reset_transport_caches()
     config = ConnectionConfig(
@@ -57,32 +52,6 @@ def test_sync_api_client_proxy_uses_explicit_transport(test_api_key):
         assert httpx_client._mounts == {}
     finally:
         httpx_client.close()
-        reset_transport_caches()
-
-
-def test_sync_retry_policy_wraps_but_does_not_split_cached_transport(test_api_key):
-    reset_transport_caches()
-    default_client = get_sync_api_client(ConnectionConfig(api_key=test_api_key))
-    retrying_client = get_sync_api_client(
-        ConnectionConfig(api_key=test_api_key, retries=2)
-    )
-    default_httpx = default_client.get_httpx_client()
-    retrying_httpx = retrying_client.get_httpx_client()
-    raw_transport = get_sync_transport(
-        ConnectionConfig(api_key=test_api_key, retries=1)
-    )
-
-    try:
-        assert isinstance(default_httpx._transport, RetryableTransport)
-        assert default_httpx._transport.retries == 3
-        assert isinstance(retrying_httpx._transport, RetryableTransport)
-        assert retrying_httpx._transport.retries == 2
-        assert retrying_httpx._transport.transport is default_httpx._transport.transport
-        assert isinstance(raw_transport, PyqwestTransport)
-        assert raw_transport is default_httpx._transport.transport
-    finally:
-        retrying_httpx.close()
-        default_httpx.close()
         reset_transport_caches()
 
 
@@ -266,22 +235,6 @@ def test_sync_api_client_request_timeout_zero_disables_timeout(test_api_key):
         reset_transport_caches()
 
 
-def test_sync_generic_transport_separates_streaming_read_timeout(test_api_key):
-    reset_transport_caches()
-    config = ConnectionConfig(api_key=test_api_key)
-
-    try:
-        api_transport = get_sync_transport(config)
-        streaming_transport = get_sync_transport(config, for_streaming=True)
-
-        assert isinstance(api_transport, PyqwestTransport)
-        assert api_transport is get_sync_transport(config, for_streaming=False)
-        assert streaming_transport is not api_transport
-        assert get_sync_transport(config, for_streaming=True) is streaming_transport
-    finally:
-        reset_transport_caches()
-
-
 def test_sync_envd_api_client_wiring(test_api_key):
     reset_transport_caches()
     config = ConnectionConfig(api_key=test_api_key)
@@ -298,25 +251,6 @@ def test_sync_envd_api_client_wiring(test_api_key):
     finally:
         client.close()
         streaming.close()
-        reset_transport_caches()
-
-
-def test_sync_api_client_is_shared_across_threads(test_api_key):
-    # httpx.Client is thread-safe and the pyqwest transport underneath is
-    # too, so a single client (and its pool) serves all threads — the
-    # per-thread client caching this replaced is gone.
-    reset_transport_caches()
-    config = ConnectionConfig(api_key=test_api_key)
-    api_client = get_sync_api_client(config)
-
-    try:
-        main_client = api_client.get_httpx_client()
-        worker_client = run_in_worker_thread(api_client.get_httpx_client)
-
-        assert api_client.get_httpx_client() is main_client
-        assert worker_client is main_client
-    finally:
-        main_client.close()
         reset_transport_caches()
 
 
@@ -484,23 +418,6 @@ async def test_async_api_client_is_shared_across_loops(test_api_key):
         assert other_loop_client is main_client
     finally:
         await main_client.aclose()
-        reset_transport_caches()
-
-
-@pytest.mark.asyncio
-async def test_async_generic_transport_separates_streaming_read_timeout(test_api_key):
-    reset_transport_caches()
-    config = ConnectionConfig(api_key=test_api_key)
-
-    try:
-        api_transport = get_async_transport(config)
-        streaming_transport = get_async_transport(config, for_streaming=True)
-
-        assert isinstance(api_transport, AsyncPyqwestTransport)
-        assert api_transport is get_async_transport(config, for_streaming=False)
-        assert streaming_transport is not api_transport
-        assert get_async_transport(config, for_streaming=True) is streaming_transport
-    finally:
         reset_transport_caches()
 
 

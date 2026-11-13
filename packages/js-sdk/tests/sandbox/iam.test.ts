@@ -144,6 +144,19 @@ test('the token map serializes, awaits and coerces like a plain object', async (
 })
 
 test.for(RUNTIME_PROBED_PROPS)(
+  'the unchecked token map resolves %s to its placeholder',
+  (prop: string) => {
+    // The update-network payload carries no iam config, so no name can be
+    // reported as unregistered.
+    const tokens = iamTokenPlaceholders([], { validate: false })
+
+    expect(`${tokens[prop]}`).toBe(`\${e2b.identity.tokens.${prop}}`)
+    expect(JSON.stringify(tokens)).toBe('{}')
+    expect(String(tokens)).toBe('[object Object]')
+  }
+)
+
+test.for(RUNTIME_PROBED_PROPS)(
   'reading the unregistered token %s throws instead of resolving',
   (prop: string) => {
     const tokens = iamTokenPlaceholders(['aws'], { validate: true })
@@ -169,16 +182,3 @@ test('the runtime-probed valueOf answers with the guarded map', () => {
     /iam token 'gcp'.*Registered tokens: 'aws'/s
   )
 })
-
-test.for(RUNTIME_PROBED_PROPS)(
-  'the unchecked token map resolves %s to its placeholder',
-  (prop: string) => {
-    // The update-network payload carries no iam config, so no name can be
-    // reported as unregistered.
-    const tokens = iamTokenPlaceholders([], { validate: false })
-
-    expect(`${tokens[prop]}`).toBe(`\${e2b.identity.tokens.${prop}}`)
-    expect(JSON.stringify(tokens)).toBe('{}')
-    expect(String(tokens)).toBe('[object Object]')
-  }
-)
