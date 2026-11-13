@@ -542,3 +542,59 @@ describe('CommandHandle', () => {
     expect(err.stderr).toBeUndefined()
   })
 })
+
+describe('CommandHandle input routing', () => {
+  async function* noEvents() {}
+
+  function ptyHandle(
+    sendInput: (data: string | Uint8Array) => Promise<void>
+  ): CommandHandle {
+    return new CommandHandle(
+      1,
+      () => {},
+      async () => true,
+      noEvents(),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      sendInput
+    )
+  }
+
+  it('sends PTY input through sendInput', async () => {
+    const sent: (string | Uint8Array)[] = []
+    const handle = ptyHandle(async (data) => {
+      sent.push(data)
+    })
+
+    await handle.sendInput('ls\n')
+    await handle.sendInput(new Uint8Array([1, 2]))
+
+    expect(sent).toEqual(['ls\n', new Uint8Array([1, 2])])
+  })
+
+  it('points PTY handles from sendStdin to sendInput', async () => {
+    const handle = ptyHandle(async () => {})
+
+    await expect(handle.sendStdin('ls\n')).rejects.toThrow(/use sendInput\(\)/)
+  })
+
+  it('points command handles from sendInput to sendStdin', async () => {
+    const handle = new CommandHandle(
+      1,
+      () => {},
+      async () => true,
+      noEvents(),
+      undefined,
+      undefined,
+      undefined,
+      async () => {}
+    )
+
+    await expect(handle.sendInput('ls\n')).rejects.toThrow(/use sendStdin\(\)/)
+  })
+})
