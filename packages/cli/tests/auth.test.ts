@@ -275,21 +275,28 @@ describe('ensureAuth', () => {
       expect(fetchMock).toHaveBeenCalledTimes(1)
     })
 
-    test('needs E2B_PROJECT_ID', async () => {
+    test('needs E2B_PROJECT_ID for requests, pointing at project list', async () => {
       vi.stubEnv('E2B_ACCESS_TOKEN', jwt(3600))
       vi.stubEnv('E2B_PROJECT_ID', '')
       const fetchMock = mockWorkspaceApi()
       const error = failing()
-      const { ensureAuth, requireMe } = await import('../src/api')
+      const { ensureAuth } = await import('../src/api')
 
       await expect(ensureAuth()).rejects.toThrow('exit 1')
-      await expect(requireMe()).rejects.toThrow('exit 1')
-      for (const call of error.mock.calls) {
-        expect(String(call[0])).toContain(
-          'E2B_ACCESS_TOKEN needs E2B_PROJECT_ID'
-        )
-      }
+      const message = String(error.mock.calls[0][0])
+      expect(message).toContain('E2B_ACCESS_TOKEN needs E2B_PROJECT_ID')
+      expect(message).toContain('e2b project list')
       expect(fetchMock).not.toHaveBeenCalled()
+    })
+
+    test('lets requireMe list projects without E2B_PROJECT_ID', async () => {
+      vi.stubEnv('E2B_ACCESS_TOKEN', jwt(3600))
+      vi.stubEnv('E2B_PROJECT_ID', '')
+      mockWorkspaceApi()
+      const { currentProject, requireMe } = await import('../src/api')
+
+      expect((await requireMe()).workspaces).toHaveLength(1)
+      expect(currentProject()).toBeUndefined()
     })
 
     test('is refused together with E2B_API_KEY', async () => {

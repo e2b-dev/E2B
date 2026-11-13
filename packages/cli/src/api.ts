@@ -66,8 +66,7 @@ export function currentProject(): string | undefined {
 /**
  * What is wrong with the credentials in the environment, if anything.
  * `E2B_API_KEY` and `E2B_ACCESS_TOKEN` select different projects (the key's
- * own, `E2B_PROJECT_ID`), so both at once is a mistake, not a precedence;
- * and the token needs the project named, like the key names its own.
+ * own, `E2B_PROJECT_ID`), so both at once is a mistake, not a precedence.
  */
 export function envCredentialsError(): string | undefined {
   if (process.env.E2B_API_KEY && envAccessToken) {
@@ -75,12 +74,30 @@ export function envCredentialsError(): string | undefined {
       'E2B_ACCESS_TOKEN'
     )} are set. Unset one of them.`
   }
-  if (envAccessToken && !projectId) {
-    return `${asBold('E2B_ACCESS_TOKEN')} needs ${asBold(
-      'E2B_PROJECT_ID'
-    )}: set it to the project requests go to (its ID, prj_ ID, slug or name).`
-  }
   return undefined
+}
+
+/**
+ * `E2B_ACCESS_TOKEN` needs the project named, like the key names its own,
+ * before any request goes to a project. Listing workspaces and projects
+ * doesn't, so `e2b project list` can find it.
+ */
+export const accessTokenNeedsProject = () =>
+  `${asBold('E2B_ACCESS_TOKEN')} needs ${asBold(
+    'E2B_PROJECT_ID'
+  )}: set it to the project requests go to (its ID, prj_ ID, slug or name). Run ${asBold(
+    'e2b project list'
+  )} to see your projects.`
+
+/**
+ * {@link envCredentialsError}, plus a missing `E2B_PROJECT_ID` with
+ * `E2B_ACCESS_TOKEN`: for commands that need a project.
+ */
+export function envProjectCredentialsError(): string | undefined {
+  return (
+    envCredentialsError() ??
+    (envAccessToken && !projectId ? accessTokenNeedsProject() : undefined)
+  )
 }
 
 /**
@@ -129,7 +146,8 @@ export function getMe(): Promise<Me> {
 /**
  * {@link getMe} for commands about workspaces and projects. workspace-api
  * only accepts an access token, so these need a login or `E2B_ACCESS_TOKEN`
- * even when `E2B_API_KEY` is set.
+ * even when `E2B_API_KEY` is set. `E2B_PROJECT_ID` is not needed with the
+ * token: listing projects is how to find one.
  */
 export async function requireMe(): Promise<Me> {
   const envError = envCredentialsError()
@@ -155,7 +173,7 @@ export async function requireMe(): Promise<Me> {
 
 /**
  * The project every request with `E2B_ACCESS_TOKEN` goes to: `E2B_PROJECT_ID`
- * (required, checked by {@link envCredentialsError}), resolved through
+ * (required, checked by {@link envProjectCredentialsError}), resolved through
  * `/v1/me` for its UUID and control plane. `--project` plays no part, as
  * with `E2B_API_KEY`.
  */
@@ -207,7 +225,7 @@ async function resolveProject(
  * expires.
  */
 export async function ensureAuth(cliProjectId?: string): Promise<Auth> {
-  const envError = envCredentialsError()
+  const envError = envProjectCredentialsError()
   if (envError) {
     console.error(envError)
     process.exit(1)

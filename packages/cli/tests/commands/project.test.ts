@@ -293,6 +293,23 @@ describe('with E2B_ACCESS_TOKEN', () => {
     expect(mocks.updateUserConfig).not.toHaveBeenCalled()
   })
 
+  test('project list works without E2B_PROJECT_ID, marking none current', async () => {
+    mocks.current = undefined
+    mocks.envToken = 'token'
+    const { out } = await run(['project', 'list', '-f', 'json'])
+    const rows = JSON.parse(out) as { current: boolean }[]
+    expect(rows.length).toBeGreaterThan(0)
+    expect(rows.some((r) => r.current)).toBe(false)
+  })
+
+  test('project info without E2B_PROJECT_ID asks for it', async () => {
+    mocks.current = undefined
+    mocks.envToken = 'token'
+    const { err } = await run(['project', 'info'])
+    expect(err).toContain('E2B_ACCESS_TOKEN needs E2B_PROJECT_ID')
+    expect(err).toContain('e2b project list')
+  })
+
   test('project list marks the E2B_PROJECT_ID project current', async () => {
     mocks.current = 'prj_shared'
     mocks.envToken = 'token'

@@ -1,6 +1,6 @@
 import * as commander from '@commander-js/extra-typings'
 
-import { envAccessToken, envCredentialsError } from 'src/api'
+import { envAccessToken, envProjectCredentialsError } from 'src/api'
 import { getUserConfig } from 'src/user'
 import { asFormattedConfig, asFormattedError } from 'src/utils/format'
 
@@ -14,7 +14,7 @@ export const infoCommand = new commander.Command('info')
       console.error(asFormattedError('Failed to read user config', err))
     }
 
-    const envError = envCredentialsError()
+    const envError = envProjectCredentialsError()
     if (envError) {
       console.error(asFormattedError(envError))
       process.exit(1)

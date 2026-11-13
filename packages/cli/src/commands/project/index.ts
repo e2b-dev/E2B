@@ -1,6 +1,12 @@
 import * as commander from '@commander-js/extra-typings'
 
-import { currentProject, envAccessToken, projectId, requireMe } from 'src/api'
+import {
+  accessTokenNeedsProject,
+  currentProject,
+  envAccessToken,
+  projectId,
+  requireMe,
+} from 'src/api'
 import { Format, parseFormat } from 'src/options'
 import { asBold, asFormattedError } from 'src/utils/format'
 import { renderTable } from 'src/utils/table'
@@ -49,6 +55,8 @@ function projectStatus({ status, blocked, block_reasons }: Project) {
 function resolveCurrent(me: Me): ProjectEntry {
   const current = currentProject()
   if (current) return findProject(me, current)
+  // `e2b project use` refuses with the token, which ignores the stored login.
+  if (envAccessToken) throw new Error(accessTokenNeedsProject())
   throw new Error(
     `No project selected. Run ${asBold('e2b project use <project>')}.`
   )
