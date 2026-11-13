@@ -144,7 +144,7 @@ def _compile(pattern: str, backslash_is_escape: bool) -> Callable[[str], bool]:
         return lambda path: path.endswith(suffix) or (
             suffix.startswith("/") and path == suffix[1:]
         )
-    compiled = re.compile(regex + r"\Z")
+    compiled = re.compile(regex + r"\Z", flags=re.ASCII)
     return lambda path: compiled.match(path) is not None
 
 
