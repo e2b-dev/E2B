@@ -1,0 +1,17 @@
+{
+  "name": "@e2b/acp-python",
+  "private": true,
+  "version": "0.0.0",
+  "dependencies": {
+    "@e2b/python-sdk": "workspace:*"
+  },
+  "scripts": {
+    "test": "uv run pytest --verbose",
+    "postVersion": "uv version --frozen $(pnpm pkg get version --workspaces=false | tr -d \\\") && uv add --frozen \"e2b>=$(node -p \"require('../python-sdk/package.json').version\"),<3.0.0\"",
+    "lock": "uv lock",
+    "postPublish": "uv build && uv publish --trusted-publishing always --check-url https://pypi.org/simple/",
+    "typecheck": "uv run make typecheck",
+    "lint": "uv run make lint",
+    "format": "uv run make format"
+  }
+}
