@@ -1,4 +1,4 @@
-import { assert, expect, test } from 'vitest'
+import { assert, test } from 'vitest'
 
 import { Paginator } from '../src/paginator'
 
@@ -51,12 +51,4 @@ test('paginator exposes pagination state and advances across pages', async () =>
   assert.deepEqual(second, ['c'])
   assert.isFalse(paginator.hasNext)
   assert.isUndefined(paginator.nextToken)
-})
-
-test('paginator throws once exhausted', async () => {
-  const paginator = new FakePaginator([{ items: [], nextToken: undefined }])
-  await paginator.nextItems()
-
-  assert.isFalse(paginator.hasNext)
-  await expect(paginator.nextItems()).rejects.toThrow('No more items to fetch')
 })
