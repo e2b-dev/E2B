@@ -370,3 +370,51 @@ async def test_build_link_error_preserves_copy_callsite(
         frame.name == "copy_with_cyclic_link"
         for frame in traceback.extract_tb(failure.value.__traceback__)
     )
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Symlinks require privileges")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("template_class", [Template, AsyncTemplate])
+async def test_build_ignores_excluded_self_referential_link(
+    tmp_path, build_endpoint, template_class
+):
+    (tmp_path / "app.py").write_text("selected")
+    (tmp_path / "loop").symlink_to("loop")
+    endpoint, uploads, _ = build_endpoint
+    template = (
+        template_class(file_context_path=tmp_path, file_ignore_patterns=["loop"])
+        .from_python_image("3")
+        .copy(".", "/app", resolve_symlinks=True)
+    )
+    result = template_class.build_in_background(
+        template, "fixture", api_key="fixture-placeholder", api_url=endpoint
+    )
+    if template_class is AsyncTemplate:
+        await result
+    assert uploads[-1]["app.py"] == (tarfile.REGTYPE, b"selected")
+    assert "loop" not in uploads[-1]
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Symlinks require privileges")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("template_class", [Template, AsyncTemplate])
+@pytest.mark.parametrize("resolve", [True, False])
+async def test_build_selects_only_source_under_linked_context(
+    tmp_path, tmp_path_factory, build_endpoint, template_class, resolve
+):
+    (tmp_path / "app.py").write_text("selected")
+    (tmp_path / "unselected.txt").write_text("not selected")
+    alias = tmp_path_factory.mktemp("context-alias") / "context"
+    alias.symlink_to(tmp_path, target_is_directory=True)
+    endpoint, uploads, _ = build_endpoint
+    template = (
+        template_class(file_context_path=alias)
+        .from_python_image("3")
+        .copy("app.py", "/app", resolve_symlinks=resolve)
+    )
+    result = template_class.build_in_background(
+        template, "fixture", api_key="fixture-placeholder", api_url=endpoint
+    )
+    if template_class is AsyncTemplate:
+        await result
+    assert uploads[-1] == {"app.py": (tarfile.REGTYPE, b"selected")}

@@ -240,9 +240,9 @@ def get_all_files_in_path(
                 ignored = matcher.matches(relative_path)
                 if not ignored:
                     files.add(entry.path)
-                if entry.is_dir(follow_symlinks=resolve_symlinks) and (
+                if (
                     not ignored or matcher.may_match_under(relative_path)
-                ):
+                ) and entry.is_dir(follow_symlinks=resolve_symlinks):
                     walk(entry.path, relative_path, ancestors)
 
     # Use glob to find all files/directories matching the pattern under context_path

@@ -282,3 +282,46 @@ test.skipIf(process.platform === 'win32')(
     })
   }
 )
+
+test.skipIf(process.platform === 'win32').each([true, false])(
+  'build selects only the source under a linked context: %s',
+  async (resolveSymlinks) => {
+    await writeFile(join(context, 'app.py'), 'selected')
+    await writeFile(join(context, 'unselected.txt'), 'not selected')
+    const aliasRoot = await mkdtemp(join(tmpdir(), 'e2b-context-alias-'))
+    try {
+      const alias = join(aliasRoot, 'context')
+      await symlink(context, alias)
+      const template = new Template({ fileContextPath: alias })
+        .fromPythonImage('3')
+        .copy('app.py', '/app', { resolveSymlinks })
+      await Template.buildInBackground(template, 'fixture', {
+        apiKey: 'fixture-placeholder',
+        apiUrl: endpoint,
+      })
+      expect(uploads.at(-1)).toEqual(new Map([['app.py', 'File']]))
+    } finally {
+      await rm(aliasRoot, { recursive: true, force: true })
+    }
+  }
+)
+
+test.skipIf(process.platform === 'win32')(
+  'build ignores an excluded self-referential link',
+  async () => {
+    await writeFile(join(context, 'app.py'), 'selected')
+    await symlink('loop', join(context, 'loop'))
+    const template = new Template({
+      fileContextPath: context,
+      fileIgnorePatterns: ['loop'],
+    })
+      .fromPythonImage('3')
+      .copy('.', '/app', { resolveSymlinks: true })
+    await Template.buildInBackground(template, 'fixture', {
+      apiKey: 'fixture-placeholder',
+      apiUrl: endpoint,
+    })
+    expect(uploads.at(-1)?.get('app.py')).toBe('File')
+    expect(uploads.at(-1)?.has('loop')).toBe(false)
+  }
+)

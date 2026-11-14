@@ -307,6 +307,11 @@ export async function getAllFilesInPath(
     // location, rather than the resolved target's location.
     // Ignored links can still contain explicitly re-included descendants.
     for (const file of linkCandidates.values()) {
+      if (
+        !files.has(file.fullpath()) &&
+        !isUnderWalkedDir(file.relativePosix())
+      )
+        continue
       const entry = await fs.promises
         .lstat(file.fullpath())
         .catch(() => undefined)
@@ -333,6 +338,7 @@ export async function getAllFilesInPath(
         `${escape(file.relativePosix() || '.')}/**/*`,
         { ignore, withFileTypes: true, dot: true, cwd: contextPath }
       )
+      walkedDirs.add(file.relativePosix())
       for (const child of linkedFiles) {
         if (!files.has(child.fullpath())) files.set(child.fullpath(), child)
       }
