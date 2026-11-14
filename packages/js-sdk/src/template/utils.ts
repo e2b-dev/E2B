@@ -5,7 +5,7 @@ import path from 'node:path'
 import url from 'node:url'
 import { parse, type StackFrame } from 'error-stack-parser-es'
 import { dynamicImport } from '../utils'
-import { TemplateError } from '../errors'
+import { BuildError, TemplateError } from '../errors'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
 import { PatternMatcher } from '@e2b/dockerfile-utils'
 import type { IgnoreLike, Path } from 'glob'
@@ -166,7 +166,8 @@ function normalizeIgnorePattern(pattern: string, contextPath: string): string {
  */
 function createIgnoreMatcher(
   ignorePatterns: string[],
-  contextPath: string
+  contextPath: string,
+  onVisit?: (entry: Path) => void
 ): IgnoreLike {
   const absoluteContextPath = path.resolve(contextPath)
   let matcher: PatternMatcher
@@ -183,7 +184,9 @@ function createIgnoreMatcher(
 
   const ignored = (p: Path) => {
     const relativePath = p.relativePosix()
-    return relativePath !== '' && matcher.matches(relativePath)
+    const isIgnored = relativePath !== '' && matcher.matches(relativePath)
+    if (!isIgnored || matcher.mayMatchUnder(relativePath)) onVisit?.(p)
+    return isIgnored
   }
 
   return {
@@ -208,9 +211,18 @@ export async function getAllFilesInPath(
   includeDirectories: boolean = true,
   resolveSymlinks: boolean = false
 ) {
-  const { glob } = await dynamicImport<typeof import('glob')>('glob')
+  const { glob, escape } = await dynamicImport<typeof import('glob')>('glob')
   const files = new Map<string, Path>()
-  const ignore = createIgnoreMatcher(ignorePatterns, contextPath)
+  const linkCandidates = new Map<string, Path>()
+  const ignore = createIgnoreMatcher(
+    ignorePatterns,
+    contextPath,
+    resolveSymlinks
+      ? (entry) => {
+          linkCandidates.set(entry.fullpath(), entry)
+        }
+      : undefined
+  )
 
   const globFiles = await glob(src, {
     ignore,
@@ -274,21 +286,42 @@ export async function getAllFilesInPath(
 
   if (resolveSymlinks) {
     const contextRoot = path.resolve(contextPath)
+    let realContextRoot: string | undefined
+    const resolveInContext = async (file: Path) => {
+      realContextRoot ??= await fs.promises.realpath(contextRoot)
+      const realPath = await fs.promises.realpath(file.fullpath())
+      const relativeTarget = path.relative(realContextRoot, realPath)
+      if (
+        relativeTarget === '..' ||
+        relativeTarget.startsWith(`..${path.sep}`) ||
+        path.isAbsolute(relativeTarget)
+      ) {
+        throw new BuildError(
+          `Path '${file.relativePosix()}' resolves outside the template context. Move the target inside the context, exclude the link via .dockerignore, or set \`resolveSymlinks: false\` to copy the link itself.`
+        )
+      }
+      return realPath
+    }
+    for (const file of files.values()) linkCandidates.set(file.fullpath(), file)
     // Keep logical paths so both ignore rules and archive names use the link's
     // location, rather than the resolved target's location.
-    for (const file of files.values()) {
-      if (!file.isSymbolicLink()) continue
+    // Ignored links can still contain explicitly re-included descendants.
+    for (const file of linkCandidates.values()) {
+      const entry = await fs.promises
+        .lstat(file.fullpath())
+        .catch(() => undefined)
+      if (!entry?.isSymbolicLink()) continue
       const target = await fs.promises
         .stat(file.fullpath())
         .catch(() => undefined)
       if (!target?.isDirectory()) continue
 
-      const realPath = await fs.promises.realpath(file.fullpath())
+      const realPath = await resolveInContext(file)
       let parent = path.dirname(file.fullpath())
       while (parent !== contextRoot || files.has(parent)) {
         if ((await fs.promises.realpath(parent)) === realPath) {
-          throw new TemplateError(
-            `Cannot resolve cyclic directory symlink: ${file.relativePosix()}`
+          throw new BuildError(
+            `Cannot resolve cyclic directory symlink '${file.relativePosix()}'. Remove the link, exclude it via .dockerignore, or set \`resolveSymlinks: false\` to copy the link itself.`
           )
         }
         const next = path.dirname(parent)
@@ -297,13 +330,14 @@ export async function getAllFilesInPath(
       }
 
       const linkedFiles = await glob(
-        normalizePath(path.join(file.relative(), '**/*')),
+        `${escape(file.relativePosix() || '.')}/**/*`,
         { ignore, withFileTypes: true, dot: true, cwd: contextPath }
       )
       for (const child of linkedFiles) {
         if (!files.has(child.fullpath())) files.set(child.fullpath(), child)
       }
     }
+    for (const file of files.values()) await resolveInContext(file)
   }
 
   // Sort by full path for a deterministic order — the default sort() would
@@ -370,7 +404,10 @@ export async function calculateFilesHash(
     ignorePatterns,
     true,
     resolveSymlinks
-  )
+  ).catch((error: unknown) => {
+    if (error instanceof BuildError && stackTrace) error.stack = stackTrace
+    throw error
+  })
 
   if (files.length === 0) {
     const error = new Error(`No files found in ${srcPath}`)

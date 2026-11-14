@@ -26,11 +26,13 @@ import {
   SandboxHealthCheck,
 } from '../../envd/rpc'
 import { ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE } from '../../envd/versions'
-import { SandboxError } from '../../errors'
+import { InvalidArgumentError, SandboxError } from '../../errors'
 import { CommandHandle, CommandOutput, CommandResult } from './commandHandle'
 import { CommandInputHandle, CommandStreamInputOpts } from './inputHandle'
 export { Pty } from './pty'
 export type { CommandStreamInputOpts }
+
+const DEFAULT_SHELL = ['/bin/bash', '-l', '-c']
 
 /**
  * Options for sending a command request.
@@ -68,6 +70,14 @@ export interface CommandStartOpts extends CommandRequestOpts {
    * @default `{}`
    */
   envs?: Record<string, string>
+  /**
+   * Shell used to run the command, as the executable followed by its arguments.
+   * The command is passed as the last argument, e.g. `['/bin/sh', '-c']` runs `/bin/sh -c <cmd>`.
+   * Throws {@link InvalidArgumentError} if `shell` is not an array, is empty, or its first element (the executable) is empty.
+   *
+   * @default `['/bin/bash', '-l', '-c']`
+   */
+  shell?: readonly string[]
   /**
    * Callback for command stdout output.
    */
@@ -456,6 +466,14 @@ export class Commands {
       )
     }
 
+    const shellOpt = opts?.shell ?? DEFAULT_SHELL
+    if (!Array.isArray(shellOpt) || !shellOpt[0]) {
+      throw new InvalidArgumentError(
+        "`shell` must start with the executable, e.g. `['/bin/sh', '-c']`. Omit `shell` to use the default `['/bin/bash', '-l', '-c']`."
+      )
+    }
+    const [shell, ...shellArgs] = shellOpt
+
     const requestTimeoutMs =
       opts?.requestTimeoutMs ?? this.connectionConfig.requestTimeoutMs
 
@@ -467,10 +485,10 @@ export class Commands {
     const events = this.rpc.start(
       {
         process: {
-          cmd: '/bin/bash',
+          cmd: shell,
           cwd: opts?.cwd,
           envs: opts?.envs,
-          args: ['-l', '-c', cmd],
+          args: [...shellArgs, cmd],
         },
         stdin: opts?.stdin || false,
       },

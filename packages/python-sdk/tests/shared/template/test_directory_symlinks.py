@@ -3,12 +3,13 @@ import json
 import sys
 import tarfile
 import threading
+import traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
 
 from e2b import AsyncTemplate, Template
-from e2b.exceptions import TemplateException
+from e2b.exceptions import BuildException
 
 
 @pytest.fixture
@@ -195,7 +196,7 @@ async def test_build_reports_cyclic_directory_symlinks(
             resolve_symlinks=True,
         )
     )
-    with pytest.raises(TemplateException, match="cyclic directory symlink"):
+    with pytest.raises(BuildException, match="cyclic directory symlink"):
         result = template_class.build_in_background(
             template,
             "fixture",
@@ -223,7 +224,7 @@ async def test_build_detects_cycles_through_ignored_ancestors(
         .from_python_image("3")
         .copy("real", "/app", resolve_symlinks=True)
     )
-    with pytest.raises(TemplateException, match="cyclic directory symlink"):
+    with pytest.raises(BuildException, match="cyclic directory symlink"):
         result = template_class.build_in_background(
             template,
             "fixture",
@@ -232,3 +233,140 @@ async def test_build_detects_cycles_through_ignored_ancestors(
         )
         if template_class is AsyncTemplate:
             await result
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Symlinks require privileges")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("template_class", [Template, AsyncTemplate])
+@pytest.mark.parametrize("case", ["reinclusion", "literal"])
+async def test_build_link_names_and_reincluded_children(
+    tmp_path, build_endpoint, template_class, case
+):
+    (tmp_path / "real").mkdir()
+    if case == "reinclusion":
+        (tmp_path / "target").mkdir()
+        (tmp_path / "target" / "keep.txt").write_text("keep")
+        (tmp_path / "target" / "skip.txt").write_text("skip")
+        (tmp_path / "real" / "link").symlink_to("../target", target_is_directory=True)
+        source = "."
+        ignores = ["target", "real/link", "!real/link/keep.txt"]
+    else:
+        (tmp_path / "alias1").mkdir()
+        (tmp_path / "real" / "app.py").write_text("correct")
+        (tmp_path / "alias1" / "wrong.txt").write_text("other directory")
+        (tmp_path / "alias[1]").symlink_to("real", target_is_directory=True)
+        source = "*"
+        ignores = []
+    endpoint, uploads, hashes = build_endpoint
+
+    async def build():
+        template = (
+            template_class(file_context_path=tmp_path, file_ignore_patterns=ignores)
+            .from_python_image("3")
+            .copy(source, "/app", resolve_symlinks=True)
+        )
+        result = template_class.build_in_background(
+            template, "fixture", api_key="fixture-placeholder", api_url=endpoint
+        )
+        if template_class is AsyncTemplate:
+            await result
+
+    await build()
+    if case == "reinclusion":
+        assert uploads[-1]["real/link/keep.txt"] == (tarfile.REGTYPE, b"keep")
+        assert "real/link" not in uploads[-1]
+        assert "real/link/skip.txt" not in uploads[-1]
+        (tmp_path / "target" / "keep.txt").write_text("edit")
+        await build()
+        assert hashes[-1] != hashes[-2]
+        (tmp_path / "target" / "skip.txt").write_text("ignored edit")
+        await build()
+        assert hashes[-1] == hashes[-2]
+    else:
+        assert uploads[-1]["alias[1]/app.py"] == (tarfile.REGTYPE, b"correct")
+        assert "alias[1]/wrong.txt" not in uploads[-1]
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Symlinks require privileges")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("template_class", [Template, AsyncTemplate])
+@pytest.mark.parametrize("resolve", [True, False])
+@pytest.mark.parametrize("target_kind", ["directory", "nested_file"])
+async def test_build_resolved_directory_links_stay_in_context(
+    tmp_path,
+    tmp_path_factory,
+    build_endpoint,
+    template_class,
+    resolve,
+    target_kind,
+):
+    outside = tmp_path_factory.mktemp("outside-link-target")
+    (outside / "synthetic.txt").write_text("outside fixture")
+    if target_kind == "directory":
+        (tmp_path / "linked").symlink_to(outside, target_is_directory=True)
+    else:
+        (tmp_path / "real").mkdir()
+        (tmp_path / "real" / "external.txt").symlink_to(outside / "synthetic.txt")
+        (tmp_path / "linked").symlink_to("real", target_is_directory=True)
+    endpoint, uploads, _ = build_endpoint
+    template = (
+        template_class(file_context_path=tmp_path)
+        .from_python_image("3")
+        .copy(
+            "linked",
+            "/app",
+            resolve_symlinks=resolve,
+        )
+    )
+
+    async def build():
+        result = template_class.build_in_background(
+            template,
+            "fixture",
+            api_key="fixture-placeholder",
+            api_url=endpoint,
+        )
+        if template_class is AsyncTemplate:
+            await result
+
+    if resolve:
+        with pytest.raises(BuildException, match="outside.*context"):
+            await build()
+        assert not uploads
+    else:
+        await build()
+        assert uploads[-1] == {"linked": (tarfile.SYMTYPE, None)}
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Symlinks require privileges")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("template_class", [Template, AsyncTemplate])
+async def test_build_link_error_preserves_copy_callsite(
+    tmp_path, build_endpoint, template_class
+):
+    (tmp_path / "real").mkdir()
+    (tmp_path / "real" / "back").symlink_to(".", target_is_directory=True)
+    endpoint, _, _ = build_endpoint
+
+    def copy_with_cyclic_link():
+        return (
+            template_class(file_context_path=tmp_path)
+            .from_python_image("3")
+            .copy(
+                "real",
+                "/app",
+                resolve_symlinks=True,
+            )
+        )
+
+    template = copy_with_cyclic_link()
+    with pytest.raises(BuildException, match="resolve_symlinks=False") as failure:
+        result = template_class.build_in_background(
+            template, "fixture", api_key="fixture-placeholder", api_url=endpoint
+        )
+        if template_class is AsyncTemplate:
+            await result
+    assert any(
+        frame.name == "copy_with_cyclic_link"
+        for frame in traceback.extract_tb(failure.value.__traceback__)
+    )

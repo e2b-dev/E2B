@@ -11,7 +11,7 @@ import inspect
 from types import TracebackType, FrameType
 from typing import IO, List, Optional, Union
 
-from e2b.exceptions import TemplateException
+from e2b.exceptions import BuildException, TemplateException
 from e2b.template.consts import BASE_STEP_NAME, FINALIZE_STEP_NAME
 from e2b_dockerfile_utils import PatternMatcher
 
@@ -190,6 +190,7 @@ def get_all_files_in_path(
     files = set()
 
     abs_context_path = os.path.abspath(context_path)
+    real_context_path = os.path.realpath(abs_context_path)
     try:
         matcher = PatternMatcher(
             [_normalize_ignore_pattern(p, abs_context_path) for p in ignore_patterns],
@@ -198,13 +199,35 @@ def get_all_files_in_path(
     except ValueError as e:
         raise TemplateException(str(e)) from e
 
+    def resolve_in_context(file_path: str, relative_path: str) -> str:
+        real_path = os.path.realpath(file_path)
+        try:
+            in_context = (
+                os.path.commonpath([real_context_path, real_path]) == real_context_path
+            )
+        except ValueError:
+            in_context = False
+        if not in_context:
+            raise BuildException(
+                f"Path '{relative_path}' resolves outside the template context. "
+                "Move the target inside the context, exclude the link via .dockerignore, "
+                "or set `resolve_symlinks=False` to copy the link itself."
+            )
+        return real_path
+
     def walk(
         dir_path: str, dir_relative_path: str, ancestors: frozenset[str] = frozenset()
     ) -> None:
-        real_path = os.path.realpath(dir_path)
+        real_path = (
+            resolve_in_context(dir_path, dir_relative_path)
+            if resolve_symlinks
+            else os.path.realpath(dir_path)
+        )
         if real_path in ancestors:
-            raise TemplateException(
-                f"Cannot resolve cyclic directory symlink: {dir_relative_path}"
+            raise BuildException(
+                f"Cannot resolve cyclic directory symlink '{dir_relative_path}'. "
+                "Remove the link, exclude it via .dockerignore, "
+                "or set `resolve_symlinks=False` to copy the link itself."
             )
         ancestors = ancestors | {real_path}
         with os.scandir(dir_path) as entries:
@@ -269,6 +292,11 @@ def get_all_files_in_path(
         else:
             files.add(file_path)
 
+    if resolve_symlinks:
+        for file_path in files:
+            resolve_in_context(
+                file_path, normalize_path(os.path.relpath(file_path, abs_context_path))
+            )
     return sorted(list(files))
 
 
@@ -306,9 +334,12 @@ def calculate_files_hash(
 
     hash_obj.update(content.encode())
 
-    files = get_all_files_in_path(
-        src, context_path, ignore_patterns, True, resolve_symlinks
-    )
+    try:
+        files = get_all_files_in_path(
+            src, context_path, ignore_patterns, True, resolve_symlinks
+        )
+    except BuildException as error:
+        raise error.with_traceback(stack_trace)
 
     if len(files) == 0:
         raise ValueError(f"No files found in {src_path}").with_traceback(stack_trace)

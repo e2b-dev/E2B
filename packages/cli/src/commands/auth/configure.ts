@@ -1,6 +1,6 @@
 import * as commander from '@commander-js/extra-typings'
 
-import { getMe } from 'src/api'
+import { envAccessToken, getMe } from 'src/api'
 import { getConfigRefreshTimestamp, getUserConfig } from 'src/user'
 import { updateUserConfig } from 'src/utils/token-refresh'
 import { blockedWarning, pickProject } from 'src/workspaces'
@@ -10,6 +10,19 @@ export const configureCommand = new commander.Command('configure')
   .description('choose the project commands run in, interactively')
   .action(async () => {
     console.log('Configuring user...\n')
+
+    // The token's projects are not the login's, and the token ignores the
+    // stored selection anyway.
+    if (envAccessToken) {
+      console.error(
+        asFormattedError(
+          `${asBold('E2B_ACCESS_TOKEN')} is set, so the stored project is not used. Choose the project with ${asBold(
+            'E2B_PROJECT_ID'
+          )} instead.`
+        )
+      )
+      process.exit(1)
+    }
 
     // A file that exists but fails validation counts as signed out too —
     // getUserConfig returns null for it (and prints the deprecation message).

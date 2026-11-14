@@ -1,5 +1,69 @@
 # @e2b/cli
 
+## 2.24.0
+
+### Minor Changes
+
+- c0211e9: The CLI now authenticates every request with your login's access token instead of a stored API key.
+
+  - `e2b auth login` opens `https://e2b.dev/auth/cli` (or `https://$E2B_DOMAIN/auth/cli`). The `E2B_DOCS_BASE` override is removed.
+  - Access tokens are refreshed automatically before they expire, including during long-running commands such as `sandbox logs --follow`, `sandbox metrics --follow` and an attached `sandbox create` session. Refreshes are serialized across concurrent `e2b` processes, so running several commands at once no longer risks signing you out.
+  - `--project`, `E2B_PROJECT_ID` and the project chosen with `e2b auth configure` select the project for each request.
+  - The project API key in `~/.e2b/config.json` plays no role any more: it is neither used for requests nor written by `e2b auth login`. After downgrading to a CLI version that authenticates with it, run `e2b auth login` again.
+  - `E2B_API_KEY` still works and takes precedence, for CI/CD and other non-interactive use.
+
+- 29fe119: `E2B_ACCESS_TOKEN` authenticates the CLI with an OAuth access token, for CI and other places without a login. It needs `E2B_PROJECT_ID`, which is the project for every request, like `E2B_API_KEY` decides the project on its own; setting both credentials is refused, and a stored login is ignored while the token is set. `e2b workspace list` and `e2b project list` work with the token alone, to find the project to set; `e2b project use` doesn't work with it. The token is used as is: once it expires, set a new one. The variable once held the dashboard's access tokens, which no longer work: such a value is ignored with a warning, as if the variable were unset.
+- 07dc47a: Upgrade commander to v15. Commands now reject unexpected extra positional arguments (e.g. `e2b sandbox pause <id> <extra>`) with an error instead of silently ignoring them.
+- 6a976f3: `e2b template list` and `e2b template delete` now use the SDK's `Template.list()` and `Template.delete()`. `TemplateInfo` gains `maxCpuCount` (`max_cpu_count` in Python) for resizable templates.
+
+  Breaking: `e2b template list -f json` now prints the SDK's `TemplateInfo` objects (`templateId`, `buildId`, `names`, …) instead of the raw API response (`templateID`, `buildID`, `aliases`, `createdBy`, …), and the pretty table drops the `Created by` column (the API deprecated the creator's email).
+
+- 805da6c: Add commands for workspaces and projects:
+
+  ```sh
+  e2b workspace list                    # workspaces you can access
+  e2b project list [--workspace <ws>]   # projects, the current one marked with *
+  e2b project use [project] [-w <ws>]   # set the project commands run in, or pick one
+  e2b project info                      # the current project
+  ```
+
+  A project can be given by its ID, `prj_` ID, slug or name. `project use` without a project asks for the workspace and then the project; `--workspace` picks from that workspace only and scopes a name to it. Commands run in the project from `E2B_PROJECT_ID`, then the one chosen with `e2b project use` (or `e2b auth configure`, which picks it interactively). With `E2B_API_KEY` set, the API key determines the project.
+
+- d7dbb7e: `e2b auth login` and `e2b auth configure` list your workspaces and projects from workspace-api instead of the API's `GET /teams`, which created a new API key in every project on each call.
+
+  - Login asks for the workspace and then the project, with your personal workspace and its project preselected. Without a terminal, the personal project (or your only active one) is used. `e2b auth configure` asks the same way, with the current project preselected. Blocked projects show a warning.
+  - Requests go to the selected project's own control plane, so projects outside the default region work.
+  - `E2B_PROJECT_ID` (and `--project` where available) accepts a project's ID, `prj_` public ID, slug or name.
+  - workspace-api is reached at `workspace-api.e2b.dev` (for `E2B_DOMAIN` `e2b.app` and `e2b.dev`), or at `E2B_WORKSPACE_API_URL`. Logging in needs it: on any other `E2B_DOMAIN`, use `E2B_API_KEY`.
+
+- 678d579: Validate all CLI options and arguments with zod. Invalid values now fail before the command runs, with a message naming the option, e.g. `error: option '-l, --limit <limit>' argument 'abc' is invalid. --limit must be a non-negative integer.`
+
+  Inputs that used to be silently accepted are now rejected:
+
+  - `--limit` on `sandbox list` and `sandbox snapshot list` must be a non-negative integer (non-numeric values used to become `NaN`).
+  - `-e, --env` entries without `=` (e.g. `-e KEY`) are rejected instead of ignored.
+  - `-m, --metadata` pairs without `=` are rejected instead of ignored, and values may now contain `=`.
+  - Integer options no longer accept forms like `1e3` or `0x10`.
+
+  `--format` (case-insensitive), `--level`, the `template create` name and an odd `--memory-mb` are now rejected when parsed, not after the command starts. Invalid `e2b.toml` files list every invalid field instead of only the first. `template_id` and `dockerfile` must be non-empty, and `cpu_count`/`memory_mb` must be integers (quoted numbers like `"2"` are still accepted).
+
+- 6ee9a4b: Add resizable templates: build a template with `maxCpuCount` and pick each sandbox's `cpuCount` on create. `e2b template list` shows a `Max vCPUs` column.
+
+### Patch Changes
+
+- ede6629: Interactive prompts (`template init`, `template migrate`, `template delete`/`publish` confirmations, project pickers) now use `@clack/prompts` instead of Inquirer. Canceling a prompt (Ctrl+C or Esc) prints `Canceled` and exits with code 130.
+- 8382945: Stop showing `(default: {})` for the repeatable `-e, --env` option in `e2b sandbox create`, `connect` and `exec` help.
+- 07dc47a: `e2b sandbox list` and `e2b sandbox kill` now reject unknown `--state` values (anything other than `running` or `paused`) instead of sending them to the API.
+- 419e939: Fix `e2b template create --no-cache` not skipping the build cache
+- Updated dependencies [6a976f3]
+- Updated dependencies [1b3b2a4]
+- Updated dependencies [6ee9a4b]
+- Updated dependencies [106efea]
+- Updated dependencies [cf7208a]
+- Updated dependencies [c513ae1]
+- Updated dependencies [e50db00]
+  - e2b@2.64.0
+
 ## 2.23.0
 
 ### Minor Changes
