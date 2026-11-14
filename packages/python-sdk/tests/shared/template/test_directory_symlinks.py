@@ -418,3 +418,53 @@ async def test_build_selects_only_source_under_linked_context(
     if template_class is AsyncTemplate:
         await result
     assert uploads[-1] == {"app.py": (tarfile.REGTYPE, b"selected")}
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Symlinks require privileges")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("template_class", [Template, AsyncTemplate])
+async def test_build_reincludes_linked_descendants_in_recursive_pattern(
+    tmp_path, build_endpoint, template_class
+):
+    (tmp_path / "real").mkdir()
+    (tmp_path / "real" / "keep.txt").write_text("keep")
+    (tmp_path / "linked").symlink_to("real", target_is_directory=True)
+    endpoint, uploads, _ = build_endpoint
+    template = (
+        template_class(
+            file_context_path=tmp_path,
+            file_ignore_patterns=["real", "linked", "!linked/keep.txt"],
+        )
+        .from_python_image("3")
+        .copy("**/*", "/app", resolve_symlinks=True)
+    )
+    result = template_class.build_in_background(
+        template, "fixture", api_key="fixture-placeholder", api_url=endpoint
+    )
+    if template_class is AsyncTemplate:
+        await result
+    assert uploads[-1] == {"linked/keep.txt": (tarfile.REGTYPE, b"keep")}
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Symlinks require privileges")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("template_class", [Template, AsyncTemplate])
+async def test_build_walks_reincluded_literal_directory_name(
+    tmp_path, build_endpoint, template_class
+):
+    (tmp_path / "real[1]").mkdir()
+    (tmp_path / "real[1]" / "keep.txt").write_text("keep")
+    endpoint, uploads, _ = build_endpoint
+    template = (
+        template_class(
+            file_context_path=tmp_path, file_ignore_patterns=["real*", "!**/keep.txt"]
+        )
+        .from_python_image("3")
+        .copy("**/*", "/app", resolve_symlinks=True)
+    )
+    result = template_class.build_in_background(
+        template, "fixture", api_key="fixture-placeholder", api_url=endpoint
+    )
+    if template_class is AsyncTemplate:
+        await result
+    assert uploads[-1] == {"real[1]/keep.txt": (tarfile.REGTYPE, b"keep")}

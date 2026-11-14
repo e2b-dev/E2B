@@ -325,3 +325,42 @@ test.skipIf(process.platform === 'win32')(
     expect(uploads.at(-1)?.has('loop')).toBe(false)
   }
 )
+
+test.skipIf(process.platform === 'win32')(
+  'build reincludes linked descendants selected by a recursive pattern',
+  async () => {
+    await mkdir(join(context, 'real'))
+    await writeFile(join(context, 'real/keep.txt'), 'keep')
+    await symlink('real', join(context, 'linked'))
+    const template = new Template({
+      fileContextPath: context,
+      fileIgnorePatterns: ['real', 'linked', '!linked/keep.txt'],
+    })
+      .fromPythonImage('3')
+      .copy('**/*', '/app', { resolveSymlinks: true })
+    await Template.buildInBackground(template, 'fixture', {
+      apiKey: 'fixture-placeholder',
+      apiUrl: endpoint,
+    })
+    expect(uploads.at(-1)).toEqual(new Map([['linked/keep.txt', 'File']]))
+  }
+)
+
+test.skipIf(process.platform === 'win32')(
+  'build walks a re-included literal directory name',
+  async () => {
+    await mkdir(join(context, 'real[1]'))
+    await writeFile(join(context, 'real[1]/keep.txt'), 'keep')
+    const template = new Template({
+      fileContextPath: context,
+      fileIgnorePatterns: ['real*', '!**/keep.txt'],
+    })
+      .fromPythonImage('3')
+      .copy('**/*', '/app', { resolveSymlinks: true })
+    await Template.buildInBackground(template, 'fixture', {
+      apiKey: 'fixture-placeholder',
+      apiUrl: endpoint,
+    })
+    expect(uploads.at(-1)).toEqual(new Map([['real[1]/keep.txt', 'File']]))
+  }
+)

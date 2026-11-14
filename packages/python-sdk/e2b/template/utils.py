@@ -278,18 +278,21 @@ def get_all_files_in_path(
     for file_path, relative_path in matches:
         if is_under_walked_dir(relative_path):
             continue
-        if relative_path != "." and matcher.matches(relative_path):
+        ignored = relative_path != "." and matcher.matches(relative_path)
+        if ignored and (
+            not resolve_symlinks or not matcher.may_match_under(relative_path)
+        ):
             continue
 
         if os.path.isdir(file_path) and (
             resolve_symlinks or not os.path.islink(file_path)
         ):
             # If it's a directory, add the directory and all entries recursively
-            if include_directories:
+            if include_directories and not ignored:
                 files.add(file_path)
             walk(file_path, relative_path)
             walked_dirs.add(relative_path)
-        else:
+        elif not ignored:
             files.add(file_path)
 
     if resolve_symlinks:

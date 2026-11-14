@@ -167,8 +167,8 @@ function normalizeIgnorePattern(pattern: string, contextPath: string): string {
 function createIgnoreMatcher(
   ignorePatterns: string[],
   contextPath: string,
-  onVisit?: (entry: Path) => void
-): IgnoreLike {
+  resolveSymlinks: boolean = false
+): IgnoreLike & { isIgnored: (entry: Path) => boolean } {
   const absoluteContextPath = path.resolve(contextPath)
   let matcher: PatternMatcher
   try {
@@ -182,17 +182,18 @@ function createIgnoreMatcher(
     throw new TemplateError((err as Error).message)
   }
 
-  const ignored = (p: Path) => {
+  const isIgnored = (p: Path) => {
     const relativePath = p.relativePosix()
-    const isIgnored = relativePath !== '' && matcher.matches(relativePath)
-    if (!isIgnored || matcher.mayMatchUnder(relativePath)) onVisit?.(p)
-    return isIgnored
+    return relativePath !== '' && matcher.matches(relativePath)
   }
 
   return {
-    ignored,
+    isIgnored,
+    ignored: (p) =>
+      isIgnored(p) &&
+      (!resolveSymlinks || !matcher.mayMatchUnder(p.relativePosix())),
     childrenIgnored: (p) =>
-      ignored(p) && !matcher.mayMatchUnder(p.relativePosix()),
+      isIgnored(p) && !matcher.mayMatchUnder(p.relativePosix()),
   }
 }
 
@@ -218,11 +219,11 @@ export async function getAllFilesInPath(
     ignorePatterns,
     contextPath,
     resolveSymlinks
-      ? (entry) => {
-          linkCandidates.set(entry.fullpath(), entry)
-        }
-      : undefined
   )
+  const addMatch = (entry: Path) => {
+    if (!ignore.isIgnored(entry)) files.set(entry.fullpath(), entry)
+    if (resolveSymlinks) linkCandidates.set(entry.fullpath(), entry)
+  }
 
   const globFiles = await glob(src, {
     ignore,
@@ -259,28 +260,31 @@ export async function getAllFilesInPath(
     if (isUnderWalkedDir(file.relativePosix())) {
       continue
     }
+    if (resolveSymlinks) linkCandidates.set(file.fullpath(), file)
     if (file.isDirectory()) {
       walkedDirs.add(file.relativePosix())
       // For directories, add the directory itself and all files inside it
-      if (includeDirectories) {
+      if (includeDirectories && !ignore.isIgnored(file)) {
         files.set(file.fullpath(), file)
       }
-      const dirPattern = normalizePath(
-        // When the matched directory is '.', `file.relative()` can be an empty string.
-        // In that case, we want to match all files under the current directory instead of
-        // creating an absolute glob like '/**/*' which would traverse the entire filesystem.
-        path.join(file.relative() || '.', '**/*')
-      )
+      const dirPattern = resolveSymlinks
+        ? `${escape(file.relativePosix() || '.')}/**/*`
+        : normalizePath(
+            // When the matched directory is '.', `file.relative()` can be an empty string.
+            // In that case, we want to match all files under the current directory instead of
+            // creating an absolute glob like '/**/*' which would traverse the entire filesystem.
+            path.join(file.relative() || '.', '**/*')
+          )
       const dirFiles = await glob(dirPattern, {
         ignore,
         withFileTypes: true,
         dot: true,
         cwd: contextPath,
       })
-      dirFiles.forEach((f) => files.set(f.fullpath(), f))
+      dirFiles.forEach(addMatch)
     } else {
       // For files, just add the file
-      files.set(file.fullpath(), file)
+      addMatch(file)
     }
   }
 
@@ -307,11 +311,6 @@ export async function getAllFilesInPath(
     // location, rather than the resolved target's location.
     // Ignored links can still contain explicitly re-included descendants.
     for (const file of linkCandidates.values()) {
-      if (
-        !files.has(file.fullpath()) &&
-        !isUnderWalkedDir(file.relativePosix())
-      )
-        continue
       const entry = await fs.promises
         .lstat(file.fullpath())
         .catch(() => undefined)
@@ -340,7 +339,7 @@ export async function getAllFilesInPath(
       )
       walkedDirs.add(file.relativePosix())
       for (const child of linkedFiles) {
-        if (!files.has(child.fullpath())) files.set(child.fullpath(), child)
+        addMatch(child)
       }
     }
     for (const file of files.values()) await resolveInContext(file)
