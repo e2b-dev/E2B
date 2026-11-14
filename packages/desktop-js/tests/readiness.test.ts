@@ -91,3 +91,26 @@ test('waits between readiness probes that exit unsuccessfully', async () => {
   expect(timeout).toHaveBeenCalled()
   expect(run).toHaveBeenCalledTimes(2)
 })
+
+test.each([
+  ['options only', () => Sandbox.create({ display: ':1' })],
+  ['template and options', () => Sandbox.create('desktop', { display: ':1' })],
+])('starts the desktop on the requested display (%s)', async (_, create) => {
+  const sandbox = {
+    _start: vi.fn().mockResolvedValue(undefined),
+    kill: vi.fn().mockResolvedValue(undefined),
+  }
+  const baseCreate = vi
+    .spyOn(BaseSandbox, 'create')
+    .mockResolvedValue(sandbox as unknown as BaseSandbox)
+
+  await create()
+
+  expect(baseCreate).toHaveBeenCalledWith(
+    'desktop',
+    expect.objectContaining({
+      envs: expect.objectContaining({ DISPLAY: ':1' }),
+    })
+  )
+  expect(sandbox._start).toHaveBeenCalledWith(':1', expect.anything())
+})
