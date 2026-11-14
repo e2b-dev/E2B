@@ -11,7 +11,7 @@ import inspect
 from types import TracebackType, FrameType
 from typing import IO, List, Optional, Union
 
-from e2b.exceptions import TemplateException
+from e2b.exceptions import BuildException, TemplateException
 from e2b.template.consts import BASE_STEP_NAME, FINALIZE_STEP_NAME
 from e2b_dockerfile_utils import PatternMatcher
 
@@ -170,6 +170,7 @@ def get_all_files_in_path(
     context_path: str,
     ignore_patterns: List[str],
     include_directories: bool = True,
+    resolve_symlinks: bool = False,
 ) -> List[str]:
     """
     Get all files for a given path and ignore patterns.
@@ -183,11 +184,13 @@ def get_all_files_in_path(
     :param context_path: Base directory for resolving relative paths
     :param ignore_patterns: Ignore patterns in `.dockerignore` syntax
     :param include_directories: Whether to include directories
+    :param resolve_symlinks: Whether to traverse symbolic links to directories
     :return: Array of files
     """
     files = set()
 
     abs_context_path = os.path.abspath(context_path)
+    real_context_path = os.path.realpath(abs_context_path)
     try:
         matcher = PatternMatcher(
             [_normalize_ignore_pattern(p, abs_context_path) for p in ignore_patterns],
@@ -196,7 +199,37 @@ def get_all_files_in_path(
     except ValueError as e:
         raise TemplateException(str(e)) from e
 
-    def walk(dir_path: str, dir_relative_path: str) -> None:
+    def resolve_in_context(file_path: str, relative_path: str) -> str:
+        real_path = os.path.realpath(file_path)
+        try:
+            in_context = (
+                os.path.commonpath([real_context_path, real_path]) == real_context_path
+            )
+        except ValueError:
+            in_context = False
+        if not in_context:
+            raise BuildException(
+                f"Path '{relative_path}' resolves outside the template context. "
+                "Move the target inside the context, exclude the link via .dockerignore, "
+                "or set `resolve_symlinks=False` to copy the link itself."
+            )
+        return real_path
+
+    def walk(
+        dir_path: str, dir_relative_path: str, ancestors: frozenset[str] = frozenset()
+    ) -> None:
+        real_path = (
+            resolve_in_context(dir_path, dir_relative_path)
+            if resolve_symlinks
+            else os.path.realpath(dir_path)
+        )
+        if real_path in ancestors:
+            raise BuildException(
+                f"Cannot resolve cyclic directory symlink '{dir_relative_path}'. "
+                "Remove the link, exclude it via .dockerignore, "
+                "or set `resolve_symlinks=False` to copy the link itself."
+            )
+        ancestors = ancestors | {real_path}
         with os.scandir(dir_path) as entries:
             for entry in entries:
                 relative_path = (
@@ -207,10 +240,10 @@ def get_all_files_in_path(
                 ignored = matcher.matches(relative_path)
                 if not ignored:
                     files.add(entry.path)
-                if entry.is_dir(follow_symlinks=False) and (
+                if (
                     not ignored or matcher.may_match_under(relative_path)
-                ):
-                    walk(entry.path, relative_path)
+                ) and entry.is_dir(follow_symlinks=resolve_symlinks):
+                    walk(entry.path, relative_path, ancestors)
 
     # Use glob to find all files/directories matching the pattern under context_path
     files_glob = glob.glob(
@@ -245,19 +278,28 @@ def get_all_files_in_path(
     for file_path, relative_path in matches:
         if is_under_walked_dir(relative_path):
             continue
-        if relative_path != "." and matcher.matches(relative_path):
+        ignored = relative_path != "." and matcher.matches(relative_path)
+        if ignored and (
+            not resolve_symlinks or not matcher.may_match_under(relative_path)
+        ):
             continue
 
-        # Symlinks are not followed, the link itself is copied
-        if os.path.isdir(file_path) and not os.path.islink(file_path):
+        if os.path.isdir(file_path) and (
+            resolve_symlinks or not os.path.islink(file_path)
+        ):
             # If it's a directory, add the directory and all entries recursively
-            if include_directories:
+            if include_directories and not ignored:
                 files.add(file_path)
             walk(file_path, relative_path)
             walked_dirs.add(relative_path)
-        else:
+        elif not ignored:
             files.add(file_path)
 
+    if resolve_symlinks:
+        for file_path in files:
+            resolve_in_context(
+                file_path, normalize_path(os.path.relpath(file_path, abs_context_path))
+            )
     return sorted(list(files))
 
 
@@ -295,7 +337,12 @@ def calculate_files_hash(
 
     hash_obj.update(content.encode())
 
-    files = get_all_files_in_path(src, context_path, ignore_patterns, True)
+    try:
+        files = get_all_files_in_path(
+            src, context_path, ignore_patterns, True, resolve_symlinks
+        )
+    except BuildException as error:
+        raise error.with_traceback(stack_trace)
 
     if len(files) == 0:
         raise ValueError(f"No files found in {src_path}").with_traceback(stack_trace)
@@ -367,7 +414,7 @@ def tar_file_stream(
             dereference=resolve_symlinks,
         ) as tar:
             files = get_all_files_in_path(
-                file_name, file_context_path, ignore_patterns, True
+                file_name, file_context_path, ignore_patterns, True, resolve_symlinks
             )
             for file in files:
                 tar.add(

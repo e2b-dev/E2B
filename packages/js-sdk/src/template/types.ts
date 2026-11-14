@@ -339,6 +339,11 @@ export type CopyItem = {
   forceUpload?: true
   user?: string
   mode?: number
+  /**
+   * Follow file and directory links within the file context during the build.
+   * Detected directory-link cycles or out-of-context targets cause a BuildError.
+   * Defaults to false, preserving the links themselves.
+   */
   resolveSymlinks?: boolean
   gzip?: boolean
 }
