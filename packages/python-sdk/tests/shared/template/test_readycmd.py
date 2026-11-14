@@ -46,3 +46,9 @@ def test_wait_for_file_keeps_simple_paths_unquoted():
 def test_wait_for_timeout_converts_milliseconds_to_seconds():
     assert wait_for_timeout(5000).get_cmd() == "sleep 5"
     assert wait_for_timeout(100).get_cmd() == "sleep 1"
+
+
+def test_wait_for_timeout_preserves_fractional_seconds():
+    assert wait_for_timeout(1500).get_cmd() == "sleep 1.5"
+    assert wait_for_timeout(1001).get_cmd() == "sleep 1.001"
+    assert wait_for_timeout(1234567).get_cmd() == "sleep 1234.567"
