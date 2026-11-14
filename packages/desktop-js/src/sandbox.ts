@@ -185,7 +185,7 @@ export class Sandbox extends SandboxBase {
         : { template: this.defaultTemplate, sandboxOpts: templateOrOpts }
 
     // Add DISPLAY environment variable if not already set
-    const display = opts?.display || ':0'
+    const display = sandboxOpts?.display || ':0'
     const sandboxOptsWithDisplay = {
       ...sandboxOpts,
       envs: {
@@ -625,14 +625,10 @@ class VNCServer {
   private url: URL | null = null
   private novncHandle: CommandHandle | null = null
   private password: string | undefined
-  private readonly novncCommand: string
   private readonly desktop: Sandbox
 
   constructor(desktop: Sandbox) {
     this.desktop = desktop
-    this.novncCommand =
-      `cd /opt/noVNC/utils && ./novnc_proxy --vnc localhost:${this.vncPort} ` +
-      `--listen ${this.port} --web /opt/noVNC > /tmp/novnc.log 2>&1`
   }
 
   public getAuthKey(): string {
@@ -697,7 +693,10 @@ class VNCServer {
     const vncCommand = await this.getVNCCommand(opts.windowId)
     await this.desktop.commands.run(vncCommand)
 
-    this.novncHandle = await this.desktop.commands.run(this.novncCommand, {
+    const novncCommand =
+      `cd /opt/noVNC/utils && ./novnc_proxy --vnc localhost:${this.vncPort} ` +
+      `--listen ${this.port} --web /opt/noVNC > /tmp/novnc.log 2>&1`
+    this.novncHandle = await this.desktop.commands.run(novncCommand, {
       background: true,
       timeoutMs: 0,
     })

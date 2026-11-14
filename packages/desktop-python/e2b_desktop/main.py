@@ -171,7 +171,9 @@ class _VNCServer:
         self._vnc_port = vnc_port or self._vnc_port
         self._port = port or self._port
         self._novnc_auth_enabled = require_auth or self._novnc_auth_enabled
-        self._novnc_password = self._generate_password() if require_auth else None
+        self._novnc_password = (
+            self._generate_password() if self._novnc_auth_enabled else None
+        )
 
         # Update URL with new port
         self._url = f"https://{self.__desktop.get_host(self._port)}/vnc.html"
