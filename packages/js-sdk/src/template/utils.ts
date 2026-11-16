@@ -85,6 +85,20 @@ export function validateNameOrIdWithoutTag(nameOrId: string): void {
 }
 
 /**
+ * Whether an API error says that the template does not exist.
+ *
+ * An API without the route also answers 404 with an error body. Its request
+ * validator words that as `validation error: ...`, which is not about the
+ * template.
+ */
+export function isTemplateNotFound(error?: {
+  code?: number
+  message?: string
+}): boolean {
+  return error?.code === 404 && !error.message?.startsWith('validation error:')
+}
+
+/**
  * Normalize build arguments from different overload signatures.
  * Handles string name or legacy options object with alias.
  *

@@ -6,7 +6,7 @@ import {
   TemplateNotFoundError,
 } from '../errors'
 import { Paginator } from '../paginator'
-import { validateNameOrIdWithoutTag } from './utils'
+import { isTemplateNotFound, validateNameOrIdWithoutTag } from './utils'
 import {
   convertTemplateBuildWithTags,
   convertTemplateInfo,
@@ -139,9 +139,7 @@ export class TemplateBuildPaginator extends Paginator<TemplateBuildWithTags> {
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
 
-    // Only the API's own "not found" answer names the template; any other
-    // 404, such as one from an API without this route, stays a TemplateError.
-    if (res.error?.code === 404) {
+    if (isTemplateNotFound(res.error)) {
       throw new TemplateNotFoundError(`Template '${this.nameOrId}' not found`)
     }
 

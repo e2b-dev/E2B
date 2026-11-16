@@ -51,7 +51,11 @@ from e2b.template.types import (
     TemplateTagInfo,
 )
 from e2b.template.consts import FILE_UPLOAD_TIMEOUT_SECONDS
-from e2b.template.utils import get_build_step_index, tar_file_stream
+from e2b.template.utils import (
+    get_build_step_index,
+    is_template_not_found,
+    tar_file_stream,
+)
 
 
 async def request_build(
@@ -475,9 +479,7 @@ async def get_template_info(
         client=client,
     )
 
-    # Only the API's own "not found" answer names the template; any other 404,
-    # such as one from an API without this route, stays a TemplateException.
-    if isinstance(res.parsed, Error) and res.parsed.code == 404:
+    if is_template_not_found(res.parsed):
         raise TemplateNotFoundException(f"Template '{template_id_or_name}' not found")
 
     if res.status_code >= 300:

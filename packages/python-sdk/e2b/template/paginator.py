@@ -13,7 +13,7 @@ from e2b.exceptions import (
 )
 from e2b.paginator import PaginatorBase
 from e2b.template.types import TemplateBuildStatus, TemplateBuildWithTags
-from e2b.template.utils import validate_name_or_id_without_tag
+from e2b.template.utils import is_template_not_found, validate_name_or_id_without_tag
 
 
 class TemplateBuildPaginatorBase(PaginatorBase[TemplateBuildWithTags, ApiParams]):
@@ -81,9 +81,7 @@ class TemplateBuildPaginatorBase(PaginatorBase[TemplateBuildWithTags, ApiParams]
         self, res: Response[Union[Error, List[TemplateBuildWithTagsModel]]]
     ) -> List[TemplateBuildWithTags]:
         """The builds of a page response; moves the paginator to the next page."""
-        # Only the API's own "not found" answer names the template; any other
-        # 404, such as one from an API without this route, stays a TemplateException.
-        if isinstance(res.parsed, Error) and res.parsed.code == 404:
+        if is_template_not_found(res.parsed):
             raise TemplateNotFoundException(f"Template '{self._name_or_id}' not found")
 
         if res.status_code >= 300:

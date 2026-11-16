@@ -12,7 +12,7 @@ import {
 } from '../errors'
 import { FILE_UPLOAD_TIMEOUT_MS } from './consts'
 import { LogEntry } from './logger'
-import { getBuildStepIndex, spoolTarArchive } from './utils'
+import { getBuildStepIndex, isTemplateNotFound, spoolTarArchive } from './utils'
 import {
   BuildStatusReason,
   convertTemplateDetails,
@@ -517,9 +517,7 @@ export async function getTemplateInfo(
     signal,
   })
 
-  // Only the API's own "not found" answer names the template; any other 404,
-  // such as one from an API without this route, stays a plain TemplateError.
-  if (res.error?.code === 404) {
+  if (isTemplateNotFound(res.error)) {
     throw new TemplateNotFoundError(`Template '${templateID}' not found`)
   }
 

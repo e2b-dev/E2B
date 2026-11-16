@@ -11,6 +11,7 @@ import inspect
 from types import TracebackType, FrameType
 from typing import IO, List, Optional, Union
 
+from e2b.api.client.models import Error
 from e2b.exceptions import InvalidArgumentException, TemplateException
 from e2b.template.consts import BASE_STEP_NAME, FINALIZE_STEP_NAME
 from e2b_dockerfile_utils import PatternMatcher
@@ -102,6 +103,23 @@ def validate_name_or_id_without_tag(name_or_id: str) -> None:
             "To read the build a tag points at, pass the tag to "
             "list_builds(name_or_id, tags=[tag])."
         )
+
+
+def is_template_not_found(error: object) -> bool:
+    """
+    Whether an API error says that the template does not exist.
+
+    An API without the route also answers 404 with an error body. Its request
+    validator words that as `validation error: ...`, which is not about the
+    template.
+
+    :param error: Parsed body of the API response
+    """
+    return (
+        isinstance(error, Error)
+        and error.code == 404
+        and not error.message.startswith("validation error:")
+    )
 
 
 def normalize_build_arguments(

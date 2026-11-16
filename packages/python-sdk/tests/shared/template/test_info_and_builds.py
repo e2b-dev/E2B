@@ -86,6 +86,10 @@ BUILDS = [
 ERRORS: Dict[str, Tuple[int, Dict[str, Any]]] = {
     "missing": (404, {"code": 404, "message": "Template not found"}),
     "no-such-route": (404, {"code": 5, "message": "Not Found"}),
+    "api-without-the-route": (
+        404,
+        {"code": 404, "message": "validation error: no matching operation was found"},
+    ),
     "broken": (500, {"code": 500, "message": "Internal error"}),
 }
 
@@ -408,8 +412,15 @@ async def test_raises_not_found_exception(template_cls, api, call):
 @both_methods
 @pytest.mark.parametrize(
     "name_or_id, message",
-    # a 404 that is not the API's "not found" answer, and another failure
-    [("no-such-route", "404: Not Found"), ("broken", "500: Internal error")],
+    # 404s that are not the API's "not found" answer, and another failure
+    [
+        ("no-such-route", "404: Not Found"),
+        (
+            "api-without-the-route",
+            "404: validation error: no matching operation was found",
+        ),
+        ("broken", "500: Internal error"),
+    ],
 )
 async def test_raises_template_exception_on_other_failures(
     template_cls, api, call, name_or_id, message

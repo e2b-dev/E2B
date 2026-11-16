@@ -108,6 +108,14 @@ function errorResponse(nameOrId: unknown) {
       )
     case 'no-such-route':
       return new HttpResponse('404 page not found', { status: 404 })
+    case 'api-without-the-route':
+      return HttpResponse.json(
+        {
+          code: 404,
+          message: 'validation error: no matching operation was found',
+        },
+        { status: 404 }
+      )
     case 'broken':
       return HttpResponse.json(
         { code: 500, message: 'Internal error' },
@@ -341,8 +349,12 @@ describe.each([
   })
 
   test.each([
-    // a 404 that is not the API's "not found" answer, and another failure
+    // 404s that are not the API's "not found" answer, and another failure
     ['no-such-route', '404: 404 page not found'],
+    [
+      'api-without-the-route',
+      '404: validation error: no matching operation was found',
+    ],
     ['broken', '500: Internal error'],
   ])('throws a TemplateError for %s', async (nameOrId, message) => {
     const error = await call(nameOrId, opts).catch((err) => err)
