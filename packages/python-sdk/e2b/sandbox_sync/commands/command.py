@@ -427,7 +427,6 @@ class Commands:
             cwd,
             stdin,
             timeout,
-            request_timeout,
             retain_output,
             shell,
         )
@@ -449,7 +448,6 @@ class Commands:
         cwd: Optional[str],
         stdin: bool,
         timeout: Optional[float],
-        request_timeout: Optional[float],
         retain_output: bool,
         shell: Optional[Sequence[str]],
     ):

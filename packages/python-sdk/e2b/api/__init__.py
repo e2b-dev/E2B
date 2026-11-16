@@ -199,7 +199,7 @@ def handle_api_exception(
     except json.JSONDecodeError:
         body = {}
 
-    message = body["message"] if "message" in body else None
+    message = body.get("message")
     if body.get("error_code") == GuestUnresponsiveException.code:
         return GuestUnresponsiveException(
             f'{message}. Resume the sandbox with on_resume="reboot".'
