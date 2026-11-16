@@ -1,6 +1,12 @@
 import * as commander from '@commander-js/extra-typings'
 
-import { currentProject, projectId, requireMe } from 'src/api'
+import {
+  accessTokenNeedsProject,
+  currentProject,
+  envAccessToken,
+  projectId,
+  requireMe,
+} from 'src/api'
 import { Format, parseFormat } from 'src/options'
 import { asBold, asFormattedError } from 'src/utils/format'
 import { renderTable } from 'src/utils/table'
@@ -45,12 +51,20 @@ function projectStatus({ status, blocked, block_reasons }: Project) {
     : 'blocked'
 }
 
-/** The current project, if it is one `me` lists. */
-function findCurrent(me: Me): ProjectEntry | undefined {
+/** The project commands run in, which `me` has to list. */
+function resolveCurrent(me: Me): ProjectEntry {
   const current = currentProject()
-  if (!current) return undefined
+  if (current) return findProject(me, current)
+  // `e2b project use` refuses with the token, which ignores the stored login.
+  if (envAccessToken) throw new Error(accessTokenNeedsProject())
+  throw new Error(
+    `No project selected. Run ${asBold('e2b project use <project>')}.`
+  )
+}
+
+function findCurrent(me: Me): ProjectEntry | undefined {
   try {
-    return findProject(me, current)
+    return resolveCurrent(me)
   } catch {
     return undefined
   }
@@ -115,6 +129,13 @@ const useCommand = new commander.Command('use')
   .addOption(workspaceOption('the workspace to pick from or look in'))
   .action(async (ref, opts) => {
     try {
+      if (envAccessToken) {
+        fail(
+          `${asBold('E2B_ACCESS_TOKEN')} is set, so the stored project is not used. Choose the project with ${asBold(
+            'E2B_PROJECT_ID'
+          )} instead.`
+        )
+      }
       const me = await requireMe()
       const workspace = opts.workspace
         ? findWorkspace(me, opts.workspace)
@@ -174,11 +195,7 @@ const infoCommand = new commander.Command('info')
   .addOption(formatOption)
   .action(async (opts) => {
     try {
-      const current = currentProject()
-      if (!current) {
-        fail(`No project selected. Run ${asBold('e2b project use <project>')}.`)
-      }
-      const { project, workspace } = findProject(await requireMe(), current)
+      const { project, workspace } = resolveCurrent(await requireMe())
 
       if (opts.format === Format.JSON) {
         console.log(

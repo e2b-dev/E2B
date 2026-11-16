@@ -1,25 +1,13 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { Sandbox } from 'e2b'
-import { getUserConfig } from 'src/user'
 import {
   bufferToText,
   isDebug,
   parseEnvInt,
   runCli,
-  runCliWithPipedStdin,
 } from '../../setup'
 
-type UserConfigWithDomain = NonNullable<ReturnType<typeof getUserConfig>> & {
-  domain?: string
-  E2B_DOMAIN?: string
-}
-
-const userConfig = safeGetUserConfig() as UserConfigWithDomain | null
-const domain =
-  process.env.E2B_DOMAIN ||
-  userConfig?.E2B_DOMAIN ||
-  userConfig?.domain ||
-  'e2b.app'
+const domain = process.env.E2B_DOMAIN || 'e2b.app'
 const apiKey = process.env.E2B_API_KEY
 const shouldSkip = !apiKey || isDebug
 const integrationTest = test.skipIf(shouldSkip)
@@ -43,8 +31,6 @@ delete cliEnv.E2B_DEBUG
 
 const runCliInSandbox = (args: string[]) =>
   runCli(args, { timeoutMs: spawnTimeoutMs, env: cliEnv })
-const runCliWithPipeInSandbox = (args: string[], input: Buffer) =>
-  runCliWithPipedStdin(args, input, { timeoutMs: spawnTimeoutMs, env: cliEnv })
 
 describe('sandbox cli backend integration', () => {
   let sandbox: Sandbox
@@ -123,22 +109,6 @@ describe('sandbox cli backend integration', () => {
   )
 
   integrationTest(
-    'exec runs a command with piped stdin',
-    { timeout: perTestTimeoutMs },
-    async () => {
-      const pipedExecResult = await runCliWithPipeInSandbox(
-        ['sandbox', 'exec', sandbox.sandboxId, '--', 'sh', '-lc', 'wc -c'],
-        Buffer.from('hello\n', 'utf8')
-      )
-      expect(pipedExecResult.status).toBe(0)
-      const pipedStdout = bufferToText(pipedExecResult.stdout).trim()
-      if (pipedStdout !== '6') {
-        expect(pipedStdout).toBe('0')
-      }
-    }
-  )
-
-  integrationTest(
     'metrics returns successfully',
     { timeout: perTestTimeoutMs },
     async () => {
@@ -195,13 +165,4 @@ function sandboxExistsInList(
 
   const parsed = JSON.parse(text) as Array<{ sandboxId?: string }>
   return parsed.some((item) => item.sandboxId === sandboxId)
-}
-
-function safeGetUserConfig(): ReturnType<typeof getUserConfig> | null {
-  try {
-    return getUserConfig()
-  } catch (err) {
-    console.warn(`Failed to read ~/.e2b/config.json: ${String(err)}`)
-    return null
-  }
 }

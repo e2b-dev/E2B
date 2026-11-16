@@ -1,5 +1,11 @@
 # @e2b/dockerfile-utils
 
+## 0.1.2
+
+### Patch Changes
+
+- aec4543: Keep bracket whitespace classes in Dockerignore patterns ASCII-only, matching Moby and the Python utility. Non-ASCII spaces such as U+00A0 are no longer matched by a pattern such as `[\s]`.
+
 ## 0.1.1
 
 ### Patch Changes

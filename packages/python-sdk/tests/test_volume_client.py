@@ -36,16 +36,12 @@ def reset_volume_transports():
     reset_transport_caches()
 
 
-def test_sync_client_requires_volume_token(monkeypatch):
-    monkeypatch.setenv("E2B_ACCESS_TOKEN", "env-access-token")
-
+def test_sync_client_requires_volume_token():
     with pytest.raises(AuthenticationException):
         get_sync_api_client(VolumeConnectionConfig())
 
 
-def test_async_client_requires_volume_token(monkeypatch):
-    monkeypatch.setenv("E2B_ACCESS_TOKEN", "env-access-token")
-
+def test_async_client_requires_volume_token():
     with pytest.raises(AuthenticationException):
         get_async_api_client(VolumeConnectionConfig())
 

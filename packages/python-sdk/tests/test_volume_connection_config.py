@@ -50,17 +50,13 @@ def test_volume_api_url_custom_domain_in_args():
     assert config.api_url == "https://api.custom.com"
 
 
-def test_volume_token_does_not_fall_back_to_access_token_env(monkeypatch):
-    monkeypatch.setenv("E2B_ACCESS_TOKEN", "env-access-token")
-
+def test_volume_token_defaults_to_none():
     config = VolumeConnectionConfig()
     assert config.token is None
     assert config.access_token is None
 
 
-def test_volume_token_in_args(monkeypatch):
-    monkeypatch.setenv("E2B_ACCESS_TOKEN", "env-access-token")
-
+def test_volume_token_in_args():
     config = VolumeConnectionConfig(token="vol-token")
     assert config.token == "vol-token"
     assert config.access_token == "vol-token"

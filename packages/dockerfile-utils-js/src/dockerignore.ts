@@ -25,14 +25,23 @@ function escapeRegex(ch: string): string {
 }
 
 // Escapes that keep their regex meaning in a bracket expression, like in Python
-const CLASS_ESCAPES = new Set('dDsSwWfnrtv')
+const CLASS_ESCAPES = new Set('dDwWfnrtv')
+// ASCII-only whitespace like Moby, as JS `\s` also matches Unicode spaces
+const CLASS_WHITESPACE_ESCAPES: Record<string, string> = {
+  s: '\\t-\\r ',
+  S: '\\u{0}-\\u{8}\\u{e}-\\u{1f}\\u{21}-\\u{10ffff}',
+}
 const CLASS_CONTROL_ESCAPES: Record<string, string> = { a: '\\x07', b: '\\x08' }
 const CLASS_HEX_ESCAPE_LENGTHS: Record<string, number> = { x: 2, u: 4, U: 8 }
 // Characters that must stay escaped in a bracket expression with the `u` flag
 const CLASS_SYNTAX_CHARS = new Set('^$\\.*+?()[]{}|/-')
 
 // Make a bracket expression body valid with the regex `u` flag
-function translateClass(body: string, backslashIsEscape: boolean): string {
+function translateClass(
+  body: string,
+  backslashIsEscape: boolean,
+  unicodeWhitespace = false
+): string {
   let cls = ''
   let i = 0
   while (i < body.length) {
@@ -45,6 +54,8 @@ function translateClass(body: string, backslashIsEscape: boolean): string {
       const next = body[i++]
       if (CLASS_ESCAPES.has(next)) {
         cls += '\\' + next
+      } else if (next in CLASS_WHITESPACE_ESCAPES) {
+        cls += unicodeWhitespace ? '\\' + next : CLASS_WHITESPACE_ESCAPES[next]
       } else if (next in CLASS_CONTROL_ESCAPES) {
         cls += CLASS_CONTROL_ESCAPES[next]
       } else if (next in CLASS_HEX_ESCAPE_LENGTHS) {
@@ -77,6 +88,10 @@ function translateClass(body: string, backslashIsEscape: boolean): string {
         cls += CLASS_SYNTAX_CHARS.has(next) ? '\\' + next : next
       }
     }
+  }
+  if (!unicodeWhitespace) {
+    // Reject ranges such as `[\s-x]` that the expanded set would allow
+    new RegExp('[' + translateClass(body, backslashIsEscape, true) + ']', 'u')
   }
   return cls
 }

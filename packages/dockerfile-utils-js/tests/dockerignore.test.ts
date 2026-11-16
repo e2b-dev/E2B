@@ -84,3 +84,20 @@ test('rejects invalid patterns with a plain Error', () => {
     "Invalid ignore pattern '[\\q]'"
   )
 })
+
+test.each([
+  ['[\\d]', '5', true],
+  ['[\\d]', '\u0661', false],
+  ['[\\d]', 'd', false],
+  ['[\\s]', ' ', true],
+  ['[\\s]', '\u00a0', false],
+  ['[\\S]', '\u00a0', true],
+  ['[\\S]', '\t', false],
+])('class %s matches %j: %s', (pattern, path, excluded) => {
+  assert.strictEqual(new PatternMatcher([pattern]).matches(path), excluded)
+})
+
+test('rejects ranges with a whitespace class escape', () => {
+  assert.throws(() => new PatternMatcher(['[\\s-x]']), Error)
+  assert.throws(() => new PatternMatcher(['[a-\\S]']), Error)
+})
