@@ -634,6 +634,15 @@ export class TemplateBase
     return this
   }
 
+  /**
+   * Copy local files or directories into the template.
+   *
+   * With `resolveSymlinks: true`, the build follows file and directory links
+   * within the file context. Detected directory-link cycles or targets outside
+   * that context fail the build with a `BuildError` before upload. Exclude the
+   * link, move its target into the context, or leave resolution disabled to
+   * copy the link itself (the default).
+   */
   copy(
     src: PathLike | PathLike[],
     dest: PathLike,

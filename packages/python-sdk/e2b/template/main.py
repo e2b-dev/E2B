@@ -57,10 +57,16 @@ class TemplateBuilder:
         :param force_upload: Force upload even if files are cached
         :param user: User and optionally group (user:group) to own the files
         :param mode: File permissions in octal format (e.g., 0o755)
-        :param resolve_symlinks: Whether to resolve symlinks
+        :param resolve_symlinks: Follow file and directory links within the file
+            context during the build. Defaults to False, preserving the links.
         :param gzip: Whether to gzip the files before upload (default: True)
 
         :return: `TemplateBuilder` class
+
+        When resolution is enabled, detected directory-link cycles or targets
+        outside the file context fail the build with ``BuildException`` before
+        upload. Exclude the link, move its target into the context, or set
+        ``resolve_symlinks=False`` to copy the link itself.
 
         Example
         ```python
