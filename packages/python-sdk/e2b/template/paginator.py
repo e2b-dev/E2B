@@ -37,12 +37,6 @@ class TemplateBuildPaginatorBase(PaginatorBase[TemplateBuildWithTags, ApiParams]
         super().__init__(limit=limit, next_token=next_token, **opts)
 
         validate_name_or_id_without_tag(name_or_id)
-        # `/templates/aliases/...` is another API route, the alias check.
-        if name_or_id == "aliases":
-            raise InvalidArgumentException(
-                "A template named 'aliases' must be given by its ID or by its "
-                "name with the team prefix, such as 'my-team/aliases'."
-            )
         self._name_or_id = name_or_id
 
         # Each filter takes one value or several, and is copied into a list so

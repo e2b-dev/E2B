@@ -88,12 +88,6 @@ export class TemplateBuildPaginator extends Paginator<TemplateBuildWithTags> {
     super(opts, opts?.limit, opts?.nextToken)
 
     validateNameOrIdWithoutTag(nameOrId)
-    // `/templates/aliases/...` is another API route, the alias check.
-    if (nameOrId === 'aliases') {
-      throw new InvalidArgumentError(
-        "A template named 'aliases' must be given by its ID or by its name with the team prefix, such as 'my-team/aliases'."
-      )
-    }
     this.nameOrId = nameOrId
 
     // Each filter takes one value or a list, and is copied so that a later

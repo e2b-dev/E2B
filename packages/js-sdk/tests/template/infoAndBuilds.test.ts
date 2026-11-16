@@ -306,21 +306,6 @@ describe('Template.listBuilds', () => {
     )
   })
 
-  test('rejects the bare name of the alias route, which getInfo accepts', async () => {
-    expect(() => Template.listBuilds('aliases', opts)).toThrow(
-      new InvalidArgumentError(
-        "A template named 'aliases' must be given by its ID or by its name with the team prefix, such as 'my-team/aliases'."
-      )
-    )
-
-    await Template.listBuilds('acme/aliases', opts).nextItems()
-    await Template.getInfo('aliases', opts)
-    expect(requests.map(({ url }) => url.pathname)).toEqual([
-      '/templates/acme%2Faliases/builds',
-      '/v2/templates/aliases',
-    ])
-  })
-
   test('a failed page can be fetched again', async () => {
     const paginator = Template.listBuilds('broken', opts)
 

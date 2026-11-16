@@ -362,24 +362,6 @@ def test_build_paginator_takes_its_options_by_keyword_only(paginator_cls):
         paginator_cls("abc", [TemplateBuildStatus.READY])
 
 
-async def test_list_builds_rejects_the_bare_name_of_the_alias_route(template_cls, api):
-    with pytest.raises(InvalidArgumentException) as error:
-        template_cls.list_builds("aliases", **api)
-
-    assert str(error.value) == (
-        "A template named 'aliases' must be given by its ID or by its name with "
-        "the team prefix, such as 'my-team/aliases'."
-    )
-
-    # The name with a team prefix is accepted, and so is the bare name by get_info.
-    await result(template_cls.list_builds("acme/aliases", **api).next_items())
-    await result(template_cls.get_info("aliases", **api))
-    assert [request.path for request in _Api.requests] == [
-        "/templates/acme%2Faliases/builds",
-        "/v2/templates/aliases",
-    ]
-
-
 async def test_list_builds_failed_page_can_be_fetched_again(template_cls, api):
     paginator = template_cls.list_builds("broken", **api)
 
