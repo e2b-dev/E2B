@@ -447,7 +447,10 @@ export class TemplateBase
    *
    * @param nameOrId Name or ID of one of your team's templates, without a tag
    * @param options Authentication options
-   * @returns The template with its default build
+   * @returns The template ID, names, visibility, `buildStatus` of the latest
+   * `default`-tagged build, build and spawn counts, timestamps, and
+   * `defaultBuild` (its build ID, status, `cpuCount`, `maxCpuCount`, memory
+   * and disk sizes); `defaultBuild` is `undefined` until a build is ready
    * @throws InvalidArgumentError if `nameOrId` is not a name or ID, or
    * includes a tag
    * @throws TemplateNotFoundError if the template is not found
@@ -480,8 +483,9 @@ export class TemplateBase
    * @param opts connection, filter and pagination options.
    *
    * @returns a {@link TemplateBuildPaginator} that yields pages of builds,
-   * each with the tags that point at it. Fetching a page throws
-   * `TemplateNotFoundError` if the template is not found.
+   * each with the tags that point at it. Drain it with
+   * `while (paginator.hasNext) await paginator.nextItems()`. Fetching a page
+   * throws `TemplateNotFoundError` if the template is not found.
    * @throws InvalidArgumentError if `nameOrId` is not a name or ID or includes
    * a tag, a status is unknown, or a tag is empty or contains a comma
    *

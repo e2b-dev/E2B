@@ -14,6 +14,7 @@ from e2b.template_async.paginator import (
 from e2b.template.types import (
     BuildInfo,
     InstructionType,
+    TemplateBuildStatus,
     TemplateDetails,
     TemplateTag,
     TemplateTagInfo,
@@ -590,7 +591,10 @@ class AsyncTemplate(TemplateBase):
         use `list_builds(name_or_id, tags=[tag])`.
 
         :param name_or_id: Name or ID of one of your team's templates, without a tag
-        :return: The template with its default build
+        :return: The template ID, names, visibility, `build_status` of the latest
+            `default`-tagged build, build and spawn counts, timestamps, and
+            `default_build` (its build ID, status, `cpu_count`, `max_cpu_count`, memory
+            and disk sizes); `default_build` is `None` until a build is ready
         :raises InvalidArgumentException: If `name_or_id` is not a name or ID, or includes a tag
         :raises TemplateNotFoundException: If the template is not found
 
@@ -615,7 +619,9 @@ class AsyncTemplate(TemplateBase):
         cls,
         name_or_id: str,
         *,
-        statuses: Optional[Union[str, Iterable[str]]] = None,
+        statuses: Optional[
+            Union[TemplateBuildStatus, Iterable[TemplateBuildStatus]]
+        ] = None,
         tags: Optional[Union[str, Iterable[str]]] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
@@ -625,15 +631,21 @@ class AsyncTemplate(TemplateBase):
         List the builds of a template, newest first.
 
         :param name_or_id: Name or ID of one of your team's templates, without a tag
-        :param statuses: Status or statuses, as `TemplateBuildStatus` values or their
-            strings. Only builds with one of them are listed.
+        :param statuses: Status or statuses. Only builds with one of them are listed.
         :param tags: Tag or tags. Only the builds they point at are listed. A tag points
             only at a ready build, so a tag with no ready build gives an empty page.
         :param limit: Maximum number of builds per page, at most 100. Defaults to 100.
         :param next_token: Token to the next page.
 
         :return: Paginator over the builds, each with the tags that point at it.
-            Fetching a page raises `TemplateNotFoundException` if the template is not found.
+            Fetching a page raises `TemplateNotFoundException` if the template is
+            not found. Drain it page by page:
+
+            ```python
+            paginator = AsyncTemplate.list_builds('my-template')
+            while paginator.has_next:
+                builds = await paginator.next_items()
+            ```
         :raises InvalidArgumentException: If `name_or_id` is not a name or ID or includes
             a tag, a status is unknown, or a tag is empty or contains a comma
 

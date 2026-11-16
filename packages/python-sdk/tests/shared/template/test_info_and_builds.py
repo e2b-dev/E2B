@@ -15,7 +15,9 @@ import pytest
 
 from e2b import (
     AsyncTemplate,
+    AsyncTemplateBuildPaginator,
     Template,
+    TemplateBuildPaginator,
     TemplateBuildInfo,
     TemplateBuildStatus,
     TemplateBuildWithTags,
@@ -304,7 +306,11 @@ async def test_list_builds_sends_filters(template_cls, api, filters, sent):
 async def test_list_builds_sends_the_same_filters_for_every_page(template_cls, api):
     tags = ["default"]
     paginator = template_cls.list_builds(
-        "abc", statuses=(status for status in ["ready"]), tags=tags, limit=2, **api
+        "abc",
+        statuses=(status for status in [TemplateBuildStatus.READY]),
+        tags=tags,
+        limit=2,
+        **api,
     )
     tags.append("v2")
 
@@ -342,6 +348,14 @@ def test_list_builds_rejects_filter(template_cls, api, filters, message):
 
     assert str(error.value) == message
     assert _Api.requests == []
+
+
+@pytest.mark.parametrize(
+    "paginator_cls", [TemplateBuildPaginator, AsyncTemplateBuildPaginator]
+)
+def test_build_paginator_takes_its_options_by_keyword_only(paginator_cls):
+    with pytest.raises(TypeError):
+        paginator_cls("abc", [TemplateBuildStatus.READY])
 
 
 async def test_list_builds_failed_page_can_be_fetched_again(template_cls, api):

@@ -25,7 +25,10 @@ class TemplateBuildPaginatorBase(PaginatorBase[TemplateBuildWithTags, ApiParams]
     def __init__(
         self,
         name_or_id: str,
-        statuses: Optional[Union[str, Iterable[str]]] = None,
+        *,
+        statuses: Optional[
+            Union[TemplateBuildStatus, Iterable[TemplateBuildStatus]]
+        ] = None,
         tags: Optional[Union[str, Iterable[str]]] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
