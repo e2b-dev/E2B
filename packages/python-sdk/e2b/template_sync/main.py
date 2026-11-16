@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Callable, List, Optional, Union, Unpack
+from typing import Callable, Iterable, List, Optional, Union, Unpack
 
 from e2b.api.client.client import AuthenticatedClient
 from e2b.api.client.types import Unset
@@ -9,12 +9,22 @@ from e2b.api.client_sync import get_api_client
 from e2b.template.consts import GZIP, RESOLVE_SYMLINKS
 from e2b.template.logger import LogEntry, LogEntryEnd, LogEntryStart
 from e2b.template.main import TemplateBase, TemplateClass
-from e2b.template_sync.paginator import TemplatePaginator
-from e2b.template.types import BuildInfo, InstructionType, TemplateTag, TemplateTagInfo
+from e2b.template_sync.paginator import (
+    TemplateBuildPaginator,
+    TemplatePaginator,
+)
+from e2b.template.types import (
+    BuildInfo,
+    InstructionType,
+    TemplateDetails,
+    TemplateTag,
+    TemplateTagInfo,
+)
 from e2b.template_sync.build_api import (
     assign_tags,
     check_alias_exists,
     delete_template,
+    get_template_info,
     get_template_tags,
     remove_tags,
     get_build_status,
@@ -24,7 +34,11 @@ from e2b.template_sync.build_api import (
     upload_file,
     wait_for_build_finish,
 )
-from e2b.template.utils import normalize_build_arguments, read_dockerignore
+from e2b.template.utils import (
+    normalize_build_arguments,
+    read_dockerignore,
+    validate_name_or_id_without_tag,
+)
 
 
 class Template(TemplateBase):
@@ -562,6 +576,85 @@ class Template(TemplateBase):
         )
 
         return get_template_tags(api_client, template_id)
+
+    @classmethod
+    def get_info(
+        cls,
+        name_or_id: str,
+        **opts: Unpack[ApiParams],
+    ) -> TemplateDetails:
+        """
+        Get a template with its default build.
+
+        `default_build` is the build sandboxes start from, and is not set until one
+        is ready. `build_status` follows the latest build tagged `default`, so it can
+        show a rebuild that is still running. For the build another tag points at,
+        use `list_builds(name_or_id, tags=[tag])`.
+
+        :param name_or_id: Name or ID of one of your team's templates, without a tag
+        :return: The template with its default build
+        :raises InvalidArgumentException: If `name_or_id` is not a name or ID, or includes a tag
+        :raises TemplateNotFoundException: If the template is not found
+
+        Example
+        ```python
+        info = Template.get_info('my-template')
+        if info.default_build:
+            print(info.default_build.cpu_count, info.default_build.max_cpu_count)
+        ```
+        """
+        validate_name_or_id_without_tag(name_or_id)
+
+        config = ConnectionConfig(**cls._resolve_api_params(**opts))
+        api_client = get_api_client(
+            config,
+        )
+
+        return get_template_info(api_client, name_or_id)
+
+    @classmethod
+    def list_builds(
+        cls,
+        name_or_id: str,
+        *,
+        statuses: Optional[Union[str, Iterable[str]]] = None,
+        tags: Optional[Union[str, Iterable[str]]] = None,
+        limit: Optional[int] = None,
+        next_token: Optional[str] = None,
+        **opts: Unpack[ApiParams],
+    ) -> TemplateBuildPaginator:
+        """
+        List the builds of a template, newest first.
+
+        :param name_or_id: Name or ID of one of your team's templates, without a tag
+        :param statuses: Status or statuses, as `TemplateBuildStatus` values or their
+            strings. Only builds with one of them are listed.
+        :param tags: Tag or tags. Only the builds they point at are listed. A tag points
+            only at a ready build, so a tag with no ready build gives an empty page.
+        :param limit: Maximum number of builds per page, at most 100. Defaults to 100.
+        :param next_token: Token to the next page.
+
+        :return: Paginator over the builds, each with the tags that point at it.
+            Fetching a page raises `TemplateNotFoundException` if the template is not found.
+        :raises InvalidArgumentException: If `name_or_id` is not a name or ID or includes
+            a tag, a status is unknown, or a tag is empty or contains a comma
+
+        Example
+        ```python
+        # The build the `v2` tag points at, with its CPU counts
+        builds = Template.list_builds('my-template', tags=['v2']).next_items()
+        if builds:
+            print(builds[0].cpu_count, builds[0].max_cpu_count)
+        ```
+        """
+        return TemplateBuildPaginator(
+            name_or_id,
+            statuses=statuses,
+            tags=tags,
+            limit=limit,
+            next_token=next_token,
+            **cls._resolve_api_params(**opts),
+        )
 
     @classmethod
     def list(

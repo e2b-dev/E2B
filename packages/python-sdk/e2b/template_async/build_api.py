@@ -15,6 +15,7 @@ from e2b.api.client.api.templates import (
     post_v_2_templates_template_id_builds_build_id,
     get_templates_template_id_builds_build_id_status,
     get_templates_aliases_alias,
+    get_v_2_templates_template_id,
     delete_templates_template_id,
 )
 from e2b.api.client.api.tags import (
@@ -29,16 +30,23 @@ from e2b.api.client.models import (
     TemplateBuildFileUpload,
     Error,
     AssignTemplateTagsRequest,
+    AssignedTemplateTags,
     DeleteTemplateTagsRequest,
 )
 from e2b.api.client.types import UNSET, Unset
-from e2b.exceptions import BuildException, FileUploadException, TemplateException
+from e2b.exceptions import (
+    BuildException,
+    FileUploadException,
+    TemplateException,
+    TemplateNotFoundException,
+)
 from e2b.template.logger import LogEntry
 from e2b.template.types import (
     TemplateType,
     BuildStatusReason,
     TemplateBuildStatus,
     TemplateBuildStatusResponse,
+    TemplateDetails,
     TemplateTag,
     TemplateTagInfo,
 )
@@ -388,7 +396,7 @@ async def assign_tags(
     if isinstance(res.parsed, Error):
         raise TemplateException(f"API error: {res.parsed.message}")
 
-    if res.parsed is None:
+    if not isinstance(res.parsed, AssignedTemplateTags):
         raise TemplateException("Failed to assign tags")
 
     return TemplateTagInfo(
@@ -450,6 +458,38 @@ async def get_template_tags(
         )
         for item in res.parsed
     ]
+
+
+async def get_template_info(
+    client: AuthenticatedClient, template_id_or_name: str
+) -> TemplateDetails:
+    """
+    Get a template with its default build.
+
+    Args:
+        client: Authenticated API client
+        template_id_or_name: Template ID or name (a name may be namespaced)
+    """
+    res = await get_v_2_templates_template_id.asyncio_detailed(
+        template_id=encode_path_param(template_id_or_name),
+        client=client,
+    )
+
+    # Only the API's own "not found" answer names the template; any other 404,
+    # such as one from an API without this route, stays a TemplateException.
+    if isinstance(res.parsed, Error) and res.parsed.code == 404:
+        raise TemplateNotFoundException(f"Template '{template_id_or_name}' not found")
+
+    if res.status_code >= 300:
+        raise handle_api_exception(res, TemplateException)
+
+    if isinstance(res.parsed, Error):
+        raise TemplateException(f"API error: {res.parsed.message}")
+
+    if res.parsed is None:
+        raise TemplateException("Failed to get template info")
+
+    return TemplateDetails._from_model(res.parsed)
 
 
 async def delete_template(

@@ -104,9 +104,19 @@ export type BuildInfo = {
 export type GetBuildStatusOptions = ConnectionOpts & { logsOffset?: number }
 
 /**
+ * Every status of a template build.
+ */
+export const TEMPLATE_BUILD_STATUSES = [
+  'building',
+  'waiting',
+  'ready',
+  'error',
+] as const
+
+/**
  * Status of a template build.
  */
-export type TemplateBuildStatus = 'building' | 'waiting' | 'ready' | 'error'
+export type TemplateBuildStatus = (typeof TEMPLATE_BUILD_STATUSES)[number]
 
 /**
  * Reason for the current build status (typically for errors).
@@ -273,11 +283,204 @@ export function convertTemplateInfo(
 }
 
 /**
+ * Information about a template build.
+ */
+export type TemplateBuildInfo = {
+  /**
+   * Build identifier.
+   */
+  buildId: string
+  /**
+   * Status of the build.
+   */
+  status: TemplateBuildStatus
+  /**
+   * Number of CPUs a sandbox created from the build starts with.
+   */
+  cpuCount: number
+  /**
+   * Maximum number of CPUs a sandbox can be started with. Set only for
+   * resizable builds.
+   */
+  maxCpuCount?: number
+  /**
+   * Amount of memory in MiB allocated to the sandbox.
+   */
+  memoryMB: number
+  /**
+   * Disk size in MiB of the sandbox.
+   */
+  diskSizeMB?: number
+  /**
+   * Version of envd running in the sandbox.
+   */
+  envdVersion?: string
+  /**
+   * When the build was created.
+   */
+  createdAt: Date
+  /**
+   * When the build was last updated.
+   */
+  updatedAt: Date
+  /**
+   * When the build finished.
+   */
+  finishedAt?: Date
+}
+
+export function convertTemplateBuildInfo(
+  build: components['schemas']['TemplateBuild']
+): TemplateBuildInfo {
+  return {
+    buildId: build.buildID,
+    status: build.status,
+    cpuCount: build.cpuCount,
+    ...(build.maxCpuCount != null && { maxCpuCount: build.maxCpuCount }),
+    memoryMB: build.memoryMB,
+    ...(build.diskSizeMB != null && { diskSizeMB: build.diskSizeMB }),
+    ...(build.envdVersion != null && { envdVersion: build.envdVersion }),
+    createdAt: new Date(build.createdAt),
+    updatedAt: new Date(build.updatedAt),
+    ...(build.finishedAt && { finishedAt: new Date(build.finishedAt) }),
+  }
+}
+
+/**
+ * A template build with the tags that point at it, as listed by
+ * `Template.listBuilds`.
+ */
+export type TemplateBuildWithTags = TemplateBuildInfo & {
+  /**
+   * Tags of the template that point at this build. A tag points at the latest
+   * ready build it was assigned to, the build a sandbox created with that tag
+   * starts from.
+   */
+  tags: string[]
+}
+
+export function convertTemplateBuildWithTags(
+  build: components['schemas']['TemplateBuildWithTags']
+): TemplateBuildWithTags {
+  return { ...convertTemplateBuildInfo(build), tags: build.tags }
+}
+
+/**
+ * A template with its default build, as returned by `Template.getInfo`.
+ *
+ * The build fields that `TemplateInfo` (an item of `Template.list`) carries at
+ * the top level, such as `buildId` and `cpuCount`, are under `defaultBuild`
+ * here.
+ */
+export type TemplateDetails = {
+  /**
+   * Template identifier.
+   */
+  templateId: string
+  /**
+   * Names of the template (`namespace/name` when namespaced).
+   */
+  names: string[]
+  /**
+   * Description of the template.
+   */
+  description?: string
+  /**
+   * Whether the template is public or only accessible by the project.
+   */
+  public: boolean
+  /**
+   * Whether the template is one of the platform's default templates.
+   */
+  isDefault: boolean
+  /**
+   * Status of the latest build tagged `default`, in any state. It is `waiting`
+   * or `building` while a rebuild runs and `error` after a failed one,
+   * although sandboxes still start from `defaultBuild`.
+   */
+  buildStatus: TemplateBuildStatus
+  /**
+   * Build a sandbox created without a tag starts from: the latest ready build
+   * tagged `default`, so its `status` is always `ready`. Not set until such a
+   * build is ready.
+   */
+  defaultBuild?: TemplateBuildInfo
+  /**
+   * Number of times the template was built.
+   */
+  buildCount: number
+  /**
+   * Number of times the template was used to create a sandbox.
+   */
+  spawnCount: number
+  /**
+   * When the template was created.
+   */
+  createdAt: Date
+  /**
+   * When the template was last updated.
+   */
+  updatedAt: Date
+  /**
+   * When the template was last used to create a sandbox.
+   */
+  lastSpawnedAt?: Date
+}
+
+export function convertTemplateDetails(
+  template: components['schemas']['TemplateV2']
+): TemplateDetails {
+  return {
+    templateId: template.templateID,
+    names: template.names,
+    ...(template.description && { description: template.description }),
+    public: template.public,
+    isDefault: template.isDefault,
+    buildStatus: template.buildStatus,
+    ...(template.defaultBuild && {
+      defaultBuild: convertTemplateBuildInfo(template.defaultBuild),
+    }),
+    buildCount: template.buildCount,
+    spawnCount: template.spawnCount,
+    createdAt: new Date(template.createdAt),
+    updatedAt: new Date(template.updatedAt),
+    ...(template.lastSpawnedAt && {
+      lastSpawnedAt: new Date(template.lastSpawnedAt),
+    }),
+  }
+}
+
+/**
  * Options for listing templates.
  */
 export interface TemplateListOpts extends Omit<ConnectionOpts, 'signal'> {
   /**
    * Maximum number of templates to return per page.
+   *
+   * @default 100
+   */
+  limit?: number
+  /**
+   * Token to the next page.
+   */
+  nextToken?: string
+}
+
+/**
+ * Options for listing the builds of a template.
+ */
+export interface TemplateBuildListOpts extends Omit<ConnectionOpts, 'signal'> {
+  /**
+   * Status or statuses. Only builds with one of them are listed.
+   */
+  statuses?: TemplateBuildStatus | TemplateBuildStatus[]
+  /**
+   * Tag or tags. Only the builds they point at are listed. A tag points only
+   * at a ready build, so a tag with no ready build gives an empty page.
+   */
+  tags?: string | string[]
+  /**
+   * Maximum number of builds to return per page, at most 100.
    *
    * @default 100
    */

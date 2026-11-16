@@ -8,11 +8,12 @@ import {
 import { BuildError, InvalidArgumentError } from '../errors'
 import { runtime, shellQuote } from '../utils'
 import { callableTemplate } from './callable'
-import { TemplatePaginator } from './paginator'
+import { TemplateBuildPaginator, TemplatePaginator } from './paginator'
 import {
   assignTags,
   checkAliasExists,
   getTemplateTags,
+  getTemplateInfo,
   deleteTemplate,
   removeTags,
   getBuildStatus,
@@ -37,8 +38,10 @@ import {
   McpServerName,
   RegistryConfig,
   TemplateBuilder,
+  TemplateBuildListOpts,
   TemplateBuildStatusResponse,
   TemplateClass,
+  TemplateDetails,
   TemplateFinal,
   TemplateFromImage,
   TemplateListOpts,
@@ -54,6 +57,7 @@ import {
   padOctal,
   readDockerignore,
   readGCPServiceAccountJSON,
+  validateNameOrIdWithoutTag,
   validateRelativePath,
 } from './utils'
 
@@ -431,6 +435,70 @@ export class TemplateBase
       { templateID: templateId },
       config.getSignal(undefined, options?.signal)
     )
+  }
+
+  /**
+   * Get a template with its default build.
+   *
+   * `defaultBuild` is the build sandboxes start from, and is not set until one
+   * is ready. `buildStatus` follows the latest build tagged `default`, so it
+   * can show a rebuild that is still running. For the build another tag points
+   * at, use `Template.listBuilds(nameOrId, { tags: [tag] })`.
+   *
+   * @param nameOrId Name or ID of one of your team's templates, without a tag
+   * @param options Authentication options
+   * @returns The template with its default build
+   * @throws InvalidArgumentError if `nameOrId` is not a name or ID, or
+   * includes a tag
+   * @throws TemplateNotFoundError if the template is not found
+   *
+   * @example
+   * ```ts
+   * const info = await Template.getInfo('my-template')
+   * console.log(info.defaultBuild?.cpuCount, info.defaultBuild?.maxCpuCount)
+   * ```
+   */
+  static async getInfo(
+    nameOrId: string,
+    options?: ConnectionOpts
+  ): Promise<TemplateDetails> {
+    validateNameOrIdWithoutTag(nameOrId)
+
+    const config = new ConnectionConfig(this.resolveOpts(options))
+    const client = new ApiClient(config)
+    return getTemplateInfo(
+      client,
+      { templateID: nameOrId },
+      config.getSignal(undefined, options?.signal)
+    )
+  }
+
+  /**
+   * List the builds of a template, newest first.
+   *
+   * @param nameOrId Name or ID of one of your team's templates, without a tag
+   * @param opts connection, filter and pagination options.
+   *
+   * @returns a {@link TemplateBuildPaginator} that yields pages of builds,
+   * each with the tags that point at it. Fetching a page throws
+   * `TemplateNotFoundError` if the template is not found.
+   * @throws InvalidArgumentError if `nameOrId` is not a name or ID or includes
+   * a tag, a status is unknown, or a tag is empty or contains a comma
+   *
+   * @example
+   * ```ts
+   * // The build the `v2` tag points at, with its CPU counts
+   * const [build] = await Template.listBuilds('my-template', {
+   *   tags: ['v2'],
+   * }).nextItems()
+   * console.log(build?.cpuCount, build?.maxCpuCount)
+   * ```
+   */
+  static listBuilds(
+    nameOrId: string,
+    opts?: TemplateBuildListOpts
+  ): TemplateBuildPaginator {
+    return new TemplateBuildPaginator(nameOrId, this.resolveOpts(opts))
   }
 
   /**
@@ -1343,7 +1411,7 @@ export class TemplateBase
  */
 export const Template = callableTemplate(TemplateBase)
 
-export { TemplatePaginator } from './paginator'
+export { TemplateBuildPaginator, TemplatePaginator } from './paginator'
 
 export type {
   BuildInfo,
@@ -1353,9 +1421,13 @@ export type {
   GetBuildStatusOptions,
   McpServerName,
   TemplateBuilder,
+  TemplateBuildInfo,
+  TemplateBuildListOpts,
   TemplateBuildStatus,
   TemplateBuildStatusResponse,
+  TemplateBuildWithTags,
   TemplateClass,
+  TemplateDetails,
   TemplateInfo,
   TemplateListOpts,
   TemplateTag,

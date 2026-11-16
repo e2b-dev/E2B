@@ -4,14 +4,21 @@ import stream from 'node:stream'
 import { ApiClient, handleApiError, components } from '../api'
 import { buildRequestSignal } from '../connectionConfig'
 import { loadUndici } from '../undici'
-import { BuildError, FileUploadError, TemplateError } from '../errors'
+import {
+  BuildError,
+  FileUploadError,
+  TemplateError,
+  TemplateNotFoundError,
+} from '../errors'
 import { FILE_UPLOAD_TIMEOUT_MS } from './consts'
 import { LogEntry } from './logger'
 import { getBuildStepIndex, spoolTarArchive } from './utils'
 import {
   BuildStatusReason,
+  convertTemplateDetails,
   TemplateBuildStatus,
   TemplateBuildStatusResponse,
+  TemplateDetails,
   TemplateTag,
   TemplateTagInfo,
 } from './types'
@@ -494,6 +501,38 @@ export async function getTemplateTags(
     buildId: item.buildID,
     createdAt: new Date(item.createdAt),
   }))
+}
+
+export async function getTemplateInfo(
+  client: ApiClient,
+  { templateID }: { templateID: string },
+  signal?: AbortSignal
+): Promise<TemplateDetails> {
+  const res = await client.api.GET('/v2/templates/{templateID}', {
+    params: {
+      path: {
+        templateID,
+      },
+    },
+    signal,
+  })
+
+  // Only the API's own "not found" answer names the template; any other 404,
+  // such as one from an API without this route, stays a plain TemplateError.
+  if (res.error?.code === 404) {
+    throw new TemplateNotFoundError(`Template '${templateID}' not found`)
+  }
+
+  const error = handleApiError(res, TemplateError)
+  if (error) {
+    throw error
+  }
+
+  if (!res.data) {
+    throw new TemplateError('Failed to get template info')
+  }
+
+  return convertTemplateDetails(res.data)
 }
 
 export async function deleteTemplate(

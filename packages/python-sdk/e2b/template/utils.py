@@ -11,7 +11,7 @@ import inspect
 from types import TracebackType, FrameType
 from typing import IO, List, Optional, Union
 
-from e2b.exceptions import TemplateException
+from e2b.exceptions import InvalidArgumentException, TemplateException
 from e2b.template.consts import BASE_STEP_NAME, FINALIZE_STEP_NAME
 from e2b_dockerfile_utils import PatternMatcher
 
@@ -82,6 +82,26 @@ def validate_relative_path(
             f'Invalid source path "{src}": path escapes the context directory. '
             "The path must stay within the context directory."
         ).with_traceback(stack_trace)
+
+
+def validate_name_or_id_without_tag(name_or_id: str) -> None:
+    """
+    Validate a template reference for the calls that take a template name or
+    ID and no tag.
+
+    :param name_or_id: Template name or ID
+    :raises InvalidArgumentException: If it is empty, `.` or `..` (these would
+        address another API route), or includes a tag
+    """
+    if name_or_id in ("", ".", ".."):
+        raise InvalidArgumentException(f"Invalid template name or ID '{name_or_id}'.")
+
+    if ":" in name_or_id:
+        raise InvalidArgumentException(
+            f"Expected a template name or ID without a tag, got '{name_or_id}'. "
+            "To read the build a tag points at, pass the tag to "
+            "list_builds(name_or_id, tags=[tag])."
+        )
 
 
 def normalize_build_arguments(

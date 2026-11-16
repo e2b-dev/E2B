@@ -47,6 +47,14 @@ const restHandlers = [
     await holdUntilAborted(request.signal)
     return HttpResponse.json([])
   }),
+  http.get(apiUrl('/v2/templates/:templateID'), async ({ request }) => {
+    await holdUntilAborted(request.signal)
+    return HttpResponse.json({})
+  }),
+  http.get(apiUrl('/templates/:templateID/builds'), async ({ request }) => {
+    await holdUntilAborted(request.signal)
+    return HttpResponse.json([])
+  }),
 ]
 
 const server = setupServer(...restHandlers)
@@ -192,6 +200,44 @@ test('Template.getTags rejects when AbortSignal is aborted', async () => {
 
   await requestStarted
   controller.abort()
+
+  await expect(promise).rejects.toThrow()
+})
+
+test('Template.getInfo rejects when AbortSignal is aborted', async () => {
+  const controller = new AbortController()
+  const requestStarted = nextRequestStart()
+
+  const promise = Template.getInfo('some-template', {
+    apiKey: TEST_API_KEY,
+    signal: controller.signal,
+  })
+
+  await requestStarted
+  controller.abort()
+
+  await expect(promise).rejects.toThrow()
+})
+
+test('Template.listBuilds page rejects when AbortSignal is aborted', async () => {
+  const controller = new AbortController()
+  const requestStarted = nextRequestStart()
+
+  const promise = Template.listBuilds('some-template', {
+    apiKey: TEST_API_KEY,
+  }).nextItems({ signal: controller.signal })
+
+  await requestStarted
+  controller.abort()
+
+  await expect(promise).rejects.toThrow()
+})
+
+test('Template.listBuilds page rejects when its request timeout passes', async () => {
+  const promise = Template.listBuilds('some-template', {
+    apiKey: TEST_API_KEY,
+    requestTimeoutMs: 50,
+  }).nextItems()
 
   await expect(promise).rejects.toThrow()
 })

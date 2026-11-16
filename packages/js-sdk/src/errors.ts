@@ -226,6 +226,17 @@ export class TemplateError extends SandboxError {
 }
 
 /**
+ * Thrown when a template is not found.
+ */
+export class TemplateNotFoundError extends TemplateError {
+  constructor(message: string) {
+    super(message)
+    this.name = 'TemplateNotFoundError'
+    this.statusCode = 404
+  }
+}
+
+/**
  * Thrown when the API rate limit is exceeded.
  */
 export class RateLimitError extends SandboxError {

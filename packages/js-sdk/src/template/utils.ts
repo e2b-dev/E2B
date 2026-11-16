@@ -5,7 +5,7 @@ import path from 'node:path'
 import url from 'node:url'
 import { parse, type StackFrame } from 'error-stack-parser-es'
 import { dynamicImport } from '../utils'
-import { TemplateError } from '../errors'
+import { InvalidArgumentError, TemplateError } from '../errors'
 import { BASE_STEP_NAME, FINALIZE_STEP_NAME } from './consts'
 import { PatternMatcher } from '@e2b/dockerfile-utils'
 import type { IgnoreLike, Path } from 'glob'
@@ -62,6 +62,25 @@ export function validateRelativePath(
       stackTrace
     )
     throw error
+  }
+}
+
+/**
+ * Validate a template reference for the calls that take a template name or
+ * ID and no tag.
+ *
+ * @throws InvalidArgumentError if it is empty, `.` or `..` (these would
+ * address another API route), or includes a tag
+ */
+export function validateNameOrIdWithoutTag(nameOrId: string): void {
+  if (nameOrId === '' || nameOrId === '.' || nameOrId === '..') {
+    throw new InvalidArgumentError(`Invalid template name or ID '${nameOrId}'.`)
+  }
+
+  if (nameOrId.includes(':')) {
+    throw new InvalidArgumentError(
+      `Expected a template name or ID without a tag, got '${nameOrId}'. To read the build a tag points at, pass the tag to Template.listBuilds(nameOrId, { tags: [tag] }).`
+    )
   }
 }
 

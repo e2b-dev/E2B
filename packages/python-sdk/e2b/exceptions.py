@@ -172,6 +172,15 @@ class TemplateException(SandboxException):
     """
 
 
+class TemplateNotFoundException(TemplateException):
+    """
+    Raised when a template is not found.
+    """
+
+    def __init__(self, *args):
+        super().__init__(*args, status_code=404)
+
+
 class RateLimitException(SandboxException):
     """
     Raised when the API rate limit is exceeded.

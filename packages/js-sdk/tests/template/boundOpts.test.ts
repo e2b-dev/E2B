@@ -39,6 +39,20 @@ const templateTags = [
   },
 ]
 
+const templateDetails = {
+  templateID: 'my-template-id',
+  names: ['my-template'],
+  public: false,
+  isDefault: false,
+  buildStatus: 'ready',
+  buildCount: 1,
+  spawnCount: 0,
+  createdBy: null,
+  createdAt: '2024-01-15T10:30:00Z',
+  updatedAt: '2024-01-15T10:30:00Z',
+  lastSpawnedAt: null,
+}
+
 const handlers = [apiUrl, boundApiUrl].flatMap((url) => [
   http.get(url('/templates/:templateID/tags'), ({ request }) => {
     recordRequest(request)
@@ -47,6 +61,14 @@ const handlers = [apiUrl, boundApiUrl].flatMap((url) => [
   http.get(url('/templates/aliases/:alias'), ({ request }) => {
     recordRequest(request)
     return HttpResponse.json({ aliases: [], templateID: 'template-id' })
+  }),
+  http.get(url('/v2/templates/:templateID'), ({ request }) => {
+    recordRequest(request)
+    return HttpResponse.json(templateDetails)
+  }),
+  http.get(url('/templates/:templateID/builds'), ({ request }) => {
+    recordRequest(request)
+    return HttpResponse.json([])
   }),
   http.post(url('/templates/tags'), async ({ request }) => {
     recordRequest(request)
@@ -96,11 +118,15 @@ test('top-level statics resolve config from per-call options', async () => {
   await Template.removeTags('my-template', 'production', {
     apiKey: TEST_API_KEY,
   })
+  await Template.getInfo('my-template', { apiKey: TEST_API_KEY })
+  await Template.listBuilds('my-template', {
+    apiKey: TEST_API_KEY,
+  }).nextItems()
   await Template.buildInBackground(Template().fromBaseImage(), 'my-template', {
     apiKey: TEST_API_KEY,
   })
 
-  expect(requests.length).toBe(6)
+  expect(requests.length).toBe(8)
   for (const request of requests) {
     expect(request.apiKey).toBe(TEST_API_KEY)
     expect(request.url).toContain(`api.${process.env.E2B_DOMAIN || 'e2b.app'}`)
@@ -113,12 +139,14 @@ test('subclass bound options are used as defaults', async () => {
   await BoundTemplate.aliasExists('my-template')
   await BoundTemplate.assignTags('my-template:v1.0', 'production')
   await BoundTemplate.removeTags('my-template', 'production')
+  await BoundTemplate.getInfo('my-template')
+  await BoundTemplate.listBuilds('my-template').nextItems()
   await BoundTemplate.buildInBackground(
     Template().fromBaseImage(),
     'my-template'
   )
 
-  expect(requests.length).toBe(7)
+  expect(requests.length).toBe(9)
   for (const request of requests) {
     expect(request.apiKey).toBe(BOUND_API_KEY)
     expect(request.url).toContain(`api.${BOUND_DOMAIN}`)
