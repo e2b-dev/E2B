@@ -70,23 +70,17 @@ class TimeoutException(SandboxException):
     The `unknown` exception type is sometimes caused by the sandbox timeout when the request is not processed correctly.\n
     """
 
-    pass
-
 
 class InvalidArgumentException(SandboxException):
     """
     Raised when an invalid argument is provided.
     """
 
-    pass
-
 
 class NotEnoughSpaceException(SandboxException):
     """
     Raised when there is not enough disk space.
     """
-
-    pass
 
 
 class NotFoundException(SandboxException):
@@ -98,23 +92,17 @@ class NotFoundException(SandboxException):
         This class will be removed in the next major version.
     """
 
-    pass
-
 
 class FileNotFoundException(NotFoundException):
     """
     Raised when a file or directory is not found inside a sandbox.
     """
 
-    pass
-
 
 class SandboxNotFoundException(NotFoundException):
     """
     Raised when a sandbox is not found (e.g. it doesn't exist or is no longer running).
     """
-
-    pass
 
 
 class SandboxNotRunningException(TimeoutException):
@@ -133,8 +121,6 @@ class SandboxNotRunningException(TimeoutException):
 
     Subclass of ``TimeoutException``, which this case surfaced as before.
     """
-
-    pass
 
 
 class SandboxUnreachableException(TimeoutException):
@@ -157,15 +143,11 @@ class SandboxUnreachableException(TimeoutException):
     Subclass of ``TimeoutException``, which these cases surfaced as before.
     """
 
-    pass
-
 
 class AuthenticationException(Exception):
     """
     Raised when authentication fails.
     """
-
-    pass
 
 
 class GitAuthException(AuthenticationException):
@@ -175,8 +157,6 @@ class GitAuthException(AuthenticationException):
     :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
     """
 
-    pass
-
 
 class GitUpstreamException(SandboxException):
     """
@@ -184,8 +164,6 @@ class GitUpstreamException(SandboxException):
 
     :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
     """
-
-    pass
 
 
 class TemplateException(SandboxException):
