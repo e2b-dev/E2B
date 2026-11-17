@@ -2,6 +2,7 @@
 Run [Agent Client Protocol](https://agentclientprotocol.com) agents in E2B sandboxes.
 """
 
+import asyncio
 import contextlib
 from typing import Callable, Dict, Optional, Tuple, Union, cast
 
@@ -76,7 +77,7 @@ class AsyncACPAgent:
         self._on_stderr = on_stderr
         self._max_message_bytes = max_message_bytes
         self._request_timeout = request_timeout
-        self._started = False
+        self._start_done: Optional[asyncio.Event] = None
         self._transport: Optional[ACPTransport] = None
         self._connection: Optional[ClientSideConnection] = None
 
@@ -90,9 +91,15 @@ class AsyncACPAgent:
             non-zero code or sends a message over `max_message_bytes`
         :raises RuntimeError: If `start()` was already called
         """
-        if self._started:
+        if self._start_done is not None:
             raise RuntimeError("ACP agent was already started")
-        self._started = True
+        self._start_done = asyncio.Event()
+        try:
+            await self._start_transport()
+        finally:
+            self._start_done.set()
+
+    async def _start_transport(self) -> None:
         transport = ACPTransport(
             self._sandbox, self._max_message_bytes, self._on_stderr
         )
@@ -110,6 +117,12 @@ class AsyncACPAgent:
                 await transport.kill()
             raise
         self._transport = transport
+
+    async def _start_settled(self) -> None:
+        # A start() in flight has no transport yet, so stop() and kill() wait
+        # for it. Its error belongs to the start() caller.
+        if self._start_done is not None:
+            await self._start_done.wait()
 
     def _running(self) -> Tuple[ACPTransport, ClientSideConnection]:
         if self._transport is None or self._connection is None:
@@ -153,21 +166,26 @@ class AsyncACPAgent:
         Stop the agent: send EOF to its stdin and kill it if it has not
         exited within `timeout` of this call. Messages the agent sends after
         this call are not delivered. It does nothing if the agent is not running.
+        If `start()` is still running, it waits for it and then stops the agent;
+        `timeout` then counts from when the start finishes.
 
         :param timeout: Time for the agent to exit in **seconds**; defaults to ``DEFAULT_STOP_TIMEOUT`` (5 seconds)
         :param request_timeout: Timeout for the request that closes the agent's stdin in **seconds**
 
         :raises SandboxException: If the agent could not be killed
         """
+        await self._start_settled()
         if self._transport is not None:
             await self._transport.close(timeout, request_timeout)
 
     async def kill(self) -> bool:
         """
-        Kill the agent process with `SIGKILL`.
+        Kill the agent process with `SIGKILL`. If `start()` is still running,
+        it waits for it and then kills the agent.
 
         :return: `True` if the agent was killed, `False` if it was not found or not started
         """
+        await self._start_settled()
         if self._transport is None:
             return False
         return await self._transport.kill()

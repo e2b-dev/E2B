@@ -321,3 +321,64 @@ async def test_start_can_be_called_only_once():
     with pytest.raises(RuntimeError, match="already started"):
         await acp_agent.start()
     await acp_agent.kill()
+
+
+def hold_start(agent):
+    """Hold commands.run until released, so a test can act while start() is running."""
+    run = agent.sandbox.commands.run
+    release = asyncio.Event()
+
+    async def held(*args, **kwargs):
+        await release.wait()
+        return await run(*args, **kwargs)
+
+    agent.sandbox.commands.run = held
+    return release
+
+
+async def test_stop_during_start_stops_the_agent_once_it_has_started():
+    async def close_stdin():
+        agent.exit_with(0)
+
+    agent = FakeAgent(close_stdin=close_stdin)
+    release = hold_start(agent)
+    acp_agent = AsyncACPAgent(agent.sandbox, "agent", SimpleNamespace())
+
+    starting = asyncio.create_task(acp_agent.start())
+    stopping = asyncio.create_task(acp_agent.stop())
+    await asyncio.sleep(0)
+    release.set()
+    await starting
+    await asyncio.wait_for(stopping, 1)
+
+    assert len(agent.close_stdin_request_timeouts) == 1
+
+
+async def test_kill_during_start_kills_the_agent_once_it_has_started():
+    agent = FakeAgent()
+    release = hold_start(agent)
+    acp_agent = AsyncACPAgent(agent.sandbox, "agent", SimpleNamespace())
+
+    starting = asyncio.create_task(acp_agent.start())
+    killing = asyncio.create_task(acp_agent.kill())
+    await asyncio.sleep(0)
+    release.set()
+    await starting
+
+    assert await asyncio.wait_for(killing, 1) is True
+    assert agent.killed == 1
+
+
+async def test_stop_and_kill_after_a_failed_start_do_nothing():
+    agent = FakeAgent()
+
+    async def run(*args, **kwargs):
+        raise RuntimeError("no sandbox")
+
+    agent.sandbox.commands.run = run
+    acp_agent = AsyncACPAgent(agent.sandbox, "agent", SimpleNamespace())
+    with pytest.raises(RuntimeError, match="no sandbox"):
+        await acp_agent.start()
+
+    await acp_agent.stop()
+    assert await acp_agent.kill() is False
