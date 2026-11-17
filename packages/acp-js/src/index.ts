@@ -1,21 +1,19 @@
 import type { ClientApp, ClientConnection } from '@agentclientprotocol/sdk'
 import type { Sandbox } from 'e2b'
-import {
-  startACPTransport,
-  type ACPAgentResult,
-  type ACPAgentStartOpts,
-  type ACPAgentStopOpts,
-  type ACPTransport,
-} from './transport'
+import { startACPTransport, type ACPTransport } from './transport'
+import type {
+  ACPAgentResult,
+  ACPAgentStartOpts,
+  ACPAgentStopOpts,
+} from './types'
 
-export { DEFAULT_STOP_TIMEOUT_MS } from './transport'
-export { DEFAULT_MAX_MESSAGE_BYTES } from './utils'
+export { DEFAULT_MAX_MESSAGE_BYTES, DEFAULT_STOP_TIMEOUT_MS } from './consts'
 export type {
   ACPAgentResult,
   ACPAgentStartOpts,
   ACPAgentStopOpts,
   StderrHandler,
-} from './transport'
+} from './types'
 
 /**
  * ACP agent running in a sandbox, connected to your client.

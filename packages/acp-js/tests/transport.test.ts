@@ -1,6 +1,7 @@
 import type { AnyMessage } from '@agentclientprotocol/sdk'
 import { assert } from 'vitest'
-import { startACPTransport, type ACPAgentStartOpts } from '../src/transport'
+import { startACPTransport } from '../src/transport'
+import type { ACPAgentStartOpts } from '../src/types'
 import { FAKE_AGENT_CMD, uploadFakeAgent } from './fakeAgent'
 import { sandboxTest } from './setup'
 

@@ -2,7 +2,8 @@ import { CommandExitError, type CommandStartOpts, type Sandbox } from 'e2b'
 import { assert, expect, test, vi } from 'vitest'
 import { client, methods, PROTOCOL_VERSION } from '@agentclientprotocol/sdk'
 import { ACPAgent } from '../src'
-import { startACPTransport, type ACPSandbox } from '../src/transport'
+import { startACPTransport } from '../src/transport'
+import type { ACPSandbox } from '../src/types'
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 

@@ -1,10 +1,5 @@
 import { InvalidArgumentError, SandboxError } from 'e2b'
-
-/**
- * Default maximum size of a single message from the agent, matching the
- * TypeScript ACP SDK.
- */
-export const DEFAULT_MAX_MESSAGE_BYTES = 32 * 1024 * 1024
+import { METHOD_NOT_FOUND } from './consts'
 
 const encoder = new TextEncoder()
 
@@ -134,7 +129,7 @@ export function filterAgentMessage(message: unknown): {
         jsonrpc: '2.0',
         id: item.id,
         error: {
-          code: -32601,
+          code: METHOD_NOT_FOUND,
           message: `Method not found: ${item.method} is not available, the agent runs inside an E2B sandbox`,
         },
       })
@@ -145,10 +140,4 @@ export function filterAgentMessage(message: unknown): {
     return { forward: forward[0], replies }
   }
   return { forward: forward.length ? forward : undefined, replies }
-}
-
-export const PARSE_ERROR_RESPONSE = {
-  jsonrpc: '2.0',
-  id: null,
-  error: { code: -32700, message: 'Parse error' },
 }

@@ -4,89 +4,26 @@ import {
   SandboxError,
   type CommandHandle,
   type CommandRequestOpts,
-  type CommandStartOpts,
-  type Sandbox,
 } from 'e2b'
 import {
   DEFAULT_MAX_MESSAGE_BYTES,
+  DEFAULT_STOP_TIMEOUT_MS,
+  PARSE_ERROR_RESPONSE,
+  READ_QUEUE_MESSAGES,
+  STDERR_TAIL_CHARS,
+} from './consts'
+import type {
+  ACPAgentResult,
+  ACPAgentStartOpts,
+  ACPAgentStopOpts,
+  ACPSandbox,
+  ACPStream,
+} from './types'
+import {
   filterAgentMessage,
   LineSplitter,
-  PARSE_ERROR_RESPONSE,
   restrictClientCapabilities,
 } from './utils'
-
-/**
- * Callback for the agent's stderr output.
- */
-export type StderrHandler = (data: string) => void | Promise<void>
-
-/**
- * Options for starting an ACP agent in a sandbox.
- */
-export interface ACPAgentStartOpts extends Pick<
-  CommandStartOpts,
-  'cwd' | 'envs' | 'user' | 'requestTimeoutMs' | 'signal'
-> {
-  /**
-   * Callback for the agent's stderr output (logs). The agent's stdout is reserved for the protocol.
-   */
-  onStderr?: StderrHandler
-  /**
-   * Maximum size of a single message from the agent in **bytes**.
-   *
-   * @default 33_554_432 // 32 MiB
-   */
-  maxMessageBytes?: number
-}
-
-/**
- * Default time for an ACP agent to exit after `stop()`, in **milliseconds**.
- */
-export const DEFAULT_STOP_TIMEOUT_MS = 5_000
-
-/**
- * Options for stopping an ACP agent. `requestTimeoutMs` and `signal` apply to
- * the request that closes the agent's stdin.
- */
-export interface ACPAgentStopOpts extends CommandRequestOpts {
-  /**
-   * Time for the agent to exit after `stop()` is called, in **milliseconds**.
-   * It covers sending EOF to the agent's stdin; after it the agent is killed.
-   *
-   * @default DEFAULT_STOP_TIMEOUT_MS // 5 seconds
-   */
-  timeoutMs?: number
-}
-
-/**
- * Exit status of an ACP agent process.
- */
-export interface ACPAgentResult {
-  /**
-   * Exit code of the agent process.
-   */
-  exitCode: number
-  /**
-   * Error message if the process failed.
-   */
-  error?: string
-}
-
-/**
- * Message stream connected to an ACP agent.
- */
-export interface ACPStream {
-  readable: ReadableStream<AnyMessage>
-  writable: WritableStream<AnyMessage>
-}
-
-/**
- * The part of `Sandbox` the transport needs.
- */
-export type ACPSandbox = Pick<Sandbox, 'commands'>
-
-const STDERR_TAIL_CHARS = 4096
-const READ_QUEUE_MESSAGES = 64
 
 /**
  * ACP over the stdin/stdout of an agent process in the sandbox.
