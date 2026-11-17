@@ -7,7 +7,7 @@ license = "MIT"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "e2b>=2.56.0,<3.0.0",
+    "e2b>=2.62.0,<3.0.0",
     "agent-client-protocol>=0.12.1,<0.13",
 ]
 
