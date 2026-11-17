@@ -20,22 +20,14 @@ export type {
  * ACP agent running in a sandbox, connected to your client.
  */
 export class ACPAgent {
-  /**
-   * @hidden
-   * @internal
-   */
-  constructor(
-    private readonly transport: ACPTransport,
-    /**
-     * Connection to the agent. Use `connection.agent` to initialize, create
-     * sessions and send prompts. Closing it also stops the agent.
-     */
-    readonly connection: ClientConnection
-  ) {}
+  private transport?: ACPTransport
+  private _connection?: ClientConnection
+  private started = false
 
   /**
-   * Start an [Agent Client Protocol](https://agentclientprotocol.com) agent in
-   * the sandbox and connect your ACP client to it over the agent's stdin/stdout.
+   * Create an [Agent Client Protocol](https://agentclientprotocol.com) agent
+   * for the sandbox. Call `start()` to run it and connect your ACP client to it
+   * over the agent's stdin/stdout.
    *
    * The client filesystem and terminal capabilities are turned off in
    * `initialize`, and agent requests for `fs/*` or `terminal/*` are answered
@@ -50,13 +42,6 @@ export class ACPAgent {
    * receive the agent's session updates.
    * @param opts options for starting the agent.
    *
-   * @returns `ACPAgent` with the ACP connection.
-   *
-   * @throws InvalidArgumentError if `maxMessageBytes` is not a positive integer.
-   * @throws SandboxError if the agent could not be started. Later, the
-   * connection fails with an `ACPError` if the agent exits with a non-zero
-   * code or sends a message over `maxMessageBytes`.
-   *
    * @example
    * ```ts
    * import { Sandbox } from 'e2b'
@@ -67,7 +52,8 @@ export class ACPAgent {
    *   console.log(params.update)
    * })
    * const sandbox = await Sandbox.create('goose')
-   * const agent = await ACPAgent.start(sandbox, 'goose acp', app)
+   * const agent = new ACPAgent(sandbox, 'goose acp', app)
+   * await agent.start()
    * await agent.connection.agent.request(methods.agent.initialize, {
    *   protocolVersion: PROTOCOL_VERSION,
    * })
@@ -82,29 +68,55 @@ export class ACPAgent {
    * await agent.stop()
    * ```
    */
-  static async start(
-    sandbox: Sandbox,
-    command: string,
-    client: ClientApp,
-    opts?: ACPAgentStartOpts
-  ): Promise<ACPAgent> {
-    const transport = await startACPTransport(sandbox, command, opts)
-    let connection: ClientConnection
+  constructor(
+    private readonly sandbox: Sandbox,
+    private readonly command: string,
+    private readonly client: ClientApp,
+    private readonly opts?: ACPAgentStartOpts
+  ) {}
+
+  /**
+   * Start the agent in the sandbox and connect your ACP client to it.
+   *
+   * @throws InvalidArgumentError if `maxMessageBytes` is not a positive integer.
+   * @throws SandboxError if the agent could not be started. Later, the
+   * connection fails with an `ACPError` if the agent exits with a non-zero
+   * code or sends a message over `maxMessageBytes`.
+   * @throws Error if `start()` was already called.
+   */
+  async start(): Promise<void> {
+    if (this.started) {
+      throw new Error('ACP agent was already started')
+    }
+    this.started = true
+    const transport = await startACPTransport(
+      this.sandbox,
+      this.command,
+      this.opts
+    )
     try {
       // Throws if an `onConnect` handler throws.
-      connection = client.connect(transport.stream)
+      this._connection = this.client.connect(transport.stream)
     } catch (err) {
       await transport.kill().catch(() => false)
       throw err
     }
-    return new ACPAgent(transport, connection)
+    this.transport = transport
+  }
+
+  /**
+   * Connection to the agent. Use `connection.agent` to initialize, create
+   * sessions and send prompts. Closing it also stops the agent.
+   */
+  get connection(): ClientConnection {
+    return this.running().connection
   }
 
   /**
    * Process ID of the agent in the sandbox.
    */
   get pid(): number {
-    return this.transport.pid
+    return this.running().transport.pid
   }
 
   /**
@@ -116,28 +128,35 @@ export class ACPAgent {
    * @returns exit status of the agent.
    */
   async wait(): Promise<ACPAgentResult> {
-    return this.transport.wait()
+    return this.running().transport.wait()
   }
 
   /**
    * Stop the agent: send EOF to its stdin and kill it if it has not exited
    * within `timeoutMs` of this call. Messages the agent sends after this call
-   * are not delivered.
+   * are not delivered. It does nothing if the agent is not running.
    *
    * @param opts options for stopping the agent.
    *
    * @throws SandboxError if the agent could not be killed.
    */
   async stop(opts?: ACPAgentStopOpts): Promise<void> {
-    return this.transport.close(opts)
+    return this.transport?.close(opts)
   }
 
   /**
    * Kill the agent process with `SIGKILL`.
    *
-   * @returns `true` if the agent was killed, `false` if it was not found.
+   * @returns `true` if the agent was killed, `false` if it was not found or not started.
    */
   async kill(): Promise<boolean> {
-    return this.transport.kill()
+    return this.transport?.kill() ?? false
+  }
+
+  private running() {
+    if (!this.transport || !this._connection) {
+      throw new Error('ACP agent is not started, call start() first')
+    }
+    return { transport: this.transport, connection: this._connection }
   }
 }

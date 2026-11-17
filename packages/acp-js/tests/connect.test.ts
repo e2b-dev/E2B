@@ -9,9 +9,10 @@ const app = client().onRequest(
   async () => ({ outcome: { outcome: 'cancelled' } })
 )
 
-sandboxTest('ACPAgent.start connects an ACP client', async ({ sandbox }) => {
+sandboxTest('ACPAgent.start() connects an ACP client', async ({ sandbox }) => {
   await uploadFakeAgent(sandbox)
-  const agent = await ACPAgent.start(sandbox, FAKE_AGENT_CMD, app)
+  const agent = new ACPAgent(sandbox, FAKE_AGENT_CMD, app)
+  await agent.start()
 
   const response = await agent.connection.agent.request(
     methods.agent.initialize,

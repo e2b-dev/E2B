@@ -34,13 +34,14 @@ const app = client({ name: 'my-app' })
 
 const sandbox = await Sandbox.create('goose', { timeoutMs: 10 * 60_000 })
 try {
-  const agent = await ACPAgent.start(sandbox, 'goose acp --with-builtin developer', app, {
+  const agent = new ACPAgent(sandbox, 'goose acp --with-builtin developer', app, {
     envs: {
       GOOSE_PROVIDER: 'openai',
       GOOSE_MODEL: 'gpt-5.6-luna',
       OPENAI_API_KEY: process.env.OPENAI_API_KEY!,
     },
   })
+  await agent.start()
 
   await agent.connection.agent.request(methods.agent.initialize, { protocolVersion: PROTOCOL_VERSION })
   const { sessionId } = await agent.connection.agent.request(methods.agent.session.new, {
@@ -60,12 +61,13 @@ try {
 
 ## Where the agent's tools run
 
-The agent talks ACP over its stdin and stdout. `ACPAgent.start` turns off the client filesystem and terminal capabilities in `initialize` and answers agent requests for `fs/*` or `terminal/*` with an error, so the agent edits files and runs commands with its own tools inside the sandbox. It does not restrict the agent's network access or the MCP servers you pass to it.
+The agent talks ACP over its stdin and stdout. `ACPAgent` turns off the client filesystem and terminal capabilities in `initialize` and answers agent requests for `fs/*` or `terminal/*` with an error, so the agent edits files and runs commands with its own tools inside the sandbox. It does not restrict the agent's network access or the MCP servers you pass to it.
 
 ## Lifecycle
 
-- `agent.stop()` sends EOF to the agent and kills it if it has not exited within `timeoutMs` (5 seconds by default) of the call. Messages the agent sends after that are not delivered.
-- `agent.wait()` resolves with the exit code once the agent exits.
+- `new ACPAgent(...)` only stores the arguments; `agent.start()` starts the agent and connects the client. `start()` can be called once.
+- `agent.stop()` sends EOF to the agent and kills it if it has not exited within `timeoutMs` (5 seconds by default) of the call. Messages the agent sends after that are not delivered. Before `start()` it does nothing, so it is safe in a `finally` block.
+- `agent.wait()` resolves with the exit code once the agent exits. It rejects with an `ACPError` if the agent sent a message over `maxMessageBytes`.
 - Closing the connection with `agent.connection.close()` also stops the agent, in the background. Use `agent.stop()` to wait for the agent to stop and to see kill errors.
-- If the agent exits with an error, the connection fails with the exit code and the end of the agent's stderr. Pass `onStderr` to receive its logs.
+- If the agent exits with an error, the connection fails with an `ACPError` carrying the exit code and the end of the agent's stderr. Pass `onStderr` to receive its logs.
 - The agent runs as long as the sandbox does, so set the sandbox timeout for the longest task you expect.

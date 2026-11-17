@@ -227,7 +227,7 @@ test('start kills the agent when an onConnect handler throws', async () => {
   })
 
   await expect(
-    ACPAgent.start(agent.sandbox as Sandbox, 'agent', app)
+    new ACPAgent(agent.sandbox as Sandbox, 'agent', app).start()
   ).rejects.toThrow('no client')
   expect(agent.handle.kill).toHaveBeenCalledOnce()
 })
@@ -241,7 +241,8 @@ test('start connects the client app to the agent', async () => {
       updates.push(params.update)
     }
   )
-  const acpAgent = await ACPAgent.start(agent.sandbox as Sandbox, 'agent', app)
+  const acpAgent = new ACPAgent(agent.sandbox as Sandbox, 'agent', app)
+  await acpAgent.start()
 
   const response = acpAgent.connection.agent.request(methods.agent.initialize, {
     protocolVersion: PROTOCOL_VERSION,
@@ -272,11 +273,8 @@ test('start connects the client app to the agent', async () => {
 test('closing the connection stops the agent', async () => {
   const closeStdin = vi.fn(async () => {})
   const agent = fakeAgent({ closeStdin })
-  const acpAgent = await ACPAgent.start(
-    agent.sandbox as Sandbox,
-    'agent',
-    client()
-  )
+  const acpAgent = new ACPAgent(agent.sandbox as Sandbox, 'agent', client())
+  await acpAgent.start()
 
   acpAgent.connection.close()
   await acpAgent.connection.closed
@@ -349,4 +347,22 @@ test('closing the writable without stdin close ends the stream cleanly', async (
 
   expect(agent.handle.kill).toHaveBeenCalledOnce()
   await expect(reader.closed).resolves.toBeUndefined()
+})
+
+test('an agent that is not started has nothing to stop', async () => {
+  const agent = fakeAgent()
+  const acpAgent = new ACPAgent(agent.sandbox as Sandbox, 'agent', client())
+
+  await acpAgent.stop()
+  assert.isFalse(await acpAgent.kill())
+  expect(() => acpAgent.connection).toThrow(/call start\(\) first/)
+  await expect(acpAgent.wait()).rejects.toThrow(/call start\(\) first/)
+})
+
+test('start can be called only once', async () => {
+  const agent = fakeAgent()
+  const acpAgent = new ACPAgent(agent.sandbox as Sandbox, 'agent', client())
+  await acpAgent.start()
+
+  await expect(acpAgent.start()).rejects.toThrow(/already started/)
 })
