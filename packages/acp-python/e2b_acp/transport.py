@@ -3,11 +3,12 @@ import inspect
 from collections import deque
 from typing import Any, Deque, Dict, Optional
 
-from e2b import AsyncCommandHandle, AsyncSandbox, CommandExitException, SandboxException
+from e2b import AsyncCommandHandle, AsyncSandbox, CommandExitException
 from e2b.connection_config import Username
 from e2b.envd.versions import ENVD_ENVD_CLOSE
 
 from .consts import DEFAULT_STOP_TIMEOUT, READ_QUEUE_MESSAGES, STDERR_TAIL_CHARS
+from .exceptions import ACPException
 from .types import ACPAgentResult, JsonRpcMessage, StderrHandler
 from .utils import (
     LineSplitter,
@@ -210,7 +211,7 @@ class ACPTransport:
             return
         try:
             lines = self._lines.push(data)
-        except SandboxException as e:
+        except ACPException as e:
             self._end(e)
             asyncio.ensure_future(self._close_quietly())
             return
@@ -246,7 +247,7 @@ class ACPTransport:
         self._exit = exit
         try:
             await self._deliver(self._lines.flush())
-        except SandboxException as e:
+        except ACPException as e:
             self._end(e)
         if exit.exit_code != 0 and not self._closing:
             message = f"ACP agent exited with code {exit.exit_code}"
@@ -254,7 +255,7 @@ class ACPTransport:
                 message += f": {exit.error}"
             if self._stderr_tail:
                 message += f"\n{self._stderr_tail}"
-            self._end(SandboxException(message))
+            self._end(ACPException(message))
         else:
             self._end()
         return exit

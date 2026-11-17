@@ -2,7 +2,8 @@ import time
 
 import pytest
 
-from e2b import InvalidArgumentException, SandboxException
+from e2b import InvalidArgumentException
+from e2b_acp import ACPException
 from e2b_acp.consts import PARSE_ERROR_RESPONSE
 from e2b_acp.utils import (
     LineSplitter,
@@ -44,7 +45,7 @@ def test_line_splitter_rejects_messages_over_the_limit_in_bytes():
 
     assert lines.push("1234567\n") == ["1234567"]
     # Four 3-byte characters are 12 bytes.
-    with pytest.raises(SandboxException, match="exceeds the limit of 8 bytes"):
+    with pytest.raises(ACPException, match="exceeds the limit of 8 bytes"):
         lines.push("€€€€")
 
 

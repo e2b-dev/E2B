@@ -2,6 +2,7 @@ import pytest
 
 from e2b import AsyncSandbox
 from e2b_acp.transport import ACPTransport
+from e2b_acp import ACPException
 from e2b_acp.consts import DEFAULT_MAX_MESSAGE_BYTES
 from acp_fake_agent import FAKE_AGENT, FAKE_AGENT_CMD, FAKE_AGENT_PATH
 
@@ -93,7 +94,7 @@ async def test_invalid_agent_output_gets_parse_error_and_stream_continues(
 async def test_messages_over_the_limit_fail_the_stream(async_sandbox: AsyncSandbox):
     agent, call = await start_agent(async_sandbox, max_message_bytes=1024)
 
-    with pytest.raises(Exception, match="exceeds the limit of 1024 bytes"):
+    with pytest.raises(ACPException, match="exceeds the limit of 1024 bytes"):
         await call(7, "test/big", {"size": 4096})
     await agent.close()
 
@@ -114,7 +115,7 @@ async def test_agent_failure_errors_the_stream_with_its_stderr(
     stderr = []
     agent, call = await start_agent(async_sandbox, on_stderr=stderr.append)
 
-    with pytest.raises(Exception, match=r"exited with code 3[\s\S]*boom"):
+    with pytest.raises(ACPException, match=r"exited with code 3[\s\S]*boom"):
         await call(9, "test/exit", {"code": 3, "stderr": "boom"})
     assert "".join(stderr) == "boom"
     assert (await agent.wait()).exit_code == 3

@@ -2,9 +2,10 @@ import json
 import math
 from typing import Any, List, Tuple
 
-from e2b import InvalidArgumentException, SandboxException
+from e2b import InvalidArgumentException
 
 from .consts import METHOD_NOT_FOUND, PARSE_ERROR_RESPONSE
+from .exceptions import ACPException
 from .types import JsonRpcMessage
 
 
@@ -58,7 +59,7 @@ class LineSplitter:
 
     def _check(self, size: int) -> None:
         if size > self._max_line_bytes:
-            raise SandboxException(
+            raise ACPException(
                 f"ACP message exceeds the limit of {self._max_line_bytes} bytes. "
                 "Pass a larger `max_message_bytes` to AsyncACPAgent.start() if the "
                 "agent sends larger messages."

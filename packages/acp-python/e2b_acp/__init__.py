@@ -11,6 +11,7 @@ from e2b import AsyncSandbox
 from e2b.connection_config import Username
 
 from .consts import DEFAULT_MAX_MESSAGE_BYTES, DEFAULT_STOP_TIMEOUT
+from .exceptions import ACPException
 from .transport import ACPTransport
 from .types import ACPAgentResult, StderrHandler
 
@@ -76,7 +77,9 @@ class AsyncACPAgent:
         :return: `AsyncACPAgent` with the ACP connection
 
         :raises InvalidArgumentException: If `max_message_bytes` is not a positive integer
-        :raises SandboxException: If the agent could not be started
+        :raises SandboxException: If the agent could not be started. Later, the
+            connection fails with an `ACPException` if the agent exits with a
+            non-zero code or sends a message over `max_message_bytes`
         """
         transport = ACPTransport(sandbox, max_message_bytes, on_stderr)
         await transport.start(command, envs, user, cwd, request_timeout)
@@ -147,6 +150,7 @@ class AsyncACPAgent:
 __all__ = [
     "DEFAULT_MAX_MESSAGE_BYTES",
     "DEFAULT_STOP_TIMEOUT",
+    "ACPException",
     "AsyncACPAgent",
     "ACPAgentResult",
     "StderrHandler",
