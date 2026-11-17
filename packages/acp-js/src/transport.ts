@@ -41,6 +41,9 @@ export class ACPTransport {
   private resumeReading?: () => void
   private stderrTail = ''
   private ended = false
+  // A message over the limit ends the stream before the agent exits; wait()
+  // reports it instead of the exit that follows.
+  private outputError?: unknown
   // Set by close(): the exit that follows is expected, and output after it is
   // not delivered.
   private closing = false
@@ -99,10 +102,15 @@ export class ACPTransport {
   /**
    * Wait for the agent process to exit.
    *
-   * It rejects if the agent's output stream failed before its exit status was known.
+   * It rejects if the agent's output stream failed before its exit status was
+   * known, for example after a message over `maxMessageBytes`.
    */
   async wait(): Promise<ACPAgentResult> {
-    return this.exit!
+    const status = await this.exit!
+    if (this.outputError !== undefined) {
+      throw this.outputError
+    }
+    return status
   }
 
   /**
@@ -275,6 +283,7 @@ export class ACPTransport {
     try {
       complete = this.lines.push(data)
     } catch (err) {
+      this.outputError = err
       this.end(err)
       // The stream already failed with the real error.
       this.closeWhenStarted().catch(() => {})

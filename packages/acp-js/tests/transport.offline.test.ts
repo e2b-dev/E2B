@@ -325,3 +325,14 @@ test('output over the limit before start returns still closes the agent', async 
   await sleep(0)
   expect(closeStdin).toHaveBeenCalledOnce()
 })
+
+test('wait rejects after a message over the limit', async () => {
+  const agent = fakeAgent({ closeStdin: async () => agent.exitWith(0) })
+  const transport = await startACPTransport(agent.sandbox, 'agent', {
+    maxMessageBytes: 10,
+  })
+
+  agent.emit({ jsonrpc: '2.0', method: 'x'.repeat(100) })
+
+  await expect(transport.wait()).rejects.toBeInstanceOf(ACPError)
+})

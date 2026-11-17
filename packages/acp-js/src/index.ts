@@ -110,7 +110,8 @@ export class ACPAgent {
   /**
    * Wait for the agent process to exit.
    *
-   * It rejects if the agent's output stream failed before its exit status was known.
+   * It rejects if the agent's output stream failed before its exit status was
+   * known, for example after a message over `maxMessageBytes`.
    *
    * @returns exit status of the agent.
    */
