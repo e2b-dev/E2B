@@ -244,6 +244,9 @@ class ACPTransport:
                 pass
             return None
 
+        # A message over the limit ends the stream before the agent exits;
+        # wait() raises it instead of returning the exit that follows.
+        output_error = self._error
         self._exit = exit
         try:
             await self._deliver(self._lines.flush())
@@ -258,4 +261,4 @@ class ACPTransport:
             self._end(ACPException(message))
         else:
             self._end()
-        return exit
+        return None if output_error is not None else exit

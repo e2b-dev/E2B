@@ -9,7 +9,7 @@ import pytest
 from packaging.version import Version
 
 from e2b import CommandExitException
-from e2b_acp import AsyncACPAgent
+from e2b_acp import ACPException, AsyncACPAgent
 from e2b_acp.consts import READ_QUEUE_MESSAGES
 from e2b_acp.transport import ACPTransport
 
@@ -284,3 +284,16 @@ async def test_stop_passes_the_request_timeout_to_close_stdin():
     await acp_agent.stop(timeout=0.05, request_timeout=7)
 
     assert agent.close_stdin_request_timeouts == [7]
+
+
+async def test_wait_raises_after_a_message_over_the_limit():
+    async def exit_on_eof():
+        agent.exit_with(0)
+
+    agent = FakeAgent(close_stdin=exit_on_eof)
+    transport = await start(agent)
+
+    await agent.emit({"jsonrpc": "2.0", "method": "x" * 2000})
+
+    with pytest.raises(ACPException, match="exceeds the limit"):
+        await asyncio.wait_for(transport.wait(), 1)
