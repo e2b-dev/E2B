@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = ">=3.11"
 resolution-markers = [
     "python_full_version >= '3.15' and sys_platform != 'emscripten'",
@@ -175,7 +175,7 @@ wheels = [
 
 [[package]]
 name = "e2b"
-version = "2.63.0"
+version = "2.64.0"
 source = { editable = "../python-sdk" }
 dependencies = [
     { name = "attrs" },
@@ -283,7 +283,7 @@ dev = [
 
 [[package]]
 name = "e2b-dockerfile-utils"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "../dockerfile-utils-python" }
 
 [package.metadata]
