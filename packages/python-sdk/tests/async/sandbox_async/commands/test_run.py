@@ -1,6 +1,6 @@
 import pytest
 
-from e2b import AsyncSandbox, TimeoutException
+from e2b import AsyncSandbox, InvalidArgumentException, TimeoutException
 
 
 async def test_run(async_sandbox: AsyncSandbox):
@@ -83,3 +83,32 @@ async def test_run_in_background_without_retaining_output(
     assert handle.stdout is None
     assert result.stdout is None
     assert result.stderr is None
+
+
+async def test_run_with_custom_shell(async_sandbox: AsyncSandbox):
+    cmd = await async_sandbox.commands.run("print(6 * 7)", shell=["python3", "-c"])
+
+    assert cmd.exit_code == 0
+    assert cmd.stdout == "42\n"
+
+
+async def test_run_with_shell_without_args(async_sandbox: AsyncSandbox):
+    cmd = await async_sandbox.commands.run("$HOME", shell=["echo"])
+
+    assert cmd.exit_code == 0
+    assert cmd.stdout == "$HOME\n"
+
+
+async def test_run_with_empty_shell(async_sandbox: AsyncSandbox):
+    with pytest.raises(InvalidArgumentException):
+        await async_sandbox.commands.run("echo hello", shell=[])
+
+
+async def test_run_with_string_shell(async_sandbox: AsyncSandbox):
+    with pytest.raises(InvalidArgumentException):
+        await async_sandbox.commands.run("echo hello", shell="/bin/sh")
+
+
+async def test_run_with_non_sequence_shell(async_sandbox: AsyncSandbox):
+    with pytest.raises(InvalidArgumentException):
+        await async_sandbox.commands.run("echo hello", shell={"/bin/sh", "-c"})  # type: ignore[arg-type]

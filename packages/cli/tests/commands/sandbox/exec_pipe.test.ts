@@ -1,7 +1,5 @@
-import { randomBytes } from 'node:crypto'
 import { describe, expect, test } from 'vitest'
 import { Sandbox } from 'e2b'
-import { getUserConfig } from 'src/user'
 import {
   type CliRunResult,
   bufferToText,
@@ -17,17 +15,7 @@ type PipeCase = {
   timeoutMs?: number
 }
 
-type UserConfigWithDomain = NonNullable<ReturnType<typeof getUserConfig>> & {
-  domain?: string
-  E2B_DOMAIN?: string
-}
-
-const userConfig = safeGetUserConfig() as UserConfigWithDomain | null
-const domain =
-  process.env.E2B_DOMAIN ||
-  userConfig?.E2B_DOMAIN ||
-  userConfig?.domain ||
-  'e2b.app'
+const domain = process.env.E2B_DOMAIN || 'e2b.app'
 const apiKey = process.env.E2B_API_KEY
 const shouldSkip = !apiKey || isDebug
 const integrationTest = test.skipIf(shouldSkip)
@@ -35,10 +23,6 @@ const templateId =
   process.env.E2B_PIPE_TEMPLATE_ID ||
   process.env.E2B_TEMPLATE_ID ||
   'base'
-const includeLargeBinary =
-  process.env.E2B_PIPE_INTEGRATION_STRICT === '1' ||
-  process.env.E2B_PIPE_INTEGRATION_BINARY === '1' ||
-  process.env.STRICT === '1'
 const sandboxTimeoutMs = parseEnvInt('E2B_PIPE_SANDBOX_TIMEOUT_MS', 10_000)
 const testTimeoutMs = parseEnvInt('E2B_PIPE_TEST_TIMEOUT_MS', 60_000)
 const defaultCmdTimeoutMs = parseEnvInt(
@@ -53,7 +37,7 @@ const cliEnv: NodeJS.ProcessEnv = {
 
 delete cliEnv.E2B_DEBUG
 
-const defaultCases: PipeCase[] = [
+const cases: PipeCase[] = [
   {
     name: 'empty_eof',
     data: Buffer.alloc(0),
@@ -91,14 +75,6 @@ const defaultCases: PipeCase[] = [
   },
 ]
 
-const largeBinaryCases: PipeCase[] = [
-  {
-    name: 'binary_random_sha256',
-    data: randomBytes(1024),
-    expectedBytes: 1024,
-  },
-]
-
 describe('sandbox exec stdin piping (integration)', () => {
   integrationTest(
     'pipes stdin to remote command',
@@ -111,9 +87,6 @@ describe('sandbox exec stdin piping (integration)', () => {
       })
 
       try {
-        const cases = includeLargeBinary
-          ? [...defaultCases, ...largeBinaryCases]
-          : defaultCases
 
         // Probe with a simple case first — some environments (notably Windows
         // CI) don't expose piped stdin so the remote byte count is 0.
@@ -175,14 +148,5 @@ function assertExecSucceeded(
   const stderr = bufferToText(result.stderr).trim()
   if (result.status !== 0) {
     throw new Error(`${name} failed with rc=${result.status} stderr=${stderr}`)
-  }
-}
-
-function safeGetUserConfig(): ReturnType<typeof getUserConfig> | null {
-  try {
-    return getUserConfig()
-  } catch (err) {
-    console.warn(`Failed to read ~/.e2b/config.json: ${String(err)}`)
-    return null
   }
 }

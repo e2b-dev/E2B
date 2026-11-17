@@ -1,4 +1,14 @@
-from typing import Any, AsyncGenerator, Dict, List, Literal, Optional, Union, overload
+from typing import (
+    Any,
+    AsyncGenerator,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Union,
+    overload,
+)
 
 import httpx
 
@@ -24,7 +34,7 @@ from e2b.envd.utils import (
 from e2b.envd.client_async import as_stream, create_rpc_client, first_event
 from e2b.envd.versions import ENVD_COMMANDS_STDIN, ENVD_ENVD_CLOSE
 from e2b.exceptions import SandboxException
-from e2b.sandbox.commands.main import ProcessInfo
+from e2b.sandbox.commands.main import ProcessInfo, shell_command
 from e2b.sandbox.commands.command_handle import CommandResult
 from e2b.sandbox_async.commands.command_input_handle import AsyncCommandInputHandle
 from e2b.sandbox_async.commands.command_handle import AsyncCommandHandle, Stderr, Stdout
@@ -219,6 +229,7 @@ class Commands:
         request_timeout: Optional[float] = None,
         *,
         retain_output: Literal[False],
+        shell: Optional[Sequence[str]] = None,
     ) -> CommandResult[None]:
         """
         Start a new command and wait until it finishes executing.
@@ -234,6 +245,7 @@ class Commands:
         :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
         :param request_timeout: Timeout for opening the stream in **seconds** — the wait until envd confirms with a start event. The running stream is bounded by `timeout`
         :param retain_output: If `False`, stdout and stderr are not accumulated in memory and are `None` on the result. Use `on_stdout`/`on_stderr` to consume the output instead
+        :param shell: Shell used to run the command, as the executable followed by its arguments. The command is passed as the last argument, e.g. `["/bin/sh", "-c"]` runs `/bin/sh -c <cmd>`. Defaults to `["/bin/bash", "-l", "-c"]`. Raises :class:`InvalidArgumentException` if `shell` is not a sequence (or is a string), is empty, or its first element is empty
 
         :return: `CommandResult` result of the command execution
         """
@@ -254,6 +266,7 @@ class Commands:
         request_timeout: Optional[float] = None,
         *,
         retain_output: Literal[True] = True,
+        shell: Optional[Sequence[str]] = None,
     ) -> CommandResult:
         """
         Start a new command and wait until it finishes executing.
@@ -269,6 +282,7 @@ class Commands:
         :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
         :param request_timeout: Timeout for opening the stream in **seconds** — the wait until envd confirms with a start event. The running stream is bounded by `timeout`
         :param retain_output: If `False`, stdout and stderr are not accumulated in memory and are `None` on the result. Use `on_stdout`/`on_stderr` to consume the output instead
+        :param shell: Shell used to run the command, as the executable followed by its arguments. The command is passed as the last argument, e.g. `["/bin/sh", "-c"]` runs `/bin/sh -c <cmd>`. Defaults to `["/bin/bash", "-l", "-c"]`. Raises :class:`InvalidArgumentException` if `shell` is not a sequence (or is a string), is empty, or its first element is empty
 
         :return: `CommandResult` result of the command execution
         """
@@ -289,6 +303,7 @@ class Commands:
         request_timeout: Optional[float] = None,
         *,
         retain_output: bool,
+        shell: Optional[Sequence[str]] = None,
     ) -> CommandResult[Optional[str]]: ...
 
     @overload
@@ -306,6 +321,7 @@ class Commands:
         request_timeout: Optional[float] = None,
         *,
         retain_output: Literal[False],
+        shell: Optional[Sequence[str]] = None,
     ) -> AsyncCommandHandle[None]:
         """
         Start a new command and return a handle to interact with it.
@@ -321,6 +337,7 @@ class Commands:
         :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
         :param request_timeout: Timeout for opening the stream in **seconds** — the wait until envd confirms with a start event. The running stream is bounded by `timeout`
         :param retain_output: If `False`, stdout and stderr are not accumulated in memory and are `None` on the result. Use `on_stdout`/`on_stderr` to consume the output instead
+        :param shell: Shell used to run the command, as the executable followed by its arguments. The command is passed as the last argument, e.g. `["/bin/sh", "-c"]` runs `/bin/sh -c <cmd>`. Defaults to `["/bin/bash", "-l", "-c"]`. Raises :class:`InvalidArgumentException` if `shell` is not a sequence (or is a string), is empty, or its first element is empty
 
         :return: `AsyncCommandHandle` handle to interact with the running command
         """
@@ -341,6 +358,7 @@ class Commands:
         request_timeout: Optional[float] = None,
         *,
         retain_output: Literal[True] = True,
+        shell: Optional[Sequence[str]] = None,
     ) -> AsyncCommandHandle:
         """
         Start a new command and return a handle to interact with it.
@@ -356,6 +374,7 @@ class Commands:
         :param timeout: Timeout for the command connection in **seconds**. Using `0` will not limit the command connection time
         :param request_timeout: Timeout for opening the stream in **seconds** — the wait until envd confirms with a start event. The running stream is bounded by `timeout`
         :param retain_output: If `False`, stdout and stderr are not accumulated in memory and are `None` on the result. Use `on_stdout`/`on_stderr` to consume the output instead
+        :param shell: Shell used to run the command, as the executable followed by its arguments. The command is passed as the last argument, e.g. `["/bin/sh", "-c"]` runs `/bin/sh -c <cmd>`. Defaults to `["/bin/bash", "-l", "-c"]`. Raises :class:`InvalidArgumentException` if `shell` is not a sequence (or is a string), is empty, or its first element is empty
 
         :return: `AsyncCommandHandle` handle to interact with the running command
         """
@@ -376,6 +395,7 @@ class Commands:
         request_timeout: Optional[float] = None,
         *,
         retain_output: bool,
+        shell: Optional[Sequence[str]] = None,
     ) -> AsyncCommandHandle[Optional[str]]: ...
 
     async def run(
@@ -392,6 +412,7 @@ class Commands:
         request_timeout: Optional[float] = None,
         *,
         retain_output: bool = True,
+        shell: Optional[Sequence[str]] = None,
     ):
         # Check version for stdin support
         if stdin is False and self._envd_version < ENVD_COMMANDS_STDIN:
@@ -414,6 +435,7 @@ class Commands:
             on_stdout=on_stdout,
             on_stderr=on_stderr,
             retain_output=retain_output,
+            shell=shell,
         )
 
         return proc if background else await proc.wait()
@@ -430,14 +452,16 @@ class Commands:
         on_stdout: Optional[OutputHandler[Stdout]],
         on_stderr: Optional[OutputHandler[Stderr]],
         retain_output: bool,
+        shell: Optional[Sequence[str]],
     ) -> AsyncCommandHandle[Optional[str]]:
+        executable, args = shell_command(shell, cmd)
         events = as_stream(
             self._rpc.start(
                 process_pb.StartRequest(
                     process=process_pb.ProcessConfig(
-                        cmd="/bin/bash",
+                        cmd=executable,
                         envs=envs,
-                        args=["-l", "-c", cmd],
+                        args=args,
                         cwd=cwd,
                     ),
                     stdin=stdin,
