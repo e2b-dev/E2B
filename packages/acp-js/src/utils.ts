@@ -1,5 +1,11 @@
-import { InvalidArgumentError, SandboxError } from 'e2b'
+import {
+  CommandExitError,
+  InvalidArgumentError,
+  SandboxError,
+  type CommandHandle,
+} from 'e2b'
 import { METHOD_NOT_FOUND } from './consts'
+import type { ACPAgentResult } from './types'
 
 const encoder = new TextEncoder()
 
@@ -140,4 +146,30 @@ export function filterAgentMessage(message: unknown): {
     return { forward: forward[0], replies }
   }
   return { forward: forward.length ? forward : undefined, replies }
+}
+
+/**
+ * Exit status of the agent process. A non-zero exit resolves, other failures reject.
+ */
+export function waitForExit(
+  handle: CommandHandle<undefined>
+): Promise<ACPAgentResult> {
+  return handle.wait().then(
+    (result) => ({ exitCode: result.exitCode, error: result.error }),
+    (err) => {
+      if (err instanceof CommandExitError) {
+        return { exitCode: err.exitCode, error: err.error }
+      }
+      throw err
+    }
+  )
+}
+
+export function exitErrorMessage(
+  status: ACPAgentResult,
+  stderrTail: string
+): string {
+  return `ACP agent exited with code ${status.exitCode}${
+    status.error ? `: ${status.error}` : ''
+  }${stderrTail ? `\n${stderrTail}` : ''}`
 }

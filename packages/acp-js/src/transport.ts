@@ -1,10 +1,5 @@
 import type { AnyMessage } from '@agentclientprotocol/sdk'
-import {
-  CommandExitError,
-  SandboxError,
-  type CommandHandle,
-  type CommandRequestOpts,
-} from 'e2b'
+import { SandboxError, type CommandHandle, type CommandRequestOpts } from 'e2b'
 import {
   DEFAULT_MAX_MESSAGE_BYTES,
   DEFAULT_STOP_TIMEOUT_MS,
@@ -20,28 +15,85 @@ import type {
   ACPStream,
 } from './types'
 import {
+  exitErrorMessage,
   filterAgentMessage,
   LineSplitter,
   restrictClientCapabilities,
+  waitForExit,
 } from './utils'
 
 /**
  * ACP over the stdin/stdout of an agent process in the sandbox.
  */
 export class ACPTransport {
+  readonly stream: ACPStream
+
+  private readonly lines: LineSplitter
+  private handle?: CommandHandle<undefined>
+  private readonly handleReady: Promise<CommandHandle<undefined>>
+  private resolveHandle!: (handle: CommandHandle<undefined>) => void
+  private rejectHandle!: (err: unknown) => void
+  private exit?: Promise<ACPAgentResult>
+  private exitStatus?: ACPAgentResult
+
+  private controller!: ReadableStreamDefaultController<AnyMessage>
+  private resumeReading?: () => void
+  private stderrTail = ''
+  private ended = false
+  // Set by close(): the exit that follows is expected, and output after it is
+  // not delivered.
+  private closing = false
+  // Client messages, replies to the agent and EOF share one ordered write
+  // path, so concurrent writes never interleave.
+  private writes: Promise<void> = Promise.resolve()
+
   /**
    * @hidden
    * @internal
    */
   constructor(
-    readonly pid: number,
-    readonly stream: ACPStream,
-    private readonly handle: CommandHandle<undefined>,
-    private readonly exit: Promise<ACPAgentResult>,
-    private readonly exitStatus: () => ACPAgentResult | undefined,
-    private readonly stopReading: () => void,
-    private readonly endInput: (opts?: CommandRequestOpts) => Promise<unknown>
-  ) {}
+    private readonly commands: ACPSandbox['commands'],
+    private readonly opts?: ACPAgentStartOpts
+  ) {
+    this.lines = new LineSplitter(
+      opts?.maxMessageBytes ?? DEFAULT_MAX_MESSAGE_BYTES
+    )
+    this.handleReady = new Promise((resolve, reject) => {
+      this.resolveHandle = resolve
+      this.rejectHandle = reject
+    })
+    this.handleReady.catch(() => {})
+    this.stream = {
+      readable: new ReadableStream<AnyMessage>(
+        {
+          start: (c) => {
+            this.controller = c
+          },
+          pull: () => {
+            this.resumeReading?.()
+            this.resumeReading = undefined
+          },
+          cancel: async () => {
+            this.ended = true
+            this.resumeReading?.()
+            await this.closeWhenStarted()
+          },
+        },
+        new CountQueuingStrategy({ highWaterMark: READ_QUEUE_MESSAGES })
+      ),
+      writable: new WritableStream<AnyMessage>({
+        write: (message) => this.send(restrictClientCapabilities(message)),
+        // Closing the writable is a graceful EOF: the agent's remaining
+        // messages and a failed exit still reach the client.
+        close: () => this.endInput(),
+        abort: () => this.closeWhenStarted(),
+      }),
+    }
+  }
+
+  get pid(): number {
+    return this.handle!.pid
+  }
 
   /**
    * Wait for the agent process to exit.
@@ -49,7 +101,7 @@ export class ACPTransport {
    * It rejects if the agent's output stream failed before its exit status was known.
    */
   async wait(): Promise<ACPAgentResult> {
-    return this.exit
+    return this.exit!
   }
 
   /**
@@ -62,7 +114,7 @@ export class ACPTransport {
   async close(opts?: ACPAgentStopOpts): Promise<void> {
     // Only a known exit status means the process is gone. A failed output
     // stream can leave it running.
-    if (this.exitStatus()) {
+    if (this.exitStatus) {
       return
     }
 
@@ -84,7 +136,7 @@ export class ACPTransport {
     ])
     clearTimeout(timer)
 
-    if (!exited && !this.exitStatus()) {
+    if (!exited && !this.exitStatus) {
       await this.kill()
     }
   }
@@ -98,7 +150,161 @@ export class ACPTransport {
     // Output waiting for the client would otherwise keep the handle from
     // seeing the exit.
     this.stopReading()
-    return this.handle.kill()
+    return this.handle!.kill()
+  }
+
+  /**
+   * @hidden
+   * @internal
+   */
+  async run(cmd: string): Promise<void> {
+    const opts = this.opts
+    let handle: CommandHandle<undefined>
+    try {
+      handle = await this.commands.run(cmd, {
+        background: true,
+        retainOutput: false,
+        stdin: true,
+        timeoutMs: 0,
+        cwd: opts?.cwd,
+        envs: opts?.envs,
+        user: opts?.user,
+        requestTimeoutMs: opts?.requestTimeoutMs,
+        signal: opts?.signal,
+        onStdout: (data) => this.onStdout(data),
+        onStderr: (data) => this.onStderr(data),
+      })
+    } catch (err) {
+      this.rejectHandle(err)
+      throw err
+    }
+    this.handle = handle
+    this.resolveHandle(handle)
+
+    this.exit = waitForExit(handle)
+    this.exit.then(
+      (status) => this.onExit(status),
+      (err) => this.onExitFailed(err)
+    )
+  }
+
+  // Output can arrive before run() returns, so wait for the handle.
+  private closeWhenStarted() {
+    return this.handleReady.then(() => this.close())
+  }
+
+  private enqueueWrite(
+    write: (handle: CommandHandle<undefined>) => Promise<unknown>
+  ) {
+    const result = this.writes.then(async () => {
+      await write(await this.handleReady)
+    })
+    this.writes = result.catch(() => {})
+    return result
+  }
+
+  private send(message: unknown) {
+    const line = JSON.stringify(message) + '\n'
+    return this.enqueueWrite((handle) => handle.sendStdin(line))
+  }
+
+  private endInput(opts?: CommandRequestOpts) {
+    return this.enqueueWrite((handle) =>
+      this.commands.supportsStdinClose ? handle.closeStdin(opts) : handle.kill()
+    )
+  }
+
+  private stopReading() {
+    this.closing = true
+    this.resumeReading?.()
+    this.resumeReading = undefined
+  }
+
+  private end(err?: unknown) {
+    if (this.ended) {
+      return
+    }
+    this.ended = true
+    this.resumeReading?.()
+    if (err === undefined) {
+      this.controller.close()
+    } else {
+      this.controller.error(err)
+    }
+  }
+
+  private async deliver(line: string) {
+    const text = line.trim()
+    if (!text || this.ended || this.closing) {
+      return
+    }
+
+    let message: unknown
+    try {
+      message = JSON.parse(text)
+    } catch {
+      this.send(PARSE_ERROR_RESPONSE).catch(() => {})
+      return
+    }
+
+    const { forward, replies } = filterAgentMessage(message)
+    for (const reply of replies) {
+      this.send(reply).catch(() => {})
+    }
+    if (forward === undefined) {
+      return
+    }
+
+    this.controller.enqueue(forward as AnyMessage)
+    // Stop reading agent output until the client catches up.
+    if (
+      (this.controller.desiredSize ?? 1) <= 0 &&
+      !this.ended &&
+      !this.closing
+    ) {
+      await new Promise<void>((resolve) => (this.resumeReading = resolve))
+    }
+  }
+
+  private async onStdout(data: string) {
+    if (this.ended || this.closing) {
+      return
+    }
+    let complete: string[]
+    try {
+      complete = this.lines.push(data)
+    } catch (err) {
+      this.end(err)
+      // The stream already failed with the real error.
+      this.closeWhenStarted().catch(() => {})
+      return
+    }
+    for (const line of complete) {
+      await this.deliver(line)
+    }
+  }
+
+  private async onStderr(data: string) {
+    this.stderrTail = (this.stderrTail + data).slice(-STDERR_TAIL_CHARS)
+    await this.opts?.onStderr?.(data)
+  }
+
+  private async onExit(status: ACPAgentResult) {
+    this.exitStatus = status
+    await this.deliver(this.lines.flush())
+    if (status.exitCode === 0 || this.closing) {
+      this.end()
+      return
+    }
+    this.end(new SandboxError(exitErrorMessage(status, this.stderrTail)))
+  }
+
+  private onExitFailed(err: unknown) {
+    this.end(err)
+    // The process may still be running, but nothing can talk to it any
+    // more. The stream already failed with the real error.
+    this.stopReading()
+    this.handle!.kill().catch(() => {})
   }
 }
 
@@ -115,214 +321,7 @@ export async function startACPTransport(
   cmd: string,
   opts?: ACPAgentStartOpts
 ): Promise<ACPTransport> {
-  const commands = sandbox.commands
-  const lines = new LineSplitter(
-    opts?.maxMessageBytes ?? DEFAULT_MAX_MESSAGE_BYTES
-  )
-  let stderrTail = ''
-  let ended = false
-  // Set by close(): the exit that follows is expected, and output after it is
-  // not delivered.
-  let closing = false
-  let resumeReading: (() => void) | undefined
-  let controller!: ReadableStreamDefaultController<AnyMessage>
-  let exitStatus: ACPAgentResult | undefined
-
-  let resolveHandle!: (handle: CommandHandle<undefined>) => void
-  let rejectHandle!: (err: unknown) => void
-  const handleReady = new Promise<CommandHandle<undefined>>(
-    (resolve, reject) => {
-      resolveHandle = resolve
-      rejectHandle = reject
-    }
-  )
-  handleReady.catch(() => {})
-
-  // Client messages, replies to the agent and EOF share one ordered write
-  // path, so concurrent writes never interleave.
-  let writes: Promise<void> = Promise.resolve()
-  const enqueueWrite = (
-    write: (handle: CommandHandle<undefined>) => Promise<unknown>
-  ) => {
-    const result = writes.then(async () => {
-      await write(await handleReady)
-    })
-    writes = result.catch(() => {})
-    return result
-  }
-  const send = (message: unknown) => {
-    const line = JSON.stringify(message) + '\n'
-    return enqueueWrite((handle) => handle.sendStdin(line))
-  }
-  const endInput = (opts?: CommandRequestOpts) =>
-    enqueueWrite((handle) =>
-      commands.supportsStdinClose ? handle.closeStdin(opts) : handle.kill()
-    )
-
-  const end = (err?: unknown) => {
-    if (ended) {
-      return
-    }
-    ended = true
-    resumeReading?.()
-    if (err === undefined) {
-      controller.close()
-    } else {
-      controller.error(err)
-    }
-  }
-
-  const deliver = async (line: string) => {
-    const text = line.trim()
-    if (!text || ended || closing) {
-      return
-    }
-
-    let message: unknown
-    try {
-      message = JSON.parse(text)
-    } catch {
-      send(PARSE_ERROR_RESPONSE).catch(() => {})
-      return
-    }
-
-    const { forward, replies } = filterAgentMessage(message)
-    for (const reply of replies) {
-      send(reply).catch(() => {})
-    }
-    if (forward === undefined) {
-      return
-    }
-
-    controller.enqueue(forward as AnyMessage)
-    // Stop reading agent output until the client catches up.
-    if ((controller.desiredSize ?? 1) <= 0 && !ended && !closing) {
-      await new Promise<void>((resolve) => (resumeReading = resolve))
-    }
-  }
-
-  let transport: ACPTransport | undefined
-  // Output can arrive before run() returns, so wait for the transport.
-  const closeTransport = () => handleReady.then(() => transport!.close())
-
-  const readable = new ReadableStream<AnyMessage>(
-    {
-      start: (c) => {
-        controller = c
-      },
-      pull: () => {
-        resumeReading?.()
-        resumeReading = undefined
-      },
-      cancel: async () => {
-        ended = true
-        resumeReading?.()
-        await closeTransport()
-      },
-    },
-    new CountQueuingStrategy({ highWaterMark: READ_QUEUE_MESSAGES })
-  )
-
-  const writable = new WritableStream<AnyMessage>({
-    write: (message) => send(restrictClientCapabilities(message)),
-    // Closing the writable is a graceful EOF: the agent's remaining messages
-    // and a failed exit still reach the client.
-    close: () => endInput(),
-    abort: () => closeTransport(),
-  })
-
-  const stopReading = () => {
-    closing = true
-    resumeReading?.()
-    resumeReading = undefined
-  }
-
-  let handle: CommandHandle<undefined>
-  try {
-    handle = await commands.run(cmd, {
-      background: true,
-      retainOutput: false,
-      stdin: true,
-      timeoutMs: 0,
-      cwd: opts?.cwd,
-      envs: opts?.envs,
-      user: opts?.user,
-      requestTimeoutMs: opts?.requestTimeoutMs,
-      signal: opts?.signal,
-      onStdout: async (data) => {
-        if (ended || closing) {
-          return
-        }
-        let complete: string[]
-        try {
-          complete = lines.push(data)
-        } catch (err) {
-          end(err)
-          // The stream already failed with the real error.
-          closeTransport().catch(() => {})
-          return
-        }
-        for (const line of complete) {
-          await deliver(line)
-        }
-      },
-      onStderr: async (data) => {
-        stderrTail = (stderrTail + data).slice(-STDERR_TAIL_CHARS)
-        await opts?.onStderr?.(data)
-      },
-    })
-  } catch (err) {
-    rejectHandle(err)
-    throw err
-  }
-  resolveHandle(handle)
-
-  const exit = handle.wait().then(
-    (result): ACPAgentResult => ({
-      exitCode: result.exitCode,
-      error: result.error,
-    }),
-    (err): ACPAgentResult => {
-      if (err instanceof CommandExitError) {
-        return { exitCode: err.exitCode, error: err.error }
-      }
-      throw err
-    }
-  )
-
-  exit.then(
-    async (status) => {
-      exitStatus = status
-      await deliver(lines.flush())
-      if (status.exitCode === 0 || closing) {
-        end()
-        return
-      }
-      end(
-        new SandboxError(
-          `ACP agent exited with code ${status.exitCode}${
-            status.error ? `: ${status.error}` : ''
-          }${stderrTail ? `\n${stderrTail}` : ''}`
-        )
-      )
-    },
-    (err) => {
-      end(err)
-      // The process may still be running, but nothing can talk to it any
-      // more. The stream already failed with the real error.
-      stopReading()
-      handle.kill().catch(() => {})
-    }
-  )
-
-  transport = new ACPTransport(
-    handle.pid,
-    { readable, writable },
-    handle,
-    exit,
-    () => exitStatus,
-    stopReading,
-    endInput
-  )
+  const transport = new ACPTransport(sandbox.commands, opts)
+  await transport.run(cmd)
   return transport
 }
