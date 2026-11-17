@@ -336,3 +336,17 @@ test('wait rejects after a message over the limit', async () => {
 
   await expect(transport.wait()).rejects.toBeInstanceOf(ACPError)
 })
+
+test('closing the writable without stdin close ends the stream cleanly', async () => {
+  const agent = fakeAgent()
+  ;(
+    agent.sandbox.commands as { supportsStdinClose: boolean }
+  ).supportsStdinClose = false
+  const transport = await startACPTransport(agent.sandbox, 'agent')
+  const reader = transport.stream.readable.getReader()
+
+  await transport.stream.writable.getWriter().close()
+
+  expect(agent.handle.kill).toHaveBeenCalledOnce()
+  await expect(reader.closed).resolves.toBeUndefined()
+})

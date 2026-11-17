@@ -218,9 +218,15 @@ export class ACPTransport {
   }
 
   private endInput(opts?: CommandRequestOpts) {
-    return this.enqueueWrite((handle) =>
-      this.commands.supportsStdinClose ? handle.closeStdin(opts) : handle.kill()
-    )
+    return this.enqueueWrite((handle) => {
+      if (this.commands.supportsStdinClose) {
+        return handle.closeStdin(opts)
+      }
+      // Without stdin close (envd < 0.5.2) EOF means killing the agent, which
+      // is then an expected exit, not a failure.
+      this.stopReading()
+      return handle.kill()
+    })
   }
 
   private stopReading() {
