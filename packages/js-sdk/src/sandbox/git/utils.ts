@@ -329,7 +329,11 @@ function deriveStatus(
 ): GitStatusLabel {
   const statuses = new Set([indexStatus, workingStatus])
 
-  if (statuses.has('U')) return 'conflict'
+  if (
+    statuses.has('U') ||
+    (indexStatus === workingStatus && ['A', 'D'].includes(indexStatus))
+  )
+    return 'conflict'
   if (statuses.has('R')) return 'renamed'
   if (statuses.has('C')) return 'copied'
   if (statuses.has('D')) return 'deleted'

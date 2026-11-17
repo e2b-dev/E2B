@@ -73,7 +73,9 @@ def _derive_status(index_status: str, working_status: str) -> str:
     :return: Normalized status label
     """
     statuses = {index_status, working_status}
-    if "U" in statuses:
+    if "U" in statuses or (
+        index_status == working_status and index_status in {"A", "D"}
+    ):
         return "conflict"
     if "R" in statuses:
         return "renamed"
