@@ -1,10 +1,6 @@
-import {
-  CommandExitError,
-  InvalidArgumentError,
-  SandboxError,
-  type CommandHandle,
-} from 'e2b'
+import { CommandExitError, InvalidArgumentError, type CommandHandle } from 'e2b'
 import { METHOD_NOT_FOUND } from './consts'
+import { ACPError } from './errors'
 import type { ACPAgentResult } from './types'
 
 const encoder = new TextEncoder()
@@ -61,7 +57,7 @@ export class LineSplitter {
 
   private check(bytes: number) {
     if (bytes > this.maxLineBytes) {
-      throw new SandboxError(
+      throw new ACPError(
         `ACP message exceeds the limit of ${this.maxLineBytes} bytes. Pass a larger \`maxMessageBytes\` to ACPAgent.start() if the agent sends larger messages.`
       )
     }

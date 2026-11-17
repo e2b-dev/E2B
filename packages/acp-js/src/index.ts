@@ -8,6 +8,7 @@ import type {
 } from './types'
 
 export { DEFAULT_MAX_MESSAGE_BYTES, DEFAULT_STOP_TIMEOUT_MS } from './consts'
+export { ACPError } from './errors'
 export type {
   ACPAgentResult,
   ACPAgentStartOpts,
@@ -53,7 +54,7 @@ export class ACPAgent {
    *
    * @throws InvalidArgumentError if `maxMessageBytes` is not a positive integer.
    * @throws SandboxError if the agent could not be started. Later, the
-   * connection fails with a `SandboxError` if the agent exits with a non-zero
+   * connection fails with an `ACPError` if the agent exits with a non-zero
    * code or sends a message over `maxMessageBytes`.
    *
    * @example

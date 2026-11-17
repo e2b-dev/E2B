@@ -1,5 +1,5 @@
 import type { AnyMessage } from '@agentclientprotocol/sdk'
-import { SandboxError, type CommandHandle, type CommandRequestOpts } from 'e2b'
+import type { CommandHandle, CommandRequestOpts } from 'e2b'
 import {
   DEFAULT_MAX_MESSAGE_BYTES,
   DEFAULT_STOP_TIMEOUT_MS,
@@ -7,6 +7,7 @@ import {
   READ_QUEUE_MESSAGES,
   STDERR_TAIL_CHARS,
 } from './consts'
+import { ACPError } from './errors'
 import type {
   ACPAgentResult,
   ACPAgentStartOpts,
@@ -296,7 +297,7 @@ export class ACPTransport {
       this.end()
       return
     }
-    this.end(new SandboxError(exitErrorMessage(status, this.stderrTail)))
+    this.end(new ACPError(exitErrorMessage(status, this.stderrTail)))
   }
 
   private onExitFailed(err: unknown) {

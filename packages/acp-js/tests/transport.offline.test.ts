@@ -1,7 +1,7 @@
 import { CommandExitError, type CommandStartOpts, type Sandbox } from 'e2b'
 import { assert, expect, test, vi } from 'vitest'
 import { client, methods, PROTOCOL_VERSION } from '@agentclientprotocol/sdk'
-import { ACPAgent } from '../src'
+import { ACPAgent, ACPError } from '../src'
 import { startACPTransport } from '../src/transport'
 import type { ACPSandbox } from '../src/types'
 
@@ -101,6 +101,7 @@ test('graceful EOF still reports a failed exit', async () => {
   agent.exitWith(3)
 
   await expect(reader.read()).rejects.toThrow(/exited with code 3/)
+  await expect(reader.closed).rejects.toBeInstanceOf(ACPError)
 })
 
 test('graceful EOF surfaces a failure to close stdin', async () => {

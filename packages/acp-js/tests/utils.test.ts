@@ -4,6 +4,7 @@ import {
   LineSplitter,
   restrictClientCapabilities,
 } from '../src/utils'
+import { ACPError } from '../src/errors'
 
 test('line splitter joins chunks split mid-line', () => {
   const lines = new LineSplitter(1024)
@@ -27,6 +28,7 @@ test('line splitter rejects messages over the limit in bytes', () => {
   assert.deepEqual(lines.push('1234567\n'), ['1234567'])
   // Four 3-byte characters are 12 bytes.
   expect(() => lines.push('€€€€')).toThrow(/exceeds the limit of 8 bytes/)
+  expect(() => new LineSplitter(8).push('123456789')).toThrow(ACPError)
 })
 
 test('line splitter handles a long message in small chunks quickly', () => {
