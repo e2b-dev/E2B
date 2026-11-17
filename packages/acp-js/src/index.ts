@@ -22,7 +22,7 @@ export type {
 export class ACPAgent {
   private transport?: ACPTransport
   private _connection?: ClientConnection
-  private started = false
+  private starting?: Promise<void>
 
   /**
    * Create an [Agent Client Protocol](https://agentclientprotocol.com) agent
@@ -85,10 +85,14 @@ export class ACPAgent {
    * @throws Error if `start()` was already called.
    */
   async start(): Promise<void> {
-    if (this.started) {
+    if (this.starting) {
       throw new Error('ACP agent was already started')
     }
-    this.started = true
+    this.starting = this.startTransport()
+    return this.starting
+  }
+
+  private async startTransport(): Promise<void> {
     const transport = await startACPTransport(
       this.sandbox,
       this.command,
@@ -134,23 +138,39 @@ export class ACPAgent {
   /**
    * Stop the agent: send EOF to its stdin and kill it if it has not exited
    * within `timeoutMs` of this call. Messages the agent sends after this call
-   * are not delivered. It does nothing if the agent is not running.
+   * are not delivered. It does nothing if the agent is not running. If
+   * `start()` is still running, it waits for it and then stops the agent;
+   * `timeoutMs` then counts from when the start finishes.
    *
    * @param opts options for stopping the agent.
    *
    * @throws SandboxError if the agent could not be killed.
    */
   async stop(opts?: ACPAgentStopOpts): Promise<void> {
+    if (!this.transport) {
+      await this.startSettled()
+    }
     return this.transport?.close(opts)
   }
 
   /**
-   * Kill the agent process with `SIGKILL`.
+   * Kill the agent process with `SIGKILL`. If `start()` is still running, it
+   * waits for it and then kills the agent.
    *
    * @returns `true` if the agent was killed, `false` if it was not found or not started.
    */
   async kill(): Promise<boolean> {
+    if (!this.transport) {
+      await this.startSettled()
+    }
     return this.transport?.kill() ?? false
+  }
+
+  // A start() in flight has no transport yet, so stop() and kill() wait for
+  // it. Its error belongs to the start() caller. With a transport they must
+  // not wait: stop() drops the agent's messages from the moment it is called.
+  private startSettled() {
+    return this.starting?.catch(() => {})
   }
 
   private running() {

@@ -366,3 +366,83 @@ test('start can be called only once', async () => {
 
   await expect(acpAgent.start()).rejects.toThrow(/already started/)
 })
+
+// Holds commands.run until released, so a test can act while start() is running.
+function holdStart(agent: ReturnType<typeof fakeAgent>) {
+  const run = agent.sandbox.commands.run
+  let release!: () => void
+  const held = new Promise<void>((resolve) => (release = resolve))
+  agent.sandbox.commands.run = (async (
+    cmd: string,
+    opts?: CommandStartOpts
+  ) => {
+    await held
+    return run(cmd, opts)
+  }) as typeof run
+  return release
+}
+
+test('stop during start stops the agent once it has started', async () => {
+  const closeStdin = vi.fn(async () => agent.exitWith(0))
+  const agent = fakeAgent({ closeStdin })
+  const release = holdStart(agent)
+  const acpAgent = new ACPAgent(agent.sandbox as Sandbox, 'agent', client())
+
+  const starting = acpAgent.start()
+  const stopping = acpAgent.stop()
+  release()
+  await starting
+  await stopping
+
+  expect(closeStdin).toHaveBeenCalledOnce()
+})
+
+test('kill during start kills the agent once it has started', async () => {
+  const agent = fakeAgent()
+  const release = holdStart(agent)
+  const acpAgent = new ACPAgent(agent.sandbox as Sandbox, 'agent', client())
+
+  const starting = acpAgent.start()
+  const killing = acpAgent.kill()
+  release()
+  await starting
+
+  assert.isTrue(await killing)
+  expect(agent.handle.kill).toHaveBeenCalledOnce()
+})
+
+test('stop and kill after a failed start do nothing', async () => {
+  const agent = fakeAgent()
+  agent.sandbox.commands.run = async () => {
+    throw new Error('no sandbox')
+  }
+  const acpAgent = new ACPAgent(agent.sandbox as Sandbox, 'agent', client())
+  await expect(acpAgent.start()).rejects.toThrow('no sandbox')
+
+  await acpAgent.stop()
+  assert.isFalse(await acpAgent.kill())
+})
+
+test('stop drops messages the agent sends right after the call', async () => {
+  const agent = fakeAgent({ closeStdin: async () => agent.exitWith(0) })
+  const updates: unknown[] = []
+  const app = client().onNotification(
+    methods.client.session.update,
+    ({ params }) => {
+      updates.push(params.update)
+    }
+  )
+  const acpAgent = new ACPAgent(agent.sandbox as Sandbox, 'agent', app)
+  await acpAgent.start()
+
+  const stopping = acpAgent.stop()
+  await agent.emit({
+    jsonrpc: '2.0',
+    method: 'session/update',
+    params: { sessionId: 's', update: { sessionUpdate: 'plan', entries: [] } },
+  })
+  await stopping
+  await sleep(10)
+
+  assert.lengthOf(updates, 0)
+})

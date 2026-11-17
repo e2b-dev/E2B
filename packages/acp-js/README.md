@@ -66,7 +66,7 @@ The agent talks ACP over its stdin and stdout. `ACPAgent` turns off the client f
 ## Lifecycle
 
 - `new ACPAgent(...)` only stores the arguments; `agent.start()` starts the agent and connects the client. `start()` can be called once.
-- `agent.stop()` sends EOF to the agent and kills it if it has not exited within `timeoutMs` (5 seconds by default) of the call. Messages the agent sends after that are not delivered. Before `start()` it does nothing, so it is safe in a `finally` block.
+- `agent.stop()` sends EOF to the agent and kills it if it has not exited within `timeoutMs` (5 seconds by default) of the call. Messages the agent sends after that are not delivered. Before `start()` it does nothing, so it is safe in a `finally` block. While `start()` is still running, `stop()` and `kill()` wait for it and then stop the agent; the stop timeout counts from when the start finishes.
 - `agent.wait()` resolves with the exit code once the agent exits. It rejects with an `ACPError` if the agent sent a message over `maxMessageBytes`.
 - Closing the connection with `agent.connection.close()` also stops the agent, in the background. Use `agent.stop()` to wait for the agent to stop and to see kill errors.
 - If the agent exits with an error, the connection fails with an `ACPError` carrying the exit code and the end of the agent's stderr. Pass `onStderr` to receive its logs.
