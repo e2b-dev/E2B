@@ -229,7 +229,7 @@ async def test_start_kills_the_agent_when_the_client_factory_raises():
         raise RuntimeError("no client")
 
     with pytest.raises(RuntimeError, match="no client"):
-        await AsyncACPAgent.start(agent.sandbox, "agent", factory)
+        await AsyncACPAgent(agent.sandbox, "agent", factory).start()
     assert agent.killed == 1
 
 
@@ -247,7 +247,8 @@ async def test_start_passes_the_agent_connection_to_the_client_factory():
         connections.append(conn)
         return Client()
 
-    acp_agent = await AsyncACPAgent.start(agent.sandbox, "agent", factory)
+    acp_agent = AsyncACPAgent(agent.sandbox, "agent", factory)
+    await acp_agent.start()
     assert connections == [acp_agent.connection]
 
     await agent.emit(
@@ -279,7 +280,8 @@ def test_import_does_not_warn():
 
 async def test_stop_passes_the_request_timeout_to_close_stdin():
     agent = FakeAgent()
-    acp_agent = await AsyncACPAgent.start(agent.sandbox, "agent", SimpleNamespace())
+    acp_agent = AsyncACPAgent(agent.sandbox, "agent", SimpleNamespace())
+    await acp_agent.start()
 
     await acp_agent.stop(timeout=0.05, request_timeout=7)
 
@@ -297,3 +299,25 @@ async def test_wait_raises_after_a_message_over_the_limit():
 
     with pytest.raises(ACPException, match="exceeds the limit"):
         await asyncio.wait_for(transport.wait(), 1)
+
+
+async def test_an_agent_that_is_not_started_has_nothing_to_stop():
+    agent = FakeAgent()
+    acp_agent = AsyncACPAgent(agent.sandbox, "agent", SimpleNamespace())
+
+    await acp_agent.stop()
+    assert await acp_agent.kill() is False
+    with pytest.raises(RuntimeError, match=r"call start\(\) first"):
+        acp_agent.connection
+    with pytest.raises(RuntimeError, match=r"call start\(\) first"):
+        await acp_agent.wait()
+
+
+async def test_start_can_be_called_only_once():
+    agent = FakeAgent()
+    acp_agent = AsyncACPAgent(agent.sandbox, "agent", SimpleNamespace())
+    await acp_agent.start()
+
+    with pytest.raises(RuntimeError, match="already started"):
+        await acp_agent.start()
+    await acp_agent.kill()

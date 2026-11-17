@@ -18,7 +18,8 @@ class Client:
 
 async def test_start_connects_an_acp_client(async_sandbox: AsyncSandbox):
     await async_sandbox.files.write(FAKE_AGENT_PATH, FAKE_AGENT)
-    agent = await AsyncACPAgent.start(async_sandbox, FAKE_AGENT_CMD, Client())
+    agent = AsyncACPAgent(async_sandbox, FAKE_AGENT_CMD, Client())
+    await agent.start()
 
     response = await agent.connection.initialize(
         protocol_version=acp.PROTOCOL_VERSION,
