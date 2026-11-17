@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Callable, Iterable, List, Optional, Union, Unpack
+from typing import Callable, List, Optional, Union, Unpack
 
 from e2b.api.client.client import AuthenticatedClient
 from e2b.api.client.types import Unset
@@ -17,7 +17,7 @@ from e2b.template.types import (
     BuildInfo,
     InstructionType,
     TemplateBuildStatus,
-    TemplateDetails,
+    TemplateDetail,
     TemplateTag,
     TemplateTagInfo,
 )
@@ -583,7 +583,7 @@ class Template(TemplateBase):
         cls,
         name_or_id: str,
         **opts: Unpack[ApiParams],
-    ) -> TemplateDetails:
+    ) -> TemplateDetail:
         """
         Get a template with its default build.
 
@@ -621,10 +621,8 @@ class Template(TemplateBase):
         cls,
         name_or_id: str,
         *,
-        statuses: Optional[
-            Union[TemplateBuildStatus, Iterable[TemplateBuildStatus]]
-        ] = None,
-        tags: Optional[Union[str, Iterable[str]]] = None,
+        statuses: Optional[List[TemplateBuildStatus]] = None,
+        tags: Optional[List[str]] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
         **opts: Unpack[ApiParams],
@@ -633,9 +631,9 @@ class Template(TemplateBase):
         List the builds of a template, newest first.
 
         :param name_or_id: Name or ID of one of your team's templates, without a tag
-        :param statuses: Status or statuses. Only builds with one of them are listed.
-        :param tags: Tag or tags. Only the builds they point at are listed. A tag points
-            only at a ready build, so a tag with no ready build gives an empty page.
+        :param statuses: Statuses. Only builds with one of them are listed.
+        :param tags: Tags. Only the builds they point at are listed. A tag points only
+            at a ready build, so a tag with no ready build gives an empty page.
         :param limit: Maximum number of builds per page, at most 100. Defaults to 100.
         :param next_token: Token to the next page.
 
@@ -649,7 +647,8 @@ class Template(TemplateBase):
                 builds = paginator.next_items()
             ```
         :raises InvalidArgumentException: If `name_or_id` is not a name or ID or includes
-            a tag, a status is unknown, or a tag is empty or contains a comma
+            a tag, a filter is not a list, a status is unknown, or a tag is empty or
+            contains a comma
 
         Example
         ```python

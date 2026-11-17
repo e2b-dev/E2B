@@ -45,7 +45,7 @@ from e2b.template.types import (
     BuildStatusReason,
     TemplateBuildStatus,
     TemplateBuildStatusResponse,
-    TemplateDetails,
+    TemplateDetail,
     TemplateTag,
     TemplateTagInfo,
 )
@@ -462,7 +462,7 @@ def get_template_tags(
 
 def get_template_info(
     client: AuthenticatedClient, template_id_or_name: str
-) -> TemplateDetails:
+) -> TemplateDetail:
     """
     Get a template with its default build.
 
@@ -487,7 +487,7 @@ def get_template_info(
     if res.parsed is None:
         raise TemplateException("Failed to get template info")
 
-    return TemplateDetails._from_model(res.parsed)
+    return TemplateDetail._from_model(res.parsed)
 
 
 def delete_template(client: AuthenticatedClient, template_id_or_name: str) -> bool:

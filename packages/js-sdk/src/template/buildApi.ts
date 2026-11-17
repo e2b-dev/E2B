@@ -15,10 +15,10 @@ import { LogEntry } from './logger'
 import { getBuildStepIndex, isTemplateNotFound, spoolTarArchive } from './utils'
 import {
   BuildStatusReason,
-  convertTemplateDetails,
+  convertTemplateDetail,
   TemplateBuildStatus,
   TemplateBuildStatusResponse,
-  TemplateDetails,
+  TemplateDetail,
   TemplateTag,
   TemplateTagInfo,
 } from './types'
@@ -507,7 +507,7 @@ export async function getTemplateInfo(
   client: ApiClient,
   { templateID }: { templateID: string },
   signal?: AbortSignal
-): Promise<TemplateDetails> {
+): Promise<TemplateDetail> {
   const res = await client.api.GET('/v2/templates/{templateID}', {
     params: {
       path: {
@@ -530,7 +530,7 @@ export async function getTemplateInfo(
     throw new TemplateError('Failed to get template info')
   }
 
-  return convertTemplateDetails(res.data)
+  return convertTemplateDetail(res.data)
 }
 
 export async function deleteTemplate(

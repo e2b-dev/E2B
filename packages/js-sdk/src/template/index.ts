@@ -41,7 +41,7 @@ import {
   TemplateBuildListOpts,
   TemplateBuildStatusResponse,
   TemplateClass,
-  TemplateDetails,
+  TemplateDetail,
   TemplateFinal,
   TemplateFromImage,
   TemplateListOpts,
@@ -464,7 +464,7 @@ export class TemplateBase
   static async getInfo(
     nameOrId: string,
     options?: ConnectionOpts
-  ): Promise<TemplateDetails> {
+  ): Promise<TemplateDetail> {
     validateNameOrIdWithoutTag(nameOrId)
 
     const config = new ConnectionConfig(this.resolveOpts(options))
@@ -487,7 +487,8 @@ export class TemplateBase
    * `while (paginator.hasNext) await paginator.nextItems()`. Fetching a page
    * throws `TemplateNotFoundError` if the template is not found.
    * @throws InvalidArgumentError if `nameOrId` is not a name or ID or includes
-   * a tag, a status is unknown, or a tag is empty or contains a comma
+   * a tag, a filter is not a list, a status is unknown, or a tag is empty or
+   * contains a comma
    *
    * @example
    * ```ts
@@ -1431,7 +1432,7 @@ export type {
   TemplateBuildStatusResponse,
   TemplateBuildWithTags,
   TemplateClass,
-  TemplateDetails,
+  TemplateDetail,
   TemplateInfo,
   TemplateListOpts,
   TemplateTag,

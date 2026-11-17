@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, List, Optional, Union, Unpack
+from typing import Any, Dict, List, Optional, Union, Unpack
 
 from e2b.api import encode_path_param, handle_api_exception
 from e2b.api.client.models import Error
@@ -26,10 +26,8 @@ class TemplateBuildPaginatorBase(PaginatorBase[TemplateBuildWithTags, ApiParams]
         self,
         name_or_id: str,
         *,
-        statuses: Optional[
-            Union[TemplateBuildStatus, Iterable[TemplateBuildStatus]]
-        ] = None,
-        tags: Optional[Union[str, Iterable[str]]] = None,
+        statuses: Optional[List[TemplateBuildStatus]] = None,
+        tags: Optional[List[str]] = None,
         limit: Optional[int] = None,
         next_token: Optional[str] = None,
         **opts: Unpack[ApiParams],
@@ -39,10 +37,15 @@ class TemplateBuildPaginatorBase(PaginatorBase[TemplateBuildWithTags, ApiParams]
         validate_name_or_id_without_tag(name_or_id)
         self._name_or_id = name_or_id
 
-        # Each filter takes one value or several, and is copied into a list so
-        # that it is the same for every page.
+        # Each filter is a list. A string is refused rather than read as a list
+        # of its characters, and any other iterable is refused with it.
+        for name, value in (("statuses", statuses), ("tags", tags)):
+            if value is not None and not isinstance(value, list):
+                raise InvalidArgumentException(f"'{name}' must be a list.")
+
+        # Each filter is copied so that it is the same for every page.
         self._statuses: List[TemplateBuildStatusModel] = []
-        for status in [statuses] if isinstance(statuses, str) else statuses or []:
+        for status in statuses or []:
             try:
                 self._statuses.append(TemplateBuildStatusModel(status))
             except ValueError:
@@ -55,7 +58,7 @@ class TemplateBuildPaginatorBase(PaginatorBase[TemplateBuildWithTags, ApiParams]
 
         # Tags are sent as one comma-separated value, so an empty tag or one
         # with a comma would not reach the API as the tag that was given.
-        self._tags = [tags] if isinstance(tags, str) else list(tags or [])
+        self._tags = list(tags or [])
         for tag in self._tags:
             if tag.strip(" \t\n\r\f\v") == "" or "," in tag:
                 raise InvalidArgumentException(

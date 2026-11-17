@@ -259,7 +259,7 @@ class TemplateBuildWithTags(TemplateBuildInfo):
 
 
 @dataclass
-class TemplateDetails:
+class TemplateDetail:
     """
     A template with its default build, as returned by `Template.get_info`.
 
@@ -307,7 +307,7 @@ class TemplateDetails:
     tagged `default`, so its `status` is always `ready`. Not set until such a build is ready."""
 
     @classmethod
-    def _from_model(cls, template: TemplateV2Model) -> "TemplateDetails":
+    def _from_model(cls, template: TemplateV2Model) -> "TemplateDetail":
         return cls(
             template_id=template.template_id,
             names=list(template.names),

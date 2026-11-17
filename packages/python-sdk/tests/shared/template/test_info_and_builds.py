@@ -21,7 +21,7 @@ from e2b import (
     TemplateBuildInfo,
     TemplateBuildStatus,
     TemplateBuildWithTags,
-    TemplateDetails,
+    TemplateDetail,
 )
 from e2b.connection_config import ApiParams
 from e2b.exceptions import (
@@ -220,7 +220,7 @@ TEMPLATE_DETAILS: Dict[str, Any] = dict(
 
 
 async def test_get_info_returns_template_with_default_build(template_cls, api):
-    assert await get_info(template_cls, "abc", **api) == TemplateDetails(
+    assert await get_info(template_cls, "abc", **api) == TemplateDetail(
         **TEMPLATE_DETAILS,
         description="Web server",
         last_spawned_at=datetime(2024, 1, 17, 8, 0, tzinfo=timezone.utc),
@@ -232,7 +232,7 @@ async def test_get_info_before_first_ready_build_has_no_default_build(
     template_cls, api
 ):
     # The stand-in API also sends an empty description, which reads as none.
-    assert await get_info(template_cls, "first-build", **api) == TemplateDetails(
+    assert await get_info(template_cls, "first-build", **api) == TemplateDetail(
         **TEMPLATE_DETAILS
     )
 
@@ -288,12 +288,8 @@ async def test_list_builds_maps_builds(template_cls, api):
             },
             {"statuses": ["ready,error"], "tags": ["default,v2"]},
         ),
-        # statuses as strings, one value without a list
+        # statuses as strings
         ({"statuses": ["ready", "error"]}, {"statuses": ["ready,error"]}),
-        (
-            {"statuses": TemplateBuildStatus.READY, "tags": "v2"},
-            {"statuses": ["ready"], "tags": ["v2"]},
-        ),
         # a status given twice is sent once
         ({"statuses": ["ready", "error", "ready"]}, {"statuses": ["ready,error"]}),
         # an empty filter is not sent
@@ -308,14 +304,12 @@ async def test_list_builds_sends_filters(template_cls, api, filters, sent):
 
 
 async def test_list_builds_sends_the_same_filters_for_every_page(template_cls, api):
+    statuses = [TemplateBuildStatus.READY]
     tags = ["default"]
     paginator = template_cls.list_builds(
-        "abc",
-        statuses=(status for status in [TemplateBuildStatus.READY]),
-        tags=tags,
-        limit=2,
-        **api,
+        "abc", statuses=statuses, tags=tags, limit=2, **api
     )
+    statuses.append(TemplateBuildStatus.ERROR)
     tags.append("v2")
 
     await result(paginator.next_items())
@@ -344,6 +338,11 @@ async def test_list_builds_sends_the_same_filters_for_every_page(template_cls, a
             {"tags": ["v1,v2"]},
             "Invalid tag 'v1,v2': a tag must not be empty or contain a comma.",
         ),
+        # one value or another iterable instead of a list
+        ({"statuses": TemplateBuildStatus.READY}, "'statuses' must be a list."),
+        ({"statuses": "ready"}, "'statuses' must be a list."),
+        ({"tags": "v2"}, "'tags' must be a list."),
+        ({"tags": ("v2",)}, "'tags' must be a list."),
     ],
 )
 def test_list_builds_rejects_filter(template_cls, api, filters, message):

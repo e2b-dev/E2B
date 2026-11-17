@@ -249,8 +249,6 @@ describe('Template.listBuilds', () => {
       { statuses: ['ready', 'error'], tags: ['default', 'v2'] },
       ['ready,error', 'default,v2'],
     ],
-    // one value without a list
-    [{ statuses: 'ready', tags: 'v2' }, ['ready', 'v2']],
     // a status given twice is sent once
     [{ statuses: ['ready', 'error', 'ready'] }, ['ready,error', null]],
     // an empty filter is not sent
@@ -299,8 +297,11 @@ describe('Template.listBuilds', () => {
       { tags: ['v1,v2'] },
       "Invalid tag 'v1,v2': a tag must not be empty or contain a comma.",
     ],
+    // one value without a list
+    [{ statuses: 'ready' }, "'statuses' must be a list."],
+    [{ tags: 'v2' }, "'tags' must be a list."],
   ])('rejects the filter %j', (filters, message) => {
-    // `as never`: a status the type does not allow
+    // `as never`: a value the types do not allow
     expect(() => Template.listBuilds('abc', filters as never)).toThrow(
       new InvalidArgumentError(message)
     )

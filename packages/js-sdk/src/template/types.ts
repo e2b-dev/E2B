@@ -372,7 +372,7 @@ export function convertTemplateBuildWithTags(
  * the top level, such as `buildId` and `cpuCount`, are under `defaultBuild`
  * here.
  */
-export type TemplateDetails = {
+export type TemplateDetail = {
   /**
    * Template identifier.
    */
@@ -427,9 +427,9 @@ export type TemplateDetails = {
   lastSpawnedAt?: Date
 }
 
-export function convertTemplateDetails(
+export function convertTemplateDetail(
   template: components['schemas']['TemplateV2']
-): TemplateDetails {
+): TemplateDetail {
   return {
     templateId: template.templateID,
     names: template.names,
@@ -471,14 +471,14 @@ export interface TemplateListOpts extends Omit<ConnectionOpts, 'signal'> {
  */
 export interface TemplateBuildListOpts extends Omit<ConnectionOpts, 'signal'> {
   /**
-   * Status or statuses. Only builds with one of them are listed.
+   * Statuses. Only builds with one of them are listed.
    */
-  statuses?: TemplateBuildStatus | TemplateBuildStatus[]
+  statuses?: TemplateBuildStatus[]
   /**
-   * Tag or tags. Only the builds they point at are listed. A tag points only
-   * at a ready build, so a tag with no ready build gives an empty page.
+   * Tags. Only the builds they point at are listed. A tag points only at a
+   * ready build, so a tag with no ready build gives an empty page.
    */
-  tags?: string | string[]
+  tags?: string[]
   /**
    * Maximum number of builds to return per page, at most 100.
    *

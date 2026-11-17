@@ -90,11 +90,22 @@ export class TemplateBuildPaginator extends Paginator<TemplateBuildWithTags> {
     validateNameOrIdWithoutTag(nameOrId)
     this.nameOrId = nameOrId
 
-    // Each filter takes one value or a list, and is copied so that a later
-    // change to the caller's list does not change the pages still to come.
-    // A status given twice is sent once: the API refuses repeated statuses.
-    this.statuses = [...new Set([opts?.statuses ?? []].flat())]
-    this.tags = [opts?.tags ?? []].flat()
+    // Each filter is a list. A string is refused rather than read as a list
+    // of its characters by a caller without types.
+    for (const [name, value] of Object.entries({
+      statuses: opts?.statuses,
+      tags: opts?.tags,
+    })) {
+      if (value !== undefined && !Array.isArray(value)) {
+        throw new InvalidArgumentError(`'${name}' must be a list.`)
+      }
+    }
+
+    // Each filter is copied so that a later change to the caller's list does
+    // not change the pages still to come. A status given twice is sent once:
+    // the API refuses repeated statuses.
+    this.statuses = [...new Set(opts?.statuses ?? [])]
+    this.tags = [...(opts?.tags ?? [])]
 
     for (const status of this.statuses) {
       if (!TEMPLATE_BUILD_STATUSES.includes(status)) {
