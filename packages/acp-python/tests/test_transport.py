@@ -2,7 +2,7 @@ import pytest
 
 from e2b import AsyncSandbox
 from e2b_acp.transport import ACPTransport
-from e2b_acp.utils import DEFAULT_MAX_MESSAGE_BYTES
+from e2b_acp.consts import DEFAULT_MAX_MESSAGE_BYTES
 from acp_fake_agent import FAKE_AGENT, FAKE_AGENT_CMD, FAKE_AGENT_PATH
 
 

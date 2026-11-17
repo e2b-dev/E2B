@@ -3,8 +3,8 @@ import time
 import pytest
 
 from e2b import InvalidArgumentException, SandboxException
+from e2b_acp.consts import PARSE_ERROR_RESPONSE
 from e2b_acp.utils import (
-    PARSE_ERROR_RESPONSE,
     LineSplitter,
     filter_agent_message,
     parse_agent_line,

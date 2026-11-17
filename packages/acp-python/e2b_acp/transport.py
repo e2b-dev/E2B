@@ -1,46 +1,20 @@
 import asyncio
 import inspect
 from collections import deque
-from dataclasses import dataclass
-from typing import Any, Awaitable, Callable, Deque, Dict, Optional, Union
+from typing import Any, Deque, Dict, Optional
 
 from e2b import AsyncCommandHandle, AsyncSandbox, CommandExitException, SandboxException
 from e2b.connection_config import Username
 from e2b.envd.versions import ENVD_ENVD_CLOSE
 
+from .consts import DEFAULT_STOP_TIMEOUT, READ_QUEUE_MESSAGES, STDERR_TAIL_CHARS
+from .types import ACPAgentResult, JsonRpcMessage, StderrHandler
 from .utils import (
-    JsonRpcMessage,
     LineSplitter,
     encode_message,
     parse_agent_line,
     restrict_client_capabilities,
 )
-
-DEFAULT_STOP_TIMEOUT = 5
-"""
-Default time for an ACP agent to exit after `stop()`, in **seconds**.
-"""
-
-STDERR_TAIL_CHARS = 4096
-READ_QUEUE_MESSAGES = 64
-
-StderrHandler = Union[Callable[[str], None], Callable[[str], Awaitable[None]]]
-
-
-@dataclass
-class ACPAgentResult:
-    """
-    Exit status of an ACP agent process.
-    """
-
-    exit_code: int
-    """
-    Exit code of the agent process.
-    """
-    error: Optional[str] = None
-    """
-    Error message if the process failed.
-    """
 
 
 class ACPTransport:

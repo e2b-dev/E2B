@@ -10,7 +10,8 @@ from packaging.version import Version
 
 from e2b import CommandExitException
 from e2b_acp import AsyncACPAgent
-from e2b_acp.transport import READ_QUEUE_MESSAGES, ACPTransport
+from e2b_acp.consts import READ_QUEUE_MESSAGES
+from e2b_acp.transport import ACPTransport
 
 
 class FakeAgent:

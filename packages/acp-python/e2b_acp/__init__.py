@@ -10,8 +10,9 @@ from acp.core import ClientSideConnection
 from e2b import AsyncSandbox
 from e2b.connection_config import Username
 
-from .transport import DEFAULT_STOP_TIMEOUT, ACPAgentResult, ACPTransport, StderrHandler
-from .utils import DEFAULT_MAX_MESSAGE_BYTES
+from .consts import DEFAULT_MAX_MESSAGE_BYTES, DEFAULT_STOP_TIMEOUT
+from .transport import ACPTransport
+from .types import ACPAgentResult, StderrHandler
 
 
 class AsyncACPAgent:

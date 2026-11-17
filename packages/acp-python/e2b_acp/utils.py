@@ -1,25 +1,11 @@
 import json
 import math
-from typing import Any, Dict, List, Tuple
+from typing import Any, List, Tuple
 
 from e2b import InvalidArgumentException, SandboxException
 
-JsonRpcMessage = Dict[str, Any]
-"""
-JSON-RPC 2.0 message exchanged with an ACP agent.
-"""
-
-DEFAULT_MAX_MESSAGE_BYTES = 32 * 1024 * 1024
-"""
-Default maximum size of a single message from the agent, the same as the
-TypeScript ACP SDK uses.
-"""
-
-PARSE_ERROR_RESPONSE: JsonRpcMessage = {
-    "jsonrpc": "2.0",
-    "id": None,
-    "error": {"code": -32700, "message": "Parse error"},
-}
+from .consts import METHOD_NOT_FOUND, PARSE_ERROR_RESPONSE
+from .types import JsonRpcMessage
 
 
 class LineSplitter:
@@ -143,7 +129,7 @@ def filter_agent_message(message: Any) -> Tuple[Any, List[JsonRpcMessage]]:
                     "jsonrpc": "2.0",
                     "id": item["id"],
                     "error": {
-                        "code": -32601,
+                        "code": METHOD_NOT_FOUND,
                         "message": f"Method not found: {item['method']} is not available, the agent runs inside an E2B sandbox",
                     },
                 }
