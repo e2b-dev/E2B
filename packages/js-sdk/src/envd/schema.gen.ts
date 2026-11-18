@@ -307,6 +307,23 @@ export interface components {
             disk_used?: number;
             /** @description Cached memory (page cache) in bytes */
             mem_cache?: number;
+            /**
+             * Format: int64
+             * @description Memory managed in the guest's other zones in bytes
+             */
+            mem_kernel?: number;
+            /**
+             * Format: int64
+             * @description Memory limit envd last applied to the user and PTY cgroups in bytes, recomputed whenever the guest's memory size changes; 0 when envd has applied none. A limit changed from inside the guest is not reflected.
+             */
+            mem_limit?: number;
+            /**
+             * Format: int64
+             * @description Memory managed in the guest's movable zone in bytes, the part a later memory unplug can reliably take back.
+             */
+            mem_movable?: number;
+            /** @description The guest kernel's memory_hotplug.online_policy, empty when the kernel has no such parameter. */
+            mem_online_policy?: string;
             /** @description Total virtual memory in bytes */
             mem_total?: number;
             /** @description Used virtual memory in bytes */

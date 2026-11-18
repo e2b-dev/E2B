@@ -55,6 +55,7 @@ from .exceptions import (
     SandboxNotRunningException,
     SandboxUnreachableException,
     TemplateException,
+    TemplateNotFoundException,
     TimeoutException,
     VolumeException,
     VolumeNotFoundException,
@@ -158,16 +159,22 @@ from .template.types import (
     BuildInfo,
     BuildStatusReason,
     CopyItem,
+    TemplateBuildInfo,
     TemplateBuildStatus,
     TemplateBuildStatusResponse,
+    TemplateBuildWithTags,
+    TemplateDetail,
     TemplateInfo,
     TemplateTag,
     TemplateTagInfo,
 )
 from .template_async.main import AsyncTemplate
-from .template_async.paginator import AsyncTemplatePaginator
+from .template_async.paginator import (
+    AsyncTemplateBuildPaginator,
+    AsyncTemplatePaginator,
+)
 from .template_sync.main import Template
-from .template_sync.paginator import TemplatePaginator
+from .template_sync.paginator import TemplateBuildPaginator, TemplatePaginator
 
 from .volume.volume_sync import Volume
 from .volume.volume_async import AsyncVolume
@@ -209,6 +216,7 @@ __all__ = [
     "InvalidArgumentException",
     "NotEnoughSpaceException",
     "TemplateException",
+    "TemplateNotFoundException",
     "DockerfileSyntaxError",
     "BuildException",
     "FileUploadException",
@@ -303,11 +311,16 @@ __all__ = [
     "CopyItem",
     "BuildInfo",
     "BuildStatusReason",
+    "TemplateBuildInfo",
     "TemplateBuildStatus",
     "TemplateBuildStatusResponse",
+    "TemplateBuildWithTags",
+    "TemplateDetail",
     "TemplateInfo",
     "TemplatePaginator",
     "AsyncTemplatePaginator",
+    "TemplateBuildPaginator",
+    "AsyncTemplateBuildPaginator",
     "TemplateTag",
     "TemplateTagInfo",
     "ReadyCmd",

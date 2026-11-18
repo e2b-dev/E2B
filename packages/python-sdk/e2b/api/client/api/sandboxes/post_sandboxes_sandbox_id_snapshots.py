@@ -8,15 +8,18 @@ from ...client import AuthenticatedClient, Client
 from ...models.error import Error
 from ...models.sandbox_snapshot_request import SandboxSnapshotRequest
 from ...models.snapshot_info import SnapshotInfo
-from ...types import Response
+from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
     sandbox_id: str,
     *,
     body: SandboxSnapshotRequest,
+    idempotency_key: Union[Unset, str] = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
+    if not isinstance(idempotency_key, Unset):
+        headers["Idempotency-Key"] = idempotency_key
 
     _kwargs: dict[str, Any] = {
         "method": "post",
@@ -50,6 +53,14 @@ def _parse_response(
         response_404 = Error.from_dict(response.json())
 
         return response_404
+    if response.status_code == 409:
+        response_409 = Error.from_dict(response.json())
+
+        return response_409
+    if response.status_code == 422:
+        response_422 = Error.from_dict(response.json())
+
+        return response_422
     if response.status_code == 429:
         response_429 = Error.from_dict(response.json())
 
@@ -84,6 +95,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient,
     body: SandboxSnapshotRequest,
+    idempotency_key: Union[Unset, str] = UNSET,
 ) -> Response[Union[Error, SnapshotInfo]]:
     """Create snapshot
 
@@ -92,6 +104,7 @@ def sync_detailed(
 
     Args:
         sandbox_id (str):
+        idempotency_key (Union[Unset, str]):
         body (SandboxSnapshotRequest):
 
     Raises:
@@ -105,6 +118,7 @@ def sync_detailed(
     kwargs = _get_kwargs(
         sandbox_id=sandbox_id,
         body=body,
+        idempotency_key=idempotency_key,
     )
 
     response = client.get_httpx_client().request(
@@ -119,6 +133,7 @@ def sync(
     *,
     client: AuthenticatedClient,
     body: SandboxSnapshotRequest,
+    idempotency_key: Union[Unset, str] = UNSET,
 ) -> Optional[Union[Error, SnapshotInfo]]:
     """Create snapshot
 
@@ -127,6 +142,7 @@ def sync(
 
     Args:
         sandbox_id (str):
+        idempotency_key (Union[Unset, str]):
         body (SandboxSnapshotRequest):
 
     Raises:
@@ -141,6 +157,7 @@ def sync(
         sandbox_id=sandbox_id,
         client=client,
         body=body,
+        idempotency_key=idempotency_key,
     ).parsed
 
 
@@ -149,6 +166,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
     body: SandboxSnapshotRequest,
+    idempotency_key: Union[Unset, str] = UNSET,
 ) -> Response[Union[Error, SnapshotInfo]]:
     """Create snapshot
 
@@ -157,6 +175,7 @@ async def asyncio_detailed(
 
     Args:
         sandbox_id (str):
+        idempotency_key (Union[Unset, str]):
         body (SandboxSnapshotRequest):
 
     Raises:
@@ -170,6 +189,7 @@ async def asyncio_detailed(
     kwargs = _get_kwargs(
         sandbox_id=sandbox_id,
         body=body,
+        idempotency_key=idempotency_key,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -182,6 +202,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient,
     body: SandboxSnapshotRequest,
+    idempotency_key: Union[Unset, str] = UNSET,
 ) -> Optional[Union[Error, SnapshotInfo]]:
     """Create snapshot
 
@@ -190,6 +211,7 @@ async def asyncio(
 
     Args:
         sandbox_id (str):
+        idempotency_key (Union[Unset, str]):
         body (SandboxSnapshotRequest):
 
     Raises:
@@ -205,5 +227,6 @@ async def asyncio(
             sandbox_id=sandbox_id,
             client=client,
             body=body,
+            idempotency_key=idempotency_key,
         )
     ).parsed

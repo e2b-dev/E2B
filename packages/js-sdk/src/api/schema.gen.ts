@@ -498,6 +498,7 @@ export interface paths {
                     };
                     content?: never;
                 };
+                400: components["responses"]["400"];
                 401: components["responses"]["401"];
                 404: components["responses"]["404"];
                 409: components["responses"]["409"];
@@ -628,7 +629,26 @@ export interface paths {
         post: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /**
+                     * @description Optional team-scoped key for retrying the request. Use 1 to 255 lowercase ASCII letters,
+                     *     digits, or hyphens (a-z, 0-9, -), such as a lowercase UUID. The HTTP method, path, query,
+                     *     and request content identify the request. When idempotency is enabled, a matching retry of
+                     *     a completed request replays its status and body, including the IDs of any resources it
+                     *     created, without repeating the operation. A failure explicitly classified as safe to retry
+                     *     (Should-Retry: true) permits a fresh attempt with the same key and request. Only one
+                     *     attempt can run at a time. A different request returns 409 with error_code
+                     *     idempotency_request_mismatch. A matching request whose original has no recorded response
+                     *     yet and is within its expected response window returns 409 with error_code
+                     *     idempotency_in_progress. A matching request whose original has no recorded response and
+                     *     whose expected response deadline has passed or is unknown returns 422 with error_code
+                     *     idempotency_outcome_unknown. These conflicts and unknown outcomes do not execute the
+                     *     request again. If the key's record is unavailable or idempotency is misconfigured, the
+                     *     request returns 503; Should-Retry tells whether to retry with the same key. After the
+                     *     retention period expires, the key can start a new operation.
+                     */
+                    "Idempotency-Key"?: components["parameters"]["idempotencyKey"];
+                };
                 path: {
                     sandboxID: components["parameters"]["sandboxID"];
                 };
@@ -649,12 +669,68 @@ export interface paths {
                         "application/json": components["schemas"]["SnapshotInfo"];
                     };
                 };
-                400: components["responses"]["400"];
+                /** @description Bad request */
+                400: {
+                    headers: {
+                        "Should-Retry"?: boolean;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
                 401: components["responses"]["401"];
-                404: components["responses"]["404"];
+                /** @description Not found */
+                404: {
+                    headers: {
+                        "Should-Retry"?: boolean;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        "Should-Retry"?: boolean;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Unprocessable request */
+                422: {
+                    headers: {
+                        "Should-Retry"?: boolean;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
                 429: components["responses"]["429"];
-                500: components["responses"]["500"];
-                503: components["responses"]["503"];
+                /** @description Server error */
+                500: {
+                    headers: {
+                        "Should-Retry"?: boolean;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Service unavailable */
+                503: {
+                    headers: {
+                        "Should-Retry"?: boolean;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
             };
         };
         delete?: never;
@@ -1025,48 +1101,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/teams": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List teams
-         * @description List all teams
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Successfully returned all teams */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Team"][];
-                    };
-                };
-                401: components["responses"]["401"];
-                429: components["responses"]["429"];
-                500: components["responses"]["500"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/teams/{teamID}/metrics": {
         parameters: {
             query?: never;
@@ -1323,6 +1357,63 @@ export interface paths {
                 500: components["responses"]["500"];
             };
         };
+        trace?: never;
+    };
+    "/templates/{templateID}/builds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List a template's builds
+         * @description List the builds of a template, newest first. The template is given by its ID or name. A template named `aliases` is given by its ID or by its name with the team prefix.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Maximum number of items to return per page */
+                    limit?: components["parameters"]["paginationLimit"];
+                    /** @description Cursor to start the list from */
+                    nextToken?: components["parameters"]["paginationNextToken"];
+                    /** @description Comma-separated list of build statuses to include. Every status when omitted. */
+                    statuses?: components["parameters"]["templateBuildStatuses"];
+                    /** @description Comma-separated list of tags. Only the builds these tags point at are returned. Every build when omitted. */
+                    tags?: components["parameters"]["templateBuildTags"];
+                };
+                header?: never;
+                path: {
+                    templateID: components["parameters"]["templateID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned the template builds */
+                200: {
+                    headers: {
+                        "X-Next-Token": components["headers"]["XNextToken"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TemplateBuildWithTags"][];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                404: components["responses"]["404"];
+                429: components["responses"]["429"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/templates/{templateID}/builds/{buildID}/logs": {
@@ -1789,12 +1880,31 @@ export interface paths {
         put?: never;
         /**
          * Assign template tags
-         * @description Assign tag(s) to a template build
+         * @description Assign tag(s) to a template build.
          */
         post: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /**
+                     * @description Optional team-scoped key for retrying the request. Use 1 to 255 lowercase ASCII letters,
+                     *     digits, or hyphens (a-z, 0-9, -), such as a lowercase UUID. The HTTP method, path, query,
+                     *     and request content identify the request. When idempotency is enabled, a matching retry of
+                     *     a completed request replays its status and body, including the IDs of any resources it
+                     *     created, without repeating the operation. A failure explicitly classified as safe to retry
+                     *     (Should-Retry: true) permits a fresh attempt with the same key and request. Only one
+                     *     attempt can run at a time. A different request returns 409 with error_code
+                     *     idempotency_request_mismatch. A matching request whose original has no recorded response
+                     *     yet and is within its expected response window returns 409 with error_code
+                     *     idempotency_in_progress. A matching request whose original has no recorded response and
+                     *     whose expected response deadline has passed or is unknown returns 422 with error_code
+                     *     idempotency_outcome_unknown. These conflicts and unknown outcomes do not execute the
+                     *     request again. If the key's record is unavailable or idempotency is misconfigured, the
+                     *     request returns 503; Should-Retry tells whether to retry with the same key. After the
+                     *     retention period expires, the key can start a new operation.
+                     */
+                    "Idempotency-Key"?: components["parameters"]["idempotencyKey"];
+                };
                 path?: never;
                 cookie?: never;
             };
@@ -1813,11 +1923,121 @@ export interface paths {
                         "application/json": components["schemas"]["AssignedTemplateTags"];
                     };
                 };
-                400: components["responses"]["400"];
-                401: components["responses"]["401"];
-                404: components["responses"]["404"];
-                429: components["responses"]["429"];
-                500: components["responses"]["500"];
+                /** @description Bad request */
+                400: {
+                    headers: {
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Authentication error */
+                401: {
+                    headers: {
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Request body read timed out before execution */
+                408: {
+                    headers: {
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The Idempotency-Key conflicts with a different request (error_code idempotency_request_mismatch), or the matching original request has no recorded response yet and is within its expected response window (error_code idempotency_in_progress); this request was not executed again */
+                409: {
+                    headers: {
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Request body exceeds the size limit */
+                413: {
+                    headers: {
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": string;
+                    };
+                };
+                /** @description The matching original request has no recorded response and its expected response deadline has passed or is unknown (error_code idempotency_outcome_unknown); this request was not executed again */
+                422: {
+                    headers: {
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Too many requests */
+                429: {
+                    headers: {
+                        /**
+                         * @description When present, the number of seconds to wait before retrying the request.
+                         * @example 30
+                         */
+                        "Retry-After"?: number;
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Server error. A failed commit has an uncertain outcome and omits Should-Retry; with an Idempotency-Key that error is replayed without executing again. */
+                500: {
+                    headers: {
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Idempotency is unavailable; the request was not executed */
+                503: {
+                    headers: {
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
             };
         };
         /**
@@ -2373,7 +2593,38 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Template info (v2)
+         * @description Get a template by its ID or name, with its default build and without its other builds.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    templateID: components["parameters"]["templateID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned the template */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TemplateV2"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                404: components["responses"]["404"];
+                429: components["responses"]["429"];
+                500: components["responses"]["500"];
+            };
+        };
         put?: never;
         post?: never;
         delete?: never;
@@ -2426,12 +2677,31 @@ export interface paths {
         put?: never;
         /**
          * Start template build (v2)
-         * @description Start the build
+         * @description Start the build. With an Idempotency-Key, replays continue to work after the build has left the waiting state.
          */
         post: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /**
+                     * @description Optional team-scoped key for retrying the request. Use 1 to 255 lowercase ASCII letters,
+                     *     digits, or hyphens (a-z, 0-9, -), such as a lowercase UUID. The HTTP method, path, query,
+                     *     and request content identify the request. When idempotency is enabled, a matching retry of
+                     *     a completed request replays its status and body, including the IDs of any resources it
+                     *     created, without repeating the operation. A failure explicitly classified as safe to retry
+                     *     (Should-Retry: true) permits a fresh attempt with the same key and request. Only one
+                     *     attempt can run at a time. A different request returns 409 with error_code
+                     *     idempotency_request_mismatch. A matching request whose original has no recorded response
+                     *     yet and is within its expected response window returns 409 with error_code
+                     *     idempotency_in_progress. A matching request whose original has no recorded response and
+                     *     whose expected response deadline has passed or is unknown returns 422 with error_code
+                     *     idempotency_outcome_unknown. These conflicts and unknown outcomes do not execute the
+                     *     request again. If the key's record is unavailable or idempotency is misconfigured, the
+                     *     request returns 503; Should-Retry tells whether to retry with the same key. After the
+                     *     retention period expires, the key can start a new operation.
+                     */
+                    "Idempotency-Key"?: components["parameters"]["idempotencyKey"];
+                };
                 path: {
                     buildID: components["parameters"]["buildID"];
                     templateID: components["parameters"]["templateID"];
@@ -2451,10 +2721,87 @@ export interface paths {
                     };
                     content?: never;
                 };
-                400: components["responses"]["400"];
-                401: components["responses"]["401"];
+                /** @description Bad request */
+                400: {
+                    headers: {
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Authentication error */
+                401: {
+                    headers: {
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The Idempotency-Key conflicts with a different request (error_code idempotency_request_mismatch), or the matching original request has no recorded response yet and is within its expected response window (error_code idempotency_in_progress); this request was not executed again */
+                409: {
+                    headers: {
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The matching original request has no recorded response and its expected response deadline has passed or is unknown (error_code idempotency_outcome_unknown); this request was not executed again */
+                422: {
+                    headers: {
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
                 429: components["responses"]["429"];
-                500: components["responses"]["500"];
+                /** @description Server error */
+                500: {
+                    headers: {
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Service unavailable */
+                503: {
+                    headers: {
+                        "Should-Retry": components["headers"]["ShouldRetry"];
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
             };
         };
         delete?: never;
@@ -2474,12 +2821,31 @@ export interface paths {
         put?: never;
         /**
          * Create template (v3)
-         * @description Create a new template
+         * @description Create a new template.
          */
         post: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /**
+                     * @description Optional team-scoped key for retrying the request. Use 1 to 255 lowercase ASCII letters,
+                     *     digits, or hyphens (a-z, 0-9, -), such as a lowercase UUID. The HTTP method, path, query,
+                     *     and request content identify the request. When idempotency is enabled, a matching retry of
+                     *     a completed request replays its status and body, including the IDs of any resources it
+                     *     created, without repeating the operation. A failure explicitly classified as safe to retry
+                     *     (Should-Retry: true) permits a fresh attempt with the same key and request. Only one
+                     *     attempt can run at a time. A different request returns 409 with error_code
+                     *     idempotency_request_mismatch. A matching request whose original has no recorded response
+                     *     yet and is within its expected response window returns 409 with error_code
+                     *     idempotency_in_progress. A matching request whose original has no recorded response and
+                     *     whose expected response deadline has passed or is unknown returns 422 with error_code
+                     *     idempotency_outcome_unknown. These conflicts and unknown outcomes do not execute the
+                     *     request again. If the key's record is unavailable or idempotency is misconfigured, the
+                     *     request returns 503; Should-Retry tells whether to retry with the same key. After the
+                     *     retention period expires, the key can start a new operation.
+                     */
+                    "Idempotency-Key"?: components["parameters"]["idempotencyKey"];
+                };
                 path?: never;
                 cookie?: never;
             };
@@ -2498,12 +2864,91 @@ export interface paths {
                         "application/json": components["schemas"]["TemplateRequestResponseV3"];
                     };
                 };
-                400: components["responses"]["400"];
-                401: components["responses"]["401"];
-                403: components["responses"]["403"];
-                409: components["responses"]["409"];
-                429: components["responses"]["429"];
-                500: components["responses"]["500"];
+                /** @description Bad request */
+                400: {
+                    headers: {
+                        "Should-Retry"?: boolean;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Authentication error */
+                401: {
+                    headers: {
+                        "Should-Retry"?: boolean;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        "Should-Retry"?: boolean;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        "Should-Retry"?: boolean;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Unprocessable request */
+                422: {
+                    headers: {
+                        "Should-Retry"?: boolean;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Too many requests */
+                429: {
+                    headers: {
+                        /**
+                         * @description When present, the number of seconds to wait before retrying the request.
+                         * @example 30
+                         */
+                        "Retry-After"?: number;
+                        "Should-Retry"?: boolean;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Server error */
+                500: {
+                    headers: {
+                        "Should-Retry"?: boolean;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Service unavailable */
+                503: {
+                    headers: {
+                        "Should-Retry"?: boolean;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
             };
         };
         delete?: never;
@@ -2681,7 +3126,10 @@ export interface components {
             awsAccessKeyId: string;
             /** @description AWS Region where the ECR registry is located */
             awsRegion: string;
-            /** @description AWS Secret Access Key for ECR authentication */
+            /**
+             * Format: password
+             * @description AWS Secret Access Key for ECR authentication
+             */
             awsSecretAccessKey: string;
             /**
              * @description Type of registry authentication (enum property replaced by openapi-typescript)
@@ -2767,7 +3215,10 @@ export interface components {
         };
         FromImageRegistry: components["schemas"]["AWSRegistry"] | components["schemas"]["GCPRegistry"] | components["schemas"]["GeneralRegistry"];
         GCPRegistry: {
-            /** @description Service Account JSON for GCP authentication */
+            /**
+             * Format: password
+             * @description Service Account JSON for GCP authentication
+             */
             serviceAccountJson: string;
             /**
              * @description Type of registry authentication (enum property replaced by openapi-typescript)
@@ -2776,7 +3227,10 @@ export interface components {
             type: "gcp";
         };
         GeneralRegistry: {
-            /** @description Password to use for the registry */
+            /**
+             * Format: password
+             * @description Password to use for the registry
+             */
             password: string;
             /**
              * @description Type of registry authentication (enum property replaced by openapi-typescript)
@@ -2934,7 +3388,10 @@ export interface components {
             metadata?: components["schemas"]["SecretMetadata"];
             /** @description Name of the secret, unique within the project. Names are lower-cased before storage and returned in that canonical form; the sec_ prefix is reserved for secret identifiers. */
             name: string;
-            /** @description Runtime marker stored as the secret's first version. The runtime resolves it to a value at sandbox egress. */
+            /**
+             * Format: password
+             * @description Runtime marker stored as the secret's first version. The runtime resolves it to a value at sandbox egress.
+             */
             value: string;
         };
         NewVolume: {
@@ -3336,7 +3793,10 @@ export interface components {
         };
         SecretUpdate: {
             metadata?: components["schemas"]["SecretMetadata"];
-            /** @description Runtime marker stored as the secret's new version. The runtime resolves it to a value at sandbox egress. */
+            /**
+             * Format: password
+             * @description Runtime marker stored as the secret's new version. The runtime resolves it to a value at sandbox egress.
+             */
             value: string;
         };
         SnapshotInfo: {
@@ -3344,16 +3804,6 @@ export interface components {
             names: string[];
             /** @description Identifier of the snapshot template including the tag. Uses namespace/alias when a name was provided (e.g. team-slug/my-snapshot:default), otherwise falls back to the raw template ID (e.g. abc123:default). */
             snapshotID: string;
-        };
-        Team: {
-            /** @description API key for the team */
-            apiKey: string;
-            /** @description Whether the team is the default team */
-            isDefault: boolean;
-            /** @description Name of the team */
-            name: string;
-            /** @description Identifier of the team */
-            teamID: string;
         };
         /** @description The team's effective resource limits */
         TeamLimits: {
@@ -3637,6 +4087,10 @@ export interface components {
          * @enum {string}
          */
         TemplateBuildStatus: "building" | "waiting" | "ready" | "error";
+        TemplateBuildWithTags: components["schemas"]["TemplateBuild"] & {
+            /** @description Tags of the template that point at this build. A tag points at the latest ready build it was assigned to, the build a sandbox created with that tag starts from. */
+            tags: string[];
+        };
         TemplateRequestResponseV3: {
             /**
              * @deprecated
@@ -3751,6 +4205,47 @@ export interface components {
         TemplateUpdateResponse: {
             /** @description Names of the template (namespace/alias format when namespaced) */
             names: string[];
+        };
+        /** @description A template with its default build. `defaultBuild` is the build a sandbox created without a tag starts from, the latest ready build tagged default; it is absent until such a build is ready. `buildStatus` is the status of the latest build tagged default in any state: it is `building` while a rebuild runs, although sandboxes still start from the default build. */
+        TemplateV2: {
+            /**
+             * Format: int32
+             * @description Number of times the template was built
+             */
+            buildCount: number;
+            buildStatus: components["schemas"]["TemplateBuildStatus"];
+            /**
+             * Format: date-time
+             * @description Time when the template was created
+             */
+            createdAt: string;
+            createdBy: components["schemas"]["TeamUser"] | null;
+            defaultBuild?: components["schemas"]["TemplateBuild"];
+            /** @description Description of the template */
+            description?: string;
+            /** @description Whether the template is one of the platform's default templates */
+            isDefault: boolean;
+            /**
+             * Format: date-time
+             * @description Time when the template was last used
+             */
+            lastSpawnedAt: string | null;
+            /** @description Names of the template (namespace/alias format when namespaced) */
+            names: string[];
+            /** @description Whether the template is public or only accessible by the team */
+            public: boolean;
+            /**
+             * Format: int64
+             * @description Number of times the template was used
+             */
+            spawnCount: number;
+            /** @description Identifier of the template */
+            templateID: string;
+            /**
+             * Format: date-time
+             * @description Time when the template was last updated
+             */
+            updatedAt: string;
         };
         TemplateWithBuilds: components["schemas"]["Template"] & {
             /** @description List of builds for the template */
@@ -3877,6 +4372,24 @@ export interface components {
     };
     parameters: {
         buildID: string;
+        /**
+         * @description Optional team-scoped key for retrying the request. Use 1 to 255 lowercase ASCII letters,
+         *     digits, or hyphens (a-z, 0-9, -), such as a lowercase UUID. The HTTP method, path, query,
+         *     and request content identify the request. When idempotency is enabled, a matching retry of
+         *     a completed request replays its status and body, including the IDs of any resources it
+         *     created, without repeating the operation. A failure explicitly classified as safe to retry
+         *     (Should-Retry: true) permits a fresh attempt with the same key and request. Only one
+         *     attempt can run at a time. A different request returns 409 with error_code
+         *     idempotency_request_mismatch. A matching request whose original has no recorded response
+         *     yet and is within its expected response window returns 409 with error_code
+         *     idempotency_in_progress. A matching request whose original has no recorded response and
+         *     whose expected response deadline has passed or is unknown returns 422 with error_code
+         *     idempotency_outcome_unknown. These conflicts and unknown outcomes do not execute the
+         *     request again. If the key's record is unavailable or idempotency is misconfigured, the
+         *     request returns 503; Should-Retry tells whether to retry with the same key. After the
+         *     retention period expires, the key can start a new operation.
+         */
+        idempotencyKey: string;
         /** @description Maximum number of items to return per page */
         paginationLimit: number;
         /** @description Cursor to start the list from */
@@ -3902,22 +4415,15 @@ export interface components {
         tagQuery: string;
         /** @description Identifier of the team, as its UUID or its public project ID (prj_) */
         teamID: string;
+        /** @description Comma-separated list of build statuses to include. Every status when omitted. */
+        templateBuildStatuses: components["schemas"]["TemplateBuildStatus"][];
+        /** @description Comma-separated list of tags. Only the builds these tags point at are returned. Every build when omitted. */
+        templateBuildTags: string[];
         templateID: string;
         volumeID: string;
     };
     requestBodies: never;
     headers: {
-        /**
-         * @description Whether the condition behind this error may clear, so that retrying the request could
-         *     succeed. true marks a transient failure such as missing capacity, a rate limit, or a
-         *     creation still in progress: retry after Retry-After when present, otherwise with
-         *     exponential backoff. false marks a failure a retry cannot fix, such as a malformed request
-         *     or a configuration fault, or an outcome that is unknown, where a retry could create a
-         *     second sandbox. Successful responses and errors without an explicit classification omit
-         *     the header. With idempotency enabled, retry sandbox creation with the same Idempotency-Key
-         *     and request parameters. A retryable creation failure permits a fresh attempt; an
-         *     idempotency_in_progress response only reports an existing attempt and never releases it.
-         */
         ShouldRetry: boolean;
         /** @description Cursor to fetch the next page of results, if more exist */
         XNextToken: string;

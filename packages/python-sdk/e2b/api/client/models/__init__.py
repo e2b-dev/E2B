@@ -77,6 +77,7 @@ from .template_build_logs_response import TemplateBuildLogsResponse
 from .template_build_request_v3 import TemplateBuildRequestV3
 from .template_build_start_v2 import TemplateBuildStartV2
 from .template_build_status import TemplateBuildStatus
+from .template_build_with_tags import TemplateBuildWithTags
 from .template_request_response_v3 import TemplateRequestResponseV3
 from .template_step import TemplateStep
 from .template_tag import TemplateTag
@@ -88,6 +89,7 @@ from .template_tag_groups_response import TemplateTagGroupsResponse
 from .template_tags_count_response import TemplateTagsCountResponse
 from .template_update_request import TemplateUpdateRequest
 from .template_update_response import TemplateUpdateResponse
+from .template_v2 import TemplateV2
 from .template_with_builds import TemplateWithBuilds
 from .volume import Volume
 from .volume_and_token import VolumeAndToken
@@ -168,6 +170,7 @@ __all__ = (
     "TemplateBuildRequestV3",
     "TemplateBuildStartV2",
     "TemplateBuildStatus",
+    "TemplateBuildWithTags",
     "TemplateRequestResponseV3",
     "TemplateStep",
     "TemplateTag",
@@ -179,6 +182,7 @@ __all__ = (
     "TemplateTagsCountResponse",
     "TemplateUpdateRequest",
     "TemplateUpdateResponse",
+    "TemplateV2",
     "TemplateWithBuilds",
     "Volume",
     "VolumeAndToken",
