@@ -124,6 +124,8 @@ class AsyncCommandHandle(Generic[OutputT]):
 
         self._result: Optional[CommandResult[OutputT]] = None
         self._iteration_exception: Optional[Exception] = None
+        self._disconnected = False
+        self._callback_active = False
 
         self._wait = asyncio.create_task(self._handle_events())
 
@@ -225,9 +227,19 @@ class AsyncCommandHandle(Generic[OutputT]):
 
         The command is not killed, but SDK stops receiving events from the command.
         You can reconnect to the command using `sandbox.commands.connect` method.
+
+        Once it returns, the `on_stdout`/`on_stderr`/`on_pty` callbacks are guaranteed
+        not to fire for output produced after this call. It is safe to await from
+        inside one of those callbacks: a callback that is already running finishes,
+        and no further callbacks are dispatched. When a callback is running, this
+        method returns without waiting for the event task to finish.
         """
-        self._wait.cancel()
-        await asyncio.wait([self._wait])
+        self._disconnected = True
+        # Cancelling the event task also cancels the callback it is awaiting.
+        # Let an active callback finish, then stop before reading another event.
+        if not self._callback_active:
+            self._wait.cancel()
+            await asyncio.wait([self._wait])
         try:
             await self._events.aclose()
         except Exception:
@@ -236,18 +248,24 @@ class AsyncCommandHandle(Generic[OutputT]):
     async def _handle_events(self):
         try:
             async for stdout, stderr, pty in self._iterate_events():
-                if stdout is not None and self._on_stdout:
-                    cb = self._on_stdout(stdout)
-                    if inspect.isawaitable(cb):
-                        await cb
-                elif stderr is not None and self._on_stderr:
-                    cb = self._on_stderr(stderr)
-                    if inspect.isawaitable(cb):
-                        await cb
-                elif pty is not None and self._on_pty:
-                    cb = self._on_pty(pty)
-                    if inspect.isawaitable(cb):
-                        await cb
+                self._callback_active = True
+                try:
+                    if stdout is not None and self._on_stdout:
+                        cb = self._on_stdout(stdout)
+                        if inspect.isawaitable(cb):
+                            await cb
+                    elif stderr is not None and self._on_stderr:
+                        cb = self._on_stderr(stderr)
+                        if inspect.isawaitable(cb):
+                            await cb
+                    elif pty is not None and self._on_pty:
+                        cb = self._on_pty(pty)
+                        if inspect.isawaitable(cb):
+                            await cb
+                finally:
+                    self._callback_active = False
+                if self._disconnected:
+                    break
         except StopAsyncIteration:
             pass
         except Exception as e:
