@@ -13,3 +13,37 @@ sandboxTest('send input', async ({ sandbox }) => {
   await terminal.wait()
   expect(terminal.exitCode).toBe(0)
 })
+
+sandboxTest('send string input', async ({ sandbox }) => {
+  const terminal = await sandbox.pty.create({
+    cols: 80,
+    rows: 24,
+    onData: () => null,
+  })
+
+  await sandbox.pty.sendInput(terminal.pid, 'exit\n')
+
+  await terminal.wait()
+  expect(terminal.exitCode).toBe(0)
+})
+
+sandboxTest('send input through handle', async ({ sandbox }) => {
+  let output = ''
+
+  const terminal = await sandbox.pty.create({
+    cols: 80,
+    rows: 24,
+    envs: { ABC: '123' },
+    onData: (data) => {
+      output += new TextDecoder().decode(data)
+    },
+  })
+
+  // Send input directly through the handle instead of the PID-keyed module method.
+  await terminal.sendInput(new TextEncoder().encode('echo $ABC\n'))
+  await terminal.sendInput('exit\n')
+
+  await terminal.wait()
+  expect(terminal.exitCode).toBe(0)
+  expect(output).toContain('123')
+})

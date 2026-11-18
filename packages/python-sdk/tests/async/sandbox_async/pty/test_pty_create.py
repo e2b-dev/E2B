@@ -12,8 +12,8 @@ async def test_pty_create(async_sandbox: AsyncSandbox):
         PtySize(80, 24), on_data=lambda x: append_data(output, x), envs={"ABC": "123"}
     )
 
-    await async_sandbox.pty.send_stdin(terminal.pid, b"echo $ABC\n")
-    await async_sandbox.pty.send_stdin(terminal.pid, b"exit\n")
+    await async_sandbox.pty.send_input(terminal.pid, b"echo $ABC\n")
+    await async_sandbox.pty.send_input(terminal.pid, b"exit\n")
 
     await terminal.wait()
     assert terminal.exit_code == 0

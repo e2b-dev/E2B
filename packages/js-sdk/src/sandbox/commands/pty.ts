@@ -153,7 +153,9 @@ export class Pty {
         opts.onData,
         undefined,
         undefined,
-        this.checkHealth
+        this.checkHealth,
+        undefined,
+        (data, inputOpts) => this.sendInput(pid, data, inputOpts)
       )
     } catch (err) {
       cleanup()
@@ -210,7 +212,9 @@ export class Pty {
         opts?.onData,
         undefined,
         undefined,
-        this.checkHealth
+        this.checkHealth,
+        undefined,
+        (data, inputOpts) => this.sendInput(pid, data, inputOpts)
       )
     } catch (err) {
       cleanup()
@@ -227,7 +231,7 @@ export class Pty {
    */
   async sendInput(
     pid: number,
-    data: Uint8Array,
+    data: string | Uint8Array,
     opts?: Pick<ConnectionOpts, 'requestTimeoutMs' | 'signal'>
   ): Promise<void> {
     try {
@@ -236,7 +240,10 @@ export class Pty {
           input: {
             input: {
               case: 'pty',
-              value: data,
+              value:
+                typeof data === 'string'
+                  ? new TextEncoder().encode(data)
+                  : data,
             },
           },
           process: {

@@ -142,7 +142,11 @@ export class CommandHandle<Output extends string | undefined = string>
       opts?: CommandRequestOpts
     ) => Promise<void>,
     private readonly checkHealth?: SandboxHealthCheck,
-    retainOutput = true
+    retainOutput = true,
+    private readonly handleSendInput?: (
+      data: string | Uint8Array,
+      opts?: CommandRequestOpts
+    ) => Promise<void>
   ) {
     if (retainOutput) {
       this._stdout = ''
@@ -248,11 +252,37 @@ export class CommandHandle<Output extends string | undefined = string>
   ): Promise<void> {
     if (!this.handleSendStdin) {
       throw new SandboxError(
-        'Sending stdin is not supported for this command handle.'
+        this.handleSendInput
+          ? 'PTY handles have no stdin, use sendInput() to send input to the PTY instead.'
+          : 'Sending stdin is not supported for this command handle.'
       )
     }
 
     await this.handleSendStdin(data, opts)
+  }
+
+  /**
+   * Send input to the PTY.
+   *
+   * Only available on handles returned by `sandbox.pty.create()` and `sandbox.pty.connect()`.
+   * Strings are encoded as UTF-8.
+   *
+   * @param data input data to send to the PTY.
+   * @param opts connection options.
+   */
+  async sendInput(
+    data: string | Uint8Array,
+    opts?: CommandRequestOpts
+  ): Promise<void> {
+    if (!this.handleSendInput) {
+      throw new SandboxError(
+        this.handleSendStdin
+          ? 'Sending input is only supported for PTY handles, use sendStdin() to send data to the command stdin instead.'
+          : 'Sending input is not supported for this command handle.'
+      )
+    }
+
+    await this.handleSendInput(data, opts)
   }
 
   /**

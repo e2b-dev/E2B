@@ -81,14 +81,31 @@ class Pty:
     def send_stdin(
         self,
         pid: int,
-        data: bytes,
+        data: Union[str, bytes],
+        request_timeout: Optional[float] = None,
+    ) -> None:
+        """
+        Send input to a PTY.
+
+        :deprecated: Use `send_input()` instead. PTYs have no stdin; this sends input to the PTY.
+
+        :param pid: Process ID of the PTY
+        :param data: Input data to send, `str` is encoded as UTF-8
+        :param request_timeout: Timeout for the request in **seconds**
+        """
+        return self.send_input(pid, data, request_timeout)
+
+    def send_input(
+        self,
+        pid: int,
+        data: Union[str, bytes],
         request_timeout: Optional[float] = None,
     ) -> None:
         """
         Send input to a PTY.
 
         :param pid: Process ID of the PTY
-        :param data: Input data to send
+        :param data: Input data to send, `str` is encoded as UTF-8
         :param request_timeout: Timeout for the request in **seconds**
         """
         try:
@@ -96,7 +113,9 @@ class Pty:
                 process_pb.SendInputRequest(
                     process=process_pb.ProcessSelector(selector=Oneof("pid", pid)),
                     input=process_pb.ProcessInput(
-                        input=Oneof("pty", data),
+                        input=Oneof(
+                            "pty", data.encode() if isinstance(data, str) else data
+                        ),
                     ),
                 ),
                 timeout_ms=timeout_to_ms(
@@ -185,6 +204,9 @@ class Pty:
                 pid=pid,
                 handle_kill=lambda: self.kill(pid),
                 events=events,
+                handle_send_input=lambda data, request_timeout=None: self.send_input(
+                    pid, data, request_timeout
+                ),
                 check_health=self._check_health,
             )
         except Exception as e:
@@ -229,6 +251,9 @@ class Pty:
                 pid=pid,
                 handle_kill=lambda: self.kill(pid),
                 events=events,
+                handle_send_input=lambda data, request_timeout=None: self.send_input(
+                    pid, data, request_timeout
+                ),
                 check_health=self._check_health,
             )
         except Exception as e:
