@@ -1,5 +1,7 @@
+import createClient from 'openapi-fetch'
+import { Response as UndiciResponse } from 'undici'
 import { assert, describe, test } from 'vitest'
-import { createRpcLogger } from '../src/logs'
+import { createApiLogger, createRpcLogger } from '../src/logs'
 
 const req = { url: 'http://localhost:49983/process.Process/Start' } as any
 
@@ -34,6 +36,40 @@ describe('createRpcLogger', () => {
     assert.deepEqual(logs[0], [
       'Response stream:',
       { offset: '9007199254740993' },
+    ])
+  })
+})
+
+describe('createApiLogger', () => {
+  // On Node the API client fetches through undici, whose Response is not the
+  // global one; openapi-fetch rejects any onResponse result that is not an
+  // instance of the global Response.
+  test('logs responses that are not instances of the global Response', async () => {
+    assert.notStrictEqual(UndiciResponse, globalThis.Response)
+    const logs: any[][] = []
+    const client = createClient<any>({
+      baseUrl: 'http://localhost',
+      fetch: async () =>
+        new UndiciResponse('{"message":"boom"}', {
+          status: 500,
+          statusText: 'Internal Server Error',
+          headers: { 'content-type': 'application/json' },
+        }) as unknown as Response,
+    })
+    client.use(
+      createApiLogger({
+        info: (...args) => logs.push(['info', ...args]),
+        error: (...args) => logs.push(['error', ...args]),
+      })
+    )
+
+    const res = await client.GET('/sandboxes' as any)
+
+    assert.equal(res.response.status, 500)
+    assert.deepEqual(res.error, { message: 'boom' })
+    assert.deepEqual(logs, [
+      ['info', 'Request GET http://localhost/sandboxes'],
+      ['error', 'Response:', 500, 'Internal Server Error'],
     ])
   })
 })
