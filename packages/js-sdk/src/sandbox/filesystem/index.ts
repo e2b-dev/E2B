@@ -396,7 +396,9 @@ export class Filesystem {
     private readonly envdApi: EnvdApiClient,
     private readonly connectionConfig: ConnectionConfig
   ) {
-    const uploadFetch = createEnvdUploadFetch({ proxy: connectionConfig.proxy })
+    const uploadFetch = envdApi.route(
+      createEnvdUploadFetch({ proxy: connectionConfig.proxy })
+    )
     this.uploadFetch = (request) => uploadFetch(request)
     this.rpc = createClient(FilesystemService, transport)
     this.checkHealth = () => checkSandboxHealth(this.envdApi)

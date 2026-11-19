@@ -190,6 +190,7 @@ export async function handleWatchDirStartEvent(
 class EnvdApiClient {
   readonly api: ReturnType<typeof createClient<paths>>
   readonly version: string
+  readonly route: (fetchImpl: typeof fetch) => typeof fetch
 
   constructor(
     config: Pick<ConnectionConfig, 'apiUrl' | 'logger'> & {
@@ -198,6 +199,11 @@ class EnvdApiClient {
        */
       envdAccessToken?: string
       fetch?: (request: Request) => ReturnType<typeof fetch>
+      /**
+       * Routes a fetch that replaces `fetch` for single requests to the
+       * sandbox's control plane, as `fetch` is.
+       */
+      route?: (fetchImpl: typeof fetch) => typeof fetch
       headers?: Record<string, string>
     },
     metadata: {
@@ -217,6 +223,7 @@ class EnvdApiClient {
       // keepalive: true,
     })
     this.version = metadata.version
+    this.route = config.route ?? ((fetchImpl) => fetchImpl)
 
     if (config.logger) {
       this.api.use(createApiLogger(config.logger))

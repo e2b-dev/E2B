@@ -13,6 +13,7 @@ import {
 } from '../errors'
 import { createApiLogger } from '../logs'
 import { withRetry } from '../retry'
+import { withApiPlaneRouting } from '../planeRouting'
 
 /**
  * Map an API error code and message to the matching error class — the same
@@ -118,10 +119,13 @@ class ApiClient {
 
     this.api = createClient<paths>({
       baseUrl: config.apiUrl,
-      fetch: withRetry(
-        createApiFetch(config),
-        config.retries,
-        config.requestTimeoutMs
+      fetch: withApiPlaneRouting(
+        withRetry(
+          createApiFetch(config),
+          config.retries,
+          config.requestTimeoutMs
+        ),
+        config
       ),
       // In HTTP 1.1, all connections are considered persistent unless declared otherwise
       // keepalive: true,

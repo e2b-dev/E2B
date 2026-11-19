@@ -9,6 +9,7 @@ import {
 import { EnvdApiClient, handleEnvdApiError } from '../envd/api'
 import { rejectProxyUnavailableResponse } from '../envd/rpc'
 import { createEnvdFetch, createEnvdRpcFetch } from '../envd/http2'
+import { EnvdPlaneRouting, planeKey } from '../planeRouting'
 import { createRpcLogger } from '../logs'
 import { createClientStreamingTransport } from '../envd/streamingTransport'
 import { Commands, Pty } from './commands'
@@ -163,8 +164,18 @@ export class Sandbox extends SandboxApi {
       'E2b-Sandbox-Id': this.sandboxId,
       'E2b-Sandbox-Port': this.envdPort.toString(),
     }
-    const envdFetch = createEnvdFetch(this.connectionConfig)
-    const envdRpcFetch = createEnvdRpcFetch(this.connectionConfig)
+    // Without a domain of its own from the API, the sandbox is on the control
+    // plane its API key's requests were last answered by.
+    const envdRouting = new EnvdPlaneRouting(
+      this.sandboxDomain === this.connectionConfig.domain
+        ? planeKey(this.connectionConfig)
+        : undefined,
+      this.sandboxDomain
+    )
+    const envdFetch = envdRouting.wrap(createEnvdFetch(this.connectionConfig))
+    const envdRpcFetch = envdRouting.wrap(
+      createEnvdRpcFetch(this.connectionConfig)
+    )
     const interceptors = opts?.logger
       ? [createRpcLogger(opts.logger)]
       : undefined
@@ -220,6 +231,7 @@ export class Sandbox extends SandboxApi {
           ...sandboxHeaders,
         },
         fetch: (request) => envdFetch(request),
+        route: (fetchImpl) => envdRouting.wrap(fetchImpl),
       },
       {
         version: opts.envdVersion,
