@@ -2,27 +2,27 @@ import { Template } from 'e2b'
 
 export const template = Template()
 {{#if fromImage}}
-  .fromImage('{{{fromImage}}}')
+  .fromImage('{{{escapeQuotes fromImage}}}')
 {{/if}}
 {{#each steps}}
 {{#eq type "WORKDIR"}}
-  .setWorkdir('{{{args.[0]}}}')
+  .setWorkdir('{{{escapeQuotes args.[0]}}}')
 {{/eq}}
 {{#eq type "USER"}}
-  .setUser('{{{args.[0]}}}')
+  .setUser('{{{escapeQuotes args.[0]}}}')
 {{/eq}}
 {{#eq type "ENV"}}
   .setEnvs({
 {{#each envVars}}
-    '{{{@key}}}': '{{{this}}}',
+    '{{{escapeQuotes @key}}}': '{{{escapeQuotes this}}}',
 {{/each}}
   })
 {{/eq}}
 {{#eq type "RUN"}}
-  .runCmd('{{{args.[0]}}}')
+  .runCmd('{{{escapeQuotes args.[0]}}}')
 {{/eq}}
 {{#eq type "COPY"}}
-  .copy('{{{src}}}', '{{{dest}}}')
+  .copy('{{{escapeQuotes src}}}', '{{{escapeQuotes dest}}}')
 {{/eq}}
 {{/each}}
 {{#if startCmd}}

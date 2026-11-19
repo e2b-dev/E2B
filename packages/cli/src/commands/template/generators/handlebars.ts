@@ -23,11 +23,26 @@ class Handlebars {
     })
 
     handlebars.registerHelper('escapeQuotes', function (str) {
-      return str ? str.replace(/'/g, "\\'") : str
+      // Escape backslashes first so the escapes added below are not double
+      // escaped, then the quotes, then newlines, which would otherwise break
+      // the string literal in the generated code.
+      return str
+        ? str
+            .replace(/\\/g, '\\\\')
+            .replace(/'/g, "\\'")
+            .replace(/\r/g, '\\r')
+            .replace(/\n/g, '\\n')
+        : str
     })
 
     handlebars.registerHelper('escapeDoubleQuotes', function (str) {
-      return str ? str.replace(/"/g, '\\"') : str
+      return str
+        ? str
+            .replace(/\\/g, '\\\\')
+            .replace(/"/g, '\\"')
+            .replace(/\r/g, '\\r')
+            .replace(/\n/g, '\\n')
+        : str
     })
 
     this.handlebars = handlebars
