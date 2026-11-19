@@ -140,7 +140,7 @@ class Filesystem:
         :param user: Run the operation as this user
         :param format: Format of the file content—`text` by default
         :param request_timeout: Timeout for the request in **seconds**
-        :param gzip: Use gzip compression for the request
+        :param gzip: :deprecated: Downloads always request gzip-encoded responses, so this has no effect. Will be removed in the next major version.
 
         :return: File content as a `str`
         """
@@ -162,7 +162,7 @@ class Filesystem:
         :param user: Run the operation as this user
         :param format: Format of the file content—`bytes`
         :param request_timeout: Timeout for the request in **seconds**
-        :param gzip: Use gzip compression for the request
+        :param gzip: :deprecated: Downloads always request gzip-encoded responses, so this has no effect. Will be removed in the next major version.
 
         :return: File content as a `bytearray`
         """
@@ -192,7 +192,7 @@ class Filesystem:
         :param user: Run the operation as this user
         :param format: Format of the file content—`stream`
         :param request_timeout: Deadline for the whole transfer in **seconds**
-        :param gzip: Use gzip compression for the request
+        :param gzip: :deprecated: Downloads always request gzip-encoded responses, so this has no effect. Will be removed in the next major version.
         :param stream_idle_timeout: Ignored — the sync client cannot
             interrupt a blocking read. A stalled streamed read is bounded by
             a transport-wide idle read timeout instead (60 seconds), which
@@ -220,9 +220,7 @@ class Filesystem:
         if username:
             params["username"] = username
 
-        headers = {}
-        if gzip:
-            headers["Accept-Encoding"] = "gzip"
+        headers = {"Accept-Encoding": "gzip"}
 
         timeout = self._connection_config.get_request_timeout(request_timeout)
 

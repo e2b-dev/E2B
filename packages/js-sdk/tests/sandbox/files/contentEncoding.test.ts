@@ -16,9 +16,7 @@ sandboxTest(
     assert.equal(info.type, 'file')
     assert.equal(info.path, `/home/user/${filename}`)
 
-    const readContent = await sandbox.files.read(filename, {
-      gzip: true,
-    })
+    const readContent = await sandbox.files.read(filename)
     assert.equal(readContent, content)
 
     if (isDebug) {
@@ -72,7 +70,7 @@ sandboxTest('writeFiles with gzip content encoding', async ({ sandbox }) => {
 })
 
 sandboxTest(
-  'read file as bytes with gzip content encoding',
+  'read file as bytes with the deprecated gzip option',
   async ({ sandbox }) => {
     const filename = 'test_gzip_bytes.txt'
     const content = 'Binary content with gzip.'
