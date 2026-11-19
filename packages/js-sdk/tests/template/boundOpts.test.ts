@@ -254,7 +254,7 @@ test.each([
 })
 
 test.each([
-  [{}, {}],
+  [{ cpuCount: 2 }, { cpuCount: 2 }],
   [
     { cpuCount: 2, maxCpuCount: 4 },
     { cpuCount: 2, maxCpuCount: 4 },

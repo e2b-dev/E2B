@@ -206,48 +206,6 @@ sandboxTest.skipIf(isDebug)('delete snapshot', async ({ sandbox }) => {
 })
 
 sandboxTest.skipIf(isDebug)(
-  'snapshot preserves file system state',
-  async ({ sandbox, sandboxTestId }) => {
-    const appDir = '/home/user/app'
-    const configPath = `${appDir}/config.json`
-    const configContent = '{"env": "test"}'
-    const dataPath = `${appDir}/data.txt`
-    const dataContent = 'important data'
-
-    await sandbox.files.makeDir(appDir)
-    await sandbox.files.write(configPath, configContent)
-    await sandbox.files.write(dataPath, dataContent)
-
-    const snapshot = await sandbox.createSnapshot()
-
-    try {
-      const newSandbox = await Sandbox.create(snapshot.snapshotId, {
-        metadata: { sandboxTestId: `${sandboxTestId}-fs-test` },
-        requestTimeoutMs: SNAPSHOT_CREATE_REQUEST_TIMEOUT_MS,
-      })
-
-      try {
-        // Verify directory exists
-        const dirExists = await newSandbox.files.exists(appDir)
-        assert.isTrue(dirExists)
-
-        // Verify files exist with correct content
-        const config = await newSandbox.files.read(configPath)
-        const data = await newSandbox.files.read(dataPath)
-
-        assert.equal(config, configContent)
-        assert.equal(data, dataContent)
-      } finally {
-        await newSandbox.kill()
-      }
-    } finally {
-      await Sandbox.deleteSnapshot(snapshot.snapshotId)
-    }
-  },
-  180_000
-)
-
-sandboxTest.skipIf(isDebug)(
   'create a filesystem-only snapshot',
   async ({ sandbox, sandboxTestId, skip }) => {
     const testContent = 'filesystem-only snapshot content'

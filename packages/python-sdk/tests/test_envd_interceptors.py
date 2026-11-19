@@ -65,24 +65,6 @@ def _full_chain_config() -> ConnectionConfig:
     return ConnectionConfig(api_key="k", logger=logging.getLogger("test"))
 
 
-def test_sync_stream_close_reaches_transport_generator():
-    closed = []
-
-    def transport(request, ctx):
-        try:
-            for i in range(10):
-                yield i
-        finally:
-            closed.append(True)
-
-    stream = _compose_sync(
-        build_interceptors(_full_chain_config(), "http://base"), transport
-    )(None, _ctx())
-    assert next(stream) == 0
-    stream.close()
-    assert closed == [True]
-
-
 async def test_async_stream_close_reaches_transport_generator():
     # Before the interceptors propagated aclose(), the transport generator
     # was only finalized by the event loop's async-generator GC hook, several

@@ -53,6 +53,18 @@ export default defineConfig({
       },
       {
         test: {
+          name: 'types',
+          include: [],
+          typecheck: {
+            enabled: true,
+            only: true,
+            include: ['tests/**/*.test-d.ts'],
+            tsconfig: './tsconfig.typecheck.json',
+          },
+        },
+      },
+      {
+        test: {
           name: 'connectionConfig',
           include: ['tests/connectionConfig.test.ts'],
           globals: false,

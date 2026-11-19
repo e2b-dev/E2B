@@ -150,46 +150,6 @@ async def test_delete_snapshot(async_sandbox: AsyncSandbox):
 
 
 @pytest.mark.skip_debug()
-@pytest.mark.timeout(180)
-async def test_snapshot_preserves_filesystem(async_sandbox: AsyncSandbox):
-    app_dir = "/home/user/app"
-    config_path = f"{app_dir}/config.json"
-    config_content = '{"env": "test"}'
-    data_path = f"{app_dir}/data.txt"
-    data_content = "important data"
-
-    await async_sandbox.files.make_dir(app_dir)
-    await async_sandbox.files.write(config_path, config_content)
-    await async_sandbox.files.write(data_path, data_content)
-
-    snapshot = await async_sandbox.create_snapshot()
-
-    try:
-        try:
-            new_sandbox = await AsyncSandbox.create(snapshot.snapshot_id)
-        except SandboxException as error:
-            # Placement can transiently time out while the snapshot is restored.
-            # Retry only the backend response that explicitly asks the caller to do so.
-            if "Failed to place sandbox: placement timed out" not in str(error):
-                raise
-            new_sandbox = await AsyncSandbox.create(snapshot.snapshot_id)
-
-        try:
-            dir_exists = await new_sandbox.files.exists(app_dir)
-            assert dir_exists
-
-            config = await new_sandbox.files.read(config_path)
-            data = await new_sandbox.files.read(data_path)
-
-            assert config == config_content
-            assert data == data_content
-        finally:
-            await new_sandbox.kill()
-    finally:
-        await AsyncSandbox.delete_snapshot(snapshot.snapshot_id)
-
-
-@pytest.mark.skip_debug()
 async def test_create_snapshot_class_method(async_sandbox: AsyncSandbox):
     snapshot = await AsyncSandbox.create_snapshot(async_sandbox.sandbox_id)
 

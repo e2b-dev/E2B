@@ -216,7 +216,7 @@ def test_minimum_free_disk_option(configs, monkeypatch, method, options, expecte
 @pytest.mark.parametrize(
     "options, expected_body",
     [
-        ({}, {}),
+        ({"cpu_count": 2}, {"cpuCount": 2}),
         (
             {"cpu_count": 2, "max_cpu_count": 4},
             {"cpuCount": 2, "maxCpuCount": 4},

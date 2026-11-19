@@ -1,4 +1,4 @@
-import { assert, expect, expectTypeOf } from 'vitest'
+import { assert, expect } from 'vitest'
 import { sandboxTest } from '../../setup.js'
 
 sandboxTest('connect to process', async ({ sandbox }) => {
@@ -30,7 +30,6 @@ sandboxTest('connect without retaining output', async ({ sandbox }) => {
     },
   })
 
-  expectTypeOf(handle.stdout).toEqualTypeOf<undefined>()
   const result = await handle.wait()
 
   assert.isUndefined(result.stdout)

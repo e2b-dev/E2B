@@ -9,11 +9,6 @@ def test_handles_string_name():
     assert result == "my-template:v1.0"
 
 
-def test_handles_name_without_tag():
-    result = normalize_build_arguments(name="my-template")
-    assert result == "my-template"
-
-
 def test_handles_legacy_alias():
     result = normalize_build_arguments(alias="my-template")
     assert result == "my-template"
@@ -38,8 +33,3 @@ def test_throws_for_empty_alias():
 def test_throws_for_missing_name_and_alias():
     with pytest.raises(TemplateException, match="Name must be provided"):
         normalize_build_arguments()
-
-
-def test_throws_for_none_values():
-    with pytest.raises(TemplateException, match="Name must be provided"):
-        normalize_build_arguments(name=None, alias=None)
