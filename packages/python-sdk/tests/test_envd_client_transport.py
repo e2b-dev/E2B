@@ -208,7 +208,8 @@ def test_rpc_clients_run_on_the_shared_pool(test_api_key, monkeypatch, http_vers
     client_sync.create_rpc_client(ProcessClientSync, "https://sandbox.e2b.app", config)
     client_async.create_rpc_client(ProcessClient, "https://sandbox.e2b.app", config)
 
-    assert wrapped == [pool, async_pool]
+    # The control-plane routing layer sits between them for a routed config.
+    assert [routing._inner for routing in wrapped] == [pool, async_pool]
 
 
 def test_shared_pool_retries_connects():

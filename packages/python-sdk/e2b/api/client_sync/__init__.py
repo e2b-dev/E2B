@@ -24,6 +24,12 @@ from e2b.api import (
     pool_max_idle_per_host,
     proxy_to_config,
 )
+from e2b.plane_routing import (
+    PlaneRoutingTransport,
+    EnvdPlaneRoutingTransport,
+    envd_plane_routing,
+    plane_key,
+)
 from e2b.connection_config import (
     DEFAULT_HTTP_VERSION,
     READ_TIMEOUT,
@@ -33,11 +39,12 @@ from e2b.connection_config import (
 
 
 def get_api_client(config: ConnectionConfig, **kwargs) -> ApiClient:
-    return ApiClient(
-        config,
-        transport=RetryableTransport(get_transport(config), config.retries),
-        **kwargs,
+    transport: httpx.BaseTransport = RetryableTransport(
+        get_transport(config), config.retries
     )
+    if plane_key(config) is not None:
+        transport = PlaneRoutingTransport(transport, config)
+    return ApiClient(config, transport=transport, **kwargs)
 
 
 class ConnectionRetryTransport(SyncRetryTransport):
@@ -228,14 +235,18 @@ def get_envd_api(
     checks) on the shared transports. The client itself is a cheap stateless
     wrapper — one per consumer is fine — while the pooled transport underneath
     is shared and thread-safe."""
+    transport: httpx.BaseTransport = get_transport(
+        config,
+        http_version=http_version,
+        for_streaming=for_streaming,
+        retry_connect=retry_connect,
+    )
+    routing = envd_plane_routing(config)
+    if routing.key is not None:
+        transport = EnvdPlaneRoutingTransport(transport, routing)
     return httpx.Client(
         base_url=base_url,
-        transport=get_transport(
-            config,
-            http_version=http_version,
-            for_streaming=for_streaming,
-            retry_connect=retry_connect,
-        ),
+        transport=transport,
         headers=config.sandbox_headers,
         event_hooks=make_logging_event_hooks(config.logger),
     )
