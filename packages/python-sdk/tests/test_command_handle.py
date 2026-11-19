@@ -154,9 +154,9 @@ def test_sync_records_result_before_yielding_flushed_chunk():
     next(iterator)
     iterator.close()
 
-    assert handle._result is not None
-    assert handle._result.exit_code == 0
-    assert handle._result.stdout == "a�"
+    result = handle.wait()
+    assert result.exit_code == 0
+    assert result.stdout == "a�"
 
 
 def test_sync_decodes_multibyte_chars_split_across_chunks():

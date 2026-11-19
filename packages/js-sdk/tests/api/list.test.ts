@@ -124,11 +124,11 @@ sandboxTest.skipIf(isDebug)(
 sandboxTest.skipIf(isDebug)(
   'paginate paused sandboxes',
   async ({ sandbox, sandboxTestId }) => {
-    await sandbox.betaPause()
+    await sandbox.pause()
 
     // Create extra paused sandbox
     const extraSbx = await Sandbox.create({ metadata: { sandboxTestId } })
-    await extraSbx.betaPause()
+    await extraSbx.pause()
 
     try {
       // Test pagination with limit
@@ -167,7 +167,7 @@ sandboxTest.skipIf(isDebug)(
     const extraSbx = await Sandbox.create({ metadata: { sandboxTestId } })
 
     // Pause the extra sandbox
-    await extraSbx.betaPause()
+    await extraSbx.pause()
 
     try {
       // Test pagination with limit

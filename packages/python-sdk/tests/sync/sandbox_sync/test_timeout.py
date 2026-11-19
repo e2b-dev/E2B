@@ -19,7 +19,9 @@ def test_shorten_then_lengthen_timeout(sandbox):
     sleep(1)
     sandbox.set_timeout(10)
     sleep(6)
-    sandbox.is_running()
+
+    is_running = sandbox.is_running()
+    assert is_running is True
 
 
 @pytest.mark.skip_debug()

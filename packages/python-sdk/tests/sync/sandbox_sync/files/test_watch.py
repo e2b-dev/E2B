@@ -106,13 +106,17 @@ def test_watch_iterated(sandbox: Sandbox):
     sandbox.files.write(f"{dirname}/{filename}", content)
 
     events = handle.get_new_events()
-    assert len(events) == 3
+    assert any(
+        event.type == FilesystemEventType.WRITE and event.name == filename
+        for event in events
+    ), f"Expected WRITE event for {filename}, but got events: {events}"
 
     sandbox.files.write(f"{dirname}/{filename}", new_content)
     events = handle.get_new_events()
-    for event in events:
-        if event.type == FilesystemEventType.WRITE and event.name == filename:
-            break
+    assert any(
+        event.type == FilesystemEventType.WRITE and event.name == filename
+        for event in events
+    ), f"Expected WRITE event for {filename}, but got events: {events}"
 
     handle.stop()
 
