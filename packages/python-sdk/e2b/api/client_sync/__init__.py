@@ -14,6 +14,7 @@ from pyqwest.httpx import PyqwestTransport
 from pyqwest.middleware.retry import RetryMode, SyncRetryTransport
 
 from e2b.retry import RetryableTransport
+from e2b.deadline import PyqwestDeadlineTransport
 from e2b.api import (
     ApiClient,
     ProxyConfig,
@@ -170,7 +171,7 @@ def get_httpx_transport(
     with _transport_lock:
         transport = _httpx_transports.get(key)
         if transport is None:
-            transport = PyqwestTransport(pool)
+            transport = PyqwestDeadlineTransport(pool)
             _httpx_transports[key] = transport
         return transport
 
