@@ -18,6 +18,7 @@ from pyqwest import Client, Request, Response, Transport
 from e2b.api import proxy_to_config
 from e2b.api.client_async import get_pyqwest_transport
 from e2b.connection_config import ConnectionConfig
+from e2b.plane_routing import AsyncEnvdPlaneRoutingRpcTransport, envd_plane_routing
 from e2b.envd.client_shared import (
     ENVD_JSON_CODEC,
     ENVD_RPC_COMPRESSION,
@@ -79,13 +80,13 @@ def create_rpc_client(
     backoff counts against the request timeout, and the normalization sits
     outside the retries so it converts the settled response once.
     """
-    http_client = Client(
-        PlainHTTPErrorTransport(
-            get_pyqwest_transport(
-                proxy_to_config(config.proxy), http_version=config.http_version
-            )
-        )
+    transport: Transport = get_pyqwest_transport(
+        proxy_to_config(config.proxy), http_version=config.http_version
     )
+    routing = envd_plane_routing(config)
+    if routing.key is not None:
+        transport = AsyncEnvdPlaneRoutingRpcTransport(transport, routing)
+    http_client = Client(PlainHTTPErrorTransport(transport))
     return client_cls(
         base_url,
         codec=ENVD_JSON_CODEC,

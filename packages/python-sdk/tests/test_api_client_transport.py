@@ -16,6 +16,12 @@ from transport_caches import reset_transport_caches
 import e2b.api.client_async as api_client_async
 import e2b.api.client_sync as api_client_sync
 from e2b.retry import AsyncRetryableTransport, RetryableTransport
+from e2b.plane_routing import (
+    AsyncEnvdPlaneRoutingTransport,
+    AsyncPlaneRoutingTransport,
+    EnvdPlaneRoutingTransport,
+    PlaneRoutingTransport,
+)
 from e2b.api import (
     pool_idle_timeout,
     pool_max_idle_per_host,
@@ -32,6 +38,21 @@ from e2b.api.client_sync import get_envd_api as get_sync_envd_api
 from e2b.api.client_sync import get_pyqwest_transport as get_sync_pyqwest_transport
 from e2b.api.client_sync import get_transport as get_sync_transport
 from e2b.connection_config import READ_TIMEOUT, ConnectionConfig
+
+
+def below_routing(transport):
+    """The transport under the control-plane routing layer, which wraps the
+    clients of a routed config (an API key on a supported domain, as here)."""
+    assert isinstance(
+        transport,
+        (
+            PlaneRoutingTransport,
+            AsyncPlaneRoutingTransport,
+            EnvdPlaneRoutingTransport,
+            AsyncEnvdPlaneRoutingTransport,
+        ),
+    )
+    return transport.transport
 
 
 def run_in_worker_thread(fn):
@@ -51,9 +72,10 @@ def test_sync_api_client_proxy_uses_explicit_transport(test_api_key):
 
     try:
         assert "proxy" not in api_client._httpx_args
-        assert isinstance(httpx_client._transport, RetryableTransport)
-        assert httpx_client._transport.transport is get_sync_transport(config)
-        assert isinstance(httpx_client._transport.transport, PyqwestTransport)
+        retrying = below_routing(httpx_client._transport)
+        assert isinstance(retrying, RetryableTransport)
+        assert retrying.transport is get_sync_transport(config)
+        assert isinstance(retrying.transport, PyqwestTransport)
         assert httpx_client._mounts == {}
     finally:
         httpx_client.close()
@@ -73,13 +95,15 @@ def test_sync_retry_policy_wraps_but_does_not_split_cached_transport(test_api_ke
     )
 
     try:
-        assert isinstance(default_httpx._transport, RetryableTransport)
-        assert default_httpx._transport.retries == 3
-        assert isinstance(retrying_httpx._transport, RetryableTransport)
-        assert retrying_httpx._transport.retries == 2
-        assert retrying_httpx._transport.transport is default_httpx._transport.transport
+        default_retrying = below_routing(default_httpx._transport)
+        retrying = below_routing(retrying_httpx._transport)
+        assert isinstance(default_retrying, RetryableTransport)
+        assert default_retrying.retries == 3
+        assert isinstance(retrying, RetryableTransport)
+        assert retrying.retries == 2
+        assert retrying.transport is default_retrying.transport
         assert isinstance(raw_transport, PyqwestTransport)
-        assert raw_transport is default_httpx._transport.transport
+        assert raw_transport is default_retrying.transport
     finally:
         retrying_httpx.close()
         default_httpx.close()
@@ -194,12 +218,13 @@ def test_sync_transports_follow_the_http_version_option(test_api_key):
         assert get_sync_transport(http1, http_version="2") is get_sync_transport(
             default
         )
-        assert get_sync_envd_api(http1, "https://sandbox.e2b.app")._transport is (
-            get_sync_transport(http1)
-        )
+        assert below_routing(
+            get_sync_envd_api(http1, "https://sandbox.e2b.app")._transport
+        ) is get_sync_transport(http1)
         api_client = get_sync_api_client(http1).get_httpx_client()
-        assert isinstance(api_client._transport, RetryableTransport)
-        assert api_client._transport.transport is get_sync_transport(http1)
+        retrying = below_routing(api_client._transport)
+        assert isinstance(retrying, RetryableTransport)
+        assert retrying.transport is get_sync_transport(http1)
         api_client.close()
     finally:
         reset_transport_caches()
@@ -291,8 +316,10 @@ def test_sync_envd_api_client_wiring(test_api_key):
 
     try:
         assert client.base_url == "https://sandbox.e2b.app"
-        assert client._transport is get_sync_transport(config)
-        assert streaming._transport is get_sync_transport(config, for_streaming=True)
+        assert below_routing(client._transport) is get_sync_transport(config)
+        assert below_routing(streaming._transport) is get_sync_transport(
+            config, for_streaming=True
+        )
         for header, value in config.sandbox_headers.items():
             assert client.headers[header] == value
     finally:
@@ -333,9 +360,10 @@ async def test_async_api_client_proxy_uses_explicit_transport(test_api_key):
 
     try:
         assert "proxy" not in api_client._httpx_args
-        assert isinstance(httpx_client._transport, AsyncRetryableTransport)
-        assert httpx_client._transport.transport is get_async_transport(config)
-        assert isinstance(httpx_client._transport.transport, AsyncPyqwestTransport)
+        retrying = below_routing(httpx_client._transport)
+        assert isinstance(retrying, AsyncRetryableTransport)
+        assert retrying.transport is get_async_transport(config)
+        assert isinstance(retrying.transport, AsyncPyqwestTransport)
         assert httpx_client._mounts == {}
     finally:
         await httpx_client.aclose()
@@ -423,12 +451,13 @@ async def test_async_transports_follow_the_http_version_option(test_api_key):
         assert get_async_transport(http1, http_version="2") is get_async_transport(
             default
         )
-        assert get_async_envd_api(http1, "https://sandbox.e2b.app")._transport is (
-            get_async_transport(http1)
-        )
+        assert below_routing(
+            get_async_envd_api(http1, "https://sandbox.e2b.app")._transport
+        ) is get_async_transport(http1)
         api_client = get_async_api_client(http1).get_async_httpx_client()
-        assert isinstance(api_client._transport, AsyncRetryableTransport)
-        assert api_client._transport.transport is get_async_transport(http1)
+        retrying = below_routing(api_client._transport)
+        assert isinstance(retrying, AsyncRetryableTransport)
+        assert retrying.transport is get_async_transport(http1)
         await api_client.aclose()
     finally:
         reset_transport_caches()
@@ -513,7 +542,7 @@ async def test_async_envd_api_client_wiring(test_api_key):
 
     try:
         assert client.base_url == "https://sandbox.e2b.app"
-        assert client._transport is get_async_transport(config)
+        assert below_routing(client._transport) is get_async_transport(config)
         for header, value in config.sandbox_headers.items():
             assert client.headers[header] == value
     finally:
