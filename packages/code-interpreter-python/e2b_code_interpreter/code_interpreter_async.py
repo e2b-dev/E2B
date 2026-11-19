@@ -269,7 +269,7 @@ class AsyncSandbox(BaseAsyncSandbox):
 
         :param cwd: Set the current working directory for the context, defaults to `/home/user`
         :param language: Language of the context. If not specified, defaults to Python
-        :param request_timeout: Timeout for the request in **milliseconds**
+        :param request_timeout: Timeout for the request in **seconds**
 
         :return: Context object
         """
