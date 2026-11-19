@@ -1,12 +1,15 @@
+from typing import Optional
 from unittest.mock import Mock
 
+import httpx
 import pytest
 from packaging.version import Version
 
 from e2b import Sandbox
-from e2b.api import SandboxCreateResponse
+from e2b.api import ApiClient, SandboxCreateResponse
 from e2b.connection_config import ConnectionConfig
 import e2b.sandbox_sync.main as sandbox_sync_main
+import e2b.sandbox_sync.sandbox_api as sandbox_sync_api
 
 BASE_DOMAIN = "base.e2b.dev"
 BASE_REQUEST_TIMEOUT = 11
@@ -14,7 +17,7 @@ BASE_DEBUG = False
 BASE_HEADERS = {"X-Test": "base"}
 
 
-def create_sandbox(monkeypatch, api_key: str) -> Sandbox:
+def create_sandbox(monkeypatch, api_key: str, api_url: Optional[str] = None) -> Sandbox:
     monkeypatch.setattr(
         sandbox_sync_main, "Filesystem", lambda *args, **kwargs: object()
     )
@@ -31,6 +34,7 @@ def create_sandbox(monkeypatch, api_key: str) -> Sandbox:
         connection_config=ConnectionConfig(
             api_key=api_key,
             domain=BASE_DOMAIN,
+            api_url=api_url,
             request_timeout=BASE_REQUEST_TIMEOUT,
             debug=BASE_DEBUG,
             api_headers=BASE_HEADERS,
@@ -113,3 +117,52 @@ def test_connect_sets_stable_host_routing_headers(monkeypatch, test_api_key):
         ConnectionConfig.envd_port
     )
     assert sandbox.connection_config.sandbox_headers["X-Access-Token"] == "tok"
+
+
+def record_api_request_urls(monkeypatch) -> list:
+    urls = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        urls.append(str(request.url))
+        return httpx.Response(204)
+
+    monkeypatch.setattr(
+        sandbox_sync_api,
+        "get_api_client",
+        lambda config, **kwargs: ApiClient(
+            config, transport=httpx.MockTransport(handler), **kwargs
+        ),
+    )
+    return urls
+
+
+@pytest.mark.skip_debug()
+def test_pause_uses_bound_domain(monkeypatch, test_api_key):
+    urls = record_api_request_urls(monkeypatch)
+
+    sandbox = create_sandbox(monkeypatch, test_api_key)
+    sandbox.pause()
+
+    assert urls == ["https://api.base.e2b.dev/sandboxes/sbx-test/pause"]
+
+
+@pytest.mark.skip_debug()
+def test_pause_uses_per_call_domain(monkeypatch, test_api_key):
+    urls = record_api_request_urls(monkeypatch)
+
+    sandbox = create_sandbox(monkeypatch, test_api_key)
+    sandbox.pause(domain="override.e2b.dev")
+
+    assert urls == ["https://api.override.e2b.dev/sandboxes/sbx-test/pause"]
+
+
+@pytest.mark.skip_debug()
+def test_pause_keeps_explicit_api_url_over_per_call_domain(monkeypatch, test_api_key):
+    urls = record_api_request_urls(monkeypatch)
+
+    sandbox = create_sandbox(
+        monkeypatch, test_api_key, api_url="https://api.custom.e2b.dev"
+    )
+    sandbox.pause(domain="override.e2b.dev")
+
+    assert urls == ["https://api.custom.e2b.dev/sandboxes/sbx-test/pause"]

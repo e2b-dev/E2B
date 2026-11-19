@@ -1,6 +1,17 @@
-import { afterEach, assert, beforeEach, describe, test, vi } from 'vitest'
+import {
+  afterAll,
+  afterEach,
+  assert,
+  beforeAll,
+  beforeEach,
+  describe,
+  test,
+  vi,
+} from 'vitest'
+import { http, HttpResponse } from 'msw'
 
 import { Sandbox } from '../../src'
+import { setupMockApi } from '../mockApi'
 import { SandboxApi } from '../../src/sandbox/sandboxApi'
 import { TEST_API_KEY } from '../setup'
 
@@ -15,7 +26,7 @@ const baseConfig = {
   apiHeaders: { 'X-Test': 'base' },
 }
 
-function createSandbox() {
+function createSandbox(opts?: { apiUrl?: string }) {
   return new Sandbox({
     sandboxId: 'sbx-test',
     sandboxDomain: 'sandbox.e2b.dev',
@@ -23,8 +34,63 @@ function createSandbox() {
     envdAccessToken: 'tok',
     trafficAccessToken: 'tok',
     ...baseConfig,
+    ...opts,
   })
 }
+
+const pauseRequestUrls: string[] = []
+const mockApi = setupMockApi(
+  http.post('*/sandboxes/:sandboxID/pause', ({ request }) => {
+    pauseRequestUrls.push(request.url)
+    return new HttpResponse(null, { status: 204 })
+  })
+)
+
+describe('Sandbox API host', () => {
+  beforeAll(() => mockApi.listen({ onUnhandledRequest: 'error' }))
+  afterAll(() => mockApi.close())
+  afterEach(() => {
+    pauseRequestUrls.length = 0
+  })
+
+  test('uses the bound domain', async () => {
+    await createSandbox().pause()
+
+    assert.deepEqual(pauseRequestUrls, [
+      'https://api.base.e2b.dev/sandboxes/sbx-test/pause',
+    ])
+  })
+
+  test('uses a per-call domain', async () => {
+    await createSandbox().pause({ domain: 'override.e2b.dev' })
+
+    assert.deepEqual(pauseRequestUrls, [
+      'https://api.override.e2b.dev/sandboxes/sbx-test/pause',
+    ])
+  })
+
+  test('uses a per-call domain when built from a resolved config', async () => {
+    // Sandbox.create and Sandbox.connect pass the resolved config, whose
+    // apiUrl is derived from the bound domain.
+    await createSandbox({ apiUrl: 'https://api.base.e2b.dev' }).pause({
+      domain: 'override.e2b.dev',
+    })
+
+    assert.deepEqual(pauseRequestUrls, [
+      'https://api.override.e2b.dev/sandboxes/sbx-test/pause',
+    ])
+  })
+
+  test('keeps an explicit apiUrl over a per-call domain', async () => {
+    await createSandbox({ apiUrl: 'https://api.custom.e2b.dev' }).pause({
+      domain: 'override.e2b.dev',
+    })
+
+    assert.deepEqual(pauseRequestUrls, [
+      'https://api.custom.e2b.dev/sandboxes/sbx-test/pause',
+    ])
+  })
+})
 
 describe('Sandbox API config propagation', () => {
   beforeEach(() => {
