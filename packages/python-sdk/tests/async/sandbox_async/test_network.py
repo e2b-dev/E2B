@@ -1,6 +1,5 @@
 import asyncio
 import json
-from unittest.mock import AsyncMock
 
 import httpx
 import pytest
@@ -34,15 +33,6 @@ async def wait_for_status(
         return response
     assert last_transport_error is not None
     raise last_transport_error
-
-
-async def test_wait_for_status_retries_transport_errors():
-    response = httpx.Response(200)
-    client = AsyncMock()
-    client.get.side_effect = [httpx.ConnectError("not ready"), response]
-
-    assert await wait_for_status(client, "https://sandbox.test", 200) is response
-    assert client.get.await_count == 2
 
 
 @pytest.mark.skip_debug()

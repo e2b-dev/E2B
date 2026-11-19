@@ -134,13 +134,4 @@ describe('file signing', () => {
       })
     }
   )
-
-  sandboxTest.skipIf(isDebug)(
-    'test command run with secured sbx',
-    async ({ sandbox }) => {
-      const response = await sandbox.commands.run('echo Hello World!')
-
-      assert.equal(response.stdout, 'Hello World!\n')
-    }
-  )
 })

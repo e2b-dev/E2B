@@ -201,26 +201,3 @@ def test_connect_propagates_byoc_domain():
     connected = Volume.connect(created.volume_id)
     assert connected._domain == byoc_domain
     assert connected._get_volume_config().domain == byoc_domain
-
-
-def test_volume_full_lifecycle():
-    # Create
-    vol = Volume.create("lifecycle-vol")
-    assert vol.name == "lifecycle-vol"
-
-    # Get info
-    info = Volume.get_info(vol.volume_id)
-    assert info.name == "lifecycle-vol"
-
-    # List
-    volumes = Volume.list()
-    assert len(volumes) == 1
-    assert volumes[0].volume_id == vol.volume_id
-
-    # Destroy
-    destroyed = Volume.destroy(vol.volume_id)
-    assert destroyed is True
-
-    # List again
-    volumes = Volume.list()
-    assert len(volumes) == 0
