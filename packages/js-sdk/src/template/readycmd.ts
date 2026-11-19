@@ -105,7 +105,7 @@ export function waitForFile(filename: string): ReadyCmd {
 
 /**
  * Wait for a specified timeout before considering the sandbox ready.
- * Uses `sleep` command to wait for a fixed duration.
+ * Uses `sleep` command to wait for a fixed duration, preserving fractional seconds.
  *
  * @param timeout Time to wait in milliseconds (minimum: 1000ms / 1 second)
  * @returns ReadyCmd that waits for the specified duration
@@ -121,7 +121,7 @@ export function waitForFile(filename: string): ReadyCmd {
  */
 export function waitForTimeout(timeout: number): ReadyCmd {
   // convert to seconds, but ensure minimum of 1 second
-  const seconds = Math.max(1, Math.floor(timeout / 1000))
+  const seconds = Math.max(1, timeout / 1000)
   const cmd = `sleep ${seconds}`
   return new ReadyCmd(cmd)
 }
