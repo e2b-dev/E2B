@@ -58,11 +58,11 @@ export function planeKey(
  */
 export function learnPlane(
   key: string,
-  requestUrl: string,
+  requestURL: string,
   response: Response,
   now = Date.now()
 ) {
-  if (!supportedApiDomain(new URL(requestUrl).hostname)) {
+  if (!supportedApiDomain(new URL(requestURL).hostname)) {
     return
   }
 
@@ -140,7 +140,7 @@ function moveHost(url: string, from: string, to: string): URL | undefined {
 
 type FetchArgs = { input: RequestInfo | URL; init?: RequestInit }
 
-function inputUrl(input: RequestInfo | URL): string {
+function inputURL(input: RequestInfo | URL): string {
   return input instanceof Request ? input.url : input.toString()
 }
 
@@ -159,7 +159,7 @@ function isReplayable({ input, init }: FetchArgs): boolean {
   )
 }
 
-function withUrl({ input, init }: FetchArgs, url: URL): FetchArgs {
+function withURL({ input, init }: FetchArgs, url: URL): FetchArgs {
   if (!(input instanceof Request)) {
     return { input: url, init }
   }
@@ -288,12 +288,12 @@ export class EnvdPlaneRouting {
       this.key && now >= this.configuredUntil
         ? currentPlane(this.key, now)
         : undefined
-    const url = plane && moveHost(inputUrl(args.input), this.domain, plane)
+    const url = plane && moveHost(inputURL(args.input), this.domain, plane)
     if (!plane || !url) {
       return fetchImpl(args.input, args.init)
     }
 
-    const routed = withUrl(args, url)
+    const routed = withURL(args, url)
     if (!isReplayable(args)) {
       return fetchImpl(routed.input, routed.init)
     }

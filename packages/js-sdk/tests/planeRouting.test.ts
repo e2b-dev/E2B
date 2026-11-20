@@ -33,7 +33,7 @@ function connectionRefused() {
   })
 }
 
-function requestUrl(call: unknown[]): string {
+function requestURL(call: unknown[]): string {
   const [input] = call
   return input instanceof Request ? input.url : String(input)
 }
@@ -139,7 +139,7 @@ describe('withApiPlaneRouting', () => {
       })
     )
 
-    expect(requestUrl(fetchImpl.mock.calls[0])).toBe(
+    expect(requestURL(fetchImpl.mock.calls[0])).toBe(
       'https://api.e2b.app/sandboxes'
     )
     const second = fetchImpl.mock.calls[1][0] as Request
@@ -171,7 +171,7 @@ describe('withApiPlaneRouting', () => {
       )
 
       expect(response.status).toBe(200)
-      expect(fetchImpl.mock.calls.map(requestUrl)).toEqual([
+      expect(fetchImpl.mock.calls.map(requestURL)).toEqual([
         'https://api.e2b.app/sandboxes',
         'https://api.e2b-foxtrot.dev/sandboxes',
         'https://api.e2b.app/sandboxes',
@@ -211,7 +211,7 @@ describe('withApiPlaneRouting', () => {
     vi.advanceTimersByTime(PLANE_TTL_MS)
     await routed(new Request('https://api.e2b.app/b'))
 
-    expect(fetchImpl.mock.calls.map(requestUrl)).toEqual([
+    expect(fetchImpl.mock.calls.map(requestURL)).toEqual([
       'https://api.e2b.app/a',
       'https://api.e2b.app/b',
     ])
@@ -251,7 +251,7 @@ describe('EnvdPlaneRouting', () => {
 
     await routed(from, { method: 'POST', body: new Uint8Array([1]) })
 
-    expect(requestUrl(fetchImpl.mock.calls[0])).toBe(to)
+    expect(requestURL(fetchImpl.mock.calls[0])).toBe(to)
   })
 
   test('leaves hosts outside the configured domain alone', async () => {
@@ -260,7 +260,7 @@ describe('EnvdPlaneRouting', () => {
 
     await routed('https://sandbox.example.com/files')
 
-    expect(requestUrl(fetchImpl.mock.calls[0])).toBe(
+    expect(requestURL(fetchImpl.mock.calls[0])).toBe(
       'https://sandbox.example.com/files'
     )
   })
@@ -279,7 +279,7 @@ describe('EnvdPlaneRouting', () => {
     await routed('https://sandbox.e2b.app/b')
 
     expect(response.status).toBe(200)
-    expect(fetchImpl.mock.calls.map(requestUrl)).toEqual([
+    expect(fetchImpl.mock.calls.map(requestURL)).toEqual([
       'https://sandbox.e2b-foxtrot.dev/a',
       'https://sandbox.e2b.app/a',
       'https://sandbox.e2b.app/b',
@@ -295,7 +295,7 @@ describe('EnvdPlaneRouting', () => {
 
     await routed('https://sandbox.e2b.app/a')
 
-    expect(fetchImpl.mock.calls.map(requestUrl)).toEqual([
+    expect(fetchImpl.mock.calls.map(requestURL)).toEqual([
       'https://sandbox.e2b-foxtrot.dev/a',
       'https://sandbox.e2b.app/a',
     ])
@@ -308,7 +308,7 @@ describe('EnvdPlaneRouting', () => {
     await routed('https://sandbox.e2b.app/a')
     await routed('https://sandbox.e2b.app/b')
 
-    expect(requestUrl(fetchImpl.mock.calls[2])).toBe(
+    expect(requestURL(fetchImpl.mock.calls[2])).toBe(
       'https://sandbox.e2b-foxtrot.dev/b'
     )
   })
@@ -332,7 +332,7 @@ describe('EnvdPlaneRouting', () => {
 
     expect(response.status).toBe(502)
     expect(fetchImpl).toHaveBeenCalledTimes(1)
-    expect(requestUrl(fetchImpl.mock.calls[0])).toBe(
+    expect(requestURL(fetchImpl.mock.calls[0])).toBe(
       'https://sandbox.e2b-foxtrot.dev/files'
     )
   })
