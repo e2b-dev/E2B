@@ -4,16 +4,29 @@ import { runtime } from './utils'
 import { resolveRetries } from './retry'
 import { InvalidArgumentError } from './errors'
 
-// Remove once all deployments support sandbox subdomains
+// E2B's domains. Each serves the stable `sandbox.<domain>` host, and the SDK
+// follows the control plane E2B's API proxy names only to one of them (see
+// planeRouting.ts).
 const supportedDomains = [
   'e2b.app',
   'e2b.dev',
   'e2b.pro',
   'e2b-staging.dev',
+  'e2b-foxtrot.dev',
   'e2b-tango.dev',
   'e2b-juliett.dev',
   'foxtrot-2.e2b.dev',
+  'foxtrot-3.e2b.dev',
 ]
+
+/**
+ * Whether `domain` is one of E2B's domains the SDK supports.
+ *
+ * @internal
+ */
+export function isSupportedDomain(domain: string): boolean {
+  return supportedDomains.includes(domain)
+}
 
 export const REQUEST_TIMEOUT_MS = 60_000 // 60 seconds
 export const STREAM_INPUT_TIMEOUT_MS = 60_000 // 60 seconds
@@ -574,7 +587,7 @@ export class ConnectionConfig {
     const sandboxDomain = opts.sandboxDomain ?? this.domain
     // The stable sandbox host is only guaranteed for E2B prod; the various other hosted domains may not serve sandbox.<domain> yet and will follow up once those are updated.
     // Issue with cors from browser so holding off on using in browser as well.
-    if (runtime !== 'browser' && supportedDomains.includes(sandboxDomain)) {
+    if (runtime !== 'browser' && isSupportedDomain(sandboxDomain)) {
       return `https://sandbox.${sandboxDomain}`
     }
 
