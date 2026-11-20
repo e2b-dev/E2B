@@ -56,6 +56,7 @@ class Template(TemplateBase):
         cpu_count: Optional[int] = None,
         max_cpu_count: Optional[int] = None,
         memory_mb: Optional[int] = None,
+        max_memory_mb: Optional[int] = None,
         min_free_disk_mb: Optional[int] = None,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
@@ -71,6 +72,7 @@ class Template(TemplateBase):
         :param cpu_count: Number of CPUs allocated to the sandbox.
         :param max_cpu_count: Maximum number of CPUs allocated to the sandbox. Setting it makes the template resizable. Must be at least ``cpu_count``.
         :param memory_mb: Amount of memory in MB allocated to the sandbox.
+        :param max_memory_mb: Memory in MiB a sandbox can grow to. Setting it makes the template's memory resizable: sandboxes boot with ``memory_mb`` and can ask for more on create. Must be at least ``memory_mb``, and the difference a multiple of 128 MiB.
         :param min_free_disk_mb: Requested minimum free space after the build steps, in MiB. Growth is best effort and the filesystem is never shrunk. Omit to use the team default or set to 0 to request no growth.
         :param skip_cache: If True, forces a complete rebuild ignoring cache
         :param on_build_logs: Callback function to receive build logs during the build process
@@ -95,6 +97,7 @@ class Template(TemplateBase):
             cpu_count=cpu_count,
             max_cpu_count=max_cpu_count,
             memory_mb=memory_mb,
+            max_memory_mb=max_memory_mb,
             min_free_disk_mb=min_free_disk_mb,
             tags=tags,
         )
@@ -226,6 +229,7 @@ class Template(TemplateBase):
         cpu_count: Optional[int] = None,
         max_cpu_count: Optional[int] = None,
         memory_mb: Optional[int] = None,
+        max_memory_mb: Optional[int] = None,
         min_free_disk_mb: Optional[int] = None,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
@@ -241,6 +245,7 @@ class Template(TemplateBase):
         :param cpu_count: Number of CPUs allocated to the sandbox.
         :param max_cpu_count: Maximum number of CPUs allocated to the sandbox. Setting it makes the template resizable. Must be at least ``cpu_count``.
         :param memory_mb: Amount of memory in MB allocated to the sandbox.
+        :param max_memory_mb: Memory in MiB a sandbox can grow to. Setting it makes the template's memory resizable: sandboxes boot with ``memory_mb`` and can ask for more on create. Must be at least ``memory_mb``, and the difference a multiple of 128 MiB.
         :param min_free_disk_mb: Requested minimum free space after the build steps, in MiB. Growth is best effort and the filesystem is never shrunk. Omit to use the team default or set to 0 to request no growth.
         :param skip_cache: If True, forces a complete rebuild ignoring cache
         :param on_build_logs: Callback function to receive build logs during the build process
@@ -289,6 +294,7 @@ class Template(TemplateBase):
                 cpu_count=cpu_count,
                 max_cpu_count=max_cpu_count,
                 memory_mb=memory_mb,
+                max_memory_mb=max_memory_mb,
                 min_free_disk_mb=min_free_disk_mb,
                 skip_cache=skip_cache,
                 on_build_logs=on_build_logs,
@@ -336,6 +342,7 @@ class Template(TemplateBase):
         cpu_count: Optional[int] = None,
         max_cpu_count: Optional[int] = None,
         memory_mb: Optional[int] = None,
+        max_memory_mb: Optional[int] = None,
         min_free_disk_mb: Optional[int] = None,
         skip_cache: bool = False,
         on_build_logs: Optional[Callable[[LogEntry], None]] = None,
@@ -351,6 +358,7 @@ class Template(TemplateBase):
         :param cpu_count: Number of CPUs allocated to the sandbox.
         :param max_cpu_count: Maximum number of CPUs allocated to the sandbox. Setting it makes the template resizable. Must be at least ``cpu_count``.
         :param memory_mb: Amount of memory in MB allocated to the sandbox.
+        :param max_memory_mb: Memory in MiB a sandbox can grow to. Setting it makes the template's memory resizable: sandboxes boot with ``memory_mb`` and can ask for more on create. Must be at least ``memory_mb``, and the difference a multiple of 128 MiB.
         :param min_free_disk_mb: Requested minimum free space after the build steps, in MiB. Growth is best effort and the filesystem is never shrunk. Omit to use the team default or set to 0 to request no growth.
         :param skip_cache: If True, forces a complete rebuild ignoring cache
         :return: BuildInfo containing the template ID and build ID
@@ -389,6 +397,7 @@ class Template(TemplateBase):
             cpu_count=cpu_count,
             max_cpu_count=max_cpu_count,
             memory_mb=memory_mb,
+            max_memory_mb=max_memory_mb,
             min_free_disk_mb=min_free_disk_mb,
             skip_cache=skip_cache,
             on_build_logs=on_build_logs,
@@ -595,8 +604,9 @@ class Template(TemplateBase):
         :param name_or_id: Name or ID of one of your team's templates, without a tag
         :return: The template ID, names, visibility, `build_status` of the latest
             `default`-tagged build, build and spawn counts, timestamps, and
-            `default_build` (its build ID, status, `cpu_count`, `max_cpu_count`, memory
-            and disk sizes); `default_build` is `None` until a build is ready
+            `default_build` (its build ID, status, `cpu_count`, `max_cpu_count`,
+            `memory_mb`, `max_memory_mb` and disk size); `default_build` is `None`
+            until a build is ready
         :raises InvalidArgumentException: If `name_or_id` is not a name or ID, or includes a tag
         :raises TemplateNotFoundException: If the template is not found
 

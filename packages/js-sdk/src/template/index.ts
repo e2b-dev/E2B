@@ -449,8 +449,9 @@ export class TemplateBase
    * @param options Authentication options
    * @returns The template ID, names, visibility, `buildStatus` of the latest
    * `default`-tagged build, build and spawn counts, timestamps, and
-   * `defaultBuild` (its build ID, status, `cpuCount`, `maxCpuCount`, memory
-   * and disk sizes); `defaultBuild` is `undefined` until a build is ready
+   * `defaultBuild` (its build ID, status, `cpuCount`, `maxCpuCount`,
+   * `memoryMB`, `maxMemoryMB` and disk size); `defaultBuild` is `undefined`
+   * until a build is ready
    * @throws InvalidArgumentError if `nameOrId` is not a name or ID, or
    * includes a tag
    * @throws TemplateNotFoundError if the template is not found
@@ -1201,6 +1202,7 @@ export class TemplateBase
         cpuCount: options.cpuCount,
         maxCpuCount: options.maxCpuCount,
         memoryMB: options.memoryMB,
+        maxMemoryMB: options.maxMemoryMB,
         minFreeDiskMb: options.minFreeDiskMb,
       },
       config.getSignal(undefined, options.signal)

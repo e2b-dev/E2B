@@ -21,6 +21,7 @@ class TemplateBuildRequestV3:
         cpu_count (Union[Unset, int]): CPU cores for the sandbox
         max_cpu_count (Union[Unset, int]): CPU cores for the sandbox
         memory_mb (Union[Unset, int]): Memory for the sandbox in MiB
+        max_memory_mb (Union[Unset, int]): Memory for the sandbox in MiB
         min_free_disk_mb (Union[Unset, int]): Requested minimum free space after the template's build steps, in MiB.
             Omit to use the team's default. Set to 0 to request no minimum free-disk growth. The filesystem is never shrunk,
             including inherited or already-larger filesystems. Growth is best effort, so filesystem metadata can leave the
@@ -34,6 +35,7 @@ class TemplateBuildRequestV3:
     cpu_count: Union[Unset, int] = UNSET
     max_cpu_count: Union[Unset, int] = UNSET
     memory_mb: Union[Unset, int] = UNSET
+    max_memory_mb: Union[Unset, int] = UNSET
     min_free_disk_mb: Union[Unset, int] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -54,6 +56,8 @@ class TemplateBuildRequestV3:
 
         memory_mb = self.memory_mb
 
+        max_memory_mb = self.max_memory_mb
+
         min_free_disk_mb = self.min_free_disk_mb
 
         field_dict: dict[str, Any] = {}
@@ -73,6 +77,8 @@ class TemplateBuildRequestV3:
             field_dict["maxCpuCount"] = max_cpu_count
         if memory_mb is not UNSET:
             field_dict["memoryMB"] = memory_mb
+        if max_memory_mb is not UNSET:
+            field_dict["maxMemoryMB"] = max_memory_mb
         if min_free_disk_mb is not UNSET:
             field_dict["minFreeDiskMb"] = min_free_disk_mb
 
@@ -95,6 +101,8 @@ class TemplateBuildRequestV3:
 
         memory_mb = d.pop("memoryMB", UNSET)
 
+        max_memory_mb = d.pop("maxMemoryMB", UNSET)
+
         min_free_disk_mb = d.pop("minFreeDiskMb", UNSET)
 
         template_build_request_v3 = cls(
@@ -105,6 +113,7 @@ class TemplateBuildRequestV3:
             cpu_count=cpu_count,
             max_cpu_count=max_cpu_count,
             memory_mb=memory_mb,
+            max_memory_mb=max_memory_mb,
             min_free_disk_mb=min_free_disk_mb,
         )
 

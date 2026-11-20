@@ -235,3 +235,22 @@ test.each([
 
   expect(buildRequestBodies).toEqual([{ name: 'resizable', ...expected }])
 })
+
+test.each([
+  [{}, {}],
+  [
+    { memoryMB: 1024, maxMemoryMB: 3072 },
+    { memoryMB: 1024, maxMemoryMB: 3072 },
+  ],
+])('build sends the memory options %j', async (options, expected) => {
+  await Template.buildInBackground(
+    Template().fromTemplate('parent'),
+    'resizable',
+    {
+      apiKey: TEST_API_KEY,
+      ...options,
+    }
+  )
+
+  expect(buildRequestBodies).toEqual([{ name: 'resizable', ...expected }])
+})

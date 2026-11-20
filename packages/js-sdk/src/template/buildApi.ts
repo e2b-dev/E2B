@@ -29,6 +29,7 @@ type RequestBuildInput = {
   cpuCount?: number
   maxCpuCount?: number
   memoryMB?: number
+  maxMemoryMB?: number
   minFreeDiskMb?: number
 }
 
@@ -65,6 +66,7 @@ export async function requestBuild(
     cpuCount,
     maxCpuCount,
     memoryMB,
+    maxMemoryMB,
     minFreeDiskMb,
   }: RequestBuildInput,
   signal?: AbortSignal
@@ -76,6 +78,7 @@ export async function requestBuild(
       cpuCount,
       maxCpuCount,
       memoryMB,
+      maxMemoryMB,
       minFreeDiskMb,
     },
     signal,

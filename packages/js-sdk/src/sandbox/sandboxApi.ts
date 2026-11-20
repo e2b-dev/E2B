@@ -802,6 +802,15 @@ export interface SandboxOpts extends ConnectionOpts {
   cpuCount?: number
 
   /**
+   * Memory in MiB to start with, from the template's `memoryMB` up to its
+   * `maxMemoryMB`, in steps of 128 MiB. Templates without a `maxMemoryMB`
+   * accept only their own `memoryMB`.
+   *
+   * @default the template's `memoryMB`
+   */
+  memoryMB?: number
+
+  /**
    * @deprecated Every sandbox secures envd access; this option is accepted for backward compatibility and ignored.
    */
   secure?: boolean
@@ -908,6 +917,20 @@ export type SandboxConnectOpts = ConnectionOpts & {
    * @throws {@link InvalidArgumentError} if the value is outside the two literals.
    */
   onResume?: SandboxOnResume
+
+  /**
+   * Memory in MiB to resume a paused sandbox with, on a restore or a reboot.
+   * At least the size it was paused with and at most the template's
+   * `maxMemoryMB`, in steps of 128 MiB above its `memoryMB`.
+   *
+   * Like `onResume`, it applies only when this call resumes a paused sandbox:
+   * a sandbox that is already running, or that another request is already
+   * resuming, keeps its size and the value is ignored. The connect doesn't
+   * report the size; read it with `getInfo()`.
+   *
+   * @default the size the sandbox was paused with
+   */
+  memoryMB?: number
 }
 
 /**
@@ -1087,7 +1110,7 @@ export interface SandboxInfo {
   cpuCount: number
 
   /**
-   * Sandbox Memory size in MiB.
+   * Memory the sandbox runs with, in MiB.
    */
   memoryMB: number
 
@@ -1985,6 +2008,7 @@ export class SandboxApi extends ClientFactory {
       timeout:
         timeoutMs === undefined ? undefined : timeoutToSeconds(timeoutMs),
       cpuCount: opts?.cpuCount,
+      memoryMB: opts?.memoryMB,
       allow_internet_access: opts?.allowInternetAccess,
       network: buildNetworkBody(opts?.network, iam),
       iam,
@@ -2124,6 +2148,7 @@ export class SandboxApi extends ClientFactory {
         timeout:
           timeoutMs === undefined ? undefined : timeoutToSeconds(timeoutMs),
         memory: onResume === 'reboot' ? false : undefined,
+        memoryMB: apiOpts?.memoryMB,
       },
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })

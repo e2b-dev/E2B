@@ -58,6 +58,7 @@ def mock_template_build(monkeypatch):
         memory_mb: int,
         min_free_disk_mb: Optional[int],
         max_cpu_count: Optional[int] = None,
+        max_memory_mb: Optional[int] = None,
     ):
         return SimpleNamespace(template_id=name, build_id=str(uuid4()), tags=tags or [])
 

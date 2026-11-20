@@ -59,6 +59,7 @@ def test_create_omits_api_owned_fields_when_unset(monkeypatch, test_api_key):
     assert "secure" not in body
     assert "allow_internet_access" not in body
     assert "cpuCount" not in body
+    assert "memoryMB" not in body
 
 
 def test_create_sends_explicit_values(monkeypatch, test_api_key):
@@ -83,6 +84,18 @@ async def test_async_create_sends_explicit_cpu_count(monkeypatch, test_api_key):
     body = await _async_create_body(monkeypatch, test_api_key, cpu_count=4)
 
     assert body["cpuCount"] == 4
+
+
+def test_create_sends_explicit_memory_mb(monkeypatch, test_api_key):
+    body = _sync_create_body(monkeypatch, test_api_key, memory_mb=2048)
+
+    assert body["memoryMB"] == 2048
+
+
+async def test_async_create_sends_explicit_memory_mb(monkeypatch, test_api_key):
+    body = await _async_create_body(monkeypatch, test_api_key, memory_mb=2048)
+
+    assert body["memoryMB"] == 2048
 
 
 def test_create_ignores_deprecated_secure(monkeypatch, test_api_key):
@@ -395,6 +408,40 @@ async def test_async_connect_sends_explicit_timeout(monkeypatch, test_api_key):
     body = await _async_connect_body(monkeypatch, test_api_key, timeout=60)
 
     assert body["timeout"] == 60
+
+
+def test_connect_omits_memory_mb_when_unset(monkeypatch, test_api_key):
+    body = _sync_connect_body(monkeypatch, test_api_key)
+
+    assert "memoryMB" not in body
+
+
+async def test_async_connect_omits_memory_mb_when_unset(monkeypatch, test_api_key):
+    body = await _async_connect_body(monkeypatch, test_api_key)
+
+    assert "memoryMB" not in body
+
+
+@pytest.mark.parametrize("on_resume, memory", [("restore", None), ("reboot", False)])
+def test_connect_sends_explicit_memory_mb(monkeypatch, test_api_key, on_resume, memory):
+    body = _sync_connect_body(
+        monkeypatch, test_api_key, on_resume=on_resume, memory_mb=4096
+    )
+
+    assert body["memoryMB"] == 4096
+    assert body.get("memory") is memory
+
+
+@pytest.mark.parametrize("on_resume, memory", [("restore", None), ("reboot", False)])
+async def test_async_connect_sends_explicit_memory_mb(
+    monkeypatch, test_api_key, on_resume, memory
+):
+    body = await _async_connect_body(
+        monkeypatch, test_api_key, on_resume=on_resume, memory_mb=4096
+    )
+
+    assert body["memoryMB"] == 4096
+    assert body.get("memory") is memory
 
 
 def _marked_snapshot_response():
