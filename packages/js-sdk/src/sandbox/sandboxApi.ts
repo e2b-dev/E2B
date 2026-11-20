@@ -923,9 +923,10 @@ export type SandboxConnectOpts = ConnectionOpts & {
    * At least the size it was paused with and at most the template's
    * `maxMemoryMB`, in steps of 128 MiB above its `memoryMB`.
    *
-   * A sandbox that is already running keeps its size: passing that size
-   * connects as usual, and any other size throws, since memory can only be
-   * chosen when a sandbox resumes.
+   * Like `onResume`, it applies only when this call resumes a paused sandbox:
+   * a sandbox that is already running, or that another request is already
+   * resuming, keeps its size and the value is ignored. The connect doesn't
+   * report the size; read it with `getInfo()`.
    *
    * @default the size the sandbox was paused with
    */

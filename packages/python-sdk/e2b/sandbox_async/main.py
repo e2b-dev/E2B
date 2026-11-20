@@ -302,9 +302,10 @@ class AsyncSandbox(SandboxApi):
             restores memory while answering as if the request had succeeded.
         :param memory_mb: Memory in MiB to resume a paused sandbox with, on a restore or a reboot.
             At least the size it was paused with and at most the template's ``max_memory_mb``, in
-            steps of 128 MiB above its ``memory_mb``. Defaults to the size it was paused with. A
-            sandbox that is already running keeps its size: passing that size connects as usual,
-            and any other size raises, since memory can only be chosen when a sandbox resumes.
+            steps of 128 MiB above its ``memory_mb``. Defaults to the size it was paused with. Like
+            ``on_resume``, it applies only when this call resumes a paused sandbox: a sandbox that is
+            already running, or that another request is already resuming, keeps its size and the
+            value is ignored. The connect doesn't report the size; read it with ``get_info()``.
         :raises GuestUnresponsiveException: when the paused sandbox's snapshot was taken while its guest agent was not responding (``envd_unresponsive_at_pause``); connect with ``on_resume="reboot"``.
         :return: A running sandbox instance
 
@@ -351,9 +352,10 @@ class AsyncSandbox(SandboxApi):
             restores memory while answering as if the request had succeeded.
         :param memory_mb: Memory in MiB to resume a paused sandbox with, on a restore or a reboot.
             At least the size it was paused with and at most the template's ``max_memory_mb``, in
-            steps of 128 MiB above its ``memory_mb``. Defaults to the size it was paused with. A
-            sandbox that is already running keeps its size: passing that size connects as usual,
-            and any other size raises, since memory can only be chosen when a sandbox resumes.
+            steps of 128 MiB above its ``memory_mb``. Defaults to the size it was paused with. Like
+            ``on_resume``, it applies only when this call resumes a paused sandbox: a sandbox that is
+            already running, or that another request is already resuming, keeps its size and the
+            value is ignored. The connect doesn't report the size; read it with ``get_info()``.
         :raises GuestUnresponsiveException: when the paused sandbox's snapshot was taken while its guest agent was not responding (``envd_unresponsive_at_pause``); connect with ``on_resume="reboot"``.
         :return: A running sandbox instance
 
@@ -396,9 +398,10 @@ class AsyncSandbox(SandboxApi):
             restores memory while answering as if the request had succeeded.
         :param memory_mb: Memory in MiB to resume a paused sandbox with, on a restore or a reboot.
             At least the size it was paused with and at most the template's ``max_memory_mb``, in
-            steps of 128 MiB above its ``memory_mb``. Defaults to the size it was paused with. A
-            sandbox that is already running keeps its size: passing that size connects as usual,
-            and any other size raises, since memory can only be chosen when a sandbox resumes.
+            steps of 128 MiB above its ``memory_mb``. Defaults to the size it was paused with. Like
+            ``on_resume``, it applies only when this call resumes a paused sandbox: a sandbox that is
+            already running, or that another request is already resuming, keeps its size and the
+            value is ignored. The connect doesn't report the size; read it with ``get_info()``.
         :raises GuestUnresponsiveException: when the paused sandbox's snapshot was taken while its guest agent was not responding (``envd_unresponsive_at_pause``); connect with ``on_resume="reboot"``.
         :return: A running sandbox instance
 

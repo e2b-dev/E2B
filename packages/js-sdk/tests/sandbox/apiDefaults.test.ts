@@ -274,30 +274,6 @@ test.each([
   }
 )
 
-test('Sandbox.connect throws when a running sandbox has another memory size', async () => {
-  server.use(
-    http.post(apiUrl('/v2/sandboxes/:sandboxID/connect'), () =>
-      HttpResponse.json(
-        {
-          code: 409,
-          message:
-            'Sandbox is already running with 2048 MiB; memory can only be chosen when it resumes',
-          error_code: 'sandbox_memory_running',
-        },
-        { status: 409 }
-      )
-    )
-  )
-
-  const err = await Sandbox.connect('test-sandbox-id', {
-    apiKey: TEST_API_KEY,
-    memoryMB: 4096,
-  }).catch((e: unknown) => e)
-
-  expect(err).toBeInstanceOf(Error)
-  expect((err as Error).message).toContain('already running with 2048 MiB')
-})
-
 test('Sandbox.connect throws GuestUnresponsiveError for a marked snapshot', async () => {
   server.use(
     http.post(apiUrl('/v2/sandboxes/:sandboxID/connect'), () =>
