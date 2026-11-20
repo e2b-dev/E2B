@@ -802,6 +802,15 @@ export interface SandboxOpts extends ConnectionOpts {
   cpuCount?: number
 
   /**
+   * Memory in MiB to start with, from the template's `memoryMB` up to its
+   * `maxMemoryMB`, in steps of 128 MiB. Templates without a `maxMemoryMB`
+   * accept only their own `memoryMB`.
+   *
+   * @default the template's `memoryMB`
+   */
+  memoryMB?: number
+
+  /**
    * @deprecated Every sandbox secures envd access; this option is accepted for backward compatibility and ignored.
    */
   secure?: boolean
@@ -1087,7 +1096,7 @@ export interface SandboxInfo {
   cpuCount: number
 
   /**
-   * Sandbox Memory size in MiB.
+   * Memory the sandbox runs with, in MiB.
    */
   memoryMB: number
 
@@ -1985,6 +1994,7 @@ export class SandboxApi extends ClientFactory {
       timeout:
         timeoutMs === undefined ? undefined : timeoutToSeconds(timeoutMs),
       cpuCount: opts?.cpuCount,
+      memoryMB: opts?.memoryMB,
       allow_internet_access: opts?.allowInternetAccess,
       network: buildNetworkBody(opts?.network, iam),
       iam,

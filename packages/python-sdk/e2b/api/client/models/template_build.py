@@ -25,6 +25,7 @@ class TemplateBuild:
         memory_mb (int): Memory for the sandbox in MiB
         finished_at (Union[Unset, datetime.datetime]): Time when the build was finished
         max_cpu_count (Union[Unset, int]): CPU cores for the sandbox
+        max_memory_mb (Union[Unset, int]): Memory for the sandbox in MiB
         disk_size_mb (Union[Unset, int]): Disk size for the sandbox in MiB
         envd_version (Union[Unset, str]): Version of the envd running in the sandbox
     """
@@ -37,6 +38,7 @@ class TemplateBuild:
     memory_mb: int
     finished_at: Union[Unset, datetime.datetime] = UNSET
     max_cpu_count: Union[Unset, int] = UNSET
+    max_memory_mb: Union[Unset, int] = UNSET
     disk_size_mb: Union[Unset, int] = UNSET
     envd_version: Union[Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -60,6 +62,8 @@ class TemplateBuild:
 
         max_cpu_count = self.max_cpu_count
 
+        max_memory_mb = self.max_memory_mb
+
         disk_size_mb = self.disk_size_mb
 
         envd_version = self.envd_version
@@ -80,6 +84,8 @@ class TemplateBuild:
             field_dict["finishedAt"] = finished_at
         if max_cpu_count is not UNSET:
             field_dict["maxCpuCount"] = max_cpu_count
+        if max_memory_mb is not UNSET:
+            field_dict["maxMemoryMB"] = max_memory_mb
         if disk_size_mb is not UNSET:
             field_dict["diskSizeMB"] = disk_size_mb
         if envd_version is not UNSET:
@@ -111,6 +117,8 @@ class TemplateBuild:
 
         max_cpu_count = d.pop("maxCpuCount", UNSET)
 
+        max_memory_mb = d.pop("maxMemoryMB", UNSET)
+
         disk_size_mb = d.pop("diskSizeMB", UNSET)
 
         envd_version = d.pop("envdVersion", UNSET)
@@ -124,6 +132,7 @@ class TemplateBuild:
             memory_mb=memory_mb,
             finished_at=finished_at,
             max_cpu_count=max_cpu_count,
+            max_memory_mb=max_memory_mb,
             disk_size_mb=disk_size_mb,
             envd_version=envd_version,
         )

@@ -1248,7 +1248,7 @@ class SandboxInfo:
     cpu_count: int
     """Number of CPUs online in the sandbox."""
     memory_mb: int
-    """Sandbox Memory size in MiB."""
+    """Memory the sandbox runs with, in MiB."""
     envd_version: str
     """Envd version."""
     allow_internet_access: Optional[bool] = None

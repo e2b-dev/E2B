@@ -67,3 +67,20 @@ test('template build request sends explicit maxCpuCount', async () => {
   expect(lastBuildBody?.cpuCount).toBe(2)
   expect(lastBuildBody?.maxCpuCount).toBe(4)
 })
+
+test('template build request omits maxMemoryMB when unset', async () => {
+  await requestBuild(client(), { name: 'test-template', memoryMB: 1024 })
+
+  expect(lastBuildBody).not.toHaveProperty('maxMemoryMB')
+})
+
+test('template build request sends explicit maxMemoryMB', async () => {
+  await requestBuild(client(), {
+    name: 'test-template',
+    memoryMB: 1024,
+    maxMemoryMB: 3072,
+  })
+
+  expect(lastBuildBody?.memoryMB).toBe(1024)
+  expect(lastBuildBody?.maxMemoryMB).toBe(3072)
+})

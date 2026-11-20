@@ -3335,6 +3335,8 @@ export interface components {
             envVars?: components["schemas"]["EnvVars"];
             iam?: components["schemas"]["SandboxIam"];
             mcp?: components["schemas"]["Mcp"];
+            /** @description Memory for the sandbox in MiB. Defaults to the template's memoryMB; at most its maxMemoryMB, in steps of 128 MiB above memoryMB (templates without a maxMemoryMB accept only their memoryMB). */
+            memoryMB?: components["schemas"]["MemoryMB"];
             metadata?: components["schemas"]["SandboxMetadata"];
             network?: components["schemas"]["SandboxNetworkConfig"];
             /**
@@ -3372,6 +3374,8 @@ export interface components {
             envVars?: components["schemas"]["EnvVars"];
             iam?: components["schemas"]["SandboxIam"];
             mcp?: components["schemas"]["Mcp"];
+            /** @description Memory for the sandbox in MiB. Defaults to the template's memoryMB; at most its maxMemoryMB, in steps of 128 MiB above memoryMB (templates without a maxMemoryMB accept only their memoryMB). */
+            memoryMB?: components["schemas"]["MemoryMB"];
             metadata?: components["schemas"]["SandboxMetadata"];
             network?: components["schemas"]["SandboxNetworkConfig"];
             /** @description Identifier of the required template */
@@ -3414,6 +3418,8 @@ export interface components {
             cpuCount?: components["schemas"]["CPUCount"];
             /** @description Defaults to true. When false, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. A snapshot taken while the sandbox guest agent was not responding (envdUnresponsiveAtPause) can only be resumed this way, and needs no enablement. */
             memory?: boolean;
+            /** @description Memory for the resumed sandbox in MiB. Defaults to the memory the sandbox had when it was paused; at least that, and at most the template's maxMemoryMB, in steps of 128 MiB above its memoryMB. */
+            memoryMB?: components["schemas"]["MemoryMB"];
             /**
              * Format: int32
              * @description Time to live for the sandbox in seconds.
@@ -3950,6 +3956,9 @@ export interface components {
             lastSpawnedAt: string | null;
             /** @description Maximum CPU count for resizable templates; absent for fixed-size templates. */
             maxCpuCount?: components["schemas"]["CPUCount"];
+            /** @description Memory the template's sandboxes can grow to, in MiB; absent for templates whose memory cannot grow. */
+            maxMemoryMB?: components["schemas"]["MemoryMB"];
+            /** @description Memory in MiB a sandbox created from this template starts with: the build's memory, or for a snapshot template of a grown sandbox the size it was taken at. A create that names no memoryMB starts at this size. */
             memoryMB: components["schemas"]["MemoryMB"];
             /** @description Names of the template (namespace/alias format when namespaced) */
             names: string[];
@@ -3995,6 +4004,9 @@ export interface components {
             finishedAt?: string;
             /** @description Maximum CPU count for resizable templates; absent for fixed-size templates. */
             maxCpuCount?: components["schemas"]["CPUCount"];
+            /** @description Memory the template's sandboxes can grow to, in MiB; absent for templates whose memory cannot grow. */
+            maxMemoryMB?: components["schemas"]["MemoryMB"];
+            /** @description Memory in MiB a sandbox created from this build starts with: the build's memory, or for a snapshot of a grown sandbox the size it was taken at. A create that names no memoryMB starts at this size. */
             memoryMB: components["schemas"]["MemoryMB"];
             status: components["schemas"]["TemplateBuildStatus"];
             /**
@@ -4048,6 +4060,8 @@ export interface components {
             cpuCount?: components["schemas"]["CPUCount"];
             /** @description Maximum CPU count the template's sandboxes can be resized to; makes the template resizable. Must be at least cpuCount. */
             maxCpuCount?: components["schemas"]["CPUCount"];
+            /** @description Memory the template's sandboxes can grow to, in MiB. memoryMB is what they boot with; the rest is added when a sandbox asks for it. Must be at least memoryMB, and the difference a multiple of 128 MiB. */
+            maxMemoryMB?: components["schemas"]["MemoryMB"];
             memoryMB?: components["schemas"]["MemoryMB"];
             minFreeDiskMb?: components["schemas"]["MinFreeDiskMb"];
             /** @description Name of the template. Can include a tag with colon separator (e.g. "my-template" or "my-template:v1"). If tag is included, it will be treated as if the tag was provided in the tags array. */

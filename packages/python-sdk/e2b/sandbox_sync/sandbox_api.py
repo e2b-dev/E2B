@@ -222,6 +222,7 @@ class SandboxApi(SandboxBase):
         logger: Optional[logging.Logger] = None,
         idempotency_key: Optional[str] = None,
         cpu_count: Optional[int] = None,
+        memory_mb: Optional[int] = None,
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
         key = resolve_idempotency_key(idempotency_key)
@@ -242,6 +243,7 @@ class SandboxApi(SandboxBase):
             metadata=metadata or {},
             timeout=timeout if timeout is not None else UNSET,
             cpu_count=cpu_count if cpu_count is not None else UNSET,
+            memory_mb=memory_mb if memory_mb is not None else UNSET,
             env_vars=env_vars or {},
             mcp=cast(Any, mcp) or UNSET,
             allow_internet_access=(

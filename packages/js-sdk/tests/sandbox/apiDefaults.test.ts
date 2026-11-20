@@ -78,12 +78,19 @@ test('Sandbox.create omits timeout and allow_internet_access when unset', async 
   expect(lastCreateBody).not.toHaveProperty('secure')
   expect(lastCreateBody).not.toHaveProperty('allow_internet_access')
   expect(lastCreateBody).not.toHaveProperty('cpuCount')
+  expect(lastCreateBody).not.toHaveProperty('memoryMB')
 })
 
 test('Sandbox.create sends an explicit cpuCount', async () => {
   await Sandbox.create('base', { apiKey: TEST_API_KEY, cpuCount: 4 })
 
   expect(lastCreateBody?.cpuCount).toBe(4)
+})
+
+test('Sandbox.create sends an explicit memoryMB', async () => {
+  await Sandbox.create('base', { apiKey: TEST_API_KEY, memoryMB: 2048 })
+
+  expect(lastCreateBody?.memoryMB).toBe(2048)
 })
 
 test('Sandbox.create ignores the deprecated secure option', async () => {

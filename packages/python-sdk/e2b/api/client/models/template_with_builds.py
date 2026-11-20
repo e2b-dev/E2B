@@ -39,6 +39,7 @@ class TemplateWithBuilds:
         build_status (TemplateBuildStatus): Status of the template build
         builds (list['TemplateBuild']): List of builds for the template
         max_cpu_count (Union[Unset, int]): CPU cores for the sandbox
+        max_memory_mb (Union[Unset, int]): Memory for the sandbox in MiB
         is_default (Union[Unset, bool]): Whether the template is one of the platform's default templates. A default
             template owned by another team carries zero or null usage fields (`spawnCount`, `buildCount`, `lastSpawnedAt`,
             `createdBy`).
@@ -63,6 +64,7 @@ class TemplateWithBuilds:
     build_status: TemplateBuildStatus
     builds: list["TemplateBuild"]
     max_cpu_count: Union[Unset, int] = UNSET
+    max_memory_mb: Union[Unset, int] = UNSET
     is_default: Union[Unset, bool] = UNSET
     description: Union[Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -117,6 +119,8 @@ class TemplateWithBuilds:
 
         max_cpu_count = self.max_cpu_count
 
+        max_memory_mb = self.max_memory_mb
+
         is_default = self.is_default
 
         description = self.description
@@ -146,6 +150,8 @@ class TemplateWithBuilds:
         )
         if max_cpu_count is not UNSET:
             field_dict["maxCpuCount"] = max_cpu_count
+        if max_memory_mb is not UNSET:
+            field_dict["maxMemoryMB"] = max_memory_mb
         if is_default is not UNSET:
             field_dict["isDefault"] = is_default
         if description is not UNSET:
@@ -226,6 +232,8 @@ class TemplateWithBuilds:
 
         max_cpu_count = d.pop("maxCpuCount", UNSET)
 
+        max_memory_mb = d.pop("maxMemoryMB", UNSET)
+
         is_default = d.pop("isDefault", UNSET)
 
         description = d.pop("description", UNSET)
@@ -249,6 +257,7 @@ class TemplateWithBuilds:
             build_status=build_status,
             builds=builds,
             max_cpu_count=max_cpu_count,
+            max_memory_mb=max_memory_mb,
             is_default=is_default,
             description=description,
         )

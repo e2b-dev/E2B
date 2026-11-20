@@ -140,6 +140,7 @@ async def test_build_resolves_build_impl_and_config_off_cls(configs, monkeypatch
             "my-template",
             min_free_disk_mb=0,
             max_cpu_count=4,
+            max_memory_mb=3072,
         )
         is build_info
     )
@@ -149,6 +150,7 @@ async def test_build_resolves_build_impl_and_config_off_cls(configs, monkeypatch
     assert configs[0].domain == BOUND_DOMAIN
     assert mock_build.call_args.kwargs["min_free_disk_mb"] == 0
     assert mock_build.call_args.kwargs["max_cpu_count"] == 4
+    assert mock_build.call_args.kwargs["max_memory_mb"] == 3072
 
 
 @pytest.mark.asyncio
@@ -232,6 +234,43 @@ async def test_minimum_free_disk_option(
     ],
 )
 async def test_cpu_options(configs, monkeypatch, method, options, expected_body):
+    bodies = []
+
+    async def request(*, client, body):
+        bodies.append(body)
+        return SimpleNamespace(
+            status_code=202,
+            parsed=SimpleNamespace(
+                template_id="template-id", build_id="build-id", tags=[]
+            ),
+        )
+
+    monkeypatch.setattr(
+        template_async_build_api.post_v3_templates, "asyncio_detailed", request
+    )
+    monkeypatch.setattr(template_async_main, "trigger_build", AsyncMock())
+    monkeypatch.setattr(template_async_main, "wait_for_build_finish", AsyncMock())
+    await getattr(AsyncTemplate, method)(
+        Template().from_template("parent"), "resizable", **options
+    )
+    assert [body.to_dict() for body in bodies] == [
+        {"name": "resizable", **expected_body}
+    ]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("method", ["build", "build_in_background"])
+@pytest.mark.parametrize(
+    "options, expected_body",
+    [
+        ({}, {}),
+        (
+            {"memory_mb": 1024, "max_memory_mb": 3072},
+            {"memoryMB": 1024, "maxMemoryMB": 3072},
+        ),
+    ],
+)
+async def test_memory_options(configs, monkeypatch, method, options, expected_body):
     bodies = []
 
     async def request(*, client, body):

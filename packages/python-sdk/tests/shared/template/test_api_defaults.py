@@ -92,3 +92,27 @@ async def test_async_build_sends_explicit_max_cpu_count(monkeypatch):
 
     assert body["cpuCount"] == 2
     assert body["maxCpuCount"] == 4
+
+
+def test_build_omits_max_memory_mb_when_unset(monkeypatch):
+    body = _sync_build_body(monkeypatch, cpu_count=None, memory_mb=1024)
+
+    assert "maxMemoryMB" not in body
+
+
+def test_build_sends_explicit_max_memory_mb(monkeypatch):
+    body = _sync_build_body(
+        monkeypatch, cpu_count=None, memory_mb=1024, max_memory_mb=3072
+    )
+
+    assert body["memoryMB"] == 1024
+    assert body["maxMemoryMB"] == 3072
+
+
+async def test_async_build_sends_explicit_max_memory_mb(monkeypatch):
+    body = await _async_build_body(
+        monkeypatch, cpu_count=None, memory_mb=1024, max_memory_mb=3072
+    )
+
+    assert body["memoryMB"] == 1024
+    assert body["maxMemoryMB"] == 3072

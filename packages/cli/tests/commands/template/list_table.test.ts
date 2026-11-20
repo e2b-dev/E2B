@@ -48,4 +48,24 @@ describe('template list table', () => {
     expect(header).toContain('MAX VCPUS')
     expect(lines.map(maxCpu)).toEqual(['MAX VCPUS', '4', ''])
   })
+
+  test('shows max RAM for templates with resizable memory and leaves it empty otherwise', () => {
+    const lines: string[] = []
+    vi.spyOn(console, 'log').mockImplementation((line: string) => {
+      lines.push(line)
+    })
+
+    renderTemplateTable([
+      template('resizable', { maxMemoryMB: 3072 }),
+      template('fixed', {}),
+    ])
+
+    const header = lines[0]
+    const maxRam = (line: string) =>
+      line
+        .slice(header.indexOf('MAX RAM MIB'), header.indexOf('CREATED AT'))
+        .trim()
+    expect(header).toContain('MAX RAM MIB')
+    expect(lines.map(maxRam)).toEqual(['MAX RAM MIB', '3072', ''])
+  })
 })

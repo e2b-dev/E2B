@@ -33,6 +33,7 @@ def _template(index: int) -> TemplateModel:
     if index == 1:
         data["description"] = "Second template"
         data["maxCpuCount"] = 4
+        data["maxMemoryMB"] = 3072
     return TemplateModel.from_dict(data)
 
 
@@ -104,6 +105,7 @@ def test_list_templates_maps_template_info():
     )
     assert described.description == "Second template"
     assert described.max_cpu_count == 4
+    assert described.max_memory_mb == 3072
     assert described.last_spawned_at == datetime(2024, 1, 17, 8, 0, tzinfo=timezone.utc)
 
 
