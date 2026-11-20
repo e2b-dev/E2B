@@ -917,6 +917,19 @@ export type SandboxConnectOpts = ConnectionOpts & {
    * @throws {@link InvalidArgumentError} if the value is outside the two literals.
    */
   onResume?: SandboxOnResume
+
+  /**
+   * Memory in MiB to resume a paused sandbox with, on a restore or a reboot.
+   * At least the size it was paused with and at most the template's
+   * `maxMemoryMB`, in steps of 128 MiB above its `memoryMB`.
+   *
+   * A sandbox that is already running keeps its size: passing that size
+   * connects as usual, and any other size throws, since memory can only be
+   * chosen when a sandbox resumes.
+   *
+   * @default the size the sandbox was paused with
+   */
+  memoryMB?: number
 }
 
 /**
@@ -2134,6 +2147,7 @@ export class SandboxApi extends ClientFactory {
         timeout:
           timeoutMs === undefined ? undefined : timeoutToSeconds(timeoutMs),
         memory: onResume === 'reboot' ? false : undefined,
+        memoryMB: apiOpts?.memoryMB,
       },
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })

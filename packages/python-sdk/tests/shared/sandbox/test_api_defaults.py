@@ -9,6 +9,7 @@ from e2b import (
     GuestUnresponsiveException,
     InvalidArgumentException,
     Sandbox,
+    SandboxException,
 )
 from e2b.api.client.api.sandboxes import (
     post_v2_sandboxes,
@@ -408,6 +409,75 @@ async def test_async_connect_sends_explicit_timeout(monkeypatch, test_api_key):
     body = await _async_connect_body(monkeypatch, test_api_key, timeout=60)
 
     assert body["timeout"] == 60
+
+
+def test_connect_omits_memory_mb_when_unset(monkeypatch, test_api_key):
+    body = _sync_connect_body(monkeypatch, test_api_key)
+
+    assert "memoryMB" not in body
+
+
+async def test_async_connect_omits_memory_mb_when_unset(monkeypatch, test_api_key):
+    body = await _async_connect_body(monkeypatch, test_api_key)
+
+    assert "memoryMB" not in body
+
+
+@pytest.mark.parametrize("on_resume, memory", [("restore", None), ("reboot", False)])
+def test_connect_sends_explicit_memory_mb(monkeypatch, test_api_key, on_resume, memory):
+    body = _sync_connect_body(
+        monkeypatch, test_api_key, on_resume=on_resume, memory_mb=4096
+    )
+
+    assert body["memoryMB"] == 4096
+    assert body.get("memory") is memory
+
+
+@pytest.mark.parametrize("on_resume, memory", [("restore", None), ("reboot", False)])
+async def test_async_connect_sends_explicit_memory_mb(
+    monkeypatch, test_api_key, on_resume, memory
+):
+    body = await _async_connect_body(
+        monkeypatch, test_api_key, on_resume=on_resume, memory_mb=4096
+    )
+
+    assert body["memoryMB"] == 4096
+    assert body.get("memory") is memory
+
+
+def _running_with_another_size_response():
+    return SimpleNamespace(
+        status_code=409,
+        content=(
+            b'{"code": 409, "message": "Sandbox is already running with 2048 MiB;'
+            b' memory can only be chosen when it resumes", "error_code":'
+            b' "sandbox_memory_running"}'
+        ),
+        parsed=None,
+        headers={},
+    )
+
+
+def test_connect_raises_when_running_with_another_memory_size(
+    monkeypatch, test_api_key
+):
+    request = Mock(return_value=_running_with_another_size_response())
+    monkeypatch.setattr(post_v_2_sandboxes_sandbox_id_connect, "sync_detailed", request)
+
+    with pytest.raises(SandboxException, match="already running with 2048 MiB"):
+        Sandbox.connect("sbx-test", api_key=test_api_key, memory_mb=4096)
+
+
+async def test_async_connect_raises_when_running_with_another_memory_size(
+    monkeypatch, test_api_key
+):
+    request = AsyncMock(return_value=_running_with_another_size_response())
+    monkeypatch.setattr(
+        post_v_2_sandboxes_sandbox_id_connect, "asyncio_detailed", request
+    )
+
+    with pytest.raises(SandboxException, match="already running with 2048 MiB"):
+        await AsyncSandbox.connect("sbx-test", api_key=test_api_key, memory_mb=4096)
 
 
 def _marked_snapshot_response():

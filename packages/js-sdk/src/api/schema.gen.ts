@@ -3172,6 +3172,8 @@ export interface components {
         ConnectSandboxV2: {
             /** @description Defaults to true. When false and the sandbox is paused, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. A snapshot taken while the sandbox guest agent was not responding (envdUnresponsiveAtPause) can only be resumed this way, and needs no enablement. */
             memory?: boolean;
+            /** @description Memory for the sandbox in MiB when connect resumes it, from its memory snapshot or by cold-booting (memory false). Defaults to the memory the sandbox had when it was paused; at least that, and at most the template's maxMemoryMB, in steps of 128 MiB above its memoryMB. A sandbox that is already running keeps its size: naming that size connects as usual, and any other size is refused with 409 sandbox_memory_running. */
+            memoryMB?: components["schemas"]["MemoryMB"];
             /**
              * Format: int32
              * @description Timeout in seconds from the current time after which the sandbox should expire

@@ -335,6 +335,7 @@ class SandboxApi(SandboxBase):
         logger: Optional[logging.Logger] = None,
         *,
         on_resume: SandboxOnResume = "restore",
+        memory_mb: Optional[int] = None,
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
         config = ConnectionConfig(logger=logger, **cls._resolve_api_params(**opts))
@@ -346,6 +347,7 @@ class SandboxApi(SandboxBase):
             body=ConnectSandboxV2(
                 timeout=timeout if timeout is not None else UNSET,
                 memory=resolve_connect_memory(on_resume),
+                memory_mb=memory_mb if memory_mb is not None else UNSET,
             ),
         )
 
