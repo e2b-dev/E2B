@@ -64,6 +64,12 @@ def _normalize_branch_name(name: str) -> str:
     )
 
 
+# The character pairs git uses for an unmerged path, as listed in git-status(1).
+# `AA` (both added) and `DD` (both deleted) contain no `U`, so the pair has to
+# be matched as a whole before the per-character rules below.
+_UNMERGED_STATUS_PAIRS = frozenset({"DD", "AU", "UD", "UA", "DU", "AA", "UU"})
+
+
 def _derive_status(index_status: str, working_status: str) -> str:
     """
     Derive a normalized status label from porcelain status characters.
@@ -72,9 +78,10 @@ def _derive_status(index_status: str, working_status: str) -> str:
     :param working_status: Working tree status character
     :return: Normalized status label
     """
-    statuses = {index_status, working_status}
-    if "U" in statuses:
+    if index_status + working_status in _UNMERGED_STATUS_PAIRS:
         return "conflict"
+
+    statuses = {index_status, working_status}
     if "R" in statuses:
         return "renamed"
     if "C" in statuses:
