@@ -22,6 +22,7 @@ const DOMAIN_B = 'client-b.test'
 const DOMAIN_ENV = 'env.test'
 
 interface RecordedRequest {
+  headers: Headers
   url: string
   apiKey?: string
 }
@@ -31,6 +32,7 @@ const requests: RecordedRequest[] = []
 function record(request: Request) {
   requests.push({
     url: request.url,
+    headers: request.headers,
     apiKey: request.headers.get('X-API-KEY') ?? undefined,
   })
 }
@@ -278,6 +280,35 @@ test('mutating the options object does not change the bound config', async () =>
 
   assert.equal(lastRequest().url, `https://api.${DOMAIN_A}/v2/sandboxes`)
 })
+
+test.each([
+  ['headers', 'original'],
+  ['headers', undefined],
+  ['apiHeaders', 'original'],
+  ['apiHeaders', undefined],
+] as const)(
+  '%s snapshots an initial header value of %s',
+  async (option, initial) => {
+    const headers: Record<string, string> = initial
+      ? { 'X-Snapshot': initial }
+      : {}
+    const client = new E2B({
+      apiKey: API_KEY_A,
+      domain: DOMAIN_A,
+      [option]: headers,
+    })
+    headers['X-Snapshot'] = 'changed'
+
+    await client.Secret.list().nextItems()
+
+    assert.equal(lastRequest().headers.get('X-Snapshot'), initial ?? null)
+
+    await client.Secret.list().nextItems({
+      [option]: { 'X-Snapshot': 'per-call' },
+    })
+    assert.equal(lastRequest().headers.get('X-Snapshot'), 'per-call')
+  }
+)
 
 test('per-call options explicitly set to undefined keep the client config', async () => {
   const client = new E2B({ apiKey: API_KEY_A, domain: DOMAIN_A })

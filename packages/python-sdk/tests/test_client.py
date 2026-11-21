@@ -336,3 +336,26 @@ def test_client_params_are_copied(api_server):
 
     assert api_keys() == [API_KEY_A]
     assert sandbox.connection_config.api_key == API_KEY_A
+
+
+@pytest.mark.parametrize("option", ["headers", "api_headers"])
+@pytest.mark.parametrize("initial", [None, "original"])
+@pytest.mark.parametrize("asynchronous", [False, True])
+def test_client_header_maps_are_copied(api_server, option, initial, asynchronous):
+    headers = {"X-Snapshot": initial} if initial is not None else {}
+    client = E2B(api_key=API_KEY_A, api_url=api_server, **{option: headers})
+    headers["X-Snapshot"] = "changed"
+
+    if asynchronous:
+        asyncio.run(client.AsyncSecret.list().next_items())
+    else:
+        client.Secret.list().next_items()
+
+    assert requests()[-1][2].get("x-snapshot") == initial
+
+    overrides = {option: {"X-Snapshot": "per-call"}}
+    if asynchronous:
+        asyncio.run(client.AsyncSecret.list().next_items(**overrides))
+    else:
+        client.Secret.list().next_items(**overrides)
+    assert requests()[-1][2].get("x-snapshot") == "per-call"
