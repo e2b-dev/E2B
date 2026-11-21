@@ -3,7 +3,7 @@ import json
 import logging
 
 from e2b import NotFoundException, TimeoutException, SandboxException
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import (
     List,
     Literal,
@@ -406,8 +406,8 @@ class Execution:
         """
         data = {
             "results": serialize_results(self.results),
-            "logs": self.logs.to_json(),
-            "error": self.error.to_json() if self.error else None,
+            "logs": asdict(self.logs),
+            "error": asdict(self.error) if self.error else None,
         }
         return json.dumps(data)
 
