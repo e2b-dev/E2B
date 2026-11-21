@@ -116,6 +116,7 @@ jobs:
               - *shared
               - '.github/workflows/id_tests.yml'
               - 'packages/js-id/**/!(*.md)'
+              - 'packages/python-id/**/!(*.md)'
 
   js-tests:
     name: JS SDK Tests

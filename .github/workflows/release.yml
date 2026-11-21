@@ -32,6 +32,7 @@ jobs:
       dockerfile_utils_js: ${{ steps.dockerfile_utils_js.outputs.release }}
       dockerfile_utils_python: ${{ steps.dockerfile_utils_python.outputs.release }}
       id_js: ${{ steps.id_js.outputs.release }}
+      id_python: ${{ steps.id_python.outputs.release }}
       itinerary: ${{ steps.itinerary.outputs.itinerary }}
     steps:
       - name: Check the ref
@@ -156,6 +157,13 @@ jobs:
           IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/id" "$RUNNER_TEMP/release-plan.json")
           echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
 
+      - name: Check ID Python Release
+        id: id_python
+        if: steps.version.outputs.release == 'true'
+        run: |
+          IS_RELEASE=$(./.github/scripts/is_release_for_package.sh "@e2b/python-id" "$RUNNER_TEMP/release-plan.json")
+          echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
+
       - name: Build release itinerary
         id: itinerary
         if: steps.version.outputs.release == 'true'
@@ -234,7 +242,8 @@ jobs:
   id-tests:
     name: ID Package Tests
     needs: [preflight]
-    if: needs.preflight.outputs.id_js == 'true'
+    # One workflow tests both ID packages, since their point is that they agree.
+    if: needs.preflight.outputs.id_js == 'true' || needs.preflight.outputs.id_python == 'true'
     uses: ./.github/workflows/id_tests.yml
 
   publish:
