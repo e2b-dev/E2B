@@ -1,3 +1,4 @@
+import re
 from typing import List, Optional
 from urllib.parse import urlparse
 
@@ -22,6 +23,101 @@ def derive_repo_dir_from_url(url: str) -> Optional[str]:
     if not last_segment:
         return None
     return last_segment[:-4] if last_segment.endswith(".git") else last_segment
+
+
+_QUOTED_PATH = re.compile(r'\A"(?:\\.|[^"\\])*"\Z', re.DOTALL)
+
+# The escapes `git status --porcelain` writes inside a quoted path, besides the
+# octal `\nnn` it uses for every other byte that is not printable ASCII.
+_PATH_ESCAPES = {
+    "a": 0x07,
+    "b": 0x08,
+    "f": 0x0C,
+    "n": 0x0A,
+    "r": 0x0D,
+    "t": 0x09,
+    "v": 0x0B,
+    '"': 0x22,
+    "\\": 0x5C,
+}
+
+
+def _unquote_path(path: str) -> str:
+    """
+    Decode a path that porcelain status output wrote in C-style quotes.
+
+    Git wraps a path in double quotes when it is not plain printable ASCII and
+    escapes the bytes it cannot print: a space is fine, but a quote, a tab, a
+    newline or any non-ASCII byte (under the default `core.quotePath`) arrives
+    as `\\nnn`. An untracked directory is quoted too, because of its trailing
+    `/`. Paths without quotes are returned unchanged.
+
+    :param path: Path as it appears in the porcelain output
+    :return: Path as it is on disk
+    """
+    if not _QUOTED_PATH.match(path):
+        return path
+
+    raw = bytearray()
+    index = 1
+    # The last character is the closing quote.
+    last = len(path) - 1
+    while index < last:
+        char = path[index]
+        if char != "\\" or index + 1 >= last:
+            raw += char.encode("utf-8")
+            index += 1
+            continue
+
+        escaped = path[index + 1]
+        if escaped in _PATH_ESCAPES:
+            raw.append(_PATH_ESCAPES[escaped])
+            index += 2
+            continue
+
+        octal = path[index + 1 : index + 4]
+        value = int(octal, 8) if all(digit in "01234567" for digit in octal) else -1
+        if len(octal) == 3 and 0 <= value <= 0xFF:
+            raw.append(value)
+            index += 4
+            continue
+
+        # Not an escape git writes: keep the character as it is.
+        raw += escaped.encode("utf-8")
+        index += 2
+
+    return raw.decode("utf-8", "surrogateescape")
+
+
+def _split_rename(path: str) -> Optional[tuple[str, str]]:
+    """
+    Split a porcelain rename/copy entry into its raw source and target paths.
+
+    Porcelain writes `old -> new`, quoting either side on its own, so a quoted
+    path may itself contain ` -> ` and the separator is only searched for
+    after the closing quote.
+
+    :param path: Path part of the porcelain line
+    :return: Tuple of (old, new) as written, or None when the line is not a rename
+    """
+    if path.startswith('"'):
+        index = 1
+        while index < len(path):
+            if path[index] == "\\":
+                index += 2
+                continue
+            if path[index] == '"':
+                separator = path.find(" -> ", index + 1)
+                if separator == -1:
+                    return None
+                return path[:separator], path[separator + 4 :]
+            index += 1
+        return None
+
+    if " -> " not in path:
+        return None
+    renamed_from, name = path.split(" -> ", 1)
+    return renamed_from, name
 
 
 def _parse_ahead_behind(segment: Optional[str]) -> tuple[int, int]:
@@ -142,7 +238,7 @@ def parse_git_status(output: str) -> GitStatus:
 
     for line in lines[1:]:
         if line.startswith("?? "):
-            name = line[3:]
+            name = _unquote_path(line[3:])
             file_status.append(
                 GitFileStatus(
                     name=name,
@@ -160,9 +256,11 @@ def parse_git_status(output: str) -> GitStatus:
         working_status = line[1]
         path = line[3:]
         renamed_from: Optional[str] = None
-        name = path
-        if " -> " in path:
-            renamed_from, name = path.split(" -> ", 1)
+        renamed = _split_rename(path)
+        if renamed is None:
+            name = _unquote_path(path)
+        else:
+            renamed_from, name = (_unquote_path(part) for part in renamed)
 
         file_status.append(
             GitFileStatus(
