@@ -336,3 +336,26 @@ def test_client_params_are_copied(api_server):
 
     assert api_keys() == [API_KEY_A]
     assert sandbox.connection_config.api_key == API_KEY_A
+
+
+def test_client_nested_dict_params_are_deep_copied(api_server):
+    headers = {"X-Tag": "a"}
+    client = E2B(
+        api_key=API_KEY_A,
+        domain=DOMAIN_A,
+        api_url=api_server,
+        headers=headers,
+    )
+
+    # Control: an unmutated config sends the original header value.
+    client.Sandbox.create()
+    assert requests()[0][2].get("x-tag") == "a"
+
+    # Mutating the caller's nested dict after construction must not change
+    # the bound configuration used by a later call.
+    headers["X-Tag"] = "b"
+    _Handler.requests = []
+    client.Sandbox.create()
+
+    assert api_keys() == [API_KEY_A]
+    assert requests()[0][2].get("x-tag") == "a"

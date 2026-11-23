@@ -1,3 +1,4 @@
+import copy
 from typing import Dict, Type, TypeVar, Unpack, cast
 
 from e2b.connection_config import ApiParams
@@ -59,8 +60,15 @@ class E2B:
             through this client's resource classes.
         """
         # Params are copied so later mutations of the caller's dicts cannot
-        # change the bound configuration.
-        api_params = cast(ApiParams, dict(cast(Dict[str, object], opts)))
+        # change the bound configuration. Nested dicts (e.g. `headers`,
+        # `api_headers`) are deep-copied so shared references are severed too.
+        api_params = cast(
+            ApiParams,
+            {
+                key: copy.deepcopy(value) if isinstance(value, dict) else value
+                for key, value in cast(Dict[str, object], opts).items()
+            },
+        )
 
         self.Sandbox = _bind(Sandbox, api_params)
         """`Sandbox` class bound to this client's connection configuration."""
