@@ -264,6 +264,19 @@ def test_request_timeout_zero_means_no_timeout():
     assert config.get_request_timeout(0) is None
 
 
+def test_a_disabled_timeout_survives_the_api_params_round_trip():
+    """Instance control-plane methods (kill, pause, set_timeout, get_info, connect, fork) rebuild the config from
+    these params, where None means "not provided": a disabled timeout used to come back as the 60 s default."""
+    config = ConnectionConfig(request_timeout=0)
+    params = config.get_api_params()
+    assert params["request_timeout"] == 0
+    assert ConnectionConfig(**params).request_timeout is None
+    assert ConnectionConfig(**params).get_request_timeout() is None
+    # An explicit per-call value still wins, and the default config is unchanged.
+    assert config.get_api_params(request_timeout=15)["request_timeout"] == 15
+    assert ConnectionConfig().get_api_params()["request_timeout"] == 60.0
+
+
 def test_get_api_params_includes_sandbox_url():
     config = ConnectionConfig(sandbox_url="https://sandbox.example.com")
 
