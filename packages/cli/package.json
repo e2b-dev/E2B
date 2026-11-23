@@ -53,7 +53,7 @@
     "@types/node": "catalog:",
     "@types/npmcli__package-json": "^4.0.4",
     "@types/proper-lockfile": "^4.1.4",
-    "@redocly/cli": "2.76.0",
+    "@redocly/cli": "2.78.0",
     "@types/statuses": "^2.0.6",
     "@typescript/native": "catalog:",
     "@vitest/coverage-v8": "catalog:",
