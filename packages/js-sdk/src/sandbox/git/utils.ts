@@ -323,13 +323,18 @@ function normalizeBranchName(name: string): string {
     .replace('Initial commit on ', '')
 }
 
+const UNMERGED_STATUSES = new Set(['DD', 'AU', 'UD', 'UA', 'DU', 'AA', 'UU'])
+
 function deriveStatus(
   indexStatus: string,
   workingStatus: string
 ): GitStatusLabel {
+  if (UNMERGED_STATUSES.has(`${indexStatus}${workingStatus}`)) {
+    return 'conflict'
+  }
+
   const statuses = new Set([indexStatus, workingStatus])
 
-  if (statuses.has('U')) return 'conflict'
   if (statuses.has('R')) return 'renamed'
   if (statuses.has('C')) return 'copied'
   if (statuses.has('D')) return 'deleted'

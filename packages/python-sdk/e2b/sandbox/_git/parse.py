@@ -64,6 +64,9 @@ def _normalize_branch_name(name: str) -> str:
     )
 
 
+_UNMERGED_STATUSES = frozenset({"DD", "AU", "UD", "UA", "DU", "AA", "UU"})
+
+
 def _derive_status(index_status: str, working_status: str) -> str:
     """
     Derive a normalized status label from porcelain status characters.
@@ -72,9 +75,9 @@ def _derive_status(index_status: str, working_status: str) -> str:
     :param working_status: Working tree status character
     :return: Normalized status label
     """
-    statuses = {index_status, working_status}
-    if "U" in statuses:
+    if f"{index_status}{working_status}" in _UNMERGED_STATUSES:
         return "conflict"
+    statuses = {index_status, working_status}
     if "R" in statuses:
         return "renamed"
     if "C" in statuses:
