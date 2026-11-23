@@ -1,8 +1,23 @@
+import codecs
 from typing import List, Optional
 from urllib.parse import urlparse
 
 from e2b.exceptions import InvalidArgumentException
 from e2b.sandbox._git.types import GitBranches, GitFileStatus, GitStatus
+
+
+def _unquote_path(path: str) -> str:
+    """
+    Decode a path written in C-style quotes: `git status --porcelain` quotes and
+    escapes a path holding a space, a quote, a backslash, a control character, or
+    (with `core.quotePath`, on by default) a non-ASCII byte.
+    """
+    if len(path) < 2 or not path.startswith('"') or not path.endswith('"'):
+        return path
+    try:
+        return codecs.escape_decode(path[1:-1].encode("utf-8"))[0].decode("utf-8")
+    except (ValueError, UnicodeDecodeError):
+        return path
 
 
 def derive_repo_dir_from_url(url: str) -> Optional[str]:
@@ -142,7 +157,7 @@ def parse_git_status(output: str) -> GitStatus:
 
     for line in lines[1:]:
         if line.startswith("?? "):
-            name = line[3:]
+            name = _unquote_path(line[3:])
             file_status.append(
                 GitFileStatus(
                     name=name,
@@ -160,9 +175,10 @@ def parse_git_status(output: str) -> GitStatus:
         working_status = line[1]
         path = line[3:]
         renamed_from: Optional[str] = None
-        name = path
+        name = _unquote_path(path)
         if " -> " in path:
-            renamed_from, name = path.split(" -> ", 1)
+            old_path, new_path = path.split(" -> ", 1)
+            renamed_from, name = _unquote_path(old_path), _unquote_path(new_path)
 
         file_status.append(
             GitFileStatus(
