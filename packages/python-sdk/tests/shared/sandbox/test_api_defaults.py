@@ -410,38 +410,48 @@ async def test_async_connect_sends_explicit_timeout(monkeypatch, test_api_key):
     assert body["timeout"] == 60
 
 
-def test_connect_omits_memory_mb_when_unset(monkeypatch, test_api_key):
+def test_connect_omits_resume_sizes_when_unset(monkeypatch, test_api_key):
     body = _sync_connect_body(monkeypatch, test_api_key)
 
     assert "memoryMB" not in body
+    assert "cpuCount" not in body
 
 
-async def test_async_connect_omits_memory_mb_when_unset(monkeypatch, test_api_key):
+async def test_async_connect_omits_resume_sizes_when_unset(monkeypatch, test_api_key):
     body = await _async_connect_body(monkeypatch, test_api_key)
 
     assert "memoryMB" not in body
+    assert "cpuCount" not in body
 
 
-@pytest.mark.parametrize("on_resume, memory", [("restore", None), ("reboot", False)])
-def test_connect_sends_explicit_memory_mb(monkeypatch, test_api_key, on_resume, memory):
+@pytest.mark.parametrize("mode, memory", [("restore", None), ("reboot", False)])
+def test_connect_sends_on_resume_sizes_flat(monkeypatch, test_api_key, mode, memory):
     body = _sync_connect_body(
-        monkeypatch, test_api_key, on_resume=on_resume, memory_mb=4096
+        monkeypatch,
+        test_api_key,
+        on_resume={"mode": mode, "memory_mb": 4096, "cpu_count": 4},
     )
 
     assert body["memoryMB"] == 4096
+    assert body["cpuCount"] == 4
     assert body.get("memory") is memory
+    assert "onResume" not in body
 
 
-@pytest.mark.parametrize("on_resume, memory", [("restore", None), ("reboot", False)])
-async def test_async_connect_sends_explicit_memory_mb(
-    monkeypatch, test_api_key, on_resume, memory
+@pytest.mark.parametrize("mode, memory", [("restore", None), ("reboot", False)])
+async def test_async_connect_sends_on_resume_sizes_flat(
+    monkeypatch, test_api_key, mode, memory
 ):
     body = await _async_connect_body(
-        monkeypatch, test_api_key, on_resume=on_resume, memory_mb=4096
+        monkeypatch,
+        test_api_key,
+        on_resume={"mode": mode, "memory_mb": 4096, "cpu_count": 4},
     )
 
     assert body["memoryMB"] == 4096
+    assert body["cpuCount"] == 4
     assert body.get("memory") is memory
+    assert "onResume" not in body
 
 
 def _marked_snapshot_response():

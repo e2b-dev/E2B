@@ -181,3 +181,86 @@ async def test_async_connect_rejects_an_unrecognized_on_resume(
         )
 
     request.assert_not_called()
+
+
+OBJECT_CASES = [
+    pytest.param({"memory_mb": 2048}, {"memoryMB": 2048}, id="memory-only"),
+    pytest.param(
+        {"mode": "reboot", "memory_mb": 4096, "cpu_count": 4},
+        {"memory": False, "memoryMB": 4096, "cpuCount": 4},
+        id="reboot-with-sizes",
+    ),
+    pytest.param({"cpu_count": 2}, {"cpuCount": 2}, id="cpu-only"),
+    pytest.param({"mode": "restore"}, {}, id="restore-object"),
+    pytest.param({}, {}, id="empty-object"),
+]
+
+RESUME_KEYS = ("memory", "memoryMB", "cpuCount", "onResume")
+
+
+def _resume_fields(body: Dict[str, Any]) -> Dict[str, Any]:
+    return {k: body[k] for k in RESUME_KEYS if k in body}
+
+
+@pytest.mark.parametrize("on_resume, expected", OBJECT_CASES)
+def test_on_resume_object_maps_to_flat_fields(
+    monkeypatch, test_api_key, on_resume, expected
+):
+    body = _sync_request_body(monkeypatch, test_api_key, on_resume=on_resume)
+
+    assert _resume_fields(body) == expected
+
+
+@pytest.mark.parametrize("on_resume, expected", OBJECT_CASES)
+async def test_async_on_resume_object_maps_to_flat_fields(
+    monkeypatch, test_api_key, on_resume, expected
+):
+    body = await _async_request_body(monkeypatch, test_api_key, on_resume=on_resume)
+
+    assert _resume_fields(body) == expected
+
+
+def test_reboot_string_sends_only_memory_false(monkeypatch, test_api_key):
+    body = _sync_request_body(monkeypatch, test_api_key, on_resume="reboot")
+
+    assert _resume_fields(body) == {"memory": False}
+
+
+INVALID_OBJECTS = [
+    pytest.param({"mode": "Reboot"}, id="bad-mode"),
+    pytest.param({"memory_mb": "4096"}, id="memory-str"),
+    pytest.param({"memory_mb": 0}, id="memory-zero"),
+    pytest.param({"memory_mb": True}, id="memory-bool"),
+    pytest.param({"cpu_count": -1}, id="cpu-negative"),
+    pytest.param({"cpu_count": 2.5}, id="cpu-float"),
+    pytest.param({"memoryMB": 4096}, id="camelcase-key"),
+    pytest.param(["reboot"], id="list"),
+]
+
+
+@pytest.mark.parametrize("on_resume", INVALID_OBJECTS)
+def test_invalid_on_resume_object_is_rejected(monkeypatch, test_api_key, on_resume):
+    request = Mock(return_value=_connected_sandbox())
+    monkeypatch.setattr(post_v_2_sandboxes_sandbox_id_connect, "sync_detailed", request)
+
+    with pytest.raises(InvalidArgumentException):
+        Sandbox.connect(SANDBOX_ID, api_key=test_api_key, on_resume=on_resume)
+
+    request.assert_not_called()
+
+
+@pytest.mark.parametrize("on_resume", INVALID_OBJECTS)
+async def test_async_invalid_on_resume_object_is_rejected(
+    monkeypatch, test_api_key, on_resume
+):
+    request = AsyncMock(return_value=_connected_sandbox())
+    monkeypatch.setattr(
+        post_v_2_sandboxes_sandbox_id_connect, "asyncio_detailed", request
+    )
+
+    with pytest.raises(InvalidArgumentException):
+        await AsyncSandbox.connect(
+            SANDBOX_ID, api_key=test_api_key, on_resume=on_resume
+        )
+
+    request.assert_not_called()

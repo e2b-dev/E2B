@@ -52,8 +52,9 @@ from e2b.sandbox.sandbox_api import (
     SandboxNetworkOpts,
     SandboxNetworkUpdate,
     SandboxOnResume,
+    SandboxOnResumeOptions,
     SnapshotMode,
-    resolve_connect_memory,
+    resolve_connect_resume,
     resolve_snapshot_memory,
     SandboxQuery,
     SnapshotInfo,
@@ -334,10 +335,10 @@ class SandboxApi(SandboxBase):
         timeout: Optional[int] = None,
         logger: Optional[logging.Logger] = None,
         *,
-        on_resume: SandboxOnResume = "restore",
-        memory_mb: Optional[int] = None,
+        on_resume: Union[SandboxOnResume, SandboxOnResumeOptions, None] = "restore",
         **opts: Unpack[ApiParams],
     ) -> SandboxCreateResponse:
+        resume = resolve_connect_resume(on_resume)
         config = ConnectionConfig(logger=logger, **cls._resolve_api_params(**opts))
 
         api_client = get_api_client(config)
@@ -346,8 +347,9 @@ class SandboxApi(SandboxBase):
             client=api_client,
             body=ConnectSandboxV2(
                 timeout=timeout if timeout is not None else UNSET,
-                memory=resolve_connect_memory(on_resume),
-                memory_mb=memory_mb if memory_mb is not None else UNSET,
+                memory=resume.memory,
+                memory_mb=resume.memory_mb,
+                cpu_count=resume.cpu_count,
             ),
         )
 

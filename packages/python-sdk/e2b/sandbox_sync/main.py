@@ -27,6 +27,7 @@ from e2b.sandbox.sandbox_api import (
     SandboxNetworkOpts,
     SandboxNetworkUpdate,
     SandboxOnResume,
+    SandboxOnResumeOptions,
     SnapshotInfo,
     SnapshotMode,
 )
@@ -273,8 +274,7 @@ class Sandbox(SandboxApi):
         self,
         timeout: Optional[int] = None,
         *,
-        on_resume: SandboxOnResume = "restore",
-        memory_mb: Optional[int] = None,
+        on_resume: Union[SandboxOnResume, SandboxOnResumeOptions, None] = "restore",
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -294,12 +294,11 @@ class Sandbox(SandboxApi):
             deployment built from `e2b-dev/runtime` at or after the commit that added the `memory`
             field to connect/resume (2026-08-20). An older control plane drops the field and
             restores memory while answering as if the request had succeeded.
-        :param memory_mb: Memory in MiB to resume a paused sandbox with, on a restore or a reboot.
-            At least the size it was paused with and at most the template's ``max_memory_mb``, in
-            steps of 128 MiB above its ``memory_mb``. Defaults to the size it was paused with. Like
-            ``on_resume``, it applies only when this call resumes a paused sandbox: a sandbox that is
-            already running, or that another request is already resuming, keeps its size and the
-            value is ignored. The connect doesn't report the size; read it with ``get_info()``.
+            Pass a ``SandboxOnResumeOptions`` dict (``mode``, ``memory_mb``, ``cpu_count``) to also
+            choose the memory and CPUs it resumes with. The sizes apply only when this call resumes a
+            paused sandbox: a sandbox that is already running, or that another request is already
+            resuming, keeps its sizes and they are ignored. Read them back with ``get_info()``. An
+            unknown mode or a size that is not a positive integer raises `InvalidArgumentException`.
         :raises GuestUnresponsiveException: when the paused sandbox's snapshot was taken while its guest agent was not responding (``envd_unresponsive_at_pause``); connect with ``on_resume="reboot"``.
         :return: A running sandbox instance
 
@@ -322,8 +321,7 @@ class Sandbox(SandboxApi):
         timeout: Optional[int] = None,
         logger: Optional[logging.Logger] = None,
         *,
-        on_resume: SandboxOnResume = "restore",
-        memory_mb: Optional[int] = None,
+        on_resume: Union[SandboxOnResume, SandboxOnResumeOptions, None] = "restore",
         **opts: Unpack[ApiParams],
     ) -> "Sandbox":
         """
@@ -345,12 +343,11 @@ class Sandbox(SandboxApi):
             deployment built from `e2b-dev/runtime` at or after the commit that added the `memory`
             field to connect/resume (2026-08-20). An older control plane drops the field and
             restores memory while answering as if the request had succeeded.
-        :param memory_mb: Memory in MiB to resume a paused sandbox with, on a restore or a reboot.
-            At least the size it was paused with and at most the template's ``max_memory_mb``, in
-            steps of 128 MiB above its ``memory_mb``. Defaults to the size it was paused with. Like
-            ``on_resume``, it applies only when this call resumes a paused sandbox: a sandbox that is
-            already running, or that another request is already resuming, keeps its size and the
-            value is ignored. The connect doesn't report the size; read it with ``get_info()``.
+            Pass a ``SandboxOnResumeOptions`` dict (``mode``, ``memory_mb``, ``cpu_count``) to also
+            choose the memory and CPUs it resumes with. The sizes apply only when this call resumes a
+            paused sandbox: a sandbox that is already running, or that another request is already
+            resuming, keeps its sizes and they are ignored. Read them back with ``get_info()``. An
+            unknown mode or a size that is not a positive integer raises `InvalidArgumentException`.
         :raises GuestUnresponsiveException: when the paused sandbox's snapshot was taken while its guest agent was not responding (``envd_unresponsive_at_pause``); connect with ``on_resume="reboot"``.
         :return: A running sandbox instance
 
@@ -370,8 +367,7 @@ class Sandbox(SandboxApi):
         self,
         timeout: Optional[int] = None,
         *,
-        on_resume: SandboxOnResume = "restore",
-        memory_mb: Optional[int] = None,
+        on_resume: Union[SandboxOnResume, SandboxOnResumeOptions, None] = "restore",
         **opts: Unpack[ApiParams],
     ) -> Self:
         """
@@ -391,12 +387,11 @@ class Sandbox(SandboxApi):
             deployment built from `e2b-dev/runtime` at or after the commit that added the `memory`
             field to connect/resume (2026-08-20). An older control plane drops the field and
             restores memory while answering as if the request had succeeded.
-        :param memory_mb: Memory in MiB to resume a paused sandbox with, on a restore or a reboot.
-            At least the size it was paused with and at most the template's ``max_memory_mb``, in
-            steps of 128 MiB above its ``memory_mb``. Defaults to the size it was paused with. Like
-            ``on_resume``, it applies only when this call resumes a paused sandbox: a sandbox that is
-            already running, or that another request is already resuming, keeps its size and the
-            value is ignored. The connect doesn't report the size; read it with ``get_info()``.
+            Pass a ``SandboxOnResumeOptions`` dict (``mode``, ``memory_mb``, ``cpu_count``) to also
+            choose the memory and CPUs it resumes with. The sizes apply only when this call resumes a
+            paused sandbox: a sandbox that is already running, or that another request is already
+            resuming, keeps its sizes and they are ignored. Read them back with ``get_info()``. An
+            unknown mode or a size that is not a positive integer raises `InvalidArgumentException`.
         :raises GuestUnresponsiveException: when the paused sandbox's snapshot was taken while its guest agent was not responding (``envd_unresponsive_at_pause``); connect with ``on_resume="reboot"``.
         :return: A running sandbox instance
 
@@ -417,7 +412,6 @@ class Sandbox(SandboxApi):
             sandbox_id=self.sandbox_id,
             timeout=timeout,
             on_resume=on_resume,
-            memory_mb=memory_mb,
             **self.connection_config.get_api_params(**opts),
         )
 
@@ -1114,8 +1108,7 @@ class Sandbox(SandboxApi):
         timeout: Optional[int] = None,
         logger: Optional[logging.Logger] = None,
         *,
-        on_resume: SandboxOnResume = "restore",
-        memory_mb: Optional[int] = None,
+        on_resume: Union[SandboxOnResume, SandboxOnResumeOptions, None] = "restore",
         **opts: Unpack[ApiParams],
     ) -> Self:
         params = cls._resolve_api_params(**opts)
@@ -1130,7 +1123,6 @@ class Sandbox(SandboxApi):
                 sandbox_id=sandbox_id,
                 timeout=timeout,
                 on_resume=on_resume,
-                memory_mb=memory_mb,
                 logger=logger,
                 **params,
             )

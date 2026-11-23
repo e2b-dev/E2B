@@ -890,6 +890,39 @@ export interface SandboxOpts extends ConnectionOpts {
 export type SandboxOnResume = 'restore' | 'reboot'
 
 /**
+ * How to bring a paused sandbox back, with the sizes to resume it at.
+ *
+ * Everything here applies only when the connect resumes a paused sandbox, by
+ * a restore or a reboot. A sandbox that is already running, or that another
+ * request is already resuming, keeps its mode and sizes and these values are
+ * ignored. Read the sizes the sandbox runs with from `getInfo()`.
+ */
+export type SandboxOnResumeOptions = {
+  /**
+   * `'restore'` restores the memory snapshot; `'reboot'` cold-boots from disk
+   * state, so writes not flushed before the pause may be lost.
+   *
+   * @default 'restore'
+   */
+  mode?: SandboxOnResume
+  /**
+   * Memory in MiB to resume with. At least the size the sandbox was paused
+   * with and at most the template's `maxMemoryMB`, in steps of 128 MiB above
+   * its `memoryMB`.
+   *
+   * @default the size the sandbox was paused with
+   */
+  memoryMB?: number
+  /**
+   * CPUs to resume with, from 1 to the template's `maxCpuCount`. Fixed-size
+   * templates accept only their own `cpuCount`.
+   *
+   * @default the count the sandbox was paused with
+   */
+  cpuCount?: number
+}
+
+/**
  * Options for connecting to a Sandbox.
  */
 export type SandboxConnectOpts = ConnectionOpts & {
@@ -905,7 +938,8 @@ export type SandboxConnectOpts = ConnectionOpts & {
    * memory snapshot; `'reboot'` cold-boots from disk state, so writes not
    * flushed before the pause may be lost. Rejected where filesystem-only resume
    * is not enabled; a no-op for a snapshot without memory or a sandbox that is
-   * already running.
+   * already running. Pass a {@link SandboxOnResumeOptions} object to also
+   * choose the memory and CPUs it resumes with.
    *
    * Needs a control plane that knows this option: E2B Cloud, or a self-hosted
    * or BYOC deployment built from `e2b-dev/runtime` at or after the commit that
@@ -914,23 +948,10 @@ export type SandboxConnectOpts = ConnectionOpts & {
    * request had succeeded.
    *
    * @default 'restore'
-   * @throws {@link InvalidArgumentError} if the value is outside the two literals.
+   * @throws {@link InvalidArgumentError} if the mode is outside the two
+   * literals, or a size is not a positive integer.
    */
-  onResume?: SandboxOnResume
-
-  /**
-   * Memory in MiB to resume a paused sandbox with, on a restore or a reboot.
-   * At least the size it was paused with and at most the template's
-   * `maxMemoryMB`, in steps of 128 MiB above its `memoryMB`.
-   *
-   * Like `onResume`, it applies only when this call resumes a paused sandbox:
-   * a sandbox that is already running, or that another request is already
-   * resuming, keeps its size and the value is ignored. The connect doesn't
-   * report the size; read it with `getInfo()`.
-   *
-   * @default the size the sandbox was paused with
-   */
-  memoryMB?: number
+  onResume?: SandboxOnResume | SandboxOnResumeOptions
 }
 
 /**
@@ -2127,13 +2148,7 @@ export class SandboxApi extends ClientFactory {
     // option. Any other value outside the union never reaches the API — it is
     // resolved here into the boolean memory field — so it cannot be rejected
     // server-side, and resolving it to restore would silently skip the reboot.
-    const onResume = apiOpts?.onResume ?? undefined
-    const allowedOnResume = ['restore', 'reboot']
-    if (onResume !== undefined && !allowedOnResume.includes(onResume)) {
-      throw new InvalidArgumentError(
-        `onResume must be one of: ${allowedOnResume.join(', ')} (got ${JSON.stringify(onResume)}).`
-      )
-    }
+    const onResume = resolveOnResume(apiOpts?.onResume)
 
     const config = new ConnectionConfig(apiOpts)
     const client = new ApiClient(config)
@@ -2147,8 +2162,9 @@ export class SandboxApi extends ClientFactory {
       body: {
         timeout:
           timeoutMs === undefined ? undefined : timeoutToSeconds(timeoutMs),
-        memory: onResume === 'reboot' ? false : undefined,
-        memoryMB: apiOpts?.memoryMB,
+        memory: onResume.mode === 'reboot' ? false : undefined,
+        memoryMB: onResume.memoryMB,
+        cpuCount: onResume.cpuCount,
       },
       signal: config.getSignal(apiOpts?.requestTimeoutMs, apiOpts?.signal),
     })
@@ -2308,5 +2324,45 @@ export class SnapshotPaginator extends Paginator<SnapshotInfo, SandboxApiOpts> {
         names: snapshot.names ?? [],
       })
     )
+  }
+}
+
+const allowedOnResumeModes: readonly SandboxOnResume[] = ['restore', 'reboot']
+
+// A nullish value is not a choice of restore, matching every other nullish
+// option. Anything else invalid never reaches the API, which cannot reject a
+// mode it only sees as the memory flag, so it is refused here.
+function resolveOnResume(
+  onResume: SandboxOnResume | SandboxOnResumeOptions | null | undefined
+): SandboxOnResumeOptions {
+  if (onResume === undefined || onResume === null) {
+    return {}
+  }
+  const options: SandboxOnResumeOptions =
+    typeof onResume === 'string' ? { mode: onResume } : onResume
+  if (typeof options !== 'object' || Array.isArray(options)) {
+    throw new InvalidArgumentError(
+      `onResume must be one of: ${allowedOnResumeModes.join(', ')}, or an object (got ${JSON.stringify(onResume)}).`
+    )
+  }
+  const mode = options.mode ?? undefined
+  if (mode !== undefined && !allowedOnResumeModes.includes(mode)) {
+    throw new InvalidArgumentError(
+      `onResume${typeof onResume === 'string' ? '' : '.mode'} must be one of: ${allowedOnResumeModes.join(', ')} (got ${JSON.stringify(mode)}).`
+    )
+  }
+  for (const key of ['memoryMB', 'cpuCount'] as const) {
+    const value = options[key] ?? undefined
+    if (value !== undefined && !(Number.isInteger(value) && value > 0)) {
+      throw new InvalidArgumentError(
+        `onResume.${key} must be a positive integer (got ${JSON.stringify(value)}).`
+      )
+    }
+  }
+
+  return {
+    mode,
+    memoryMB: options.memoryMB ?? undefined,
+    cpuCount: options.cpuCount ?? undefined,
   }
 }

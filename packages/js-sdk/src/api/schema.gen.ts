@@ -3170,9 +3170,11 @@ export interface components {
             timeout: number;
         };
         ConnectSandboxV2: {
+            /** @description Online vCPU target for the sandbox when this connect resumes it, from its memory snapshot or by cold-booting (memory false). Defaults to the snapshot's cpuCount, lowered to the team's vCPU limit when above it; at most the template's maxCpuCount (fixed-size templates accept only their cpuCount) and the team's vCPU limit, and refused when resizable templates are not enabled for the team. Like memoryMB, it applies only when this connect resumes a paused sandbox: a sandbox that is already running, or that another request is already resuming, keeps its count and the field is ignored. The response's cpuCount reports the count the sandbox runs with. */
+            cpuCount?: components["schemas"]["CPUCount"];
             /** @description Defaults to true. When false and the sandbox is paused, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. A snapshot taken while the sandbox guest agent was not responding (envdUnresponsiveAtPause) can only be resumed this way, and needs no enablement. */
             memory?: boolean;
-            /** @description Memory for the sandbox in MiB when this connect resumes it, from its memory snapshot or by cold-booting (memory false). Defaults to the memory the sandbox had when it was paused; at least that, and at most the template's maxMemoryMB, in steps of 128 MiB above its memoryMB. Like memory, it applies only when this connect resumes a paused sandbox: a sandbox that is already running, or that another request is already resuming, keeps its size and the field is ignored. The response does not report the size; read the sandbox to see it, and note that while the API does not know a running sandbox's size (it was started by an older API version, for example), the sandbox's memoryMB may report its boot RAM. */
+            /** @description Memory for the sandbox in MiB when this connect resumes it, from its memory snapshot or by cold-booting (memory false). Defaults to the memory the sandbox had when it was paused; at least that, and at most the template's maxMemoryMB, in steps of 128 MiB above its memoryMB. Like memory, it applies only when this connect resumes a paused sandbox: a sandbox that is already running, or that another request is already resuming, keeps its size and the field is ignored. The response's memoryMB reports the size the sandbox runs with. */
             memoryMB?: components["schemas"]["MemoryMB"];
             /**
              * Format: int32
@@ -3437,11 +3439,15 @@ export interface components {
              * @description Identifier of the client
              */
             clientID: string;
+            /** @description Online vCPUs the sandbox runs with. A connect reports the count of the sandbox it returns, which differs from a requested cpuCount when the request was ignored. Absent from older API versions. */
+            cpuCount?: components["schemas"]["CPUCount"];
             /** @description Base domain where the sandbox traffic is accessible */
             domain?: string | null;
             /** @description Access token used for envd communication */
             envdAccessToken?: string;
             envdVersion: components["schemas"]["EnvdVersion"];
+            /** @description Memory the sandbox runs with in MiB. A connect reports the size of the sandbox it returns, which differs from a requested memoryMB when the request was ignored. While the API does not know a sandbox's size (it was started by an older API version, for example), this reports its boot RAM. Absent from older API versions. */
+            memoryMB?: components["schemas"]["MemoryMB"];
             /** @description Identifier of the sandbox */
             sandboxID: string;
             /** @description Identifier of the template from which is the sandbox created */

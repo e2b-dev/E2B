@@ -124,3 +124,78 @@ test('an unrecognized onResume is InvalidArgumentError without an API key', asyn
   }
   expect(lastConnectBody).toBeUndefined()
 })
+
+test('an onResume object with only memoryMB sends memoryMB alone', async () => {
+  await Sandbox.connect('test-sandbox-id', {
+    apiKey: TEST_API_KEY,
+    onResume: { memoryMB: 2048 },
+  })
+
+  expect(lastConnectBody?.memoryMB).toBe(2048)
+  expect(lastConnectBody).not.toHaveProperty('memory')
+  expect(lastConnectBody).not.toHaveProperty('cpuCount')
+  expect(lastConnectBody).not.toHaveProperty('onResume')
+})
+
+test("an onResume object with mode 'reboot' sends flat fields", async () => {
+  await Sandbox.connect('test-sandbox-id', {
+    apiKey: TEST_API_KEY,
+    onResume: { mode: 'reboot', memoryMB: 4096, cpuCount: 4 },
+  })
+
+  expect(lastConnectBody).toMatchObject({
+    memory: false,
+    memoryMB: 4096,
+    cpuCount: 4,
+  })
+  expect(lastConnectBody).not.toHaveProperty('onResume')
+})
+
+test("the string onResume 'reboot' sends only memory: false", async () => {
+  await Sandbox.connect('test-sandbox-id', {
+    apiKey: TEST_API_KEY,
+    onResume: 'reboot',
+  })
+
+  expect(lastConnectBody?.memory).toBe(false)
+  expect(lastConnectBody).not.toHaveProperty('memoryMB')
+  expect(lastConnectBody).not.toHaveProperty('cpuCount')
+  expect(lastConnectBody).not.toHaveProperty('onResume')
+})
+
+test('an empty onResume object sends none of the resume fields', async () => {
+  await Sandbox.connect('test-sandbox-id', {
+    apiKey: TEST_API_KEY,
+    onResume: {},
+  })
+
+  expect(lastConnectBody).toBeDefined()
+  for (const key of ['memory', 'memoryMB', 'cpuCount', 'onResume']) {
+    expect(lastConnectBody).not.toHaveProperty(key)
+  }
+})
+
+const invalidObjects = [
+  { mode: 'Reboot' },
+  { mode: 'rebooted' },
+  { memoryMB: '4096' },
+  { memoryMB: 0 },
+  { memoryMB: 1024.5 },
+  { cpuCount: -1 },
+  { cpuCount: '4' },
+]
+
+test.for(invalidObjects)(
+  'an invalid onResume object %o is rejected before any request',
+  async (value) => {
+    await expect(
+      Sandbox.connect('test-sandbox-id', {
+        apiKey: TEST_API_KEY,
+        // @ts-expect-error deliberately invalid
+        onResume: value,
+      })
+    ).rejects.toThrowError(InvalidArgumentError)
+
+    expect(lastConnectBody).toBeUndefined()
+  }
+)

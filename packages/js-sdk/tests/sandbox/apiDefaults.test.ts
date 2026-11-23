@@ -251,26 +251,28 @@ test('Sandbox.connect sends an explicit timeout', async () => {
   expect(lastConnectBody?.timeout).toBe(60)
 })
 
-test('Sandbox.connect omits memoryMB when unset', async () => {
+test('Sandbox.connect omits memoryMB and cpuCount when unset', async () => {
   await Sandbox.connect('test-sandbox-id', { apiKey: TEST_API_KEY })
 
   expect(lastConnectBody).not.toHaveProperty('memoryMB')
+  expect(lastConnectBody).not.toHaveProperty('cpuCount')
 })
 
 test.each([
   ['restore', undefined],
   ['reboot', false],
 ] as const)(
-  'Sandbox.connect sends an explicit memoryMB on %s',
-  async (onResume, memory) => {
+  'Sandbox.connect sends onResume sizes as flat fields on %s',
+  async (mode, memory) => {
     await Sandbox.connect('test-sandbox-id', {
       apiKey: TEST_API_KEY,
-      onResume,
-      memoryMB: 4096,
+      onResume: { mode, memoryMB: 4096, cpuCount: 4 },
     })
 
     expect(lastConnectBody?.memoryMB).toBe(4096)
+    expect(lastConnectBody?.cpuCount).toBe(4)
     expect(lastConnectBody?.memory).toBe(memory)
+    expect(lastConnectBody).not.toHaveProperty('onResume')
   }
 )
 

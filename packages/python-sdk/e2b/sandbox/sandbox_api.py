@@ -9,6 +9,7 @@ from typing import (
     List,
     Literal,
     Mapping,
+    NamedTuple,
     NotRequired,
     Optional,
     TypedDict,
@@ -789,6 +790,75 @@ survive the pause. ``"reboot"`` ignores any memory in the snapshot and
 cold-boots from disk state alone — the rescue path for a snapshot whose memory
 image wedges the guest.
 """
+
+
+class SandboxOnResumeOptions(TypedDict, total=False):
+    """
+    How to bring a paused sandbox back, with the sizes to resume it at.
+
+    Everything here applies only when the connect resumes a paused sandbox, by
+    a restore or a reboot. A sandbox that is already running, or that another
+    request is already resuming, keeps its mode and sizes and these values are
+    ignored. Read the sizes the sandbox runs with from ``get_info()``.
+    """
+
+    mode: SandboxOnResume
+    """``"restore"`` (the default) restores the memory snapshot; ``"reboot"`` cold-boots from disk state, so writes not flushed before the pause may be lost."""
+
+    memory_mb: int
+    """Memory in MiB to resume with. At least the size the sandbox was paused with and at most the template's ``max_memory_mb``, in steps of 128 MiB above its ``memory_mb``. Defaults to the size it was paused with."""
+
+    cpu_count: int
+    """CPUs to resume with, from 1 to the template's ``max_cpu_count``. Fixed-size templates accept only their own ``cpu_count``. Defaults to the count it was paused with."""
+
+
+class ConnectResume(NamedTuple):
+    """``on_resume`` resolved into the flat ``ConnectSandboxV2`` fields."""
+
+    memory: Union[Unset, bool]
+    memory_mb: Union[Unset, int]
+    cpu_count: Union[Unset, int]
+
+
+def resolve_connect_resume(
+    on_resume: Union[None, "SandboxOnResume", SandboxOnResumeOptions],
+) -> ConnectResume:
+    """Resolve ``on_resume`` into the flat connect fields: the mode into
+    ``memory`` (``"restore"`` is the API's default, so it travels as an omitted
+    field) and the sizes into ``memory_mb`` and ``cpu_count``."""
+    if on_resume is None:
+        return ConnectResume(UNSET, UNSET, UNSET)
+    if isinstance(on_resume, str):
+        return ConnectResume(resolve_connect_memory(on_resume), UNSET, UNSET)
+    if not isinstance(on_resume, dict):
+        raise InvalidArgumentException(
+            f"on_resume must be one of: restore, reboot, or a dict (got {on_resume!r})."
+        )
+    unknown = set(on_resume) - {"mode", "memory_mb", "cpu_count"}
+    if unknown:
+        raise InvalidArgumentException(
+            f"on_resume has unknown keys: {', '.join(sorted(unknown))}."
+        )
+    mode = on_resume.get("mode")
+    if mode is not None and mode not in ("restore", "reboot"):
+        raise InvalidArgumentException(
+            f"on_resume['mode'] must be one of: restore, reboot (got {mode!r})."
+        )
+    sizes = {}
+    for key in ("memory_mb", "cpu_count"):
+        value = on_resume.get(key)
+        if value is not None and (
+            isinstance(value, bool) or not isinstance(value, int) or value <= 0
+        ):
+            raise InvalidArgumentException(
+                f"on_resume['{key}'] must be a positive integer (got {value!r})."
+            )
+        sizes[key] = value if value is not None else UNSET
+    return ConnectResume(
+        resolve_connect_memory(mode) if mode is not None else UNSET,
+        sizes["memory_mb"],
+        sizes["cpu_count"],
+    )
 
 
 def _resolve_network_selector(
