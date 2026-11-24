@@ -73,12 +73,12 @@ export class CommandInputHandle {
         this.notify()
       })
       .catch(async (error: unknown) => {
+        this.stopped = true
+        this.notify()
         this.failure = await handleRpcErrorWithHealthCheck(
           error,
           this.checkHealth
         )
-        this.stopped = true
-        this.notify()
         throw this.failure
       })
     this.completion.catch(() => undefined)
@@ -96,6 +96,10 @@ export class CommandInputHandle {
   async send(data: string | Uint8Array): Promise<void> {
     if (this.failure) {
       throw this.failure
+    }
+    if (this.stopped && !this.closing) {
+      // Let a failed stream finish classifying its error without queuing input.
+      await this.completion
     }
     if (this.closing || this.stopped) {
       throw new SandboxError(

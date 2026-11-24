@@ -58,6 +58,9 @@ class AsyncCommandInputHandle:
             ``sandbox.commands.stream_input(pid)`` or
             ``sandbox.pty.stream_input(pid)``.
         """
+        if self._stopped and not self._closing:
+            # Wait for the stream error without letting this send cancel the probe.
+            await asyncio.shield(self._task)
         if self._failure is not None:
             raise self._failure
         if self._closing or self._stopped:
@@ -95,11 +98,11 @@ class AsyncCommandInputHandle:
                 timeout_ms=timeout_to_ms(self._timeout),
             )
         except Exception as error:
+            self._stopped = True
+            self._discard_pending_input()
             self._failure = await ahandle_rpc_exception_with_health(
                 error, self._check_health
             )
-            self._stopped = True
-            self._discard_pending_input()
         else:
             self._stopped = True
 
