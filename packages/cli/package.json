@@ -50,11 +50,12 @@
     "check-deps": "knip"
   },
   "devDependencies": {
+    "@redocly/cli": "2.76.0",
     "@types/node": "catalog:",
     "@types/npmcli__package-json": "^4.0.4",
     "@types/proper-lockfile": "^4.1.4",
-    "@redocly/cli": "2.76.0",
     "@types/statuses": "^2.0.6",
+    "@types/ws": "^8.18.2",
     "@typescript/native": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "knip": "^5.88.1",
@@ -91,6 +92,7 @@
     "simple-update-notifier": "^2.0.0",
     "simple-wcswidth": "^1.1.2",
     "statuses": "^2.0.2",
+    "ws": "^8.22.0",
     "zod": "^4.6.7"
   },
   "engines": {

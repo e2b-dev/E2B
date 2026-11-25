@@ -1,4 +1,5 @@
 import * as net from 'node:net'
+import WebSocket, { createWebSocketStream } from 'ws'
 import { z } from 'zod'
 
 import { integer, zodParser } from 'src/validation'
@@ -66,11 +67,9 @@ export function websocatInstallCommand(arch: string): string {
   ].join('\n')
 }
 
-const HIGH_WATER_MARK = 1024 * 1024
-const DRAIN_POLL_MS = 10
-
 /**
  * Pipes a local TCP socket through a WebSocket until either side closes.
+ * Both directions apply backpressure, so a slow reader pauses the other side.
  */
 export function tunnelSocket(
   socket: net.Socket,
@@ -78,48 +77,17 @@ export function tunnelSocket(
   headers: Record<string, string>,
   onError: () => void
 ): void {
-  socket.pause()
+  const remote = createWebSocketStream(new WebSocket(url, { headers }))
 
-  // Node's WebSocket (undici) accepts headers; the DOM typings don't know it.
-  const ws = new WebSocket(url, { headers } as unknown as string[])
-  ws.binaryType = 'arraybuffer'
+  // A WebSocket can't half-close: after the local client stops writing, keep
+  // relaying the sandbox's reply until either side closes the connection.
+  socket.pipe(remote, { end: false })
+  remote.pipe(socket)
 
-  let drainTimer: NodeJS.Timeout | undefined
-  const waitForDrain = () => {
-    if (drainTimer) return
-    socket.pause()
-    drainTimer = setInterval(() => {
-      if (ws.readyState !== WebSocket.OPEN) {
-        clearInterval(drainTimer)
-        return
-      }
-      if (ws.bufferedAmount < HIGH_WATER_MARK) {
-        clearInterval(drainTimer)
-        drainTimer = undefined
-        socket.resume()
-      }
-    }, DRAIN_POLL_MS)
-  }
-
-  ws.addEventListener('open', () => socket.resume())
-  ws.addEventListener('message', (event) => {
-    socket.write(Buffer.from(event.data as ArrayBuffer))
-  })
-  ws.addEventListener('close', () => {
-    clearInterval(drainTimer)
-    socket.end()
-  })
-  ws.addEventListener('error', () => {
+  remote.on('error', () => {
     onError()
     socket.destroy()
   })
-
-  socket.on('data', (chunk) => {
-    ws.send(chunk)
-    if (ws.bufferedAmount >= HIGH_WATER_MARK) waitForDrain()
-  })
-  // A WebSocket can't half-close: after the local client stops writing, keep
-  // relaying the sandbox's reply until either side closes the connection.
-  socket.on('close', () => ws.close())
-  socket.on('error', () => ws.close())
+  socket.on('error', () => remote.destroy())
+  socket.on('close', () => remote.destroy())
 }
