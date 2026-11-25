@@ -96,6 +96,7 @@ async function startWebsocat(
   }
 
   if (!(await sandbox.files.exists(WEBSOCAT_SANDBOX_PATH))) {
+    console.log('Downloading websocat into the sandbox...')
     const arch = (await sandbox.commands.run('uname -m')).stdout.trim()
     await sandbox.commands.run(websocatInstallCommand(arch)).catch((err) => {
       throw new Error(
