@@ -10,7 +10,12 @@
 
 import * as os from 'node:os'
 import * as net from 'node:net'
-import { CommandExitError, CommandHandle, Sandbox } from 'e2b'
+import {
+  CommandExitError,
+  CommandHandle,
+  Sandbox,
+  SandboxNotFoundError,
+} from 'e2b'
 import * as commander from '@commander-js/extra-typings'
 
 import { ensureAuth } from '../../api'
@@ -192,7 +197,10 @@ async function waitForExit(
     const processes = await sandbox.commands.list().catch(() => undefined)
     const running = processes
       ? processes.some((p) => p.pid === handle.pid)
-      : await sandbox.isRunning().catch(() => true)
+      : await sandbox.getInfo().then(
+          (info) => info.state === 'running',
+          (err) => !(err instanceof SandboxNotFoundError)
+        )
     if (!running) return handle
     handle = await sandbox.commands
       .connect(handle.pid, { timeoutMs: 0 })
