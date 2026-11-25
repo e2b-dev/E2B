@@ -36,6 +36,13 @@ export const portForwardCommand = new commander.Command('port-forward')
   )
   .alias('pf')
   .action(async (sandboxID, { localPort, remotePort }) => {
+    let websocat: { handle: CommandHandle; owned: boolean } | undefined
+    let stopping = false
+    const stop = async () => {
+      stopping = true
+      if (websocat?.owned) await websocat.handle.kill().catch(() => {})
+    }
+
     try {
       const sandbox = await Sandbox.connect(sandboxID, await ensureAuth())
       const wsPort = websocketPortFor(remotePort)
@@ -43,9 +50,10 @@ export const portForwardCommand = new commander.Command('port-forward')
         ? { 'e2b-traffic-access-token': sandbox.trafficAccessToken }
         : {}
 
-      const { handle, owned } = await startWebsocat(sandbox, wsPort, remotePort)
+      websocat = await startWebsocat(sandbox, wsPort, remotePort)
+      const { handle } = websocat
       setupSignalHandlers(async () => {
-        if (owned) await handle.kill().catch(() => {})
+        await stop()
         process.exit(0)
       })
       await waitForWebsocat(sandbox.getHost(wsPort), headers, handle)
@@ -68,12 +76,15 @@ export const portForwardCommand = new commander.Command('port-forward')
       )
 
       await handle.wait().catch(() => {})
+      if (stopping) return
       console.error(
         `websocat in sandbox exited: ${handle.stderr || handle.error || ''}`.trim()
       )
       process.exit(1)
     } catch (err: any) {
+      if (stopping) return
       console.error(err)
+      await stop()
       process.exit(1)
     }
   })
@@ -92,7 +103,10 @@ async function startWebsocat(
   const processes = await sandbox.commands.list()
   const running = processes.find((p) => p.args.join(' ').endsWith(args))
   if (running) {
-    return { handle: await sandbox.commands.connect(running.pid), owned: false }
+    return {
+      handle: await sandbox.commands.connect(running.pid, { timeoutMs: 0 }),
+      owned: false,
+    }
   }
 
   if (!(await sandbox.files.exists(WEBSOCAT_SANDBOX_PATH))) {
