@@ -1,3 +1,4 @@
+import * as https from 'node:https'
 import * as net from 'node:net'
 import WebSocket, { createWebSocketStream } from 'ws'
 import { z } from 'zod'
@@ -77,7 +78,11 @@ export function tunnelSocket(
   headers: Record<string, string>,
   onError: () => void
 ): void {
-  const remote = createWebSocketStream(new WebSocket(url, { headers }))
+  // ws bypasses the global agent by default, which ignores the proxy Node
+  // configures from HTTPS_PROXY when NODE_USE_ENV_PROXY is set.
+  const remote = createWebSocketStream(
+    new WebSocket(url, { headers, agent: https.globalAgent })
+  )
 
   // A WebSocket can't half-close: after the local client stops writing, keep
   // relaying the sandbox's reply until either side closes the connection.
