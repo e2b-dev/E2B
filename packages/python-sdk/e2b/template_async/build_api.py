@@ -5,8 +5,8 @@ from typing import Callable, Dict, Optional, List, Union
 
 import httpx
 from pyqwest import HTTPTransport
-from pyqwest.httpx import AsyncPyqwestTransport
 
+from e2b.api.transport_timeout import AsyncDeadlinePyqwestTransport
 from e2b.api import encode_path_param, handle_api_exception, proxy_to_config
 from e2b.io_utils import aiter_io_chunks
 from e2b.api.client.api.templates import (
@@ -151,11 +151,13 @@ async def upload_file(
 
             # Through the pyqwest adapter the upload timeout is a
             # whole-request deadline for the entire transfer, not a per-write
-            # bound as with the httpx transport this replaced.
+            # bound as with the httpx transport this replaced. The SDK's
+            # adapter keeps that deadline at exactly upload_timeout (plain
+            # pyqwest would make it read + write, twice the value).
             async with httpx.AsyncClient(
                 timeout=httpx.Timeout(upload_timeout),
                 follow_redirects=api_client._follow_redirects,
-                transport=AsyncPyqwestTransport(
+                transport=AsyncDeadlinePyqwestTransport(
                     HTTPTransport(
                         tls_include_system_certs=True,
                         proxy=(

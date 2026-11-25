@@ -1,4 +1,5 @@
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Any, Dict
 from unittest import mock
@@ -20,6 +21,9 @@ from e2b.template_sync.build_api import upload_file
 # buffered in memory; this test guards that contract.
 
 
+SLOW_RESPONSE_SECONDS = 3.0
+
+
 def _make_server():
     state: Dict[str, Any] = {"headers": None, "body_length": 0, "paths": []}
 
@@ -32,6 +36,8 @@ def _make_server():
             length = int(self.headers.get("Content-Length", 0))
             body = self.rfile.read(length) if length else b""
             state["body_length"] = len(body)
+            if self.path.startswith("/slow"):
+                time.sleep(SLOW_RESPONSE_SECONDS)
             if self.path.startswith("/redirect"):
                 self.send_response(307)
                 self.send_header("Location", "/upload")
@@ -321,3 +327,35 @@ def test_upload_file_keeps_its_own_content_length(tmp_path):
 
     assert state["body_length"] > 1
     assert int(state["headers"]["content-length"]) == state["body_length"]
+
+
+def test_upload_file_request_timeout_is_exact(tmp_path):
+    # The upload transport turns httpx's per-phase timeouts into one
+    # whole-request deadline; it must be request_timeout, not twice that.
+    (tmp_path / "hello.txt").write_text("hello world")
+
+    server, thread, _ = _make_server()
+    host, port = server.server_address
+
+    try:
+        client = AuthenticatedClient(base_url="http://test", token="test")
+        start = time.monotonic()
+        with pytest.raises(FileUploadException, match="timed out"):
+            upload_file(
+                api_client=client,
+                file_name="*.txt",
+                context_path=str(tmp_path),
+                url=f"http://{host}:{port}/slow",
+                ignore_patterns=[],
+                resolve_symlinks=False,
+                gzip=True,
+                stack_trace=None,
+                request_timeout=1.0,
+            )
+        elapsed = time.monotonic() - start
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+    assert 0.9 <= elapsed < 1.6, f"timed out after {elapsed:.2f}s, expected ~1s"
