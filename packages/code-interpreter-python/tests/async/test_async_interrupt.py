@@ -20,9 +20,6 @@ async def test_subsequent_execution_works_after_client_timeout(
     await asyncio.sleep(5)
 
     # Run a simple execution. Without the kernel interrupt fix, this would
-    # block behind the still-running sleep(300) and time out. The budget has
-    # to cover how long the server takes to notice the disconnect through the
-    # sandbox proxies (tens of seconds in CI); it used to be hidden by the
-    # transport doubling every timeout.
-    result = await async_sandbox.run_code("1 + 1", timeout=90)
+    # block behind the still-running sleep(30) and time out.
+    result = await async_sandbox.run_code("1 + 1", timeout=10)
     assert result.text == "2"
