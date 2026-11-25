@@ -286,6 +286,8 @@ class Git:
         :param request_timeout: Timeout for the request in **seconds**
         :param dangerously_store_credentials: Store credentials in the cloned repository when True
         :return: Command result from the command runner
+
+        :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
         """
         if password and not username:
             raise InvalidArgumentException(
@@ -351,6 +353,8 @@ class Git:
         :param timeout: Timeout for the command connection in **seconds**
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
+
+        :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
         """
         args = ["init"]
         if initial_branch:
@@ -389,6 +393,8 @@ class Git:
         :param timeout: Timeout for the command connection in **seconds**
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
+
+        :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
         """
         args = build_remote_add_args(name, url, fetch)
 
@@ -430,6 +436,8 @@ class Git:
         :param timeout: Timeout for the command connection in **seconds**
         :param request_timeout: Timeout for the request in **seconds**
         :return: Remote URL if present, otherwise `None`
+
+        :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
         """
         cmd = build_remote_get_command(path, name)
         result = (
@@ -463,6 +471,8 @@ class Git:
         :param timeout: Timeout for the command connection in **seconds**
         :param request_timeout: Timeout for the request in **seconds**
         :return: Parsed git status
+
+        :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
         """
         result = await self._run_git(
             build_status_args(),
@@ -494,6 +504,8 @@ class Git:
         :param timeout: Timeout for the command connection in **seconds**
         :param request_timeout: Timeout for the request in **seconds**
         :return: Parsed branch list
+
+        :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
         """
         result = await self._run_git(
             build_branches_args(),
@@ -527,6 +539,8 @@ class Git:
         :param timeout: Timeout for the command connection in **seconds**
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
+
+        :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
         """
         return await self._run_git(
             build_create_branch_args(branch),
@@ -559,6 +573,8 @@ class Git:
         :param timeout: Timeout for the command connection in **seconds**
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
+
+        :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
         """
         return await self._run_git(
             build_checkout_branch_args(branch),
@@ -593,6 +609,8 @@ class Git:
         :param timeout: Timeout for the command connection in **seconds**
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
+
+        :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
         """
         args = build_delete_branch_args(branch, force)
         return await self._run_git(
@@ -622,6 +640,8 @@ class Git:
         :param timeout: Timeout for the command connection in **seconds**
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
+
+        :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
         """
         args = build_add_args(files, all)
         return await self._run_git(
@@ -655,6 +675,8 @@ class Git:
         :param timeout: Timeout for the command connection in **seconds**
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
+
+        :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
         """
         args = build_commit_args(message, author_name, author_email, allow_empty)
         return await self._run_git(
@@ -686,6 +708,8 @@ class Git:
         :param timeout: Timeout for the command connection in **seconds**
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
+
+        :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
         """
         args = build_reset_args(mode, target, paths)
         return await self._run_git(
@@ -719,6 +743,8 @@ class Git:
         :param timeout: Timeout for the command connection in **seconds**
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
+
+        :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
         """
         args = build_restore_args(paths, staged, worktree, source)
         return await self._run_git(
@@ -754,6 +780,8 @@ class Git:
         :param timeout: Timeout for the command connection in **seconds**
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
+
+        :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
         """
         if password and not username:
             raise InvalidArgumentException(
@@ -843,6 +871,8 @@ class Git:
         :param timeout: Timeout for the command connection in **seconds**
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
+
+        :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
         """
         if password and not username:
             raise InvalidArgumentException(
@@ -929,6 +959,8 @@ class Git:
         :param timeout: Timeout for the command connection in **seconds**
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
+
+        :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
         """
         if not key:
             raise InvalidArgumentException("Git config key is required.")
@@ -969,6 +1001,8 @@ class Git:
         :param timeout: Timeout for the command connection in **seconds**
         :param request_timeout: Timeout for the request in **seconds**
         :return: Config value if present, otherwise `None`
+
+        :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
         """
         if not key:
             raise InvalidArgumentException("Git config key is required.")
@@ -1018,6 +1052,8 @@ class Git:
         :param timeout: Timeout for the command connection in **seconds**
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
+
+        :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
         """
         if not username or not password:
             raise InvalidArgumentException(
@@ -1074,6 +1110,8 @@ class Git:
         :param timeout: Timeout for the command connection in **seconds**
         :param request_timeout: Timeout for the request in **seconds**
         :return: Command result from the command runner
+
+        :deprecated: Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
         """
         if not name or not email:
             raise InvalidArgumentException("Both name and email are required.")
