@@ -8,6 +8,7 @@
  * remote port shares that websocat and exits with it.
  */
 
+import * as os from 'node:os'
 import * as net from 'node:net'
 import { CommandExitError, CommandHandle, Sandbox } from 'e2b'
 import * as commander from '@commander-js/extra-typings'
@@ -25,7 +26,9 @@ import {
 const READY_TIMEOUT_MS = 15_000
 const READY_POLL_MS = 200
 const RECONNECT_DELAY_MS = 1_000
-const STOP_SIGNALS = ['SIGINT', 'SIGTERM', 'SIGHUP'] as const
+const STOP_SIGNALS = (
+  ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGQUIT'] as const
+).filter((signal) => signal in os.constants.signals)
 
 export const portForwardCommand = new commander.Command('port-forward')
   .description('forward a local port to a port in a running sandbox')
