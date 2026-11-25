@@ -57,30 +57,52 @@ export function randomTunnelPath(): string {
 }
 
 /**
- * The websocat arguments that serve `remotePort` on `wsPort` behind `path`.
+ * Marker file the forward that starts websocat for these ports writes, so
+ * concurrent forwards find its PID and secret path. Holds `<pid> <path>`.
  */
-export function websocatArgs(
+export function tunnelMarkerPath(wsPort: number, remotePort: number): string {
+  return `${WEBSOCAT_SANDBOX_DIR}/port-forward-${wsPort}-${remotePort}`
+}
+
+/**
+ * Parses a {@link tunnelMarkerPath} file, or returns undefined if it's malformed.
+ */
+export function parseTunnelMarker(
+  content: string
+): { pid: number; path: string } | undefined {
+  const match = content.trim().match(/^(\d+) (\/[A-Za-z0-9_-]+)$/)
+  return match ? { pid: Number(match[1]), path: match[2] } : undefined
+}
+
+/**
+ * Shell command that writes the marker and then becomes websocat, so the
+ * marker's PID is websocat's. noclobber makes a concurrent start fail instead
+ * of overwriting the marker of the websocat that owns the port.
+ */
+export function websocatStartCommand(
   wsPort: number,
   remotePort: number,
   path: string
 ): string {
-  return `--restrict-uri ${path} ws-l:0.0.0.0:${wsPort} tcp:127.0.0.1:${remotePort}`
+  const marker = tunnelMarkerPath(wsPort, remotePort)
+  return [
+    'set -C',
+    'umask 077',
+    `printf '%s %s\\n' "$$" '${path}' > ${marker}`,
+    `exec ${WEBSOCAT_SANDBOX_PATH} --binary --exit-on-eof --restrict-uri ${path} ws-l:0.0.0.0:${wsPort} tcp:127.0.0.1:${remotePort}`,
+  ].join(' && ')
 }
 
 /**
- * The `--restrict-uri` path of a running websocat for `wsPort` and
- * `remotePort`, given its command line, or undefined if it serves other ports.
+ * Shell command that removes the marker if it still belongs to `pid`.
  */
-export function tunnelPathOf(
-  commandLine: string,
+export function removeTunnelMarkerCommand(
   wsPort: number,
-  remotePort: number
-): string | undefined {
-  const suffix = ` ws-l:0.0.0.0:${wsPort} tcp:127.0.0.1:${remotePort}`
-  if (!commandLine.endsWith(suffix)) return undefined
-  return commandLine
-    .slice(0, -suffix.length)
-    .match(/--restrict-uri (\/\S+)$/)?.[1]
+  remotePort: number,
+  pid: number
+): string {
+  const marker = tunnelMarkerPath(wsPort, remotePort)
+  return `[ "$(cut -d' ' -f1 ${marker} 2>/dev/null)" = ${pid} ] && rm -f ${marker} || true`
 }
 
 /**

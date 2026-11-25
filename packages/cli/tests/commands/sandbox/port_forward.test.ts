@@ -5,7 +5,10 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { Sandbox } from 'e2b'
 import WebSocket from 'ws'
 import { isDebug } from '../../setup'
-import { websocketPortFor } from '../../../src/commands/sandbox/port_forward_helpers'
+import {
+  tunnelMarkerPath,
+  websocketPortFor,
+} from '../../../src/commands/sandbox/port_forward_helpers'
 
 const domain = process.env.E2B_DOMAIN || 'e2b.app'
 const apiKey = process.env.E2B_API_KEY
@@ -56,6 +59,11 @@ describe('sandbox port-forward', () => {
       background: true,
       timeoutMs: 0,
     })
+    // A marker left by a crashed forward must not block a new one.
+    await sandbox.files.write(
+      tunnelMarkerPath(websocketPortFor(3000), 3000),
+      '999999 /stale'
+    )
   }, 60_000)
 
   afterAll(async () => {
@@ -128,6 +136,11 @@ describe('sandbox port-forward', () => {
 
       const processes = await sandbox.commands.list()
       expect(processes.some((p) => p.args.join(' ').includes('websocat'))).toBe(false)
+      expect(
+        await sandbox.files.exists(
+          tunnelMarkerPath(websocketPortFor(3000), 3000)
+        )
+      ).toBe(false)
     }
   )
 })

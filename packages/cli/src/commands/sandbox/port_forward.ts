@@ -23,12 +23,14 @@ import { ensureAuth } from '../../api'
 import { asBold, asPrimary } from 'src/utils/format'
 import {
   parsePortMapping,
+  parseTunnelMarker,
   randomTunnelPath,
-  tunnelPathOf,
+  removeTunnelMarkerCommand,
+  tunnelMarkerPath,
   tunnelSocket,
   WEBSOCAT_SANDBOX_PATH,
-  websocatArgs,
   websocatInstallCommand,
+  websocatStartCommand,
   websocketPortFor,
 } from './port_forward_helpers'
 
@@ -53,16 +55,20 @@ export const portForwardCommand = new commander.Command('port-forward')
     let websocat:
       { handle: CommandHandle; owned: boolean; path: string } | undefined
     let stopping = false
+    const wsPort = websocketPortFor(remotePort)
     const stop = async () => {
       stopping = true
       if (sandbox && websocat?.owned) {
-        await sandbox.commands.kill(websocat.handle.pid).catch(() => {})
+        const { pid } = websocat.handle
+        await sandbox.commands.kill(pid).catch(() => {})
+        await sandbox.commands
+          .run(removeTunnelMarkerCommand(wsPort, remotePort, pid))
+          .catch(() => {})
       }
     }
 
     try {
       sandbox = await Sandbox.connect(sandboxID, await ensureAuth())
-      const wsPort = websocketPortFor(remotePort)
       const headers: Record<string, string> = sandbox.trafficAccessToken
         ? { 'e2b-traffic-access-token': sandbox.trafficAccessToken }
         : {}
@@ -120,16 +126,17 @@ async function startWebsocat(
   wsPort: number,
   remotePort: number
 ): Promise<{ handle: CommandHandle; owned: boolean; path: string }> {
-  const processes = await sandbox.commands.list()
-  for (const p of processes) {
-    const path = tunnelPathOf(p.args.join(' '), wsPort, remotePort)
-    if (path) {
-      return {
-        handle: await sandbox.commands.connect(p.pid, { timeoutMs: 0 }),
-        owned: false,
-        path,
-      }
-    }
+  const marker = tunnelMarkerPath(wsPort, remotePort)
+  const existing = parseTunnelMarker(
+    await sandbox.files.read(marker).catch(() => '')
+  )
+  if (existing) {
+    const handle = await sandbox.commands
+      .connect(existing.pid, { timeoutMs: 0 })
+      .catch(() => undefined)
+    if (handle) return { handle, owned: false, path: existing.path }
+    // websocat is gone without cleaning up, e.g. the CLI that started it crashed.
+    await sandbox.files.remove(marker).catch(() => {})
   }
 
   if (!(await sandbox.files.exists(WEBSOCAT_SANDBOX_PATH))) {
@@ -145,7 +152,7 @@ async function startWebsocat(
 
   const path = randomTunnelPath()
   const handle = await sandbox.commands.run(
-    `exec ${WEBSOCAT_SANDBOX_PATH} --binary --exit-on-eof ${websocatArgs(wsPort, remotePort, path)}`,
+    websocatStartCommand(wsPort, remotePort, path),
     { background: true, timeoutMs: 0 }
   )
   return { handle, owned: true, path }
