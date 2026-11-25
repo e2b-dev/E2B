@@ -78,6 +78,10 @@ describe('sandbox port-forward', () => {
       const reused = await fetch('http://127.0.0.1:13580/hello.txt')
       expect(await reused.text()).toBe('hello from sandbox')
 
+      // Windows has no catchable SIGINT for child processes: kill() terminates
+      // the CLI before it can stop websocat.
+      if (process.platform === 'win32') return
+
       const secondExit = new Promise((resolve) =>
         second.child.once('exit', resolve)
       )
