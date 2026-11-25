@@ -30,14 +30,19 @@ describe('port-forward helpers', () => {
     }
   )
 
-  test('websocketPortFor prefixes the remote port with 80 when it fits', () => {
-    expect(websocketPortFor(22)).toBe(8022)
-    expect(websocketPortFor(99)).toBe(8099)
+  test('websocketPortFor shifts the port by half of 1024-65535', () => {
+    expect(websocketPortFor(22)).toBe(32278)
+    expect(websocketPortFor(3000)).toBe(35256)
+    expect(websocketPortFor(33279)).toBe(65535)
+    expect(websocketPortFor(33280)).toBe(1024)
   })
 
-  test('websocketPortFor maps larger ports into 50000-59999', () => {
-    expect(websocketPortFor(100)).toBe(50100)
-    expect(websocketPortFor(3000)).toBe(53000)
-    expect(websocketPortFor(65535)).toBe(55535)
+  test('websocketPortFor never returns the remote port or a privileged port', () => {
+    for (let port = 1; port <= 65535; port++) {
+      const wsPort = websocketPortFor(port)
+      expect(wsPort).not.toBe(port)
+      expect(wsPort).toBeGreaterThanOrEqual(1024)
+      expect(wsPort).toBeLessThanOrEqual(65535)
+    }
   })
 })

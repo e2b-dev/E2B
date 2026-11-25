@@ -36,13 +36,12 @@ export const parsePortMapping = zodParser(
 )
 
 /**
- * The sandbox port websocat listens on for `remotePort`: `80{remote}` for
- * ports below 100, else `50000 + remote % 10000`.
+ * The sandbox port websocat listens on for `remotePort`: the port shifted by
+ * half of the unprivileged range (1024-65535), wrapping around inside it. It
+ * never equals `remotePort` and never needs root to bind.
  */
 export function websocketPortFor(remotePort: number): number {
-  const prefixed = Number(`80${remotePort}`)
-  if (prefixed <= 65535) return prefixed
-  return 50000 + (remotePort % 10000)
+  return 1024 + ((remotePort + 31232) % 64512)
 }
 
 /**
