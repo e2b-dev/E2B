@@ -11,6 +11,7 @@
 import * as os from 'node:os'
 import * as net from 'node:net'
 import {
+  AuthenticationError,
   CommandExitError,
   CommandHandle,
   Sandbox,
@@ -199,7 +200,12 @@ async function waitForExit(
       ? processes.some((p) => p.pid === handle.pid)
       : await sandbox.getInfo().then(
           (info) => info.state === 'running',
-          (err) => !(err instanceof SandboxNotFoundError)
+          (err) => {
+            // An expired login never recovers, so retrying would keep the
+            // local port bound forever.
+            if (err instanceof AuthenticationError) throw err
+            return !(err instanceof SandboxNotFoundError)
+          }
         )
     if (!running) return handle
     handle = await sandbox.commands
