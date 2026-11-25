@@ -321,6 +321,8 @@ export class Git {
    * @param url Git repository URL.
    * @param opts Clone options.
    * @returns Command result from the command runner.
+   *
+   * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
    */
   async clone(url: string, opts?: GitCloneOpts): Promise<CommandResult> {
     const {
@@ -399,6 +401,8 @@ export class Git {
    * @param path Destination path for the repository.
    * @param opts Init options.
    * @returns Command result from the command runner.
+   *
+   * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
    */
   async init(path: string, opts?: GitInitOpts): Promise<CommandResult> {
     const { bare, initialBranch, ...rest } = opts ?? {}
@@ -423,6 +427,8 @@ export class Git {
    * @param url Remote URL.
    * @param opts Remote add options.
    * @returns Command result from the command runner.
+   *
+   * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
    */
   async remoteAdd(
     path: string,
@@ -468,6 +474,8 @@ export class Git {
    * @param name Remote name (for example, `"origin"`).
    * @param opts Command execution options.
    * @returns Remote URL if present.
+   *
+   * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
    */
   async remoteGet(
     path: string,
@@ -490,6 +498,8 @@ export class Git {
    * @param path Repository path.
    * @param opts Command execution options.
    * @returns Parsed git status.
+   *
+   * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
    */
   async status(path: string, opts?: GitRequestOpts): Promise<GitStatus> {
     const result = await this.runGit(
@@ -506,6 +516,8 @@ export class Git {
    * @param path Repository path.
    * @param opts Command execution options.
    * @returns Parsed branch list.
+   *
+   * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
    */
   async branches(path: string, opts?: GitRequestOpts): Promise<GitBranches> {
     const result = await this.runGit(
@@ -523,6 +535,8 @@ export class Git {
    * @param branch Branch name to create.
    * @param opts Command execution options.
    * @returns Command result from the command runner.
+   *
+   * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
    */
   async createBranch(
     path: string,
@@ -539,6 +553,8 @@ export class Git {
    * @param branch Branch name to check out.
    * @param opts Command execution options.
    * @returns Command result from the command runner.
+   *
+   * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
    */
   async checkoutBranch(
     path: string,
@@ -555,6 +571,8 @@ export class Git {
    * @param branch Branch name to delete.
    * @param opts Delete options.
    * @returns Command result from the command runner.
+   *
+   * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
    */
   async deleteBranch(
     path: string,
@@ -572,6 +590,8 @@ export class Git {
    * @param path Repository path.
    * @param opts Add options.
    * @returns Command result from the command runner.
+   *
+   * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
    */
   async add(path: string, opts?: GitAddOpts): Promise<CommandResult> {
     const { files, all = true, ...rest } = opts ?? {}
@@ -593,6 +613,8 @@ export class Git {
    * @param message Commit message.
    * @param opts Commit options.
    * @returns Command result from the command runner.
+   *
+   * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
    */
   async commit(
     path: string,
@@ -623,6 +645,8 @@ export class Git {
    * @param path Repository path.
    * @param opts Reset options.
    * @returns Command result from the command runner.
+   *
+   * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
    */
   async reset(path: string, opts?: GitResetOpts): Promise<CommandResult> {
     const { mode, target, paths, ...rest } = opts ?? {}
@@ -660,6 +684,8 @@ export class Git {
    * @param path Repository path.
    * @param opts Restore options.
    * @returns Command result from the command runner.
+   *
+   * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
    */
   async restore(path: string, opts: GitRestoreOpts): Promise<CommandResult> {
     const { paths, staged, worktree, source, ...rest } = opts
@@ -706,6 +732,8 @@ export class Git {
    * @param path Repository path.
    * @param opts Push options.
    * @returns Command result from the command runner.
+   *
+   * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
    */
   async push(path: string, opts?: GitPushOpts): Promise<CommandResult> {
     const {
@@ -765,6 +793,8 @@ export class Git {
    * @param path Repository path.
    * @param opts Pull options.
    * @returns Command result from the command runner.
+   *
+   * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
    */
   async pull(path: string, opts?: GitPullOpts): Promise<CommandResult> {
     const { remote, branch, username, password, ...rest } = opts ?? {}
@@ -829,6 +859,8 @@ export class Git {
    * @param value Git config value.
    * @param opts Config options.
    * @returns Command result from the command runner.
+   *
+   * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
    */
   async setConfig(
     key: string,
@@ -854,6 +886,8 @@ export class Git {
    * @param key Git config key (for example, `"pull.rebase"`).
    * @param opts Config options.
    * @returns The config value if present.
+   *
+   * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
    */
   async getConfig(
     key: string,
@@ -880,6 +914,8 @@ export class Git {
    *
    * @param opts Authentication options.
    * @returns Command result from the command runner.
+   *
+   * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
    */
   async dangerouslyAuthenticate(
     opts: GitDangerouslyAuthenticateOpts
@@ -923,6 +959,8 @@ export class Git {
    * @param email Git user email.
    * @param opts Config options.
    * @returns Command result from the command runner.
+   *
+   * @deprecated Run git with `sandbox.commands.run()` instead. The git module will be removed in the next major version.
    */
   async configureUser(
     name: string,
