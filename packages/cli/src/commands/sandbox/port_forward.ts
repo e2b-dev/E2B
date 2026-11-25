@@ -3,10 +3,9 @@
  *
  * websocat runs in the sandbox, exposing the remote TCP port as a WebSocket
  * server on websocketPortFor(remote). The CLI listens on the local port and
- * tunnels each accepted connection over its own WebSocket. websocat keeps
- * running after the CLI exits so concurrent and later port-forwards to the same
- * remote port reuse it; it exposes nothing the sandbox proxy doesn't already
- * expose on the remote port itself.
+ * tunnels each accepted connection over its own WebSocket. The CLI kills the
+ * websocat it started when it exits; a concurrent port-forward to the same
+ * remote port shares that websocat and exits with it.
  */
 
 import * as net from 'node:net'
@@ -36,10 +35,6 @@ export const portForwardCommand = new commander.Command('port-forward')
     parsePortMapping
   )
   .alias('pf')
-  .addHelpText(
-    'after',
-    '\nwebsocat keeps running in the sandbox after the command exits, so later port-forwards to the same port reuse it.'
-  )
   .action(async (sandboxID, { localPort, remotePort }) => {
     try {
       const sandbox = await Sandbox.connect(sandboxID, await ensureAuth())
@@ -48,7 +43,11 @@ export const portForwardCommand = new commander.Command('port-forward')
         ? { 'e2b-traffic-access-token': sandbox.trafficAccessToken }
         : {}
 
-      const handle = await startWebsocat(sandbox, wsPort, remotePort)
+      const { handle, owned } = await startWebsocat(sandbox, wsPort, remotePort)
+      setupSignalHandlers(async () => {
+        if (owned) await handle.kill().catch(() => {})
+        process.exit(0)
+      })
       await waitForWebsocat(sandbox.getHost(wsPort), headers, handle)
 
       const url = `wss://${sandbox.getHost(wsPort)}`
@@ -68,15 +67,11 @@ export const portForwardCommand = new commander.Command('port-forward')
         `Forwarding 127.0.0.1:${localPort} -> sandbox ${asPrimary(sandbox.sandboxId)} port ${remotePort}`
       )
 
-      setupSignalHandlers(() => process.exit(0))
-
-      if (handle) {
-        await handle.wait().catch(() => {})
-        console.error(
-          `websocat in sandbox exited: ${handle.stderr || handle.error || ''}`.trim()
-        )
-        process.exit(1)
-      }
+      await handle.wait().catch(() => {})
+      console.error(
+        `websocat in sandbox exited: ${handle.stderr || handle.error || ''}`.trim()
+      )
+      process.exit(1)
     } catch (err: any) {
       console.error(err)
       process.exit(1)
@@ -84,19 +79,20 @@ export const portForwardCommand = new commander.Command('port-forward')
   })
 
 /**
- * Starts websocat in the sandbox, or returns undefined when an earlier
- * port-forward already runs one for the same ports.
+ * Starts websocat in the sandbox, or connects to the one a concurrent
+ * port-forward already runs for the same ports. `owned` is false in that case.
  */
 async function startWebsocat(
   sandbox: Sandbox,
   wsPort: number,
   remotePort: number
-): Promise<CommandHandle | undefined> {
+): Promise<{ handle: CommandHandle; owned: boolean }> {
   const args = `ws-l:0.0.0.0:${wsPort} tcp:127.0.0.1:${remotePort}`
 
   const processes = await sandbox.commands.list()
-  if (processes.some((p) => p.args.join(' ').endsWith(args))) {
-    return undefined
+  const running = processes.find((p) => p.args.join(' ').endsWith(args))
+  if (running) {
+    return { handle: await sandbox.commands.connect(running.pid), owned: false }
   }
 
   if (!(await sandbox.files.exists(WEBSOCAT_SANDBOX_PATH))) {
@@ -109,10 +105,11 @@ async function startWebsocat(
     })
   }
 
-  return sandbox.commands.run(
+  const handle = await sandbox.commands.run(
     `exec ${WEBSOCAT_SANDBOX_PATH} --binary --exit-on-eof ${args}`,
     { background: true, timeoutMs: 0 }
   )
+  return { handle, owned: true }
 }
 
 /**
@@ -121,11 +118,11 @@ async function startWebsocat(
 async function waitForWebsocat(
   host: string,
   headers: Record<string, string>,
-  handle: CommandHandle | undefined
+  handle: CommandHandle
 ): Promise<void> {
   let exited = false
   handle
-    ?.wait()
+    .wait()
     .catch(() => {})
     .finally(() => (exited = true))
 
@@ -133,7 +130,7 @@ async function waitForWebsocat(
   while (Date.now() < deadline) {
     if (exited) {
       throw new Error(
-        `websocat in sandbox exited: ${handle?.stderr || handle?.error || ''}`.trim()
+        `websocat in sandbox exited: ${handle.stderr || handle.error || ''}`.trim()
       )
     }
     const res = await fetch(`https://${host}/`, {

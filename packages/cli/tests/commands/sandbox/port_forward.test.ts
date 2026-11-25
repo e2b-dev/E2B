@@ -77,6 +77,18 @@ describe('sandbox port-forward', () => {
 
       const reused = await fetch('http://127.0.0.1:13580/hello.txt')
       expect(await reused.text()).toBe('hello from sandbox')
+
+      const secondExit = new Promise((resolve) =>
+        second.child.once('exit', resolve)
+      )
+      await new Promise((resolve) => {
+        first.child.once('exit', resolve)
+        first.child.kill('SIGINT')
+      })
+      await secondExit
+
+      const processes = await sandbox.commands.list()
+      expect(processes.some((p) => p.args.join(' ').includes('websocat'))).toBe(false)
     }
   )
 })
