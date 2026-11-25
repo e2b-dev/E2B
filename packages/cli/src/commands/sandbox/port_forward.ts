@@ -17,10 +17,10 @@ import { ensureAuth } from '../../api'
 import { asBold, asPrimary } from 'src/utils/format'
 import { setupSignalHandlers } from 'src/utils/signal'
 import {
-  getWebsocatBinary,
   parsePortMapping,
   tunnelSocket,
-  websocatSandboxPath,
+  WEBSOCAT_SANDBOX_PATH,
+  websocatInstallCommand,
   websocketPortFor,
 } from './port_forward_helpers'
 
@@ -88,7 +88,6 @@ async function startWebsocat(
   wsPort: number,
   remotePort: number
 ): Promise<CommandHandle | undefined> {
-  const websocat = websocatSandboxPath()
   const args = `ws-l:0.0.0.0:${wsPort} tcp:127.0.0.1:${remotePort}`
 
   const processes = await sandbox.commands.list()
@@ -96,14 +95,13 @@ async function startWebsocat(
     return undefined
   }
 
-  if (!(await sandbox.files.exists(websocat))) {
+  if (!(await sandbox.files.exists(WEBSOCAT_SANDBOX_PATH))) {
     const arch = (await sandbox.commands.run('uname -m')).stdout.trim()
-    await sandbox.files.write(websocat, await getWebsocatBinary(arch))
-    await sandbox.commands.run(`chmod +x ${websocat}`)
+    await sandbox.commands.run(websocatInstallCommand(arch))
   }
 
   return sandbox.commands.run(
-    `exec ${websocat} --binary --exit-on-eof ${args}`,
+    `exec ${WEBSOCAT_SANDBOX_PATH} --binary --exit-on-eof ${args}`,
     { background: true, timeoutMs: 0 }
   )
 }

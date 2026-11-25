@@ -1,11 +1,9 @@
-import { createHash } from 'node:crypto'
-import * as fs from 'node:fs/promises'
 import * as net from 'node:net'
-import * as os from 'node:os'
-import * as path from 'node:path'
-import * as commander from '@commander-js/extra-typings'
+import { z } from 'zod'
 
-export const WEBSOCAT_VERSION = 'v1.14.2'
+import { integer, zodParser } from 'src/validation'
+
+const WEBSOCAT_VERSION = 'v1.14.2'
 
 const WEBSOCAT_BINARIES: Record<string, { asset: string; sha256: string }> = {
   x86_64: {
@@ -18,35 +16,24 @@ const WEBSOCAT_BINARIES: Record<string, { asset: string; sha256: string }> = {
   },
 }
 
-export interface PortMapping {
-  localPort: number
-  remotePort: number
-}
+const WEBSOCAT_SANDBOX_DIR = '/tmp/.e2b'
+export const WEBSOCAT_SANDBOX_PATH = `${WEBSOCAT_SANDBOX_DIR}/websocat-${WEBSOCAT_VERSION}`
 
-function parsePort(value: string): number {
-  const port = Number(value)
-  if (!/^\d+$/.test(value) || port < 1 || port > 65535) {
-    throw new commander.InvalidArgumentError(
-      `Invalid port "${value}", expected a number between 1 and 65535.`
-    )
-  }
-  return port
-}
+const port = integer('Port', { min: 1, max: 65535 })
 
 /**
- * Parses `local:remote`, or a single `port` used for both sides.
+ * Commander parser for `local:remote`, or a single `port` used for both sides.
  */
-export function parsePortMapping(value: string): PortMapping {
-  const parts = value.split(':')
-  if (parts.length > 2) {
-    throw new commander.InvalidArgumentError(
-      `Invalid port mapping "${value}", expected <local>:<remote>.`
-    )
-  }
-  const localPort = parsePort(parts[0])
-  const remotePort = parts.length === 2 ? parsePort(parts[1]) : localPort
-  return { localPort, remotePort }
-}
+export const parsePortMapping = zodParser(
+  z
+    .string()
+    .regex(/^[^:]*(:[^:]*)?$/, 'Expected <local>:<remote> or <port>.')
+    .transform((value) => {
+      const [localPort, remotePort = localPort] = value.split(':')
+      return { localPort, remotePort }
+    })
+    .pipe(z.object({ localPort: port, remotePort: port }))
+)
 
 /**
  * The sandbox port websocat listens on for `remotePort`: `80{remote}` for
@@ -58,44 +45,26 @@ export function websocketPortFor(remotePort: number): number {
   return 50000 + (remotePort % 10000)
 }
 
-export function websocatSandboxPath(): string {
-  return `/tmp/.e2b/websocat-${WEBSOCAT_VERSION}`
-}
-
 /**
- * Returns the websocat binary for `arch` (`uname -m` in the sandbox),
- * downloading it into ~/.e2b/cache on first use.
+ * Shell command that downloads websocat for `arch` (`uname -m` in the
+ * sandbox) to WEBSOCAT_SANDBOX_PATH and verifies its checksum.
  */
-export async function getWebsocatBinary(
-  arch: string,
-  cacheDir = path.join(os.homedir(), '.e2b', 'cache', 'websocat')
-): Promise<Buffer> {
+export function websocatInstallCommand(arch: string): string {
   const binary = WEBSOCAT_BINARIES[arch]
   if (!binary) {
     throw new Error(`Port forwarding is not supported on ${arch} sandboxes.`)
   }
 
-  const cachePath = path.join(cacheDir, WEBSOCAT_VERSION, binary.asset)
-  const cached = await fs.readFile(cachePath).catch(() => undefined)
-  if (cached && sha256(cached) === binary.sha256) return cached
-
   const url = `https://github.com/vi/websocat/releases/download/${WEBSOCAT_VERSION}/${binary.asset}`
-  const res = await fetch(url)
-  if (!res.ok) {
-    throw new Error(`Failed to download websocat from ${url}: ${res.status}`)
-  }
-  const data = Buffer.from(await res.arrayBuffer())
-  if (sha256(data) !== binary.sha256) {
-    throw new Error(`Checksum mismatch for websocat downloaded from ${url}`)
-  }
-
-  await fs.mkdir(path.dirname(cachePath), { recursive: true })
-  await fs.writeFile(cachePath, data, { mode: 0o755 })
-  return data
-}
-
-function sha256(data: Buffer): string {
-  return createHash('sha256').update(data).digest('hex')
+  const tmp = `${WEBSOCAT_SANDBOX_PATH}.download`
+  return [
+    'set -e',
+    `mkdir -p ${WEBSOCAT_SANDBOX_DIR}`,
+    `if command -v curl >/dev/null; then curl -fsSL -o ${tmp} ${url}; else wget -qO ${tmp} ${url}; fi`,
+    `echo "${binary.sha256}  ${tmp}" | sha256sum -c - >/dev/null`,
+    `chmod +x ${tmp}`,
+    `mv ${tmp} ${WEBSOCAT_SANDBOX_PATH}`,
+  ].join('\n')
 }
 
 const HIGH_WATER_MARK = 1024 * 1024
