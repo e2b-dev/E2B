@@ -3,7 +3,9 @@ import * as net from 'node:net'
 import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { Sandbox } from 'e2b'
+import WebSocket from 'ws'
 import { isDebug } from '../../setup'
+import { websocketPortFor } from '../../../src/commands/sandbox/port_forward_helpers'
 
 const domain = process.env.E2B_DOMAIN || 'e2b.app'
 const apiKey = process.env.E2B_API_KEY
@@ -83,6 +85,26 @@ describe('sandbox port-forward', () => {
         client.on('error', reject)
       })
       expect(halfClosed).toContain('hello from sandbox')
+
+      // Without the secret path, websocat refuses the WebSocket upgrade even
+      // with the traffic access token.
+      const status = await new Promise<number | undefined>((resolve) => {
+        const ws = new WebSocket(
+          `wss://${sandbox.getHost(websocketPortFor(3000))}/`,
+          {
+            headers: {
+              'e2b-traffic-access-token': sandbox.trafficAccessToken!,
+            },
+          }
+        )
+        ws.on('unexpected-response', (_req, res) => resolve(res.statusCode))
+        ws.on('open', () => {
+          ws.terminate()
+          resolve(101)
+        })
+        ws.on('error', () => resolve(undefined))
+      })
+      expect(status).toBe(400)
 
       const second = startPortForward(sandbox.sandboxId, '13580:3000')
       children.push(second.child)

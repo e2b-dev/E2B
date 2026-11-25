@@ -23,8 +23,11 @@ import { ensureAuth } from '../../api'
 import { asBold, asPrimary } from 'src/utils/format'
 import {
   parsePortMapping,
+  randomTunnelPath,
+  tunnelPathOf,
   tunnelSocket,
   WEBSOCAT_SANDBOX_PATH,
+  websocatArgs,
   websocatInstallCommand,
   websocketPortFor,
 } from './port_forward_helpers'
@@ -47,7 +50,8 @@ export const portForwardCommand = new commander.Command('port-forward')
   .alias('pf')
   .action(async (sandboxID, { localPort, remotePort }) => {
     let sandbox: Sandbox | undefined
-    let websocat: { handle: CommandHandle; owned: boolean } | undefined
+    let websocat:
+      { handle: CommandHandle; owned: boolean; path: string } | undefined
     let stopping = false
     const stop = async () => {
       stopping = true
@@ -64,7 +68,7 @@ export const portForwardCommand = new commander.Command('port-forward')
         : {}
 
       websocat = await startWebsocat(sandbox, wsPort, remotePort)
-      const { handle } = websocat
+      const { handle, path } = websocat
       // Not setupSignalHandlers: it also catches SIGPIPE, which a local client
       // resetting its connection raises and must not stop the forward.
       for (const signal of STOP_SIGNALS) {
@@ -75,7 +79,7 @@ export const portForwardCommand = new commander.Command('port-forward')
       }
       await waitForWebsocat(sandbox.getHost(wsPort), headers, handle)
 
-      const url = `wss://${sandbox.getHost(wsPort)}`
+      const url = `wss://${sandbox.getHost(wsPort)}${path}`
       const server = net.createServer({ allowHalfOpen: true }, (socket) =>
         tunnelSocket(socket, url, headers, () =>
           console.error(
@@ -109,20 +113,22 @@ export const portForwardCommand = new commander.Command('port-forward')
 /**
  * Starts websocat in the sandbox, or connects to the one a concurrent
  * port-forward already runs for the same ports. `owned` is false in that case.
+ * `path` is the secret URI path websocat accepts WebSocket connections on.
  */
 async function startWebsocat(
   sandbox: Sandbox,
   wsPort: number,
   remotePort: number
-): Promise<{ handle: CommandHandle; owned: boolean }> {
-  const args = `ws-l:0.0.0.0:${wsPort} tcp:127.0.0.1:${remotePort}`
-
+): Promise<{ handle: CommandHandle; owned: boolean; path: string }> {
   const processes = await sandbox.commands.list()
-  const running = processes.find((p) => p.args.join(' ').endsWith(args))
-  if (running) {
-    return {
-      handle: await sandbox.commands.connect(running.pid, { timeoutMs: 0 }),
-      owned: false,
+  for (const p of processes) {
+    const path = tunnelPathOf(p.args.join(' '), wsPort, remotePort)
+    if (path) {
+      return {
+        handle: await sandbox.commands.connect(p.pid, { timeoutMs: 0 }),
+        owned: false,
+        path,
+      }
     }
   }
 
@@ -137,11 +143,12 @@ async function startWebsocat(
     })
   }
 
+  const path = randomTunnelPath()
   const handle = await sandbox.commands.run(
-    `exec ${WEBSOCAT_SANDBOX_PATH} --binary --exit-on-eof ${args}`,
+    `exec ${WEBSOCAT_SANDBOX_PATH} --binary --exit-on-eof ${websocatArgs(wsPort, remotePort, path)}`,
     { background: true, timeoutMs: 0 }
   )
-  return { handle, owned: true }
+  return { handle, owned: true, path }
 }
 
 /**

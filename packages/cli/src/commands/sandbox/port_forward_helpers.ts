@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto'
 import * as http from 'node:http'
 import * as https from 'node:https'
 import * as net from 'node:net'
@@ -45,6 +46,41 @@ export const parsePortMapping = zodParser(
  */
 export function websocketPortFor(remotePort: number): number {
   return 1024 + ((remotePort + 31232) % 64512)
+}
+
+/**
+ * A random URI path for websocat's `--restrict-uri`. The relay's sandbox URL
+ * can be public, so only clients that know this path reach the remote port.
+ */
+export function randomTunnelPath(): string {
+  return `/${randomBytes(24).toString('base64url')}`
+}
+
+/**
+ * The websocat arguments that serve `remotePort` on `wsPort` behind `path`.
+ */
+export function websocatArgs(
+  wsPort: number,
+  remotePort: number,
+  path: string
+): string {
+  return `--restrict-uri ${path} ws-l:0.0.0.0:${wsPort} tcp:127.0.0.1:${remotePort}`
+}
+
+/**
+ * The `--restrict-uri` path of a running websocat for `wsPort` and
+ * `remotePort`, given its command line, or undefined if it serves other ports.
+ */
+export function tunnelPathOf(
+  commandLine: string,
+  wsPort: number,
+  remotePort: number
+): string | undefined {
+  const suffix = ` ws-l:0.0.0.0:${wsPort} tcp:127.0.0.1:${remotePort}`
+  if (!commandLine.endsWith(suffix)) return undefined
+  return commandLine
+    .slice(0, -suffix.length)
+    .match(/--restrict-uri (\/\S+)$/)?.[1]
 }
 
 /**

@@ -3,6 +3,9 @@ import * as commander from '@commander-js/extra-typings'
 
 import {
   parsePortMapping,
+  randomTunnelPath,
+  tunnelPathOf,
+  websocatArgs,
   websocketPortFor,
 } from '../../../src/commands/sandbox/port_forward_helpers'
 
@@ -44,5 +47,20 @@ describe('port-forward helpers', () => {
       expect(wsPort).toBeGreaterThanOrEqual(1024)
       expect(wsPort).toBeLessThanOrEqual(65535)
     }
+  })
+
+  test('randomTunnelPath returns a fresh URL-safe path', () => {
+    const path = randomTunnelPath()
+    expect(path).toMatch(/^\/[A-Za-z0-9_-]{32}$/)
+    expect(randomTunnelPath()).not.toBe(path)
+  })
+
+  test('tunnelPathOf reads the path of a websocat for the same ports', () => {
+    const commandLine = `-l -c exec /tmp/.e2b/websocat --binary --exit-on-eof ${websocatArgs(35256, 3000, '/s3cret')}`
+    expect(tunnelPathOf(commandLine, 35256, 3000)).toBe('/s3cret')
+    expect(tunnelPathOf(commandLine, 35257, 3001)).toBeUndefined()
+    expect(
+      tunnelPathOf('-l -c exec websocat ws-l:0.0.0.0:35256 tcp:127.0.0.1:3000', 35256, 3000)
+    ).toBeUndefined()
   })
 })
