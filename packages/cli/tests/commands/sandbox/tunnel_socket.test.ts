@@ -90,4 +90,21 @@ describe('tunnelSocket', () => {
     // Without backpressure the tunnel would queue the whole download here.
     expect(tunnelSockets[0].writableLength).toBeLessThan(4 * MB)
   })
+
+  test('closes the WebSocket when the client resets during a stalled download', async () => {
+    let sandboxClosed!: Promise<void>
+    const { port } = await startTunnel((ws) => {
+      sandboxClosed = new Promise((resolve) => ws.once('close', () => resolve()))
+      const chunk = Buffer.alloc(MB)
+      for (let i = 0; i < 64; i++) ws.send(chunk)
+    })
+
+    const client = net.connect(port, '127.0.0.1')
+    client.pause()
+    await new Promise((resolve) => setTimeout(resolve, 1_000))
+    client.resetAndDestroy()
+
+    // ws would otherwise wait 30s for a close reply it never reads.
+    await sandboxClosed
+  }, 5_000)
 })

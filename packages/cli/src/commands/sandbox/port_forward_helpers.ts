@@ -90,7 +90,7 @@ export function tunnelSocket(
 
   ws.on('open', () => socket.resume())
   ws.on('message', (data: Buffer) => {
-    if (!socket.write(data)) ws.pause()
+    if (!socket.destroyed && !socket.write(data)) ws.pause()
   })
   socket.on('drain', () => ws.resume())
   ws.on('close', () => socket.end())
@@ -110,8 +110,11 @@ export function tunnelSocket(
   })
   // A WebSocket can't half-close: after the local client stops writing, keep
   // relaying the sandbox's reply until either side closes the connection.
-  socket.on('close', () =>
-    ws.readyState === WebSocket.OPEN ? ws.close() : ws.terminate()
-  )
+  socket.on('close', () => {
+    // The socket will never drain now; resume so ws can read the close reply.
+    ws.resume()
+    if (ws.readyState === WebSocket.OPEN) ws.close()
+    else ws.terminate()
+  })
   socket.on('error', () => {})
 }
