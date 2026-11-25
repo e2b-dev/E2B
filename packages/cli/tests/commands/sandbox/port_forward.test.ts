@@ -59,10 +59,10 @@ describe('sandbox port-forward', () => {
       background: true,
       timeoutMs: 0,
     })
-    // A marker left by a crashed forward must not block a new one.
+    // A malformed marker, e.g. from a failed write, must not block a new forward.
     await sandbox.files.write(
       tunnelMarkerPath(websocketPortFor(3000), 3000),
-      '999999 /stale'
+      ''
     )
   }, 60_000)
 

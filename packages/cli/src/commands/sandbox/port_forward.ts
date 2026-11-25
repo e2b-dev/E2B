@@ -135,9 +135,10 @@ async function startWebsocat(
       .connect(existing.pid, { timeoutMs: 0 })
       .catch(() => undefined)
     if (handle) return { handle, owned: false, path: existing.path }
-    // websocat is gone without cleaning up, e.g. the CLI that started it crashed.
-    await sandbox.files.remove(marker).catch(() => {})
   }
+  // A missing, malformed or stale marker (e.g. the CLI that started websocat
+  // crashed) would otherwise make the noclobber write below fail.
+  await sandbox.files.remove(marker).catch(() => {})
 
   if (!(await sandbox.files.exists(WEBSOCAT_SANDBOX_PATH))) {
     console.log('Downloading websocat into the sandbox...')
