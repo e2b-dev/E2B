@@ -1,6 +1,7 @@
+import * as http from 'node:http'
 import * as https from 'node:https'
 import * as net from 'node:net'
-import WebSocket, { createWebSocketStream } from 'ws'
+import WebSocket from 'ws'
 import { z } from 'zod'
 
 import { integer, zodParser } from 'src/validation'
@@ -68,6 +69,8 @@ export function websocatInstallCommand(arch: string): string {
   ].join('\n')
 }
 
+const HIGH_WATER_MARK = 1024 * 1024
+
 /**
  * Pipes a local TCP socket through a WebSocket until either side closes.
  * Both directions apply backpressure, so a slow reader pauses the other side.
@@ -78,21 +81,37 @@ export function tunnelSocket(
   headers: Record<string, string>,
   onError: () => void
 ): void {
+  socket.pause()
+
   // ws bypasses the global agent by default, which ignores the proxy Node
   // configures from HTTPS_PROXY when NODE_USE_ENV_PROXY is set.
-  const remote = createWebSocketStream(
-    new WebSocket(url, { headers, agent: https.globalAgent })
-  )
+  const agent = url.startsWith('wss:') ? https.globalAgent : http.globalAgent
+  const ws = new WebSocket(url, { headers, agent })
 
-  // A WebSocket can't half-close: after the local client stops writing, keep
-  // relaying the sandbox's reply until either side closes the connection.
-  socket.pipe(remote, { end: false })
-  remote.pipe(socket)
-
-  remote.on('error', () => {
-    onError()
+  ws.on('open', () => socket.resume())
+  ws.on('message', (data: Buffer) => {
+    if (!socket.write(data)) ws.pause()
+  })
+  socket.on('drain', () => ws.resume())
+  ws.on('close', () => socket.end())
+  ws.on('error', () => {
+    if (!socket.destroyed) onError()
     socket.destroy()
   })
-  socket.on('error', () => remote.destroy())
-  socket.on('close', () => remote.destroy())
+
+  socket.on('data', (chunk) => {
+    // Once the sandbox closes, drop the rest of the upload so the reply it
+    // already sent still reaches the client.
+    if (ws.readyState !== WebSocket.OPEN) return
+    ws.send(chunk, () => {
+      if (ws.bufferedAmount < HIGH_WATER_MARK) socket.resume()
+    })
+    if (ws.bufferedAmount >= HIGH_WATER_MARK) socket.pause()
+  })
+  // A WebSocket can't half-close: after the local client stops writing, keep
+  // relaying the sandbox's reply until either side closes the connection.
+  socket.on('close', () =>
+    ws.readyState === WebSocket.OPEN ? ws.close() : ws.terminate()
+  )
+  socket.on('error', () => {})
 }
