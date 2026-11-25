@@ -36,6 +36,10 @@ export const portForwardCommand = new commander.Command('port-forward')
     parsePortMapping
   )
   .alias('pf')
+  .addHelpText(
+    'after',
+    '\nwebsocat keeps running in the sandbox after the command exits, so later port-forwards to the same port reuse it.'
+  )
   .action(async (sandboxID, { localPort, remotePort }) => {
     try {
       const sandbox = await Sandbox.connect(sandboxID, await ensureAuth())
@@ -97,7 +101,12 @@ async function startWebsocat(
 
   if (!(await sandbox.files.exists(WEBSOCAT_SANDBOX_PATH))) {
     const arch = (await sandbox.commands.run('uname -m')).stdout.trim()
-    await sandbox.commands.run(websocatInstallCommand(arch))
+    await sandbox.commands.run(websocatInstallCommand(arch)).catch((err) => {
+      throw new Error(
+        `Failed to download websocat in the sandbox: ${err.stderr || err.message}. ` +
+          'Check that the sandbox has internet access and can reach github.com.'
+      )
+    })
   }
 
   return sandbox.commands.run(
@@ -127,12 +136,16 @@ async function waitForWebsocat(
         `websocat in sandbox exited: ${handle?.stderr || handle?.error || ''}`.trim()
       )
     }
-    const res = await fetch(`https://${host}/`, { headers }).catch(
-      () => undefined
-    )
+    const res = await fetch(`https://${host}/`, {
+      headers,
+      signal: AbortSignal.timeout(Math.max(deadline - Date.now(), 1)),
+    }).catch(() => undefined)
     await res?.body?.cancel()
     if (res && res.status !== 502) return
     await new Promise((resolve) => setTimeout(resolve, READY_POLL_MS))
   }
-  throw new Error(`Timed out waiting for websocat on ${host}`)
+  throw new Error(
+    `Timed out after ${READY_TIMEOUT_MS / 1000}s waiting for the sandbox proxy to reach websocat on ${host}. ` +
+      'Check that the sandbox is still running (`e2b sandbox list`) and retry.'
+  )
 }
