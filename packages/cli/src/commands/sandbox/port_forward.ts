@@ -187,9 +187,10 @@ async function waitForExit(
     }
     await new Promise((resolve) => setTimeout(resolve, RECONNECT_DELAY_MS))
     const processes = await sandbox.commands.list().catch(() => undefined)
-    if (processes && !processes.some((p) => p.pid === handle.pid)) {
-      return handle
-    }
+    const running = processes
+      ? processes.some((p) => p.pid === handle.pid)
+      : await sandbox.isRunning().catch(() => true)
+    if (!running) return handle
     handle = await sandbox.commands
       .connect(handle.pid, { timeoutMs: 0 })
       .catch(() => handle)
