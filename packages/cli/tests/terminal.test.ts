@@ -1,6 +1,7 @@
-import type { Sandbox } from 'e2b'
+import { CommandInputHandle, type Sandbox } from 'e2b'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
+import { rejectProxyUnavailableResponse } from '../../js-sdk/src/envd/rpc'
 import { spawnConnectedTerminal } from '../src/terminal'
 
 function createDeferred() {
@@ -122,6 +123,49 @@ describe('spawnConnectedTerminal input stream', () => {
 
       expect(sentChunks(replacement)).toEqual(['first', 'second', 'later'])
     } finally {
+      wait.resolve()
+      await terminal
+    }
+  })
+
+  test('replays keystrokes typed during a failed stream health check', async () => {
+    const healthStarted = createDeferred()
+    const releaseHealth = createDeferred()
+    const rpc = {
+      streamInput: () =>
+        rejectProxyUnavailableResponse(
+          new Response(
+            'the connection to sandbox ended before the stream completed',
+            { status: 502 }
+          )
+        ),
+    } as unknown as ConstructorParameters<typeof CommandInputHandle>[0]
+    const first = new CommandInputHandle(rpc, 1, 'pty', {}, async () => {
+      healthStarted.resolve()
+      await releaseHealth.promise
+      return true
+    })
+    const replacement = createInputHandle()
+    const { sandbox, streamInput, wait } = createSandbox([replacement])
+    vi.mocked(sandbox.pty.streamInput).mockReturnValueOnce(first)
+    const terminal = spawnConnectedTerminal(sandbox)
+
+    try {
+      await healthStarted.promise
+      process.stdin.emit('data', Buffer.from('p'))
+      await flush()
+
+      expect(streamInput).toHaveBeenCalledTimes(1)
+
+      releaseHealth.resolve()
+      await flush()
+      process.stdin.emit('data', Buffer.from('wd\r'))
+      await flush()
+
+      expect(streamInput).toHaveBeenCalledTimes(2)
+      expect(sentChunks(replacement)).toEqual(['p', 'wd\r'])
+    } finally {
+      releaseHealth.resolve()
       wait.resolve()
       await terminal
     }
