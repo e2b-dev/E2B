@@ -9,12 +9,11 @@
  */
 
 import * as net from 'node:net'
-import { CommandHandle, Sandbox } from 'e2b'
+import { CommandExitError, CommandHandle, Sandbox } from 'e2b'
 import * as commander from '@commander-js/extra-typings'
 
 import { ensureAuth } from '../../api'
 import { asBold, asPrimary } from 'src/utils/format'
-import { setupSignalHandlers } from 'src/utils/signal'
 import {
   parsePortMapping,
   tunnelSocket,
@@ -25,6 +24,8 @@ import {
 
 const READY_TIMEOUT_MS = 15_000
 const READY_POLL_MS = 200
+const RECONNECT_DELAY_MS = 1_000
+const STOP_SIGNALS = ['SIGINT', 'SIGTERM', 'SIGHUP'] as const
 
 export const portForwardCommand = new commander.Command('port-forward')
   .description('forward a local port to a port in a running sandbox')
@@ -36,15 +37,18 @@ export const portForwardCommand = new commander.Command('port-forward')
   )
   .alias('pf')
   .action(async (sandboxID, { localPort, remotePort }) => {
+    let sandbox: Sandbox | undefined
     let websocat: { handle: CommandHandle; owned: boolean } | undefined
     let stopping = false
     const stop = async () => {
       stopping = true
-      if (websocat?.owned) await websocat.handle.kill().catch(() => {})
+      if (sandbox && websocat?.owned) {
+        await sandbox.commands.kill(websocat.handle.pid).catch(() => {})
+      }
     }
 
     try {
-      const sandbox = await Sandbox.connect(sandboxID, await ensureAuth())
+      sandbox = await Sandbox.connect(sandboxID, await ensureAuth())
       const wsPort = websocketPortFor(remotePort)
       const headers: Record<string, string> = sandbox.trafficAccessToken
         ? { 'e2b-traffic-access-token': sandbox.trafficAccessToken }
@@ -52,14 +56,18 @@ export const portForwardCommand = new commander.Command('port-forward')
 
       websocat = await startWebsocat(sandbox, wsPort, remotePort)
       const { handle } = websocat
-      setupSignalHandlers(async () => {
-        await stop()
-        process.exit(0)
-      })
+      // Not setupSignalHandlers: it also catches SIGPIPE, which a local client
+      // resetting its connection raises and must not stop the forward.
+      for (const signal of STOP_SIGNALS) {
+        process.on(signal, async () => {
+          await stop()
+          process.exit(0)
+        })
+      }
       await waitForWebsocat(sandbox.getHost(wsPort), headers, handle)
 
       const url = `wss://${sandbox.getHost(wsPort)}`
-      const server = net.createServer((socket) =>
+      const server = net.createServer({ allowHalfOpen: true }, (socket) =>
         tunnelSocket(socket, url, headers, () =>
           console.error(
             `Connection to sandbox port ${remotePort} failed, is anything listening on it?`
@@ -75,10 +83,10 @@ export const portForwardCommand = new commander.Command('port-forward')
         `Forwarding 127.0.0.1:${localPort} -> sandbox ${asPrimary(sandbox.sandboxId)} port ${remotePort}`
       )
 
-      await handle.wait().catch(() => {})
+      const exited = await waitForExit(sandbox, handle)
       if (stopping) return
       console.error(
-        `websocat in sandbox exited: ${handle.stderr || handle.error || ''}`.trim()
+        `websocat in sandbox exited: ${exited.stderr || exited.error || ''}`.trim()
       )
       process.exit(1)
     } catch (err: any) {
@@ -160,4 +168,30 @@ async function waitForWebsocat(
     `Timed out after ${READY_TIMEOUT_MS / 1000}s waiting for the sandbox proxy to reach websocat on ${host}. ` +
       'Check that the sandbox is still running (`e2b sandbox list`) and retry.'
   )
+}
+
+/**
+ * Waits until websocat exits. A dropped command stream is not an exit: as long
+ * as websocat still runs in the sandbox, reconnect to it and keep waiting.
+ */
+async function waitForExit(
+  sandbox: Sandbox,
+  handle: CommandHandle
+): Promise<CommandHandle> {
+  for (;;) {
+    try {
+      await handle.wait()
+      return handle
+    } catch (err) {
+      if (err instanceof CommandExitError) return handle
+    }
+    await new Promise((resolve) => setTimeout(resolve, RECONNECT_DELAY_MS))
+    const processes = await sandbox.commands.list().catch(() => undefined)
+    if (processes && !processes.some((p) => p.pid === handle.pid)) {
+      return handle
+    }
+    handle = await sandbox.commands
+      .connect(handle.pid, { timeoutMs: 0 })
+      .catch(() => handle)
+  }
 }

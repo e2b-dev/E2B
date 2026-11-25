@@ -55,7 +55,7 @@ export function websocatInstallCommand(arch: string): string {
   }
 
   const url = `https://github.com/vi/websocat/releases/download/${WEBSOCAT_VERSION}/${binary.asset}`
-  const tmp = `${WEBSOCAT_SANDBOX_PATH}.download`
+  const tmp = `${WEBSOCAT_SANDBOX_PATH}.$$.download`
   return [
     'set -e',
     `mkdir -p ${WEBSOCAT_SANDBOX_DIR}`,
@@ -118,6 +118,8 @@ export function tunnelSocket(
     ws.send(chunk)
     if (ws.bufferedAmount >= HIGH_WATER_MARK) waitForDrain()
   })
-  socket.on('end', () => ws.close())
+  // A WebSocket can't half-close: after the local client stops writing, keep
+  // relaying the sandbox's reply until either side closes the connection.
+  socket.on('close', () => ws.close())
   socket.on('error', () => ws.close())
 }

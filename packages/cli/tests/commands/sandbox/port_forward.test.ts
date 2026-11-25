@@ -1,4 +1,5 @@
 import { spawn, type ChildProcess } from 'node:child_process'
+import * as net from 'node:net'
 import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { Sandbox } from 'e2b'
@@ -70,6 +71,18 @@ describe('sandbox port-forward', () => {
 
       const res = await fetch('http://127.0.0.1:13579/hello.txt')
       expect(await res.text()).toBe('hello from sandbox')
+
+      // The client half-closes after its request and still gets the reply.
+      const halfClosed = await new Promise<string>((resolve, reject) => {
+        let reply = ''
+        const client = net.connect(13579, '127.0.0.1', () =>
+          client.end('GET /hello.txt HTTP/1.0\r\n\r\n')
+        )
+        client.on('data', (chunk) => (reply += chunk))
+        client.on('close', () => resolve(reply))
+        client.on('error', reject)
+      })
+      expect(halfClosed).toContain('hello from sandbox')
 
       const second = startPortForward(sandbox.sandboxId, '13580:3000')
       children.push(second.child)
