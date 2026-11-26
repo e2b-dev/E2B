@@ -36,6 +36,7 @@ jobs:
       dockerfile_utils_js: ${{ steps.filter.outputs.dockerfile_utils_js }}
       dockerfile_utils_python: ${{ steps.filter.outputs.dockerfile_utils_python }}
       acp_js: ${{ steps.filter.outputs.acp_js }}
+      acp_python: ${{ steps.filter.outputs.acp_python }}
     steps:
       - name: Filter changed paths
         # On workflow_dispatch there is no PR diff and paths-filter would fall
@@ -81,6 +82,12 @@ jobs:
               - 'packages/acp-js/**/!(*.md)'
               - 'packages/js-sdk/**/!(*.md)'
               - 'packages/dockerfile-utils-js/**/!(*.md)'
+            acp_python:
+              - *shared
+              - '.github/workflows/acp_python_tests.yml'
+              - 'packages/acp-python/**/!(*.md)'
+              - 'packages/python-sdk/**/!(*.md)'
+              - 'packages/dockerfile-utils-python/**/!(*.md)'
             code_interpreter_js:
               - *shared
               - '.github/workflows/code_interpreter_js_tests.yml'
@@ -154,6 +161,14 @@ jobs:
     secrets:
       E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
 
+  acp-python-tests:
+    name: Production / ACP Python SDK Tests
+    needs: changes
+    if: ${{ needs.changes.outputs.acp_python == 'true' || github.event_name == 'workflow_dispatch' }}
+    uses: ./.github/workflows/acp_python_tests.yml
+    secrets:
+      E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+
   code-interpreter-js-tests:
     name: Code Interpreter JS SDK Tests
     needs: changes
@@ -208,6 +223,7 @@ jobs:
       - python-tests
       - cli-tests
       - acp-js-tests
+      - acp-python-tests
       - code-interpreter-js-tests
       - code-interpreter-python-tests
       - desktop-js-tests
