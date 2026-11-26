@@ -1,6 +1,6 @@
 [project]
 name = "e2b-acp"
-version = "0.1.0"
+version = "0.1.1"
 description = "Run Agent Client Protocol (ACP) agents in E2B sandboxes"
 authors = [{ name = "e2b", email = "hello@e2b.dev" }]
 license = "Apache-2.0"

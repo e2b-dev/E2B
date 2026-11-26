@@ -1,5 +1,13 @@
 # @e2b/acp
 
+## 0.1.1
+
+### Patch Changes
+
+- f5b63f7: Allow `@agentclientprotocol/sdk` 2.x as a peer dependency (`^1.8.0 || ^2.0.0`), so `npm install e2b @e2b/acp @agentclientprotocol/sdk` resolves with the current SDK release.
+- Updated dependencies [00da275]
+  - e2b@2.66.0
+
 ## 0.1.0
 
 ### Minor Changes

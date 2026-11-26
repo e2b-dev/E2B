@@ -1,5 +1,17 @@
 # @e2b/cli
 
+## 2.26.0
+
+### Minor Changes
+
+- 49984f9: `e2b sandbox port-forward` accepts several `<local>:<remote>` mappings, e.g. `e2b sandbox port-forward <sandboxID> 8000:3000 5432`, and `:<remote>` to forward a random free local port
+- 00da275: Add resizable memory: build a template with `maxMemoryMB`, pick each sandbox's `memoryMB` on create, and pick the memory and CPUs a paused sandbox resumes with on `Sandbox.connect`. `onResume` (`on_resume`) now also accepts an object, `{ action, memoryMB, cpuCount }` (`{"action", "memory_mb", "cpu_count"}` in Python), next to the existing `'restore'` / `'reboot'` strings, which keep working unchanged. The sizes apply only when the connect resumes a paused sandbox, and a size the sandbox cannot take is refused. `Template.list()`, `Template.getInfo()` and `Template.listBuilds()` return `maxMemoryMB`, and `e2b template list` shows a `Max RAM MiB` column.
+
+### Patch Changes
+
+- Updated dependencies [00da275]
+  - e2b@2.66.0
+
 ## 2.25.0
 
 ### Minor Changes

@@ -1,7 +1,7 @@
 {
   "name": "@e2b/acp-python",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "dependencies": {
     "@e2b/python-sdk": "workspace:*"
   },

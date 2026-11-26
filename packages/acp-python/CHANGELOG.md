@@ -1,5 +1,12 @@
 # @e2b/acp-python
 
+## 0.1.1
+
+### Patch Changes
+
+- Updated dependencies [00da275]
+  - @e2b/python-sdk@2.66.0
+
 ## 0.1.0
 
 ### Minor Changes
