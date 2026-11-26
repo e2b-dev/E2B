@@ -54,7 +54,8 @@ export type PortMapping = ReturnType<typeof parsePortMapping>
 /**
  * Commander parser for a variadic list of {@link parsePortMapping} arguments.
  * Rejects a local port given twice, which could only be bound once; random
- * local ports never clash.
+ * local ports never clash. Also rejects distinct remote ports whose websocats
+ * would need the same sandbox port (see {@link websocketPortFor}).
  */
 export function collectPortMapping(
   value: string,
@@ -67,6 +68,16 @@ export function collectPortMapping(
   ) {
     throw new InvalidArgumentError(
       `Local port ${mapping.localPort} is forwarded more than once. Use a different <local> port for each mapping; a <remote> port can repeat.`
+    )
+  }
+  const clash = previous.find(
+    ({ remotePort }) =>
+      remotePort !== mapping.remotePort &&
+      websocketPortFor(remotePort) === websocketPortFor(mapping.remotePort)
+  )
+  if (clash) {
+    throw new InvalidArgumentError(
+      `Remote ports ${clash.remotePort} and ${mapping.remotePort} cannot be forwarded together: both need sandbox port ${websocketPortFor(mapping.remotePort)} for websocat.`
     )
   }
   return [...previous, mapping]

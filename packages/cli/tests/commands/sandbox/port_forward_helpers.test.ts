@@ -60,6 +60,19 @@ describe('port-forward helpers', () => {
     ).toThrow(commander.InvalidArgumentError)
   })
 
+  test('collectPortMapping allows a remote port given twice', () => {
+    expect(collectPortMapping('8001:3000', collectPortMapping('8000:3000'))).toEqual([
+      { localPort: 8000, remotePort: 3000 },
+      { localPort: 8001, remotePort: 3000 },
+    ])
+  })
+
+  test('collectPortMapping rejects remote ports sharing a websocat port', () => {
+    expect(() => collectPortMapping(':64513', collectPortMapping(':1'))).toThrow(
+      'Remote ports 1 and 64513 cannot be forwarded together'
+    )
+  })
+
   test('websocketPortFor shifts the port by half of 1024-65535', () => {
     expect(websocketPortFor(22)).toBe(32278)
     expect(websocketPortFor(3000)).toBe(35256)
