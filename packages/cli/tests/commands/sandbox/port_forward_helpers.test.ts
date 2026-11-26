@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest'
 import * as commander from '@commander-js/extra-typings'
 
 import {
+  collectPortMapping,
   parsePortMapping,
   parseTunnelMarker,
   randomTunnelPath,
@@ -23,7 +24,14 @@ describe('port-forward helpers', () => {
     })
   })
 
-  test.each(['', 'abc', '0', '65536', '80:', ':80', '1:2:3', '80.5', '-1'])(
+  test('parsePortMapping reads :remote as a random local port', () => {
+    expect(parsePortMapping(':3000')).toEqual({
+      localPort: 0,
+      remotePort: 3000,
+    })
+  })
+
+  test.each(['', 'abc', '0', '65536', '80:', ':', ':0', '0:80', '1:2:3', '80.5', '-1'])(
     'parsePortMapping rejects %j',
     (value: string) => {
       expect(() => parsePortMapping(value)).toThrow(
@@ -31,6 +39,39 @@ describe('port-forward helpers', () => {
       )
     }
   )
+
+  test('collectPortMapping collects every mapping', () => {
+    expect(collectPortMapping('5432', collectPortMapping('8000:3000'))).toEqual([
+      { localPort: 8000, remotePort: 3000 },
+      { localPort: 5432, remotePort: 5432 },
+    ])
+  })
+
+  test('collectPortMapping allows several random local ports', () => {
+    expect(collectPortMapping(':4000', collectPortMapping(':3000'))).toEqual([
+      { localPort: 0, remotePort: 3000 },
+      { localPort: 0, remotePort: 4000 },
+    ])
+  })
+
+  test('collectPortMapping rejects a local port given twice', () => {
+    expect(() =>
+      collectPortMapping('8000:4000', collectPortMapping('8000:3000'))
+    ).toThrow(commander.InvalidArgumentError)
+  })
+
+  test('collectPortMapping allows a remote port given twice', () => {
+    expect(collectPortMapping('8001:3000', collectPortMapping('8000:3000'))).toEqual([
+      { localPort: 8000, remotePort: 3000 },
+      { localPort: 8001, remotePort: 3000 },
+    ])
+  })
+
+  test('collectPortMapping rejects remote ports sharing a websocat port', () => {
+    expect(() => collectPortMapping(':64513', collectPortMapping(':1'))).toThrow(
+      'Remote ports 1 and 64513 cannot be forwarded together'
+    )
+  })
 
   test('websocketPortFor shifts the port by half of 1024-65535', () => {
     expect(websocketPortFor(22)).toBe(32278)

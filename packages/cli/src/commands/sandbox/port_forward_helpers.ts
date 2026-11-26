@@ -4,6 +4,7 @@ import * as https from 'node:https'
 import * as net from 'node:net'
 import WebSocket from 'ws'
 import { z } from 'zod'
+import { InvalidArgumentError } from '@commander-js/extra-typings'
 
 import { integer, zodParser } from 'src/validation'
 
@@ -26,18 +27,61 @@ export const WEBSOCAT_SANDBOX_PATH = `${WEBSOCAT_SANDBOX_DIR}/websocat-${WEBSOCA
 const port = integer('Port', { min: 1, max: 65535 })
 
 /**
- * Commander parser for `local:remote`, or a single `port` used for both sides.
+ * Commander parser for `local:remote`, a single `port` used for both sides, or
+ * `:remote` for a random free local port (`localPort` 0).
  */
 export const parsePortMapping = zodParser(
   z
     .string()
-    .regex(/^[^:]*(:[^:]*)?$/, 'Expected <local>:<remote> or <port>.')
+    .regex(
+      /^[^:]*(:[^:]*)?$/,
+      'Expected <local>:<remote>, <port> or :<remote>.'
+    )
     .transform((value) => {
       const [localPort, remotePort = localPort] = value.split(':')
       return { localPort, remotePort }
     })
-    .pipe(z.object({ localPort: port, remotePort: port }))
+    .pipe(
+      z.object({
+        localPort: z.union([z.literal('').transform(() => 0), port]),
+        remotePort: port,
+      })
+    )
 )
+
+export type PortMapping = ReturnType<typeof parsePortMapping>
+
+/**
+ * Commander parser for a variadic list of {@link parsePortMapping} arguments.
+ * Rejects a local port given twice, which could only be bound once; random
+ * local ports never clash. Also rejects distinct remote ports whose websocats
+ * would need the same sandbox port (see {@link websocketPortFor}).
+ */
+export function collectPortMapping(
+  value: string,
+  previous: PortMapping[] = []
+): PortMapping[] {
+  const mapping = parsePortMapping(value)
+  if (
+    mapping.localPort !== 0 &&
+    previous.some(({ localPort }) => localPort === mapping.localPort)
+  ) {
+    throw new InvalidArgumentError(
+      `Local port ${mapping.localPort} is forwarded more than once. Use a different <local> port for each mapping; a <remote> port can repeat.`
+    )
+  }
+  const clash = previous.find(
+    ({ remotePort }) =>
+      remotePort !== mapping.remotePort &&
+      websocketPortFor(remotePort) === websocketPortFor(mapping.remotePort)
+  )
+  if (clash) {
+    throw new InvalidArgumentError(
+      `Remote ports ${clash.remotePort} and ${mapping.remotePort} cannot be forwarded together: both need sandbox port ${websocketPortFor(mapping.remotePort)} for websocat.`
+    )
+  }
+  return [...previous, mapping]
+}
 
 /**
  * The sandbox port websocat listens on for `remotePort`: the port shifted by
